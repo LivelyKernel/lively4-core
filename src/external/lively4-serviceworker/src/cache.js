@@ -80,7 +80,6 @@ export class Cache {
     
     // #OfflineFirst
     this.offlineFirstReady = (async () => {
-      if (!self.caches) return; // #MacCachesBug
       this.offlineFirstCache = await caches.open("offlineFirstCache")
       lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
       if (this.offlineFirst) {
@@ -91,7 +90,7 @@ export class Cache {
   
   async fetchOfflineFirst(request, doNetworkRequest) {
     // console.log("offline first " + request.url)
-    if (request.method == "GET" && this.offlineFirstCache) {
+    if (request.method == "GET") {
       var resp = await this.offlineFirstCache.match(request)
       if (resp) {
         var lastModified = resp.headers.get("modified") 

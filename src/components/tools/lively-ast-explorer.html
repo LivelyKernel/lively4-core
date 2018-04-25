@@ -4,32 +4,32 @@
   :host {
     width: 50px;
     height: 25px;
-    
-    display: flex;
-    flex-direction: column;
   }
  
-  .layout-column {
-    display: flex;
-    flex-direction: column;
+ 
+  #firstRow, #secondRow {
+    border: 1px gray solid;
   }
-  .layout-row {
-    display: flex;
-    flex-direction: row;
-  }
-
+  
   #outputPane, #astPane, #resultPane {
      border-left: 2px gray solid;
   }
   
+  
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+
   #firstRow, #secondRow {
-    border: 1px gray solid;
+    display: flex;
+    flex-direction: rows;
     flex: 0.5;
   }
   
+
   #sourcePane {
     flex: 0.33;
-    overflow: hidden;
   }
   
   #outputPane {
@@ -41,6 +41,7 @@
     flex: 0.33;
   }
   
+  
   #pluginPane {
     flex: 0.66;
     overflow: hidden;
@@ -48,6 +49,12 @@
   
   #resultPane {
     flex: 0.33;
+    
+  }
+
+  #outputPane, #sourcePane, #pluginPane, #resultPane, #astPane {
+    display: flex;
+    flex-direction: column;
   }
 
   lively-code-mirror {
@@ -63,57 +70,50 @@
     height: 100%;
   }
   
+  
   #resultPane pre {
     flex: 1;
     margin-left: 15px
   }
   #resultPane {
-    overflow: auto;
+    overflow: scroll;
   }
     
-  #plugin, #source, #output {
+  #plugin, #source {
     width: 100%;
     height: calc(100% - 30px);
   }
-  #plugin-url, #source-url {
-    width: -webkit-fill-available;
-  }
   </style>
-<div id="firstRow" class="layout-row">
+<div id="firstRow">
   <div id="sourcePane">
-    <div>
-      Source <input id="source-url" type="text" placeholder="source url" />
-    </div>
-    <lively-code-mirror id="source"></lively-code-mirror>
+    <div>Source</div>
+    <lively-editor id="source"></lively-editor>      
   </div>
   <lively-separator></lively-separator>
-  <div id="astPane" class="layout-column">
+  <div id="astPane">
     <lively-inspector id="astInspector" type="ast"></lively-inspector>
   </div>
   
   <lively-separator></lively-separator>
-  <div id="outputPane" class="layout-column">
-    <span  id="eval">
-      Output
-      <input type="checkbox" id="live" title="continous eval" checked/>
-      <label for="live">run</label>
-    </span>
-    <lively-code-mirror id="output"></lively-code-mirror>
+  <div id="outputPane">
+    
+    <div>Output <span  id="eval">
+          <input type="checkbox" id="live" title="continous eval" checked/> run
+      </span></div>
+    
+     <lively-code-mirror  id="output"></lively-code-mirror>
   </div>   
 </div>
 <lively-separator></lively-separator>
-<div id="secondRow" class="layout-row">
+<div id="secondRow">
   <div id="pluginPane">
     <div>Plugin</div>
-    <div>
-      <input id="plugin-url" type="text" placeholder="plugin url" />
-    </div>
-    <lively-code-mirror id="plugin"></lively-code-mirror>
+    <lively-editor id="plugin"></lively-editor>
   </div>
   <lively-separator ></lively-separator>
-  <div id="resultPane" class="layout-column">
+  <div id="resultPane">
     <div>Result</div>
-    <pre id="result"></pre>
+      <pre id="result"></pre>
   </div>
 </div>
 

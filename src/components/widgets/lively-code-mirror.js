@@ -10,10 +10,6 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
-
-import * as spellCheck from "src/external/codemirror-spellcheck.js"
-
-
 import {isSet} from 'utils'
 
 let loadPromise = undefined;
@@ -76,7 +72,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/javascript/javascript.js")
       await this.loadModule("mode/xml/xml.js")
       await this.loadModule("mode/css/css.js")
-      await this.loadModule("mode/diff/diff.js")
 
       await this.loadModule("mode/markdown/markdown.js")
       await this.loadModule("mode/htmlmixed/htmlmixed.js")
@@ -318,7 +313,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       },
       // #KeyboardShortcut Alt-. jump to definition using tern
       "Alt-.": cm => {
-        lively.notify("try to JUMP TO DEFINITION")
+        lively.error("JUMP TO DEFINITION")
         TernCodeMirrorWrapper.jumpToDefinition(cm, this);
       },
       // #KeyboardShortcut Alt-, jump back from definition using tern
@@ -636,7 +631,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   
-  async changeModeForFile(filename) {
+  changeModeForFile(filename) {
     if (!this.editor) return;
     
     var mode = "text"
@@ -666,12 +661,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
-    
-    if (mode == "gfm") {
-      // #TODO make language customizable
-      spellCheck.startSpellCheck(this.editor, await spellCheck.current())
-    }
-    
   }
 
   livelyPrepareSave() {

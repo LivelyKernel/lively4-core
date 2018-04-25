@@ -388,7 +388,6 @@ export default class Lively {
     return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
       comp.mode = "text/jsx";
       comp.value = string;
-      comp.setAttribute("overscroll", "contain")
       var container = comp.parentElement
       if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");

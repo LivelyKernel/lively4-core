@@ -63,7 +63,7 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 - [Paperjs](http://paperjs.org) #MIT 
 
 ## Graph Layout
-- [Dagre](https://github.com/cpettitt/dagre) #MIT
+- [Dagre] (https://github.com/cpettitt/dagre) #MIT
   - [combined with JointJS](http://www.daviddurman.com/automatic-graph-layout-with-jointjs-and-dagre.html)
 - [vis.js](http://visjs.org/) #MIT
 - [Mermaid](http://knsv.github.io/mermaid/)

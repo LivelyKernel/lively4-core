@@ -1,0 +1,494 @@
+<div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;"><!-- markdown-config presentation=true -->
+<!-- #TODO make style links in container content relative to url -->
+<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css">
+<link rel="stylesheet" type="text/css" href="../../src/client/lively.css">
+<link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css">
+<style>
+  .lively-slide {
+    border: 1px solid rgb(220,220,220)
+  }
+  p {
+    font-size: 18pt
+  }
+  @media print {
+    .lively-slide {
+      border: 0px solid white
+    }      
+  }
+  
+</style>
+<div class="title">
+  PX 2018: Seminar on Programming Experience
+</div>
+<div class="authors">
+  Jens Lincke, Stefan Ramson, Patrick Rein, Marcel Taeumel, Robert Hirschfeld
+</div>
+<div class="credentials">
+  Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
+</div>
+<lively-script><script>
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(this, "lively-presentation")
+   presentation.exportPrint()
+  }
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  button
+</script></lively-script>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">1</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Abstract</h1>
+<!-- #TODO get rid of this formatting #Hack -->
+<div style="height:10%"></div> 
+<p><a href="http://www.playfulinvention.com/emergence/active-essay.html">Active Essays</a> and <a href="http://explorabl.es/">Explorable Explanations</a> is a form of interactive media that can help understand complex systems for many relevant domains.
+In particular, the domain of software design is filled with challenging algorithms, patterns, and systems that are hard to understand and master.&nbsp;
+In this seminar, the participants will create demos, tools, and applications based on the idea of Explorable Explanations to improve the programming experience when developing such systems.
+By using our live collaborative development environment, <a href="https://lively-kernel.org/lively4/lively4-core/start.html">Lively4</a>, they will share, explore, and adapt the created tools and explanations --- even in unanticipated ways.</p>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">2</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<!-- #SWD12 -->
+<h1>What will this Seminar be about?</h1>
+<ul>
+<li>
+<p>Design ideas</p>
+<ul>
+<li>Algorithms</li>
+<li>Patterns</li>
+</ul>
+</li>
+<li>
+<p>Found in all kinds of software systems</p>
+<ul>
+<li>Programming languages</li>
+<li>Frameworks</li>
+<li>Libraries</li>
+<li>Applications</li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">3</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>How to present the idea</h1>
+<ul>
+<li>Implement the idea in a new environment / language</li>
+<li>Generate visualizations and animations</li>
+<li>Goal: make the idea better understandable</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">4</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Examples</h1>
+<ul>
+<li><a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">A* vs Dijstra Path Finding Algorithms</a></li>
+<li><a href="http://explorabl.es/">Explorable Explanations</a></li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">5</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Implementation Platforms</h1>
+<table style="margin-left: 10px; margin-top: 100px; text-align: center; font-size: 20pt;"> 
+  <tbody><tr>
+    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/logo_squeak.png" height="200px"></td>
+    <td width="40%"><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/lively4_logo.png" height="200px"></td>
+  </tr>
+  <tr>
+    <td><a href="http://squeak.org">Squeak (Smalltalk)</a></td>
+    <td><a href="https://lively-kernel.org/lively4/lively4-core/start.html">Lively4</a>: JavaScript, Web components</td>
+  </tr>
+</tbody></table>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">6</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topics</h1>
+<!-- #Idea make TOC navigate-able? Goto slide? -->
+<lively-script><script>
+// Poor men's: Table of Content / Topic list... I always wanted to do this in PowerPoint... but I did not know how to use Macros...
+(async () => {
+  var container = lively.query(this, "lively-container")
+  var source = await fetch(container.getURL()).then(r => r.text())
+  var topics = source.split("\n").filter(ea => ea.match(/^# Topic( \d\d)?:/)).map(ea => <li>{ea.replace(/# Topic/,"").replace(/:/,"").replace(/<.*>/,"")}</li>)
+
+  // #Idea, instead of just printing a TOC in the view, we could materialize them as content and update the topic number? 
+  // #Contra, maybe this should be very static and done by hand to use them as references....
+  var ul = <ul>{...topics}</ul>
+  return ul
+})()
+</script></lively-script>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">7</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 01: Graph Drawing</h1>
+<ul>
+<li>Domain: Visualization algorithms</li>
+<li>Compare:
+<ul>
+<li>Simulated Annealing</li>
+<li>Force Layout</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_graphlayout.png" width="60%" style="position:absolute; top:90px; right:20px;z-index:-1"></p>
+<div style="height:30%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Graph_drawing">wikipedia:Graph Drawing</a></li>
+<li>Ron Davidson, David Harel (1996). Drawing graphs nicely using simulated annealing</li>
+<li>Thomas M. J., Fruchterman  Edward M. Reingold (1991). Graph drawing by force-directed placement</li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">8</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 02: Stable Treemaps</h1>
+<ul>
+<li>Domain: Visualization Algorithms</li>
+<li>e.g. Voronoi tree maps</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_treemaps.png" width="40%" style="position:absolute; top:290px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>see <a href="https://hpi.de/doellner/people/current/schmechel.html">Sebastian Hahn @ hpi</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">9</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 03: Entity Component System</h1>
+<ul>
+<li>Domain: Software Engineering</li>
+<li>Links/Resources</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_ecs_entity.png" width="40%" style="position:absolute; top:240px; right:50px;z-index:-1"></p>
+<div style="height:30%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system">wikipedia:Entity Component System</a></li>
+<li><a href="https://www.heise.de/developer/artikel/Component-Based-Entity-Systems-in-Spielen-2262126.html?seite=all">Nick Prühs (2014) Component-Based Entity Systems in Spielen</a></li>
+<li><a href="https://gamedev.stackexchange.com/questions/31473/what-is-the-role-of-systems-in-a-component-based-entity-architecture">Michael House (2012) What is the role of “systems” in a component-based entity architecture</a></li>
+<li><a href="http://www.chris-granger.com/2012/12/11/anatomy-of-a-knockout/">Chris Granger (2012). Anatomy of a Knockout</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">10</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 04: Conflict-free replicated data type</h1>
+<ul>
+<li>Domain: Software Engineering / Distributed Computing</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_distributed-computing.png" width="50%" style="position:absolute; top:190px;right:60px;z-index:-1"></p>
+<div style="height:60%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type">wipipedia:Conflict-free replicated data type</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">11</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 05: Regular Expressions</h1>
+<ul>
+<li>Domain: Algorithms</li>
+<li>Implementation Strategies
+<ul>
+<li>Deterministic Finite Automatons (DFAs)</li>
+<li>Nondeterministic Finite Automatons (NFAs)</li>
+<li>Backtracking</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_regex.png" width="30%" style="position:absolute; top:190px;right:60px;z-index:-1"></p>
+<div style="height:30%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Regular_expression">wikipedia:Regular Expression</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">12</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 06:  Parser Combinator</h1>
+<ul>
+<li>Domain: Software Engineering</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_parser_combinator.png" width="60%" style="position:absolute; top:190px;right:60px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Parser_combinator">wikipedia:Parser_combinator</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">13</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 07: Material Point Method</h1>
+<ul>
+<li>Domain: Simulation Algorithms</li>
+<li><a href="http://onsetsu.github.io/floom/example.html">Example</a></li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_material_method.jpg" width="70%" style="position:absolute; top:290px;right:60px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Material_point_method">wikipedia:Material Point Method</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">14</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 08: Alpha-beta Pruning</h1>
+<ul>
+<li>Domain: Artificial Intelligence / Search Algorithm</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_alpha_betta.png" width="60%" style="position:absolute; top:200px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning">wikipedia:Alpha-beta Pruning</a></li>
+<li>Knuth, D. E., and Moore, R. W. (1975). "An Analysis of Alpha-Beta Pruning”</li>
+<li><a href="http://chessprogramming.wikispaces.com/Alpha-Beta">Chessprogramming Wiki / Alpha-Beta</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">15</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 09: Monte Carlo Tree Search</h1>
+<ul>
+<li>Domain: Artificial Intelligence / Search Algorithm</li>
+<li>Example Application: Alpha Go KI</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_game_structure.png" width="40%" style="position:absolute; top:50px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Monte_Carlo_tree_search">wikipedia:Monte Carlo Tree Search</a></li>
+<li><a href="https://pdfs.semanticscholar.org/1740/eb993cc8ca81f1e46ddaadce1f917e8000b5.pdf">Silver, David, et al. "Mastering the game of Go with deep neural networks and tree search" </a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">16</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 10: Support Vector Machine</h1>
+<ul>
+<li>Domain: Artificial Intelligence</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_support_vector_machines.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Support_vector_machine">wikipedia:Support Vector Machine</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">17</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 11: Artificial Neural Network</h1>
+<ul>
+<li>Domain: Artificial Intelligence</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_multi-layer-neural-network.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Deep_learning">wikipedia:Deep Learning</a></li>
+<li><a href="http://neuralnetworksanddeeplearning.com/index.html">Michael Nielsen (2017). Neural Networks and Deep Learning</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">18</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 12: Prolog / Unification</h1>
+<ul>
+<li>Domain: Software Engineering / Solving / AI ...</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_prolog.png" width="60%" style="position:absolute; top:220px; right:50px;z-index:-1"></p>
+<div style="height:50%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Unification_(computer_science)">wikipedia:Unification</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Prolog">wikipedia:Prolog</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">19</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 13: Constraint Solver</h1>
+<ul>
+<li>Domain: Constraints Solving</li>
+<li>Compare
+<ul>
+<li>Cassowary</li>
+<li>Gradient Descent</li>
+<li>Back tracking</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_gradient_ascent.png" width="50%" style="position:absolute; top:120px; right:50px;z-index:-1"></p>
+<div style="height:30%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Gradient_descent">wikipedia:Gradient Descent</a></li>
+<li>Greg J. Badros, Alan Borning, and Peter J. Stuckey (2001). The Cassowary Linear Arithmetic Constraint Solving Algorithm</li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">20</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 14: Z3</h1>
+<ul>
+<li>Domain: Constraints Solving</li>
+<li>Theorem prover</li>
+<li>Satisfiability modulo theories (SMT)</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_smt_solver.png" width="50%" style="position:absolute; top:220px; right:50px;z-index:-1" alt="image source:David Déharbe, Pascal Fontaine, Yoann Guyot, and Laurent Voisin. 2012. SMT solvers for rodin"></p>
+<div style="height:40%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>Leonardo de Moura, Nikolaj Bjørner (2008). Z3: An efficient SMT solver</li>
+<li><a href="https://github.com/Z3Prover/z3">github:z3</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">21</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 15: Learnable Programming<br> 1. Follow the flow</h1>
+<ul>
+<li>Domain: Programming Experience</li>
+<li><a href="open://lively-continuous-editor">lively4 continous editor prototype</a></li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_1.png" width="100%" style="position:absolute; top:270px; right:50px;z-index:-1"></p>
+<div style="height:40%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>Bret Victor 2012. Inventing on Principle.</li>
+<li>Bret Victor 2012. Learnable Programming. <a href="http://worrydream.com/">http://worrydream.com/</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">22</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 16: Learnable Programming <br> 2. See the state</h1>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_2.png" width="100%" style="position:absolute; top:230px; right:50px;z-index:-1"></p>
+<div style="height:55%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>Bret Victor 2012. Inventing on Principle.</li>
+<li>Bret Victor 2012. Learnable Programming. <a href="http://worrydream.com/">http://worrydream.com/</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">23</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 17: Learnable Programming <br> 3. Create by reacting</h1>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_3.png" width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></p>
+<div style="height:55%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>Bret Victor 2012. Inventing on Principle.</li>
+<li>Bret Victor 2012. Learnable Programming. <a href="http://worrydream.com/">http://worrydream.com/</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">24</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 18: Learnable Programming <br>4. Create by abstracting</h1>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_learnable_programming_4.png" width="100%" style="position:absolute; top:200px; right:50px;z-index:-1"></p>
+<div style="height:55%"></div>
+<ul>
+<li>Literature
+<ul>
+<li>Bret Victor 2012. Inventing on Principle.</li>
+<li>Bret Victor 2012. Learnable Programming. <a href="http://worrydream.com/">http://worrydream.com/</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">25</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Topic 19: Blockchain</h1>
+<ul>
+<li>Domain: Cryptography Algorithm</li>
+</ul>
+<p><img src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/topic_blockchain.png" width="20%" style="position:absolute; top:50px; right:50px;z-index:-1"></p>
+<div style="height:55%"></div>
+<ul>
+<li>Literature
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Blockchain">wikipedia:Blockchain</a></li>
+</ul>
+</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">26</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>And ...</h1>
+<div style="font-size: 40pt; margin-top:200px; margin-left:150px">
+Propose your own topic!
+</div>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">27</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Form of Presentation</h1>
+<ul>
+<li>Demo / active content with text (no external slides)</li>
+<li>Squeak: see BookMorph etc</li>
+<li>Lively4: Markdown / HTML</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">28</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Content of Presentation</h1>
+<ul>
+<li>Present and explain problem and specific solution of the domain problem</li>
+<li>Use interactivity and visualizations that are supported by text</li>
+<li>Present your solution on a meta level: present how you visualized made it interactive</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">29</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Early Feedback Presentation</h1>
+<ul>
+<li>No weekly meetings, but we want to know if you are on the right track</li>
+<li>Solution, one very short presentation:
+<ul>
+<li>Understanding the problem / motivation?</li>
+<li>Handle technical problems with both domain and presentation technogy?</li>
+<li>Are on the right track?</li>
+</ul>
+</li>
+<li>Max 10 mins</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">30</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Schedule</h1>
+<ul>
+<li>Project presentation (April 11th)</li>
+<li>Topic assignment and Tutorial(s) (April 18th)</li>
+<li>Continuous consulations (in C.E)</li>
+<li>Early feedback presentation (10min), May 16th</li>
+<li>Continuous consulations (in C.E)</li>
+<li>Presentations (30min + discussion), 2 projects per session until July 18th</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">31</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<h1>Organization</h1>
+<ul>
+<li>Project-Seminar, 4 SWS, 2 students per group</li>
+<li>Grading
+<ul>
+<li>6 ECTS graded credit points</li>
+<li>Grade based on project and presentation</li>
+</ul>
+</li>
+<li>Hand-In
+<ul>
+<li>Presentation, Screencast, Sourcecode</li>
+</ul>
+</li>
+<li>Enrollment with preferred 3 topic names on or before April 16th
+<ul>
+<li>Mail to stefan.ramson@hpi.de and jens.lincke@hpi.de with PX2018 in subject</li>
+</ul>
+</li>
+<li>Presentation dates determined after topics are assigned</li>
+</ul>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">32</div></div><div class="lively-slide" style="display: block; position: relative; left: 0px; top: 0px;">
+<!-- #TODO pull this up into presentation? -->
+<lively-script><script>
+// poor men's slide master
+var presentation = lively.query(this, "lively-presentation")
+if (presentation && presentation.slides) {
+  presentation.slides().forEach(ea => {
+    var img = document.createElement("img")
+    img.classList.add("logo")
+    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" 
+    img.setAttribute("width", "50px")
+    ea.appendChild(img)
+
+    var div = document.createElement("div")
+    div.classList.add("page-number")
+    ea.appendChild(div)
+  });
+}
+""
+</script></lively-script>
+<img class="logo" src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/hpi_logo.png" width="50px"><div class="page-number">33</div></div>

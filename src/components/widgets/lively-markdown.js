@@ -2,8 +2,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
-import MarkdownItTasks from "src/external/markdown-it-tasks.js"
-
 import highlight from 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
@@ -73,8 +71,6 @@ export default class LivelyMarkdown extends Morph {
       }
     });  
     md.use(MarkdownItHashtag)
-    md.use(MarkdownItTasks)
-    
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
       var tagName = tokens[idx].content 
       if(tagName.match(/^[A-Za-z][A-Za-z0-9]+/))
@@ -110,19 +106,6 @@ export default class LivelyMarkdown extends Morph {
     if (dir) {
       lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
     }
-    
-    root.querySelectorAll("input[type=checkbox]").forEach(ea => {
-      ea.disabled = false;
-      ea.addEventListener("click", evt => {
-        if ( ea.checked) {
-          ea.setAttribute("checked", "true")
-        } else {
-          ea.removeAttribute("checked")
-        }
-      })
-    })
-    
-    
     if (configPresentation)
       this.startPresentation()
 
@@ -172,6 +155,10 @@ export default class LivelyMarkdown extends Morph {
     var markdownConverter = new Upndown()
     markdownConverter.tabindent = "  "
     markdownConverter.bullet = "- "
+    markdownConverter.wrap_pre = function(node, markdown) { 
+      var lang = node.attribs["data-lang"] || ""
+      return '\n```'+lang+'\n' + this.allText(node) + '\n```\n'; 
+    }
     
     var source = await markdownConverter.convert(htmlSource, {
       keepHtml: true,

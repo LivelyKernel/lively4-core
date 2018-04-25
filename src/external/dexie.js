@@ -4469,3 +4469,4 @@ dbNamesDB.version(1).stores({ dbnames: 'name' });
 return Dexie;
 
 })));
+//# sourceMappingURL=dexie.js.map

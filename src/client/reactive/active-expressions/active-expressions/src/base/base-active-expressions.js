@@ -2,8 +2,6 @@
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
-// I was here
-
 export class BaseActiveExpression {
 
   /**

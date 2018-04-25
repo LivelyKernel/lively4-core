@@ -178,9 +178,6 @@ export default class Sync extends Morph {
   }
   
   onDiffButton() {
-    this.get("#log").setAttribute('mode', "text/x-diff")
-    // text/x-diff
-    
     this.gitControl("diff")  
   }
 
