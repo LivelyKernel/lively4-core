@@ -88,9 +88,13 @@
 
  	.CodeMirror-scroll {
    /* top: 30px;*/
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
  	}
 
+  :host([overscroll="contain"]) .CodeMirror-scroll {
+    overscroll-behavior: contain;
+ 	}
+    
   .CodeMirror-focused .cm-matchhighlight {
 /*     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQI12NgYGBgkKzc8x9CMDAwAAAmhwSbidEoSQAAAABJRU5ErkJggg==);
     background-position: bottom;
