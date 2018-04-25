@@ -5,9 +5,25 @@
 :host {
   
 }
-#content {
-  background-color: gray;
-}
+  #content {
+    background-color: gray;
+  }
+  
+  ul {
+    list-style: none;
+  }
+  
+  li > ul {
+    display: none;
+  }
+  
+  .expander {
+    cursor: pointer;
+  }
+  
+  .expanded > ul {
+    display: block;
+  }
 </style>
   <ul id="tree">
   <content></content>
