@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hello MarkDown
 
 Ok, this is text! And this is a [link](https://foobarlink/xy/)..
@@ -19,3 +20,6 @@ function()  {
   var a = window.foobarx()
 }
 ```
+=======
+this should be a conflict
+>>>>>>> 8d86ca779080c504acc8a51eb37b6baaea986505
