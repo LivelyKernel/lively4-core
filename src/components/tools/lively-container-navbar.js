@@ -133,8 +133,8 @@ export default class LivelyContainerNavbar extends Morph {
             method: "PUT",
             body: content
           })
-          that.updateOtherNavbars(this.getRoot(fromurl))
-          that.updateOtherNavbars(this.getRoot(newurl))
+          this.updateOtherNavbars(this.getRoot(fromurl))
+          this.updateOtherNavbars(this.getRoot(newurl))
 
           lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
         }

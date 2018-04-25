@@ -22,6 +22,7 @@ export default class Editor extends Morph {
     var editor = document.createElement("lively-code-mirror")
     editor.id = "editor"; // this is important to do before opening 
     await components.openIn(container, editor);
+    editor.setAttribute("overscroll", "contain")
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
     

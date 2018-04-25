@@ -88,9 +88,13 @@
 
  	.CodeMirror-scroll {
    /* top: 30px;*/
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
  	}
 
+  :host([overscroll="contain"]) .CodeMirror-scroll {
+    overscroll-behavior: contain;
+ 	}
+    
   .CodeMirror-focused .cm-matchhighlight {
 /*     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQI12NgYGBgkKzc8x9CMDAwAAAmhwSbidEoSQAAAABJRU5ErkJggg==);
     background-position: bottom;
@@ -118,6 +122,24 @@
   .cm-header-5 { font-size: 110%; }
   .cm-header-6 { font-size: 90%; }
 
+    .CodeMirror .cm-spell-error { 
+	background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAYAAAB/qH1jAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUXCToH00Y1UgAAACFJREFUCNdjPMDBUc/AwNDAAAFMTAwMDA0OP34wQgX/AQBYgwYEx4f9lQAAAABJRU5ErkJggg==);;
+	background-position: bottom;
+	background-repeat: repeat-x;
+}
+
+#suggestBox {
+	display:inline-block; overflow:hidden; border:solid black 1px;
+}
+
+#suggestBox > select {
+	padding:10px; margin:-5px -20px -5px -5px;
+}
+
+#suggestBox > select > option:hover {
+	box-shadow: 0 0 10px 100px #4A8CF7 inset; color: white;
+}
+    
   </style>
   <style id="customStyle"></style>
   <div id="code-mirror-hints"></div>

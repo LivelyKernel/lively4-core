@@ -91,4 +91,22 @@
 .CodeMirror-Tern-type { color: #07c; }
 .CodeMirror-Tern-fhint-guess { opacity: .7; }
 
+
+.CodeMirror .cm-spell-error { 
+	background-image: "src/components/widgets/lively-codemirror-red-wavy-underline.gif";
+	background-position: bottom;
+	background-repeat: repeat-x;
+}
+
+#suggestBox {
+	display:inline-block; overflow:hidden; border:solid black 1px;
+}
+
+#suggestBox > select {
+	padding:10px; margin:-5px -20px -5px -5px;
+}
+
+#suggestBox > select > option:hover {
+	box-shadow: 0 0 10px 100px #4A8CF7 inset; color: white;
+}
       

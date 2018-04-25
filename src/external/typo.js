@@ -1,5 +1,11 @@
 'use strict';
 
+/* globals chrome: false */
+/* globals __dirname: false */
+/* globals require: false */
+/* globals Buffer: false */
+/* globals module: false */
+
 /**
  * Typo is a JavaScript implementation of a spellchecker using hunspell-style 
  * dictionaries.
@@ -26,13 +32,18 @@
  *                              {String} [dictionaryPath]: path to load dictionary from in non-chrome
  *                              environment.
  *                              {Object} [flags]: flag information.
- *
+ *                              {Boolean} [asyncLoad]: If true, affData and wordsData will be loaded
+ *                              asynchronously.
+ *                              {Function} [loadedCallback]: Called when both affData and wordsData
+ *                              have been loaded. Only used if asyncLoad is set to true. The parameter
+ *                              is the instantiated Typo object.
  *
  * @returns {Typo} A Typo object.
  */
+
 var Typo = function (dictionary, affData, wordsData, settings) {
 	settings = settings || {};
-	
+
 	this.dictionary = null;
 	
 	this.rules = {};
@@ -45,76 +56,137 @@ var Typo = function (dictionary, affData, wordsData, settings) {
 	
 	this.flags = settings.flags || {}; 
 	
+	this.memoized = {};
+
+	this.loaded = false;
+	
+	var self = this;
+	
+	var path;
+	
+	// Loop-control variables.
+	var i, j, _len, _jlen;
+	
 	if (dictionary) {
-		this.dictionary = dictionary;
+		self.dictionary = dictionary;
 		
-		if (typeof window !== 'undefined' && 'chrome' in window && 'extension' in window.chrome && 'getURL' in window.chrome.extension) {
-			if (!affData) affData = this._readFile(chrome.extension.getURL("lib/typo/dictionaries/" + dictionary + "/" + dictionary + ".aff"));
-			if (!wordsData) wordsData = this._readFile(chrome.extension.getURL("lib/typo/dictionaries/" + dictionary + "/" + dictionary + ".dic"));
-		} else {
+		// If the data is preloaded, just setup the Typo object.
+		if (affData && wordsData) {
+			setup();
+		}
+		// Loading data for Chrome extentions.
+		else if (typeof window !== 'undefined' && 'chrome' in window && 'extension' in window.chrome && 'getURL' in window.chrome.extension) {
 			if (settings.dictionaryPath) {
-				var path = settings.dictionaryPath;
-			}
-			else if (typeof __dirname !== 'undefined') {
-				var path = __dirname + '/dictionaries';
+				path = settings.dictionaryPath;
 			}
 			else {
-				var path = './dictionaries';
+				path = "typo/dictionaries";
 			}
 			
-			if (!affData) affData = this._readFile(path + "/" + dictionary + "/" + dictionary + ".aff");
-			if (!wordsData) wordsData = this._readFile(path + "/" + dictionary + "/" + dictionary + ".dic");
+			if (!affData) readDataFile(chrome.extension.getURL(path + "/" + dictionary + "/" + dictionary + ".aff"), setAffData);
+			if (!wordsData) readDataFile(chrome.extension.getURL(path + "/" + dictionary + "/" + dictionary + ".dic"), setWordsData);
 		}
+		else {
+			if (settings.dictionaryPath) {
+				path = settings.dictionaryPath;
+			}
+			else if (typeof __dirname !== 'undefined') {
+				path = __dirname + '/dictionaries';
+			}
+			else {
+				path = './dictionaries';
+			}
+			
+			if (!affData) readDataFile(path + "/" + dictionary + "/" + dictionary + ".aff", setAffData);
+			if (!wordsData) readDataFile(path + "/" + dictionary + "/" + dictionary + ".dic", setWordsData);
+		}
+	}
+	
+	function readDataFile(url, setFunc) {
+		var response = self._readFile(url, null, settings.asyncLoad);
 		
-		this.rules = this._parseAFF(affData);
+		if (settings.asyncLoad) {
+			response.then(function(data) {
+				setFunc(data);
+			});
+		}
+		else {
+			setFunc(response);
+		}
+	}
+
+	function setAffData(data) {
+		affData = data;
+
+		if (wordsData) {
+			setup();
+		}
+	}
+
+	function setWordsData(data) {
+		wordsData = data;
+
+		if (affData) {
+			setup();
+		}
+	}
+
+	function setup() {
+		self.rules = self._parseAFF(affData);
 		
 		// Save the rule codes that are used in compound rules.
-		this.compoundRuleCodes = {};
+		self.compoundRuleCodes = {};
 		
-		for (var i = 0, _len = this.compoundRules.length; i < _len; i++) {
-			var rule = this.compoundRules[i];
+		for (i = 0, _len = self.compoundRules.length; i < _len; i++) {
+			var rule = self.compoundRules[i];
 			
-			for (var j = 0, _jlen = rule.length; j < _jlen; j++) {
-				this.compoundRuleCodes[rule[j]] = [];
+			for (j = 0, _jlen = rule.length; j < _jlen; j++) {
+				self.compoundRuleCodes[rule[j]] = [];
 			}
 		}
 		
-		// If we add this ONLYINCOMPOUND flag to this.compoundRuleCodes, then _parseDIC
+		// If we add this ONLYINCOMPOUND flag to self.compoundRuleCodes, then _parseDIC
 		// will do the work of saving the list of words that are compound-only.
-		if ("ONLYINCOMPOUND" in this.flags) {
-			this.compoundRuleCodes[this.flags.ONLYINCOMPOUND] = [];
+		if ("ONLYINCOMPOUND" in self.flags) {
+			self.compoundRuleCodes[self.flags.ONLYINCOMPOUND] = [];
 		}
 		
-		this.dictionaryTable = this._parseDIC(wordsData);
+		self.dictionaryTable = self._parseDIC(wordsData);
 		
 		// Get rid of any codes from the compound rule codes that are never used 
 		// (or that were special regex characters).  Not especially necessary... 
-		for (var i in this.compoundRuleCodes) {
-			if (this.compoundRuleCodes[i].length == 0) {
-				delete this.compoundRuleCodes[i];
+		for (i in self.compoundRuleCodes) {
+			if (self.compoundRuleCodes[i].length === 0) {
+				delete self.compoundRuleCodes[i];
 			}
 		}
 		
 		// Build the full regular expressions for each compound rule.
 		// I have a feeling (but no confirmation yet) that this method of 
 		// testing for compound words is probably slow.
-		for (var i = 0, _len = this.compoundRules.length; i < _len; i++) {
-			var ruleText = this.compoundRules[i];
+		for (i = 0, _len = self.compoundRules.length; i < _len; i++) {
+			var ruleText = self.compoundRules[i];
 			
 			var expressionText = "";
 			
-			for (var j = 0, _jlen = ruleText.length; j < _jlen; j++) {
+			for (j = 0, _jlen = ruleText.length; j < _jlen; j++) {
 				var character = ruleText[j];
 				
-				if (character in this.compoundRuleCodes) {
-					expressionText += "(" + this.compoundRuleCodes[character].join("|") + ")";
+				if (character in self.compoundRuleCodes) {
+					expressionText += "(" + self.compoundRuleCodes[character].join("|") + ")";
 				}
 				else {
 					expressionText += character;
 				}
 			}
 			
-			this.compoundRules[i] = new RegExp(expressionText, "i");
+			self.compoundRules[i] = new RegExp(expressionText, "i");
+		}
+		
+		self.loaded = true;
+		
+		if (settings.asyncLoad && settings.loadedCallback) {
+			settings.loadedCallback(self);
 		}
 	}
 	
@@ -130,7 +202,9 @@ Typo.prototype = {
 	
 	load : function (obj) {
 		for (var i in obj) {
-			this[i] = obj[i];
+			if (obj.hasOwnProperty(i)) {
+				this[i] = obj[i];
+			}
 		}
 		
 		return this;
@@ -141,26 +215,46 @@ Typo.prototype = {
 	 * 
 	 * @param {String} path The path (relative) to the file.
 	 * @param {String} [charset="ISO8859-1"] The expected charset of the file
-	 * @returns string The file data.
+	 * @param {Boolean} async If true, the file will be read asynchronously. For node.js this does nothing, all
+	 *        files are read synchronously.
+	 * @returns {String} The file data if async is false, otherwise a promise object. If running node.js, the data is
+	 *          always returned.
 	 */
 	
-	_readFile : function (path, charset) {
-		if (!charset) charset = "utf8";
+	_readFile : function (path, charset, async) {
+		charset = charset || "utf8";
 		
 		if (typeof XMLHttpRequest !== 'undefined') {
+			var promise;
 			var req = new XMLHttpRequest();
-			req.open("GET", path, false);
+			req.open("GET", path, async);
+			
+			if (async) {
+				promise = new Promise(function(resolve, reject) {
+					req.onload = function() {
+						if (req.status === 200) {
+							resolve(req.responseText);
+						}
+						else {
+							reject(req.statusText);
+						}
+					};
+					
+					req.onerror = function() {
+						reject(req.statusText);
+					}
+				});
+			}
 		
 			if (req.overrideMimeType)
 				req.overrideMimeType("text/plain; charset=" + charset);
 		
 			req.send(null);
 			
-			return req.responseText;
+			return async ? promise : req.responseText;
 		}
 		else if (typeof require !== 'undefined') {
 			// Node.js
-		
 			var fs = require("fs");
 			
 			try {
@@ -195,13 +289,16 @@ Typo.prototype = {
 	_parseAFF : function (data) {
 		var rules = {};
 		
+		var line, subline, numEntries, lineParts;
+		var i, j, _len, _jlen;
+		
 		// Remove comment lines
 		data = this._removeAffixComments(data);
 		
 		var lines = data.split("\n");
 		
-		for (var i = 0, _len = lines.length; i < _len; i++) {
-			var line = lines[i];
+		for (i = 0, _len = lines.length; i < _len; i++) {
+			line = lines[i];
 			
 			var definitionParts = line.split(/\s+/);
 			
@@ -210,14 +307,14 @@ Typo.prototype = {
 			if (ruleType == "PFX" || ruleType == "SFX") {
 				var ruleCode = definitionParts[1];
 				var combineable = definitionParts[2];
-				var numEntries = parseInt(definitionParts[3], 10);
+				numEntries = parseInt(definitionParts[3], 10);
 				
 				var entries = [];
 				
-				for (var j = i + 1, _jlen = i + 1 + numEntries; j < _jlen; j++) {
-					var line = lines[j];
+				for (j = i + 1, _jlen = i + 1 + numEntries; j < _jlen; j++) {
+					subline = lines[j];
 					
-					var lineParts = line.split(/\s+/);
+					lineParts = subline.split(/\s+/);
 					var charactersToRemove = lineParts[2];
 					
 					var additionParts = lineParts[3].split("/");
@@ -260,19 +357,19 @@ Typo.prototype = {
 				i += numEntries;
 			}
 			else if (ruleType === "COMPOUNDRULE") {
-				var numEntries = parseInt(definitionParts[1], 10);
+				numEntries = parseInt(definitionParts[1], 10);
 				
-				for (var j = i + 1, _jlen = i + 1 + numEntries; j < _jlen; j++) {
-					var line = lines[j];
+				for (j = i + 1, _jlen = i + 1 + numEntries; j < _jlen; j++) {
+					line = lines[j];
 					
-					var lineParts = line.split(/\s+/);
+					lineParts = line.split(/\s+/);
 					this.compoundRules.push(lineParts[1]);
 				}
 				
 				i += numEntries;
 			}
 			else if (ruleType === "REP") {
-				var lineParts = line.split(/\s+/);
+				lineParts = line.split(/\s+/);
 				
 				if (lineParts.length === 3) {
 					this.replacementTable.push([ lineParts[1], lineParts[2] ]);
@@ -331,11 +428,17 @@ Typo.prototype = {
 		
 		function addWord(word, rules) {
 			// Some dictionaries will list the same word multiple times with different rule sets.
-			if (!(word in dictionaryTable) || typeof dictionaryTable[word] != 'object') {
-				dictionaryTable[word] = [];
+			if (!dictionaryTable.hasOwnProperty(word)) {
+				dictionaryTable[word] = null;
 			}
 			
-			dictionaryTable[word].push(rules);
+			if (rules.length > 0) {
+				if (dictionaryTable[word] === null) {
+					dictionaryTable[word] = [];
+				}
+
+				dictionaryTable[word].push(rules);
+			}
 		}
 		
 		// The first line is the number of words in the dictionary.
@@ -437,7 +540,7 @@ Typo.prototype = {
 			return flags;
 		}
 		else if (this.flags.FLAG === "num") {
-			return textCode.split(",");
+			return textCodes.split(",");
 		}
 	},
 	
@@ -506,6 +609,10 @@ Typo.prototype = {
 	 */
 	
 	check : function (aWord) {
+		if (!this.loaded) {
+			throw "Dictionary not loaded.";
+		}
+		
 		// Remove leading and trailing whitespace
 		var trimmedWord = aWord.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 		
@@ -513,24 +620,7 @@ Typo.prototype = {
 			return true;
 		}
 		
-		// The exact word is not in the dictionary.
-		if (trimmedWord.toUpperCase() === trimmedWord) {
-			// The word was supplied in all uppercase.
-			// Check for a capitalized form of the word.
-			var capitalizedWord = trimmedWord[0] + trimmedWord.substring(1).toLowerCase();
-			
-			if (this.hasFlag(capitalizedWord, "KEEPCASE")) {
-				// Capitalization variants are not allowed for this word.
-				return false;
-			}
-			
-			if (this.checkExact(capitalizedWord)) {
-				return true;
-			}
-		}
-		
 		var lowercaseWord = trimmedWord.toLowerCase();
-		
 		if (lowercaseWord !== trimmedWord) {
 			if (this.hasFlag(lowercaseWord, "KEEPCASE")) {
 				// Capitalization variants are not allowed for this word.
@@ -554,29 +644,40 @@ Typo.prototype = {
 	 */
 	
 	checkExact : function (word) {
+		if (!this.loaded) {
+			throw "Dictionary not loaded.";
+		}
+
 		var ruleCodes = this.dictionaryTable[word];
 		
+		var i, _len;
+
+		if (word === word.toUpperCase()) return true; // all uppercase word is ok
+
 		if (typeof ruleCodes === 'undefined') {
 			// Check if this might be a compound word.
 			if ("COMPOUNDMIN" in this.flags && word.length >= this.flags.COMPOUNDMIN) {
-				for (var i = 0, _len = this.compoundRules.length; i < _len; i++) {
+				for (i = 0, _len = this.compoundRules.length; i < _len; i++) {
 					if (word.match(this.compoundRules[i])) {
 						return true;
 					}
 				}
 			}
-			
-			return false;
+		}
+		else if (ruleCodes === null) {
+			// a null (but not undefined) value for an entry in the dictionary table
+			// means that the word is in the dictionary but has no flags.
+			return true;
 		}
 		else if (typeof ruleCodes === 'object') { // this.dictionary['hasOwnProperty'] will be a function.
-			for (var i = 0, _len = ruleCodes.length; i < _len; i++) {
+			for (i = 0, _len = ruleCodes.length; i < _len; i++) {
 				if (!this.hasFlag(word, "ONLYINCOMPOUND", ruleCodes[i])) {
 					return true;
 				}
 			}
-			
-			return false;
 		}
+
+		return false;
 	},
 	
 	/**
@@ -588,9 +689,13 @@ Typo.prototype = {
 	 */
 	 
 	hasFlag : function (word, flag, wordFlags) {
+		if (!this.loaded) {
+			throw "Dictionary not loaded.";
+		}
+
 		if (flag in this.flags) {
 			if (typeof wordFlags === 'undefined') {
-				var wordFlags = Array.prototype.concat.apply([], this.dictionaryTable[word]);
+				wordFlags = Array.prototype.concat.apply([], this.dictionaryTable[word]);
 			}
 			
 			if (wordFlags && wordFlags.indexOf(this.flags[flag]) !== -1) {
@@ -614,27 +719,75 @@ Typo.prototype = {
 	
 	alphabet : "",
 	
-	suggest : function (word, limit) {
-		if (!limit) limit = 5;
+	suggest : function (word, limit, doneFunc, progressFunc) {
+		var self = this;
+
+		var async=!!(doneFunc || progressFunc), localId;
+		var ed1=[], ed2=[], founds=[];
+
+		if (!self.loaded) {
+			throw "Dictionary not loaded.";
+		}
 		
-		if (this.check(word)) return [];
+		// id identify the current async op
+		if (!self.id || self.id>100000) self.id=0;
+		localId=++self.id;
 		
-		// Check the replacement table.
-		for (var i = 0, _len = this.replacementTable.length; i < _len; i++) {
-			var replacementEntry = this.replacementTable[i];
-			
-			if (word.indexOf(replacementEntry[0]) !== -1) {
-				var correctedWord = word.replace(replacementEntry[0], replacementEntry[1]);
-				
-				if (this.check(correctedWord)) {
-					return [ correctedWord ];
+		// calling suggest with no arguments will stop the current search if there is one
+		if (arguments.length===0) return;
+		
+		limit = limit || 5;
+
+		if (self.memoized.hasOwnProperty(word)) {
+			var memoizedLimit = self.memoized[word]['limit'];
+
+			// Only return the cached list if it's big enough or if there weren't enough suggestions
+			// to fill a smaller limit.
+			if (limit <= memoizedLimit || self.memoized[word]['suggestions'].length < memoizedLimit) {
+				var res=self.memoized[word]['suggestions'].slice(0, limit);
+				if (async) {
+					if (progressFunc) for (var r=0; r<res.length; r++) progressFunc(res[r]);
+					if (doneFunc) doneFunc(res);
+					return;
+				} else {
+					return res;
 				}
 			}
 		}
 		
-		var self = this;
-		self.alphabet = "abcdefghijklmnopqrstuvwxyz";
+		if (self.check(word)) {
+			if (async) {
+				if (doneFunc) doneFunc([]);
+				return;
+			} else {
+				return [];  
+			}
+		}
 		
+		// Check the replacement table.
+		for (var i = 0, _len = self.replacementTable.length; i < _len; i++) {
+			var replacementEntry = self.replacementTable[i];
+			
+			if (word.indexOf(replacementEntry[0]) !== -1) {
+				var correctedWord = word.replace(replacementEntry[0], replacementEntry[1]);
+				
+				if (self.check(correctedWord)) {
+					founds.push(correctedWord);
+					if (async) {
+						if (progressFunc) progressFunc(correctedWord);
+						if (founds.length===limit) {
+							if (doneFunc) doneFunc(founds);
+							return;
+						}
+					} else {
+						if (founds.length===limit) return founds;  
+					}
+				}
+			}
+		}
+
+		self.alphabet = "abcdefghijklmnopqrstuvwxyz";
+
 		/*
 		if (!self.alphabet) {
 			// Use the alphabet as implicitly defined by the words in the dictionary.
@@ -656,94 +809,13 @@ Typo.prototype = {
 		}
 		*/
 		
-		function edits1(words) {
-			var rv = [];
-			
-			for (var ii = 0, _iilen = words.length; ii < _iilen; ii++) {
-				var word = words[ii];
-				
-				var splits = [];
-			
-				for (var i = 0, _len = word.length + 1; i < _len; i++) {
-					splits.push([ word.substring(0, i), word.substring(i, word.length) ]);
-				}
-			
-				var deletes = [];
-			
-				for (var i = 0, _len = splits.length; i < _len; i++) {
-					var s = splits[i];
-				
-					if (s[1]) {
-						deletes.push(s[0] + s[1].substring(1));
-					}
-				}
-			
-				var transposes = [];
-			
-				for (var i = 0, _len = splits.length; i < _len; i++) {
-					var s = splits[i];
-				
-					if (s[1].length > 1) {
-						transposes.push(s[0] + s[1][1] + s[1][0] + s[1].substring(2));
-					}
-				}
-			
-				var replaces = [];
-			
-				for (var i = 0, _len = splits.length; i < _len; i++) {
-					var s = splits[i];
-				
-					if (s[1]) {
-						for (var j = 0, _jlen = self.alphabet.length; j < _jlen; j++) {
-							replaces.push(s[0] + self.alphabet[j] + s[1].substring(1));
-						}
-					}
-				}
-			
-				var inserts = [];
-			
-				for (var i = 0, _len = splits.length; i < _len; i++) {
-					var s = splits[i];
-				
-					if (s[1]) {
-						for (var j = 0, _jlen = self.alphabet.length; j < _jlen; j++) {
-							replaces.push(s[0] + self.alphabet[j] + s[1]);
-						}
-					}
-				}
-			
-				rv = rv.concat(deletes);
-				rv = rv.concat(transposes);
-				rv = rv.concat(replaces);
-				rv = rv.concat(inserts);
-			}
-			
-			return rv;
-		}
-		
-		function known(words) {
-			var rv = [];
-			
-			for (var i = 0; i < words.length; i++) {
-				if (self.check(words[i])) {
-					rv.push(words[i]);
-				}
-			}
-			
-			return rv;
-		}
-		
-		function correct(word) {
-			// Get the edit-distance-1 and edit-distance-2 forms of this word.
-			var ed1 = edits1([word]);
-			var ed2 = edits1(ed1);
-			
-			var corrections = known(ed1).concat(known(ed2));
+		function sortCorrections(corrections) {
+			var i, _len;
 			
 			// Sort the edits based on how many different ways they were created.
 			var weighted_corrections = {};
 			
-			for (var i = 0, _len = corrections.length; i < _len; i++) {
+			for (i = 0, _len = corrections.length; i < _len; i++) {
 				if (!(corrections[i] in weighted_corrections)) {
 					weighted_corrections[corrections[i]] = 1;
 				}
@@ -751,11 +823,13 @@ Typo.prototype = {
 					weighted_corrections[corrections[i]] += 1;
 				}
 			}
-			
+		
 			var sorted_corrections = [];
 			
-			for (var i in weighted_corrections) {
-				sorted_corrections.push([ i, weighted_corrections[i] ]);
+			for (i in weighted_corrections) {
+				if (weighted_corrections.hasOwnProperty(i)) {
+					sorted_corrections.push([ i, weighted_corrections[i] ]);
+				}
 			}
 			
 			function sorter(a, b) {
@@ -769,26 +843,145 @@ Typo.prototype = {
 			sorted_corrections.sort(sorter).reverse();
 			
 			var rv = [];
+
+			var capitalization_scheme = "lowercase";
 			
-			for (var i = 0, _len = Math.min(limit, sorted_corrections.length); i < _len; i++) {
+			if (word.toUpperCase() === word) {
+				capitalization_scheme = "uppercase";
+			}
+			else if (word.substr(0, 1).toUpperCase() + word.substr(1).toLowerCase() === word) {
+				capitalization_scheme = "capitalized";
+			}
+			
+			for (i = 0, _len = Math.min(limit, sorted_corrections.length); i < _len; i++) {
+				if ("uppercase" === capitalization_scheme) {
+					sorted_corrections[i][0] = sorted_corrections[i][0].toUpperCase();
+				}
+				else if ("capitalized" === capitalization_scheme) {
+					sorted_corrections[i][0] = sorted_corrections[i][0].substr(0, 1).toUpperCase() + sorted_corrections[i][0].substr(1);
+				}
+				
 				if (!self.hasFlag(sorted_corrections[i][0], "NOSUGGEST")) {
 					rv.push(sorted_corrections[i][0]);
 				}
 			}
+
+			return rv;
+		}	
+	
+		// Get the edit-distance-1 of word 
+		// we are adding matches in reverse as they will later be popped
+		function edits1(word) {
+			var word=word.toLowerCase(), rv=[], i, j, _len=word.length+1, s;
+
+			// add a letter
+			for (i = _len ; i >=0; i--) {
+				s = [ word.substring(0, i), word.substring(i) ];
 			
+				if (s[1]) {
+					for (j = self.alphabet.length-1; j >=0; j--) {
+						rv.push(s[0] + self.alphabet[j] + s[1]);
+						if (i===0)  rv.push(self.alphabet[j].toUpperCase() + s[1]);
+					}
+				}
+			}
+
+			// remove a letter
+			for (i = _len ; i >=0; i--) {
+				s = [ word.substring(0, i), word.substring(i) ];
+			
+				if (s[1]) {
+					rv.push(s[0] + s[1].substring(1));
+					if (i===0) rv.push(s[1][1].toUpperCase() + s[1].substring(2));
+				}
+			}				
+
+			// replace a letter
+			for (i = _len ; i >=0; i--) {
+				s = [ word.substring(0, i), word.substring(i) ];
+			
+				if (s[1]) {
+					for (j = self.alphabet.length-1; j>= 0; j--) {
+						// Eliminate replacement of a letter by itself
+						if (self.alphabet[j] != s[1].substring(0,1)){
+							rv.push(s[0] + self.alphabet[j] + s[1].substring(1));
+							if (i===0) rv.push(self.alphabet[j].toUpperCase() + s[1].substring(1));
+						}
+					}
+				}
+			}
+
+			// Eliminate transpositions of identical letters
+			for (i = _len ; i >=0; i--) {
+				s = [ word.substring(0, i), word.substring(i) ];
+			
+				if (s[1].length > 1 && s[1][1] !== s[1][0]) {
+					rv.push(s[0] + s[1][1] + s[1][0] + s[1].substring(2));
+					if (i===0) rv.push(s[1][1].toUpperCase() + s[1][0] + s[1].substring(2));
+				}
+			}
+
 			return rv;
 		}
 		
-		return correct(word);
+		function known() {
+			// verify we are still in the same operation
+			if (localId!==self.id) {
+				//console.log('different context - aborting');
+				ed1.length=ed2.length=0; // encourage GC
+				return; 
+			}
+			
+			var next, startTime=Date.now();
+
+			while(ed1.length!==0 || ed2.length!==0) {
+				if (ed2.length===0) ed2=edits1(ed1.pop());
+				next=ed2.pop();
+
+				if (founds.indexOf(next)===-1 && self.checkExact(next)) {
+					if (progressFunc && progressFunc(next)===false) { 
+						// console.log('suggestions aborted');
+						ed1.length=ed2.length=0; // encourage GC
+						return; // abort requested
+					}
+					founds.push(next);
+					if (founds.length===limit) ed1.length=ed2.length=0; // finish gracefully
+				}
+				
+				if (async) {
+					// do a sleep(0) every 200 ms
+					if (Date.now()-startTime>200) {
+						//console.log('sleep 0');
+						setTimeout(known, 0); 
+						return;
+					} 
+				}
+			}
+
+			founds=sortCorrections(founds);
+			self.memoized[word] = {
+				'suggestions': founds,
+				'limit': limit
+			}
+			
+			if (async) {
+				if (doneFunc) doneFunc(founds);
+			} else {
+				return founds;
+			}
+		}
+
+		ed1=edits1(word);
+		ed2=ed1.slice();
+		known(); // start the search
+		if (!async) return founds;
 	}
 };
 
 
 export default Typo
 
-// Support for use as a node.js module.
+// // Support for use as a node.js module.
 // if (typeof module !== 'undefined') {
 // 	module.exports = Typo;
 // }
-
-
