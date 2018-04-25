@@ -1,11 +1,5 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
-
-// import ansispan from 'src/external/ansispan.js'
-
 import Filter from "src/external/ansi-to-html.js"
-
 
 export default class Sync extends Morph {
   initialize() {
