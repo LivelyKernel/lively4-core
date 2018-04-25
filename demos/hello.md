@@ -6,11 +6,7 @@ Ok, this is text! And this is a [link](https://foobarlink/xy/)..
 - bar
 - bla
 
-<<<<<<< HEAD
 nothing to see here
-=======
-nothing
->>>>>>> parent of ac69cf8... misc
 
 - [x] this is an issue #hashtag
 - [x] ok blabla ba here we go
