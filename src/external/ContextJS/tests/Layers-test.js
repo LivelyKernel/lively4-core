@@ -26,7 +26,7 @@ import '../src/module_import.js';
 import * as cop from '../src/Layers.js';
 import { LayerableObject } from '../src/Layers.js';
 
-import './globalChai.js'
+import chai from '../../chai.js'
 
 const assert = chai.assert;
 
