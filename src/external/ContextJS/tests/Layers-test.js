@@ -22,13 +22,23 @@
  */
 'use strict';
 
-import '../src/module_import.js';
-import * as cop from '../src/Layers.js';
-import { LayerableObject } from '../src/Layers.js';
-
-import './globalChai.js'
-
+import chai, {expect} from 'src/external/chai.js';
+import sinon from 'src/external/sinon-3.2.1.js';
+import sinonChai from 'src/external/sinon-chai.js';
+chai.use(sinonChai);
 const assert = chai.assert;
+
+// import '../src/module_import.js';
+import * as cop from './../src/Layers.js';
+import { LayerableObject, withLayers, withoutLayers, layer, proceed, Layer } from './../src/Layers.js';
+
+debugger
+
+describe("f", () => {
+  it("x", () => {
+     
+     });
+});
 
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
@@ -117,6 +127,7 @@ describe('COP example', function () {
 
 });
 
+/*
 describe('contextjs', function () {
     let currentTest;
 
@@ -1876,4 +1887,4 @@ describe('contextjs', function () {
         });
     });
 });
-
+*/
