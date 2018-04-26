@@ -19,6 +19,7 @@ export default class Preferences {
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
+      GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
     }
   }
   

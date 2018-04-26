@@ -88,6 +88,8 @@ export default class Graffle {
   }
   
   static async onKeyDown(evt) {        
+    if (!lively.preferences.get("GraffleMode")) return;
+
     if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
       return; 
     var key = String.fromCharCode(evt.keyCode)

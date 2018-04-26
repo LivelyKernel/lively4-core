@@ -134,7 +134,7 @@ export default class Sync extends Morph {
           if (eachCB) 
             eachCB(eaChunk)
           else
-            this.log(new Filter().toHtml(eaChunk.replace(/</g,"&lt;")))
+            this.log(this.linkifyFiles(new Filter().toHtml(eaChunk.replace(/</g,"&lt;"))))
         }, resolve)
     })
   }
@@ -303,6 +303,17 @@ export default class Sync extends Morph {
 
   get repositoryBlacklist() {
     return ["lively4-core", "lively4-stable"]
+  }
+  
+  linkifyFiles(htmlString) {
+    return htmlString
+      .replace(/(<span style="color:#A00">(?:deleted\: *)?)(.*?)(<\/span>)/g, (m,a,b,c) => 
+          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>${c}`)
+      .replace(/(modified: *)([a-zA-Z-_/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>`)
+      .replace(/((?:\+\+\+\s*b\/)|(?:\-\-\- a\/))([a-zA-Z-_0-9/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>`)
+// 
   }
   
   async updateContextSensitiveButtons() {
