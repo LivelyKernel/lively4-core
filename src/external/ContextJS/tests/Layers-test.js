@@ -32,8 +32,6 @@ const assert = chai.assert;
 import * as cop from './../src/Layers.js';
 import { LayerableObject, withLayers, withoutLayers, layer, proceed, Layer } from './../src/Layers.js';
 
-debugger
-
 describe("f", () => {
   it("x", () => {
      

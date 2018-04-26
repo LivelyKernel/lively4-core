@@ -1,6 +1,5 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
+import Filter from "src/external/ansi-to-html.js"
 
 export default class Sync extends Morph {
   initialize() {
@@ -26,16 +25,18 @@ export default class Sync extends Morph {
 
   // #TODO into Morph or Tool
   clearLog(s) {
-    var editor= this.get("#log").editor;
-    if (editor) editor.setValue("");
+    this.get("#log").innerHTML = ""
+    // var editor= this.get("#log").editor;
+    // if (editor) editor.setValue("");
   }
 
   log(s) {
-    var editor = this.get("#log").editor;
-    if (editor) {
-      editor.setValue(editor.getValue() + "\n" + s);
-      // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
-    }
+    this.get("#log").innerHTML += s
+    // var editor = this.get("#log").editor;
+    // if (editor) {
+    //   editor.setValue(editor.getValue() + "\n" + s);
+    //   // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
+    // }
   }
 
   async updateLoginStatus() {
@@ -133,7 +134,7 @@ export default class Sync extends Morph {
           if (eachCB) 
             eachCB(eaChunk)
           else
-            this.log("" + eaChunk)
+            this.log(new Filter().toHtml(eaChunk.replace(/</g,"&lt;")))
         }, resolve)
     })
   }

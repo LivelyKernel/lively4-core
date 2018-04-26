@@ -1,0 +1,33 @@
+<template id="vivide-tree-widget" data-class="VivideTreeWidget">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+  #content {
+    background-color: gray;
+  }
+  
+  ul {
+    list-style: none;
+  }
+  
+  li > ul {
+    display: none;
+  }
+  
+  .expander {
+    cursor: pointer;
+  }
+  
+  .expanded > ul {
+    display: block;
+  }
+</style>
+  <ul id="tree">
+  <content></content>
+  </ul>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
