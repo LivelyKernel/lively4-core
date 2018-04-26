@@ -23,14 +23,26 @@ export default class AddSeminarTopic extends Morph {
 
     const topicKnot = await graph.createKnot('https://lively4/notes/', name, 'md');
     const topicURL = topicKnot.url;
-
+    
+    const seminarURL = "https://lively4/notes/RP18.md"; // #TODO should be configurable
+    
     await topicKnot.save(topicKnot.content + this.get('#content').value);
     await graph.createTriple(
       topicKnot.url,
       "https://lively4/notes/is_Topic_of.md",
-      "https://lively4/notes/RP18.md", // #TODO should be configurable
+      seminarURL,
       DEFAULT_FOLDER_URL
     );
+    
+    const isPotentialTopic = this.get('#is-potential-topic');
+    if(isPotentialTopic && isPotentialTopic.checked) {
+      await graph.createTriple(
+        topicKnot.url,
+        "https://lively4/notes/potential_topic_for.md",
+        seminarURL,
+        DEFAULT_FOLDER_URL
+      );
+    }
     
     await graph.createTriple(
       topicKnot.url,

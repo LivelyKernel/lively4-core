@@ -15,6 +15,12 @@
   <lively-code-mirror id="content">Some Description</lively-code-mirror>
 
 <form>
+  <br />
+  <input type="checkbox" id="is-potential-topic"/>
+  <label for="is-potential-topic">Potential Topic</label>
+</form>
+
+<form>
   Choose Topic Category
   <br />
   <input type="radio" id="design-and-implementation" name="category" value="https://lively4/notes/RP18_Category_Design_and_Implementation.md" checked/>
@@ -27,7 +33,7 @@
   <input type="radio" id="bonus" name="category" value="https://lively4/notes/RP18_Category_Bonus.md"/>
   <label for="bonus">Bonus</label>
 </form>
-  <button id="create">Create Topic</button>
+<button id="create">Create Topic</button>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
