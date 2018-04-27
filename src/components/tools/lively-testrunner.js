@@ -37,8 +37,7 @@ export default class TestRunner extends Morph {
     
     lively.loadCSSThroughDOM("mochaCSS", lively4url + "/src/external/mocha.css");
     
-    lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
-      .then(() => {mocha.setup("bdd")});
+    this.resetMocha();
     
     var testDir =  this.getAttribute('testDir');
     if (testDir) {
@@ -98,7 +97,7 @@ export default class TestRunner extends Morph {
       
         return System.import(url);
         // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
-      }));
+      })).then(() => lively.warn("LOAD TESTS"));
   }
   
   runTests() {
@@ -117,6 +116,19 @@ export default class TestRunner extends Morph {
     await this.loadTests();
     this.runTests();
   }
+  
+  async onResetButton() {
+    this.clearTests();
+    this.resetMocha();
+  }
+  
+  // some tests, e.g. ContextJS manage to break mocha, so that they can be only once... without this
+  resetMocha() {
+    lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true).then(() => {
+      mocha.setup("bdd");
+    });
+  }
+  
   //  window.history.pushState({ mochastate: true }, '',        window.location);
   fixHTML() {
     var self = this;

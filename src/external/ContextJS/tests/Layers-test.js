@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Hasso Plattner Institute
+ * Copyright (c) 2008-2018 Hasso Plattner Institute
  *
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-'use strict';
 
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -30,7 +29,10 @@ const assert = chai.assert;
 
 // import '../src/module_import.js';
 import * as cop from './../src/Layers.js';
-import { LayerableObject, withLayers, withoutLayers, layer, proceed, Layer } from './../src/Layers.js';
+import { LayerableObject, proceed, Layer } from './../src/Layers.js';
+import { withLayers, withoutLayers, layer } from './../src/contextjs.js';
+
+
 
 describe("f", () => {
   it("x", () => {
@@ -38,10 +40,12 @@ describe("f", () => {
      });
 });
 
+
 // COP Example from: Hirschfeld, Costanza, Nierstrasz. 2008.
 // Context-oriented Programming. JOT)
 describe('COP example', function () {
 
+  
     const AddressLayer = new Layer("AddressLayer");
     const EmploymentLayer = new Layer("EmploymentLayer");
 
@@ -125,22 +129,26 @@ describe('COP example', function () {
 
 });
 
-/*
+
+
+
+
+
 describe('contextjs', function () {
     let currentTest;
 
     beforeEach(function() {
         this.execution  = [];
         currentTest = this;
-        this.oldGlobalLayers = cop.GlobalLayers.slice();
+        this.oldGlobalLayers = GlobalLayers.slice();
         // when we are testing layers, there should be no other layers active in the system (to make things easier)
-        cop.GlobalLayers.splice(0, cop.GlobalLayers.length); // remove all
+        GlobalLayers.splice(0, GlobalLayers.length); // remove all
         cop.resetLayerStack();
     });
 
     afterEach(function() {
         // remove all global layers and put oldGlobalLayers in there again
-        cop.GlobalLayers.splice(0, cop.GlobalLayers.length, ...this.oldGlobalLayers);
+        GlobalLayers.splice(0, GlobalLayers.length, ...this.oldGlobalLayers);
         cop.resetLayerStack();
     });
 
@@ -722,12 +730,12 @@ describe('contextjs', function () {
             cop.enableLayer(layer1);
             cop.enableLayer(layer2);
             // FIXME: implementation detail? GlobalLayers[...]
-            assert.strictEqual(cop.GlobalLayers[0], layer1, "layer1 not global");
-            assert.strictEqual(cop.GlobalLayers[1], layer2, "layer2 not global");
+            assert.strictEqual(GlobalLayers[0], layer1, "layer1 not global");
+            assert.strictEqual(GlobalLayers[1], layer2, "layer2 not global");
             cop.disableLayer(layer1);
-            assert.strictEqual(cop.GlobalLayers[0], layer2, "layer1 not removed from global");
+            assert.strictEqual(GlobalLayers[0], layer2, "layer1 not removed from global");
             cop.disableLayer(layer2);
-            assert.strictEqual(cop.GlobalLayers.length, 0, "global layers still active");
+            assert.strictEqual(GlobalLayers.length, 0, "global layers still active");
         });
 
         it('testEnableDisableLayer', function() {
@@ -949,7 +957,7 @@ describe('contextjs', function () {
         it('can be activated globally with #beGlobal', function() {
             const l = new Layer();
             l.beGlobal();
-            assert.include(cop.GlobalLayers, l, "be global is broken")
+            assert.include(GlobalLayers, l, "be global is broken")
         });
 
         describe('reinstall', function () {
@@ -967,7 +975,9 @@ describe('contextjs', function () {
                    value() { return "2" },
                    configurable: true
                 });
-                assert.isNotOk(ex.version.isLayerAware, "method should now be layer unaware");
+                
+                expect(ex.version.isLayerAware).not.to.be.ok("method should now be layer unaware");
+
                 aLayer.reinstallInClass(Example);
                 // then
                 assert.isTrue(ex.version.isLayerAware, "method should be layer aware again");
@@ -1546,7 +1556,7 @@ describe('contextjs', function () {
             const layer1 = new Layer('LtestLayerObject');
             const object1 = fixture().makeObject1();
             layer1.refineObject(object1, {
-                f(a, b) {
+                f(a) {
                     currentTest.execution.push("l1.f");
                     // console.log("execute layer1 function for f");
                     return proceed() + a;
@@ -1558,13 +1568,12 @@ describe('contextjs', function () {
                 assert.equal(currentTest.execution.toString(), ["l1.f", "d.f"]);
             });
         });
-
         let CopProceedTestClass,
             CopProceedTestAddLayer,
             CopProceedPropertyTestLayer,
             CopProceedMultAddLayer,
             CopProceedMultipleProceedLayer;
-
+        let localProceed;
         function setupClasses() {
             CopProceedTestClass = class CopProceedTestClass {
                 constructor() {
@@ -1579,14 +1588,14 @@ describe('contextjs', function () {
             CopProceedTestAddLayer = new Layer('CopProceedTestAddLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
-                    return cop.proceed(a + 1)
+                    return localProceed(a + 1)
                 },
             });
 
             CopProceedPropertyTestLayer = new Layer('CopProceedPropertyTestLayer')
             .refineClass(CopProceedTestClass, {
                 get p() {
-                    return cop.proceed() + " World"
+                    return localProceed() + " World"
                 },
 
                 set p(value) {
@@ -1599,27 +1608,26 @@ describe('contextjs', function () {
             CopProceedMultAddLayer = new Layer('CopProceedMultAddLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
-                    return cop.proceed(a) * 3
+                    return localProceed(a) * 3
                 }
             });
 
             CopProceedMultipleProceedLayer = new Layer('CopProceedMultipleProceedLayer')
             .refineClass(CopProceedTestClass, {
                 m(a) {
-                    return cop.proceed(a * 2) + cop.proceed(a *3)
+                    return localProceed(a * 2) + localProceed(a *3)
                 }
             });
-        };
+        }
 
-        let originalProceed;
+        // let originalProceed;
         beforeEach('setUp', function() {
-            originalProceed = cop.proceed;
+            localProceed = cop.proceed;
             setupClasses();
         });
-
-        afterEach('tearDown', function() {
-            cop.proceed = originalProceed;
-        });
+        // afterEach('tearDown', function() {
+        //     cop.proceed = originalProceed;
+        // });
 
         it('can provide different arguments to the next partial method', function () {
             const o = {say(a) {return "Say: " +a}},
@@ -1636,15 +1644,15 @@ describe('contextjs', function () {
             // inlining does not use proceedStack
             if (cop.staticInlining || cop.dynamicInlining) return;
 
-            // TODO: why do we test the proceedStack length? Shouldn't we test the behavior instead? (but most of the other tests do that)
+            // #TODO: why do we test the proceedStack length? Shouldn't we test the behavior instead? (but most of the other tests do that)
             let newLength;
             const o = {m() { return 1 }};
             const layer = new Layer('someLayer').refineObject(o, {
-                m() { newLength = cop.proceedStack.length }
+                m() { newLength = window.proceedStack.length }
             });
-            const oldLength = cop.proceedStack.length;
+            const oldLength = window.proceedStack.length;
             withLayers([layer], () => o.m());
-            assert.isAbove(newLength, oldLength, "stack did not change")
+            expect(newLength).to.be.above(oldLength, "stack did not change");
         });
 
         it('has an active layer composition for each method call', function() {
@@ -1655,16 +1663,14 @@ describe('contextjs', function () {
                 object;
 
             // FIXME: as cop is a Module now, this should not work
-            cop.proceed = function() {
-                const composition = cop.proceedStack[cop.proceedStack.length - 1];
+            localProceed = function() {
+                const composition = window.proceedStack[window.proceedStack.length - 1];
                 partialMethods = composition.partialMethods;
                 object = composition.object;
             }
 
             const o = new CopProceedTestClass();
-            withLayers([CopProceedTestAddLayer], () => {
-                o.m();
-            });
+            withLayers([CopProceedTestAddLayer], () => o.m());
 
             assert(partialMethods, "no partialMethods");
             assert(object, "no  object");
@@ -1885,4 +1891,5 @@ describe('contextjs', function () {
         });
     });
 });
-*/
+
+

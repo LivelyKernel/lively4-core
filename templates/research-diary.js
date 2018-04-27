@@ -25,7 +25,7 @@ export default class ResearchDiary extends Morph {
     this.windowTitle = "Research Diary";
     
     await this.prepareEditor();
-    this.refreshList();
+    await this.refreshList();
 
     this.get('#new').addEventListener("click", ::this.createNewEntry);
     
@@ -42,7 +42,7 @@ export default class ResearchDiary extends Morph {
   async prepareEditor() {
     const editorComp = this.codeEditor;
 
-    await promisedEvent(editorComp, "editor-loaded");
+    await editorComp.editorLoaded();
     
     // editorComp.editor.setOptions({
     //   maxLines:Infinity,
@@ -75,7 +75,6 @@ export default class ResearchDiary extends Morph {
     const entries = await this.getEntries();
     const ul = this.get('#nav ul');
     ul.innerHTML = "";
-    
     entries
       ::sortBy(getDateString)
       .reverse()
