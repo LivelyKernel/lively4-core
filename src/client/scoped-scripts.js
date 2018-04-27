@@ -1,6 +1,6 @@
-import {proceed, layer} from "src/external/ContextJS/src/contextjs.js";
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import * as Layers  from "src/external/ContextJS/src/Layers.js";
+import {proceed, layer} from "src/client/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import * as Layers  from "src/client/ContextJS/src/Layers.js";
 import lively from "src/client/lively.js";
 
 
@@ -8,16 +8,16 @@ export default class ScopedScripts {
 
   static load() {
     this.openPromises = []
-    this.documentRoot = lively4url; 
-    this.documentLocation = window.location;   
+    this.documentRoot = lively4url;
+    this.documentLocation = window.location;
   }
-  
+
   static layers(url, optBody) {
     this.documentRoot = url.toString().replace(/[^/]*$/,"");
-    this.documentLocation = new URL(url); 
+    this.documentLocation = new URL(url);
     this.documentBody = optBody || document.body;
     return [this.ImportLayer, this.DocumentLayer, this.LocalLayer, this.PropagateLayerActicationLayer];
-  } 
+  }
 }
 
 /*
@@ -37,7 +37,7 @@ layer(window, "PropagateLayerActicationLayer").refineClass(Promise, {
 		var newError = function() {
       var args = arguments;
       return cop.withLayers(layers, () => onerror.apply(window, args));
-		}; 
+		};
 		return cop.proceed(onresolve ? newResolve : undefined, onerror ? newError : undefined);
 	}
 }).refineObject(lively, {
@@ -57,7 +57,7 @@ layer(window, "PropagateLayerActicationLayer").refineClass(Promise, {
       globalLayers.forEach( ea => ea.beNotGlobal());
       return error;
     });
-  }  
+  }
 });
 
 
@@ -86,7 +86,7 @@ layer(window, "DocumentLayer").refineObject(document, {
   get body() {
     return ScopedScripts.documentBody
   },
-  
+
 	write(a) {
     console.log("document.write " + a);
     // console.log("BEGIN")
@@ -101,17 +101,17 @@ layer(window, "DocumentLayer").refineObject(document, {
           if (!src.match(/^(https?\:\/\/)|(\/\/)/) )
             src = src.replace(/^/, ScopedScripts.documentRoot);
           s.src = src
-          
+
           console.log("old src... ", ea)
           // s.async = false;
-          ea = s;        
+          ea = s;
           ea.addEventListener("load", () => {
-            resolve();          
+            resolve();
           });
           ea.addEventListener("error", () => {
-            reject();          
+            reject();
           });
-        } 
+        }
       });
       ScopedScripts.openPromises.push(myPromise);
       ScopedScripts.documentBody.appendChild(ea); // #TODO instanctiate layers

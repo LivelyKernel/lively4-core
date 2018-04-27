@@ -28,15 +28,15 @@ chai.use(sinonChai);
 const assert = chai.assert;
 
 // import '../src/module_import.js';
-import * as cop from './../src/Layers.js';
-import { LayerableObject, proceed, Layer } from './../src/Layers.js';
-import { withLayers, withoutLayers, layer } from './../src/contextjs.js';
+import * as cop from '../src/Layers.js';
+import { LayerableObject, proceed, Layer } from '../src/Layers.js';
+import { withLayers, withoutLayers, layer } from '../src/contextjs.js';
 
 
 
 describe("f", () => {
   it("x", () => {
-     
+
      });
 });
 
@@ -45,7 +45,7 @@ describe("f", () => {
 // Context-oriented Programming. JOT)
 describe('COP example', function () {
 
-  
+
     const AddressLayer = new Layer("AddressLayer");
     const EmploymentLayer = new Layer("EmploymentLayer");
 
@@ -795,7 +795,7 @@ describe('contextjs', function () {
             DummyLayer.refineClass(OtherChild, {
                 m1() { return 101 }
             });
-            
+
             it('is layer-aware', function() {
                 const o = new Child();
                 assert(o.f2.isLayerAware,
@@ -975,7 +975,7 @@ describe('contextjs', function () {
                    value() { return "2" },
                    configurable: true
                 });
-                
+
                 expect(ex.version.isLayerAware).not.to.be.ok("method should now be layer unaware");
 
                 aLayer.reinstallInClass(Example);

@@ -3,7 +3,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import { withAdvice } from './../lib/flight/advice.js';
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (FilterOperation would not be defined in select)
