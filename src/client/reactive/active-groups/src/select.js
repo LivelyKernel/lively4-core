@@ -60,10 +60,9 @@ class IdentityOperator extends Operator {
 }
 
 class FilterOperator extends IdentityOperator {
-  constructor(upstream, downstream, expression, context) {
+  constructor(upstream, downstream, expression) {
     super();
     this.expression = expression;
-    this.expression.varMapping = context;
 
     this.selectionItems = [];
 
@@ -433,11 +432,11 @@ View.withOnStack = function(el, callback, context) {
  * @param {predicate} predicate
  * @return {View}
  */
-export default function select(Class, predicate, context) {
+export default function select(Class, predicate) {
     var newSelection = new View();
 
     ensureBaseViewForClass(Class);
-    new FilterOperator(Class._instances_, newSelection, predicate, context);
+    new FilterOperator(Class._instances_, newSelection, predicate);
 
     return newSelection;
 }
