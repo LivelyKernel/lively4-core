@@ -352,7 +352,7 @@ export default class Container extends Morph {
 
   onUp() {
     var path = this.getPath();
-    if (path.match(/(README|index)\.((html)|(md))/))
+    if (path.match(/\.?(README|index)\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
@@ -933,11 +933,12 @@ export default class Container extends Morph {
   listingForDirectory(url, render) {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
-      var index = _.find(files, (ea) => ea.name.match(/^index\.md$/i));
-      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
+      var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^\.index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
-        return this.setPath(url + "/" + index.name) ;
+        lively.notify("found index" + index)
+        return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
       // return Promise.resolve(""); // DISABLE Listings
 
@@ -1037,6 +1038,7 @@ export default class Container extends Morph {
 
     url = this.getURL();
 
+    
     this.showNavbar();
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
@@ -1103,7 +1105,7 @@ export default class Container extends Morph {
         `);
       } else {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&st;") +"</code></pre>");
+        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
