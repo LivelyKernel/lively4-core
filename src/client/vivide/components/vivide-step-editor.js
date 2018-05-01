@@ -6,37 +6,33 @@ export default class VivideStepEditor extends Morph {
   
   async initialize() {
     this.windowTitle = "VivideStepEditor";
-    
     this.editor.setOption('viewportMargin', Infinity);
-    this.editor.value = 'Initializing Script...';
+    if (!this.editor.value) {
+      this.editor.value = 'Initializing Script...';
+    }
     this.editor.doSave = text => this.stepSaved(text);
   }
   
   setScriptEditor(scriptEditor) {
     this._scriptEditor = scriptEditor;
   }
-  async setStepURLString(urlString) {
-    this._urlString = urlString;
-    let txt = await fetch(urlString).then(res => res.text());
-    
-    this.editor.value = txt;
+  
+  setStepScript(script) {
+    this.editor.value = script;
   }
   async stepSaved(text) {
-    if(!this._urlString) {
-      lively.warn('No file set for this editor.');
+    if(!this.editor.value) {
+      lively.warn('No script set for this editor.');
       return;
     }
-    
-    await lively.unloadModule(this._urlString);
-    await lively.files.saveFile(this._urlString, text);    
 
     this.notifyChange();
   }
   notifyChange() {
     if(this._scriptEditor) {
-      this._scriptEditor.stepChanged(this, this._urlString);
+      this._scriptEditor.stepChanged(this, this.editor.value);
     } else {
-      lively.error('No script editor found for ' + this._urlString);
+      lively.error('No script editor found for script.');
     }
   }
 }

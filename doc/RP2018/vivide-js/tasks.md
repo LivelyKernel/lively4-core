@@ -1,6 +1,9 @@
 # Vivide Tasks
 
 - [ ] [Save scripts to view's local storage](https://github.com/LivelyKernel/lively4-core/issues/312)
+  - [ ] Saved scripts to tmp view data via setJSONAttribute
+  - [ ] Load scripts via getJSONAttribute
+  - [ ] Remove old scripting
 - [ ] [Implement a vivide tree view](https://github.com/LivelyKernel/lively4-core/issues/309) 
   - [x] Models containing a "children" variable show their children's data on click
   - [x] Children are can be made visible or hidden by clicking
