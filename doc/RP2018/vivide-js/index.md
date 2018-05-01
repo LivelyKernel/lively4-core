@@ -5,7 +5,12 @@ lively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/projec
 
 # Hierarchical Data and Asynchronicity for VivideJS
 
-<script>insertNewNoticeButton("doc/RP2018/vivide-js/", "New Notice");</script>
+<script>createNewFileButton("doc/RP2018/vivide-js/", "New Notice");</script>  
+<script>createNewFileButton("doc/RP2018/vivide-js/meeting/", "New Meeting", "meeting", true);</script>
+<script>createNewFileButton("doc/RP2018/vivide-js/presentation/", "New Presentation", "presentation", true);</script>  
 
 <p class="comment">Vivide directory</p>
 <script>openBrowser('src/client/vivide/', 'VivideJS')</script>
+
+<p class="comment">Example View</p>
+<script>openComponent('vivide-view', 'Vivide View')</script>

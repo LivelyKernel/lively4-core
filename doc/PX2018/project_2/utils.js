@@ -26,20 +26,36 @@ function _getLink(text) {
   return link;
 }
 
-function insertNewNoticeButton(subdir, text) {
+function createNewFileButton(subdir, text, name, input) {
+  let container = document.createElement("div");
   let button = document.createElement("button");
-  button.addEventListener("click", () => { _createNoticeFile(subdir) });
   button.innerHTML = text || "new";
-  return button;
+  
+  if (input) {
+    let input = document.createElement("input");
+    container.appendChild(input);
+    button.addEventListener("click", () => { _createNewFile(subdir, name, input) });
+  } else {
+    button.addEventListener("click", () => { _createNewFile(subdir, name) });
+  }
+  
+  container.appendChild(button);
+  return container;
 }
   
-async function _createNoticeFile(subdir) {
+async function _createNewFile(subdir, name, input) {
   var path = lively4url + "/" + subdir;
   var dir = path.replace(/[^/]*$/,"");
   
   let dateStr = new Date().toISOString().split('T')[0];
-  let filename =  "notices-" + dateStr + ".md";
-  let url = dir  + "/" + filename;
+  let inputDate = null;
+  
+  if (input) {
+    inputDate = input.value;
+  }
+  
+  let filename =  name + "-" + (inputDate || dateStr) + ".md";
+  let url = dir + filename;
 
   lively.notify("create " + url);
   if (await lively.files.existFile(url)) {
