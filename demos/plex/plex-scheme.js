@@ -62,6 +62,7 @@ export class PlexScheme extends Scheme {
     
     
     let apiString = this.getAPIString()
+    
     if (apiString.endsWith(this.indexFilename())) {
       let mediacontent = await this.plex(apiString.replace("/" + this.indexFilename(), ""))
       var table = await lively.create("lively-table")
@@ -137,9 +138,15 @@ export class PlexScheme extends Scheme {
   }
   
   getAPIString() {
-    return this.url.replace(new RegExp("^" + this.scheme+ ":/"),"")
+    var urlObj = new URL(this.url)
+    return urlObj.pathname.replace(/^\/\//,"/")
   }
-  
+
+  getURLSearch() {
+    var urlObj = new URL(this.url)
+    return urlObj.search
+  }
+
   async OPTIONS() {
     var apiString = this.getAPIString().replace("/" + this.indexFilename(),"")
     var mediacontent = await this.plex(apiString)

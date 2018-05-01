@@ -1037,7 +1037,9 @@ export default class Container extends Morph {
     container.style.overflow = "auto";
 
     url = this.getURL();
-
+    
+    this.content = ""
+    this.showNavbar();
     
     
     // console.log("set url: " + url);
