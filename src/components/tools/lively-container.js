@@ -1039,7 +1039,7 @@ export default class Container extends Morph {
     url = this.getURL();
 
     
-    this.showNavbar();
+    
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
     var render = !donotrender;
@@ -1084,6 +1084,9 @@ export default class Container extends Morph {
 
       return resp.text();
     }).then((content) => {
+      this.content = content
+      this.showNavbar();
+      
       if (format == "html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
@@ -1144,10 +1147,7 @@ export default class Container extends Morph {
     navbar.followPath = (path) => { this.followPath(path) }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-
-
-
-    await navbar.show(this.getURL(), this.sourceContent)
+    await navbar.show(this.getURL(), this.content)
   }
 
   isFullscreen() {
