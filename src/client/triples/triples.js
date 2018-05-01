@@ -360,7 +360,7 @@ export class Graph {
   
   async getNonCollidableURL(directory, name, fileEnding) {
     const maxTries = 10;
-    const fileName = name.replace(/\s/g, '_');
+    const fileName = name.replace(/[^A-Za-z0-9-]/g, '_');
     let offset = 0;
     let i = 0;
     

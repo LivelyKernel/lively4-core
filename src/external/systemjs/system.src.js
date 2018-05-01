@@ -3529,7 +3529,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   .then(function (fetched) {
     livelyLog("fetched")
     if (!fetched) {
-      debugger
+      // debugger
     }
     
     // if (cachedOutputCode ) {

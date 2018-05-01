@@ -1,5 +1,5 @@
 import Morph from "src/components/widgets/lively-morph.js"
-import * as cop from "src/external/ContextJS/src/contextjs.js"
+import * as cop from "src/client/ContextJS/src/contextjs.js"
 import Files from "src/client/files.js"
 
 export default class Console extends Morph {
@@ -10,15 +10,15 @@ export default class Console extends Morph {
     // lineNumbers: true,
     //   gutters: ["rightgutter", "CodeMirror-linenumbers", "rightgutter"],
     //   mode: {name: "javascript", globalVars: true},
-    // });  
-    
+    // });
+
     this.registerButtons();
-    
+
     this.addEventListener("focus", evt => this.onFocus(evt))
     this.setAttribute('tabindex', 0)
     this.get("#console").addEventListener("editor-loaded", () => this.onEditorLoaded())
     this.get("#commandline").addEventListener("editor-loaded", () => this.onCommandLineLoaded())
-        
+
     this.get("#console").setCustomStyle(`
       .CodeMirror pre { 
         border-bottom: 1px solid lightgrey;
@@ -34,7 +34,7 @@ export default class Console extends Morph {
         width: 300px;
       }
     `)
-    
+
   }
 
   onEditorLoaded() {
@@ -46,14 +46,14 @@ export default class Console extends Morph {
     editor.setOption("readOnly",  true);
     editor.setOption("gutters",  ["leftgutter"]);
     editor.setOption("mode",  null);
-     
-  
+
+
   }
-   
+
   onFocus() {
     this.get("#commandline").editor && this.get("#commandline").editor.focus()
-  } 
-  
+  }
+
   onCommandLineLoaded() {
     var commandLine = this.getSubmorph('#commandline');
     var editor = commandLine.editor
@@ -61,7 +61,7 @@ export default class Console extends Morph {
 
     editor.setOption("lineNumbers", false);
     editor.setOption("lineWrapping", true);
-    
+
     editor.setOption("gutters",  []);
     editor.setOption("extraKeys", {
       "Enter": async (cm) => {
@@ -90,10 +90,10 @@ export default class Console extends Morph {
       overflow: hidden  
     }
     `)
-    
+
     this.dispatchEvent(new CustomEvent("console-loaded"));
   }
-  
+
   onCommandLineKeyUp(evt) {
     if(evt.keyCode == 13) { this.evalInput() }
   }
@@ -101,7 +101,7 @@ export default class Console extends Morph {
   onClear() {
     this.getSubmorph('#console').editor.setValue("")
   }
-    
+
   evalInput() {
     var src = this.getSubmorph('#commandline').editor.getValue()
     try { var result = eval(src) } catch(e) { result = "ERROR:" + e }
@@ -116,7 +116,7 @@ export default class Console extends Morph {
     let to = editor.getCursor()
 
     let widget = document.createElement("lively-error")
-    
+
     lively.components.openIn(document.body, widget).then( comp => {
       widget.stack =  err.stack
     })
@@ -127,11 +127,11 @@ export default class Console extends Morph {
       atomic: true
     })
   }
-  
-    
+
+
   log() {
     var args = Array.from(arguments)
-    
+
     if (this.lastLog && (this.lastLog.join("") == args.join(""))) {
       this.lastLogCounter++
       // this.logWithLeftAndRight(args, "" + this.lastLogCounter, this.calledFrom(4))
@@ -141,9 +141,9 @@ export default class Console extends Morph {
       this.lastLogCounter=1
     }
     this.lastLog = args
-    
+
   }
-  
+
   get editor() {
     var c = this.getSubmorph('#console')
     return c.editor
@@ -181,7 +181,7 @@ export default class Console extends Morph {
         editor.replaceSelection(" ")
       }
     })
-    
+
     if (right) {
       this.setRightAnnotation(right)
     }
@@ -193,7 +193,7 @@ export default class Console extends Morph {
     //     row: session.getLength(),
     //     column: 0
     //   }, "\n" + this.currentStack())
-    
+
     // this.getSubmorph('#console').editor.scrollToRow(1000000000000)
   }
 
@@ -203,13 +203,13 @@ export default class Console extends Morph {
     leftAnnotation.style.fontSize = "8pt"
     leftAnnotation.style.whiteSpace = "nowrap"
     leftAnnotation.innerHTML = "<b>" + left +"<b>"
-    
+
     leftAnnotation.style.color = "gray";
     leftAnnotation.style.marginTop = "2px"
 
     leftAnnotation.style.marginLeft = "2px"
     leftAnnotation.classList.add("errorMark")
-      
+
     editor.setGutterMarker(editor.getCursor().line , "leftgutter", leftAnnotation);
   }
 
@@ -219,44 +219,44 @@ export default class Console extends Morph {
       var from = editor.getCursor()
       editor.replaceSelection(right);
       var to = editor.getCursor()
-      
+
       var annotation = document.createElement("a")
       annotation.style.display = "inline-block"
       // annotation.style.position = "relative"
       annotation.style.color = "grey"
-      
+
       annotation.textContent = "" + right
-      
+
       // annotation.style.position = "relative"
       annotation.style.right = "0px"
       // annotation.style.clear = "both"
       annotation.style.float = "right"
-     
-      var ref =  Files.parseSourceReference(right) 
+
+      var ref =  Files.parseSourceReference(right)
       if (ref) {
         annotation.textContent = "" + ref
       }
       var url = (ref && ref.url) || right
-    
+
       annotation.setAttribute("href", "" + right)
       annotation.addEventListener("click", (evt) => {
         evt.preventDefault()
         lively.openBrowser(url, true, ref)
         return true
-      }, true) 
+      }, true)
 
 
-      var marker = editor.markText( 
+      var marker = editor.markText(
         from, to,
         {
           className: "loglink",
           replacedWith: annotation,
           handleMouseEvents: false
         })
-      
+
       // annotation.style.left = (c.getBoundingClientRect().right - annotation.getBoundingClientRect().right - 20) + "px"
   }
-   
+
   calledFrom(offset) {
     try {
       throw new Error("XYZError")
@@ -264,12 +264,12 @@ export default class Console extends Morph {
       // return e.stack
       /// console.log("DEBUG " + e.stack)
       return e.stack.split("\n")
-        .filter(ea => !ea.match("src/external/ContextJS/src/Layers.js") )
+        .filter(ea => !ea.match("src/client/ContextJS/src/Layers.js") )
         .filter(ea => !ea.match("XYZError") )
         .filter(ea => !ea.match("currentStack"))
         .filter(ea => !ea.match("notify"))
-        
-        
+
+
         .slice(offset,offset + 1)
         // .map(ea => ea.replace(/\(.*?\)/,""))
         .join("")
@@ -278,10 +278,10 @@ export default class Console extends Morph {
 
     }
   }
-  
+
   livelyMigrate(other) {
     this.addEventListener("console-loaded", () => {
-      
+
       other.get("#console").editor.getValue().split("\n").forEach( line => {
         var m = line.match(/^(.*)(https?:\/\/.*[0-9]+:[0-9]+$)/)
         if (m) {
@@ -290,7 +290,7 @@ export default class Console extends Morph {
           this.logWithLeftAndRight([line])
         }
       })
-      
+
       this.get("#commandline").editor.setValue(other.get("#commandline").editor.getValue())
     })
   }
@@ -310,9 +310,9 @@ cop.layer(window, "ConsoleLayer").refineObject(console, {
         cop.withoutLayers([ConsoleLayer], () => {
           console.log(e)
         })
-      }  
+      }
       // })
-    } finally {    
+    } finally {
       return cop.proceed.apply(this, arguments)
     }
   }

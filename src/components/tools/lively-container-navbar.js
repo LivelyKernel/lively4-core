@@ -245,6 +245,7 @@ export default class LivelyContainerNavbar extends Morph {
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
+     
       var icon;
       if (ea.type == "directory") {
         name += "/";
@@ -256,14 +257,14 @@ export default class LivelyContainerNavbar extends Morph {
       } else {
         icon = '<i class="fa fa-file"></i>';
       }
-      
+      var title = ea.title || name
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML =  icon + name;
+      link.innerHTML =  icon + title;
       var href = ea.href || ea.name;
       if (ea.type == "directory" && !href.endsWith("/")) {
         href += "/"
       }
-      var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
+      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : root + "" + href;
       if (mystats.parent && ea.name == "..") {        
         otherUrl = mystats.parent
         lively.notify("other " + otherUrl)

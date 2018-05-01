@@ -22,7 +22,7 @@
  */
 'use strict';
 
-import * as cop from 'Layers.js';
+import * as cop from './Layers';
 
 class MethodManipulator {
   constructor () {

@@ -1,4 +1,4 @@
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 var counter = 0
 

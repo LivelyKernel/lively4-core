@@ -1,4 +1,4 @@
-import { uuid as generateUUID } from 'utils';
+import { uuid as generateUUID, promisedEvent } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js"
 import diff from 'src/external/diff-match-patch.js';
@@ -186,6 +186,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.dispatchEvent(new CustomEvent("editor-loaded"))
     this["editor-loaded"] = true // event can sometimes already be fired
   };
+  
+  async editorLoaded() {
+    if(!this["editor-loaded"]) {
+      return promisedEvent(this, "editor-loaded");
+    }
+  }
   
   editView(value) {
     if (!value) value = this.value || "";

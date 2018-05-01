@@ -3,7 +3,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import { withAdvice } from './../lib/flight/advice.js';
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (FilterOperation would not be defined in select)
@@ -60,10 +60,9 @@ class IdentityOperator extends Operator {
 }
 
 class FilterOperator extends IdentityOperator {
-  constructor(upstream, downstream, expression, context) {
+  constructor(upstream, downstream, expression) {
     super();
     this.expression = expression;
-    this.expression.varMapping = context;
 
     this.selectionItems = [];
 
@@ -433,11 +432,11 @@ View.withOnStack = function(el, callback, context) {
  * @param {predicate} predicate
  * @return {View}
  */
-export default function select(Class, predicate, context) {
+export default function select(Class, predicate) {
     var newSelection = new View();
 
     ensureBaseViewForClass(Class);
-    new FilterOperator(Class._instances_, newSelection, predicate, context);
+    new FilterOperator(Class._instances_, newSelection, predicate);
 
     return newSelection;
 }

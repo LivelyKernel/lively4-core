@@ -1,6 +1,6 @@
 'use strict';
 
-import * as cop from "src/external/ContextJS/src/contextjs.js"
+import * as cop from "src/client/ContextJS/src/contextjs.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 
 
@@ -8,12 +8,12 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 // var parseQueryLayer = cop.create("MochaParseQueryLayer");
 // parseQueryLayer.layerObject(Mocha.utils, {
-    
+
 // });
 
 export default class TestRunner extends Morph {
   get testDir() { return this.get('#testDir'); }
-  
+
   initialize() {
     this.windowTitle = "Test Runner"
     this.registerButtons();
@@ -34,12 +34,11 @@ export default class TestRunner extends Morph {
       this.mochadiv = this.querySelector("#mocha");
     }
     this.querySelector("#mocha").innerHTML = "";
-    
+
     lively.loadCSSThroughDOM("mochaCSS", lively4url + "/src/external/mocha.css");
-    
-    lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js")
-      .then(() => {mocha.setup("bdd")});
-    
+
+    this.resetMocha();
+
     var testDir =  this.getAttribute('testDir');
     if (testDir) {
       this.testDir.value = testDir;
@@ -52,7 +51,7 @@ export default class TestRunner extends Morph {
     return files
       .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/));
   }
-  
+
   async findTestFiles() {
     var files = []
     var list = this.testDir.value.split(",")
@@ -64,7 +63,7 @@ export default class TestRunner extends Morph {
     //     files = files.concat(newFiles)
     //   })
     // }));
-    
+
     for (let dir of list) {
       let newFiles = await this.findTestFilesInDir(dir)
       files = files.concat(newFiles)
@@ -77,30 +76,30 @@ export default class TestRunner extends Morph {
     // }, [])
   }
   // await that.findTestFilesInDir( "/test/templates/")
-  
+
   clearTests() {
     if (mocha.suite) {
       mocha.suite.suites.length = 0; // hihi #Holzhammer
     }
-    this.querySelector("#mocha").innerHTML= "";    
+    this.querySelector("#mocha").innerHTML= "";
   }
-  
+
   async loadTests() {
     return Promise.all(
       (await this.findTestFiles()).map(url => {
         var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
-        
+
         // the code in the module has to be reexecuted!
         // var module = lively.modules.module(url)
         // if (module) module.reload()
-      
+
         lively.reloadModule(url);
-      
+
         return System.import(url);
         // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
-      }));
+      })).then(() => lively.warn("LOAD TESTS"));
   }
-  
+
   runTests() {
     var self = this;
     mocha.run(failures => {
@@ -111,12 +110,25 @@ export default class TestRunner extends Morph {
       self.fixHTML();
     });
   }
-  
+
   async onRunButton() {
     this.clearTests();
     await this.loadTests();
     this.runTests();
   }
+
+  async onResetButton() {
+    this.clearTests();
+    this.resetMocha();
+  }
+
+  // some tests, e.g. ContextJS manage to break mocha, so that they can be only once... without this
+  resetMocha() {
+    lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true).then(() => {
+      mocha.setup("bdd");
+    });
+  }
+
   //  window.history.pushState({ mochastate: true }, '',        window.location);
   fixHTML() {
     var self = this;
@@ -133,11 +145,11 @@ export default class TestRunner extends Morph {
       };
     });
   }
-  
+
   async onTestDirChanged() {
     this.onRunButton()
   }
-  
+
   runMocha() {
     // #TODO port this to Lively4
   var self = this;
@@ -153,8 +165,8 @@ export default class TestRunner extends Morph {
 
       mocha.reporter(function Reporter(runner) {
         // this.done = (failures) => show("done " + failures)
-        // runner.on("suite", function (x) { show("suite %s", x) }); 
-        // runner.on("pending", function (x) { show("pending %s", x) }); 
+        // runner.on("suite", function (x) { show("suite %s", x) });
+        // runner.on("pending", function (x) { show("pending %s", x) });
 
         runner.on("test", test => {
           try {
@@ -193,7 +205,7 @@ export default class TestRunner extends Morph {
             }
 
             self.update();
-            
+
             function attachErrorToTest(test, error, duration) {
               test.state = "failed";
               test.duration = test.duration;
@@ -203,25 +215,25 @@ export default class TestRunner extends Morph {
           } catch (e) { self.showError("runner on fail error: " + e.stack); }
         });
 
-        // runner.on("start", test => { show("START %o", lively.printInspect(test ,1)) }); 
+        // runner.on("start", test => { show("START %o", lively.printInspect(test ,1)) });
         // runner.on("end", test => { show("end %o", lively.printInspect(test ,1)) });
 
         // runner.on("hook end", function (x) { show("hook end %s", x) });
         // runner.on("suite end", function (x) { show("suite end %s", x) });
       });
-      
+
       mocha.run(failures => resolve());
     });
   }
-  
+
   livelyMigrate(other) {
     this.testDir.value = other.testDir.value;
   }
-  
+
   livelyPrepareSave() {
     this.setAttribute('testDir', this.testDir.value);
   }
-  
+
   testDirChanged(e) {
     this.setAttribute('testDir', this.testDir.value);
   }

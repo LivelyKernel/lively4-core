@@ -1,33 +1,36 @@
 <template id="lively-testrunner" data-class="LivelyTestrunner">
-    <style>
+  <style>
     .container {
       width: 100%;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    p {
-      margin: 2px;
-    }
-    p #testDir {
-      width: 90%;
+      overflow-y: auto;
     }
     #content {
-      overflow: auto;
       margin: 0;
       padding: 0;
     }
+      
+    #bar {
+      display: flex;
+      margin: 2px;
+      flex-direction: row;
+    }
     
-    </style>
-    <div class="container">
-        <p>
-          <button id="runButton">run</button>
-          <input id="testDir" value="/test,/src/client/reactive" placeholder="path to folder relative to lively4url">
-        </p>
-        <div id="content">
-        <content></content>
-        </div>
+    input#testDir {
+      width: 85%;
+      flex: 1;
+    }
+  </style>
+    <div id="bar">
+      <button id="runButton" title="run mocha tests">run</button>
+      <input id="testDir" value="/test,/src/client/reactive" placeholder="path to folder relative to lively4url">
+      <button id="resetButton" title="force reload mocha">reset</button>
     </div>
+  <div class="container">
+    <div id="content">
+      <content></content>
+    </div>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

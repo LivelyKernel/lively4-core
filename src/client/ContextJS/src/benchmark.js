@@ -22,8 +22,8 @@
  */
 'use strict'
 
-import * as cop from './contextjs'
-import { Layer } from './contextjs'
+import * as cop from './contextjs.js'
+import { Layer } from './contextjs.js'
 
 function extendString(s, length) {
     return s + new Array(Math.max(0, length - s.length)).join(' ')
