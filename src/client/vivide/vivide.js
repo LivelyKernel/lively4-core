@@ -2,24 +2,21 @@ import { uuid } from 'utils';
 import { stepFolder, scriptFolder } from './utils.js';
 import { pt } from 'src/client/graphics.js'
 
-async function newScriptFromTemplate() {
+export async function newScriptFromTemplate() {
   async function copyStep(type) {
-    let transformStepURL = new URL(uuid() + '.js', stepFolder);
     let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-
-    await lively.files.copyURLtoURL(stepTemplateURL, transformStepURL);
+    let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
     
-    return transformStepURL;
+    return stepTemplate;
   }
   
-  let scriptURL = new URL(uuid() + '.json', scriptFolder);
-  await lively.files.saveFile(scriptURL, JSON.stringify([{
-    transform: [(await copyStep('transform')).href],
-    extract: [(await copyStep('extract')).href],
-    descent: [(await copyStep('descent')).href]
-  }]));
+  let scripts = {
+    transform: [await copyStep('transform')],
+    extract: [await copyStep('extract')],
+    descent: [await copyStep('descent')]
+  }
   
-  return scriptURL.href;
+  return scripts;
 }
 
 export async function createScriptEditorFor(view) {
@@ -30,14 +27,13 @@ export async function createScriptEditorFor(view) {
 
   let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
 
-  let scriptURLString = view.getScriptURLString();
-  scriptEditor.setScriptURLString(scriptURLString);
+  let scripts = view.getScripts();
+  scriptEditor.setScripts(scripts);
 
   return scriptEditor;
 }
 
 export async function letsScript(object, evt, sourceView) {
-
   let pos;
   if(evt) {
     pos = lively.getPosition(evt);
@@ -45,8 +41,8 @@ export async function letsScript(object, evt, sourceView) {
 
   let view = await lively.openComponentInWindow('vivide-view', pos);
 
-  let scriptURLString = await newScriptFromTemplate();
-  view.setScriptURLString(scriptURLString);
+  let scripts = await newScriptFromTemplate();
+  view.setScripts(scripts);
   view.newDataFromUpstream(object);
 
   if(evt && evt.shiftKey) {
