@@ -18,3 +18,7 @@
 .task-list .task-list {
   padding-left: 25px;
 }
+
+lively-script {
+  display: inline-block;  
+}
