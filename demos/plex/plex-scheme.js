@@ -26,16 +26,25 @@ export class PlexScheme extends Scheme {
   
   plexToJSON(mediacontent) {
     
-      let obj = {}
+      let obj = {
+        _type: mediacontent.tagName
+      }
       mediacontent.getAttributeNames().forEach(prop => {
         obj[prop] = mediacontent.getAttribute(prop)
       })
       
       this.plexChildren(mediacontent).forEach(child => {
+        
         let tag = child.getAttribute("tag")
         if (tag) {
           if (!obj[child.tagName]) obj[child.tagName] = [];
           obj[child.tagName].push(tag)
+        } else if (child.tagName == "Media") {
+          if (!obj.media) obj.media = []
+           obj.media.push(this.plexToJSON(child))
+        } else if (child.tagName == "Part") {
+          if (!obj.part) obj.part = []
+           obj.part.push(this.plexToJSON(child))
         } else {
           if (!obj.children) obj.children = []
           obj.children.push(this.plexToJSON(child))

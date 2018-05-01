@@ -261,3 +261,17 @@ export function textualRepresentation(thing) {
   
   return 'unprintable object';
 }
+
+
+export function getDeepProperty(obj, pathString) {
+  var path = pathString.split(".")
+  var next
+  var result = obj
+  while(next = path.shift()) {
+    var nextResult = result[next] 
+    if (!nextResult) return // could not resolve path
+    result = nextResult
+  }
+  return result
+}
+
