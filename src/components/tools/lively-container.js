@@ -108,12 +108,10 @@ export default class Container extends Morph {
     if(this.getAttribute("controls") =="hidden" || fullsreen) {
       this.hideControls()
     }
-
     this.withAttributeDo("leftpane-flex", value =>
       this.get("#container-leftpane").style.flex = value)
     this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
-
   }
 
   onContextMenu(evt) {
@@ -125,7 +123,6 @@ export default class Container extends Morph {
       if (this.contentIsEditable() && !this.isEditing()) {
         worldContext = this
       }
-
 	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
     }
@@ -136,16 +133,14 @@ export default class Container extends Morph {
     if (!this.parentElement.isMaximized) return;
     if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
        (!this.isFullscreen() && this.parentElement.isMaximized()))  {
-        this.parentElement.toggleMaximize();
-        if ( this.parentElement.isMaximized()) {
-          this.parentElement.get(".window-titlebar").style.display = "none"
-          this.parentElement.style.zIndex = 0
-        } else {
-          this.parentElement.get(".window-titlebar").style.display = ""
-        }
+      this.parentElement.toggleMaximize();
+      if ( this.parentElement.isMaximized()) {
+        this.parentElement.get(".window-titlebar").style.display = "none"
+        this.parentElement.style.zIndex = 0
+      } else {
+        this.parentElement.get(".window-titlebar").style.display = ""
+      }
     }
-
-
   }
 
   useBrowserHistory() {
@@ -352,7 +347,7 @@ export default class Container extends Morph {
 
   onUp() {
     var path = this.getPath();
-    if (path.match(/\.?(README|index)\.((html)|(md))/))
+    if (path.match(/(README|index)\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
@@ -934,7 +929,6 @@ export default class Container extends Morph {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
-      if (!index) index = _.find(files, (ea) => ea.name.match(/^\.index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
         lively.notify("found index" + index)
@@ -1011,7 +1005,7 @@ export default class Container extends Morph {
       }
       // console.log("[container] isdir " + isdir)
     }
-    if (!path.match(/\/$/) && isdir) {
+    if (!path.match(/\/$/) && isdir ) {
       path =  path + "/"
     }
 
@@ -1049,7 +1043,11 @@ export default class Container extends Morph {
 
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
-      return this.listingForDirectory(url, render)
+      if (!options || !options["index-available"]) {
+        return this.listingForDirectory(url, render)
+      } else {
+        format = "html"
+      }
     }
     // Handling files
     this.lastVersion = null; // just to be sure
@@ -1070,10 +1068,18 @@ export default class Container extends Morph {
         + url +'"></lively-pdf>');
       else return;
     }
-
-
-    return fetch(url).then( resp => {
+    var headers = {}
+    if (format == "html") {
+      headers["content-type"] = "text/html" // maybe we can convice the url to return html
+    }
+  
+    return fetch(url, {
+      method: "GET",
+      headers: headers
+    }).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
+      this.contentType = resp.headers.get("content-type");
+      
 
       // console.log("[container] lastVersion " +  this.lastVersion)
 
@@ -1089,7 +1095,7 @@ export default class Container extends Morph {
       this.content = content
       this.showNavbar();
       
-      if (format == "html")  {
+      if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
       } else if (format == "md") {

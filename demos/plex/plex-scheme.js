@@ -1,6 +1,8 @@
 import {Scheme}  from "src/client/poid.js"
 import PolymorphicIdentifier  from "src/client/poid.js"
 import focalStorage from "src/external/focalStorage.js"
+import {parseQuery, getDeepProperty} from 'utils'
+
 
 export class PlexScheme extends Scheme {
   
@@ -16,9 +18,7 @@ export class PlexScheme extends Scheme {
     return true
   }  
 
-  indexFilename() {
-    return ".index.html"
-  }
+ 
   
   plexChildren(mediacontent) {
     return Array.from(mediacontent.childNodes).filter(ea => ea.getAttribute)
@@ -59,29 +59,53 @@ export class PlexScheme extends Scheme {
   }
   
   async GET(options) {
-    
-    
     let apiString = this.getAPIString()
-    
-    if (apiString.endsWith(this.indexFilename())) {
-      let mediacontent = await this.plex(apiString.replace("/" + this.indexFilename(), ""))
-      var table = await lively.create("lively-table")
-      try {
-        table.setFromJSO(this.plexToJSON(mediacontent).children)
-      } finally {
-        table.remove()
+    let query = this.getURLQuery()
+    let contentType = options && options.headers && new Headers(options.headers).get("content-type")
+  
+
+    if (contentType ==  'text/html' || 
+        query.thumbs || query.list || query.index) {
+      let mediacontent = await this.plex(apiString)
+      let html
+      if (query.list) {
+        let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
+        html = <html><ul>{...(children.map(ea => 
+          <li>{ea.getAttribute("title")}</li>
+        ))}</ul></html>
+      } else if (query.thumbs) {
+        let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
+        lively.notify("thumbs!")
+        html = <html><div style="">{...(children.map(ea => {
+              var img = <img style="" width="100px"></img>
+              img.src = lively.swxURL("plex://" + ea.getAttribute("thumb"))
+              img.title = ea.getAttribute("title")
+              var a = <a style="">{img}<br />{ea.getAttribute("title")}</a>
+              a.href = lively.swxURL("plex://" + ea.getAttribute("key"))
+              var div = <div style="font-size:8pt;margin:10px;vertical-align: text-top; display:inline-block; width:100px; overflow: hidden">{a}<br />{ea.getAttribute("year")}</div>
+              return div
+            }
+        ))}</div></html>
+      } else { 
+        // default html rendering
+        let table = await lively.create("lively-table")
+        try {
+          table.setFromJSO(this.plexToJSON(mediacontent).children)
+        } finally {
+          table.remove()
+        }
+        html = table        
       }
-      let html = table
-      // var children = this.plexChildren(mediacontent)
-//       let html = <html><ul>{...(children.map(ea => 
-//         <li>{ea.getAttribute("title")}</li>
-//       ))}</ul></html>
         
-      
-      return new Response(html.outerHTML, {status: 200})
+      return new Response(html.outerHTML, {
+        status: 200,
+        headers: {
+          "content-type": "text/html" 
+        }
+      })
     }
     
-    if (options && options.headers && new Headers(options.headers).get("content-type") ==  'application/json') {
+    if (contentType ==  'application/json') {
       let mediacontent = await this.plex(apiString)
       // ok, we parse, then serialize, then pase again... can we avoid this?
       return new Response(JSON.stringify(this.plexToJSON(mediacontent)), {status: 200})
@@ -112,6 +136,7 @@ export class PlexScheme extends Scheme {
       name: xml.getAttribute("key") || xml.getAttribute("title") || xml.getAttribute("title1") || xml.tagName ,
       title: xml.getAttribute("title") || xml.getAttribute("title1"),
       parent: url.replace(/\/[^/]+\/?$/,""),
+      "index-available": true,
       contents: Array.from(xml.childNodes)
         .filter(ea => ea.getAttribute && ea.getAttribute("key"))
         .map(ea => {
@@ -127,12 +152,7 @@ export class PlexScheme extends Scheme {
             obj.href = this.scheme + ":/" + obj.name
           }
           return obj
-        }).concat([{
-          name: ".index.html", // hidden index file
-          parent: url,
-          contents: [],
-          type: "file"
-        }]),
+        }),
       type: "directory"
     }
   }
@@ -142,13 +162,17 @@ export class PlexScheme extends Scheme {
     return urlObj.pathname.replace(/^\/\//,"/")
   }
 
-  getURLSearch() {
+  getURLQuery() {
     var urlObj = new URL(this.url)
-    return urlObj.search
+    var query =  parseQuery(urlObj.search)
+    Object.keys(query).forEach(ea => {
+      if (query[ea] == "") query[ea] = true;
+    })
+    return query
   }
 
   async OPTIONS() {
-    var apiString = this.getAPIString().replace("/" + this.indexFilename(),"")
+    var apiString = this.getAPIString()
     var mediacontent = await this.plex(apiString)
     var result = await this.optionsFromPlex(mediacontent, this.url)
     return new Response(JSON.stringify(result), {status: 200})

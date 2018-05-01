@@ -171,7 +171,6 @@ export default class LivelyContainerNavbar extends Morph {
   async show(targetUrl, sourceContent) {
     
     this.sourceContent = sourceContent;
-    lively.notify("source content " + sourceContent.length)
     this.url = "" + targetUrl;
     var filename = this.getFilename();
     var root = this.getRoot();
