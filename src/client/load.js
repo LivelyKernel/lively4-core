@@ -11,7 +11,6 @@ if (document.location.search.match("noserviceworker")) {
   externalSite=true
 }
 
-
 function loadJavaScriptThroughDOM(name, src, force) {
   return new Promise(function (resolve) {
     var scriptNode = document.querySelector(name);
