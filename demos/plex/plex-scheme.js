@@ -65,7 +65,11 @@ export class PlexScheme extends Scheme {
     if (apiString.endsWith(this.indexFilename())) {
       let mediacontent = await this.plex(apiString.replace("/" + this.indexFilename(), ""))
       var table = await lively.create("lively-table")
-      table.setFromJSO(this.plexToJSON(mediacontent).children)
+      try {
+        table.setFromJSO(this.plexToJSON(mediacontent).children)
+      } finally {
+        table.remove()
+      }
       let html = table
       // var children = this.plexChildren(mediacontent)
 //       let html = <html><ul>{...(children.map(ea => 
@@ -76,24 +80,25 @@ export class PlexScheme extends Scheme {
       return new Response(html.outerHTML, {status: 200})
     }
     
-    let mediacontent = await this.plex(apiString)
     if (options && options.headers && new Headers(options.headers).get("content-type") ==  'application/json') {
+      let mediacontent = await this.plex(apiString)
       // ok, we parse, then serialize, then pase again... can we avoid this?
       return new Response(JSON.stringify(this.plexToJSON(mediacontent)), {status: 200})
     }
 
-    let html = mediacontent.outerHTML
-  
-    
-    return new Response(html, {status: 200})
-    
-    // return new Response("&st;h1>Nothing found&st;/h1>", {status: 200})
+    let resp = await this.plexBlob(apiString)
+    return new Response(resp) // {status: 200}   
   }
 
   async plex(apiString) {
     var token = await this.plexToken()
     var text = await fetch("http://127.0.0.1:32400" + apiString + "?X-Plex-Token=" + token).then(r => r.text())
     return new DOMParser().parseFromString(text, "text/xml").childNodes[0];
+  }
+  
+  async plexBlob(apiString) {
+    var token = await this.plexToken()
+    return fetch("http://127.0.0.1:32400" + apiString + "?X-Plex-Token=" + token).then(r => r.blob())
   }
   
   optionsFromPlex(xml, url) {

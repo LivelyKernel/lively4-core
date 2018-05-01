@@ -56,8 +56,9 @@ export default class Search extends Morph {
         pattern.replace(/</g,"&lt;")}</span></td>`;
       var link = item.querySelector("a");
       link.href = ea.file;
+      link.title = ea.file
       link.onclick = () => {
-        this.browseSearchResult(url, pattern);
+        this.browseSearchResult(ea.file, pattern);
         return false;
       };
       this.get("#searchResults").appendChild(item);
