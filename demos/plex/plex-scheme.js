@@ -75,7 +75,7 @@ export class PlexScheme extends Scheme {
         ))}</ul></html>
       } else if (query.thumbs) {
         let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
-        lively.notify("thumbs!")
+        // #TODO we should do this only if we have a thumb        
         html = <html><div style="">{...(children.map(ea => {
               var img = <img style="" width="100px"></img>
               img.src = lively.swxURL("plex://" + ea.getAttribute("thumb"))
@@ -86,8 +86,7 @@ export class PlexScheme extends Scheme {
               return div
             }
         ))}</div></html>
-      } else { 
-        // default html rendering
+      } else { // default html rendering
         let table = await lively.create("lively-table")
         try {
           table.setFromJSO(this.plexToJSON(mediacontent).children)
@@ -137,23 +136,24 @@ export class PlexScheme extends Scheme {
       title: xml.getAttribute("title") || xml.getAttribute("title1"),
       parent: url.replace(/\/[^/]+\/?$/,""),
       "index-available": true,
-      contents: Array.from(xml.childNodes)
-        .filter(ea => ea.getAttribute && ea.getAttribute("key"))
-        .map(ea => {
-          var obj = {
-            name: ea.getAttribute("key"),
-            title: ea.getAttribute("title") || ea.getAttribute("title1"),
-            contents: [],
-            parent: url,
-            type: ea.tagName == "Directory" ? "directory" : "file"
-          }
-          if (obj.name.match(/^\//)) {
-            obj.type = "link" // symlinks, cross refs... etc
-            obj.href = this.scheme + ":/" + obj.name
-          }
-          return obj
-        }),
-      type: "directory"
+      contents: _.sortBy(Array.from(xml.childNodes)
+          .filter(ea => ea.getAttribute && ea.getAttribute("key"))
+          .map(ea => {
+            var obj = {
+              name: ea.getAttribute("key"),
+              title: ea.getAttribute("title") || ea.getAttribute("title1"),
+              contents: [],
+              parent: url,
+              type: ea.tagName == "Directory" ? "directory" : "file"
+            }
+            if (obj.name.match(/^\//)) {
+              obj.type = "link" // symlinks, cross refs... etc
+              obj.href = this.scheme + ":/" + obj.name
+            }
+            return obj
+          }), 
+          ea => ea.title),
+      type: "file"
     }
   }
   

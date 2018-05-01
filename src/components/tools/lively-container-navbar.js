@@ -221,7 +221,7 @@ export default class LivelyContainerNavbar extends Morph {
           return (a.name >= b.name) ? -1 : 1;          
         }
         
-        return (a.name >= b.name) ? 1 : -1;
+        return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
     

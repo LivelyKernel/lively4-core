@@ -996,10 +996,10 @@ export default class Container extends Morph {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
+    
+    // check if our file is a directory
+    var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})  
     if (!isdir && !other) {
-      // check if our file is a directory
-
-      var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
         isdir = true
       }
@@ -1041,6 +1041,14 @@ export default class Container extends Morph {
     var render = !donotrender;
     // Handling directories
 
+
+    // Handling files
+    this.lastVersion = null; // just to be sure
+
+    var format = path.replace(/.*\./,"");
+    if (url.protocol == "search:") {
+      format = "html"
+    }
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
       if (!options || !options["index-available"]) {
@@ -1048,13 +1056,6 @@ export default class Container extends Morph {
       } else {
         format = "html"
       }
-    }
-    // Handling files
-    this.lastVersion = null; // just to be sure
-
-    var format = path.replace(/.*\./,"");
-    if (url.protocol == "search:") {
-      format = "html"
     }
 
     if (format.match(/(svg)|(png)|(jpe?g)/)) {
