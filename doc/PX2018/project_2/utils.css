@@ -22,3 +22,12 @@
 .inline {
   display: inline-block;  
 }
+
+.answer {
+  color: red;
+  padding-left: 30px;
+}
+
+.answer:before {
+  content: "Answer: ";
+}

@@ -22,6 +22,7 @@ function _getLink(text) {
   let link = document.createElement("a");
   link.innerHTML = text;
   link.style.cursor = "pointer";
+  link.style.textDecoration = "underline";
   
   return link;
 }
