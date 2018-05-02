@@ -1,0 +1,37 @@
+.CodeMirror {
+  font-size: 16pt !important;
+}
+
+.annotation {
+  position: relative;
+  display: inline-block;
+  background-color: hsla(198, 69%, 67%, 0.5);
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  color: hsl(198, 69%, 17%);
+  margin-left: 4px;
+  margin-bottom: 2px;
+}
+
+.annotation.replacement {
+  background-color: hsla(344, 54%, 63%, 0.5);
+  color: hsl(344, 54%, 13%);
+}
+
+.marker {
+  display: inline-block;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+.probe {
+  background-color: hsla(198, 69%, 67%, 0.3);
+}
+
+.replace {
+  background-color: hsla(344, 54%, 63%, 0.3);
+}
+
+.dead {
+  opacity: 0.5;
+}
