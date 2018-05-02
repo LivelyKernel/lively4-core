@@ -2,7 +2,7 @@ import { Base } from './base.js'
 
 export default class PolymorphicIdendifierFs extends Base {
   constructor(path, options) {
-    super('html5', path, options)
+    super('scheme', path, options)
   }
 
   read(path) {
