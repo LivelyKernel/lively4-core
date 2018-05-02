@@ -533,6 +533,35 @@ window.fetch = async function(request, options, ...rest) {
   return window.originalFetch.apply(window, [request, options, ...rest])
 }
 
+
+lively.removeEventListener("poid", navigator.serviceWorker)
+lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {
+  try {
+    let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)\/(.*)$/)
+    if (!m) {
+      throw new Error("Requested path does mot fit a scheme! path='" + evt.data.path +"'")        
+    }
+    let url= m[1] + "://" + m[2]    
+    if(evt.data.name == 'swx:pi:GET') {
+      evt.ports[0].postMessage({content: await fetch(url).then(r => r.blob())}); 
+    } else if(evt.data.name == 'swx:pi:PUT') {
+      evt.ports[0].postMessage({
+        content: await fetch(url, {
+          method: "PUT", 
+          body: event.data.content
+        }).then(r => r.blob())}); 
+    } else if(evt.data.name == 'swx:pi:OPTIONS') {
+      evt.ports[0].postMessage({content: await fetch(url, {
+        method: "OPTIONS"
+      }).then(r => r.blob())}); 
+    }
+  } catch(err) {
+    evt.ports[0].postMessage({error: err});
+  }
+});
+
+
+
 PolymorphicIdentifier.load()
 
 // window.fetch  = window.originalFetch

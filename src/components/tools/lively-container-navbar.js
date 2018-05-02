@@ -47,7 +47,6 @@ export default class LivelyContainerNavbar extends Morph {
   onItemDragStart(link, evt) {
     let urls = this.getSelection();
     if (urls.length > 1) {
-      lively.notify("hehe... ")
       this.dragFilesAsZip(urls, evt)
     } else {
       let url = link.href,
@@ -222,7 +221,7 @@ export default class LivelyContainerNavbar extends Morph {
           return (a.name >= b.name) ? -1 : 1;          
         }
         
-        return (a.name >= b.name) ? 1 : -1;
+        return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
     
@@ -267,7 +266,6 @@ export default class LivelyContainerNavbar extends Morph {
       var otherUrl = href.match(/^[a-z]+:\/\//) ? href : root + "" + href;
       if (mystats.parent && ea.name == "..") {        
         otherUrl = mystats.parent
-        lively.notify("other " + otherUrl)
       }
       link.href = otherUrl;
       

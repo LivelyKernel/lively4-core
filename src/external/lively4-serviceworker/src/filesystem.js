@@ -129,6 +129,8 @@ export class Filesystem {
         
         // do nothing with sys fs... is already mounted
         if (mount.name === "sys") continue;
+        if (mount.name === "scheme") continue;
+
         
         let fs = await System.import('./src/external/lively4-serviceworker/src/fs/' + mount.name + '.js');
         this.mount(mount.path, fs.default, mount.options);

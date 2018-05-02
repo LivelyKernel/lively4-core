@@ -48,16 +48,19 @@ export default class Search extends Morph {
 
   onSearchResults(list) {
     for (var ea of list) {
-      var pattern = ea.text;
-      var url = ea.url;
-      var item = document.createElement("tr");
-      var filename = ea.file.replace(/.*\//,"")
+      let pattern = ea.text;
+      let url = ea.url;
+      let item = document.createElement("tr");
+      let filename = ea.file.replace(/.*\//,"")
       item.innerHTML = `<td class="filename"><a>${filename}</a></td><td><span ="pattern">${
         pattern.replace(/</g,"&lt;")}</span></td>`;
-      var link = item.querySelector("a");
+      let link = item.querySelector("a");
       link.href = ea.file;
-      link.onclick = () => {
-        this.browseSearchResult(url, pattern);
+      link.url = url
+      link.title = ea.file
+      var self = this
+      link.onclick = function() {
+        self.browseSearchResult(this.url, pattern);
         return false;
       };
       this.get("#searchResults").appendChild(item);
