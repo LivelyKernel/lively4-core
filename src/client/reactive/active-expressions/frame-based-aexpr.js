@@ -5,7 +5,8 @@ import { PausableLoop } from 'utils';
 export class FrameBasedActiveExpression extends BaseActiveExpression {
   constructor(func, ...params) {
     super(func, ...params);
-  
+    this.meta({ strategy: 'Frame-based' });
+
     // needed for check function for aexpr-ticking
     this.enabled = true;
   }

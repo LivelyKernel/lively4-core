@@ -99,6 +99,7 @@ const aexprStack = new Stack();
 class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...params){
     super(func, ...params);
+    this.meta({ strategy: 'Rewriting' });
     ExpressionAnalysis.check(this);
   }
 

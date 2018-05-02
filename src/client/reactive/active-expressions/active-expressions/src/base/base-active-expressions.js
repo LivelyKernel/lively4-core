@@ -1,3 +1,5 @@
+import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
@@ -17,6 +19,8 @@ export class BaseActiveExpression {
     this.lastValue = this.getCurrentValue();
     this.callbacks = [];
     this._isDisposed = false;
+    
+    this._annotations = new Annotations();
   }
 
   /**
@@ -133,6 +137,15 @@ export class BaseActiveExpression {
    */
   disposeOnLastCallbackDetached() {
     throw new Error('Not yet implemented.')
+  }
+  
+  meta(annotation) {
+    if(annotation) {
+      this._annotations.add(annotation);
+      return this;
+    } else {
+      return this._annotations;
+    }
   }
 }
 
