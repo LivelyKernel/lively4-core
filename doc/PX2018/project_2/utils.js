@@ -27,7 +27,7 @@ function _getLink(text) {
   return link;
 }
 
-function createNewFileButton(subdir, text, name, input) {
+export function createNewFileButton(subdir, text, name, input) {
   let container = document.createElement("div");
   let button = document.createElement("button");
   button.innerHTML = text || "new";

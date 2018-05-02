@@ -303,7 +303,7 @@ export default class VivideView extends Morph {
         return 'vivide-boxplot-widget';
       }
     }
-    return 'vivide-tree-widget';
+    return 'vivide-list-widget';
   }
 
   async updateWidget() {

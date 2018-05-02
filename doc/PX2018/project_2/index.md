@@ -1,6 +1,9 @@
 <script>
-lively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/project_2/utils.js");
+// all scripts are lively-scripts that share the same "module" and therefore module global variables
+import {createNewFileButton} from "doc/PX2018/project_2/utils.js"
 </script>
+
+
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 
 # Project 2: Sebastian Koall - Material Point Method

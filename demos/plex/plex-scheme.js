@@ -26,9 +26,7 @@ export class PlexScheme extends Scheme {
   resolve() {
     return true
   }  
-
  
-  
   plexChildren(mediacontent) {
     return Array.from(mediacontent.childNodes).filter(ea => ea.getAttribute)
   }
@@ -72,39 +70,10 @@ export class PlexScheme extends Scheme {
     let query = this.getURLQuery()
     let contentType = options && options.headers && new Headers(options.headers).get("content-type")
   
-
-    if (contentType ==  'text/html' || 
-        query.thumbs || query.list || query.index) {
-      let mediacontent = await this.plex(apiString)
-      let html
-      if (query.list) {
-        let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
-        html = <html><ul>{...(children.map(ea => 
-          <li>{ea.getAttribute("title")}</li>
-        ))}</ul></html>
-      } else if (query.thumbs) {
-        let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
-        // #TODO we should do this only if we have a thumb        
-        html = <html><div style="">{...(children.map(ea => {
-              var img = <img style="" width="100px"></img>
-              img.src = lively.swxURL("plex://" + ea.getAttribute("thumb"))
-              img.title = ea.getAttribute("title")
-              var a = <a style="">{img}<br />{ea.getAttribute("title")}</a>
-              a.href = lively.swxURL("plex://" + ea.getAttribute("key"))
-              var div = <div style="font-size:8pt;margin:10px;vertical-align: text-top; display:inline-block; width:100px; overflow: hidden">{a}<br />{ea.getAttribute("year")}</div>
-              return div
-            }
-        ))}</div></html>
-      } else { // default html rendering
-        let table = await lively.create("lively-table")
-        try {
-          table.setFromJSO(this.plexToJSON(mediacontent).children)
-        } finally {
-          table.remove()
-        }
-        html = table        
-      }
-        
+    let html
+    let mediacontent = await this.plex(apiString)
+    
+    let htmlResponse = function(html) {
       return new Response(html.outerHTML, {
         status: 200,
         headers: {
@@ -113,14 +82,44 @@ export class PlexScheme extends Scheme {
       })
     }
     
-    if (contentType ==  'application/json') {
-      let mediacontent = await this.plex(apiString)
+    if (query.json || contentType ==  'application/json') {
       // ok, we parse, then serialize, then pase again... can we avoid this?
       return new Response(JSON.stringify(this.plexToJSON(mediacontent)), {status: 200})
+    } else if (query.list) {
+      let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
+      html = <html><ul>{...(children.map(ea => 
+        <li>{ea.getAttribute("title")}</li>
+      ))}</ul></html>
+      return htmlResponse(html)
+    } else if (query.thumbs) {
+      let children = _.sortBy(this.plexChildren(mediacontent), ea => ea.getAttribute("title"))
+      // #TODO we should do this only if we have a thumb        
+      html = <html><div style="">{...(children.map(ea => {
+            var img = <img style="" width="100px"></img>
+            img.src = lively.swxURL("plex://" + ea.getAttribute("thumb"))
+            img.title = ea.getAttribute("title")
+            var a = <a style="">{img}<br />{ea.getAttribute("title")}</a>
+            a.href = lively.swxURL("plex://" + ea.getAttribute("key"))
+            var div = <div style="font-size:8pt;margin:10px;vertical-align: text-top; display:inline-block; width:100px; overflow: hidden">{a}<br />{ea.getAttribute("year")}</div>
+            return div
+          }
+      ))}</div></html>
+      return htmlResponse(html)
+    } else if(query.html || query.index || contentType ==  'text/html') { 
+      // default html rendering
+      let table = await lively.create("lively-table")
+      try {
+        table.setFromJSO(this.plexToJSON(mediacontent).children)
+      } finally {
+        table.remove()
+      }
+      html = table     
+      return htmlResponse(html)
+    } else {
+      // default xml
+      let resp = await this.plexBlob(apiString)
+      return new Response(resp) // {status: 200}   
     }
-
-    let resp = await this.plexBlob(apiString)
-    return new Response(resp) // {status: 200}   
   }
 
   async plex(apiString) {
