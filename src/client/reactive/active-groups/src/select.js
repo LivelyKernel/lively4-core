@@ -432,7 +432,7 @@ View.withOnStack = function(el, callback, context) {
  * @param {predicate} predicate
  * @return {View}
  */
-export default function select(Class, predicate) {
+export default function select(Class, predicate = () => true) {
     var newSelection = new View();
 
     ensureBaseViewForClass(Class);
