@@ -3,6 +3,7 @@ import PolymorphicIdentifier  from "src/client/poid.js"
 import focalStorage from "src/external/focalStorage.js"
 import {parseQuery, getDeepProperty} from 'utils'
 
+var lastTokenPromted
 
 export class PlexScheme extends Scheme {
   
@@ -11,7 +12,15 @@ export class PlexScheme extends Scheme {
   }
   
   async plexToken() {
-    return focalStorage.getItem("plex-token")
+    var token = await focalStorage.getItem("plex-token")
+    if(!token && (!lastTokenPromted || ((Date.now() - lastTokenPromted) > 1000 * 5))) { // don't ask again for 5 seconds...
+      lastTokenPromted = Date.now()
+      token = await lively.prompt("plex token required: ")
+      if (token) {
+        focalStorage.setItem("plex-token", token)
+      }
+    }
+    return token
   }
 
   resolve() {
