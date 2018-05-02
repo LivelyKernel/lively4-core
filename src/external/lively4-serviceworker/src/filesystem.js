@@ -100,11 +100,13 @@ export class Filesystem {
   mountsAsJso() {
     let jso = [];
     for (let [path, mount] of this.mounts) {
-      jso.push({
-        path: path,
-        name: mount.name,
-        options: mount.options
-      })
+      if(mount.name !== "sys" && mount.name !== "scheme") {
+        jso.push({
+          path: path,
+          name: mount.name,
+          options: mount.options
+        })        
+      }
     }
     return jso;
   }
