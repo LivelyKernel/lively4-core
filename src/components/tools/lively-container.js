@@ -108,12 +108,10 @@ export default class Container extends Morph {
     if(this.getAttribute("controls") =="hidden" || fullsreen) {
       this.hideControls()
     }
-
     this.withAttributeDo("leftpane-flex", value =>
       this.get("#container-leftpane").style.flex = value)
     this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
-
   }
 
   onContextMenu(evt) {
@@ -125,7 +123,6 @@ export default class Container extends Morph {
       if (this.contentIsEditable() && !this.isEditing()) {
         worldContext = this
       }
-
 	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
     }
@@ -136,16 +133,14 @@ export default class Container extends Morph {
     if (!this.parentElement.isMaximized) return;
     if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
        (!this.isFullscreen() && this.parentElement.isMaximized()))  {
-        this.parentElement.toggleMaximize();
-        if ( this.parentElement.isMaximized()) {
-          this.parentElement.get(".window-titlebar").style.display = "none"
-          this.parentElement.style.zIndex = 0
-        } else {
-          this.parentElement.get(".window-titlebar").style.display = ""
-        }
+      this.parentElement.toggleMaximize();
+      if ( this.parentElement.isMaximized()) {
+        this.parentElement.get(".window-titlebar").style.display = "none"
+        this.parentElement.style.zIndex = 0
+      } else {
+        this.parentElement.get(".window-titlebar").style.display = ""
+      }
     }
-
-
   }
 
   useBrowserHistory() {
@@ -933,11 +928,11 @@ export default class Container extends Morph {
   listingForDirectory(url, render) {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
-      var index = _.find(files, (ea) => ea.name.match(/^index\.md$/i));
-      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
+      var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
-        return this.setPath(url + "/" + index.name) ;
+        lively.notify("found index" + index)
+        return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
       // return Promise.resolve(""); // DISABLE Listings
 
@@ -1001,16 +996,16 @@ export default class Container extends Morph {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
+    
+    // check if our file is a directory
+    var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})  
     if (!isdir && !other) {
-      // check if our file is a directory
-
-      var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
         isdir = true
       }
       // console.log("[container] isdir " + isdir)
     }
-    if (!path.match(/\/$/) && isdir) {
+    if (!path.match(/\/$/) && isdir ) {
       path =  path + "/"
     }
 
@@ -1036,23 +1031,31 @@ export default class Container extends Morph {
     container.style.overflow = "auto";
 
     url = this.getURL();
-
+    
+    this.content = ""
     this.showNavbar();
+    
+    
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
     var render = !donotrender;
     // Handling directories
 
-    if (isdir) {
-      // return new Promise((resolve) => { resolve("") });
-      return this.listingForDirectory(url, render)
-    }
+
     // Handling files
     this.lastVersion = null; // just to be sure
 
     var format = path.replace(/.*\./,"");
     if (url.protocol == "search:") {
       format = "html"
+    }
+    if (isdir) {
+      // return new Promise((resolve) => { resolve("") });
+      if (!options || !options["index-available"]) {
+        return this.listingForDirectory(url, render)
+      } else {
+        format = "html"
+      }
     }
 
     if (format.match(/(svg)|(png)|(jpe?g)/)) {
@@ -1066,10 +1069,18 @@ export default class Container extends Morph {
         + url +'"></lively-pdf>');
       else return;
     }
-
-
-    return fetch(url).then( resp => {
+    var headers = {}
+    if (format == "html") {
+      headers["content-type"] = "text/html" // maybe we can convice the url to return html
+    }
+  
+    return fetch(url, {
+      method: "GET",
+      headers: headers
+    }).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
+      this.contentType = resp.headers.get("content-type");
+      
 
       // console.log("[container] lastVersion " +  this.lastVersion)
 
@@ -1082,7 +1093,10 @@ export default class Container extends Morph {
 
       return resp.text();
     }).then((content) => {
-      if (format == "html")  {
+      this.content = content
+      this.showNavbar();
+      
+      if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
       } else if (format == "md") {
@@ -1103,7 +1117,7 @@ export default class Container extends Morph {
         `);
       } else {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&st;") +"</code></pre>");
+        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
@@ -1142,10 +1156,7 @@ export default class Container extends Morph {
     navbar.followPath = (path) => { this.followPath(path) }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-
-
-
-    await navbar.show(this.getURL(), this.sourceContent)
+    await navbar.show(this.getURL(), this.content)
   }
 
   isFullscreen() {

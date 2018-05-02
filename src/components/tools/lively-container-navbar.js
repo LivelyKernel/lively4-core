@@ -47,7 +47,6 @@ export default class LivelyContainerNavbar extends Morph {
   onItemDragStart(link, evt) {
     let urls = this.getSelection();
     if (urls.length > 1) {
-      lively.notify("hehe... ")
       this.dragFilesAsZip(urls, evt)
     } else {
       let url = link.href,
@@ -222,7 +221,7 @@ export default class LivelyContainerNavbar extends Morph {
           return (a.name >= b.name) ? -1 : 1;          
         }
         
-        return (a.name >= b.name) ? 1 : -1;
+        return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
     
@@ -245,6 +244,7 @@ export default class LivelyContainerNavbar extends Morph {
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
+     
       var icon;
       if (ea.type == "directory") {
         name += "/";
@@ -256,17 +256,16 @@ export default class LivelyContainerNavbar extends Morph {
       } else {
         icon = '<i class="fa fa-file"></i>';
       }
-      
+      var title = ea.title || name
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML =  icon + name;
+      link.innerHTML =  icon + title;
       var href = ea.href || ea.name;
       if (ea.type == "directory" && !href.endsWith("/")) {
         href += "/"
       }
-      var otherUrl = href.match(/^https?:\/\//) ? href : root + "" + href;
+      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : root + "" + href;
       if (mystats.parent && ea.name == "..") {        
         otherUrl = mystats.parent
-        lively.notify("other " + otherUrl)
       }
       link.href = otherUrl;
       
