@@ -1,6 +1,6 @@
 // Package imports
 import { babel } from 'systemjs-babel-build';
-const { types, template, generate, transform, transformFromAst, traverse } = babel;
+const { types, template, transform, transformFromAst, traverse } = babel;
 
 // Custom imports
 import { deepCopy, generateLocationMap } from "../utils/ast.js";

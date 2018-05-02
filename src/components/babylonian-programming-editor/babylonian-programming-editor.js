@@ -1,11 +1,14 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
+import { babel } from 'systemjs-babel-build';
+const { traverse } = babel;
 
 // Custom imports
 import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import { generateLocationMap } from "./utils/ast.js";
+import makeAnnotation from "./utils/annotation.js";
 
 
 /**
@@ -43,15 +46,24 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("change", this.evaluateTimer.start.bind(this.evaluateTimer));
       this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
-        "Ctrl-P": this.toggleProbe.bind(this),
+        "Ctrl-T": this.toggleProbe.bind(this),
         "Ctrl-R": this.toggleReplace.bind(this)
       });
+      
+      // Inject styling into CodeMirror
+      // This is dirty, but currently necessary
+      fetch("src/components/babylonian-programming-editor/codemirror-inject-styles.css").then(result => {
+        result.text().then(styles => {
+          const node = document.createElement('style');
+          node.innerHTML = styles;
+          this.editorComp().shadowRoot.appendChild(node);
+        });
+      });
     });
-    
   }
   
   
-  // UI Event handlers
+  // Event handlers
   
   /**
    * Is called whenever the user's selection in the editor changes
@@ -77,17 +89,17 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Toggles a probe at the selected location
    */
   toggleProbe() {
-    this.toggleMarkAtSelection((path, loc) => {
+    this.toggleMarkerAtSelection((path, loc) => {
       if(path.isIdentifier) {
-        this.markers.probe.push(
-          this.codemirror.markText(
-            loc.from,
-            loc.to,
-            {
-              className: "marker probe"
-            }
-          )
+        const marker = this.editor().markText(
+          loc.from,
+          loc.to,
+          {
+            className: "marker probe"
+          }
         );
+        marker._babylonian = true;
+        this.markers.probe.push(marker);
       }
     });
   }
@@ -96,16 +108,16 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Toggles a replacement at the selected location
    */
   toggleReplace() {
-    this.toggleMarkAtSelection((path, loc) => {
-      this.markers.replace.push(
-        this.codemirror.markText(
-          loc.from,
-          loc.to,
-          {
-            className: "marker replace"
-          }
-        )
+    this.toggleMarkerAtSelection((path, loc) => {
+      const marker = this.editor().markText(
+        loc.from,
+        loc.to,
+        {
+          className: "marker replace"
+        }
       );
+      marker._babylonian = true;
+      this.markers.replace.push(marker);
     });
   }
   
@@ -181,7 +193,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   
-  // Tools
+  // UI
   
   /**
    * Returns the marker-location of the currently selected path
@@ -204,7 +216,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       return;
     }
 
-    const existingMarks = this.codemirror.findMarks(loc.from, loc.to);
+    const existingMarks = this.editor()
+                              .findMarks(loc.from, loc.to)
+                              .filter(m => m._babylonian);
     if(existingMarks.length > 0) {
       existingMarks.map((mark) => {
         mark.clear();
@@ -215,6 +229,64 @@ export default class BabylonianProgrammingEditor extends Morph {
       createMarkerCallback(this.selectedPath, loc);
     }
     this.evaluate();
+  }
+  
+  showAnnotations() {
+    // Remove all existing annotations
+    this.annotations.map(e => e.clear());
+
+    // Find probed nodes
+    const probedNodes = this.markers.probe.map((mark) => {
+      return this.ast._locationMap[LocationConverter.markerToKey(mark.find())].node;
+    }).filter((node) => node);
+
+    // Add new annotations for replacements
+    this.markers.replace.map(mark => {
+      let markLoc = mark.find();
+      const annotation = makeAnnotation([["number", 24]], markLoc.from.ch, true);
+      this.annotations.push(
+        this.editor().addLineWidget(markLoc.to.line, annotation)
+      );
+    }).filter((node) => node);
+
+    // Add new Annotations for probes
+    const that = this;
+    traverse(this.ast, {
+      Identifier(path) {
+        const node = path.node;
+        if(probedNodes.indexOf(node) !== -1 && node._id in window.__tracker.ids) {
+          const values = window.__tracker.ids[node._id];
+          const annotation = makeAnnotation(values, node.loc.start.column);
+          that.annotations.push(
+            that.editor().addLineWidget(node.loc.end.line-1, annotation)
+          );
+        }
+      }
+    });
+  }
+
+  showDeadMarkers() {
+    // Remove old dead markers
+    this.markers.dead.map(m => m.clear());
+
+    // Add new markers
+    const that = this;
+    traverse(this.ast, {
+      BlockStatement(path) {
+        if(!window.__tracker.blocks.includes(path.node._id)) {
+          const markerLocation = LocationConverter.astToMarker(path.node.loc);
+          that.markers.dead.push(
+            that.editor().markText(
+              markerLocation.from,
+              markerLocation.to,
+              {
+                className: "marker dead"
+              }
+            )
+          );
+        }
+      }
+    });
   }
   
   /**
