@@ -10,6 +10,8 @@ import LocationConverter from "./utils/location-converter.js";
 import { generateLocationMap } from "./utils/ast.js";
 import makeAnnotation from "./utils/annotation.js";
 
+// Constants
+const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
 
 /**
  * An editor for Babylonian (Example-Based) Programming
@@ -18,8 +20,6 @@ export default class BabylonianProgrammingEditor extends Morph {
  
   initialize() {
     this.windowTitle = "Babylonian Programming Editor";
-    this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor/demos/1_simple_demo.js");
-    this.get("#source").loadFile();
     
     // Set up the WebWorker for parsing
     this.worker = new ASTWorkerWrapper();
@@ -43,6 +43,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
+      // Test file
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.get("#source").loadFile();
+      
+      // Event listeners
       this.editor().on("change", this.evaluateTimer.start.bind(this.evaluateTimer));
       this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
@@ -52,7 +57,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       
       // Inject styling into CodeMirror
       // This is dirty, but currently necessary
-      fetch("src/components/babylonian-programming-editor/codemirror-inject-styles.css").then(result => {
+      fetch(`${COMPONENT_URL}/codemirror-inject-styles.css`).then(result => {
         result.text().then(styles => {
           const node = document.createElement('style');
           node.innerHTML = styles;
