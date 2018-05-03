@@ -292,6 +292,7 @@ export default class Lively {
       if (document.querySelector("lively-console")) {
         console.log(error)
       } else {
+        console.error('#########################################', error, error.stack);
         await lively.notify("Error: ", error, 10, () => {
         		lively.openComponentInWindow("lively-error").then( comp => {
               comp.stack =  error.stack
