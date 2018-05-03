@@ -11,7 +11,8 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
   // var TEST_CLIENT_REGEXP = /(\.|-)(spec|test)\.js$/i;
   // var TEST_CLIENT_REGEXP = /(\.|-)(spec|test)\.js$/i;
-  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive))\/(.*(\.|-)(spec|test)\.js$/i;
+  // var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive))\/(.*(\.|-)(spec|test)\.js$/i;
+  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS2)|(reactive))\/(.*(\.|-)(spec|test)\.js$/i;
   // |(ContextJS) #Travis fails
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
