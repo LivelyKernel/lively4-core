@@ -17,19 +17,42 @@ export const addMarker = (editor, loc, classNames) => {
   return marker;
 }
 
+
 /**
- * Generates a new annotation
+ * An Annotation shows values for probes
  */
-export const makeAnnotation = (values, indent, isReplacement) => {
-  const element = document.createElement("span");
-  element.classList.add("annotation");
-  if(isReplacement) {
-    element.classList.add("replacement");
+export class Annotation {
+  constructor(editor, line, kind) {
+    this.values = []
+    this.indent = 0;
+    this.kind = kind;
+    
+    this._element = document.createElement("span");
+    this._element.classList.add("annotation");
+    this._element.classList.add(this.kind);
+
+    this._updateElement();
+    
+    this._widget = editor.addLineWidget(line, this._element);
   }
-
-  const arrow = isReplacement ? "↖︎" : "↘︎";
-  element.textContent = `${arrow} ${values.map((e)=>e[1]).join(" | ")}`;
-  element.style.left = `${indent}ch`;
-
-  return element;
+  
+  update(values, indent) {
+    this.values = values;
+    this.indent = indent;
+    this._updateElement();
+  }
+  
+  _updateElement() {
+    const arrow = this.kind === "replace" ? "↖︎" : "↘︎";
+    const valuesString = this.values.length ? this.values.map((e)=>e[1]).join(" | ") : "??";
+    this._element.textContent = `${arrow} ${valuesString}`;
+    this._element.style.left = `${this.indent}ch`;
+  }
+  
+  clear() {
+    this._widget.clear();
+  }
 }
+
+
+

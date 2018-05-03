@@ -8,7 +8,7 @@ import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
-  makeAnnotation,
+  Annotation,
   addMarker
 } from "./utils/ui.js";
 import {
@@ -40,10 +40,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.markers = {
       dead: []
     };
-    USER_MARKER_KINDS.map(m => this.markers[m] = []);
-
-    // Set up annotations
-    this.annotations = [];
+    USER_MARKER_KINDS.map(m => this.markers[m] = new Map()); // TextMarker -> Annotation
     
     // Set up timer
     this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
@@ -102,36 +99,21 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Toggles a probe at the selected location
    */
   toggleProbe() {
-    this.toggleMarkerAtSelection((path, loc) => {
-      if(!canBeProbed(path)) {
-        return;
-      }
-      const marker = addMarker(this.editor(), loc, ["probe"]);
-      this.markers.probe.push(marker);
-    });
+    this.toggleMarkerAtSelection("probe");
   }
 
   /**
    * Toggles a replacement at the selected location
    */
   toggleReplace() {
-    this.toggleMarkerAtSelection((path, loc) => {
-      const marker = addMarker(this.editor(), loc, ["replace"]);
-      this.markers.replace.push(marker);
-    });
+    this.toggleMarkerAtSelection("replace");
   }
   
   /**
    * Toggles an example at the selected location
    */
   toggleExample() {
-    this.toggleMarkerAtSelection((path, loc) => {
-      if(!canBeExample(path)) {
-        return;
-      }
-      const marker = addMarker(this.editor(), loc, ["example"]);
-      this.markers.example.push(marker);
-    });
+    this.toggleMarkerAtSelection("example");
   }
   
   
@@ -147,14 +129,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     const markers = {};
     for(const markerKey of USER_MARKER_KINDS) {
       // Remove invalid markers
-      this.markers[markerKey].map((marker) => {
+      this.markers[markerKey].forEach((annotation, marker) => {
         if(!marker.find()) {
           this.removeMarker(marker);
         }
       })
       
       // Convert locations
-      markers[markerKey] = this.markers[markerKey].map(convertLocation);
+      markers[markerKey] = Array.from(this.markers[markerKey].keys())
+                                .map(convertLocation);
     }
 
     // Call the worker
@@ -177,8 +160,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.execute(code);
 
     // Show the results
-    this.showAnnotations();
-    this.showDeadMarkers();
+    this.updateAnnotations();
+    this.updateDeadMarkers();
   }
   
   
@@ -232,17 +215,25 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   removeMarker(marker) {
     marker.clear();
-    USER_MARKER_KINDS.map(m => this.markers[m].splice(this.markers[m].indexOf(marker), 1));
+    USER_MARKER_KINDS.map(m => {
+      if(this.markers[m].has(marker)) {
+        this.markers[m].get(marker).clear();
+        this.markers[m].delete(marker);
+      }
+    });
   }
   
   /**
    * Removes an existing marker at the selected location,
    * or calls the callback to create a new one
    */
-  toggleMarkerAtSelection(createMarkerCallback) {
+  toggleMarkerAtSelection(newMarkerKind) {
     const loc = this.getSelectedPathLocation();
     if(!loc) {
       return;
+    }
+    if(!USER_MARKER_KINDS.includes(newMarkerKind)) {
+      throw Error("Unknown marker kind");
     }
 
     const existingMarks = this.editor()
@@ -250,47 +241,42 @@ export default class BabylonianProgrammingEditor extends Morph {
                               .filter(m => m._babylonian);
     if(existingMarks.length > 0) {
       existingMarks.map(this.removeMarker.bind(this));
+    } else if((newMarkerKind === "probe" && canBeProbed(this.selectedPath))
+               || (newMarkerKind === "example" && canBeExample(this.selectedPath))
+               || (newMarkerKind === "replace")) {
+      const marker = addMarker(this.editor(), loc, [newMarkerKind]);
+      this.markers[newMarkerKind].set(
+        marker,
+        new Annotation(this.editor(), loc.to.line, newMarkerKind)
+      );
     } else {
-      createMarkerCallback(this.selectedPath, loc);
+      console.warn("Could neither remove nor add a marker");
     }
     this.evaluate();
   }
   
-  showAnnotations() {
-    // Remove all existing annotations
-    this.annotations.map(e => e.clear());
-
-    // Find probed nodes
-    const probedNodes = this.markers.probe.map((mark) => {
-      return this.ast._locationMap[LocationConverter.markerToKey(mark.find())].node;
-    }).filter((node) => node);
-
-    // Add new annotations for replacements
-    this.markers.replace.map(mark => {
-      let markLoc = mark.find();
-      const annotation = makeAnnotation([["number", 24]], markLoc.from.ch, true);
-      this.annotations.push(
-        this.editor().addLineWidget(markLoc.to.line, annotation)
-      );
-    }).filter((node) => node);
-
-    // Add new Annotations for probes
-    const that = this;
-    traverse(this.ast, {
-      Identifier(path) {
-        const node = path.node;
-        if(probedNodes.indexOf(node) !== -1 && node._id in window.__tracker.ids) {
-          const values = window.__tracker.ids[node._id];
-          const annotation = makeAnnotation(values, node.loc.start.column);
-          that.annotations.push(
-            that.editor().addLineWidget(node.loc.end.line-1, annotation)
-          );
-        }
+  updateAnnotations() {
+    // Update annotations for replacements
+    this.markers.replace.forEach((annotation, marker) => {
+      const markerLoc = marker.find();
+      annotation.update([["number", 24]], markerLoc.from.ch);
+    });
+    
+    // Update annotations for probes
+    this.markers.probe.forEach((annotation, marker) => {
+      const markerLoc = marker.find();
+      const probedNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())].node;
+      let values;
+      if(probedNode._id in window.__tracker.ids) {
+        values = window.__tracker.ids[probedNode._id];
+      } else {
+        values = [["??", "??"]];
       }
+      annotation.update(values, markerLoc.from.ch);
     });
   }
 
-  showDeadMarkers() {
+  updateDeadMarkers() {
     // Remove old dead markers
     this.markers.dead.map(m => m.clear());
 
