@@ -23,7 +23,8 @@ export default class ResearchDiary extends Morph {
   
   async initialize() {
     this.windowTitle = "Research Diary";
-    
+    this.windowIcon = '<i class="fa fa-book" aria-hidden="true"></i>';
+
     await this.prepareEditor();
     await this.refreshList();
 

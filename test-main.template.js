@@ -9,10 +9,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
-  // var TEST_CLIENT_REGEXP = /(\.|-)(spec|test)\.js$/i;
-  // var TEST_CLIENT_REGEXP = /(\.|-)(spec|test)\.js$/i;
-  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive))\/(.*(\.|-)(spec|test)\.js$/i;
-  // |(ContextJS) #Travis fails
+  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive))\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
@@ -38,8 +35,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
   });
 
-  window.lively4url = "http://localhost:9876/base"
-
+  window.lively4url = 'http://localhost:9876/base';
 
   var runTests = ()=> {
      Promise.all(allClientTestFiles.map(function (file) {
