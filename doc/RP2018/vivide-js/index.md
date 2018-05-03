@@ -1,5 +1,5 @@
 <script>
-lively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/project_2/utils.js");
+import { createNewFileButton, openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 
