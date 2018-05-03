@@ -43,4 +43,28 @@ describe("when utility", function() {
   it("integrates with await", async () => {
     await when(() => true);
   });
+  
+  xit("allows for other detection strategies", async () => {
+    let spy = sinon.spy();
+    let bool = false;
+
+    when(() => bool, { strategy: frameBasedAExpr.aexpr})
+      .then(spy);
+
+    await wait(50);
+    expect(spy).not.to.be.called;
+
+    bool = true;
+    await wait(50);
+    expect(spy).to.be.calledOnce;
+  });
+  xit("propagates configuration to the aexpr constructor function", async () => {
+    let spy = sinon.spy();
+
+    when(() => true, { active: false }) // the internal aexpr is not active
+      .then(spy);
+
+    await wait(50);
+    expect(spy).not.to.be.called;
+  });
 });

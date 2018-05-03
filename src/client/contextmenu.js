@@ -359,7 +359,8 @@ export default class ContextMenu {
              li.remove();
             }
             event.stopPropagation();
-          }}><i class="fa fa-close" aria-hidden="true"></i></span>)
+          }}><i class="fa fa-close" aria-hidden="true"></i></span>),
+          ea.getAttribute("icon")
         ]).concat([["Close all", async () => {
           if(await lively.confirm('Close all windows?')) {
             document.body.querySelectorAll('lively-window').forEach(w => w.remove())
