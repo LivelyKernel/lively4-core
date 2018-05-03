@@ -9,12 +9,14 @@ import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
   Annotation,
+  Form,
   addMarker
 } from "./utils/ui.js";
 import {
   generateLocationMap,
   canBeProbed,
-  canBeExample
+  canBeExample,
+  replacementNodeForCode
 } from "./utils/ast.js";
 
 // Constants
@@ -48,7 +50,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -123,8 +125,11 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Evaluates the current editor content and updates the results
    */
   async evaluate() {
-    // Convert the markers' locations into key format
-    const convertLocation = (m) => LocationConverter.markerToKey(m.find());
+    // Convert the markers
+    const convertMarker = m => ({
+      loc: LocationConverter.markerToKey(m.find()),
+      replacementNode: m._replacementNode
+    });
     
     const markers = {};
     for(const markerKey of USER_MARKER_KINDS) {
@@ -135,9 +140,9 @@ export default class BabylonianProgrammingEditor extends Morph {
         }
       })
       
-      // Convert locations
+      // Convert marker
       markers[markerKey] = Array.from(this.markers[markerKey].keys())
-                                .map(convertLocation);
+                                .map(convertMarker);
     }
 
     // Call the worker
@@ -242,12 +247,19 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(existingMarks.length > 0) {
       existingMarks.map(this.removeMarker.bind(this));
     } else if((newMarkerKind === "probe" && canBeProbed(this.selectedPath))
-               || (newMarkerKind === "example" && canBeExample(this.selectedPath))
-               || (newMarkerKind === "replace")) {
+               || (newMarkerKind === "example" && canBeExample(this.selectedPath))) {
+      this.markers[newMarkerKind].set(
+        addMarker(this.editor(), loc, [newMarkerKind]),
+        new Annotation(this.editor(), loc.to.line, newMarkerKind)
+      );
+    } else if(newMarkerKind === "replace") {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
         marker,
-        new Annotation(this.editor(), loc.to.line, newMarkerKind)
+        new Form(this.editor(), loc.to.line, newMarkerKind, null, (newValue) => {
+          marker._replacementNode = replacementNodeForCode(newValue);
+          this.evaluate();
+        })
       );
     } else {
       console.warn("Could neither remove nor add a marker");

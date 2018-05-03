@@ -83,25 +83,26 @@ const assignIds = (ast) => {
  * Applies replace markers to the given AST
  */
 const applyReplaceMarkers = (ast, markers) => {
-  // TODO: Real values
-  const tmpValue = types.numericLiteral(24);
-
   // Apply the markers
-  markers.map((marker) => {
-    const path = ast._locationMap[marker];
+  markers.forEach((marker) => {
+    const replacementNode = marker.replacementNode;
+    if(!replacementNode) {
+      return;
+    }
+    const path = ast._locationMap[marker.loc];
     if(path.parentPath.isVariableDeclarator()) {
-      path.parent.init = tmpValue;
+      path.parent.init = replacementNode;
     } else {
-      path.replaceWith(tmpValue);
+      path.replaceWith(replacementNode);
     }
   });
 };
 
 /**
- * Applies replace markers to the given AST
+ * Applies probe markers to the given AST
  */
 const applyProbeMarkers = (ast, markers) => {
-  const trackedIdentifiers = markers.map(marker => ast._locationMap[marker].node);
+  const trackedIdentifiers = markers.map(marker => ast._locationMap[marker.loc].node);
 
   traverse(ast, {
     Identifier(path) {
@@ -126,7 +127,7 @@ const applyExampleMarkers = (ast, markers) => {
   const methodCall = template("CLASS.ID()");
   
   // Get tracked functions
-  const exampleIdentifiers = markers.map(marker => ast._locationMap[marker].node);
+  const exampleIdentifiers = markers.map(marker => ast._locationMap[marker.loc].node);
   const nodesToInsert = [];
   
   // Gather new nodes to insert

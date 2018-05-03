@@ -54,5 +54,32 @@ export class Annotation {
   }
 }
 
-
+/**
+ * A Form is used to enter values
+ */
+export class Form extends Annotation {
+  constructor(editor, line, kind, node, changeCallback) {
+    super(editor, line, kind);
+    
+    // If there is no node, we are replacing something
+    // Just show an empty textfield
+    if(!this.node) {
+      const textfield = document.createElement("input");
+      textfield.setAttribute("type", "text");
+      textfield.addEventListener("change", () => {
+        changeCallback(textfield.value);
+      });
+      this._element.appendChild(textfield);
+    }
+  }
+  
+  _updateElement() {
+    
+    this._element.style.left = `${this.indent}ch`;
+  }
+  
+  getReplacementNode() {
+    
+  }
+}
 

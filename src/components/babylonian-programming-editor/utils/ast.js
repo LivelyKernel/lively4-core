@@ -1,5 +1,5 @@
 import { babel } from 'systemjs-babel-build';
-const { traverse } = babel;
+const { traverse, transform } = babel;
 
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
@@ -42,3 +42,27 @@ export const canBeExample = (path) => {
          && (functionParent.get("id") === path
              || functionParent.get("key") === path));
 }
+
+/**
+ * Generates a replacement node (without expression) for a given code
+ */
+export const replacementNodeForCode = (code) => {
+  const ast = astForCode(code);
+  return ast.program.body[0].expression;
+}
+
+const astForCode = (code) =>
+  transform(code, {
+    babelrc: false,
+    plugins: [],
+    presets: [],
+    filename: undefined,
+    sourceFileName: undefined,
+    moduleIds: false,
+    sourceMaps: false,
+    compact: false,
+    comments: true,
+    code: false,
+    ast: true,
+    resolveModuleSource: undefined
+  }).ast
