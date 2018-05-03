@@ -344,15 +344,27 @@ export default class ContextMenu {
           this.hide();
         }],
         ["Invalidate caches", async evt => {
-          lively4invalidateFileCaches ()
+          lively4invalidateFileCaches()
         }],
       ]],
       [
         "Windows", 
         Windows.allWindows().map(ea => [
           "" + ea.getAttribute("title"),
-          () => lively.gotoWindow(ea)
-        ])
+          () => lively.gotoWindow(ea),
+          (<span click={function (event) {
+            ea.remove();
+            const li = lively.query(this, 'li')
+            if(li) {
+             li.remove();
+            }
+            event.stopPropagation();
+          }}><i class="fa fa-close" aria-hidden="true"></i></span>)
+        ]).concat([["Close all", async () => {
+          if(await lively.confirm('Close all windows?')) {
+            document.body.querySelectorAll('lively-window').forEach(w => w.remove())
+          } 
+        }]])
       ],
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 
