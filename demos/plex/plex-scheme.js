@@ -5,6 +5,7 @@ import {parseQuery, getDeepProperty} from 'utils'
 
 var lastTokenPromted
 
+
 export class PlexScheme extends Scheme {
   
   get scheme() {
@@ -186,5 +187,8 @@ export class PlexScheme extends Scheme {
     return new Response(JSON.stringify(result), {status: 200})
   }
 }
+
+lively.components.addTemplatePath(lively4url + "/demos/plex/")
+lively.components.resetTemplatePathCache()
 
 PolymorphicIdentifier.register(PlexScheme)
