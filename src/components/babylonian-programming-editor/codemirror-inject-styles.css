@@ -17,16 +17,26 @@
 
 .marker {
   display: inline-block;
+}
+
+.marker.start {
   border-top-left-radius: 3px;
+}
+
+.marker.end {
   border-top-right-radius: 3px;
 }
 
-.probe {
+.marker.probe {
   background-color: hsla(198, 69%, 67%, 0.3);
 }
 
-.replace {
+.marker.replace {
   background-color: hsla(344, 54%, 63%, 0.3);
+}
+
+.marker.example {
+  background-color: hsla(41, 69%, 38%, 0.3);
 }
 
 .dead {

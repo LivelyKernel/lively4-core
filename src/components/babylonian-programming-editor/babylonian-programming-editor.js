@@ -7,11 +7,19 @@ const { traverse } = babel;
 import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
-import { generateLocationMap } from "./utils/ast.js";
-import makeAnnotation from "./utils/annotation.js";
+import {
+  makeAnnotation,
+  addMarker
+} from "./utils/ui.js";
+import {
+  generateLocationMap,
+  canBeProbed,
+  canBeExample
+} from "./utils/ast.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
+const USER_MARKER_KINDS = ["example", "replace", "probe"];
 
 /**
  * An editor for Babylonian (Example-Based) Programming
@@ -30,16 +38,15 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Set up markers
     this.markers = {
-      replace: [],
-      probe: [],
       dead: []
     };
+    USER_MARKER_KINDS.map(m => this.markers[m] = []);
 
     // Set up annotations
     this.annotations = [];
     
     // Set up timer
-    this.evaluateTimer = new Timer(100, this.evaluate.bind(this));
+    this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
     
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -51,8 +58,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("change", this.evaluateTimer.start.bind(this.evaluateTimer));
       this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
-        "Ctrl-T": this.toggleProbe.bind(this),
-        "Ctrl-R": this.toggleReplace.bind(this)
+        "Ctrl-1": this.toggleProbe.bind(this),
+        "Ctrl-2": this.toggleReplace.bind(this),
+        "Ctrl-3": this.toggleExample.bind(this)
       });
       
       // Inject styling into CodeMirror
@@ -95,17 +103,11 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   toggleProbe() {
     this.toggleMarkerAtSelection((path, loc) => {
-      if(path.isIdentifier) {
-        const marker = this.editor().markText(
-          loc.from,
-          loc.to,
-          {
-            className: "marker probe"
-          }
-        );
-        marker._babylonian = true;
-        this.markers.probe.push(marker);
+      if(!canBeProbed(path)) {
+        return;
       }
+      const marker = addMarker(this.editor(), loc, ["probe"]);
+      this.markers.probe.push(marker);
     });
   }
 
@@ -114,15 +116,21 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   toggleReplace() {
     this.toggleMarkerAtSelection((path, loc) => {
-      const marker = this.editor().markText(
-        loc.from,
-        loc.to,
-        {
-          className: "marker replace"
-        }
-      );
-      marker._babylonian = true;
+      const marker = addMarker(this.editor(), loc, ["replace"]);
       this.markers.replace.push(marker);
+    });
+  }
+  
+  /**
+   * Toggles an example at the selected location
+   */
+  toggleExample() {
+    this.toggleMarkerAtSelection((path, loc) => {
+      if(!canBeExample(path)) {
+        return;
+      }
+      const marker = addMarker(this.editor(), loc, ["example"]);
+      this.markers.example.push(marker);
     });
   }
   
@@ -135,10 +143,19 @@ export default class BabylonianProgrammingEditor extends Morph {
   async evaluate() {
     // Convert the markers' locations into key format
     const convertLocation = (m) => LocationConverter.markerToKey(m.find());
-    const markers = {
-      probe: this.markers.probe.map(convertLocation),
-      replace: this.markers.replace.map(convertLocation),
-    };
+    
+    const markers = {};
+    for(const markerKey of USER_MARKER_KINDS) {
+      // Remove invalid markers
+      this.markers[markerKey].map((marker) => {
+        if(!marker.find()) {
+          this.removeMarker(marker);
+        }
+      })
+      
+      // Convert locations
+      markers[markerKey] = this.markers[markerKey].map(convertLocation);
+    }
 
     // Call the worker
     const { ast, code } = await this.worker.process(
@@ -193,7 +210,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     } catch (e) {
       console.warn("Could not execute code");
       console.error(e);
-      return null;
     }
   }
   
@@ -212,6 +228,14 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   /**
+   * Removes a marker from the editor
+   */
+  removeMarker(marker) {
+    marker.clear();
+    USER_MARKER_KINDS.map(m => this.markers[m].splice(this.markers[m].indexOf(marker), 1));
+  }
+  
+  /**
    * Removes an existing marker at the selected location,
    * or calls the callback to create a new one
    */
@@ -225,11 +249,7 @@ export default class BabylonianProgrammingEditor extends Morph {
                               .findMarks(loc.from, loc.to)
                               .filter(m => m._babylonian);
     if(existingMarks.length > 0) {
-      existingMarks.map((mark) => {
-        mark.clear();
-        this.markers.probe.splice(this.markers.probe.indexOf(mark), 1);
-        this.markers.replace.splice(this.markers.replace.indexOf(mark), 1);
-      });
+      existingMarks.map(this.removeMarker.bind(this));
     } else {
       createMarkerCallback(this.selectedPath, loc);
     }

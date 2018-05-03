@@ -21,6 +21,7 @@ export default onmessage = function(msg) {
     generateLocationMap(ast);
     applyReplaceMarkers(ast, markers.replace);
     applyProbeMarkers(ast, markers.probe);
+    applyExampleMarkers(ast, markers.example);
 
     // Generate executable code
     const executableCode = generateCode(ast);
@@ -100,20 +101,61 @@ const applyReplaceMarkers = (ast, markers) => {
  * Applies replace markers to the given AST
  */
 const applyProbeMarkers = (ast, markers) => {
-  // Prepare templates to insert
   const trackedIdentifiers = markers.map(marker => ast._locationMap[marker].node);
 
   traverse(ast, {
     Identifier(path) {
-      if(trackedIdentifiers.includes(path.node)) {
-        insertIdentifierTracker(path);
+      if(!trackedIdentifiers.includes(path.node)) {
+        return;
       }
+      
+      insertIdentifierTracker(path);
     },
     BlockStatement(path) {
       insertBlockTracker(path);
     }
   });
 };
+
+/**
+ * Applies example markers to the given AST
+ */
+const applyExampleMarkers = (ast, markers) => {
+  // Prepare templates to insert
+  const functionCall = template("ID()");
+  const methodCall = template("CLASS.ID()");
+  
+  // Get tracked functions
+  const exampleIdentifiers = markers.map(marker => ast._locationMap[marker].node);
+  const nodesToInsert = [];
+  
+  // Gather new nodes to insert
+  traverse(ast, {
+    Identifier(path) {
+      if(!exampleIdentifiers.includes(path.node)) {
+        return;
+      }
+      
+      let nodeToInsert;
+      const functionParent = path.getFunctionParent();
+      if(functionParent.isClassMethod()) {
+        const className = functionParent.getStatementParent().get("id").get("name").node;
+        nodeToInsert = methodCall({
+          CLASS: types.identifier(className),
+          ID: types.identifier(path.node.name)
+        });
+      } else {
+        nodeToInsert = functionCall({
+          ID: types.identifier(path.node.name)
+        });
+      }
+      nodesToInsert.push(nodeToInsert);
+    }
+  });
+  
+  // Insert collected new nodes
+  nodesToInsert.map(n => ast.program.body.push(n));
+}
 
 /**
  * Insers an appropriate tracker for the given identifier path

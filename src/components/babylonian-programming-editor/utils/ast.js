@@ -23,3 +23,22 @@ export const generateLocationMap = (ast) => {
     }
   });
 };
+
+/**
+ * Checks whether a path can be probed
+ */
+export const canBeProbed = (path) => {
+  // TODO: More sophisticated check
+  return path.isIdentifier();
+}
+
+/**
+ * Checks whether a path can be an example
+ */
+export const canBeExample = (path) => {
+  // We have to be the name of a function
+  const functionParent = path.getFunctionParent();
+  return(functionParent
+         && (functionParent.get("id") === path
+             || functionParent.get("key") === path));
+}
