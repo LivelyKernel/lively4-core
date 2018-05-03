@@ -318,6 +318,8 @@ export default class ContextMenu {
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
         // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
+        ["Inspector", evt => lively.openInspector(document.body)],
+        
         ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),

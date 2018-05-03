@@ -1,7 +1,7 @@
 <!-- markdown-config presentation=true -->
 
 <script>
-lively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/project_2/utils.js");
+import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 
@@ -72,14 +72,8 @@ lively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/projec
 # Concept
 
 - (TBD) Some general information on how MPM works
-
----
-
-# Concept - Update Steps
-
-<p class="comment">For fluids</p>
-
-1. Particles 
+- HIGH LVL only 10 mins of presentation
+- Grids + particles that are moved around on them
 
 ---
 

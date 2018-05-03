@@ -59,8 +59,8 @@ export default class Search extends Morph {
       link.url = url
       link.title = ea.file
       var self = this
-      link.onclick = function() {
-        self.browseSearchResult(this.url, pattern);
+      link.onclick = () => {
+        this.browseSearchResult(url, pattern);
         return false;
       };
       this.get("#searchResults").appendChild(item);
