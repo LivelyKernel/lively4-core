@@ -1,91 +1,28 @@
-<!-- markdown-config presentation=true -->
-
-<!-- #TODO make style links in container content relative to url -->
-<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
-<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
-<link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
-<link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
-
-<style>
-  .lively-slide {
-    border: 1px solid rgb(220,220,220)
-    page-break-before: always;
-/*     border: 2px solid red
- */
-  }
-  p {
-    font-size: 18pt
-  }
-  @media print {
-    .lively-slide {
-      page-break-before: always;
-      border: 0px solid white;
-/*       border: 2px solid blue; */
-    }      
-  }
-  
-</style>
-
-<div class="title">
-  PX 2018: Graph Drawing
-</div>
-
-<div class="authors">
-  Theresa Zobel, Siegfried Horschig
-</div>
-
-<div class="credentials">
-  Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
-</div>
-
-<script>
-  var button = document.createElement("button")
-  button.textContent = "print"
-  button.onclick = async () => {
-   var presentation = lively.query(this, "lively-presentation")
-   presentation.print()
-  }
-  button.style = "position: absolute; bottom: 10px; left: 10px"
-  button
-</script>
-
-
---- 
-
-# Abstract
-
-<img src="./img/standard-layout-1.gif">
-
----
-
-# Demo
-
-<div>
-<svg id="svgContainer"></svg>
-</div>
-
-<script>
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
 function getTreeData() {
-    return {
-        "name": "Top Level",
-        "children": [
-          { 
-            "name": "Level 2: A",
-            "children": [
-              { "name": "Son of A" },
-              { "name": "Daughter of A" }
-            ]
-          },
-          { "name": "Level 2: B" }
-        ]
-      }
+    if (treeData) {
+      var treeData = {
+          "name": "Top Level",
+          "children": [
+            { 
+              "name": "Level 2: A",
+              "children": [
+                { "name": "Son of A" },
+                { "name": "Daughter of A" }
+              ]
+            },
+            { "name": "Level 2: B" }
+          ]
+        };
+    }
+    return treeData
   }
   
-function updateViz(obj) {
-    lively.query(obj, '#svgContainer').innerHTML = ""
+function updateViz() {
+    lively.query(this, '#svgContainer').innerHTML = ""
+    console.log(lively.query(this, '#svgContainer'));
 
     var treeData = getTreeData()
     var bounds = {width:1000, height:1000}
@@ -94,13 +31,12 @@ function updateViz(obj) {
       width = bounds.width - margin.right - margin.left,
       height = bounds.height - margin.top - margin.bottom;
 
-    var svg = d3.select(lively.query(obj, '#svgContainer'))
+    var svg = d3.select(lively.query(this, '#svgContainer'))
       .attr("width", width + margin.right + margin.left)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
-    var i = 0;
     var duration = 750
     var root;
 
@@ -113,7 +49,7 @@ function updateViz(obj) {
     // Collapse after the second level
     root.children.forEach(ea => collapse(ea));
     
-    update(root, root, treemap, svg, duration, i);
+    update(root, treemap, svg, duration);
     // d3.select(self.frameElement).style("height", "500px");    
   }
   
@@ -127,7 +63,7 @@ function collapse(d) {
   }
   
   // Toggle children on click.
-function click(d, root, treemap, svg, duration, i) {
+function click(d) {
     if (d.children) {
       d._children = d.children;
       d.children = null;
@@ -135,12 +71,12 @@ function click(d, root, treemap, svg, duration, i) {
       d.children = d._children;
       d._children = null;
     }
-    update(d, root, treemap, svg, duration, i);
+    update(d);
   }
   
-function update(source, root, treemap, svg, duration, i) {
+function update(source, treemap, svg, duration) {
     // Assigns the x and y position for the nodes
-    var treeData = treemap(source);
+    var treeData = treemap(this.root);
     
     // Compute the new tree layout
     const nodes = treeData.descendants()
@@ -150,14 +86,14 @@ function update(source, root, treemap, svg, duration, i) {
     nodes.forEach((d) => { d.y = d.depth * 180; });
 
     // Update the nodes…
-    var node = svg.selectAll("g.node")
-      .data(nodes, (d) => d.id || (d.id = ++i));
+    var node = this.svg.selectAll("g.node")
+      .data(nodes, (d) => d.id || (d.id = ++this.i));
 
     // Enter any new nodes at the parent's previous position.
     var nodeEnter = node.enter().append("g")
       .attr("class", "node")
       .attr("transform", d => "translate(" + source.y0 + "," + source.x0 + ")")
-      .on("click", (d) => click(d, root, treemap, svg, duration, i));
+      .on("click", (d) => click(d));
 
     // Add Circle for the nodes
     nodeEnter.append("circle")
@@ -170,7 +106,7 @@ function update(source, root, treemap, svg, duration, i) {
       .attr("x", d => d.children || d._children ? -13 : 13)
       .attr("dy", ".35em")
       .attr("text-anchor", d  => d.children || d._children ? "end" : "start")
-      .text(d =>  d.data.name)
+      .text(d =>  this.dataName ? this.dataName(d.data) : d.data.name)
     // .style("fill-opacity", 1e-6);
 
     // UPDATE
@@ -178,7 +114,7 @@ function update(source, root, treemap, svg, duration, i) {
         
     // Transition nodes to their new position.
     nodeUpdate.transition()
-      .duration(duration)
+      .duration(this.duration)
       .attr("transform", d => "translate(" + d.y + "," + d.x + ")");
     
     
@@ -193,7 +129,7 @@ function update(source, root, treemap, svg, duration, i) {
 
     // Transition exiting nodes to the parent's new position.
     var nodeExit = node.exit().transition()
-      .duration(duration)
+      .duration(this.duration)
       .attr("transform", d => "translate(" + source.y + "," + source.x + ")")
       .remove();
 
@@ -204,6 +140,7 @@ function update(source, root, treemap, svg, duration, i) {
     // On exit reduce the opacity of text labels
     nodeExit.select("text")
       .style("fill-opacity", 1e-6);
+
     // Update the links...
     var link = svg.selectAll("path.link")
       .data(links, d => d.id);
@@ -251,27 +188,4 @@ function diagonal(s, d) {
     return path
   }
 
-updateViz(this);
-</script>
-
----
-
-<!-- #TODO pull this up into presentation? -->
-<script>
-// poor men's slide master
-var presentation = lively.query(this, "lively-presentation")
-if (presentation && presentation.slides) {
-  presentation.slides().forEach(ea => {
-    var img = document.createElement("img")
-    img.classList.add("logo")
-    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png" 
-    img.setAttribute("width", "50px")
-    ea.appendChild(img)
-
-    var div = document.createElement("div")
-    div.classList.add("page-number")
-    ea.appendChild(div)
-  });
-}
-""
-</script>
+updateViz();

@@ -989,7 +989,6 @@ export default class Container extends Morph {
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
     } else if (path.match(/^[a-zA-Z]+:\/\//)) {
-      lively.notify("it other url : " + path)
       url = new URL(path)
       var other = true
     } else {
