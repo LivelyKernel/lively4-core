@@ -30,7 +30,6 @@ import focalStorage from '../external/focalStorage.js';
 import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
 
-import "src/client/poid.js"; // custom fetch
 
 let $ = window.$; // known global variables.
 
@@ -293,6 +292,7 @@ export default class Lively {
       if (document.querySelector("lively-console")) {
         console.log(error)
       } else {
+        console.error('#########################################', error, error.stack);
         await lively.notify("Error: ", error, 10, () => {
         		lively.openComponentInWindow("lively-error").then( comp => {
               comp.stack =  error.stack
@@ -363,7 +363,10 @@ export default class Lively {
     }) // depends on me
     System.import("src/client/graffle.js") // depends on me
     System.import("src/client/draganddrop.js") // depends on me
+    System.import("src/client/poid.js") // depends on me
+    System.import("demos/plex/plex-scheme.js") // depends on me
   }
+  
 
   static asUL(anyList){
     var ul = document.createElement("ul")
@@ -1658,6 +1661,14 @@ export default class Lively {
   static showHalo(element) {
     window.that = element
     HaloService.showHalos(element)
+  }
+  
+  static swxURL(url) {
+    var m = url.toString().match(/^([a-zA-Z0-9]+)\:\/\/(.*)$/)
+    if (!m) {
+      throw new Error("coudl not convert url to an swx form: " + url)
+    }
+    return "https://lively4/scheme/" + m[1] +"/" + m[2]
   }
 
 }

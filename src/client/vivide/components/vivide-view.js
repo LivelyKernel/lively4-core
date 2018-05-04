@@ -1,5 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -224,19 +226,19 @@ export default class VivideView extends Morph {
     }
   }
   
-  setScriptURLString(scriptURLString) {
-    this.setAttribute(VivideView.scriptAttribute, scriptURLString);
-    return scriptURLString;
+  setScripts(scripts) {
+    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
+    return scripts;
   }
   
-  getScriptURLString() {
-    return this.getAttribute(VivideView.scriptAttribute);
+  getScripts() {
+    return this.getJSONAttribute(VivideView.scriptAttribute);
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if(this.getScriptURLString()) {
+    if(this.getScripts()) {
       await this.calculateOutputModel();
     } else {
       lively.warn('view got new data, but had no script attached!', 'we are trying our best');
@@ -255,37 +257,39 @@ export default class VivideView extends Morph {
   }
   
   async calculateOutputModel() {
-    let scriptDescription = await fetch(this.getScriptURLString()).then(r => r.json());
-    let stepURLs = scriptDescription[0];
-    let transforms = await Promise.all(stepURLs.transform.map(url => System.import(url)));
-    let extracts = await Promise.all(stepURLs.extract.map(url => System.import(url)));
-    let descents = await Promise.all(stepURLs.descent.map(url => System.import(url)));
-
+    let scripts = this.getScripts();
+    let transforms = await Promise.all(scripts.transform.map(script => this.updateScript(script)));
+    let extracts = await Promise.all(scripts.extract.map(script => this.updateScript(script)));
+    let descents = await Promise.all(scripts.descent.map(script => this.updateScript(script)));
     let transformedData = transforms.reduce((data, transform) => {
       let output = [];
-      transform.default(data, output);
+      transform.value(data, output);
       return output;
     }, this.input);
     let annotatedModel = transformedData.map(object => {
       let children = [];
-      descents.map(descent => children.push(...descent.default(object).map(c => ({ object: c, properties: [], children: [] }))));     
+      descents.map(descent => children.push(...descent.value(object).map(c => ({ object: c, properties: [], children: [] }))));     
       return {
         object,
-        properties: extracts.map(extract => extract.default(object)),
+        properties: extracts.map(extract => extract.value(object)),
         children: children
       };
     });
     this.modelToDisplay = annotatedModel;
-    this.viewConfig = transforms.concat(extracts).map(step => step.default.__vivideStepConfig__);
+    this.viewConfig = transforms.concat(extracts).map(step => { step.value.__vivideStepConfig__ } );
   }
   
-  async scriptGotUpdated(urlString) {
-    lively.notify(`received script updated`, urlString);
-    let ownScriptURLString = this.getScriptURLString();
-    if(ownScriptURLString === urlString) {
-      await this.calculateOutputModel();
-      await this.updateWidget();
-    }
+  async updateScript(script) {
+    let module = await boundEval(script);
+    return module;
+  }
+  
+  async scriptGotUpdated(scripts) {
+    lively.notify(`received script updated`, scripts);
+    this.setScripts(scripts);
+    
+    await this.calculateOutputModel();
+    await this.updateWidget();
   }
 
   findAppropriateWidget(model) {
@@ -316,6 +320,7 @@ export default class VivideView extends Morph {
     ];
     
     this.newDataFromUpstream(exampleData);
+    newScriptFromTemplate().then(scripts => this.setScripts(scripts)).then(() => createScriptEditorFor(this));
   }
   
   livelyMigrate(other) {

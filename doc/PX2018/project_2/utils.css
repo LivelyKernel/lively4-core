@@ -1,0 +1,33 @@
+.comment {
+  color: #888;
+  margin-bottom: 3px;
+  font-family: monospace;
+  font-size: 1.2em;
+}
+
+.comment:before {
+  content: "// ";
+  font-family: monospace;
+}
+
+.task-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.task-list .task-list {
+  padding-left: 25px;
+}
+
+.inline {
+  display: inline-block;  
+}
+
+.answer {
+  color: red;
+  padding-left: 30px;
+}
+
+.answer:before {
+  content: "Answer: ";
+}

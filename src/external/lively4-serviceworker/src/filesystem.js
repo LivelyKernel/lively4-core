@@ -100,11 +100,13 @@ export class Filesystem {
   mountsAsJso() {
     let jso = [];
     for (let [path, mount] of this.mounts) {
-      jso.push({
-        path: path,
-        name: mount.name,
-        options: mount.options
-      })
+      if(mount.name !== "sys" && mount.name !== "scheme") {
+        jso.push({
+          path: path,
+          name: mount.name,
+          options: mount.options
+        })        
+      }
     }
     return jso;
   }
@@ -129,6 +131,8 @@ export class Filesystem {
         
         // do nothing with sys fs... is already mounted
         if (mount.name === "sys") continue;
+        if (mount.name === "scheme") continue;
+
         
         let fs = await System.import('./src/external/lively4-serviceworker/src/fs/' + mount.name + '.js');
         this.mount(mount.path, fs.default, mount.options);

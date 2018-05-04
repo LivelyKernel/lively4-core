@@ -256,7 +256,11 @@ export default class HTML {
 
   static saveCurrentPage() {
     var url = lively.preferences.getURLParameter("page");
-    this.savePageAs(url)
+    if (!url) {
+      lively.confirm("Could not save this page...")
+    } else {
+      this.savePageAs(url)
+    }
   }
   
   static savePageAs(url) {

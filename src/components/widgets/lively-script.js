@@ -27,6 +27,7 @@ export default class LivelyScript extends Morph {
   }
     
   async boundEval(str) {
-    return boundEval(str, this)
+    var targetModule = "boundEvalModule" // #TODO make use of this... to separate modules
+    return boundEval(str, this, targetModule) 
   }
 }

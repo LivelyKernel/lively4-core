@@ -12,6 +12,7 @@ import httpfs from './fs/http.js'
 import html5fs from './fs/html5.js'
 import githubfs from './fs/github.js'
 import dropboxfs from './fs/dropbox.js'
+import schemefs from './fs/scheme.js'
 
 import focalStorage from './external/focalStorage.js';
 
@@ -43,6 +44,7 @@ class ServiceWorker {
     // this.filesystem.mount('/', githubfs, {repo: 'LivelyKernel/Lively4', branch: 'master'}); // mounting lively4-core is to irritating
     this.filesystem.mount('/', sysfs, this);
     this.filesystem.mount('/sys', sysfs, this);
+    this.filesystem.mount('/scheme', schemefs, this);
     this.filesystem.mount('/local', html5fs);
 
     // here we should remount previous filesystem (remembered in focalStorage)
@@ -105,7 +107,7 @@ class ServiceWorker {
 
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
 
-    if (url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
+    if (url.hostname !== 'pi' && url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
       try {
         // Prepare a function that performs the network request if necessary
         let doNetworkRequest = () => {
@@ -209,6 +211,16 @@ class ServiceWorker {
             return new Response(content, {status: 500, statusText: message});
           }));
         });
+      } 
+
+      if (pending) {
+        pending.resolve(doNetworkRequest());
+      } else
+        event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
+    } else if (url.hostname === 'pi') {
+      let doNetworkRequest = async () => {
+          // request.clone
+          return new Response("this shortcut is not implemented yet #TODO ");
       } 
 
       if (pending) {

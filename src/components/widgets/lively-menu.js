@@ -103,13 +103,15 @@ export default class LivelyMenu extends Morph {
       var item = document.createElement("li");
       item.entry = ea
       var icon = "<div class='icon'>"+ (ea[3] ? ea[3] : "")+"</div>"
-      var right = " <label>" 
-        + (ea[2] ?  ea[2].replace("CMD","Ctrl")  : "")
-        + "<span class='submenuindicator'> "+ (ea[1] instanceof Array ? "&#9658;" : " ")+" </span>"
-        + "</label>"
-
+      var right = <label>{ea[2] ?
+              (ea[2].replace ? ea[2].replace("CMD","Ctrl")  : ea[2]) :
+              ""}
+        <span class='submenuindicator'>{(ea[1] instanceof Array ? <span>&#9658;</span> : " ")}</span>
+</label>
       
-      item.innerHTML = icon + ea[0] + right 
+      item.innerHTML = icon + ea[0];
+      item.appendChild(right);
+      
       if (ea[1] instanceof Function) {
         var func = ea[1];
         item.addEventListener("click", evt => func(evt, item));
