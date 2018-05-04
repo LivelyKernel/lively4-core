@@ -793,8 +793,6 @@ export default class Container extends Morph {
         return window.open(path);
       }
     }
-    lively.notify("options " + options)
-
     if (options && options.donotfollowpath) {
       fetch(path) // e.g. open://my-component
       return ;
