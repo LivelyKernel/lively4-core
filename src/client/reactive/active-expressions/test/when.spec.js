@@ -44,20 +44,21 @@ describe("when utility", function() {
     await when(() => true);
   });
   
-  xit("allows for other detection strategies", async () => {
+  it("allows for other detection strategies", async () => {
     let spy = sinon.spy();
-    let bool = false;
+    let referenceTime = Date.now();
 
-    when(() => bool, { strategy: frameBasedAExpr.aexpr})
+    // fires in 100 milliseconds
+    when(() => Date.now() >= 100 + referenceTime, { strategy: frameBasedAExpr.aexpr})
       .then(spy);
 
     await wait(50);
     expect(spy).not.to.be.called;
 
-    bool = true;
-    await wait(50);
+    await wait(100);
     expect(spy).to.be.calledOnce;
   });
+  // #TODO: waits for .(de)activate functionality
   xit("propagates configuration to the aexpr constructor function", async () => {
     let spy = sinon.spy();
 
