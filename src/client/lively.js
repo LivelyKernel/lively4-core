@@ -364,7 +364,9 @@ export default class Lively {
     System.import("src/client/graffle.js") // depends on me
     System.import("src/client/draganddrop.js") // depends on me
     System.import("src/client/poid.js") // depends on me
+    // #TODO should we load fetch protocols lazy?
     System.import("demos/plex/plex-scheme.js") // depends on me
+    System.import("src/client/protocols/todoist.js") 
   }
   
 

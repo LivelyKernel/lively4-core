@@ -179,7 +179,7 @@ const dropOnDocumentBehavior = {
       
       new DropOnBodyHandler('text/uri-list', urlString => {
         var link = <div class="lively-content"><a  href={urlString}>
-          {urlString.replace(/.*\//,"")}
+          {urlString.replace(/\/$/,"").replace(/.*\//,"")}
         </a></div>;
         // register the event... to be able to remove it again...
         lively.addEventListener("link", link, "click", evt => {
