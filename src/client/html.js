@@ -158,22 +158,6 @@ export default class HTML {
     Array.prototype.forEach.call(nodes, node => {
       if (node.getAttribute) {
         var href = node.getAttribute("href")
-        if (href && node.classList.contains("play")) {
-          var filename = href.replace(lively4url.replace(/[^\/]*$/,""),"")
-          console.log("fix play link " + filename)
-          node.onclick = () => {
-            lively.notify("play " + filename)
-            fetch(lively4url + "/_meta/play", {
-              headers: new Headers({ 
-                filepath: filename
-              })
-            }).then(r => r.text()).then(t => {
-                console.log("play: " + t)
-            })
-            return false
-          }
-          return
-        } 
         if (href) {
           // #TODO load inplace....
           var path;
@@ -187,7 +171,7 @@ export default class HTML {
             // $(node).click(() => { 
             //   alert("eval " + code)
             // })
-          } else if (href.match(/([A-Za-z]+):\/\/.+/)) {
+          } else if (href.match(/([A-Za-z]+):\/\/.*/)) {
             // console.log("ignore "  + href);
             path = href;
           } else if (href.match(/^\//)) {

@@ -106,7 +106,7 @@ export class PlexScheme extends Scheme {
           }
       ))}</div></html>
       return htmlResponse(html)
-    } else if(query.html || query.index || contentType ==  'text/html') { 
+    } else if(query.table) { 
       // default html rendering
       let table = await lively.create("lively-table")
       try {
@@ -116,6 +116,9 @@ export class PlexScheme extends Scheme {
       }
       html = table     
       return htmlResponse(html)
+    } else if(query.html || query.index || contentType ==  'text/html') { 
+      html = `<plex-media src='plex:/${apiString}'></plex-media>` // a fetchy double dispatch 
+      return new Response(html)
     } else {
       // default xml
       let resp = await this.plexBlob(apiString)
@@ -149,7 +152,7 @@ export class PlexScheme extends Scheme {
           .filter(ea => ea.getAttribute && ea.getAttribute("key"))
           .map(ea => {
             var obj = {
-              name: ea.getAttribute("key"),
+              name: ea.getAttribute("key").replace(/\/children$/,"/"),
               title: ea.getAttribute("title") || ea.getAttribute("title1"),
               contents: [],
               parent: url,
