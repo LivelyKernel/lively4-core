@@ -169,20 +169,19 @@ const insertIdentifierTracker = (path) => {
   // Find the closest parent statement
   let statementParentPath = path.getStatementParent();
 
-  // Check if the parent statement is a a BlockParent
-  // In this case, we have to insert into the block body
-  if(statementParentPath.isBlockParent()) {
-
-    // The init part of a ForStatement is only executed once,
-    // So we don't want to add the tracker to the body
-    /*if(statementParentPath.isForStatement()
-       && path.getPathLocation().indexOf(`${statementParentPath.getPathLocation()}.init`) === 0) {
-      statementParentPath.get("init").get("declarations").push(assignedTracker.declarations[0]);
-    }*/
-
-    // Get body
-    // TODO: Fix for if and switch
+  // We have to insert the tracker at different positions depending on
+  // the context of the tracked Identifier
+  // TODO: Handle switch
+  if(path.parentKey === "params") {
+    // We are in a parameter list
+    // Prepend tracker to body of function
+    const functionParentPath = path.getFunctionParent();
+    functionParentPath.get("body").unshiftContainer("body", tracker);
+  } else if(statementParentPath.isBlockParent()) {
+    // We are in a block
+    // Insert into the block body
     const body = statementParentPath.get("body");
+
     if(body instanceof Array) {
       body.unshift(tracker);
     } else if (body.isBlockStatement()) {
@@ -195,6 +194,10 @@ const insertIdentifierTracker = (path) => {
       );
       body.unshiftContainer("body", tracker);
     }
+  } else if(statementParentPath.isIfStatement()) {
+    // We are in an if
+    // We have to insert the tracker before the if
+    statementParentPath.insertBefore(tracker);
   } else {
     statementParentPath.insertAfter(tracker);
   }

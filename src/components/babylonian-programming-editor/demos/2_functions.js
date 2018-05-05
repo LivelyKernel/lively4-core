@@ -12,6 +12,10 @@ class TestClass {
      const pi = 3.1415026;
      console.log(pi);
    }
+  
+  static square(x) {
+    return x*x;
+  }
 }
 
 // It also works for functions with parameters
