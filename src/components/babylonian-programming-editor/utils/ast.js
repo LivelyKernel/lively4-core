@@ -140,8 +140,8 @@ export const applyProbeMarkers = (ast, markers) => {
  */
 export const applyExampleMarkers = (ast, markers) => {
   // Prepare templates to insert
-  const functionCall = template("ID.apply(THIS, PARAMS)");
-  const methodCall = template("CLASS.ID.apply(THIS, PARAMS)");
+  const functionCall = template("ID.apply(null, PARAMS)");
+  const methodCall = template("CLASS.ID.apply(null, PARAMS)");
   
   // Apply the markers
   markers.forEach((marker) => {
@@ -159,13 +159,11 @@ export const applyExampleMarkers = (ast, markers) => {
       nodeToInsert = methodCall({
         CLASS: types.identifier(className),
         ID: types.identifier(path.node.name),
-        THIS: types.nullLiteral(),
         PARAMS: parametersNode
       });
     } else {
       nodeToInsert = functionCall({
         ID: types.identifier(path.node.name),
-        THIS: types.nullLiteral(),
         PARAMS: parametersNode
       });
     }
