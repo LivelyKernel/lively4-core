@@ -19,7 +19,8 @@
 }
 
 .annotation.example {
-  display: none;
+  background-color: hsla(41, 69%, 38%, 0.5);
+  color: hsl(41, 69%, 8%);
 }
 
 .annotation > input {

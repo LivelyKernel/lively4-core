@@ -1,4 +1,4 @@
-// This function is never called in the code...
+// This function is never called in the code
 // Try defining an example for it
 function someFunction() {
   let celcius = 24;
@@ -12,4 +12,13 @@ class TestClass {
      const pi = 3.1415026;
      console.log(pi);
    }
+}
+
+// It also works for functions with parameters
+function max(a, b) {
+  if(a > b) {
+    return a;
+  } else {
+    return b;
+  }
 }

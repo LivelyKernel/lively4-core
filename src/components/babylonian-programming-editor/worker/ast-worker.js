@@ -119,39 +119,41 @@ const applyProbeMarkers = (ast, markers) => {
  */
 const applyExampleMarkers = (ast, markers) => {
   // Prepare templates to insert
-  const functionCall = template("ID()");
-  const methodCall = template("CLASS.ID()");
+  const functionCall = template("ID.apply(THIS, PARAMS)");
+  const methodCall = template("CLASS.ID.apply(THIS, PARAMS)");
   
-  // Get tracked functions
-  const exampleIdentifiers = markers.map(marker => ast._locationMap[marker.loc].node);
-  const nodesToInsert = [];
-  
-  // Gather new nodes to insert
-  traverse(ast, {
-    Identifier(path) {
-      if(!exampleIdentifiers.includes(path.node)) {
-        return;
-      }
-      
-      let nodeToInsert;
-      const functionParent = path.getFunctionParent();
-      if(functionParent.isClassMethod()) {
-        const className = functionParent.getStatementParent().get("id").get("name").node;
-        nodeToInsert = methodCall({
-          CLASS: types.identifier(className),
-          ID: types.identifier(path.node.name)
-        });
-      } else {
-        nodeToInsert = functionCall({
-          ID: types.identifier(path.node.name)
-        });
-      }
-      nodesToInsert.push(nodeToInsert);
+  // Apply the markers
+  markers.forEach((marker) => {
+    let parametersNode = marker.replacementNode;
+    if(!parametersNode) {
+      parametersNode = types.nullLiteral();
+    }
+    const path = ast._locationMap[marker.loc];
+    const functionParent = path.getFunctionParent()
+    let nodeToInsert;
+    
+    // Distinguish between Methods and Functions
+    if(functionParent.isClassMethod()) {
+      const className = functionParent.getStatementParent().get("id").get("name").node;
+      nodeToInsert = methodCall({
+        CLASS: types.identifier(className),
+        ID: types.identifier(path.node.name),
+        THIS: types.nullLiteral(),
+        PARAMS: parametersNode
+      });
+    } else {
+      nodeToInsert = functionCall({
+        ID: types.identifier(path.node.name),
+        THIS: types.nullLiteral(),
+        PARAMS: parametersNode
+      });
+    }
+    
+    // Insert a call at the end of the script
+    if(nodeToInsert) {
+      ast.program.body.push(nodeToInsert);
     }
   });
-  
-  // Insert collected new nodes
-  nodesToInsert.map(n => ast.program.body.push(n));
 }
 
 /**

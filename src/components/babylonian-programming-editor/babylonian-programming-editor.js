@@ -50,7 +50,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -246,13 +246,21 @@ export default class BabylonianProgrammingEditor extends Morph {
                               .filter(m => m._babylonian);
     if(existingMarks.length > 0) {
       existingMarks.map(this.removeMarker.bind(this));
-    } else if((newMarkerKind === "probe" && canBeProbed(this.selectedPath))
-               || (newMarkerKind === "example" && canBeExample(this.selectedPath))) {
+    } else if(newMarkerKind === "probe" && canBeProbed(this.selectedPath)) {
       this.markers[newMarkerKind].set(
         addMarker(this.editor(), loc, [newMarkerKind]),
         new Annotation(this.editor(), loc.to.line, newMarkerKind)
       );
     } else if(newMarkerKind === "replace") {
+      const marker = addMarker(this.editor(), loc, [newMarkerKind]);
+      this.markers[newMarkerKind].set(
+        marker,
+        new Form(this.editor(), loc.to.line, newMarkerKind, null, (newValue) => {
+          marker._replacementNode = replacementNodeForCode(newValue);
+          this.evaluate();
+        })
+      );
+    } else if(newMarkerKind === "example" && canBeExample(this.selectedPath)) {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
         marker,
@@ -271,7 +279,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update annotations for replacements
     this.markers.replace.forEach((annotation, marker) => {
       const markerLoc = marker.find();
-      annotation.update([["number", 24]], markerLoc.from.ch);
+      annotation.update(null, markerLoc.from.ch);
     });
     
     // Update annotations for probes
@@ -285,6 +293,12 @@ export default class BabylonianProgrammingEditor extends Morph {
         values = [["??", "??"]];
       }
       annotation.update(values, markerLoc.from.ch);
+    });
+    
+    // Update annotations for examples
+    this.markers.example.forEach((annotation, marker) => {
+      const markerLoc = marker.find();
+      annotation.update(null, markerLoc.from.ch);
     });
   }
 
