@@ -82,9 +82,5 @@ export class Form extends Annotation {
   _updateElement() {
     this._element.style.left = `${this.indent}ch`;
   }
-  
-  getReplacementNode() {
-    
-  }
 }
 

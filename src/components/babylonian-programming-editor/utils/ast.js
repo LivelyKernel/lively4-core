@@ -48,6 +48,15 @@ export const canBeExample = (path) => {
 }
 
 /**
+ * Checks whether a path can be replaced
+ */
+export const canBeReplaced = (path) => {
+  // We have to be the righthand side of an assignment
+  return ((path.parentPath.isVariableDeclarator() && path.parentKey === "init")
+          || (path.parentPath.isAssignmentExpression() && path.parentKey === "right"));
+}
+
+/**
  * Generates a replacement node
  * (to be used as the righthand side of an assignment)
  */

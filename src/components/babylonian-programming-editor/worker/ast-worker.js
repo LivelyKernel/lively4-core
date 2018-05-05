@@ -177,11 +177,14 @@ const insertIdentifierTracker = (path) => {
     // Prepend tracker to body of function
     const functionParentPath = path.getFunctionParent();
     functionParentPath.get("body").unshiftContainer("body", tracker);
+  } else if(statementParentPath.isReturnStatement()) {
+    // We are in a return statement
+    // Prepend the tracker to the return
+    statementParentPath.insertBefore(tracker);
   } else if(statementParentPath.isBlockParent()) {
     // We are in a block
     // Insert into the block body
     const body = statementParentPath.get("body");
-
     if(body instanceof Array) {
       body.unshift(tracker);
     } else if (body.isBlockStatement()) {

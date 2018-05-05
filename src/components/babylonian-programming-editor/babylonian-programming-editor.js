@@ -16,6 +16,7 @@ import {
   generateLocationMap,
   canBeProbed,
   canBeExample,
+  canBeReplaced,
   replacementNodeForCode
 } from "./utils/ast.js";
 
@@ -251,7 +252,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         addMarker(this.editor(), loc, [newMarkerKind]),
         new Annotation(this.editor(), loc.to.line, newMarkerKind)
       );
-    } else if(newMarkerKind === "replace") {
+    } else if(newMarkerKind === "replace" && canBeReplaced(this.selectedPath)) {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
         marker,
