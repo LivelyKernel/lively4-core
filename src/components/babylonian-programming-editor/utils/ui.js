@@ -67,6 +67,11 @@ export class Form extends Annotation {
     if(!this.node) {
       const textfield = document.createElement("input");
       textfield.setAttribute("type", "text");
+      textfield.setAttribute("size", 1);
+      
+      textfield.addEventListener("input", () => {
+        textfield.setAttribute("size", textfield.value.length ? textfield.value.length : 1);
+      });
       textfield.addEventListener("change", () => {
         changeCallback(textfield.value);
       });

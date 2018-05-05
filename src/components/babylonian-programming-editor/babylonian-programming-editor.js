@@ -265,7 +265,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.markers[newMarkerKind].set(
         marker,
         new Form(this.editor(), loc.to.line, newMarkerKind, null, (newValue) => {
-          marker._replacementNode = replacementNodeForCode(newValue);
+          marker._replacementNode = replacementNodeForCode(`[${newValue}]`);
           this.evaluate();
         })
       );
