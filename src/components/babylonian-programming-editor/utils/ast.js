@@ -33,7 +33,7 @@ export const generateLocationMap = (ast) => {
  */
 export const canBeProbed = (path) => {
   // TODO: More sophisticated check
-  return path.isIdentifier();
+  return path.isIdentifier() || path.isReturnStatement();
 }
 
 /**

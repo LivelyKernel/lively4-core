@@ -187,6 +187,7 @@ export default class BabylonianProgrammingEditor extends Morph {
           this.ids[id] = [];
         }
         this.ids[id].push([typeof(value), value]);
+        return value;
       },
       block: function(id) {
         this.blocks.push(id);

@@ -98,15 +98,16 @@ const applyReplaceMarkers = (ast, markers) => {
  * Applies probe markers to the given AST
  */
 const applyProbeMarkers = (ast, markers) => {
-  const trackedIdentifiers = markers.map(marker => ast._locationMap[marker.loc].node);
+  const trackedNodes = markers.map(marker => ast._locationMap[marker.loc].node);
 
   traverse(ast, {
     Identifier(path) {
-      if(!trackedIdentifiers.includes(path.node)) {
-        return;
-      }
-      
+      if(!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
+    },
+    ReturnStatement(path) {
+      if(!trackedNodes.includes(path.node)) return;
+      insertReturnTracker(path);
     },
     BlockStatement(path) {
       insertBlockTracker(path);
@@ -205,6 +206,17 @@ const insertIdentifierTracker = (path) => {
     statementParentPath.insertAfter(tracker);
   }
 };
+
+/**
+ * Insers an appropriate tracker for the given return statement
+ */
+const insertReturnTracker = (path) => {
+  const returnTracker = template("window.__tracker.id(ID, VALUE)")({
+    ID: types.numericLiteral(path.node._id),
+    VALUE: path.node.argument
+  });
+  path.get("argument").replaceWith(returnTracker);
+}
 
 /**
  * Inserts a tracker to check whether a block was entered
