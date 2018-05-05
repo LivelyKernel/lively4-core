@@ -1,9 +1,18 @@
 // Package imports
 import { babel } from 'systemjs-babel-build';
-const { types, template, transform, transformFromAst, traverse } = babel;
+const { 
+  types, 
+  template, 
+  traverse
+} = babel;
 
 // Custom imports
-import { deepCopy, generateLocationMap } from "../utils/ast.js";
+import {
+  deepCopy,
+  generateLocationMap,
+  astForCode,
+  codeForAst
+} from "../utils/ast.js";
 
 
 /**
@@ -24,7 +33,7 @@ export default onmessage = function(msg) {
     applyExampleMarkers(ast, markers.example);
 
     // Generate executable code
-    const executableCode = generateCode(ast);
+    const executableCode = codeForAst(ast);
 
     // Send result
     return respond(msg.data.id, originalAst, executableCode);
@@ -51,20 +60,7 @@ const respond = (id, ast = null, code = null) =>
  * Parses code and returns the corresponding AST
  */
 const parse = (code) =>
-  assignIds(transform(code, {
-      babelrc: false,
-      plugins: [],
-      presets: [],
-      filename: undefined,
-      sourceFileName: undefined,
-      moduleIds: false,
-      sourceMaps: false,
-      compact: false,
-      comments: true,
-      code: false,
-      ast: true,
-      resolveModuleSource: undefined
-    }).ast);
+  assignIds(astForCode(code));
 
 /**
  * Assigns IDs to add nodes of the AST
@@ -212,21 +208,4 @@ const insertBlockTracker = (path) => {
   path.unshiftContainer("body", tracker);
 };
 
-/**
- * Generates executable code for a given AST
- */
-const generateCode = (ast) =>
-  transformFromAst(ast, {
-    babelrc: false,
-    plugins: [],
-    presets: [],
-    filename: undefined,
-    sourceFileName: undefined,
-    moduleIds: false,
-    sourceMaps: false,
-    compact: false,
-    comments: true,
-    code: true,
-    ast: false,
-    resolveModuleSource: undefined
-  }).code;
+

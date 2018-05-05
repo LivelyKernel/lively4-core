@@ -1,5 +1,9 @@
 import { babel } from 'systemjs-babel-build';
-const { traverse, transform } = babel;
+const {
+  traverse,
+  transform,
+  transformFromAst
+} = babel;
 
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
@@ -44,25 +48,48 @@ export const canBeExample = (path) => {
 }
 
 /**
- * Generates a replacement node (without expression) for a given code
+ * Generates a replacement node
+ * (to be used as the righthand side of an assignment)
  */
 export const replacementNodeForCode = (code) => {
+  // The code we get here will be used as the righthand side of an Assignment
+  // We we pretend that it is that while parsing
+  code = `placeholder = ${code}`;
   const ast = astForCode(code);
-  return ast.program.body[0].expression;
+  
+  return ast.program.body[0].expression.right;
 }
 
-const astForCode = (code) =>
-  transform(code, {
-    babelrc: false,
-    plugins: [],
-    presets: [],
-    filename: undefined,
-    sourceFileName: undefined,
-    moduleIds: false,
-    sourceMaps: false,
-    compact: false,
-    comments: true,
+/**
+ * All the standard parameters for bablylon
+ */
+const BABYLON_CONFIG = {
+  babelrc: false,
+  plugins: [],
+  presets: [],
+  filename: undefined,
+  sourceFileName: undefined,
+  moduleIds: false,
+  sourceMaps: false,
+  compact: false,
+  comments: false,
+  resolveModuleSource: undefined
+};
+
+/**
+ * Parses code and returns the AST
+ */
+export const astForCode = (code) =>
+  transform(code, Object.assign({}, BABYLON_CONFIG, {
     code: false,
-    ast: true,
-    resolveModuleSource: undefined
-  }).ast
+    ast: true
+  })).ast
+
+/**
+ * Generates executable code for a given AST
+ */
+export const codeForAst = (ast) =>
+  transformFromAst(ast, Object.assign({}, BABYLON_CONFIG, {
+    code: true,
+    ast: false
+  })).code;
