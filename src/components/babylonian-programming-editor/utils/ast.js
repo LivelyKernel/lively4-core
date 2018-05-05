@@ -41,8 +41,10 @@ export const generateLocationMap = (ast) => {
  * Checks whether a path can be probed
  */
 export const canBeProbed = (path) => {
-  // TODO: More sophisticated check
-  return path.isIdentifier() || path.isReturnStatement();
+  const isTrackableIdentifier = path.isIdentifier() && !path.parentPath.isMemberExpression();
+  const isTrackableMemberExpression = path.isMemberExpression();
+  const isTrackableReturnStatement = path.isReturnStatement();
+  return isTrackableIdentifier || isTrackableMemberExpression || isTrackableReturnStatement;
 }
 
 /**
@@ -125,6 +127,10 @@ export const applyProbeMarkers = (ast, markers) => {
       if(!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
     },
+    MemberExpression(path) {
+      if(!trackedNodes.includes(path.node)) return;
+      insertIdentifierTracker(path);
+    },
     ReturnStatement(path) {
       if(!trackedNodes.includes(path.node)) return;
       insertReturnTracker(path);
@@ -182,7 +188,7 @@ const insertIdentifierTracker = (path) => {
   // Prepare Trackers
   const tracker = template("window.__tracker.id(ID, VALUE)")({
     ID: types.numericLiteral(path.node._id),
-    VALUE: types.identifier(path.node.name)
+    VALUE: deepCopy(path.node)
   });
 
   // Find the closest parent statement
