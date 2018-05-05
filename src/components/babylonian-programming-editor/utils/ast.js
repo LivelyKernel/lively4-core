@@ -23,7 +23,14 @@ export const generateLocationMap = (ast) => {
 
   traverse(ast, {
     enter(path) {
-      ast._locationMap[LocationConverter.astToKey(path.node.loc)] = path;
+      let location = path.node.loc;
+      // ReturnStatement is an exception
+      // We want to only associate it with the "return" token
+      if(path.isReturnStatement()) {
+        location.end.line = location.start.line;
+        location.end.column = location.start.column + "return".length;
+      }
+      ast._locationMap[LocationConverter.astToKey(location)] = path;
     }
   });
 };
