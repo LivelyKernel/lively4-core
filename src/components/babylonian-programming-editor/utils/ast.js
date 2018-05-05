@@ -55,9 +55,13 @@ export const replacementNodeForCode = (code) => {
   // The code we get here will be used as the righthand side of an Assignment
   // We we pretend that it is that while parsing
   code = `placeholder = ${code}`;
-  const ast = astForCode(code);
-  
-  return ast.program.body[0].expression.right;
+  try {
+    const ast = astForCode(code);
+    return ast.program.body[0].expression.right;
+  } catch (e) {
+    console.warn("Error parsing replacement node", e);
+    return null;
+  }
 }
 
 /**
