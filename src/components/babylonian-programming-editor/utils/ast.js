@@ -1,6 +1,8 @@
 import { babel } from 'systemjs-babel-build';
 const {
   traverse,
+  template,
+  types,
   transform,
   transformFromAst
 } = babel;
@@ -81,7 +83,173 @@ export const replacementNodeForCode = (code) => {
 }
 
 /**
- * All the standard parameters for bablylon
+ * Assigns IDs to add nodes of the AST
+ */
+export const assignIds = (ast) => {
+  let idCounter = 1;
+  traverse(ast, {
+    enter(path) {
+      path.node._id = idCounter++;
+    }
+  });
+  return ast;
+};
+
+/**
+ * Applies replace markers to the given AST
+ */
+export const applyReplaceMarkers = (ast, markers) => {
+  // Apply the markers
+  markers.forEach((marker) => {
+    const replacementNode = marker.replacementNode;
+    if(!replacementNode) {
+      return;
+    }
+    const path = ast._locationMap[marker.loc];
+    if(path.parentPath.isVariableDeclarator()) {
+      path.parent.init = replacementNode;
+    } else {
+      path.replaceWith(replacementNode);
+    }
+  });
+};
+
+/**
+ * Applies probe markers to the given AST
+ */
+export const applyProbeMarkers = (ast, markers) => {
+  const trackedNodes = markers.map(marker => ast._locationMap[marker.loc].node);
+
+  traverse(ast, {
+    Identifier(path) {
+      if(!trackedNodes.includes(path.node)) return;
+      insertIdentifierTracker(path);
+    },
+    ReturnStatement(path) {
+      if(!trackedNodes.includes(path.node)) return;
+      insertReturnTracker(path);
+    },
+    BlockStatement(path) {
+      insertBlockTracker(path);
+    }
+  });
+};
+
+/**
+ * Applies example markers to the given AST
+ */
+export const applyExampleMarkers = (ast, markers) => {
+  // Prepare templates to insert
+  const functionCall = template("ID.apply(THIS, PARAMS)");
+  const methodCall = template("CLASS.ID.apply(THIS, PARAMS)");
+  
+  // Apply the markers
+  markers.forEach((marker) => {
+    let parametersNode = marker.replacementNode;
+    if(!parametersNode) {
+      parametersNode = types.nullLiteral();
+    }
+    const path = ast._locationMap[marker.loc];
+    const functionParent = path.getFunctionParent()
+    let nodeToInsert;
+    
+    // Distinguish between Methods and Functions
+    if(functionParent.isClassMethod()) {
+      const className = functionParent.getStatementParent().get("id").get("name").node;
+      nodeToInsert = methodCall({
+        CLASS: types.identifier(className),
+        ID: types.identifier(path.node.name),
+        THIS: types.nullLiteral(),
+        PARAMS: parametersNode
+      });
+    } else {
+      nodeToInsert = functionCall({
+        ID: types.identifier(path.node.name),
+        THIS: types.nullLiteral(),
+        PARAMS: parametersNode
+      });
+    }
+    
+    // Insert a call at the end of the script
+    if(nodeToInsert) {
+      ast.program.body.push(nodeToInsert);
+    }
+  });
+}
+
+/**
+ * Insers an appropriate tracker for the given identifier path
+ */
+const insertIdentifierTracker = (path) => {
+  // Prepare Trackers
+  const tracker = template("window.__tracker.id(ID, VALUE)")({
+    ID: types.numericLiteral(path.node._id),
+    VALUE: types.identifier(path.node.name)
+  });
+
+  // Find the closest parent statement
+  let statementParentPath = path.getStatementParent();
+
+  // We have to insert the tracker at different positions depending on
+  // the context of the tracked Identifier
+  // TODO: Handle switch
+  if(path.parentKey === "params") {
+    // We are in a parameter list
+    // Prepend tracker to body of function
+    const functionParentPath = path.getFunctionParent();
+    functionParentPath.get("body").unshiftContainer("body", tracker);
+  } else if(statementParentPath.isReturnStatement()) {
+    // We are in a return statement
+    // Prepend the tracker to the return
+    statementParentPath.insertBefore(tracker);
+  } else if(statementParentPath.isBlockParent()) {
+    // We are in a block
+    // Insert into the block body
+    const body = statementParentPath.get("body");
+    if(body instanceof Array) {
+      body.unshift(tracker);
+    } else if (body.isBlockStatement()) {
+      body.unshiftContainer("body", tracker);
+    } else {
+      body.replaceWith(
+        types.blockStatement([
+          body
+        ])
+      );
+      body.unshiftContainer("body", tracker);
+    }
+  } else if(statementParentPath.isIfStatement()) {
+    // We are in an if
+    // We have to insert the tracker before the if
+    statementParentPath.insertBefore(tracker);
+  } else {
+    statementParentPath.insertAfter(tracker);
+  }
+};
+
+/**
+ * Insers an appropriate tracker for the given return statement
+ */
+const insertReturnTracker = (path) => {
+  const returnTracker = template("window.__tracker.id(ID, VALUE)")({
+    ID: types.numericLiteral(path.node._id),
+    VALUE: path.node.argument
+  });
+  path.get("argument").replaceWith(returnTracker);
+}
+
+/**
+ * Inserts a tracker to check whether a block was entered
+ */
+const insertBlockTracker = (path) => {
+  const tracker = template("window.__tracker.block(ID)")({
+    ID: types.numericLiteral(path.node._id)
+  });
+  path.unshiftContainer("body", tracker);
+};
+
+/**
+ * All the standard parameters for babylon
  */
 const BABYLON_CONFIG = {
   babelrc: false,
