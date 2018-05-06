@@ -1,4 +1,8 @@
 export class VibratingPoint {
+  constructor() {
+    
+  }
+  
   get numParticles() {
     return 1;
   }
