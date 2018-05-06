@@ -23,6 +23,26 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
     background-color: #fff;
   }
   
+  .lively-slide.fullscreen .title-frontpage {
+    color: #2B547E;
+    font-weight: bold;
+    font-size: 40pt;
+    width: calc(100% - 40px);
+    top: 25%;
+    text-align: center;
+    position: absolute;
+  }
+  
+  .lively-slide.fullscreen .title-1 {
+    color: #2B547E;
+    font-weight: bold;
+    font-size: 40pt;
+    position: absolute;
+    top: 50px; 
+    width: calc(100% - 40px);
+    text-align: center;
+  }
+  
   p {
     font-size: 18pt
   }
@@ -67,8 +87,8 @@ if (presentation && presentation.slides) {
 presentButton
 </script>
 
-<div class="title">
-  RP 2018: Seminar on Reactive Programming - Hierarchical Data and Asynchronicity for VivideJS
+<div class="title-frontpage">
+  RP 2018: Seminar on Reactive Programming<br />- Hierarchical Data and Asynchronicity for VivideJS -
 </div>
 
 <div class="authors">
@@ -92,28 +112,23 @@ presentButton
 
 
 --- 
-
-# Context/Motivation
-
-- 
+<div class="title-1">Context/Motivation</div>
 
 ---
-
-# Design Space
+<div class="title-1">Design Space</div>
 
 
 ---
-
-# Done
+<div class="title-1">Done</div>
 
 - Tree View
 - First level children
 
 ---
-
-# Next Steps
+<div class="title-1">Next Steps</div>
 
 - Complete Tree View
+
   - Processing 
 
 ---
