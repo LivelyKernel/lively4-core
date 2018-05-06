@@ -9,6 +9,7 @@ import forge from 'node_modules/node-forge/dist/forge.min.js';
 
 export default class Transaction {
   constructor(senderWallet, inputCollection, outputCollection) {
+    this.timestamp = Date.now();
     this.senderHash = senderWallet.hash;
     this.senderPublicKey = senderWallet.publicKey;
     this.inputs = inputCollection;
@@ -37,7 +38,7 @@ export default class Transaction {
     return this.signature != null;
   }
   
-  isOwner(senderPublicKey) {
+  isVerified() {
     if (!this.isSigned()) {
       return false;
     }
@@ -46,8 +47,8 @@ export default class Transaction {
     // if anything was changed, this hash will not match the encrypted hash (signature)
     var hash = this._hash();
     
-    // decrypt the signature using the given public key (==> hash) and compare with the hash we just calculated
-    return senderPublicKey.verify(hash.digest().bytes(), this.signature);
+    // decrypt the signature using the public key (==> hash) and compare with the hash we just calculated
+    return this.senderPublicKey.verify(hash.digest().bytes(), this.signature);
   }
   
   inputValue() {
@@ -65,6 +66,7 @@ export default class Transaction {
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
+      this.timestamp + 
       this.senderHash + 
       this.senderPublicKey + 
       this.inputs.hash + 
