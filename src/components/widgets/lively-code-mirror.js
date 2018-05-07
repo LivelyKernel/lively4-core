@@ -505,14 +505,15 @@ export default class LivelyCodeMirror extends HTMLElement {
       })
     }
     if (promisedWidget) {
-      var widget = await promisedWidget;
-      var span = <span style="border-top:2px solid darkgray;color:darkblue">
-        {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>
-      widget.parentElement.insertBefore(span, widget)
-      span.appendChild(widget)
-      if (isAsync && promisedWidget) {
-        if (widget) widget.style.border = "2px dashed blue"
-      }
+        var widget = await promisedWidget;
+        var span = <span style="border-top:2px solid darkgray;color:darkblue">
+          {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>
+        widget.parentElement.insertBefore(span, widget)
+        span.appendChild(widget)
+        if (isAsync && promisedWidget) {
+          if (widget) widget.style.border = "2px dashed blue"
+        }
+      
     } 
   }
     
