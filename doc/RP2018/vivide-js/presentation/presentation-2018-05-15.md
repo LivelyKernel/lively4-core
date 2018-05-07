@@ -2,6 +2,8 @@
 
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
+
+let presentationSize = "big";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 
@@ -15,7 +17,16 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
     page-break-before: always;
   }
   
-  .lively-slide.fullscreen {
+  .lively-slide.fullscreen-small {
+    position:fixed;
+    width: 1024px;
+    height: 768px;
+    box-sizing: border-box;
+    background-color: #fff;
+    z-index: 10001;
+  }
+  
+  .lively-slide.fullscreen-big {
     position:fixed;
     width: 100%;
     height: 100%;
@@ -24,51 +35,81 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
     z-index: 10001;
   }
   
-  .lively-slide.fullscreen .title-frontpage {
+  .lively-slide .title-frontpage {
     color: #2B547E;
     font-weight: bold;
-    font-size: 44pt;
+    font-size: 26pt;
     width: calc(100% - 40px);
-    top: 20%;
+    top: 25%;
     text-align: center;
     position: absolute;
   }
   
-  .lively-slide.fullscreen .authors {
+  .lively-slide.fullscreen-big .title-frontpage {
+    font-size: 44pt;
+  }
+  
+  .lively-slide .authors {
     position: absolute;
     width: calc(100% - 40px);
     text-align: center;
+    top: 300px;
+    font-size: 20pt;
+  }
+  
+  .lively-slide.fullscreen-big .authors {
     top: 500px;
     font-size: 32pt;
   }
   
-  .lively-slide.fullscreen .credentials {
+  .lively-slide .credentials {
     position: absolute;
     width: calc(100% - 40px);
     text-align: center;
+    top: 400px;
+    font-size: 18pt;
+  }
+  
+  .lively-slide.fullscreen-big .credentials {
     top: 700px;
     font-size: 28pt;
   }
   
-  .lively-slide.fullscreen .notes {
+  .lively-slide .notes {
     position: absolute;
-    left: 250px;
-    top: 220px;
+    left: 100px;
+    top: 120px;
   }
   
-  .lively-slide.fullscreen .notes li {
+  .lively-slide.fullscreen-big .notes {
+    position: absolute;
+    left: 250px;
+    top: 230px;
+  }
+  
+  .lively-slide .notes li {
+    font-size: 24pt;
+    line-height: 1.5em;
+  }
+  
+  .lively-slide.fullscreen-big .notes li {
     font-size: 36pt;
     line-height: 2em;
   }
   
-  .lively-slide.fullscreen .title-1 {
+  .lively-slide .title-1 {
     color: #2B547E;
     font-weight: bold;
-    font-size: 50pt;
+    font-size: 36pt;
     position: absolute;
-    top: 75px; 
+    top: 40px; 
     width: calc(100% - 40px);
     text-align: center;
+  }
+  
+  .lively-slide.fullscreen-big .title-1 {
+    font-size: 50pt;
+    top: 75px; 
   }
   
   p {
@@ -92,7 +133,7 @@ presentButton.addEventListener("click", () => {
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
-    slide.className += ' fullscreen';
+    slide.className += ' fullscreen-' + presentationSize;
   })
   presentButton.style.display = 'none';
   prevButton.style.display = 'none';
@@ -191,7 +232,7 @@ closeButton.addEventListener("click", () => {
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
-    slide.className = slide.className.replace('fullscreen', '');
+    slide.className = slide.className.replace('fullscreen-' + presentationSize, '');
   })
   
   presentButton.style.display = 'inline';
