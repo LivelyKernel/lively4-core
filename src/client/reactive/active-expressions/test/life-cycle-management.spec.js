@@ -144,5 +144,18 @@ describe("life-cycle management", function() {
     xit('works', () => {
       // #TODO: proper test first
     });
-  });
+
+    xit('works instantaneously', () => {
+      let spy = sinon.spy();
+      let bool = false
+      aexpr(() => bool)
+        .disposeOnLastCallbackDetached()
+        .onChange(spy)
+        .offChange(spy);
+      
+      bool = true;
+      // #TODO: use `aexpr.isDisposed()` instead
+      expect(spy).not.to.be.called;
+    });
+});
 });
