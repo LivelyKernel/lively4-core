@@ -185,10 +185,11 @@ presentButton
 <div class="title-1">Context/Motivation</div>
 
 <ul class="notes">
-<li>Test</li>
-<li>Bla</li>
-<li>Foo</li>
-<li>Test</li>
+<li>System: VivideJS</li>
+<li>Provide data in a task-oriented form</li>
+<li>Already in a live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>Explore data by utilizing different views</li>
+<li>Adapt the views while exploring the data</li>
 </ul>
 
 ---
@@ -205,20 +206,23 @@ presentButton
 <div class="title-1">Done</div>
 
 <ul class="notes">
-<li>Test</li>
-<li>Bla</li>
-<li>Foo</li>
-<li>Test</li>
+<li>Scripts are saved in the corresponding view</li>
+<li>First level of descents + tree view: <div class="inline"><script>openComponent('vivide-view', 'Vivide View')</script></div></li>
 </ul>
+
+<img alt="Hier hätte ein Vivide View und sein Script Editor erscheinen müssen..." src="">
 
 ---
 <div class="title-1">Next Steps</div>
 
 <ul class="notes">
-<li>Test</li>
-<li>Bla</li>
-<li>Foo</li>
-<li>Test</li>
+<li>Multi-level hierarchies</li>
+  <ul>
+  <li>Scripts for each level</li>
+  <li>Children are processed on demand</li>
+  </ul>
+<li>Improved view connection management</li>
+<li>Processing asynchronous data</li>
 </ul>
 
 ---
