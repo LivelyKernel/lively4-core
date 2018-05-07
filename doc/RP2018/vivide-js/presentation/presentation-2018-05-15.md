@@ -5,9 +5,9 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 
-<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
-<link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
-<link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
+<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css" />
+<link rel="stylesheet" type="text/css" href="src/client/lively.css" />
+<link rel="stylesheet" type="text/css" href="templates/livelystyle.css" />
 
 <style>
   .lively-slide {
@@ -21,24 +21,52 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
     height: 100%;
     box-sizing: border-box;
     background-color: #fff;
+    z-index: 10001;
   }
   
   .lively-slide.fullscreen .title-frontpage {
     color: #2B547E;
     font-weight: bold;
-    font-size: 40pt;
+    font-size: 44pt;
     width: calc(100% - 40px);
-    top: 25%;
+    top: 20%;
     text-align: center;
     position: absolute;
+  }
+  
+  .lively-slide.fullscreen .authors {
+    position: absolute;
+    width: calc(100% - 40px);
+    text-align: center;
+    top: 500px;
+    font-size: 32pt;
+  }
+  
+  .lively-slide.fullscreen .credentials {
+    position: absolute;
+    width: calc(100% - 40px);
+    text-align: center;
+    top: 700px;
+    font-size: 28pt;
+  }
+  
+  .lively-slide.fullscreen .notes {
+    position: absolute;
+    left: 250px;
+    top: 220px;
+  }
+  
+  .lively-slide.fullscreen .notes li {
+    font-size: 36pt;
+    line-height: 2em;
   }
   
   .lively-slide.fullscreen .title-1 {
     color: #2B547E;
     font-weight: bold;
-    font-size: 40pt;
+    font-size: 50pt;
     position: absolute;
-    top: 50px; 
+    top: 75px; 
     width: calc(100% - 40px);
     text-align: center;
   }
@@ -61,13 +89,14 @@ let presentation = lively.query(this, "lively-presentation");
 let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
 presentButton.addEventListener("click", () => {
-  
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
     slide.className += ' fullscreen';
   })
   presentButton.style.display = 'none';
+  prevButton.style.display = 'none';
+  nextButton.style.display = 'none';
 })
 
 if (presentation && presentation.slides) {
@@ -114,22 +143,42 @@ presentButton
 --- 
 <div class="title-1">Context/Motivation</div>
 
+<ul class="notes">
+<li>Test</li>
+<li>Bla</li>
+<li>Foo</li>
+<li>Test</li>
+</ul>
+
 ---
 <div class="title-1">Design Space</div>
 
+<ul class="notes">
+<li>Test</li>
+<li>Bla</li>
+<li>Foo</li>
+<li>Test</li>
+</ul>
 
 ---
 <div class="title-1">Done</div>
 
-- Tree View
-- First level children
+<ul class="notes">
+<li>Test</li>
+<li>Bla</li>
+<li>Foo</li>
+<li>Test</li>
+</ul>
 
 ---
 <div class="title-1">Next Steps</div>
 
-- Complete Tree View
-
-  - Processing 
+<ul class="notes">
+<li>Test</li>
+<li>Bla</li>
+<li>Foo</li>
+<li>Test</li>
+</ul>
 
 ---
 
