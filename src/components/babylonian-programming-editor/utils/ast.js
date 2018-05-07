@@ -253,6 +253,14 @@ const insertBlockTracker = (path) => {
 };
 
 /**
+ * Returns a list of parameter names for the given function Identifier
+ */
+export const parameterNamesForFunctionIdentifier = (path) => {
+  let parameterIdentifiers = path.getFunctionParent().get("params");
+  return parameterIdentifiers.map(id => id.node.name);
+}
+
+/**
  * All the standard parameters for babylon
  */
 const BABYLON_CONFIG = {

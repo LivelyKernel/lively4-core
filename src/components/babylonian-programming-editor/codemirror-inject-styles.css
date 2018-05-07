@@ -1,4 +1,4 @@
-.annotation {
+.line-widget {
   position: relative;
   display: inline-block;
   border-bottom-left-radius: 3px;
@@ -7,22 +7,22 @@
   padding: 0 4px;
 }
 
-.annotation.probe {
+.line-widget.probe {
   background-color: hsla(198, 69%, 67%, 0.5);
   color: hsl(198, 69%, 17%);
 }
 
-.annotation.replace {
+.line-widget.replace {
   background-color: hsla(344, 54%, 63%, 0.5);
   color: hsl(344, 54%, 13%);
 }
 
-.annotation.example {
+.line-widget.example {
   background-color: hsla(41, 69%, 38%, 0.5);
   color: hsl(41, 69%, 8%);
 }
 
-.annotation > input {
+.line-widget > input {
   background: transparent;
   border: none;
   font: inherit;

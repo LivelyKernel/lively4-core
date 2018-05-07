@@ -9,6 +9,7 @@ import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
   Annotation,
+  Input,
   Form,
   addMarker
 } from "./utils/ui.js";
@@ -17,7 +18,8 @@ import {
   canBeProbed,
   canBeExample,
   canBeReplaced,
-  replacementNodeForCode
+  replacementNodeForCode,
+  parameterNamesForFunctionIdentifier
 } from "./utils/ast.js";
 
 // Constants
@@ -257,19 +259,30 @@ export default class BabylonianProgrammingEditor extends Morph {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
         marker,
-        new Form(this.editor(), loc.to.line, newMarkerKind, null, (newValue) => {
-          marker._replacementNode = replacementNodeForCode(newValue);
-          this.evaluate();
-        })
+        new Input(
+          this.editor(),
+          loc.to.line,
+          newMarkerKind,
+          (newValue) => {
+            marker._replacementNode = replacementNodeForCode(newValue);
+            this.evaluate();
+          }
+        )
       );
     } else if(newMarkerKind === "example" && canBeExample(this.selectedPath)) {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
         marker,
-        new Form(this.editor(), loc.to.line, newMarkerKind, null, (newValue) => {
-          marker._replacementNode = replacementNodeForCode(`[${newValue}]`);
-          this.evaluate();
-        })
+        new Form(
+          this.editor(),
+          loc.to.line,
+          newMarkerKind,
+          parameterNamesForFunctionIdentifier(this.selectedPath),
+          (newValue) => {
+            marker._replacementNode = replacementNodeForCode(newValue);
+            this.evaluate();
+          }
+        )
       );
     } else {
       console.warn("Could neither remove nor add a marker");
@@ -281,7 +294,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update annotations for replacements
     this.markers.replace.forEach((annotation, marker) => {
       const markerLoc = marker.find();
-      annotation.update(null, markerLoc.from.ch);
+      annotation.update(markerLoc.from.ch);
     });
     
     // Update annotations for probes
@@ -300,7 +313,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update annotations for examples
     this.markers.example.forEach((annotation, marker) => {
       const markerLoc = marker.find();
-      annotation.update(null, markerLoc.from.ch);
+      const exampleNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
+      annotation.update(
+        parameterNamesForFunctionIdentifier(exampleNode),
+        markerLoc.from.ch
+      );
     });
   }
 
