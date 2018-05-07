@@ -8,23 +8,33 @@ Semantic Source Code Navigation Abstract Web-based Development Environments WS 1
 - [example component](open://semantic-source-code-navigator)
 - [example source](browse://templates/semantic-source-code-navigator.js)
 
+## Test File Content
+<script>
+(async () => {
+  const code = document.createElement('pre');  
+  code.textContent = await fetch(SystemJS.normalizeSync("demos/systembrowser/testFile2.js")).then(r => r.text());
+  return <div style="border: 2px solid lightgray">{code}</div>;
+})()
+</script>
+
+## Example Script
 <!-- the "{}" syntax allows to add attributes, foo="bar" and .myclass -->
-```javascript {.example}
+```javascript {id="example"}
 import {SignatureManipulator} from "src/client/signature-db.js"
 
 var sig = new SignatureManipulator()
 var data 
 (async () => {
 data = await sig.parseAndExtractFile("demos/systembrowser/testFile2.js")
-  return data.ast
+  return data
 })()
 ```
 
-
+## Resulting Data
 <script>
  import boundEval from "src/client/bound-eval.js";
 (async () => {
-  var src = lively.query(this,".example").textContent // reference to previous <code> element 
+  var src = lively.query(this,"#example").textContent // reference to previous <code> element 
   var result  = await boundEval(src);
   if (result.value && result.value.then) result = await result.value
   var inspector = await (<lively-inspector></lively-inspector>)
