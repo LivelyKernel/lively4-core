@@ -198,17 +198,44 @@ export default class upndown {
 
     // Block level elements
 
-    wrap_h1(node, markdown) { return '\n# ' + markdown + '\n'; }
-    wrap_h2(node, markdown) { return '\n## ' + markdown + '\n'; }
-    wrap_h3(node, markdown) { return '\n### ' + markdown + '\n'; }
-    wrap_h4(node, markdown) { return '\n#### ' + markdown + '\n'; }
-    wrap_h5(node, markdown) { return '\n##### ' + markdown + '\n'; }
-    wrap_h6(node, markdown) { return '\n###### ' + markdown + '\n'; }
+    gen_attribs(attribs) {
+      var keys = Object.keys(attribs)
+      if (!attribs || keys.length == 0) return ""
+      var result = keys.map(ea => {
+        if (ea == "class") {
+          if (attribs[ea].length == 0) return ""
+          return attribs[ea].split(" ").map(eaClass => "."+eaClass).join(" ")
+        } else {
+          return ea + '="' +attribs[ea] +'"'
+        }
+      }).filter(ea => ea).join(" ")
+      if (result == "") return ""
+      return "{" + result + "}"
+      
+      
+    }
+  
+    wrap_h1(node, markdown) {
+      return '\n# ' + markdown + this.gen_attribs(node.attribs) +'\n'; }
+    wrap_h2(node, markdown) { return '\n## ' + markdown + this.gen_attribs(node.attribs) + '\n'; }
+    wrap_h3(node, markdown) { return '\n### ' + markdown + this.gen_attribs(node.attribs) +'\n'; }
+    wrap_h4(node, markdown) { return '\n#### ' + markdown + this.gen_attribs(node.attribs) +'\n'; }
+    wrap_h5(node, markdown) { return '\n##### ' + markdown + this.gen_attribs(node.attribs) +'\n'; }
+    wrap_h6(node, markdown) { return '\n###### ' + markdown + this.gen_attribs(node.attribs) +'\n'; }
 
     wrap_blockquote(node, markdown) { return '\n' + markdown.trim().replace(/^/gm, '> ') + '\n'; }
     wrap_pre(node, markdown) { 
-      var lang = node.attribs["data-lang"] || ""
-      return '\n```'+lang+'\n' + this.allText(node) + '```\n'; 
+      var lang =""
+      var codeNode =  node.children.find(ea => ea.name == 'code' )
+      var codeClass = codeNode && node.children[0].attribs["class"]
+      if (codeClass) {
+        var m = codeClass.match(/language-([a-zA-Z0-9]+)/)
+        if (m) {
+          codeNode.attribs["class"] = codeNode.attribs["class"].replace(m[0],"") // we handle this here
+          lang = m[1] // sorry... that is is so complicated! #Jens
+        }
+      }
+      return '\n```'+lang + " "+ this.gen_attribs((codeNode ? codeNode : node).attribs) +'\n' + this.allText(node) + '```\n'; 
     }
 
     wrap_code(node, markdown) {

@@ -2,7 +2,8 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Strings from 'src/client/strings.js'
 import _ from 'src/external/underscore.js'
 import {getDeepProperty} from "utils"
- 
+import {pt} from "src/client/graphics.js"
+
 // move to html
 function registerAttributeObservers(obj) {
   obj._attrObserver = new MutationObserver((mutations) => {

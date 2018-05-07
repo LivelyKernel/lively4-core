@@ -309,7 +309,7 @@ export default class Lively {
     }
   }
 
-  static loaded() {
+  static async loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
     // if (!console.log.originalFunction) {
@@ -341,32 +341,38 @@ export default class Lively {
       window.addEventListener('unhandledrejection', unhandledRejectionEventLister);
     }
 
-    this.exportModules()
+    await this.exportModules();
+    
 
     if (!window.lively4chrome) {
       // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
       lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     }
     // preload some components
-    components.loadByName("lively-window");
-    components.loadByName("lively-editor");
+    await components.loadByName("lively-window");
+    await components.loadByName("lively-editor");
+    
+    setTimeout(() => {
+      // wait for the timeout and try again
+      document.body.querySelectorAll("img").forEach(ea => ea.src = "" + ea.src) // #Hack #swx RPC messages...
+    }, 12 * 1000)
 
 
   }
 
 
-  static exportModules() {
+  static async exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
 
-    System.import("src/client/clipboard.js").then( m => {
+    await System.import("src/client/clipboard.js").then( m => {
       lively.clipboard = m.default
     }) // depends on me
-    System.import("src/client/graffle.js") // depends on me
-    System.import("src/client/draganddrop.js") // depends on me
-    System.import("src/client/poid.js") // depends on me
+    await System.import("src/client/graffle.js") // depends on me
+    await System.import("src/client/draganddrop.js") // depends on me
+    await System.import("src/client/poid.js") // depends on me
     // #TODO should we load fetch protocols lazy?
-    System.import("demos/plex/plex-scheme.js") // depends on me
-    System.import("src/client/protocols/todoist.js") 
+    await System.import("demos/plex/plex-scheme.js") // depends on me
+    await System.import("src/client/protocols/todoist.js") 
   }
   
 
@@ -1685,9 +1691,9 @@ if (!window.lively || window.lively.name != "Lively") {
   Lively.previous = oldLively
   window.lively = Lively;
 }
-
-
 Lively.exportModules();
+
+
 
 
 console.log(window.lively4stamp, "loaded lively");

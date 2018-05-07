@@ -3,6 +3,10 @@ import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import MarkdownItTasks from "src/external/markdown-it-tasks.js"
+import MarkdownItAttrs from "src/external/markdown-it-attrs.js"
+
+// import MarkdownItContainer from "src/external/markdown-it-container.js"
+// see https://www.npmjs.com/package/markdown-it-container
 
 import highlight from 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
@@ -59,13 +63,10 @@ export default class LivelyMarkdown extends Morph {
       // or '' if the source string is not changed and should be escaped externaly.
       // If result starts with <pre... internal wrapper is skipped.
       highlight:  function (str, lang) {
-        //debugger
         if (lang && hljs.getLanguage(lang)) {
           try {
             hljs.configure({tabReplace: '  '})
-            return '<pre class="hljs" data-lang="'+lang+'"><code>' +
-                   hljs.highlight(lang, str, true).value +
-                   '</code></pre>';
+            return hljs.highlight(lang, str, true).value
           } catch (__) {}
         }
 
@@ -74,6 +75,9 @@ export default class LivelyMarkdown extends Morph {
     });  
     md.use(MarkdownItHashtag)
     md.use(MarkdownItTasks)
+    md.use(MarkdownItAttrs)
+    
+    // md.use(MarkdownItContainer)
     
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
       var tagName = tokens[idx].content 
@@ -232,12 +236,14 @@ export default class LivelyMarkdown extends Morph {
 lively.notify("scripts still run")
 </script>
 
-\`\`\`javascript
+\`\`\`javascript {.foo}
 function foo() {
   var a = "hello"
   return a + a
 }
 \`\`\`
+
+## Foo {.blub style="background-color:yellow"}
 
 
 `)
