@@ -184,7 +184,11 @@ const dropOnDocumentBehavior = {
           <span id="title">{urlString}</span>
         </a></div>;
         fetch(urlString.replace(/\?.*/,"") + "?json").then(r => r.json()).then(json => {
-          var media = json.children[0]
+          var media = json
+          if (media.children.length == 1) {
+            media =  media.children[0]
+          }
+          
           link.querySelector("#thumb").src = lively.swxURL("plex:/" + media.thumb)
           link.querySelector("#title").innerHTML = 
             (media.title ?
