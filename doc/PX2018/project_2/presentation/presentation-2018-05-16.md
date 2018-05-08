@@ -117,7 +117,7 @@ presentButton
 <li>Why is it of interest?</li>
 <li>Well take a look:</li>
 </ul>
-<iframe style="position: absolute; bottom: 50px; right: 50px;" width="1000" height="563" src="https://www.youtube.com/embed/nXck0xs7oyw?start=150" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+<iframe style="position: absolute; bottom: 50px; right: 50px;" width="50%" height="50%" src="https://www.youtube.com/embed/nXck0xs7oyw?start=150" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
 ---
 <div class="title-1">Related Work</div>
@@ -137,6 +137,8 @@ presentButton
 <li>Grid points influence the particle movement</li>
 </ul>
 
+<img style="position: absolute; bottom: 100px; left: calc(30% + 10px); width: 40%; max-width: 100%;" alt="Hier hätte eine MPM Grafik erscheinen müssen..." src="./mpm-phases.png" />
+
 ---
 <div class="title-1">Outlook</div>
 
@@ -147,6 +149,7 @@ presentButton
 <li>To simulate different materials</li>
 <li>To simulate different behavior</li>
 </ul>
+<li>If manageable:<br />Explain how to create material out of particles</li>
 </ul>
 
 ---
