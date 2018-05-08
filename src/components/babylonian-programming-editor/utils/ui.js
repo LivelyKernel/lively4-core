@@ -23,12 +23,15 @@ export const addMarker = (editor, loc, className = "") => {
 class LineWidget {
   constructor(editor, loc, kind) {
     this._indent = loc.to.ch;
-    
-    this._element = document.createElement("span");
-    this._element.classList.add("line-widget");
-    this._element.classList.add(kind);
-    
+    this._element = <span class={"line-widget " + kind}></span>;
     this._widget = editor.addLineWidget(loc.to.line, this._element);
+  }
+  
+  /**
+   * Removes the Widget from it's editor
+   */
+  clear() {
+    this._widget.clear();
   }
 }
 
@@ -43,33 +46,40 @@ export class Annotation extends LineWidget {
     this._updateElement();
   }
   
+  /**
+   * Updates the annotation's values and indent
+   */
   update(values, indent) {
     this._values = values;
     this._indent = indent;
     this._updateElement();
   }
   
+  /**
+   * Sets the displayed run (loops)
+   */
   setActiveRun(activeRun) {
     this._activeRun = activeRun;
     this._updateElement();
   }
   
+  /**
+   * Updates the internal DOM element
+   */
   _updateElement() {
     let valueString = "??";
     if(this._values) {
       if(this._activeRun !== null) {
         valueString = this._values.get(this._activeRun)[1];
       } else {
-        valueString = Array.from(this._values).map(([,v])=>v[1]).join(" | ");
+        valueString = Array.from(this._values)
+                           .map(([,v]) => v[1])
+                           .join(" | ");
       }
     }
 
     this._element.textContent = `↘︎ ${valueString}`;
     this._element.style.left = `${this._indent}ch`;
-  }
-  
-  clear() {
-    this._widget.clear();
   }
 }
 
@@ -81,28 +91,39 @@ export class Input extends LineWidget {
     super(editor, loc, kind);
     this._element.textContent = "↖︎";
     
-    // Make textfield
-    const textfield = document.createElement("input");
-    textfield.setAttribute("type", "text");
-    const autoWidth = () => {
-      textfield.setAttribute("size", textfield.value.length ? textfield.value.length : 1);
-    };
-    autoWidth();
-
-    textfield.addEventListener("input", autoWidth);
-    textfield.addEventListener("change", () => {
-      changeCallback(textfield.value);
+    // Prepare values for input
+    
+    
+    // Make input textfield
+    const input = <input type="text" size="1"></input>
+    input.addEventListener("input", this._onChange);
+    input.addEventListener("change", () => {
+      changeCallback(input.value);
     });
-    this._element.appendChild(textfield);
+    this._element.appendChild(input);
   }
   
+  /**
+   * Updates the inputs's indent
+   */
   update(indent) {
     this._indent = indent;
     this._updateElement();
   }
   
+  /**
+   * Updates the internal DOM element
+   */
   _updateElement() {
     this._element.style.left = `${this._indent}ch`;
+  }
+  
+  /**
+   * Called when the input's value changes
+   * "this" refers to the DOM element
+   */
+  _onChange() {
+    this.setAttribute("size", this.value.length ? this.value.length : 1);
   }
 }
 
@@ -114,19 +135,25 @@ let FORM_ID_COUNTER = 0;
 export class Form extends LineWidget {
   constructor(editor, loc, kind, keys = [], changeCallback) {
     super(editor, loc, kind);
-    this.changeCallback = changeCallback;
+    this._changeCallback = changeCallback;
     this._keys = keys;
     this._values = {};
     
     this.update(keys, 0);
   }
   
+  /**
+   * Updates the inputs's keys and indent
+   */
   update(keys, indent) {
     this._keys = keys;
     this._indent = indent;
     this._updateElement();
   }
   
+  /**
+   * Updates the internal DOM element
+   */
   _updateElement() {
     // Adds a single field to the element
     const addField = (name = "") => {
@@ -158,7 +185,7 @@ export class Form extends LineWidget {
       textfield.addEventListener("input", autoWidth);
       textfield.addEventListener("change", () => {
         this._values[name] = textfield.value;
-        this.changeCallback(this.valueArrayString);
+        this._changeCallback(this.valueArrayString);
       });
       this._element.appendChild(textfield);
     }
@@ -180,6 +207,9 @@ export class Form extends LineWidget {
     }
   }
   
+  /**
+   * Returns a string representation of the current form values
+   */
   get valueArrayString() {
     return `[${this._keys.map(k => this._values[k]).join(",")}]`; 
   }
@@ -215,6 +245,9 @@ export class Slider extends LineWidget {
     this._element.appendChild(this._output);
   }
   
+  /**
+   * Updates the slider's maximum value and indent
+   */
   update(maxValue, indent) {
     this._maxValue = maxValue;
     if(this._value > this._maxValue) {
@@ -224,6 +257,9 @@ export class Slider extends LineWidget {
     this._updateElement();
   }
   
+  /**
+   * Updates the internal DOM element
+   */
   _updateElement() {
     this._input.setAttribute("max", this._maxValue);
     this._output.textContent = ` ${this._value + 1}`;

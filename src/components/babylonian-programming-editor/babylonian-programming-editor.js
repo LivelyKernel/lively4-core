@@ -54,7 +54,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -295,7 +295,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       loc,
       kind,
-      this.makeInputValueChangeCallback(this, marker)
+      this.makeInputValueCallback(this, marker)
     );
     
     this.markers[kind].set(marker, widget);
@@ -321,18 +321,18 @@ export default class BabylonianProgrammingEditor extends Morph {
       // For classes: Just show a simple input
       widget = new Input(
         this.editor(),
-        loc.to.line,
+        loc,
         kind,
-        this.makeInputValueChangeCallback(this, marker)
+        this.makeInputValueCallback(this, marker)
       )
     } else {
       // For functions: Show a form for the parameters
       widget = new Form(
         this.editor(),
-        loc.to.line,
+        loc,
         kind,
         parameterNamesForFunctionIdentifier(this.selectedPath),
-        this.makeInputValueChangeCallback(this, marker)
+        this.makeInputValueCallback(this, marker)
       );
     }
 
