@@ -35,6 +35,7 @@ class LineWidget {
   }
 }
 
+
 /**
  * An Annotation shows values for probes
  */
@@ -83,6 +84,7 @@ export class Annotation extends LineWidget {
   }
 }
 
+
 /**
  * An Input is used to enter a single value
  */
@@ -90,9 +92,6 @@ export class Input extends LineWidget {
   constructor(editor, loc, kind, changeCallback) {
     super(editor, loc, kind);
     this._element.textContent = "↖︎";
-    
-    // Prepare values for input
-    
     
     // Make input textfield
     const input = <input type="text" size="1"></input>;
@@ -131,15 +130,13 @@ export class Input extends LineWidget {
 /**
  * A Form is used to enter keyed values
  */
-let FORM_ID_COUNTER = 0;
 export class Form extends LineWidget {
   constructor(editor, loc, kind, keys = [], changeCallback) {
     super(editor, loc, kind);
     this._changeCallback = changeCallback;
-    this._keys = keys;
-    this._values = {};
-    
-    this.update(keys, 0);
+    this._keys = [];
+    this._inputs = new Map();
+    this.update(keys, loc.to.ch);
   }
   
   /**
@@ -148,58 +145,65 @@ export class Form extends LineWidget {
   update(keys, indent) {
     this._keys = keys;
     this._indent = indent;
+    
+    // Remove old keys, add new ones
+    for(let key of this._inputs.keys()) {
+        if(!keys.includes(key)) {
+          this._inputs.delete(key);
+        }
+    }
+    for(let key of keys) {
+      if(!this._inputs.has(key)) {
+        this._inputs.set(key, this._makeInput(key));
+      }
+    }
+    
     this._updateElement();
+  }
+  
+  /**
+   * Creates a new form input
+   */
+  _makeInput(name = "") {
+    const id = Form.nextInputId;
+
+    // Textfield
+    const input = <input
+                    type="text"
+                    id={id}
+                    name={name}
+                    size="1"></input>
+
+    input.addEventListener("input", () => {
+      input.setAttribute("size", input.value.length ? input.value.length : 1);
+    });
+    input.addEventListener("change", () => {
+      this._changeCallback(this.valueArrayString);
+    });
+    
+    return input;
   }
   
   /**
    * Updates the internal DOM element
    */
   _updateElement() {
-    // Adds a single field to the element
-    const addField = (name = "") => {
-      const id = FORM_ID_COUNTER++;
-      
-      // Label
-      const label = document.createElement("label");
-      label.setAttribute("for", id);
-      label.textContent = `${name}: `;
-      this._element.appendChild(label);
-      
-      // Textfield
-      const textfield = document.createElement("input");
-      textfield.setAttribute("id", id);
-      textfield.setAttribute("type", "text");
-      if(name.length) {
-        textfield.setAttribute("name", name);
-      }
-      
-      if(this._values[name]) {
-        textfield.setAttribute("value", this._values[name]);
-      }
-      
-      const autoWidth = () => {
-        textfield.setAttribute("size", textfield.value.length ? textfield.value.length : 1);
-      };
-      autoWidth();
-      
-      textfield.addEventListener("input", autoWidth);
-      textfield.addEventListener("change", () => {
-        this._values[name] = textfield.value;
-        this._changeCallback(this.valueArrayString);
-      });
-      this._element.appendChild(textfield);
-    }
-    
     // Clear the element
     this._element.textContent = "↖︎";
     
-    // Generate Fields
-    this._keys.forEach(addField);
+    // Show fields
+    for(let key of this._keys) {
+      const input = this._inputs.get(key);
+      this._element.appendChild(<label
+                                  for={input.getAttribute("id")}
+                                >{key + ":"}</label>);
+      this._element.appendChild(input);
+    }
     
     // Indent
     this._element.style.left = `${this._indent}ch`;
     
-    // Hide empty elements
+    // Hide empty forms
     if(!this._keys.length) {
       this._element.style.display = "none";
     } else {
@@ -211,9 +215,19 @@ export class Form extends LineWidget {
    * Returns a string representation of the current form values
    */
   get valueArrayString() {
-    return `[${this._keys.map(k => this._values[k]).join(",")}]`; 
+    return `[${this._keys.map(k => this._inputs.get(k).value)
+                         .join(",")}]`;
+  }
+
+  /**
+   * Returns a new form input id
+   */
+  static get nextInputId() {
+    return `form-${Form.inputIdCounter++}`;
   }
 }
+Form.inputIdCounter = 0;
+
 
 /**
  * A Slider is used to slide through a loop
