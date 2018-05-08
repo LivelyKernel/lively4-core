@@ -28,7 +28,7 @@ export default class TransactionOutputCollection {
   }
   
   value() {
-    return this._transactionOutputs.entries().reduce(function(total, output) {
+    return this._transactionOutputs.entries().reduce((total, output) => {
       total += output.amount;
     });
   }
@@ -47,7 +47,7 @@ export default class TransactionOutputCollection {
   }
   
   isFinalized() {
-    return this.hash != null;
+    return !!this.hash;
   }
   
   _hash() {

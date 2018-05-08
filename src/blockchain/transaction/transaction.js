@@ -1,12 +1,5 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
 
-/**
-  Intended usage:
-  
-  var transaction = new Transaction(sender, inputs, outputs)
-                        .sign(sender);
-**/
-
 export default class Transaction {
   constructor(senderWallet, inputCollection, outputCollection) {
     this.timestamp = Date.now();
@@ -15,27 +8,26 @@ export default class Transaction {
     this.inputs = inputCollection;
     this.outputs = outputCollection;    
     this.hash = this._hash();
-    this.signature = null;
+    this.signature = this._generateSignature(senderWallet);
   }
   
-  sign(sender) {
+  _generateSignature(senderWallet) {
     if (this.isSigned()) {
       return this;
     }
     
-    if (this.fees() <= 0) {
-      // transactions must pay fees
-      return this;
+    if (this.fees() < 0) {
+      throw new Error("Fee must be positive");
     }
     
     // encrypt the hash using the given private key
-    // this allows us to decrypt the signature later on using the matching public key
-    this.signature = sender.sign(this.hash);
-    return this;
+    // this allows us to decrypt the signature later
+    // on using the matching public key
+    return senderWallet.sign(this.hash);
   }
   
   isSigned() {
-    return this.signature != null;
+    return !!this.signature;
   }
   
   isVerified() {

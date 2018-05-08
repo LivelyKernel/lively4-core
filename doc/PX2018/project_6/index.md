@@ -63,27 +63,72 @@
 <div>
 <svg width="900" height="500" id="svgContainer" style="border-style: solid"></svg>
 </div>
+<style>
 
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+.node {
+  fill: #000;
+}
+
+.cursor {
+  fill: none;
+  stroke: brown;
+  pointer-events: none;
+}
+
+.link {
+  stroke: #999;
+}
+
+</style>
 
 <script>
-import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
-function getGraphJSON() {
-    return {
+var addNewButton = document.createElement("button")
+  addNewButton.textContent = "Add"
+  addNewButton.onclick = async () => {
+   addNode();
+  }
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  button
+
+var nodeId = 3;
+
+var graphJson = {
         "nodes": [
-        {"id": "A", "group": 1},
-        {"id": "B", "group": 2},
-        {"id": "C", "group": 3}        
+          {"id": 1, "group": 1},
+          {"id": 2, "group": 2},
+          {"id": 3, "group": 3}        
         ],
         "links": [
-          {"source": "A", "target": "B", "value": 1},
-          {"source": "A", "target": "C", "value": 2}
+          {"source": 1, "target": 2, "value": 1},
+          {"source": 1, "target": 3, "value": 2}
         ]
       }
-  }
 
-(async () => {
+function getGraphJSON() {
+    return graphJson;
+  }
+  
+function addNode() {
+  nodeId++;
+  var newNode = {"id": nodeId, "group": nodeId};
+  var newLink = {"source": 1, "target": newNode, "value": 2};
+  console.log(nodeId);
+  // graphJson.nodes.append(newNode);
+  // graphJson.links.append(newLink);
+}
+  
+  
+
+(async restart => {
+
+  console.log('restart');
 
   var color = d3.scaleOrdinal(d3.schemeCategory20);
   var svg = d3.select(lively.query(this, "#svgContainer")),
@@ -98,47 +143,47 @@ function getGraphJSON() {
 
   var node = svg.append("g")
     .attr("class", "nodes")
-  .selectAll("circle")
-  .data(graph.nodes)
-  .enter().append("circle")
-    .attr("r", 10)
-    .attr("fill", function(d) { return color(d.group); })
-    .call(d3.drag()
-        .on("start", dragstarted.bind(this, simulation))
-        .on("drag", dragged.bind(this, simulation))
-        .on("end", dragended.bind(this, simulation)));
+    .selectAll("circle")
+    .data(graph.nodes)
+    .enter().append("circle")
+      .attr("r", 10)
+      .attr("fill", function(d) { return color(d.group); })
+      .call(d3.drag()
+          .on("start", dragstarted.bind(this, simulation))
+          .on("drag", dragged.bind(this, simulation))
+          .on("end", dragended.bind(this, simulation)));
 
   var link = svg.append("g")
     .attr("class", "links")
-  .selectAll("line")
-  .data(graph.links)
-  .enter().append("line")
-    .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
-    .attr("stroke", "lightgray");
+    .selectAll("line")
+    .data(graph.links)
+    .enter().append("line")
+      .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+      .attr("stroke", "lightgray");
 
   node.append("title")
-      .text(function(d) { return d.id; });
+    .text(function(d) { return d.id; });
 
   simulation
-      .nodes(graph.nodes)
-      .on("tick", ticked.bind(this, link, node));
+    .nodes(graph.nodes)
+    .on("tick", ticked.bind(this, link, node));
 
   simulation.force("link")
-      .links(graph.links)
-      .distance(100);
+    .links(graph.links)
+    .distance(100);
 
 })();
 
 function ticked(link, node) {
   link
-      .attr("x1", function(d) { return d.source.x; })
-      .attr("y1", function(d) { return d.source.y; })
-      .attr("x2", function(d) { return d.target.x; })
-      .attr("y2", function(d) { return d.target.y; });
+    .attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
 
   node
-      .attr("cx", function(d) { return d.x; })
-      .attr("cy", function(d) { return d.y; });
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
 }
   
 function dragstarted(simulation, d) {
@@ -158,7 +203,6 @@ function dragended(simulation, d) {
   d.fy = null;
 }
 </script>
-
 ---
 
 <!-- #TODO pull this up into presentation? -->
