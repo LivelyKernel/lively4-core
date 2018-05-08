@@ -132,9 +132,9 @@ presentButton
 <div class="title-1">Concept</div>
 
 <ul class="notes notes-big">
-<li>Grids + particles</li>
-<li>HIGH LVL only 10 mins of presentation</li>
-<li> that are moved around on them</li>
+<li>Is a particle-in-cell method</li>
+<li>Particles moving in a grid</li>
+<li>Grid points influence the particle movement</li>
 </ul>
 
 ---
@@ -142,7 +142,11 @@ presentButton
 
 <ul class="notes notes-big">
 <li>Explore the material point method with simple examples</li>
-<li>(TBD) "Paper" prototype or simple example if possible</li>
+<li>Animations that show the influence of variables</li>
+<ul>
+<li>To simulate different materials</li>
+<li>To simulate different behavior</li>
+</ul>
 </ul>
 
 ---

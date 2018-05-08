@@ -3,7 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "small";
+let presentationSize = "big";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -109,6 +109,7 @@ presentButton
 </ul>
 <li>Improved view connection management</li>
 <li>Processing asynchronous data</li>
+<li>Merging data from two sources</li>
 </ul>
 
 ---
