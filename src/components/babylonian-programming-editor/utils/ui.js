@@ -21,14 +21,14 @@ export const addMarker = (editor, loc, className = "") => {
  * The base class for LineWidgets
  */
 class LineWidget {
-  constructor(editor, line, kind) {
-    this._indent = 0;
+  constructor(editor, loc, kind) {
+    this._indent = loc.to.ch;
     
     this._element = document.createElement("span");
     this._element.classList.add("line-widget");
     this._element.classList.add(kind);
     
-    this._widget = editor.addLineWidget(line, this._element);
+    this._widget = editor.addLineWidget(loc.to.line, this._element);
   }
 }
 
@@ -36,8 +36,8 @@ class LineWidget {
  * An Annotation shows values for probes
  */
 export class Annotation extends LineWidget {
-  constructor(editor, line, kind) {
-    super(editor, line, kind);
+  constructor(editor, loc, kind) {
+    super(editor, loc, kind);
     this._values = null;
     this._activeRun = null;
     this._updateElement();
@@ -77,8 +77,8 @@ export class Annotation extends LineWidget {
  * An Input is used to enter a single value
  */
 export class Input extends LineWidget {
-  constructor(editor, line, kind, changeCallback) {
-    super(editor, line, kind);
+  constructor(editor, loc, kind, changeCallback) {
+    super(editor, loc, kind);
     this._element.textContent = "↖︎";
     
     // Make textfield
@@ -112,8 +112,8 @@ export class Input extends LineWidget {
  */
 let FORM_ID_COUNTER = 0;
 export class Form extends LineWidget {
-  constructor(editor, line, kind, keys = [], changeCallback) {
-    super(editor, line, kind);
+  constructor(editor, loc, kind, keys = [], changeCallback) {
+    super(editor, loc, kind);
     this.changeCallback = changeCallback;
     this._keys = keys;
     this._values = {};
@@ -189,8 +189,8 @@ export class Form extends LineWidget {
  * A Slider is used to slide through a loop
  */
 export class Slider extends LineWidget {
-  constructor(editor, line, kind, changeCallback) {
-    super(editor, line, kind);
+  constructor(editor, loc, kind, changeCallback) {
+    super(editor, loc, kind);
     this._value = 0;
     this._maxValue = 10;
     this._element.textContent = "↻ ";

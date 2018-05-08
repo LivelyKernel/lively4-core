@@ -262,15 +262,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(path.isLoop()) {
       widget = new Slider(
         this.editor(),
-        loc.to.line,
+        loc,
         kind,
-        (newValue) => { this.onSliderValueChanged(marker, newValue) }
+        this.makeSliderValueCallback(this, marker)
       );
     } else {
-      widget = new Annotation(
-        this.editor(),
-        loc.to.line,
-        kind);
+      widget = new Annotation(this.editor(), loc, kind);
     }
     
     // Add new probe
@@ -296,9 +293,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     const marker = addMarker(this.editor(), loc, kind);
     const widget = new Input(
       this.editor(),
-      loc.to.line,
+      loc,
       kind,
-      (newValue) => { this.onInputValueChanged(marker, newValue) }
+      this.makeInputValueChangeCallback(this, marker)
     );
     
     this.markers[kind].set(marker, widget);
@@ -326,7 +323,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.editor(),
         loc.to.line,
         kind,
-        (newValue) => { this.onInputValueChanged(marker, newValue) }
+        this.makeInputValueChangeCallback(this, marker)
       )
     } else {
       // For functions: Show a form for the parameters
@@ -335,7 +332,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         loc.to.line,
         kind,
         parameterNamesForFunctionIdentifier(this.selectedPath),
-        (newValue) => { this.onInputValueChanged(marker, newValue) }
+        this.makeInputValueChangeCallback(this, marker)
       );
     }
 
@@ -346,36 +343,40 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   /**
-   * Is called whenever an input's value changes (examples, replacements)
+   * Creates a callback for input value changes (examples, replacements)
    */
-  onInputValueChanged(marker, newValue) {
-    marker._replacementNode = replacementNodeForCode(newValue);
-    this.evaluate();
+  makeInputValueCallback(that, marker) {
+    return (newValue) => {
+      marker._replacementNode = replacementNodeForCode(newValue);
+      that.evaluate();
+    }
   }
   
   /**
    * Is called whenever a slider's value changes (loops)
    */
-  onSliderValueChanged(marker, newValue) {
-    // Get the location for the body
-    const loopPath = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-    const bodyLoc = LocationConverter.astToMarker({
-      start: loopPath.node.loc.start,
-      end: loopPath.node.body.loc.end
-    });
+  makeSliderValueCallback(that, marker) {
+    return (newValue) => {
+      // Get the location for the body
+      const loopPath = that.ast._locationMap[LocationConverter.markerToKey(marker.find())];
+      const bodyLoc = LocationConverter.astToMarker({
+        start: loopPath.node.loc.start,
+        end: loopPath.node.body.loc.end
+      });
 
-    // Get all markers in the body
-    const includedMarkers = this.editor()
-                                .findMarks(bodyLoc.from, bodyLoc.to)
-                                .filter(m => m._babylonian);
+      // Get all markers in the body
+      const includedMarkers = that.editor()
+                                  .findMarks(bodyLoc.from, bodyLoc.to)
+                                  .filter(m => m._babylonian);
 
-    // Tell all markers about the selected run
-    includedMarkers.forEach(marker => {
-      const widget = this.markers.probe.get(marker);
-      if(widget instanceof Annotation) {
-        widget.setActiveRun(newValue);
-      }
-    });
+      // Tell all markers about the selected run
+      includedMarkers.forEach(marker => {
+        const widget = that.markers.probe.get(marker);
+        if(widget instanceof Annotation) {
+          widget.setActiveRun(newValue);
+        }
+      });
+    }
   }
   
   /**
