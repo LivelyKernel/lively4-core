@@ -53,7 +53,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/3_objects.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -271,9 +271,21 @@ export default class BabylonianProgrammingEditor extends Morph {
       );
     } else if(newMarkerKind === "example" && canBeExample(this.selectedPath)) {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
-      this.markers[newMarkerKind].set(
-        marker,
-        new Form(
+      let lineWidget;
+      
+      // TMP: Just a plain input for classes
+      if(this.selectedPath.parentPath.isClassDeclaration()) {
+        lineWidget = new Input(
+          this.editor(),
+          loc.to.line,
+          newMarkerKind,
+          (newValue) => {
+            marker._replacementNode = replacementNodeForCode(newValue);
+            this.evaluate();
+          }
+        )
+      } else {
+        lineWidget = new Form(
           this.editor(),
           loc.to.line,
           newMarkerKind,
@@ -282,7 +294,12 @@ export default class BabylonianProgrammingEditor extends Morph {
             marker._replacementNode = replacementNodeForCode(newValue);
             this.evaluate();
           }
-        )
+        );
+      }
+      
+      this.markers[newMarkerKind].set(
+        marker,
+        lineWidget
       );
     } else {
       console.warn("Could neither remove nor add a marker");
@@ -314,10 +331,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.markers.example.forEach((annotation, marker) => {
       const markerLoc = marker.find();
       const exampleNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-      annotation.update(
-        parameterNamesForFunctionIdentifier(exampleNode),
-        markerLoc.from.ch
-      );
+      if(annotation instanceof Form) {
+        annotation.update(
+          parameterNamesForFunctionIdentifier(exampleNode),
+          markerLoc.from.ch
+        );
+      } else if (annotation instanceof Input) {
+        annotation.update(
+          markerLoc.from.ch
+        );
+      }
     });
   }
 

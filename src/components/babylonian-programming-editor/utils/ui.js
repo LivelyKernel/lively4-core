@@ -161,7 +161,7 @@ export class Form extends LineWidget {
     
     // Hide empty elements
     if(!this._keys.length) {
-      this._element.style.display = "hidden";
+      this._element.style.display = "none";
     } else {
       this._element.style.display = "";
     }

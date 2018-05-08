@@ -51,11 +51,13 @@ export const canBeProbed = (path) => {
  * Checks whether a path can be an example
  */
 export const canBeExample = (path) => {
-  // We have to be the name of a function
+  // We have to be the name of a function of class
   const functionParent = path.getFunctionParent();
-  return(functionParent
-         && (functionParent.get("id") === path
-             || functionParent.get("key") === path));
+  const isFunctionName = (functionParent
+                          && (functionParent.get("id") === path
+                              || functionParent.get("key") === path));
+  const isClassName = (path.parentPath.isClassDeclaration() && path.parentKey === "id");
+  return isFunctionName || isClassName;
 }
 
 /**
@@ -147,10 +149,22 @@ export const applyProbeMarkers = (ast, markers) => {
 export const applyExampleMarkers = (ast, markers) => {
   // Prepare templates to insert
   const functionCall = template("ID.apply(null, PARAMS)");
-  const methodCall = template("CLASS.ID.apply(null, PARAMS)");
+  const staticMethodCall = template("CLASS.ID.apply(null, PARAMS)");
+  const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
+  
+  // Distinguish between class- and function examples
+  const functionMarkers = markers.filter(m => {
+    const nodePath = ast._locationMap[m.loc];
+    if(nodePath.parentPath.isClassDeclaration()) {
+      nodePath.node._exampleInstance = m.replacementNode;
+      return false;
+    } else {
+      return true;
+    }
+  })
   
   // Apply the markers
-  markers.forEach((marker) => {
+  functionMarkers.forEach((marker) => {
     let parametersNode = marker.replacementNode;
     if(!parametersNode) {
       parametersNode = types.nullLiteral();
@@ -161,12 +175,25 @@ export const applyExampleMarkers = (ast, markers) => {
     
     // Distinguish between Methods and Functions
     if(functionParent.isClassMethod()) {
-      const className = functionParent.getStatementParent().get("id").get("name").node;
-      nodeToInsert = methodCall({
-        CLASS: types.identifier(className),
-        ID: types.identifier(path.node.name),
-        PARAMS: parametersNode
-      });
+      // We have a method
+      const classIdNode = functionParent.getStatementParent().get("id").node;
+      
+      // Distinguish between static and object methods
+      if(functionParent.node.static) {
+        nodeToInsert = staticMethodCall({
+          CLASS: types.identifier(classIdNode.name),
+          ID: types.identifier(path.node.name),
+          PARAMS: parametersNode
+        });
+      } else {
+        // Get the example instance
+        nodeToInsert = objectMethodCall({
+          CLASS: types.identifier(classIdNode.name),
+          ID: types.identifier(path.node.name),
+          THIS: classIdNode._exampleInstance,
+          PARAMS: parametersNode
+        });
+      }
     } else {
       nodeToInsert = functionCall({
         ID: types.identifier(path.node.name),
