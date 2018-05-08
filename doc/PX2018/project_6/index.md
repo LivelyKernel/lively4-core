@@ -61,197 +61,102 @@
 # Demo
 
 <div>
-<svg id="svgContainer"></svg>
+<svg width="900" height="500" id="svgContainer" style="border-style: solid"></svg>
 </div>
+
 
 <script>
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
-function getTreeData() {
+function getGraphJSON() {
     return {
-        "name": "Top Level",
-        "children": [
-          { 
-            "name": "Level 2: A",
-            "children": [
-              { "name": "Son of A" },
-              { "name": "Daughter of A" }
-            ]
-          },
-          { "name": "Level 2: B" }
+        "nodes": [
+        {"id": "A", "group": 1},
+        {"id": "B", "group": 2},
+        {"id": "C", "group": 3}        
+        ],
+        "links": [
+          {"source": "A", "target": "B", "value": 1},
+          {"source": "A", "target": "C", "value": 2}
         ]
       }
   }
+
+(async () => {
+
+  var color = d3.scaleOrdinal(d3.schemeCategory20);
+  var svg = d3.select(lively.query(this, "#svgContainer")),
+      graph = getGraphJSON(),
+      width = +svg.attr("width"),
+      height = +svg.attr("height");
+
+  var simulation = d3.forceSimulation()
+  .force("link", d3.forceLink().id(function(d) { return d.id; }))
+  .force("charge", d3.forceManyBody())
+  .force("center", d3.forceCenter(width / 2, height / 2));
+
+  var node = svg.append("g")
+    .attr("class", "nodes")
+  .selectAll("circle")
+  .data(graph.nodes)
+  .enter().append("circle")
+    .attr("r", 10)
+    .attr("fill", function(d) { return color(d.group); })
+    .call(d3.drag()
+        .on("start", dragstarted.bind(this, simulation))
+        .on("drag", dragged.bind(this, simulation))
+        .on("end", dragended.bind(this, simulation)));
+
+  var link = svg.append("g")
+    .attr("class", "links")
+  .selectAll("line")
+  .data(graph.links)
+  .enter().append("line")
+    .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+    .attr("stroke", "lightgray");
+
+  node.append("title")
+      .text(function(d) { return d.id; });
+
+  simulation
+      .nodes(graph.nodes)
+      .on("tick", ticked.bind(this, link, node));
+
+  simulation.force("link")
+      .links(graph.links)
+      .distance(100);
+
+})();
+
+function ticked(link, node) {
+  link
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
   
-function updateViz(obj) {
-    lively.query(obj, '#svgContainer').innerHTML = ""
+function dragstarted(simulation, d) {
+  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
 
-    var treeData = getTreeData()
-    var bounds = {width:1000, height:1000}
-        
-    var margin = {top: 20, right: 120, bottom: 20, left: 120},
-      width = bounds.width - margin.right - margin.left,
-      height = bounds.height - margin.top - margin.bottom;
+function dragged(simulation, d) {
+  d.fx = d3.event.x;
+  d.fy = d3.event.y;
+}
 
-    var svg = d3.select(lively.query(obj, '#svgContainer'))
-      .attr("width", width + margin.right + margin.left)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    
-    var i = 0;
-    var duration = 750
-    var root;
-
-    var treemap = d3.tree().size([height, width]);
-
-    root = d3.hierarchy(treeData, d => d.children );
-    root.x0 = height / 2;
-    root.y0 = 0;
-
-    // Collapse after the second level
-    root.children.forEach(ea => collapse(ea));
-    
-    update(root, root, treemap, svg, duration, i);
-    // d3.select(self.frameElement).style("height", "500px");    
-  }
-  
-  // Collapse the node and all it's children
-function collapse(d) {
-    if(d.children) {
-      d._children = d.children
-      d._children.forEach(ea => collapse(ea))
-      d.children = null
-    }
-  }
-  
-  // Toggle children on click.
-function click(d, root, treemap, svg, duration, i) {
-    if (d.children) {
-      d._children = d.children;
-      d.children = null;
-    } else {
-      d.children = d._children;
-      d._children = null;
-    }
-    update(d, root, treemap, svg, duration, i);
-  }
-  
-function update(source, root, treemap, svg, duration, i) {
-    // Assigns the x and y position for the nodes
-    var treeData = treemap(source);
-    
-    // Compute the new tree layout
-    const nodes = treeData.descendants()
-    const links = treeData.descendants().slice(1) // links() // 
-        
-    // Normalize for fixed-depth.
-    nodes.forEach((d) => { d.y = d.depth * 180; });
-
-    // Update the nodes…
-    var node = svg.selectAll("g.node")
-      .data(nodes, (d) => d.id || (d.id = ++i));
-
-    // Enter any new nodes at the parent's previous position.
-    var nodeEnter = node.enter().append("g")
-      .attr("class", "node")
-      .attr("transform", d => "translate(" + source.y0 + "," + source.x0 + ")")
-      .on("click", (d) => click(d, root, treemap, svg, duration, i));
-
-    // Add Circle for the nodes
-    nodeEnter.append("circle")
-      .attr('class', 'node')
-      .attr("r", 1e-6)
-      .style("fill", d => d._children ? "lightsteelblue" : "#fff");
-
-    // Add labels for the nodes
-    nodeEnter.append("text")
-      .attr("x", d => d.children || d._children ? -13 : 13)
-      .attr("dy", ".35em")
-      .attr("text-anchor", d  => d.children || d._children ? "end" : "start")
-      .text(d =>  d.data.name)
-    // .style("fill-opacity", 1e-6);
-
-    // UPDATE
-    var nodeUpdate = nodeEnter.merge(node)
-        
-    // Transition nodes to their new position.
-    nodeUpdate.transition()
-      .duration(duration)
-      .attr("transform", d => "translate(" + d.y + "," + d.x + ")");
-    
-    
-    // Update the node attributes and style
-    nodeUpdate.select("circle.node")
-      .attr("r", 10)
-      .style("fill", d => d._children ? "lightsteelblue" : "#fff")
-      .attr('cursor', 'pointer');
-
-    // nodeUpdate.select("text")
-    //   .style("fill-opacity", 1);
-
-    // Transition exiting nodes to the parent's new position.
-    var nodeExit = node.exit().transition()
-      .duration(duration)
-      .attr("transform", d => "translate(" + source.y + "," + source.x + ")")
-      .remove();
-
-    // On exit reduce the node circles size to 0
-    nodeExit.select("circle")
-      .attr("r", 1e-6);
-
-    // On exit reduce the opacity of text labels
-    nodeExit.select("text")
-      .style("fill-opacity", 1e-6);
-    // Update the links...
-    var link = svg.selectAll("path.link")
-      .data(links, d => d.id);
-
-    // Enter any new links at the parent's previous position.
-    var linkEnter = link.enter().insert("path", "g")
-      .attr("class", "link")
-      .attr("d", (d) => {
-        var o = {x: source.x0, y: source.y0};
-        return diagonal(o, o);
-      });
-
-    // UPDATE
-    var linkUpdate = linkEnter.merge(link);
-    
-     // Transition back to the parent element position
-    linkUpdate.transition()
-      .duration(duration)
-      .attr('d', d => {
-        return diagonal(d, d.parent)
-      })
-      
-    // Remove any exiting links
-    var linkExit = link.exit().transition()
-      .duration(d => duration)
-      .attr("d", (d) => {
-        var o = {x: source.x, y: source.y};
-        return diagonal(o, o);
-      })
-      .remove();
-
-    // Stash the old positions for transition.
-    nodes.forEach(d => {
-      d.x0 = d.x;
-      d.y0 = d.y;
-    });
-  }  
-  
-  // Creates a curved (diagonal) path from parent to the child nodes
-function diagonal(s, d) {
-    var path = `M ${s.y} ${s.x}
-            C ${(s.y + d.y) / 2} ${s.x},
-              ${(s.y + d.y) / 2} ${d.x},
-              ${d.y} ${d.x}`
-    return path
-  }
-
-updateViz(this);
+function dragended(simulation, d) {
+  if (!d3.event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
 </script>
 
 ---
