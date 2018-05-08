@@ -28,9 +28,9 @@ export default class TransactionOutputCollection {
   }
   
   value() {
-    return this._transactionOutputs.entries().reduce((total, output) => {
+    return Array.from(this._transactionOutputs.entries()).reduce((total, output) => {
       total += output.amount;
-    });
+    }, 0);
   }
   
   get(receiverHash) {
