@@ -54,7 +54,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -194,13 +194,15 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Removes a marker from the editor
    */
   removeMarker(marker) {
-    marker.clear();
+    // Remove the associated widget
     USER_MARKER_KINDS.map(m => {
       if(this.markers[m].has(marker)) {
         this.markers[m].get(marker).clear();
         this.markers[m].delete(marker);
       }
     });
+    // Remove the marker itself
+    marker.clear();
   }
   
   /**
@@ -383,6 +385,9 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Updates the values of all widgets
    */
   updateWidgets() {
+    // Enforce all sliders
+    this.enforceSliders();
+    
     // Update widgets for replacements
     this.markers.replacement.forEach((widget, marker) => {
       const markerLoc = marker.find();
@@ -450,6 +455,18 @@ export default class BabylonianProgrammingEditor extends Morph {
             )
           );
         }
+      }
+    });
+  }
+  
+  /**
+   * Enforces all sliders
+   */
+  enforceSliders() {
+    // Get all sliders
+    this.markers.probe.forEach(widget => {
+      if(widget instanceof Slider) {
+        widget.fire();
       }
     });
   }

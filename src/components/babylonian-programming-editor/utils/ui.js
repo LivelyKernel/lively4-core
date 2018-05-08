@@ -76,6 +76,9 @@ export class Annotation extends LineWidget {
         valueString = Array.from(this._values)
                            .map(([,v]) => v[1])
                            .join(" | ");
+        if(valueString.length > 40) {
+          valueString = valueString.substring(0, 40) + "...";
+        }
       }
     }
 
@@ -235,6 +238,7 @@ Form.inputIdCounter = 0;
 export class Slider extends LineWidget {
   constructor(editor, loc, kind, changeCallback) {
     super(editor, loc, kind);
+    this._changeCallback = changeCallback;
     this._value = 0;
     this._maxValue = 0;
     this._element.textContent = "↻ ";
@@ -251,13 +255,16 @@ export class Slider extends LineWidget {
     this._input.addEventListener("input", () => {
       this._value = this._input.valueAsNumber;
       this._updateElement();
-      changeCallback(this._value);
+      this.fire();
     });
     this._element.appendChild(this._input);
     
     // Make current value output
-    this._output = <span> {this._value + 1}</span>;
+    this._output = <span> {this._value + 1}/{this._maxValue + 1}</span>;
     this._element.appendChild(this._output);
+    
+    // Trigger first event
+    changeCallback(this._value);
   }
   
   /**
@@ -273,11 +280,27 @@ export class Slider extends LineWidget {
   }
   
   /**
+   * Forces the change event to fire
+   */
+  fire() {
+    this._changeCallback(this._value);
+  }
+  
+  /**
+   * Removes the Widget from it's editor
+   */
+  clear() {
+    this._value = null;
+    this.fire();
+    super.clear();
+  }
+  
+  /**
    * Updates the internal DOM element
    */
   _updateElement() {
     this._input.setAttribute("max", this._maxValue);
-    this._output.textContent = ` ${this._value + 1}`;
+    this._output.textContent = ` ${this._value + 1}/${this._maxValue + 1}`;
     this._element.style.left = `${this._indent}ch`;
   }
 }
