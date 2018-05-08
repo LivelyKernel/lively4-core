@@ -1,6 +1,6 @@
 "enable aexpr";
 
-import Morph from 'src/components/widgets/lively-morph.js';
+import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
 
 export default class LivelyMpm extends Morph {
@@ -20,11 +20,11 @@ export default class LivelyMpm extends Morph {
     this.context.fillRect(150, 150, 2, 2);
     
     this.execute();
-    console.log(this.xa[this.xa - 1]);
+    console.log(this.xa);
   }
   
   execute() {
-    const time = 100;
+    const time = 1000;
     const dtime = 0.01;
     const L = 2;
     const Mp = 1;
@@ -43,7 +43,7 @@ export default class LivelyMpm extends Morph {
     this.xa = [];
     
     while (t < time) {
-      let N1 = 1 - Math.abs(xp - nodes[0]);
+      let N1 = 1 - Math.abs(xp - nodes[0]) / L;
       let N2 = 1 - Math.abs(xp - nodes[1]) / L;
       let dN1 = -1 / L;
       let dN2 = 1 /L;
@@ -51,12 +51,12 @@ export default class LivelyMpm extends Morph {
       let m2 = N2 * Mp;
       let mv1 = N1 * q;
       let mv2 = N2 * q;
-      //mv1 = 0;
+      mv1 = 0;
       let fint1 = -Vp * s * dN1;
       let fint2 = -Vp * s * dN2;
       let f1 = fint1; 
       let f2 = fint2;
-      //f1 = 0;
+      f1 = 0;
       mv1 = mv1 + f1 * dtime;
       mv2 = mv2 + f2 * dtime;
       vp = vp + dtime * (N1* f1 / m1 + N2 * f2 / m2);
@@ -64,7 +64,7 @@ export default class LivelyMpm extends Morph {
       q = Mp * vp;
       let v1 = N1 * Mp * vp / m1;
       let v2 = N2 * Mp * vp / m2;
-      //v1 = 0; 
+      v1 = 0; 
       let Lp = dN1 * v1 + dN2 * v2; 
       let dEps = dtime * Lp; 
       s = s + E * dEps;

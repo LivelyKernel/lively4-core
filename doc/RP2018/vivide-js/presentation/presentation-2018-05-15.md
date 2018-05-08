@@ -3,7 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "big";
+let presentationSize = "small";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -88,7 +88,7 @@ presentButton
 
 
 --- 
-<div class="title-1">Context/Motivation</div>
+<div class="title-1">The Vivide Tool Building Framework</div>
 
 <ul class="notes notes-big">
 <li>System: VivideJS</li>
@@ -99,14 +99,11 @@ presentButton
 </ul>
 
 ---
-<div class="title-1">Design Space</div>
+<div class="title-1">Planned Features</div>
 
 <ul class="notes notes-big">
-<li>Advanced properties</li>
-<ul>
-<li>Width, height</li>
-<li>Color, background color</li>
-</ul>
+<li>Multi-level hierarchies</li>
+<li>Advanced configuration options in scripts</li>
 <li>Improved view connection management</li>
 <li>Processing asynchronous data</li>
 <li>Merging data from two sources</li>
@@ -126,16 +123,12 @@ presentButton
 <div class="title-1">Next Steps</div>
 
 <ul class="notes notes-big">
-<li>Improve scripting</li>
-  <ul>
-  <li>Unique scripts ids</li>
-  <li>Provide further properties</li>
-  </ul>
 <li>Multi-level hierarchies</li>
   <ul>
   <li>Scripts for each level</li>
   <li>Children are processed on demand</li>
   </ul>
+<li>Advanced configuration options in scripts</li>
 </ul>
 
 ---
