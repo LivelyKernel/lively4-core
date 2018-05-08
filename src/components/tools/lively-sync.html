@@ -45,6 +45,12 @@
       float: right;
       margin-right: 5px;
     }
+    
+    #imprint {
+      float: right;
+      margin-right: 5px;
+    }
+    
     label {
       padding: 3px;
       padding-top: 6px;
@@ -149,7 +155,9 @@
 
           <label><input class="checkbox" type="checkbox" id="dryrun">
           dry run</label>
-           <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
+          <a id="imprint" href="browse://imprint.md" 
+             onclick="event.preventDefault(); fetch(this.href)">imprint</a>  
+          <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  
       </p>

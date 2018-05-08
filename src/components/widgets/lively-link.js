@@ -16,7 +16,6 @@ export default class File extends Morph {
     html.registerAttributeObservers(this);
   }
   
-  
   onClick() {
     if (this.classList.contains("selected")) {
       this.classList.remove("selected")        
@@ -26,7 +25,7 @@ export default class File extends Morph {
   }
   
   async onDoubleClick() {
-    var comp = await lively.openBrowser(LivelyFile.fileToURI(this), false)
+    var comp = await lively.openBrowser(this.url, false)
     comp.hideNavbar() 
   }
   
@@ -66,17 +65,27 @@ export default class File extends Morph {
   }
 
   
-  updateView(value) {
-    if (!value) return
+  updateView() {
+    var value = this.id
     this.get('#item-name').innerHTML = value
-    if (value.match(/\.(md)|(txt)$/))
-      this._setIcon('fa-file-text-o')
-    if (value.match(/\.(html)|(js)|(json)$/))
-      this._setIcon('fa-file-code-o')
-    if (value.match(/\.(mkv)|(mov)|(mp4)$/))
-      this._setIcon('fa-film')
-    if (value.match(/\.(mp3)$/))
-      this._setIcon('fa-audio')
+
+    if (this.url || this.url.match(/^plex:/)) {
+      lively.notify("update...")
+      fetch(this.url.replace(/\?.*/,"") + "?json").then(r => r.json()).then(json => {
+        var media = json
+        if (media.children.length == 1) {
+          media =  media.children[0]
+        }
+
+        this.get("img").src = lively.swxURL("plex:/" + media.thumb)
+        this.get("#item-name").innerHTML = 
+          (media.title ?
+            ("<b>" + media.parentTitle + "</b><br>" + media.title) :      
+            ("" + media.title1 + "<br>"+ media.title2))
+        // lively.openInspector(media)
+      })
+    }
+    
   }
   
   set name(value) {
@@ -120,7 +129,9 @@ export default class File extends Morph {
   }
   
   livelyExample() {
-    this.name = "foo.md"    
+    this.url = "plex://library/sections/3/"
+    this.name = "music"    
+    this.updateView()
   }
   
   

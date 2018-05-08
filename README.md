@@ -23,7 +23,9 @@ A project or branch of a project on GitHub can be checked out in multiple direct
 The Livel4 server and GitHub sync tools can check out arbitrary projects, such as the code of [lively4-server](https://lively-kernel.org/lively4/lively4-server/) itself, or the source of a [paper](https://lively-kernel.org/lively4/Lively4DevelopmentExperience/content/Introduction.md)
 hosted by overleaf. 
 
-# Authors / Contributors
+
+
+## Authors / Contributors
 
 - [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de),  2015-2018 [MIT LICENSE](LICENSE)
 - Jens Lincke, Stefan Ramson, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
@@ -33,3 +35,4 @@ hosted by overleaf.
   - Web-based Development [WebDev 2016](doc/WebDev2016/index.md), [WebDev 2017/18](doc/WebDev2017/index.md)
   - Programming Experience [PX 2018](doc/PX2018/index.md)
   - Reactive Programming [RP 2018](doc/RP2018/index.md)
+- [Imprint](imprint.md)
