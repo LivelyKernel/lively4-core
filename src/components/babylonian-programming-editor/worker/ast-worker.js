@@ -5,7 +5,7 @@ import {
   astForCode,
   codeForAst,
   assignIds,
-  applyReplaceMarkers,
+  applyReplacementMarkers,
   applyProbeMarkers,
   applyExampleMarkers
 } from "../utils/ast.js";
@@ -24,7 +24,7 @@ export default onmessage = function(msg) {
 
     // Process AST using markers
     generateLocationMap(ast);
-    applyReplaceMarkers(ast, markers.replace);
+    applyReplacementMarkers(ast, markers.replacement);
     applyProbeMarkers(ast, markers.probe);
     applyExampleMarkers(ast, markers.example);
 

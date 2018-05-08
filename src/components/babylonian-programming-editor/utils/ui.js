@@ -1,12 +1,12 @@
 /**
  * Adds a new marker to the editor
  */
-export const addMarker = (editor, loc, classNames) => {
+export const addMarker = (editor, loc, className = "") => {
   const marker = editor.markText(
     loc.from,
     loc.to,
     {
-      className: `marker ${classNames.join(" ")}`,
+      className: `marker ${className}`,
       startStyle: "start",
       endStyle: "end",
       inclusiveLeft: true,

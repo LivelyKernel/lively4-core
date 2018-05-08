@@ -109,9 +109,9 @@ export const assignIds = (ast) => {
 };
 
 /**
- * Applies replace markers to the given AST
+ * Applies replacement markers to the given AST
  */
-export const applyReplaceMarkers = (ast, markers) => {
+export const applyReplacementMarkers = (ast, markers) => {
   // Apply the markers
   markers.forEach((marker) => {
     const replacementNode = marker.replacementNode;

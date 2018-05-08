@@ -25,7 +25,7 @@ import {
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
-const USER_MARKER_KINDS = ["example", "replace", "probe"];
+const USER_MARKER_KINDS = ["example", "replacement", "probe"];
 
 /**
  * An editor for Babylonian (Example-Based) Programming
@@ -61,9 +61,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("change", this.evaluateTimer.start.bind(this.evaluateTimer));
       this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
-        "Ctrl-1": this.toggleProbe.bind(this),
-        "Ctrl-2": this.toggleReplace.bind(this),
-        "Ctrl-3": this.toggleExample.bind(this)
+        "Ctrl-1": () => { this.toggleMarkerAtSelection("probe") },
+        "Ctrl-2": () => { this.toggleMarkerAtSelection("replacement") },
+        "Ctrl-3": () => { this.toggleMarkerAtSelection("example") },
       });
       
       // Inject styling into CodeMirror
@@ -99,27 +99,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     } else {
       this.selectedPath = null;
     }
-  }
-  
-  /**
-   * Toggles a probe at the selected location
-   */
-  toggleProbe() {
-    this.toggleMarkerAtSelection("probe");
-  }
-
-  /**
-   * Toggles a replacement at the selected location
-   */
-  toggleReplace() {
-    this.toggleMarkerAtSelection("replace");
-  }
-  
-  /**
-   * Toggles an example at the selected location
-   */
-  toggleExample() {
-    this.toggleMarkerAtSelection("example");
   }
   
   
@@ -212,17 +191,6 @@ export default class BabylonianProgrammingEditor extends Morph {
   // UI
   
   /**
-   * Returns the marker-location of the currently selected path
-   */
-  getSelectedPathLocation() {
-    if(!this.selectedPath) {
-      return null;
-    }
-
-    return LocationConverter.astToMarker(this.selectedPath.node.loc);
-  }
-  
-  /**
    * Removes a marker from the editor
    */
   removeMarker(marker) {
@@ -239,109 +207,183 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Removes an existing marker at the selected location,
    * or calls the callback to create a new one
    */
-  toggleMarkerAtSelection(newMarkerKind) {
-    const loc = this.getSelectedPathLocation();
-    if(!loc) {
-      return;
+  toggleMarkerAtSelection(kind) {
+    // Make sure there is a selection
+    if(!this.selectedPath) {
+      throw Error("There is no selected node");
     }
-    if(!USER_MARKER_KINDS.includes(newMarkerKind)) {
+    
+    // Make sure the marker kind is valid
+    if(!USER_MARKER_KINDS.includes(kind)) {
       throw Error("Unknown marker kind");
     }
-
+    
+    // Get existing markers at the selection
+    const path = this.selectedPath;
+    const loc = LocationConverter.astToMarker(path.node.loc);
     const existingMarks = this.editor()
                               .findMarks(loc.from, loc.to)
                               .filter(m => m._babylonian);
+    
     if(existingMarks.length > 0) {
+      // Remove existing markers
       existingMarks.map(this.removeMarker.bind(this));
-    } else if(newMarkerKind === "probe" && canBeProbed(this.selectedPath)) {
-      // Distinguish between value-probes (identifier, return) and loop-probes
-      if(this.selectedPath.isLoop()) {
-        const marker = addMarker(this.editor(), loc, [newMarkerKind]);
-        const onSliderChanged = (newValue) => {
-          // Get all markers for the body
-          const loopPath = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-          const bodyLoc = LocationConverter.astToMarker({
-            start: loopPath.node.loc.start,
-            end: loopPath.node.body.loc.end
-          });
-          const includedMarkers = this.editor()
-                                      .findMarks(bodyLoc.from, bodyLoc.to)
-                                      .filter(m => m._babylonian);
-
-
-          includedMarkers.forEach(marker => {
-            const widget = this.markers.probe.get(marker);
-            if(widget instanceof Annotation) {
-              widget.setActiveRun(newValue);
-            }
-          });
-        }
-        this.markers[newMarkerKind].set(
-          marker,
-          new Slider(this.editor(), loc.to.line, newMarkerKind, onSliderChanged)
-        );
-        onSliderChanged(0);
-      } else {
-        this.markers[newMarkerKind].set(
-          addMarker(this.editor(), loc, [newMarkerKind]),
-          new Annotation(this.editor(), loc.to.line, newMarkerKind)
-        );
-      }
-    } else if(newMarkerKind === "replace" && canBeReplaced(this.selectedPath)) {
-      const marker = addMarker(this.editor(), loc, [newMarkerKind]);
-      this.markers[newMarkerKind].set(
-        marker,
-        new Input(
-          this.editor(),
-          loc.to.line,
-          newMarkerKind,
-          (newValue) => {
-            marker._replacementNode = replacementNodeForCode(newValue);
-            this.evaluate();
-          }
-        )
-      );
-    } else if(newMarkerKind === "example" && canBeExample(this.selectedPath)) {
-      const marker = addMarker(this.editor(), loc, [newMarkerKind]);
-      let lineWidget;
-      
-      // TMP: Just a plain input for classes
-      if(this.selectedPath.parentPath.isClassDeclaration()) {
-        lineWidget = new Input(
-          this.editor(),
-          loc.to.line,
-          newMarkerKind,
-          (newValue) => {
-            marker._replacementNode = replacementNodeForCode(newValue);
-            this.evaluate();
-          }
-        )
-      } else {
-        lineWidget = new Form(
-          this.editor(),
-          loc.to.line,
-          newMarkerKind,
-          parameterNamesForFunctionIdentifier(this.selectedPath),
-          (newValue) => {
-            marker._replacementNode = replacementNodeForCode(newValue);
-            this.evaluate();
-          }
-        );
-      }
-      
-      this.markers[newMarkerKind].set(
-        marker,
-        lineWidget
-      );
-    } else {
-      console.warn("Could neither remove nor add a marker");
+    } else if(kind === "probe") {
+      // Add a probe
+      this.addProbeAtPath(path);
+    } else if(kind === "replacement") {
+      // Add a replacement
+      this.addReplacementAtPath(path);
+    } else if(kind === "example") {
+      // Add a example
+      this.addExampleAtPath(path);
     }
+    
+    // Re-evaluate the examples
     this.evaluate();
   }
   
+  /**
+   * Adds a probe at the given path
+   */
+  addProbeAtPath(path) {
+    // Make sure we can probe this path
+    if(!canBeProbed(this.selectedPath)) {
+      return;
+    }
+    
+    // Prepare variables
+    const kind = "probe";
+    const loc = LocationConverter.astToMarker(path.node.loc);
+    let marker = addMarker(this.editor(), loc, kind);
+    let widget = null;
+    
+    // Distinguish between value-probes (identifier, return) and loop-probes
+    if(path.isLoop()) {
+      widget = new Slider(
+        this.editor(),
+        loc.to.line,
+        kind,
+        (newValue) => { this.onSliderValueChanged(marker, newValue) }
+      );
+    } else {
+      widget = new Annotation(
+        this.editor(),
+        loc.to.line,
+        kind);
+    }
+    
+    // Add new probe
+    if(marker && widget) {
+      this.markers[kind].set(marker, widget);
+    }
+  }
+  
+  /**
+   * Adds a replacement at the given path
+   */
+  addReplacementAtPath(path) {
+    // Make sure we can replace this path
+    if(!canBeReplaced(this.selectedPath)) {
+      return;
+    }
+    
+    // Prepare variables
+    const kind = "replacement";
+    const loc = LocationConverter.astToMarker(path.node.loc);
+    
+    // Add a new replacement
+    const marker = addMarker(this.editor(), loc, kind);
+    const widget = new Input(
+      this.editor(),
+      loc.to.line,
+      kind,
+      (newValue) => { this.onInputValueChanged(marker, newValue) }
+    );
+    
+    this.markers[kind].set(marker, widget);
+  }
+  
+  /**
+   * Adds an example at the given path
+   */
+  addExampleAtPath(path) {
+    // Make sure we can add an example at this path
+    if(!canBeExample(this.selectedPath)) {
+      return;
+    }
+    
+    // Prepare variables
+    const kind = "example";
+    const loc = LocationConverter.astToMarker(path.node.loc);
+    const marker = addMarker(this.editor(), loc, kind);
+    let widget = null;
+
+    // Distinguish between class- and function examples
+    if(this.selectedPath.parentPath.isClassDeclaration()) {
+      // For classes: Just show a simple input
+      widget = new Input(
+        this.editor(),
+        loc.to.line,
+        kind,
+        (newValue) => { this.onInputValueChanged(marker, newValue) }
+      )
+    } else {
+      // For functions: Show a form for the parameters
+      widget = new Form(
+        this.editor(),
+        loc.to.line,
+        kind,
+        parameterNamesForFunctionIdentifier(this.selectedPath),
+        (newValue) => { this.onInputValueChanged(marker, newValue) }
+      );
+    }
+
+    // Add a new example
+    if(marker && widget) {
+      this.markers[kind].set(marker, widget);
+    }
+  }
+  
+  /**
+   * Is called whenever an input's value changes (examples, replacements)
+   */
+  onInputValueChanged(marker, newValue) {
+    marker._replacementNode = replacementNodeForCode(newValue);
+    this.evaluate();
+  }
+  
+  /**
+   * Is called whenever a slider's value changes (loops)
+   */
+  onSliderValueChanged(marker, newValue) {
+    // Get the location for the body
+    const loopPath = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
+    const bodyLoc = LocationConverter.astToMarker({
+      start: loopPath.node.loc.start,
+      end: loopPath.node.body.loc.end
+    });
+
+    // Get all markers in the body
+    const includedMarkers = this.editor()
+                                .findMarks(bodyLoc.from, bodyLoc.to)
+                                .filter(m => m._babylonian);
+
+    // Tell all markers about the selected run
+    includedMarkers.forEach(marker => {
+      const widget = this.markers.probe.get(marker);
+      if(widget instanceof Annotation) {
+        widget.setActiveRun(newValue);
+      }
+    });
+  }
+  
+  /**
+   * Updates the values of all widgets
+   */
   updateWidgets() {
     // Update widgets for replacements
-    this.markers.replace.forEach((widget, marker) => {
+    this.markers.replacement.forEach((widget, marker) => {
       const markerLoc = marker.find();
       widget.update(markerLoc.from.ch);
     });
@@ -384,6 +426,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     });
   }
 
+  /**
+   * Marks all dead code
+   */
   updateDeadMarkers() {
     // Remove old dead markers
     this.markers.dead.map(m => m.clear());

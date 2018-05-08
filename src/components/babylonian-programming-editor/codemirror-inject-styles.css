@@ -12,7 +12,7 @@
   color: hsl(198, 69%, 17%);
 }
 
-.line-widget.replace {
+.line-widget.replacement {
   background-color: hsla(344, 54%, 63%, 0.5);
   color: hsl(344, 54%, 13%);
 }
@@ -44,7 +44,7 @@
   background-color: hsla(198, 69%, 67%, 0.3);
 }
 
-.marker.replace {
+.marker.replacement {
   background-color: hsla(344, 54%, 63%, 0.3);
 }
 
