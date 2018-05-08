@@ -11,21 +11,6 @@ export default class Transaction {
     this.signature = this._generateSignature(senderWallet);
   }
   
-  _generateSignature(senderWallet) {
-    if (this.isSigned()) {
-      return this;
-    }
-    
-    if (this.fees() < 0) {
-      throw new Error("Fee must be positive");
-    }
-    
-    // encrypt the hash using the given private key
-    // this allows us to decrypt the signature later
-    // on using the matching public key
-    return senderWallet.sign(this.hash);
-  }
-  
   isSigned() {
     return !!this.signature;
   }
@@ -53,6 +38,21 @@ export default class Transaction {
   
   fees() {
     return this.inputValue() - this.outputValue();
+  }
+  
+  _generateSignature(senderWallet) {
+    if (this.isSigned()) {
+      return this;
+    }
+    
+    if (this.fees() < 0) {
+      throw new Error("Fee must be positive");
+    }
+    
+    // encrypt the hash using the given private key
+    // this allows us to decrypt the signature later
+    // on using the matching public key
+    return senderWallet.sign(this.hash);
   }
   
   _hash() {
