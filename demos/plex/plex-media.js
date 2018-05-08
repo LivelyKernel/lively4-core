@@ -2,7 +2,8 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Strings from 'src/client/strings.js'
 import _ from 'src/external/underscore.js'
 import {getDeepProperty} from "utils"
- 
+import {pt} from "src/client/graphics.js"
+
 // move to html
 function registerAttributeObservers(obj) {
   obj._attrObserver = new MutationObserver((mutations) => {
@@ -63,23 +64,34 @@ export default class PlexMedia extends Morph {
     
     var mediaElement = this.get("#media");
     media.children.forEach(ea => {
-      var dirElement = <div class={"directory " + ea.type} 
-          click={() => this.showDetails(dirElement, ea)}>
+      var dirElement = <a class={"directory " + ea.type} href={"plex:/" + ea.key.replace(/\/children$/,"/")} 
+          click={() => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
           {
             !ea.thumb ? "" :
               <img class="thumb" src={lively.swxURL("plex:/" + ea.thumb)}></img>
           } <br />
           <span class="title"><b>{ea.parentTitle}</b><br />{ea.title}</span>
-        </div>
+        </a>
       dirElement.media = ea
       dirElement.setAttribute("data-url", "plex:/" + ea.key)
       mediaElement.appendChild(dirElement)    
     })
     var detailsURL = this.getAttribute("details")
-    if (detailsURL) {
+    if (detailsURL || media.children.length == 1) {
+      if (!detailsURL) {
+        detailsURL = "plex:/" + media.children[0].key
+        var removeDir = true;
+      }
       var dir = mediaElement.querySelector(`[data-url="${detailsURL}"]`)
-      this.showDetails(dir, dir.media)
+      if (dir) {
+        await this.showDetails(dir, dir.media)
+        if (removeDir) {
+          // if there is only one element, just schow the details
+          dir.remove()
+        }
+      }
     }
+    
     // special container full extent #TODO, how to handle the generally?
     var containerContent = this.parentElement && this.parentElement.get("#container-content")
     if (containerContent) {
@@ -164,7 +176,9 @@ export default class PlexMedia extends Morph {
     this.detailMedia = detailMedia
     if (this.details) this.details.remove();
     this.details = <div class="details">
-        <img class="thumb" src={lively.swxURL("plex:/" + detailMedia.thumb)}></img>
+        <a href={url.replace(/\/children/,"/")} click={() => event.preventDefault()} >
+          <img class="thumb" src={lively.swxURL("plex:/" + detailMedia.thumb)}></img>
+        </a>
         <div class="title">{media.title}</div>
         <div class="parentTitle">{media.parentTitle}{media.year ? " (" + media.year +")"  : ""}</div>
         <table class="tracks">

@@ -171,7 +171,7 @@ export class PlexScheme extends Scheme {
   
   getAPIString() {
     var urlObj = new URL(this.url)
-    return urlObj.pathname.replace(/^\/\//,"/")
+    return urlObj.pathname.replace(/\/\//g,"/")
   }
 
   getURLQuery() {

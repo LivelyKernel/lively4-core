@@ -25,6 +25,7 @@ export default class PolymorphicIdendifierFs extends Base {
       .then((event) => event.data.content)
   }
   
+  
   _rpc(data) {
     return new Promise((resolve, reject) => {
       console.log('RPC request:', data)
@@ -32,8 +33,16 @@ export default class PolymorphicIdendifierFs extends Base {
         let channel = new MessageChannel()
         let client  = clients[0]
 
-        channel.port1.onmessage = resolve
+        var done = false
+        channel.port1.onmessage = (...args) => {
+          done  = true
+          resolve(...args)
+        }
         client.postMessage(data, [channel.port2])
+        
+        setTimeout(() => {
+          if (!done) reject("timeout")
+        }, 10 * 1000)
       })
     }).then((event) => {
       console.log('RPC response:', event.data)

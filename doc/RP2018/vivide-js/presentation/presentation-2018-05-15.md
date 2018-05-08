@@ -2,45 +2,20 @@
 
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
+
+let presentationSize = "big";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
+<link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
 
-<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
-<link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
-<link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
+<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css" />
+<link rel="stylesheet" type="text/css" href="src/client/lively.css" />
+<link rel="stylesheet" type="text/css" href="templates/livelystyle.css" />
 
 <style>
   .lively-slide {
     border: 1px solid rgb(220,220,220)
     page-break-before: always;
-  }
-  
-  .lively-slide.fullscreen {
-    position:fixed;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    background-color: #fff;
-  }
-  
-  .lively-slide.fullscreen .title-frontpage {
-    color: #2B547E;
-    font-weight: bold;
-    font-size: 40pt;
-    width: calc(100% - 40px);
-    top: 25%;
-    text-align: center;
-    position: absolute;
-  }
-  
-  .lively-slide.fullscreen .title-1 {
-    color: #2B547E;
-    font-weight: bold;
-    font-size: 40pt;
-    position: absolute;
-    top: 50px; 
-    width: calc(100% - 40px);
-    text-align: center;
   }
   
   p {
@@ -61,13 +36,14 @@ let presentation = lively.query(this, "lively-presentation");
 let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
 presentButton.addEventListener("click", () => {
-  
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
-    slide.className += ' fullscreen';
+    slide.className += ' fullscreen-' + presentationSize;
   })
   presentButton.style.display = 'none';
+  prevButton.style.display = 'none';
+  nextButton.style.display = 'none';
 })
 
 if (presentation && presentation.slides) {
@@ -114,22 +90,53 @@ presentButton
 --- 
 <div class="title-1">Context/Motivation</div>
 
+<ul class="notes notes-big">
+<li>System: VivideJS</li>
+<li>Provide data in a task-oriented form</li>
+<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>Explore data by utilizing different views</li>
+<li>Adapt the views while exploring the data</li>
+</ul>
+
 ---
 <div class="title-1">Design Space</div>
 
+<ul class="notes notes-big">
+<li>Advanced properties</li>
+<ul>
+<li>Width, height</li>
+<li>Color, background color</li>
+</ul>
+<li>Improved view connection management</li>
+<li>Processing asynchronous data</li>
+<li>Merging data from two sources</li>
+</ul>
 
 ---
 <div class="title-1">Done</div>
 
-- Tree View
-- First level children
+<ul class="notes notes-big">
+<li>Scripts are saved in the corresponding view</li>
+<li>First level of descents + tree view: <div class="inline"><script>openComponent('vivide-view', 'Vivide View')</script></div></li>
+</ul>
+
+<img style="position: absolute; bottom: 100px; left: calc(10% + 10px); width: 80%; max-width: 100%;" alt="Hier hätte ein Vivide View und sein Script Editor erscheinen müssen..." src="./vivide-view.png" />
 
 ---
 <div class="title-1">Next Steps</div>
 
-- Complete Tree View
-
-  - Processing 
+<ul class="notes notes-big">
+<li>Improve scripting</li>
+  <ul>
+  <li>Unique scripts ids</li>
+  <li>Provide further properties</li>
+  </ul>
+<li>Multi-level hierarchies</li>
+  <ul>
+  <li>Scripts for each level</li>
+  <li>Children are processed on demand</li>
+  </ul>
+</ul>
 
 ---
 
@@ -142,7 +149,7 @@ closeButton.addEventListener("click", () => {
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
-    slide.className = slide.className.replace('fullscreen', '');
+    slide.className = slide.className.replace('fullscreen-' + presentationSize, '');
   })
   
   presentButton.style.display = 'inline';
