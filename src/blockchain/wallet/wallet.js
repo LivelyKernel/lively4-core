@@ -19,9 +19,9 @@ export default class Wallet {
   }
   
   _hash() {
-    var sha256 = forge.md.sh256.create();
+    var sha256 = forge.md.sha256.create();
     return sha256.update(
-      this.rsaKeyPair.publicKey
+      this.publicKey
     );
   }
 }
