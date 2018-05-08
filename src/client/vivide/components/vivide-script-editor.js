@@ -14,13 +14,18 @@ export default class VivideScriptEditor extends Morph {
     return scripts;
   }
   
+  setView(view) {
+    this.view = view;
+    return view;
+  }
+  
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
     this.inspector.hideWorkspace();
   }
   
   initialFocus() {
-    lively.error('#TODO: implement this');
+    
   }
   
   async setScripts(scripts) {
@@ -56,11 +61,7 @@ export default class VivideScriptEditor extends Morph {
   }
   
   broadcastChange(scripts) {
-    // TODO: Replace with proper ownership
-    Array.from(document.querySelectorAll('vivide-view'))
-      .forEach(vivideView => {
-        vivideView.scriptGotUpdated(scripts);
-      });
+    this.view.scriptGotUpdated(scripts);
   }
   
   stepChanged(editor, stepScript) {
