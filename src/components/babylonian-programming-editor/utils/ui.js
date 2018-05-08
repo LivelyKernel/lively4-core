@@ -95,7 +95,7 @@ export class Input extends LineWidget {
     
     
     // Make input textfield
-    const input = <input type="text" size="1"></input>
+    const input = <input type="text" size="1"></input>;
     input.addEventListener("input", this._onChange);
     input.addEventListener("change", () => {
       changeCallback(input.value);
@@ -222,26 +222,27 @@ export class Slider extends LineWidget {
   constructor(editor, loc, kind, changeCallback) {
     super(editor, loc, kind);
     this._value = 0;
-    this._maxValue = 10;
+    this._maxValue = 0;
     this._element.textContent = "↻ ";
     
-    // Make slider
-    this._input = document.createElement("input");
-    this._input.setAttribute("type", "range");
-    this._input.setAttribute("min", 0);
-    this._input.setAttribute("max", this._maxValue);
-    this._input.setAttribute("value", this._value);
+    // Make slider input
+    this._input = <input
+                    type="range"
+                    min="0"
+                    max={this._maxValue}
+                    value={this._value}
+                    style="width: 200px"
+                  ></input>;
+    
     this._input.addEventListener("input", () => {
       this._value = this._input.valueAsNumber;
       this._updateElement();
       changeCallback(this._value);
     });
-    this._input.style.width = "200px";
     this._element.appendChild(this._input);
     
-    // Make current value
-    this._output = document.createElement("span");
-    this._output.textContent = ` ${this._value + 1}`;
+    // Make current value output
+    this._output = <span> {this._value + 1}</span>;
     this._element.appendChild(this._output);
   }
   
