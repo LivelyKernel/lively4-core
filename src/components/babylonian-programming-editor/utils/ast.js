@@ -26,12 +26,17 @@ export const generateLocationMap = (ast) => {
   traverse(ast, {
     enter(path) {
       let location = path.node.loc;
-      // ReturnStatement is an exception
-      // We want to only associate it with the "return" token
+      // Some Nodes are exceptions
       if(path.isReturnStatement()) {
+        // ReturnStatements are associated with the "return" keyword
         location.end.line = location.start.line;
         location.end.column = location.start.column + "return".length;
+      } else if(path.isForStatement()) { //TODO: All loops
+        // Loops are associated with their keywords
+        location.end.line = location.start.line;
+        location.end.column = location.start.column + "for".length;
       }
+      
       ast._locationMap[LocationConverter.astToKey(location)] = path;
     }
   });
@@ -44,7 +49,11 @@ export const canBeProbed = (path) => {
   const isTrackableIdentifier = path.isIdentifier() && !path.parentPath.isMemberExpression();
   const isTrackableMemberExpression = path.isMemberExpression();
   const isTrackableReturnStatement = path.isReturnStatement();
-  return isTrackableIdentifier || isTrackableMemberExpression || isTrackableReturnStatement;
+  const isTrackableLoop = path.isLoop();
+  return isTrackableIdentifier
+         || isTrackableMemberExpression
+         || isTrackableReturnStatement
+         || isTrackableLoop;
 }
 
 /**
@@ -139,6 +148,9 @@ export const applyProbeMarkers = (ast, markers) => {
     },
     BlockStatement(path) {
       insertBlockTracker(path);
+    },
+    Program(path) {
+      insertBlockTracker(path);
     }
   });
 };
@@ -213,7 +225,7 @@ export const applyExampleMarkers = (ast, markers) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const tracker = template("window.__tracker.id(ID, VALUE)")({
+  const tracker = template("window.__tracker.id(ID, VALUE, __blockCount)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: deepCopy(path.node)
   });
@@ -273,10 +285,12 @@ const insertReturnTracker = (path) => {
  * Inserts a tracker to check whether a block was entered
  */
 const insertBlockTracker = (path) => {
-  const tracker = template("window.__tracker.block(ID)")({
+  const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
+  const tracker = template("const __blockCount = window.__tracker.block(__blockId)")();
   path.unshiftContainer("body", tracker);
+  path.unshiftContainer("body", blockId);
 };
 
 /**

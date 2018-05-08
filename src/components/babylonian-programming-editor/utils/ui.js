@@ -38,8 +38,8 @@ class LineWidget {
 export class Annotation extends LineWidget {
   constructor(editor, line, kind) {
     super(editor, line, kind);
-    this._values = []
-
+    this._values = null;
+    this._activeRun = null;
     this._updateElement();
   }
   
@@ -49,9 +49,22 @@ export class Annotation extends LineWidget {
     this._updateElement();
   }
   
+  setActiveRun(activeRun) {
+    this._activeRun = activeRun;
+    this._updateElement();
+  }
+  
   _updateElement() {
-    const valuesString = this._values.length ? this._values.map((e)=>e[1]).join(" | ") : "??";
-    this._element.textContent = `↘︎ ${valuesString}`;
+    let valueString = "??";
+    if(this._values) {
+      if(this._activeRun !== null) {
+        valueString = this._values.get(this._activeRun)[1];
+      } else {
+        valueString = Array.from(this._values).map(([,v])=>v[1]).join(" | ");
+      }
+    }
+
+    this._element.textContent = `↘︎ ${valueString}`;
     this._element.style.left = `${this._indent}ch`;
   }
   
@@ -172,3 +185,48 @@ export class Form extends LineWidget {
   }
 }
 
+/**
+ * A Slider is used to slide through a loop
+ */
+export class Slider extends LineWidget {
+  constructor(editor, line, kind, changeCallback) {
+    super(editor, line, kind);
+    this._value = 0;
+    this._maxValue = 10;
+    this._element.textContent = "↻ ";
+    
+    // Make slider
+    this._input = document.createElement("input");
+    this._input.setAttribute("type", "range");
+    this._input.setAttribute("min", 0);
+    this._input.setAttribute("max", this._maxValue);
+    this._input.setAttribute("value", this._value);
+    this._input.addEventListener("input", () => {
+      this._value = this._input.valueAsNumber;
+      this._updateElement();
+      changeCallback(this._value);
+    });
+    this._input.style.width = "200px";
+    this._element.appendChild(this._input);
+    
+    // Make current value
+    this._output = document.createElement("span");
+    this._output.textContent = ` ${this._value + 1}`;
+    this._element.appendChild(this._output);
+  }
+  
+  update(maxValue, indent) {
+    this._maxValue = maxValue;
+    if(this._value > this._maxValue) {
+      this._value = this._maxValue;
+    }
+    this._indent = indent;
+    this._updateElement();
+  }
+  
+  _updateElement() {
+    this._input.setAttribute("max", this._maxValue);
+    this._output.textContent = ` ${this._value + 1}`;
+    this._element.style.left = `${this._indent}ch`;
+  }
+}

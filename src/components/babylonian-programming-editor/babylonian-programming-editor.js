@@ -11,6 +11,7 @@ import {
   Annotation,
   Input,
   Form,
+  Slider,
   addMarker
 } from "./utils/ui.js";
 import {
@@ -53,7 +54,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/3_objects.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -168,7 +169,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.execute(code);
 
     // Show the results
-    this.updateAnnotations();
+    this.updateWidgets();
     this.updateDeadMarkers();
   }
   
@@ -180,19 +181,21 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Prepare result container
     window.__tracker = {
       // Properties
-      ids: {},
-      blocks: [],
+      ids: new Map(),
+      blocks: new Map(),
 
       // Functions
-      id: function(id, value) {
-        if(!(id in this.ids)) {
-          this.ids[id] = [];
+      id: function(id, value, blockCount) {
+        if(!this.ids.has(id)) {
+          this.ids.set(id, new Map());
         }
-        this.ids[id].push([typeof(value), value]);
+        this.ids.get(id).set(blockCount, [typeof(value), value]);
         return value;
       },
       block: function(id) {
-        this.blocks.push(id);
+        const blockCount = this.blocks.has(id) ? this.blocks.get(id) : 0;
+        this.blocks.set(id, blockCount + 1);
+        return blockCount;
       }
     };
 
@@ -251,10 +254,39 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(existingMarks.length > 0) {
       existingMarks.map(this.removeMarker.bind(this));
     } else if(newMarkerKind === "probe" && canBeProbed(this.selectedPath)) {
-      this.markers[newMarkerKind].set(
-        addMarker(this.editor(), loc, [newMarkerKind]),
-        new Annotation(this.editor(), loc.to.line, newMarkerKind)
-      );
+      // Distinguish between value-probes (identifier, return) and loop-probes
+      if(this.selectedPath.isLoop()) {
+        const marker = addMarker(this.editor(), loc, [newMarkerKind]);
+        const onSliderChanged = (newValue) => {
+          // Get all markers for the body
+          const loopPath = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
+          const bodyLoc = LocationConverter.astToMarker({
+            start: loopPath.node.loc.start,
+            end: loopPath.node.body.loc.end
+          });
+          const includedMarkers = this.editor()
+                                      .findMarks(bodyLoc.from, bodyLoc.to)
+                                      .filter(m => m._babylonian);
+
+
+          includedMarkers.forEach(marker => {
+            const widget = this.markers.probe.get(marker);
+            if(widget instanceof Annotation) {
+              widget.setActiveRun(newValue);
+            }
+          });
+        }
+        this.markers[newMarkerKind].set(
+          marker,
+          new Slider(this.editor(), loc.to.line, newMarkerKind, onSliderChanged)
+        );
+        onSliderChanged(0);
+      } else {
+        this.markers[newMarkerKind].set(
+          addMarker(this.editor(), loc, [newMarkerKind]),
+          new Annotation(this.editor(), loc.to.line, newMarkerKind)
+        );
+      }
     } else if(newMarkerKind === "replace" && canBeReplaced(this.selectedPath)) {
       const marker = addMarker(this.editor(), loc, [newMarkerKind]);
       this.markers[newMarkerKind].set(
@@ -307,37 +339,45 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.evaluate();
   }
   
-  updateAnnotations() {
-    // Update annotations for replacements
-    this.markers.replace.forEach((annotation, marker) => {
+  updateWidgets() {
+    // Update widgets for replacements
+    this.markers.replace.forEach((widget, marker) => {
       const markerLoc = marker.find();
-      annotation.update(markerLoc.from.ch);
+      widget.update(markerLoc.from.ch);
     });
     
-    // Update annotations for probes
-    this.markers.probe.forEach((annotation, marker) => {
+    // Update widgets for probes
+    this.markers.probe.forEach((widget, marker) => {
       const markerLoc = marker.find();
       const probedNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())].node;
-      let values;
-      if(probedNode._id in window.__tracker.ids) {
-        values = window.__tracker.ids[probedNode._id];
-      } else {
-        values = [["??", "??"]];
+      
+      // Distinguish between Annotations and Sliders
+      if(widget instanceof Annotation) {
+        let values = null;
+        if(window.__tracker.ids.has(probedNode._id)) {
+          values = window.__tracker.ids.get(probedNode._id);
+        }
+        widget.update(values, markerLoc.from.ch);
+      } else if(widget instanceof Slider) {
+        let maxValue = 0;
+        if(window.__tracker.blocks.has(probedNode.body._id)) {
+          maxValue = window.__tracker.blocks.get(probedNode.body._id) - 1;
+        }
+        widget.update(maxValue, markerLoc.from.ch);
       }
-      annotation.update(values, markerLoc.from.ch);
     });
     
-    // Update annotations for examples
-    this.markers.example.forEach((annotation, marker) => {
+    // Update widgets for examples
+    this.markers.example.forEach((widget, marker) => {
       const markerLoc = marker.find();
       const exampleNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-      if(annotation instanceof Form) {
-        annotation.update(
+      if(widget instanceof Form) {
+        widget.update(
           parameterNamesForFunctionIdentifier(exampleNode),
           markerLoc.from.ch
         );
-      } else if (annotation instanceof Input) {
-        annotation.update(
+      } else if (widget instanceof Input) {
+        widget.update(
           markerLoc.from.ch
         );
       }
@@ -352,7 +392,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this.ast, {
       BlockStatement(path) {
-        if(!window.__tracker.blocks.includes(path.node._id)) {
+        if(!window.__tracker.blocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that.markers.dead.push(
             that.editor().markText(
