@@ -3,28 +3,13 @@ import Strings from 'src/client/strings.js'
 import _ from 'src/external/underscore.js'
 import {getDeepProperty} from "utils"
 import {pt} from "src/client/graphics.js"
+import html from 'src/client/html.js'
 
-// move to html
-function registerAttributeObservers(obj) {
-  obj._attrObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {  
-      if(mutation.type == "attributes") { 
-        var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
-        if (obj.methodName) {
-          obj.methodName(
-            mutation.target.getAttribute(mutation.attributeName),
-            mutation.oldValue)
-        }        
-      }
-    });
-  });
-  obj._attrObserver.observe(obj, { attributes: true });  
-}
 
 export default class PlexMedia extends Morph {
 
   async initialize() {
-    registerAttributeObservers(this);
+    html.registerAttributeObservers(this);
     this.get("#controls audio").addEventListener('ended',() => this.onAudioEnded())
     this.render()
   }
