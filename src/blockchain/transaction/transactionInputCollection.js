@@ -33,9 +33,9 @@ export default class TransactionInputCollection {
   }
   
   value() {
-    return this._transactionInputs.entries().reduce(function(total, output) {
+    return Array.from(this._transactionInputs.entries()).reduce((total, output) => {
       total += output.amount;
-    });
+    },0);
   }
   
   finalize() {
@@ -48,7 +48,7 @@ export default class TransactionInputCollection {
   }
   
   isFinalized() {
-    return this.hash != null;
+    return !!this.hash;
   }
   
   _hash() {

@@ -2,6 +2,7 @@ import Preferences from "src/client/preferences.js"
 import _ from 'src/external/underscore.js'
 import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
+import Strings from 'src/client/strings.js'
 
 /*
  * Kitchensink for all HTML manipulation utilities
@@ -322,5 +323,26 @@ export default class HTML {
     return saveAsURL
   }
 
+  
+ static async registerAttributeObservers(obj) {
+    obj._attrObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") { 
+          console.log('mutation ' + mutation.attributeName )
+          var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
+          if (obj[methodName]) {
+            console.log("found " + methodName)
+            obj[methodName](
+              mutation.target.getAttribute(mutation.attributeName),
+              mutation.oldValue)
+          } else {
+             console.log("NOT found: " + methodName)
+          }
+        }
+      });
+    });
+    obj._attrObserver.observe(obj, { attributes: true });  
+  }
+  
 }
 

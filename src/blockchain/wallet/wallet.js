@@ -8,7 +8,7 @@ export default class Wallet {
     this._privateKey = rsaKeyPair.privateKey;
     this.hash = this._hash(); 
   }
-  
+   
   sign(hash) {
     return this._privateKey.sign(hash);
   }
@@ -19,9 +19,9 @@ export default class Wallet {
   }
   
   _hash() {
-    var sha256 = forge.md.sh256.create();
+    var sha256 = forge.md.sha256.create();
     return sha256.update(
-      this.rsaKeyPair.publicKey
+      this.publicKey
     );
   }
 }

@@ -1,0 +1,17 @@
+div.quotation {
+  width: 85%;
+  margin: 20% auto;
+  text-align: center;
+  display: block;
+  font-size: 24px;
+}
+
+div.quotation .author {
+  width: 50%;
+  float: right;
+  display: block;
+  font-size: 16px;
+  color: grey;
+  clear: both;
+  margin-top: 20px;
+}
