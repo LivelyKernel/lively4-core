@@ -351,6 +351,7 @@ export default class Lively {
     // preload some components
     await components.loadByName("lively-window");
     await components.loadByName("lively-editor");
+    await components.loadByName("lively-script");
     
     setTimeout(() => {
       // wait for the timeout and try again
