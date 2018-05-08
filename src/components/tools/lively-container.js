@@ -1279,7 +1279,12 @@ export default class Container extends Morph {
   }
 
   async saveMarkdown(url) {
-    var source = await this.get("lively-markdown").htmlAsMarkdownSource()
+    var markdown = this.get("lively-markdown")
+    if (that.getAttribute("mode") == "presentation") {
+      lively.confirm("Saving in presentation mode, not supported yet")
+      return 
+    }
+    var source = await markdown.htmlAsMarkdownSource()
     return this.saveSource(url, source);
   }
 
