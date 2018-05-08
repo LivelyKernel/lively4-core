@@ -37,9 +37,9 @@
 
 - Geschichtlicher Hintergrund
 - Blockchain als Datenstruktur
-- Eigenschafte einer Blockchain
-- Optimierung (Merkle Trees)
+- Eigenschaften einer Blockchain
+- <strike>Optimierung (Merkle Trees)</strike>
 - Distributed Blockchain
-- Distributed Trust
+- <strike>Distributed Trust</strike>
 - weitere Beispiele
 - Anti-Beispiele / Kritik / Hype?

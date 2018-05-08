@@ -8,7 +8,7 @@ export default class Wallet {
     this._privateKey = rsaKeyPair.privateKey;
     this.hash = this._hash(); 
   }
-  
+   
   sign(hash) {
     return this._privateKey.sign(hash);
   }

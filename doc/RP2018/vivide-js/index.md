@@ -14,10 +14,10 @@ import { createNewFileButton, openBrowser, openComponent } from "doc/PX2018/proj
 createNewFileButton("doc/RP2018/vivide-js/presentation/", "New Presentation", "presentation", true);
 </script>
 
-Vivide directory: <browse://src/client/vivide/>
+[Vivide directory](browse://src/client/vivide/)
 
 Vivide View: <div class="inline"><script>openComponent('vivide-view', 'Vivide View')</script></div>
 
 
 
-Alternative: <open://vivide-view>
+[Alternative](open://vivide-view)

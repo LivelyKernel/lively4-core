@@ -33,7 +33,7 @@ export default class TransactionInputCollection {
   }
   
   value() {
-    return this._transactionInputs.entries().reduce(function(total, output) {
+    return this._transactionInputs.entries().reduce((total, output) => {
       total += output.amount;
     });
   }
@@ -48,7 +48,7 @@ export default class TransactionInputCollection {
   }
   
   isFinalized() {
-    return this.hash != null;
+    return !!this.hash;
   }
   
   _hash() {

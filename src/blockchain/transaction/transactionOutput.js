@@ -10,8 +10,7 @@ export default class TransactionOutput {
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
-      this.receiverId + 
-      this.receiverPublicKey + 
+      this.receiverHash + 
       this.amount
     );
   }
