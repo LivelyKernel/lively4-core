@@ -9,6 +9,26 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
 
     // needed for check function for aexpr-ticking
     this.enabled = true;
+
+    if(this.isAsync === true) {
+      this.cachedCurrentValueUpdatedAt = 0;
+    }
+  }
+
+  getCurrentValue() {
+    if(this.isAsync !== true || this.cachingFetch.hasTraced()) {
+      return super.getCurrentValue();
+    }
+
+    let time = new Date().getTime();
+    if((time - this.cachedCurrentValueUpdatedAt) > 5000) {
+      let currentValue = super.getCurrentValue();
+      this.cachedCurrentValue = currentValue;
+      this.cachedCurrentValueUpdatedAt = time;
+      return currentValue;
+    } else {
+      return this.cachedCurrentValue;
+    }
   }
 
   onChange(...args) {
@@ -22,17 +42,17 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
 
   offChange(...args) {
     super.offChange(...args);
-    
+
     if(this.callbacks.length === 0) {
       this.revoke();
     }
   }
-  
+
   dispose() {
     super.dispose();
     this.revoke();
   }
-  
+
   // #TODO: unused!
   revoke() {
     FRAME_BASED_AEXPRS.delete(this);
