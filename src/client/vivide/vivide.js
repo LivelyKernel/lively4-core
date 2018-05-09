@@ -27,6 +27,7 @@ export async function createScriptEditorFor(view) {
 
   let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
 
+  scriptEditor.setView(view);
   let scripts = view.getScripts();
   scriptEditor.setScripts(scripts);
 

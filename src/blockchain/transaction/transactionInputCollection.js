@@ -35,7 +35,7 @@ export default class TransactionInputCollection {
   value() {
     return Array.from(this._transactionInputs.entries()).reduce((total, output) => {
       total += output.amount;
-    },0);
+    }, 0);
   }
   
   finalize() {
