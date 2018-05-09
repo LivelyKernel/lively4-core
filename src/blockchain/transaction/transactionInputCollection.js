@@ -1,4 +1,5 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
+import TransactionOutput from './transactionOutput.js';
 
 /**
   Intended usage:
@@ -14,11 +15,12 @@ export default class TransactionInputCollection {
   constructor(senderWallet) {
     this._senderWallet = senderWallet;
     this._transactionInputs = new Map();
+    this._containsMiningReward = false;
     this.hash = null;
   }
   
   add(transaction) {
-    if (this.isFinialized()) {
+    if (this.isFinalized()) {
       return this;
     }
     
@@ -32,6 +34,26 @@ export default class TransactionInputCollection {
     return this;
   }
   
+  addMiningReward(block) {
+    if (this.isFinalized()) {
+      return this;
+    }
+    
+    if (this._containsMiningReward) {
+      // there must only be one mining reward per transaction
+      return this;
+    }
+
+    if (block.minerHash !== this._senderWallet.hash) {
+      throw new Error("the block must be mined by the reward receiver");
+    }
+    
+    var output = new TransactionOutput(this._senderWallet, block.reward);
+    this._transactionInputs.set(output.hash, output);
+    this._containsMiningReward = true;
+    return this;
+  }
+  
   value() {
     return Array.from(this._transactionInputs.entries()).reduce((total, output) => {
       total += output.amount;
@@ -39,7 +61,7 @@ export default class TransactionInputCollection {
   }
   
   finalize() {
-    if (this.isFinialized()) {
+    if (this.isFinalized()) {
       return this;
     }
     
@@ -54,7 +76,7 @@ export default class TransactionInputCollection {
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
-      this._transactionInputs.keys().join('')
+      Array.from(this._transactionInputs.keys()).join('')
     );
   }
 }

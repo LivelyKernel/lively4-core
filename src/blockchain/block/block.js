@@ -1,4 +1,7 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
+import Transaction from '../transaction/transaction.js';
+import TransactionInputCollection from '../transaction/transactionInputCollection.js';
+import TransactionOutputCollection from '../transaction/transactionOutputCollection.js';
 
 const C_BLOCK_REWARD = 10;
 
@@ -13,13 +16,13 @@ export default class Block {
     }
     
     this.timestamp = Date.now();
-    this.minetHash = minerWallet.hash;
+    this.minerHash = minerWallet.hash;
     this.minerPublicKey = minerWallet.publicKey;
     this.transactions = transactions;
     this.miningProof = miningProof;
     this.reward = transactions.fees() + C_BLOCK_REWARD;
     
-    this._sendReward();
+    this._sendReward(minerWallet);
     
     this.hash = this._hash();
     this.signature = this._generateSignature(minerWallet);
@@ -42,10 +45,16 @@ export default class Block {
     return this.minerPublicKey.verify(hash.digest().bytes(), this.signature);
   }
   
-  _sendReward() {
-    // TODO: send the reward to the miner
-    // => append the transaction to the transactions
+  _sendReward(minerWallet) {
+    var inputs = new TransactionInputCollection(minerWallet)
+                      .addMiningReward(this)
+                      .finalize();
+    var outputs = new TransactionOutputCollection()
+                      .add(minerWallet, this.reward)
+                      .finalize();
     
+    var transaction = new Transaction(minerWallet, inputs, outputs);
+    this.transactions.add(transaction);
     this.transactions.finalize();
   }
   
