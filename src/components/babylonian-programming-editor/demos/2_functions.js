@@ -26,3 +26,4 @@ function max(a, b) {
     return b;
   }
 }
+/* Examples: {"probe":[{"loc":[24,4,24,10]},{"loc":[26,4,26,10]}],"replacement":[],"example":[{"loc":[22,9,22,12],"value":{"a":"50","b":"40"}}]} */

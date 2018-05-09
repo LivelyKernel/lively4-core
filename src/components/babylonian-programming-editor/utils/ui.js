@@ -92,16 +92,25 @@ export class Annotation extends LineWidget {
  * An Input is used to enter a single value
  */
 export class Input extends LineWidget {
-  constructor(editor, loc, kind, changeCallback) {
+  constructor(editor, loc, kind, initialValue, changeCallback) {
     super(editor, loc, kind);
     this._element.textContent = "↖︎";
+    this._value = initialValue;
     
     // Make input textfield
-    const input = <input type="text" size="1"></input>;
+    const input = <input
+                    type="text"
+                    size={this._value.length ? this._value.length : 1}
+                    value={this._value}
+                  ></input>;
     input.addEventListener("input", this._onChange);
     input.addEventListener("change", () => {
-      changeCallback(input.value);
+      this._value = input.value;
+      changeCallback(this._value);
     });
+    if(this._value.length) {
+      changeCallback(this._value);
+    }
     this._element.appendChild(input);
   }
   
@@ -127,6 +136,13 @@ export class Input extends LineWidget {
   _onChange() {
     this.setAttribute("size", this.value.length ? this.value.length : 1);
   }
+  
+  /**
+   * Returns a serializable representation of the current value
+   */
+  getSerializableValue() {
+    return this._value;
+  }
 }
 
 
@@ -134,18 +150,21 @@ export class Input extends LineWidget {
  * A Form is used to enter keyed values
  */
 export class Form extends LineWidget {
-  constructor(editor, loc, kind, keys = [], changeCallback) {
+  constructor(editor, loc, kind, initialValue, keys = [], changeCallback) {
     super(editor, loc, kind);
     this._changeCallback = changeCallback;
     this._keys = [];
     this._inputs = new Map();
-    this.update(keys, loc.to.ch);
+    this.update(keys, loc.to.ch, initialValue);
+    if(initialValue) {
+      this._changeCallback(this.valueArrayString);
+    }
   }
   
   /**
    * Updates the inputs's keys and indent
    */
-  update(keys, indent) {
+  update(keys, indent, initialValue = null) {
     this._keys = keys;
     this._indent = indent;
     
@@ -157,7 +176,7 @@ export class Form extends LineWidget {
     }
     for(let key of keys) {
       if(!this._inputs.has(key)) {
-        this._inputs.set(key, this._makeInput(key));
+        this._inputs.set(key, this._makeInput(key, initialValue[key]));
       }
     }
     
@@ -167,7 +186,7 @@ export class Form extends LineWidget {
   /**
    * Creates a new form input
    */
-  _makeInput(name = "") {
+  _makeInput(name = "", initialValue = "") {
     const id = Form.nextInputId;
 
     // Textfield
@@ -175,7 +194,8 @@ export class Form extends LineWidget {
                     type="text"
                     id={id}
                     name={name}
-                    size="1"></input>
+                    size={initialValue.length ? initialValue.length : 1}
+                    value={initialValue}></input>
 
     input.addEventListener("input", () => {
       input.setAttribute("size", input.value.length ? input.value.length : 1);
@@ -220,6 +240,19 @@ export class Form extends LineWidget {
   get valueArrayString() {
     return `[${this._keys.map(k => this._inputs.get(k).value)
                          .join(",")}]`;
+  }
+  
+  /**
+   * Returns a serializable representation of the current value
+   */
+  getSerializableValue() {
+    const valueObj = {};
+    this._inputs.forEach((input, key) => {
+      if(this._keys.includes(key)) {
+        valueObj[key] = input.value
+      }
+    });
+    return valueObj;
   }
 
   /**
@@ -289,9 +322,9 @@ export class Slider extends LineWidget {
   /**
    * Removes the Widget from it's editor
    */
-  clear() {
+  clear(silent = false) {
     this._value = null;
-    this.fire();
+    if(!silent) this.fire();
     super.clear();
   }
   

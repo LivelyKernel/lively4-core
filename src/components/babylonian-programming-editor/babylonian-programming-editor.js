@@ -22,6 +22,7 @@ import {
   replacementNodeForCode,
   parameterNamesForFunctionIdentifier
 } from "./utils/ast.js";
+import { patchEditor } from "./utils/load-save.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
@@ -35,6 +36,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   initialize() {
     this.windowTitle = "Babylonian Programming Editor";
     
+    // Lock evaluation until we are fully loaded
+    this._evaluationLocked = true;
+    
     // Set up the WebWorker for parsing
     this.worker = new ASTWorkerWrapper();
     
@@ -46,13 +50,20 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.markers = {
       dead: []
     };
-    USER_MARKER_KINDS.map(m => this.markers[m] = new Map()); // TextMarker -> Annotation
+    USER_MARKER_KINDS.forEach(m => this.markers[m] = new Map()); // TextMarker -> Annotation
     
     // Set up timer
     this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
     
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
+      // Patch editor to load/save comments
+      patchEditor(
+        this.get("#source"),
+        () => this.markers,
+        this.setMarkers.bind(this)
+      );
+      
       // Test file
       this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
@@ -79,6 +90,45 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   
+  async setMarkers(markers) {
+    // Unlock evaluation after two seconds
+    this._evaluationLocked = true;
+    setTimeout(() => {
+      this._evaluationLocked = false;
+    }, 2000);
+    
+    // Remove all existing markers
+    for(let kind of USER_MARKER_KINDS) {
+      this.markers[kind].forEach((w,m) => {
+        this.markers[kind].get(m).clear(true);
+        this.markers[kind].delete(m);
+        m.clear();
+      });
+    }
+    
+    // Make sure we have a locationMap
+    await this.parse();
+    
+    // Add new markers
+    if(markers) {
+      markers.probe.forEach(m => {
+        const path = this.ast._locationMap[m.loc];
+        this.addProbeAtPath(path);
+      });
+      markers.replacement.forEach(m => {
+        const path = this.ast._locationMap[m.loc];
+        this.addReplacementAtPath(path, m.value);
+      });
+      markers.example.forEach(m => {
+        const path = this.ast._locationMap[m.loc];
+        this.addExampleAtPath(path, m.value);
+      });
+    }
+    
+    // Evaluate
+    this.evaluate(true);
+  }
+
   // Event handlers
   
   /**
@@ -105,9 +155,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   // Evaluating and running code
   
   /**
-   * Evaluates the current editor content and updates the results
+   * Parses the current code
    */
-  async evaluate() {
+  async parse() {
     // Convert the markers
     const convertMarker = m => ({
       loc: LocationConverter.markerToKey(m.find()),
@@ -136,15 +186,29 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(!ast) {
       return;
     }
-    console.log(code);
 
     this.ast = ast;
 
     // Post-process AST
     // (we can't do this in the worker because it create a cyclical structure)
     generateLocationMap(ast);
+    
+    return code;
+  }
+  
+  /**
+   * Evaluates the current editor content and updates the results
+   */
+  async evaluate(ignoreLock = false) {
+    if(this._evaluationLocked && !ignoreLock) {
+      return;
+    }
+    
+    // Parse the code
+    const code = await this.parse()
 
     // Execute the code
+    console.log("Executing", code);
     this.execute(code);
 
     // Show the results
@@ -250,7 +314,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   addProbeAtPath(path) {
     // Make sure we can probe this path
-    if(!canBeProbed(this.selectedPath)) {
+    if(!canBeProbed(path)) {
       return;
     }
     
@@ -281,9 +345,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Adds a replacement at the given path
    */
-  addReplacementAtPath(path) {
+  addReplacementAtPath(path, initialValue = null) {
     // Make sure we can replace this path
-    if(!canBeReplaced(this.selectedPath)) {
+    if(!canBeReplaced(path)) {
       return;
     }
     
@@ -297,6 +361,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       loc,
       kind,
+      initialValue,
       this.makeInputValueCallback(this, marker)
     );
     
@@ -306,9 +371,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Adds an example at the given path
    */
-  addExampleAtPath(path) {
+  addExampleAtPath(path, initialValue = null) {
     // Make sure we can add an example at this path
-    if(!canBeExample(this.selectedPath)) {
+    if(!canBeExample(path)) {
       return;
     }
     
@@ -319,12 +384,13 @@ export default class BabylonianProgrammingEditor extends Morph {
     let widget = null;
 
     // Distinguish between class- and function examples
-    if(this.selectedPath.parentPath.isClassDeclaration()) {
+    if(path.parentPath.isClassDeclaration()) {
       // For classes: Just show a simple input
       widget = new Input(
         this.editor(),
         loc,
         kind,
+        initialValue,
         this.makeInputValueCallback(this, marker)
       )
     } else {
@@ -333,7 +399,8 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.editor(),
         loc,
         kind,
-        parameterNamesForFunctionIdentifier(this.selectedPath),
+        initialValue,
+        parameterNamesForFunctionIdentifier(path),
         this.makeInputValueCallback(this, marker)
       );
     }
