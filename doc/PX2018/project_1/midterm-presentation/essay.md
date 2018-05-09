@@ -67,9 +67,6 @@ const outputCollection = new TransactionOutputCollection();
 
 <br/><br/>
 ## Visualization
-
-<div id="blockchain-viz-wrapper"></div>
-
 <script>
 import Wallet from 'src/blockchain/wallet/wallet.js';
 import Transaction from 'src/blockchain/transaction/transaction.js';
