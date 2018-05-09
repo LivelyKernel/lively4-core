@@ -66,9 +66,9 @@ export function withLogLayerCode(func) {
   } finally {
     log_layer_code = old;
   }
-};
+}
 
-const LayerObjectID = Symbol("layerObjectID");
+const LayerObjectID = self.Symbol("layerObjectID");
 
 export function getLayerDefinitionForObject(layer, object) {
   // log("cop getLayerDefinitionForObject(" + layer + ", " + object + ")");
@@ -76,8 +76,15 @@ export function getLayerDefinitionForObject(layer, object) {
     return;
   }
   var result = layer[object[LayerObjectID]];
-  return result ? result : getLayerDefinitionForObject(layer, object.prototype);
-};
+  // #BUG Maximum call stack size exceeded
+  try {
+    return result ? result : getLayerDefinitionForObject(layer, object.prototype);
+  } catch(e) {
+    debugger
+    console.error('getLayerDefinitionForObject', e)
+    return;
+  }
+}
 
 /**
  * Stores partial definitions for a single layered object and layer.
@@ -148,7 +155,7 @@ export function ensurePartialLayer(layer, object) {
     layer[object[LayerObjectID]] = new PartialLayer(object);
   }
   return layer[object[LayerObjectID]];
-};
+}
 
 // TODO(mariannet) : Find out if ES6 constructor also has type
 export function layerMethod(layer, object, property, func) {
@@ -161,15 +168,15 @@ export function layerMethod(layer, object, property, func) {
   // Bookkeeping for layer uninstall
   // typeof object.getName === 'function'
   //    && (layer._layeredFunctionsList[object][property] = true);
-};
+}
 
 function layerGetterMethod(layer, object, property, getter) {
   ensurePartialLayer(layer, object).defineGetter(property, getter);
-};
+}
 
 function layerSetterMethod(layer, object, property, setter) {
   ensurePartialLayer(layer, object).defineSetter(property, setter);
-};
+}
 
 export function layerProperty(layer, object, property, defs) {
   var defProperty = Object.getOwnPropertyDescriptor(defs, property);
@@ -186,15 +193,15 @@ export function layerProperty(layer, object, property, defs) {
   } else {
     layerMethod(layer, object, property, defs[property]);
   }
-};
+}
 
 export function layerPropertyWithShadow(layer, object, property) {
   // shadowing does not work with current implementation
   // see the shadow tests in LayersTest
   // TODO: the tests are green, what is the above comment about?
   var defs = {};
-  var baseValue = object[property];
-  const layeredPropSymbol = Symbol(property + ' ' +
+  // var baseValue = object[property];
+  const layeredPropSymbol = self.Symbol(property + ' ' +
       (typeof layer.name === 'string'
        ? 'for Layer ' + layer.name
        : 'for anonymous Layer'));
@@ -209,15 +216,15 @@ export function layerPropertyWithShadow(layer, object, property) {
     configurable: true
   });
   layerProperty(layer, object, property, defs);
-};
+}
 
 export function computeLayersFor(obj) {
   return obj && obj.activeLayers ?
       obj.activeLayers(currentLayers) : currentLayers();
-};
+}
 
 export function composeLayers(stack) {
-  var result = GlobalLayers.slice(0);
+  var result = self.GlobalLayers.slice(0);
   for (var i = 0; i < stack.length; i++) {
     var current = stack[i];
     if (current.withLayers) {
@@ -227,7 +234,7 @@ export function composeLayers(stack) {
     }
   }
   return result;
-};
+}
 
 export let LayerStack;
 
@@ -238,7 +245,8 @@ export function resetLayerStack() {
     composition: null
   }];
   invalidateLayerComposition();
-};
+}
+
 
 export function currentLayers() {
   if (LayerStack.length == 0) {
@@ -250,7 +258,7 @@ export function currentLayers() {
     current.composition = composeLayers(LayerStack);
   }
   return current.composition;
-};
+}
 
 // clear cached layer compositions
 export function invalidateLayerComposition() {
@@ -258,7 +266,7 @@ export function invalidateLayerComposition() {
     function(ea) {
       ea.composition = null;
     });
-};
+}
 
 export function lookupLayeredFunctionForObject(
     self, layer, function_name, methodType, n) {
@@ -287,7 +295,7 @@ export function lookupLayeredFunctionForObject(
     }
   }
   return partialFunction;
-};
+}
 
 function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isHidden) {
   // install in obj[slotName] a cop wrapper that weaves partial methods
@@ -296,17 +304,23 @@ function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isH
     return;
   }
   makeSlotLayerAwareWithNormalLookup(obj, slotName, baseValue, type, isHidden);
-};
+}
 
 function makeSlotLayerAwareWithNormalLookup(
     obj, slotName, baseValue, type, isHidden) {
+  var tmpObj = {}
+  if (baseValue && baseValue.isLayerAware) {
+    debugger
+  }
   let wrapped_function = function() {
     'use strict';
+    
     var composition =
         new PartialLayerComposition(this, slotName, baseValue, type);
-    proceedStack.push(composition);
+    self.proceedStack.push(composition);
     return invokeLayeredMethodThenPopProceedStack.apply(this, arguments);
   };
+  wrapped_function.displayName = "wrapped_" + slotName    
   wrapped_function.isLayerAware = true;
   // this is more declarative outside of COP context
   wrapped_function.isContextJSWrapper = true;
@@ -325,19 +339,24 @@ function makeSlotLayerAwareWithNormalLookup(
     Object.defineProperty(obj, slotName, {
       get() { return wrapped_function; },
       set(newFunction) {
-        makeSlotLayerAwareWithNormalLookup(this, slotName, newFunction);
+        if (newFunction.isLayerAware) {
+          // when someone reasigns an already layered method.... Example Bug. Dexie modifies Promise.then
+          // #Paper #ContextJS 
+        } else {
+          // makeSlotLayerAwareWithNormalLookup(this, slotName, newFunction);
+        }
       }
     });
   }
-};
+}
 
 function invokeLayeredMethodThenPopProceedStack() {
   'use strict';
   try {
     return proceed.apply(void 0 /* undefined */, arguments);
   } finally {
-    proceedStack.pop()
-  };
+    self.proceedStack.pop()
+  }
 }
 
 function makeFunctionLayerAware(base_obj, function_name, isHidden) {
@@ -351,10 +370,10 @@ function makeFunctionLayerAware(base_obj, function_name, isHidden) {
     // " , so do nothing")
     // return;
     base_function = () => null;
-  };
+  }
   pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function,
                                             undefined, isHidden)
-};
+}
 
 function makePropertyLayerAware(baseObj, property) {
   if (!baseObj) {
@@ -369,15 +388,15 @@ function makePropertyLayerAware(baseObj, property) {
     baseObj[propName] = baseObj[property]; // take over old value
     getter = function() { return this[propName] };
     Object.defineProperty(baseObj, property, {get: getter, configurable: true});
-  };
+  }
   var setter = baseObjProperty && baseObjProperty.set;
   if (!setter) {
     setter = function(value) { return this[propName] = value };
     Object.defineProperty(baseObj, property, {set: setter, configurable: true});
-  };
+  }
   pvtMakeFunctionOrPropertyLayerAware(baseObj, property, getter, 'getter');
   pvtMakeFunctionOrPropertyLayerAware(baseObj, property, setter, 'setter');
-};
+}
 
 function makeFunctionLayerUnaware(base_obj, function_name) {
   if (!base_obj) {
@@ -390,7 +409,7 @@ function makeFunctionLayerUnaware(base_obj, function_name) {
   }  
   while (typeof currentFunction.originalFunction == 'function'
       && !currentFunction.isLayerAware) {
-    var prevFunction = currentFunction;
+    prevFunction = currentFunction;
     currentFunction = currentFunction.originalFunction
   }
   if (!(currentFunction.isLayerAware)) {
@@ -409,14 +428,14 @@ function makeFunctionLayerUnaware(base_obj, function_name) {
       configurable: true
     });
   }
-};
+}
 
 export function uninstallLayersInObject(object) {
   Object.getOwnPropertyNames(object).forEach(ea => {
     if (typeof object[ea] === 'function')
       makeFunctionLayerUnaware(object, ea);
   });
-};
+}
 
 /* 
  * PUBLIC COP Layer Definition
@@ -428,27 +447,27 @@ export { globalContextForNamedLayers as GlobalNamedLayers };
 
 // Gloabl Layer Activation
 export function enableLayer(layer) {
-  if (GlobalLayers.indexOf(layer) !== -1) {
+  if (self.GlobalLayers.indexOf(layer) !== -1) {
     return;
   }
-  GlobalLayers.push(layer);
+  self.GlobalLayers.push(layer);
   invalidateLayerComposition();
-};
+}
 
 export function disableLayer(layer) {
-  var idx = GlobalLayers.indexOf(layer);
+  var idx = self.GlobalLayers.indexOf(layer);
   if (idx < 0) {
     return;
   }
-  GlobalLayers.splice(idx, 1);
+  self.GlobalLayers.splice(idx, 1);
   invalidateLayerComposition();
-};
+}
 
 export function proceed(...args) {
   // COP Proceed Function
-  var composition = proceedStack[proceedStack.length - 1];
+  var composition = self.proceedStack[self.proceedStack.length - 1];
   if (!composition) {
-    console.log('ContextJS: no composition to proceed (stack is empty) ');
+    console.warn('ContextJS: no composition to proceed (stack is empty) ');
     return;
   }
   if (composition.partialMethodIndex == undefined) {
@@ -462,9 +481,19 @@ export function proceed(...args) {
     }
   } else {
     composition.partialMethodIndex = index - 1;
-    return invokeNextPartialMethod(partialMethod, index, composition, args);
+    try {
+      if (self.proceedStack.length > 1000) {
+        debugger // #Debug
+      }
+      
+      return invokeNextPartialMethod(partialMethod, index, composition, args);
+    } catch(e) {
+      console.error("proceed " + self.proceedStack.length, e)
+      debugger // #TODO debug endless recursion!
+      return 
+    }
   }
-};
+}
 
 function invokeNextPartialMethod(partialMethod, index, composition, args) {
   try {
@@ -481,7 +510,7 @@ export class Layer {
   constructor (name, context) {
     this._name = name;
     if (typeof name === 'undefined') {
-      this._name = Symbol('COP Layer');
+      this._name = self.Symbol('COP Layer');
     }
     this._context = context;
     // this._layeredFunctionsList = {};
@@ -548,7 +577,7 @@ export class Layer {
   // Layer installation
   refineClass (classObject, methods) {
     if (!classObject || !classObject.prototype) {
-      throw new Error("ContextJS: can not refine class '" + classObject + "' in " + layer);
+      throw new Error("ContextJS: can not refine class '" + classObject + "' in " + this);
     }
     this.refineObject(classObject.prototype, methods);
     return this;
@@ -608,7 +637,7 @@ export class Layer {
     return true;
   }
   isGlobal () {
-    return GlobalLayers.indexOf(this) !== -1;
+    return self.GlobalLayers.indexOf(this) !== -1;
   }
   
   // Debugging
@@ -661,8 +690,8 @@ export class LayerableObjectTrait {
     return result;
   }
   structuralLayers (result) {
-    var allLayers = result.withLayers;
-    var allWithoutLayers = result.withoutLayers;
+    // var allLayers = result.withLayers;
+    // var allWithoutLayers = result.withoutLayers;
     var obj = this;
     // go ownerchain backward and gather all layer activations and deactivations
     while (obj) {
@@ -679,7 +708,7 @@ export class LayerableObjectTrait {
     return result;
   }
   globalLayers (result) {
-    this.collectWithLayersIn(GlobalLayers, result);
+    this.collectWithLayersIn(self.GlobalLayers, result);
     return result;
   }
   setWithLayers (layers) {
@@ -710,10 +739,10 @@ export class LayerableObjectTrait {
   setWithoutLayers (layers) {
     this.withoutLayers = layers;
   }
-  getWithLayers (layers) {
+  getWithLayers () {
     return this.withLayers || [];
   }
-  getWithoutLayer (layers) {
+  getWithoutLayer () {
     return this.withoutLayers || [];
   }
 }
@@ -722,7 +751,7 @@ export class LayerableObject extends LayerableObjectTrait {}
 
 export class COPError {
   constructor (message) {
-    this._msg = msg;
+    this._msg = message;
   }
   toString () {
     return "COP ERROR: " + this._msg;

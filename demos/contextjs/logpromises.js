@@ -10,18 +10,19 @@ if (!self.OriginalPromise) {
   self.OriginalPromise = Promise;
 }
 self.Promise = function Promise(...args) {
+  
   this.is_not_a_promise = true;
   if (this.constructorHook) {
-    var proceed = (...rest) => {
+    var p = (...rest) => {
       return new OriginalPromise(...rest)
     }
-    return this.constructorHook(proceed, args)
+    return this.constructorHook(p, args)
   }
   return new OriginalPromise(...args)
 };
 self.Promise.prototype = OriginalPromise.prototype;
-self.Promise.prototype.constructorHook = function(proceed, args) {
- return proceed(...args)
+self.Promise.prototype.constructorHook = function(p, args) {
+ return p(...args)
 }
 self.Promise.__proto__ = OriginalPromise
 // END
@@ -213,7 +214,7 @@ cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
 
   then(onresolve, onerror) {
     var oldPromise = this;
-    LogPromises.ensureDebugId(oldPromise)
+    var debugId = LogPromises.ensureDebugId(oldPromise)
     var newPromise = cop.proceed(
       onresolve ? (...args) => {
         var result
