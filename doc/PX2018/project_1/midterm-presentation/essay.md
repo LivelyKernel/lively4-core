@@ -29,7 +29,7 @@ Johannes Schneider, Julian Weise
   const code = document.createElement('pre');  
   code.textContent = await fetch(SystemJS.normalizeSync("src/blockchain/transaction/transaction.js")).then(r => r.text());
   return <div class="highlight">{code}</div>;
-})()
+})();
 </script>
 
 <br/><br/>
@@ -49,7 +49,7 @@ const outputCollection = new TransactionOutputCollection();
 
 (async () => {
   return new Transaction(sender, inputCollection, outputCollection);
-})()
+})();
 ```
 <br/><br/>
 ## Inspecting transaction object
@@ -62,20 +62,25 @@ const outputCollection = new TransactionOutputCollection();
   var inspector = await (<lively-inspector></lively-inspector>)
   inspector.inspect(result)
   return <div style="border: 2px solid lightgray">{inspector}</div>
-})()
+})();
 </script>
 
 <br/><br/>
-## Visualization of transaction object
+## Visualization
+
+<div id="blockchain-viz-wrapper"></div>
+
 <script>
 import Wallet from 'src/blockchain/wallet/wallet.js';
 import Transaction from 'src/blockchain/transaction/transaction.js';
 import TransactionInputCollection from 'src/blockchain/transaction/transactionInputCollection.js';
 import TransactionOutputCollection from 'src/blockchain/transaction/transactionOutputCollection.js';
-
-const sender = new Wallet();
-const inputCollection = new TransactionInputCollection(sender);
-const outputCollection = new TransactionOutputCollection();
-const transactionView = lively.openComponentInWindow("blockchain-transaction");
-transactionView.transaction = new Transaction(sender, inputCollection, outputCollection);
+(() => {
+  const sender = new Wallet();
+  const inputCollection = new TransactionInputCollection(sender);
+  const outputCollection = new TransactionOutputCollection();
+  const transactionView = document.createElement("blockchain-transaction");
+  transactionView.transaction = new Transaction(sender, inputCollection, outputCollection);
+  return transactionView;
+})();
 </script>
