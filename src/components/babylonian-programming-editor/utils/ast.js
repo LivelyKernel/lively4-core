@@ -108,9 +108,26 @@ export const assignIds = (ast) => {
   return ast;
 };
 
+
+/**
+ * Applies basic modifications to the given AST
+ */
+export const applyBasicModifications = (ast) => {
+  traverse(ast, {
+    Program(path) {
+      // Add global example ID
+      const globalExampleId = template("let __exampleId = 0")();
+      path.unshiftContainer("body", globalExampleId);
+    }
+  });
+}
+
 /**
  * Applies replacement markers to the given AST
  */
+export const applyReplacements = (ast, annotations) => {
+  // TODO
+}
 export const applyReplacementMarkers = (ast, markers) => {
   // Apply the markers
   markers.forEach((marker) => {
@@ -130,8 +147,8 @@ export const applyReplacementMarkers = (ast, markers) => {
 /**
  * Applies probe markers to the given AST
  */
-export const applyProbeMarkers = (ast, markers) => {
-  const trackedNodes = markers.map(marker => ast._locationMap[marker.loc].node);
+export const applyProbes = (ast, annotations) => {
+  const trackedNodes = annotations.map((a) => ast._locationMap[a.location].node);
 
   traverse(ast, {
     Identifier(path) {
@@ -158,6 +175,9 @@ export const applyProbeMarkers = (ast, markers) => {
 /**
  * Applies example markers to the given AST
  */
+export const applyExamples = (ast, annotations) => {
+  // TODO
+}
 export const applyExampleMarkers = (ast, markers) => {
   // Prepare templates to insert
   const functionCall = template("ID.apply(null, PARAMS)");
@@ -225,7 +245,7 @@ export const applyExampleMarkers = (ast, markers) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const tracker = template("window.__tracker.id(ID, VALUE, __blockCount)")({
+  const tracker = template("window.__tracker.id(__exampleId, ID, VALUE, __blockCount)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: deepCopy(path.node)
   });
@@ -274,7 +294,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("window.__tracker.id(ID, VALUE)")({
+  const returnTracker = template("window.__tracker.id(__exampleId, ID, VALUE)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument
   });

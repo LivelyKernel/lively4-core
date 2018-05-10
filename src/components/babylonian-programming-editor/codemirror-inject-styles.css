@@ -1,28 +1,34 @@
-.line-widget {
+.widget {
   position: relative;
   display: inline-block;
   border-bottom-left-radius: 3px;
   border-bottom-right-radius: 3px;
   margin-left: 4px;
   padding: 0 4px;
+  overflow: hidden;
 }
 
-.line-widget.probe {
+.widget.probe {
   background-color: hsla(198, 69%, 67%, 0.5);
   color: hsl(198, 69%, 17%);
+  padding-left: 0px
 }
 
-.line-widget.replacement {
+.widget.probe .example-name {
+  padding-left: 4px;
+}
+
+.widget.replacement {
   background-color: hsla(344, 54%, 63%, 0.5);
   color: hsl(344, 54%, 13%);
 }
 
-.line-widget.example {
+.widget.example {
   background-color: hsla(41, 69%, 38%, 0.5);
   color: hsl(41, 69%, 8%);
 }
 
-.line-widget > input {
+.widget > input {
   background: transparent;
   border: none;
   font: inherit;

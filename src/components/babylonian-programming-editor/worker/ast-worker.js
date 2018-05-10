@@ -5,9 +5,10 @@ import {
   astForCode,
   codeForAst,
   assignIds,
-  applyReplacementMarkers,
-  applyProbeMarkers,
-  applyExampleMarkers
+  applyReplacements,
+  applyProbes,
+  applyExamples,
+  applyBasicModifications,
 } from "../utils/ast.js";
 
 
@@ -15,18 +16,27 @@ import {
  * Receive message from the main thread
  */
 export default onmessage = function(msg) {
-  const { code, markers } = JSON.parse(msg.data.payload);
+  const { code, annotations } = JSON.parse(msg.data.payload);
 
   // Process the code
   try {
     const ast = parse(code);
     const originalAst = deepCopy(ast);
 
-    // Process AST using markers
+    // Process AST
     generateLocationMap(ast);
-    applyReplacementMarkers(ast, markers.replacement);
-    applyProbeMarkers(ast, markers.probe);
-    applyExampleMarkers(ast, markers.example);
+    applyBasicModifications(ast);
+    if(annotations.replacements) {
+      applyReplacements(ast, annotations.replacements);
+    }
+    if(annotations.probes) {
+      applyProbes(ast, annotations.probes);
+    }
+    
+    // Add trackers for all examples
+    if(annotations.examples) {
+      applyExamples(ast, annotations.examples);
+    }
 
     // Generate executable code
     const executableCode = codeForAst(ast);

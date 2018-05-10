@@ -24,6 +24,8 @@ import {
 } from "./utils/ast.js";
 import { patchEditor } from "./utils/load-save.js";
 
+import Probe from "./data/probe.js";
+
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
 const USER_MARKER_KINDS = ["example", "replacement", "probe"];
@@ -37,20 +39,22 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.windowTitle = "Babylonian Programming Editor";
     
     // Lock evaluation until we are fully loaded
-    this._evaluationLocked = true;
+    this._evaluationLocked = false;
     
     // Set up the WebWorker for parsing
     this.worker = new ASTWorkerWrapper();
     
     // Set up AST
-    this.ast = null;
-    this.selectedPath = null;
+    this._ast = null;
+    this._selectedPath = null;
 
     // Set up markers
-    this.markers = {
-      dead: []
+    this._deadMarkers = []
+    
+    // Set up Annotations
+    this._annotations = {
+      probes: [] // [Probe]
     };
-    USER_MARKER_KINDS.forEach(m => this.markers[m] = new Map()); // TextMarker -> Annotation
     
     // Set up timer
     this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
@@ -58,23 +62,27 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Patch editor to load/save comments
-      patchEditor(
+      /*patchEditor(
         this.get("#source"),
         () => this.markers,
         this.setMarkers.bind(this)
-      );
+      );*/
       
       // Test file
       this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
       
       // Event listeners
-      this.editor().on("change", this.evaluateTimer.start.bind(this.evaluateTimer));
+      this.editor().on("change", () => {
+        this.syncIndentations();
+        this.evaluateTimer.start();
+      });
       this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
-        "Ctrl-1": () => { this.toggleMarkerAtSelection("probe") },
+        "Ctrl-1": () => { this.addAnnotationAtSelection("probe") },
         "Ctrl-2": () => { this.toggleMarkerAtSelection("replacement") },
         "Ctrl-3": () => { this.toggleMarkerAtSelection("example") },
+        "Tab": (cm) => { cm.replaceSelection("  ") },
       });
       
       // Inject styling into CodeMirror
@@ -137,6 +145,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   selectionChanged(instance, data) {
     // This needs an AST
     if(!this.hasWorkingAst()) {
+      this._selectedPath = null;
       return;
     }
     
@@ -144,11 +153,80 @@ export default class BabylonianProgrammingEditor extends Morph {
     const selectedLocation = LocationConverter.selectionToKey(data.ranges[0]);
 
     // Check if we selected a node
-    if(selectedLocation in this.ast._locationMap) {
-      this.selectedPath = this.ast._locationMap[selectedLocation];
+    if(selectedLocation in this._ast._locationMap) {
+      this._selectedPath = this._ast._locationMap[selectedLocation];
     } else {
-      this.selectedPath = null;
+      this._selectedPath = null;
     }
+  }
+  
+  
+  // Adding new Annotations
+  
+  /**
+   * Adds a new annotation at the selected element
+   */
+  addAnnotationAtSelection(kind) {
+    // Get selected path
+    const path = this._selectedPath;
+    if(!path) {
+      throw new Error("The selection is not valid");
+    }
+    
+    // Add annotation
+    switch(kind) {
+      case "probe":
+        this.addProbeAtPath(path)
+        break;
+      default:
+        throw new Error("Unknown annotation kind");
+    }
+  }
+  
+  
+  /**
+   * Adds a new probe at the given path
+   */
+  addProbeAtPath(path) {
+    // Make sure we can probe this path
+    if(!canBeProbed(path)) {
+      return;
+    }
+    
+    // Add the probe
+    this._annotations.probes.push(
+      new Probe(
+        this.editor(),
+        LocationConverter.astToMarker(path.node.loc),
+      )
+    );
+    
+    this.evaluate();
+    
+    /*
+    // Prepare variables
+    const kind = "probe";
+    const loc = LocationConverter.astToMarker(path.node.loc);
+    let marker = addMarker(this.editor(), loc, kind);
+    let widget = null;
+    
+    // Distinguish between value-probes (identifier, return) and loop-probes
+    if(path.isLoop()) {
+      widget = new Slider(
+        this.editor(),
+        loc,
+        kind,
+        this.makeSliderValueCallback(this, marker)
+      );
+    } else {
+      widget = new Annotation(this.editor(), loc, kind);
+    }
+    
+    // Add new probe
+    if(marker && widget) {
+      this.markers[kind].set(marker, widget);
+    }
+    */
   }
   
   
@@ -158,6 +236,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Parses the current code
    */
   async parse() {
+    /*
     // Convert the markers
     const convertMarker = m => ({
       loc: LocationConverter.markerToKey(m.find()),
@@ -176,18 +255,27 @@ export default class BabylonianProgrammingEditor extends Morph {
       // Convert marker
       markers[markerKey] = Array.from(this.markers[markerKey].keys())
                                 .map(convertMarker);
+    }*/
+    
+    // TODO: Remove unused
+    
+    // Serialize annotations
+    let serializedAnnotations = {};
+    for(let key in this._annotations) {
+      serializedAnnotations[key] = this._annotations[key].map((a) => a.serialize());
     }
+    console.log(serializedAnnotations);
 
     // Call the worker
     const { ast, code } = await this.worker.process(
       this.editor().getValue(),
-      markers
+      serializedAnnotations
     );
     if(!ast) {
       return;
     }
 
-    this.ast = ast;
+    this._ast = ast;
 
     // Post-process AST
     // (we can't do this in the worker because it create a cyclical structure)
@@ -212,7 +300,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.execute(code);
 
     // Show the results
-    this.updateWidgets();
+    this.updateAnnotations();
     this.updateDeadMarkers();
   }
   
@@ -224,15 +312,18 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Prepare result container
     window.__tracker = {
       // Properties
-      ids: new Map(),
+      ids: new Map(), // Map(id, Map(exampleId, Map(runId, {type, value}))) 
       blocks: new Map(),
 
       // Functions
-      id: function(id, value, blockCount) {
+      id: function(exampleId, id, value, runId) {
         if(!this.ids.has(id)) {
           this.ids.set(id, new Map());
         }
-        this.ids.get(id).set(blockCount, [typeof(value), value]);
+        if(!this.ids.get(id).has(exampleId)) {
+          this.ids.get(id).set(exampleId, new Map());
+        }
+        this.ids.get(id).get(exampleId).set(runId, {type: typeof(value), value: value});
         return value;
       },
       block: function(id) {
@@ -307,39 +398,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Re-evaluate the examples
     this.evaluate();
-  }
-  
-  /**
-   * Adds a probe at the given path
-   */
-  addProbeAtPath(path) {
-    // Make sure we can probe this path
-    if(!canBeProbed(path)) {
-      return;
-    }
-    
-    // Prepare variables
-    const kind = "probe";
-    const loc = LocationConverter.astToMarker(path.node.loc);
-    let marker = addMarker(this.editor(), loc, kind);
-    let widget = null;
-    
-    // Distinguish between value-probes (identifier, return) and loop-probes
-    if(path.isLoop()) {
-      widget = new Slider(
-        this.editor(),
-        loc,
-        kind,
-        this.makeSliderValueCallback(this, marker)
-      );
-    } else {
-      widget = new Annotation(this.editor(), loc, kind);
-    }
-    
-    // Add new probe
-    if(marker && widget) {
-      this.markers[kind].set(marker, widget);
-    }
   }
   
   /**
@@ -449,6 +507,30 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   /**
+   * Syncs the indentations of all annotations
+   */
+  syncIndentations() {
+    for(let key in this._annotations) {
+      for(let annotation of this._annotations[key]) {
+        annotation.syncIndentation();
+      }
+    }
+  }
+  
+  /**
+   * Updates the values of all annotations
+   */
+  updateAnnotations() {
+    // Update probes
+    for(let probe of this._annotations.probes) {
+      const node = this._nodeForAnnotation(probe);
+      if(window.__tracker.ids.has(node._id)) {
+        probe.value = window.__tracker.ids.get(node._id);
+      }
+    }
+  }
+  
+  /**
    * Updates the values of all widgets
    */
   updateWidgets() {
@@ -504,15 +586,15 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   updateDeadMarkers() {
     // Remove old dead markers
-    this.markers.dead.map(m => m.clear());
+    this._deadMarkers.map(m => m.clear());
 
     // Add new markers
     const that = this;
-    traverse(this.ast, {
+    traverse(this._ast, {
       BlockStatement(path) {
         if(!window.__tracker.blocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
-          that.markers.dead.push(
+          that._deadMarkers.push(
             that.editor().markText(
               markerLocation.from,
               markerLocation.to,
@@ -542,7 +624,17 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Checks whether we currently have a working AST
    */
   hasWorkingAst() {
-    return (this.ast && this.ast._locationMap);
+    return (this._ast && this._ast._locationMap);
+  }
+  
+  /**
+   * Returns the node for a given annotation
+   */
+  _nodeForAnnotation(annotation) {
+    if(this.hasWorkingAst()) {
+      return this._ast._locationMap[annotation.locationAsKey].node;
+    }
+    return null;
   }
   
   
