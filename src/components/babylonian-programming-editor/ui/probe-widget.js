@@ -15,7 +15,6 @@ export default class ProbeWidget extends Widget {
     }]; // [{id, name, color}]
     this._value = new Map(); // Map(exampleId, Map(runId, {type, value}))
     this._activeRuns = new Map(); // exampleId -> run
-    this._update(); // TODO: Is this needed?
   }
   
   /**
@@ -50,8 +49,9 @@ export default class ProbeWidget extends Widget {
       let valueString = "";
       const runs = this._value.get(example.id); // Map(runId, {type, value})
       
-      if(this._activeRuns.has(example.id)) {
-        valueString = stringForRun(runs.get(example.id));
+      if(this._activeRuns.has(example.id)
+         && this._activeRuns.get(example.id) !== -1) {
+        valueString = stringForRun(runs.get(this._activeRuns.get(example.id)));
       } else {
         valueString= Array.from(runs.values())
                           .map(stringForRun)

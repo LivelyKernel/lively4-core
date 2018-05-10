@@ -4,10 +4,10 @@ import LocationConverter from "../utils/location-converter.js";
  * The base class for all annotations
  */
 export default class Annotation {
-  constructor(editor, location, value = null) {
+  constructor(editor, location) {
     this._marker = this._makeMarker(editor, location);
-    this._widget = this._makeWidget(editor, location);
-    this.value = value;
+    this._widget = null;
+    this._value = null;
   }
   
   /**

@@ -8,13 +8,13 @@
   overflow: hidden;
 }
 
-.widget.probe {
+.widget.probe, .widget.slider {
   background-color: hsla(198, 69%, 67%, 0.5);
   color: hsl(198, 69%, 17%);
   padding-left: 0px
 }
 
-.widget.probe .example-name {
+.widget.probe .example-name, .widget.slider .example-name {
   padding-left: 4px;
 }
 
@@ -46,7 +46,7 @@
   border-top-right-radius: 3px;
 }
 
-.marker.probe {
+.marker.probe, .marker.slider {
   background-color: hsla(198, 69%, 67%, 0.3);
 }
 

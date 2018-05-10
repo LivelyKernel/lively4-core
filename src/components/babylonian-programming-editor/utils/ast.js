@@ -113,13 +113,11 @@ export const assignIds = (ast) => {
  * Applies basic modifications to the given AST
  */
 export const applyBasicModifications = (ast) => {
-  traverse(ast, {
+  /*traverse(ast, {
     Program(path) {
-      // Add global example ID
-      const globalExampleId = template("let __exampleId = 0")();
-      path.unshiftContainer("body", globalExampleId);
+      
     }
-  });
+  });*/
 }
 
 /**
@@ -168,6 +166,7 @@ export const applyProbes = (ast, annotations) => {
     },
     Program(path) {
       insertBlockTracker(path);
+      insertExampleId(path);
     }
   });
 };
@@ -308,10 +307,19 @@ const insertBlockTracker = (path) => {
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const tracker = template("const __blockCount = window.__tracker.block(__blockId)")();
+  const tracker = template("const __blockCount = window.__tracker.block(__exampleId, __blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
 };
+
+/**
+ *
+ */
+const insertExampleId = (path) => {
+  // Add global example ID
+  const globalExampleId = template("let __exampleId = 0")();
+  path.unshiftContainer("body", globalExampleId);
+}
 
 /**
  * Returns a list of parameter names for the given function Identifier

@@ -7,6 +7,8 @@ import ProbeWidget from "../ui/probe-widget.js";
 export default class Probe extends Annotation {
   constructor(editor, location, value = new Map()) {
     super(editor, location, value);
+    this._widget = this._makeWidget(editor, location);
+    this.value = value;
   }
   
   /**
@@ -14,6 +16,20 @@ export default class Probe extends Annotation {
    */
   _makeWidget(editor, location) {
     return new ProbeWidget(editor, location, this.kind);
+  }
+  
+  /**
+   * Sets the displayed run (loops)
+   */
+  setActiveRunForExampleId(exampleId, activeRun) {
+    this._widget.setActiveRunForExampleId(exampleId, activeRun);
+  }
+  
+  /**
+   * Unsets s the displayed run (loops)
+   */
+  unsetActiveRunForExample(exampleId) {
+    this._widget.unsetActiveRunForExample(exampleId);
   }
   
   /**

@@ -11,7 +11,6 @@ import {
   Annotation,
   Input,
   Form,
-  Slider,
   addMarker
 } from "./utils/ui.js";
 import {
@@ -25,6 +24,7 @@ import {
 import { patchEditor } from "./utils/load-save.js";
 
 import Probe from "./data/probe.js";
+import Slider from "./data/slider.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
@@ -53,7 +53,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Set up Annotations
     this._annotations = {
-      probes: [] // [Probe]
+      probes: [], // [Probe]
+      sliders: [], // [Slider]
     };
     
     // Set up timer
@@ -77,7 +78,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.syncIndentations();
         this.evaluateTimer.start();
       });
-      this.editor().on("beforeSelectionChange", this.selectionChanged.bind(this));
+      this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
         "Ctrl-1": () => { this.addAnnotationAtSelection("probe") },
         "Ctrl-2": () => { this.toggleMarkerAtSelection("replacement") },
@@ -142,7 +143,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Is called whenever the user's selection in the editor changes
    */
-  selectionChanged(instance, data) {
+  onSelectionChanged(instance, data) {
     // This needs an AST
     if(!this.hasWorkingAst()) {
       this._selectedPath = null;
@@ -157,6 +158,36 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._selectedPath = this._ast._locationMap[selectedLocation];
     } else {
       this._selectedPath = null;
+    }
+  }
+  
+  
+  /**
+   * Is called when a slider's value changes
+   */
+  onSliderChanged(slider, exampleId, value) {
+    // Get the location for the body
+    const node = this._nodeForAnnotation(slider);
+    const bodyLocation = LocationConverter.astToKey({
+      start: node.loc.start,
+      end: node.body.loc.end
+    });
+
+    // Get all probes in the body
+    const includedProbes = this._annotations.probes.filter((probe) => {
+      const probeLocation = probe.locationAsKey;
+      const beginsAfter = probeLocation[0] > bodyLocation[0]
+                          || (probeLocation[0] === bodyLocation[0]
+                              && probeLocation[1] >= bodyLocation[1]);
+      const endsBefore = probeLocation[2] < bodyLocation[2]
+                         || (probeLocation[2] === bodyLocation[2]
+                             && probeLocation[3] <= bodyLocation[3]);
+      return beginsAfter && endsBefore;
+    });
+    
+    // Tell all probes about the selected run
+    for(let probe of includedProbes) {
+      probe.setActiveRunForExampleId(exampleId, value);
     }
   }
   
@@ -176,7 +207,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Add annotation
     switch(kind) {
       case "probe":
-        this.addProbeAtPath(path)
+        // Decide if we mean a probe or a slider
+        if(path.isLoop()) {
+          this.addSliderAtPath(path);
+        } else {
+          this.addProbeAtPath(path);
+        }
         break;
       default:
         throw new Error("Unknown annotation kind");
@@ -201,32 +237,29 @@ export default class BabylonianProgrammingEditor extends Morph {
       )
     );
     
+    this.enforceAllSliders();
     this.evaluate();
+  }
+  
+  /**
+   * Adds a new slider at the given path
+   */
+  addSliderAtPath(path) {
+    // Make sure we can probe this path
+    if(!canBeProbed(path)) {
+      return;
+    }
     
-    /*
-    // Prepare variables
-    const kind = "probe";
-    const loc = LocationConverter.astToMarker(path.node.loc);
-    let marker = addMarker(this.editor(), loc, kind);
-    let widget = null;
-    
-    // Distinguish between value-probes (identifier, return) and loop-probes
-    if(path.isLoop()) {
-      widget = new Slider(
+    // Add the probe
+    this._annotations.sliders.push(
+      new Slider(
         this.editor(),
-        loc,
-        kind,
-        this.makeSliderValueCallback(this, marker)
-      );
-    } else {
-      widget = new Annotation(this.editor(), loc, kind);
-    }
+        LocationConverter.astToMarker(path.node.loc),
+        this.onSliderChanged.bind(this)
+      )
+    );
     
-    // Add new probe
-    if(marker && widget) {
-      this.markers[kind].set(marker, widget);
-    }
-    */
+    this.evaluate();
   }
   
   
@@ -313,7 +346,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     window.__tracker = {
       // Properties
       ids: new Map(), // Map(id, Map(exampleId, Map(runId, {type, value}))) 
-      blocks: new Map(),
+      blocks: new Map(), // Map(id, Map(exampleId, runCounter))
+      executedBlocks: new Set(), // Set(id)
 
       // Functions
       id: function(exampleId, id, value, runId) {
@@ -326,9 +360,15 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.ids.get(id).get(exampleId).set(runId, {type: typeof(value), value: value});
         return value;
       },
-      block: function(id) {
-        const blockCount = this.blocks.has(id) ? this.blocks.get(id) : 0;
-        this.blocks.set(id, blockCount + 1);
+      block: function(exampleId, id) {
+        this.executedBlocks.add(id);
+        if(!this.blocks.has(id)) {
+          this.blocks.set(id, new Map());
+        }
+        const blockCount = this.blocks.get(id).has(exampleId)
+                           ? this.blocks.get(id).get(exampleId)
+                           : 0;
+        this.blocks.get(id).set(exampleId, blockCount + 1);
         return blockCount;
       }
     };
@@ -521,6 +561,14 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Updates the values of all annotations
    */
   updateAnnotations() {
+    // Update sliders
+    for(let slider of this._annotations.sliders) {
+      const node = this._nodeForAnnotation(slider).body;
+      if(window.__tracker.blocks.has(node._id)) {
+        slider.value = window.__tracker.blocks.get(node._id);
+      }
+    }
+    
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this._nodeForAnnotation(probe);
@@ -592,7 +640,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
-        if(!window.__tracker.blocks.has(path.node._id)) {
+        if(!window.__tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
             that.editor().markText(
@@ -611,13 +659,10 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Enforces all sliders
    */
-  enforceSliders() {
-    // Get all sliders
-    this.markers.probe.forEach(widget => {
-      if(widget instanceof Slider) {
-        widget.fire();
-      }
-    });
+  enforceAllSliders() {
+    for(let slider of this._annotations.sliders) {
+      slider.fire();
+    }
   }
   
   /**
