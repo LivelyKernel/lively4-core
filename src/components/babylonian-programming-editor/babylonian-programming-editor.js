@@ -15,7 +15,10 @@ import {
   canBeInstance,
   parameterNamesForFunctionIdentifier
 } from "./utils/ast.js";
-import { patchEditor } from "./utils/load-save.js";
+import { 
+  loadFile,
+  saveFile
+} from "./utils/load-save.js";
 
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
@@ -40,7 +43,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.windowTitle = "Babylonian Programming Editor";
     
     // Lock evaluation until we are fully loaded
-    this._evaluationLocked = false;
+    this._evaluationLocked = true;
     
     // Set up the WebWorker for parsing
     this.worker = new ASTWorkerWrapper();
@@ -67,15 +70,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Set up CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Patch editor to load/save comments
-      /*patchEditor(
-        this.get("#source"),
-        () => this.markers,
-        this.loadMarkers.bind(this)
-      );*/
+      this.livelyEditor().loadFile = this.load.bind(this);
+      this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/3_objects.js`);
-      this.get("#source").loadFile();
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().loadFile();
       
       // Event listeners
       this.editor().on("change", () => {
@@ -102,12 +102,75 @@ export default class BabylonianProgrammingEditor extends Morph {
     });
   }
   
-  async loadMarkers(markers) {
+  async load() {
     // Unlock evaluation after two seconds
     this._evaluationLocked = true;
     setTimeout(() => {
       this._evaluationLocked = false;
     }, 2000);
+    
+    // Remove all existing annotations
+    for(let key in this._annotations) {
+      for(let index in this._annotations[key]) {
+        this._annotations[key][index].clear();
+        this._annotations[key].splice(index, 1);
+      }
+    }
+    
+    // Load file from network
+    let text = await loadFile(this.livelyEditor());
+    await this.parse();
+    
+    // Find annotations
+    let annotations = null;
+    const matches = text.match(/\/\* Examples: (.*) \*\//);
+    if(matches) {
+      annotations = JSON.parse(matches[matches.length-1]);
+      text = text.replace(matches[matches.length-2], "");
+    }
+    
+    // Set text
+    this.livelyEditor().setText(text);
+    
+    console.log(annotations);
+    
+    this.evaluate(this);
+  }
+  
+  async save() {
+    let serializedAnnotations = {};
+    
+    // Serialize annotations
+    for(let key in this._annotations) {
+      serializedAnnotations[key] = [];
+      for(let annotation of this._annotations[key]) {
+        serializedAnnotations[key].push(annotation.serializeForSave());
+      }
+    }
+    const stringAnnotations = JSON.stringify(serializedAnnotations);
+    
+    // Save file
+    let data = this.livelyEditor().currentEditor().getValue();
+    data = `${data}/* Examples: ${stringAnnotations} */`;
+    saveFile(this.livelyEditor(), data);
+  }
+  
+  async loadAnnotations(newAnnotations) {
+    // Unlock evaluation after two seconds
+    this._evaluationLocked = true;
+    setTimeout(() => {
+      this._evaluationLocked = false;
+    }, 2000);
+    
+    // Remove all existing annotations
+    for(let key in this._annotations) {
+      for(let index in this._annotations[key]) {
+        this._annotations[key][index].clear();
+        this._annotations[key].splice(index, 1);
+      }
+    }
+    
+    /*
     
     // Remove all existing markers
     for(let kind of USER_MARKER_KINDS) {
@@ -135,7 +198,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         const path = this.ast._locationMap[m.loc];
         this.addExampleAtPath(path, m.value);
       });
-    }
+    }*/
     
     // Evaluate
     this.evaluate(true);
@@ -345,41 +408,26 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
   
+  removeAnnotation(annotation) {
+    for(let key in this._annotations) {
+      if(this._annotations[key].includes(annotation)) {
+        this._annotations[key].splice(this._annotations[key].indexOf(annotation), 1);
+      }
+    }
+    annotation.clear()
+  }
+  
   
   /**
    * Evaluating code
    */
   
-  async parse() {
-    /*
-    // Convert the markers
-    const convertMarker = m => ({
-      loc: LocationConverter.markerToKey(m.find()),
-      replacementNode: m._replacementNode
-    });
-    
-    const markers = {};
-    for(const markerKey of USER_MARKER_KINDS) {
-      // Remove invalid markers
-      this.markers[markerKey].forEach((annotation, marker) => {
-        if(!marker.find()) {
-          this.removeMarker(marker);
-        }
-      })
-      
-      // Convert marker
-      markers[markerKey] = Array.from(this.markers[markerKey].keys())
-                                .map(convertMarker);
-    }*/
-    
-    // TODO: Remove unused
-    
+  async parse() {    
     // Serialize annotations
     let serializedAnnotations = {};
     for(let key in this._annotations) {
       serializedAnnotations[key] = this._annotations[key].map((a) => a.serializeForWorker());
     }
-    console.log(serializedAnnotations);
 
     // Call the worker
     const { ast, code } = await this.worker.process(
@@ -534,8 +582,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     return null;
   }
   
+  livelyEditor() {
+    return this.get("#source");
+  }
+  
   editorComp() {
-    return this.get("#source").get("lively-code-mirror");
+    return this.livelyEditor().get("lively-code-mirror");
   }
   
   editor() {

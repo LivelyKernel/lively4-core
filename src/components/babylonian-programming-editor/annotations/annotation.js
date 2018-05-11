@@ -31,6 +31,15 @@ export default class Annotation {
     this._widget.indentation = this.location.from.ch;
   }
   
+  clear() {
+    if(this._marker) {
+      this._marker.clear();
+    }
+    if(this._widget) {
+      this._widget.clear();
+    }
+  }
+  
   get location() {
     return this._marker.find();
   }
