@@ -8,6 +8,7 @@ import {
   applyReplacements,
   applyProbes,
   applyExamples,
+  applyInstances,
   applyBasicModifications,
 } from "../utils/ast.js";
 
@@ -31,6 +32,9 @@ export default onmessage = function(msg) {
     }
     if(annotations.probes) {
       applyProbes(ast, annotations.probes);
+    }
+    if(annotations.instances) {
+      applyInstances(ast, annotations.instances);
     }
     
     // Add trackers for all examples

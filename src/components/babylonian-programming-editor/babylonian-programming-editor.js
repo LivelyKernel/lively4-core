@@ -18,6 +18,7 @@ import {
   canBeProbed,
   canBeExample,
   canBeReplaced,
+  canBeInstance,
   replacementNodeForCode,
   parameterNamesForFunctionIdentifier
 } from "./utils/ast.js";
@@ -27,6 +28,7 @@ import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
 import Example from "./annotations/example.js";
 import Replacement from "./annotations/replacement.js";
+import Instance from "./annotations/instance.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
@@ -59,6 +61,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       sliders: [], // [Slider]
       examples: [], // [Example]
       replacements: [], // [Replacement]
+      instances: [], // [Instance]
     };
 
     // Set up timer
@@ -74,7 +77,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       );*/
       
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/3_objects.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -85,8 +88,8 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
         "Ctrl-1": () => { this.addAnnotationAtSelection("probe") },
-        "Ctrl-2": () => { this.addAnnotationAtSelection("replacement") },
-        "Ctrl-3": () => { this.addAnnotationAtSelection("example") },
+        "Ctrl-2": () => { this.addAnnotationAtSelection("example") },
+        "Ctrl-3": () => { this.addAnnotationAtSelection("replacement") },
         "Tab": (cm) => { cm.replaceSelection("  ") },
       });
       
@@ -216,7 +219,12 @@ export default class BabylonianProgrammingEditor extends Morph {
         }
         break;
       case "example":
-        this.addExampleAtPath(path);
+        // Decide if we mean an example or an instance
+        if(path.parentPath.isClassDeclaration()) {
+          this.addInstanceAtPath(path);
+        } else {
+          this.addExampleAtPath(path);
+        }
         break;
       case "replacement":
         this.addReplacementAtPath(path);
@@ -291,6 +299,24 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Add the replacement
     this._annotations.replacements.push(
       new Replacement(
+        this.editor(),
+        LocationConverter.astToMarker(path.node.loc),
+        this.onEvaluationNeeded.bind(this)
+      )
+    );
+    
+    this.evaluate();
+  }
+  
+  addInstanceAtPath(path) {
+    // Make sure we can add an instance to this path
+    if(!canBeInstance(path)) {
+      return;
+    }
+    
+    // Add the instance
+    this._annotations.instances.push(
+      new Instance(
         this.editor(),
         LocationConverter.astToMarker(path.node.loc),
         this.onEvaluationNeeded.bind(this)

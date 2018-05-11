@@ -61,13 +61,21 @@ export const canBeProbed = (path) => {
  * Checks whether a path can be an example
  */
 export const canBeExample = (path) => {
-  // We have to be the name of a function of class
+  // We have to be the name of a function
   const functionParent = path.getFunctionParent();
   const isFunctionName = (functionParent
                           && (functionParent.get("id") === path
                               || functionParent.get("key") === path));
+  return isFunctionName;
+}
+
+/**
+ * Checks whether a path can be an instance
+ */
+export const canBeInstance  = (path) => {
+  // We have to be the name of a class
   const isClassName = (path.parentPath.isClassDeclaration() && path.parentKey === "id");
-  return isFunctionName || isClassName;
+  return isClassName;
 }
 
 /**
@@ -167,6 +175,20 @@ export const applyProbes = (ast, annotations) => {
     }
   });
 };
+
+/**
+ * Applies instances to the given AST
+ */
+export const applyInstances = (ast, instances) => {
+  instances.forEach((instance) => {
+    let instanceNode = replacementNodeForCode(instance.code);
+    if(!instanceNode) {
+      instanceNode = types.nullLiteral();
+    }
+    const path = ast._locationMap[instance.location];
+    path.node._exampleInstance = instanceNode;
+  });
+}
 
 /**
  * Applies example markers to the given AST

@@ -21,12 +21,17 @@
   background-color: hsla(344, 54%, 63%, 0.5);
 }
 
-.widget.example {
+.widget.example, .widget.instance {
   background-color: hsla(41, 69%, 38%, 0.5);
   border-radius: 0px;
 }
 
 .CodeMirror-linewidget:last-of-type > .widget.example {
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.CodeMirror-linewidget:last-of-type > .widget.instance {
   border-bottom-left-radius: 3px;
   border-bottom-right-radius: 3px;
 }
@@ -63,7 +68,7 @@
   text-decoration: line-through;
 }
 
-.marker.example {
+.marker.example, .marker.instance {
   background-color: hsla(41, 69%, 38%, 0.3);
 }
 
