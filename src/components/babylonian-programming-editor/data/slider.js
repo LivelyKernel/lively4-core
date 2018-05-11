@@ -1,34 +1,35 @@
 import InputAnnotation from "./input-annotation.js";
 import SliderWidget from "../ui/slider-widget.js";
 
-/**
- * A slider is used to scrub through loop
- */
+
 export default class Slider extends InputAnnotation {
-  constructor(editor, location, changeCallback, value = new Map()) {
-    super(editor, location, changeCallback, value);
+  constructor(editor, location, changeCallback, examples) {
+    super(editor, location, changeCallback, examples);
   }
   
-  /**
-   * Creates a new widget
-   */
-  _makeWidget(editor, location) {
-    return new SliderWidget(editor, location, this.kind, this._changeCallback);
+  _makeWidget(editor, location, examples) {
+    return new SliderWidget(editor, location, this.kind, this._changeCallback, examples);
   }
   
-  /**
-   * Forces all change events to fire
-   */
+  set maxValues(maxValues) {
+    this._widget.maxValues = maxValues;
+  }
+  
+  empty() {
+    this._widget.maxValues = new Map();
+  }
+
   fire() {
     this._widget.fire();
   }
   
-  /**
-   * Returns a serialized version of this annotation
-   */
-  serialize() {
+  serializeForWorker() {
     return {
       location: this.locationAsKey
     };
+  }
+  
+  serializeForSave() {
+    return this.serializeForWorker();
   }
 }

@@ -174,33 +174,32 @@ export const applyProbes = (ast, annotations) => {
 /**
  * Applies example markers to the given AST
  */
-export const applyExamples = (ast, annotations) => {
-  // TODO
-}
-export const applyExampleMarkers = (ast, markers) => {
+export const applyExamples = (ast, examples) => {
   // Prepare templates to insert
+  const exampleId = template("__exampleId = EXAMPL")
   const functionCall = template("ID.apply(null, PARAMS)");
   const staticMethodCall = template("CLASS.ID.apply(null, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
   
   // Distinguish between class- and function examples
-  const functionMarkers = markers.filter(m => {
-    const nodePath = ast._locationMap[m.loc];
+  /*const functionExamples = examples.filter((example) => {
+    const nodePath = ast._locationMap[example.location];
+    nodePath.node._replacementNode
     if(nodePath.parentPath.isClassDeclaration()) {
-      nodePath.node._exampleInstance = m.replacementNode;
+      //nodePath.node._exampleInstance = replacementNodeForCode(example.code);
       return false;
     } else {
       return true;
     }
-  })
+  })*/
   
   // Apply the markers
-  functionMarkers.forEach((marker) => {
-    let parametersNode = marker.replacementNode;
+  examples.forEach((example) => {
+    let parametersNode = replacementNodeForCode(example.code);
     if(!parametersNode) {
       parametersNode = types.nullLiteral();
     }
-    const path = ast._locationMap[marker.loc];
+    const path = ast._locationMap[example.location];
     const functionParent = path.getFunctionParent()
     let nodeToInsert;
     
@@ -234,6 +233,7 @@ export const applyExampleMarkers = (ast, markers) => {
     
     // Insert a call at the end of the script
     if(nodeToInsert) {
+      ast.program.body.push(template(`__exampleId = ${example.id}`)());
       ast.program.body.push(nodeToInsert);
     }
   });

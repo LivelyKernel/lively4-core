@@ -1,24 +1,21 @@
 import InputWidget from "./input-widget.js";
+import { defaultExample } from "../utils/defaults.js";
 
-/**
- * A Slider to scrub through loops
- */
+
 export default class SliderWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback) {
+  constructor(editor, location, kind, changeCallback, examples) {
     super(editor, location, kind, changeCallback);
-    this._examples = [{
-      id: 0,
-      name: "global",
-      color: "transparent"
-    }]; // [{id, name, color}]
-    this._value = new Map() // Map(exampleId, maxValue)
+    this._examples = examples; // [{id, name, color}]
+    this._maxValues = new Map() // Map(exampleId, maxValue)
     this._elements = new Map() // Map(exampleId, {element, input})
     this._fireFunctions = new Map(); // Map(exampleId, function)
   }
   
-  /**
-   * Updates the Widget's UI
-   */
+  set maxValues(maxValues) {
+    this._maxValues = maxValues;
+    this._update();
+  }
+  
   _update() {
     // Generates the status string
     const statusString = (value, maxValue) => {
@@ -43,21 +40,23 @@ export default class SliderWidget extends InputWidget {
 
       const fireFunction = () => {
         const value = input.valueAsNumber;
-        status.textContent = statusString(value, this._value.get(example.id));
+        status.textContent = statusString(value, this._maxValues.get(example.id));
         this._changeCallback(example.id, value - 1);
       };
       this._fireFunctions.set(example.id, fireFunction);
       input.addEventListener("input", fireFunction);
 
       return {
-        element: <span>
-                   <span
-                     class="example-name"
-                     style={"background-color:" + example.color}>↻ {example.name}:
-                   </span>
-                   {input}
-                   {status}
-                 </span>,
+        element: (
+          <span class="widget-line">
+            ↻
+            <span
+              class="example-name"
+              style={"background-color:" + example.color}>{example.name}
+            </span>
+            {input}
+            {status}
+          </span>),
         input: input,
         status: status
       };
@@ -75,7 +74,7 @@ export default class SliderWidget extends InputWidget {
     // Updates the element for a given example
     const updateElementForExample = (example) => {
       const element = elementForExample(example);
-      const newMax = this._value.get(example.id);
+      const newMax = this._maxValues.get(example.id);
       if(newMax < element.input.valueAsNumber) {
         element.input.valueAsNumber = newMax;
         this._fireFunctions.get(example.id)();
@@ -87,13 +86,20 @@ export default class SliderWidget extends InputWidget {
     
     this._element.textContent = "";
     this._examples
-        .filter((e) => this._value.has(e.id))
+        .filter((e) => this._maxValues.has(e.id))
         .forEach(updateElementForExample);
+    if(this._maxValues.has(defaultExample.id)) {
+      updateElementForExample(defaultExample);
+    }
+    
+    // Hide if empty
+    if(this._maxValues.size === 0) {
+      this._element.style.display = "none";
+    } else {
+      this._element.style.display = "";
+    }
   }
   
-  /**
-   * Forces all change events to fire
-   */
   fire() {
     this._examples.forEach((e) => this._fireFunctions.get(e.id)());
   }

@@ -1,41 +1,32 @@
 import Widget from "./widget.js";
+import { defaultExample } from "../utils/defaults.js";
 
 const MAX_VALUESTRING_LENGTH = 40;
 
-/**
- * A widget to display a probe value
- */
+
 export default class ProbeWidget extends Widget {
-  constructor(editor, location, kind) {
+  constructor(editor, location, kind, examples) {
     super(editor, location, kind);
-    this._examples = [{
-      id: 0,
-      name: "global",
-      color: "transparent"
-    }]; // [{id, name, color}]
-    this._value = new Map(); // Map(exampleId, Map(runId, {type, value}))
-    this._activeRuns = new Map(); // exampleId -> run
+    this._examples = examples; // [{id, name, color}]
+    this._values = new Map(); // Map(exampleId, Map(runId, {type, value}))
+    this._activeRuns = new Map(); // exampleId -> runId
   }
   
-  /**
-   * Sets the displayed run (loops)
-   */
+  set values(values) {
+    this._values = values;
+    this._update();
+  }
+
   setActiveRunForExampleId(exampleId, activeRun) {
     this._activeRuns.set(exampleId, activeRun);
     this._update();
   }
   
-  /**
-   * Unsets s the displayed run (loops)
-   */
   unsetActiveRunForExample(exampleId) {
     this._activeRuns.delete(exampleId);
     this._update();
   }
-  
-  /**
-   * Updates the Widget's UI
-   */
+
   _update() {
     // Gets a string representaion for a single run
     const stringForRun = (run) => {
@@ -47,7 +38,7 @@ export default class ProbeWidget extends Widget {
     const elementForExample = (example) => {
       // example: {id, name, color}
       let valueString = "";
-      const runs = this._value.get(example.id); // Map(runId, {type, value})
+      const runs = this._values.get(example.id); // Map(runId, {type, value})
       
       if(this._activeRuns.has(example.id)
          && this._activeRuns.get(example.id) !== -1) {
@@ -61,10 +52,11 @@ export default class ProbeWidget extends Widget {
         }
       }
       
-      return <span>
+      return <span class="widget-line">
+        ↘︎
         <span
           class="example-name"
-          style={"background-color:" + example.color}>↘︎ {example.name}:
+          style={"background-color:" + example.color}>{example.name}
         </span>
         &nbsp;{valueString}
       </span>
@@ -73,8 +65,18 @@ export default class ProbeWidget extends Widget {
     // Iterate over all examples and get their values
     this._element.innerHTML = ""
     const newChildren = this._examples
-                            .filter((e) => this._value.has(e.id))
+                            .filter((e) => this._values.has(e.id))
                             .map(elementForExample);
+    if(this._values.has(defaultExample.id)) {
+      newChildren.push(elementForExample(defaultExample));
+    }
     newChildren.forEach((e) => this._element.appendChild(e));
+    
+    // Hide if empty
+    if(newChildren.length === 0) {
+      this._element.style.display = "none";
+    } else {
+      this._element.style.display = "";
+    }
   }
 }

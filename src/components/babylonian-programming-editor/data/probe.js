@@ -1,43 +1,40 @@
 import Annotation from "./annotation.js";
 import ProbeWidget from "../ui/probe-widget.js";
 
-/**
- * A probe shows values
- */
+
 export default class Probe extends Annotation {
-  constructor(editor, location, value = new Map()) {
-    super(editor, location, value);
-    this._widget = this._makeWidget(editor, location);
-    this.value = value;
+  constructor(editor, location, examples) {
+    super(editor, location);
+    this._widget = this._makeWidget(editor, location, examples);
   }
   
-  /**
-   * Creates a new widget
-   */
-  _makeWidget(editor, location) {
-    return new ProbeWidget(editor, location, this.kind);
+  _makeWidget(editor, location, examples) {
+    return new ProbeWidget(editor, location, this.kind, examples);
   }
   
-  /**
-   * Sets the displayed run (loops)
-   */
   setActiveRunForExampleId(exampleId, activeRun) {
     this._widget.setActiveRunForExampleId(exampleId, activeRun);
   }
-  
-  /**
-   * Unsets s the displayed run (loops)
-   */
+
   unsetActiveRunForExample(exampleId) {
     this._widget.unsetActiveRunForExample(exampleId);
   }
   
-  /**
-   * Returns a serialized version of this annotation
-   */
-  serialize() {
+  set values(values) {
+    this._widget.values = values;
+  }
+  
+  empty() {
+    this._widget.values = new Map();
+  }
+  
+  serializeForWorker() {
     return {
       location: this.locationAsKey
     };
+  }
+  
+  serializeForSave() {
+    return this.serializeForWorker();
   }
 }
