@@ -9,6 +9,7 @@ const {
 
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
+import { defaultBabylonConfig } from "./defaults.js";
 
 /**
  * Creates a deep copy of arbitrary objects.
@@ -330,26 +331,10 @@ export const parameterNamesForFunctionIdentifier = (path) => {
 }
 
 /**
- * All the standard parameters for babylon
- */
-const BABYLON_CONFIG = {
-  babelrc: false,
-  plugins: [],
-  presets: [],
-  filename: undefined,
-  sourceFileName: undefined,
-  moduleIds: false,
-  sourceMaps: false,
-  compact: false,
-  comments: false,
-  resolveModuleSource: undefined
-};
-
-/**
  * Parses code and returns the AST
  */
 export const astForCode = (code) =>
-  transform(code, Object.assign({}, BABYLON_CONFIG, {
+  transform(code, Object.assign({}, defaultBabylonConfig, {
     code: false,
     ast: true
   })).ast
@@ -358,7 +343,7 @@ export const astForCode = (code) =>
  * Generates executable code for a given AST
  */
 export const codeForAst = (ast) =>
-  transformFromAst(ast, Object.assign({}, BABYLON_CONFIG, {
+  transformFromAst(ast, Object.assign({}, defaultBabylonConfig, {
     code: true,
     ast: false
   })).code;
