@@ -1,10 +1,10 @@
-export const defaultExample = {
+export const defaultExample = () => ({
   id: 0,
   name: "script",
   color: ""
-}
+})
 
-export const defaultBabylonConfig = {
+export const defaultBabylonConfig = () => ({
   babelrc: false,
   plugins: [],
   presets: [],
@@ -15,4 +15,12 @@ export const defaultBabylonConfig = {
   compact: false,
   comments: false,
   resolveModuleSource: undefined
-};
+});
+
+export const defaultAnnotations = () => ({
+  probes: [], // [Probe]
+  sliders: [], // [Slider]
+  examples: [], // [Example]
+  replacements: [], // [Replacement]
+  instances: [], // [Instance]
+});

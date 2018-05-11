@@ -59,4 +59,8 @@ export default class Annotation {
   serializeForSave() {
     throw new Error("Annotation should not be used directly")
   }
+  
+  load(serialized) {
+    throw new Error("Annotation should not be used directly");
+  }
 }

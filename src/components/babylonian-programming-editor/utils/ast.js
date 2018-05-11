@@ -352,7 +352,7 @@ export const parameterNamesForFunctionIdentifier = (path) => {
  * Parses code and returns the AST
  */
 export const astForCode = (code) =>
-  transform(code, Object.assign({}, defaultBabylonConfig, {
+  transform(code, Object.assign({}, defaultBabylonConfig(), {
     code: false,
     ast: true
   })).ast
@@ -361,7 +361,7 @@ export const astForCode = (code) =>
  * Generates executable code for a given AST
  */
 export const codeForAst = (ast) =>
-  transformFromAst(ast, Object.assign({}, defaultBabylonConfig, {
+  transformFromAst(ast, Object.assign({}, defaultBabylonConfig(), {
     code: true,
     ast: false
   })).code;

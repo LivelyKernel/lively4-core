@@ -6,7 +6,7 @@ export default class Widget {
   }
   
   clear() {
-    this._widget.clear();
+    this._lineWidget.clear();
   }
 
   set indentation(indentation) {

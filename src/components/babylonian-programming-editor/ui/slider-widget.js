@@ -89,8 +89,8 @@ export default class SliderWidget extends InputWidget {
     this._examples
         .filter((e) => this._maxValues.has(e.id))
         .forEach(updateElementForExample);
-    if(this._maxValues.has(defaultExample.id)) {
-      updateElementForExample(defaultExample);
+    if(this._maxValues.has(defaultExample().id)) {
+      updateElementForExample(defaultExample());
     }
     
     // Hide if empty

@@ -19,6 +19,7 @@ import {
   loadFile,
   saveFile
 } from "./utils/load-save.js";
+import { defaultAnnotations } from "./utils/defaults.js";
 
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
@@ -56,13 +57,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._deadMarkers = []; // [TextMarker]
     
     // Set up Annotations
-    this._annotations = {
-      probes: [], // [Probe]
-      sliders: [], // [Slider]
-      examples: [], // [Example]
-      replacements: [], // [Replacement]
-      instances: [], // [Instance]
-    };
+    this._annotations = defaultAnnotations;
 
     // Set up timer
     this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
@@ -74,7 +69,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_objects.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -113,9 +108,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     for(let key in this._annotations) {
       for(let index in this._annotations[key]) {
         this._annotations[key][index].clear();
-        this._annotations[key].splice(index, 1);
       }
     }
+    this._annotations = defaultAnnotations();
     
     // Load file from network
     let text = await loadFile(this.livelyEditor());
@@ -131,10 +126,31 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Set text
     this.livelyEditor().setText(text);
+    await this.parse();
     
-    console.log(annotations);
-    
-    this.evaluate(this);
+    // Add annotations
+    if(annotations) {
+      for(let probe of annotations.probes) {
+        this.addProbeAtPath(this.pathForKey(probe.location));
+      }
+      for(let slider of annotations.sliders) {
+        this.addSliderAtPath(this.pathForKey(slider.location));
+      }
+      for(let example of annotations.examples) {
+        const obj = this.addExampleAtPath(this.pathForKey(example.location));
+        obj.load(example);
+      }
+      for(let replacement of annotations.replacements) {
+        const obj = this.addReplacementAtPath(this.pathForKey(replacement.location));
+        obj.load(replacement);
+      }
+      for(let instance of annotations.instances) {
+        const obj = this.addInstanceAtPath(this.pathForKey(instance.location));
+        obj.load(instance);
+      }
+    }
+
+    this.evaluate(true);
   }
   
   async save() {
@@ -154,56 +170,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     data = `${data}/* Examples: ${stringAnnotations} */`;
     saveFile(this.livelyEditor(), data);
   }
-  
-  async loadAnnotations(newAnnotations) {
-    // Unlock evaluation after two seconds
-    this._evaluationLocked = true;
-    setTimeout(() => {
-      this._evaluationLocked = false;
-    }, 2000);
-    
-    // Remove all existing annotations
-    for(let key in this._annotations) {
-      for(let index in this._annotations[key]) {
-        this._annotations[key][index].clear();
-        this._annotations[key].splice(index, 1);
-      }
-    }
-    
-    /*
-    
-    // Remove all existing markers
-    for(let kind of USER_MARKER_KINDS) {
-      this.markers[kind].forEach((w,m) => {
-        this.markers[kind].get(m).clear(true);
-        this.markers[kind].delete(m);
-        m.clear();
-      });
-    }
-    
-    // Make sure we have a locationMap
-    await this.parse();
-    
-    // Add new markers
-    if(markers) {
-      markers.probe.forEach(m => {
-        const path = this.ast._locationMap[m.loc];
-        this.addProbeAtPath(path);
-      });
-      markers.replacement.forEach(m => {
-        const path = this.ast._locationMap[m.loc];
-        this.addReplacementAtPath(path, m.value);
-      });
-      markers.example.forEach(m => {
-        const path = this.ast._locationMap[m.loc];
-        this.addExampleAtPath(path, m.value);
-      });
-    }*/
-    
-    // Evaluate
-    this.evaluate(true);
-  }
-  
+
   
   /**
    * Adding annotations
@@ -249,16 +216,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add the probe
-    this._annotations.probes.push(
-      new Probe(
-        this.editor(),
-        LocationConverter.astToMarker(path.node.loc),
-        this._annotations.examples
-      )
+    const probe = new Probe(
+      this.editor(),
+      LocationConverter.astToMarker(path.node.loc),
+      this._annotations.examples
     );
+    this._annotations.probes.push(probe);
     
     this.enforceAllSliders();
     this.evaluate();
+    return probe;
   }
 
   addSliderAtPath(path) {
@@ -268,16 +235,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add the slider
-    this._annotations.sliders.push(
-      new Slider(
-        this.editor(),
-        LocationConverter.astToMarker(path.node.loc),
-        this.onSliderChanged.bind(this),
-        this._annotations.examples
-      )
+    const slider = new Slider(
+      this.editor(),
+      LocationConverter.astToMarker(path.node.loc),
+      this.onSliderChanged.bind(this),
+      this._annotations.examples
     );
+    this._annotations.sliders.push(slider);
     
     this.evaluate();
+    return slider;
   }
 
   addExampleAtPath(path) {
@@ -287,15 +254,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add the example
-    this._annotations.examples.push(
-      new Example(
-        this.editor(),
-        LocationConverter.astToMarker(path.node.loc),
-        this.onEvaluationNeeded.bind(this)
-      )
+    const example = new Example(
+      this.editor(),
+      LocationConverter.astToMarker(path.node.loc),
+      this.onEvaluationNeeded.bind(this)
     );
+    this._annotations.examples.push(example);
     
     this.evaluate();
+    return example;
   }
   
   addReplacementAtPath(path) {
@@ -305,15 +272,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add the replacement
-    this._annotations.replacements.push(
-      new Replacement(
-        this.editor(),
-        LocationConverter.astToMarker(path.node.loc),
-        this.onEvaluationNeeded.bind(this)
-      )
+    const replacement = new Replacement(
+      this.editor(),
+      LocationConverter.astToMarker(path.node.loc),
+      this.onEvaluationNeeded.bind(this)
     );
+    this._annotations.replacements.push(replacement);
     
     this.evaluate();
+    return replacement;
   }
   
   addInstanceAtPath(path) {
@@ -323,15 +290,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add the instance
-    this._annotations.instances.push(
-      new Instance(
-        this.editor(),
-        LocationConverter.astToMarker(path.node.loc),
-        this.onEvaluationNeeded.bind(this)
-      )
+    const instance = new Instance(
+      this.editor(),
+      LocationConverter.astToMarker(path.node.loc),
+      this.onEvaluationNeeded.bind(this)
     );
+    this._annotations.instances.push(instance);
     
     this.evaluate();
+    return instance;
   }
   
   
@@ -577,9 +544,13 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   pathForAnnotation(annotation) {
     if(this.hasWorkingAst()) {
-      return this._ast._locationMap[annotation.locationAsKey];
+      return this.pathForKey(annotation.locationAsKey);
     }
     return null;
+  }
+  
+  pathForKey(key) {
+    return this._ast._locationMap[key];
   }
   
   livelyEditor() {

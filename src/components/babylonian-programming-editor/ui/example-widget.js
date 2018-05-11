@@ -9,7 +9,6 @@ export default class ExampleWidget extends InputWidget {
     this._keys = [] // [key]
     this._nameElement = null; // {element, input}
     this._elements = new Map() // Map(key, {element, input})
-    this._fireFunctions = new Map(); // Map(exampleId, function)
   }
   
   set keys(keys) {
@@ -96,8 +95,20 @@ export default class ExampleWidget extends InputWidget {
     })
   }
   
-  fire() {
-    this._examples.forEach((e) => this._fireFunctions.get(e.id)());
+  get values() {
+    let result = {};
+    this._keys.forEach(k => {
+      result[k] = this._elements.get(k).input.value
+    });
+    return result;
+  }
+  
+  set values(values) {
+    this.keys = Object.keys(values);
+    for(let key of this._keys) {
+      this._elements.get(key).input.value = values[key];
+      this._elements.get(key).input.dispatchEvent(new Event("input"));
+    }
   }
   
   get code() {
@@ -111,6 +122,11 @@ export default class ExampleWidget extends InputWidget {
     } else {
       return "";
     }
+  }
+    
+  set name(name) {
+    this._nameElement.input.value = name;
+    this._nameElement.input.dispatchEvent(new Event("input"));
   }
 }
 

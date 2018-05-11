@@ -45,4 +45,17 @@ export default class LocationConverter {
       }
     };
   }
+  
+  static keyToMarker(loc) {
+    return {
+      from: {
+        line: loc[0]-1,
+        ch: loc[1]
+      },
+      to: {
+        line: loc[2]-1,
+        ch: loc[3]
+      }
+    };
+  }
 }

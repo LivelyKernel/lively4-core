@@ -11,10 +11,6 @@ export default class Example extends InputAnnotation {
     return new ExampleWidget(editor, location, this.kind, this._changeCallback);
   }
   
-  fire() {
-    this._widget.fire();
-  }
-  
   get id() {
     return this._widget._id;
   }
@@ -42,6 +38,13 @@ export default class Example extends InputAnnotation {
   serializeForSave() {
     return {
       location: this.locationAsKey,
+      name: this.name,
+      values: this._widget.values
     };
+  }
+  
+  load(serialized) {
+    this._widget.values = serialized.values;
+    this._widget.name = serialized.name;
   }
 }

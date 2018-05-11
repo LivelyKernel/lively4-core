@@ -21,4 +21,8 @@ export default class Replacement extends InputAnnotation {
   serializeForSave() {
     return this.serializeForWorker();
   }
+  
+  load(serialized) {
+    this._widget.code = serialized.code;
+  }
 }

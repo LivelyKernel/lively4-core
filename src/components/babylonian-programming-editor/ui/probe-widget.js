@@ -68,8 +68,8 @@ export default class ProbeWidget extends Widget {
     const newChildren = this._examples
                             .filter((e) => this._values.has(e.id))
                             .map(elementForExample);
-    if(this._values.has(defaultExample.id)) {
-      newChildren.push(elementForExample(defaultExample));
+    if(this._values.has(defaultExample().id)) {
+      newChildren.push(elementForExample(defaultExample()));
     }
     newChildren.forEach((e) => this._element.appendChild(e));
     

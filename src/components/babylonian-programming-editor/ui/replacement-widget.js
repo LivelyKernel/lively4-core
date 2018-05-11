@@ -25,4 +25,9 @@ export default class ReplacementWidget extends InputWidget {
   get code() {
     return this._input.value;
   }
+  
+  set code(code) {
+    this._input.value = code;
+    this._input.dispatchEvent(new Event("input"));
+  }
 }
