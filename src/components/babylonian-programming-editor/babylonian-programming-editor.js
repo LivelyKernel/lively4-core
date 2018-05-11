@@ -23,9 +23,10 @@ import {
 } from "./utils/ast.js";
 import { patchEditor } from "./utils/load-save.js";
 
-import Probe from "./data/probe.js";
-import Slider from "./data/slider.js";
-import Example from "./data/example.js";
+import Probe from "./annotations/probe.js";
+import Slider from "./annotations/slider.js";
+import Example from "./annotations/example.js";
+import Replacement from "./annotations/replacement.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
@@ -46,17 +47,18 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.worker = new ASTWorkerWrapper();
     
     // Set up AST
-    this._ast = null;
-    this._selectedPath = null;
+    this._ast = null; // Node
+    this._selectedPath = null; // NodePath
 
     // Set up markers
-    this._deadMarkers = []
+    this._deadMarkers = []; // [TextMarker]
     
     // Set up Annotations
     this._annotations = {
       probes: [], // [Probe]
       sliders: [], // [Slider]
       examples: [], // [Example]
+      replacements: [], // [Replacement]
     };
 
     // Set up timer
@@ -72,7 +74,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       );*/
       
       // Test file
-      this.get("#source").setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.get("#source").setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.get("#source").loadFile();
       
       // Event listeners
@@ -83,7 +85,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
         "Ctrl-1": () => { this.addAnnotationAtSelection("probe") },
-        "Ctrl-2": () => { this.toggleMarkerAtSelection("replacement") },
+        "Ctrl-2": () => { this.addAnnotationAtSelection("replacement") },
         "Ctrl-3": () => { this.addAnnotationAtSelection("example") },
         "Tab": (cm) => { cm.replaceSelection("  ") },
       });
@@ -142,9 +144,6 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   // Event handlers
   
-  /**
-   * Is called whenever the user's selection in the editor changes
-   */
   onSelectionChanged(instance, data) {
     // This needs an AST
     if(!this.hasWorkingAst()) {
@@ -162,11 +161,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._selectedPath = null;
     }
   }
-  
-  
-  /**
-   * Is called when a slider's value changes
-   */
+
   onSliderChanged(slider, exampleId, value) {
     // Get the location for the body
     const node = this._nodeForAnnotation(slider);
@@ -193,10 +188,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
   
-  /**
-   * Is called when an example's value changes
-   */
-  onExampleChanged(example) {
+  onEvaluationNeeded() {
     this.evaluate();
   }
   
@@ -226,15 +218,14 @@ export default class BabylonianProgrammingEditor extends Morph {
       case "example":
         this.addExampleAtPath(path);
         break;
+      case "replacement":
+        this.addReplacementAtPath(path);
+        break;
       default:
         throw new Error("Unknown annotation kind");
     }
   }
   
-  
-  /**
-   * Adds a new probe at the given path
-   */
   addProbeAtPath(path) {
     // Make sure we can probe this path
     if(!canBeProbed(path)) {
@@ -253,10 +244,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.enforceAllSliders();
     this.evaluate();
   }
-  
-  /**
-   * Adds a new slider at the given path
-   */
+
   addSliderAtPath(path) {
     // Make sure we can probe this path
     if(!canBeProbed(path)) {
@@ -276,9 +264,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.evaluate();
   }
 
-  /**
-   * Adds a new example at the given path
-   */
   addExampleAtPath(path) {
     // Make sure we can probe this path
     if(!canBeExample(path)) {
@@ -290,7 +275,25 @@ export default class BabylonianProgrammingEditor extends Morph {
       new Example(
         this.editor(),
         LocationConverter.astToMarker(path.node.loc),
-        this.onExampleChanged.bind(this)
+        this.onEvaluationNeeded.bind(this)
+      )
+    );
+    
+    this.evaluate();
+  }
+  
+  addReplacementAtPath(path) {
+    // Make sure we can replace this path
+    if(!canBeReplaced(path)) {
+      return;
+    }
+    
+    // Add the replacement
+    this._annotations.replacements.push(
+      new Replacement(
+        this.editor(),
+        LocationConverter.astToMarker(path.node.loc),
+        this.onEvaluationNeeded.bind(this)
       )
     );
     
@@ -371,7 +374,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.updateDeadMarkers();
   }
   
-  
   /**
    * Executes the given code
    */
@@ -432,152 +434,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     });
     // Remove the marker itself
     marker.clear();
-  }
-  
-  /**
-   * Removes an existing marker at the selected location,
-   * or calls the callback to create a new one
-   */
-  toggleMarkerAtSelection(kind) {
-    // Make sure there is a selection
-    if(!this.selectedPath) {
-      throw Error("There is no selected node");
-    }
-    
-    // Make sure the marker kind is valid
-    if(!USER_MARKER_KINDS.includes(kind)) {
-      throw Error("Unknown marker kind");
-    }
-    
-    // Get existing markers at the selection
-    const path = this.selectedPath;
-    const loc = LocationConverter.astToMarker(path.node.loc);
-    const existingMarks = this.editor()
-                              .findMarks(loc.from, loc.to)
-                              .filter(m => m._babylonian);
-    
-    if(existingMarks.length > 0) {
-      // Remove existing markers
-      existingMarks.map(this.removeMarker.bind(this));
-    } else if(kind === "probe") {
-      // Add a probe
-      this.addProbeAtPath(path);
-    } else if(kind === "replacement") {
-      // Add a replacement
-      this.addReplacementAtPath(path);
-    } else if(kind === "example") {
-      // Add a example
-      this.addExampleAtPath(path);
-    }
-    
-    // Re-evaluate the examples
-    this.evaluate();
-  }
-  
-  /**
-   * Adds a replacement at the given path
-   */
-  addReplacementAtPath(path, initialValue = null) {
-    // Make sure we can replace this path
-    if(!canBeReplaced(path)) {
-      return;
-    }
-    
-    // Prepare variables
-    const kind = "replacement";
-    const loc = LocationConverter.astToMarker(path.node.loc);
-    
-    // Add a new replacement
-    const marker = addMarker(this.editor(), loc, kind);
-    const widget = new Input(
-      this.editor(),
-      loc,
-      kind,
-      initialValue,
-      this.makeInputValueCallback(this, marker)
-    );
-    
-    this.markers[kind].set(marker, widget);
-  }
-  
-  /**
-   * Adds an example at the given path
-   */
-  _addExampleAtPath(path, initialValue = null) {
-    // Make sure we can add an example at this path
-    if(!canBeExample(path)) {
-      return;
-    }
-    
-    // Prepare variables
-    const kind = "example";
-    const loc = LocationConverter.astToMarker(path.node.loc);
-    const marker = addMarker(this.editor(), loc, kind);
-    let widget = null;
-
-    // Distinguish between class- and function examples
-    if(path.parentPath.isClassDeclaration()) {
-      // For classes: Just show a simple input
-      widget = new Input(
-        this.editor(),
-        loc,
-        kind,
-        initialValue,
-        this.makeInputValueCallback(this, marker)
-      )
-    } else {
-      // For functions: Show a form for the parameters
-      widget = new Form(
-        this.editor(),
-        loc,
-        kind,
-        initialValue,
-        parameterNamesForFunctionIdentifier(path),
-        this.makeInputValueCallback(this, marker)
-      );
-    }
-
-    // Add a new example
-    if(marker && widget) {
-      this.markers[kind].set(marker, widget);
-    }
-  }
-  
-  /**
-   * Creates a callback for input value changes (examples, replacements)
-   */
-  makeInputValueCallback(that, marker) {
-    return (newValue) => {
-      marker._replacementNode = replacementNodeForCode(newValue);
-      that.evaluate();
-    }
-  }
-  
-  /**
-   * Is called whenever a slider's value changes (loops)
-   */
-  makeSliderValueCallback(that, marker) {
-    return (newValue) => {
-      // Get the location for the body
-      const loopPath = that.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-      const bodyLoc = LocationConverter.astToMarker({
-        start: loopPath.node.loc.start,
-        end: loopPath.node.body.loc.end
-      });
-
-      // Get all markers in the body
-      const includedMarkers = that.editor()
-                                  .findMarks(bodyLoc.from, bodyLoc.to)
-                                  .filter(m => m._babylonian);
-
-      // Tell all markers about the selected run
-      includedMarkers.forEach(marker => {
-        const widget = that.markers.probe.get(marker);
-        if(widget instanceof Annotation) {
-          widget.setActiveRun(newValue);
-        }
-      });
-    }
   }
   
   /**

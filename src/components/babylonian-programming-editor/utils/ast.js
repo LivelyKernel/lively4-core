@@ -124,17 +124,13 @@ export const applyBasicModifications = (ast) => {
 /**
  * Applies replacement markers to the given AST
  */
-export const applyReplacements = (ast, annotations) => {
-  // TODO
-}
-export const applyReplacementMarkers = (ast, markers) => {
-  // Apply the markers
-  markers.forEach((marker) => {
-    const replacementNode = marker.replacementNode;
+export const applyReplacements = (ast, replacements) => {
+  replacements.forEach((replacement) => {
+    const replacementNode = replacementNodeForCode(replacement.code);
     if(!replacementNode) {
       return;
     }
-    const path = ast._locationMap[marker.loc];
+    const path = ast._locationMap[replacement.location];
     if(path.parentPath.isVariableDeclarator()) {
       path.parent.init = replacementNode;
     } else {

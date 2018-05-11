@@ -60,6 +60,7 @@
 
 .marker.replacement {
   background-color: hsla(344, 54%, 63%, 0.3);
+  text-decoration: line-through;
 }
 
 .marker.example {
