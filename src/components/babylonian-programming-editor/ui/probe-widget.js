@@ -56,7 +56,8 @@ export default class ProbeWidget extends Widget {
         ↘︎
         <span
           class="example-name"
-          style={"background-color:" + example.color}>{example.name}
+          style={"background-color:" + example.color}>
+          {example.name.length ? example.name : "\u00A0"}
         </span>
         &nbsp;{valueString}
       </span>

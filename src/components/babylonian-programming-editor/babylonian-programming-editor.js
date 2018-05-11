@@ -8,18 +8,11 @@ import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
-  Annotation,
-  Input,
-  Form,
-  addMarker
-} from "./utils/ui.js";
-import {
   generateLocationMap,
   canBeProbed,
   canBeExample,
   canBeReplaced,
   canBeInstance,
-  replacementNodeForCode,
   parameterNamesForFunctionIdentifier
 } from "./utils/ast.js";
 import { patchEditor } from "./utils/load-save.js";
@@ -39,6 +32,10 @@ const USER_MARKER_KINDS = ["example", "replacement", "probe"];
  */
 export default class BabylonianProgrammingEditor extends Morph {
  
+  /**
+   * Loading the editor
+   */
+  
   initialize() {
     this.windowTitle = "Babylonian Programming Editor";
     
@@ -73,7 +70,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       /*patchEditor(
         this.get("#source"),
         () => this.markers,
-        this.setMarkers.bind(this)
+        this.loadMarkers.bind(this)
       );*/
       
       // Test file
@@ -105,8 +102,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     });
   }
   
-  
-  async setMarkers(markers) {
+  async loadMarkers(markers) {
     // Unlock evaluation after two seconds
     this._evaluationLocked = true;
     setTimeout(() => {
@@ -144,63 +140,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Evaluate
     this.evaluate(true);
   }
-
-  // Event handlers
   
-  onSelectionChanged(instance, data) {
-    // This needs an AST
-    if(!this.hasWorkingAst()) {
-      this._selectedPath = null;
-      return;
-    }
-    
-    // Get selected path
-    const selectedLocation = LocationConverter.selectionToKey(data.ranges[0]);
-
-    // Check if we selected a node
-    if(selectedLocation in this._ast._locationMap) {
-      this._selectedPath = this._ast._locationMap[selectedLocation];
-    } else {
-      this._selectedPath = null;
-    }
-  }
-
-  onSliderChanged(slider, exampleId, value) {
-    // Get the location for the body
-    const node = this._nodeForAnnotation(slider);
-    const bodyLocation = LocationConverter.astToKey({
-      start: node.loc.start,
-      end: node.body.loc.end
-    });
-
-    // Get all probes in the body
-    const includedProbes = this._annotations.probes.filter((probe) => {
-      const probeLocation = probe.locationAsKey;
-      const beginsAfter = probeLocation[0] > bodyLocation[0]
-                          || (probeLocation[0] === bodyLocation[0]
-                              && probeLocation[1] >= bodyLocation[1]);
-      const endsBefore = probeLocation[2] < bodyLocation[2]
-                         || (probeLocation[2] === bodyLocation[2]
-                             && probeLocation[3] <= bodyLocation[3]);
-      return beginsAfter && endsBefore;
-    });
-    
-    // Tell all probes about the selected run
-    for(let probe of includedProbes) {
-      probe.setActiveRunForExampleId(exampleId, value);
-    }
-  }
-  
-  onEvaluationNeeded() {
-    this.evaluate();
-  }
-  
-  
-  // Adding new Annotations
   
   /**
-   * Adds a new annotation at the selected element
+   * Adding annotations
    */
+  
   addAnnotationAtSelection(kind) {
     // Get selected path
     const path = this._selectedPath;
@@ -326,11 +271,85 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.evaluate();
   }
   
-  // Evaluating and running code
   
   /**
-   * Parses the current code
+   * Updating annotations
    */
+  
+  syncIndentations() {
+    for(let key in this._annotations) {
+      for(let annotation of this._annotations[key]) {
+        annotation.syncIndentation();
+      }
+    }
+  }
+  
+  updateAnnotations() {
+    // Update sliders
+    for(let slider of this._annotations.sliders) {
+      const node = this.nodeForAnnotation(slider).body;
+      if(window.__tracker.blocks.has(node._id)) {
+        slider.maxValues = window.__tracker.blocks.get(node._id);
+      } else {
+        slider.empty();
+      }
+    }
+    
+    // Update probes
+    for(let probe of this._annotations.probes) {
+      const node = this.nodeForAnnotation(probe);
+      if(window.__tracker.ids.has(node._id)) {
+        probe.values = window.__tracker.ids.get(node._id);
+      } else {
+        probe.empty();
+      }
+    }
+    
+    // Update examples
+    for(let example of this._annotations.examples) {
+      if(example.default) {
+        continue;
+      }
+      const path = this.pathForAnnotation(example);
+      example.keys = parameterNamesForFunctionIdentifier(path);
+    }
+  }
+
+  updateDeadMarkers() {
+    // Remove old dead markers
+    this._deadMarkers.map(m => m.clear());
+
+    // Add new markers
+    const that = this;
+    traverse(this._ast, {
+      BlockStatement(path) {
+        if(!window.__tracker.executedBlocks.has(path.node._id)) {
+          const markerLocation = LocationConverter.astToMarker(path.node.loc);
+          that._deadMarkers.push(
+            that.editor().markText(
+              markerLocation.from,
+              markerLocation.to,
+              {
+                className: "marker dead"
+              }
+            )
+          );
+        }
+      }
+    });
+  }
+  
+  enforceAllSliders() {
+    for(let slider of this._annotations.sliders) {
+      slider.fire();
+    }
+  }
+  
+  
+  /**
+   * Evaluating code
+   */
+  
   async parse() {
     /*
     // Convert the markers
@@ -380,9 +399,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     return code;
   }
   
-  /**
-   * Evaluates the current editor content and updates the results
-   */
   async evaluate(ignoreLock = false) {
     if(this._evaluationLocked && !ignoreLock) {
       return;
@@ -400,9 +416,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.updateDeadMarkers();
   }
   
-  /**
-   * Executes the given code
-   */
   execute(code) {
     // Prepare result container
     window.__tracker = {
@@ -443,187 +456,83 @@ export default class BabylonianProgrammingEditor extends Morph {
       console.error(e);
     }
   }
-  
-  
-  // UI
+
   
   /**
-   * Removes a marker from the editor
+   * Event handlers
    */
-  removeMarker(marker) {
-    // Remove the associated widget
-    USER_MARKER_KINDS.map(m => {
-      if(this.markers[m].has(marker)) {
-        this.markers[m].get(marker).clear();
-        this.markers[m].delete(marker);
-      }
-    });
-    // Remove the marker itself
-    marker.clear();
-  }
   
-  /**
-   * Syncs the indentations of all annotations
-   */
-  syncIndentations() {
-    for(let key in this._annotations) {
-      for(let annotation of this._annotations[key]) {
-        annotation.syncIndentation();
-      }
-    }
-  }
-  
-  /**
-   * Updates the values of all annotations
-   */
-  updateAnnotations() {
-    // Update sliders
-    for(let slider of this._annotations.sliders) {
-      const node = this._nodeForAnnotation(slider).body;
-      if(window.__tracker.blocks.has(node._id)) {
-        slider.maxValues = window.__tracker.blocks.get(node._id);
-      } else {
-        slider.empty();
-      }
+  onSelectionChanged(instance, data) {
+    // This needs an AST
+    if(!this.hasWorkingAst()) {
+      this._selectedPath = null;
+      return;
     }
     
-    // Update probes
-    for(let probe of this._annotations.probes) {
-      const node = this._nodeForAnnotation(probe);
-      if(window.__tracker.ids.has(node._id)) {
-        probe.values = window.__tracker.ids.get(node._id);
-      } else {
-        probe.empty();
-      }
+    // Get selected path
+    const selectedLocation = LocationConverter.selectionToKey(data.ranges[0]);
+
+    // Check if we selected a node
+    if(selectedLocation in this._ast._locationMap) {
+      this._selectedPath = this._ast._locationMap[selectedLocation];
+    } else {
+      this._selectedPath = null;
     }
-    
-    // Update examples
-    for(let example of this._annotations.examples) {
-      if(example.default) {
-        continue;
-      }
-      const path = this._pathForAnnotation(example);
-      example.keys = parameterNamesForFunctionIdentifier(path);
-    }
-  }
-  
-  /**
-   * Updates the values of all widgets
-   */
-  updateWidgets() {
-    // Enforce all sliders
-    this.enforceSliders();
-    
-    // Update widgets for replacements
-    this.markers.replacement.forEach((widget, marker) => {
-      const markerLoc = marker.find();
-      widget.update(markerLoc.from.ch);
-    });
-    
-    // Update widgets for probes
-    this.markers.probe.forEach((widget, marker) => {
-      const markerLoc = marker.find();
-      const probedNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())].node;
-      
-      // Distinguish between Annotations and Sliders
-      if(widget instanceof Annotation) {
-        let values = null;
-        if(window.__tracker.ids.has(probedNode._id)) {
-          values = window.__tracker.ids.get(probedNode._id);
-        }
-        widget.update(values, markerLoc.from.ch);
-      } else if(widget instanceof Slider) {
-        let maxValue = 0;
-        if(window.__tracker.blocks.has(probedNode.body._id)) {
-          maxValue = window.__tracker.blocks.get(probedNode.body._id) - 1;
-        }
-        widget.update(maxValue, markerLoc.from.ch);
-      }
-    });
-    
-    // Update widgets for examples
-    this.markers.example.forEach((widget, marker) => {
-      const markerLoc = marker.find();
-      const exampleNode = this.ast._locationMap[LocationConverter.markerToKey(marker.find())];
-      if(widget instanceof Form) {
-        widget.update(
-          parameterNamesForFunctionIdentifier(exampleNode),
-          markerLoc.from.ch
-        );
-      } else if (widget instanceof Input) {
-        widget.update(
-          markerLoc.from.ch
-        );
-      }
-    });
   }
 
-  /**
-   * Marks all dead code
-   */
-  updateDeadMarkers() {
-    // Remove old dead markers
-    this._deadMarkers.map(m => m.clear());
-
-    // Add new markers
-    const that = this;
-    traverse(this._ast, {
-      BlockStatement(path) {
-        if(!window.__tracker.executedBlocks.has(path.node._id)) {
-          const markerLocation = LocationConverter.astToMarker(path.node.loc);
-          that._deadMarkers.push(
-            that.editor().markText(
-              markerLocation.from,
-              markerLocation.to,
-              {
-                className: "marker dead"
-              }
-            )
-          );
-        }
-      }
+  onSliderChanged(slider, exampleId, value) {
+    // Get the location for the body
+    const node = this.nodeForAnnotation(slider);
+    const bodyLocation = LocationConverter.astToKey({
+      start: node.loc.start,
+      end: node.body.loc.end
     });
-  }
-  
-  /**
-   * Enforces all sliders
-   */
-  enforceAllSliders() {
-    for(let slider of this._annotations.sliders) {
-      slider.fire();
+
+    // Get all probes in the body
+    const includedProbes = this._annotations.probes.filter((probe) => {
+      const probeLocation = probe.locationAsKey;
+      const beginsAfter = probeLocation[0] > bodyLocation[0]
+                          || (probeLocation[0] === bodyLocation[0]
+                              && probeLocation[1] >= bodyLocation[1]);
+      const endsBefore = probeLocation[2] < bodyLocation[2]
+                         || (probeLocation[2] === bodyLocation[2]
+                             && probeLocation[3] <= bodyLocation[3]);
+      return beginsAfter && endsBefore;
+    });
+    
+    // Tell all probes about the selected run
+    for(let probe of includedProbes) {
+      probe.setActiveRunForExampleId(exampleId, value);
     }
   }
   
+  onEvaluationNeeded() {
+    this.evaluate();
+  }
+  
+  
   /**
-   * Checks whether we currently have a working AST
+   * Shortcuts
    */
+
   hasWorkingAst() {
     return (this._ast && this._ast._locationMap);
   }
   
-  /**
-   * Returns the node for a given annotation
-   */
-  _nodeForAnnotation(annotation) {
-    const path = this._pathForAnnotation(annotation);
+  nodeForAnnotation(annotation) {
+    const path = this.pathForAnnotation(annotation);
     if(path) {
       return path.node;
     }
     return null;
   }
   
-  /**
-   * Returns the path for a given annotation
-   */
-  _pathForAnnotation(annotation) {
+  pathForAnnotation(annotation) {
     if(this.hasWorkingAst()) {
       return this._ast._locationMap[annotation.locationAsKey];
     }
     return null;
   }
-  
-  
-  // UI Acessors
   
   editorComp() {
     return this.get("#source").get("lively-code-mirror");
