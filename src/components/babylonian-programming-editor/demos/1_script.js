@@ -14,4 +14,4 @@ if(celcius < 15) {
 } else {
   console.log("It's warm");
 }
-/* Examples: {"probes":[{"location":[12,3,12,10]},{"location":[8,2,8,6]}],"sliders":[{"location":[7,0,7,3]}],"examples":[],"replacements":[],"instances":[]} */
+/* Examples: {"probes":[{"location":[12,3,12,10]},{"location":[8,2,8,6]},{"location":[6,4,6,8]}],"sliders":[{"location":[7,0,7,3]}],"examples":[],"replacements":[],"instances":[]} */

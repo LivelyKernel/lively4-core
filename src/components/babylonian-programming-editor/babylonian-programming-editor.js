@@ -19,8 +19,10 @@ import {
   loadFile,
   saveFile
 } from "./utils/load-save.js";
-import { defaultAnnotations } from "./utils/defaults.js";
-
+import {
+  defaultAnnotations,
+  defaultTracker
+} from "./utils/defaults.js";
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
 import Example from "./annotations/example.js";
@@ -69,7 +71,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_objects.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -433,35 +435,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   execute(code) {
     // Prepare result container
-    window.__tracker = {
-      // Properties
-      ids: new Map(), // Map(id, Map(exampleId, Map(runId, {type, value}))) 
-      blocks: new Map(), // Map(id, Map(exampleId, runCounter))
-      executedBlocks: new Set(), // Set(id)
-
-      // Functions
-      id: function(exampleId, id, value, runId) {
-        if(!this.ids.has(id)) {
-          this.ids.set(id, new Map());
-        }
-        if(!this.ids.get(id).has(exampleId)) {
-          this.ids.get(id).set(exampleId, new Map());
-        }
-        this.ids.get(id).get(exampleId).set(runId, {type: typeof(value), value: value});
-        return value;
-      },
-      block: function(exampleId, id) {
-        this.executedBlocks.add(id);
-        if(!this.blocks.has(id)) {
-          this.blocks.set(id, new Map());
-        }
-        const blockCount = this.blocks.get(id).has(exampleId)
-                           ? this.blocks.get(id).get(exampleId)
-                           : 0;
-        this.blocks.get(id).set(exampleId, blockCount + 1);
-        return blockCount;
-      }
-    };
+    window.__tracker = defaultTracker();
 
     // Execute the code
     try {

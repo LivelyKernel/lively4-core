@@ -303,7 +303,13 @@ const insertIdentifierTracker = (path) => {
     // We are in an if
     // We have to insert the tracker before the if
     statementParentPath.insertBefore(tracker);
+  } else if(path.parentPath.isVariableDeclarator()
+            && path.parentKey === "id") {
+    // Declaration - only track value after
+    statementParentPath.insertAfter(tracker);
   } else {
+    // Normal statement - track value before and after
+    statementParentPath.insertBefore(tracker);
     statementParentPath.insertAfter(tracker);
   }
 };

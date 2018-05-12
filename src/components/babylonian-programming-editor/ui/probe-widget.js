@@ -8,7 +8,7 @@ export default class ProbeWidget extends Widget {
   constructor(editor, location, kind, examples) {
     super(editor, location, kind);
     this._examples = examples; // [{id, name, color}]
-    this._values = new Map(); // Map(exampleId, Map(runId, {type, value}))
+    this._values = new Map(); // Map(exampleId, Map(runId, [{type, value}]))
     this._activeRuns = new Map(); // exampleId -> runId
   }
   
@@ -30,8 +30,12 @@ export default class ProbeWidget extends Widget {
   _update() {
     // Gets a string representaion for a single run
     const stringForRun = (run) => {
-      // run: {type, value}
-      return `${run.value}`;
+      // run: [{type, value}]
+      if(run.length < 2 || run[0].value === run[1].value) {
+        return `${run[0].value}`;
+      } else {
+        return `${run[0].value}→${run[1].value}`;
+      }
     }
     
     // Gets a string representation for a single example
