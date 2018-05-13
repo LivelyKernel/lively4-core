@@ -9,7 +9,6 @@ export function config(conf) {
     throw new TypeError('config of vivide script can only be called on objects.');
   }
   
-  lively.warn([this, conf]);
   this.__vivideStepConfig__ = conf;
   
   return this;

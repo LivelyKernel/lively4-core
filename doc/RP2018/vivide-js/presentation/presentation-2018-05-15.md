@@ -98,6 +98,34 @@ presentButton
 <li>Adapt the views while exploring the data</li>
 </ul>
 
+
+---
+<div class="title-1">Initial State</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+
+(async () => {
+  let vivideView = await (<vivide-view-demo></vivide-view-demo>);
+  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
+  
+  let exampleData = [
+    {name: "object", subclasses:[{name: "morph"},]},
+    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+  ];
+  vivideView.newDataFromUpstream(exampleData);
+  newScriptFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
+    vivideScriptEditor.setView(vivideView);
+    let scripts = vivideView.getScripts();
+    vivideScriptEditor.setScripts(scripts);
+  });
+  
+  return <div style="position: absolute; left: 90px; top: 120px; border: 1px solid lightgray; overflow: auto; "><div style="width: 200px; height: 450px; float: left; padding: 10px; ">{vivideView}</div><div style="width: 500px; height: 450px; float: left; border-left: 1px solid lightgray; padding: 10px; ">{vivideScriptEditor}</div></div>;
+})()
+</script>
+
 ---
 <div class="title-1">Planned Features</div>
 
@@ -112,12 +140,29 @@ presentButton
 ---
 <div class="title-1">Done</div>
 
-<ul class="notes notes-big">
-<li>Scripts are saved in the corresponding view</li>
-<li>First level of descents + tree view: <div class="inline"><script>openComponent('vivide-view', 'Vivide View')</script></div></li>
-</ul>
+<script>
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
-<img style="position: absolute; bottom: 100px; left: calc(10% + 10px); width: 80%; max-width: 100%;" alt="Hier hätte ein Vivide View und sein Script Editor erscheinen müssen..." src="./vivide-view.png" />
+(async () => {
+  let vivideView = await (<vivide-view></vivide-view>);
+  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
+  
+  let exampleData = [
+    {name: "object", subclasses:[{name: "morph"},]},
+    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+  ];
+  vivideView.newDataFromUpstream(exampleData);
+  newScriptFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
+    vivideScriptEditor.setView(vivideView);
+    let scripts = vivideView.getScripts();
+    vivideScriptEditor.setScripts(scripts);
+  });
+  
+  return <div style="position: absolute; left: 90px; top: 120px; border: 1px solid lightgray; overflow: auto; "><div style="width: 200px; height: 450px; float: left; padding: 10px; ">{vivideView}</div><div style="width: 500px; height: 450px; float: left; border-left: 1px solid lightgray; padding: 10px; ">{vivideScriptEditor}</div></div>;
+})()
+</script>
 
 ---
 <div class="title-1">Next Steps</div>
