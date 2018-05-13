@@ -7,11 +7,11 @@ export default class TransactionCollection {
   }
   
   add(transaction) {
-    if (this.isFianlized()) {
+    if (this.isFinalized()) {
       return this;
     }
     
-    this._transactions.add(transaction.hash, transaction);
+    this._transactions.set(transaction.hash, transaction);
     return this;
   }
   
@@ -22,7 +22,7 @@ export default class TransactionCollection {
   }
   
   finalize() {
-    if (this.isFinalize()) {
+    if (this.isFinalized()) {
       return this;
     }
     
@@ -37,7 +37,7 @@ export default class TransactionCollection {
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
-      this._transactions.keys().join('')
+      Array.from(this._transactions.keys()).join('')
     );
   }
 }
