@@ -3,7 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "small";
+let presentationSize = "standard-vga";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -109,7 +109,7 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 (async () => {
   let vivideView = await (<vivide-view-demo></vivide-view-demo>);
   let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  
+  let containerClass = "vivide-view-container " + presentationSize;
   let exampleData = [
     {name: "object", subclasses:[{name: "morph"},]},
     {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
@@ -122,7 +122,7 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
     vivideScriptEditor.setScripts(scripts);
   });
   
-  return <div style="position: absolute; left: 90px; top: 120px; border: 1px solid lightgray; overflow: auto; "><div style="width: 200px; height: 450px; float: left; padding: 10px; ">{vivideView}</div><div style="width: 500px; height: 450px; float: left; border-left: 1px solid lightgray; padding: 10px; ">{vivideScriptEditor}</div></div>;
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
 })()
 </script>
 
@@ -147,7 +147,7 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 (async () => {
   let vivideView = await (<vivide-view></vivide-view>);
   let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  
+  let containerClass = "vivide-view-container " + presentationSize;
   let exampleData = [
     {name: "object", subclasses:[{name: "morph"},]},
     {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
@@ -160,7 +160,7 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
     vivideScriptEditor.setScripts(scripts);
   });
   
-  return <div style="position: absolute; left: 90px; top: 120px; border: 1px solid lightgray; overflow: auto; "><div style="width: 200px; height: 450px; float: left; padding: 10px; ">{vivideView}</div><div style="width: 500px; height: 450px; float: left; border-left: 1px solid lightgray; padding: 10px; ">{vivideScriptEditor}</div></div>;
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
 })()
 </script>
 
