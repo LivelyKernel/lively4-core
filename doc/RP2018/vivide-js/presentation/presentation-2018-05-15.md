@@ -93,7 +93,9 @@ presentButton
 <ul class="notes notes-big">
 <li>System: VivideJS</li>
 <li>Provide data in a task-oriented form</li>
-<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li> <!-- #Comment: Reordering
+du erklärst hier ja einige allgemeine Motivationspunkte für Vivide. Vllt. wäre es besser, zuerst diese allgemeinen Punkte zu erklären und dann erst mit diesen Stichpunkt auf Lively und VivideJS überzuleiten, quasi als Schlussfolgerung/Zielstellung
+-->
 <li>Explore data by utilizing different views</li>
 <li>Adapt the views while exploring the data</li>
 </ul>
@@ -102,6 +104,10 @@ presentButton
 ---
 <div class="title-1">Initial State</div>
 
+<!-- #Comment:
+Dadurch, dass du den vivide-view eingebettet hast, kannst du (glaube ich) nicht zeigen, wie man mehrere View miteinander verbindet, oder?
+Da musst du entscheiden, ob dir das wichtig ist.
+-->
 <script>
 import boundEval from "src/client/bound-eval.js";
 import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
@@ -129,12 +135,16 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 ---
 <div class="title-1">Planned Features</div>
 
+<!-- #Comment:
+Hier solltest du auf jeden Fall sagen, dass das viele Features sind, die es im normalen Vivide gibt (Wir könne für das gewünschte Feature Set quasi abschauen).
+Nur bei den asynchronen Daten hat das originale Vivide seine kleinen Schwierigkeiten -> wobei die ja bei uns im Web-Context besonders wichtig sind.
+-->
 <ul class="notes notes-big">
 <li>Multi-level hierarchies</li>
 <li>Advanced configuration options in scripts</li>
 <li>Improved view connection management</li>
 <li>Processing asynchronous data</li>
-<li>Merging data from two sources</li>
+<li>Merging data from two sources</li> <!-- #Comment: two -> multiple -->
 </ul>
 
 ---
@@ -173,6 +183,9 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
   <li>Scripts for each level</li>
   <li>Children are processed on demand</li>
   </ul>
+<!-- #Comment:
+Da du zum ersten Stichpunkt auch unterpunkte hast (was auch wichtig ist), sollest du das folgende Todo-Item auch näher beschreiben.
+-->
 <li>Advanced configuration options in scripts</li>
 </ul>
 
