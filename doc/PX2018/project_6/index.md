@@ -216,17 +216,12 @@ function restart() {
   node.exit().transition()
       .attr("r", 0)
       .remove();
-  // node.exit().remove();
-  // node = node.enter().append("circle")
-  //   .attr("r", 10)
-  //   .attr("fill", function(d) { return color(d.id); })
-  //   .merge(node);
-    node = node.enter().append("circle")
-      .attr("fill", function(d) { return color(d.id); })
-      .call(function(node) { node.transition().attr("r", 8); })
-      .merge(node);
+  node = node.enter().append("circle")
+    .attr("fill", function(d) { return color(d.id); })
+    .call(function(node) { node.transition().attr("r", 8); })
+    .merge(node);
 
-   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+  link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
   link.exit().transition()
     .attr("stroke-opacity", 0)
     .attrTween("x1", function(d) { return function() { return d.source.x; }; })
