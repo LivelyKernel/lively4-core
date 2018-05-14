@@ -185,13 +185,7 @@ async function start() {
       .on("end", dragended.bind(this, simulation)));
 
   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-  link.exit().transition()
-    .attr("stroke-opacity", 0)
-    .attrTween("x1", function(d) { return function() { return d.source.x; }; })
-    .attrTween("x2", function(d) { return function() { return d.target.x; }; })
-    .attrTween("y1", function(d) { return function() { return d.source.y; }; })
-    .attrTween("y2", function(d) { return function() { return d.target.y; }; })
-    .remove();
+  link.exit().remove();
   link = link.enter().append("line")
     .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
     .call(function(link) { link.transition().attr("stroke-opacity", 1); })
