@@ -140,7 +140,13 @@ var simulation = d3.forceSimulation()
   .force("center", d3.forceCenter(width / 2, height / 2))
   .force("x", d3.forceX())
   .force("y", d3.forceY())
-  .alphaTarget(1)
+  .alphaTarget(1);
+  
+var force = d3.layout.force()
+    .gravity(.05)
+    .distance(100)
+    .charge(-100)
+    .size([w, h]);
   
 var node = svg.append("g")
   .selectAll(".node");
