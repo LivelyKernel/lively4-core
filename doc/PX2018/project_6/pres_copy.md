@@ -129,7 +129,6 @@ function removeNode() {
   
 
 async function start() {
-  console.log(d3.graphAnneal)
   node = node.data(nodes, function(d) { return d.id;});
   node.exit().remove();
   node = node.enter().append("circle")
