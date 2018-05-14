@@ -135,7 +135,7 @@ presentButton
 <img style="position: absolute; bottom: 100px; left: calc(30% + 10px); width: 40%; max-width: 100%;" alt="Hier hätte eine MPM Grafik erscheinen müssen..." src="./mpm-phases.png" />
 
 ---
-<div class="title-1">Initial State</div>
+<div class="title-1">Demo</div>
 
 <script>
 import boundEval from "src/client/bound-eval.js";
@@ -157,6 +157,8 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 <li>Number of particles influences performance</li>
 <li>Each algorithm has a different set of parameters</li>
 <li>Which algorithm explains a parameter the best</li>
+<li>Suitable controls for each parameter</li>
+<li>Exchangeability of examples algorithms</li>
 </ul>
 
 ---
