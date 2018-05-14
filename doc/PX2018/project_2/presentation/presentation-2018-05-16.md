@@ -3,7 +3,10 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "small";
+let presentationSize = "standard-vga";
+
+lively.components.addTemplatePath(lively4url + "/doc/PX2018/project_2/")
+lively.components.resetTemplatePathCache()
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -106,16 +109,7 @@ presentButton
 
 <ul class="notes notes-big">
 <li>How can materials be simulate<br><i class="fa fa-arrow-right"></i>Material Point Method</li>
-<li>Why is it of interest?</li>
-</ul>
-
----
-<div class="title-1">Introduction</div>
-
-<ul class="notes notes-big">
-<li>How can materials be simulate<br><i class="fa fa-arrow-right"></i>Material Point Method</li>
-<li>Why is it of interest?</li>
-<li>Well take a look:</li>
+<li>How does it look like?</li>
 </ul>
 <iframe style="position: absolute; bottom: 50px; right: 50px;" width="50%" height="50%" src="https://www.youtube.com/embed/nXck0xs7oyw?start=150" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
@@ -129,6 +123,7 @@ presentButton
 </ul>
 
 ---
+
 <div class="title-1">Concept</div>
 
 <ul class="notes notes-big">
@@ -138,6 +133,31 @@ presentButton
 </ul>
 
 <img style="position: absolute; bottom: 100px; left: calc(30% + 10px); width: 40%; max-width: 100%;" alt="Hier hätte eine MPM Grafik erscheinen müssen..." src="./mpm-phases.png" />
+
+---
+<div class="title-1">Initial State</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+
+(async () => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  let containerClass = "mpm " + presentationSize;
+
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}>{mpm}</div></div>;
+})()
+</script>
+
+---
+
+<div class="title-1">Challenges</div>
+
+<ul class="notes notes-big">
+<li>Number of particles influences performance</li>
+<li>Each algorithm has a different set of parameters</li>
+<li>Which algorithm explains a parameter the best</li>
+</ul>
 
 ---
 <div class="title-1">Outlook</div>

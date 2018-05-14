@@ -191,3 +191,20 @@
   width: 900px;
   height: 800px;
 }
+
+.mpm {
+  position: absolute;
+  left: 100px;
+  top: 150px;
+  width: 800px;
+}
+
+.mpm.hd {
+  left: 450px;
+  top: 250px;
+}
+
+.mpm.fullhd {
+  left: 550px;
+  top: 350px;
+}

@@ -26,24 +26,26 @@
   
   input {
     float: right;
+    text-align: right;
+    margin-right: 20px;
   }
 </style>
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
-      <label>Speed: </label><input id="speed" /><br />
+      <label>Speed: </label><input id="speed"  value="20"/><br />
     </div>
     <div class="input-line">
-      <label>Young modulus: </label><input id="young-modulus" />
+      <label>Young modulus: </label><input id="young-modulus" value="0.001"/>
     </div>
     <div class="input-line">
-      <label>Extend: </label><input id="extend" />
+      <label>Extend: </label><input id="extend" value="200"/>
     </div>
     <div class="input-line">
-      <label># Particles: </label><input id="num-particles" />
+      <label># Particles: </label><input id="num-particles" value="1"/>
     </div>
     <div class="input-line">
-      <label>Particle Size: </label><input id="particle-size" />
+      <label>Particle Size: </label><input id="particle-size" value="2"/>
     </div>
   </div>
 
