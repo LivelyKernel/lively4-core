@@ -229,7 +229,7 @@ function restart() {
 
   simulation.force("link").links(links).distance(100);
     
-  simulation.restart();
+  // simulation.restart();
 }
 
 function ticked(link, node) {
