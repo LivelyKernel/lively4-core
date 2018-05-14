@@ -146,7 +146,7 @@ async function start() {
   node.append("title")
     .text(function(d) { return d.id; });
     
-  console.log(nodes, links)
+  console.log(node, link)
     
   d3.graphAnneal()
     .nodes(nodes)
