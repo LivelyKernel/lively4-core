@@ -160,7 +160,7 @@ function addNode() {
   nodes.push(c); // Re-add c.
   //links.push({source: b, target: c}); // Re-add b-c.
   links.push({source: c, target: a}); // Re-add c-a.
-  start();
+  restart();
 }
 
 function removeNode() {
