@@ -1,7 +1,7 @@
 import Widget from "./widget.js";
 import { defaultExample } from "../utils/defaults.js";
 
-const MAX_VALUESTRING_LENGTH = 40;
+const MAX_VALUESTRING_LENGTH = 100;
 
 
 export default class ProbeWidget extends Widget {
@@ -31,10 +31,10 @@ export default class ProbeWidget extends Widget {
     // Gets a string representaion for a single run
     const stringForRun = (run) => {
       // run: [{type, value}]
-      if(run[0].value.__proto__
-           && run[0].value.__proto__.constructor.name === "Object") {
+      if(run[0].value instanceof Object) {
         // We have to print the key-value pairs
-        let combinedObj = {}; // {key: [oldValue, newValue]}
+        // Combine all properties (before and after)
+        const combinedObj = {}; // {key: [oldValue, newValue]}
         for(let key in run[0].value) {
           combinedObj[key] = [run[0].value[key], undefined];
         }
@@ -47,13 +47,25 @@ export default class ProbeWidget extends Widget {
         }
         const propStrings = [];
         for(let key in combinedObj) {
+          if(key === "__tracker_identity") {
+            continue;
+          }
           if(combinedObj[key][0] === combinedObj[key][run.length-1]) {
             propStrings.push(`  ${key}: ${run[0].value[key]}`);
           } else {
             propStrings.push(`  ${key}: ${run[0].value[key]} → ${run[run.length-1].value[key]}`);
           }
         }
-        return `{\n${propStrings.join("\n")}\n}`;
+        
+        // Check the identity
+        let identityString;
+        if(combinedObj.__tracker_identity[0] === combinedObj.__tracker_identity[1]) {
+          identityString = combinedObj.__tracker_identity[0];
+        } else {
+          identityString = `${combinedObj.__tracker_identity[0]} → ${combinedObj.__tracker_identity[1]}`;
+        }
+        
+        return `${identityString}:{\n${propStrings.join("\n")}\n}`;
       } else {
         // We can just print the value
         if(run.length < 2 || run[0].value === run[run.length-1].value) {

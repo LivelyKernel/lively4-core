@@ -423,6 +423,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Parse the code
     const code = await this.parse()
+    if(!code) {
+      return;
+    }
 
     // Execute the code
     console.log("Executing", code);

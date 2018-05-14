@@ -23,6 +23,7 @@ var obj = {
 obj.c = 4
 delete obj.a;
 
+let test = { a: 1 };
+test = { a: 1 };
 
-
-/* Examples: {"probes":[{"location":[12,3,12,10]},{"location":[8,2,8,6]},{"location":[6,4,6,8]},{"location":[19,4,19,7]},{"location":[23,0,23,3]},{"location":[24,7,24,10]}],"sliders":[{"location":[7,0,7,3]}],"examples":[],"replacements":[],"instances":[]} */
+/* Examples: {"probes":[{"location":[12,3,12,10]},{"location":[8,2,8,6]},{"location":[6,4,6,8]},{"location":[19,4,19,7]},{"location":[23,0,23,3]},{"location":[24,7,24,10]},{"location":[26,4,26,8]},{"location":[27,0,27,4]}],"sliders":[{"location":[7,0,7,3]}],"examples":[],"replacements":[],"instances":[]} */
