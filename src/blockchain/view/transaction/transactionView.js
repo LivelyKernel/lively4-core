@@ -1,4 +1,3 @@
-import Transaction from 'src/blockchain/transaction/transaction.js';
 import Point from 'src/blockchain/view/point.js';
 import Rectangle from 'src/blockchain/view/rectangle.js';
 
