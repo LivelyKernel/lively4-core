@@ -197,18 +197,6 @@ async function start() {
     .call(function(link) { link.transition().attr("stroke-opacity", 1); })
     .attr("stroke", "lightgray")
     .merge(link);
-  
-//   link.exit().transition()
-//     .attr("stroke-opacity", 0)
-//     .attrTween("x1", function(d) { return function() { return d.source.x; }; })
-//     .attrTween("x2", function(d) { return function() { return d.target.x; }; })
-//     .attrTween("y1", function(d) { return function() { return d.source.y; }; })
-//     .attrTween("y2", function(d) { return function() { return d.target.y; }; })
-//     .remove();
-
-//   link = link.enter().append("line")
-//       .call(function(link) { link.transition().attr("stroke-opacity", 1); })
-//     .merge(link);
 
   node.append("title")
     .text(function(d) { return d.id; });
@@ -238,9 +226,19 @@ function restart() {
       .call(function(node) { node.transition().attr("r", 8); })
       .merge(node);
 
-  link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-  link.exit().remove();
-  link = link.enter().append("line").merge(link);
+   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+  link.exit().transition()
+    .attr("stroke-opacity", 0)
+    .attrTween("x1", function(d) { return function() { return d.source.x; }; })
+    .attrTween("x2", function(d) { return function() { return d.target.x; }; })
+    .attrTween("y1", function(d) { return function() { return d.source.y; }; })
+    .attrTween("y2", function(d) { return function() { return d.target.y; }; })
+    .remove();
+  link = link.enter().append("line")
+    .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+    .call(function(link) { link.transition().attr("stroke-opacity", 1); })
+    .attr("stroke", "lightgray")
+    .merge(link);
 
   node.append("title")
     .text(function(d) { return d.id; });
