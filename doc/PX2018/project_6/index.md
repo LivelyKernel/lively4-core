@@ -142,12 +142,6 @@ var simulation = d3.forceSimulation()
   .force("y", d3.forceY())
   .alphaTarget(1);
   
-var force = d3.layout.force()
-    .gravity(.05)
-    .distance(100)
-    .charge(-100)
-    .size([w, h]);
-  
 var node = svg.append("g")
   .selectAll(".node");
   
@@ -231,8 +225,7 @@ function restart() {
 
   simulation.force("link").links(links);
     
-  simulation.alpha(1).restart();
-  force.start();
+  simulation.alpha(1).start();
 }
 
 function ticked(link, node) {
