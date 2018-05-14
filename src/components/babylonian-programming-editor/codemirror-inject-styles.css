@@ -75,3 +75,7 @@
 .marker.dead {
   opacity: 0.5;
 }
+
+.probe-value {
+  white-space: pre;
+}

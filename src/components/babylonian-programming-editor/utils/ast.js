@@ -47,7 +47,9 @@ export const generateLocationMap = (ast) => {
  * Checks whether a path can be probed
  */
 export const canBeProbed = (path) => {
-  const isTrackableIdentifier = path.isIdentifier() && !path.parentPath.isMemberExpression();
+  const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
+                                 && (!path.parentPath.isMemberExpression()
+                                     || path.parentKey === "object");
   const isTrackableMemberExpression = path.isMemberExpression();
   const isTrackableReturnStatement = path.isReturnStatement();
   const isTrackableLoop = path.isLoop();
@@ -159,6 +161,10 @@ export const applyProbes = (ast, annotations) => {
       insertIdentifierTracker(path);
     },
     MemberExpression(path) {
+      if(!trackedNodes.includes(path.node)) return;
+      insertIdentifierTracker(path);
+    },
+    ThisExpression(path) {
       if(!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
     },

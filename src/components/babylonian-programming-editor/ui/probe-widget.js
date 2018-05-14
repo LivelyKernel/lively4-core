@@ -31,10 +31,36 @@ export default class ProbeWidget extends Widget {
     // Gets a string representaion for a single run
     const stringForRun = (run) => {
       // run: [{type, value}]
-      if(run.length < 2 || run[0].value === run[1].value) {
-        return `${run[0].value}`;
+      if(run[0].value.__proto__
+           && run[0].value.__proto__.constructor.name === "Object") {
+        // We have to print the key-value pairs
+        let combinedObj = {}; // {key: [oldValue, newValue]}
+        for(let key in run[0].value) {
+          combinedObj[key] = [run[0].value[key], undefined];
+        }
+        for(let key in run[run.length-1].value) {
+          if(combinedObj[key] instanceof Array) {
+            combinedObj[key][1] = run[run.length-1].value[key];
+          } else {
+            combinedObj[key] = [undefined, run[run.length-1].value[key]];
+          }
+        }
+        const propStrings = [];
+        for(let key in combinedObj) {
+          if(combinedObj[key][0] === combinedObj[key][run.length-1]) {
+            propStrings.push(`  ${key}: ${run[0].value[key]}`);
+          } else {
+            propStrings.push(`  ${key}: ${run[0].value[key]} → ${run[run.length-1].value[key]}`);
+          }
+        }
+        return `{\n${propStrings.join("\n")}\n}`;
       } else {
-        return `${run[0].value}→${run[1].value}`;
+        // We can just print the value
+        if(run.length < 2 || run[0].value === run[run.length-1].value) {
+           return `${run[0].value}`;
+        } else {
+          return `${run[0].value} → ${run[run.length-1].value}`;
+        }
       }
     }
     
@@ -63,7 +89,8 @@ export default class ProbeWidget extends Widget {
           style={"background-color:" + example.color}>
           {example.name.length ? example.name : "\u00A0"}
         </span>
-        &nbsp;{valueString}
+        &nbsp;
+        <span class="probe-value">{valueString}</span>
       </span>
     }
     

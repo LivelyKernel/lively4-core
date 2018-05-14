@@ -427,10 +427,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     console.log("Executing", code);
     this.execute(code);
-
-    // Show the results
-    this.updateAnnotations();
-    this.updateDeadMarkers();
   }
   
   execute(code) {
@@ -440,6 +436,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     try {
       eval(code);
+      // Show the results
+      this.updateAnnotations();
+      this.updateDeadMarkers();
     } catch (e) {
       console.warn("Could not execute code");
       console.error(e);

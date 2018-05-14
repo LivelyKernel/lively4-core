@@ -49,7 +49,7 @@ export const defaultTracker = () => ({
     this.ids.get(id)
             .get(exampleId)
             .get(runId)
-            .push({type: typeof(value), value: value});
+            .push({type: typeof(value), value: this._clone(value)});
     
     return value;
   },
@@ -63,5 +63,12 @@ export const defaultTracker = () => ({
                        : 0;
     this.blocks.get(id).set(exampleId, blockCount + 1);
     return blockCount;
+  },
+  
+  // Utils
+  _clone: function(obj) {
+    // TODO: Cyclical structures...
+    // TODO: Check identity (with identityMap)
+    return JSON.parse(JSON.stringify(obj));
   }
 });
