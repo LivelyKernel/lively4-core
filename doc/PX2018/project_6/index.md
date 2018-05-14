@@ -162,7 +162,7 @@ var a = {id: "a", group: 1},
     c = {id: "c", group: 3},
     nodes = [a, b, c],
     links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
-  restart();
+  start();
 }
 
 function removeNode() {
