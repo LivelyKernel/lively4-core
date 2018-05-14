@@ -218,7 +218,6 @@ function restart() {
   link.exit().remove();
   link = link.enter().append("line")
     .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
-    .call(function(link) { link.transition().attr("stroke-opacity", 1); })
     .attr("stroke", "lightgray")
     .merge(link);
 
