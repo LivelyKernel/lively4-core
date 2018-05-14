@@ -104,7 +104,6 @@ export default class VivideView extends Morph {
   }
   
   notifyOutportTargets() {
-    lively.warn('explicitly notify outport targets', this.outportTargets);
     this.outportTargets
       .forEach(target => {
         target.newDataFromUpstream(VivideView.modelToData(this.modelToDisplay));
@@ -122,10 +121,7 @@ export default class VivideView extends Morph {
   selectionChanged() {
     let data = this.getSelectedData();
     if(data) {
-      lively.success('selection changed', 'notify outport targets');
       this.outportTargets.forEach(target => target.newDataFromUpstream(data));
-    } else {
-      lively.error('selection changed, but no widget to retrieve data from');
     }
   }
   
@@ -241,7 +237,6 @@ export default class VivideView extends Morph {
     if(this.getScripts()) {
       await this.calculateOutputModel();
     } else {
-      lively.warn('view got new data, but had no script attached!', 'we are trying our best');
       this.modelToDisplay = VivideView.dataToModel(this.input);
     }
 
@@ -285,7 +280,6 @@ export default class VivideView extends Morph {
   }
   
   async scriptGotUpdated(scripts) {
-    lively.notify(`received script updated`, scripts);
     this.setScripts(scripts);
     
     await this.calculateOutputModel();
