@@ -31,7 +31,22 @@ export default class ProbeWidget extends Widget {
     // Gets a string representaion for a single run
     const stringForRun = (run) => {
       // run: [{type, value}]
-      if(run[0].value instanceof Object) {
+      if(run[0].value instanceof Array) {
+        // We have an array
+        if(run.length > 1) {
+          let combinedArray = run[0].value.map(e => [e, undefined]);
+          for(let i in run[1].value) {
+            if(i < combinedArray.length) {
+              combinedArray[i][1] = run[1].value[i];
+            } else {
+              combinedArray.push([undefined, run[1].value[i]]);
+            }
+          }
+          return `[${combinedArray.map(e => e[0] == e[1] ? `${e[0]}` : `${e[0]} → ${e[1]}`).join(", ")}]`;
+        } else {
+          return `[${run[0].value.join(", ")}]`;
+        }
+      } else if(run[0].value instanceof Object) {
         // We have to print the key-value pairs
         // Combine all properties (before and after)
         const combinedObj = {}; // {key: [oldValue, newValue]}
