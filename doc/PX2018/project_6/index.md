@@ -247,7 +247,7 @@ function restart() {
 
   simulation.nodes(nodes);
 
-  simulation.force("link").links(links);
+  simulation.force("link").links(links).distance(100);
     
   simulation.alpha(1).restart();
 }
