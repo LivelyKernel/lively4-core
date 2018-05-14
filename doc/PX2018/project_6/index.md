@@ -157,6 +157,7 @@ var a = {id: "a", group: 1},
     links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
     
 function addNode() {
+  simulation.stop();
   nodes.push(c); // Re-add c.
   links.push({source: b, target: c}); // Re-add b-c.
   links.push({source: c, target: a}); // Re-add c-a.
