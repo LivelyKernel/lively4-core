@@ -81,7 +81,7 @@ rect {
 <script>
 
 import d3 from "src/external/d3.v4.js";
-import * from "doc/PX2018/project_6/annealing.js";
+import {} from "doc/PX2018/project_6/annealing.js";
 (async () => {
 
 
