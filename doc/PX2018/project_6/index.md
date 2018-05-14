@@ -207,41 +207,25 @@ async function start() {
 };
 
 function restart() {
-//   node = node.data(nodes, function(d) { return d.id;});
-//   node.exit().remove();
-//   node = node.enter().append("circle")
-//     .attr("r", 10)
-//     .attr("fill", function(d) { return color(d.id); })
-//     .merge(node);
-
-//   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-//   link.exit().remove();
-//   link = link.enter().append("line").merge(link);
-
-//   node.append("title")
-//     .text(function(d) { return d.id; });
-
-//   simulation.nodes(nodes);
-
-//   simulation.force("link").links(links);
-    
-//   simulation.alpha(1).restart();
-
-    // Apply the general update pattern to the nodes.
   node = node.data(nodes, function(d) { return d.id;});
   node.exit().remove();
-  node = node.enter().append("circle").attr("fill", function(d) { return color(d.id); }).attr("r", 8).merge(node);
+  node = node.enter().append("circle")
+    .attr("r", 10)
+    .attr("fill", function(d) { return color(d.id); })
+    .merge(node);
 
-  // Apply the general update pattern to the links.
   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
   link.exit().remove();
   link = link.enter().append("line").merge(link);
 
-  // Update and restart the simulation.
-  simulation.nodes(nodes);
-  simulation.force("link").links(links);
-  simulation.alpha(1).restart();
+  node.append("title")
+    .text(function(d) { return d.id; });
 
+  simulation.nodes(nodes);
+
+  simulation.force("link").links(links);
+    
+  simulation.alpha(1).restart();
 }
 
 function ticked(link, node) {
