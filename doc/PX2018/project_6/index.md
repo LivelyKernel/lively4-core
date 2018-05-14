@@ -1,5 +1,341 @@
-<lively-presentation tabindex="0"></lively-presentation>
-<div class="lively-slide" style="display: block;"> <!-- markdown-config presentation=true --> <!-- #TODO make style links in container content relative to url --> <!-- <link rel="stylesheet" type="text/css" href="style.css" /> --> <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"></link><link rel="stylesheet" type="text/css" href="src/client/lively.css"></link><link rel="stylesheet" type="text/css" href="templates/livelystyle.css"></link><style> .lively-slide { border: 1px solid rgb(220,220,220) page-break-before: always; /* border: 2px solid red <em>/ } p { font-size: 18pt } @media print { .lively-slide { page-break-before: always; border: 0px solid white; /</em> border: 2px solid blue; */ } } </style> <div class="title">PX 2018: Graph Drawing</div> <div class="authors">Theresa Zobel, Siegfried Horschig</div> <div class="credentials">Software Architecture Group Hasso Plattner Institute University of Potsdam, Germany</div> <lively-script><script>var button = document.createElement(&quot;button&quot;) button.textContent = &quot;print&quot; button.onclick = async () =&gt; { var presentation = lively.query(this, &quot;lively-presentation&quot;) presentation.print() } button.style = &quot;position: absolute; bottom: 10px; left: 10px&quot; button</script> </lively-script> ![](https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png) <div class="page-number"></div> </div>
-<div class="lively-slide" style="display: none;"># Abstract ![](https://lively-kernel.org/lively4/lively4-core/doc/PX2018/project_6/./img/standard-layout-1.gif) ![](https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png) <div class="page-number"></div> </div>
-<div class="lively-slide" style="display: none;"># Demo <div><svg width="900" height="500" id="svgContainer" style="border-style: solid"><g class="nodes"><circle r="10" cx="504.6702363960105" cy="224.1597547660516"></circle><title>1</title><circle r="10" cx="441.51370049050007" cy="302.68207250555514"></circle><title>2</title><circle r="10" cx="403.88576893763576" cy="223.1253175807241"></circle><title>3</title></g><g class="links"><line stroke-width="1" stroke="lightgray" x1="504.6702363960105" y1="224.1597547660516" x2="441.51370049050007" y2="302.68207250555514"></line><line stroke-width="1.4142135623730951" stroke="lightgray" x1="504.6702363960105" y1="224.1597547660516" x2="403.88576893763576" y2="223.1253175807241"></line></g></svg><button id="addNode">Add Node</button></div> <lively-script><script>import d3 from &quot;src/external/d3.v5.js&quot; var addNodeButton = lively.query(this, &quot;#addNode&quot;); addNodeButton.onclick = async () =&gt; { addNode(); } var svg = d3.select(lively.query(this, &quot;#svgContainer&quot;)); var nodeId = 3; var graphJson = { &quot;nodes&quot;: [ {&quot;id&quot;: &quot;1&quot;, &quot;group&quot;: 1}, {&quot;id&quot;: &quot;2&quot;, &quot;group&quot;: 2}, {&quot;id&quot;: &quot;3&quot;, &quot;group&quot;: 3} ], &quot;links&quot;: [ {&quot;source&quot;: &quot;1&quot;, &quot;target&quot;: &quot;2&quot;, &quot;value&quot;: 1}, {&quot;source&quot;: &quot;1&quot;, &quot;target&quot;: &quot;3&quot;, &quot;value&quot;: 2} ] } function getGraphJSON() { return graphJson; } function addNode() { nodeId++; var newNode = {&quot;id&quot;: nodeId, &quot;group&quot;: nodeId}; var newLink = {&quot;source&quot;: &quot;1&quot;, &quot;target&quot;: nodeId, &quot;value&quot;: 2}; graphJson[&quot;nodes&quot;].push(newNode); graphJson[&quot;links&quot;].push(newLink); console.log(graphJson); // restart(); } function restart() { console.log('restart'); } (async () =&gt; { var color = d3.scaleOrdinal(d3.schemeCategory20); var graph = getGraphJSON(), width = +svg.attr(&quot;width&quot;), height = +svg.attr(&quot;height&quot;); var simulation = d3.forceSimulation() .force(&quot;link&quot;, d3.forceLink().id(function(d) { return d.id; })) .force(&quot;charge&quot;, d3.forceManyBody()) .force(&quot;center&quot;, d3.forceCenter(width / 2, height / 2)); var node = svg.append(&quot;g&quot;) .attr(&quot;class&quot;, &quot;nodes&quot;) .selectAll(&quot;circle&quot;) .data(graph.nodes) node.exit().remove(); node = node.enter().append(&quot;circle&quot;) .attr(&quot;r&quot;, 10) .attr(&quot;fill&quot;, function(d) { return color(d.group); }) .call(d3.drag() .on(&quot;start&quot;, dragstarted.bind(this, simulation)) .on(&quot;drag&quot;, dragged.bind(this, simulation)) .on(&quot;end&quot;, dragended.bind(this, simulation))) .merge(node); var link = svg.append(&quot;g&quot;) .attr(&quot;class&quot;, &quot;links&quot;) .selectAll(&quot;line&quot;) .data(graph.links) link.exit().remove(); link = link.enter().append(&quot;line&quot;) .attr(&quot;stroke-width&quot;, function(d) { return Math.sqrt(d.value); }) .attr(&quot;stroke&quot;, &quot;lightgray&quot;) .merge(link); node.append(&quot;title&quot;) .text(function(d) { return d.id; }); simulation .nodes(graph.nodes) .on(&quot;tick&quot;, ticked.bind(this, link, node)); simulation.force(&quot;link&quot;) .links(graph.links) .distance(100); simulation.alpha(1).restart(); })(); function ticked(link, node) { link .attr(&quot;x1&quot;, function(d) { return d.source.x; }) .attr(&quot;y1&quot;, function(d) { return d.source.y; }) .attr(&quot;x2&quot;, function(d) { return d.target.x; }) .attr(&quot;y2&quot;, function(d) { return d.target.y; }); node .attr(&quot;cx&quot;, function(d) { return d.x; }) .attr(&quot;cy&quot;, function(d) { return d.y; }); } function dragstarted(simulation, d) { if (!d3.event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; } function dragged(simulation, d) { d.fx = d3.event.x; d.fy = d3.event.y; } function dragended(simulation, d) { if (!d3.event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }</script> </lively-script> ![](https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png) <div class="page-number"></div> </div>
-<div class="lively-slide" style="display: none;"> <!-- #TODO pull this up into presentation? --> <lively-script><script>// poor men's slide master var presentation = lively.query(this, &quot;lively-presentation&quot;) if (presentation &amp;&amp; presentation.slides) { presentation.slides().forEach(ea =&gt; { var img = document.createElement(&quot;img&quot;) img.classList.add(&quot;logo&quot;) img.src=&quot;https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png&quot; img.setAttribute(&quot;width&quot;, &quot;50px&quot;) ea.appendChild(img) var div = document.createElement(&quot;div&quot;) div.classList.add(&quot;page-number&quot;) ea.appendChild(div) }); } &quot;&quot;</script> </lively-script> ![](https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png) <div class="page-number"></div> </div>
+<!-- markdown-config presentation=true -->
+
+<!-- #TODO make style links in container content relative to url -->
+<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
+<link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
+<link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
+<link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
+
+<style>
+  .lively-slide {
+    border: 1px solid rgb(220,220,220)
+    page-break-before: always;
+/*     border: 2px solid red
+ */
+  }
+  p {
+    font-size: 18pt
+  }
+  @media print {
+    .lively-slide {
+      page-break-before: always;
+      border: 0px solid white;
+/*       border: 2px solid blue; */
+    }      
+  }
+  
+</style>
+
+<div class="title">
+  PX 2018: Graph Drawing
+</div>
+
+<div class="authors">
+  Theresa Zobel, Siegfried Horschig
+</div>
+
+<div class="credentials">
+  Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
+</div>
+
+<script>
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(this, "lively-presentation")
+   presentation.print()
+  }
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  button
+</script>
+
+
+--- 
+
+# Problem
+
+<img src="./img/standard-layout-1.gif">
+
+--- 
+
+# Graph Drawing - Key Challenges
+
+
+* Low number of crossings
+
+* Small area
+
+* Short edges
+
+<img src="./img/Graph_drawing.jpg">
+
+--- 
+
+# Layout Methods
+
+
+* Arc Layout
+
+<img style="max-height: 100px" src="./img/arc_diagram.png">
+
+* Circle Layout
+
+<img style="max-height: 100px" src="./img/Barabasi_Albert_model.gif">
+
+* Force-directed Layouts
+
+* Energy-minimizing simulations (Simulated Annealing)
+
+
+<span style="font-size: 8pt;
+    position: fixed;
+    bottom: 0;
+    width: 100%;"> source: commons.wikimedia.org</span>
+
+--- 
+
+# Force-directed Layouts - Demo
+
+<div>
+<svg width="900" height="500" id="svgContainer" style="border-style: solid"></svg>
+</div>
+<button id="addNode">Add Node</button>
+<button id="removeNode">Remove Node</button>
+<style>
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+.node {
+  fill: #000;
+}
+
+.cursor {
+  fill: none;
+  stroke: brown;
+  pointer-events: none;
+}
+
+</style>
+
+<script>
+import d3 from "src/external/d3.v4.js"
+
+var nodeId = 3;
+var svg = d3.select(lively.query(this, "#svgContainer"));
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+var width = +svg.attr("width"),
+  height = +svg.attr("height");
+  
+var addButton = lively.query(this, "#addNode")
+addButton.addEventListener("click", addNode);
+var removeButton = lively.query(this, "#removeNode")
+removeButton.addEventListener("click", removeNode);
+
+var simulation = d3.forceSimulation()
+  .force("link", d3.forceLink().id(function(d) { return d.id; }))
+  .force("charge", d3.forceManyBody())
+  .force("center", d3.forceCenter(width / 2, height / 2))
+  .force("x", d3.forceX())
+  .force("y", d3.forceY())
+  .alphaTarget(1)
+  
+var node = svg.append("g")
+  .selectAll(".node");
+  
+var link = svg.append("g")
+  .selectAll(".link")
+  .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+  .attr("stroke", "lightgray");
+
+var a = {id: "a", group: 1},
+    b = {id: "b", group: 2},
+    c = {id: "c", group: 3},
+    nodes = [a, b, c],
+    links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
+    
+function addNode() {
+  nodes.push(c); // Re-add c.
+  links.push({source: b, target: c}); // Re-add b-c.
+  links.push({source: c, target: a}); // Re-add c-a.
+  console.log(nodes, 'nodes');
+  console.log(links, 'links');
+  restart();
+}
+
+function removeNode() {
+  nodes.pop(); // Remove c.
+  links.pop(); // Remove c-a.
+  links.pop(); // Remove b-c.
+  restart();
+}
+
+  
+
+async function start() {
+  node = node.data(nodes, function(d) { return d.id;});
+  node.exit().remove();
+  node = node.enter().append("circle")
+    .attr("r", 10)
+    .attr("fill", function(d) { return color(d.id); })
+    .merge(node)
+    .call(d3.drag()
+      .on("start", dragstarted.bind(this, simulation))
+      .on("drag", dragged.bind(this, simulation))
+      .on("end", dragended.bind(this, simulation)));
+
+  link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+  link.exit().remove();
+  link = link.enter().append("line")
+    .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+    .attr("stroke", "lightgray")
+    .merge(link);
+
+  node.append("title")
+    .text(function(d) { return d.id; });
+
+  simulation
+    .nodes(nodes)
+    .on("tick", ticked.bind(this, link, node));
+
+  simulation.force("link")
+    .links(links)
+    .distance(100);
+
+};
+
+function restart() {
+//   node = node.data(nodes, function(d) { return d.id;});
+//   node.exit().remove();
+//   node = node.enter().append("circle")
+//     .attr("r", 10)
+//     .attr("fill", function(d) { return color(d.id); })
+//     .merge(node);
+
+//   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+//   link.exit().remove();
+//   link = link.enter().append("line").merge(link);
+
+//   node.append("title")
+//     .text(function(d) { return d.id; });
+
+//   simulation.nodes(nodes);
+
+//   simulation.force("link").links(links);
+    
+//   simulation.alpha(1).restart();
+
+    // Apply the general update pattern to the nodes.
+  node = node.data(nodes, function(d) { return d.id;});
+  node.exit().remove();
+  node = node.enter().append("circle").attr("fill", function(d) { return color(d.id); }).attr("r", 8).merge(node);
+
+  // Apply the general update pattern to the links.
+  link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+  link.exit().remove();
+  link = link.enter().append("line").merge(link);
+
+  // Update and restart the simulation.
+  simulation.nodes(nodes);
+  simulation.force("link").links(links);
+  simulation.alpha(1).restart();
+
+}
+
+function ticked(link, node) {
+  link
+    .attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
+
+  node
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+}
+  
+function dragstarted(simulation, d) {
+  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x;
+  d.fy = d.y;
+}
+
+function dragged(simulation, d) {
+  d.fx = d3.event.x;
+  d.fy = d3.event.y;
+}
+
+function dragended(simulation, d) {
+  if (!d3.event.active) simulation.alphaTarget(0);
+  d.fx = null;
+  d.fy = null;
+}
+
+start();
+
+</script>
+
+--- 
+
+# Force-directed Layouts - Evaluation
+
+### Advantages:
+
+* Good quality
+
+* Flexible
+
+* Interactive
+
+### Disadvantages:
+
+* Can lead to jittering
+
+* Poor local minima
+
+---
+
+# Simulated Annealing
+
+* Attempts to find global optimum
+
+* Energy function to determine fitness of solutions
+
+* "Annealing" Principle:
+  * Initial high "Temperature" value, decreasing with time
+  * Alters solution (switches to neighbouring solution) if:
+    * Neighbouring solution has a lower energy or
+    * Neighbouring solution has a higher energy and the temperature is high
+    
+<img style="max-height: 100px" src="./img/Hill_Climbing_with_Simulated_Annealing.gif">
+
+---
+
+# TODOs
+
+* Demo for simulated annealing
+
+* Extend force-directed approach from d3.js with simulated annealing
+
+
+<!-- #TODO pull this up into presentation? -->
+<script>
+// poor men's slide master
+var presentation = lively.query(this, "lively-presentation")
+if (presentation && presentation.slides) {
+  presentation.slides().forEach(ea => {
+    var img = document.createElement("img")
+    img.classList.add("logo")
+    img.src="https://lively-kernel.org/lively4/lively4-jens/doc/PX2018/media/hpi_logo.png" 
+    img.setAttribute("width", "50px")
+    ea.appendChild(img)
+
+    var div = document.createElement("div")
+    div.classList.add("page-number")
+    ea.appendChild(div)
+  });
+}
+""
+</script>
