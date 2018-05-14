@@ -157,11 +157,9 @@ var a = {id: "a", group: 1},
     links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
     
 function addNode() {
-var a = {id: "a", group: 1},
-    b = {id: "b", group: 2},
-    c = {id: "c", group: 3},
-    nodes = [a, b, c],
-    links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
+  nodes.push(c); // Re-add c.
+  links.push({source: b, target: c}); // Re-add b-c.
+  links.push({source: c, target: a}); // Re-add c-a.
   start();
 }
 
