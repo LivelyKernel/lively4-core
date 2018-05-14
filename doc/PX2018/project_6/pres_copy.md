@@ -81,8 +81,8 @@ rect {
 <script>
 
 import d3 from "src/external/d3.v4.js";
-import "doc/PX2018/project_6/annealing.js";
 (async () => {
+import "doc/PX2018/project_6/annealing.js";
 
 
 var nodeId = 3;
