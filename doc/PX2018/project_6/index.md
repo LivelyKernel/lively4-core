@@ -211,7 +211,7 @@ function restart() {
       .remove();
   node = node.enter().append("circle")
     .attr("fill", function(d) { return color(d.id); })
-    .call(function(node) { node.transition().attr("r", 8); })
+    .call(function(node) { node.transition().attr("r", 10); })
     .merge(node);
 
   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
