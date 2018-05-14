@@ -12,9 +12,41 @@
   
   canvas {
     border: 1px solid black;
+    float: left;
   }    
+  
+  .inputs {
+    position: relative;
+    float: right;
+  }
+  
+  .input-line {
+    margin: 20px 0;
+  }
+  
+  input {
+    float: right;
+  }
 </style>
-  <canvas id="mpm" width="300" height="300"></canvas>
+  <canvas id="mpm" width="400" height="400"></canvas>
+  <div class="inputs">
+    <div class="input-line">
+      <label>Speed: </label><input id="speed" /><br />
+    </div>
+    <div class="input-line">
+      <label>Young modulus: </label><input id="young-modulus" />
+    </div>
+    <div class="input-line">
+      <label>Extend: </label><input id="extend" />
+    </div>
+    <div class="input-line">
+      <label># Particles: </label><input id="num-particles" />
+    </div>
+    <div class="input-line">
+      <label>Particle Size: </label><input id="particle-size" />
+    </div>
+  </div>
+
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
