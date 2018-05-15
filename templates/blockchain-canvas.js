@@ -23,8 +23,8 @@ export default class BlockchainCanvas extends Morph {
     this.draw();
   }
   
-  draw() {
-    this._renderContext.startFrame();
+  async draw() {
+    this._renderContext.beginFrame();
     
     this._transactionNode.draw(this._renderContext);
     
@@ -32,10 +32,9 @@ export default class BlockchainCanvas extends Morph {
   }
   
   async livelyExample() {
-    var wallet = new Wallet();
-    var inputs = new InputCollection(wallet);
-    var outputs = new OutputCollection();
-    var transaction = new Transaction(wallet, inputs, outputs);
-    this.transaction = transaction;
+    const wallet = new Wallet();
+    const inputs = new InputCollection(wallet);
+    const outputs = new OutputCollection();
+    this.transaction = new Transaction(wallet, inputs, outputs);
   } 
 }

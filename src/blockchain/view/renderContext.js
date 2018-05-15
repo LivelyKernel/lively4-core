@@ -17,11 +17,27 @@ export default class RenderContext {
     return this._camera;
   }
   
-  startFrame() {
+  beginFrame() {
     this._canvasContext.clearRect(0, 0, this._canvas.width, this._canvas.height);
   }
   
   endFrame() {
     // nothing to be seen here
+  }
+  
+  drawClipped(clippingLocation, clippingSize, drawMethod) {
+    this.canvasContext.save();
+    this.canvasContext.beginPath();
+    this.canvasContext.rect(
+      clippingLocation.x,
+      clippingLocation.y,
+      clippingSize.x,
+      clippingSize.y
+    );
+    this.canvasContext.clip();
+    
+    drawMethod();
+    
+    this.canvasContext.restore();
   }
 }
