@@ -114,27 +114,6 @@ presentButton
 <iframe style="position: absolute; bottom: 50px; right: 50px;" width="50%" height="50%" src="https://www.youtube.com/embed/nXck0xs7oyw?start=150" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
 ---
-<div class="title-1">Related Work</div>
-
-<ul class="notes notes-big">
-<li><a href="https://www.researchgate.net/profile/Vinh_Phu_Nguyen/publication/262415477_Material_point_method_basics_and_applications/links/00463537ab99f084f0000000/Material-point-method-basics-and-applications.pdf">Material point method: basics and applications</a></li>
-<li><a href="https://www.math.ucla.edu/~jteran/student_thesis/jiang.pdf">The Material Point Method for the<br />Physics-Based Simulation of Solids and Fluids</a></li> 
-<li><a href="https://github.com/onsetsu/floom/">Stefan's Javascript implementation</a></li>
-</ul>
-
----
-
-<div class="title-1">Concept</div>
-
-<ul class="notes notes-big">
-<li>Is a particle-in-cell method</li>
-<li>Particles moving in a grid</li>
-<li>Grid points influence the particle movement</li>
-</ul>
-
-<img style="position: absolute; bottom: 100px; left: calc(30% + 10px); width: 40%; max-width: 100%;" alt="Hier hätte eine MPM Grafik erscheinen müssen..." src="./mpm-phases.png" />
-
----
 <div class="title-1">Demo</div>
 
 <script>
@@ -154,9 +133,9 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 <div class="title-1">Challenges</div>
 
 <ul class="notes notes-big">
-<li>Number of particles influences performance</li>
-<li>Each algorithm has a different set of parameters</li>
-<li>Which algorithm explains a parameter the best</li>
+<li>Particles & performance</li>
+<li>Algorithms have different parameters</li>
+<li>Preferable algorithm to explain a parameter</li>
 <li>Suitable controls for each parameter</li>
 <li>Exchangeability of examples algorithms</li>
 </ul>
@@ -192,3 +171,10 @@ closeButton.addEventListener("click", () => {
 })
 closeButton
 </script>
+
+---
+<div class="title-1">References</div>
+
+<ul class="notes notes-big">
+<li><a href="https://i.stack.imgur.com/sSrFV.png">Slider Image</a></li>
+</ul>
