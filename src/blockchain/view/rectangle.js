@@ -77,4 +77,8 @@ export default class Rectangle {
     
     return true;
   }
+  
+  offset(point) {
+    return new Point(point.x - this.x, point.y - this.y);
+  }
 }

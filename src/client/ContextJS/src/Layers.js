@@ -343,7 +343,7 @@ function makeSlotLayerAwareWithNormalLookup(
           // when someone reasigns an already layered method.... Example Bug. Dexie modifies Promise.then
           // #Paper #ContextJS 
         } else {
-          // makeSlotLayerAwareWithNormalLookup(this, slotName, newFunction);
+          makeSlotLayerAwareWithNormalLookup(this, slotName, newFunction);
         }
       }
     });
