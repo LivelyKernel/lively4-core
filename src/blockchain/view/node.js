@@ -8,17 +8,6 @@ export default class Node {
     console.log(this.bounds);
     this.parents = [];
     this.children = [];
-    this._invalid = true;
-  }
-  
-  isInvalid() {
-    return this._invalid;
-  }
-  
-  invalidate() {
-    // indicates, that this node needs to be drawn again
-    this._invalid = true;
-    return this;
   }
   
   onClick(relativePosition) {
@@ -29,7 +18,7 @@ export default class Node {
   draw(renderContext) {
     if (this._beginDraw(renderContext)) {
       
-      var canvasLocation = renderContext.camera.offset(this.bounds);
+      var canvasLocation = renderContext.camera.internalLocation(this.bounds);
       renderContext.drawClipped(canvasLocation, this.bounds.size, () => {
         
         this._drawContent(renderContext, canvasLocation);
@@ -51,6 +40,5 @@ export default class Node {
   
   _endDraw(renderContext) {
     renderContext.canvasContext.restore();
-    this._invalid = false;
   }
 }

@@ -1,10 +1,17 @@
 import Node from '../node.js';
 import Point from '../point.js';
+import BlockchainTransactionView from 'templates/blockchain-transaction.js';
 
 export default class TransactionNode extends Node {
-  constructor(transaction, location, size = new Point(600, 30)) {
+  constructor(transaction = null, location = new Point(0, 0), size = new Point(600, 30)) {
     super(location, size);
     this.transaction = transaction;
+  }
+  
+  onClick(relativePosition) {
+    lively.openComponentInWindow("blockchain-transaction").then(view => {
+      view.transaction = this.transaction;
+    });
   }
   
   _beginDraw(renderContext) {

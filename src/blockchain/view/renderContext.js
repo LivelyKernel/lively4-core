@@ -9,6 +9,10 @@ export default class RenderContext {
     this.style = new RenderStyle();
   }
   
+  get canvas() {
+    return this._canvas;
+  }
+  
   get canvasContext() {
     return this._canvasContext;
   }

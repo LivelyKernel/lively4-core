@@ -6,9 +6,6 @@
   
 Johannes Schneider, Julian Weise
 
-  
-  
-
 
 ## Resources / Literature
 
@@ -26,26 +23,25 @@ Johannes Schneider, Julian Weise
 import forge from 'node_modules/node-forge/dist/forge.min.js';
 ```
 
-  
-  
-
 
 ## Basic transaction implementation
-<lively-script><script>(async () => { const code = document.createElement('pre'); code.textContent = await fetch(SystemJS.normalizeSync("src/blockchain/transaction/transaction.js")).then(r => r.text()); return <div class="highlight">{code}</div>; })();</script> </lively-script>
-  
-  
+<script>
+(async () => { 
+  const code = document.createElement('pre'); 
+  code.textContent = await fetch(SystemJS.normalizeSync("src/blockchain/model/transaction/transaction.js")).then(r => r.text()); 
+  return <div class="highlight">{code}</div>; 
+})();
+</script>
 
 
 ## Basic transaction usage
-  
-
 <!-- the "{}" syntax allows to add attributes, foo="bar" and .myclass -->
 
 ```javascript {id="transactionExample"}
-import Wallet from 'src/blockchain/wallet/wallet.js';
-import Transaction from 'src/blockchain/transaction/transaction.js';
-import TransactionInputCollection from 'src/blockchain/transaction/transactionInputCollection.js';
-import TransactionOutputCollection from 'src/blockchain/transaction/transactionOutputCollection.js';
+import Wallet from 'src/blockchain/model/wallet/wallet.js';
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
 
 const sender = new Wallet();
 const inputCollection = new TransactionInputCollection(sender);
@@ -56,21 +52,64 @@ const outputCollection = new TransactionOutputCollection();
 })();
 ```
 
-  
-  
-
 
 ## Inspecting transaction object
-<lively-script><script>import boundEval from "src/client/bound-eval.js"; (async () => { var src = lively.query(this,"#transactionExample").textContent // reference to previous <code> element var result = await boundEval(src); if (result.value && result.value.then) result = await result.value var inspector = await (<lively-inspector></lively-inspector>) inspector.inspect(result) return <div style="border: 2px solid lightgray">{inspector}</div> })();</script> </lively-script>
-  
-  
+<script>
+import boundEval from "src/client/bound-eval.js"; 
+(async () => { 
+  var src = lively.query(this,"#transactionExample").textContent; // reference to previous <code> element 
+  var result = await boundEval(src); 
+  if (result.value && result.value.then) {
+    result = await result.value;
+    var inspector = await (<lively-inspector></lively-inspector>);
+    inspector.inspect(result);
+    return <div style="border: 2px solid lightgray">{inspector}</div>;
+  }
+})();
+</script>
 
 
 ## Webcomponent implementation
-<lively-script><script>(async () => { const code = document.createElement('pre'); code.textContent = await fetch(SystemJS.normalizeSync("templates/blockchain-transaction.js")).then(r => r.text()); return <div class="highlight">{code}</div>; })();</script> </lively-script>
-  
-  
+<script>
+(async () => { 
+  const code = document.createElement('pre'); 
+  code.textContent = await fetch(SystemJS.normalizeSync("templates/blockchain-transaction.js")).then(r => r.text()); 
+  return <div class="highlight">{code}</div>; 
+})();
+</script>
 
 
 ## Visualization
-<lively-script><script>import Wallet from 'src/blockchain/wallet/wallet.js'; import Transaction from 'src/blockchain/transaction/transaction.js'; import TransactionInputCollection from 'src/blockchain/transaction/transactionInputCollection.js'; import TransactionOutputCollection from 'src/blockchain/transaction/transactionOutputCollection.js'; (() => { const sender = new Wallet(); const inputCollection = new TransactionInputCollection(sender); const outputCollection = new TransactionOutputCollection(); const transactionView = document.createElement("blockchain-transaction"); transactionView.transaction = new Transaction(sender, inputCollection, outputCollection); return transactionView; })();</script> </lively-script>
+<script>
+import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
+import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js'; 
+(async () => { 
+  const sender = new Wallet(); 
+  const inputCollection = new TransactionInputCollection(sender); 
+  const outputCollection = new TransactionOutputCollection(); 
+  const transactionView = document.createElement("blockchain-transaction"); 
+  transactionView.transaction = new Transaction(sender, inputCollection, outputCollection); 
+  return transactionView; 
+})();
+</script>
+
+## Custom Visualization (canvas)
+<script>
+import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
+import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+const sender = new Wallet(); 
+const inputCollection = new TransactionInputCollection(sender); 
+const outputCollection = new TransactionOutputCollection();
+const transaction = new Transaction(sender, inputCollection, outputCollection);
+const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
+  transactionNetwork.controller.addTransaction(transaction);
+});
+
+(() => {
+  return transactionNetwork;
+})();
+</script>
