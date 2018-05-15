@@ -409,9 +409,10 @@ export default class BabylonianProgrammingEditor extends Morph {
   async parse() {    
     // Serialize annotations
     let serializedAnnotations = {};
-    for(let key in this._annotations) {
+    for(let key of ["probes", "sliders", "replacements", "instances"]) {
       serializedAnnotations[key] = this._annotations[key].map((a) => a.serializeForWorker());
     }
+    serializedAnnotations.examples = this._activeExamples.map((a) => a.serializeForWorker());
 
     // Call the worker
     const { ast, code } = await this.worker.process(
