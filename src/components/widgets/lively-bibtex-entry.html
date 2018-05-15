@@ -1,0 +1,33 @@
+<template id="lively-bibtex-entry" data-class="LivelyBibtexEntry">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+
+  }
+  #content {
+    display: none
+  }
+  #title {
+    font-style: italic
+  }
+  #entry {
+    text-indent: -20px;
+    margin-left: 20px;
+    padding: 3px;
+  }
+  #key {
+    font-weight: bold
+  }
+  
+</style>
+<div id="entry">
+  [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
+  <span id="title"></span>
+</div>
+<div id="content">
+  <content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
