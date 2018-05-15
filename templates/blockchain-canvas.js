@@ -14,8 +14,8 @@ export default class BlockchainCanvas extends Morph {
     this.windowTitle = "BlockchainCanvas";
     
     this._canvas = this.shadowRoot.querySelector("#blockchain-canvas");
-    this._renderContext = RenderContext(this._canvas);
-    this._transactionView = TransactionView(this._renderContext);
+    this._renderContext = new RenderContext(this._canvas);
+    this._transactionView = new TransactionView(this._renderContext);
   }
   
   set transaction(transaction) {
@@ -24,15 +24,18 @@ export default class BlockchainCanvas extends Morph {
   }
   
   draw() {
-    this._canvas.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    this._renderContext.startFrame();
+    
     this._transactionView.draw();
+    
+    this._renderContext.endFrame();
   }
   
   async livelyExample() {
-    var wallet = Wallet();
-    var inputs = InputCollection(wallet);
-    var outputs = OutputCollection();
-    var transaction = Transaction(wallet, inputs, outputs);
+    var wallet = new Wallet();
+    var inputs = new InputCollection(wallet);
+    var outputs = new OutputCollection();
+    var transaction = new Transaction(wallet, inputs, outputs);
     this.transaction = transaction;
   } 
 }
