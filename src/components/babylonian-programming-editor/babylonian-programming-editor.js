@@ -65,7 +65,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._activeExamples = []; // [Example]
 
     // Timer to evaluate when user stops writing
-    this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
+    this.evaluateTimer = new Timer(500, this.evaluate.bind(this));
     
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -74,7 +74,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/2_functions.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -116,6 +116,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
     }
     this._annotations = defaultAnnotations();
+    this._activeExamples = [];
     
     // Load file from network
     let text = await loadFile(this.livelyEditor());
@@ -141,17 +142,17 @@ export default class BabylonianProgrammingEditor extends Morph {
       for(let slider of annotations.sliders) {
         this.addSliderAtPath(this.pathForKey(slider.location));
       }
+       for(let instance of annotations.instances) {
+        const obj = this.addInstanceAtPath(this.pathForKey(instance.location));
+        obj.load(instance);
+      }
       for(let example of annotations.examples) {
-        const obj = this.addExampleAtPath(this.pathForKey(example.location), false);
+        const obj = this.addExampleAtPath(this.pathForKey(example.location), true);
         obj.load(example);
       }
       for(let replacement of annotations.replacements) {
         const obj = this.addReplacementAtPath(this.pathForKey(replacement.location));
         obj.load(replacement);
-      }
-      for(let instance of annotations.instances) {
-        const obj = this.addInstanceAtPath(this.pathForKey(instance.location));
-        obj.load(instance);
       }
     }
 
@@ -267,7 +268,8 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.onEvaluationNeeded.bind(this),
       this.removeAnnotation.bind(this),
       this.onExampleStateChanged.bind(this),
-      isOn
+      isOn,
+      this._annotations.instances
     );
     this._annotations.examples.push(example);
     
@@ -397,6 +399,10 @@ export default class BabylonianProgrammingEditor extends Morph {
         this._annotations[key].splice(this._annotations[key].indexOf(annotation), 1);
       }
     }
+    const activeIndex = this._activeExamples.indexOf(annotation);
+    if(activeIndex !== -1) {
+      this._activeExamples.splice(activeIndex, 1);
+    }
     annotation.clear();
     this.evaluate();
   }
@@ -436,6 +442,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(this._evaluationLocked && !ignoreLock) {
       return;
     }
+    
+    // Update UI first
+    this.updateAnnotations();
     
     // Parse the code
     const code = await this.parse()

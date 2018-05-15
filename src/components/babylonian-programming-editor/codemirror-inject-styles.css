@@ -8,8 +8,14 @@
   padding: 0 4px;
 }
 
+
 .widget.probe, .widget.slider {
+  padding: 0;  
+}
+
+.widget.probe .widget-line, .widget.slider .widget-line {
   background-color: hsla(198, 69%, 67%, 0.5);
+  padding: 0 4px;
 }
 
 .example-name {
@@ -26,12 +32,10 @@
   border-radius: 0px;
 }
 
-.CodeMirror-linewidget:last-of-type > .widget.example {
-  border-bottom-left-radius: 3px;
-  border-bottom-right-radius: 3px;
-}
-
-.CodeMirror-linewidget:last-of-type > .widget.instance {
+.CodeMirror-linewidget:last-of-type > .widget.example,
+.CodeMirror-linewidget:last-of-type > .widget.instance,
+.widget.probe .widget-line:last-of-type,
+.widget.slider .widget-line:last-of-type {
   border-bottom-left-radius: 3px;
   border-bottom-right-radius: 3px;
 }
@@ -42,8 +46,13 @@
   font: inherit;
 }
 
+.widget-line {
+  display: block;
+  width: max-content;
+}
+
 .widget-line:after {
-  content: "\a";
+  content: "\A";
   white-space: pre;
 }
 
@@ -94,10 +103,11 @@
 
 .widget.probe .delete-button, .widget.probe .delete-button {
   width: 1ch;
+  padding-right: 2px;
 }
 
 .space-before {
-  padding-left: 1ch;
+  margin-left: 1ch;
 }
 
 .switch-button {

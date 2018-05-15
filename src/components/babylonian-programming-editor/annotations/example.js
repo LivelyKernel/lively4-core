@@ -3,12 +3,12 @@ import ExampleWidget from "../ui/example-widget.js";
 
 
 export default class Example extends InputAnnotation {
-  constructor(editor, location, changeCallback, deleteCallback, stateCallback, defaultIsOn) {
+  constructor(editor, location, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances) {
     super(editor, location, changeCallback, null, deleteCallback);
     let newStateCallback = (newState) => {
       stateCallback(this, newState);
     }
-    this._widget = new ExampleWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback, newStateCallback, defaultIsOn);
+    this._widget = new ExampleWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback, newStateCallback, defaultIsOn, instances);
   }
   
   get id() {
@@ -35,20 +35,25 @@ export default class Example extends InputAnnotation {
     return {
       location: this.locationAsKey,
       id: this.id,
-      code: this._widget.code
+      code: this._widget.code,
+      instanceId: this._widget.instanceId
     };
   }
   
   serializeForSave() {
     return {
       location: this.locationAsKey,
+      id: this.id,
       name: this.name,
-      values: this._widget.values
+      values: this._widget.values,
+      instanceId: this._widget.instanceId
     };
   }
   
   load(serialized) {
+    this._widget.id = serialized.id;
     this._widget.values = serialized.values;
     this._widget.name = serialized.name;
+    this._widget.instanceId = serialized.instanceId;
   }
 }

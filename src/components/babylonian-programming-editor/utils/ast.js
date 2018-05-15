@@ -192,7 +192,12 @@ export const applyInstances = (ast, instances) => {
       instanceNode = types.nullLiteral();
     }
     const path = ast._locationMap[instance.location];
-    path.node._exampleInstance = instanceNode;
+    if(!path.node._exampleInstances) {
+      path.node._exampleInstances = {
+        "0": types.nullLiteral()
+      };
+    }
+    path.node._exampleInstances[instance.id] = instanceNode;
   });
 }
 
@@ -245,7 +250,7 @@ export const applyExamples = (ast, examples) => {
         nodeToInsert = objectMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
-          THIS: classIdNode._exampleInstance,
+          THIS: classIdNode._exampleInstances[example.instanceId],
           PARAMS: parametersNode
         });
       }
@@ -258,7 +263,7 @@ export const applyExamples = (ast, examples) => {
     
     // Insert a call at the end of the script
     if(nodeToInsert) {
-      ast.program.body.push(template(`__exampleId = ${example.id}`)());
+      ast.program.body.push(template(`__exampleId = "${example.id}"`)());
       ast.program.body.push(nodeToInsert);
     }
   });

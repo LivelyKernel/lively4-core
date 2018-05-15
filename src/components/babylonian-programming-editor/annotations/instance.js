@@ -11,6 +11,8 @@ export default class Instance extends InputAnnotation {
   serializeForWorker() {
     return {
       location: this.locationAsKey,
+      id: this._widget.id,
+      name: this._widget.name,
       code: this._widget.code
     };
   }
@@ -19,7 +21,17 @@ export default class Instance extends InputAnnotation {
     return this.serializeForWorker();
   }
   
+  get id() {
+    return this._widget.id;
+  }
+  
+  get name() {
+    return this._widget.name;
+  }
+  
   load(serialized) {
+    this._widget.id = serialized.id;
+    this._widget.name = serialized.name;
     this._widget.code = serialized.code;
   }
 }
