@@ -3,7 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "full-hd";
+let presentationSize = "standard-vga";
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
