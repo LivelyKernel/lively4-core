@@ -9,6 +9,5 @@ export default class InputAnnotation extends Annotation {
     this._changeCallback = (exampleId, newValue) => {
       changeCallback(this, exampleId, newValue);
     };
-    this._widget = this._makeWidget(editor, location, examples);
   }
 }

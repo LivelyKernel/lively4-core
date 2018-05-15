@@ -3,12 +3,12 @@ import ExampleWidget from "../ui/example-widget.js";
 
 
 export default class Example extends InputAnnotation {
-  constructor(editor, location, changeCallback, deleteCallback) {
+  constructor(editor, location, changeCallback, deleteCallback, stateCallback, defaultIsOn) {
     super(editor, location, changeCallback, null, deleteCallback);
-  }
-  
-  _makeWidget(editor, location) {
-    return new ExampleWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
+    let newStateCallback = (newState) => {
+      stateCallback(this, newState);
+    }
+    this._widget = new ExampleWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback, newStateCallback, defaultIsOn);
   }
   
   get id() {
@@ -21,6 +21,10 @@ export default class Example extends InputAnnotation {
   
   get color() {
     return this._widget._color;
+  }
+  
+  get isOn() {
+    return this._widget._isOn;
   }
   
   set keys(keys) {

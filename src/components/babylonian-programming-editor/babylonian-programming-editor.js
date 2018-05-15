@@ -48,30 +48,33 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
     
-    // Set up the WebWorker for parsing
+    // Worker for parsing
     this.worker = new ASTWorkerWrapper();
     
-    // Set up AST
+    // AST
     this._ast = null; // Node
     this._selectedPath = null; // NodePath
 
-    // Set up markers
+    // Pure text markers
     this._deadMarkers = []; // [TextMarker]
     
-    // Set up Annotations
+    // All Annotations
     this._annotations = defaultAnnotations;
+    
+    // Currently activated examples
+    this._activeExamples = []; // [Example]
 
-    // Set up timer
+    // Timer to evaluate when user stops writing
     this.evaluateTimer = new Timer(300, this.evaluate.bind(this));
     
-    // Set up CodeMirror
+    // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
       // Patch editor to load/save comments
       this.livelyEditor().loadFile = this.load.bind(this);
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_classes.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/2_functions.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -139,7 +142,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.addSliderAtPath(this.pathForKey(slider.location));
       }
       for(let example of annotations.examples) {
-        const obj = this.addExampleAtPath(this.pathForKey(example.location));
+        const obj = this.addExampleAtPath(this.pathForKey(example.location), false);
         obj.load(example);
       }
       for(let replacement of annotations.replacements) {
@@ -221,7 +224,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this._annotations.examples,
+      this._activeExamples,
       this.removeAnnotation.bind(this)
     );
     this._annotations.probes.push(probe);
@@ -242,7 +245,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
       this.onSliderChanged.bind(this),
-      this._annotations.examples,
+      this._activeExamples,
       this.removeAnnotation.bind(this)
     );
     this._annotations.sliders.push(slider);
@@ -251,7 +254,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     return slider;
   }
 
-  addExampleAtPath(path) {
+  addExampleAtPath(path, isOn = true) {
     // Make sure we can probe this path
     if(!canBeExample(path)) {
       return;
@@ -262,9 +265,15 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
       this.onEvaluationNeeded.bind(this),
-      this.removeAnnotation.bind(this)
+      this.removeAnnotation.bind(this),
+      this.onExampleStateChanged.bind(this),
+      isOn
     );
     this._annotations.examples.push(example);
+    
+    if(isOn) {
+      this._activeExamples.push(example);
+    }
     
     this.evaluate();
     return example;
@@ -501,6 +510,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     for(let probe of includedProbes) {
       probe.setActiveRunForExampleId(exampleId, value);
     }
+  }
+  
+  onExampleStateChanged(example, newIsOn) {
+    if(newIsOn) {
+      this._activeExamples.push(example);
+    } else {
+      this._activeExamples.splice(this._activeExamples.indexOf(example), 1);
+    }
+    this.evaluate();
   }
   
   onEvaluationNeeded() {

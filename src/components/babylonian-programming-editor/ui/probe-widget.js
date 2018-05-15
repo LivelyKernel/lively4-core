@@ -1,5 +1,5 @@
 import Widget from "./widget.js";
-import DeleteButton from "./delete-button.js";
+import { DeleteButton } from "./buttons.js";
 import { defaultExample } from "../utils/defaults.js";
 
 const MAX_VALUESTRING_LENGTH = 100;

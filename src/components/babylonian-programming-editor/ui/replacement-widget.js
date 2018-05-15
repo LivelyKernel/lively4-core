@@ -1,5 +1,5 @@
 import InputWidget from "./input-widget.js";
-import DeleteButton from "./delete-button.js";
+import { DeleteButton } from "./buttons.js";
 
 
 export default class ReplacementWidget extends InputWidget {

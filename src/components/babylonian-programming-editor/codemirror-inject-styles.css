@@ -85,12 +85,32 @@
   opacity: 0.8;
   color: maroon;
   font-family: "FontAwesome";
+  display: inline-block;
 }
 
 .delete-button::before {
   content: "\f00d"
 }
 
+.widget.probe .delete-button, .widget.probe .delete-button {
+  width: 1ch;
+}
+
 .space-before {
   padding-left: 1ch;
 }
+
+.switch-button {
+  cursor: pointer;
+  font-family: "FontAwesome";
+  opacity: 0.8;
+}
+
+.switch-button.on::before {
+  content: "\f205";
+}
+
+.switch-button.off::before {
+  content: "\f204";
+}
+

@@ -1,12 +1,14 @@
 import InputWidget from "./input-widget.js";
-import DeleteButton from "./delete-button.js";
+import { DeleteButton, SwitchButton } from "./buttons.js";
 
 
 export default class ExampleWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback, deleteCallback) {
+  constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn) {
     super(editor, location, kind, changeCallback, deleteCallback);
     this._id = nextId();
-    this._color = nextColor();
+    this._isOn = defaultIsOn;
+    this._updateColor();
+    this._stateCallback = stateCallback;
     this._keys = [] // [key]
     this._nameElement = null; // {element, input}
     this._elements = new Map() // Map(key, {element, input})
@@ -81,20 +83,38 @@ export default class ExampleWidget extends InputWidget {
         this._nameElement = {
           element: (
             <span>
-              {DeleteButton(this._deleteCallback)}
               {input}
             </span>),
           input: input
         };
       }
+      
+      this._nameElement.input.style.backgroundColor = this._color;
+      
       return this._nameElement;
     }
     
     this._element.textContent = "";
+    this._element.appendChild(DeleteButton(this._deleteCallback));
+    this._element.appendChild(SwitchButton(this._onSwitchClicked.bind(this), this._isOn));
     this._element.appendChild(nameElement().element);
     this._keys.forEach((key) => {
       this._element.appendChild(elementForKey(key).element);
     })
+  }
+                                           
+  _onSwitchClicked() {
+    this._isOn = !this._isOn;
+    this._updateColor();
+    this._stateCallback(this._isOn);
+  }
+  
+  _updateColor() {
+    if(this._isOn) {
+      this._color = nextColor();
+    } else {
+      this._color = "lightgray";
+    }
   }
   
   get values() {
@@ -137,7 +157,7 @@ const nextId = () => ExampleWidget.idCounter++;
 
 ExampleWidget.hue = 0
 const nextColor = () => {
-  const color = `hsl(${ExampleWidget.hue}, 30%, 60%)`;
+  const color = `hsl(${ExampleWidget.hue}, 30%, 70%)`;
   ExampleWidget.hue = (ExampleWidget.hue + 60) % 360;
   return color;
 }
