@@ -108,6 +108,8 @@ d3.graphAnneal = function() {
   }
 
   graphAnneal.start = function(nsweeps) {
+    
+  console.log(nodes, links)
   // main simulated annealing function
       var m = nodes.length,
           currT = 1.0,

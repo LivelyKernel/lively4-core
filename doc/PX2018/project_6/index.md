@@ -140,7 +140,7 @@ var simulation = d3.forceSimulation()
   .force("center", d3.forceCenter(width / 2, height / 2))
   .force("x", d3.forceX())
   .force("y", d3.forceY())
-  .alphaTarget(1)
+  .alphaTarget(1);
   
 var node = svg.append("g")
   .selectAll(".node");
@@ -157,11 +157,10 @@ var a = {id: "a", group: 1},
     links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
     
 function addNode() {
+  simulation.stop();
   nodes.push(c); // Re-add c.
   links.push({source: b, target: c}); // Re-add b-c.
   links.push({source: c, target: a}); // Re-add c-a.
-  console.log(nodes, 'nodes');
-  console.log(links, 'links');
   restart();
 }
 
@@ -207,41 +206,30 @@ async function start() {
 };
 
 function restart() {
-//   node = node.data(nodes, function(d) { return d.id;});
-//   node.exit().remove();
-//   node = node.enter().append("circle")
-//     .attr("r", 10)
-//     .attr("fill", function(d) { return color(d.id); })
-//     .merge(node);
-
-//   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-//   link.exit().remove();
-//   link = link.enter().append("line").merge(link);
-
-//   node.append("title")
-//     .text(function(d) { return d.id; });
-
-//   simulation.nodes(nodes);
-
-//   simulation.force("link").links(links);
-    
-//   simulation.alpha(1).restart();
-
-    // Apply the general update pattern to the nodes.
   node = node.data(nodes, function(d) { return d.id;});
-  node.exit().remove();
-  node = node.enter().append("circle").attr("fill", function(d) { return color(d.id); }).attr("r", 8).merge(node);
+  node.exit().transition()
+      .attr("r", 0)
+      .remove();
+  node = node.enter().append("circle")
+    .attr("fill", function(d) { return color(d.id); })
+    .call(function(node) { node.transition().attr("r", 10); })
+    .merge(node);
 
-  // Apply the general update pattern to the links.
   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
   link.exit().remove();
-  link = link.enter().append("line").merge(link);
+  link = link.enter().append("line")
+    .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
+    .attr("stroke", "lightgray")
+    .merge(link);
 
-  // Update and restart the simulation.
+  node.append("title")
+    .text(function(d) { return d.id; });
+
   simulation.nodes(nodes);
-  simulation.force("link").links(links);
-  simulation.alpha(1).restart();
 
+  simulation.force("link").links(links).distance(100);
+    
+  // simulation.restart();
 }
 
 function ticked(link, node) {

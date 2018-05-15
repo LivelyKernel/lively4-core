@@ -1,4 +1,3 @@
-import Transaction from 'src/blockchain/transaction/transaction.js';
 import Point from 'src/blockchain/view/point.js';
 import Rectangle from 'src/blockchain/view/rectangle.js';
 
@@ -49,6 +48,7 @@ export default class TransactionView {
   }
   
   draw() {
+    console.log("drawing transaction: " + this._transaction.hash.digest().toHex());
     if (!this.context) {
       throw new Error("no render context");
     }
