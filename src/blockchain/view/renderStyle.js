@@ -4,6 +4,8 @@ export default class RenderStyle {
   constructor() {
     this.font = "18px FontAwesome";
     this.foreColor = "#000000ff";
-    this.borderThickness = new Point(1, 1);
+    this.borderThickness = 1;
+    this.borderColor = "#000000ff";
+    this.textMargin = new Point(6, 6);
   }
 }
