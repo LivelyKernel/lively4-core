@@ -8,9 +8,9 @@ import { createNewFileButton } from "doc/PX2018/project_2/utils.js"
 
 # Project 2: Sebastian Koall - Material Point Method
 
-<script>createNewFileButton("doc/PX2018/project_2/notices/", "New Notice", "notices");</script>
-<script>createNewFileButton("doc/PX2018/project_2/meeting/", "New Meeting", "meeting", true);</script>
-<script>createNewFileButton("doc/PX2018/project_2/presentation/", "New Presentation", "presentation", true);</script>  
+<script>if (typeof createNewFileButton !== 'function') {var createNewFileButton = function f(){};}createNewFileButton("doc/PX2018/project_2/notices/", "New Notice", "notices");</script>
+<script>if (typeof createNewFileButton !== 'function') {var createNewFileButton = function f(){};}createNewFileButton("doc/PX2018/project_2/meeting/", "New Meeting", "meeting", true);</script>
+<script>if (typeof createNewFileButton !== 'function') {var createNewFileButton = function f(){};}createNewFileButton("doc/PX2018/project_2/presentation/", "New Presentation", "presentation", true);</script>  
 
 [Initial Presentation](presentation/presentation-2018-05-16.md)
 
