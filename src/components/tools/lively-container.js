@@ -927,6 +927,7 @@ export default class Container extends Morph {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
         lively.notify("found index" + index)
