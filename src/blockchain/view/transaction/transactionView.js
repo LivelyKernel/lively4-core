@@ -48,6 +48,7 @@ export default class TransactionView {
   }
   
   draw() {
+    console.log("drawing transaction: " + this._transaction.hash.digest().toHex());
     if (!this.context) {
       throw new Error("no render context");
     }
