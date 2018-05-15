@@ -1,9 +1,10 @@
 import InputWidget from "./input-widget.js";
+import DeleteButton from "./delete-button.js";
 
 
 export default class ExampleWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback) {
-    super(editor, location, kind, changeCallback);
+  constructor(editor, location, kind, changeCallback, deleteCallback) {
+    super(editor, location, kind, changeCallback, deleteCallback);
     this._id = nextId();
     this._color = nextColor();
     this._keys = [] // [key]
@@ -79,7 +80,8 @@ export default class ExampleWidget extends InputWidget {
               
         this._nameElement = {
           element: (
-            <span>↖︎ 
+            <span>
+              {DeleteButton(this._deleteCallback)}
               {input}
             </span>),
           input: input

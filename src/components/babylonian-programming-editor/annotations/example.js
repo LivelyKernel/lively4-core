@@ -3,12 +3,12 @@ import ExampleWidget from "../ui/example-widget.js";
 
 
 export default class Example extends InputAnnotation {
-  constructor(editor, location, changeCallback) {
-    super(editor, location, changeCallback);
+  constructor(editor, location, changeCallback, deleteCallback) {
+    super(editor, location, changeCallback, null, deleteCallback);
   }
   
   _makeWidget(editor, location) {
-    return new ExampleWidget(editor, location, this.kind, this._changeCallback);
+    return new ExampleWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
   }
   
   get id() {

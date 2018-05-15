@@ -71,7 +71,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_classes.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -221,7 +221,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this._annotations.examples
+      this._annotations.examples,
+      this.removeAnnotation.bind(this)
     );
     this._annotations.probes.push(probe);
     
@@ -241,7 +242,8 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
       this.onSliderChanged.bind(this),
-      this._annotations.examples
+      this._annotations.examples,
+      this.removeAnnotation.bind(this)
     );
     this._annotations.sliders.push(slider);
     
@@ -259,7 +261,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const example = new Example(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.onEvaluationNeeded.bind(this)
+      this.onEvaluationNeeded.bind(this),
+      this.removeAnnotation.bind(this)
     );
     this._annotations.examples.push(example);
     
@@ -277,7 +280,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const replacement = new Replacement(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.onEvaluationNeeded.bind(this)
+      this.onEvaluationNeeded.bind(this),
+      this.removeAnnotation.bind(this)
     );
     this._annotations.replacements.push(replacement);
     
@@ -295,7 +299,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const instance = new Instance(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.onEvaluationNeeded.bind(this)
+      this.onEvaluationNeeded.bind(this),
+      this.removeAnnotation.bind(this)
     );
     this._annotations.instances.push(instance);
     
@@ -383,7 +388,8 @@ export default class BabylonianProgrammingEditor extends Morph {
         this._annotations[key].splice(this._annotations[key].indexOf(annotation), 1);
       }
     }
-    annotation.clear()
+    annotation.clear();
+    this.evaluate();
   }
   
   

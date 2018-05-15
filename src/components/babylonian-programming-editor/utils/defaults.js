@@ -1,7 +1,7 @@
 export const defaultExample = () => ({
   id: 0,
   name: "script",
-  color: ""
+  color: "lightgray"
 });
 
 export const defaultBabylonConfig = () => ({

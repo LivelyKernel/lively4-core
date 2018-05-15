@@ -79,3 +79,18 @@
 .probe-value {
   white-space: pre;
 }
+
+.delete-button {
+  cursor: pointer;
+  opacity: 0.8;
+  color: maroon;
+  font-family: "FontAwesome";
+}
+
+.delete-button::before {
+  content: "\f00d"
+}
+
+.space-before {
+  padding-left: 1ch;
+}

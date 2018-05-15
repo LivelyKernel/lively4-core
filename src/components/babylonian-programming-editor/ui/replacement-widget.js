@@ -1,12 +1,14 @@
 import InputWidget from "./input-widget.js";
+import DeleteButton from "./delete-button.js";
 
 
 export default class ReplacementWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback) {
-    super(editor, location, kind, changeCallback);
+  constructor(editor, location, kind, changeCallback, deleteCallback) {
+    super(editor, location, kind, changeCallback, deleteCallback);
     
     // Make input
     this._input = <input
+                    class="space-before"
                     type="text"
                     size="1"
                     value=""></input>
@@ -18,7 +20,8 @@ export default class ReplacementWidget extends InputWidget {
       this._changeCallback();
     });
     
-    this._element.textContent = "↖︎";
+    this._element.textContent = "";
+    this._element.appendChild(DeleteButton(this._deleteCallback));
     this._element.appendChild(this._input);
   }
   

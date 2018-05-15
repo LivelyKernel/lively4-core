@@ -1,10 +1,11 @@
 import InputWidget from "./input-widget.js";
+import DeleteButton from "./delete-button.js";
 import { defaultExample } from "../utils/defaults.js";
 
 
 export default class SliderWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback, examples) {
-    super(editor, location, kind, changeCallback);
+  constructor(editor, location, kind, changeCallback, examples, deleteCallback) {
+    super(editor, location, kind, changeCallback, deleteCallback);
     this._examples = examples; // [{id, name, color}]
     this._maxValues = new Map() // Map(exampleId, maxValue)
     this._elements = new Map() // Map(exampleId, {element, input})
@@ -45,11 +46,11 @@ export default class SliderWidget extends InputWidget {
       };
       this._fireFunctions.set(example.id, fireFunction);
       input.addEventListener("input", fireFunction);
-
+      
       return {
         element: (
           <span class="widget-line">
-            ↻
+            <span class="left-space"></span>
             <span
               class="example-name"
               style={"background-color:" + example.color}>
@@ -73,7 +74,7 @@ export default class SliderWidget extends InputWidget {
     }
     
     // Updates the element for a given example
-    const updateElementForExample = (example) => {
+    const updateElementForExample = (example, index) => {
       const element = elementForExample(example);
       const newMax = this._maxValues.get(example.id);
       if(newMax < element.input.valueAsNumber) {
@@ -82,16 +83,28 @@ export default class SliderWidget extends InputWidget {
       }
       element.input.setAttribute("max", newMax);
       element.status.textContent = statusString(element.input.valueAsNumber, newMax);
+      
+      // Show a delete button for the first element, and just a space for all others
+      let leftSpace = <span>&nbsp;</span>;
+      if(index === 0) {
+        leftSpace = DeleteButton(this._deleteCallback);
+      }
+      const leftSpaceContainer = element.element.querySelector(".left-space");
+      leftSpaceContainer.innerHTML = "";
+      leftSpaceContainer.appendChild(leftSpace);
+      
       this._element.appendChild(element.element);
     };
     
     this._element.textContent = "";
-    this._examples
-        .filter((e) => this._maxValues.has(e.id))
-        .forEach(updateElementForExample);
+    
+    // Generate UI for all examples
+    let examples = Array.from(this._examples);
     if(this._maxValues.has(defaultExample().id)) {
-      updateElementForExample(defaultExample());
+      examples.unshift(defaultExample());
     }
+    examples.filter((e) => this._maxValues.has(e.id))
+            .forEach(updateElementForExample);
     
     // Hide if empty
     if(this._maxValues.size === 0) {

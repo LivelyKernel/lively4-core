@@ -3,12 +3,12 @@ import SliderWidget from "../ui/slider-widget.js";
 
 
 export default class Slider extends InputAnnotation {
-  constructor(editor, location, changeCallback, examples) {
-    super(editor, location, changeCallback, examples);
+  constructor(editor, location, changeCallback, examples, deleteCallback) {
+    super(editor, location, changeCallback, examples, deleteCallback);
   }
   
   _makeWidget(editor, location, examples) {
-    return new SliderWidget(editor, location, this.kind, this._changeCallback, examples);
+    return new SliderWidget(editor, location, this.kind, this._changeCallback, examples, this._deleteCallback);
   }
   
   set maxValues(maxValues) {

@@ -3,12 +3,12 @@ import InputAnnotation from "./input-annotation.js";
 
 
 export default class Replacement extends InputAnnotation {
-  constructor(editor, location, changeCallback) {
-    super(editor, location, changeCallback);
+  constructor(editor, location, changeCallback, deleteCallback) {
+    super(editor, location, changeCallback, null, deleteCallback);
   }
   
   _makeWidget(editor, location) {
-    return new ReplacementWidget(editor, location, this.kind, this._changeCallback);
+    return new ReplacementWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
   }
   
   serializeForWorker() {

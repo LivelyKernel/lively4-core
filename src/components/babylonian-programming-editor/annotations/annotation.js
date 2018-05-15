@@ -2,9 +2,12 @@ import LocationConverter from "../utils/location-converter.js";
 
 
 export default class Annotation {
-  constructor(editor, location) {
+  constructor(editor, location, deleteCallback) {
     this._marker = this._makeMarker(editor, location);
     this._widget = null;
+    this._deleteCallback = () => {
+      deleteCallback(this);
+    };
   }
   
   _makeMarker(editor, location) {

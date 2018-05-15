@@ -1,12 +1,13 @@
 import Widget from "./widget.js";
+import DeleteButton from "./delete-button.js";
 import { defaultExample } from "../utils/defaults.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
 
 export default class ProbeWidget extends Widget {
-  constructor(editor, location, kind, examples) {
-    super(editor, location, kind);
+  constructor(editor, location, kind, examples, deleteCallback) {
+    super(editor, location, kind, deleteCallback);
     this._examples = examples; // [{id, name, color}]
     this._values = new Map(); // Map(exampleId, Map(runId, [{type, value}]))
     this._activeRuns = new Map(); // exampleId -> runId
@@ -92,7 +93,7 @@ export default class ProbeWidget extends Widget {
     }
     
     // Gets a string representation for a single example
-    const elementForExample = (example) => {
+    const elementForExample = (example, index) => {
       // example: {id, name, color}
       let valueString = "";
       const runs = this._values.get(example.id); // Map(runId, {type, value})
@@ -109,8 +110,14 @@ export default class ProbeWidget extends Widget {
         }
       }
       
+      // Show a delete button for the first element, and just a space for all others
+      let leftSpace = <span>&nbsp;</span>;
+      if(index === 0) {
+        leftSpace = DeleteButton(this._deleteCallback);
+      }
+      
       return <span class="widget-line">
-        ↘︎
+        {leftSpace}
         <span
           class="example-name"
           style={"background-color:" + example.color}>
@@ -122,13 +129,14 @@ export default class ProbeWidget extends Widget {
     }
     
     // Iterate over all examples and get their values
-    this._element.innerHTML = ""
-    const newChildren = this._examples
-                            .filter((e) => this._values.has(e.id))
-                            .map(elementForExample);
+    this._element.innerHTML = "";
+    let examples = Array.from(this._examples);
     if(this._values.has(defaultExample().id)) {
-      newChildren.push(elementForExample(defaultExample()));
+      examples.unshift(defaultExample());
     }
+    
+    const newChildren = examples.filter((e) => this._values.has(e.id))
+                                .map(elementForExample);
     newChildren.forEach((e) => this._element.appendChild(e));
     
     // Hide if empty
