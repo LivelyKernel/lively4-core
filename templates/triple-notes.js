@@ -337,7 +337,12 @@ export default class TripleNotes extends Morph {
         let knotView = await lively.openComponentInWindow("knot-view");
         knotView.loadKnotForURL(node.getKnot().url);
       })
-      .on("mouseover", node => this.get('#knot-view').loadKnotForURL(node.getKnot().url))
+      .on("click", node => {
+        d3.event.stopPropagation();
+        d3.event.preventDefault();
+        
+        this.get('#knot-view').loadKnotForURL(node.getKnot().url);
+      })
       .on("mouseout", node => {})
       .on("contextmenu", async node => {
         d3.event.stopPropagation();
