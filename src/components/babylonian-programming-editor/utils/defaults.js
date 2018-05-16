@@ -47,7 +47,7 @@ export const defaultTracker = () => ({
   executedBlocks: new Set(), // Set(id)
 
   // Functions
-  id: function(exampleId, id, value, runId) {
+  id: function(id, exampleId, runId, value, name) {
     // Do the things we could just do with a DefaultDict...
     if(!this.ids.has(id)) {
       this.ids.set(id, new Map());
@@ -75,7 +75,11 @@ export const defaultTracker = () => ({
     this.ids.get(id)
             .get(exampleId)
             .get(runId)
-            .push({type: typeof(value), value: this._clone(value)});
+            .push({
+              type: typeof(value),
+              value: this._clone(value),
+              name: name
+            });
     
     return value;
   },

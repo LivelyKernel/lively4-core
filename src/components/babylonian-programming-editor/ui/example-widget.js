@@ -41,12 +41,12 @@ export default class ExampleWidget extends InputWidget {
                     type="text"
                     id={fieldId}
                     name={key}
-                    size="1"
+                    size="4"
                     value=""
                     placeholder="init"></input>
 
     input.addEventListener("input", () => {
-      input.setAttribute("size", input.value.length ? input.value.length : 1);
+      input.setAttribute("size", input.value.length ? input.value.length : 4);
     });
     input.addEventListener("change", () => {
       this._changeCallback(this._id);

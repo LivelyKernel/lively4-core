@@ -47,15 +47,20 @@ export default class SliderWidget extends InputWidget {
       this._fireFunctions.set(example.id, fireFunction);
       input.addEventListener("input", fireFunction);
       
+      let exampleName = "";
+      if(example.id !== defaultExample().id) {
+        exampleName = <span
+          class="example-name"
+          style={"background-color:" + example.color}>
+          {example.name.length ? example.name : "\u00A0"}
+        </span>;
+      }
+      
       return {
         element: (
           <span class="widget-line">
             <span class="left-space"></span>
-            <span
-              class="example-name"
-              style={"background-color:" + example.color}>
-              {example.name.length ? example.name : "\u00A0"}
-            </span>
+            {exampleName}
             {input}
             {status}
           </span>),

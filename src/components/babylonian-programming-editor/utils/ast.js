@@ -274,9 +274,10 @@ export const applyExamples = (ast, examples) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const tracker = template("window.__tracker.id(__exampleId, ID, VALUE, __blockCount)")({
+  const tracker = template("window.__tracker.id(ID, __exampleId, __blockCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
-    VALUE: deepCopy(path.node)
+    VALUE: deepCopy(path.node),
+    NAME: types.stringLiteral(stringForPath(path))
   });
 
   // Find the closest parent statement
@@ -382,3 +383,21 @@ export const codeForAst = (ast) =>
     code: true,
     ast: false
   })).code;
+
+
+const stringForPath = (path) => {
+  if(path.isIdentifier()) {
+    return path.node.name;
+  } else if(path.isThisExpression()) {
+    return "this";
+  } else if(path.isMemberExpression()) {
+    return `${stringForPath(path.get("object"))}.${stringForPath(path.get("property"))}`;
+  } else {
+    return "";
+  }
+}
+
+
+
+
+

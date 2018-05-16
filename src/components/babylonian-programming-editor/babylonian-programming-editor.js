@@ -74,7 +74,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_classes.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -333,6 +333,10 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   updateAnnotations() {
+    if(!this.hasResults()) {
+      return;
+    }
+    
     // Update sliders
     for(let slider of this._annotations.sliders) {
       const node = this.nodeForAnnotation(slider).body;
@@ -367,6 +371,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Remove old dead markers
     this._deadMarkers.map(m => m.clear());
 
+    // Don't show dead markers if we have no activated example
+    if(this._activeExamples.length === 0) {
+      return;
+    }
+    
     // Add new markers
     const that = this;
     traverse(this._ast, {
@@ -542,6 +551,10 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   hasWorkingAst() {
     return (this._ast && this._ast._locationMap);
+  }
+  
+  hasResults() {
+    return !!window.__tracker;
   }
   
   nodeForAnnotation(annotation) {

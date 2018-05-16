@@ -9,7 +9,7 @@ export default class ProbeWidget extends Widget {
   constructor(editor, location, kind, examples, deleteCallback) {
     super(editor, location, kind, deleteCallback);
     this._examples = examples; // [{id, name, color}]
-    this._values = new Map(); // Map(exampleId, Map(runId, [{type, value}]))
+    this._values = new Map(); // Map(exampleId, Map(runId, [{type, value, name}]))
     this._activeRuns = new Map(); // exampleId -> runId
   }
   
@@ -116,14 +116,20 @@ export default class ProbeWidget extends Widget {
         leftSpace = DeleteButton(this._deleteCallback);
       }
       
-      return <span class="widget-line">
-        {leftSpace}
-        <span
+      let exampleName = "";
+      if(example.id !== defaultExample().id) {
+        exampleName = <span
           class="example-name"
           style={"background-color:" + example.color}>
           {example.name.length ? example.name : "\u00A0"}
-        </span>
+        </span>;
+      }
+      
+      return <span class="widget-line">
+        {leftSpace}
+        {exampleName}
         &nbsp;
+        {Array.from(runs.values())[0][0].name}:
         <span class="probe-value">{valueString}</span>
       </span>
     }

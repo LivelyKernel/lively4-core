@@ -14,7 +14,7 @@
 }
 
 .widget.probe .widget-line, .widget.slider .widget-line {
-  background-color: hsla(198, 69%, 67%, 0.5);
+  background-color: hsla(198, 69%, 67%, 0.4);
   padding: 0 4px;
 }
 
@@ -24,11 +24,11 @@
 }
 
 .widget.replacement {
-  background-color: hsla(344, 54%, 63%, 0.5);
+  background-color: hsla(344, 54%, 63%, 0.2);
 }
 
 .widget.example, .widget.instance {
-  background-color: hsla(41, 69%, 38%, 0.5);
+  background-color: hsla(41, 39%, 38%, 0.2);
   border-radius: 0px;
 }
 
@@ -69,16 +69,16 @@
 }
 
 .marker.probe, .marker.slider {
-  background-color: hsla(198, 69%, 67%, 0.3);
+  background-color: hsla(198, 69%, 67%, 0.2);
 }
 
 .marker.replacement {
-  background-color: hsla(344, 54%, 63%, 0.3);
+  background-color: hsla(344, 54%, 63%, 0.2);
   text-decoration: line-through;
 }
 
 .marker.example, .marker.instance {
-  background-color: hsla(41, 69%, 38%, 0.3);
+  background-color: hsla(41, 39%, 38%, 0.2);
 }
 
 .marker.dead {
