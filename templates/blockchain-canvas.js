@@ -23,7 +23,7 @@ export default class BlockchainCanvas extends Morph {
     return this._controller;
   }
   
-  async draw() {
+  draw() {
     this._controller.draw();
   }
   
