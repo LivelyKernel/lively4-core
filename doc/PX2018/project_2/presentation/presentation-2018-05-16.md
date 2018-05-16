@@ -3,7 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "fullhd";
+let presentationSize = "hd";
 
 lively.components.addTemplatePath(lively4url + "/doc/PX2018/project_2/")
 lively.components.resetTemplatePathCache()
