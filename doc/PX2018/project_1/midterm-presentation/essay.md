@@ -98,21 +98,21 @@ import TransactionOutputCollection from 'src/blockchain/model/transaction/transa
 
 ## Custom Visualization (canvas)
 <script>
-// import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
-// import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
-// import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
-// import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
-// const sender = new Wallet(); 
-// const inputCollection = new TransactionInputCollection(sender); 
-// const outputCollection = new TransactionOutputCollection();
-// const transaction = new Transaction(sender, inputCollection, outputCollection);
-// const transactionNetwork = document.createElement("blockchain-canvas");
-// transactionNetwork.controller.addTransaction(transaction);
-// // const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
-// //   transactionNetwork.controller.addTransaction(transaction);
-// // });
+import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
+import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+const sender = new Wallet(); 
+const inputCollection = new TransactionInputCollection(sender); 
+const outputCollection = new TransactionOutputCollection();
+const transaction = new Transaction(sender, inputCollection, outputCollection);
+const transactionNetwork = document.createElement("blockchain-canvas");
+transactionNetwork.controller.addTransaction(transaction);
+// const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
+//   transactionNetwork.controller.addTransaction(transaction);
+// });
 
-// (() => {
-//   return transactionNetwork;
-// })();
+(() => {
+  return transactionNetwork;
+})();
 </script>
