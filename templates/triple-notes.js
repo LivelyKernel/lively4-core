@@ -158,11 +158,11 @@ class Link extends Node {
   }
   
   draw(linkGroup, markerContainer) {
-  	linkGroup.append("path")
-  		.classed("link-path", true)
-  		//.classed(this.domain().cssClassOfNode(), true)
-  		//.classed(this.range().cssClassOfNode(), true)
-      //.classed(property.linkType(), true);
+    linkGroup.append("path")
+    .classed("link-path", true)
+    //.classed(this.domain().cssClassOfNode(), true)
+    //.classed(this.range().cssClassOfNode(), true)
+    //.classed(property.linkType(), true);
   }
   
   // TODO: if we are self-referencial: compute the number of self references from the graph

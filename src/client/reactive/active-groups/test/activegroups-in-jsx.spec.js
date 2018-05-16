@@ -21,7 +21,8 @@ describe('Active Groups in JSX support', function() {
         bernd = new Person("Bernd");
     let startLetter = "A";
 
-    let personList = select(Person, p => p.name.startsWith(startLetter))
+    let personList = select(Person)
+      .filter(p => p.name.startsWith(startLetter))
       .map(p => <li>{p.name}</li>);
 
     let list = <ul>
