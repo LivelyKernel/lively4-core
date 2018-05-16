@@ -85,7 +85,7 @@ import Wallet from 'src/blockchain/model/wallet/wallet.js';
 import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
 import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
 import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js'; 
-(async () => { 
+(() => { 
   const sender = new Wallet(); 
   const inputCollection = new TransactionInputCollection(sender); 
   const outputCollection = new TransactionOutputCollection(); 
@@ -107,6 +107,7 @@ const inputCollection = new TransactionInputCollection(sender);
 const outputCollection = new TransactionOutputCollection();
 const transaction = new Transaction(sender, inputCollection, outputCollection);
 const transactionNetwork = document.createElement("blockchain-canvas");
+transactionNetwork.initialize();
 transactionNetwork.controller.addTransaction(transaction);
 // const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
 //   transactionNetwork.controller.addTransaction(transaction);

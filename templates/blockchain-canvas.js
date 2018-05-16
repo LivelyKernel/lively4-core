@@ -11,11 +11,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class BlockchainCanvas extends Morph {
   
-  constructor() {
-    super();
-    this.initialize();
-  }
-  
   async initialize() {
     this.windowTitle = "BlockchainCanvas";
     
