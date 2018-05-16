@@ -1,5 +1,5 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
-import transactionOutput from './transactionOutput.js';
+import TransactionOutput from './transactionOutput.js';
 
 /**
   Intended usage:
@@ -22,7 +22,7 @@ export default class TransactionOutputCollection {
       return this;
     }
     
-    var output = new transactionOutput(receiverWallet, amount);
+    const output = new TransactionOutput(receiverWallet, amount);
     this._transactionOutputs.set(receiverWallet.hash, output);
     return this;
   }

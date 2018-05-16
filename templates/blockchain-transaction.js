@@ -1,13 +1,12 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import Wallet from 'src/blockchain/wallet/wallet.js';
-import Transaction from 'src/blockchain/transaction/transaction.js';
-import TransactionInputCollection from 'src/blockchain/transaction/transactionInputCollection.js';
-import TransactionOutputCollection from 'src/blockchain/transaction/transactionOutputCollection.js';
+import Wallet from 'src/blockchain/model/wallet/wallet.js';
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
 
 export default class BlockchainTransaction extends Morph {
-  
   
   async initialize() {
     this.windowTitle = "BlockchainTransactionView";

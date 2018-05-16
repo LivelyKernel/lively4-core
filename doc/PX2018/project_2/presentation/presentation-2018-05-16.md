@@ -136,7 +136,20 @@ import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/
 <li>Particles & performance</li>
 <li>Algorithms have different parameters</li>
 <li>Preferable algorithm to explain a parameter</li>
-<li>Suitable controls for each parameter</li>
+<ul>
+<li>Single point not suitable for E</li>
+<li>Stretching material more suitable</li>
+</ul>
+<li>
+Suitable controls for each parameter
+<script>
+(() => {
+let sliderClass = "slider-" + presentationSize;
+let img = <img class={sliderClass}/>;
+img.src = "doc/PX2018/project_2/presentation/slider-control.png";
+return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation/presentation-2018-05-16.css" />{img}</div>;
+})();</script>
+</li>
 <li>Exchangeability of examples algorithms</li>
 </ul>
 

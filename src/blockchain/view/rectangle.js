@@ -78,7 +78,19 @@ export default class Rectangle {
     return true;
   }
   
-  offset(point) {
+  contains(point) {
+    if (point.x >= this.right || point.x <= this.left) {
+      return false;
+    }
+    
+    if (point.y >= this.bottom || point.y <= this.top) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  internalLocation(point) {
     return new Point(point.x - this.x, point.y - this.y);
   }
 }
