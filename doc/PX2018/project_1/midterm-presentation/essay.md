@@ -105,9 +105,11 @@ const sender = new Wallet();
 const inputCollection = new TransactionInputCollection(sender); 
 const outputCollection = new TransactionOutputCollection();
 const transaction = new Transaction(sender, inputCollection, outputCollection);
-const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
-  transactionNetwork.controller.addTransaction(transaction);
-});
+const transactionNetwork = document.createElement("blockchain-canvas");
+transactionNetwork.controller.addTransaction(transaction);
+// const transactionNetwork = document.createElement("blockchain-canvas").then(() => {
+//   transactionNetwork.controller.addTransaction(transaction);
+// });
 
 (() => {
   return transactionNetwork;
