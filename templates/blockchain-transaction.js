@@ -8,12 +8,6 @@ import TransactionOutputCollection from 'src/blockchain/model/transaction/transa
 
 export default class BlockchainTransaction extends Morph {
   
-  constructor() {
-    super();
-    this.initialize();
-  }
-  
-  
   async initialize() {
     this.windowTitle = "BlockchainTransactionView";
     this._transaction = null;
