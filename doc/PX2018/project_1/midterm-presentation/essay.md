@@ -95,6 +95,7 @@ import TransactionOutputCollection from 'src/blockchain/model/transaction/transa
 })();
 </script>
 
+
 ## Custom Visualization (canvas)
 <script>
 import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
