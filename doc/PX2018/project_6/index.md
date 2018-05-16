@@ -60,31 +60,61 @@
 
 # Graph Drawing - Key Challenges
 
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg .tg-2tx9{border-color:#ffffff}
+td li {font-size: 18pt; margin-bottom: 50px; margin-top: 30px;}
+</style>
+<table class="tg">
+  <tr>
+    <td class="tg-2tx9"><li>Low number of crossings</li></td>
+    <td class="tg-2tx9" rowspan="2">
+      <img src="./img/graph_drawing2.png" style="width:350px">
+    </td>
+  </tr>
+  <tr>
+  <td class="tg-2tx9"><li>Small area</li></td>
+  </tr>
+  <tr>
+  <td class="tg-2tx9"><li>Short edges</li></td>
+    <td class="tg-2tx9" rowspan="1">
+      <img src="./img/graph_drawing1.png" style="width:150px">
+    </td>
+  </tr>
+</table>
 
-* Low number of crossings
 
-* Small area
 
-* Short edges
-
-<img src="./img/Graph_drawing.jpg">
 
 --- 
 
 # Layout Methods
 
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg .tg-2tx9{border-color:#ffffff}
+td li {font-size: 18pt; margin-bottom: 50px; margin-top: 30px;}
+.nomargin {margin-bottom: 0px; margin-top: 0px}
+</style>
+<table class="tg">
+  <tr>
+    <td class="tg-2tx9"><li>Arc Layout</li></td>
+    <td class="tg-2tx9" rowspan="1">
+      <img style="max-height: 150px" src="./img/arc_diagram.png">
+    </td>
+  </tr>
+  <tr>
+    <td class="tg-2tx9">
+      <li style="margin-bottom: 50px;">Circle Layout</li>
+      <li>Force-directed Layouts</li>
+      <li>Energy-minimizing simulations (Simulated Annealing)</li>
+    </td>
+    <td class="tg-2tx9 nomargin" rowspan="1">  
+      <img style="max-height: 200px" src="./img/Barabasi_Albert_model.gif">
+    </td>
+  </tr>
+</table>
 
-* Arc Layout
-
-<img style="max-height: 100px" src="./img/arc_diagram.png">
-
-* Circle Layout
-
-<img style="max-height: 100px" src="./img/Barabasi_Albert_model.gif">
-
-* Force-directed Layouts
-
-* Energy-minimizing simulations (Simulated Annealing)
 
 
 <span style="font-size: 8pt;

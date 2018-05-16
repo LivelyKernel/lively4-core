@@ -927,6 +927,7 @@ export default class Container extends Morph {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
         lively.notify("found index" + index)
@@ -1065,7 +1066,7 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + url +'"></lively-pdf>');
       else return;
-    }
+    } 
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
@@ -1093,6 +1094,7 @@ export default class Container extends Morph {
       this.content = content
       this.showNavbar();
       
+      
       if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
@@ -1107,11 +1109,18 @@ export default class Container extends Morph {
         if (render) return this.appendCSV(content);
       } else if (format == "error") {
         this.sourceCountent = content;
-        if (render) return this.appendHtml(`
-          <h2>
-            <span style="color: darkred">Error: </span>${content}
-          <h2>
-        `);
+        if (render) {
+          return this.appendHtml(`
+            <h2>
+              <span style="color: darkred">Error: </span>${content}
+            </h2>
+          `);
+        }
+      } else if (format == "bib") {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
+        }
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");

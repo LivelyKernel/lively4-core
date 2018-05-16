@@ -6,7 +6,7 @@ import TransactionOutputCollection from '../transaction/transactionOutputCollect
 const C_BLOCK_REWARD = 10;
 
 export default class Block {
-  constructor(minerWallet, transactions, miningProof) {
+  constructor(minerWallet, transactions, miningProof, previousHash) {
     if (!miningProof.isFinalized()) {
       throw new Error("a block needs to be proven");
     }
@@ -24,6 +24,7 @@ export default class Block {
     
     this._sendReward(minerWallet);
     
+    this.previousHash = previousHash;
     this.hash = this._hash();
     this.signature = this._generateSignature(minerWallet);
   }
@@ -63,6 +64,10 @@ export default class Block {
       return this;
     }
     
+    if (!this.transactions.isFinalized()) {
+      throw new Error("transactions need to be finallized");
+    }
+    
     if (!this.miningProof.isFinalized()) {
       throw new Error("a block needs to be proven");
     }
@@ -81,6 +86,7 @@ export default class Block {
       this.minerPublicKey +
       this.transactions.hash +
       this.miningProof.hash + 
+      this.previousHash +
       this.reward
     );
   }
