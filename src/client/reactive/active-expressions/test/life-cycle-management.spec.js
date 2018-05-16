@@ -4,6 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
+import { BaseActiveExpression } from 'src/client/reactive/active-expressions/active-expressions/src/base/base-active-expressions.js';
 import * as frameBasedAExpr from "frame-based-aexpr";
 
 describe("life-cycle management", function() {
@@ -127,6 +128,19 @@ describe("life-cycle management", function() {
       value = 2;
       expect(spy).not.to.be.called;
     });
+    
+  });
+
+  describe("isDisposed", function() {
+    it('is defined', () => {
+      expect(BaseActiveExpression).to.respondTo('isDisposed');
+    });
+    it('outputs disposing status', () => {
+      let axp = aexpr(() => true);
+      expect(axp.isDisposed()).not.to.be.ok;
+      axp.dispose();
+      expect(axp.isDisposed()).to.be.ok;
+    });
   });
 
   describe('disposeOnLastCallbackDetached', function() {
@@ -135,27 +149,42 @@ describe("life-cycle management", function() {
       expect(exp).to.respondTo('disposeOnLastCallbackDetached');
     });
 
-    xit('is chainable', () => {
+    it('is chainable', () => {
       let exp = aexpr(() => {})
       let exp2 = exp.disposeOnLastCallbackDetached();
       expect(exp2).to.equal(exp);
     });
 
-    xit('works', () => {
-      // #TODO: proper test first
-    });
-
-    xit('works instantaneously', () => {
+    // #TODO: proper test first
+    it('works', () => {
       let spy = sinon.spy();
       let bool = false
-      aexpr(() => bool)
+      const expr = aexpr(() => bool)
+        .onChange(spy);
+      
+      expr.disposeOnLastCallbackDetached();
+      
+      bool = true;
+      expect(spy).to.be.calledOnce;
+      
+      expr.offChange(spy);
+      // bool = false;
+      // expect(spy).to.be.calledOnce;
+      // #TODO: use `aexpr.isDisposed()` instead
+      expect(expr._isDisposed).to.be.ok;
+    });
+
+    it('works instantaneously', () => {
+      let spy = sinon.spy();
+      let bool = false
+      const expr = aexpr(() => bool)
         .disposeOnLastCallbackDetached()
         .onChange(spy)
         .offChange(spy);
       
       bool = true;
       // #TODO: use `aexpr.isDisposed()` instead
-      expect(spy).not.to.be.called;
+      expect(expr._isDisposed).to.be.ok;
     });
 });
 });
