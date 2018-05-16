@@ -15,7 +15,7 @@ export default class Wallet {
   
   _generateKeyPair() {
     var rsa = forge.pki.rsa;
-    return rsa.generateKeyPair({bits: 2048, e: 0x10001});
+    return rsa.generateKeyPair({bits: 128, e: 0x10001});
   }
   
   _hash() {
