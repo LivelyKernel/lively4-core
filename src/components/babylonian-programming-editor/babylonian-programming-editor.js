@@ -13,7 +13,9 @@ import {
   canBeExample,
   canBeReplaced,
   canBeInstance,
-  parameterNamesForFunctionIdentifier
+  canBeSlider,
+  parameterNamesForFunctionIdentifier,
+  bodyForPath
 } from "./utils/ast.js";
 import { 
   loadFile,
@@ -193,7 +195,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     switch(kind) {
       case "probe":
         // Decide if we mean a probe or a slider
-        if(path.isLoop()) {
+        if(canBeSlider(path)) {
           this.addSliderAtPath(path);
         } else {
           this.addProbeAtPath(path);
@@ -237,7 +239,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   addSliderAtPath(path) {
     // Make sure we can probe this path
-    if(!canBeProbed(path)) {
+    if(!canBeSlider(path)) {
       return;
     }
     
@@ -339,7 +341,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Update sliders
     for(let slider of this._annotations.sliders) {
-      const node = this.nodeForAnnotation(slider).body;
+      const node = bodyForPath(this.pathForAnnotation(slider)).node;
       if(window.__tracker.blocks.has(node._id)) {
         slider.maxValues = window.__tracker.blocks.get(node._id);
       } else {
@@ -507,10 +509,13 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   onSliderChanged(slider, exampleId, value) {
     // Get the location for the body
-    const path = this.pathForAnnotation(slider);
+    const bodyPath = bodyForPath(this.pathForAnnotation(slider));
     const includedIds = [];
-    traverse(path.node.body, {
+    traverse(bodyPath.node, {
         Identifier(path) {
+          includedIds.push(path.node._id);
+        },
+        ReturnStatement(path) {
           includedIds.push(path.node._id);
         },
         BlockStatement(path) {
@@ -520,8 +525,8 @@ export default class BabylonianProgrammingEditor extends Morph {
           path.skip();
         }
       },
-      path.scope,
-      path
+      bodyPath.scope,
+      bodyPath
     );
 
     // Get all probes directly in the body

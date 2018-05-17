@@ -49,14 +49,23 @@ export const generateLocationMap = (ast) => {
 export const canBeProbed = (path) => {
   const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
-                                     || path.parentKey === "object");
+                                     || path.parentKey === "object")
+                                 && (path.parentPath !== path.getFunctionParent());
   const isTrackableMemberExpression = path.isMemberExpression();
   const isTrackableReturnStatement = path.isReturnStatement();
-  const isTrackableLoop = path.isLoop();
   return isTrackableIdentifier
          || isTrackableMemberExpression
-         || isTrackableReturnStatement
-         || isTrackableLoop;
+         || isTrackableReturnStatement;
+}
+
+/**
+ * Checks whether a path can be a slider
+ */
+export const canBeSlider = (path) => {
+  const isTrackableIdentifier = path.isIdentifier()
+                                && path.parentPath === path.getFunctionParent();
+  const isTrackableLoop = path.isLoop();
+  return isTrackableIdentifier || isTrackableLoop;
 }
 
 /**
@@ -398,7 +407,12 @@ const stringForPath = (path) => {
   }
 }
 
-
-
-
+export const bodyForPath = (path) => {
+  if(path.node.body) {
+    return path.get("body");
+  } else if(path.parentPath.node.body) {
+    return path.parentPath.get("body");
+  }
+  return null;
+}
 
