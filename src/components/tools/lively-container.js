@@ -793,8 +793,6 @@ export default class Container extends Morph {
         return window.open(path);
       }
     }
-    lively.notify("options " + options)
-
     if (options && options.donotfollowpath) {
       fetch(path) // e.g. open://my-component
       return ;
@@ -929,6 +927,7 @@ export default class Container extends Morph {
     return lively.files.statFile(url).then((content) => {
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
+      if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
         lively.notify("found index" + index)
@@ -989,7 +988,6 @@ export default class Container extends Morph {
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
     } else if (path.match(/^[a-zA-Z]+:\/\//)) {
-      lively.notify("it other url : " + path)
       url = new URL(path)
       var other = true
     } else {
@@ -1068,7 +1066,7 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + url +'"></lively-pdf>');
       else return;
-    }
+    } 
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
@@ -1096,6 +1094,7 @@ export default class Container extends Morph {
       this.content = content
       this.showNavbar();
       
+      
       if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content);
@@ -1110,11 +1109,18 @@ export default class Container extends Morph {
         if (render) return this.appendCSV(content);
       } else if (format == "error") {
         this.sourceCountent = content;
-        if (render) return this.appendHtml(`
-          <h2>
-            <span style="color: darkred">Error: </span>${content}
-          <h2>
-        `);
+        if (render) {
+          return this.appendHtml(`
+            <h2>
+              <span style="color: darkred">Error: </span>${content}
+            </h2>
+          `);
+        }
+      } else if (format == "bib") {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
+        }
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
@@ -1282,12 +1288,18 @@ export default class Container extends Morph {
   }
 
   async saveMarkdown(url) {
-    var source = await this.get("lively-markdown").htmlAsMarkdownSource()
-    return this.saveSource(url, source);
+    var markdown =  await this.get("lively-markdown")
+    if (markdown.getAttribute("mode") == "presentation") {
+      lively.notify("saving in presentation mode not supported yet")
+    } else {
+      var source = markdown.htmlAsMarkdownSource()
+      return this.saveSource(url, source);
+    }   
   }
 
-  saveEditsInView(url) {
+  async saveEditsInView(url) {
     url = (url || this.getURL()).toString();
+    var contentElement = this.childNodes[0]
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
@@ -1302,6 +1314,10 @@ export default class Container extends Morph {
         //   title: "saved HTML",
         //   color: "green"});
        });
+    } else if (contentElement && contentElement.livelySource) {
+      var source = contentElement.livelySource()
+      if (source.then) source = await source; // maybe some elements take a while to generate their source
+      return this.saveSource(url, source);
     } else {
       lively.notify("Editing in view not supported for the content type!");
     }

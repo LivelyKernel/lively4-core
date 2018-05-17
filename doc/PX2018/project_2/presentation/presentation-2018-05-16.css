@@ -1,0 +1,23 @@
+.slider-standard-vga {
+  width: 230px;
+  padding-left: 30px;
+  position: absolute;
+  right: -180px;
+  top: 290px;
+} 
+
+.slider-hd {
+  width: 300px;
+  padding-left: 30px;
+  position: absolute;
+  right: -320px;
+  top: 435px;
+}
+
+.slider-fullhd {
+  width: 300px;
+  padding-left: 30px;
+  position: absolute;
+  right: -320px;
+  top: 540px;
+}

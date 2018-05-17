@@ -3,6 +3,7 @@ import ContextMenu from 'src/client/contextmenu.js'
 import Mimetypes from 'src/client/mimetypes.js'
 import {getTempKeyFor} from 'utils'
 import {LivelyFile} from "src/client/poid.js"
+import html from  'src/client/html.js'
 
 export default class File extends Morph {
   initialize() {
@@ -12,7 +13,9 @@ export default class File extends Morph {
     this.addEventListener("dragstart", evt => this.onDragStart(evt))
     this.addEventListener("click", evt => this.onClick(evt))
     this.addEventListener("dblclick", evt => this.onDoubleClick(evt))    
+    html.registerAttributeObservers(this);
   }
+  
   
   onClick() {
     if (this.classList.contains("selected")) {
@@ -61,6 +64,7 @@ export default class File extends Morph {
       return true;
     }
   }
+
   
   updateView(value) {
     if (!value) return
@@ -78,6 +82,11 @@ export default class File extends Morph {
   set name(value) {
     this.setAttribute("id", value)
     this.updateView(value)
+  }
+ 
+  onIdChanged(value) {
+    lively.notify("id changed " + value)
+    this.updateView(value)  
   }
   
   get name() {

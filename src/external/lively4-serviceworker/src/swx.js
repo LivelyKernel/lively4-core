@@ -80,7 +80,7 @@ class ServiceWorker {
     // console.log("resolve pending requests: " + pendingRequests);
     // #Hack needed, because the swx-solved loads asyncronously and the service worker expects and syncronouse answer or promise. 
     pendingRequests.forEach(ea => {
-      // console.log("work on pendingRequest " + ea.url);
+      console.log("work on pendingRequest " + ea.url);
       this.fetch(ea.event, ea);
     });
     // stop listening to requests..

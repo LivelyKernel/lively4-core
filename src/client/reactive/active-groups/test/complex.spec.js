@@ -19,9 +19,8 @@ describe('complex example', function() {
         );
 
         var threshold = 10;
-        var selection = select(AddExpr, function(expr) {
-            return expr.result() > threshold;
-        });
+        var selection = select(AddExpr)
+          .filter(expr => expr.result() > threshold);
         expect(selection.now()).to.have.length(1);
 
       var manualSelectionSize = 0;

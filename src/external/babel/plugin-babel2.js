@@ -316,9 +316,9 @@ exports.translate = async function(load, traceOpts) {
     })
     
     if (cachedOutputCode) {
-      console.log("used cached output " + (performance.now() - startTransform) + "ms")
+      // console.log("used cached output " + (performance.now() - startTransform) + "ms")
     } else {
-      console.log("transformed in " + (performance.now() - startTransform) + "ms")
+      // console.log("transformed in " + (performance.now() - startTransform) + "ms")
     }
       
 //       if (cachedOutput) {

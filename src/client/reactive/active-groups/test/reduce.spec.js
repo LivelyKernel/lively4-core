@@ -17,7 +17,7 @@ describe('.reduce operator', function() {
 
     var threshold = { min: 0 },
         initialValue = 3;
-    select(AValueClass, data => data.value > threshold.min)
+    select(AValueClass).filter(data => data.value > threshold.min)
       .reduce((acc, instance) => acc + instance.value, initialValue)
       .onChange(spy);
     expect(spy).to.not.have.been.called;

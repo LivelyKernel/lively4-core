@@ -144,13 +144,12 @@ export default class Lively {
     // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
-    var load = System.loads[changedModule]
+    var load = System.loads[changedModule];
     if (!load) {
-      await this.unloadModule(path) // just to be sure...
-      console.warn("Don't reload non-loaded module")
-      return
+      await this.unloadModule(path); // just to be sure...
+      console.warn("Don't reload non-loaded module");
+      return;
     }
-    var modulePaths = [path];
     await this.unloadModule(path);
     let mod = await System.import(path);
 
@@ -163,11 +162,18 @@ export default class Lively {
     //   return mod
     // }
 
-    // Find all modules that depend on me
-    let dependedModules = lively.findDependedModules(path);
+    let dependedModules;
+    if(path.match('client/reactive')) {
+      // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
+      dependedModules = lively.findDependedModules(path, true);
+      dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+    } else {
+      // Find all modules that depend on me
+      dependedModules = lively.findDependedModules(path);
+    }
+
     // and update them
     for(let ea of dependedModules) {
-      modulePaths.push(ea)
       // console.log("reload " + path + " triggers reload of " + ea)
       System.registry.delete(ea);
     }
@@ -189,7 +195,7 @@ export default class Lively {
     /**
      * Update Templates: Reload a template's .html file
      */
-    [path].concat(modulePaths).forEach(eaPath => {
+    [path].concat(dependedModules).forEach(eaPath => {
       console.log("update dependend: ", eaPath, 3, "blue")
       let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
       if (found) {
@@ -292,6 +298,7 @@ export default class Lively {
       if (document.querySelector("lively-console")) {
         console.log(error)
       } else {
+        console.error('#########################################', error, error.stack);
         await lively.notify("Error: ", error, 10, () => {
         		lively.openComponentInWindow("lively-error").then( comp => {
               comp.stack =  error.stack
@@ -308,7 +315,7 @@ export default class Lively {
     }
   }
 
-  static loaded() {
+  static async loaded() {
     // #Refactor with #ContextJS
     // guard againsst wrapping twice and ending in endless recursion
     // if (!console.log.originalFunction) {
@@ -340,31 +347,41 @@ export default class Lively {
       window.addEventListener('unhandledrejection', unhandledRejectionEventLister);
     }
 
-    this.exportModules()
+    await this.exportModules();
+    
 
     if (!window.lively4chrome) {
       // for container content... But this will lead to conflicts with lively4chrome  ?? #Jens
       lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     }
     // preload some components
-    components.loadByName("lively-window");
-    components.loadByName("lively-editor");
+    await components.loadByName("lively-window");
+    await components.loadByName("lively-editor");
+    await components.loadByName("lively-script");
+    
+    setTimeout(() => {
+      // wait for the timeout and try again
+      document.body.querySelectorAll("img").forEach(ea => ea.src = "" + ea.src) // #Hack #swx RPC messages...
+    }, 12 * 1000)
 
 
   }
 
 
-  static exportModules() {
+  static async exportModules() {
     exportmodules.forEach(name => lively[name] = eval(name)); // oh... this seems uglier than expectednit
 
-    System.import("src/client/clipboard.js").then( m => {
+    await System.import("src/client/clipboard.js").then( m => {
       lively.clipboard = m.default
     }) // depends on me
-    System.import("src/client/graffle.js") // depends on me
-    System.import("src/client/draganddrop.js") // depends on me
-    System.import("src/client/poid.js") // depends on me
-
+    await System.import("src/client/graffle.js") // depends on me
+    await System.import("src/client/draganddrop.js") // depends on me
+    await System.import("src/client/poid.js") // depends on me
+    // #TODO should we load fetch protocols lazy?
+    await System.import("demos/plex/plex-scheme.js") // depends on me
+    await System.import("src/client/protocols/todoist.js") 
   }
+  
 
   static asUL(anyList){
     var ul = document.createElement("ul")
@@ -1681,9 +1698,9 @@ if (!window.lively || window.lively.name != "Lively") {
   Lively.previous = oldLively
   window.lively = Lively;
 }
-
-
 Lively.exportModules();
+
+
 
 
 console.log(window.lively4stamp, "loaded lively");

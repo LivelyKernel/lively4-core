@@ -13,7 +13,6 @@ export default class VivideMultiSelectionWidget extends VivideWidget {
   }
   
   selectionChanged(selection) {
-    lively.success(`selected ${selection.length} item(s)`);
     let viewParent = this.getViewParent();
     if(viewParent) {
       viewParent.selectionChanged();

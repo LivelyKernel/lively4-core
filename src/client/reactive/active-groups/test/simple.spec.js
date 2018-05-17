@@ -16,7 +16,7 @@ describe("simple select", () => {
   }
   
   it("should use aexprs to track changes", () => {
-    let sel = select(Value, v => v.val > 5);
+    let sel = select(Value).filter(v => v.val > 5);
     expect(sel.now()).to.have.length(0);
     let v = new Value(6);
     expect(sel.now()).to.have.length(1);

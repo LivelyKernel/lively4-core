@@ -59,4 +59,21 @@ describe('Base Active Expressions', () => {
         });
 
     });
+  describe('meta', () => {
+    it('responds to meta', () => {
+      expect(BaseActiveExpression).to.respondTo('meta');
+    });
+    it('meta is chainable', () => {
+      let aexpr = new BaseActiveExpression(() => {});
+
+      let actual = aexpr.meta({ value: 'expect' });
+      expect(actual).to.equal(aexpr);
+    });
+    it('stores values conveniently', () => {
+      let aexpr = new BaseActiveExpression(() => {});
+
+      aexpr.meta({ value: 'expected' });
+      expect(aexpr.meta().get('value')).to.equal('expected');
+    });
+  });
 });

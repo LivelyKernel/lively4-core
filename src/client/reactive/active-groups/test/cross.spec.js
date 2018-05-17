@@ -15,10 +15,10 @@ describe('.cross operator', function() {
 
         var instanceA1 = new ValueClassA(42);
         var instanceB1 = new ValueClassB(43);
-        var baseA = select(ValueClassA, function(data) {
+        var baseA = select(ValueClassA).filter(function(data) {
             return data.value > 30;
         });
-        var baseB = select(ValueClassB, function(data) {
+        var baseB = select(ValueClassB).filter(function(data) {
             return data.value > 30;
         });
         var product = baseA.cross(baseB);

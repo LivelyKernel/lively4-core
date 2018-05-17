@@ -2,6 +2,7 @@ import Preferences from "src/client/preferences.js"
 import _ from 'src/external/underscore.js'
 import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
+import Strings from 'src/client/strings.js'
 
 /*
  * Kitchensink for all HTML manipulation utilities
@@ -158,22 +159,6 @@ export default class HTML {
     Array.prototype.forEach.call(nodes, node => {
       if (node.getAttribute) {
         var href = node.getAttribute("href")
-        if (href && node.classList.contains("play")) {
-          var filename = href.replace(lively4url.replace(/[^\/]*$/,""),"")
-          console.log("fix play link " + filename)
-          node.onclick = () => {
-            lively.notify("play " + filename)
-            fetch(lively4url + "/_meta/play", {
-              headers: new Headers({ 
-                filepath: filename
-              })
-            }).then(r => r.text()).then(t => {
-                console.log("play: " + t)
-            })
-            return false
-          }
-          return
-        } 
         if (href) {
           // #TODO load inplace....
           var path;
@@ -187,7 +172,7 @@ export default class HTML {
             // $(node).click(() => { 
             //   alert("eval " + code)
             // })
-          } else if (href.match(/([A-Za-z]+):\/\/.+/)) {
+          } else if (href.match(/([A-Za-z]+):\/\/.*/)) {
             // console.log("ignore "  + href);
             path = href;
           } else if (href.match(/^\//)) {
@@ -338,5 +323,26 @@ export default class HTML {
     return saveAsURL
   }
 
+  
+ static async registerAttributeObservers(obj) {
+    obj._attrObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") { 
+          console.log('mutation ' + mutation.attributeName )
+          var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
+          if (obj[methodName]) {
+            console.log("found " + methodName)
+            obj[methodName](
+              mutation.target.getAttribute(mutation.attributeName),
+              mutation.oldValue)
+          } else {
+             console.log("NOT found: " + methodName)
+          }
+        }
+      });
+    });
+    obj._attrObserver.observe(obj, { attributes: true });  
+  }
+  
 }
 

@@ -19,7 +19,7 @@ describe("Enter, Exit", () => {
     const enterSpy = sinon.spy();
     const exitSpy = sinon.spy();
     
-    select(Value, v => v.val > 5)
+    select(Value).filter(v => v.val > 5)
       .enter(enterSpy)
       .exit(exitSpy);
 

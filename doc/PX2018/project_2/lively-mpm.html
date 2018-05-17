@@ -1,0 +1,54 @@
+<template id="lively-mpm" data-class="LivelyMpm">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+
+  }
+  
+  #content {
+    background-color: gray;
+  }
+  
+  canvas {
+    border: 1px solid black;
+    float: left;
+  }    
+  
+  .inputs {
+    position: relative;
+    float: right;
+  }
+  
+  .input-line {
+    margin: 20px 0;
+  }
+  
+  input {
+    float: right;
+    text-align: right;
+    margin-right: 20px;
+  }
+</style>
+  <canvas id="mpm" width="400" height="400"></canvas>
+  <div class="inputs">
+    <div class="input-line">
+      <label>Speed: </label><input id="speed"  value="20"/><br />
+    </div>
+    <div class="input-line">
+      <label>Young modulus: </label><input id="young-modulus" value="0.001"/>
+    </div>
+    <div class="input-line">
+      <label>Extend: </label><input id="extend" value="200"/>
+    </div>
+    <div class="input-line">
+      <label># Particles: </label><input id="num-particles" value="1"/>
+    </div>
+    <div class="input-line">
+      <label>Particle Size: </label><input id="particle-size" value="2"/>
+    </div>
+  </div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

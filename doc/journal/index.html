@@ -45,7 +45,7 @@ import FileCache from "src/client/filecache.js"
   var list = document.createElement("ul")
   _.sortBy(opts.contents, ea => ea.name)
     .reverse()
-    .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d.*((html)|(md))$/))
+    .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d\.((html)|(md))$/))
     .forEach(ea => {
       var li = document.createElement("li")
       var a = document.createElement("a")

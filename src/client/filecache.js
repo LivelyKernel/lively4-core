@@ -1,8 +1,12 @@
-// File Cache for Static Analys and Searching
+/*
+ * File Cache for Static Analys and Searching
+ *
+ * #TODO How do we get this a) into a web worker and b) trigger this for changed files
+ *
+ */
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
 import {babel} from 'systemjs-babel-build';
-
 import * as cop from "src/client/ContextJS/src/contextjs.js";
 
 export default class FileCache {

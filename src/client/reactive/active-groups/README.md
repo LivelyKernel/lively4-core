@@ -1,3 +1,6 @@
+# DEPRECATED
+We now use `select(Class).filter(fn)` instead of `select(Class, fn)`!
+
 # Reactive Object Queries[![Build Status](https://travis-ci.org/active-expressions/reactive-object-queries.svg?branch=master)](https://travis-ci.org/active-expressions/reactive-object-queries)
 A JavaScript implementation of reactive object queries using active expressions.
 
