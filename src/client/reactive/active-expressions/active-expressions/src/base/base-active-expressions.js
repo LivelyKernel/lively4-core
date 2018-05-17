@@ -4,8 +4,6 @@ import Annotations from 'src/client/reactive/active-expressions/active-expressio
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
-// I was here
-
 export class BaseActiveExpression {
 
   /**
