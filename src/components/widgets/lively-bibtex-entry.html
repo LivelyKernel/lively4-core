@@ -3,8 +3,15 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
+    width: fill-available;
 
   }
+  :host(.selected) #root  {
+    background-color: rgba(150,150,255,0.1);
+    outline: 1px solid rgba(150,150,255,0.3);
+  }
+
+  
   #content {
     display: none
   }
@@ -20,14 +27,30 @@
     font-weight: bold
   }
   
+  :host([mode="edit"]) #content {
+    display: block;
+    white-space: pre;
+    font-family: courier;
+    font-size: 9pt;
+    overflow: scroll;
+    width: 600px;
+  }
+
+  :host([mode="edit"]) #entry {
+    display: none;
+  }
+
+  
 </style>
-<div id="entry">
-  [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
-  <span id="title"></span>
-</div>
-<div id="content">
-  <content></content>
-</div>
+  <div id="root">
+    <div id="entry">
+      [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
+      <span id="title"></span>
+    </div>
+    <div id="content">
+      <content></content>
+    </div>    
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
