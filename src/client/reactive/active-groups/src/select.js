@@ -368,7 +368,7 @@ Object.assign(View.prototype, {
 });
 
 /**
- * The callback function called to determine whether an Object is in the derived {@link View}.
+ * The callback function to determine whether an Object should be part of the resulting derived {@link View}.
  * @callback View~filterIterator
  * @param {Object} item - item from the original {@link View}.
  * @return {Boolean}
@@ -400,50 +400,12 @@ View.withOnStack = function(el, callback, context) {
     }
 };
 
-//     class SelectionItem {
-//         constructor(selection, item, callback) {
-//             this.selection = selection;
-//             this.item = item;
-//             this.callback = callback;
-
-//             this.propertyAccessors = new Set();
-//         }
-
-//         installListeners() {
-//             var item = this.item;
-//             View.withOnStack(this, function() {
-//                 cop.withLayers([SelectionLayer], (function() {
-//                     this.expression.forInterpretation().apply(null, [item]);
-//                 }).bind(this));
-//             }, this.selection);
-//         }
-
-//         removeListeners() {
-//             this.propertyAccessors.forEach(function(propertyAccessor) {
-//                 propertyAccessor.selectionItems.delete(this);
-//             }, this);
-//             this.propertyAccessors.clear();
-//         }
-//     }
-
 /**
  * @function select
  * @param {Class} Class
- * @param {predicate} predicate
  * @return {View}
  */
-export default function select(Class, predicate) {
-    var newSelection = new View();
-
+export default function select(Class) {
     ensureBaseViewForClass(Class);
-    new FilterOperator(Class._instances_, newSelection, predicate);
-
-    return newSelection;
+    return Class._instances_;
 }
-
-/**
- * This callback to determine whether an item should be part of the resulting {@link View}.
- * @callback predicate
- * @param {Object} item
- * @return {Boolean}
- */

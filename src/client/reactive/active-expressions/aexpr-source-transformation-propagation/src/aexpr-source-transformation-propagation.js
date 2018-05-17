@@ -99,12 +99,12 @@ const aexprStack = new Stack();
 class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...params){
     super(func, ...params);
+    this.meta({ strategy: 'Rewriting' });
     ExpressionAnalysis.check(this);
   }
 
   dispose() {
     super.dispose();
-    lively.success("dispose")
     aexprStorage.disconnectAll(this);
     aexprStorageForLocals.disconnectAll(this);
   }

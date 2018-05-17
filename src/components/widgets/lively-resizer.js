@@ -13,7 +13,6 @@ export default class Resizer extends Morph {
     lively.addEventListener('lively', this,'dragstart', evt => this.onDragStart(evt));
     lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
     lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
-    lively.addEventListener('lively', this,'click', evt => this.onClick(evt));
     
     this.originalLengths = new Map()
     this.originalFlexs = new Map()
@@ -129,24 +128,7 @@ export default class Resizer extends Morph {
     evt.stopPropagation();
   }
   
-  /*
-   * (un-)collabses prev element on click
-   */
-  onClick() {
-    var prev = this.getPreviousElement()
-    var next = this.getNextElement()
-    if (this.lastPrevLength) {
-      this.setLength(prev, this.lastPrevLength);
-      this.setLength(next, this.lastNextLength);
-      delete this.lastPrevLength
-      delete this.lastNextLength;
-    } else {
-      this.lastPrevLength = this.getLength(prev);
-      this.lastNextLength = this.getLength(next);
-      this.setLength(prev, 0)
-      this.setLength(next, this.lastPrevLength + this.lastNextLength)
-    }
-  }
+
   
   onDrag(evt) {
     if (!evt.clientX) return

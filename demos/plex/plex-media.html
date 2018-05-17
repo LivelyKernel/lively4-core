@@ -1,0 +1,103 @@
+<template id="plex-media" data-class="PlexMedia">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      width: 100%;
+      height: 100%;
+    }
+    #content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      user-select: none;
+    }
+    
+    #media {
+      flex: 1;
+      overflow: scroll;
+    }
+    
+    
+    img.thumb {
+      width: 100px;
+    }
+    
+    .directory {
+      display:inline-block; 
+      font-size:8pt;
+      margin:10px;
+      vertical-align: text-top; 
+      width:100px; 
+      
+      overflow: hidden
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      
+    }
+    
+    div.details {
+      display:inline-block; 
+      margin:10px;
+      background-color: lightgray;
+      vertical-align: text-top; 
+      width: calc(100% - 20px); 
+      overflow: hidden
+    }
+    
+    div.details  img.thumb {
+      width: 300px;
+      vertical-align: text-top; 
+      float: left;
+      margin: 20px;
+      
+    }
+    
+    div.details .tracks {
+      display:inline-block; 
+      margin:10px;
+      vertical-align: text-top; 
+      width: calc(100% - 420px);
+       border-spacing: 0;
+    border-collapse: collapse;
+      
+    }
+    .track td {
+        vertical-align: text-top; 
+
+    }
+    .track {
+  
+    }
+    .selected {
+      background-color: darkgray;
+      color: white;
+    }
+    
+    div.details .title {
+      font-size: 150%;  
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    
+    div.details .parentTitle {
+      font-size: 120%;  
+      margin-top: 3px;
+     
+    }
+  </style>
+<div id="content">
+  <div id="media">
+  </div>
+  <div id="controls">  
+    <audio controls="" preload="auto">
+      <source src="" type="audio/mpeg"></source>
+    </audio>
+    <span id="track-info"></span>
+  </div>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -1,4 +1,4 @@
-function openComponent(name, text) {
+export function openComponent(name, text) {
   let link = _getLink(text);
   link.addEventListener("click", () => {
     lively.openComponentInWindow(name).then(comp => {
@@ -7,13 +7,6 @@ function openComponent(name, text) {
       comp.livelyExample();
     });
   });
-  
-  return link;
-}
-
-function openBrowser(path, text) {
-  let link = _getLink(text);
-  link.addEventListener("click", () => lively.openBrowser(lively4url + "/" + path));
   
   return link;
 }
@@ -62,7 +55,7 @@ async function _createNewFile(subdir, name, input) {
   if (await lively.files.existFile(url)) {
     lively.notify("Could not create " + url + ", because it already exists!");
   } else {
-    let src = '<script>\nlively.loadJavaScriptThroughDOM("thulur-utils", lively4url + "/doc/PX2018/project_2/utils.js");\n</script>\n';
+    let src = '<script>\nimport { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"\n</script>\n';
     src += '<link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">\n\n# \n\n'; 
     
     await lively.files.saveFile(url, src);
