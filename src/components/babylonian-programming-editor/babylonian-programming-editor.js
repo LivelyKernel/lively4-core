@@ -74,7 +74,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/3_classes.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners
@@ -507,28 +507,29 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   onSliderChanged(slider, exampleId, value) {
     // Get the location for the body
-    const node = this.nodeForAnnotation(slider);
-    const bodyLocation = LocationConverter.astToKey({
-      start: node.loc.start,
-      end: node.body.loc.end
-    });
+    const path = this.pathForAnnotation(slider);
+    const includedIds = [];
+    traverse(path.node.body, {
+        Identifier(path) {
+          includedIds.push(path.node._id);
+        },
+        BlockStatement(path) {
+          path.skip();
+        },
+        BlockParent(path) {
+          path.skip();
+        }
+      },
+      path.scope,
+      path
+    );
 
-    // Get all probes in the body
-    const includedProbes = this._annotations.probes.filter((probe) => {
-      const probeLocation = probe.locationAsKey;
-      const beginsAfter = probeLocation[0] > bodyLocation[0]
-                          || (probeLocation[0] === bodyLocation[0]
-                              && probeLocation[1] >= bodyLocation[1]);
-      const endsBefore = probeLocation[2] < bodyLocation[2]
-                         || (probeLocation[2] === bodyLocation[2]
-                             && probeLocation[3] <= bodyLocation[3]);
-      return beginsAfter && endsBefore;
+    // Get all probes directly in the body
+    this._annotations.probes.forEach((probe) => {
+      if(includedIds.includes(this.nodeForAnnotation(probe)._id)) {
+        probe.setActiveRunForExampleId(exampleId, value);
+      }
     });
-    
-    // Tell all probes about the selected run
-    for(let probe of includedProbes) {
-      probe.setActiveRunForExampleId(exampleId, value);
-    }
   }
   
   onExampleStateChanged(example, newIsOn) {

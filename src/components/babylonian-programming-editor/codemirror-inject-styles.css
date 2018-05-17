@@ -69,7 +69,7 @@
 }
 
 .marker.probe, .marker.slider {
-  background-color: hsla(198, 69%, 67%, 0.2);
+  background-color: hsla(198, 69%, 67%, 0.4);
 }
 
 .marker.replacement {
