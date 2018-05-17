@@ -330,9 +330,10 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("window.__tracker.id(__exampleId, ID, VALUE)")({
+  const returnTracker = template("window.__tracker.id(ID, __exampleId, __blockCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
-    VALUE: path.node.argument
+    VALUE: path.node.argument,
+    NAME: types.stringLiteral("return")
   });
   path.get("argument").replaceWith(returnTracker);
 }
