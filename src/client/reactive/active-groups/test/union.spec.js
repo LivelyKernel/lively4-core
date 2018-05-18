@@ -21,10 +21,10 @@ describe('.union operator', function() {
             min: 15,
             max: 50
         };
-        var view1 = select(ValueHolder, function(data) {
+        var view1 = select(ValueHolder).filter(function(data) {
             return range1.min <= data.value && data.value <= range1.max;
         });
-        var view2 = select(ValueHolder, function(data) {
+        var view2 = select(ValueHolder).filter(function(data) {
             return range2.min <= data.value && data.value <= range2.max;
         });
         var v1 = new ValueHolder(10);

@@ -3,7 +3,7 @@ import Point from '../point.js';
 import BlockchainTransactionView from 'templates/blockchain-transaction.js';
 
 export default class TransactionNode extends Node {
-  constructor(transaction = null, location = new Point(0, 0), size = new Point(600, 30)) {
+  constructor(transaction = null, location = new Point(0, 0), size = new Point(300, 30)) {
     super(location, size);
     this.transaction = transaction;
   }

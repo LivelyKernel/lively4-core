@@ -144,13 +144,12 @@ export default class Lively {
     // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
-    var load = System.loads[changedModule]
+    var load = System.loads[changedModule];
     if (!load) {
-      await this.unloadModule(path) // just to be sure...
-      console.warn("Don't reload non-loaded module")
-      return
+      await this.unloadModule(path); // just to be sure...
+      console.warn("Don't reload non-loaded module");
+      return;
     }
-    var modulePaths = [path];
     await this.unloadModule(path);
     let mod = await System.import(path);
 
@@ -163,11 +162,18 @@ export default class Lively {
     //   return mod
     // }
 
-    // Find all modules that depend on me
-    let dependedModules = lively.findDependedModules(path);
+    let dependedModules;
+    if(path.match('client/reactive')) {
+      // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
+      dependedModules = lively.findDependedModules(path, true);
+      dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+    } else {
+      // Find all modules that depend on me
+      dependedModules = lively.findDependedModules(path);
+    }
+
     // and update them
     for(let ea of dependedModules) {
-      modulePaths.push(ea)
       // console.log("reload " + path + " triggers reload of " + ea)
       System.registry.delete(ea);
     }
@@ -189,7 +195,7 @@ export default class Lively {
     /**
      * Update Templates: Reload a template's .html file
      */
-    [path].concat(modulePaths).forEach(eaPath => {
+    [path].concat(dependedModules).forEach(eaPath => {
       console.log("update dependend: ", eaPath, 3, "blue")
       let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
       if (found) {

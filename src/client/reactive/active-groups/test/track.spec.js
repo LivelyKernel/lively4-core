@@ -23,18 +23,18 @@ describe('instance tracking', function() {
     }
     
     let neverTracked = new ValueHolder(10);
-    let beforeTracking = select(ValueHolder, v => v.val >= 5);
+    let beforeTracking = select(ValueHolder).filter(v => v.val >= 5);
     new ValueHolder(10);
     
     trackInitializeAndDestroy(ValueHolder);
     
-    let afterTracking = select(ValueHolder, v => v.val >= 5);
+    let afterTracking = select(ValueHolder).filter(v => v.val >= 5);
     
     let spy = sinon.spy();
 
     var threshold = { min: 0 },
         initialValue = 3;
-    select(AValueClass, data => data.value > threshold.min)
+    select(AValueClass).filter(data => data.value > threshold.min)
       .reduce((acc, instance) => acc + instance.value, initialValue)
       .onChange(spy);
     expect(spy).to.not.have.been.called;

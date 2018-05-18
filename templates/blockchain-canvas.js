@@ -10,6 +10,7 @@ import TransactionsController from 'src/blockchain/control/transactionsControlle
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class BlockchainCanvas extends Morph {
+  
   async initialize() {
     this.windowTitle = "BlockchainCanvas";
     
@@ -23,7 +24,7 @@ export default class BlockchainCanvas extends Morph {
     return this._controller;
   }
   
-  async draw() {
+  draw() {
     this._controller.draw();
   }
   

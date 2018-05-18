@@ -8,7 +8,6 @@ import TransactionOutputCollection from 'src/blockchain/model/transaction/transa
 
 export default class BlockchainTransaction extends Morph {
   
-  
   async initialize() {
     this.windowTitle = "BlockchainTransactionView";
     this._transaction = null;

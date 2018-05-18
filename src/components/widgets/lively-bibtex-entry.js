@@ -5,13 +5,57 @@ import latexconv from "src/external/latex-to-unicode-converter.js"
 export default class LivelyBibtexEntry extends Morph {
   async initialize() {
     this.windowTitle = "LivelyBibtexEntry";
+    this.value = Parser.toJSON(this.textContent)[0];
+    this.addEventListener("dblclick", evt => this.onDblClick(evt))
+    
+    this.get("#entry").addEventListener("dragstart", evt => this.onDragStart(evt))
+    this.get("#entry").draggable = true;
+    
+  }
+
+  async onDragStart(evt) {
+    
+    if (evt.ctrlKey) {
+      evt.dataTransfer.setData("text/plain", this.innerHTML)
+    } else {
+      evt.dataTransfer.setData("text/plain", "[@" + this.key + "]")
+    }
+
+  }
+  
+  onDblClick(evt) {
+    if (this.getAttribute("mode") == "edit") {
+      var newvalue 
+      try {
+        newvalue = Parser.toJSON(this.textContent)
+      } catch(e) {
+        lively.notify("could not parse bibtex entry: " + e)
+      }
+      if (newvalue && newvalue[0]) {
+        this.value = newvalue[0]
+        this.setAttribute("mode", "view")
+        this.removeAttribute("contenteditable")
+      } 
+    } else {
+      this.setAttribute("mode", "edit")
+      this.setAttribute("contenteditable", "true")      
+    }
   }
   
   get value() {
     return this._value
   }
   
+  parseAuthors(bibtexAuthors) {
+    return bibtexAuthors.split(/ and /).map(ea => ea.split(/, /).reverse().join(" "))
+  }
+  
   set value(obj) {
+    if (obj) {
+      this.textContent = Parser.toBibtex([obj], false)
+    } else {
+      this.textContent = ""
+    }
     this._value = obj
     this.updateView()
   }
@@ -21,9 +65,9 @@ export default class LivelyBibtexEntry extends Morph {
     this.value = other.value
   }
   updateView() {
-    if (!this.value) return;
+    if (!this.value || !this.value.entryTags ) return;
     this.get("#key").textContent = this.key
-    this.get("#author").textContent = latexconv.convertLaTeXToUnicode(this.author)
+    this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ")
     this.get("#year").textContent = this.year
     this.get("#title").textContent = latexconv.convertLaTeXToUnicode(this.title)
   }
@@ -40,7 +84,8 @@ export default class LivelyBibtexEntry extends Morph {
   }
   
   get author() {
-    return this.value.entryTags.Author || this.value.entryTags.author 
+    return this.value.entryTags && 
+      (this.value.entryTags.Author || this.value.entryTags.author) 
   }
 
   set author(string) {
@@ -77,7 +122,6 @@ export default class LivelyBibtexEntry extends Morph {
   
   setFromBibtex(string) {
     this.value = Parser.toJSON(string)[0]
-    this.updateView()
   }
   
   

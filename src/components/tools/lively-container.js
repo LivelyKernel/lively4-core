@@ -1297,8 +1297,9 @@ export default class Container extends Morph {
     }   
   }
 
-  saveEditsInView(url) {
+  async saveEditsInView(url) {
     url = (url || this.getURL()).toString();
+    var contentElement = this.childNodes[0]
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
@@ -1313,6 +1314,10 @@ export default class Container extends Morph {
         //   title: "saved HTML",
         //   color: "green"});
        });
+    } else if (contentElement && contentElement.livelySource) {
+      var source = contentElement.livelySource()
+      if (source.then) source = await source; // maybe some elements take a while to generate their source
+      return this.saveSource(url, source);
     } else {
       lively.notify("Editing in view not supported for the content type!");
     }

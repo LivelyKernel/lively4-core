@@ -14,7 +14,7 @@ describe('.filter operator', function() {
             min: 0,
             max: 20
         };
-        var positiveData = select(DataHolder, function(data) {
+        var positiveData = select(DataHolder).filter(function(data) {
             return data.value > range.min;
         });
         new DataHolder(17);

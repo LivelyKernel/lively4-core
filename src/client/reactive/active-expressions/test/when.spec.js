@@ -33,12 +33,7 @@ describe("when utility", function() {
     expect(spy).to.be.calledOnce;
   });
   it("resolves instantaneously", async () => {
-    let spy = sinon.spy();
-    let condition = true;
-    
-    when(() => condition).then(spy);
-    await wait(50);
-    expect(spy).to.be.calledOnce;
+    await when(() => true);
   });
   it("integrates with await", async () => {
     await when(() => true);

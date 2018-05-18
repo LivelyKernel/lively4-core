@@ -290,7 +290,7 @@ export default class HTML {
             node.dataset.lively4Donotpersist == 'all');
   }
   
-  static async loadHTMLFromURL(url) {
+  static async loadHTMLFromURL(url, zoom=1) {
     var html = await fetch(url).then(r => {
       if (r.status != 200) {
         throw new Error("Could not load HTML from " + url + " due to status " + r.status)
@@ -298,7 +298,7 @@ export default class HTML {
       return r.text()
     })
     var tmp = await lively.create("div")
-    tmp.style.transform = "scale(2)"
+    tmp.style.transform = `scale(${zoom})`
     lively.setGlobalPosition(tmp, pt(0,0))
     try {
       lively.clipboard.pasteHTMLDataInto(html, tmp)
@@ -311,11 +311,12 @@ export default class HTML {
   static async saveAsPNG(url) {
     if (url.match(/\.html$/)) {
       var saveAsURL = url.replace(/html$/, "png")
-      var element = await this.loadHTMLFromURL(url)
+      var zoom = 2
+      var element = await this.loadHTMLFromURL(url, zoom)
       document.body.appendChild(element)
       // await lively.sleep(100)
       try {
-        await Rasterize.elementToURL(element, saveAsURL)      
+        await Rasterize.elementToURL(element, saveAsURL, zoom)      
       } finally {
         element.remove()
       }

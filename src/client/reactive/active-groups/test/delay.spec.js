@@ -13,7 +13,7 @@ describe('.delay operator', function() {
         this.timeout(10000);
 
         var otherInstance1 = new OtherClass(42);
-        var baseView = select(OtherClass, function(data) {
+        var baseView = select(OtherClass).filter(function(data) {
             return data.value === 42;
         });
         var otherInstance2 = new OtherClass(42);
