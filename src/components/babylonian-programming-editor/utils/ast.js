@@ -186,7 +186,6 @@ export const applyProbes = (ast, annotations) => {
     },
     Program(path) {
       insertBlockTracker(path);
-      insertExampleId(path);
     }
   });
 };
@@ -215,7 +214,6 @@ export const applyInstances = (ast, instances) => {
  */
 export const applyExamples = (ast, examples) => {
   // Prepare templates to insert
-  const exampleId = template("__exampleId = EXAMPL")
   const functionCall = template("ID.apply(null, PARAMS)");
   const staticMethodCall = template("CLASS.ID.apply(null, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
@@ -272,7 +270,7 @@ export const applyExamples = (ast, examples) => {
     
     // Insert a call at the end of the script
     if(nodeToInsert) {
-      ast.program.body.push(template(`__exampleId = "${example.id}"`)());
+      ast.program.body.push(template(`window.__tracker.exampleId = "${example.id}"`)());
       ast.program.body.push(nodeToInsert);
     }
   });
@@ -283,7 +281,7 @@ export const applyExamples = (ast, examples) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const tracker = template("window.__tracker.id(ID, __exampleId, __blockCount, VALUE, NAME)")({
+  const tracker = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: deepCopy(path.node),
     NAME: types.stringLiteral(stringForPath(path))
@@ -339,7 +337,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("window.__tracker.id(ID, __exampleId, __blockCount, VALUE, NAME)")({
+  const returnTracker = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")
@@ -354,19 +352,10 @@ const insertBlockTracker = (path) => {
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const tracker = template("const __blockCount = window.__tracker.block(__exampleId, __blockId)")();
+  const tracker = template("const __blockCount = window.__tracker.block(window.__tracker.exampleId, __blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
 };
-
-/**
- *
- */
-const insertExampleId = (path) => {
-  // Add global example ID
-  const globalExampleId = template("let __exampleId = 0")();
-  path.unshiftContainer("body", globalExampleId);
-}
 
 /**
  * Returns a list of parameter names for the given function Identifier

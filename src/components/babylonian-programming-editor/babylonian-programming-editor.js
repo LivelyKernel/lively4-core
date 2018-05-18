@@ -30,6 +30,8 @@ import Slider from "./annotations/slider.js";
 import Example from "./annotations/example.js";
 import Replacement from "./annotations/replacement.js";
 import Instance from "./annotations/instance.js";
+import InstanceWidget from "./ui/instance-widget.js";
+import StatusBar from "./ui/status-bar.js";
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
@@ -67,7 +69,10 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._activeExamples = []; // [Example]
 
     // Timer to evaluate when user stops writing
-    this.evaluateTimer = new Timer(500, this.evaluate.bind(this));
+    this._evaluateTimer = new Timer(500, this.evaluate.bind(this));
+    
+    // Status Bar
+    this._statusBar = new StatusBar(this.get("#status"));
     
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -82,7 +87,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       // Event listeners
       this.editor().on("change", () => {
         this.syncIndentations();
-        this.evaluateTimer.start();
+        this._evaluateTimer.start();
       });
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
@@ -94,6 +99,11 @@ export default class BabylonianProgrammingEditor extends Morph {
       
       // Inject styling into CodeMirror
       // This is dirty, but currently necessary
+      const livelyEditorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/lively-code-editor-inject-styles.css`}></link>;
+      const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
+      this.livelyEditor().shadowRoot.appendChild(livelyEditorStyle);
+      this.editorComp().shadowRoot.appendChild(codeMirrorStyle);
+      /*
       fetch(`${COMPONENT_URL}/codemirror-inject-styles.css`).then(result => {
         result.text().then(styles => {
           const node = document.createElement('style');
@@ -101,6 +111,7 @@ export default class BabylonianProgrammingEditor extends Morph {
           this.editorComp().shadowRoot.appendChild(node);
         });
       });
+      */
     });
   }
   
@@ -360,12 +371,14 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Update examples
+    this.updateExamples();
+  }
+  
+  updateExamples() {
     for(let example of this._annotations.examples) {
-      if(example.default) {
-        continue;
-      }
       const path = this.pathForAnnotation(example);
       example.keys = parameterNamesForFunctionIdentifier(path);
+      example.error = ""
     }
   }
 
@@ -415,6 +428,12 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._activeExamples.splice(activeIndex, 1);
     }
     annotation.clear();
+    
+    // If the annotation was an instance, we have to update the examples that might have used it
+    if(annotation._widget instanceof InstanceWidget) {
+      this.updateExamples();
+    }
+    
     this.evaluate();
   }
   
@@ -423,7 +442,9 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Evaluating code
    */
   
-  async parse() {    
+  async parse() {
+    this.status("parsing");
+    
     // Serialize annotations
     let serializedAnnotations = {};
     for(let key of ["probes", "sliders", "replacements", "instances"]) {
@@ -437,6 +458,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       serializedAnnotations
     );
     if(!ast) {
+      this.status("error", "Could not parse code");
       return;
     }
 
@@ -446,6 +468,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // (we can't do this in the worker because it create a cyclical structure)
     generateLocationMap(ast);
     
+    this.status();
     return code;
   }
   
@@ -454,9 +477,6 @@ export default class BabylonianProgrammingEditor extends Morph {
       return;
     }
     
-    // Update UI first
-    this.updateAnnotations();
-    
     // Parse the code
     const code = await this.parse()
     if(!code) {
@@ -464,8 +484,18 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
 
     // Execute the code
+    this.status("evaluating");
     console.log("Executing", code);
-    this.execute(code);
+    const evalError = this.execute(code);
+    
+    // Show the results
+    if(!evalError) {
+      this.updateAnnotations();
+      this.updateDeadMarkers();
+      this.status()
+    } else {
+      this.status("error", evalError.message);
+    }
   }
   
   execute(code) {
@@ -475,12 +505,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     try {
       eval(code);
-      // Show the results
-      this.updateAnnotations();
-      this.updateDeadMarkers();
+      return null;
     } catch (e) {
       console.warn("Could not execute code");
       console.error(e);
+      return e;
     }
   }
 
@@ -576,6 +605,18 @@ export default class BabylonianProgrammingEditor extends Morph {
       return this.pathForKey(annotation.locationAsKey);
     }
     return null;
+  }
+  
+  status(status = null, message = null) {
+    this._statusBar.setStatus(status, message);
+    if(status === "error") {
+      // Show the error at the relevant example
+      const example = this._annotations.examples.find(example =>
+                        example.id === window.__tracker.exampleId);
+      if(example) {
+        example.error = message;
+      }
+    }
   }
   
   pathForKey(key) {

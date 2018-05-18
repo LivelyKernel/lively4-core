@@ -46,6 +46,12 @@
   font: inherit;
 }
 
+.widget .error {
+  background-color: hsla(344, 54%, 63%, 0.2);
+  color: rgb(151, 45, 46);
+  border-radius: 3px;
+}
+
 .widget-line {
   display: block;
   width: max-content;

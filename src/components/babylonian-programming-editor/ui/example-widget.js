@@ -18,6 +18,8 @@ export default class ExampleWidget extends InputWidget {
     this._nameElement = null; // input
     this._instanceElement = null; // {element, input}
     this._elements = new Map(); // Map(key, {element, input})
+    this._errorElement = <span class="error"></span>;
+    this._update();
   }
   
   set keys(keys) {
@@ -138,6 +140,7 @@ export default class ExampleWidget extends InputWidget {
     this._keys.forEach((key) => {
       this._element.appendChild(this._getFormElementForKey(key).element);
     })
+    this._element.appendChild(this._errorElement);
   }
                                            
   _onSwitchClicked() {
@@ -206,6 +209,14 @@ export default class ExampleWidget extends InputWidget {
   set name(name) {
     this._nameElement.value = name;
     this._nameElement.dispatchEvent(new Event("input"));
+  }
+  
+  set error(error) {
+    if(error && error.length) {
+      this._errorElement.textContent = `Error: ${error}`;
+    } else {
+      this._errorElement.textContent = "";
+    }
   }
 }
 

@@ -45,6 +45,7 @@ export const defaultTracker = () => ({
   ids: new Map(), // Map(id, Map(exampleId, Map(runId, [{type, value}]))) 
   blocks: new Map(), // Map(id, Map(exampleId, runCounter))
   executedBlocks: new Set(), // Set(id)
+  exampleId: defaultExample().id,
 
   // Functions
   id: function(id, exampleId, runId, value, name) {

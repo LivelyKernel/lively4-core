@@ -31,6 +31,10 @@ export default class Example extends InputAnnotation {
     this._widget.keys = keys;
   }
   
+  set error(error) {
+    this._widget.error = error;
+  }
+  
   serializeForWorker() {
     return {
       location: this.locationAsKey,
