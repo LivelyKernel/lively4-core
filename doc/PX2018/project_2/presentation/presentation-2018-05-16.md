@@ -133,12 +133,12 @@ presentButton
 import boundEval from "src/client/bound-eval.js";
 import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
-//(async () => {
-//  let mpm = await (<lively-mpm></lively-mpm>);
-//  let containerClass = "mpm " + presentationSize;
+(async () => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  let containerClass = "mpm " + presentationSize;
 
-//  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}>{mpm}</div></div>;
-//})()
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}>{mpm}</div></div>;
+})()
 </script>
 
 ---

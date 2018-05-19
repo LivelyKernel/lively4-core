@@ -1,5 +1,8 @@
-export default class VibratingPoint {
+import MpmAnimation from 'doc/PX2018/project_2/mpmanimation.js';
+
+export default class VibratingPoint extends MpmAnimation {
   constructor() {
+    super();
     VibratingPoint.Mp = 1;
     VibratingPoint.Vp = 1;
     
@@ -8,18 +11,14 @@ export default class VibratingPoint {
     this.E = 0.001 * Math.PI * Math.PI;
     this.L = 200;
     this.dtime = 20;
-    
     this.standardS = 0;
     this.nodes = [1, 100];   
     this.standardVp = 0.1;
     this.standardQ = VibratingPoint.Mp * this.standardVp;
-    
-    this.particles = [];
     this.q = [];
     this.s = [];
     this.vp = [];
     this.numParticles = 1;
-    this.animating = false;
   }
   
   set numParticles(value) {
@@ -39,24 +38,11 @@ export default class VibratingPoint {
     return this._numParticles;
   }
   
-  get running() {
-    return this.animating;
-  }
-  
   get numParticles() {
     return this._numParticles;
   }
   
-  stopAnimating(id) {
-    this.animating = false;
-  }
-  
-  startAnimating(caller) {
-    this.animating = true; 
-    this.animate(caller);
-  }
-  
-  animate(caller) {
+  calculate(caller) {
     this.E = caller.young != null ? caller.young * Math.PI * Math.PI : this.E;
     this.L = caller.extend != null ? caller.extend : this.L;
     this.dtime = caller.speed != null ? caller.speed : this.dtime;
@@ -87,12 +73,6 @@ export default class VibratingPoint {
       let Lp = dN1 * v1 + dN2 * v2; 
       let dEps = this.dtime * Lp; 
       this.s[i] = this.s[i] + this.E * dEps;
-    }
-
-    caller.draw(this.particles);
-    
-    if (this.animating) {
-      window.requestAnimationFrame(this.animate.bind(this, caller));  
     }
   }
 }
