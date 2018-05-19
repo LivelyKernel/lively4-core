@@ -102,29 +102,9 @@ presentButton
 ---
 <div class="title-1">Initial State</div>
 
-<script>
-import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
-
-(async () => {
-  let vivideView = await (<vivide-view-demo></vivide-view-demo>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleData = [
-    {name: "object", subclasses:[{name: "morph"},]},
-    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
-    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
-  ];
-  vivideView.newDataFromUpstream(exampleData);
-  newScriptFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
-    vivideScriptEditor.setView(vivideView);
-    let scripts = vivideView.getScripts();
-    vivideScriptEditor.setScripts(scripts);
-  });
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
-})()
-</script>
+<ul class="notes notes-big">
+<li>Component removed</li>
+</ul>
 
 ---
 <div class="title-1">Planned Features</div>
