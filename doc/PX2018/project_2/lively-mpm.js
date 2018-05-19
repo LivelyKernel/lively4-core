@@ -1,5 +1,7 @@
 "enable aexpr";
 
+// TODO: Animation start/stop button
+
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
 
@@ -57,15 +59,12 @@ export default class LivelyMpm extends Morph {
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    // Start animating
-    new Promise(() => this.animation.execute(this));
+    
   }
   
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      //console.log("width: ", particles[i] + (this.canvas.width / 2) - 50);
-      //console.log("height: ", (this.canvas.height / particles.length) * (i + 1));
       this.context.fillRect(particles[i] + (this.canvas.width / 2) - (this.animation.L / 2), (this.canvas.height / (particles.length + 1)) * (i + 1), this.particleSize, this.particleSize);
     }
   }
@@ -73,6 +72,17 @@ export default class LivelyMpm extends Morph {
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
     
+  }
+  
+  onToggleAnimation() {
+    if (this.animation.running) {
+      this.animation.stopAnimating();
+      this.get("#toggleAnimation").innerHTML = "start";
+    } else {
+      // Start animating
+      this.animation.startAnimating(this);
+      this.get("#toggleAnimation").innerHTML = "stop";
+    }
   }
 
   /* Lively-specific API */
