@@ -42,12 +42,12 @@ export default class VivideScriptEditor extends Morph {
     this.editorList.innerHTML = '';
     this.editorList.appendChild(<span>Next Level</span>);
     this.editorList.appendChild(<span>-- transform --</span>);
-    this.scripts.transform.forEach(element => createStepEditorFor(element, "transform"));
+    this.scripts.transform.forEach(script => createStepEditorFor(script, script.type));
     this.editorList.appendChild(<span>-- extract --</span>);
-    this.scripts.extract.forEach(element => createStepEditorFor(element, "extract"));
+    this.scripts.extract.forEach(script => createStepEditorFor(script, script.type));
     if(this.scripts.descent) {
       this.editorList.appendChild(<span>-- descent --</span>);
-      this.scripts.descent.forEach(element => createStepEditorFor(element, "descent"));
+      this.scripts.descent.forEach(script => createStepEditorFor(script, script.type));
     }
   }
   
@@ -64,9 +64,9 @@ export default class VivideScriptEditor extends Morph {
     this.view.scriptGotUpdated(scripts);
   }
   
-  stepChanged(editor, stepScript) {
+  stepChanged(editor, stepSource) {
     let scripts = this.scripts;
-    scripts[editor.id] = new Array(stepScript);
+    scripts[editor.id][0].source = stepSource;
     this.scripts = scripts;
     
     if (this.scripts) {

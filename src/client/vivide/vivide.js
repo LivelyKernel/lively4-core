@@ -1,13 +1,15 @@
 import { uuid } from 'utils';
 import { stepFolder, scriptFolder } from './utils.js';
-import { pt } from 'src/client/graphics.js'
+import { pt } from 'src/client/graphics.js';
+import Script from 'src/client/vivide/script.js';
 
 export async function newScriptFromTemplate() {
   async function copyStep(type) {
     let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
     let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
+    let script = new Script(stepTemplate, type);
     
-    return stepTemplate;
+    return script;
   }
   
   let scripts = {

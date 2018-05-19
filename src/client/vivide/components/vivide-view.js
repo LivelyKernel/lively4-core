@@ -275,7 +275,7 @@ export default class VivideView extends Morph {
   }
   
   async updateScript(script) {
-    let module = await boundEval(script);
+    let module = await boundEval(script.source);
     return module;
   }
   

@@ -18,7 +18,7 @@ export default class VivideStepEditor extends Morph {
   }
   
   setStepScript(script) {
-    this.editor.value = script;
+    this.editor.value = script.source;
   }
   async stepSaved(text) {
     if(!this.editor.value) {
