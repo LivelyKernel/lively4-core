@@ -120,6 +120,11 @@ export default class SliderWidget extends InputWidget {
   }
   
   fire() {
-    this._examples.forEach((e) => this._fireFunctions.get(e.id)());
+    [defaultExample()].concat(this._examples).forEach((e) => {
+      const fireFunction = this._fireFunctions.get(e.id);
+      if(typeof fireFunction === "function") {
+        fireFunction();
+      }
+    });
   }
 }

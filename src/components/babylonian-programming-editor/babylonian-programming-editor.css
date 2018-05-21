@@ -15,6 +15,6 @@
 
 #status.error {
   background-color: hsla(344, 54%, 63%, 0.2);
-  border-color: rgb(151, 45, 46);
+  border-color: hsla(344, 54%, 63%, 0.6);
   color: rgb(151, 45, 46);
 }

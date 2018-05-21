@@ -458,7 +458,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       serializedAnnotations
     );
     if(!ast) {
-      this.status("error", "Could not parse code");
+      this.status("error", "Could not parse code", false);
       return;
     }
 
@@ -607,9 +607,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     return null;
   }
   
-  status(status = null, message = null) {
+  status(status = null, message = null, isOnExample = true) {
     this._statusBar.setStatus(status, message);
-    if(status === "error") {
+    if(status === "error" && isOnExample) {
       // Show the error at the relevant example
       const example = this._annotations.examples.find(example =>
                         example.id === window.__tracker.exampleId);

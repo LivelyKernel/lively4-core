@@ -49,4 +49,4 @@ function fun() {
     default:
       console.log("large");
   }
-}/* Examples: {"probes":[{"location":[31,2,31,10]},{"location":[33,4,33,12]}],"sliders":[{"location":[30,0,30,3]},{"location":[32,2,32,5]}],"examples":[{"location":[38,9,38,12],"id":"e259-552c-02ee","name":"","values":{},"instanceId":"0"}],"replacements":[],"instances":[]} */
+}/* Examples: {"probes":[{"location":[31,2,31,10]},{"location":[33,4,33,12]},{"location":[42,5,42,8]}],"sliders":[{"location":[30,0,30,3]},{"location":[32,2,32,5]}],"examples":[{"location":[38,9,38,12],"id":"e259-552c-02ee","name":"Some Example","values":{},"instanceId":"0"}],"replacements":[],"instances":[]} */
