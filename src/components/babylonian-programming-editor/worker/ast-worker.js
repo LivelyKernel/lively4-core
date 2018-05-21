@@ -22,11 +22,11 @@ export default onmessage = function(msg) {
   // Process the code
   try {
     const ast = parse(code);
+    applyBasicModifications(ast);
     const originalAst = deepCopy(ast);
 
     // Process AST
     generateLocationMap(ast);
-    applyBasicModifications(ast);
     if(annotations.replacements) {
       applyReplacements(ast, annotations.replacements);
     }

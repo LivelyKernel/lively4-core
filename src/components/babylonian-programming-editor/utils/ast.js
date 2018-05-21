@@ -15,8 +15,14 @@ import { defaultBabylonConfig } from "./defaults.js";
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!
  */
-export const deepCopy = (obj) =>
-  JSON.parse(JSON.stringify(obj));
+export const deepCopy = (obj) => {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch(e) {
+    console.warn("Could not deeply clone object", obj);
+    return Object.assign({}, obj);
+  }
+}
 
 /**
  * Generates a locationMap for the AST
@@ -27,6 +33,10 @@ export const generateLocationMap = (ast) => {
   traverse(ast, {
     enter(path) {
       let location = path.node.loc;
+      if(!location) {
+        return;
+      }
+      
       // Some Nodes are exceptions
       if(path.isReturnStatement()) {
         // ReturnStatements are associated with the "return" keyword
@@ -122,22 +132,64 @@ export const assignIds = (ast) => {
   let idCounter = 1;
   traverse(ast, {
     enter(path) {
-      path.node._id = idCounter++;
+      path.node._id = nextId();
     }
   });
   return ast;
 };
+const assignId = (node) => {
+  node._id = nextId();
+  return node;
+}
+let ID_COUNTER = 1;
+const nextId = () => ID_COUNTER++;
 
 
 /**
  * Applies basic modifications to the given AST
  */
 export const applyBasicModifications = (ast) => {
-  /*traverse(ast, {
-    Program(path) {
-      
+  const wrapPropertyOfPath = (path, property) => {
+    const oldBody = path.get(property);
+    const oldBodyNode = path.node[property];
+    if(!oldBodyNode) {
+      return;
     }
-  });*/
+    if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
+      // This is already a block
+      return;
+    } else if(oldBody instanceof Array) {
+      const newBodyNode = prepForInsert(types.blockStatement(oldBodyNode));
+      path.node[property] = [newBodyNode];
+    } else {
+      const newBodyNode = prepForInsert(types.blockStatement([oldBodyNode]));
+      oldBody.replaceWith(newBodyNode);
+    }
+    return path;
+  }
+  
+  // Enforce that all bodies are in BlockStatements
+  traverse(ast, {
+    BlockParent(path) {
+      if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+        return;
+      }
+      if(!path.node.body) {
+        console.warn("A BlockParent without body: ", path);
+      }
+      
+      wrapPropertyOfPath(path, "body");
+    },
+    IfStatement(path) {
+      for(let property of ["consequent", "alternate"]) {
+        wrapPropertyOfPath(path, property);
+      }
+    },
+    SwitchCase(path) {
+      console.log(path);
+      wrapPropertyOfPath(path, "consequent");
+    }
+  });
 }
 
 /**
@@ -349,6 +401,9 @@ const insertReturnTracker = (path) => {
  * Inserts a tracker to check whether a block was entered
  */
 const insertBlockTracker = (path) => {
+  if(typeof path.node._id === "undefined") {
+    return;
+  }
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
@@ -403,5 +458,28 @@ export const bodyForPath = (path) => {
     return path.parentPath.get("body");
   }
   return null;
+}
+
+const assignLocationToBlockStatement = (node) => {
+  if(node.body.length) {
+    node.loc = {
+      start: node.body[0].loc.start,
+      end: node.body[node.body.length - 1].loc.end
+    }
+  } else {
+    node.loc = {
+      start: { line: 1, column: 0 },
+      end: { line: 1, column: 0 }
+    };
+  }
+  return node;
+}
+
+const prepForInsert = (node) => {
+  assignId(node);
+  if(node.type === "BlockStatement") {
+    assignLocationToBlockStatement(node);
+  }
+  return node;
 }
 

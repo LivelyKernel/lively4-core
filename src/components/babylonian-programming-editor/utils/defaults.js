@@ -1,3 +1,5 @@
+import { deepCopy } from "./ast.js";
+
 export const defaultExample = () => ({
   id: 0,
   name: "script",
@@ -78,7 +80,7 @@ export const defaultTracker = () => ({
             .get(runId)
             .push({
               type: typeof(value),
-              value: this._clone(value),
+              value: deepCopy(value),
               name: name
             });
     
@@ -97,10 +99,6 @@ export const defaultTracker = () => ({
   },
   
   // Utils
-  _clone: function(obj) {
-    // TODO: Cyclical structures...
-    return JSON.parse(JSON.stringify(obj));
-  },
   _identitySymbols:  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','🐬','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'],
   _identities: new Map(), // Map(identity, symbol)
 });
