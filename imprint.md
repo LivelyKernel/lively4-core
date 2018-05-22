@@ -29,7 +29,16 @@ Each time this website is accessed, the following details of the request will be
 
 This website utilizes JavaScript to enhance its usability. If JavaScript is disabled in the browser, some of this site's functionality will not work as intended or at all.
 
-<b>Wiki:</b> The Lively4 development environment allows all users to create new content and change the behavior of the environment itself. Those changes can be stored in browser local storage and published on GitHub. For publishing files on GitHub an OAuth authentication is used. Modified data and meta-data are stored on the server and on GitHub in git repositories. 
+**Wiki:** The Lively4 development environment allows all users to create new content and change the behavior of the environment itself. Those changes can be stored in browser local storage and published on [GitHub](). For publishing files on GitHub an OAuth authentication is used. Modified data and meta-data are stored on the server and on GitHub in git repositories. 
 The authentication token will not be stored on the server, but is kept in browser local storage.  
+
+**Travis:**  To display continuous integration information, the [Travis](https://docs.travis-ci.com/imprint.html) service is used and your IP address and other data is transmitted to:
+
+<pre>
+Travis CI GmbH
+Rigaer Straße 8
+10247 Berlin
+Germany
+</pre>
 
 <p> Please refer to <a href="https://hpi.de/en/datenschutz.html" rel="external">hpi.de/en/datenschutz.html</a> for HPI's detailed data privacy statement. </p>
