@@ -94,15 +94,15 @@ export default class ResearchDiary extends Morph {
 
 - 
 
-## Todos for Today
+## MITs for Today
 
 - 
 
-## Done
+## Chore
 
 - 
 
-## Todo
+## Todo for Tomorrow
 
 - 
 `;
@@ -111,7 +111,7 @@ export default class ResearchDiary extends Morph {
     let content = this.entryTemplate();
     
     this.codeEditor.editor.setValue(content);
-    this.codeEditor.editor.setCursor({line: 4, ch: 0});
+    this.codeEditor.editor.setCursor({line: 8, ch: 0});
     this.codeEditor.editor.execCommand("goLineEnd")
     this.codeEditor.editor.focus();
     

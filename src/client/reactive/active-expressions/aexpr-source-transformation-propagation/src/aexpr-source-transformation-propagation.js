@@ -105,7 +105,6 @@ class RewritingActiveExpression extends BaseActiveExpression {
 
   dispose() {
     super.dispose();
-    lively.success("dispose")
     aexprStorage.disconnectAll(this);
     aexprStorageForLocals.disconnectAll(this);
   }

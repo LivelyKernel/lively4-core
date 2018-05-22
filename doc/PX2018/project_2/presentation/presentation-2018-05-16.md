@@ -1,6 +1,7 @@
 <!-- markdown-config presentation=true -->
 
 <script>
+// TODO: 
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
 let presentationSize = "hd";
@@ -40,6 +41,18 @@ let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
 presentButton.addEventListener("click", () => {
   let slides = presentation.querySelectorAll('.lively-slide');
+  let width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  let height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+  
+  // Fit presentation into screen
+  if (width >= 1920 && height >= 1080) {
+    presentationSize = "fullhd";
+  } else if (width >= 1600 && height >= 900) {
+    presentationSize = "hd";
+  } //else if (width >= 1280 && height >= 800) {
+    //lively.notify("some strange resolution of HPI beamers")
+  //}
+
   
   slides.forEach(slide => {
     slide.className += ' fullscreen-' + presentationSize;
