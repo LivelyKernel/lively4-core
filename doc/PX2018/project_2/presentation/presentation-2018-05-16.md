@@ -52,6 +52,9 @@ presentButton.addEventListener("click", () => {
   } //else if (width >= 1280 && height >= 800) {
     //lively.notify("some strange resolution of HPI beamers")
   //}
+  else {
+    presentationSize = "standard-vga"
+  }
 
   
   slides.forEach(slide => {
