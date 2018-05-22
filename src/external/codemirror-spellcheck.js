@@ -33,16 +33,18 @@ async function loadIgnoreDict() {
   return (await focalStorage.getItem(spellCheckKey)) || {};
 }
 
-async function saveIgnoreDict(dict) { return (await focalStorage.setItem(spellCheckKey), dict);
+async function saveIgnoreDict(dict) { 
+  return (await focalStorage.setItem(spellCheckKey, dict));
 }
 
+export var ignoreDict
 
 export async  function startSpellCheck(cm, typo) {
 	if (!cm || !typo) return; // sanity
 
-	// startSpellCheck.ignoreDict = {}; // dictionary of ignored words
-  if (!startSpellCheck.ignoreDict ) {
-    startSpellCheck.ignoreDict = await loadIgnoreDict()
+	// ignoreDict = {}; // dictionary of ignored words
+  if (!ignoreDict ) {
+    ignoreDict = await loadIgnoreDict()
   }
   
 	// Define what separates a word
@@ -72,7 +74,7 @@ export async  function startSpellCheck(cm, typo) {
       // console.log("w", word, "type ", token.type)
       // if (token.type && token.type.match("url")) return null; 
 
-      if (startSpellCheck.ignoreDict && startSpellCheck.ignoreDict[word]) return null;
+      if (ignoreDict && ignoreDict[word]) return null;
 			if (!typo.check(word)) return "spell-error"; // CSS class: cm-spell-error
 		}
 	}
@@ -185,8 +187,9 @@ export function getSuggestionBox(typo) {
 			sboxHide(sbox)
 			let cm = sbox.codeMirror, correction = e.target.value;
 			if (correction == '##ignoreall##') {
-				startSpellCheck.ignoreDict[sbox.token] = true;
-        saveIgnoreDict(startSpellCheck.ignoreDict);
+        
+				ignoreDict[sbox.token] = true;
+        saveIgnoreDict(ignoreDict);
 				cm.setOption('maxHighlightLength', (--cm.options.maxHighlightLength) + 1); // ugly hack to rerun overlays
 			} else {
 				cm.replaceRange(correction, { line: sbox.cmpos.line, ch: sbox.cmpos.start}, { line: sbox.cmpos.line, ch: sbox.cmpos.end});
