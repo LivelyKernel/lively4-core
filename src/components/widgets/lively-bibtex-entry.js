@@ -76,7 +76,7 @@ export default class LivelyBibtexEntry extends Morph {
   }
   
   generateFilename() {
-    return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join("") +`_${this.year}_${Strings.toUpperCaseFirst(Strings.toCamelCase(latexconv.convertLaTeXToUnicode(this.title).replace(/(^| )[aA] /,"")).replace(/[:,\-_'"\`\$\%{}()\[\]]/g,""))}` 
+    return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join("") +`_${this.year}_${Strings.toUpperCaseFirst(Strings.toCamelCase(latexconv.convertLaTeXToUnicode(this.title).replace(/(^| )[aA] /,"")).replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g,""))}` 
   }
   
   
