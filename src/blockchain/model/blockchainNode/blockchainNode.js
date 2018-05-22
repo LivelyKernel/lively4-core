@@ -27,6 +27,13 @@ export default class BlockchainNode {
     this._miner.addTransaction(transaction);
   }
   
+  handleBlockchain(blockchain) {
+    if(blockchain) {
+      return;
+    }
+    //TODO: Validate blockchain before saving
+  }
+  
   // Sending to other nodes (via network component)
   
   propagateBlock(block) {

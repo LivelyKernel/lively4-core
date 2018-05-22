@@ -3,11 +3,23 @@ const NETWORK_LATENCY = 1;
 export default class NetworkComponent {
   
   constructor(node) {
-    self._node = node;
-    self._addSelfToGlobalListOfPeers();
+    this._node = node;
+    this._addSelfToGlobalListOfPeers();
   }
   
-  // Simplified Peer-Handling: All peers are known via central source of truth
+  requestBlockchain() {
+    NetworkComponent.peers.forEach(peer => {
+      this._simulateNetwork(peer.provideBlockchain.bind(this, this));
+    });
+  }
+  
+  provideBlockchain(peer) {
+    if(this._node._blockchain) {
+      peer.receiveBlockchain(this._node._blockchain);
+    }
+  }
+  
+  // simplified Peer-Handling: All peers are known via central source of truth
   _addSelfToGlobalListOfPeers() {
     if(NetworkComponent.peers != null) {
       NetworkComponent.peers = new Array();
@@ -42,6 +54,10 @@ export default class NetworkComponent {
   
   receiveTransaction(transaction) {
     this._node.handleTransaction(transaction);
+  }
+  
+  receiveBlockchain(blockchain) {
+    this._node.handleBlockchain(blockchain);
   }
   
 }
