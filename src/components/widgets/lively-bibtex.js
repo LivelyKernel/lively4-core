@@ -37,6 +37,7 @@ export default class LivelyBibtex extends Morph {
   }
   
   onCopy(evt) {
+    if (this.isEditing()) return;
     var data = this.selectedEntries().map(ea => ea.textContent).join("")
     evt.clipboardData.setData('text/plain', data);   
     evt.stopPropagation()
@@ -44,11 +45,13 @@ export default class LivelyBibtex extends Morph {
   }
   
   onCut(evt) {
+    if (this.isEditing()) return;
     this.onCopy(evt)
     this.selectedEntries().forEach(ea => ea.remove())
   }
 
   async onPaste(evt) {
+    if (this.isEditing()) return;
     var scroll = this.scrollTop
     var data = evt.clipboardData.getData('text');
     var entries = this.parseEntries(data)
@@ -71,6 +74,10 @@ export default class LivelyBibtex extends Morph {
     } catch(e) {
       lively.notify("Bibtex could not parse: " + source) 
     }
+  }
+  
+  isEditing() {
+    return this.currentEntry && (this.currentEntry.getAttribute("mode") == "edit")
   }
   
   async onDrop(evt) {
@@ -102,11 +109,15 @@ export default class LivelyBibtex extends Morph {
   }
   
   onClick(evt) {
+    if (this.isEditing()) return;
     // var oldScroll
-    lively.focusWithoutScroll(this.get("#copyHack"))
     var entry = this.findEntryInPath(evt.path)
     if (!entry) return;
     this.select(entry, evt.shiftKey)
+    
+    if (entry.getAttribute("mode") != "edit") {
+      lively.focusWithoutScroll(this.get("#copyHack"))
+    }
   }
   
   select(entry, keepSelection) {
