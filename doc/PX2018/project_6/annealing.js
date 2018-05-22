@@ -3,9 +3,7 @@ For now a copy of the d3 labeler from https://github.com/tinker10/D3-Labeler, to
 */
 import d3 from "src/external/d3.v5.js"
 
-(function() {
-
-d3.graphAnneal = function() {
+export default function() {
   var nodes = [],
       links = [],
       w = 1, // box width
@@ -169,5 +167,3 @@ d3.graphAnneal = function() {
 
   return graphAnneal;
 };
-
-})();
