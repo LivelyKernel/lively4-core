@@ -11,7 +11,7 @@ export default class D3Example extends Morph {
   
   async initialize() {
     this.windowTitle = "D3Example";
-    this._svg = d3.select(lively.query(this, "#svgContainer"));
+    this._svg = this.shadowRoot.querySelector('#svgContainer');
   }
   
   get svg() {
@@ -19,20 +19,26 @@ export default class D3Example extends Morph {
   }
   
   async livelyExample() {
-    //this.svg.exit().remove();
-    /*
-    this.svg.append("circle")
-      .attr("cx", 100)
-      .attr("cy", 100)
-      .attr("r", 100)
-      .attr("fill", "red");
-    */
-    
-    const node = this.svg.selectAll(".node")
-      .data([{hash: "0xffffff"}])
-      .enter()
-      .append("g");
-    
-    node.append("circle").attr("class", "node").attr("cx", "100").attr("cy", "100");
+    this._data = [
+      {hash: "324dwqad3we"},
+      {hash: "qwf3q4wfqwa"},
+      {hash: "nw8fqodwewq"},
+      {hash: "slnfiewolsd"},
+      {hash: "09hjqwbdv8q"}
+    ];
+    let counter = 1;
+    this._data.forEach(element => {
+      const group = d3.select(this._svg)
+        .append('g')
+          .attr('class', 'node');
+      group.append('circle')
+        .attr('cx', 50*counter)
+        .attr('cy', 50*counter);
+      group.append('text')
+        .text(element.hash)
+        .attr('x', 50*counter + 15)
+        .attr('y', 50*counter + 7);
+      counter += 1;
+    });    
   }
 }
