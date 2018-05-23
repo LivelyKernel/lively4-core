@@ -15,8 +15,21 @@ export default class BlockchainNode {
     this._wallet = new Wallet();
   }
   
-  checkBlockchain(blockchain) {
-    
+  blockchainIsValid(blockchain) {
+    // Currently double spend check is not implemented
+    let currentBlock = blockchain.headOfChain;
+    let counter = 0;
+    while(currentBlock) {
+      counter += 1;
+      if(!currentBlock.isVerified()) {
+        return false;
+      }
+      currentBlock = blockchain.get(currentBlock.previousHash);
+    }
+    if(counter != blockchain.size()) {
+      return false;
+    }
+    return true;
   }
   
   handleBlock(block) {
