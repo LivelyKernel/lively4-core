@@ -8,15 +8,14 @@ export default class NetworkComponent {
   }
   
   requestBlockchain() {
-    NetworkComponent.peers.forEach(peer => {
-      this._simulateNetwork(peer.provideBlockchain.bind(this, this));
-    });
+    // select random peer
+    const peer = NetworkComponent.peers[Math.floor(Math.random() *  NetworkComponent.peers.length) + 1];
+    // request blockchain
+    this._simulateNetwork(peer.provideBlockchain.bind(this, this));
   }
   
   provideBlockchain(peer) {
-    if(this._node._blockchain) {
-      peer.receiveBlockchain(this._node._blockchain);
-    }
+    peer.receiveBlockchain(this._node._blockchain);
   }
   
   // simplified Peer-Handling: All peers are known via central source of truth
@@ -57,7 +56,11 @@ export default class NetworkComponent {
   }
   
   receiveBlockchain(blockchain) {
-    this._node.handleBlockchain(blockchain);
+    if(blockchain) {
+      this._node.handleBlockchain(blockchain);
+    } else {
+      this.requestBlockchain();
+    }
   }
   
 }

@@ -15,6 +15,10 @@ export default class BlockchainNode {
     this._wallet = new Wallet();
   }
   
+  checkBlockchain(blockchain) {
+    
+  }
+  
   handleBlock(block) {
     this._blockchain.add(block);
   }
