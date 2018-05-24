@@ -30,12 +30,12 @@ export default class ProbeWidget extends Widget {
 
   _update() {
     // Gets a string representaion for a single run
-    const stringForRun = (run) => {
+    const elementForRun = (run) => {
       // run: [{type, value}]
       if(run[0].value instanceof Array) {
         // We have an array
         if(run.length > 1) {
-          let combinedArray = run[0].value.map(e => [e, undefined]);
+          const combinedArray = run[0].value.map(e => [e, undefined]);
           for(let i in run[1].value) {
             if(i < combinedArray.length) {
               combinedArray[i][1] = run[1].value[i];
@@ -43,9 +43,20 @@ export default class ProbeWidget extends Widget {
               combinedArray.push([undefined, run[1].value[i]]);
             }
           }
-          return `[${combinedArray.map(e => e[0] == e[1] ? `${e[0]}` : `${e[0]} → ${e[1]}`).join(", ")}]`;
+          const arrayElement = <span class="run array"></span>;
+          for(let entry of combinedArray) {
+            if(entry[0] !== entry[1]) {
+              arrayElement.appendChild(<span class="old-value">{entry[0]}</span>);
+            }
+            arrayElement.appendChild(<span class="new-value">{entry[1]}</span>);
+          }
+          return arrayElement;
         } else {
-          return `[${run[0].value.join(", ")}]`;
+          const arrayElement = <span class="run array"></span>;
+          for(let entry of run[0].value) {
+            arrayElement.appendChild(<span class="new-value">{entry}</span>);
+          }
+          return arrayElement;
         }
       } else if(run[0].value instanceof Object) {
         // We have to print the key-value pairs
@@ -61,33 +72,51 @@ export default class ProbeWidget extends Widget {
             combinedObj[key] = [undefined, run[run.length-1].value[key]];
           }
         }
-        const propStrings = [];
+        const propElement = <span class="properties"></span>;
         for(let key in combinedObj) {
           if(key === "__tracker_identity") {
             continue;
           }
           if(combinedObj[key][0] === combinedObj[key][run.length-1]) {
-            propStrings.push(`  ${key}: ${run[0].value[key]}`);
+            propElement.appendChild(<span class="property">
+                <span class="key">{key}</span>
+                <span class="new-value">{run[run.length-1].value[key]}</span>
+              </span>);
           } else {
-            propStrings.push(`  ${key}: ${run[0].value[key]} → ${run[run.length-1].value[key]}`);
+            propElement.appendChild(<span class="property">
+                <span class="key">{key}</span>
+                <span class="old-value">{run[0].value[key]}</span>
+                <span class="new-value">{run[run.length-1].value[key]}</span>
+              </span>);
           }
         }
         
         // Check the identity
-        let identityString;
-        if(combinedObj.__tracker_identity[0] === combinedObj.__tracker_identity[1]) {
-          identityString = combinedObj.__tracker_identity[0];
-        } else {
-          identityString = `${combinedObj.__tracker_identity[0]} → ${combinedObj.__tracker_identity[1]}`;
+        let identityElement = <span class="identity space-after"></span>;
+        if(combinedObj.__tracker_identity[0] !== combinedObj.__tracker_identity[1]) {
+          identityElement.appendChild(<span class="old-value emoji ">
+              {combinedObj.__tracker_identity[0]}
+            </span>);
         }
+        identityElement.appendChild(<span class="new-value emoji">
+            {combinedObj.__tracker_identity[1]}
+          </span>);
         
-        return `${identityString}:{\n${propStrings.join("\n")}\n}`;
+        return <span class="object">
+            {identityElement}
+            {propElement}
+          </span>;
       } else {
         // We can just print the value
         if(run.length < 2 || run[0].value === run[run.length-1].value) {
-           return `${run[0].value}`;
+          return <span class="run">
+            <span class="new-value">{run[0].value}</span>
+          </span>;
         } else {
-          return `${run[0].value} → ${run[run.length-1].value}`;
+          return <span class="run">
+            <span class="old-value">{run[0].value}</span>
+            <span class="new-value">{run[run.length-1].value}</span>
+          </span>;
         }
       }
     }
@@ -95,19 +124,16 @@ export default class ProbeWidget extends Widget {
     // Gets a string representation for a single example
     const elementForExample = (example, index) => {
       // example: {id, name, color}
-      let valueString = "";
+      let valueElement = <span class="probe-value"></span>
       const runs = this._values.get(example.id); // Map(runId, {type, value})
       
       if(this._activeRuns.has(example.id)
          && this._activeRuns.get(example.id) !== -1) {
-        valueString = stringForRun(runs.get(this._activeRuns.get(example.id)));
+        valueElement.appendChild(elementForRun(runs.get(this._activeRuns.get(example.id))));
       } else {
-        valueString= Array.from(runs.values())
-                          .map(stringForRun)
-                          .join(" | ");
-        if(valueString.length > MAX_VALUESTRING_LENGTH) {
-          valueString = valueString.substring(0, MAX_VALUESTRING_LENGTH) + "...";
-        }
+        Array.from(runs.values())
+             .map(elementForRun)
+             .forEach((e) => valueElement.appendChild(e));
       }
       
       // Show a delete button for the first element, and just a space for all others
@@ -116,26 +142,36 @@ export default class ProbeWidget extends Widget {
         leftSpace = DeleteButton(this._deleteCallback);
       }
       
+      let variableName = <span></span>;
+      if(index === 0) {
+        variableName = <span class="id-name space-after">{Array.from(runs.values())[0][0].name}</span>;
+      }
+      
       let exampleName = "";
       if(example.id !== defaultExample().id) {
         exampleName = <span
-          class="example-name"
+          class="example-name space-after"
           style={"background-color:" + example.color}>
           {example.name.length ? example.name : "\u00A0"}
         </span>;
       }
       
-      return <span class="widget-line">
-        {leftSpace}
-        {exampleName}
-        &nbsp;
-        {Array.from(runs.values())[0][0].name}:
-        <span class="probe-value">{valueString}</span>
-      </span>
+      return <tr class="widget-line">
+        <td class="probe-meta">
+          {leftSpace}
+          {variableName}
+        </td>
+        <td class="probe-example">
+          {exampleName}
+          {valueElement}
+        </td>
+      </tr>
     }
     
     // Iterate over all examples and get their values
     this._element.innerHTML = "";
+    let table = <table></table>;
+    this._element.appendChild(table);
     let examples = Array.from(this._examples);
     if(this._values.has(defaultExample().id)) {
       examples.unshift(defaultExample());
@@ -143,7 +179,7 @@ export default class ProbeWidget extends Widget {
     
     const newChildren = examples.filter((e) => this._values.has(e.id))
                                 .map(elementForExample);
-    newChildren.forEach((e) => this._element.appendChild(e));
+    newChildren.forEach((e) => table.appendChild(e));
     
     // Hide if empty
     if(newChildren.length === 0) {

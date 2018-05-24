@@ -13,14 +13,14 @@
   padding: 0;  
 }
 
-.widget.probe .widget-line, .widget.slider .widget-line {
-  background-color: hsla(198, 69%, 67%, 0.4);
-  padding: 0 4px;
-}
-
 .example-name {
   border-radius: 3px;
   padding-left: 4px;
+}
+
+.probe-example .example-name {
+  padding-right: 4px;
+  height: fit-content;
 }
 
 .widget.replacement {
@@ -29,14 +29,22 @@
 
 .widget.example, .widget.instance {
   background-color: hsla(41, 39%, 38%, 0.2);
-  border-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
 }
 
 .CodeMirror-linewidget:last-of-type > .widget.example,
-.CodeMirror-linewidget:last-of-type > .widget.instance,
-.widget.probe .widget-line:last-of-type,
-.widget.slider .widget-line:last-of-type {
+.CodeMirror-linewidget:last-of-type > .widget.instance {
   border-bottom-left-radius: 3px;
+}
+
+.widget-line:last-of-type .probe-meta {
+  border-bottom-left-radius: 3px;
+}
+
+.widget-line .probe-example {
+  border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
 }
 
@@ -50,16 +58,6 @@
   background-color: hsla(344, 54%, 63%, 0.2);
   color: rgb(151, 45, 46);
   border-radius: 3px;
-}
-
-.widget-line {
-  display: block;
-  width: max-content;
-}
-
-.widget-line:after {
-  content: "\A";
-  white-space: pre;
 }
 
 .marker {
@@ -91,8 +89,109 @@
   opacity: 0.5;
 }
 
-.probe-value {
-  white-space: pre;
+.widget > table {
+  border-collapse: collapse;
+  border: none;
+}
+
+.widget > table > tr {
+  vertical-align: top;
+}
+
+.widget > table td {
+  padding: 0;
+}
+
+.widget > table td.probe-meta {
+  padding-left: 4px;
+}
+
+.widget > table td.probe-example {
+  padding-right: 4px;
+}
+
+.probe-example {
+  display: flex;
+  width: max-content;
+}
+
+.probe-meta, .probe-example {
+  background-color: hsla(198, 69%, 67%, 0.4);
+}
+
+.probe-value .old-value {
+  text-decoration: line-through;
+}
+
+.probe-value .run {
+  border-right: 1px solid black;
+  margin-right: 1ch;
+}
+
+.probe-value .run:last-of-type {
+  border-right: none;
+  margin-right: 0;
+}
+
+.object {
+  display: flex;
+}
+
+.object .properties {
+  display: flex;
+  flex-direction: row;
+}
+
+.object .properties::before {
+  content: "{";
+}
+
+.object .properties::after {
+  content: "}";
+}
+
+.object .key::after {
+  content: ":";
+}
+
+.object .property .new-value::after {
+  content: ",";
+}
+
+.object .property:last-of-type .new-value::after {
+  content: "";
+}
+
+.id-name::after {
+  content: ":";
+}
+
+.array {
+  padding-right: 1ch;
+}
+
+.array:last-of-type {
+  padding-right: 0;
+}
+
+.array::before {
+  content: "[";
+}
+
+.array::after {
+  content: "]";
+}
+
+.array .new-value::after {
+  content: ",";
+}
+
+.array .new-value:last-of-type::after {
+  content: "";
+}
+
+.slider-input {
+  width: 200px;
 }
 
 .delete-button {
@@ -108,12 +207,19 @@
 }
 
 .widget.probe .delete-button, .widget.probe .delete-button {
-  width: 1ch;
   padding-right: 2px;
 }
 
 .space-before {
   margin-left: 1ch;
+}
+
+.space-before {
+  margin-left: 1ch;
+}
+
+.space-after {
+  margin-right: 1ch;
 }
 
 .switch-button {
@@ -130,3 +236,9 @@
   content: "\f204";
 }
 
+.emoji {
+  display: inline-block;
+  width: 2ch;
+  margin-top: -3px;
+  height: 18px;
+}

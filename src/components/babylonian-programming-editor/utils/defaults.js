@@ -1,5 +1,3 @@
-import { deepCopy } from "./ast.js";
-
 export const defaultExample = () => ({
   id: 0,
   name: "script",
@@ -80,7 +78,7 @@ export const defaultTracker = () => ({
             .get(runId)
             .push({
               type: typeof(value),
-              value: deepCopy(value),
+              value: this._clone(value),
               name: name
             });
     
@@ -101,4 +99,12 @@ export const defaultTracker = () => ({
   // Utils
   _identitySymbols:  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','🐬','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'],
   _identities: new Map(), // Map(identity, symbol)
+  _clone: function(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch(e) {
+    console.warn("Could not deeply clone object", obj);
+    return Object.assign({}, obj);
+  }
+}
 });

@@ -34,7 +34,7 @@ export default class SliderWidget extends InputWidget {
                       min="0"
                       max="0"
                       value="0"
-                      style="width: 200px"
+                      class="slider-input space-after"
                     ></input>;
 
       const status = <span></span>;
@@ -50,7 +50,7 @@ export default class SliderWidget extends InputWidget {
       let exampleName = "";
       if(example.id !== defaultExample().id) {
         exampleName = <span
-          class="example-name"
+          class="example-name space-after"
           style={"background-color:" + example.color}>
           {example.name.length ? example.name : "\u00A0"}
         </span>;
@@ -58,12 +58,16 @@ export default class SliderWidget extends InputWidget {
       
       return {
         element: (
-          <span class="widget-line">
-            <span class="left-space"></span>
-            {exampleName}
-            {input}
-            {status}
-          </span>),
+          <tr class="widget-line">
+            <td class="probe-meta">
+              <span class="left-space space-after"></span>
+            </td>
+            <td class="probe-example">
+              {exampleName}
+              {input}
+              {status}
+            </td>
+          </tr>),
         input: input,
         status: status
       };
@@ -90,7 +94,7 @@ export default class SliderWidget extends InputWidget {
       element.status.textContent = statusString(element.input.valueAsNumber, newMax);
       
       // Show a delete button for the first element, and just a space for all others
-      let leftSpace = <span>&nbsp;</span>;
+      let leftSpace = <span></span>;
       if(index === 0) {
         leftSpace = DeleteButton(this._deleteCallback);
       }
@@ -98,10 +102,12 @@ export default class SliderWidget extends InputWidget {
       leftSpaceContainer.innerHTML = "";
       leftSpaceContainer.appendChild(leftSpace);
       
-      this._element.appendChild(element.element);
+      this._table.appendChild(element.element);
     };
     
     this._element.textContent = "";
+    this._table = <table></table>;
+    this._element.appendChild(this._table);
     
     // Generate UI for all examples
     let examples = Array.from(this._examples);
