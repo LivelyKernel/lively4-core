@@ -187,7 +187,7 @@ export default class LivelyContainerNavbar extends Morph {
       stats = {};// fake it
       stats.contents = [{type: "file", name: "index.html"}];
       
-      var html = await fetch(root).then(r => r.text())
+      var html = await fetch(root.replace(/\/?$/,"/")).then(r => r.text())
       var div = document.createElement("div");
       div.innerHTML = html;
       var i=0;

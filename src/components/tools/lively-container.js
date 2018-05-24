@@ -1121,6 +1121,11 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
         }
+      } else if (format == "xhtml") {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>');
+        }
       } else {
         this.sourceContent = content;
         if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
