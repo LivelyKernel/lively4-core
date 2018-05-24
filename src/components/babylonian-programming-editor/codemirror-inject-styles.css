@@ -124,7 +124,7 @@
 }
 
 .probe-value .run {
-  border-right: 1px solid black;
+  border-right: 1px solid rgba(0, 0, 0, 0.6);
   margin-right: 1ch;
 }
 
@@ -144,26 +144,33 @@
 
 .object .properties::before {
   content: "{";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .object .properties::after {
   content: "}";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .object .key::after {
   content: ":";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .object .property .new-value::after {
-  content: ",";
+  content: ", ";
+  white-space: pre;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .object .property:last-of-type .new-value::after {
   content: "";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .id-name::after {
   content: ":";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .array {
@@ -176,14 +183,18 @@
 
 .array::before {
   content: "[";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .array::after {
   content: "]";
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .array .new-value::after {
-  content: ",";
+  content: ", ";
+  white-space: pre;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .array .new-value:last-of-type::after {
