@@ -1,18 +1,26 @@
 import Blockchain from "../blockchain/blockchain.js";
-import NetworkComponent from "networkComponent.js";
+import NetworkComponent from "./networkComponent.js";
 import Wallet from "../wallet/wallet.js";
-import Miner from "miner.js";
+import Miner from "./miner.js";
 
 export default class BlockchainNode {
   
   constructor(firstNode = false) {
+    this._wallet = new Wallet();
     this._blockchain = null;
     if(firstNode) {
-      this._blockchain = new Blockchain();
+      this._blockchain = new Blockchain(this._wallet);
     }
-    this._networkComponent = new NetworkComponent(self);
-    this._miner = new Miner();
-    this._wallet = new Wallet();
+    this._networkComponent = new NetworkComponent(this);
+    this._miner = new Miner(this);
+  }
+  
+  get blockchain() {
+    return this._blockchain;
+  }
+  
+  get wallet() {
+    return this._wallet;
   }
   
   blockchainIsValid(blockchain) {
