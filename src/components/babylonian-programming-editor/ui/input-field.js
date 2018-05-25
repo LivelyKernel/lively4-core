@@ -28,13 +28,17 @@ export default class InputField {
     });
     
     // Connector
-    this._connector = <span class="connector"></span>;
+    this._connector = <span class="icon connector off"></span>;
     this._connector.addEventListener("click", () => {
-      setTimeout(() => {
-        document.addEventListener("click", (e) => {
-          this.target = e.target.shadowRoot ? e.target.shadowRoot.querySelector("canvas") : e.target.querySelector("canvas");
-        }, {once : true});
-      }, 100);
+      if(this._target) {
+        this.target = null;
+      } else {
+        setTimeout(() => {
+          document.addEventListener("click", (e) => {
+            this.target = e.target.shadowRoot ? e.target.shadowRoot.querySelector("canvas") : e.target.querySelector("canvas");
+          }, {once : true});
+        }, 100);
+      }
     });
     
     // Element
@@ -72,6 +76,14 @@ export default class InputField {
     }
   }
   
+  get valueForSave() {
+    if(this._target) {
+      return "";
+    } else {
+      return this._input.value;
+    }
+  }
+  
   set value(value) {
     this._input.value = value;
     this.fireChange();
@@ -81,15 +93,20 @@ export default class InputField {
     this._target = target;
     if(this._target) {
       this._input.style.display = "none"
+      this._element.style.border = "none";
+      this._connector.classList.remove("off");
       // Set up target
       if(!window.__connectors) {
         window.__connectors = {};
       }
       window.__connectors[this._id] = () => {
         target.getContext("2d").clearRect(0, 0, target.width, target.height);
-        target.style.border = `3px solid ${this._example.color}`;
         return target;
       };
+    } else {
+      this._input.style.display = "";
+      this._element.style.border = "";
+      this._connector.classList.add("off");
     }
     this.fireChange();
   }

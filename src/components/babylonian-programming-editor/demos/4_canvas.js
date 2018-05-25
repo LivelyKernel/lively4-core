@@ -1,6 +1,20 @@
-function drawBall(canvas, x, y, r) {
-  const context = canvas.getContext("2d");
-  context.beginPath();
-  context.arc(x, y, r, 0, Math.PI*2);
-  context.fill();
-}/* Examples: {"probes":[],"sliders":[],"examples":[{"location":[1,9,1,17],"id":"4bb6-ba2a-fbdd","name":"","values":{"canvas":"","x":"100","y":"100","r":"20"},"instanceId":"0"}],"replacements":[],"instances":[]} */
+function drawSmiley(canvas, eyeColor) {
+  if (canvas.getContext) {
+    let ctx = canvas.getContext('2d');
+    if(eyeColor) {
+      ctx.fillStyle = eyeColor;
+    }
+    ctx.beginPath();
+    ctx.arc(75, 75, 50, 0, Math.PI * 2, true); // Outer circle
+    ctx.moveTo(110, 75);
+    ctx.arc(75, 75, 35, 0, Math.PI, false);  // Mouth (clockwise)
+    ctx.moveTo(65, 65);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(60, 65, 5, 0, Math.PI * 2, true);  // Left eye
+    ctx.moveTo(95, 65);
+    ctx.arc(90, 65, 5, 0, Math.PI * 2, true);  // Right eye
+    ctx.fill();
+    ctx.stroke();
+  }
+}/* Examples: {"probes":[],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"20bb-e3d5-b35c","name":"","values":{"canvas":"","eyeColor":"\"green\""},"instanceId":"0"},{"location":[1,9,1,19],"id":"b0f4-d0e5-c0e9","name":"","values":{"canvas":"","eyeColor":"\"brown\""},"instanceId":"0"}],"replacements":[],"instances":[]} */

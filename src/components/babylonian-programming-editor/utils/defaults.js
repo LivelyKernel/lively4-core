@@ -73,6 +73,10 @@ export const defaultTracker = () => ({
       }
     }
     
+    if(value instanceof CanvasRenderingContext2D) {
+      value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
+    }
+    
     this.ids.get(id)
             .get(exampleId)
             .get(runId)

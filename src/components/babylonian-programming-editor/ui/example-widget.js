@@ -143,24 +143,10 @@ export default class ExampleWidget extends InputWidget {
     }
   }
   
-  _onConnectorSelection(target, input) {
-    // Find a canvas in the target
-    if(target.shadowRoot) {
-      target = target.shadowRoot;
-    }
-    const canvas = target.querySelector("canvas");
-    if(!canvas) {
-      return;
-    }
-    window.__connector.register(this, input.name, canvas);
-    input.value = `window.__connector.retrieve(["${this._id}_${input.name}"]()`;
-    this._changeCallback(this._id);
-  }
-  
   get values() {
     let result = {};
     this._keys.forEach(k => {
-      result[k] = this._elements.get(k).input.value
+      result[k] = this._elements.get(k).input.valueForSave
     });
     return result;
   }

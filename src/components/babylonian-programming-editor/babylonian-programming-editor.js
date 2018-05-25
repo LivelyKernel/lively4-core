@@ -161,7 +161,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         obj.load(instance);
       }
       for(let example of annotations.examples) {
-        const obj = this.addExampleAtPath(this.pathForKey(example.location), true);
+        const obj = this.addExampleAtPath(this.pathForKey(example.location), false);
         obj.load(example);
       }
       for(let replacement of annotations.replacements) {
@@ -218,7 +218,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         if(path.parentPath.isClassDeclaration()) {
           this.addInstanceAtPath(path);
         } else {
-          this.addExampleAtPath(path);
+          this.addExampleAtPath(path, false);
         }
         break;
       case "replacement":

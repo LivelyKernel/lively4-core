@@ -205,20 +205,19 @@
   width: 200px;
 }
 
-.delete-button {
-  cursor: pointer;
-  opacity: 0.8;
-  color: maroon;
+.icon {
   font-family: "FontAwesome";
   display: inline-block;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.delete-button {
+  color: maroon;
 }
 
 .delete-button::before {
   content: "\f00d"
-}
-
-.connector {
-  cursor: pointer;
 }
 
 .widget.probe .delete-button, .widget.probe .delete-button {
@@ -235,12 +234,6 @@
 
 .space-after {
   margin-right: 1ch;
-}
-
-.switch-button, .connector {
-  cursor: pointer;
-  font-family: "FontAwesome";
-  opacity: 0.8;
 }
 
 .switch-button.on::before {
@@ -261,6 +254,11 @@
 .input-field {
   border: 1px solid rgba(0, 0, 0, 0.6);
   border-radius: 3px;
+  display: inline-block;
+}
+
+.connector.off {
+  opacity: 0.5;
 }
 
 .connector::before {
