@@ -33,6 +33,7 @@ import Instance from "./annotations/instance.js";
 import InstanceWidget from "./ui/instance-widget.js";
 import StatusBar from "./ui/status-bar.js";
 
+
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/components/babylonian-programming-editor";
 const USER_MARKER_KINDS = ["example", "replacement", "probe"];
@@ -81,7 +82,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/4_canvas.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners

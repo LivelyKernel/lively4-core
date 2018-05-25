@@ -46,7 +46,7 @@ export default class ProbeWidget extends Widget {
           const arrayElement = <span class="run array"></span>;
           for(let entry of combinedArray) {
             if(entry[0] !== entry[1]) {
-              arrayElement.appendChild(<span class="old-value">{entry[0]}</span>);
+              arrayElement.appendChild(<span class="old-value space-after">{entry[0]}</span>);
             }
             arrayElement.appendChild(<span class="new-value">{entry[1]}</span>);
           }

@@ -1,5 +1,6 @@
 import InputWidget from "./input-widget.js";
 import { DeleteButton, SwitchButton } from "./buttons.js";
+import InputField from "./input-field.js";
 import {
   defaultInstance,
   guid
@@ -36,33 +37,18 @@ export default class ExampleWidget extends InputWidget {
   
   // Creates a single form element
   _makeFormElementForKey(key) {
-    const fieldId = `form-${this._id}-${key}`;
-
     // Textfield
-    const input = <input
-                    type="text"
-                    id={fieldId}
-                    name={key}
-                    size="4"
-                    value=""
-                    placeholder="init"></input>
-
-    input.addEventListener("input", () => {
-      input.setAttribute("size", input.value.length ? input.value.length : 4);
-    });
-    input.addEventListener("change", () => {
-      this._changeCallback(this._id);
-    });
+    const input = new InputField(this, key, "null", "", this._changeCallback);
 
     // Label
     const label = <label
-                    for={fieldId}
+                    for={input.id}
                   >{key + ":"}</label>
 
     return {
       element: <span>
                  {label}
-                 {input}
+                 {input.element}
                </span>,
       input: input
     };
@@ -157,6 +143,20 @@ export default class ExampleWidget extends InputWidget {
     }
   }
   
+  _onConnectorSelection(target, input) {
+    // Find a canvas in the target
+    if(target.shadowRoot) {
+      target = target.shadowRoot;
+    }
+    const canvas = target.querySelector("canvas");
+    if(!canvas) {
+      return;
+    }
+    window.__connector.register(this, input.name, canvas);
+    input.value = `window.__connector.retrieve(["${this._id}_${input.name}"]()`;
+    this._changeCallback(this._id);
+  }
+  
   get values() {
     let result = {};
     this._keys.forEach(k => {
@@ -169,7 +169,7 @@ export default class ExampleWidget extends InputWidget {
     this.keys = Object.keys(values);
     for(let key of this._keys) {
       this._elements.get(key).input.value = values[key];
-      this._elements.get(key).input.dispatchEvent(new Event("input"));
+      this._elements.get(key).input.fireChange();
     }
   }
   
@@ -204,6 +204,10 @@ export default class ExampleWidget extends InputWidget {
     } else {
       return "";
     }
+  }
+  
+  get color() {
+    return this._color;
   }
     
   set name(name) {
