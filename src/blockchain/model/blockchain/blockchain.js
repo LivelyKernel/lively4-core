@@ -4,7 +4,7 @@ export default class Blockchain {
   constructor(wallet) {
     this._blocks = new Map();
     this.headOfChain = new GenesisBlock(wallet);
-    this._blocks.set(this._headOfChain.hash, this._headOfChain);
+    this._blocks.set(this.headOfChain.hash, this._headOfChain);
   }
   
   add(block) {

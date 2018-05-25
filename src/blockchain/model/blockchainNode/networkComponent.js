@@ -20,7 +20,7 @@ export default class NetworkComponent {
   
   // simplified Peer-Handling: All peers are known via central source of truth
   _addSelfToGlobalListOfPeers() {
-    if(NetworkComponent.peers != null) {
+    if(NetworkComponent.peers == null) {
       NetworkComponent.peers = new Array();
     }
     NetworkComponent.peers.push(self);
