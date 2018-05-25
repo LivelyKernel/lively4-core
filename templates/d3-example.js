@@ -18,8 +18,8 @@ export default class D3Example extends Morph {
     return this._svg;
   }
   
-  async livelyExample() {
-    this._data = [
+  example1() {
+    let data = [
       {hash: "324dwqad3we"},
       {hash: "qwf3q4wfqwa"},
       {hash: "nw8fqodwewq"},
@@ -27,7 +27,7 @@ export default class D3Example extends Morph {
       {hash: "09hjqwbdv8q"}
     ];
     let counter = 1;
-    this._data.forEach(element => {
+    data.forEach(element => {
       const group = d3.select(this._svg)
         .append('g')
           .attr('class', 'node');
@@ -39,6 +39,10 @@ export default class D3Example extends Morph {
         .attr('x', 50*counter + 15)
         .attr('y', 50*counter + 7);
       counter += 1;
-    });    
+    });  
+  }
+  
+  async livelyExample() {
+      this.example1();
   }
 }
