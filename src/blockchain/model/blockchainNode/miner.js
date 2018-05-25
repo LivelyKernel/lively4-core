@@ -22,19 +22,20 @@ export default class Miner {
   }
   
   async mine() {
-    this._transactions.finalize();
-    const relevantTransactions = Object.assign({}, this._transactions);
-    this._transactions = new TransactionCollection;
+    if(this._transactions.size() < 1) {
+      return;
+    }
     const miningDifficulty = Math.log10(this._blockchainNode.blockchain.size());
     const miningProof = new MiningProof(miningDifficulty);
     await miningProof.work();
     const block = new Block(
       this._blockchainNode.wallet,
-      relevantTransactions,
+      this._transactions,
       miningProof,
       this._blockchainNode.blockchain.headOfChain.hash
     );
     this._blockchainNode.propagateBlock(block);
+    this._transactions = new TransactionCollection();
     console.log('[BLOCKCHAIN] Successfully mined a new block');
   }
 }

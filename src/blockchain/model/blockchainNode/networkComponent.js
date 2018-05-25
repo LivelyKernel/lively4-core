@@ -1,3 +1,5 @@
+import { cloneDeep } from 'src/external/lodash/lodash.js';
+
 const NETWORK_LATENCY = 1;
 
 export default class NetworkComponent {
@@ -23,7 +25,7 @@ export default class NetworkComponent {
     if(NetworkComponent.peers == null) {
       NetworkComponent.peers = new Array();
     }
-    NetworkComponent.peers.push(self);
+    NetworkComponent.peers.push(this);
   }
   
   async _simulateNetwork(sendToDestinationSocket) {
@@ -35,13 +37,14 @@ export default class NetworkComponent {
   
   propagateTransaction(transaction) {
     NetworkComponent.peers.forEach(peer => {
-      this._simulateNetwork(peer.receiveTransaction.bind(this, Object.assign({}, transaction)));
+      console.log(peer);
+      this._simulateNetwork(peer.receiveTransaction.bind(this, cloneDeep(transaction)));
     });
   }
   
   propagateBlock(block) {
     NetworkComponent.peers.forEach(peer => {
-      this._simulateNetwork(peer.receiveBlock.bind(this, Object.assign({}, block)));
+      this._simulateNetwork(peer.receiveBlock.bind(this, cloneDeep(block)));
     });
   }
   

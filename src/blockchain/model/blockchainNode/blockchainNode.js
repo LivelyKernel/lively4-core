@@ -11,7 +11,7 @@ export default class BlockchainNode {
     if(firstNode) {
       this._blockchain = new Blockchain(this._wallet);
     }
-    this._networkComponent = new NetworkComponent(self);
+    this._networkComponent = new NetworkComponent(this);
     this._miner = new Miner(this);
   }
   
