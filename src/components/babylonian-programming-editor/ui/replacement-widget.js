@@ -1,4 +1,5 @@
 import InputWidget from "./input-widget.js";
+import InputField from "./input-field.js";
 import { DeleteButton } from "./buttons.js";
 
 
@@ -7,30 +8,26 @@ export default class ReplacementWidget extends InputWidget {
     super(editor, location, kind, changeCallback, deleteCallback);
     
     // Make input
-    this._input = <input
-                    class="space-before"
-                    type="text"
-                    size="1"
-                    value=""></input>
-
-    this._input.addEventListener("input", () => {
-      this._input.setAttribute("size", this._input.value.length ? this._input.value.length : 1);
-    });
-    this._input.addEventListener("change", () => {
-      this._changeCallback();
-    });
+    this._input = new InputField(this,
+                                 "value",
+                                 "replacement",
+                                 this._changeCallback,
+                                 "space-before");
     
-    this._element.textContent = "";
+    this._element.innerHTML = "";
     this._element.appendChild(DeleteButton(this._deleteCallback));
-    this._element.appendChild(this._input);
+    this._element.appendChild(this._input.element);
   }
   
-  get code() {
+  get value() {
     return this._input.value;
   }
   
-  set code(code) {
-    this._input.value = code;
-    this._input.dispatchEvent(new Event("input"));
+  set value(value) {
+    this._input.value = value;
+  }
+  
+  get valueForSave() {
+    return this._input.valueForSave;
   }
 }

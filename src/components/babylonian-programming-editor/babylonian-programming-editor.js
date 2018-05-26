@@ -15,6 +15,7 @@ import {
   canBeInstance,
   canBeSlider,
   parameterNamesForFunctionIdentifier,
+  constructorParameterNamesForClassIdentifier,
   bodyForPath
 } from "./utils/ast.js";
 import { 
@@ -371,6 +372,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
     }
     
+    // Update instances
+    this.updateInstances();
+    
     // Update examples
     this.updateExamples();
   }
@@ -380,6 +384,13 @@ export default class BabylonianProgrammingEditor extends Morph {
       const path = this.pathForAnnotation(example);
       example.keys = parameterNamesForFunctionIdentifier(path);
       example.error = ""
+    }
+  }
+  
+  updateInstances() {
+    for(let instance of this._annotations.instances) {
+      const path = this.pathForAnnotation(instance);
+      instance.keys = constructorParameterNamesForClassIdentifier(path);
     }
   }
 

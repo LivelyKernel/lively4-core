@@ -1,3 +1,7 @@
+.rightgutter {
+  display: none;
+}
+
 .widget {
   position: relative;
   display: inline-block;

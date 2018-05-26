@@ -1,6 +1,6 @@
 export default class InputField {
   
-  constructor(example, name, placeholder, className, changeCallback) {
+  constructor(example, name, placeholder, changeCallback, className = "", style = "", hasConnector = true) {
     this._example = example;
     this._name = name;
     this._id = `${this._example.id}_${this._name}`;
@@ -12,7 +12,6 @@ export default class InputField {
     this._input = <input
         type="text"
         id={this._id}
-        class={className}
         name={name}
         size={placeholder.length}
         value=""
@@ -42,9 +41,9 @@ export default class InputField {
     });
     
     // Element
-    this._element = <span class="input-field">
+    this._element = <span class={"input-field " + className} style={style}>
         {this._input}
-        {this._connector}
+        {hasConnector ? this._connector : ""}
       </span>;
     
   }
@@ -87,6 +86,14 @@ export default class InputField {
   set value(value) {
     this._input.value = value;
     this.fireChange();
+  }
+  
+  get style() {
+    return this._element.style;
+  }
+  
+  set style(style) {
+    this._element.style = style;
   }
   
   set target(target) {

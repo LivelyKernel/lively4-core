@@ -11,15 +11,18 @@ export default class Replacement extends InputAnnotation {
   serializeForWorker() {
     return {
       location: this.locationAsKey,
-      code: this._widget.code
+      value: this._widget.value
     };
   }
   
   serializeForSave() {
-    return this.serializeForWorker();
+    return {
+      location: this.locationAsKey,
+      value: this._widget.valueForSave
+    };
   }
   
   load(serialized) {
-    this._widget.code = serialized.code;
+    this._widget.value = serialized.value;
   }
 }

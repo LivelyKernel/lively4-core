@@ -112,3 +112,7 @@ export const defaultTracker = () => ({
   }
 }
 });
+
+export const abstract = () => {
+  throw Error("This function is abstract");
+}

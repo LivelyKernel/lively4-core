@@ -1,85 +1,25 @@
-import InputWidget from "./input-widget.js";
+import FormWidget from "./form-widget.js";
 import { DeleteButton, SwitchButton } from "./buttons.js";
 import InputField from "./input-field.js";
-import {
-  defaultInstance,
-  guid
-} from "../utils/defaults.js";
+import { defaultInstance } from "../utils/defaults.js";
 
 
-export default class ExampleWidget extends InputWidget {
+export default class ExampleWidget extends FormWidget {
   constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances) {
     super(editor, location, kind, changeCallback, deleteCallback);
-    this._id = guid();
     this._isOn = defaultIsOn;
     this._updateColor();
     this._stateCallback = stateCallback;
     this._instances = instances; // [Instance]
-    this._keys = []; // [key]
-    this._nameElement = null; // input
     this._instanceElement = null; // {element, input}
-    this._elements = new Map(); // Map(key, {element, input})
     this._errorElement = <span class="error"></span>;
     this._update();
   }
   
-  set keys(keys) {
-    this._keys = keys;
-    this._update();
-  }
+  // UI Generators
   
-  _getFormElementForKey(key) {
-    if(!this._elements.has(key)) {
-      this._elements.set(key, this._makeFormElementForKey(key));
-    }
-    return this._elements.get(key);
-  }
-  
-  // Creates a single form element
-  _makeFormElementForKey(key) {
-    // Textfield
-    const input = new InputField(this, key, "null", "", this._changeCallback);
-
-    // Label
-    const label = <label
-                    for={input.id}
-                  >{key + ":"}</label>
-
-    return {
-      element: <span>
-                 {label}
-                 {input.element}
-               </span>,
-      input: input
-    };
-  }
-  
-  // Create a field for the example name
   _getNameElement() {
-    if(!this._nameElement) {
-      const input = <input
-                      type="text"
-                      id={`form-${this._id}-__name`}
-                      class="example-name space-before"
-                      style={"background-color:"+this._color}
-                      name="__name"
-                      size="4"
-                      placeholder="name"
-                      value=""></input>
-
-      input.addEventListener("input", () => {
-        input.setAttribute("size", input.value.length ? input.value.length : 4);
-      });
-      input.addEventListener("change", () => {
-        this._changeCallback(this._id);
-      });
-
-      this._nameElement = input;
-    }
-
-    this._nameElement.style.backgroundColor = this._color;
-
-    return this._nameElement;
+    return super._getNameElement("example-name space-before", `background-color: ${this._color}`);
   }
   
   _getInstanceElement() {
@@ -121,7 +61,7 @@ export default class ExampleWidget extends InputWidget {
     this._element.appendChild(DeleteButton(this._deleteCallback));
     this._element.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
                                            this._isOn));
-    this._element.appendChild(this._getNameElement());
+    this._element.appendChild(this._getNameElement().element);
     this._element.appendChild(this._getInstanceElement().element);
     this._keys.forEach((key) => {
       this._element.appendChild(this._getFormElementForKey(key).element);
@@ -143,26 +83,7 @@ export default class ExampleWidget extends InputWidget {
     }
   }
   
-  get values() {
-    let result = {};
-    this._keys.forEach(k => {
-      result[k] = this._elements.get(k).input.valueForSave
-    });
-    return result;
-  }
-  
-  set values(values) {
-    this.keys = Object.keys(values);
-    for(let key of this._keys) {
-      this._elements.get(key).input.value = values[key];
-      this._elements.get(key).input.fireChange();
-    }
-  }
-  
-  get code() {
-    return `[${this._keys.map(k => this._elements.get(k).input.value)
-                         .join(",")}]`;
-  }
+  // Getters and Setters
   
   get instanceId() {
     return this._instanceElement.input.options[this._instanceElement.input.selectedIndex].value;
@@ -176,29 +97,8 @@ export default class ExampleWidget extends InputWidget {
     });
   }
   
-  get id() {
-    return this._id;
-  }
-  
-  set id(id) {
-    this._id = id;
-  }
-  
-  get name() {
-    if(this._nameElement) {
-      return this._nameElement.value;
-    } else {
-      return "";
-    }
-  }
-  
   get color() {
     return this._color;
-  }
-    
-  set name(name) {
-    this._nameElement.value = name;
-    this._nameElement.dispatchEvent(new Event("input"));
   }
   
   set error(error) {

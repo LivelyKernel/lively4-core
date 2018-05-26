@@ -115,12 +115,17 @@ export const canBeReplaced = (path) => {
 export const replacementNodeForCode = (code) => {
   // The code we get here will be used as the righthand side of an Assignment
   // We we pretend that it is that while parsing
+  
+  if(!code || !code.length) {
+    return types.nullLiteral();
+  }
+  
   code = `placeholder = ${code}`;
   try {
     const ast = astForCode(code);
     return ast.program.body[0].expression.right;
   } catch (e) {
-    console.warn("Error parsing replacement node", e);
+    console.error("Error parsing replacement node", e);
     return null;
   }
 }
@@ -197,7 +202,7 @@ export const applyBasicModifications = (ast) => {
  */
 export const applyReplacements = (ast, replacements) => {
   replacements.forEach((replacement) => {
-    const replacementNode = replacementNodeForCode(replacement.code);
+    const replacementNode = replacementNodeForCode(replacement.value);
     if(!replacementNode) {
       return;
     }
@@ -246,12 +251,20 @@ export const applyProbes = (ast, annotations) => {
  * Applies instances to the given AST
  */
 export const applyInstances = (ast, instances) => {
+  const constructorCall = template("new CLASS(PARAMS)");
+  
   instances.forEach((instance) => {
-    let instanceNode = replacementNodeForCode(instance.code);
+    const path = ast._locationMap[instance.location];
+    const className = path.node.name;
+    
+    let instanceNode = constructorCall({
+      CLASS: types.identifier(className),
+      PARAMS: instance.values.map(replacementNodeForCode)
+    });
+    
     if(!instanceNode) {
       instanceNode = types.nullLiteral();
     }
-    const path = ast._locationMap[instance.location];
     if(!path.node._exampleInstances) {
       path.node._exampleInstances = {
         "0": types.nullLiteral()
@@ -270,21 +283,11 @@ export const applyExamples = (ast, examples) => {
   const staticMethodCall = template("CLASS.ID.apply(null, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
   
-  // Distinguish between class- and function examples
-  /*const functionExamples = examples.filter((example) => {
-    const nodePath = ast._locationMap[example.location];
-    nodePath.node._replacementNode
-    if(nodePath.parentPath.isClassDeclaration()) {
-      //nodePath.node._exampleInstance = replacementNodeForCode(example.code);
-      return false;
-    } else {
-      return true;
-    }
-  })*/
-  
   // Apply the markers
   examples.forEach((example) => {
-    let parametersNode = replacementNodeForCode(example.code);
+    let parametersNode = types.arrayExpression(
+      example.values.map(replacementNodeForCode)
+    );
     if(!parametersNode) {
       parametersNode = types.nullLiteral();
     }
@@ -418,6 +421,20 @@ const insertBlockTracker = (path) => {
 export const parameterNamesForFunctionIdentifier = (path) => {
   let parameterIdentifiers = path.getFunctionParent().get("params");
   return parameterIdentifiers.map(id => id.node.name);
+}
+
+/**
+ * Returns a list of parameter names for the constructor of given class Identifier
+ */
+export const constructorParameterNamesForClassIdentifier = (path) => {
+  const functions = path.parentPath.get("body").get("body");
+  for(let f of functions) {
+    let idPath = f.get("key");
+    if(idPath.node.name === "constructor") {
+      return parameterNamesForFunctionIdentifier(idPath);
+    }
+  }
+  return [];
 }
 
 /**

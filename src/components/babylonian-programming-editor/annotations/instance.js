@@ -8,30 +8,39 @@ export default class Instance extends InputAnnotation {
     this._widget = new InstanceWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
   }
   
-  serializeForWorker() {
-    return {
-      location: this.locationAsKey,
-      id: this._widget.id,
-      name: this._widget.name,
-      code: this._widget.code
-    };
-  }
-  
-  serializeForSave() {
-    return this.serializeForWorker();
-  }
-  
   get id() {
-    return this._widget.id;
+    return this._widget._id;
   }
   
   get name() {
     return this._widget.name;
   }
   
+  set keys(keys) {
+    this._widget.keys = keys;
+  }
+  
+  serializeForWorker() {
+    return {
+      location: this.locationAsKey,
+      id: this.id,
+      name: this._widget.name,
+      values: this._widget.valuesArray
+    };
+  }
+  
+  serializeForSave() {
+    return {
+      location: this.locationAsKey,
+      id: this.id,
+      name: this._widget.name,
+      values: this._widget.values
+    };
+  }
+  
   load(serialized) {
     this._widget.id = serialized.id;
+    this._widget.values = serialized.values;
     this._widget.name = serialized.name;
-    this._widget.code = serialized.code;
   }
 }

@@ -39,7 +39,8 @@ export default class Example extends InputAnnotation {
     return {
       location: this.locationAsKey,
       id: this.id,
-      code: this._widget.code,
+      name: this.name,
+      values: this._widget.valuesArray,
       instanceId: this._widget.instanceId
     };
   }
