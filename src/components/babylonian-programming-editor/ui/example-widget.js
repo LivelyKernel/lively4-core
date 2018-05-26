@@ -1,6 +1,5 @@
 import FormWidget from "./form-widget.js";
 import { DeleteButton, SwitchButton } from "./buttons.js";
-import InputField from "./input-field.js";
 import { defaultInstance } from "../utils/defaults.js";
 
 

@@ -58,6 +58,15 @@ export default class ProbeWidget extends Widget {
           }
           return arrayElement;
         }
+      } else if(run[0].value instanceof ImageData) {
+        const imageData = run[run.length-1].value;
+        const canvas = <canvas
+                         class="run"
+                         width={imageData.width}
+                         height={imageData.height}
+                         ></canvas>
+        canvas.getContext("2d").putImageData(imageData, 0, 0);
+        return canvas;
       } else if(run[0].value instanceof Object) {
         // We have to print the key-value pairs
         // Combine all properties (before and after)

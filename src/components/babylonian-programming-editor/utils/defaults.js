@@ -73,16 +73,20 @@ export const defaultTracker = () => ({
       }
     }
     
+    const type = typeof(value);
+    
     if(value instanceof CanvasRenderingContext2D) {
       value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
+    } else {
+      value = this._clone(value);
     }
     
     this.ids.get(id)
             .get(exampleId)
             .get(runId)
             .push({
-              type: typeof(value),
-              value: this._clone(value),
+              type: type,
+              value: value,
               name: name
             });
     

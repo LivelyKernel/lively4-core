@@ -1,7 +1,6 @@
 import InputWidget from "./input-widget.js";
 import InputField from "./input-field.js";
 import {
-  defaultInstance,
   guid,
   abstract
 } from "../utils/defaults.js";
@@ -116,6 +115,3 @@ export default class FormWidget extends InputWidget {
   }
   
 }
-
-FormWidget.idCounter = 1;
-const nextId = () => FormWidget.idCounter++;

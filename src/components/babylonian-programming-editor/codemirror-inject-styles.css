@@ -23,7 +23,7 @@
 
 .probe-example .example-name {
   padding-right: 4px;
-  height: fit-content;
+  height: 17px;
 }
 
 .widget.replacement {
@@ -123,6 +123,10 @@
   background-color: hsla(198, 69%, 67%, 0.4);
 }
 
+.probe-value {
+  display: flex;
+}
+
 .probe-value .old-value {
   text-decoration: line-through;
 }
@@ -130,11 +134,16 @@
 .probe-value .run {
   border-right: 1px solid rgba(0, 0, 0, 0.6);
   margin-right: 1ch;
+  padding-bottom: 2px;
 }
 
 .probe-value .run:last-of-type {
   border-right: none;
   margin-right: 0;
+}
+
+.probe-value canvas {
+  height: 100px;
 }
 
 .object {
