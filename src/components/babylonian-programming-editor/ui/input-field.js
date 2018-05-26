@@ -32,6 +32,7 @@ export default class InputField {
       if(this._target) {
         this.target = null;
       } else {
+        this._connector.classList.remove("off");
         setTimeout(() => {
           document.addEventListener("click", (e) => {
             this.target = e.target.shadowRoot ? e.target.shadowRoot.querySelector("canvas") : e.target.querySelector("canvas");
@@ -101,7 +102,8 @@ export default class InputField {
     if(this._target) {
       this._input.style.display = "none"
       this._element.style.border = "none";
-      this._connector.classList.remove("off");
+      this._connector.classList.remove("off");      
+      
       // Set up target
       if(!window.__connectors) {
         window.__connectors = {};
