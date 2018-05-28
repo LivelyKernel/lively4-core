@@ -125,11 +125,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     }, 2000);
     
     // Remove all existing annotations
-    for(let key in this._annotations) {
-      for(let index in this._annotations[key]) {
-        this._annotations[key][index].clear();
-      }
-    }
+    this.removeAnnotations();
     this._annotations = defaultAnnotations();
     this._activeExamples = [];
     
@@ -393,6 +389,10 @@ export default class BabylonianProgrammingEditor extends Morph {
       instance.keys = constructorParameterNamesForClassIdentifier(path);
     }
   }
+  
+  cleanupAnnotations() {
+    this.removeAnnotations(annotation => !annotation.location);
+  }
 
   updateDeadMarkers() {
     // Remove old dead markers
@@ -429,12 +429,18 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
   
-  removeAnnotation(annotation) {
-    for(let key in this._annotations) {
-      if(this._annotations[key].includes(annotation)) {
-        this._annotations[key].splice(this._annotations[key].indexOf(annotation), 1);
+  removeAnnotation(annotation, fromContainer = null) {
+    if(fromContainer) {
+      fromContainer.splice(fromContainer.indexOf(annotation), 1);
+    } else {
+      for(let key in this._annotations) {
+        if(this._annotations[key].includes(annotation)) {
+          this._annotations[key].splice(this._annotations[key].indexOf(annotation), 1);
+        }
       }
     }
+    
+    // If the annotation was an active example, we have to deactivate it
     const activeIndex = this._activeExamples.indexOf(annotation);
     if(activeIndex !== -1) {
       this._activeExamples.splice(activeIndex, 1);
@@ -449,6 +455,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.evaluate();
   }
   
+  removeAnnotations(callback = null) {
+    for(let annotationType in this._annotations) {
+      for(let annotation of this._annotations[annotationType]) {
+        if(!callback || callback(annotation)) {
+          this.removeAnnotation(annotation, this._annotations[annotationType]);
+        }
+      }
+    }
+  }
+  
   
   /**
    * Evaluating code
@@ -456,6 +472,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   async parse() {
     this.status("parsing");
+    
+    // Make sure we have no zombie annotations
+    this.cleanupAnnotations()
     
     // Serialize annotations
     let serializedAnnotations = {};

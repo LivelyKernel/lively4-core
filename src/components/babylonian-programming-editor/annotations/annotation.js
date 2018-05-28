@@ -31,7 +31,9 @@ export default class Annotation {
   }
 
   syncIndentation() {
-    this._widget.indentation = this.location.from.ch;
+    if(this.location) {
+      this._widget.indentation = this.location.from.ch;
+    }
   }
   
   clear() {
@@ -48,7 +50,9 @@ export default class Annotation {
   }
   
   get locationAsKey() {
-    return LocationConverter.markerToKey(this.location);
+    if(this.location) {
+      return LocationConverter.markerToKey(this.location);
+    }
   }
 
   get kind() {

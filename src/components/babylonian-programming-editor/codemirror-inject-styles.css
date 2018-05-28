@@ -16,6 +16,10 @@
   padding: 0;  
 }
 
+.widget.slider .probe-meta {
+  padding-bottom: 4px;
+}
+
 .example-name {
   border-radius: 3px;
   padding-left: 4px;
@@ -134,6 +138,7 @@
 .probe-value .run {
   border-right: 1px solid rgba(0, 0, 0, 0.6);
   margin-right: 1ch;
+  padding-right: 1ch;
   padding-bottom: 2px;
 }
 
@@ -184,10 +189,6 @@
 .id-name::after {
   content: ":";
   color: rgba(0, 0, 0, 0.6);
-}
-
-.array {
-  padding-right: 1ch;
 }
 
 .array:last-of-type {

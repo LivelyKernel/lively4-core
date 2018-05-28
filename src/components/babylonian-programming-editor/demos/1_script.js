@@ -34,3 +34,4 @@ for(let i = 0; i < 5; i++) {
     innerSum += j;
   }
 }
+/* Examples: {"probes":[{"location":[34,4,34,12]},{"location":[20,0,20,4]}],"sliders":[{"location":[33,2,33,5]}],"examples":[],"replacements":[],"instances":[]} */
