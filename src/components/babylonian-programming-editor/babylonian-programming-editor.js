@@ -71,7 +71,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._activeExamples = []; // [Example]
 
     // Timer to evaluate when user stops writing
-    this._evaluateTimer = new Timer(500, this.evaluate.bind(this));
+    this._evaluateTimer = new Timer(1000, this.evaluate.bind(this));
     
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
@@ -83,7 +83,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/4_canvas.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners

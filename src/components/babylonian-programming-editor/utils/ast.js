@@ -240,9 +240,11 @@ export const applyProbes = (ast, annotations) => {
     },
     BlockStatement(path) {
       insertBlockTracker(path);
+      insertTimer(path);
     },
     Program(path) {
       insertBlockTracker(path);
+      insertTimer(path, true);
     }
   });
 };
@@ -413,6 +415,18 @@ const insertBlockTracker = (path) => {
   const tracker = template("const __blockCount = window.__tracker.block(window.__tracker.exampleId, __blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
+};
+
+
+/**
+ * Inserts a timer check
+ */
+const insertTimer = (path, isStart = false) => {
+  if(typeof path.node._id === "undefined") {
+    return;
+  }
+  const code = `window.__tracker.timer.${isStart ? "start" : "check"}()`;
+  path.unshiftContainer("body", template(code)());
 };
 
 /**

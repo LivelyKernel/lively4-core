@@ -103,6 +103,19 @@ export const defaultTracker = () => ({
     this.blocks.get(id).set(exampleId, blockCount + 1);
     return blockCount;
   },
+  timer: {
+    _maxRuntime: 1000,
+    _startTime: null,
+    start() {
+      this._startTime = (+new Date());
+    },
+    check() {
+      const time = (+new Date());
+      if(time - this._startTime > this._maxRuntime) {
+        throw new Error("Timeout reached. Maybe there is an inifinite loop?");
+      }
+    }
+  },
   
   // Utils
   _identitySymbols:  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','🐬','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'],
