@@ -100,6 +100,7 @@ export default class InputField {
   set target(target) {
     this._target = target;
     if(this._target) {
+      // New target
       this._input.style.display = "none"
       this._element.style.border = "none";
       this._connector.classList.remove("off");      
@@ -113,9 +114,12 @@ export default class InputField {
         return target;
       };
     } else {
+      // Clear target
       this._input.style.display = "";
       this._element.style.border = "";
       this._connector.classList.add("off");
+      
+      delete window.__connectors[this._id];
     }
     this.fireChange();
   }
