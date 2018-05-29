@@ -4,9 +4,11 @@
 
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
+import VibratingContinuumBar from 'doc/PX2018/project_2/vibratingcontinuumbar.js';
 
 export default class LivelyMpm extends Morph {
   async initialize() {
+    this.algorithms = { "Vibrating Poin": VibratingPoint, "Vibrating Continuum Bar": VibratingContinuumBar };
     this.windowTitle = "Lively Material Point Method Demo";
     this.registerButtons()
     this.time = 1;

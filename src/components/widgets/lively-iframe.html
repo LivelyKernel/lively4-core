@@ -1,6 +1,11 @@
 <template id="lively-iframe" data-title="iFrame Browser" data-class="LivelyIframe">
-    <style data-src="/templates/livelystyle.css"></style>
-    <style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      width: 1980px;
+      height: 1020px;  
+    }
+      
     .container {
         width: 100%;
         height: 100%;
@@ -24,19 +29,19 @@
       margin: 2px;
     }
     
-    </style>
-    <div class="container">
-        <p>
-          <input id="input" value="" />
-        </p>
-        <iframe id="frame" width="100%" height="100%">
-        </iframe>
-    </div>
+    :host([navigation=false]) input {
+      display: none
+    }
 
     
-    
-    
-    
+  </style>
+  <div class="container">
+    <p>
+      <input id="input" value="" />
+    </p>
+    <iframe id="frame" width="100%" height="100%">
+    </iframe>
+</div>    
 </template>
 
 <script class="registrationScript">lively.registerTemplate()</script>

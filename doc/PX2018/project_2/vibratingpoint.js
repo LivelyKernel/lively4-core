@@ -1,4 +1,4 @@
-import MpmAnimation from 'doc/PX2018/project_2/mpmanimation.js';
+import MpmAnimation from './mpmanimation.js';
 
 export default class VibratingPoint extends MpmAnimation {
   constructor() {

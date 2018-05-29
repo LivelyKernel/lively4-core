@@ -40,6 +40,14 @@
     display: none;
   }
 
+  #filename {
+    /* display: none; */
+  }
+
+  :host([mode="edit"]) #filename {
+    display: block;
+  }
+
   
 </style>
   <div id="root">
@@ -48,6 +56,9 @@
       <span id="title"></span>
     </div>
     <div id="content">
+      <div id="filename">
+        asdfa
+      </div>
       <content></content>
     </div>    
   </div>
