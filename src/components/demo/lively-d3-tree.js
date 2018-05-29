@@ -66,7 +66,7 @@ export default class LivelyD3Tree extends Morph {
     this.root = root
 
     // Collapse after the second level
-    root.children.forEach(ea => this.collapse(ea));
+    root.children && root.children.forEach(ea => this.collapse(ea));
     
     this.update(root);
     // d3.select(self.frameElement).style("height", "500px");    

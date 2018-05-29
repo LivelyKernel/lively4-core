@@ -30,6 +30,10 @@ export default class TransactionCollection {
     return this;
   }
   
+  size() {
+    return this._transactions.size;
+  }
+  
   isFinalized() {
     return !!this.hash;
   }

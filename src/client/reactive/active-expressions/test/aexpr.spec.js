@@ -190,6 +190,20 @@ describe('Propagation Logic', function() {
 
     expect(spy.withArgs(3)).to.be.calledOnce;
   });
+  
+  it('reset all active expressions', () => {
+    const obj = {
+      get calcProp() { return this.x + this.y; },
+      x: 42,
+      y: 17
+    },
+        spy = sinon.spy();
+
+    aexpr(() => obj.calcProp).onChange(spy);
+
+    obj.x = 33;
+    expect(spy).to.be.calledWith(50);
+  });
 
   it('reset all active expressions', () => {
     let obj = { prop: 42 },
