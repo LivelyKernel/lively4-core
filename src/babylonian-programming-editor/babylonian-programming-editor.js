@@ -1,5 +1,6 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
+import boundEval from 'src/client/bound-eval.js';
 import { babel } from 'systemjs-babel-build';
 const { traverse } = babel;
 
@@ -82,7 +83,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -506,31 +507,24 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     this.status("evaluating");
     console.log("Executing", code);
-    const evalError = this.execute(code);
+    const {value, isError} = await this.execute(code);
 
     // Show the results
-    if(!evalError) {
+    if(!isError) {
       this.updateAnnotations();
       this.updateDeadMarkers();
       this.status()
     } else {
-      this.status("error", evalError.message);
+      this.status("error", value.originalErr.message);
     }
   }
 
-  execute(code) {
+  async execute(code) {
     // Prepare result container
     window.__tracker = defaultTracker();
 
     // Execute the code
-    try {
-      eval(code);
-      return null;
-    } catch (e) {
-      console.warn("Could not execute code");
-      console.error(e);
-      return e;
-    }
+    return await boundEval(code, window);
   }
 
 
