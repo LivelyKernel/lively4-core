@@ -140,9 +140,10 @@ export default class ProbeWidget extends Widget {
          && this._activeRuns.get(example.id) !== -1) {
         valueElement.appendChild(elementForRun(runs.get(this._activeRuns.get(example.id))));
       } else {
-        Array.from(runs.values())
-             .map(elementForRun)
-             .forEach((e) => valueElement.appendChild(e));
+        Array.from(runs.entries())
+             .sort((a, b) => a[0] - b[0])
+             .map(entry => elementForRun(entry[1]))
+             .forEach(element => valueElement.appendChild(element));
       }
       
       // Show a delete button for the first element, and just a space for all others

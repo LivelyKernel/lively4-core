@@ -26,10 +26,7 @@ function max(a, b) {
   }
 }
 
-// Nested functions
-function outer(x) {
-  function inner(y) {
-    return y*y
-  }
-  return inner(x)+inner(x)+inner(x);
-}/* Examples: {"probes":[{"location":[16,4,16,10]},{"location":[5,2,5,8]},{"location":[32,4,32,10]}],"sliders":[],"examples":[{"location":[3,9,3,28],"id":"fd7e-ac75-4de7","name":"Room temperature","values":{"celcius":"23"},"instanceId":"0"},{"location":[3,9,3,28],"id":"63c6-d5d4-cd32","name":"Boiling","values":{"celcius":"100"},"instanceId":"0"},{"location":[3,9,3,28],"id":"b73d-2fb7-f4fb","name":"Freezing","values":{"celcius":"0"},"instanceId":"0"},{"location":[30,9,30,14],"id":"826a-5111-9075","name":"","values":{"x":"2"},"instanceId":"0"}],"replacements":[],"instances":[]} */
+// Recursion
+function factorial(x) {
+  return x <= 1 ? 1 : x * factorial(x-1);
+}/* Examples: {"probes":[{"location":[16,4,16,10]},{"location":[5,2,5,8]},{"location":[31,2,31,8]}],"sliders":[{"location":[30,9,30,18]}],"examples":[{"location":[3,9,3,28],"id":"fd7e-ac75-4de7","name":"Room temperature","values":{"celcius":"23"},"instanceId":"0"},{"location":[3,9,3,28],"id":"63c6-d5d4-cd32","name":"Boiling","values":{"celcius":"100"},"instanceId":"0"},{"location":[3,9,3,28],"id":"b73d-2fb7-f4fb","name":"Freezing","values":{"celcius":"0"},"instanceId":"0"},{"location":[30,9,30,18],"id":"620c-dc07-a5da","name":"Normal","values":{"x":"8"},"instanceId":"0"},{"location":[30,9,30,18],"id":"b100-e3eb-6f20","name":"Negative","values":{"x":"-50"},"instanceId":"0"},{"location":[30,9,30,18],"id":"0f4e-deed-3446","name":"Large","values":{"x":"100"},"instanceId":"0"}],"replacements":[],"instances":[]} */

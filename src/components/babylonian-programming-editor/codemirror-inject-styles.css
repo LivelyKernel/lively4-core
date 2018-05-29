@@ -35,7 +35,8 @@
 }
 
 .widget.example, .widget.instance {
-  background-color: hsla(41, 39%, 38%, 0.2);
+  /*background-color: hsla(41, 39%, 38%, 0.2);*/
+  background-color: #e8e8e8;
   border-bottom-left-radius: 0px;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
@@ -90,7 +91,8 @@
 }
 
 .marker.example, .marker.instance {
-  background-color: hsla(41, 39%, 38%, 0.2);
+  /*background-color: hsla(41, 39%, 38%, 0.2);*/
+  background-color: #e8e8e8;
 }
 
 .marker.dead {
@@ -112,6 +114,7 @@
 
 .widget > table td.probe-meta {
   padding-left: 4px;
+  white-space: nowrap;
 }
 
 .widget > table td.probe-example {
