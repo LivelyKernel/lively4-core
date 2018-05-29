@@ -223,12 +223,19 @@ export default class VivideView extends Morph {
   }
   
   setScripts(scripts) {
-    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
-    return scripts;
+    this.scripts = scripts;
+    this.scripts.transform.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
+    this.scripts.extract.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
+    this.scripts.descent.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
+    this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
+    
+    return this.scripts;
   }
   
   getScripts() {
-    return this.getJSONAttribute(VivideView.scriptAttribute);
+    this.getJSONAttribute(VivideView.scriptAttribute);
+    
+    return this.scripts;
   }
   
   async newDataFromUpstream(data) {
@@ -279,9 +286,7 @@ export default class VivideView extends Morph {
     return module;
   }
   
-  async scriptGotUpdated(scripts) {
-    this.setScripts(scripts);
-    
+  async scriptGotUpdated() {
     await this.calculateOutputModel();
     await this.updateWidget();
   }
