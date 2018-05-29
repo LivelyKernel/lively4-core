@@ -368,10 +368,12 @@ export default class ComponentLoader {
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
-        lively4url + '/src/components/babylonian-programming-editor/',
         lively4url + '/src/client/vivide/components/',
         lively4url + '/src/client/reactive/components/',
         lively4url + '/src/client/triples/components/',
+        lively4url + '/src/babylonian-programming-editor/',
+        lively4url + '/src/babylonian-programming-editor/demos/canvas/',
+        lively4url + '/src/babylonian-programming-editor/demos/todo/',
       ]; // default
     } 
     return _templatePaths

@@ -99,7 +99,6 @@ export default class BabylonianProgrammingEditor extends Morph {
       });
 
       // Inject styling into CodeMirror
-      // This is dirty, but currently necessary
       const livelyEditorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/lively-code-editor-inject-styles.css`}></link>;
       const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
       this.livelyEditor().shadowRoot.appendChild(livelyEditorStyle);
