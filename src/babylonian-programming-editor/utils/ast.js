@@ -305,7 +305,7 @@ export const applyExamples = (ast, examples) => {
     // Distinguish between Methods and Functions
     if(functionParent.isClassMethod()) {
       // We have a method
-      const classIdNode = functionParent.getStatementParent().get("id").node;
+      const classIdNode = functionParent.findParent(p => p.type === "ClassDeclaration").get("id").node;
       
       // Distinguish between static and object methods
       if(functionParent.node.static) {
@@ -438,8 +438,15 @@ const insertTimer = (path, isStart = false) => {
  * Returns a list of parameter names for the given function Identifier
  */
 export const parameterNamesForFunctionIdentifier = (path) => {
-  let parameterIdentifiers = path.getFunctionParent().get("params");
-  return parameterIdentifiers.map(id => id.node.name);
+  let parameterPaths = path.getFunctionParent().get("params");
+  return parameterPaths.map(parameterPath => {
+    if(parameterPath.isIdentifier()) {
+      return parameterPath.node.name;
+    } else if(parameterPath.isAssignmentPattern()) {
+      return parameterPath.node.left.name;
+    }
+    return null;
+  }).filter(name => !!name);
 }
 
 /**

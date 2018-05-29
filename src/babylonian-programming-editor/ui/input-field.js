@@ -1,3 +1,5 @@
+import Connector from "./connector.js";
+
 export default class InputField {
   
   constructor(example, name, placeholder, changeCallback, className = "", style = "", hasConnector = true) {
@@ -6,7 +8,6 @@ export default class InputField {
     this._id = `${this._example.id}_${this._name}`;
     this._placeholder = placeholder;
     this._changeCallback = changeCallback;
-    this._target = null;
     
     // Text input
     this._input = <input
@@ -27,24 +28,12 @@ export default class InputField {
     });
     
     // Connector
-    this._connector = <span class="icon connector off"></span>;
-    this._connector.addEventListener("click", () => {
-      if(this._target) {
-        this.target = null;
-      } else {
-        this._connector.classList.remove("off");
-        setTimeout(() => {
-          document.addEventListener("click", (e) => {
-            this.target = e.target.shadowRoot ? e.target.shadowRoot.querySelector("canvas") : e.target.querySelector("canvas");
-          }, {once : true});
-        }, 100);
-      }
-    });
+    this._connector = new Connector(this, this._onConnectorChange.bind(this));
     
     // Element
     this._element = <span class={"input-field " + className} style={style}>
         {this._input}
-        {hasConnector ? this._connector : ""}
+        {hasConnector ? this._connector.element : ""}
       </span>;
     
   }
@@ -60,6 +49,19 @@ export default class InputField {
         this._input.value.length ? this._input.value.length : this._placeholder.length);
   }
   
+  _onConnectorChange(newTarget){
+    if(newTarget) {
+      // New target
+      this._input.style.display = "none"
+      this._element.style.border = "none"; 
+    } else {
+      // Clear target
+      this._input.style.display = "";
+      this._element.style.border = "";
+    }
+    this.fireChange();
+  }
+  
   get id() {
     return this._id;
   }
@@ -69,7 +71,7 @@ export default class InputField {
   }
   
   get value() {
-    if(this._target) {
+    if(this.target) {
       return `window.__connectors["${this._id}"]()`;
     } else {
       return this._input.value;
@@ -77,7 +79,7 @@ export default class InputField {
   }
   
   get valueForSave() {
-    if(this._target) {
+    if(this.target) {
       return "";
     } else {
       return this._input.value;
@@ -97,30 +99,7 @@ export default class InputField {
     this._element.style = style;
   }
   
-  set target(target) {
-    this._target = target;
-    if(this._target) {
-      // New target
-      this._input.style.display = "none"
-      this._element.style.border = "none";
-      this._connector.classList.remove("off");      
-      
-      // Set up target
-      if(!window.__connectors) {
-        window.__connectors = {};
-      }
-      window.__connectors[this._id] = () => {
-        target.getContext("2d").clearRect(0, 0, target.width, target.height);
-        return target;
-      };
-    } else {
-      // Clear target
-      this._input.style.display = "";
-      this._element.style.border = "";
-      this._connector.classList.add("off");
-      
-      delete window.__connectors[this._id];
-    }
-    this.fireChange();
+  get target() {
+    return this._connector.target;
   }
 }

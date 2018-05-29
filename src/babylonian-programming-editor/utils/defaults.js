@@ -75,8 +75,11 @@ export const defaultTracker = () => ({
     
     const type = typeof(value);
     
+    // Handle special cases
     if(value instanceof CanvasRenderingContext2D) {
       value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
+    } else if(value instanceof HTMLElement) {
+      value = value.outerHTML;
     } else {
       value = this._clone(value);
     }
