@@ -83,7 +83,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
       
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/4_canvas.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/1_script.js`);
       this.livelyEditor().loadFile();
       
       // Event listeners

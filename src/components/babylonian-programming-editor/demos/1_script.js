@@ -34,4 +34,8 @@ for(let i = 0; i < 5; i++) {
     innerSum += j;
   }
 }
-/* Examples: {"probes":[{"location":[34,4,34,12]},{"location":[20,0,20,4]}],"sliders":[{"location":[33,2,33,5]}],"examples":[],"replacements":[],"instances":[]} */
+
+let i = 0;
+while(i < 5) {
+  i++;
+}/* Examples: {"probes":[{"location":[34,4,34,12]},{"location":[20,0,20,4]},{"location":[40,2,40,3]}],"sliders":[{"location":[33,2,33,5]}],"examples":[],"replacements":[],"instances":[]} */

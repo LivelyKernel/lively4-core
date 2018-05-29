@@ -69,6 +69,7 @@ export default class SliderWidget extends InputWidget {
             </td>
           </tr>),
         input: input,
+        nameElement: exampleName,
         status: status
       };
     };
@@ -79,7 +80,13 @@ export default class SliderWidget extends InputWidget {
       if(!this._elements.has(example.id)) {
         this._elements.set(example.id, makeElementForExample(example));
       }
-      return this._elements.get(example.id);
+      
+      const element = this._elements.get(example.id);
+      if(element.nameElement instanceof HTMLElement) {
+        element.nameElement.style.backgroundColor = example.color;
+      }
+      
+      return element;
     }
     
     // Updates the element for a given example

@@ -29,7 +29,16 @@ export const deepCopy = (obj) => {
  */
 export const generateLocationMap = (ast) => {
   ast._locationMap = new DefaultDict(Object);
-
+  
+  const keywords = {
+    "ForStatement": "for",
+    "ForInStatement": "for",
+    "ForOfStatement": "for",
+    "WhileStatement": "while",
+    "DoWhileStatement": "do",
+    "ReturnStatement": "return"
+  };
+  
   traverse(ast, {
     enter(path) {
       let location = path.node.loc;
@@ -37,15 +46,11 @@ export const generateLocationMap = (ast) => {
         return;
       }
       
-      // Some Nodes are exceptions
-      if(path.isReturnStatement()) {
-        // ReturnStatements are associated with the "return" keyword
+      // Some Nodes are only associated with their keywords
+      const keyword = keywords[path.type];
+      if(keyword) {
         location.end.line = location.start.line;
-        location.end.column = location.start.column + "return".length;
-      } else if(path.isForStatement()) { //TODO: All loops
-        // Loops are associated with their keywords
-        location.end.line = location.start.line;
-        location.end.column = location.start.column + "for".length;
+        location.end.column = location.start.column + keyword.length;
       }
       
       ast._locationMap[LocationConverter.astToKey(location)] = path;
