@@ -37,7 +37,7 @@ export default class SliderWidget extends InputWidget {
                       class="slider-input space-after"
                     ></input>;
 
-      const status = <span></span>;
+      const status = <span class="status"></span>;
 
       const fireFunction = () => {
         const value = input.valueAsNumber;

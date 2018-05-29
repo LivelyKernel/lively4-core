@@ -17,7 +17,16 @@
 }
 
 .widget.slider .probe-meta {
-  padding-bottom: 4px;
+  padding-bottom: 2px;
+}
+
+.widget.slider .probe-example {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.widget.slider .status {
+  white-space: nowrap;
 }
 
 .example-name {
@@ -274,6 +283,7 @@
   display: inline-block;
 }
 
+.input-field
 
 .connector {
   color: blue;
@@ -286,4 +296,37 @@
 
 .connector::before {
   content: "\f0c1";
+}
+
+.widget select {
+  border:none;
+  border-radius: 0;
+  font: inherit;
+  background: transparent;
+}
+
+.widget input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+.widget input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 2px;
+  background: #333;
+  margin-top: -4px;
+}
+
+.widget input[type=range]:focus {
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: #999;
+  border-radius: 2px;
 }
