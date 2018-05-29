@@ -19,6 +19,7 @@ export async function newScriptFromTemplate() {
   
   transform.nextScript = extract;
   extract.nextScript = descent;
+  descent.nextScript = transform;
   
   scripts.push(transform);
   scripts.push(extract);
