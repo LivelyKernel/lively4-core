@@ -255,9 +255,13 @@ export const applyProbes = (ast, annotations) => {
 };
 
 /**
- * Applies instances to the given AST
+ * Generates instances for the given AST
  */
-export const applyInstances = (ast, instances) => {
+export const generateInstances = (ast, instances) => {
+  const exampleInstances = {
+    "0": types.nullLiteral()
+  };
+  
   const constructorCall = template("new CLASS(PARAMS)");
   
   instances.forEach((instance) => {
@@ -266,34 +270,45 @@ export const applyInstances = (ast, instances) => {
     
     let instanceNode = constructorCall({
       CLASS: types.identifier(className),
-      PARAMS: instance.values.map(replacementNodeForCode)
+      PARAMS: instance.values.map(value => value.isConnection ?
+                                           connectorTemplate(value.value) :
+                                           value.value)
+                             .map(replacementNodeForCode)
     });
     
     if(!instanceNode) {
       instanceNode = types.nullLiteral();
     }
-    if(!path.node._exampleInstances) {
-      path.node._exampleInstances = {
-        "0": types.nullLiteral()
-      };
-    }
-    path.node._exampleInstances[instance.id] = instanceNode;
+    
+    exampleInstances[instance.id] = instanceNode;
   });
+  return exampleInstances;
 }
 
 /**
  * Applies example markers to the given AST
  */
-export const applyExamples = (ast, examples) => {
+export const applyExamples = (ast, examples, exampleInstances) => {
   // Prepare templates to insert
-  const functionCall = template("ID.apply(null, PARAMS)");
-  const staticMethodCall = template("CLASS.ID.apply(null, PARAMS)");
+  const functionCall = template("ID.apply(THIS, PARAMS)");
+  const staticMethodCall = template("CLASS.ID.apply(THIS, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
+  
+  const instanceNode = (instanceId) => {
+    if(instanceId.isConnection) {
+      return replacementNodeForCode(connectorTemplate(instanceId.value));
+    } else {
+      return exampleInstances[instanceId.value];
+    }
+  };
   
   // Apply the markers
   examples.forEach((example) => {
     let parametersNode = types.arrayExpression(
-      example.values.map(replacementNodeForCode)
+      example.values.map(value => value.isConnection ?
+                                  connectorTemplate(value.value) :
+                                  value.value)
+                    .map(replacementNodeForCode)
     );
     if(!parametersNode) {
       parametersNode = types.nullLiteral();
@@ -312,6 +327,7 @@ export const applyExamples = (ast, examples) => {
         nodeToInsert = staticMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
+          THIS: instanceNode(example.instanceId),
           PARAMS: parametersNode
         });
       } else {
@@ -319,13 +335,14 @@ export const applyExamples = (ast, examples) => {
         nodeToInsert = objectMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
-          THIS: classIdNode._exampleInstances[example.instanceId],
+          THIS: instanceNode(example.instanceId),
           PARAMS: parametersNode
         });
       }
     } else {
       nodeToInsert = functionCall({
         ID: types.identifier(path.node.name),
+        THIS: instanceNode(example.instanceId),
         PARAMS: parametersNode
       });
     }
@@ -524,5 +541,9 @@ const prepForInsert = (node) => {
     assignLocationToBlockStatement(node);
   }
   return node;
+}
+
+const connectorTemplate = (id) => {
+  return `window.__connectors["${id}"]()`;
 }
 

@@ -84,7 +84,7 @@ export default class FormWidget extends InputWidget {
   
   get name() {
     if(this._nameElement) {
-      return this._nameElement.value;
+      return this._nameElement.value.value;
     } else {
       return "";
     }

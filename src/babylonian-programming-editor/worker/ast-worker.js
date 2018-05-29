@@ -8,7 +8,7 @@ import {
   applyReplacements,
   applyProbes,
   applyExamples,
-  applyInstances,
+  generateInstances,
   applyBasicModifications,
 } from "../utils/ast.js";
 
@@ -27,20 +27,12 @@ export default onmessage = function(msg) {
 
     // Process AST
     generateLocationMap(ast);
-    if(annotations.replacements) {
-      applyReplacements(ast, annotations.replacements);
-    }
-    if(annotations.probes) {
-      applyProbes(ast, annotations.probes);
-    }
-    if(annotations.instances) {
-      applyInstances(ast, annotations.instances);
-    }
+    applyReplacements(ast, annotations.replacements);
+    applyProbes(ast, annotations.probes);
     
     // Add trackers for all examples
-    if(annotations.examples) {
-      applyExamples(ast, annotations.examples);
-    }
+    const exampleInstances = generateInstances(ast, annotations.instances);
+    applyExamples(ast, annotations.examples, exampleInstances);
 
     // Generate executable code
     const executableCode = codeForAst(ast);

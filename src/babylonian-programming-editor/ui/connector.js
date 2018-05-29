@@ -1,8 +1,10 @@
 export default class Connector {
-  constructor(source, changeCallback) {
+  
+  constructor(source, changeCallback, targetKind) {
     this._sourceId = source.id;
     this._target = null;
     this._changeCallback = changeCallback;
+    this._targetKind = targetKind;
     
     // Global connector table
     if(!window.__connectors) {
@@ -17,12 +19,23 @@ export default class Connector {
       } else {
         this._element.classList.remove("off");
         setTimeout(() => {
-          document.addEventListener("click", (e) => {
-            this.target = e.target.shadowRoot ? e.target.shadowRoot.querySelector("canvas") : e.target.querySelector("canvas");
-          }, {once : true});
+          document.addEventListener("click", this._onTargetSelect.bind(this), {once : true});
         }, 100);
       }
     });
+  }
+  
+  _onTargetSelect(event) {
+    switch(this._targetKind) {
+      case "canvas":
+        this.target = event.target.shadowRoot ?
+                      event.target.shadowRoot.querySelector("canvas") :
+                      event.target.querySelector("canvas");
+        break;
+      case "component":
+        this.target = event.target;
+        break;
+    }
   }
   
   get target() {
@@ -36,7 +49,9 @@ export default class Connector {
       
       // Set up target
       window.__connectors[this._sourceId] = () => {
-        target.getContext("2d").clearRect(0, 0, target.width, target.height);
+        if(this._targetKind === "canvas") {
+          target.getContext("2d").clearRect(0, 0, target.width, target.height);
+        }
         return target;
       };
     } else {

@@ -24,7 +24,7 @@ export default class Instance extends InputAnnotation {
     return {
       location: this.locationAsKey,
       id: this.id,
-      name: this._widget.name,
+      name: this.name,
       values: this._widget.valuesArray
     };
   }
@@ -33,7 +33,7 @@ export default class Instance extends InputAnnotation {
     return {
       location: this.locationAsKey,
       id: this.id,
-      name: this._widget.name,
+      name: this.name,
       values: this._widget.values
     };
   }

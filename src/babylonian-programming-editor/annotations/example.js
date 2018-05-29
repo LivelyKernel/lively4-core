@@ -51,7 +51,7 @@ export default class Example extends InputAnnotation {
       id: this.id,
       name: this.name,
       values: this._widget.values,
-      instanceId: this._widget.instanceId
+      instanceId: this._widget.instanceIdForSave
     };
   }
   

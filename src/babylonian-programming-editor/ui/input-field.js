@@ -1,13 +1,10 @@
-import Connector from "./connector.js";
+import ConnectorField from "./connector-field.js";
 
-export default class InputField {
+export default class InputField extends ConnectorField {
   
   constructor(example, name, placeholder, changeCallback, className = "", style = "", hasConnector = true) {
-    this._example = example;
-    this._name = name;
-    this._id = `${this._example.id}_${this._name}`;
+    super(example, name, changeCallback);
     this._placeholder = placeholder;
-    this._changeCallback = changeCallback;
     
     // Text input
     this._input = <input
@@ -28,7 +25,7 @@ export default class InputField {
     });
     
     // Connector
-    this._connector = new Connector(this, this._onConnectorChange.bind(this));
+    this._makeConnector("canvas");
     
     // Element
     this._element = <span class={"input-field " + className} style={style}>
@@ -49,32 +46,17 @@ export default class InputField {
         this._input.value.length ? this._input.value.length : this._placeholder.length);
   }
   
-  _onConnectorChange(newTarget){
-    if(newTarget) {
-      // New target
-      this._input.style.display = "none"
-      this._element.style.border = "none"; 
-    } else {
-      // Clear target
-      this._input.style.display = "";
-      this._element.style.border = "";
-    }
-    this.fireChange();
-  }
-  
-  get id() {
-    return this._id;
-  }
-  
-  get element() {
-    return this._element;
-  }
-  
   get value() {
     if(this.target) {
-      return `window.__connectors["${this._id}"]()`;
+      return {
+        value: this._id,
+        isConnection: true,
+      }
     } else {
-      return this._input.value;
+      return {
+        value: this._input.value,
+        isConnection: false,
+     };
     }
   }
   
@@ -89,17 +71,5 @@ export default class InputField {
   set value(value) {
     this._input.value = value;
     this.fireChange();
-  }
-  
-  get style() {
-    return this._element.style;
-  }
-  
-  set style(style) {
-    this._element.style = style;
-  }
-  
-  get target() {
-    return this._connector.target;
   }
 }
