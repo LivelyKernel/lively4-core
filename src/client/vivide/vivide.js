@@ -12,11 +12,17 @@ export async function newScriptFromTemplate() {
     return script;
   }
   
-  let scripts = {
-    transform: [await copyStep('transform')],
-    extract: [await copyStep('extract')],
-    descent: [await copyStep('descent')]
-  }
+  let scripts = [];
+  let transform = await copyStep('transform');
+  let extract = await copyStep('extract');
+  let descent = await copyStep('descent');
+  
+  transform.nextScript = extract;
+  extract.nextScript = descent;
+  
+  scripts.push(transform);
+  scripts.push(extract);
+  scripts.push(descent);
   
   return scripts;
 }

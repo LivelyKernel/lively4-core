@@ -30,13 +30,10 @@ export default class VivideScriptEditor extends Morph {
     
     this.editorList.innerHTML = '';
     this.editorList.appendChild(<span>Next Level</span>);
-    this.editorList.appendChild(<span>-- transform --</span>);
-    scripts.transform.forEach(script => createStepEditorFor(script));
-    this.editorList.appendChild(<span>-- extract --</span>);
-    scripts.extract.forEach(script => createStepEditorFor(script));
-    if (scripts.descent) {
-      this.editorList.appendChild(<span>-- descent --</span>);
-      scripts.descent.forEach(script => createStepEditorFor(script));
-    }
+    
+    scripts.forEach(script => {
+      this.editorList.appendChild(<span>-- {script.type} --</span>);
+      createStepEditorFor(script);
+    });
   }
 }

@@ -224,9 +224,7 @@ export default class VivideView extends Morph {
   
   setScripts(scripts) {
     this.scripts = scripts;
-    this.scripts.transform.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
-    this.scripts.extract.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
-    this.scripts.descent.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
+    this.scripts.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
     this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
     
     return this.scripts;
@@ -260,28 +258,43 @@ export default class VivideView extends Morph {
   
   async calculateOutputModel() {
     let scripts = this.getScripts();
-    let transforms = await Promise.all(scripts.transform.map(script => this.updateScript(script)));
-    let extracts = await Promise.all(scripts.extract.map(script => this.updateScript(script)));
-    let descents = await Promise.all(scripts.descent.map(script => this.updateScript(script)));
-    let transformedData = transforms.reduce((data, transform) => {
-      let output = [];
-      transform.value(data, output);
-      return output;
-    }, this.input);
-    let annotatedModel = transformedData.map(object => {
-      let children = [];
-      descents.map(descent => children.push(...descent.value(object).map(c => ({ object: c, properties: [], children: [] }))));     
-      return {
-        object,
-        properties: extracts.map(extract => extract.value(object)),
-        children: children
-      };
-    });
+    let script = scripts[0];
+    let transformedData = [];
+    let properties = [];
+    let children = [];
+    this.viewConfig = [];
+    
+    while (script !== null) {
+      let module = await this.evalScript(script);
+      
+      if (script.type == 'transform') {
+        module.value(this.input, transformedData);
+      } else if (script.type == 'extract') {
+        transformedData.forEach(data => properties.push([module.value(data)]));
+      } else if (script.type == 'descent') {
+        transformedData.forEach(data => {
+          children.push(module.value(data).map(c => ({ object: c, properties: [], children: [] })));
+        });
+      }
+      
+      this.viewConfig.push(module.value.__vivideStepConfig__)
+      script = script.nextScript;
+    }
+    
+    let annotatedModel = [];
+    
+    for (let i = 0; i < transformedData.length; ++i) {
+      annotatedModel.push({
+        object: transformedData[i],
+        properties: properties[i],
+        children: children[i]
+      })
+    }
+    
     this.modelToDisplay = annotatedModel;
-    this.viewConfig = transforms.concat(extracts).map(step => { step.value.__vivideStepConfig__ } );
   }
   
-  async updateScript(script) {
+  async evalScript(script) {
     let module = await boundEval(script.source);
     return module;
   }
