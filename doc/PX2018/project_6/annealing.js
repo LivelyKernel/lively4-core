@@ -6,12 +6,16 @@ import d3 from "src/external/d3.v5.js"
 export default function() {
   var nodes = [],
       links = [],
-      w = 1, // box width
-      h = 1, // box width
+      w = 900, // box width
+      h = 500, // box width
       graphAnneal = {};
 
-  var max_move = 5.0;
-
+  var max_move = 500.0;
+  
+   // weights
+  var w_node_overlap = 30.0, // Node-overlap 
+      w_edge_overlap = 10;   // Edge-overlap
+  
   // booleans for user defined functions
   var user_energy = false,
       user_defined_energy,
@@ -21,22 +25,62 @@ export default function() {
   var energy = function(index) {
   // energy function, to be tailored for node placement
 
-      var v = nodes.length,
-          e = links.length,
-          ener = 0;
+    var v = nodes.length,
+        e = links.length,
+        ener = 0;
     
-      for (var i = 0; i < e; i++) {
+    for (var i = 0; i < e; i++) {
+      for (var j = i + 1; j < e; j++) {
         // Penalty for edge intersection
+        var x1 = links[i].source.x,
+            x2 = links[i].target.x,
+            y1 = links[i].source.y,
+            y2 = links[i].target.y,
+            x3 = links[j].source.x,
+            x4 = links[j].target.x,
+            y3 = links[j].source.y,
+            y4 = links[j].target.y;
+        
+        if (intersect(x1, x2, x3, x4, y1, y2, y3, y4)) {
+          ener += w_edge_overlap;
+        } 
       }
+    }
 
-      for (i = 0; i < v; i++) {
-        if (i != index) {
-          // Penalty for node intersection
+    for (i = 0; i < v; i++) {
+      if (i != index) {
+        // Penalty for node intersection
+        var nx1 = nodes[index].x,
+            ny1 = nodes[index].y,
+            r1 = nodes[index].r,
+            nx2 = nodes[i].x,
+            ny2 = nodes[i].y,
+            r2 = nodes[i].r;
+
+        if (collision(nx1, ny1, r1, nx2, ny2, r2)) {
+          ener += w_node_overlap; 
         }
-
       }
-      return ener;
+
+    }
+    return ener;
   };
+  
+  var collision = function(p1x, p1y, r1, p2x, p2y, r2) {
+    var a;
+    var x;
+    var y;
+
+    a = r1 + r2;
+    x = p1x - p2x;
+    y = p1y - p2y;
+
+    if ( a > Math.sqrt( (x*x) + (y*y) ) ) {
+        return true;
+    } else {
+        return false;
+    }   
+  }
 
   var mcmove = function(currT) {
   // Monte Carlo translation move
@@ -109,16 +153,20 @@ export default function() {
     
   console.log(nodes, links)
   // main simulated annealing function
-      var m = nodes.length,
-          currT = 1.0,
-          initialT = 1.0;
+    var m = nodes.length,
+        currT = 1.0,
+        initialT = 1.0;
+    for (i = 0; i < m; i++) {
+      nodes[i].x = 0;
+      nodes[i].y = 0;
+    }
 
-      for (var i = 0; i < nsweeps; i++) {
-        for (var j = 0; j < m; j++) { 
-          mcmove(currT);
-        }
-        currT = cooling_schedule(currT, initialT, nsweeps);
+    for (var i = 0; i < nsweeps; i++) {
+      for (var j = 0; j < m; j++) { 
+        mcmove(currT);
       }
+      currT = cooling_schedule(currT, initialT, nsweeps);
+    }
   };
 
   graphAnneal.width = function(x) {
