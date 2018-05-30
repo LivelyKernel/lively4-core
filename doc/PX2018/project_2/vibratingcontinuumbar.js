@@ -7,7 +7,7 @@ export default class VibratingContinuumBar extends MpmAnimation {
     this.L = 25;
     this.E = 100;
     this.elementCount = 13;
-    this.nodes = null;                                          // TODO: finish
+    this.nodes = Array.apply(null, {length: this.elementCount + 1}).map(Number.call, Number).map(n => (this.L / this.elementCount) * n);
     this.elements = null;                                       // TODO: finish
     
     for (let i = 0; i < this.elementCount; ++i) {
@@ -31,10 +31,10 @@ export default class VibratingContinuumBar extends MpmAnimation {
     this.Mp = this.deltax;                                      // TODO: finish
     this.Vp = this.deltax;                                      // TODO: finish
     
-    this.Fp = null;                                             // TODO: finish
+    this.Fp = Array(this.pCount).fill(1);
     this.Vp0 = this.Vp;
-    this.sp = null;                                             // TODO: finish
-    this.vp = null;                                             // TODO: finish
+    this.sp = new Array(this.pCount).fill(0);
+    this.vp = new Array(this.pCount).fill(0);
     
     // Initial velocities
     for (let i = 1; i < this.pCount; ++i) {
@@ -49,10 +49,10 @@ export default class VibratingContinuumBar extends MpmAnimation {
     this.va = [];
     this.xa = [];
     
-    this.nmass = new Array(this.nodeCount);
-    this.nmomentum = new Array(this.nodeCount);
-    this.niforce = new Array(this.nodeCount);
-    this.neforce = new Array(this.nodeCount);
+    this.nmass = new Array(this.nodeCount).fill(0);
+    this.nmomentum = new Array(this.nodeCount).fill(0);
+    this.niforce = new Array(this.nodeCount).fill(0);
+    this.neforce = new Array(this.nodeCount).fill(0);
   }
   
   calculate(caller) {    

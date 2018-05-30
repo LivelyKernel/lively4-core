@@ -11,7 +11,7 @@ function rewriteSourceWithAsyncAwaitSupport(source) {
 export default async function boundEval(source, thisReference, targetModule) {
   try {
     // 'this' reference
-    window.__global_this__ = thisReference;
+    window.__global_this__ = thisReference; //  #BUG this breaks sometimes when there is a lot of async behavior... two scripts loaded in parallel ?
     
     // binding module
     window.__topLevelVarRecorder_ModuleName__ = targetModule;
