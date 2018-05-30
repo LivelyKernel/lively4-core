@@ -73,7 +73,10 @@ export const defaultTracker = () => ({
       }
     }
     
-    const type = typeof(value);
+    let type = typeof(value);
+    if(value.constructor && value.constructor.name) {
+      type = value.constructor.name;
+    }
     
     // Handle special cases
     if(value instanceof CanvasRenderingContext2D) {

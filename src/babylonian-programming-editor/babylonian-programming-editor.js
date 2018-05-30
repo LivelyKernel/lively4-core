@@ -1,6 +1,7 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
 import boundEval from 'src/client/bound-eval.js';
+import ContextMenu from 'src/client/contextmenu.js';
 import { babel } from 'systemjs-babel-build';
 const { traverse } = babel;
 
@@ -75,6 +76,9 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
+    
+    // Right click listener
+    this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
 
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -83,19 +87,19 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/functions.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
       this.editor().on("change", () => {
-        this.syncIndentations();
+        this.syncIndentations() ;
         this._evaluateTimer.start();
       });
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
-        "Ctrl-1": () => { this.addAnnotationAtSelection("probe") },
-        "Ctrl-2": () => { this.addAnnotationAtSelection("example") },
-        "Ctrl-3": () => { this.addAnnotationAtSelection("replacement") },
+        "Ctrl-1": () => this.addAnnotationAtSelection("probe"),
+        "Ctrl-2": () => this.addAnnotationAtSelection("example"),
+        "Ctrl-3": () => this.addAnnotationAtSelection("replacement"),
         "Tab": (cm) => { cm.replaceSelection("  ") },
       });
 
@@ -548,6 +552,22 @@ export default class BabylonianProgrammingEditor extends Morph {
     } else {
       this._selectedPath = null;
     }
+  }
+  
+  onContextMenu(evt) {
+    if (evt.shiftKey) { 
+      return true;
+    }
+    
+    evt.preventDefault();
+    evt.stopPropagation();
+    var menu = new ContextMenu(this, [
+      ["Add Probe", () => this.addAnnotationAtSelection("probe")],
+      ["Add Example", () => this.addAnnotationAtSelection("example")],
+      ["Add Replacement", () => this.addAnnotationAtSelection("replacement")],
+    ]);
+    menu.openIn(document.body, evt, this);
+    return false; 
   }
 
   onSliderChanged(slider, exampleId, value) {

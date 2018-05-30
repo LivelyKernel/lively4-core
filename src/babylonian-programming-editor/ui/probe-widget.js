@@ -166,6 +166,12 @@ export default class ProbeWidget extends Widget {
         </span>;
       }
       
+      // Inspector icon
+      const inspectorIcon = <span class="icon inspector space-before"></span>;
+      inspectorIcon.addEventListener("click", () => {
+        this._onInspectorIconClicked(runs);
+      });
+      
       return <tr class="widget-line">
         <td class="probe-meta">
           {leftSpace}
@@ -174,6 +180,7 @@ export default class ProbeWidget extends Widget {
         <td class="probe-example">
           {exampleName}
           {valueElement}
+          {inspectorIcon}
         </td>
       </tr>
     }
@@ -197,5 +204,11 @@ export default class ProbeWidget extends Widget {
     } else {
       this._element.style.display = "";
     }
+  }
+  
+  _onInspectorIconClicked(runs) {
+    const inspectableRun = Array.from(runs.entries())
+                                .reduce((acc, run) => { acc[run[0]] = run[1]; return acc }, []);
+        lively.openInspector(inspectableRun);
   }
 }

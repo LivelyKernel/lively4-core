@@ -287,10 +287,11 @@
 
 .connector {
   color: blue;
+  padding-right: 2px;
 }
 
 .connector.off {
-  opacity: 0.5;
+  opacity: 0.8;
   color: black;
 }
 
@@ -330,3 +331,13 @@ input[type=range]::-webkit-slider-runnable-track {
   background: #999;
   border-radius: 2px;
 }
+
+.inspector {
+  padding-top: 2px;
+}
+
+.inspector::before {
+  content: "\f2d2";
+  opacity: 0.8;
+}
+
