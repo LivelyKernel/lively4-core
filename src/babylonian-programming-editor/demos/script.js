@@ -1,10 +1,10 @@
 // Try out replacement
-let celcius = 24;
+let celcius = prompt();
 let fahrenheit = celcius * 9/5 + 32;
 
 // Track loop variables
 let fact = 1;
-for(let i = 1; i < 5; i++) {
+for(let i = 1; i < 50; i++) {
   fact *= i;
 }
 
@@ -17,7 +17,7 @@ obj.c = 4
 delete obj.a;
 
 let test = { a: 1, b: 2 };
-test.b = 4;
+test.b = celcius;
 test = { a: 1 };
 
 // Array test
@@ -33,9 +33,4 @@ for(let i = 0; i < 5; i++) {
   for(let j = 0; j < 3; j++) {
     innerSum += j;
   }
-}
-
-let i = 0;
-while(i < 5) {
-  i++;
-}/* Examples: {"probes":[{"location":[34,4,34,12]},{"location":[20,0,20,4]},{"location":[40,2,40,3]}],"sliders":[{"location":[33,2,33,5]}],"examples":[],"replacements":[],"instances":[]} */
+}/* Examples: {"probes":[{"location":[3,4,3,14]},{"location":[8,10,8,11]},{"location":[12,4,12,7]},{"location":[16,0,16,3]},{"location":[17,7,17,10]},{"location":[19,4,19,8]},{"location":[21,0,21,4]},{"location":[25,0,25,3]},{"location":[34,4,34,12]}],"sliders":[{"location":[33,2,33,5]}],"examples":[],"replacements":[{"location":[2,14,2,22],"value":"120"}],"instances":[]} */

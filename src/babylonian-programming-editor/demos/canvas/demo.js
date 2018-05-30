@@ -15,15 +15,44 @@ function drawSmiley(canvas, eyeColor, skinColor) {
     ctx.stroke();
     
     ctx.fillStyle = eyeColor;
-    for(let i = 0; i < 2; i++) {
+    const eyeDistance = 35;
+    const numEyes = 2;
+    for(let i = 0; i < numEyes; i++) {
+      const eyePosX = 60 + i*(eyeDistance / (numEyes-1));
       ctx.beginPath();
-      ctx.moveTo(60 + i*35, 65);
-      ctx.arc(60 + i*35, 65, 5, 0, Math.PI * 2, true);  // Eye
+      ctx.moveTo(eyePosX, 65);
+      ctx.arc(eyePosX, 65, 5, 0, Math.PI * 2, true);  // Eye
       ctx.stroke();
       ctx.fill();
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Smiley {
   constructor(canvas, eyeColor, skinColor) {
@@ -55,4 +84,4 @@ class Smiley {
     ctx.fill();
     ctx.stroke();
   }
-}/* Examples: {"probes":[{"location":[23,6,23,9]}],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"20bb-e3d5-b35c","name":"Simpson","values":{"canvas":"","eyeColor":"\"green\"","skinColor":"\"yellow\""},"instanceId":"0"},{"location":[1,9,1,19],"id":"b0f4-d0e5-c0e9","name":"Alien","values":{"canvas":"","eyeColor":"\"brown\"","skinColor":"\"green\""},"instanceId":"0"},{"location":[35,2,35,8],"id":"9b62-6c3e-6271","name":"","values":{"x":"100","y":"100"},"instanceId":"7309-a90c-9b51"}],"replacements":[],"instances":[{"location":[28,6,28,12],"id":"7309-a90c-9b51","name":"Weird Alien","values":{"canvas":"","eyeColor":"\"red\"","skinColor":"\"blue\""}}]} */
+}/* Examples: {"probes":[],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"20bb-e3d5-b35c","name":"Simpson","values":{"canvas":"","eyeColor":"\"green\"","skinColor":"\"yellow\""},"instanceId":"0"},{"location":[1,9,1,19],"id":"b0f4-d0e5-c0e9","name":"Alien","values":{"canvas":"","eyeColor":"\"brown\"","skinColor":"\"green\""},"instanceId":"0"},{"location":[64,2,64,8],"id":"9b62-6c3e-6271","name":"","values":{"x":"100","y":"100"},"instanceId":"7309-a90c-9b51"}],"replacements":[],"instances":[{"location":[57,6,57,12],"id":"7309-a90c-9b51","name":"Weird Alien","values":{"canvas":"","eyeColor":"\"red\"","skinColor":"\"blue\""}}]} */

@@ -107,7 +107,7 @@ export const defaultTracker = () => ({
     return blockCount;
   },
   timer: {
-    _maxRuntime: 1000,
+    _maxRuntime: 5000,
     _startTime: null,
     start() {
       this._startTime = (+new Date());
