@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { scriptFolder, stepFolder } from 'src/client/vivide/utils.js';
+import Script from 'src/client/vivide/script.js';
 
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
@@ -13,26 +14,12 @@ export default class VivideStepEditor extends Morph {
     this.editor.doSave = text => this.stepSaved(text);
   }
   
-  setScriptEditor(scriptEditor) {
-    this._scriptEditor = scriptEditor;
-  }
-  
   setStepScript(script) {
-    this.editor.value = script;
+    this.script = script;
+    this.editor.value = script.source;
   }
   async stepSaved(text) {
-    if(!this.editor.value) {
-      lively.warn('No script set for this editor.');
-      return;
-    }
-
-    this.notifyChange();
-  }
-  notifyChange() {
-    if(this._scriptEditor) {
-      this._scriptEditor.stepChanged(this, this.editor.value);
-    } else {
-      lively.error('No script editor found for script.');
-    }
+    this.script.source = text;
+    this.script.update();
   }
 }

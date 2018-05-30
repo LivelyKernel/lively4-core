@@ -181,7 +181,8 @@ export default class Rasterize {
         return copy;
     }
   
-   static async elementToCanvas(element) {
+   static async elementToCanvas(element, zoom=1) {
+    // zoom = 2; // see   tmp.style.transform = "scale(2)" in (rc/client/html.js)
     var bounds = lively.getTotalGlobalBounds(element)
     var extent = pt(bounds.width, bounds.height)
 
@@ -200,7 +201,6 @@ export default class Rasterize {
 
     lively.setPosition(cloned, pt(0,0))
     var canvas = document.createElement("canvas")
-    var zoom = 2; // see   tmp.style.transform = "scale(2)" in (rc/client/html.js)
     var minExtent = pt(1,1);
     canvas.width = Math.max(extent.x * zoom, minExtent.x);
     canvas.height = Math.max(extent.y * zoom, minExtent.y);
@@ -210,14 +210,14 @@ export default class Rasterize {
     return canvas
   } 
 
-  static async elementToDataURL(element) {
-    var canvas = await this.elementToCanvas(element)
+  static async elementToDataURL(element, zoom) {
+    var canvas = await this.elementToCanvas(element, zoom)
     return canvas.toDataURL("image/png")
   } 
 
   
-  static async elementToURL(element, url) {
-    var dataURL = await this.elementToDataURL(element)
+  static async elementToURL(element, url, zoom) {
+    var dataURL = await this.elementToDataURL(element, zoom)
     return lively.files.copyURLtoURL(dataURL, url)
   } 
   

@@ -14,4 +14,4 @@ import { createNewFileButton } from "doc/PX2018/project_2/utils.js"
 
 [Initial Presentation](presentation/presentation-2018-05-16.md)
 
-[Next Meeting](meeting/meeting-2018-05-02.md)
+[Next Meeting](meeting/meeting-2018-05-22.md)

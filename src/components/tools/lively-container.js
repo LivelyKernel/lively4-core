@@ -617,7 +617,7 @@ export default class Container extends Morph {
     }
 
     // get around some async fun
-    if (this.preserveContentScroll) {
+    if (this.preserveContentScroll !== undefined) {
       this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
@@ -741,8 +741,8 @@ export default class Container extends Morph {
     }
 
     // get around some async fun
-    if (this.preserveContentScroll) {
-       this.get("#container-content").scrollTop = this.preserveContentScroll
+    if (this.preserveContentScroll !== undefined) {
+      this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
 
@@ -1021,8 +1021,7 @@ export default class Container extends Morph {
       }
       this.wasContentEditable =   markdown.contentEditable == "true"
     }
-
-
+    
 	  this.setAttribute("src", path);
     this.clear();
     this.get('#container-path').value = decodeURI(path);
@@ -1120,6 +1119,11 @@ export default class Container extends Morph {
         this.sourceContent = content;
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
+        }
+      } else if (format == "xhtml") {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>');
         }
       } else {
         this.sourceContent = content;

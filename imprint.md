@@ -10,15 +10,35 @@ office-hirschfeld@hpi.uni-potsdam.de<br />
 +49-331-5509-229 (fax)<br />
 
 
-## Datenschutzerklärung
+## Data Privacy
 
-<!-- based on https://wikipedia.de/imprint -->
+Each time this website is accessed, the following details of the request will be stored to enable its optimization and improvement:
 
-Personenbezogene Daten werden auf dieser Webseite nur im technisch notwendigen Umfang erhoben. In keinem Fall werden die erhobenen Daten verkauft oder aus anderen Gründen an Dritte weitergegeben. Im Folgenden erhalten Sie einen Überblick über die von uns im Rahmen dieser Website erhobenen Daten.
+<ul>
+<li>Name of the requested resource</li>
+<li>Date and time of the request</li>
+<li>Transferred data volume</li>
+<li>Browser type and version</li>
+<li>Operating system used</li> 
+<li>Hostname of the accessing computer</li>
+<li>Full IP address for requests</li>
+<li>GitHub username, if user is logged in</li>
+<li>Notification whether the retrieval was successful or not</li>
+<li>This data will not be shared with third parties.</li>
+</ul>
 
-<b>Log-Files:</b> Bei der Nutzung dieses Angebots werden die von Ihrem Browser an den Server übermittelten Daten erfasst und gespeichert. Dies umfasst üblichweise Informationen über den Typ und die Version des von Ihnen verwendeten Browsers, das verwendete Betriebssystem, die Referrer URL (die Webseite, von der aus Sie zu dieser Website gelangt sind, den Hostnamen des zugreifenden Rechners (die IP Adresse) sowie die Uhrzeit der Serveranfrage. In der Regel lassen sich diese Daten nicht bestimmten Personen - und damit auch nicht Ihnen - zuordnen. Weder wird zu diesem Zweck ein Abgleich der Daten mit anderen Daten vorgenommen, noch werden sie hierfür mit anderen Daten zusammengeführt. 
+This website utilizes JavaScript to enhance its usability. If JavaScript is disabled in the browser, some of this site's functionality will not work as intended or at all.
 
-<b>Wiki Funktionalität:</b> Die Lively4 Entwicklungsumgebung erlaubt es allen Benutzern, neue Inhalte und den Verhalten zu der Umgebung hinzu zu fügen und existierende Inhalte zu verändern. Dies geschieht sowohl lokal, als auch mit Hilfe des GitHub services.
-Die Inhalte werden auf dem Server 
+**Wiki:** The Lively4 development environment allows all users to create new content and change the behavior of the environment itself. Those changes can be stored in browser local storage and published on [GitHub](). For publishing files on GitHub an OAuth authentication is used. Modified data and meta-data are stored on the server and on GitHub in git repositories. 
+The authentication token will not be stored on the server, but is kept in browser local storage.  
 
-<b>Local Storage:</b> Diese Website verwendet an mehreren Stellen so genannten "Local Storage". Local Storage, wird ähnlich wie Cookies, im Browser gespeichert und dient dazu dienen, die Benutzung einer Website einfacher, effektiver und sicherer zu machen. Lively4 verwendet "Local Storage" um Authenifizierungstokensdes jeweiligen Benutzers zu speichern. 
+**Travis:**  To display continuous integration information, the [Travis](https://docs.travis-ci.com/imprint.html) service is used and your IP address and other data is transmitted to:
+
+<pre>
+Travis CI GmbH
+Rigaer Straße 8
+10247 Berlin
+Germany
+</pre>
+
+<p> Please refer to <a href="https://hpi.de/en/datenschutz.html" rel="external">hpi.de/en/datenschutz.html</a> for HPI's detailed data privacy statement. </p>

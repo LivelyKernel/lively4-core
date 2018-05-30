@@ -91,10 +91,6 @@ export default class Inspector   extends Morph {
   renderObject(node, obj, expanded, name) {
     // handle system objects... 
     var handlerMethod = "render" +obj.constructor.name + "Object"
-    console.log("render " +handlerMethod)
-    
-    
-    
     node.type = "Object"
     node.isExpanded = expanded;
     if (!name) {
@@ -558,8 +554,7 @@ export default class Inspector   extends Morph {
     return result
   }
 
-  // callbacks for system objects...
-  renderHeadersObject(contentNode, obj) {
+  renderInterable(contentNode, obj) {
     if (!contentNode) return
     contentNode.innerHTML = ""
     var keys = []
@@ -570,6 +565,16 @@ export default class Inspector   extends Morph {
       var node = this.displayObject(obj.get(ea), true, ea)
       if (node) contentNode.appendChild(node);   
     }
+  }
+  
+  // callbacks for system objects...
+  renderHeadersObject(contentNode, obj) {
+    this.renderInterable(contentNode, obj)
+  }
+  
+  // callbacks for system objects...
+  renderMapObject(contentNode, obj) {
+    this.renderInterable(contentNode, obj)
   }
   
   static inspectArrayAsTable(array) {

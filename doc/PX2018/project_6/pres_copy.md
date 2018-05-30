@@ -81,7 +81,7 @@ rect {
 <script>
 
 import d3 from "src/external/d3.v4.js";
-import "doc/PX2018/project_6/annealing.js";
+import annealing from "doc/PX2018/project_6/annealing.js";
 (async () => {
 
 
@@ -91,11 +91,6 @@ var color = d3.scaleOrdinal(d3.schemeCategory20);
 var width = +svg.attr("width"),
   height = +svg.attr("height");
   
-var addButton = lively.query(this, "#addNode")
-addButton.addEventListener("click", addNode);
-var removeButton = lively.query(this, "#removeNode")
-removeButton.addEventListener("click", removeNode);
-  
 var node = svg.append("g")
   .selectAll(".node");
   
@@ -104,27 +99,12 @@ var link = svg.append("g")
   .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
   .attr("stroke", "lightgray");
 
-var a = {id: "a", group: 1},
-    b = {id: "b", group: 2},
-    c = {id: "c", group: 3},
-    nodes = [a, b, c],
-    links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
-    
-function addNode() {
-  nodes.push(c); // Re-add c.
-  links.push({source: b, target: c}); // Re-add b-c.
-  links.push({source: c, target: a}); // Re-add c-a.
-  console.log(nodes, 'nodes');
-  console.log(links, 'links');
-  restart();
-}
-
-function removeNode() {
-  nodes.pop(); // Remove c.
-  links.pop(); // Remove c-a.
-  links.pop(); // Remove b-c.
-  restart();
-}
+var a = {id: "a", group: 1, x: 0, y: 0, r: 10},
+    b = {id: "b", group: 2, x: 0, y: 0, r: 10},
+    c = {id: "c", group: 3, x: 0, y: 0, r: 10},
+    d = {id: "d", group: 4, x: 0, y: 0, r: 10},
+    nodes = [a, b, c, d],
+    links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a}, {source: a, target: d}, {source: b, target: d}, {source: c, target: d} ];
 
   
 
@@ -146,50 +126,19 @@ async function start() {
   node.append("title")
     .text(function(d) { return d.id; });
     
-  d3.graphAnneal()
+  annealing()
     .nodes(nodes)
     .links(links)
     .start(10000);
-
+  node
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+  link
+    .attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
 };
-
-function restart() {
-//   node = node.data(nodes, function(d) { return d.id;});
-//   node.exit().remove();
-//   node = node.enter().append("circle")
-//     .attr("r", 10)
-//     .attr("fill", function(d) { return color(d.id); })
-//     .merge(node);
-
-//   link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-//   link.exit().remove();
-//   link = link.enter().append("line").merge(link);
-
-//   node.append("title")
-//     .text(function(d) { return d.id; });
-
-//   simulation.nodes(nodes);
-
-//   simulation.force("link").links(links);
-    
-//   simulation.alpha(1).restart();
-
-    // Apply the general update pattern to the nodes.
-  node = node.data(nodes, function(d) { return d.id;});
-  node.exit().remove();
-  node = node.enter().append("circle").attr("fill", function(d) { return color(d.id); }).attr("r", 8).merge(node);
-
-  // Apply the general update pattern to the links.
-  link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
-  link.exit().remove();
-  link = link.enter().append("line").merge(link);
-    
-  d3.graphAnneal()
-    .nodes(nodes)
-    .links(links)
-    .start(10000);
-
-}
 
 start();
 
