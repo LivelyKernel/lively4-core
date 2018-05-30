@@ -29,6 +29,18 @@ export default class ProbeWidget extends Widget {
   }
 
   _update() {
+    const renderValue = (value) => {
+      if(!value) {
+        return null;
+      } else if(value instanceof HTMLElement) {
+        return value.outerHTML
+      } else if(value.toString) {
+        return value.toString();
+      } else {
+        return value;
+      }
+    }
+    
     // Gets a string representaion for a single run
     const elementForRun = (run) => {
       // run: [{type, value}]
@@ -46,15 +58,15 @@ export default class ProbeWidget extends Widget {
           const arrayElement = <span class="run array"></span>;
           for(let entry of combinedArray) {
             if(entry[0] !== entry[1]) {
-              arrayElement.appendChild(<span class="old-value space-after">{entry[0]}</span>);
+              arrayElement.appendChild(<span class="old-value space-after">{renderValue(entry[0])}</span>);
             }
-            arrayElement.appendChild(<span class="new-value">{entry[1]}</span>);
+            arrayElement.appendChild(<span class="new-value">{renderValue(entry[1])}</span>);
           }
           return arrayElement;
         } else {
           const arrayElement = <span class="run array"></span>;
           for(let entry of run[0].value) {
-            arrayElement.appendChild(<span class="new-value">{entry}</span>);
+            arrayElement.appendChild(<span class="new-value">{renderValue(entry)}</span>);
           }
           return arrayElement;
         }
@@ -67,7 +79,8 @@ export default class ProbeWidget extends Widget {
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
         return canvas;
-      } else if(run[0].value instanceof Object) {
+      } else if(run[0].value instanceof Object
+                && !(run[0].value instanceof HTMLElement)) {
         // We have to print the key-value pairs
         // Combine all properties (before and after)
         const combinedObj = {}; // {key: [oldValue, newValue]}
@@ -89,13 +102,13 @@ export default class ProbeWidget extends Widget {
           if(combinedObj[key][0] === combinedObj[key][run.length-1]) {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
-                <span class="new-value">{run[run.length-1].value[key]}</span>
+                <span class="new-value">{renderValue(run[run.length-1].value[key])}</span>
               </span>);
           } else {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
                 <span class="old-value">{run[0].value[key]}</span>
-                <span class="new-value">{run[run.length-1].value[key]}</span>
+                <span class="new-value">{renderValue(run[run.length-1].value[key])}</span>
               </span>);
           }
         }
@@ -119,12 +132,12 @@ export default class ProbeWidget extends Widget {
         // We can just print the value
         if(run.length < 2 || run[0].value === run[run.length-1].value) {
           return <span class="run">
-            <span class="new-value">{run[0].value}</span>
+            <span class="new-value">{renderValue(run[0].value)}</span>
           </span>;
         } else {
           return <span class="run">
-            <span class="old-value">{run[0].value}</span>
-            <span class="new-value">{run[run.length-1].value}</span>
+            <span class="old-value">{renderValue(run[0].value)}</span>
+            <span class="new-value">{renderValue(run[run.length-1].value)}</span>
           </span>;
         }
       }

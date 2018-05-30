@@ -17,7 +17,11 @@ import { defaultBabylonConfig } from "./defaults.js";
  */
 export const deepCopy = (obj) => {
   try {
-    return JSON.parse(JSON.stringify(obj));
+    if(obj instanceof HTMLElement) {
+      return obj.cloneNode(true);
+    } else {
+      return JSON.parse(JSON.stringify(obj));
+    }
   } catch(e) {
     console.warn("Could not deeply clone object", obj);
     return Object.assign({}, obj);
