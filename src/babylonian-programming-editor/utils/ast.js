@@ -135,6 +135,11 @@ export const replacementNodeForCode = (code) => {
   }
 }
 
+const replacementNodeForValue = (value) => 
+  replacementNodeForCode(value.isConnection ?
+                         connectorTemplate(value.value) :
+                         value.value);
+
 /**
  * Assigns IDs to add nodes of the AST
  */
@@ -207,7 +212,7 @@ export const applyBasicModifications = (ast) => {
  */
 export const applyReplacements = (ast, replacements) => {
   replacements.forEach((replacement) => {
-    const replacementNode = replacementNodeForCode(replacement.value);
+    const replacementNode = replacementNodeForValue(replacement.value);
     if(!replacementNode) {
       return;
     }
@@ -270,10 +275,7 @@ export const generateInstances = (ast, instances) => {
     
     let instanceNode = constructorCall({
       CLASS: types.identifier(className),
-      PARAMS: instance.values.map(value => value.isConnection ?
-                                           connectorTemplate(value.value) :
-                                           value.value)
-                             .map(replacementNodeForCode)
+      PARAMS: instance.values.map(replacementNodeForValue)
     });
     
     if(!instanceNode) {
@@ -305,10 +307,7 @@ export const applyExamples = (ast, examples, exampleInstances) => {
   // Apply the markers
   examples.forEach((example) => {
     let parametersNode = types.arrayExpression(
-      example.values.map(value => value.isConnection ?
-                                  connectorTemplate(value.value) :
-                                  value.value)
-                    .map(replacementNodeForCode)
+      example.values.map(replacementNodeForValue)
     );
     if(!parametersNode) {
       parametersNode = types.nullLiteral();

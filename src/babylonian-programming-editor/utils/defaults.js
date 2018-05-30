@@ -73,7 +73,10 @@ export const defaultTracker = () => ({
       }
     }
     
-    const type = typeof(value);
+    let type = typeof(value);
+    if(value.constructor && value.constructor.name) {
+      type = value.constructor.name;
+    }
     
     // Handle special cases
     if(value instanceof CanvasRenderingContext2D) {
@@ -107,7 +110,7 @@ export const defaultTracker = () => ({
     return blockCount;
   },
   timer: {
-    _maxRuntime: 1000,
+    _maxRuntime: 5000,
     _startTime: null,
     start() {
       this._startTime = (+new Date());
