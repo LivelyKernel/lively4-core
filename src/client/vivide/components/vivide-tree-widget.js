@@ -19,25 +19,35 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     return this.dataByTreeItem.get(treeItem);
   }
 
-  display(model, config) {
+  async display(model, config) {
     super.display(model, config);
 
     this.dataByTreeItem = new Map();
     this.childrenByTreeItem = new Map();
+    this.childScriptByTreeItem = new Map();
     
     this.tree.innerHTML = '';
-    model.forEach(m => this.processModel(m, this.tree));
+    for (let m of model) {
+      await this.processModel(m, this.tree);
+    }
   }
   
-  toggleTree(treeItem, expander) {
+  async toggleTree(treeItem, expander) {
     let children = this.childrenByTreeItem.get(treeItem);
     
-    if (!children.length) return;
+    if (!children || !children.length) return;
     
     let sub = treeItem.querySelector("#child");
     if (sub.innerHTML.length == 0) {
       treeItem.className += " expanded"
-      children.forEach(c => this.processModel(c, sub));
+      let childScript = this.childScriptByTreeItem.get(treeItem);
+      let childObjects = children.map(c => c.object);
+      children = await this.expandChild(childObjects, childScript);
+      this.childrenByTreeItem.set(treeItem, children);
+      
+      for (let child of children) {  
+        this.processModel(child, sub);
+      }
       treeItem.appendChild(sub);
       expander.classList.remove("fa-caret-right");
       expander.classList += " fa-caret-down";
@@ -52,7 +62,7 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     }
   }
   
-  processModel(model, parent) {
+  async processModel(model, parent) {    
     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
@@ -63,6 +73,7 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     this.addDragEventTo(treeItem);
     this.dataByTreeItem.set(treeItem, model.object);
     this.childrenByTreeItem.set(treeItem, model.children);
+    this.childScriptByTreeItem.set(treeItem, model.childScript);
     parent.appendChild(treeItem);
   }
   
