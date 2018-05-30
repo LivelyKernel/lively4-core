@@ -24,10 +24,8 @@ import {
   loadFile,
   saveFile
 } from "./utils/load-save.js";
-import {
-  defaultAnnotations,
-  defaultTracker
-} from "./utils/defaults.js";
+import { defaultAnnotations } from "./utils/defaults.js";
+import Tracker from "./utils/tracker.js";
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
 import Example from "./annotations/example.js";
@@ -79,6 +77,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Right click listener
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
+    
+    // Tracker
+    this._tracker = window.__tracker = new Tracker();
 
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -87,7 +88,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/functions.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -525,7 +526,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   async execute(code) {
     // Prepare result container
-    window.__tracker = defaultTracker();
+    this._tracker.reset();
 
     // Execute the code
     return await boundEval(code, window);

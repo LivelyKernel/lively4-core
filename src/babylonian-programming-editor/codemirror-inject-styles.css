@@ -333,11 +333,11 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .inspector {
-  padding-top: 2px;
+  padding-top: 1px;
 }
 
 .inspector::before {
-  content: "\f2d2";
+  content: "\f002";
   opacity: 0.8;
 }
 
