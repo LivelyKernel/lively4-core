@@ -2,10 +2,9 @@ import Connector from "./connector.js";
 import { abstract } from "../utils/defaults.js";
 
 export default class ConnectorField {
-  constructor(example, name, changeCallback) {
-    this._example = example;
+  constructor(parent, name, changeCallback) {
+    this._parent = parent;
     this._name = name;
-    this._id = `${this._example.id}_${this._name}`;
     this._changeCallback = changeCallback;
   }
   
@@ -35,11 +34,15 @@ export default class ConnectorField {
   }
   
   get id() {
-    return this._id;
+    return `${this._parent.id}_${this._name}`;
   }
   
   get input() {
     return this._input;
+  }
+  
+  get isConnected() {
+    return this._connector.isConnected;
   }
   
   get style() {
@@ -52,6 +55,22 @@ export default class ConnectorField {
   
   get target() {
     return this._connector.target;
+  }
+  
+  set target(target) {
+    this._connector.target = target;
+  }
+  
+  setTargetKey(targetKey) {
+    if(targetKey in window.__connectors) {
+      this.target = window.__connectors[targetKey]();
+      return true;
+    } else {
+      this._connector.isConnected = true;
+      this._connector.isBroken = true;
+      this._onConnectorChange(true);
+      return false;
+    }
   }
   
   get value() {

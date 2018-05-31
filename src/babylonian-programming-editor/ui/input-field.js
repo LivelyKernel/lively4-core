@@ -2,14 +2,14 @@ import ConnectorField from "./connector-field.js";
 
 export default class InputField extends ConnectorField {
   
-  constructor(example, name, placeholder, changeCallback, className = "", style = "", hasConnector = true) {
-    super(example, name, changeCallback);
+  constructor(parent, name, placeholder, changeCallback, className = "", style = "", hasConnector = true) {
+    super(parent, name, changeCallback);
     this._placeholder = placeholder;
     
     // Text input
     this._input = <input
         type="text"
-        id={this._id}
+        id={this.id}
         name={name}
         size={placeholder.length}
         value=""
@@ -37,7 +37,7 @@ export default class InputField extends ConnectorField {
   
   fireChange() {
     this._adjustSize();
-    this._changeCallback(this._id, this._name);
+    this._changeCallback(this.id, this._name);
   }
   
   _adjustSize() {
@@ -47,9 +47,9 @@ export default class InputField extends ConnectorField {
   }
   
   get value() {
-    if(this.target) {
+    if(this.isConnected) {
       return {
-        value: this._id,
+        value: this.id,
         isConnection: true,
       }
     } else {
@@ -60,16 +60,12 @@ export default class InputField extends ConnectorField {
     }
   }
   
-  get valueForSave() {
-    if(this.target) {
-      return "";
-    } else {
-      return this._input.value;
-    }
-  }
-  
   set value(value) {
-    this._input.value = value;
+    if(value.isConnection) {
+      this.setTargetKey(value.value);
+    } else {
+      this._input.value = value.value;
+    }
     this.fireChange();
   }
 }

@@ -7,22 +7,25 @@ export default class Replacement extends InputAnnotation {
     super(editor, location, changeCallback, null, deleteCallback);
     this._widget = new ReplacementWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
   }
+  
+  get id() {
+    return this._widget.id;
+  }
 
   serializeForWorker() {
     return {
+      id: this.id,
       location: this.locationAsKey,
       value: this._widget.value
     };
   }
   
   serializeForSave() {
-    return {
-      location: this.locationAsKey,
-      value: this._widget.valueForSave
-    };
+    return this.serializeForWorker();
   }
   
   load(serialized) {
+    this._widget.id = serialized.id;
     this._widget.value = serialized.value;
   }
 }

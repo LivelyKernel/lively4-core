@@ -1,14 +1,10 @@
 import InputWidget from "./input-widget.js";
 import InputField from "./input-field.js";
-import {
-  guid,
-  abstract
-} from "../utils/defaults.js";
+import { abstract } from "../utils/defaults.js";
 
 export default class FormWidget extends InputWidget {
   constructor(editor, location, kind, changeCallback, deleteCallback) {
     super(editor, location, kind, changeCallback, deleteCallback);
-    this._id = guid();
     this._keys = []; // [key]
     this._nameElement = null; // InputField
     this._elements = new Map(); // Map(key, {element, input})
@@ -69,14 +65,6 @@ export default class FormWidget extends InputWidget {
     abstract();
   }
   
-  get id() {
-    return this._id;
-  }
-  
-  set id(id) {
-    this._id = id;
-  }
-  
   set keys(keys) {
     this._keys = keys;
     this._update();
@@ -84,7 +72,7 @@ export default class FormWidget extends InputWidget {
   
   get name() {
     if(this._nameElement) {
-      return this._nameElement.value.value;
+      return this._nameElement.value;
     } else {
       return "";
     }
@@ -95,11 +83,10 @@ export default class FormWidget extends InputWidget {
   }
   
   get values() {
-    let result = {};
-    this._keys.forEach(k => {
-      result[k] = this._elements.get(k).input.valueForSave
-    });
-    return result;
+    return this._keys.reduce((acc, k) => {
+      acc[k] = this._elements.get(k).input.value;
+      return acc;
+    }, {});
   }
   
   set values(values) {

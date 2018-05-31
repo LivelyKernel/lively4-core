@@ -1,20 +1,17 @@
 export default class Connector {
   
   constructor(source, changeCallback, targetKind) {
-    this._sourceId = source.id;
+    this._source = source;
     this._target = null;
     this._changeCallback = changeCallback;
     this._targetKind = targetKind;
-    
-    // Global connector table
-    if(!window.__connectors) {
-      window.__connectors = {};
-    }
+    this._isConnected = false;
+    this._isBroken = false;
     
     // Set up element
     this._element = <span class="icon connector off"></span>;
     this._element.addEventListener("click", () => {
-      if(this.target) {
+      if(this.isConnected) {
         this.target = null;
       } else {
         this._element.classList.remove("off");
@@ -38,6 +35,32 @@ export default class Connector {
     }
   }
   
+  get isBroken() {
+    return this._isBroken;
+  }
+  
+  set isBroken(isBroken) {
+    this._isBroken = isBroken;
+    if(isBroken) {
+      this._element.classList.add("broken");
+    } else {
+      this._element.classList.remove("broken");
+    }
+  }
+  
+  get isConnected() {
+    return this._isConnected;
+  }
+  
+  set isConnected(isConnected) {
+    this._isConnected = isConnected;
+    if(isConnected) {
+      this._element.classList.remove("off");
+    } else {
+      this._element.classList.add("off");
+    }
+  }
+  
   get target() {
     return this._target;
   }
@@ -45,18 +68,20 @@ export default class Connector {
   set target(target) {
     this._target = target;
     if(target) {
-      this._element.classList.remove("off");      
+      this.isConnected = true;
+      this.isBroken = false;
       
       // Set up target
-      window.__connectors[this._sourceId] = () => {
+      window.__connectors[this._source.id] = () => {
         if(this._targetKind === "canvas") {
           target.getContext("2d").clearRect(0, 0, target.width, target.height);
         }
         return target;
       };
     } else {
-      this._element.classList.add("off");
-      delete window.__connectors[this._sourceId];
+      this.isConnected = false;
+      this.isBroken = false;
+      delete window.__connectors[this._source.id];
     }
     this._changeCallback(target);
   }

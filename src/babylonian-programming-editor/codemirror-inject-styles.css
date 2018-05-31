@@ -295,6 +295,11 @@
   color: black;
 }
 
+.connector.broken {
+  color: maroon !important;
+  opacity: 1 !important;
+}
+
 .connector::before {
   content: "\f0c1";
 }

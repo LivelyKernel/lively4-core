@@ -29,31 +29,6 @@ function drawSmiley(canvas, eyeColor, skinColor) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Smiley {
   constructor(canvas, eyeColor, skinColor) {
     this._canvas = canvas;
@@ -84,4 +59,5 @@ class Smiley {
     ctx.fill();
     ctx.stroke();
   }
-}/* Examples: {"probes":[{"location":[26,6,26,9]}],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"20bb-e3d5-b35c","name":"Simpson","values":{"canvas":"","eyeColor":"\"green\"","skinColor":"\"yellow\""},"instanceId":"0"},{"location":[1,9,1,19],"id":"b0f4-d0e5-c0e9","name":"Alien","values":{"canvas":"","eyeColor":"\"brown\"","skinColor":"\"green\""},"instanceId":"0"},{"location":[64,2,64,8],"id":"9b62-6c3e-6271","name":"","values":{"x":"100","y":"100"},"instanceId":"7309-a90c-9b51"}],"replacements":[],"instances":[{"location":[57,6,57,12],"id":"7309-a90c-9b51","name":"Weird Alien","values":{"canvas":"","eyeColor":"\"red\"","skinColor":"\"blue\""}}]} */
+}
+/* Examples: {"probes":[],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"7782-7825-9a38","name":{"value":"Test","isConnection":false},"values":{"canvas":{"value":"7782-7825-9a38_canvas","isConnection":true},"eyeColor":{"value":"\"blue\"","isConnection":false},"skinColor":{"value":"\"yellow\"","isConnection":false}},"instanceId":{"value":"0","isConnection":false}}],"replacements":[],"instances":[]} */

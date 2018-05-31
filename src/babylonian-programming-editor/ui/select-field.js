@@ -21,7 +21,7 @@ export default class SelectField extends ConnectorField {
   }
   
   fireChange() {
-    this._changeCallback(this._id);
+    this._changeCallback(this.id);
   }
   
   set options(options) {
@@ -34,7 +34,7 @@ export default class SelectField extends ConnectorField {
     
     let newIndex = 0;
     options.map((option, index) => {
-      this._input.appendChild(<option value={option.id}>{option.name}</option>)
+      this._input.appendChild(<option value={option.id}>{option.name.value}</option>)
       if(option.id === oldValue) {
         newIndex = index;
       }
@@ -43,9 +43,9 @@ export default class SelectField extends ConnectorField {
   }
   
   get value() {
-    if(this.target) {
+    if(this.isConnected) {
       return {
-        value: this._id,
+        value: this.id,
         isConnection: true,
       }
     } else {
@@ -56,20 +56,16 @@ export default class SelectField extends ConnectorField {
     }
   }
   
-  get valueForSave() {
-    if(this.target) {
-      return "";
-    } else {
-      return this._input.options[this._input.selectedIndex].value;
-    }
-  }
-  
   set value(value) {
-    Array.from(this._input.options).forEach((option, index) => {
-      if(option.value === value) {
-        this._input.selectedIndex = index;
-      }
-    });
+    if(value.isConnection) {
+      this.setTargetKey(value.value);
+    } else {
+      Array.from(this._input.options).forEach((option, index) => {
+        if(option.value === value.value) {
+          this._input.selectedIndex = index;
+        }
+      });
+    }
     this.fireChange();
   }
 }

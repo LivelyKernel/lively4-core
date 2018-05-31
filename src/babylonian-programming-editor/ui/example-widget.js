@@ -67,10 +67,6 @@ export default class ExampleWidget extends FormWidget {
     return this._instanceElement.value
   }
   
-  get instanceIdForSave() {
-    return this._instanceElement.valueForSave
-  }
-  
   set instanceId(instanceId) {
     this._instanceElement.value = instanceId;
   }

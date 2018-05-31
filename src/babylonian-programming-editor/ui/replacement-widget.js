@@ -26,8 +26,4 @@ export default class ReplacementWidget extends InputWidget {
   set value(value) {
     this._input.value = value;
   }
-  
-  get valueForSave() {
-    return this._input.valueForSave;
-  }
 }

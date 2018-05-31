@@ -24,7 +24,10 @@ import {
   loadFile,
   saveFile
 } from "./utils/load-save.js";
-import { defaultAnnotations } from "./utils/defaults.js";
+import {
+  defaultAnnotations,
+  defaultConnectors
+} from "./utils/defaults.js";
 import Tracker from "./utils/tracker.js";
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
@@ -80,6 +83,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Tracker
     this._tracker = window.__tracker = new Tracker();
+    if(!window.__connectors) {
+      window.__connectors = defaultConnectors();
+    }
 
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
