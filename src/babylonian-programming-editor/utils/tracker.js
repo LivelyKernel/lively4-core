@@ -5,9 +5,9 @@ import { DefaultMap } from "./collections.js";
 export default class Tracker {
   
   constructor() {
-    this.ids = new DefaultMap( // Map(id, Map(exampleId, Map(runId, [{type, value}])))
+    this.ids = new DefaultMap( // Map(id, Map(exampleId, Map(runId, {before, after: {type, value, name}]})) 
       DefaultMap.builder(
-        DefaultMap.builder(Array)
+        DefaultMap.builder(Object)
       )
     );
     this.blocks = new DefaultMap( // Map(id, Map(exampleId, runCounter))
@@ -29,7 +29,11 @@ export default class Tracker {
     this._symbolProvider.reset();
   }
 
- id(id, exampleId, runId, value, name) {
+  id(id, exampleId, runId, value, name, keyword = "after") {
+    if(!["before", "after"].includes(keyword)) {
+      return value;
+    }
+   
     // Check and assign object identity
     if(value instanceof Object) {
       if(this._identities.has(value)) {
@@ -41,26 +45,26 @@ export default class Tracker {
     }
     
    
+    // Check and store object type
     let type = typeof(value);
     if(value.constructor && value.constructor.name) {
       type = value.constructor.name;
     }
     
-    // Handle special cases
+    // Copy the value
     if(value instanceof CanvasRenderingContext2D) {
       value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
     } else {
       value = deepCopy(value);
     }
-    
+   
     this.ids.get(id)
             .get(exampleId)
-            .get(runId)
-            .push({
+            .get(runId)[keyword] = {
               type: type,
               value: value,
               name: name
-            });
+            };
     
     return value;
   }

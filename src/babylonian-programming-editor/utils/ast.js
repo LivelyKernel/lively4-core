@@ -363,10 +363,12 @@ export const applyExamples = (ast, examples, exampleInstances) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const tracker = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME)")({
-    ID: types.numericLiteral(path.node._id),
-    VALUE: deepCopy(path.node),
-    NAME: types.stringLiteral(stringForPath(path))
+  const trackerTemplate = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME, KEYWORD)");
+  const trackerBuilder = (keyword = "after") => trackerTemplate({
+    ID:      types.numericLiteral(path.node._id),
+    VALUE:   deepCopy(path.node),
+    NAME:    types.stringLiteral(stringForPath(path)),
+    KEYWORD: types.stringLiteral(keyword),
   });
 
   // Find the closest parent statement
@@ -379,39 +381,39 @@ const insertIdentifierTracker = (path) => {
     // We are in a parameter list
     // Prepend tracker to body of function
     const functionParentPath = path.getFunctionParent();
-    functionParentPath.get("body").unshiftContainer("body", tracker);
+    functionParentPath.get("body").unshiftContainer("body", trackerBuilder());
   } else if(statementParentPath.isReturnStatement()) {
     // We are in a return statement
     // Prepend the tracker to the return
-    statementParentPath.insertBefore(tracker);
+    statementParentPath.insertBefore(trackerBuilder());
   } else if(statementParentPath.isBlockParent()) {
     // We are in a block
     // Insert into the block body
     const body = statementParentPath.get("body");
     if(body instanceof Array) {
-      body.unshift(tracker);
+      body.unshift(trackerBuilder());
     } else if (body.isBlockStatement()) {
-      body.unshiftContainer("body", tracker);
+      body.unshiftContainer("body", trackerBuilder());
     } else {
       body.replaceWith(
         types.blockStatement([
           body
         ])
       );
-      body.unshiftContainer("body", tracker);
+      body.unshiftContainer("body", trackerBuilder());
     }
   } else if(statementParentPath.isIfStatement()) {
     // We are in an if
     // We have to insert the tracker before the if
-    statementParentPath.insertBefore(tracker);
+    statementParentPath.insertBefore(trackerBuilder());
   } else if(path.parentPath.isVariableDeclarator()
             && path.parentKey === "id") {
     // Declaration - only track value after
-    statementParentPath.insertAfter(tracker);
+    statementParentPath.insertAfter(trackerBuilder());
   } else {
     // Normal statement - track value before and after
-    statementParentPath.insertBefore(tracker);
-    statementParentPath.insertAfter(tracker);
+    statementParentPath.insertBefore(trackerBuilder("before"));
+    statementParentPath.insertAfter(trackerBuilder("after"));
   }
 };
 

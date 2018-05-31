@@ -43,16 +43,16 @@ export default class ProbeWidget extends Widget {
     
     // Gets a string representaion for a single run
     const elementForRun = (run) => {
-      // run: [{type, value}]
-      if(run[0].value instanceof Array) {
+      // run: {before, after: {type, value, name}}
+      if(run.after.value instanceof Array) {
         // We have an array
-        if(run.length > 1) {
-          const combinedArray = run[0].value.map(e => [e, undefined]);
-          for(let i in run[1].value) {
+        if(run.before) {
+          const combinedArray = run.before.value.map(e => [e, undefined]);
+          for(let i in run.after.value) {
             if(i < combinedArray.length) {
-              combinedArray[i][1] = run[1].value[i];
+              combinedArray[i][1] = run.after.value[i];
             } else {
-              combinedArray.push([undefined, run[1].value[i]]);
+              combinedArray.push([undefined, run.after.value[i]]);
             }
           }
           const arrayElement = <span class="run array"></span>;
@@ -65,13 +65,13 @@ export default class ProbeWidget extends Widget {
           return arrayElement;
         } else {
           const arrayElement = <span class="run array"></span>;
-          for(let entry of run[0].value) {
+          for(let entry of run.after.value) {
             arrayElement.appendChild(<span class="new-value">{renderValue(entry)}</span>);
           }
           return arrayElement;
         }
-      } else if(run[0].value instanceof ImageData) {
-        const imageData = run[run.length-1].value;
+      } else if(run.after.value instanceof ImageData) {
+        const imageData = run.after.value;
         const canvas = <canvas
                          class="run"
                          width={imageData.width}
@@ -79,43 +79,49 @@ export default class ProbeWidget extends Widget {
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
         return canvas;
-      } else if(run[0].value instanceof Object
-                && !(run[0].value instanceof HTMLElement)) {
+      } else if(run.after.value instanceof Object
+                && !(run.after.value instanceof HTMLElement)) {
         // We have to print the key-value pairs
+        let noBefore = false;
+        if(!run.before) {
+          run.before = {value: {}, type: undefined};
+          noBefore = true;
+        }
+        
         // Combine all properties (before and after)
-        const combinedObj = {}; // {key: [oldValue, newValue]}
-        for(let key in run[0].value) {
-          combinedObj[key] = [run[0].value[key], undefined];
-        }
-        for(let key in run[run.length-1].value) {
-          if(combinedObj[key] instanceof Array) {
-            combinedObj[key][1] = run[run.length-1].value[key];
-          } else {
-            combinedObj[key] = [undefined, run[run.length-1].value[key]];
-          }
-        }
+        // {key: [oldValue, newValue]}
+        const combinedKeys = new Set()
+        Object.keys(run.before.value).forEach(key => combinedKeys.add(key));
+        Object.keys(run.after.value).forEach(key => combinedKeys.add(key));
+
+        const combinedObj = Array.from(combinedKeys)
+                                 .reduce((acc, key) => {
+                                   acc[key] = [run.before.value[key], run.after.value[key]];
+                                   return acc;
+                                 }, {});
+          
         const propElement = <span class="properties"></span>;
         for(let key in combinedObj) {
           if(key === "__tracker_identity") {
             continue;
           }
-          if(combinedObj[key][0] === combinedObj[key][run.length-1]) {
+          if(combinedObj[key][0] === combinedObj[key][1] || noBefore) {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
-                <span class="new-value">{renderValue(run[run.length-1].value[key])}</span>
+                <span class="new-value">{renderValue(combinedObj[key][1])}</span>
               </span>);
           } else {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
-                <span class="old-value">{run[0].value[key]}</span>
-                <span class="new-value">{renderValue(run[run.length-1].value[key])}</span>
+                <span class="old-value">{renderValue(combinedObj[key][0])}</span>
+                <span class="new-value">{renderValue(combinedObj[key][1])}</span>
               </span>);
           }
         }
         
         // Check the identity
         let identityElement = <span class="identity space-after"></span>;
-        if(combinedObj.__tracker_identity[0] !== combinedObj.__tracker_identity[1]) {
+        if(combinedObj.__tracker_identity[0] !== combinedObj.__tracker_identity[1] && !noBefore) {
           identityElement.appendChild(<span class="old-value emoji ">
               {combinedObj.__tracker_identity[0]}
             </span>);
@@ -130,14 +136,14 @@ export default class ProbeWidget extends Widget {
           </span>;
       } else {
         // We can just print the value
-        if(run.length < 2 || run[0].value === run[run.length-1].value) {
+        if(!run.before || run.before.value === run.after.value) {
           return <span class="run">
-            <span class="new-value">{renderValue(run[0].value)}</span>
+            <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
         } else {
           return <span class="run">
-            <span class="old-value">{renderValue(run[0].value)}</span>
-            <span class="new-value">{renderValue(run[run.length-1].value)}</span>
+            <span class="old-value">{renderValue(run.before.value)}</span>
+            <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
         }
       }
@@ -155,8 +161,7 @@ export default class ProbeWidget extends Widget {
       } else {
         Array.from(runs.entries())
              .sort((a, b) => a[0] - b[0])
-             .map(entry => elementForRun(entry[1]))
-             .forEach(element => valueElement.appendChild(element));
+             .forEach(entry => valueElement.appendChild(elementForRun(entry[1])));
       }
       
       // Show a delete button for the first element, and just a space for all others
@@ -167,7 +172,7 @@ export default class ProbeWidget extends Widget {
       
       let variableName = <span></span>;
       if(index === 0) {
-        variableName = <span class="id-name space-after">{Array.from(runs.values())[0][0].name}</span>;
+        variableName = <span class="id-name space-after">{Array.from(runs.values())[0].after.name}</span>;
       }
       
       let exampleName = "";
