@@ -389,6 +389,7 @@ if (window.lively && window.lively4url) {
           groupedMessageEnd();
 
           groupedMessage(2, 4, 'Wait for Service Worker');
+          debugger
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
           await new Promise(whenLoaded);
           groupedMessageEnd();
