@@ -43,6 +43,7 @@ export default class ProbeWidget extends Widget {
     
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
+      let runElement = null;
       // run: {before, after: {type, value, name}}
       if(run.after.value instanceof Array) {
         // We have an array
@@ -62,13 +63,13 @@ export default class ProbeWidget extends Widget {
             }
             arrayElement.appendChild(<span class="new-value">{renderValue(entry[1])}</span>);
           }
-          return arrayElement;
+          runElement = arrayElement;
         } else {
           const arrayElement = <span class="run array"></span>;
           for(let entry of run.after.value) {
             arrayElement.appendChild(<span class="new-value">{renderValue(entry)}</span>);
           }
-          return arrayElement;
+          runElement = arrayElement;
         }
       } else if(run.after.value instanceof ImageData) {
         const imageData = run.after.value;
@@ -78,7 +79,7 @@ export default class ProbeWidget extends Widget {
                          height={imageData.height}
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
-        return canvas;
+        runElement = canvas;
       } else if(run.after.value instanceof Object
                 && !(run.after.value instanceof HTMLElement)) {
         // We have to print the key-value pairs
@@ -130,7 +131,7 @@ export default class ProbeWidget extends Widget {
             {combinedObj.__tracker_identity[1]}
           </span>);
         
-        return <span class="object">
+        runElement = <span class="run object">
             {identityElement}
             {propElement}
           </span>;
@@ -139,20 +140,25 @@ export default class ProbeWidget extends Widget {
         if(!run.before ||
            run.before.value === run.after.value ||
            (prevRun && prevRun.after.value === run.before.value)) {
-          return <span class="run">
+          runElement = <span class="run">
             <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
         } else {
-          return <span class="run">
+          runElement = <span class="run">
             <span class="old-value">{renderValue(run.before.value)}</span>
             <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
         }
       }
+      
+      runElement.addEventListener("click", () => {
+        lively.openInspector(run);
+      });
+      return runElement;
     }
     
     // Gets a string representation for a single example
-    const elementForExample = (example, index) => {
+    const elementForExample = (example, index, examples) => {
       // example: {id, name, color}
       let valueElement = <span class="probe-value"></span>
       const runs = this._values.get(example.id); // Map(runId, {type, value})
@@ -171,10 +177,18 @@ export default class ProbeWidget extends Widget {
              });
       }
       
-      // Show a delete button for the first element, and just a space for all others
-      let leftSpace = <span>&nbsp;</span>;
+      // Show some UI only for the first element
+      let leftSpace = <span></span>;
       if(index === 0) {
-        leftSpace = DeleteButton(this._deleteCallback);
+        // Delete butotm
+        leftSpace.appendChild(DeleteButton(this._deleteCallback));
+        
+        // Inspector icon
+        const inspectorIcon = <span class="icon inspector space-before"></span>;
+        inspectorIcon.addEventListener("click", () => {
+          this._onInspectorIconClicked(examples);
+        });
+        leftSpace.appendChild(inspectorIcon);
       }
       
       let variableName = <span></span>;
@@ -187,15 +201,9 @@ export default class ProbeWidget extends Widget {
         exampleName = <span
           class="example-name space-after"
           style={"background-color:" + example.color}>
-          {example.name.length ? example.name : "\u00A0"}
+          {example.name.value.length ? example.name.value : "\u00A0"}
         </span>;
       }
-      
-      // Inspector icon
-      const inspectorIcon = <span class="icon inspector space-before"></span>;
-      inspectorIcon.addEventListener("click", () => {
-        this._onInspectorIconClicked(runs);
-      });
       
       return <tr class="widget-line">
         <td class="probe-meta">
@@ -205,7 +213,6 @@ export default class ProbeWidget extends Widget {
         <td class="probe-example">
           {exampleName}
           {valueElement}
-          {inspectorIcon}
         </td>
       </tr>
     }
@@ -231,9 +238,24 @@ export default class ProbeWidget extends Widget {
     }
   }
   
-  _onInspectorIconClicked(runs) {
-    const inspectableRun = Array.from(runs.entries())
-                                .reduce((acc, run) => { acc[run[0]] = run[1]; return acc }, []);
-        lively.openInspector(inspectableRun);
+  _onInspectorIconClicked(examples) {
+    const processExample = (examplesAcc, example) => {
+      const runs = this._values.get(example.id);
+      const value = Array.from(runs.entries())
+                         .reduce((acc, run) => {
+                           acc[run[0]] = run[1];
+                           return acc
+                         }, []);
+      const key = (example.name.value && example.name.value.length) ?
+                  `${example.name.value} (${example.id})` :
+                  `Unnamed example (${example.id})`;
+      examplesAcc[key] = value;
+      return examplesAcc;
+    }
+    
+    const inspectorValue = examples.filter(example => this._values.has(example.id))
+                                   .reduce(processExample, {});
+    
+    lively.openInspector(inspectorValue);
   }
 }
