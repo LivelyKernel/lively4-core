@@ -609,6 +609,8 @@ export default class Container extends Morph {
     if (this.getAttribute("mode") == "presentation") {
       var presentation = await md.startPresentation()
       if (this.lastPage) {
+        lively.notify("goto slide at " +this.lastPage)
+        debugger
         presentation.gotoSlideAt(this.lastPage)
       }
     }
@@ -1018,6 +1020,8 @@ export default class Container extends Morph {
       var presentation = markdown.get("lively-presentation")
       if (presentation && presentation.currentSlideNumber) {
         this.lastPage  = presentation.currentSlideNumber()
+        
+        lively.notify('last page ' + this.lastPage)
       }
       this.wasContentEditable =   markdown.contentEditable == "true"
     }
