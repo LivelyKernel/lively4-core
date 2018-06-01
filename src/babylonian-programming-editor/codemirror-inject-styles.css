@@ -73,13 +73,6 @@
   font: inherit;
 }
 
-.widget .error {
-  background-color: hsla(344, 54%, 63%, 0.2);
-  color: rgb(151, 45, 46);
-  border-radius: 3px;
-  padding: 2px 4px 0 4px;
-}
-
 .marker {
   display: inline-block;
 }
@@ -102,7 +95,6 @@
 }
 
 .marker.example, .marker.instance {
-  /*background-color: hsla(41, 39%, 38%, 0.2);*/
   background-color: #e8e8e8;
 }
 
@@ -381,3 +373,12 @@ input[type=range]::-webkit-slider-runnable-track {
 .expanded .form {
   flex-direction: column;
 }
+
+.icon.warn {
+  color: rgb(151, 45, 46);
+}
+
+.icon.warn::before {
+  content: "\f071";
+}
+

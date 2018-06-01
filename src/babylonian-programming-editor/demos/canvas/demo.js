@@ -27,7 +27,6 @@ function drawSmiley(canvas, eyeColor, skinColor) {
   }
 }
 
-
 class Smiley {
   constructor(canvas, eyeColor, skinColor) {
     this._canvas = canvas;

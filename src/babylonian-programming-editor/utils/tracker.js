@@ -13,6 +13,7 @@ export default class Tracker {
     this.blocks = new DefaultMap( // Map(id, Map(exampleId, runCounter))
       DefaultMap.builder(0)
     );
+    this.errors = new Map(); // Map(exampleId, errorMsg);
     this.executedBlocks = new Set(); // Set(id)
     this.exampleId = defaultExample().id;
     this.timer = new Timer();
@@ -23,6 +24,7 @@ export default class Tracker {
   reset() {
     this.ids.clear();
     this.blocks.clear();
+    this.errors.clear();
     this.executedBlocks.clear();
     this.exampleId = defaultExample().id;
     this._identities.clear();
@@ -69,11 +71,15 @@ export default class Tracker {
     return value;
   }
   
-  block(exampleId, id) {
+  block(id) {
     this.executedBlocks.add(id);
-    const blockCount = this.blocks.get(id).get(exampleId);
-    this.blocks.get(id).set(exampleId, blockCount + 1);
+    const blockCount = this.blocks.get(id).get(this.exampleId);
+    this.blocks.get(id).set(this.exampleId, blockCount + 1);
     return blockCount;
+  }
+  
+  error(errorMsg) {
+    this.errors.set(this.exampleId, errorMsg);
   }
 }
 

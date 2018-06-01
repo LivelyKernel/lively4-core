@@ -1,5 +1,5 @@
-export function Button(callback, additionalClasses) {
-  let button = <span class="icon"></span>
+export function Button(callback, additionalClasses = [], hoverText = "") {
+  let button = <span class="icon" title={hoverText}></span>
   button.addEventListener("click", callback);
   for(let cls of additionalClasses) {
     button.classList.add(cls);
@@ -17,4 +17,8 @@ export function SwitchButton(callback, isOn) {
 
 export function ExpandButton(callback) {
   return Button(callback, ["expand", "space-before"]);
+}
+
+export function ErrorButton(hoverText) {
+  return Button(Function(), ["warn", "space-before"], hoverText);
 }

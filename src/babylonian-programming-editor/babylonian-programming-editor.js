@@ -94,7 +94,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -352,8 +352,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update sliders
     for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(window.__tracker.blocks.has(node._id)) {
-        slider.maxValues = window.__tracker.blocks.get(node._id);
+      if(this._tracker.blocks.has(node._id)) {
+        slider.maxValues = this._tracker.blocks.get(node._id);
       } else {
         slider.empty();
       }
@@ -362,8 +362,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(window.__tracker.ids.has(node._id)) {
-        probe.values = window.__tracker.ids.get(node._id);
+      if(this._tracker.ids.has(node._id)) {
+        probe.values = this._tracker.ids.get(node._id);
       } else {
         probe.empty();
       }
@@ -379,8 +379,12 @@ export default class BabylonianProgrammingEditor extends Morph {
   updateExamples() {
     for(let example of this._annotations.examples) {
       const path = this.pathForAnnotation(example);
+      if(this._tracker.errors.has(example.id)) {
+        example.error = this._tracker.errors.get(example.id);
+      } else {
+        example.error = null;
+      }
       example.keys = parameterNamesForFunctionIdentifier(path);
-      example.error = ""
     }
   }
 
@@ -408,7 +412,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
-        if(!window.__tracker.executedBlocks.has(path.node._id)) {
+        if(!that._tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
             that.editor().markText(
@@ -490,7 +494,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       serializedAnnotations
     );
     if(!ast) {
-      this.status("error", "Could not parse code", false);
+      this.status("error", "Syntax Error", false);
       return;
     }
 
@@ -524,7 +528,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(!isError) {
       this.updateAnnotations();
       this.updateDeadMarkers();
-      this.status()
+      if(this._tracker.errors.size) {
+        this.status("warning", "At least one example threw an Error");
+      } else {
+        this.status();
+      }
     } else {
       this.status("error", value.originalErr.message);
       this.updateInstances();
@@ -635,7 +643,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   hasResults() {
-    return !!window.__tracker;
+    return !!this._tracker;
   }
 
   nodeForAnnotation(annotation) {
@@ -655,14 +663,14 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   status(status = null, message = null, isOnExample = true) {
     this._statusBar.setStatus(status, message);
-    if(status === "error" && isOnExample) {
+    /*f(status === "error" && isOnExample) {
       // Show the error at the relevant example
       const example = this._annotations.examples.find(example =>
                         example.id === window.__tracker.exampleId);
       if(example) {
         example.error = message;
       }
-    }
+    }*/
   }
 
   pathForKey(key) {

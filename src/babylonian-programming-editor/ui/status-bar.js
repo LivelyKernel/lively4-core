@@ -1,4 +1,4 @@
-const VALID_STATUSES = ["ready", "parsing", "evaluating", "error"];
+const VALID_STATUSES = ["ready", "parsing", "evaluating", "error", "warning"];
 
 export default class StatusBar {
   constructor(element) {
@@ -28,6 +28,9 @@ export default class StatusBar {
         break;
       case "evaluating":
         this._element.textContent = "Evaluating examples...";
+        break;
+      case "warning":
+        this._element.textContent = `Warning: ${message}`;
         break;
       case "error":
         this._element.textContent = `Error: ${message}`;

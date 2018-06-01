@@ -205,7 +205,6 @@ export const applyBasicModifications = (ast) => {
       }
     },
     SwitchCase(path) {
-      console.log(path);
       wrapPropertyOfPath(path, "consequent");
     }
   });
@@ -353,7 +352,11 @@ export const applyExamples = (ast, examples, exampleInstances) => {
     // Insert a call at the end of the script
     if(nodeToInsert) {
       ast.program.body.push(template(`window.__tracker.exampleId = "${example.id}"`)());
-      ast.program.body.push(nodeToInsert);
+      ast.program.body.push(
+        template("try { BODY; } catch(e) { window.__tracker.error(e.message) }")({
+          BODY: nodeToInsert
+        })
+      );
     }
   });
 }
@@ -439,7 +442,7 @@ const insertBlockTracker = (path) => {
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const tracker = template("const __blockCount = window.__tracker.block(window.__tracker.exampleId, __blockId)")();
+  const tracker = template("const __blockCount = window.__tracker.block(__blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
 };

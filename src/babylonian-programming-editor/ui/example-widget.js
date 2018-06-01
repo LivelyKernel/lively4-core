@@ -4,6 +4,7 @@ import {
   DeleteButton,
   SwitchButton,
   ExpandButton,
+  ErrorButton,
 } from "./buttons.js";
 import { defaultInstance } from "../utils/defaults.js";
 
@@ -16,7 +17,7 @@ export default class ExampleWidget extends FormWidget {
     this._stateCallback = stateCallback;
     this._instances = instances; // [Instance]
     this._instanceElement = null; // {element, input}
-    this._errorElement = null;
+    this._error = null;
     this._update();
   }
   
@@ -45,12 +46,12 @@ export default class ExampleWidget extends FormWidget {
     buttonElement.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
                                            this._isOn));
     buttonElement.appendChild(ExpandButton(this._onExpandClicked.bind(this)));
+    if(this._error) {
+      buttonElement.appendChild(ErrorButton(this._error));
+    }
     this._element.appendChild(buttonElement);
     this._element.appendChild(this._getNameElement().element);
     this._addFormElements();
-    if(this._errorElement) {
-      this._element.appendChild(this._errorElement);
-    }
   }
                                            
   _onSwitchClicked() {
@@ -86,11 +87,7 @@ export default class ExampleWidget extends FormWidget {
   }
   
   set error(error) {
-    if(error && error.length) {
-      this._errorElement = <span class="error">{`Error: ${error}`}</span>;
-    } else {
-      this._errorElement = null;
-    }
+    this._error = error;
   }
 }
 

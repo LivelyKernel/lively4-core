@@ -18,3 +18,9 @@
   border-color: hsla(344, 54%, 63%, 0.6);
   color: rgb(151, 45, 46);
 }
+
+#status.warning {
+  background-color: rgba(249, 225, 84, 0.6);
+  border-color: hsl(30, 100%, 20%);
+  color: hsl(30, 100%, 20%);
+}
