@@ -4,6 +4,7 @@ import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import { withAdvice } from './../lib/flight/advice.js';
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import { PausableLoop } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (FilterOperation would not be defined in select)
@@ -401,11 +402,140 @@ View.withOnStack = function(el, callback, context) {
 };
 
 /**
+ * ################## CSS SELECTORS ##################
+ */
+const events = {};
+const selectors = {};
+let animationCount = 0;
+const styles = document.createElement('style');
+const keyframes = document.createElement('style');
+const head = document.getElementsByTagName('head')[0];
+const startName = 'animationstart';
+const startEvent = function(event) {
+  event.selector = (events[event.animationName] || {}).selector;
+  ((this.startListeners || {})[event.animationName] || []).forEach(fn => {
+    fn.call(this, event);
+  });
+};
+
+styles.type = keyframes.type = 'text/css';
+head.appendChild(styles);
+head.appendChild(keyframes);
+
+HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function(selector, fn) {
+  var key = selectors[selector];
+  var listeners = this.startListeners = this.startListeners || {};
+
+  if (key) {
+    events[key].count++;
+  } else {
+    key = selectors[selector] = 'SelectorListener-' + animationCount++;
+    let node = document.createTextNode(`@keyframes ${key} {
+from { outline-color: #fff; } to { outline-color: #000; }
+}`);
+    keyframes.appendChild(node);
+    styles.sheet.insertRule(`${selector} {
+  animation-duration: 0.001s;
+  animation-name: ${key} !important;
+}`, 0);
+    events[key] = {
+      count: 1,
+      selector: selector,
+      keyframe: node,
+      rule: styles.sheet.cssRules[0]
+    };
+  }
+
+  if (listeners.count) {
+    listeners.count++;
+  } else {
+    listeners.count = 1;
+    this.addEventListener(startName, startEvent, false);
+  }
+
+  (listeners[key] = listeners[key] || []).push(fn);
+};
+
+HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSelectorListener = function(selector, fn){
+  var listeners = this.startListeners || {};
+  var key = selectors[selector];
+  var listener = listeners[key] || [];
+  var index = listener.indexOf(fn);
+
+  if (index > -1){
+    let event = events[selectors[selector]];
+    event.count--;
+    if (!event.count) {
+      styles.sheet.deleteRule(styles.sheet.cssRules.item(event.rule));
+      keyframes.removeChild(event.keyframe);
+      delete events[key];
+      delete selectors[selector];
+    }
+
+    listeners.count--;
+    listener.splice(index, 1);
+    if (!listeners.count) {
+      this.removeEventListener(startName, startEvent, false);
+    }
+  }
+};
+
+
+// chrome does not support the animationcancel event, so we have to resort back to other means, namely polling
+
+const REMOVE_ELEMENT_BY_MATCH_CHECK = new Map(); // matchesSelector -> removeElement
+
+function removeObsoleteListeners() {
+  Array.from(REMOVE_ELEMENT_BY_MATCH_CHECK).forEach(([matchesSelector, removeElement]) => {
+    if(!matchesSelector()) {
+      removeElement();
+      REMOVE_ELEMENT_BY_MATCH_CHECK.delete(matchesSelector);
+    }
+  });
+  if(REMOVE_ELEMENT_BY_MATCH_CHECK.size === 0) {
+    stopMatchingLoop.pause();
+  }
+}
+const stopMatchingLoop = new PausableLoop(() => {
+  lively.warn('check stop matching', REMOVE_ELEMENT_BY_MATCH_CHECK.size);
+  removeObsoleteListeners();
+});
+
+function trackSelector(selector, { root = document }) {
+  const view = new View();
+  root.addSelectorListener(selector, event => {
+    const element = event.target;
+    view.safeAdd(element);
+    
+    const matchesSelector = () => {
+      const inDOM = element.getRootNode({ composed: true }) === document;
+      return inDOM && element.matches(selector);
+    }
+    const removeElement = () => view.safeRemove(element);
+    REMOVE_ELEMENT_BY_MATCH_CHECK.set(matchesSelector, removeElement);
+    stopMatchingLoop.ensureRunning();
+  });
+  return view;
+}
+
+export function __unload__() {
+  styles.remove();
+  keyframes.remove();
+  stopMatchingLoop.pause();
+}
+
+/**
  * @function select
  * @param {Class} Class
  * @return {View}
  */
-export default function select(Class) {
-    ensureBaseViewForClass(Class);
-    return Class._instances_;
+export default function select(Class, options) {
+  // css selector given?
+  if(typeof Class === 'string') {
+    return trackSelector(Class, options || {})
+  }
+
+  // fall back to track all instances of a class
+  ensureBaseViewForClass(Class);
+  return Class._instances_;
 }

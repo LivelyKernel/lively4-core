@@ -286,3 +286,6 @@ export function parseQuery(queryString) {
     return query;
 }
 
+export function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
