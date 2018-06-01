@@ -29,7 +29,7 @@ export default class FormWidget extends InputWidget {
                   >{key + ":"}</label>
 
     return {
-      element: <span>
+      element: <span class="space-before">
                  {label}
                  {input.element}
                </span>,
@@ -55,8 +55,29 @@ export default class FormWidget extends InputWidget {
     return this._nameElement;
   }
   
+  _getAdditionalFormElements() {
+    return [];
+  }
+  
+  _addFormElements() {
+    const form = <div class="form"></div>;
+    this._element.appendChild(form);
+    
+    const elementsToAdd = [];
+    this._getAdditionalFormElements().forEach(e => elementsToAdd.push(e.element));
+    this._keys.forEach(key => elementsToAdd.push(this._getFormElementForKey(key).element));
+    
+    while(elementsToAdd.length) {
+      form.appendChild(elementsToAdd.shift());
+    }
+  }
+  
   _update() {
     abstract();
+  }
+  
+  _onExpandClicked() {
+    this._element.classList.toggle("expanded");
   }
   
   // Getters and Setters

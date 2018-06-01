@@ -527,6 +527,8 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.status()
     } else {
       this.status("error", value.originalErr.message);
+      this.updateInstances();
+      this.updateExamples();
     }
   }
 

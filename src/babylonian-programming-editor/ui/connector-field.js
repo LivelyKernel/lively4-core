@@ -18,13 +18,9 @@ export default class ConnectorField {
   
   _onConnectorChange(newTarget){
     if(newTarget) {
-      // New target
-      this._input.style.display = "none"
-      this._element.style.border = "none"; 
+      this._element.classList.add("connected");
     } else {
-      // Clear target
-      this._input.style.display = "";
-      this._element.style.border = "";
+      this._element.classList.remove("connected");
     }
     this.fireChange();
   }

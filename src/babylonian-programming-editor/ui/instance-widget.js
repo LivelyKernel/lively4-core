@@ -1,5 +1,8 @@
 import FormWidget from "./form-widget.js";
-import { DeleteButton } from "./buttons.js";
+import {
+  DeleteButton,
+  ExpandButton,
+} from "./buttons.js";
 
 
 export default class InstanceWidget extends FormWidget {
@@ -10,16 +13,17 @@ export default class InstanceWidget extends FormWidget {
   // UI Generators
   
   _getNameElement() {
-    return super._getNameElement("space-before");
+    return super._getNameElement("example-name space-before");
   }
   
   _update() {
-    this._element.textContent = "";
-    this._element.appendChild(DeleteButton(this._deleteCallback));
+    this._element.innerHTML = "";
+    const buttonElement = <span class="buttons"></span>;
+    buttonElement.appendChild(DeleteButton(this._deleteCallback));
+    buttonElement.appendChild(ExpandButton(this._onExpandClicked.bind(this)));
+    this._element.appendChild(buttonElement);
     this._element.appendChild(this._getNameElement().element);
-    this._keys.forEach((key) => {
-      this._element.appendChild(this._getFormElementForKey(key).element);
-    });
+    this._addFormElements();
   }
   
 }

@@ -52,7 +52,7 @@ export default class SliderWidget extends InputWidget {
         exampleName = <span
           class="example-name space-after"
           style={"background-color:" + example.color}>
-          {example.name.length ? example.name : "\u00A0"}
+          {example.name.value.length ? example.name.value : "\u00A0"}
         </span>;
       }
       

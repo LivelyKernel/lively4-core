@@ -1,6 +1,10 @@
 import FormWidget from "./form-widget.js";
 import SelectField from "./select-field.js";
-import { DeleteButton, SwitchButton } from "./buttons.js";
+import {
+  DeleteButton,
+  SwitchButton,
+  ExpandButton,
+} from "./buttons.js";
 import { defaultInstance } from "../utils/defaults.js";
 
 
@@ -12,7 +16,7 @@ export default class ExampleWidget extends FormWidget {
     this._stateCallback = stateCallback;
     this._instances = instances; // [Instance]
     this._instanceElement = null; // {element, input}
-    this._errorElement = <span class="error"></span>;
+    this._errorElement = null;
     this._update();
   }
   
@@ -22,25 +26,31 @@ export default class ExampleWidget extends FormWidget {
     return super._getNameElement("example-name space-before", `background-color: ${this._color}`);
   }
   
-  _getInstanceElement() {
+  _getAdditionalFormElements() {
     if(!this._instanceElement) {
       this._instanceElement = new SelectField(this, "this", this._onSelectChanged.bind(this));
     }
     this._instanceElement.options = [defaultInstance()].concat(this._instances);
-    return <span class="space-before">this: {this._instanceElement.element}</span>;
+    return [
+      {
+        element:<span class="space-before">this: {this._instanceElement.element}</span>
+      }
+    ];
   }
   
   _update() {
-    this._element.textContent = "";
-    this._element.appendChild(DeleteButton(this._deleteCallback));
-    this._element.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
+    this._element.innerHTML = "";
+    const buttonElement = <span class="buttons"></span>;
+    buttonElement.appendChild(DeleteButton(this._deleteCallback));
+    buttonElement.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
                                            this._isOn));
+    buttonElement.appendChild(ExpandButton(this._onExpandClicked.bind(this)));
+    this._element.appendChild(buttonElement);
     this._element.appendChild(this._getNameElement().element);
-    this._element.appendChild(this._getInstanceElement());
-    this._keys.forEach((key) => {
-      this._element.appendChild(this._getFormElementForKey(key).element);
-    })
-    this._element.appendChild(this._errorElement);
+    this._addFormElements();
+    if(this._errorElement) {
+      this._element.appendChild(this._errorElement);
+    }
   }
                                            
   _onSwitchClicked() {
@@ -77,9 +87,9 @@ export default class ExampleWidget extends FormWidget {
   
   set error(error) {
     if(error && error.length) {
-      this._errorElement.textContent = `Error: ${error}`;
+      this._errorElement = <span class="error">{`Error: ${error}`}</span>;
     } else {
-      this._errorElement.textContent = "";
+      this._errorElement = null;
     }
   }
 }

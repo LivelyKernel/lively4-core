@@ -1,7 +1,6 @@
 function drawSmiley(canvas, eyeColor, skinColor) {
   if (canvas.getContext) {
     let ctx = canvas.getContext('2d');
-
     
     ctx.beginPath();
     ctx.arc(75, 75, 50, 0, Math.PI * 2, true); // Outer circle
@@ -60,4 +59,4 @@ class Smiley {
     ctx.stroke();
   }
 }
-/* Examples: {"probes":[],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"7782-7825-9a38","name":{"value":"Test","isConnection":false},"values":{"canvas":{"value":"7782-7825-9a38_canvas","isConnection":true},"eyeColor":{"value":"\"blue\"","isConnection":false},"skinColor":{"value":"\"yellow\"","isConnection":false}},"instanceId":{"value":"0","isConnection":false}}],"replacements":[],"instances":[]} */
+/* Examples: {"probes":[{"location":[25,6,25,9]}],"sliders":[{"location":[19,4,19,7]}],"examples":[{"location":[1,9,1,19],"id":"7782-7825-9a38","name":{"value":"Test","isConnection":false},"values":{"canvas":{"value":"7782-7825-9a38_canvas","isConnection":true},"eyeColor":{"value":"\"blue\"","isConnection":false},"skinColor":{"value":"\"yellow\"","isConnection":false}},"instanceId":{"value":"0","isConnection":false}}],"replacements":[],"instances":[]} */
