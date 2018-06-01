@@ -175,7 +175,8 @@ export default class Lively {
     // and update them
     for(let ea of dependedModules) {
       // console.log("reload " + path + " triggers reload of " + ea)
-      System.registry.delete(ea);
+      this.unloadModule(ea);
+      //System.registry.delete(ea);
     }
     // now the system may build up a cache again
     for(let ea of dependedModules) {

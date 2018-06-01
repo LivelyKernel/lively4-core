@@ -8,9 +8,7 @@ import aexpr from 'aexpr-source-transformation-propagation';
 import * as frameBasedAExpr from "frame-based-aexpr";
 import when from 'src/client/reactive/active-expressions/when.js';
 
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+import { wait } from 'utils';
 
 describe("when utility", function() {
   it("is defined and a function", () => {

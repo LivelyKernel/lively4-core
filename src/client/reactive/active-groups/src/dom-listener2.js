@@ -5,17 +5,17 @@ const styles = document.createElement('style');
 const keyframes = document.createElement('style');
 const head = document.getElementsByTagName('head')[0];
 const startNames = ['animationstart'];
-const startEvent = function(event){
+const startEvent = function(event) {
 			event.selector = (events[event.animationName] || {}).selector;
 			((this.selectorListeners || {})[event.animationName] || []).forEach(function(fn){
 				fn.call(this, event);
 			}, this);
 		};
 const prefix = (function() {
-			var duration = 'animation-duration: 0.001s;',
-				name = 'animation-name: SelectorListener !important;',
-				computed = window.getComputedStyle(document.documentElement, ''),
-				pre = (Array.prototype.slice.call(computed).join('').match(/moz|webkit|ms/)||(computed.OLink===''&&['o']))[0];
+			var duration = 'animation-duration: 0.001s;';
+      var name = 'animation-name: SelectorListener !important;';
+      var computed = window.getComputedStyle(document.documentElement, '');
+      var pre = (Array.prototype.slice.call(computed).join('').match(/moz|webkit|ms/)||(computed.OLink===''&&['o']))[0];
 			return {
 				css: '-' + pre + '-',
 				properties: '{' + duration + name + '-' + pre + '-' + duration + '-' + pre + '-' + name + '}',
@@ -26,8 +26,6 @@ const prefix = (function() {
 styles.type = keyframes.type = "text/css";
 head.appendChild(styles);
 head.appendChild(keyframes);
-
-
 
 HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function(selector, fn){
   var key = selectors[selector],
@@ -54,9 +52,9 @@ from { outline-color: #fff; } to { outline-color: #000; }
     listeners.count++;
   } else {
     listeners.count = 1;
-    startNames.forEach(function(name){
+    startNames.forEach(name => {
       this.addEventListener(name, startEvent, false);
-    }, this);
+    });
   }
 
   (listeners[key] = listeners[key] || []).push(fn);
@@ -80,18 +78,19 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
 
     listeners.count--;
     listener.splice(index, 1);
-    if (!listeners.count) startNames.forEach(function(name){
+    if (!listeners.count) startNames.forEach(name => {
       this.removeEventListener(name, startEvent, false);
-    }, this);
+    });
   }
 };
 
 document.addSelectorListener('lively-window', animationEvent => {
-  lively.success("WINDOW8!");
+  lively.success("WINDOW99!");
   lively.showElement(animationEvent.target, 2000);
 });
 document.addSelectorListener('input[value="foobar"]', () => lively.success("INPUT!"));
-
+document.addSelectorListener('button', () => lively.success("BUTTON!"));
+that.addSelectorListener('input', () => lively.success("INPUT222!"))
 document.querySelector('input[value=""]')
 
 //let foobar = <div id="foobar"></div>;
