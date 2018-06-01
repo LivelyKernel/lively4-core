@@ -1,5 +1,8 @@
 import Connector from "./connector.js";
-import { abstract } from "../utils/defaults.js";
+import {
+  abstract,
+  defaultConnections,
+} from "../utils/defaults.js";
 
 export default class ConnectorField {
   constructor(parent, name, changeCallback) {
@@ -58,8 +61,8 @@ export default class ConnectorField {
   }
   
   setTargetKey(targetKey) {
-    if(targetKey in window.__connectors) {
-      this.target = window.__connectors[targetKey]();
+    if(targetKey in defaultConnections()) {
+      this.target = defaultConnections()[targetKey]();
       return true;
     } else {
       this._connector.isConnected = true;

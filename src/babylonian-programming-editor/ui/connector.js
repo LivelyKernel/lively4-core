@@ -1,3 +1,5 @@
+import { defaultConnections } from "../utils/defaults.js";
+
 export default class Connector {
   
   constructor(source, changeCallback, targetKind) {
@@ -72,7 +74,7 @@ export default class Connector {
       this.isBroken = false;
       
       // Set up target
-      window.__connectors[this._source.id] = () => {
+      defaultConnections()[this._source.id] = () => {
         if(this._targetKind === "canvas") {
           target.getContext("2d").clearRect(0, 0, target.width, target.height);
         }
@@ -81,7 +83,7 @@ export default class Connector {
     } else {
       this.isConnected = false;
       this.isBroken = false;
-      delete window.__connectors[this._source.id];
+      delete defaultConnections()[this._source.id];
     }
     this._changeCallback(target);
   }

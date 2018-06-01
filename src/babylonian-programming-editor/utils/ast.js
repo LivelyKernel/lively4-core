@@ -557,6 +557,6 @@ const prepForInsert = (node) => {
 }
 
 const connectorTemplate = (id) => {
-  return `window.__connectors["${id}"]()`;
+  return `__connections["${id}"]()`;
 }
 

@@ -26,7 +26,7 @@ import {
 } from "./utils/load-save.js";
 import {
   defaultAnnotations,
-  defaultConnectors
+  defaultConnections
 } from "./utils/defaults.js";
 import Tracker from "./utils/tracker.js";
 import Probe from "./annotations/probe.js";
@@ -83,9 +83,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     
     // Tracker
     this._tracker = new Tracker();
-    if(!window.__connectors) {
-      window.__connectors = defaultConnectors();
-    }
 
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -94,7 +91,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -494,7 +491,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       serializedAnnotations
     );
     if(!ast) {
-      this.status("error", "Syntax Error", false);
+      this.status("error", "Syntax Error");
       return;
     }
 
@@ -547,7 +544,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     return await boundEval(code, {
       tracker: this._tracker,
-      connections: null,
+      connections: defaultConnections(),
     });
   }
 
@@ -664,16 +661,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     return null;
   }
 
-  status(status = null, message = null, isOnExample = true) {
+  status(status = null, message = null) {
     this._statusBar.setStatus(status, message);
-    /*f(status === "error" && isOnExample) {
-      // Show the error at the relevant example
-      const example = this._annotations.examples.find(example =>
-                        example.id === window.__tracker.exampleId);
-      if(example) {
-        example.error = message;
-      }
-    }*/
   }
 
   pathForKey(key) {

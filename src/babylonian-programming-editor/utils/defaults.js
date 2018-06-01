@@ -30,15 +30,21 @@ export const defaultAnnotations = () => ({
   instances: [], // [Instance]
 });
 
-export const defaultConnectors = () => new Proxy({}, {
-  get(target, key) {
-    if(key in target) {
-      return target[key];
-    } else {
-      throw new Error(`The object referenced by "${key.split("_")[1]}" does not exist`);
-    }
+let defaultConnectionsInstance = null;
+export const defaultConnections = () => {
+  if(!defaultConnectionsInstance) {
+    defaultConnectionsInstance = new Proxy({}, {
+      get(target, key) {
+        if(key in target) {
+          return target[key];
+        } else {
+          throw new Error(`The object referenced by "${key.split("_")[1]}" does not exist`);
+        }
+      }
+    });
   }
-});
+  return defaultConnectionsInstance; 
+}
 
 export const guid = () => {
   // from https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
