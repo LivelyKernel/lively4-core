@@ -10,6 +10,7 @@ import {
   applyExamples,
   generateInstances,
   applyBasicModifications,
+  applyTracker,
 } from "../utils/ast.js";
 
 
@@ -33,6 +34,9 @@ export default onmessage = function(msg) {
     // Add trackers for all examples
     const exampleInstances = generateInstances(ast, annotations.instances);
     applyExamples(ast, annotations.examples, exampleInstances);
+    
+    // Insert tracker
+    applyTracker(ast);
 
     // Generate executable code
     const executableCode = codeForAst(ast);

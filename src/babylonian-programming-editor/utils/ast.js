@@ -148,7 +148,6 @@ const replacementNodeForValue = (value) =>
  * Assigns IDs to add nodes of the AST
  */
 export const assignIds = (ast) => {
-  let idCounter = 1;
   traverse(ast, {
     enter(path) {
       path.node._id = nextId();
@@ -187,7 +186,7 @@ export const applyBasicModifications = (ast) => {
     return path;
   }
   
-  // Enforce that all bodies are in BlockStatements
+  // Prepare Tracker and enforce that all bodies are in BlockStatements
   traverse(ast, {
     BlockParent(path) {
       if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
@@ -208,6 +207,12 @@ export const applyBasicModifications = (ast) => {
       wrapPropertyOfPath(path, "consequent");
     }
   });
+}
+
+export const applyTracker = (ast) => {
+  ast.program.body.unshift(template("const __connections = this.connections;")());
+  ast.program.body.unshift(template("const __tracker = this.tracker;")());
+  return ast;
 }
 
 /**
@@ -351,9 +356,9 @@ export const applyExamples = (ast, examples, exampleInstances) => {
     
     // Insert a call at the end of the script
     if(nodeToInsert) {
-      ast.program.body.push(template(`window.__tracker.exampleId = "${example.id}"`)());
+      ast.program.body.push(template(`__tracker.exampleId = "${example.id}"`)());
       ast.program.body.push(
-        template("try { BODY; } catch(e) { window.__tracker.error(e.message) }")({
+        template("try { BODY; } catch(e) { __tracker.error(e.message) }")({
           BODY: nodeToInsert
         })
       );
@@ -366,7 +371,7 @@ export const applyExamples = (ast, examples, exampleInstances) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const trackerTemplate = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME, KEYWORD)");
+  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __blockCount, VALUE, NAME, KEYWORD)");
   const trackerBuilder = (keyword = "after") => trackerTemplate({
     ID:      types.numericLiteral(path.node._id),
     VALUE:   deepCopy(path.node),
@@ -424,7 +429,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("window.__tracker.id(ID, window.__tracker.exampleId, __blockCount, VALUE, NAME)")({
+  const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __blockCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")
@@ -442,7 +447,7 @@ const insertBlockTracker = (path) => {
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const tracker = template("const __blockCount = window.__tracker.block(__blockId)")();
+  const tracker = template("const __blockCount = __tracker.block(__blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
 };
@@ -455,7 +460,7 @@ const insertTimer = (path, isStart = false) => {
   if(typeof path.node._id === "undefined") {
     return;
   }
-  const code = `window.__tracker.timer.${isStart ? "start" : "check"}()`;
+  const code = `__tracker.timer.${isStart ? "start" : "check"}()`;
   path.unshiftContainer("body", template(code)());
 };
 

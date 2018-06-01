@@ -82,7 +82,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
     
     // Tracker
-    this._tracker = window.__tracker = new Tracker();
+    this._tracker = new Tracker();
     if(!window.__connectors) {
       window.__connectors = defaultConnectors();
     }
@@ -94,7 +94,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -545,7 +545,10 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._tracker.reset();
 
     // Execute the code
-    return await boundEval(code, window);
+    return await boundEval(code, {
+      tracker: this._tracker,
+      connections: null,
+    });
   }
 
 
