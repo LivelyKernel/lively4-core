@@ -34,4 +34,4 @@ for(let i = 0; i < 5; i++) {
     innerSum += j;
   }
 }
-/* Examples: {"probes":[{"location":[3,4,3,14]}],"sliders":[],"examples":[],"replacements":[{"id":"dcae-4b0e-1650","location":[2,14,2,16],"value":{"value":"dcae-4b0e-1650_value","isConnection":true}}],"instances":[]} */
+/* Examples: {"probes":[{"location":[3,4,3,14]}],"sliders":[],"examples":[],"replacements":[],"instances":[]} */

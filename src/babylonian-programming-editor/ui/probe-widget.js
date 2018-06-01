@@ -30,7 +30,7 @@ export default class ProbeWidget extends Widget {
 
   _update() {
     const renderValue = (value) => {
-      if(!value) {
+      if(value === null || value === undefined) {
         return null;
       } else if(value instanceof HTMLElement) {
         return value.outerHTML
@@ -42,7 +42,7 @@ export default class ProbeWidget extends Widget {
     }
     
     // Gets a string representaion for a single run
-    const elementForRun = (run) => {
+    const elementForRun = (run, prevRun) => {
       // run: {before, after: {type, value, name}}
       if(run.after.value instanceof Array) {
         // We have an array
@@ -105,7 +105,7 @@ export default class ProbeWidget extends Widget {
           if(key === "__tracker_identity") {
             continue;
           }
-          if(combinedObj[key][0] === combinedObj[key][1] || noBefore) {
+          if(noBefore || combinedObj[key][0] === combinedObj[key][1]) {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
                 <span class="new-value">{renderValue(combinedObj[key][1])}</span>
@@ -136,7 +136,9 @@ export default class ProbeWidget extends Widget {
           </span>;
       } else {
         // We can just print the value
-        if(!run.before || run.before.value === run.after.value) {
+        if(!run.before ||
+           run.before.value === run.after.value ||
+           (prevRun && prevRun.after.value === run.before.value)) {
           return <span class="run">
             <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
@@ -157,11 +159,16 @@ export default class ProbeWidget extends Widget {
       
       if(this._activeRuns.has(example.id)
          && this._activeRuns.get(example.id) !== -1) {
-        valueElement.appendChild(elementForRun(runs.get(this._activeRuns.get(example.id))));
+        valueElement.appendChild(
+          elementForRun(runs.get(this._activeRuns.get(example.id)), null)
+        );
       } else {
         Array.from(runs.entries())
              .sort((a, b) => a[0] - b[0])
-             .forEach(entry => valueElement.appendChild(elementForRun(entry[1])));
+             .forEach((entry, i, arr) => {
+               const prevRun = i > 0 ? arr[i-1][1] : null;
+               valueElement.appendChild(elementForRun(entry[1], prevRun))
+             });
       }
       
       // Show a delete button for the first element, and just a space for all others
