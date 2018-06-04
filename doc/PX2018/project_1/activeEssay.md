@@ -1,8 +1,13 @@
 <link rel="stylesheet" href="doc/PX2018/project_1/assets/css/style.css">
+<div class="wrapper">
+
+<div class="center">
 
 # Blockchain
 <div class="authors">Johannes Schneider, Julian Weise</div>
 <div class="seminar">Programming Experience 2018</div>
+</div>
+<br/>
 
 
 ## Motivation and historical background
@@ -13,3 +18,4 @@ In former research communities timestamping was a serious issue. How possibly co
 
 People developed several different approaches to tackle the timestamping problem: Some kept a complete log about there activities, ideas and their development. Others copied their research results and sent them as a letter to themselves. The date stamp on the letter served as a trusted timestamp. Nevertheless, all of these approaches had different issues: They were either not forgery-proofed, expensive or simply hard to apply. As a consequence, the research community continued to find better solutions for the timestamping problem.
 </p>
+</div>

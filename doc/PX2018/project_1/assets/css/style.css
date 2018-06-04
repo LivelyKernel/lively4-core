@@ -1,3 +1,15 @@
+.wrapper {
+  padding-right: 10px;
+}
+
+.center {
+  text-align: center;
+  div {
+    width: auto;
+    margin: 0 auto;
+  }
+}
+
 img {
     float: left;
     margin: 0 20px 5px 0;
