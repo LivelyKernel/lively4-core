@@ -37,18 +37,32 @@ export function withLayers(layers, func) {
   try {
     return func();
   } finally {
+    const beforePop = currentLayers();
     cop.LayerStack.pop();
+    const afterPop = currentLayers();
+    layers
+      .filter(l => beforePop.includes(l) && !afterPop.includes(l))
+      .forEach(l => l._emitDeactivateCallbacks());
   }
-};
+}
 
 export function withoutLayers(layers, func) {
+  const beforePush = currentLayers();
   cop.LayerStack.push({withoutLayers: layers});
+  layers
+    .filter(l => beforePush.includes(l))
+    .forEach(l => l._emitDeactivateCallbacks());
   try {
     return func();
   } finally {
+    const beforePop = currentLayers();
     cop.LayerStack.pop();
+    const afterPop = currentLayers();
+    layers
+      .filter(l => !beforePop.includes(l) && afterPop.includes(l))
+      .forEach(l => l._emitActivateCallbacks());
   }
-};
+}
 
 // Layer creation by name
 export function layer(...args) {

@@ -463,6 +463,7 @@ export function disableLayer(layer) {
   if (idx < 0) {
     return;
   }
+  layer._emitDeactivateCallbacks();
   self.GlobalLayers.splice(idx, 1);
   invalidateLayerComposition();
 }
@@ -520,6 +521,7 @@ export class Layer {
     // this._layeredFunctionsList = {};
     
     this._activateCallbacks = [];
+    this._deactivateCallbacks = [];
   }
   
   // Accessing
@@ -655,11 +657,14 @@ export class Layer {
   onActivate(callback) {
     this._activateCallbacks.push(callback);
   }
-  onDeactivate() {
-    
+  onDeactivate(callback) {
+    this._deactivateCallbacks.push(callback);
   }
   _emitActivateCallbacks() {
-    this._activateCallbacks.forEach(cb => cb())
+    this._activateCallbacks.forEach(cb => cb());
+  }
+  _emitDeactivateCallbacks() {
+    this._deactivateCallbacks.forEach(cb => cb());
   }
 }
 
