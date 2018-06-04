@@ -404,7 +404,7 @@ View.withOnStack = function(el, callback, context) {
 /**
  * ################## CSS SELECTORS ##################
  */
-const events = {};
+const selectorByAnimationName = new Map();
 const selectors = {};
 let animationCount = 0;
 const styles = document.createElement('style');
@@ -412,24 +412,27 @@ const keyframes = document.createElement('style');
 const head = document.getElementsByTagName('head')[0];
 const startName = 'animationstart';
 const startEvent = function(event) {
-  event.selector = (events[event.animationName] || {}).selector;
-  ((this.startListeners || {})[event.animationName] || []).forEach(fn => {
+  event.selector = selectorByAnimationName.get(event.animationName);
+  ((startListenerByRoot.get(this) || {})[event.animationName] || []).forEach(fn => {
     fn.call(this, event);
   });
 };
+const roots = new Set();
+const startListenerByRoot = new Map();
 
 styles.type = keyframes.type = 'text/css';
 head.appendChild(styles);
 head.appendChild(keyframes);
 
-HTMLDocument.prototype.addSelectorListener = HTMLElement.prototype.addSelectorListener = function(selector, fn) {
+function addSelectorListener(root, selector, fn) {
   var key = selectors[selector];
-  var listeners = this.startListeners = this.startListeners || {};
+  if(!startListenerByRoot.has(root)) {
+    startListenerByRoot.set(root, {});
+  }
+  var listeners = startListenerByRoot.get(root);
 
-  if (key) {
-    events[key].count++;
-  } else {
-    key = selectors[selector] = 'SelectorListener-' + animationCount++;
+  if (!key) {
+    key = selectors[selector] = 'SelectorListener-' + animationCount++ + '-' + selector.replace(/[^0-9a-zA-Z]/gi, '');
     let node = document.createTextNode(`@keyframes ${key} {
 from { outline-color: #fff; } to { outline-color: #000; }
 }`);
@@ -438,81 +441,52 @@ from { outline-color: #fff; } to { outline-color: #000; }
   animation-duration: 0.001s;
   animation-name: ${key} !important;
 }`, 0);
-    events[key] = {
-      count: 1,
-      selector: selector,
-      keyframe: node,
-      rule: styles.sheet.cssRules[0]
-    };
+    selectorByAnimationName.set(key, selector);
   }
 
-  if (listeners.count) {
-    listeners.count++;
-  } else {
-    listeners.count = 1;
-    this.addEventListener(startName, startEvent, false);
+  if(!roots.has(root)) {
+    roots.add(root);
+    root.addEventListener(startName, startEvent, false);
   }
 
   (listeners[key] = listeners[key] || []).push(fn);
-};
+}
 
-HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSelectorListener = function(selector, fn){
-  var listeners = this.startListeners || {};
-  var key = selectors[selector];
-  var listener = listeners[key] || [];
-  var index = listener.indexOf(fn);
-
-  if (index > -1){
-    let event = events[selectors[selector]];
-    event.count--;
-    if (!event.count) {
-      styles.sheet.deleteRule(styles.sheet.cssRules.item(event.rule));
-      keyframes.removeChild(event.keyframe);
-      delete events[key];
-      delete selectors[selector];
-    }
-
-    listeners.count--;
-    listener.splice(index, 1);
-    if (!listeners.count) {
-      this.removeEventListener(startName, startEvent, false);
-    }
-  }
-};
-
-
-// chrome does not support the animationcancel event, so we have to resort back to other means, namely polling
-
-const REMOVE_ELEMENT_BY_MATCH_CHECK = new Map(); // matchesSelector -> removeElement
+/**
+ * chrome does not support the animationcancel event, so we have to resort back to other means, namely polling
+ */
+const stopMatchingDetectors = new Set();
 
 function removeObsoleteListeners() {
-  Array.from(REMOVE_ELEMENT_BY_MATCH_CHECK).forEach(([matchesSelector, removeElement]) => {
-    if(!matchesSelector()) {
-      removeElement();
-      REMOVE_ELEMENT_BY_MATCH_CHECK.delete(matchesSelector);
+  Array.from(stopMatchingDetectors).forEach(detector => {
+    if(!detector.matchesSelector()) {
+      detector.removeElement();
+      stopMatchingDetectors.delete(detector);
     }
   });
-  if(REMOVE_ELEMENT_BY_MATCH_CHECK.size === 0) {
+  if(stopMatchingDetectors.size === 0) {
     stopMatchingLoop.pause();
   }
 }
+
 const stopMatchingLoop = new PausableLoop(() => {
-  lively.warn('check stop matching', REMOVE_ELEMENT_BY_MATCH_CHECK.size);
+  lively.warn('check stop matching');
   removeObsoleteListeners();
 });
 
 function trackSelector(selector, { root = document }) {
   const view = new View();
-  root.addSelectorListener(selector, event => {
+  addSelectorListener(root, selector, event => {
     const element = event.target;
     view.safeAdd(element);
     
-    const matchesSelector = () => {
-      const inDOM = element.getRootNode({ composed: true }) === document;
-      return inDOM && element.matches(selector);
-    }
-    const removeElement = () => view.safeRemove(element);
-    REMOVE_ELEMENT_BY_MATCH_CHECK.set(matchesSelector, removeElement);
+    stopMatchingDetectors.add({
+      matchesSelector() {
+        const inDOM = element.getRootNode({ composed: true }) === document;
+        return inDOM && element.matches(selector);
+      },
+      removeElement() { view.safeRemove(element); }
+    });
     stopMatchingLoop.ensureRunning();
   });
   return view;
@@ -521,6 +495,8 @@ function trackSelector(selector, { root = document }) {
 export function __unload__() {
   styles.remove();
   keyframes.remove();
+  roots.forEach(root => root.removeEventListener(startName, startEvent, false));
+  
   stopMatchingLoop.pause();
 }
 
