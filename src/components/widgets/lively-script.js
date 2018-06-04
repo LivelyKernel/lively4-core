@@ -57,7 +57,6 @@ export default class LivelyScript extends Morph {
   async boundEval(str) {
     // console.log("" + this.id + ">>boundEval " + str )
     var targetModule =  this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
-    debugger
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
