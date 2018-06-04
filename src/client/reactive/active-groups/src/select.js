@@ -417,21 +417,22 @@ const startEvent = function(event) {
     fn.call(this, event);
   });
 };
+const roots = new Set();
 const startListenerByRoot = new Map();
 
 styles.type = keyframes.type = 'text/css';
 head.appendChild(styles);
 head.appendChild(keyframes);
 
-function addSelectorListener(selector, fn) {
+function addSelectorListener(root, selector, fn) {
   var key = selectors[selector];
-  if(!startListenerByRoot.has(this)) {
-    startListenerByRoot.set(this, {});
+  if(!startListenerByRoot.has(root)) {
+    startListenerByRoot.set(root, {});
   }
-  var listeners = startListenerByRoot.get(this);
+  var listeners = startListenerByRoot.get(root);
 
   if (!key) {
-    key = selectors[selector] = 'SelectorListener-' + animationCount++;
+    key = selectors[selector] = 'SelectorListener-' + animationCount++ + '-' + selector.replace(/[^0-9a-zA-Z]/gi, '');
     let node = document.createTextNode(`@keyframes ${key} {
 from { outline-color: #fff; } to { outline-color: #000; }
 }`);
@@ -443,11 +444,9 @@ from { outline-color: #fff; } to { outline-color: #000; }
     selectorByAnimationName.set(key, selector);
   }
 
-  if (listeners.count) {
-    listeners.count++;
-  } else {
-    listeners.count = 1;
-    this.addEventListener(startName, startEvent, false);
+  if(!roots.has(root)) {
+    roots.add(root);
+    root.addEventListener(startName, startEvent, false);
   }
 
   (listeners[key] = listeners[key] || []).push(fn);
@@ -477,7 +476,7 @@ const stopMatchingLoop = new PausableLoop(() => {
 
 function trackSelector(selector, { root = document }) {
   const view = new View();
-  addSelectorListener.call(root, selector, event => {
+  addSelectorListener(root, selector, event => {
     const element = event.target;
     view.safeAdd(element);
     
@@ -496,7 +495,7 @@ function trackSelector(selector, { root = document }) {
 export function __unload__() {
   styles.remove();
   keyframes.remove();
-  document.removeEventListener(startName, startEvent, false);
+  roots.forEach(root => root.removeEventListener(startName, startEvent, false));
   
   stopMatchingLoop.pause();
 }
