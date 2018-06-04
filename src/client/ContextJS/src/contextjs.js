@@ -23,11 +23,16 @@
 'use strict'; 
 
 import * as cop from "./Layers.js";
+import { currentLayers } from "./Layers.js";
 export { proceed, Layer } from "./Layers.js";
 
 // Layer Activation
 export function withLayers(layers, func) {
+  const previouslyActiveLayers = currentLayers();
   cop.LayerStack.push({withLayers: layers});
+  layers
+    .filter(l => !previouslyActiveLayers.includes(l))
+    .forEach(l => l._emitActivateCallbacks());
   // console.log("callee: " + withLayers.callee);
   try {
     return func();

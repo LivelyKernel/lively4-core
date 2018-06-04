@@ -450,8 +450,12 @@ export function enableLayer(layer) {
   if (self.GlobalLayers.indexOf(layer) !== -1) {
     return;
   }
+  const wasAlreadyActive = currentLayers().includes(layer);
   self.GlobalLayers.push(layer);
   invalidateLayerComposition();
+  if(!wasAlreadyActive) {
+    layer._emitActivateCallbacks();
+  }
 }
 
 export function disableLayer(layer) {
@@ -514,6 +518,8 @@ export class Layer {
     }
     this._context = context;
     // this._layeredFunctionsList = {};
+    
+    this._activateCallbacks = [];
   }
   
   // Accessing
@@ -643,6 +649,17 @@ export class Layer {
   // Debugging
   toString () {
     return String(this.name); // could be a symbol
+  }
+  
+  // Life-cycle callbacks
+  onActivate(callback) {
+    this._activateCallbacks.push(callback);
+  }
+  onDeactivate() {
+    
+  }
+  _emitActivateCallbacks() {
+    this._activateCallbacks.forEach(cb => cb())
   }
 }
 
