@@ -42,6 +42,7 @@ export default class D3Example extends Morph {
     const node = svg.selectAll()
             .data(graph.nodes)
             .enter()
+            .append('group')
             .append('circle')
             .attr('r', 50)
             .attr('fill', 'red')
