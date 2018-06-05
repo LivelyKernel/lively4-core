@@ -255,9 +255,9 @@ export function currentLayers() {
   // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION
   var current = LayerStack[LayerStack.length - 1];
   if (!current.composition) {
-    current.composition = composeLayers(LayerStack);
+    current.composition = composeLayers(LayerStack) ;
   }
-  return current.composition;
+  return current.composition.concat(getActiveImplicitLayers());
 }
 
 // clear cached layer compositions
@@ -547,6 +547,11 @@ export class Layer {
     if (this.isGlobal()) {
       this.beNotGlobal();
     }
+    implicitLayers.delete(this);
+    if(this.AExprForILA) {
+      this.AExprForILA.dispose();
+    }
+
     var context = this._context;
     if (typeof context !== 'undefined')
       delete context[this.name];
@@ -656,9 +661,13 @@ export class Layer {
   // Life-cycle callbacks
   onActivate(callback) {
     this._activateCallbacks.push(callback);
+    this._fallbackToReactiveTrackingOfILA();
+    return this;
   }
   onDeactivate(callback) {
     this._deactivateCallbacks.push(callback);
+    this._fallbackToReactiveTrackingOfILA();
+    return this;
   }
   _emitActivateCallbacks() {
     this._activateCallbacks.forEach(cb => cb());
@@ -666,8 +675,43 @@ export class Layer {
   _emitDeactivateCallbacks() {
     this._deactivateCallbacks.forEach(cb => cb());
   }
+  
+  // Implicit Layer Activation
+  activeWhile(condition, aexprConstructor) {
+    this.implicitlyActivated = condition;
+    this.aexprConstructor = aexprConstructor;
+    
+    implicitLayers.add(this);
+    this._fallbackToReactiveTrackingOfILA();
+
+    return this;
+  }
+  _fallbackToReactiveTrackingOfILA() {
+    if(this._shouldUseReactiveTracking()) {
+      this._setupReactiveILA()
+    }
+  }
+  _shouldUseReactiveTracking() {
+    return this.implicitlyActivated &&
+      this.aexprConstructor &&
+      (this._activateCallbacks.length + this._deactivateCallbacks.length > 0);
+  }
+  _setupReactiveILA() {
+    implicitLayers.delete(this);
+    
+    if(!this.AExprForILA) {
+      this.AExprForILA = this.aexprConstructor(this.implicitlyActivated)
+          .onBecomeTrue(() => this.beGlobal())
+          .onBecomeFalse(() => this.beNotGlobal());
+    }
+  }
 }
 
+const implicitLayers = new Set();
+function getActiveImplicitLayers ( ) {
+  return [...implicitLayers]
+    .filter(layer => layer.implicitlyActivated());
+}
 /*
  * Example implementation of a layerable object
  */
