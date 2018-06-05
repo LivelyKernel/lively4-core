@@ -14,7 +14,7 @@ import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
-
+  
   get target() { return this.childNodes[0] }
 
   initialize() {
@@ -1151,7 +1151,9 @@ export default class Container extends Morph {
   }
 
   hideNavbar() {
-    this.get('lively-separator').onClick()
+    if (lively.getExtent(this).x > 1 ) {
+      this.get('lively-separator').onClick()
+    }
   }
 
   async showNavbar() {
@@ -1192,6 +1194,7 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "block"
     this.get("#container-navigation").style.display  = "none";
     this.get("#container-leftpane").style.display  = "none";
+    this.get("#container-rightpane").style.flex = 1
     this.get("lively-separator").style.display  = "none";
   }
 
@@ -1200,6 +1203,7 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
+    this.get("#container-rightpane").style.flex = 0.8
     this.get("lively-separator").style.display  = "";
   }
 

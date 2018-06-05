@@ -6,22 +6,14 @@ img {
 }
 
 .lively-slide {
-  transform-origin: top left;
-  transform: scale(1);
-}
-
-
-.lively-slide {
   position: absolute;
   top: 0px;
   left: 0px;
   width:   923px; /* 20/13 * 600 */
   height: 600px;
-  
-  border: solid 2px rgb(240,240,240);
+  /* border: solid 0px rgb(240,240,240); */
   padding: 20px;
-  
-
+  background-color: white;
 }
 
 .title, .authors, .credentials, .conference {

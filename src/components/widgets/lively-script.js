@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import boundEval from 'src/client/bound-eval.js';
 import _ from 'src/external/lodash/lodash.js'
+import { uuid as generateUuid } from 'utils'
 
 /* Replacement for "script" tag, that supports
  *  - import module statements
@@ -12,6 +13,9 @@ import _ from 'src/external/lodash/lodash.js'
  */
 
 export var currentScriptPromises = []
+
+export var moduleMap = new Map()
+
 
 export default class LivelyScript extends Morph {
 
@@ -40,10 +44,20 @@ export default class LivelyScript extends Morph {
       this.get("#result").innerHTML = ""
     }
   }
-    
+
+  moduleFor(obj) {
+    var moduleName  = moduleMap.get(obj)
+    if (!moduleName) {
+      moduleName = "livelyscript_" + generateUuid()
+      moduleMap.set(obj, moduleName)
+    }
+    return moduleName
+  }
+  
   async boundEval(str) {
     // console.log("" + this.id + ">>boundEval " + str )
-    var targetModule = "boundEvalModule" // #TODO make use of this... to separate modules
+    var targetModule =  this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
+    
     var resolveMe
     if (currentScriptPromises.length > 0) {
       // console.log("script wait on " + currentScriptPromise)

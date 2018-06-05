@@ -450,8 +450,12 @@ export function enableLayer(layer) {
   if (self.GlobalLayers.indexOf(layer) !== -1) {
     return;
   }
+  const wasAlreadyActive = currentLayers().includes(layer);
   self.GlobalLayers.push(layer);
   invalidateLayerComposition();
+  if(!wasAlreadyActive) {
+    layer._emitActivateCallbacks();
+  }
 }
 
 export function disableLayer(layer) {
@@ -459,6 +463,7 @@ export function disableLayer(layer) {
   if (idx < 0) {
     return;
   }
+  layer._emitDeactivateCallbacks();
   self.GlobalLayers.splice(idx, 1);
   invalidateLayerComposition();
 }
@@ -514,6 +519,9 @@ export class Layer {
     }
     this._context = context;
     // this._layeredFunctionsList = {};
+    
+    this._activateCallbacks = [];
+    this._deactivateCallbacks = [];
   }
   
   // Accessing
@@ -643,6 +651,20 @@ export class Layer {
   // Debugging
   toString () {
     return String(this.name); // could be a symbol
+  }
+  
+  // Life-cycle callbacks
+  onActivate(callback) {
+    this._activateCallbacks.push(callback);
+  }
+  onDeactivate(callback) {
+    this._deactivateCallbacks.push(callback);
+  }
+  _emitActivateCallbacks() {
+    this._activateCallbacks.forEach(cb => cb());
+  }
+  _emitDeactivateCallbacks() {
+    this._deactivateCallbacks.forEach(cb => cb());
   }
 }
 

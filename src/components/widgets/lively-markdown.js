@@ -203,7 +203,7 @@ export default class LivelyMarkdown extends Morph {
       this.parentElement.setAttribute("mode", "presentation")
     }
     if (this.get("lively-presentation")) {
-      return
+      return this.get("lively-presentation")
     }
     
     var comp = document.createElement("lively-presentation")
