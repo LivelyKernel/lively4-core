@@ -1,8 +1,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { debounce } from "utils";
 
-const PRE_HEADER_TEMPLATE = (keys) => `beforeExample(${keys.join(", ")}) {`;
-const POST_HEADER_TEMPLATE = (keys) => `afterExample(${keys.join(", ")} {)`;
+const HEADER_TEMPLATE = (order, type, keys) => `${order} ${type.toLowerCase()}${keys.length ? " ("+keys.join(", ")+")" : ""}:`;
+const PRE_HEADER_TEMPLATE = (type, keys) => HEADER_TEMPLATE("Before", type, keys);
+const POST_HEADER_TEMPLATE = (type, keys) => HEADER_TEMPLATE("After", type, keys);
 
 export default class PrePostScriptEditor extends Morph {
   
@@ -18,6 +19,7 @@ export default class PrePostScriptEditor extends Morph {
     this._preHeader = this.get("#prescript-header");
     this._postHeader = this.get("#postscript-header");
     
+    this._type = "Example";
     this.keys = [];
     this.name = null;
     this.callback = null;
@@ -25,7 +27,6 @@ export default class PrePostScriptEditor extends Morph {
   
   _addEditorListeners(editor) {
     editor.editor.setOption("lint", false);
-    editor.editor.setOption("lineNumbers", false);
     editor.editor.on("change", ((value) => {
       if(this._callback) {
         this._callback({
@@ -36,7 +37,8 @@ export default class PrePostScriptEditor extends Morph {
     })::debounce(500));
   }
   
-  setup(name, keys, prescript, postscript, callback) {
+  setup(name, keys, prescript, postscript, callback, type = "Example") {
+    this._type = type;
     this.name = name;
     this.keys = keys;
     this.callback = callback;
@@ -50,13 +52,16 @@ export default class PrePostScriptEditor extends Morph {
   
   set keys(keys) {
     this._keys = keys;
-    this._preHeader.textContent = PRE_HEADER_TEMPLATE(this._keys);
-    this._postHeader.textContent = POST_HEADER_TEMPLATE(this._keys);
+    this._preHeader.textContent = PRE_HEADER_TEMPLATE(this._type, this._keys);
+    this._postHeader.textContent = POST_HEADER_TEMPLATE(this._type, this._keys);
   }
   
   set name(name) {
-    if(name && name.value && name.value.length) {
-      this._name = name.value;
+    if(name) {
+      if(name.value) {
+        name = name.value;
+      }
+      this._name = name;
       this.windowTitle = `Edit Pre/Postscript for "${this._name}"`;
     } else {
       this._name = null;

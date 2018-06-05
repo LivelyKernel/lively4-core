@@ -188,6 +188,13 @@ export const applyTracker = (ast) => {
   return ast;
 }
 
+export const applyContext = (ast, context) => {
+  const prescriptNodes = astForCode(context.prescript).program.body;
+  const postscriptNodes = astForCode(context.postscript).program.body;
+  ast.program.body = prescriptNodes.concat(ast.program.body).concat(postscriptNodes);
+  return ast;
+}
+
 /**
  * Applies replacement markers to the given AST
  */

@@ -11,6 +11,7 @@ import {
   generateInstances,
   applyBasicModifications,
   applyTracker,
+  applyContext,
 } from "../utils/ast.js";
 
 
@@ -34,6 +35,9 @@ export default onmessage = function(msg) {
     // Add trackers for all examples
     const exampleInstances = generateInstances(ast, annotations.instances);
     applyExamples(ast, annotations.examples, exampleInstances);
+    
+    // Apply context
+    applyContext(ast, annotations.context);
     
     // Insert tracker
     applyTracker(ast);

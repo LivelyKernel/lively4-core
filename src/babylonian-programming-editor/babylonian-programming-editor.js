@@ -25,6 +25,7 @@ import {
   saveFile
 } from "./utils/load-save.js";
 import {
+  defaultContext,
   defaultAnnotations,
   defaultConnections
 } from "./utils/defaults.js";
@@ -36,6 +37,7 @@ import Replacement from "./annotations/replacement.js";
 import Instance from "./annotations/instance.js";
 import InstanceWidget from "./ui/instance-widget.js";
 import StatusBar from "./ui/status-bar.js";
+import { PrePostscriptButton } from "./ui/buttons.js";
 
 
 // Constants
@@ -68,6 +70,9 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // All Annotations
     this._annotations = defaultAnnotations;
+    
+    // Module context
+    this._context = defaultContext();
 
     // Currently activated examples
     this._activeExamples = []; // [Example]
@@ -77,6 +82,8 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
+    this._buttons = this.get("#buttons");
+    this._buttons.appendChild(PrePostscriptButton(this.onEditPrePostScript.bind(this)));
     
     // Right click listener
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
@@ -164,6 +171,9 @@ export default class BabylonianProgrammingEditor extends Morph {
         obj.load(replacement);
       }
     }
+    
+    // Add context
+    this._context = annotations.context ? annotations.context : defaultContext();
 
     this.evaluate(true);
   }
@@ -178,9 +188,12 @@ export default class BabylonianProgrammingEditor extends Morph {
         serializedAnnotations[key].push(annotation.serializeForSave());
       }
     }
-    const stringAnnotations = JSON.stringify(serializedAnnotations);
 
+    // Serialize context
+    serializedAnnotations.context = this._context;
+    
     // Save file
+    const stringAnnotations = JSON.stringify(serializedAnnotations);
     let data = this.livelyEditor().currentEditor().getValue();
     data = `${data}/* Examples: ${stringAnnotations} */`;
     saveFile(this.livelyEditor(), data);
@@ -485,6 +498,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     serializedAnnotations.examples = this._activeExamples.map((a) => a.serializeForWorker());
 
+    // Serialize context
+    serializedAnnotations.context = this._context;
+    
     // Call the worker
     const { ast, code } = await this.worker.process(
       this.editor().getValue(),
@@ -579,12 +595,22 @@ export default class BabylonianProgrammingEditor extends Morph {
     evt.preventDefault();
     evt.stopPropagation();
     var menu = new ContextMenu(this, [
-      ["Add Probe", () => this.addAnnotationAtSelection("probe")],
-      ["Add Example", () => this.addAnnotationAtSelection("example")],
-      ["Add Replacement", () => this.addAnnotationAtSelection("replacement")],
+      ["Add probe", () => this.addAnnotationAtSelection("probe")],
+      ["Add example", () => this.addAnnotationAtSelection("example")],
+      ["Add replacement", () => this.addAnnotationAtSelection("replacement")],
+      ["Edit module pre/postscript", () => this.onEditPrePostScript()],
     ]);
     menu.openIn(document.body, evt, this);
     return false; 
+  }
+  
+  async onEditPrePostScript() {
+    let comp = await lively.openComponentInWindow("pre-post-script-editor");
+    comp.setup("Module", [], this._context.prescript, this._context.postscript, (value) => {
+      this._context.prescript = value.prescript;
+      this._context.postscript = value.postscript;
+      this.onEvaluationNeeded();
+    }, "Module");
   }
 
   onSliderChanged(slider, exampleId, value) {

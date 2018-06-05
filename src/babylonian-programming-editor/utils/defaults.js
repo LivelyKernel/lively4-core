@@ -30,6 +30,11 @@ export const defaultAnnotations = () => ({
   instances: [], // [Instance]
 });
 
+export const defaultContext = () => ({
+  prescript: "",
+  postscript: ""
+});
+
 let defaultConnectionsInstance = null;
 export const defaultConnections = () => {
   if(!defaultConnectionsInstance) {

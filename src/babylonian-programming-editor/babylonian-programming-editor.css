@@ -5,13 +5,27 @@
   flex-direction: column;
 }
 
-#status {
-  padding: 4px;
+#bottom {
   border-top: 1px solid rgb(221, 221, 221);
-  background-color: #f7f7f7;
+  background-color: rgb(247, 247, 247);
   font-family: monospace;
   color: #333;
+  display: flex;
+  flex-direction: row;
 }
+
+#bottom > div {
+  padding: 4px;
+}
+
+#status-container {
+  flex: 1;
+}
+
+#status {
+  padding: 0 2px;
+}
+
 
 #status.error {
   background-color: hsla(344, 54%, 63%, 0.2);
@@ -23,4 +37,23 @@
   background-color: rgba(249, 225, 84, 0.6);
   border-color: hsl(30, 100%, 20%);
   color: hsl(30, 100%, 20%);
+}
+
+#buttons {
+  width: 47px;
+  border-right: 1px solid rgb(221, 221, 221);
+  text-align: center;
+}
+
+.icon {
+  font-family: "FontAwesome";
+  display: inline-block;
+  cursor: pointer;
+  opacity: 0.8;
+  min-width: 1em;
+  text-align: center;
+}
+
+.icon.exchange::before {
+  content: "\f0ec";
 }
