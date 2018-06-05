@@ -58,4 +58,4 @@ class Smiley {
     ctx.stroke();
   }
 }
-/* Examples: {"probes":[{"location":[25,6,25,9]}],"sliders":[{"location":[19,4,19,7]}],"examples":[{"location":[1,9,1,19],"id":"7782-7825-9a38","name":{"value":"Test","isConnection":false},"values":{"canvas":{"value":"7782-7825-9a38_canvas","isConnection":true},"eyeColor":{"value":"\"blue\"","isConnection":false},"skinColor":{"value":"\"yellow\"","isConnection":false}},"instanceId":{"value":"0","isConnection":false}}],"replacements":[],"instances":[]} */
+/* Examples: {"probes":[{"location":[25,6,25,9]}],"sliders":[{"location":[19,4,19,7]}],"examples":[{"location":[1,9,1,19],"id":"7782-7825-9a38","name":{"value":"Test","isConnection":false},"values":{"canvas":{"value":"7782-7825-9a38_canvas","isConnection":true},"eyeColor":{"value":"\"blue\"","isConnection":false},"skinColor":{"value":"\"yellow\"","isConnection":false}},"instanceId":{"value":"0","isConnection":false},"prescript":"console.log(\"prescript called\")\ncanvas.getContext(\"2d\").clearRect(0, 0, canvas.width, canvas.height);","postscript":"console.log(\"postscript called\")"}],"replacements":[],"instances":[]} */

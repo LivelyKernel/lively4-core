@@ -8,7 +8,7 @@ export function Button(callback, additionalClasses = [], hoverText = "") {
 }
 
 export function DeleteButton(callback) {
-  return Button(callback, ["delete-button"]);
+  return Button(callback, ["delete-button"], "Delete");
 }
 
 export function SwitchButton(callback, isOn) {
@@ -16,9 +16,13 @@ export function SwitchButton(callback, isOn) {
 }
 
 export function ExpandButton(callback) {
-  return Button(callback, ["expand", "space-before"]);
+  return Button(callback, ["expand", "space-before"], "Switch form layout");
 }
 
 export function ErrorButton(hoverText) {
   return Button(Function(), ["warn", "space-before"], hoverText);
+}
+
+export function PrePostscriptButton(callback) {
+  return Button(callback, ["exchange", "space-before"], "Edit Pre/Postscript");
 }

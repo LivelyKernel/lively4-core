@@ -1,0 +1,29 @@
+<template id="pre-post-script-editor" data-class="PrePostScriptEditor">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #prescript, #postscript {
+      flex: 1;
+    }
+    
+    #postscript-header, #postscript-header {
+      margin-top: 1em;
+    }
+    
+    pre {
+      margin: 0;
+    }
+  </style> 
+  
+  <pre id="prescript-header">prescript() {</pre>
+  <lively-code-mirror  id="prescript" ></lively-code-mirror>
+  <pre>},</pre>
+  
+  <pre id="postscript-header">postscript() {</pre>
+  <lively-code-mirror  id="postscript" ></lively-code-mirror>
+  <pre>}</pre>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

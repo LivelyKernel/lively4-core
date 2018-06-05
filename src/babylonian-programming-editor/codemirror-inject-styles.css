@@ -235,7 +235,7 @@
   display: inline-block;
   cursor: pointer;
   opacity: 0.8;
-  width: 1em;
+  min-width: 1em;
   text-align: center;
 }
 
@@ -382,3 +382,6 @@ input[type=range]::-webkit-slider-runnable-track {
   content: "\f071";
 }
 
+.icon.exchange::before {
+  content: "\f0ec";
+}

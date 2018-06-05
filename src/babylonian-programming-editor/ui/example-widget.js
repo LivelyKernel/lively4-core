@@ -5,6 +5,7 @@ import {
   SwitchButton,
   ExpandButton,
   ErrorButton,
+  PrePostscriptButton,
 } from "./buttons.js";
 import { defaultInstance } from "../utils/defaults.js";
 
@@ -39,17 +40,22 @@ export default class ExampleWidget extends FormWidget {
     ];
   }
   
-  _update() {
-    this._element.innerHTML = "";
+  _addButtonElement() {
     const buttonElement = <span class="buttons"></span>;
     buttonElement.appendChild(DeleteButton(this._deleteCallback));
     buttonElement.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
                                            this._isOn));
+    buttonElement.appendChild(PrePostscriptButton(this._onPrePostscriptClicked.bind(this)));
     buttonElement.appendChild(ExpandButton(this._onExpandClicked.bind(this)));
     if(this._error) {
       buttonElement.appendChild(ErrorButton(this._error));
     }
     this._element.appendChild(buttonElement);
+  }
+  
+  _update() {
+    this._element.innerHTML = "";
+    this._addButtonElement();
     this._element.appendChild(this._getNameElement().element);
     this._addFormElements();
   }

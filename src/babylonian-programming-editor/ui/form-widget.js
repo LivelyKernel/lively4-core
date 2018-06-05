@@ -8,6 +8,9 @@ export default class FormWidget extends InputWidget {
     this._keys = []; // [key]
     this._nameElement = null; // InputField
     this._elements = new Map(); // Map(key, {element, input})
+    
+    this._prescript = ""
+    this._postscript = ""
   }
   
   // UI Generators
@@ -80,10 +83,23 @@ export default class FormWidget extends InputWidget {
     this._element.classList.toggle("expanded");
   }
   
+  async _onPrePostscriptClicked() {
+    let comp = await lively.openComponentInWindow("pre-post-script-editor");
+    comp.setup(this.name, this.keys, this.prescript, this.postscript, (value) => {
+      this._prescript = value.prescript;
+      this._postscript = value.postscript;
+      this._changeCallback();
+    });
+  }
+  
   // Getters and Setters
   
   get code() {
     abstract();
+  }
+  
+  get keys() {
+    return this._keys;
   }
   
   set keys(keys) {
@@ -101,6 +117,22 @@ export default class FormWidget extends InputWidget {
   
   set name(name) {
     this._nameElement.value = name;
+  }
+  
+  get prescript() {
+    return this._prescript;
+  }
+  
+  set prescript(prescript) {
+    this._prescript = prescript ? prescript : "";
+  }
+  
+  get postscript() {
+    return this._postscript;
+  }
+  
+  set postscript(postscript) {
+    this._postscript = postscript ? postscript : "";
   }
   
   get values() {

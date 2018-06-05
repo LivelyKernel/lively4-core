@@ -62,7 +62,7 @@ export default class ConnectorField {
   
   setTargetKey(targetKey) {
     if(targetKey in defaultConnections()) {
-      this.target = defaultConnections()[targetKey]();
+      this.target = defaultConnections()[targetKey];
       return true;
     } else {
       this._connector.isConnected = true;

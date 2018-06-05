@@ -41,7 +41,9 @@ export default class Example extends InputAnnotation {
       id: this.id,
       name: this.name,
       values: this._widget.valuesArray,
-      instanceId: this._widget.instanceId
+      instanceId: this._widget.instanceId,
+      prescript: this._widget.prescript,
+      postscript: this._widget.postscript,
     };
   }
   
@@ -51,7 +53,9 @@ export default class Example extends InputAnnotation {
       id: this.id,
       name: this.name,
       values: this._widget.values,
-      instanceId: this._widget.instanceId
+      instanceId: this._widget.instanceId,
+      prescript: this._widget.prescript,
+      postscript: this._widget.postscript,
     };
   }
   
@@ -60,5 +64,7 @@ export default class Example extends InputAnnotation {
     this._widget.values = serialized.values;
     this._widget.name = serialized.name;
     this._widget.instanceId = serialized.instanceId;
+    this._widget.prescript = serialized.prescript;
+    this._widget.postscript = serialized.postscript;
   }
 }

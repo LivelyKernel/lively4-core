@@ -74,12 +74,7 @@ export default class Connector {
       this.isBroken = false;
       
       // Set up target
-      defaultConnections()[this._source.id] = () => {
-        if(this._targetKind === "canvas") {
-          target.getContext("2d").clearRect(0, 0, target.width, target.height);
-        }
-        return target;
-      };
+      defaultConnections()[this._source.id] = target;
     } else {
       this.isConnected = false;
       this.isBroken = false;

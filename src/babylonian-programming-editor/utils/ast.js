@@ -118,33 +118,6 @@ export const canBeReplaced = (path) => {
 }
 
 /**
- * Generates a replacement node
- * (to be used as the righthand side of an assignment)
- */
-export const replacementNodeForCode = (code) => {
-  // The code we get here will be used as the righthand side of an Assignment
-  // We we pretend that it is that while parsing
-  
-  if(!code || !code.length) {
-    return types.nullLiteral();
-  }
-  
-  code = `placeholder = ${code}`;
-  try {
-    const ast = astForCode(code);
-    return ast.program.body[0].expression.right;
-  } catch (e) {
-    console.error("Error parsing replacement node", e);
-    return null;
-  }
-}
-
-const replacementNodeForValue = (value) => 
-  replacementNodeForCode(value.isConnection ?
-                         connectorTemplate(value.value) :
-                         value.value);
-
-/**
  * Assigns IDs to add nodes of the AST
  */
 export const assignIds = (ast) => {
@@ -300,11 +273,11 @@ export const generateInstances = (ast, instances) => {
  */
 export const applyExamples = (ast, examples, exampleInstances) => {
   // Prepare templates to insert
-  const functionCall = template("ID.apply(THIS, PARAMS)");
-  const staticMethodCall = template("CLASS.ID.apply(THIS, PARAMS)");
-  const objectMethodCall = template("CLASS.prototype.ID.apply(THIS, PARAMS)");
+  const functionCall = template("ID.apply(this, PARAMS)");
+  const staticMethodCall = template("CLASS.ID.apply(this, PARAMS)");
+  const objectMethodCall = template("CLASS.prototype.ID.apply(this, PARAMS)");
   
-  const instanceNode = (instanceId) => {
+  const makeInstanceNode = (instanceId) => {
     if(instanceId.isConnection) {
       return replacementNodeForCode(connectorTemplate(instanceId.value));
     } else {
@@ -314,15 +287,22 @@ export const applyExamples = (ast, examples, exampleInstances) => {
   
   // Apply the markers
   examples.forEach((example) => {
-    let parametersNode = types.arrayExpression(
+    const path = ast._locationMap[example.location];
+    let instanceNode = makeInstanceNode(example.instanceId);
+    let parametersValuesNode = types.arrayExpression(
       example.values.map(replacementNodeForValue)
     );
-    if(!parametersNode) {
-      parametersNode = types.nullLiteral();
+    let parametersNames = parameterNamesForFunctionIdentifier(path);
+    let parametersNamessNode = types.arrayExpression(
+      parametersNames.map((s) => types.identifier(s))
+    );
+    
+    if(!parametersValuesNode) {
+      parametersValuesNode = types.nullLiteral();
     }
-    const path = ast._locationMap[example.location];
+    
     const functionParent = path.getFunctionParent()
-    let nodeToInsert;
+    let exampleCallNode;
     
     // Distinguish between Methods and Functions
     if(functionParent.isClassMethod()) {
@@ -331,35 +311,44 @@ export const applyExamples = (ast, examples, exampleInstances) => {
       
       // Distinguish between static and object methods
       if(functionParent.node.static) {
-        nodeToInsert = staticMethodCall({
+        exampleCallNode = staticMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
-          THIS: instanceNode(example.instanceId),
-          PARAMS: parametersNode
+          PARAMS: parametersNamessNode
         });
       } else {
         // Get the example instance
-        nodeToInsert = objectMethodCall({
+        exampleCallNode = objectMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
-          THIS: instanceNode(example.instanceId),
-          PARAMS: parametersNode
+          PARAMS: parametersNamessNode
         });
       }
     } else {
-      nodeToInsert = functionCall({
+      exampleCallNode = functionCall({
         ID: types.identifier(path.node.name),
-        THIS: instanceNode(example.instanceId),
-        PARAMS: parametersNode
+        PARAMS: parametersNamessNode
       });
     }
     
     // Insert a call at the end of the script
-    if(nodeToInsert) {
-      ast.program.body.push(template(`__tracker.exampleId = "${example.id}"`)());
+    if(exampleCallNode) {
       ast.program.body.push(
-        template("try { BODY; } catch(e) { __tracker.error(e.message) }")({
-          BODY: nodeToInsert
+        template(`
+          try {
+            __tracker.exampleId = "${example.id}";
+            const example = function(${parametersNames.join(", ")}) {
+              ${example.prescript};
+              EXAMPLECALL;
+              ${example.postscript};
+            };
+            example.apply(INSTANCE, PARAMS);
+          } catch(e) {
+            __tracker.error(e.message);
+          }`)({
+          EXAMPLECALL: exampleCallNode,
+          INSTANCE: instanceNode,
+          PARAMS: parametersValuesNode
         })
       );
     }
@@ -494,6 +483,44 @@ export const constructorParameterNamesForClassIdentifier = (path) => {
 }
 
 /**
+ * Generates a replacement node
+ * (to be used as the righthand side of an assignment)
+ */
+export const replacementNodeForCode = (code) => {
+  // The code we get here will be used as the righthand side of an Assignment
+  // We we pretend that it is that while parsing
+  
+  if(!code || !code.length) {
+    return types.nullLiteral();
+  }
+  
+  code = `placeholder = ${code}`;
+  try {
+    const ast = astForCode(code);
+    return ast.program.body[0].expression.right;
+  } catch (e) {
+    console.error("Error parsing replacement node", e);
+    return null;
+  }
+}
+
+const replacementNodeForValue = (value) => 
+  replacementNodeForCode(value.isConnection ?
+                         connectorTemplate(value.value) :
+                         value.value);
+
+const wrapPrePostScript = (name, args, code) => {
+  code = `const ${name} = function(${args.join(", ")}) { ${code} };`;
+  try {
+    const ast = astForCode(code);
+    return ast.program.body[0];
+  } catch (e) {
+    console.error("Error parsing replacement node", e);
+    return null;
+  }
+}
+
+/**
  * Parses code and returns the AST
  */
 export const astForCode = (code) =>
@@ -557,6 +584,6 @@ const prepForInsert = (node) => {
 }
 
 const connectorTemplate = (id) => {
-  return `__connections["${id}"]()`;
+  return `__connections["${id}"]`;
 }
 
