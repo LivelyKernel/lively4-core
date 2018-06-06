@@ -434,7 +434,8 @@ function addSelectorListener(root, selector, fn) {
   if (!key) {
     key = selectors[selector] = 'SelectorListener-' + animationCount++ + '-' + selector.replace(/[^0-9a-zA-Z]/gi, '');
     let node = document.createTextNode(`@keyframes ${key} {
-from { outline-color: #fff; } to { outline-color: #000; }
+  from { outline-color: #fff; }
+  to { outline-color: #000; }
 }`);
     keyframes.appendChild(node);
     styles.sheet.insertRule(`${selector} {
