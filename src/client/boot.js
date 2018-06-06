@@ -11,6 +11,7 @@
   - currently we have different entry points we should unify
  */
 
+
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
@@ -390,10 +391,16 @@ if (window.lively && window.lively4url) {
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
 
+          
           groupedMessage(1, 4, 'Invalidate Caches');
           await invalidateFileCaches()
           groupedMessageEnd();
 
+          
+//           groupedMessage(2, 4, 'Load foo.js');
+//           const { contextJS } = await System.import(lively4url + "/foo.js");
+          
+          
           groupedMessage(2, 4, 'Wait for Service Worker');
           
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");

@@ -87,6 +87,8 @@ var defaultBabelOptions = {
 };
 
 exports.translate = async function(load, traceOpts) {
+  // console.log("plugin-babel transform ", load)
+  
   
   if (!transformCache && self.caches) transformCache = await caches.open("plugin-babel")
   
@@ -201,28 +203,61 @@ exports.translate = async function(load, traceOpts) {
     if(self.lively4plugincache && transformCache) {
       var key = "pluginBabelTransfrom_" + load.name
 
+       // console.log(`lively4plugincache `);
+      
       // storage 1
       //       var cachedInputCode = self.localStorage && self.localStorage[key+"_source"]
       //       var cachedOutputCode = self.localStorage && self.localStorage[key]
       // cachedOutputMap = JSON.parse(self.localStorage[key+"_map"]
       
       if (!useCacheAPI) {
+        // console.log(`storage 2`);
         // storage 2
         var loadCacheStart = performance.now()
         let cached = await pluginBabelCache.files.get(key)
-        console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
+        // console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
         if (cached) {
           cachedInputCode = cached.source
           cachedOutputCode = cached.output 
           cachedOutputMap = JSON.parse(cached.map)           
         }
       } else {
+        // console.log(`storage 3`);
+
         // storage 3
-        await Promise.all([
-          transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t),
-          transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t),
-          transformCache.match(key + "_map").then(r => r && r.text())
-            .then( t => cachedOutputMap = t && JSON.parse(t))])
+        try {
+          await Promise.race([
+            new Promise(r => setTimeout(r, 1000)).then( () => {
+              if (!cachedOutputCode || !cachedOutputMap || !cachedOutputMap) {
+                debugger
+                console.warn("TIMEOUT transform cache", cachedOutputCode, cachedOutputMap, cachedOutputMap)  
+                cachedOutputCode = null;
+                cachedOutputMap = null;                
+              }
+            }),
+            // Promise.all([
+            //     transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t),
+            //     transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t),
+            //     transformCache.match(key + "_map").then(r => r && r.text())
+            //       .then( t => cachedOutputMap = t && JSON.parse(t))])          
+
+            // There seems to be a hickup in the code above... lets wait more
+            (async () => {
+                await transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t)
+                await transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t)
+                await transformCache.match(key + "_map").then(r => r && r.text())
+                  .then( t => cachedOutputMap = t && JSON.parse(t))          
+            // but it does not help, the #Bug seems to be in #
+              
+            })()
+            
+          ])
+          
+        } catch(e) {
+          console.error(`could not load from transform cache`);  
+        }
+        
+        // console.log(`storage 3 finished`);
       }
       if (cachedOutputCode && (cachedInputCode == load.source)) {
         // console.log("plugin babel use cache: " + load.name)
@@ -239,14 +274,14 @@ exports.translate = async function(load, traceOpts) {
           _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
 
         } catch(e) {
-          console.log("something went wrong... while loading cache " + e)
+          console.warn("something went wrong... while loading cache " + e)
           output = undefined
         }
         cachedOutput = output
       } 
 
     } 
-    
+    // console.log(`cached output = `, output);
     
     if (!output) {
     
@@ -286,6 +321,8 @@ exports.translate = async function(load, traceOpts) {
       }
     });
     
+    // console.log("output ", output)
+      
     if (self.lively4plugincache && transformCache) {
 
       // storage 1      
