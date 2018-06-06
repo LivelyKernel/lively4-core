@@ -201,8 +201,8 @@ exports.translate = async function(load, traceOpts) {
     var startTransform = performance.now()
     let cachedInputCode, cachedOutputCode, cachedOutputMap
     if(self.lively4plugincache && transformCache) {
-      var key = "pluginBabelTransfrom_" + load.name
-
+      var key = "pluginBabelTransfrom_" + load.name.replace(/[^A-Za-z0-9 _\-./]/g,"_")
+      
        // console.log(`lively4plugincache `);
       
       // storage 1
@@ -216,7 +216,7 @@ exports.translate = async function(load, traceOpts) {
         var loadCacheStart = performance.now()
         let cached = await pluginBabelCache.files.get(key)
         // console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
-        if (cached) {
+            if (cached) {
           cachedInputCode = cached.source
           cachedOutputCode = cached.output 
           cachedOutputMap = JSON.parse(cached.map)           
@@ -226,11 +226,11 @@ exports.translate = async function(load, traceOpts) {
 
         // storage 3
         try {
+          var matchWorked 
           await Promise.race([
             new Promise(r => setTimeout(r, 1000)).then( () => {
-              if (!cachedOutputCode || !cachedOutputMap || !cachedOutputMap) {
-                debugger
-                console.warn("TIMEOUT transform cache", cachedOutputCode, cachedOutputMap, cachedOutputMap)  
+              if (!matchWorked) {
+                console.warn("TIMEOUT transform cache " + key, cachedOutputCode, cachedOutputMap, cachedOutputMap)  
                 cachedOutputCode = null;
                 cachedOutputMap = null;                
               }
@@ -248,7 +248,8 @@ exports.translate = async function(load, traceOpts) {
                 await transformCache.match(key + "_map").then(r => r && r.text())
                   .then( t => cachedOutputMap = t && JSON.parse(t))          
             // but it does not help, the #Bug seems to be in #
-              
+                matchWorked = true
+                // console.log("loaded cached transform " + key)
             })()
             
           ])
