@@ -98,7 +98,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/classes.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -535,33 +535,55 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     this.status("evaluating");
     console.log("Executing", code);
-    const {value, isError} = await this.execute(code);
+    let { executionPromise, tracker } = await this.execute(code);
 
-    // Show the results
-    if(!isError) {
+    try {
+      // Wait for execution to finish
+      await executionPromise;
+      
+      // Store results
+      this._tracker = tracker
+      
+      // Show results
       this.updateAnnotations();
       this.updateDeadMarkers();
-      if(this._tracker.errors.size) {
+      if(tracker.errors.size) {
         this.status("warning", "At least one example threw an Error");
       } else {
         this.status();
       }
-    } else {
-      this.status("error", value.originalErr.message);
+      
+    } catch (e) {
+      // Show error message
+      if(tracker.timer.timeoutReached) {
+        this.status("error", "Execution timeout reached");
+      } else {
+        this.status("error", "Unknown execution error");
+      }
+      
+      // Update UI
       this.updateInstances();
       this.updateExamples();
+      
+      // Reset tracker
+      this._tracker = new Tracker();
     }
   }
 
   async execute(code) {
     // Prepare result container
-    this._tracker.reset();
+    let tracker = new Tracker();
 
     // Execute the code
-    return await boundEval(code, {
-      tracker: this._tracker,
+    const executionPromise = (await boundEval(code, {
+      tracker: tracker,
       connections: defaultConnections(),
-    });
+    })).value;
+    
+    return {
+      executionPromise: executionPromise,
+      tracker: tracker
+    };
   }
 
 

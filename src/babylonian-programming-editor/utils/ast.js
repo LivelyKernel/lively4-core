@@ -31,7 +31,7 @@ export const deepCopy = (obj) => {
 /**
  * Generates a locationMap for the AST
  */
-export const generateLocationMap = (ast) => {
+export const generateLocationMap = (ast, prefix = "(async () => { ") => {
   ast._locationMap = new DefaultDict(Object);
   
   const keywords = {
@@ -48,6 +48,26 @@ export const generateLocationMap = (ast) => {
       let location = path.node.loc;
       if(!location) {
         return;
+      }
+      
+      if(location.start.line === 1) {
+        if(location.start.column === (prefix.length-2) && path.isBlockStatement()) {
+          ast._realProgram = path.node;
+          ast._realProgramPath = path;
+        }
+        if(location.start.column >= prefix.length) {
+          location.start.column -= prefix.length;
+        } else {
+          return;
+        }
+      }
+      
+      if(location.end.line === 1) {
+        if(location.end.column >= prefix.length) {
+          location.end.column -= prefix.length;
+        } else {
+          return;
+        }
       }
       
       // Some Nodes are only associated with their keywords
@@ -183,15 +203,15 @@ export const applyBasicModifications = (ast) => {
 }
 
 export const applyTracker = (ast) => {
-  ast.program.body.unshift(template("const __connections = this.connections;")());
-  ast.program.body.unshift(template("const __tracker = this.tracker;")());
+  ast._realProgram.body.unshift(template("const __connections = this.connections;")());
+  ast._realProgram.body.unshift(template("const __tracker = this.tracker;")());
   return ast;
 }
 
 export const applyContext = (ast, context) => {
   const prescriptNodes = astForCode(context.prescript).program.body;
   const postscriptNodes = astForCode(context.postscript).program.body;
-  ast.program.body = prescriptNodes.concat(ast.program.body).concat(postscriptNodes);
+  ast._realProgram.body = prescriptNodes.concat(ast._realProgram.body).concat(postscriptNodes);
   return ast;
 }
 
@@ -218,7 +238,7 @@ export const applyReplacements = (ast, replacements) => {
  */
 export const applyProbes = (ast, annotations) => {
   const trackedNodes = annotations.map((a) => ast._locationMap[a.location].node);
-
+  
   traverse(ast, {
     Identifier(path) {
       if(!trackedNodes.includes(path.node)) return;
@@ -238,11 +258,7 @@ export const applyProbes = (ast, annotations) => {
     },
     BlockStatement(path) {
       insertBlockTracker(path);
-      insertTimer(path);
-    },
-    Program(path) {
-      insertBlockTracker(path);
-      insertTimer(path, true);
+      insertTimer(path, path.node._id === ast._realProgram._id);
     }
   });
 };
@@ -340,7 +356,7 @@ export const applyExamples = (ast, examples, exampleInstances) => {
     
     // Insert a call at the end of the script
     if(exampleCallNode) {
-      ast.program.body.push(
+      ast._realProgram.body.push(
         template(`
           try {
             __tracker.exampleId = "${example.id}";
@@ -456,8 +472,13 @@ const insertTimer = (path, isStart = false) => {
   if(typeof path.node._id === "undefined") {
     return;
   }
-  const code = `__tracker.timer.${isStart ? "start" : "check"}()`;
-  path.unshiftContainer("body", template(code)());
+  let node = template("__tracker.timer.start();")();
+  if(!isStart) {
+    node = types.expressionStatement(
+      astForCode("async() => await __tracker.timer.check();").program.body[0].expression.body
+    );
+  }
+  path.unshiftContainer("body", node);
 };
 
 /**

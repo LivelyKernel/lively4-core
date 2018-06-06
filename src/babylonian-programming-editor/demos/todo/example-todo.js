@@ -1,8 +1,13 @@
+import boundEval from 'src/client/bound-eval.js';
+
 import Morph from "src/components/widgets/lively-morph.js";
-//import { Todo } from "src/babylonian-programming-editor/demos/todo/todo.js";
+// import { asdf } from "src/babylonian-programming-editor/demos/todo/todo.js";
 
 export default class ExampleTodo extends Morph {
   initialize() {
+    boundEval("for(let i = 0; i < 1000000000; i++) {} console.log('In eval')");
+    console.log("After eval");
+    
     this.windowTitle = "ExampleTodo";
     this.list = this.get("#list");
     
