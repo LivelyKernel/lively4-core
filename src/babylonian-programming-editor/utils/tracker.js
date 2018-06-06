@@ -102,26 +102,18 @@ class IdentitySymbolProvider {
 
 class Timer {
   constructor() {
-    this._maxRuntime = 5000;
-    this._interruptDuration = 100;
+    this._maxRuntime = 1000;
     this._startTime = null;
-    this._lastInterruptTime = null;
-    this.timeoutReached = false;
   }
   
   start() {
     this._startTime = (+new Date());
   }
   
-  async check() {
-    const now = (+new Date());
-    if(now - this._startTime > this._maxRuntime) {
-      this.timeoutReached = true;
-      throw new Error("Timeout reached");
-    }
-    if(now - this._lastInterruptTime > this._interruptDuration) {
-      await new Promise(resolve => setTimeout(resolve, 0));
-      this._lastInterruptTime = now;
+  check() {
+    const time = (+new Date());
+    if(time - this._startTime > this._maxRuntime) {
+      throw new Error("Timeout reached. Maybe there is an inifinite loop?");
     }
   }
 }

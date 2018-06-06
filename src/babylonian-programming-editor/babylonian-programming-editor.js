@@ -98,7 +98,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/classes.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -535,55 +535,33 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Execute the code
     this.status("evaluating");
     console.log("Executing", code);
-    let { executionPromise, tracker } = await this.execute(code);
+    const {value, isError} = await this.execute(code);
 
-    try {
-      // Wait for execution to finish
-      await executionPromise;
-      
-      // Store results
-      this._tracker = tracker
-      
-      // Show results
+    // Show the results
+    if(!isError) {
       this.updateAnnotations();
       this.updateDeadMarkers();
-      if(tracker.errors.size) {
+      if(this._tracker.errors.size) {
         this.status("warning", "At least one example threw an Error");
       } else {
         this.status();
       }
-      
-    } catch (e) {
-      // Show error message
-      if(tracker.timer.timeoutReached) {
-        this.status("error", "Execution timeout reached");
-      } else {
-        this.status("error", "Unknown execution error");
-      }
-      
-      // Update UI
+    } else {
+      this.status("error", value.originalErr.message);
       this.updateInstances();
       this.updateExamples();
-      
-      // Reset tracker
-      this._tracker = new Tracker();
     }
   }
 
   async execute(code) {
     // Prepare result container
-    let tracker = new Tracker();
+    this._tracker.reset();
 
     // Execute the code
-    const executionPromise = (await boundEval(code, {
-      tracker: tracker,
+    return await boundEval(code, {
+      tracker: this._tracker,
       connections: defaultConnections(),
-    })).value;
-    
-    return {
-      executionPromise: executionPromise,
-      tracker: tracker
-    };
+    });
   }
 
 

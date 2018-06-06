@@ -17,12 +17,3 @@ export class Todo {
     return element;
   }
 }
-
-export const asdf = async() => {
-  class TEST {
-    constructor() {
-      console.log("HERE")
-    }
-  }
-  new TEST();
-}
