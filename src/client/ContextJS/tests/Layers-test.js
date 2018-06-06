@@ -725,8 +725,16 @@ describe('contextjs', function () {
     describe('global layer activation', function () {
         // FIXME: the following tests all assert on currentLayers(), why not test the behavior instead?
         it('testGlobalLayers', function() {
-            const layer1 = {name: "Layer1"};
-            const layer2 = {name: "Layer2"};
+            const layer1 = {
+              name: "Layer1",
+              _emitActivateCallbacks() {},
+              _emitDeactivateCallbacks() {}
+            };
+            const layer2 = {
+              name: "Layer2",
+              _emitActivateCallbacks() {},
+              _emitDeactivateCallbacks() {}
+            };
             cop.enableLayer(layer1);
             cop.enableLayer(layer2);
             // FIXME: implementation detail? GlobalLayers[...]

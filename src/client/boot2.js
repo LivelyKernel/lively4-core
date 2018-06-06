@@ -11,6 +11,11 @@
   - currently we have different entry points we should unify
  */
 
+import * as cop  from './ContextJS/src/contextjs.js';
+
+console.log(cop)
+debugger
+
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
@@ -116,11 +121,13 @@ if (window.lively && window.lively4url) {
     console.group("BOOT");
 
     // for finding the baseURL...
-    var script = document.currentScript;
-    var scriptURL = script.src;
+    
+    // var script = document.currentScript;
+    // var scriptURL = script.src;
 
-    window.lively4url = scriptURL.replace("/src/client/boot.js","");
-
+    // window.lively4url = scriptURL.replace("/src/client/boot.js","");
+    window.lively4url = window.location.toString().replace(/\/start2.html.*/, '')
+    
     // some performance logging
     window.lively4performance = {start: performance.now()}
     try {
@@ -137,7 +144,7 @@ if (window.lively && window.lively4url) {
       console.error(e)
     }
 
-    var loadContainer = script.getAttribute("data-container"); // some simple configuration
+    var loadContainer = true; //script.getAttribute("data-container"); // some simple configuration
 
     console.log("lively4url: " + lively4url);
 

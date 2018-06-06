@@ -42,15 +42,18 @@ export default class D3Example extends Morph {
     const node = svg.selectAll()
             .data(graph.nodes)
             .enter()
-            .append('circle')
-            .attr('r', 50)
-            .attr('fill', 'red')
-            .attr('stroke', 'black')
-            .attr('stroke-width', '5px')
+            .append("g")
             .call(d3.drag()
                   .on('start', dragstarted)
                   .on('drag', dragged)
                   .on('end', dragended));
+    
+    node
+      .append('circle')
+      .attr('r', 50)
+      .attr('fill', 'red')
+      .attr('stroke', 'black')
+      .attr('stroke-width', '5px');
 
     const simulation = d3.forceSimulation()
               .force('link', d3.forceLink().distance(width / 2))

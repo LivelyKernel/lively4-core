@@ -72,6 +72,13 @@
   button.onclick = async () => {
     fullscreen = !fullscreen
     if (fullscreen) {
+  
+      // all back 
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        ea.style.zIndex = 0
+      })
+      
+
       document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
       await lively.sleep(100) // wait for fullscreen
 
