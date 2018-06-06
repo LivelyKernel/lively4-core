@@ -158,7 +158,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       for(let slider of annotations.sliders) {
         this.addSliderAtPath(this.pathForKey(slider.location));
       }
-       for(let instance of annotations.instances) {
+      for(let instance of annotations.instances) {
         const obj = this.addInstanceAtPath(this.pathForKey(instance.location));
         obj.load(instance);
       }

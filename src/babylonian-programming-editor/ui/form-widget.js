@@ -52,8 +52,8 @@ export default class FormWidget extends InputWidget {
 
       this._nameElement = input;
     }
-
-    this._nameElement.style.backgroundColor = this._color;
+    
+   this._nameElement.style.cssText = style;
 
     return this._nameElement;
   }

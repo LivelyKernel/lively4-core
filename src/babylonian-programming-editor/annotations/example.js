@@ -40,6 +40,7 @@ export default class Example extends InputAnnotation {
       location: this.locationAsKey,
       id: this.id,
       name: this.name,
+      color: this._widget.color,
       values: this._widget.valuesArray,
       instanceId: this._widget.instanceId,
       prescript: this._widget.prescript,
@@ -52,6 +53,7 @@ export default class Example extends InputAnnotation {
       location: this.locationAsKey,
       id: this.id,
       name: this.name,
+      color: this._widget.color,
       values: this._widget.values,
       instanceId: this._widget.instanceId,
       prescript: this._widget.prescript,
@@ -63,6 +65,7 @@ export default class Example extends InputAnnotation {
     this._widget.id = serialized.id;
     this._widget.values = serialized.values;
     this._widget.name = serialized.name;
+    this._widget.color = serialized.color;
     this._widget.instanceId = serialized.instanceId;
     this._widget.prescript = serialized.prescript;
     this._widget.postscript = serialized.postscript;

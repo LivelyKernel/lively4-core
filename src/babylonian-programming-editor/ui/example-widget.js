@@ -14,7 +14,7 @@ export default class ExampleWidget extends FormWidget {
   constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances) {
     super(editor, location, kind, changeCallback, deleteCallback);
     this._isOn = defaultIsOn;
-    this._updateColor();
+    this._color = randomColor();
     this._stateCallback = stateCallback;
     this._instances = instances; // [Instance]
     this._instanceElement = null; // {element, input}
@@ -25,7 +25,7 @@ export default class ExampleWidget extends FormWidget {
   // UI Generators
   
   _getNameElement() {
-    return super._getNameElement("example-name space-before", `background-color: ${this._color}`);
+    return super._getNameElement("example-name space-before", `background-color: ${this._isOn ? this._color : "lightgray"}`);
   }
   
   _getAdditionalFormElements() {
@@ -62,20 +62,11 @@ export default class ExampleWidget extends FormWidget {
                                            
   _onSwitchClicked() {
     this._isOn = !this._isOn;
-    this._updateColor();
     this._stateCallback(this._isOn);
   }
   
   _onSelectChanged() {
     this._changeCallback(this._id);
-  }
-  
-  _updateColor() {
-    if(this._isOn) {
-      this._color = nextColor();
-    } else {
-      this._color = "lightgray";
-    }
   }
   
   // Getters and Setters
@@ -92,14 +83,18 @@ export default class ExampleWidget extends FormWidget {
     return this._color;
   }
   
+  set color(color) {
+    if(color) {
+      this._color = color;
+    }
+  }
+  
   set error(error) {
     this._error = error;
   }
 }
 
-ExampleWidget.hue = 0
-const nextColor = () => {
-  const color = `hsl(${ExampleWidget.hue}, 30%, 70%)`;
-  ExampleWidget.hue = (ExampleWidget.hue + 60) % 360;
-  return color;
+const randomColor = () => {
+  const hue = Math.round(Math.random() * 36) * 10;
+  return `hsl(${hue}, 30%, 70%)`;
 }
