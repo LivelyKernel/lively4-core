@@ -202,7 +202,7 @@ export default class PlexMedia extends Morph {
     // plex://library/sections/2/genre/48422/
     // plex://library/sections/3/year/2000/
     // plex://library/sections/2/decade/2000/
-    this.setAttribute("src", "plex://library/sections/3/decade/2000/")
+    this.setAttribute("src", "plex://library/sections/3/decade/1980/")
   }
   
   
