@@ -12,6 +12,9 @@
  */
 
 
+// #BUG the browser cache API blocks (promises does not resolve) sometimes?
+// #BUG the performance, in our alternative to use IndexedDB can quickly degrate when DB gets to big...
+// window.localStorage["livel4systemjscache"] = false
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
