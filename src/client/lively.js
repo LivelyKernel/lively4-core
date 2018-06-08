@@ -783,6 +783,8 @@ export default class Lively {
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
+    await modulesExported
+    
     console.log("Lively4 initializeDocument" );
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
@@ -1699,7 +1701,7 @@ if (!window.lively || window.lively.name != "Lively") {
   Lively.previous = oldLively
   window.lively = Lively;
 }
-Lively.exportModules();
+var modulesExported = Lively.exportModules();
 
 
 
