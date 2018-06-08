@@ -60,6 +60,7 @@ module.exports = function(config) {
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
+      '/demos/': '/base/demos/',
       '/templates/': '/base/templates/',
       '/package.json': '/base/package.json',
       '/swx-boot.js': '/base/swx-boot.js',
