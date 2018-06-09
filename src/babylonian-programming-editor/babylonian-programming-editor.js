@@ -37,7 +37,10 @@ import Replacement from "./annotations/replacement.js";
 import Instance from "./annotations/instance.js";
 import InstanceWidget from "./ui/instance-widget.js";
 import StatusBar from "./ui/status-bar.js";
-import { PrePostscriptButton } from "./ui/buttons.js";
+import { 
+  PrePostscriptButton,
+  InstanceButton,
+} from "./ui/buttons.js";
 
 
 // Constants
@@ -84,6 +87,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._statusBar = new StatusBar(this.get("#status"));
     this._buttons = this.get("#buttons");
     this._buttons.appendChild(PrePostscriptButton(this.onEditPrePostScript.bind(this)));
+    this._buttons.appendChild(InstanceButton(this.onEditInstances.bind(this)));
     
     // Right click listener
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
@@ -611,6 +615,17 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._context.postscript = value.postscript;
       this.onEvaluationNeeded();
     }, "Module");
+  }
+  
+  async onEditInstances() {
+    let comp = await lively.openComponentInWindow("custom-instance-editor");
+    const MOCK_INSTANCES = [
+      { name: "Test 1", code: "" },
+      { name: "Test 2", code: "return new String(\"CAKE\")" },
+      { name: "Test 3" }
+    ];
+
+    comp.setup(MOCK_INSTANCES, this.onEvaluationNeeded.bind(this));
   }
 
   onSliderChanged(slider, exampleId, value) {

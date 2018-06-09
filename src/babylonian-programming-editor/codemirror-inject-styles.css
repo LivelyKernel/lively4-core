@@ -385,3 +385,7 @@ input[type=range]::-webkit-slider-runnable-track {
 .icon.exchange::before {
   content: "\f0ec";
 }
+
+.icon.object-group::before {
+  content: "\f247";
+}

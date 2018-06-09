@@ -26,3 +26,7 @@ export function ErrorButton(hoverText) {
 export function PrePostscriptButton(callback) {
   return Button(callback, ["exchange", "space-before"], "Edit Pre/Postscript");
 }
+
+export function InstanceButton(callback) {
+  return Button(callback, ["object-group", "space-before"], "Edit Instances");
+}

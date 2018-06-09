@@ -1,0 +1,87 @@
+<template id="custom-instance-editor" data-class="CustomInstanceEditor">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+    }
+    
+    #list-container {
+      display: flex;
+      flex-direction: column;
+      width: 200px;
+      border-right: 1px solid rgba(0, 0, 0, 0.3);
+    }
+    
+    #editor-container {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    
+    #editor {
+      flex: 1;
+    }
+    
+    #instance-list {
+      flex: 1;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #instance-list > li {
+      padding: 0.5em;
+      border-bottom: 1px solid rgb(221, 221, 221);
+      cursor: pointer;
+    }
+    
+    #instance-list > li:hover {
+      background-color: #eee;
+    }
+    
+    #instance-list > li.active {
+      background-color: #ddd;
+    }
+    
+    h5 {
+      margin: 0;
+      padding: 0.5em;
+    }
+    
+    .header {
+      border-bottom: 1px solid rgb(221, 221, 221);
+    }
+    
+    #name-container {
+      display: flex;
+      flex-direction: row;
+    }
+    
+    #name-input {
+      display: flex;
+      border: none;
+      flex-grow: 1;
+    }
+  </style> 
+  
+  <div id="list-container">
+    <h5 class="header">Custom instances:</h5>
+    <ul id="instance-list">
+      <li></li>
+    </ul>
+    <div id="buttons">
+      
+    </div>
+  </div>
+  
+  <div id="editor-container">
+    <div id="name-container" class="header">
+      <h5>Instance name:</h5>
+      <input id="name-input">
+    </div>
+    <h5 class="header">Instance creation (return new instance):</h5>
+    <lively-code-mirror  id="editor" ></lively-code-mirror>
+  </div>
+  
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
