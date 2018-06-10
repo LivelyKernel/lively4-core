@@ -26,7 +26,7 @@ export async function initialScriptsFromTemplate() {
   scripts.push(extract);
   scripts.push(descent);
   
-  return scripts;
+  return transform;
 }
 
 export async function createScriptEditorFor(view) {
@@ -38,8 +38,8 @@ export async function createScriptEditorFor(view) {
   let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
 
   scriptEditor.setView(view);
-  let scripts = view.getScripts();
-  scriptEditor.setScripts(scripts);
+  let firstScript = view.getFirstScript();
+  scriptEditor.setScripts(firstScript);
 
   return scriptEditor;
 }
@@ -52,8 +52,8 @@ export async function letsScript(object, evt, sourceView) {
 
   let view = await lively.openComponentInWindow('vivide-view', pos);
 
-  let scripts = await initialScriptsFromTemplate();
-  view.setScripts(scripts);
+  let firstScript = await initialScriptsFromTemplate();
+  view.setFirstScript(firstScript);
   view.newDataFromUpstream(object);
 
   if(evt && evt.shiftKey) {

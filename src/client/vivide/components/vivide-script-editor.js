@@ -27,6 +27,10 @@ export default class VivideScriptEditor extends Morph {
     this.createTypeMenu();
   }
   
+  initialFocus() {
+    
+  }
+  
   onAddScript() {
     this.typeMenu.style.left = this.addScriptX + "px";
     this.typeMenu.style.top = this.addScriptY + "px";
@@ -68,10 +72,15 @@ export default class VivideScriptEditor extends Morph {
     this.createStepEditorFor(script);
   }
   
-  async setScripts(scripts) {    
+  async setScripts(firstScript) {    
     this.editorList.innerHTML = '';
-    for (let script of scripts) {
-      await this.createStepEditorFor(script);
+    
+    await this.createStepEditorFor(firstScript);
+    while (firstScript.nextScript != null) {
+      firstScript = firstScript.nextScript;
+      await this.createStepEditorFor(firstScript);
+      
+      if (firstScript.lastScript) break;
     }
   }
   
