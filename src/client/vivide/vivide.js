@@ -3,23 +3,24 @@ import { stepFolder, scriptFolder } from './utils.js';
 import { pt } from 'src/client/graphics.js';
 import Script from 'src/client/vivide/script.js';
 
-export async function newScriptFromTemplate() {
-  async function copyStep(type) {
-    let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-    let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
-    let script = new Script(stepTemplate, type);
-    
-    return script;
-  }
-  
+export async function newScriptFromTemplate(type) {
+  let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
+  let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
+  let script = new Script(stepTemplate, type);
+
+  return script;
+}
+
+export async function initialScriptsFromTemplate() {  
   let scripts = [];
-  let transform = await copyStep('transform');
-  let extract = await copyStep('extract');
-  let descent = await copyStep('descent');
+  let transform = await newScriptFromTemplate('transform');
+  let extract = await newScriptFromTemplate('extract');
+  let descent = await newScriptFromTemplate('descent');
   
   transform.nextScript = extract;
   extract.nextScript = descent;
   descent.nextScript = transform;
+  descent.lastScript = true;
   
   scripts.push(transform);
   scripts.push(extract);
@@ -51,7 +52,7 @@ export async function letsScript(object, evt, sourceView) {
 
   let view = await lively.openComponentInWindow('vivide-view', pos);
 
-  let scripts = await newScriptFromTemplate();
+  let scripts = await initialScriptsFromTemplate();
   view.setScripts(scripts);
   view.newDataFromUpstream(object);
 

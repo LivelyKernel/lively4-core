@@ -15,25 +15,70 @@ export default class VivideScriptEditor extends Morph {
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
     this.inspector.hideWorkspace();
-  }
-  
-  initialFocus() {
+    this.registerButtons();
     
-  }
-  
-  async setScripts(scripts) {
-    let createStepEditorFor = (script) => {
-      let stepEditor = document.createElement('vivide-step-editor');
-      stepEditor.setStepScript(script);    
-      this.editorList.appendChild(stepEditor);
-    }
-    
-    this.editorList.innerHTML = '';
-    this.editorList.appendChild(<span>Next Level</span>);
-    
-    scripts.forEach(script => {
-      this.editorList.appendChild(<span>-- {script.type} --</span>);
-      createStepEditorFor(script);
+    // Show script type dialog at mouse position
+    this.get('#addScript').addEventListener("mousedown", event => {
+      this.addScriptX = event.clientX;
+      this.addScriptY = event.clientY;
     });
+    
+    this.container = this.get('#container');
+    this.createTypeMenu();
+  }
+  
+  onAddScript() {
+    this.typeMenu.style.left = this.addScriptX + "px";
+    this.typeMenu.style.top = this.addScriptY + "px";
+    this.container.insertBefore(this.typeMenu, this.editorList);
+  }
+  
+  /**
+   * Creates and initializes the context menu used to add
+   * additional scripts.
+   */
+  createTypeMenu() {
+    this.typeMenu = document.createElement('div');
+    this.typeMenu.classList = "type-menu";
+
+    let list = document.createElement('ul');
+    let createListItem = (type) => {
+      let listItem = document.createElement('li');
+      listItem.setAttribute('data-type', type.toLowerCase());
+      listItem.innerHTML = type;
+      listItem.addEventListener("mousedown", () => {
+        this.typeMenu.chosenType = listItem.dataset.type;
+      });
+      
+      return listItem;
+    }
+    list.appendChild(createListItem('Transform'));
+    list.appendChild(createListItem('Extract'));
+    list.appendChild(createListItem('Descent'));
+
+    this.typeMenu.appendChild(list);
+    this.typeMenu.addEventListener("mousedown", () => {
+      this.typeMenu.remove();
+      this.appendStepEditor(this.typeMenu.chosenType);
+    });
+  }
+  
+  async appendStepEditor(scriptType) {
+    let script = await this.view.appendScript(scriptType);
+    this.createStepEditorFor(script);
+  }
+  
+  async setScripts(scripts) {    
+    this.editorList.innerHTML = '';
+    for (let script of scripts) {
+      await this.createStepEditorFor(script);
+    }
+  }
+  
+  async createStepEditorFor(script) {
+    let stepEditor = await (<vivide-step-editor></vivide-step-editor>);
+    stepEditor.setStepScript(script);
+    this.editorList.appendChild(<span>-- {script.type} --</span>);
+    this.editorList.appendChild(stepEditor);
   }
 }

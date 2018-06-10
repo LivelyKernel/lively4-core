@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -341,6 +341,25 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig || []);
   }
   
+  async appendScript(scriptType) {
+    let newScript = await newScriptFromTemplate(scriptType);
+    let scripts = this.getScripts();
+    let script = scripts[0];
+    
+    while (!script.lastScript) {
+      script = script.nextScript;
+    }
+    
+    newScript.nextScript = script.nextScript;
+    script.nextScript = newScript;
+    script.lastScript = false;
+    newScript.lastScript = true;
+    
+    console.log(scripts[0]);
+    
+    return newScript;
+  }
+  
   livelyExample() {
     let exampleData = [
       {name: "object", subclasses:[{name: "morph"},]},
@@ -349,7 +368,7 @@ export default class VivideView extends Morph {
     ];
     
     this.newDataFromUpstream(exampleData)
-    newScriptFromTemplate().then(scripts => this.setScripts(scripts)).then(() => createScriptEditorFor(this));
+    initialScriptsFromTemplate().then(scripts => this.setScripts(scripts)).then(() => createScriptEditorFor(this));
   }
   
   livelyMigrate(other) {
