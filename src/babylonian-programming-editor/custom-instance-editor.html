@@ -62,6 +62,25 @@
       border: none;
       flex-grow: 1;
     }
+    
+    #buttons {
+      border-top: 1px solid rgb(221, 221, 221);
+      padding: 0.1em;
+      text-align: center;
+    }
+    
+    .icon {
+      font-family: "FontAwesome";
+      display: inline-block;
+      cursor: pointer;
+      opacity: 0.8;
+      min-width: 1em;
+      text-align: center;
+    }
+    
+    .icon.plus::before {
+      content: "\f067";
+    }
   </style> 
   
   <div id="list-container">

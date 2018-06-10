@@ -62,3 +62,7 @@
 .icon.object-group::before {
   content: "\f247";
 }
+
+.icon.plus::before {
+  content: "\f067";
+}

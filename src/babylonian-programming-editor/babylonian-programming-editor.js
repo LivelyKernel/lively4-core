@@ -41,6 +41,7 @@ import {
   PrePostscriptButton,
   InstanceButton,
 } from "./ui/buttons.js";
+import CustomInstance from "./utils/custom-instance.js";
 
 
 // Constants
@@ -73,6 +74,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // All Annotations
     this._annotations = defaultAnnotations;
+    this._customInstances = [];
     
     // Module context
     this._context = defaultContext();
@@ -102,7 +104,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/classes.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -143,11 +145,14 @@ export default class BabylonianProgrammingEditor extends Morph {
     await this.parse();
 
     // Find annotations
-    let annotations = null;
+    let annotations, context, customInstances = null;
     const matches = text.match(/\/\* Examples: (.*) \*\//);
     if(matches) {
-      annotations = JSON.parse(matches[matches.length-1]);
       text = text.replace(matches[matches.length-2], "");
+      const data = JSON.parse(matches[matches.length-1]);
+      annotations = data.annotations;
+      context = data.context;
+      customInstances = data.customInstances;
     }
 
     // Set text
@@ -177,7 +182,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     // Add context
-    this._context = annotations.context ? annotations.context : defaultContext();
+    this._context = context ? context : defaultContext();
+    customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
 
     this.evaluate(true);
   }
@@ -192,14 +198,15 @@ export default class BabylonianProgrammingEditor extends Morph {
         serializedAnnotations[key].push(annotation.serializeForSave());
       }
     }
-
-    // Serialize context
-    serializedAnnotations.context = this._context;
     
     // Save file
-    const stringAnnotations = JSON.stringify(serializedAnnotations);
+    const saveString = JSON.stringify({
+      annotations: serializedAnnotations,
+      context: this._context,
+      customInstances: this._customInstances.map(i => i.serializeForSave())
+    });
     let data = this.livelyEditor().currentEditor().getValue();
-    data = `${data}/* Examples: ${stringAnnotations} */`;
+    data = `${data}/* Examples: ${saveString} */`;
     saveFile(this.livelyEditor(), data);
   }
 
@@ -295,7 +302,8 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.removeAnnotation.bind(this),
       this.onExampleStateChanged.bind(this),
       isOn,
-      this._annotations.instances
+      this._annotations.instances,
+      this._customInstances
     );
     this._annotations.examples.push(example);
 
@@ -508,7 +516,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Call the worker
     const { ast, code } = await this.worker.process(
       this.editor().getValue(),
-      serializedAnnotations
+      serializedAnnotations,
+      this._customInstances.map(i => i.serializeForWorker())
     );
     if(!ast) {
       this.status("error", "Syntax Error");
@@ -619,13 +628,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   async onEditInstances() {
     let comp = await lively.openComponentInWindow("custom-instance-editor");
-    const MOCK_INSTANCES = [
-      { name: "Test 1", code: "" },
-      { name: "Test 2", code: "return new String(\"CAKE\")" },
-      { name: "Test 3" }
-    ];
-
-    comp.setup(MOCK_INSTANCES, this.onEvaluationNeeded.bind(this));
+    comp.setup(this._customInstances, this.onEvaluationNeeded.bind(this));
   }
 
   onSliderChanged(slider, exampleId, value) {

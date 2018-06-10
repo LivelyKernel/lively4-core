@@ -1,12 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { debounce } from "utils";
 import InstanceList from "./ui/instance-list.js";
-
-const MOCK_INSTANCES = [
-  { name: "Test 1", code: "" },
-  { name: "Test 2", code: "return new String(\"CAKE\")" },
-  { name: "Test 3" }
-];
+import { AddButton } from "./ui/buttons.js";
+import CustomInstance from "./utils/custom-instance.js";
 
 const DEFAULT_CODE = "return null;";
 
@@ -27,7 +23,7 @@ export default class CustomInstanceEditor extends Morph {
     
     this._editor = this.get("#editor");
     this._editor.addEventListener("editor-loaded", () => {
-      //this._editor.editor.setOption("lint", false);
+      this._editor.editor.setOption("lint", false);
       this._editor.editor.on("change", ((value) => {
         if(this._activeInstance) {
           this._activeInstance.code = this._editor.value;
@@ -48,12 +44,17 @@ export default class CustomInstanceEditor extends Morph {
       }
       this._instanceList.render();
     });
+    
+    this.get("#buttons").appendChild(AddButton(() => {
+      this._instances.push(new CustomInstance("New instance"));
+      this._instanceList.render();
+    }));
   }
   
   setup(instances, callback) {
     this._callback = callback;
-    this._instances.length = 0;
-    instances.forEach((i) => this._instances.push(i));
+    this._instances = instances;
+    this._instanceList.instances = instances;
     this.activeInstance = this._instances[0];
   }
   

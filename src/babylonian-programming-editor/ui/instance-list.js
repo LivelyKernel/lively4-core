@@ -31,4 +31,9 @@ export default class InstanceList {
     this.render();
   }
   
+  set instances(instances) {
+    this._instances = instances;
+    this.render();
+  }
+  
 }

@@ -10,6 +10,7 @@ const {
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
 import { defaultBabylonConfig } from "./defaults.js";
+import { maybeUnpackString } from "./utils.js";
 
 /**
  * Creates a deep copy of arbitrary objects.
@@ -250,35 +251,37 @@ export const applyProbes = (ast, annotations) => {
 /**
  * Generates instances for the given AST
  */
-export const generateInstances = (ast, instances) => {
-  const exampleInstances = {
-    "0": types.nullLiteral()
-  };
-  
-  const constructorCall = template("new CLASS(PARAMS)");
+export const applyInstances = (ast, instances, customInstances) => {
+  const defaultInstanceNode = template(`const __0 = () => null;`)();
+  ast.program.body.push(defaultInstanceNode);
   
   instances.forEach((instance) => {
     const path = ast._locationMap[instance.location];
     const className = path.node.name;
     
-    let instanceNode = constructorCall({
+    let instanceNode = template(`const __${instance.id} = () => new CLASS(PARAMS);`)({
       CLASS: types.identifier(className),
       PARAMS: instance.values.map(replacementNodeForValue)
     });
     
-    if(!instanceNode) {
-      instanceNode = types.nullLiteral();
+    if(instanceNode) {
+      ast.program.body.push(instanceNode);
     }
-    
-    exampleInstances[instance.id] = instanceNode;
   });
-  return exampleInstances;
+  
+  customInstances.forEach((instance) => {    
+    let instanceNode = template(`const __${instance.id} = () => { ${instance.code} }`)();
+    
+    if(instanceNode) {
+      ast.program.body.push(instanceNode);
+    }
+  });
 }
 
 /**
  * Applies example markers to the given AST
  */
-export const applyExamples = (ast, examples, exampleInstances) => {
+export const applyExamples = (ast, examples) => {
   // Prepare templates to insert
   const functionCall = template("ID.apply(this, PARAMS)");
   const staticMethodCall = template("CLASS.ID.apply(this, PARAMS)");
@@ -288,7 +291,7 @@ export const applyExamples = (ast, examples, exampleInstances) => {
     if(instanceId.isConnection) {
       return replacementNodeForCode(connectorTemplate(instanceId.value));
     } else {
-      return exampleInstances[instanceId.value];
+      return replacementNodeForCode(`__${maybeUnpackString(instanceId)}()`);
     }
   };
   
@@ -510,6 +513,19 @@ export const replacementNodeForCode = (code) => {
     return null;
   }
 }
+
+/*export const replacementNodeForExpression = (statement) => {
+  if(!statement || !statement.length) {
+    return types.nullLiteral();
+  }
+  try {
+    const ast = astForCode(statement);
+    return ast.program.body[0];
+  } catch (e) {
+    console.error("Error parsing replacement node", e);
+    return null;
+  }
+}*/
 
 const replacementNodeForValue = (value) => 
   replacementNodeForCode(value.isConnection ?

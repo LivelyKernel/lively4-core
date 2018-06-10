@@ -8,7 +8,7 @@ import {
   applyReplacements,
   applyProbes,
   applyExamples,
-  generateInstances,
+  applyInstances,
   applyBasicModifications,
   applyTracker,
   applyContext,
@@ -19,7 +19,7 @@ import {
  * Receive message from the main thread
  */
 export default onmessage = function(msg) {
-  const { code, annotations } = JSON.parse(msg.data.payload);
+  const { code, annotations, customInstances } = JSON.parse(msg.data.payload);
 
   // Process the code
   try {
@@ -33,8 +33,8 @@ export default onmessage = function(msg) {
     applyProbes(ast, annotations.probes);
     
     // Add trackers for all examples
-    const exampleInstances = generateInstances(ast, annotations.instances);
-    applyExamples(ast, annotations.examples, exampleInstances);
+    applyInstances(ast, annotations.instances, customInstances);
+    applyExamples(ast, annotations.examples);
     
     // Apply context
     applyContext(ast, annotations.context);

@@ -13,4 +13,5 @@ class Person {
     this.name = this.name.split("").reverse().join("");
   }
 }
-/* Examples: {"probes":[{"location":[9,23,9,32]}],"sliders":[],"examples":[{"location":[8,2,8,7],"id":"b9c3-4326-8de2","name":{"value":"ASDF","isConnection":false},"values":{},"instanceId":{"value":"813f-340e-a842","isConnection":false}}],"replacements":[],"instances":[{"location":[2,6,2,12],"id":"813f-340e-a842","name":{"value":"Timmy","isConnection":false},"values":{"name":{"value":"\"Timmy\"","isConnection":false},"hobby":{"value":"\"cycling\"","isConnection":false}}}]} */
+
+/* Examples: {"annotations":{"probes":[{"location":[9,23,9,32]}],"sliders":[],"examples":[{"location":[8,2,8,7],"id":"b0b1_a952_7055","name":{"value":"","isConnection":false},"color":"hsl(340, 30%, 70%)","values":{},"instanceId":{"value":"0","isConnection":false},"prescript":"","postscript":""}],"replacements":[],"instances":[]},"context":{"prescript":"","postscript":""},"customInstances":[{"id":"68ae_6b05_bb36","name":"WHAT?","code":"return {name:\"asd\"}"}]} */

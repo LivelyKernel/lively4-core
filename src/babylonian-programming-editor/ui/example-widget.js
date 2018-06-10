@@ -11,12 +11,13 @@ import { defaultInstance } from "../utils/defaults.js";
 
 
 export default class ExampleWidget extends FormWidget {
-  constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances) {
+  constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances, customInstances) {
     super(editor, location, kind, changeCallback, deleteCallback);
     this._isOn = defaultIsOn;
     this._color = randomColor();
     this._stateCallback = stateCallback;
     this._instances = instances; // [Instance]
+    this._customInstances = customInstances; // [CustomInstance]
     this._instanceElement = null; // {element, input}
     this._error = null;
     this._update();
@@ -32,7 +33,7 @@ export default class ExampleWidget extends FormWidget {
     if(!this._instanceElement) {
       this._instanceElement = new SelectField(this, "this", this._onSelectChanged.bind(this));
     }
-    this._instanceElement.options = [defaultInstance()].concat(this._instances);
+    this._instanceElement.options = [defaultInstance()].concat(this._instances).concat(this._customInstances);
     return [
       {
         element:<span class="space-before">this: {this._instanceElement.element}</span>

@@ -1,4 +1,5 @@
 import ConnectorField from "./connector-field.js";
+import { maybeUnpackString } from "../utils/utils.js";
 
 export default class SelectField extends ConnectorField {
   
@@ -34,7 +35,7 @@ export default class SelectField extends ConnectorField {
     
     let newIndex = 0;
     options.map((option, index) => {
-      this._input.appendChild(<option value={option.id}>{option.name.value}</option>)
+      this._input.appendChild(<option value={option.id}>{maybeUnpackString(option.name)}</option>)
       if(option.id === oldValue) {
         newIndex = index;
       }

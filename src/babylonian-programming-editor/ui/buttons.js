@@ -30,3 +30,7 @@ export function PrePostscriptButton(callback) {
 export function InstanceButton(callback) {
   return Button(callback, ["object-group", "space-before"], "Edit Instances");
 }
+
+export function AddButton(callback) {
+  return Button(callback, ["plus"], "Add");
+}
