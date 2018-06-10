@@ -283,7 +283,7 @@ export default class VivideView extends Morph {
   
   async computeModel(data, script) {
     this.modelData = {};
-    this.modelData["transformedData"] = [];
+    this.modelData["transformedData"] = data;
     this.modelData["properties"] = [];
     this.modelData["children"] = [];
     this.modelData["childScript"] = null;
@@ -300,7 +300,7 @@ export default class VivideView extends Morph {
     
     for (let i = 0; i < data.length; ++i) {
       model.push({
-        object: data[i],
+        object: this.modelData["transformedData"][i],
         properties: this.modelData["properties"][i],
         children: this.modelData["children"][i],
         childScript: this.modelData["childScript"]
@@ -314,11 +314,15 @@ export default class VivideView extends Morph {
     let module = await this.evalScript(script);
     
     if (script.type == 'transform') {
+      let output = [];
+      
       if (module.value.constructor.name === 'AsyncFunction') {
-        await module.value(data, this.modelData["transformedData"]);
+        await module.value(this.modelData["transformedData"], output);
       } else {
-        module.value(data, this.modelData["transformedData"]);
+        module.value(this.modelData["transformedData"], output);
       }
+      
+      this.modelData["transformedData"] = output;
     } else if (script.type == 'extract') {
       this.modelData["transformedData"].forEach(data => this.modelData["properties"].push([module.value(data)]));
     } else if (script.type == 'descent') {
