@@ -26,6 +26,7 @@ export default class VivideScriptEditor extends Morph {
     this.container = this.get('#container');
     this.createTypeMenu();
     this.settingLoopStart = false;
+    this.newScriptPosition = null;
   }
   
   initialFocus() {
@@ -78,7 +79,8 @@ export default class VivideScriptEditor extends Morph {
   }
   
   async appendStepEditor(scriptType) {
-    let script = await this.view.appendScript(scriptType);
+    let position = this.newScriptPosition != null ? this.newScriptPosition.script : null;
+    let script = await this.view.insertScript(scriptType, position);
     this.lastScript = script;
     this.createStepEditorFor(script);
     this.updateLoopState();
@@ -125,7 +127,14 @@ export default class VivideScriptEditor extends Morph {
       this.updateLoopState();
       this.settingLoopStart = false;
     });
-    this.editorList.appendChild(<span>-- {script.type} --</span>);
-    this.editorList.appendChild(stepEditor);
+    
+    if (this.newScriptPosition) {
+      this.editorList.insertBefore(stepEditor, this.newScriptPosition.editor.nextSibling);
+      this.editorList.insertBefore(<span>-- {script.type} --</span>, this.newScriptPosition.editor.nextSibling);
+      this.newScriptPosition = null;
+    } else {
+      this.editorList.appendChild(<span>-- {script.type} --</span>);
+      this.editorList.appendChild(stepEditor);
+    }
   }
 }

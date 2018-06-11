@@ -30,10 +30,12 @@ export default class VivideStepEditor extends Morph {
   }
   
   onInsertScript() {
-    if (this.scriptEditor) {
-      // TODO: The position for the script has to be implemented
-      this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY);
-    } 
+    if (!this.scriptEditor) return;
+    
+    let position = {};
+    position.editor = this;
+    position.script = this.script;
+    this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY, position);
   }
   
   setToLoopStart() {

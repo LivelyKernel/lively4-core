@@ -364,12 +364,16 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig || []);
   }
   
-  async appendScript(scriptType) {
+  async insertScript(scriptType, prevScript = null) {
     let newScript = await newScriptFromTemplate(scriptType);
     let script = this.getFirstScript();
     
-    while (!script.lastScript) {
-      script = script.nextScript;
+    if (prevScript) {
+      script = prevScript;
+    } else {
+      while (!script.lastScript) {
+        script = script.nextScript;
+      }
     }
     
     newScript.updateCallback = this.scriptGotUpdated.bind(this);
