@@ -32,8 +32,13 @@ export default class VivideScriptEditor extends Morph {
   }
   
   onAddScript() {
-    this.typeMenu.style.left = this.addScriptX + "px";
-    this.typeMenu.style.top = this.addScriptY + "px";
+    this.showTypeMenu(this.addScriptX, this.addScriptY);
+  }
+  
+  showTypeMenu(posX, posY, position = null) {
+    this.newScriptPosition = position;
+    this.typeMenu.style.left = posX + "px";
+    this.typeMenu.style.top = posY + "px";
     this.container.insertBefore(this.typeMenu, this.editorList);
   }
   
@@ -69,24 +74,47 @@ export default class VivideScriptEditor extends Morph {
   
   async appendStepEditor(scriptType) {
     let script = await this.view.appendScript(scriptType);
+    this.lastScript = script;
     this.createStepEditorFor(script);
+    this.updateStepEditorState();
   }
   
-  async setScripts(firstScript) {    
+  updateStepEditorState() {
+    let editorListContent = this.editorList.children;
+    let loopStart = this.lastScript.nextScript;
+    
+    for (let element of editorListContent) {
+      if (element.localName != 'vivide-step-editor') continue;
+      if (!element.containsScript(loopStart)) continue;
+      
+      debugger;
+      
+      let loopmarker = this.get('#loop-marker');
+      loopmarker.style.display = "inline-block";
+      loopmarker.style.top = element.offsetTop + "px";
+      loopmarker.style.height = element.offsetHeight + "px";
+    }
+  }
+  
+  async setScripts(script) {    
     this.editorList.innerHTML = '';
     
-    await this.createStepEditorFor(firstScript);
-    while (firstScript.nextScript != null) {
-      firstScript = firstScript.nextScript;
-      await this.createStepEditorFor(firstScript);
+    await this.createStepEditorFor(script);
+    while (script.nextScript != null) {
+      script = script.nextScript;
+      await this.createStepEditorFor(script);
       
-      if (firstScript.lastScript) break;
+      if (script.lastScript) break;
     }
+    
+    this.lastScript = script;
+    this.updateStepEditorState();
   }
   
   async createStepEditorFor(script) {
     let stepEditor = await (<vivide-step-editor></vivide-step-editor>);
     stepEditor.setStepScript(script);
+    stepEditor.setScriptEditor(this);
     this.editorList.appendChild(<span>-- {script.type} --</span>);
     this.editorList.appendChild(stepEditor);
   }

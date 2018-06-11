@@ -8,10 +8,32 @@ export default class VivideStepEditor extends Morph {
   async initialize() {
     this.windowTitle = "VivideStepEditor";
     this.editor.setOption('viewportMargin', Infinity);
+    this.registerButtons();
     if (!this.editor.value) {
       this.editor.value = 'Initializing Script...';
     }
     this.editor.doSave = text => this.stepSaved(text);
+    
+    // Show script type dialog at mouse position
+    this.get('#insertScript').addEventListener("mousedown", event => {
+      this.insertScriptX = event.clientX;
+      this.insertScriptY = event.clientY;
+    });
+  }
+  
+  containsScript(script) {
+    return script === this.script;
+  }
+  
+  setScriptEditor(scriptEditor) {
+    this.scriptEditor = scriptEditor;
+  }
+  
+  onInsertScript() {
+    if (this.scriptEditor) {
+      // TODO: The position for the script has to be implemented
+      this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY);
+    } 
   }
   
   setStepScript(script) {

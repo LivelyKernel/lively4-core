@@ -24,7 +24,7 @@
 
   .type-menu {
     position: fixed;
-    z-index: 1001;
+    z-index: 1002;
   }
   
   .type-menu ul {
@@ -46,11 +46,30 @@
     color: #fff;
     background-color: #789;
   }
+  
+  .loop-marker {
+    display: hidden;
+    width: 4px;
+    z-index: 1002;
+    background-color: #0f0;
+    position: absolute;
+    right: 0px;
+  }
+  
+  .container {
+    position: relative;
+  }
+  
+  vivide-step-editor {
+    display: block;
+  }
 </style>
-  <div id="container">
+  <div id="container" class="container">
     <lively-inspector id="inspector" style="display: none;"></lively-inspector>
     <div id="editor-list"></div>
     <button id="addScript">+ Add Script</button>
+    <button id="setLoopStart">Set Loop Start</button>
+    <div id="loop-marker" class="loop-marker"></div>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
