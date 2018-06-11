@@ -36,6 +36,17 @@ export default class VivideStepEditor extends Morph {
     } 
   }
   
+  setToLoopStart() {
+    // Go to last script
+    let script = this.script;
+    while (script.nextScript != null && !script.lastScript) {
+      script = script.nextScript;
+    }
+    
+    // Reconfigure loop
+    script.nextScript = this.script;
+  }
+  
   setStepScript(script) {
     this.script = script;
     this.editor.value = script.source;

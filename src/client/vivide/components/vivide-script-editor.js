@@ -25,6 +25,7 @@ export default class VivideScriptEditor extends Morph {
     
     this.container = this.get('#container');
     this.createTypeMenu();
+    this.settingLoopStart = false;
   }
   
   initialFocus() {
@@ -33,6 +34,10 @@ export default class VivideScriptEditor extends Morph {
   
   onAddScript() {
     this.showTypeMenu(this.addScriptX, this.addScriptY);
+  }
+  
+  onSetLoopStart() {
+    this.settingLoopStart = true;
   }
   
   showTypeMenu(posX, posY, position = null) {
@@ -76,18 +81,16 @@ export default class VivideScriptEditor extends Morph {
     let script = await this.view.appendScript(scriptType);
     this.lastScript = script;
     this.createStepEditorFor(script);
-    this.updateStepEditorState();
+    this.updateLoopState();
   }
   
-  updateStepEditorState() {
+  updateLoopState() {
     let editorListContent = this.editorList.children;
     let loopStart = this.lastScript.nextScript;
     
     for (let element of editorListContent) {
       if (element.localName != 'vivide-step-editor') continue;
       if (!element.containsScript(loopStart)) continue;
-      
-      debugger;
       
       let loopmarker = this.get('#loop-marker');
       loopmarker.style.display = "inline-block";
@@ -108,13 +111,20 @@ export default class VivideScriptEditor extends Morph {
     }
     
     this.lastScript = script;
-    this.updateStepEditorState();
+    this.updateLoopState();
   }
   
   async createStepEditorFor(script) {
     let stepEditor = await (<vivide-step-editor></vivide-step-editor>);
     stepEditor.setStepScript(script);
     stepEditor.setScriptEditor(this);
+    stepEditor.addEventListener("mousedown", () => {
+      if (!this.settingLoopStart) return;
+      
+      stepEditor.setToLoopStart();
+      this.updateLoopState();
+      this.settingLoopStart = false;
+    });
     this.editorList.appendChild(<span>-- {script.type} --</span>);
     this.editorList.appendChild(stepEditor);
   }
