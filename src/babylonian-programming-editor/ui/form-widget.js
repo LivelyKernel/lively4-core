@@ -1,6 +1,7 @@
 import InputWidget from "./input-widget.js";
 import InputField from "./input-field.js";
-import { abstract, defaultInstance } from "../utils/utils.js";
+import { abstract } from "../utils/utils.js";
+import { defaultInstance } from "../utils/defaults.js";
 
 
 export default class FormWidget extends InputWidget {
