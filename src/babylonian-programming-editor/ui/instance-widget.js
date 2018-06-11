@@ -7,8 +7,8 @@ import {
 
 
 export default class InstanceWidget extends FormWidget {
-  constructor(editor, location, kind, changeCallback, deleteCallback) {
-    super(editor, location, kind, changeCallback, deleteCallback);
+  constructor(editor, location, kind, instances, customInstances, changeCallback, deleteCallback) {
+    super(editor, location, kind, instances, customInstances, changeCallback, deleteCallback);
   }
   
   // UI Generators

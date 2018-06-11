@@ -1,13 +1,17 @@
 import InputWidget from "./input-widget.js";
 import InputField from "./input-field.js";
-import { abstract } from "../utils/defaults.js";
+import { abstract, defaultInstance } from "../utils/defaults.js";
+
 
 export default class FormWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback, deleteCallback) {
+  constructor(editor, location, kind, instances, customInstances, changeCallback, deleteCallback) {
     super(editor, location, kind, changeCallback, deleteCallback);
     this._keys = []; // [key]
     this._nameElement = null; // InputField
     this._elements = new Map(); // Map(key, {element, input})
+    
+    this._instances = instances; // [Instance]
+    this._customInstances = customInstances; // [CustomInstance]
     
     this._prescript = ""
     this._postscript = ""
@@ -19,6 +23,8 @@ export default class FormWidget extends InputWidget {
     if(!this._elements.has(key)) {
       this._elements.set(key, this._makeFormElementForKey(key));
     }
+    const element = this._elements.get(key);
+    element.input.options = this._getOptions();
     return this._elements.get(key);
   }
   
@@ -90,6 +96,12 @@ export default class FormWidget extends InputWidget {
       this._postscript = value.postscript;
       this._changeCallback();
     });
+  }
+  
+  _getOptions() {
+    return [defaultInstance()].concat(this._instances)
+                              .concat(this._customInstances)
+                              .filter(i => i.id !== this.id);
   }
   
   // Getters and Setters

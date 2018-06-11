@@ -287,18 +287,10 @@ export const applyExamples = (ast, examples) => {
   const staticMethodCall = template("CLASS.ID.apply(this, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(this, PARAMS)");
   
-  const makeInstanceNode = (instanceId) => {
-    if(instanceId.isConnection) {
-      return replacementNodeForCode(connectorTemplate(instanceId.value));
-    } else {
-      return replacementNodeForCode(`__${maybeUnpackString(instanceId)}()`);
-    }
-  };
-  
   // Apply the markers
   examples.forEach((example) => {
     const path = ast._locationMap[example.location];
-    let instanceNode = makeInstanceNode(example.instanceId);
+    let instanceNode = replacementNodeForValue(example.instanceId);
     let parametersValuesNode = types.arrayExpression(
       example.values.map(replacementNodeForValue)
     );
@@ -514,24 +506,6 @@ export const replacementNodeForCode = (code) => {
   }
 }
 
-/*export const replacementNodeForExpression = (statement) => {
-  if(!statement || !statement.length) {
-    return types.nullLiteral();
-  }
-  try {
-    const ast = astForCode(statement);
-    return ast.program.body[0];
-  } catch (e) {
-    console.error("Error parsing replacement node", e);
-    return null;
-  }
-}*/
-
-const replacementNodeForValue = (value) => 
-  replacementNodeForCode(value.isConnection ?
-                         connectorTemplate(value.value) :
-                         value.value);
-
 const wrapPrePostScript = (name, args, code) => {
   code = `const ${name} = function(${args.join(", ")}) { ${code} };`;
   try {
@@ -542,6 +516,17 @@ const wrapPrePostScript = (name, args, code) => {
     return null;
   }
 }
+
+const replacementNodeForValue = (value) => {
+    switch(value.mode) {
+      case "input":
+        return replacementNodeForCode(value.value);
+      case "select":
+        return replacementNodeForCode(instanceTemplate(value.value));
+      case "connect":
+        return replacementNodeForCode(connectorTemplate(value.value));
+    }
+  };
 
 /**
  * Parses code and returns the AST
@@ -606,7 +591,7 @@ const prepForInsert = (node) => {
   return node;
 }
 
-const connectorTemplate = (id) => {
-  return `__connections["${id}"]`;
-}
+const connectorTemplate = (id) => `__connections["${id}"]`;
+
+const instanceTemplate = (id) => `__${id}()`;
 

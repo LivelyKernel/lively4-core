@@ -284,26 +284,14 @@
   display: inline-block;
 }
 
-.connected {
-  border-color: transparent;
-}
-
-.connected input, .connected select {
-  display: none;
-}
-
-.connected .icon {
-  padding-top: 2px;
-}
-
 .connector {
-  color: blue;
+  opacity: 0.8;
+  color: black;
   padding-right: 2px;
 }
 
-.connector.off {
-  opacity: 0.8;
-  color: black;
+.connector.on {
+  color: blue;
 }
 
 .connector.broken {
@@ -315,11 +303,16 @@
   content: "\f0c1";
 }
 
-.widget select {
+.input-field select {
   border:none;
   border-radius: 0;
   font: inherit;
   background: transparent;
+  width: 15px;
+}
+
+.input-field.select select {
+  color: blue;
 }
 
 .widget input[type=range] {

@@ -3,9 +3,9 @@ import InputAnnotation from "./input-annotation.js";
 
 
 export default class Instance extends InputAnnotation {
-  constructor(editor, location, changeCallback, deleteCallback) {
+  constructor(editor, location, changeCallback, deleteCallback, instances, customInstances) {
     super(editor, location, changeCallback, null, deleteCallback);
-    this._widget = new InstanceWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
+    this._widget = new InstanceWidget(editor, location, this.kind, instances, customInstances, this._changeCallback, this._deleteCallback);
   }
   
   get id() {

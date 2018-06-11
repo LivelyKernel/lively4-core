@@ -13,5 +13,4 @@ class Person {
     this.name = this.name.split("").reverse().join("");
   }
 }
-
-/* Examples: {"annotations":{"probes":[{"location":[9,23,9,32]}],"sliders":[],"examples":[{"location":[8,2,8,7],"id":"b0b1_a952_7055","name":{"value":"","isConnection":false},"color":"hsl(340, 30%, 70%)","values":{},"instanceId":{"value":"0","isConnection":false},"prescript":"","postscript":""}],"replacements":[],"instances":[]},"context":{"prescript":"","postscript":""},"customInstances":[{"id":"68ae_6b05_bb36","name":"WHAT?","code":"return {name:\"asd\"}"}]} */
+/* Examples: {"annotations":{"probes":[{"location":[9,23,9,32]}],"sliders":[],"examples":[{"location":[8,2,8,7],"id":"1c9f_5fb5_8820","name":{"mode":"input","value":""},"color":"hsl(180, 30%, 70%)","values":{},"instanceId":{"mode":"select","value":"c583_ac5d_3548"},"prescript":"","postscript":""}],"replacements":[],"instances":[{"location":[2,6,2,12],"id":"c583_ac5d_3548","name":{"mode":"input","value":"Someone."},"values":{"name":{"mode":"input","value":"\"Timmy\""},"hobby":{"mode":"input","value":"\"cycling\""}}}]},"context":{"prescript":"","postscript":""},"customInstances":[]} */

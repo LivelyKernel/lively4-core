@@ -58,3 +58,4 @@ class Smiley {
     ctx.stroke();
   }
 }
+/* Examples: {"annotations":{"probes":[{"location":[25,6,25,9]}],"sliders":[],"examples":[{"location":[1,9,1,19],"id":"e5b0_d0e8_38ca","name":{"mode":"input","value":"Simpson"},"color":"hsl(100, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"e5b0_d0e8_38ca_canvas"},"eyeColor":{"mode":"input","value":"\"blue\""},"skinColor":{"mode":"input","value":"\"yellow\""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}],"replacements":[],"instances":[]},"context":{"prescript":"","postscript":""},"customInstances":[]} */

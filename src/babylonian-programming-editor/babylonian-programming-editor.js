@@ -104,7 +104,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/classes.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -159,6 +159,13 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.livelyEditor().setText(text);
     await this.parse();
 
+    // Add context
+    this._context = context ? context : defaultContext();
+    this._customInstances.length = 0;
+    if(customInstances) {
+      customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
+    }
+    
     // Add annotations
     if(annotations) {
       for(let probe of annotations.probes) {
@@ -180,10 +187,6 @@ export default class BabylonianProgrammingEditor extends Morph {
         obj.load(replacement);
       }
     }
-    
-    // Add context
-    this._context = context ? context : defaultContext();
-    customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
 
     this.evaluate(true);
   }
@@ -345,7 +348,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
       this.onEvaluationNeeded.bind(this),
-      this.removeAnnotation.bind(this)
+      this.removeAnnotation.bind(this),
+      this._annotations.instances,
+      this._customInstances
     );
     this._annotations.instances.push(instance);
 

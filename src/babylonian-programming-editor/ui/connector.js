@@ -16,7 +16,7 @@ export default class Connector {
       if(this.isConnected) {
         this.target = null;
       } else {
-        this._element.classList.remove("off");
+        this._element.classList.add("on");
         setTimeout(() => {
           document.addEventListener("click", this._onTargetSelect.bind(this), {once : true});
         }, 100);
@@ -57,9 +57,20 @@ export default class Connector {
   set isConnected(isConnected) {
     this._isConnected = isConnected;
     if(isConnected) {
-      this._element.classList.remove("off");
+      this._element.classList.add("on");
     } else {
-      this._element.classList.add("off");
+      this._element.classList.remove("on");
+    }
+  }
+  
+  get stringTarget() {
+    if(!this._target) {
+      return null;
+    }
+    if(this._target.__proto__.constructor) {
+      return this._target.__proto__.constructor.name;
+    } else {
+      return "" + this._target;
     }
   }
   

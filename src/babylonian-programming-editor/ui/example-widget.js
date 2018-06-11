@@ -1,5 +1,5 @@
 import FormWidget from "./form-widget.js";
-import SelectField from "./select-field.js";
+import InputField from "./input-field.js";
 import {
   DeleteButton,
   SwitchButton,
@@ -12,12 +12,10 @@ import { defaultInstance } from "../utils/defaults.js";
 
 export default class ExampleWidget extends FormWidget {
   constructor(editor, location, kind, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances, customInstances) {
-    super(editor, location, kind, changeCallback, deleteCallback);
+    super(editor, location, kind, instances, customInstances, changeCallback, deleteCallback);
     this._isOn = defaultIsOn;
     this._color = randomColor();
     this._stateCallback = stateCallback;
-    this._instances = instances; // [Instance]
-    this._customInstances = customInstances; // [CustomInstance]
     this._instanceElement = null; // {element, input}
     this._error = null;
     this._update();
@@ -31,9 +29,9 @@ export default class ExampleWidget extends FormWidget {
   
   _getAdditionalFormElements() {
     if(!this._instanceElement) {
-      this._instanceElement = new SelectField(this, "this", this._onSelectChanged.bind(this));
+      this._instanceElement = new InputField(this, "this", "null", this._onSelectChanged.bind(this));
     }
-    this._instanceElement.options = [defaultInstance()].concat(this._instances).concat(this._customInstances);
+    this._instanceElement.options = this._getOptions();
     return [
       {
         element:<span class="space-before">this: {this._instanceElement.element}</span>

@@ -6,7 +6,7 @@ export const defaultExample = () => ({
 
 export const defaultInstance = () => ({
   id: 0,
-  name: { value: "null", isConnected: false },
+  name: { value: "", isConnected: false },
 });
 
 export const defaultBabylonConfig = () => ({
