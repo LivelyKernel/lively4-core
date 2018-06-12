@@ -13,6 +13,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
+    // Callback set in the view
+    this.expandChild = null;
   }
   
   dataForDOMNode(treeItem) {
@@ -41,8 +43,12 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     if (sub.innerHTML.length == 0) {
       treeItem.className += " expanded"
       let childScript = this.childScriptByTreeItem.get(treeItem);
-      let childObjects = children.map(c => c.object);
-      children = await this.expandChild(childObjects, childScript);
+      
+      if (childScript) {
+        let test = children.map(c => c.object);
+        children = await this.expandChild(test, childScript);
+      }
+      
       this.childrenByTreeItem.set(treeItem, children);
       
       for (let child of children) {  

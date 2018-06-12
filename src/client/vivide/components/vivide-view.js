@@ -326,16 +326,12 @@ export default class VivideView extends Morph {
     } else if (script.type == 'extract') {
       this.modelData["transformedData"].forEach(data => this.modelData["properties"].push([module.value(data)]));
     } else if (script.type == 'descent') {
-      let childTransform = await this.evalScript(script.nextScript);
-      let childExtract = await this.evalScript(script.nextScript.nextScript);
       this.modelData["transformedData"].forEach(data => {
-        let childrenInput = module.value(data);
-
-        if (childrenInput) {
-          let childrenOutput = [];
-          childTransform.value(childrenInput, childrenOutput);
-          this.modelData["children"].push(childrenOutput.map(child => ({ object: child, properties: [childExtract.value(child)], children: [] })));
-        }
+        let children = module.value(data);
+        
+        if (!children) return;
+        
+        this.modelData["children"].push(children.map(child => ({ object: child, properties: [], children: [] })));
       });
       this.modelData["childScript"] = script.nextScript;
     }
