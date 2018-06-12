@@ -43,7 +43,8 @@ import TransactionOutputCollection from 'src/blockchain/model/transaction/transa
 })();
 </script>
 </div>
-The fundamental elements of Nakamoto's Bitcoin concept are transactions. Every transfer of coins is encapsulated in transactions, stating who sends coins, who receives them and where they originate from.
+The fundamental elements of Nakamoto's Bitcoin concept are transactions. They occur in a chronological order and serve as a proof for money transfers. In order to meet these requirements, transactions have to held certain information about the transfer. The given view of an example transaction gives you a good overview about the most important attributes. 
 
-Beside these main constituents of a transaction, there are some other components which are important as well. The given visualization of a single transaction gives you a good overview over all of them. First of all an transaction requires a timestamp to provide a specific point of time when this transaction has happen. 
+First of all, the timestamp is necessary to sort the transaction correctly into the ledger (we will come the ledger later on). The sender hash describes the address of the wallet which issued the transaction. From this wallet all coins are taken to satisfy the transaction amount. Furthermore, the wallet is also responsible to settle the feeds for this transaction. The amount of fees is defined by the difference between input and output amount of the transaction. All information about the transaction amounts can be inferred from the right column of the view.
+
 </div>

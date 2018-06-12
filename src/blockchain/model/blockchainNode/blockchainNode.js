@@ -6,6 +6,7 @@ import Miner from "./miner.js";
 export default class BlockchainNode {
   
   constructor(firstNode = false) {
+    this._hasExited = false;
     this._wallet = new Wallet();
     this._blockchain = null;
     if(firstNode) {
@@ -21,6 +22,14 @@ export default class BlockchainNode {
   
   get wallet() {
     return this._wallet;
+  }
+  
+  get hasExited() {
+    return this._hasExited;
+  }
+  
+  exit() {
+    this._hasExited = true;
   }
   
   blockchainIsValid(blockchain) {
@@ -62,10 +71,12 @@ export default class BlockchainNode {
   // Sending to other nodes (via network component)
   
   propagateBlock(block) {
+    this.handleBlock(block);
     this._networkComponent.propagateBlock(block);
   }
   
   propagateTransaction(transaction) {
+    this.handleTransaction(transaction);
     this._networkComponent.propagateTransaction(transaction);
   }
     
