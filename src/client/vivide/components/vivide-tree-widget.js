@@ -70,8 +70,13 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async processModel(model, parent) {    
     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
+    let tooltip = model.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
+    
+    if (tooltip.length > 0) {
+      treeItem.title = tooltip;
+    }
     
     treeItem.prepend(expander);
     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
