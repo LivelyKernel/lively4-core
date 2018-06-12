@@ -34,6 +34,14 @@ export default class TransactionCollection {
     return this._transactions.size;
   }
   
+  forEach(callback) {
+    this._transactions.forEach((value) => callback(value));
+  }
+  
+  getByHash(hash) {
+    return this._transactions.get(hash);
+  }
+  
   isFinalized() {
     return !!this.hash;
   }

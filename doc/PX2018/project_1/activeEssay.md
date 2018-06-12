@@ -22,4 +22,28 @@ By the end of the 20th century the problem of timestamping documents progressed 
 
 The ideas of Haber and Stornetta laid the foundation for blockchains as we know them today. Satoshi Nakamoto (a pseudonym - a real person or group of persons is still not known today) built on their idea to come up with the concept of Bitcoin. She published a paper describing the idea behind in 2008 and came up with the first implementation, named Bitcoin Core, in 2009. Bitcoin, a distributed purely digital currency, is the first ever realization of blockchain. In the following chapters we are going to explain the blockchain technology in detail using the example of Bitcoin.
 </p>
+
+## Bitcoin
+<p>
+Haber and Stornetta were able to build up a trustable system to timestamp documents without the need for an central trusted authority. Fascinated by the idea of replacing central authorities, Nakamoto transferred the concept to the financial sector. His goal was to enable financial transactions without the need to clear each and every transaction by a financial institution.
+<div id="blockchain-essay-transaction-visualization">
+<script>
+// Visualize one single transaction
+import Wallet from 'src/blockchain/model/wallet/wallet.js'; 
+import Transaction from 'src/blockchain/model/transaction/transaction.js'; 
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js'; 
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js'; 
+(() => { 
+  const sender = new Wallet(); 
+  const inputCollection = new TransactionInputCollection(sender); 
+  const outputCollection = new TransactionOutputCollection(); 
+  const transactionView = document.createElement("blockchain-transaction"); 
+  transactionView.transaction = new Transaction(sender, inputCollection, outputCollection); 
+  return transactionView;
+})();
+</script>
+</div>
+The fundamental elements of Nakamoto's Bitcoin concept are transactions. Every transfer of coins is encapsulated in transactions, stating who sends coins, who receives them and where they originate from.
+
+Beside these main constituents of a transaction, there are some other components which are important as well. The given visualization of a single transaction gives you a good overview over all of them. First of all an transaction requires a timestamp to provide a specific point of time when this transaction has happen. 
 </div>
