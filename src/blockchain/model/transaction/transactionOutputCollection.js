@@ -50,6 +50,10 @@ export default class TransactionOutputCollection {
     return !!this.hash;
   }
   
+  has(outputHash) {
+    return this._transactionOutputs.has(outputHash);
+  }
+  
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(

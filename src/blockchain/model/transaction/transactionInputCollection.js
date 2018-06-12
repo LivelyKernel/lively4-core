@@ -73,6 +73,14 @@ export default class TransactionInputCollection {
     return !!this.hash;
   }
   
+  forEach(callback) {
+    this._transactionInputs.forEach((value) => callback(value));
+  }
+  
+  has(outputHash) {
+    return this._transactionInputs.has(outputHash);
+  }
+  
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
