@@ -8,13 +8,16 @@ export default function() {
       links = [],
       w = 900, // box width
       h = 500, // box width
+      updateFunction = function() {},
+      timeout = 0, // timeout between move operations
       graphAnneal = {};
 
   var max_move = 500.0;
   
    // weights
   var w_node_overlap = 30.0, // Node-overlap 
-      w_edge_overlap = 10;   // Edge-overlap
+      w_edge_overlap = 30.0, // Edge-overlap
+      w_edge_node_overlap = 10.0; // Edge-Node-overlap
   
   // booleans for user defined functions
   var user_energy = false,
@@ -25,14 +28,14 @@ export default function() {
   var energy = function(index) {
   // energy function, to be tailored for node placement
 
-    var v = nodes.length,
+    let v = nodes.length,
         e = links.length,
         ener = 0;
     
-    for (var i = 0; i < e; i++) {
-      for (var j = i + 1; j < e; j++) {
+    for (let i = 0; i < e; i++) {
+      for (let j = i + 1; j < e; j++) {
         // Penalty for edge intersection
-        var x1 = links[i].source.x,
+        let x1 = links[i].source.x,
             x2 = links[i].target.x,
             y1 = links[i].source.y,
             y2 = links[i].target.y,
@@ -46,8 +49,27 @@ export default function() {
         } 
       }
     }
+    
+    for (let i = 0; i < e; i++) {
+      for (let n = 0; n < v; n++) {
+        // Penalty for edge-node intersection
+        if (nodes[n] !== links[i].source && nodes[n] !== links[i].target) {
+          let x1 = links[i].source.x,
+              x2 = links[i].target.x,
+              y1 = links[i].source.y,
+              y2 = links[i].target.y,
+              cx = nodes[n].x,
+              cy = nodes[n].y,
+              r = nodes[n].r;
 
-    for (i = 0; i < v; i++) {
+          if (lineCircleIntersect(x1, x2, y1, y2, cx, cy, r)) {
+            //ener += w_edge_node_overlap;
+          } 
+        }
+      }
+    }
+
+    for (let i = 0; i < v; i++) {
       if (i != index) {
         // Penalty for node intersection
         var nx1 = nodes[index].x,
@@ -124,7 +146,6 @@ export default function() {
   };
 
   var intersect = function(x1, x2, x3, x4, y1, y2, y3, y4) {
-  // Not sure if we need this still, but ill keep it for now
   // returns true if two lines intersect, else false
   // from http://paulbourke.net/geometry/lineline2d/
 
@@ -143,6 +164,28 @@ export default function() {
     }
     return false;
   }
+  
+  var lineCircleIntersect = function(x1, x2, y1, y2, cx, cy, r) {
+    var b, c, d, u1, u2, ret, retP1, retP2, v1, v2;
+    v1 = {};
+    v2 = {};
+    v1.x = x2 - x1;
+    v1.y = y2 - y1;
+    v2.x = x1 - cx;
+    v2.y = y1 - cy;
+    b = (v1.x * v2.x + v1.y * v2.y);
+    c = 2 * (v1.x * v1.x + v1.y * v1.y);
+    b *= -2;
+    d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - r * r));
+    if(isNaN(d)){ // no intercept
+        return [];
+    }
+    u1 = (b - d) / c;  // these represent the unit distance of point one and two on the line
+    u2 = (b + d) / c;    
+    if(u1 <= 1 && u1 >= 0 || u2 <= 1 && u2 >= 0)
+      return true;
+    return false;
+  }
 
   var cooling_schedule = function(currT, initialT, nsweeps) {
   // linear cooling
@@ -150,23 +193,27 @@ export default function() {
   }
 
   graphAnneal.start = function(nsweeps) {
-    
-  console.log(nodes, links)
   // main simulated annealing function
     var m = nodes.length,
         currT = 1.0,
         initialT = 1.0;
-    for (i = 0; i < m; i++) {
+    for (var i = 0; i < m; i++) {
       nodes[i].x = 0;
       nodes[i].y = 0;
     }
-
-    for (var i = 0; i < nsweeps; i++) {
-      for (var j = 0; j < m; j++) { 
+    
+    function anneal(sweepsDone) {
+      for (var i = 0; i < m; i++) { 
         mcmove(currT);
       }
       currT = cooling_schedule(currT, initialT, nsweeps);
+      updateFunction();
+      if (sweepsDone > 0) {
+        setTimeout(() => anneal(sweepsDone - 1), timeout)
+      }
     }
+    anneal(nsweeps);
+    console.log(nodes, links)
   };
 
   graphAnneal.width = function(x) {
@@ -212,6 +259,20 @@ export default function() {
     user_schedule = true;
     return graphAnneal;
   };
+  
+  graphAnneal.updateFunction = function(x) {
+  // user defined callback for node updates
+    if (!arguments.length) return  updateFunction;
+    updateFunction = x;
+    return graphAnneal;
+  };
+  
+  graphAnneal.timeout = function(x) {
+  // user defined timeout between annealing
+    if (!arguments.length) return  timeout;
+    timeout = x;
+    return graphAnneal;
+  };
 
   return graphAnneal;
-};
+}

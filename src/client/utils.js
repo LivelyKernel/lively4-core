@@ -237,7 +237,9 @@ export function copyTextToClipboard(text) {
 
 // taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
 export function isFunction(functionToCheck) {
-  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+  let isFunc = functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+  let isAsyncFunc = functionToCheck && {}.toString.call(functionToCheck) === '[object AsyncFunction]';
+  return isFunc || isAsyncFunc;
 }
 
 export function cancelEvent(evt) {
