@@ -74,7 +74,7 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let symbolClasses = "expander fa";
     // Items with no children have no symbol, because FontAwesome does not supply a good one
-    symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : "";
+    symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
     let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltip.length > 0) {

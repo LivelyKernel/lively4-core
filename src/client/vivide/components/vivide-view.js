@@ -324,7 +324,7 @@ export default class VivideView extends Morph {
       for (let data of this.modelData["transformedData"]) {
         let children = await module.value(data);
         
-        if (!children) return;
+        if (!children) continue;
         
         this.modelData["children"].push(children.map(child => ({ object: child, properties: [], children: [] })));
       }
