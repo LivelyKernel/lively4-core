@@ -68,47 +68,82 @@ export function showVariable(name, self) {
 
 export function runExampleButton(exampleName, ctx, dependencies=[]) {
   var button=<button>{exampleName}</button>
+  var appendResult = function(code, element) {
+    element.classList.add("result")
+    code.parentElement.insertBefore(element, code.nextSibling)
+  }
+  
   button.onclick = (async () => {
+    // gather all dependent code blocks
     var codeBlocks = []
     dependencies.forEach(ea => {
-      codeBlocks.push(...ctx.parentElement.querySelectorAll("." + ea))
+      codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + ea), 
+                      ea => lively.getGlobalPosition(ea).y))
     })
-    codeBlocks.push(...ctx.parentElement.querySelectorAll("." + exampleName))
-    codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + exampleName), 
+                      ea => lively.getGlobalPosition(ea).y))
+    
+  
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // go through all code blocks and (re-)execute them and show result (and errors)
+    
+    ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
+      ea.remove()
+    });
+      
+    
+    var i=1
     for(var code of codeBlocks) {
+      var indexElement = <div class="indexElement" style="color: blue">{i++}</div>
+      code.parentElement.insertBefore(indexElement, code)
+
+      // show only the latest result
+      var resultElement = code.parentElement.querySelector(".result")
+      if (resultElement) resultElement.remove()
       var result  = await boundEval(code.textContent, ctx);    
       if (result.isError) {
         code.parentElement.style.border = "1px solid red";
         lively.showError(result.value)
-        var error = <div style="color: red">Error: {result.value}</div>
+        var error = <div class="result error" style="color: red">Error: {result.value}</div>
         code.parentElement.insertBefore(error, code.nextSibling)
-        return    
+        return
       } else {
         code.parentElement.style.border = "1px dashed darkgreen";
         if (code.classList.contains("NoResult")) continue;
         var element;
         var value = result.value
-        if (value && value.then) value = await value;
-        result = code.parentElement.querySelector(".result")
-        if (result) result.remove()
-
+        if (value && value.then) {
+          try {
+            value = await value;
+          } catch(e) {
+            let error = <div class="error" style="color: red">Error in Promise: {e}</div>
+            appendResult(code, error)
+          return    
+          }
+        }
         if (value instanceof HTMLElement) {
-          element = <div class="result" style="color: blue; font-style='italic'"></div>
+          element = <div style="color: blue; font-style='italic'"></div>
           element.appendChild(value)
           element.style.position = "relative"
           lively.sleep(100).then(()=> {
             lively.setExtent(element, lively.getExtent(value)) // #LayoutHack
             element.style.margin = "20px"
           })
-          code.parentElement.insertBefore(element, code.nextSibling)
+          appendResult(code, element)
         } else if (value && value.beGlobal) {
           element = toggleLayer(value.name)
-          element.classList.add("result")
-          code.parentElement.insertBefore(element, code.nextSibling)
-        } else if (value !== undefined) { 
-          element = <div class="result" style="color: blue; font-style='italic'"> => {value}</div>
-          code.parentElement.insertBefore(element, code.nextSibling)
+          appendResult(code, element)
 
+        } else if (value !== undefined && value instanceof Object) {
+          var inspector = await (<lively-inspector style="position:absolute; top:0px; left:0px; width: 100%; height: 100%"></lively-inspector>)
+          inspector.inspect(value)
+          inspector.hideWorkspace()
+          var element  = <div style="display: inline-block; position:relative; top:0px; left:0px; height: 100px; width: 500px;background: white; white-space: wrap">{inspector}</div>
+          
+          appendResult(code, element)
+        } else if (value !== undefined) { 
+          element = <div style="color: blue; font-style='italic'"> => {value}</div>
+          appendResult(code, element)
         }
       }
     }
