@@ -1,6 +1,7 @@
 <template id="vivide-tree-widget" data-class="VivideTreeWidget">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/vivide/components/vivide.css"></style>
 <style>
 :host {
   
@@ -18,14 +19,20 @@
   }
   
   .expander {
+    width: 25px;
     cursor: pointer;
+    position: absolute;
+    left: 0;
   }
   
   .expanded > ul {
     display: block;
+    padding-left: 0;
   }
   
   li {
+    padding-left: 25px;
+    position: relative;
     -moz-user-select: none;
     -khtml-user-select: none;
     -webkit-user-select: none;

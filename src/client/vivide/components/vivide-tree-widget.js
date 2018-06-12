@@ -72,10 +72,14 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
     let tooltip = model.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
-    let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
+    let symbolClasses = "expander fa";
+    // Items with no children have no symbol, because FontAwesome does not supply a good one
+    symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : "";
+    let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltip.length > 0) {
       treeItem.title = tooltip;
+      treeItem.setAttribute('data-tooltip', tooltip);
     }
     
     treeItem.prepend(expander);

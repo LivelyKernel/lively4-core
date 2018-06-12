@@ -312,7 +312,6 @@ export default class VivideView extends Morph {
   
   async applyScript(script, data) {
     let module = await this.evalScript(script);
-    
     if (script.type == 'transform') {
       let output = [];
       await module.value(this.modelData["transformedData"], output);
