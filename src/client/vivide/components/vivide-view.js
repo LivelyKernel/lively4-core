@@ -339,8 +339,16 @@ export default class VivideView extends Morph {
     this.viewConfig.push(module.value.__vivideStepConfig__);
   }
 
-  findAppropriateWidget(model) {
-    if(model.length > 0) {
+  findAppropriateWidget(model) {    
+    if (this.viewConfig) {
+      for (let config of this.viewConfig) {
+        if (!config.widget) continue;
+        
+        return config.widget;
+      }
+    }
+    
+    if (model.length > 0) {
       let m = model[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')
