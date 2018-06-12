@@ -72,6 +72,13 @@
   button.onclick = async () => {
     fullscreen = !fullscreen
     if (fullscreen) {
+  
+      // all back 
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        ea.style.zIndex = 0
+      })
+      
+
       document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
       await lively.sleep(100) // wait for fullscreen
 
@@ -178,6 +185,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 // Poor men's: Table of Content / Topic list... I always wanted to do this in PowerPoint... but I did not know how to use Macros...
 (async () => {
   var container = lively.query(this, "lively-container")
+  if (!container || container.getURL) return
   var source = await fetch(container.getURL()).then(r => r.text())
   var topics = source.split("\n").filter(ea => ea.match(/^# Topic( \d\d)?:/)).map(ea => <li>{ea.replace(/# Topic/,"").replace(/:/,"").replace(/<.*>/,"")}</li>)
 

@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -222,24 +222,32 @@ export default class VivideView extends Morph {
     }
   }
   
-  setScripts(scripts) {
-    this.scripts = scripts;
-    this.scripts.forEach(s => s.updateCallback = this.scriptGotUpdated.bind(this));
+  setFirstScript(firstScript) {
+    this.firstScript = firstScript;
+    this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
+    let script = this.firstScript;
+    
+    while (script.nextScript != null) {
+      script = script.nextScript;
+      script.updateCallback = this.scriptGotUpdated.bind(this);
+      
+      if (script.lastScript) break;
+     }
     //this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
 
-    return this.scripts;
+    return this.firstScript;
   }
   
-  getScripts() {
+  getFirstScript() {
     //this.getJSONAttribute(VivideView.scriptAttribute);
     
-    return this.scripts;
+    return this.firstScript;
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if (this.getScripts()) {
+    if (this.getFirstScript()) {
       await this.calculateOutputModel();
     } else {
       this.modelToDisplay = VivideView.dataToModel(this.input);
@@ -258,8 +266,7 @@ export default class VivideView extends Morph {
   
   async calculateOutputModel() {
     this.viewConfig = [];
-    let scripts = this.getScripts();
-    let script = scripts[0];
+    let script = this.getFirstScript();
     
     this.modelToDisplay = await this.computeModel(this.input, script);
   }
@@ -275,49 +282,65 @@ export default class VivideView extends Morph {
   }
   
   async computeModel(data, script) {
-    let transformedData = [];
-    let properties = [];
-    let children = [];
-    let childScript = null;
+    this.modelData = {};
+    this.modelData["transformedData"] = data;
+    this.modelData["properties"] = [];
+    this.modelData["children"] = [];
+    this.modelData["childScript"] = null;
     
-    for (let i = 0; i < 3; ++i) {
-      let module = await this.evalScript(script);
-      
-      if (script.type == 'transform') {
-        module.value(data, transformedData);
-      } else if (script.type == 'extract') {
-        transformedData.forEach(data => properties.push([module.value(data)]));
-      } else if (script.type == 'descent') {
-        let childTransform = await this.evalScript(script.nextScript);
-        let childExtract = await this.evalScript(script.nextScript.nextScript);
-        transformedData.forEach(data => {
-          let childrenInput = module.value(data);
-          
-          if (childrenInput) {
-            let childrenOutput = [];
-            childTransform.value(childrenInput, childrenOutput);
-            children.push(childrenOutput.map(child => ({ object: child, properties: [childExtract.value(child)], children: [] })));
-          }
-        });
-        childScript = script.nextScript;
-      }
-      
-      this.viewConfig.push(module.value.__vivideStepConfig__)
+    await this.applyScript(script, data);
+    while (script.nextScript) {
       script = script.nextScript;
+      await this.applyScript(script, data);
+      
+      if (script.lastScript) break;
     }
     
     let model = [];
     
     for (let i = 0; i < data.length; ++i) {
       model.push({
-        object: data[i],
-        properties: properties[i],
-        children: children[i],
-        childScript: childScript
+        object: this.modelData["transformedData"][i],
+        properties: this.modelData["properties"][i],
+        children: this.modelData["children"][i],
+        childScript: this.modelData["childScript"]
       })
     }
     
     return model;
+  }
+  
+  async applyScript(script, data) {
+    let module = await this.evalScript(script);
+    
+    if (script.type == 'transform') {
+      let output = [];
+      
+      if (module.value.constructor.name === 'AsyncFunction') {
+        await module.value(this.modelData["transformedData"], output);
+      } else {
+        module.value(this.modelData["transformedData"], output);
+      }
+      
+      this.modelData["transformedData"] = output;
+    } else if (script.type == 'extract') {
+      this.modelData["transformedData"].forEach(data => this.modelData["properties"].push([module.value(data)]));
+    } else if (script.type == 'descent') {
+      let childTransform = await this.evalScript(script.nextScript);
+      let childExtract = await this.evalScript(script.nextScript.nextScript);
+      this.modelData["transformedData"].forEach(data => {
+        let childrenInput = module.value(data);
+
+        if (childrenInput) {
+          let childrenOutput = [];
+          childTransform.value(childrenInput, childrenOutput);
+          this.modelData["children"].push(childrenOutput.map(child => ({ object: child, properties: [childExtract.value(child)], children: [] })));
+        }
+      });
+      this.modelData["childScript"] = script.nextScript;
+    }
+
+    this.viewConfig.push(module.value.__vivideStepConfig__);
   }
 
   findAppropriateWidget(model) {
@@ -341,6 +364,27 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig || []);
   }
   
+  async insertScript(scriptType, prevScript = null) {
+    let newScript = await newScriptFromTemplate(scriptType);
+    let script = this.getFirstScript();
+    
+    if (prevScript) {
+      script = prevScript;
+    } else {
+      while (!script.lastScript) {
+        script = script.nextScript;
+      }
+    }
+    
+    newScript.updateCallback = this.scriptGotUpdated.bind(this);
+    newScript.nextScript = script.nextScript;
+    script.nextScript = newScript;
+    script.lastScript = false;
+    newScript.lastScript = true;
+    
+    return newScript;
+  }
+  
   livelyExample() {
     let exampleData = [
       {name: "object", subclasses:[{name: "morph"},]},
@@ -349,7 +393,7 @@ export default class VivideView extends Morph {
     ];
     
     this.newDataFromUpstream(exampleData)
-    newScriptFromTemplate().then(scripts => this.setScripts(scripts)).then(() => createScriptEditorFor(this));
+    initialScriptsFromTemplate().then(script => this.setFirstScript(script)).then(() => createScriptEditorFor(this));
   }
   
   livelyMigrate(other) {

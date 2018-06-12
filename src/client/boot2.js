@@ -11,10 +11,11 @@
   - currently we have different entry points we should unify
  */
 
+import * as cop  from './ContextJS/src/contextjs.js';
 
-// #BUG the browser cache API blocks (promises does not resolve) sometimes?
-// #BUG the performance, in our alternative to use IndexedDB can quickly degrate when DB gets to big...
-// window.localStorage["livel4systemjscache"] = false
+console.log(cop)
+debugger
+
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
@@ -120,11 +121,13 @@ if (window.lively && window.lively4url) {
     console.group("BOOT");
 
     // for finding the baseURL...
-    var script = document.currentScript;
-    var scriptURL = script.src;
+    
+    // var script = document.currentScript;
+    // var scriptURL = script.src;
 
-    window.lively4url = scriptURL.replace("/src/client/boot.js","");
-
+    // window.lively4url = scriptURL.replace("/src/client/boot.js","");
+    window.lively4url = window.location.toString().replace(/\/start2.html.*/, '')
+    
     // some performance logging
     window.lively4performance = {start: performance.now()}
     try {
@@ -141,7 +144,7 @@ if (window.lively && window.lively4url) {
       console.error(e)
     }
 
-    var loadContainer = script.getAttribute("data-container"); // some simple configuration
+    var loadContainer = true; //script.getAttribute("data-container"); // some simple configuration
 
     console.log("lively4url: " + lively4url);
 
@@ -394,16 +397,10 @@ if (window.lively && window.lively4url) {
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
 
-          
           groupedMessage(1, 4, 'Invalidate Caches');
           await invalidateFileCaches()
           groupedMessageEnd();
 
-          
-//           groupedMessage(2, 4, 'Load foo.js');
-//           const { contextJS } = await System.import(lively4url + "/foo.js");
-          
-          
           groupedMessage(2, 4, 'Wait for Service Worker');
           
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");

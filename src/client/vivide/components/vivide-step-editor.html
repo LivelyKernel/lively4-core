@@ -16,8 +16,21 @@ lively-code-mirror {
   height: auto;
 }
 
+.insert-button {
+  position: absolute;
+  bottom: 0;
+  right: 4px;
+  z-index: 1001;
+}
+  
+.container {
+  position: relative
+}
 </style>
-<lively-code-mirror id="editor"></lively-code-mirror>
+<div class="container">
+  <lively-code-mirror id="editor"></lively-code-mirror>
+  <button id="insertScript" class="insert-button">+ Insert Script</button>
+</div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
