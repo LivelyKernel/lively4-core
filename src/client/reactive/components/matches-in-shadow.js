@@ -1,6 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import select, { View} from 'active-groups';
 
 export default class MatchesInShadow extends Morph {
   async initialize() {
@@ -18,8 +19,17 @@ export default class MatchesInShadow extends Morph {
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt))
   }
+  attachedCallback() {
+    lively.warn('ADDED')
+  }
+  detachedCallback() {
+    lively.warn('REMOVED')
+  }
+  attributeChangedCallback(attrName, oldVal, newVal) {
+    lively.warn('CHANGED ' + attrName, oldVal + ' -> ' + newVal);
+  }
   keyframeHack(event) {
-    lively.notify(event.selector);
+    lively.notify(event.animationName, event.selector);
     if (event.path && event.path[0]) {
       lively.showElement(event.path[0])
     }
@@ -57,7 +67,6 @@ export default class MatchesInShadow extends Morph {
     
   }
   
-  
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
@@ -73,5 +82,7 @@ export default class MatchesInShadow extends Morph {
     this.appendChild(b)
   }
   
-  
+  select() {
+    return new View();
+  }
 }

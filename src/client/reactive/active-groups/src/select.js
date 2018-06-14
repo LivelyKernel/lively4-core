@@ -1,3 +1,4 @@
+export { default as View} from './view.js';
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import { BaseActiveExpression } from "active-expressions";
