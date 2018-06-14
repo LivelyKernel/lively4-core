@@ -5,13 +5,13 @@ import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.j
 
 export default class BlockchainNodeCard extends Morph {
   
-  set nodeName(nodeName) {
-    this._nodeName = nodeName;
+  set blockchainNodeName(blockchainNodeName) {
+    this._blockchainNodeName = blockchainNodeName;
     this.update();
   }
   
-  get nodeName() {
-    return this._nodeName;
+  get blockchainNodeName() {
+    return this._blockchainNodeName;
   }
   
   set node(node) {
@@ -29,11 +29,11 @@ export default class BlockchainNodeCard extends Morph {
   }
   
   async initialize() {
-    this.nodeName = 'Unnamed node'
+    this.blockchainNodeName = 'Unnamed node'
   }
   
   async update() {
-    this.shadowRoot.querySelector('#node-title').innerHTML = this._nodeName;
+    this.shadowRoot.querySelector('#node-title').innerHTML = this.blockchainNodeName;
     if(!this._node) {
       return;
     }

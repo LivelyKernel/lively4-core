@@ -19,7 +19,7 @@ export default class BlockchainUI extends Morph {
     this._nodes.push(node);
     const nodeUI = document.createElement('blockchain-node-card');
     nodeUI.node = node;
-    nodeUI.nodeName = "Node #" + this._nodes.length;
+    nodeUI.blockchainNodeName = "Node #" + this._nodes.length;
     this.shadowRoot.querySelector('#node-list').appendChild(nodeUI);
   }
   
