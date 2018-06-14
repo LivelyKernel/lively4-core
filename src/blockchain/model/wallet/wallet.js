@@ -8,6 +8,14 @@ export default class Wallet {
     this._privateKey = rsaKeyPair.privateKey;
     this.hash = this._hash(); 
   }
+  
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
    
   sign(hash) {
     return this._privateKey.sign(hash);

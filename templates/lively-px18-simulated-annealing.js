@@ -83,7 +83,7 @@ export default class LivelyPx18SimulatedAnnealing extends Morph {
         .links(links)
         .updateFunction(updatePositions)
         .timeout(0)
-        .start(100);
+        .start(1000);
     }
 
     start();

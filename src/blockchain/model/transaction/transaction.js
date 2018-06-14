@@ -11,6 +11,14 @@ export default class Transaction {
     this.signature = this._generateSignature(senderWallet);
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   isSigned() {
     return !!this.signature;
   }

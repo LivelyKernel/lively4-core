@@ -19,6 +19,14 @@ export default class TransactionInputCollection {
     this.hash = null;
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   add(transaction) {
     if (this.isFinalized()) {
       return this;

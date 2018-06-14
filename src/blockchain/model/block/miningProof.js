@@ -12,6 +12,14 @@ export default class MiningProof {
     this.hash = null;
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   async work() {
     this.startTimestamp = Date.now();
     await this._solveCryptoPuzzle();
