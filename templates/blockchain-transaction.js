@@ -26,7 +26,6 @@ export default class BlockchainTransaction extends Morph {
     if(!this._transaction) {
       return
     }
-    console.log(this._transaction.senderPublicKey)
     this.shadowRoot.querySelector('#hash').innerHTML = this._transaction.hash.digest().toHex();
     this.shadowRoot.querySelector('#sender span').innerHTML = this._transaction.senderHash.digest().toHex();
     this.shadowRoot.querySelector('#timestamp span').innerHTML = new Date(this._transaction.timestamp).toISOString();

@@ -134,7 +134,6 @@ presentButton
 
 <script>
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
 (async () => {
   let mpm = await (<lively-mpm></lively-mpm>);

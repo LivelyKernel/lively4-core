@@ -31,11 +31,26 @@ export default class BlockchainNodeView extends Morph {
       .linkDistance(60)
       .start();
     
+    // build the arrow.
+    svg.append("svg:defs").selectAll("marker")
+      .data(["end"])      // Different link/path types can be defined here
+      .enter().append("svg:marker")    // This section adds in the arrows
+      .attr("id", String)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5");
+    
     const link = svg.selectAll(".link")
       .data(this._links)
       .enter()
       .append("line")
-      .attr("class", "link");
+      .attr("class", "link")
+      .attr("marker-end", "url(#end)");
     
     const node = svg.selectAll(".node")
       .data(this._nodes)
@@ -59,7 +74,7 @@ export default class BlockchainNodeView extends Morph {
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
-
+      
       node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
     });
   }
