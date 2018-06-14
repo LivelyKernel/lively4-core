@@ -19,7 +19,6 @@ export async function initialScriptsFromTemplate() {
   
   transform.nextScript = extract;
   extract.nextScript = descent;
-  descent.nextScript = transform;
   descent.lastScript = true;
   
   scripts.push(transform);

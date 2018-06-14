@@ -312,39 +312,38 @@ export default class VivideView extends Morph {
   
   async applyScript(script, data) {
     let module = await this.evalScript(script);
-    
     if (script.type == 'transform') {
       let output = [];
-      
-      if (module.value.constructor.name === 'AsyncFunction') {
-        await module.value(this.modelData["transformedData"], output);
-      } else {
-        module.value(this.modelData["transformedData"], output);
-      }
-      
+      await module.value(this.modelData["transformedData"], output);
       this.modelData["transformedData"] = output;
     } else if (script.type == 'extract') {
-      this.modelData["transformedData"].forEach(data => this.modelData["properties"].push([module.value(data)]));
+      for (let data of this.modelData["transformedData"]) {
+        this.modelData["properties"].push([ await module.value(data)])
+      }
     } else if (script.type == 'descent') {
-      let childTransform = await this.evalScript(script.nextScript);
-      let childExtract = await this.evalScript(script.nextScript.nextScript);
-      this.modelData["transformedData"].forEach(data => {
-        let childrenInput = module.value(data);
-
-        if (childrenInput) {
-          let childrenOutput = [];
-          childTransform.value(childrenInput, childrenOutput);
-          this.modelData["children"].push(childrenOutput.map(child => ({ object: child, properties: [childExtract.value(child)], children: [] })));
-        }
-      });
+      for (let data of this.modelData["transformedData"]) {
+        let children = await module.value(data);
+        
+        if (!children) continue;
+        
+        this.modelData["children"].push(children.map(child => ({ object: child, properties: [], children: [] })));
+      }
       this.modelData["childScript"] = script.nextScript;
     }
 
     this.viewConfig.push(module.value.__vivideStepConfig__);
   }
 
-  findAppropriateWidget(model) {
-    if(model.length > 0) {
+  findAppropriateWidget(model) {    
+    if (this.viewConfig) {
+      for (let config of this.viewConfig) {
+        if (!config.widget) continue;
+        
+        return config.widget;
+      }
+    }
+    
+    if (model.length > 0) {
       let m = model[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')

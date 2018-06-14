@@ -13,6 +13,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
+    // Callback set in the view
+    this.expandChild = null;
   }
   
   dataForDOMNode(treeItem) {
@@ -41,8 +43,12 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     if (sub.innerHTML.length == 0) {
       treeItem.className += " expanded"
       let childScript = this.childScriptByTreeItem.get(treeItem);
-      let childObjects = children.map(c => c.object);
-      children = await this.expandChild(childObjects, childScript);
+      
+      if (childScript) {
+        let test = children.map(c => c.object);
+        children = await this.expandChild(test, childScript);
+      }
+      
       this.childrenByTreeItem.set(treeItem, children);
       
       for (let child of children) {  
@@ -64,8 +70,17 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async processModel(model, parent) {    
     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
+    let tooltip = model.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
-    let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
+    let symbolClasses = "expander fa";
+    // Items with no children have no symbol, because FontAwesome does not supply a good one
+    symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
+    let expander = <span id="expander" class={symbolClasses}></span>;
+    
+    if (tooltip.length > 0) {
+      treeItem.title = tooltip;
+      treeItem.setAttribute('data-tooltip', tooltip);
+    }
     
     treeItem.prepend(expander);
     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
