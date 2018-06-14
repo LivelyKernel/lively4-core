@@ -16,7 +16,7 @@ export default class Blockchain {
       // only accept valid blocks
       return;
     }
-    if(block.previousHash != this.headOfChain.hash) {
+    if(block.previousHash.digest().data != this.headOfChain.hash.digest().data) {
       throw new Error('The block to be added does not reference the previous block correctly!')
     }
     this._blocks.set(block.hash, block);

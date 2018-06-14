@@ -8,29 +8,33 @@
     100% { fill: #2c2c2c; }
   }
   
-    @-webkit-keyframes strokeGray {
+  @-webkit-keyframes strokeGray {
     0% { stroke: #ff2c2c; }
     100% { stroke: #2c2c2c; }
   }
   
-  .link {
-    stroke: #2c2c2c;
+  .animationFill {
+    -webkit-animation-name: fillGray;
+    -webkit-animation-duration: 10s;
+  }
+  
+  .animationStroke {
     -webkit-animation-name: strokeGray;
     -webkit-animation-duration: 10s;
   }
   
+  .link {
+    stroke: #2c2c2c;
+  }
+  
   .linkEnd {
     fill: #2c2c2c;
-    -webkit-animation-name: fillGray;
-    -webkit-animation-duration: 10s;
   }
 
-  .node circle {
+  .bubble {
     r: 5;
     fill: #2c2c2c;
     stroke-width: 2px;
-    -webkit-animation-name: fillGray;
-    -webkit-animation-duration: 10s;
   }
   
   .node text {

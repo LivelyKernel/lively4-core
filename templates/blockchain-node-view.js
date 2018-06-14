@@ -23,11 +23,14 @@ export default class BlockchainNodeView extends Morph {
   }
   
   draw() {
+    const that = this;
+    const allNodes = this._displayedNodes.concat(this._nodes);
+    const allLinks = this._displayedLinks.concat(this._links);
     const svg = d3.select(this._svg);
     const width = svg.attr("width");
     const height = svg.attr("height");
-    const displayedMarker = "displayedEnd";
-    const newMarker = "end";
+    const newMarker = "newEnd";
+    const oldMarker = "oldEnd";
     
     // remove all elements before drawing new ones
     svg.selectAll("*").remove();
@@ -39,63 +42,61 @@ export default class BlockchainNodeView extends Morph {
       .size([width, height]);
     
     force
-      .nodes(this._displayedNodes.concat(this._nodes))
-      .links(this._displayedLinks.concat(this._links))
+      .nodes(allNodes)
+      .links(allLinks)
       .start();
     
-    this._addMarker(svg, displayedMarker, false);
+    this._addMarker(svg, oldMarker, false);
     this._addMarker(svg, newMarker, true);
-    /*
-    // build the arrow.
-    svg.append("svg:defs").selectAll("marker")
-      .data(["end"])      // Different link/path types can be defined here
-      .enter().append("svg:marker")    // This section adds in the arrows
-      .attr("id", String)
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 15)
-      .attr("refY", -1.5)
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("orient", "auto")
-      .append("svg:path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("class", "linkEnd");
-    */
-    
-    let link = d3.merge(
-      this._addLink(svg, this._displayedLinks, displayedMarker, false),
-      this._addLink(svg, this._links, newMarker, true)
-    );
-    
-    /*
+
     const link = svg.selectAll(".link")
-      .data(this._links)
+      .data(allLinks)
       .enter()
       .append("line")
-      .attr("class", "link")
-      .attr("marker-end", "url(#end)");
-    */
-    
-    const node = d3.merge(
-      this._addNode(svg, this._displayedNodes, force, false),
-      this._addNode(svg, this._nodes, force, true)
-    );
-    
-    /*
+      .classed("link", true)
+      .each(function(d, i) {
+        if (i < that._displayedLinks.length) {
+          this.setAttribute("marker-end", "url(#" + oldMarker + ")")
+          return;
+        }
+        
+        // overwrite marker end with new marker
+        this.classList.add("animationStroke");
+        this.setAttribute("marker-end", "url(#" + newMarker + ")")
+      });
+
     const node = svg.selectAll(".node")
-      .data(this._nodes)
+      .data(allNodes)
       .enter()
       .append("g")
-      .attr("class", "node")
-      .call(force.drag);
+      .call(force.drag)
+      .classed("node", true)
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+        
+        this.classList.add("animationFill");
+      });
     
-    const bubble = node.append("circle");
+    node
+      .append("circle")
+      .classed("bubble", true)
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+
+        this.classList.add("animationFill");
+      });
     
     node.append("text")
       .attr("dx", 12)
       .attr("dy", ".35em")
       .text(function(d) { return d.name });
-    */
+    
     
     force.on("tick", function() {
       link.attr("x1", function(d) { return d.source.x; })
@@ -106,8 +107,8 @@ export default class BlockchainNodeView extends Morph {
       node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
     });
     
-    this._displayedNodes = this._displayedNodes.concat(this._nodes);
-    this._displayedLinks = this._displayedLinks.concat(this._links);
+    this._displayedNodes = allNodes;
+    this._displayedLinks = allLinks;
     this._nodes = [];
     this._links = [];
   }
@@ -126,55 +127,13 @@ export default class BlockchainNodeView extends Morph {
       .attr("orient", "auto")
       .append("svg:path")
       .attr("d", "M0,-5L10,0L0,5")
-      .attr("class", "linkEnd");
+      .classed("linkEnd", true);
     
     if (!animation) {
       return marker;
     }
     
-    return this._addAnimation(marker, "fillGray");
-  }
-  
-  _addLink(svg, links, markerName, animation) {
-    const link = svg.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("line")
-      .attr("class", "link")
-      .attr("marker-end", "url(#" + markerName + ")");
-    
-    if (!animation) {
-      return link;
-    }
-    
-    return this._addAnimation(link, "strokeGray");
-  }
-  
-  _addNode(svg, nodes, force, animation) {
-    const node = svg.selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .call(force.drag)
-      .append("circle")
-      .append("text")
-      .attr("dx", 12)
-      .attr("dy", ".35em")
-      .text(function(d) { return d.name });
-    
-    if (!animation) {
-      return node;
-    }
-    
-    return this._addAnimation(node, "fillGray");
-  }
-  
-  _addAnimation(svgElement, animationName) {
-    svgElement.attr("-webkit-animation-name", animationName);
-    svgElement.attr("-webkit-animation-duration", "10s");
-    
-    return svgElement;
+    return marker.classed("animationFill", true);
   }
   
   async livelyExample() {
@@ -192,7 +151,7 @@ export default class BlockchainNodeView extends Morph {
         "group": 1
       },
       {
-        "name": "0123abcdef",
+        "name": "#0123abcdef",
         "group": 1
       }
     ];

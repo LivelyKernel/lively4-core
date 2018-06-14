@@ -32,4 +32,9 @@ export default class Wallet {
       this.publicKey
     );
   }
+  
+  value() {
+    // TODO: Implement function that returns value of all transactions that reference this wallet
+    return 200;
+  }
 }
