@@ -1,9 +1,10 @@
 "enable aexpr";
+import { debounce } from "utils";
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
-import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
+import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
 
 export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   get multiSelectionConfig() {
@@ -19,39 +20,65 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     this.windowTitle = "VivideTreeWidget";
     // Callback set in the view
     this.expandChild = null;
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
   }
-  
+  onExtentChanged(evt) {
+    this.d3treemap && this.d3treemap.updateViz && this.d3treemap.updateViz();
+  }
   dataForDOMNode(treeItem) {
     return this.dataByTreeItem.get(treeItem);
   }
 
+  createTreeNodeForLabel(label) {
+    return ({
+      name: label
+    });
+  }
+  labelForModel(model) {
+    const label = model.properties
+      .map(prop => prop.label)
+      .find(label => label) || textualRepresentation(model.object);
+    return label;
+  }
+  async attachChildren(model, treeNode) {
+    // console.log('attach children', model.object && model.object.name)
+    let children = model.children;
+    if (children && children.length > 0) {
+      if (model.childScript) {
+        let test = children.map(c => c.object);
+        let x = await this.expandChild(test, model.childScript);
+        if (x && x.length > 0) {
+          treeNode.children = [];
+          await Promise.all(x.map(async child => {
+            const label = this.labelForModel(child);
+            const childNode = this.createTreeNodeForLabel(label);
+            treeNode.children.push(childNode);
+            return await this.attachChildren(child, childNode);
+          }));
+          return;
+        }
+      }
+    }
+    treeNode.size = 1;
+  }
   async display(model, config) {
     super.display(model, config);
-
-    lively.success('should DISPLAY2');
     this.innerHTML = '';
+    
+    this.treeData = this.createTreeNodeForLabel('Top Level');
+
+    for(var m of model) {
+      await this.attachChildren(m, this.treeData);
+    }
+    
+    console.warn(this.treeData);
+    const outputWorkspace = document.body.querySelector('#output-dump');
+    if(outputWorkspace) {
+      outputWorkspace.value = JSON.stringify(this.treeData, null, 2)
+    }
 
     let widget = this.d3treemap;
-    this.appendChild(widget);
-    lively.setWidth(widget, 300)
-    lively.setHeight(widget, 300)
-    widget.setTreeData({
-      "name": "Top Level",
-      "children": [
-        { 
-          "name": "Level 2: A",
-          "children": [
-            { "name": "Son of A",
-              size: 50},
-            { 
-              "name": "Daughter of A",
-              size: 30}
-          ]
-        },
-        { "name": "Level 2: B",
-        size: 20}
-      ]
-    });
+    widget.setTreeData(this.treeData);
     
     return;
     
@@ -119,5 +146,11 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view
-  }  
+  }
+  
+  livelyMigrate(other) {
+    lively.warn('MIGRATE')
+    this.expandChild = other.expandChild;
+    super.display(other);
+  }
 }
