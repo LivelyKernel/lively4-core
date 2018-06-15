@@ -7,6 +7,14 @@ export default class TransactionOutput {
     this.hash = this._hash();
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   _hash() {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
