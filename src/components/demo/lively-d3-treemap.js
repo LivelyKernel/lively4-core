@@ -42,7 +42,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   updateViz() {
-    var bounds = this.getBoundingClientRect()
+    var bounds = this.get('svg').getBoundingClientRect()
     this.shadowRoot.querySelector("svg").innerHTML = ""
     
     var treeData = this.getTreeData()
