@@ -23,14 +23,4 @@ export default class Probe extends Annotation {
   empty() {
     this._widget.values = new Map();
   }
-  
-  serializeForWorker() {
-    return {
-      location: this.locationAsKey
-    };
-  }
-  
-  serializeForSave() {
-    return this.serializeForWorker();
-  }
 }

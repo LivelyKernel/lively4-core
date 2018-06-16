@@ -13,11 +13,11 @@ export default class Replacement extends InputAnnotation {
   }
 
   serializeForWorker() {
-    return {
+    return Object.assign(super.serializeForWorker(), {
       id: this.id,
       location: this.locationAsKey,
       value: this._widget.value
-    };
+    });
   }
   
   serializeForSave() {

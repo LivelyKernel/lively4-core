@@ -20,3 +20,19 @@ export const guid = () => {
 export const abstract = () => {
   throw Error("This function is abstract");
 }
+
+export const compareKeyLocations = (a, b) => {
+  return a[0] - b[0] ? a[0] - b[0] :
+         a[1] - b[1] ? a[1] - b[1] :
+         a[2] - b[2] ? a[2] - b[2] :
+         a[3] - b[3] ? a[3] - b[3] :
+         0;
+}
+
+export const stringInsert = (baseString, insertString, index) => {
+  return baseString.slice(0, index) + insertString + baseString.slice(index);
+}
+
+export const stringRemove = (baseString, startIndex, endIndex) => {
+  return baseString.slice(0, startIndex) + baseString.slice(endIndex);
+}

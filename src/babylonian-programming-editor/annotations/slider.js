@@ -19,14 +19,4 @@ export default class Slider extends InputAnnotation {
   fire() {
     this._widget.fire();
   }
-  
-  serializeForWorker() {
-    return {
-      location: this.locationAsKey
-    };
-  }
-  
-  serializeForSave() {
-    return this.serializeForWorker();
-  }
 }

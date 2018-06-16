@@ -59,12 +59,15 @@ export default class Annotation {
     return this.__proto__.constructor.name.toLowerCase();
   }
   
-  serializeForWorker() {
-    throw new Error("Annotation should not be used directly")
+  serializeForSave() {
+    return {
+      kind: this.kind,
+      location: this.locationAsKey
+    };
   }
   
-  serializeForSave() {
-    throw new Error("Annotation should not be used directly")
+  serializeForWorker() {
+    return this.serializeForSave();
   }
   
   load(serialized) {

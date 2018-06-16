@@ -18,7 +18,7 @@ export const defaultBabylonConfig = () => ({
   moduleIds: false,
   sourceMaps: false,
   compact: false,
-  comments: false,
+  comments: true,
   resolveModuleSource: undefined
 });
 

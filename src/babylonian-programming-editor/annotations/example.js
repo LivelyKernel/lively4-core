@@ -36,8 +36,7 @@ export default class Example extends InputAnnotation {
   }
   
   serializeForWorker() {
-    return {
-      location: this.locationAsKey,
+    return Object.assign(super.serializeForWorker(), {
       id: this.id,
       name: this.name,
       color: this._widget.color,
@@ -45,12 +44,11 @@ export default class Example extends InputAnnotation {
       instanceId: this._widget.instanceId,
       prescript: this._widget.prescript,
       postscript: this._widget.postscript,
-    };
+    });
   }
   
   serializeForSave() {
-    return {
-      location: this.locationAsKey,
+    return Object.assign(super.serializeForSave(), {
       id: this.id,
       name: this.name,
       color: this._widget.color,
@@ -58,7 +56,7 @@ export default class Example extends InputAnnotation {
       instanceId: this._widget.instanceId,
       prescript: this._widget.prescript,
       postscript: this._widget.postscript,
-    };
+    });
   }
   
   load(serialized) {

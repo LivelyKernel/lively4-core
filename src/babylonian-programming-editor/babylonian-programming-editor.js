@@ -10,6 +10,7 @@ import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
+  astForCode,
   generateLocationMap,
   canBeProbed,
   canBeExample,
@@ -42,6 +43,11 @@ import {
   InstanceButton,
 } from "./ui/buttons.js";
 import CustomInstance from "./utils/custom-instance.js";
+import { 
+  compareKeyLocations,
+  stringInsert,
+  stringRemove
+} from "./utils/utils.js";
 
 
 // Constants
@@ -127,90 +133,187 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editorComp().shadowRoot.appendChild(codeMirrorStyle);
     });
   }
-
+  
   async load() {
-    // Unlock evaluation after two seconds
-    this._evaluationLocked = true;
-    setTimeout(() => {
-      this._evaluationLocked = false;
-    }, 2000);
-
     // Remove all existing annotations
     this.removeAnnotations();
     this._annotations = defaultAnnotations();
     this._activeExamples = [];
+    this._context = defaultContext();
+    this._customInstances.length = 0;
 
     // Load file from network
     let text = await loadFile(this.livelyEditor());
-    await this.parse();
-
+    let comments = [];
+    try {
+      comments = astForCode(text).comments;
+    } catch(e) {
+      this.status("error", "Syntax error. Fix syntax and reload file.");
+      this.livelyEditor().setText(text);
+      return;
+    }
+    
     // Find annotations
-    let annotations, context, customInstances = null;
-    const matches = text.match(/\/\* Examples: (.*) \*\//);
+    const getAnnotationKind = (string) => {
+      for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
+        if(string == `${key}:`) {
+          return key;
+        }
+      }
+      return false;
+    }
+    const getAnnotationValue = (string) => {
+      try {
+        const value = JSON.parse(string);
+        if(typeof(value) === "object") {
+          return value;
+        }
+      } catch(e) {
+        return false;
+      }
+      return false
+    }
+    
+    // Collect annotations and remove comments
+    const lines = text.split("\n");
+    const annotationsStack = [];
+    const annotations = [];
+
+    let removedChars = 0;
+
+    let lineIndex = 0;
+    for(let comment of comments) {        
+      const loc = LocationConverter.astToKey(comment.loc);
+      if(loc[0] - 1 !== lineIndex) {
+        lineIndex = loc[0] - 1;
+        removedChars = 0;
+      }
+
+      const removeComment = () => {
+        const pos = loc[1] - removedChars;
+        lines[lineIndex] = stringRemove(lines[lineIndex], pos, loc[3] - removedChars);
+        removedChars += loc[3] - loc[1];
+        return pos;
+      };
+      
+      let kind = getAnnotationKind(comment.value);
+      let value = getAnnotationValue(comment.value);
+      if(kind) {
+        annotationsStack.push([kind, removeComment()]);
+      } else if(value) {
+        let annotationMeta = annotationsStack.pop();
+        if(annotationMeta) {
+          value.kind = annotationMeta[0];
+          value.location = [lineIndex+1, annotationMeta[1], lineIndex+1, removeComment()];
+          annotations.push(value);
+        }
+      }
+    }
+    text = lines.join("\n");
+    
+    // Add context
+    const matches = text.match(/\/\* Context: (.*) \*\//);
     if(matches) {
       text = text.replace(matches[matches.length-2], "");
       const data = JSON.parse(matches[matches.length-1]);
-      annotations = data.annotations;
-      context = data.context;
-      customInstances = data.customInstances;
-    }
-
-    // Set text
-    this.livelyEditor().setText(text);
-    await this.parse();
-
-    // Add context
-    this._context = context ? context : defaultContext();
-    this._customInstances.length = 0;
-    if(customInstances) {
-      customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
+      this._context = data.context ? data.context : defaultContext();
+      if(data.customInstances) {
+        data.customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
+      }
     }
     
     // Add annotations
-    if(annotations) {
-      for(let probe of annotations.probes) {
-        this.addProbeAtPath(this.pathForKey(probe.location));
-      }
-      for(let slider of annotations.sliders) {
-        this.addSliderAtPath(this.pathForKey(slider.location));
-      }
-      for(let instance of annotations.instances) {
-        const obj = this.addInstanceAtPath(this.pathForKey(instance.location));
-        obj.load(instance);
-      }
-      for(let example of annotations.examples) {
-        const obj = this.addExampleAtPath(this.pathForKey(example.location), false);
-        obj.load(example);
-      }
-      for(let replacement of annotations.replacements) {
-        const obj = this.addReplacementAtPath(this.pathForKey(replacement.location));
-        obj.load(replacement);
-      }
-    }
-
-    this.evaluate(true);
-  }
-
-  async save() {
-    let serializedAnnotations = {};
-
-    // Serialize annotations
-    for(let key in this._annotations) {
-      serializedAnnotations[key] = [];
-      for(let annotation of this._annotations[key]) {
-        serializedAnnotations[key].push(annotation.serializeForSave());
+    this.livelyEditor().setText(text);
+    await this.parse();
+    
+    for(let annotation of annotations) {
+      let obj;
+      switch(annotation.kind) {
+        case "probe":
+          this.addProbeAtPath(this.pathForKey(annotation.location));
+          break;
+        case "slider":
+          this.addSliderAtPath(this.pathForKey(annotation.location));
+          break;
+        case "instance":
+          obj = this.addInstanceAtPath(this.pathForKey(annotation.location));
+          obj.load(annotation);
+          break;
+        case "example":
+          obj = this.addExampleAtPath(this.pathForKey(annotation.location), false);
+          obj.load(annotation);
+          break;
+        case "replacement":
+          obj = this.addReplacementAtPath(this.pathForKey(annotation.location));
+          obj.load(annotation);
       }
     }
     
-    // Save file
-    const saveString = JSON.stringify({
-      annotations: serializedAnnotations,
+    // Evaluate
+    this.evaluate(true);
+    setTimeout(() => {
+      this._evaluationLocked = false;
+    }, 2000);
+  }
+  
+  async save() {
+    // Serialize annotations
+    const serializedAnnotations = [];
+    for(let key in this._annotations) {
+      for(let annotation of this._annotations[key]) {
+        serializedAnnotations.push(annotation.serializeForSave());
+      }
+    }
+    serializedAnnotations.sort((a,b) => compareKeyLocations(a.location, b.location));
+    const makeTags = (annotation) => {
+      const beginTag = `/*${annotation.kind}:*/`;
+      const endObj = Object.assign({}, annotation);
+      delete endObj.kind;
+      delete endObj.location;
+      const endTag = `/*${JSON.stringify(endObj)}*/`;
+      return [beginTag, endTag];
+    };
+    
+    // Write annotations
+    let currentAnnotation = serializedAnnotations.shift();
+    const lines = this.livelyEditor().currentEditor().getValue().split("\n").map((line, i) => {
+      let insertedRanges = [];
+      const insert = (string, index) => {
+        const originalIndex = index;
+        const originalRange = [originalIndex, string.length];
+        // Apply existing ranges
+        for(let range of insertedRanges) {
+          if(range[0] <= originalIndex) {
+            index += range[1];
+          }
+        }
+        // Insert
+        line = stringInsert(line, string, index);
+        // Store range
+        insertedRanges.push(originalRange);
+      };
+      
+      while(currentAnnotation && currentAnnotation.location[0]-1 === i) {
+        const tags = makeTags(currentAnnotation);
+        insert(tags[0], currentAnnotation.location[1]);
+        insert(tags[1], currentAnnotation.location[3]);
+        currentAnnotation = serializedAnnotations.shift();
+      }
+      return line;
+    });
+    
+    for(let lineIndex in lines) {
+      let charsAddedOnLine = 0;
+    }
+    
+    // Write file
+    let text = lines.join("\n");
+    const appendString = JSON.stringify({
       context: this._context,
       customInstances: this._customInstances.map(i => i.serializeForSave())
     });
-    let data = this.livelyEditor().currentEditor().getValue();
-    data = `${data}/* Examples: ${saveString} */`;
-    saveFile(this.livelyEditor(), data);
+    text = `${text}/* Context: ${appendString} */`;
+    saveFile(this.livelyEditor(), text);
   }
 
 
@@ -364,6 +467,10 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
 
   syncIndentations() {
+    if(!this.hasWorkingAst()) {
+      return;
+    }
+    
     for(let key in this._annotations) {
       for(let annotation of this._annotations[key]) {
         annotation.syncIndentation();

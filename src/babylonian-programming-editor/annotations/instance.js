@@ -21,21 +21,19 @@ export default class Instance extends InputAnnotation {
   }
   
   serializeForWorker() {
-    return {
-      location: this.locationAsKey,
+    return Object.assign(super.serializeForWorker(), {
       id: this.id,
       name: this.name,
       values: this._widget.valuesArray
-    };
+    });
   }
   
   serializeForSave() {
-    return {
-      location: this.locationAsKey,
+    return Object.assign(super.serializeForSave(), {
       id: this.id,
       name: this.name,
       values: this._widget.values
-    };
+    });
   }
   
   load(serialized) {
