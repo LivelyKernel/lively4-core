@@ -42,7 +42,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   updateViz() {
-    var bounds = this.getBoundingClientRect()
+    var bounds = this.get('svg').getBoundingClientRect()
     this.shadowRoot.querySelector("svg").innerHTML = ""
     
     var treeData = this.getTreeData()
@@ -67,7 +67,8 @@ export default class LivelyD3Treemap extends Morph {
       .tile(d3.treemapResquarify)
       .size([width, height])
       .round(true)
-      .paddingInner(1);
+      .paddingInner(2)
+      .paddingTop(20)
     
     this.root = d3.hierarchy(treeData)
       .eachBefore(function(d) { d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name; })
@@ -77,7 +78,7 @@ export default class LivelyD3Treemap extends Morph {
     treemap(this.root);
     
     var cell = svg.selectAll("g")
-      .data(this.root.leaves())
+      .data(this.root.descendants())
       .enter().append("g")
         .attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; });
 
@@ -85,7 +86,14 @@ export default class LivelyD3Treemap extends Morph {
         .attr("id", d => d.data.id)
         .attr("width", d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
-        .attr("fill", d => this.dataColor ? this.dataColor(d.data) : color(d.parent.data.id));
+        .attr("fill", d => {
+          if(this.dataColor) return this.dataColor(d.data);
+          if(d.parent) return color(d.parent.data.id)
+          return 'lightgrey';
+          // fill: cadetblue;
+          // opacity: 0.3;
+          // stroke: white;
+        });
 
     cell.append("clipPath")
         .attr("id", function(d) { return "clip-" + d.data.id; })
@@ -110,7 +118,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    // this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
  
   livelyMigrate(other) {

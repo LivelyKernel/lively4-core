@@ -209,7 +209,7 @@ export default function() {
       currT = cooling_schedule(currT, initialT, nsweeps);
       updateFunction();
       if (sweepsDone > 0) {
-        setTimeout(() => anneal(sweepsDone - 1), timeout)
+        setTimeout(() => anneal(sweepsDone - 1), 0);
       }
     }
     anneal(nsweeps);

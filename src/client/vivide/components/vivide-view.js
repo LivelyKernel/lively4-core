@@ -141,6 +141,7 @@ export default class VivideView extends Morph {
 
   async initialize() {
     this.windowTitle = "VivideView";
+    this.addEventListener('extent-changed', evt => this.onExtentChanged(evt));
     
     this.addEventListener('dragenter', evt => this.dragenter(evt), false);
     this.addEventListener('dragover', evt => this.dragover(evt), false);
@@ -148,6 +149,13 @@ export default class VivideView extends Morph {
     this.addEventListener('drop', evt => this.drop(evt), false);
 
     this.input = this.input || [];
+  }
+  onExtentChanged() {
+    this.childNodes.forEach(childNode => {
+      if(childNode.dispatchEvent) {
+        childNode.dispatchEvent(new CustomEvent("extent-changed"));
+      }
+    })
   }
   
   dragenter(evt) {}
@@ -282,16 +290,16 @@ export default class VivideView extends Morph {
   }
   
   async computeModel(data, script) {
-    this.modelData = {};
-    this.modelData["transformedData"] = data;
-    this.modelData["properties"] = [];
-    this.modelData["children"] = [];
-    this.modelData["childScript"] = null;
+    const modelData = {};
+    modelData["transformedData"] = data;
+    modelData["properties"] = [];
+    modelData["children"] = [];
+    modelData["childScript"] = null;
     
-    await this.applyScript(script, data);
+    await this.applyScript(script, data, modelData);
     while (script.nextScript) {
       script = script.nextScript;
-      await this.applyScript(script, data);
+      await this.applyScript(script, data, modelData);
       
       if (script.lastScript) break;
     }
@@ -300,51 +308,50 @@ export default class VivideView extends Morph {
     
     for (let i = 0; i < data.length; ++i) {
       model.push({
-        object: this.modelData["transformedData"][i],
-        properties: this.modelData["properties"][i],
-        children: this.modelData["children"][i],
-        childScript: this.modelData["childScript"]
+        object: modelData["transformedData"][i],
+        properties: modelData["properties"][i],
+        children: modelData["children"][i],
+        childScript: modelData["childScript"]
       })
     }
     
     return model;
   }
   
-  async applyScript(script, data) {
+  async applyScript(script, data, modelData) {
     let module = await this.evalScript(script);
-    
     if (script.type == 'transform') {
       let output = [];
-      
-      if (module.value.constructor.name === 'AsyncFunction') {
-        await module.value(this.modelData["transformedData"], output);
-      } else {
-        module.value(this.modelData["transformedData"], output);
-      }
-      
-      this.modelData["transformedData"] = output;
+      await module.value(modelData["transformedData"], output);
+      modelData["transformedData"] = output;
     } else if (script.type == 'extract') {
-      this.modelData["transformedData"].forEach(data => this.modelData["properties"].push([module.value(data)]));
+      for (let data of modelData["transformedData"]) {
+        modelData["properties"].push([ await module.value(data)])
+      }
     } else if (script.type == 'descent') {
-      let childTransform = await this.evalScript(script.nextScript);
-      let childExtract = await this.evalScript(script.nextScript.nextScript);
-      this.modelData["transformedData"].forEach(data => {
-        let childrenInput = module.value(data);
-
-        if (childrenInput) {
-          let childrenOutput = [];
-          childTransform.value(childrenInput, childrenOutput);
-          this.modelData["children"].push(childrenOutput.map(child => ({ object: child, properties: [childExtract.value(child)], children: [] })));
-        }
-      });
-      this.modelData["childScript"] = script.nextScript;
+      for (let data of modelData["transformedData"]) {
+        let children = await module.value(data);
+        
+        if (!children) continue;
+        
+        modelData["children"].push(children.map(child => ({ object: child, properties: [], children: [] })));
+      }
+      modelData["childScript"] = script.nextScript;
     }
 
     this.viewConfig.push(module.value.__vivideStepConfig__);
   }
 
-  findAppropriateWidget(model) {
-    if(model.length > 0) {
+  findAppropriateWidget(model) {    
+    if (this.viewConfig) {
+      for (let config of this.viewConfig) {
+        if (!config.widget) continue;
+        
+        return config.widget;
+      }
+    }
+    
+    if (model.length > 0) {
       let m = model[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')

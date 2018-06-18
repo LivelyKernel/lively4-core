@@ -17,6 +17,14 @@ export default class TransactionOutputCollection {
     this.hash = null;
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   add(receiverWallet, amount) {
     if (this.isFinalized()) {
       return this;

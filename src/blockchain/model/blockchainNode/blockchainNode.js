@@ -5,15 +5,13 @@ import Miner from "./miner.js";
 
 export default class BlockchainNode {
   
-  constructor(firstNode = false) {
+  constructor() {
     this._hasExited = false;
     this._wallet = new Wallet();
-    this._blockchain = null;
-    if(firstNode) {
-      this._blockchain = new Blockchain(this._wallet);
-    }
+    this._blockchain = new Blockchain(this._wallet);
     this._networkComponent = new NetworkComponent(this);
     this._miner = new Miner(this);
+    this._networkComponent.requestBlockchain();
   }
   
   get blockchain() {
@@ -30,6 +28,10 @@ export default class BlockchainNode {
   
   exit() {
     this._hasExited = true;
+  }
+  
+  mine() {
+    this._miner.mine();
   }
   
   blockchainIsValid(blockchain) {
@@ -62,10 +64,11 @@ export default class BlockchainNode {
   }
   
   handleBlockchain(blockchain) {
-    if(blockchain) {
+    if(!blockchain) {
       return;
     }
     //TODO: Validate blockchain before saving
+    this._blockchain = blockchain;
   }
   
   // Sending to other nodes (via network component)

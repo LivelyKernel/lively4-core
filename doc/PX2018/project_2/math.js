@@ -1,4 +1,4 @@
-import ExtMath from 'https://raw.githubusercontent.com/josdejong/mathjs/master/dist/math.js'
+import ExtMath from 'src/external/math.js'
 
 /**
  * Wrapper class that encapsulates an external math library
