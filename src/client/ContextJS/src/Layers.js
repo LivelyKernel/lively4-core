@@ -220,7 +220,7 @@ export function layerPropertyWithShadow(layer, object, property) {
 
 export function computeLayersFor(obj) {
   return obj && obj.activeLayers ?
-      obj.activeLayers(currentLayers) : currentLayers();
+      obj.activeLayers(activeLayers) : activeLayers();
 }
 
 export function composeLayers(stack) {
@@ -250,16 +250,17 @@ export function resetLayerStack() {
 
 
 export function currentLayers() {
-  if (LayerStack.length == 0) {
-    throw new Error("The default layer is missing");
-  }
-  // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION 
-  // #TODO check if this still hold for #async
-  var current = LayerStack[LayerStack.length - 1];
-  if (!current.composition) {
-    current.composition = composeLayers(LayerStack) ;
-  }
-  return current.composition.concat(getActiveImplicitLayers());
+  return activeLayers()
+  // if (LayerStack.length == 0) {
+  //   throw new Error("The default layer is missing");
+  // }
+  // // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION 
+  // // #TODO check if this still hold for #async
+  // var current = LayerStack[LayerStack.length - 1];
+  // if (!current.composition) {
+  //   current.composition = composeLayers(LayerStack) ;
+  // }
+  // return current.composition.concat(getActiveImplicitLayers());
 }
 
 // clear cached layer compositions
@@ -714,86 +715,122 @@ function getActiveImplicitLayers ( ) {
   return [...implicitLayers]
     .filter(layer => layer.implicitlyActivated());
 }
+
+export function collectWithLayersIn (layers, result) {
+  for (var i = layers.length - 1; i >= 0 ; i--) {
+    var ea = layers[i]
+    if ((result.withLayers.indexOf(ea) === -1)
+        && (result.withoutLayers.indexOf(ea) === -1)) {
+      result.withLayers.unshift(ea)
+    }
+  }
+}
+
+export function collectWithoutLayersIn (layers, result) {
+  for (var i = 0; i < layers.length; i++) {
+    var ea = layers[i]
+    if (result.withoutLayers.indexOf(ea) === -1) {
+      result.withoutLayers.push(ea)
+    }
+  }
+}
+
+export function structuralLayers (result, obj) {
+  // var allLayers = result.withLayers;
+  // var allWithoutLayers = result.withoutLayers;
+  // go ownerchain backward and gather all layer activations and deactivations
+  while (obj) {
+    // don't use accessor methods because of speed... (not measured yet)
+    if (obj.withLayers) {
+        collectWithLayersIn(obj.withLayers, result);
+    }
+    if (obj.withoutLayers) {
+        collectWithoutLayersIn(obj.withoutLayers, result);
+    }      
+    // recurse, stop if owner is undefined
+    obj = obj.owner; // || obj.parentElement || obj.parentNode
+  }
+  return result;
+}
+
+export function aysncLayers (result) {
+  // optimized version, that does not use closures and recursion
+  var stack = self.AsyncLayerStack;
+  // top down, ignore bottom element
+  for (var j = stack.length - 1; j > 0; j--) {
+    var current = stack[j];
+    if (current.withLayers) {
+      collectWithLayersIn(current.withLayers, result);
+    }
+    if (current.withoutLayers) {
+      collectWithoutLayersIn(current.withoutLayers, result);
+    }
+  }
+  return result;
+}
+
+export function globalLayers (result) {
+  collectWithLayersIn(self.GlobalLayers, result);
+  return result;
+}
+
+export function dynamicLayers (result) {
+  // optimized version, that does not use closures and recursion
+  var stack = LayerStack;
+  // top down, ignore bottom element
+  for (var j = stack.length - 1; j > 0; j--) {
+    var current = stack[j];
+    if (current.withLayers) {
+      collectWithLayersIn(current.withLayers, result);
+    }
+    if (current.withoutLayers) {
+      collectWithoutLayersIn(current.withoutLayers, result);
+    }
+  }
+  return result;
+}
+
+
+// #TODO #STEFAN rename -> implicitLayers
+export function activeImplicitLayers(result) {
+  collectWithLayersIn(getActiveImplicitLayers(), result);
+  return result
+}
+
+export function activeLayers () {
+  var result = {withLayers: [], withoutLayers: []};
+  // go top to bottom in stack... 
+  // so the last (dynamically) (de-)activated layers are first...
+  // remember withLayers and withoutLayers in result
+  // this is a bit to "clever" to iterate only once...
+  dynamicLayers(result); 
+  
+  // #Idea we can implement structural layer for HTMLElements without having to modify prototype...
+  // structuralLayers(result, obj);
+  activeImplicitLayers(result); 
+   
+  globalLayers(result);
+  // and the global layers are last
+  return result.withLayers;
+}
+
 /*
  * Example implementation of a layerable object
  */
 export class LayerableObjectTrait {
-  activeLayers () {
+  activeLayers (defaultActiveLayersFunc) {
     var result = {withLayers: [], withoutLayers: []};
-    this.dynamicLayers(result);
-    this.structuralLayers(result);
-    this.globalLayers(result);
+    // go top to bottom in stack... 
+    // so the last (dynamically) (de-)activated layers are first...
+    // remember withLayers and withoutLayers in result
+    // this is a bit to "clever" to iterate only once...
+    dynamicLayers(result); 
+    structuralLayers(result, this);
+    globalLayers(result);
+    // and the global layers are last
     return result.withLayers;
   }
-  collectWithLayersIn (layers, result) {
-    for (var i = 0; i < layers.length; i++) {
-      var ea = layers[i]
-      if ((result.withLayers.indexOf(ea) === -1)
-          && (result.withoutLayers.indexOf(ea) === -1)) {
-        result.withLayers.unshift(ea)
-      }
-    }
-  }
-  collectWithoutLayersIn (layers, result) {
-    for (var i = 0; i < layers.length; i++) {
-      var ea = layers[i]
-      if (result.withoutLayers.indexOf(ea) === -1) {
-        result.withoutLayers.push(ea)
-      }
-    }
-  }
-  dynamicLayers (result) {
-    // optimized version, that does not use closures and recursion
-    var stack = LayerStack;
-    // top down, ignore bottom element
-    for (var j = stack.length - 1; j > 0; j--) {
-      var current = stack[j];
-      if (current.withLayers) {
-        this.collectWithLayersIn(current.withLayers, result);
-      }
-      if (current.withoutLayers) {
-        this.collectWithoutLayersIn(current.withoutLayers, result);
-      }
-    }
-    return result;
-  }
-  structuralLayers (result) {
-    // var allLayers = result.withLayers;
-    // var allWithoutLayers = result.withoutLayers;
-    var obj = this;
-    // go ownerchain backward and gather all layer activations and deactivations
-    while (obj) {
-      // don't use accessor methods because of speed... (not measured yet)
-      if (obj.withLayers) {
-          this.collectWithLayersIn(obj.withLayers, result);
-      }
-      if (obj.withoutLayers) {
-          this.collectWithoutLayersIn(obj.withoutLayers, result);
-      }      
-      // recurse, stop if owner is undefined
-      obj = obj.owner;
-    }
-    return result;
-  }
-  aysncLayers (result) {
-    // optimized version, that does not use closures and recursion
-    var stack = AsyncLayerStack;
-    // top down, ignore bottom element
-    for (var j = stack.length - 1; j > 0; j--) {
-      var current = stack[j];
-      if (current.withLayers) {
-        this.collectWithLayersIn(current.withLayers, result);
-      }
-      if (current.withoutLayers) {
-        this.collectWithoutLayersIn(current.withoutLayers, result);
-      }
-    }
-    return result;
-  }
-  globalLayers (result) {
-    this.collectWithLayersIn(self.GlobalLayers, result);
-    return result;
-  }
+
   setWithLayers (layers) {
     this.withLayers = layers;
   }
