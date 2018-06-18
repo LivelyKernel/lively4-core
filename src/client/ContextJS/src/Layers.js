@@ -224,7 +224,8 @@ export function computeLayersFor(obj) {
 }
 
 export function composeLayers(stack) {
-  var result = self.GlobalLayers.slice(0);
+  var result = self.GlobalLayers.slice(0); // copy the array, #TODO: use `Array.from`
+  // duplicate of dynamicLayers, #TODO: use LayerableObjectTrait.dynamicLayers
   for (var i = 0; i < stack.length; i++) {
     var current = stack[i];
     if (current.withLayers) {
