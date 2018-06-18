@@ -38,10 +38,10 @@ export function log(string) {
  * Private State
  */
 
-
 // #HACK #TODO
 window.proceedStack = []
 window.GlobalLayers = []
+window.AsyncLayerStack = []
 
 // export const proceedStack = [];
 // export const GlobalLayers = [];
@@ -252,7 +252,8 @@ export function currentLayers() {
   if (LayerStack.length == 0) {
     throw new Error("The default layer is missing");
   }
-  // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION
+  // NON OPTIMIZED VERSION FOR STATE BASED LAYER ACTIVATION 
+  // #TODO check if this still hold for #async
   var current = LayerStack[LayerStack.length - 1];
   if (!current.composition) {
     current.composition = composeLayers(LayerStack) ;
@@ -770,6 +771,21 @@ export class LayerableObjectTrait {
       }      
       // recurse, stop if owner is undefined
       obj = obj.owner;
+    }
+    return result;
+  }
+  aysncLayers (result) {
+    // optimized version, that does not use closures and recursion
+    var stack = AsyncLayerStack;
+    // top down, ignore bottom element
+    for (var j = stack.length - 1; j > 0; j--) {
+      var current = stack[j];
+      if (current.withLayers) {
+        this.collectWithLayersIn(current.withLayers, result);
+      }
+      if (current.withoutLayers) {
+        this.collectWithoutLayersIn(current.withoutLayers, result);
+      }
     }
     return result;
   }
