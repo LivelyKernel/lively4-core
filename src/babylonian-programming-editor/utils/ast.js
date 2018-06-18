@@ -65,7 +65,7 @@ export function /*example:*//*example:*/generateLocationMap/*{"id":"4ebc_b290_28
 /**
  * Checks whether a path can be probed
  */
-export function /*example:*//*example:*/canBeProbed/*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+export function /*example:*//*example:*/canBeProbe/*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
   const /*probe:*/isTrackableIdentifier/*{}*/ = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
@@ -111,7 +111,7 @@ export const canBeInstance  = (path) => {
 /**
  * Checks whether a path can be replaced
  */
-export const canBeReplaced = (path) => {
+export const canBeReplacement = (path) => {
   // We have to be the righthand side of an assignment
   return ((path.parentPath.isVariableDeclarator() && path.parentKey === "init")
           || (path.parentPath.isAssignmentExpression() && path.parentKey === "right"));

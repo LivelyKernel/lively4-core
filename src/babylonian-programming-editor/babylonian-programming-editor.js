@@ -12,9 +12,9 @@ import LocationConverter from "./utils/location-converter.js";
 import {
   astForCode,
   generateLocationMap,
-  canBeProbed,
+  canBeProbe,
   canBeExample,
-  canBeReplaced,
+  canBeReplacement,
   canBeInstance,
   canBeSlider,
   parameterNamesForFunctionIdentifier,
@@ -38,12 +38,12 @@ import Replacement from "./annotations/replacement.js";
 import Instance from "./annotations/instance.js";
 import InstanceWidget from "./ui/instance-widget.js";
 import StatusBar from "./ui/status-bar.js";
-import { 
+import {
   PrePostscriptButton,
   InstanceButton,
 } from "./ui/buttons.js";
 import CustomInstance from "./utils/custom-instance.js";
-import { 
+import {
   compareKeyLocations,
   stringInsert,
   stringRemove
@@ -81,7 +81,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // All Annotations
     this._annotations = defaultAnnotations;
     this._customInstances = [];
-    
+
     // Module context
     this._context = defaultContext();
 
@@ -96,10 +96,10 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._buttons = this.get("#buttons");
     this._buttons.appendChild(PrePostscriptButton(this.onEditPrePostScript.bind(this)));
     this._buttons.appendChild(InstanceButton(this.onEditInstances.bind(this)));
-    
+
     // Right click listener
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
-    
+
     // Tracker
     this._tracker = new Tracker();
 
@@ -135,11 +135,11 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editorComp().shadowRoot.appendChild(codeMirrorStyle);
     });
   }
-  
+
   async load() {
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
-    
+
     // Remove all existing annotations
     this.removeAnnotations();
     this._annotations = defaultAnnotations();
@@ -157,7 +157,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().setText(text);
       return;
     }
-    
+
     // Find annotations
     const getAnnotationKind = (string) => {
       for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
@@ -178,7 +178,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
       return false
     }
-    
+
     // Collect annotations and remove comments
     const lines = text.split("\n");
     const annotationsStack = [];
@@ -187,7 +187,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     let removedChars = 0;
 
     let lineIndex = 0;
-    for(let comment of comments) {        
+    for(let comment of comments) {
       const loc = LocationConverter.astToKey(comment.loc);
       if(loc[0] - 1 !== lineIndex) {
         lineIndex = loc[0] - 1;
@@ -200,7 +200,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         removedChars += loc[3] - loc[1];
         return pos;
       };
-      
+
       let kind = getAnnotationKind(comment.value);
       let value = getAnnotationValue(comment.value);
       if(kind) {
@@ -215,7 +215,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
     }
     text = lines.join("\n");
-    
+
     // Add context
     const matches = text.match(/\/\* Context: (.*) \*\//);
     if(matches) {
@@ -226,11 +226,11 @@ export default class BabylonianProgrammingEditor extends Morph {
         data.customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
       }
     }
-    
+
     // Add annotations
     this.livelyEditor().setText(text);
     await this.parse();
-    
+
     for(let annotation of annotations) {
       let obj;
       switch(annotation.kind) {
@@ -253,14 +253,14 @@ export default class BabylonianProgrammingEditor extends Morph {
           obj.load(annotation);
       }
     }
-    
+
     // Evaluate
     this.evaluate(true);
     setTimeout(() => {
       this._evaluationLocked = false;
     }, 2000);
   }
-  
+
   async save() {
     // Serialize annotations
     const serializedAnnotations = [];
@@ -278,7 +278,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       const endTag = `/*${JSON.stringify(endObj)}*/`;
       return [beginTag, endTag];
     };
-    
+
     // Write annotations
     let currentAnnotation = serializedAnnotations.shift();
     const lines = this.livelyEditor().currentEditor().getValue().split("\n").map((line, i) => {
@@ -297,7 +297,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         // Store range
         insertedRanges.push(originalRange);
       };
-      
+
       while(currentAnnotation && currentAnnotation.location[0]-1 === i) {
         const tags = makeTags(currentAnnotation);
         insert(tags[0], currentAnnotation.location[1]);
@@ -306,11 +306,11 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
       return line;
     });
-    
+
     for(let lineIndex in lines) {
       let charsAddedOnLine = 0;
     }
-    
+
     // Write file
     let text = lines.join("\n");
     const appendString = JSON.stringify({
@@ -357,7 +357,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   addProbeAtPath(path) {
     // Make sure we can probe this path
-    if(!canBeProbed(path)) {
+    if(!canBeProbe(path)) {
       return;
     }
 
@@ -424,7 +424,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   addReplacementAtPath(path) {
     // Make sure we can replace this path
-    if(!canBeReplaced(path)) {
+    if(!canBeReplacement(path)) {
       return;
     }
 
@@ -471,7 +471,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(!this.hasWorkingAst()) {
       return;
     }
-    
+
     for(let key in this._annotations) {
       for(let annotation of this._annotations[key]) {
         annotation.syncIndentation();
@@ -625,7 +625,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Serialize context
     serializedAnnotations.context = this._context;
-    
+
     // Call the worker
     const { ast, code } = await this.worker.process(
       this.editor().getValue(),
@@ -713,12 +713,12 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._selectedPath = null;
     }
   }
-  
+
   onContextMenu(evt) {
-    if (evt.shiftKey) { 
+    if (evt.shiftKey) {
       return true;
     }
-    
+
     evt.preventDefault();
     evt.stopPropagation();
     var menu = new ContextMenu(this, [
@@ -730,9 +730,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       ["Edit module pre/postscript", () => this.onEditPrePostScript()],
     ]);
     menu.openIn(document.body, evt, this);
-    return false; 
+    return false;
   }
-  
+
   async onEditPrePostScript() {
     let comp = await lively.openComponentInWindow("pre-post-script-editor");
     comp.setup("Module", [], this._context.prescript, this._context.postscript, (value) => {
@@ -741,7 +741,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.onEvaluationNeeded();
     }, "Module");
   }
-  
+
   async onEditInstances() {
     let comp = await lively.openComponentInWindow("custom-instance-editor");
     comp.setup(this._customInstances, this.onEvaluationNeeded.bind(this));
