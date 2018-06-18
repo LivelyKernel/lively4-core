@@ -1,7 +1,6 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
 import boundEval from 'src/client/bound-eval.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import { babel } from 'systemjs-babel-build';
 const { traverse } = babel;
 
@@ -94,9 +93,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
     this.updateButtons();
-
-    // Right click listener
-    this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
 
     // Tracker
     this._tracker = new Tracker();
@@ -712,27 +708,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     this.updateSelectedPathActions();
-    this.updateContextMenu();
-    this.updateButtons();
-  }
-
-  onContextMenu(evt) {
-    if (evt.shiftKey) {
-      return true;
-    }
-
-    evt.preventDefault();
-    evt.stopPropagation();
-    var menu = new ContextMenu(this, [
-      ["Add probe", () => this.addAnnotationAtSelection("probe")],
-      ["Add slider", () => this.addAnnotationAtSelection("slider")],
-      ["Add example", () => this.addAnnotationAtSelection("example")],
-      ["Add instance", () => this.addAnnotationAtSelection("instance")],
-      ["Add replacement", () => this.addAnnotationAtSelection("replacement")],
-      ["Edit module pre/postscript", () => this.onEditPrePostScript()],
-    ]);
-    menu.openIn(document.body, evt, this);
-    return false;
   }
 
   async onEditPrePostScript() {
@@ -814,10 +789,8 @@ export default class BabylonianProgrammingEditor extends Morph {
         this._selectedPathActions.push(key);
       }
     });
-  }
-  
-  updateContextMenu() {
     
+    this.updateButtons();
   }
   
   updateButtons() {
