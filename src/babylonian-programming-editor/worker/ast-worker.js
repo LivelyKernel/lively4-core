@@ -19,11 +19,12 @@ import {
  * Receive message from the main thread
  */
 export default onmessage = function(msg) {
-  const { code, annotations, customInstances } = JSON.parse(msg.data.payload);
+  const { code, annotations, customInstances, sourceUrl } = JSON.parse(msg.data.payload);
 
   // Process the code
   try {
     const ast = parse(code);
+    ast._sourceUrl = sourceUrl;
     applyBasicModifications(ast);
     const originalAst = deepCopy(ast);
 

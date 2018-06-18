@@ -31,7 +31,7 @@ export default class CustomInstanceEditor extends Morph {
         if(this._callback) {
           this._callback();
         }
-      })::debounce(500));
+      })::debounce(1000));
     });
     
     this._nameInput = this.get("#name-input");

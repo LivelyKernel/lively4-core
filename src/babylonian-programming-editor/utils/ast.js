@@ -6,7 +6,6 @@ const {
   transform,
   transformFromAst
 } = babel;
-
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
 import { defaultBabylonConfig } from "./defaults.js";
@@ -16,23 +15,23 @@ import { maybeUnpackString } from "./utils.js";
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!
  */
-export const deepCopy = (obj) => {
+export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
   try {
     if(obj instanceof HTMLElement) {
-      return obj.cloneNode(true);
+      /*probe:*/return/*{}*/ obj.cloneNode(true);
     } else {
-      return JSON.parse(JSON.stringify(obj));
+      /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
     }
   } catch(e) {
     console.warn("Could not deeply clone object", obj);
-    return Object.assign({}, obj);
+    /*probe:*/return/*{}*/ Object.assign({}, obj);
   }
 }
 
 /**
  * Generates a locationMap for the AST
  */
-export const generateLocationMap = (ast) => {
+export function /*example:*//*example:*/generateLocationMap/*{"id":"4ebc_b290_28de","name":{"mode":"input","value":"Fibonacci"},"color":"hsl(10, 30%, 70%)","values":{"ast":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"345b_37c4_c8b1","name":{"mode":"input","value":"Simple"},"color":"hsl(300, 30%, 70%)","values":{"ast":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(ast) {
   ast._locationMap = new DefaultDict(Object);
   
   const keywords = {
@@ -45,35 +44,35 @@ export const generateLocationMap = (ast) => {
   };
   
   traverse(ast, {
-    enter(path) {
+    /*slider:*/enter/*{}*/(path) {
       let location = path.node.loc;
       if(!location) {
         return;
       }
       
       // Some Nodes are only associated with their keywords
-      const keyword = keywords[path.type];
+      const keyword = keywords[/*probe:*/path.type/*{}*/];
       if(keyword) {
         location.end.line = location.start.line;
-        location.end.column = location.start.column + keyword.length;
+        location.end.column = location.start.column + /*probe:*/keyword/*{}*/.length;
       }
       
       ast._locationMap[LocationConverter.astToKey(location)] = path;
     }
   });
-};
+}
 
 /**
  * Checks whether a path can be probed
  */
-export const canBeProbed = (path) => {
-  const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
+export function /*example:*//*example:*/canBeProbed/*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+  const /*probe:*/isTrackableIdentifier/*{}*/ = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
                                  && (path.parentPath !== path.getFunctionParent());
-  const isTrackableMemberExpression = path.isMemberExpression();
-  const isTrackableReturnStatement = path.isReturnStatement();
-  return isTrackableIdentifier
+  const /*probe:*/isTrackableMemberExpression/*{}*/ = path.isMemberExpression();
+  const /*probe:*/isTrackableReturnStatement/*{}*/ = path.isReturnStatement();
+  /*probe:*/return/*{}*/ isTrackableIdentifier
          || isTrackableMemberExpression
          || isTrackableReturnStatement;
 }
@@ -81,7 +80,7 @@ export const canBeProbed = (path) => {
 /**
  * Checks whether a path can be a slider
  */
-export const canBeSlider = (path) => {
+export function canBeSlider(path) {
   const isTrackableIdentifier = path.isIdentifier()
                                 && path.parentPath === path.getFunctionParent();
   const isTrackableLoop = path.isLoop();
@@ -97,7 +96,7 @@ export const canBeExample = (path) => {
   const isFunctionName = (functionParent
                           && (functionParent.get("id") === path
                               || functionParent.get("key") === path));
-  return isFunctionName;
+  return isFunctionName || isArrowFunctionName(path);
 }
 
 /**
@@ -136,7 +135,6 @@ const assignId = (node) => {
 let ID_COUNTER = 1;
 const nextId = () => ID_COUNTER++;
 
-
 /**
  * Applies basic modifications to the given AST
  */
@@ -154,7 +152,7 @@ export const applyBasicModifications = (ast) => {
       const newBodyNode = prepForInsert(types.blockStatement(oldBodyNode));
       path.node[property] = [newBodyNode];
     } else {
-      const newBodyNode = prepForInsert(types.blockStatement([oldBodyNode]));
+      const newBodyNode = prepForInsert(types.blockStatement([maybeWrapInStatement(oldBodyNode)]));
       oldBody.replaceWith(newBodyNode);
     }
     return path;
@@ -179,6 +177,19 @@ export const applyBasicModifications = (ast) => {
     },
     SwitchCase(path) {
       wrapPropertyOfPath(path, "consequent");
+    },
+    ImportDeclaration(path) {
+      if(!path.get("source").isStringLiteral() || !ast._sourceUrl || !ast._sourceUrl.length) {
+        return;
+      }
+      const sourceUrl = path.get("source").node.value;
+      if(ast._sourceUrl.indexOf(lively4url) !== 0 || sourceUrl[0] !== ".") {
+        return;
+      }
+      
+      const prefixParts = ast._sourceUrl.slice(lively4url.length + 1).split("/");
+      prefixParts.pop();
+      path.get("source").node.value = `${prefixParts.join("/")}/${sourceUrl}`;
     }
   });
 }
@@ -459,7 +470,13 @@ const insertTimer = (path, isStart = false) => {
  * Returns a list of parameter names for the given function Identifier
  */
 export const parameterNamesForFunctionIdentifier = (path) => {
-  let parameterPaths = path.getFunctionParent().get("params");
+  let parameterPaths = [];
+  if(isArrowFunctionName(path)) {
+    parameterPaths = path.parentPath.get("init").get("params");
+  } else {
+    parameterPaths = path.getFunctionParent().get("params"); 
+  }
+  
   return parameterPaths.map(parameterPath => {
     if(parameterPath.isIdentifier()) {
       return parameterPath.node.name;
@@ -591,7 +608,27 @@ const prepForInsert = (node) => {
   return node;
 }
 
+const maybeWrapInStatement = (node) => {
+  if(types.isStatement(node)) {
+    return node;
+  } else if(types.isExpression(node)) {
+    const expressionNode = types.expressionStatement(node);
+    expressionNode.loc = node.loc;
+    return expressionNode;
+  } else {
+    console.error("Tried to wrap something unknown:", node);
+    return node;
+  }
+}
+
 const connectorTemplate = (id) => `__connections["${id}"]`;
 
 const instanceTemplate = (id) => `__${id}()`;
 
+const isArrowFunctionName = path => 
+  (path.isIdentifier()
+   && path.parentPath.isVariableDeclarator()
+   && path.parentPath.get("id") === path
+   && path.parentPath.get("init").isArrowFunctionExpression());
+
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"35d8_cf9d_8ad4","name":"Simple AST","code":"return transform(\"const i = 0\").ast;"},{"id":"9055_2982_7d26","name":"<div>","code":"return document.createElement(\"div\");"},{"id":"8a96_17d6_1be7","name":"Fibonacci AST","code":"const code = `\nfunction fib(i) {\n  if(i <= 1) return 1;\n  return fib(i-1) + fib(i-2);\n}`\n\nreturn transform(code).ast;"},{"id":"1558_7aa2_37fa","name":"Identifier","code":"const ast = transform(\"const i = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d779_a710_b464","name":"Member Identifier","code":"const ast = transform(\"this.test = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d695_3c6c_89a9","name":"New instance","code":"return null;"}]} */

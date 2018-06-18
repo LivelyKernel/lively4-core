@@ -29,3 +29,8 @@ function max(a, b) {
 function factorial(x) {
   return x <= 1 ? 1 : x * factorial(x-1);
 }
+
+// Arrow functions
+export const /*example:*/fibonacci/*{"id":"6787_dff6_4d06","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{"x":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/ = (x) => {
+  /*probe:*/return/*{}*/ x <= 1 ? 1 : fibonacci(x-1) + fibonacci(x-2);
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

@@ -33,6 +33,7 @@
   border-radius: 3px;
   padding-left: 4px;
   height: max-content;
+  white-space: nowrap;
 }
 
 .probe-example .example-name {

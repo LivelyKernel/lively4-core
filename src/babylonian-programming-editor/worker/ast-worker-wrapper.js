@@ -73,14 +73,15 @@ export default class ASTWorkerWrapper {
 }
 */
 export default class ASTWorkerWrapper {
-  async process(code, annotations, customInstances) {
+  async process(code, annotations, customInstances, sourceUrl) {
     const msgId = globalMsgId++;
     const msg = {
       id: msgId,
       payload:JSON.stringify({
         code: code,
         annotations: annotations,
-        customInstances: customInstances
+        customInstances: customInstances,
+        sourceUrl: sourceUrl
       })
     };
 

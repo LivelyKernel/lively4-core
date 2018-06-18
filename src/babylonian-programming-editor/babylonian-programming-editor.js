@@ -110,7 +110,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/canvas/demo.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/functions.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -121,8 +121,10 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
         "Ctrl-1": () => this.addAnnotationAtSelection("probe"),
-        "Ctrl-2": () => this.addAnnotationAtSelection("example"),
-        "Ctrl-3": () => this.addAnnotationAtSelection("replacement"),
+        "Ctrl-2": () => this.addAnnotationAtSelection("slider"),
+        "Ctrl-3": () => this.addAnnotationAtSelection("example"),
+        "Ctrl-4": () => this.addAnnotationAtSelection("instance"),
+        "Ctrl-5": () => this.addAnnotationAtSelection("replacement"),
         "Tab": (cm) => { cm.replaceSelection("  ") },
       });
 
@@ -135,6 +137,9 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   async load() {
+    // Lock evaluation until we are fully loaded
+    this._evaluationLocked = true;
+    
     // Remove all existing annotations
     this.removeAnnotations();
     this._annotations = defaultAnnotations();
@@ -331,20 +336,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Add annotation
     switch(kind) {
       case "probe":
-        // Decide if we mean a probe or a slider
-        if(canBeSlider(path)) {
-          this.addSliderAtPath(path);
-        } else {
-          this.addProbeAtPath(path);
-        }
+        this.addProbeAtPath(path);
+        break;
+      case "slider":
+        this.addSliderAtPath(path);
         break;
       case "example":
-        // Decide if we mean an example or an instance
-        if(path.parentPath.isClassDeclaration()) {
-          this.addInstanceAtPath(path);
-        } else {
-          this.addExampleAtPath(path, false);
-        }
+        this.addExampleAtPath(path, false);
+        break;
+      case "instance":
+        this.addInstanceAtPath(path);
         break;
       case "replacement":
         this.addReplacementAtPath(path);
@@ -629,7 +630,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const { ast, code } = await this.worker.process(
       this.editor().getValue(),
       serializedAnnotations,
-      this._customInstances.map(i => i.serializeForWorker())
+      this._customInstances.map(i => i.serializeForWorker()),
+      this.livelyEditor().getURL().toString()
     );
     if(!ast) {
       this.status("error", "Syntax Error");
@@ -659,7 +661,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Execute the code
     this.status("evaluating");
-    console.log("Executing", code);
+    console.log("Executing");
     const {value, isError} = await this.execute(code);
 
     // Show the results
@@ -721,7 +723,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     evt.stopPropagation();
     var menu = new ContextMenu(this, [
       ["Add probe", () => this.addAnnotationAtSelection("probe")],
+      ["Add slider", () => this.addAnnotationAtSelection("slider")],
       ["Add example", () => this.addAnnotationAtSelection("example")],
+      ["Add instance", () => this.addAnnotationAtSelection("instance")],
       ["Add replacement", () => this.addAnnotationAtSelection("replacement")],
       ["Edit module pre/postscript", () => this.onEditPrePostScript()],
     ]);

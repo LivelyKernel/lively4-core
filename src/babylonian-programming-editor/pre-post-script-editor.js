@@ -34,7 +34,7 @@ export default class PrePostScriptEditor extends Morph {
           postscript: this._postEditor.value,
         });
       }
-    })::debounce(500));
+    })::debounce(1000));
   }
   
   setup(name, keys, prescript, postscript, callback, type = "Example") {
