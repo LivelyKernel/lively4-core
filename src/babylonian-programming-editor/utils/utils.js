@@ -29,6 +29,10 @@ export const compareKeyLocations = (a, b) => {
          0;
 }
 
+export const keyLocationsAreEqual = (a, b) => {
+  return compareKeyLocations(a, b) === 0;
+}
+
 export const stringInsert = (baseString, insertString, index) => {
   return baseString.slice(0, index) + insertString + baseString.slice(index);
 }

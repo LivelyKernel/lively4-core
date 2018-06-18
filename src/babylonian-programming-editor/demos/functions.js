@@ -17,7 +17,7 @@ class TestClass {
 }
 
 // It also works for functions with parameters
-function max(a, b) {
+function /*slider:*//*example:*/max/*{}*//*{"id":"ac09_1857_56af","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"a":{"mode":"input","value":"10"},"b":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(a, b) {
   if(a > b) {
     return a;
   } else {
@@ -26,11 +26,11 @@ function max(a, b) {
 }
 
 // Recursion
-function factorial(x) {
+function /*example:*/factorial/*{"name":{"mode":"input","value":""},"color":"hsl(280, 30%, 70%)","values":{"x":{"mode":"input","value":""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(x) {
   return x <= 1 ? 1 : x * factorial(x-1);
 }
 
 // Arrow functions
-export const /*example:*/fibonacci/*{"id":"6787_dff6_4d06","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{"x":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/ = (x) => {
-  /*probe:*/return/*{}*/ x <= 1 ? 1 : fibonacci(x-1) + fibonacci(x-2);
+export const fibonacci = (x) => {
+  return x <= 1 ? 1 : fibonacci(x-1) + fibonacci(x-2);
 }/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

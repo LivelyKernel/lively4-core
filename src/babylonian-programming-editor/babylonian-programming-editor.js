@@ -41,6 +41,7 @@ import { TextButton } from "./ui/buttons.js";
 import CustomInstance from "./utils/custom-instance.js";
 import {
   compareKeyLocations,
+  keyLocationsAreEqual,
   stringInsert,
   stringRemove
 } from "./utils/utils.js";
@@ -71,6 +72,9 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // AST
     this._ast = null; // Node
+    
+    // Selection
+    this._selectedLocation = null;
     this._selectedPath = null; // NodePath
     this._selectedPathActions = []; // [String]
 
@@ -175,7 +179,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Collect annotations and remove comments
     const lines = text.split("\n");
-    const annotationsStack = [];
+    const annotationsQueue = [];
     const annotations = [];
 
     let removedChars = 0;
@@ -198,9 +202,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       let kind = getAnnotationKind(comment.value);
       let value = getAnnotationValue(comment.value);
       if(kind) {
-        annotationsStack.push([kind, removeComment()]);
+        annotationsQueue.push([kind, removeComment()]);
       } else if(value) {
-        let annotationMeta = annotationsStack.pop();
+        let annotationMeta = annotationsQueue.shift();
         if(annotationMeta) {
           value.kind = annotationMeta[0];
           value.location = [lineIndex+1, annotationMeta[1], lineIndex+1, removeComment()];
@@ -698,11 +702,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
 
     // Get selected path
-    const selectedLocation = LocationConverter.selectionToKey(data.ranges[0]);
+    this._selectedLocation = LocationConverter.selectionToKey(data.ranges[0]);
 
     // Check if we selected a node
-    if(selectedLocation in this._ast._locationMap) {
-      this._selectedPath = this._ast._locationMap[selectedLocation];
+    if(this._selectedLocation in this._ast._locationMap) {
+      this._selectedPath = this._ast._locationMap[this._selectedLocation];
     } else {
       this._selectedPath = null;
     }
@@ -801,7 +805,20 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._buttons.appendChild(TextButton("", "exchange", this.onEditPrePostScript.bind(this)));
     this._buttons.appendChild(TextButton("", "object-group", this.onEditInstances.bind(this)));
     
-    // Depending on Selection
+    if(!this._selectedPath) {
+      return;
+    }
+    
+    // Remove annotations
+    for(let annotation of this._annotations.probes.concat(this._annotations.sliders)) {
+      if(keyLocationsAreEqual(LocationConverter.markerToKey(annotation.location), this._selectedLocation)) {
+        this._buttons.appendChild(TextButton(annotation.__proto__.constructor.name, "minus", () => {
+          this.removeAnnotation(annotation);
+        }));
+      }
+    }
+    
+    // Add annotations
     for(let key of this._selectedPathActions) {
       const buttonText = key.charAt(0).toUpperCase() + key.slice(1);
       this._buttons.appendChild(TextButton(buttonText, "plus", this.addAnnotationAtSelection.bind(this, key)));
