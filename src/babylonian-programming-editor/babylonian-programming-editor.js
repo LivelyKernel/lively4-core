@@ -38,10 +38,7 @@ import Replacement from "./annotations/replacement.js";
 import Instance from "./annotations/instance.js";
 import InstanceWidget from "./ui/instance-widget.js";
 import StatusBar from "./ui/status-bar.js";
-import {
-  PrePostscriptButton,
-  InstanceButton,
-} from "./ui/buttons.js";
+import { TextButton } from "./ui/buttons.js";
 import CustomInstance from "./utils/custom-instance.js";
 import {
   compareKeyLocations,
@@ -52,6 +49,8 @@ import {
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/babylonian-programming-editor";
+const SINGULAR_KEYS = ["probe", "slider", "example", "instance", "replacement"];
+
 
 /**
  * An editor for Babylonian (Example-Based) Programming
@@ -74,6 +73,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // AST
     this._ast = null; // Node
     this._selectedPath = null; // NodePath
+    this._selectedPathActions = []; // [String]
 
     // Pure text markers
     this._deadMarkers = []; // [TextMarker]
@@ -93,9 +93,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
-    this._buttons = this.get("#buttons");
-    this._buttons.appendChild(PrePostscriptButton(this.onEditPrePostScript.bind(this)));
-    this._buttons.appendChild(InstanceButton(this.onEditInstances.bind(this)));
+    this.updateButtons();
 
     // Right click listener
     this.addEventListener("contextmenu",  this.onContextMenu.bind(this), false);
@@ -712,6 +710,10 @@ export default class BabylonianProgrammingEditor extends Morph {
     } else {
       this._selectedPath = null;
     }
+    
+    this.updateSelectedPathActions();
+    this.updateContextMenu();
+    this.updateButtons();
   }
 
   onContextMenu(evt) {
@@ -791,6 +793,46 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   onEvaluationNeeded() {
     this.evaluate();
+  }
+  
+  updateSelectedPathActions() {
+    if(!this._selectedPath) {
+      this._selectedPathActions = [];
+      return;
+    }
+    
+    const checkFunctions = {
+      "probe": canBeProbe,
+      "slider": canBeSlider,
+      "replacement": canBeReplacement,
+      "example": canBeExample,
+      "instance": canBeInstance,
+    }
+    
+    Object.keys(checkFunctions).forEach(key => {
+      if(checkFunctions[key](this._selectedPath)) {
+        this._selectedPathActions.push(key);
+      }
+    });
+  }
+  
+  updateContextMenu() {
+    
+  }
+  
+  updateButtons() {
+    this._buttons = this.get("#buttons");
+    this._buttons.innerHTML = "";
+    
+    // Always visible
+    this._buttons.appendChild(TextButton("", "exchange", this.onEditPrePostScript.bind(this)));
+    this._buttons.appendChild(TextButton("", "object-group", this.onEditInstances.bind(this)));
+    
+    // Depending on Selection
+    for(let key of this._selectedPathActions) {
+      const buttonText = key.charAt(0).toUpperCase() + key.slice(1);
+      this._buttons.appendChild(TextButton(buttonText, "plus", this.addAnnotationAtSelection.bind(this, key)));
+    }
   }
 
 

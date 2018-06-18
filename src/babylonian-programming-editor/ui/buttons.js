@@ -34,3 +34,12 @@ export function InstanceButton(callback) {
 export function AddButton(callback) {
   return Button(callback, ["plus"], "Add");
 }
+
+export function TextButton(text, cls, callback) {
+  let button = <button>
+        <span class={"icon " + cls} title={text}></span>
+        {text.length ? <span class="text">{text}</span> : ""}
+      </button>;
+  button.addEventListener("click", callback);
+  return button;
+}

@@ -5,27 +5,42 @@
   flex-direction: column;
 }
 
-#bottom {
+.hidden {
+  display: none;
+}
+
+#buttons {
+  display: flex;
+  height: 30px;
+}
+
+button {
+  display: flex;
+  padding: 4px;
+  margin: 2px;
+  border: 1px solid #d5d5d5;
+  background: linear-gradient(#fcfcfc, #eee);
+  border-radius: 2px;
+  font-size: 10pt;
+  color: #404040;
+  cursor: pointer;
+}
+
+button > .text {
+  margin-left: 0.5ch;
+}
+
+#status-bar {
+  padding: 4px;
   border-top: 1px solid rgb(221, 221, 221);
   background-color: rgb(247, 247, 247);
   font-family: monospace;
   color: #333;
-  display: flex;
-  flex-direction: row;
-}
-
-#bottom > div {
-  padding: 4px;
-}
-
-#status-container {
-  flex: 1;
 }
 
 #status {
   padding: 0 2px;
 }
-
 
 #status.error {
   background-color: hsla(344, 54%, 63%, 0.2);
@@ -39,20 +54,14 @@
   color: hsl(30, 100%, 20%);
 }
 
-#buttons {
-  width: 47px;
-  border-right: 1px solid rgb(221, 221, 221);
-  display: flex;
-  justify-content: space-evenly;
-}
-
 .icon {
   font-family: "FontAwesome";
   display: inline-block;
   cursor: pointer;
   opacity: 0.8;
-  min-width: 1em;
+  min-width: 16px;
   text-align: center;
+  margin-top: 2px;
 }
 
 .icon.exchange::before {
