@@ -68,15 +68,33 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async processObject(object, parent) {
     let label = object.properties.map(prop => prop.label).find(label => label) || textualRepresentation(object.data);
-    let tooltip = object.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
+    let tooltipText = object.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let symbolClasses = "expander fa";
     symbolClasses += object.hasChildren > 0 ? " fa-caret-right" : " fa-circle small";
     let expander = <span id="expander" class={symbolClasses}></span>;
     
-    if (tooltip.length > 0) {
-      let tooltipText = <span class="tooltip">{tooltip}</span>;
-      treeItem.appendChild(tooltipText);
+    if (tooltipText.length > 0) {
+      let tooltip = <span class="tooltip">{tooltipText}</span>;
+      treeItem.appendChild(tooltip);
+      treeItem.addEventListener('mouseover', event => {
+        tooltip.remove();
+        document.body.appendChild(tooltip);
+        tooltip.style.display = 'inline-block';
+        tooltip.style.top = (event.clientY + 3) + "px";
+        tooltip.style.left = (event.clientX + 3) + "px";
+        tooltip.style.position = 'fixed';
+        tooltip.style.zIndex = 1001;
+        tooltip.style.backgroundColor = '#fff';
+        tooltip.style.border = '1px solid #d5d5d5';
+        tooltip.style.padding = '5px 10px';
+      });
+      
+      treeItem.addEventListener('mouseout', event => {
+        tooltip.remove();
+        treeItem.appendChild(tooltip);
+        tooltip.style.display = 'none';
+      });
     }
     
     treeItem.prepend(expander);
