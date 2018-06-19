@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import BlockchainNodeCard from 'templates/blockchain-node-card.js';
 
 export default class BlockchainUI extends Morph {
   
