@@ -299,10 +299,9 @@ export default class VivideView extends Morph {
       script = script.nextScript;
       await this.applyScript(script, vivideLayer);
       
-      if (script.lastScript) break;
+      if (script.type == 'descent' || script.lastScript) break;
     }
-    
-    await vivideLayer.readyToProcess();
+    await vivideLayer.processData();
     
     return vivideLayer;
   }
@@ -360,13 +359,14 @@ export default class VivideView extends Morph {
       while (!script.lastScript) {
         script = script.nextScript;
       }
+      
+      script.lastScript = false;
+      newScript.lastScript = true;
     }
     
     newScript.updateCallback = this.scriptGotUpdated.bind(this);
     newScript.nextScript = script.nextScript;
     script.nextScript = newScript;
-    script.lastScript = false;
-    newScript.lastScript = true;
     
     return newScript;
   }

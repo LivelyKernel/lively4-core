@@ -79,70 +79,59 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
 
     let widget = this.d3treemap;
     widget.setTreeData(this.treeData);
-    
-    return;
-    
-    this.dataByTreeItem = new Map();
-    this.childrenByTreeItem = new Map();
-    this.childScriptByTreeItem = new Map();
-    
-    this.tree.innerHTML = '';
-    for (let m of model) {
-      await this.processModel(m, this.tree);
-    }
   }
   
-  async toggleTree(treeItem, expander) {
-    let children = this.childrenByTreeItem.get(treeItem);
+//   async toggleTree(treeItem, expander) {
+//     let children = this.childrenByTreeItem.get(treeItem);
     
-    if (!children || !children.length) return;
+//     if (!children || !children.length) return;
     
-    let sub = treeItem.querySelector("#child");
-    if (sub.innerHTML.length == 0) {
-      treeItem.className += " expanded"
-      let childScript = this.childScriptByTreeItem.get(treeItem);
+//     let sub = treeItem.querySelector("#child");
+//     if (sub.innerHTML.length == 0) {
+//       treeItem.className += " expanded"
+//       let childScript = this.childScriptByTreeItem.get(treeItem);
       
-      if (childScript) {
-        let test = children.map(c => c.object);
-        children = await this.expandChild(test, childScript);
-      }
+//       if (childScript) {
+//         let test = children.map(c => c.object);
+//         children = await this.expandChild(test, childScript);
+//       }
       
-      this.childrenByTreeItem.set(treeItem, children);
+//       this.childrenByTreeItem.set(treeItem, children);
       
-      for (let child of children) {  
-        this.processModel(child, sub);
-      }
-      treeItem.appendChild(sub);
-      expander.classList.remove("fa-caret-right");
-      expander.classList += " fa-caret-down";
-    } else if (treeItem.classList.contains("expanded")) {
-      treeItem.classList.remove("expanded");
-      expander.classList.remove("fa-caret-down");
-      expander.classList += " fa-caret-right";
-    } else {
-      treeItem.classList += " expanded";
-      expander.classList.remove("fa-caret-right");
-      expander.classList += " fa-caret-down";
-    }
-  }
+//       for (let child of children) {  
+//         this.processModel(child, sub);
+//       }
+//       treeItem.appendChild(sub);
+//       expander.classList.remove("fa-caret-right");
+//       expander.classList += " fa-caret-down";
+//     } else if (treeItem.classList.contains("expanded")) {
+//       treeItem.classList.remove("expanded");
+//       expander.classList.remove("fa-caret-down");
+//       expander.classList += " fa-caret-right";
+//     } else {
+//       treeItem.classList += " expanded";
+//       expander.classList.remove("fa-caret-right");
+//       expander.classList += " fa-caret-down";
+//     }
+//   }
   
-  async processModel(model, parent) {    
-    let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
-    let treeItem = <li>{label}<ul id="child"></ul></li>;
-    let symbolClasses = "expander fa";
-    // Items with no children have no symbol, because FontAwesome does not supply a good one
-    symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
-    let expander = <span id="expander" class={symbolClasses}></span>;
+//   async processModel(model, parent) {    
+//     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
+//     let treeItem = <li>{label}<ul id="child"></ul></li>;
+//     let symbolClasses = "expander fa";
+//     // Items with no children have no symbol, because FontAwesome does not supply a good one
+//     symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
+//     let expander = <span id="expander" class={symbolClasses}></span>;
     
-    treeItem.prepend(expander);
-    expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
-    this.multiSelection.addItem(treeItem);
-    this.addDragEventTo(treeItem);
-    this.dataByTreeItem.set(treeItem, model.object);
-    this.childrenByTreeItem.set(treeItem, model.children);
-    this.childScriptByTreeItem.set(treeItem, model.childScript);
-    parent.appendChild(treeItem);
-  }
+//     treeItem.prepend(expander);
+//     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
+//     this.multiSelection.addItem(treeItem);
+//     this.addDragEventTo(treeItem);
+//     this.dataByTreeItem.set(treeItem, model.object);
+//     this.childrenByTreeItem.set(treeItem, model.children);
+//     this.childScriptByTreeItem.set(treeItem, model.childScript);
+//     parent.appendChild(treeItem);
+//   }
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view
