@@ -1,7 +1,7 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
-import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection';
-import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection';
-import Transaction from 'src/blockchain/model/transaction/transaction';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
 
 export default class Wallet {
   constructor() {
