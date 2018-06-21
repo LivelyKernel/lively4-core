@@ -359,13 +359,14 @@ export default class VivideView extends Morph {
       while (!script.lastScript) {
         script = script.nextScript;
       }
+      
+      script.lastScript = false;
+      newScript.lastScript = true;
     }
     
     newScript.updateCallback = this.scriptGotUpdated.bind(this);
     newScript.nextScript = script.nextScript;
     script.nextScript = newScript;
-    script.lastScript = false;
-    newScript.lastScript = true;
     
     return newScript;
   }

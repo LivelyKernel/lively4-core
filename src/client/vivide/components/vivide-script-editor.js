@@ -94,7 +94,11 @@ export default class VivideScriptEditor extends Morph {
   async appendStepEditor(scriptType) {
     let position = this.newScriptPosition != null ? this.newScriptPosition.script : null;
     let script = await this.view.insertScript(scriptType, position);
-    this.lastScript = script;
+
+    if (script.lastScript) {
+      this.lastScript = script;
+    }
+    
     this.createStepEditorFor(script);
     this.updateLoopState();
   }
@@ -102,7 +106,6 @@ export default class VivideScriptEditor extends Morph {
   updateLoopState() {
     let editorListContent = this.editorList.children;
     let loopStart = this.lastScript.nextScript;
-    
     for (let element of editorListContent) {
       if (element.localName != 'vivide-step-editor') continue;
       if (!element.containsScript(loopStart)) continue;
