@@ -6,7 +6,6 @@ import VivideObject from 'src/client/vivide/vivideobject.js';
 export default class VivideLayer {
   constructor(data) {
     this._objects = [];
-    this._readyToProcess = false;
     this._rawData = data;
     this._modules = {'transform': [], 'extract': [], 'descent': []};
     this._script = null;
@@ -20,15 +19,6 @@ export default class VivideLayer {
   
   get objects() {
     return this._objects;
-  }
-  
-  isToProcess() {
-    return this._readyToProcess;
-  }
-  
-  async readyToProcess() {
-    this._readyToProcess = true;
-    await this.processData();
   }
   
   get script() {
@@ -58,21 +48,23 @@ export default class VivideLayer {
   }
   
   async processData() {
-    await this.transform();    
+    await this.transform();
+    
+    // Reset object array and insert new transformed data
+    this._objects.length = 0;
+    for (let entry of this._rawData) {
+      this._objects.push(new VivideObject(entry));
+    }
+    
     await this.extract();
     await this.descent();
   }
   
   async transform() {
-    for (let module of this._modules.transform) {
+    for (let transform of this._modules.transform) {
       let tmp = this._rawData.slice(0);
       this.clearData();
-      await module.value(tmp, this);
-    }
-    
-    this._objects.length = 0;
-    for (let entry of this._rawData) {
-      this._objects.push(new VivideObject(entry));
+      await transform.value(tmp, this);
     }
   }
   

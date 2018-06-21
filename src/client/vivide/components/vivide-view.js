@@ -299,10 +299,9 @@ export default class VivideView extends Morph {
       script = script.nextScript;
       await this.applyScript(script, vivideLayer);
       
-      if (script.lastScript) break;
+      if (script.type == 'descent' || script.lastScript) break;
     }
-    
-    await vivideLayer.readyToProcess();
+    await vivideLayer.processData();
     
     return vivideLayer;
   }
