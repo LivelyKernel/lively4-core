@@ -42,7 +42,7 @@ export default class BlockchainNodeCard extends Morph {
     if(!this._node) {
       return;
     }
-    this.shadowRoot.querySelector('#node-value').innerHTML = this._node.wallet.value();
+    this.shadowRoot.querySelector('#node-value').innerHTML = "μ" + this._node.wallet.value();
   }
   
   async livelyExample() {

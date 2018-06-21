@@ -1,9 +1,9 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
 
 export default class TransactionOutput {
-  constructor(receiverWallet, amount) {
+  constructor(receiverWallet, value) {
     this.receiverHash = receiverWallet.hash;
-    this.amount = amount;
+    this.value = value;
     this.hash = this._hash();
   }
   
@@ -19,7 +19,7 @@ export default class TransactionOutput {
     var sha256 = forge.md.sha256.create();
     return sha256.update(
       this.receiverHash + 
-      this.amount
+      this.value
     );
   }
 }
