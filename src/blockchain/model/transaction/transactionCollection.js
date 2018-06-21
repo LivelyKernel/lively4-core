@@ -25,7 +25,7 @@ export default class TransactionCollection {
   
   fees() {
     return Array.from(this._transactions.entries()).reduce((total, output) => {
-      total += output.fees();
+      total += output.fees;
     }, 0);
   }
   

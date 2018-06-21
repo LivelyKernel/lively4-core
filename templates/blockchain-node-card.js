@@ -14,27 +14,38 @@ export default class BlockchainNodeCard extends Morph {
     return this._blockchainNodeName;
   }
   
-  set node(node) {
-    if(!node) {
-      return;
-    }
-    this._node = node;
-    this.shadowRoot.querySelector('#button-node-mine').addEventListener('click', () => this._node.mine());
-    this.shadowRoot.querySelector('#button-node-send-transaction').addEventListener('click', this.openAddTransactionView.bind(this));
-    this.update();
+  get nodes() {
+    return this._nodes;
   }
   
-  openAddTransactionView() {
-    const transactionDialog = document.createElement('blockchain-transaction-dialog');
-    lively.components.openInWindow(transactionDialog);
+  set nodes(nodes) {
+    this._nodes = nodes;
   }
   
   get node() {
     return this._node;
   }
   
+  set node(node) {
+    if(!node) {
+      return;
+    }
+    this._node = node;
+    this.shadowRoot.querySelector('#button-node-mine').onclick=(this._node.mine.bind(this._node));
+    this.update();
+  }
+  
+  openAddTransactionView() {
+    const transactionDialog = document.createElement('blockchain-transaction-dialog');
+    lively.components.openInWindow(transactionDialog).then(() => {
+      transactionDialog.node = this.node;
+      transactionDialog.nodes = this.nodes;
+    });
+  }
+  
   async initialize() {
-    this.blockchainNodeName = 'Unnamed node'
+    this.blockchainNodeName = 'Unnamed node';
+    this.shadowRoot.querySelector('#button-node-send-transaction').addEventListener('click', this.openAddTransactionView.bind(this));
   }
   
   async update() {
@@ -42,7 +53,7 @@ export default class BlockchainNodeCard extends Morph {
     if(!this._node) {
       return;
     }
-    this.shadowRoot.querySelector('#node-value').innerHTML = "μ" + this._node.wallet.value();
+    this.shadowRoot.querySelector('#node-value').innerHTML = "μ" + this._node.wallet.value;
   }
   
   async livelyExample() {
