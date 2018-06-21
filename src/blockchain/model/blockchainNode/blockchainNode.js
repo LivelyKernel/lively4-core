@@ -60,6 +60,9 @@ export default class BlockchainNode {
       // only accept verified transactions
       return;
     }
+    if (transaction.outputs.has(this._wallet.hash)) {
+      this._wallet.receive(transaction);
+    }
     this._miner.addTransaction(transaction);
   }
   

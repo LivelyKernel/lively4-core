@@ -35,7 +35,7 @@ export default class NetworkComponent {
       return;
     }
     // request blockchain
-    this.receiveBlockchain(relevantBlockchainProvider._node._blockchain);
+    this.receiveBlockchain(cloneDeep(relevantBlockchainProvider._node._blockchain));
     //this._simulateNetwork(() => peer.provideBlockchain(this));
   }
   

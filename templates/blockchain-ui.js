@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import BlockchainNodeCard from 'templates/blockchain-node-card.js';
 
 export default class BlockchainUI extends Morph {
   
@@ -20,7 +21,10 @@ export default class BlockchainUI extends Morph {
     const nodeUI = document.createElement('blockchain-node-card');
     nodeUI.node = node;
     nodeUI.blockchainNodeName = "Node #" + this._nodes.length;
-    this.shadowRoot.querySelector('#node-list').appendChild(nodeUI);
+    lively.components.openIn(this.shadowRoot.querySelector('#node-list'), nodeUI).then( () => {
+      nodeUI.node = node;
+      nodeUI.blockchainNodeName = "Node #" + this._nodes.length;
+    });
   }
   
   async livelyExample() {
