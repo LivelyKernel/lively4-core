@@ -20,11 +20,11 @@ export default class BlockchainUI extends Morph {
     this._nodes.push(node);
     const nodeUI = document.createElement('blockchain-node-card');
     nodeUI.node = node;
-    nodeUI.blockchainNodeName = "Node #" + this._nodes.length;
+    nodeUI.blockchainNodeName = "Node " + node.wallet.displayName;
     lively.components.openIn(this.shadowRoot.querySelector('#node-list'), nodeUI).then( () => {
       nodeUI.node = node;
       nodeUI.nodes = this._nodes;
-      nodeUI.blockchainNodeName = "Node #" + this._nodes.length;
+      nodeUI.blockchainNodeName = "Node " + node.wallet.displayName;
     });
   }
   

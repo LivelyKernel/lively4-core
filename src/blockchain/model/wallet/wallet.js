@@ -15,11 +15,11 @@ export default class Wallet {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.digest().toHex().substring(0, 10);
   }
    
   sign(hash) {
@@ -32,15 +32,16 @@ export default class Wallet {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
-      this.publicKey
-    );
+    const sha256Date = forge.md.sha256.create();
+    const dateHash = sha256Date.update(Date.now());
+    
+    var sha256Wallet = forge.md.sha256.create();
+    return sha256Wallet.update(this.sign(dateHash));
   }
   
   transactionsChanged() {
    this._value = this._receivedTransactions.reduce((previousValue, transaction) => {
-      previousValue += transaction.outputs.get(this.hash).value;
+      return previousValue + transaction.outputs.get(this.hash).value;
     }, 0);
   }
   
@@ -57,7 +58,7 @@ export default class Wallet {
   }
   
   newTransaction(outgoingTransactions) {
-    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { sum += transaction.amount}, 0);
+    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { return sum + transaction.value}, 0);
     if(inputAmount > this.value) {
       throw new Error('Can not create transaction - not enough money');
     }

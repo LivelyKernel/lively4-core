@@ -52,7 +52,6 @@ export default class BlockchainNode {
   }
   
   handleBlock(block) {
-    console.log("block: " + block);
     block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
   }

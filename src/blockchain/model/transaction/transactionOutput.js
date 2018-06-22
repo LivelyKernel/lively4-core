@@ -8,11 +8,11 @@ export default class TransactionOutput {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.digest().toHex().substring(0, 10);
   }
   
   _hash() {
