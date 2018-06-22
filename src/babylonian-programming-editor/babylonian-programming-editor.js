@@ -1,16 +1,14 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
-import boundEval from 'src/client/bound-eval.js';
 import { babel } from 'systemjs-babel-build';
 const { traverse } = babel;
 
 // Custom imports
-import ASTWorkerWrapper from "./worker/ast-worker-wrapper.js";
+import BabylonianWorker from "./worker/babylonian-worker.js";
 import Timer from "./utils/timer.js";
 import LocationConverter from "./utils/location-converter.js";
 import {
   astForCode,
-  generateLocationMap,
   canBeProbe,
   canBeExample,
   canBeReplacement,
@@ -26,10 +24,8 @@ import {
 } from "./utils/load-save.js";
 import {
   defaultContext,
-  defaultAnnotations,
-  defaultConnections
+  defaultAnnotations
 } from "./utils/defaults.js";
-import Tracker from "./utils/tracker.js";
 import Probe from "./annotations/probe.js";
 import Slider from "./annotations/slider.js";
 import Example from "./annotations/example.js";
@@ -49,7 +45,6 @@ import {
 
 // Constants
 const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/babylonian-programming-editor";
-const SINGULAR_KEYS = ["probe", "slider", "example", "instance", "replacement"];
 
 
 /**
@@ -67,8 +62,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
 
-    // Worker for parsing
-    this.worker = new ASTWorkerWrapper();
+    // Register editor
+    BabylonianWorker.registerEditor(this);
 
     // AST
     this._ast = null; // Node
@@ -92,14 +87,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._activeExamples = []; // [Example]
 
     // Timer to evaluate when user stops writing
-    this._evaluateTimer = new Timer(500, this.evaluate.bind(this));
+    this._changeTimer = new Timer(500, this.evaluate.bind(this));
 
     // Status Bar
     this._statusBar = new StatusBar(this.get("#status"));
     this.updateButtons();
-
-    // Tracker
-    this._tracker = new Tracker();
 
     // CodeMirror
     this.editorComp().addEventListener("editor-loaded", () => {
@@ -114,7 +106,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       // Event listeners
       this.editor().on("change", () => {
         this.syncIndentations() ;
-        this._evaluateTimer.start();
+        this._changeTimer.start();
       });
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
       this.editor().setOption("extraKeys", {
@@ -227,7 +219,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Add annotations
     this.livelyEditor().setText(text);
-    await this.parse();
+    await BabylonianWorker.evaluateEditor(this, false);
 
     for(let annotation of annotations) {
       let obj;
@@ -253,7 +245,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
 
     // Evaluate
-    this.evaluate(true);
+    await this.evaluate(true);
     setTimeout(() => {
       this._evaluationLocked = false;
     }, 2000);
@@ -478,15 +470,11 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   updateAnnotations() {
-    if(!this.hasResults()) {
-      return;
-    }
-
     // Update sliders
     for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(this._tracker.blocks.has(node._id)) {
-        slider.maxValues = this._tracker.blocks.get(node._id);
+      if(BabylonianWorker.tracker.blocks.has(node._id)) {
+        slider.maxValues = BabylonianWorker.tracker.blocks.get(node._id);
       } else {
         slider.empty();
       }
@@ -495,8 +483,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(this._tracker.ids.has(node._id)) {
-        probe.values = this._tracker.ids.get(node._id);
+      if(BabylonianWorker.tracker.ids.has(node._id)) {
+        probe.values = BabylonianWorker.tracker.ids.get(node._id);
       } else {
         probe.empty();
       }
@@ -512,8 +500,8 @@ export default class BabylonianProgrammingEditor extends Morph {
   updateExamples() {
     for(let example of this._annotations.examples) {
       const path = this.pathForAnnotation(example);
-      if(this._tracker.errors.has(example.id)) {
-        example.error = this._tracker.errors.get(example.id);
+      if(BabylonianWorker.tracker.errors.has(example.id)) {
+        example.error = BabylonianWorker.tracker.errors.get(example.id);
       } else {
         example.error = null;
       }
@@ -545,7 +533,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
-        if(!that._tracker.executedBlocks.has(path.node._id)) {
+        if(!BabylonianWorker.tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
             that.editor().markText(
@@ -608,91 +596,46 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Evaluating code
    */
 
-  async parse() {
-    this.status("parsing");
-
-    // Make sure we have no zombie annotations
-    this.cleanupAnnotations()
-
-    // Serialize annotations
-    let serializedAnnotations = {};
-    for(let key of ["probes", "sliders", "replacements", "instances"]) {
-      serializedAnnotations[key] = this._annotations[key].map((a) => a.serializeForWorker());
-    }
-    serializedAnnotations.examples = this._activeExamples.map((a) => a.serializeForWorker());
-
-    // Serialize context
-    serializedAnnotations.context = this._context;
-
-    // Call the worker
-    const { ast, code } = await this.worker.process(
-      this.editor().getValue(),
-      serializedAnnotations,
-      this._customInstances.map(i => i.serializeForWorker()),
-      this.livelyEditor().getURL().toString()
-    );
-    if(!ast) {
-      this.status("error", "Syntax Error");
-      return;
-    }
-
-    this._ast = ast;
-
-    // Post-process AST
-    // (we can't do this in the worker because it create a cyclical structure)
-    generateLocationMap(ast);
-
-    this.status();
-    return code;
-  }
-
   async evaluate(ignoreLock = false) {
     if(this._evaluationLocked && !ignoreLock) {
       return;
     }
 
-    // Parse the code
-    const code = await this.parse()
-    if(!code) {
-      return;
-    }
-
-    // Execute the code
     this.status("evaluating");
-    console.log("Executing");
-    const {value, isError} = await this.execute(code);
-
-    // Show the results
-    if(!isError) {
-      this.updateAnnotations();
-      this.updateDeadMarkers();
-      if(this._tracker.errors.size) {
-        this.status("warning", "At least one example threw an Error");
-      } else {
-        this.status();
-      }
-    } else {
-      this.status("error", value.originalErr.message);
-      this.updateInstances();
-      this.updateExamples();
-    }
-  }
-
-  async execute(code) {
-    // Prepare result container
-    this._tracker.reset();
-
-    // Execute the code
-    return await boundEval(code, {
-      tracker: this._tracker,
-      connections: defaultConnections(),
-    });
+    await BabylonianWorker.evaluateEditor(this);
   }
 
 
   /**
    * Event handlers
    */
+  
+  onChange() {
+    // Make sure we have no zombie annotations
+    this.cleanupAnnotations()
+    
+    // Tell worker that the value changed
+    BabylonianWorker.onEditorChanged(this);
+  }
+  
+  onTrackerChanged() {
+    if(this.hadParseError) {
+      this.status("error", "Syntax Error");
+    } else if(this.hadEvalError) {
+      this.status("error", this.lastEvalError);
+      this.updateInstances();
+      this.updateExamples();
+    } else {
+      this.updateAnnotations();
+      this.updateDeadMarkers();
+      if(BabylonianWorker.tracker.errors.size) {
+        this.status("warning", "At least one example caused an Error");
+      } else {
+        this.status();
+      }
+    }
+  }
+  
 
   onSelectionChanged(instance, data) {
     // This needs an AST
@@ -833,10 +776,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     return (this._ast && this._ast._locationMap);
   }
 
-  hasResults() {
-    return !!this._tracker;
-  }
-
   nodeForAnnotation(annotation) {
     const path = this.pathForAnnotation(annotation);
     if(path) {
@@ -871,5 +810,17 @@ export default class BabylonianProgrammingEditor extends Morph {
   editor() {
     return this.editorComp().editor
   }
+  
+  /**
+   * Accessors
+   */
+  
+  get activeExamples() { return this._activeExamples; }
+  get annotations() { return this._annotations; }
+  set ast(ast) { this._ast = ast; }
+  get context() { return this._context; }
+  get customInstances() { return this._customInstances; }
+  get url() { return this.livelyEditor().getURL().toString(); }
+  get value() { return this.editor().getValue(); }
 
 }
