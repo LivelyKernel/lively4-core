@@ -13,7 +13,6 @@ export default class TransactionNetworkView {
   
   _constructNodes() {
     const nodeIndices = new Map();
-    this._nodeView.nodes = [];
     
     this._transactions.forEach((transaction) => {
       nodeIndices.set(transaction.hash, this._nodeView.nodes.length);
@@ -28,9 +27,7 @@ export default class TransactionNetworkView {
     return nodeIndices;
   }
   
-  _constructLinks(nodeIndices) {
-    this._nodeView.links = [];
-    
+  _constructLinks(nodeIndices) {    
     this._transactions.forEach((receiver) => {
       receiver.inputs.forEach((input) => {
         this._transactions.forEach((sender) => {

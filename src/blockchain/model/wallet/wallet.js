@@ -58,7 +58,7 @@ export default class Wallet {
   }
   
   newTransaction(outgoingTransactions) {
-    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { return sum + transaction.value}, 0);
+    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { return sum + transaction.value }, 0);
     if(inputAmount > this.value) {
       throw new Error('Can not create transaction - not enough money');
     }

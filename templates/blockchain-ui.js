@@ -9,6 +9,11 @@ export default class BlockchainUI extends Morph {
   async initialize() {
     this.windowTitle = "Blockchain - UI";
     this._nodes = [];
+    
+    // Set width & height of window (parent node)
+    this.parentNode.style.width = "800px";
+    this.parentNode.style.height = "400px";
+    
     this.shadowRoot.querySelector('#new-node-button').addEventListener('click', this.createNewNode.bind(this));
   }
 

@@ -63,8 +63,8 @@ export default class TransactionOutputCollection {
   }
   
   _calculateValue() {
-    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, output) => {
-      return total + output.value;
+    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, entry) => {
+      return total + entry[1].value;
     }, 0);
   }
   

@@ -167,6 +167,7 @@ export default class BlockchainNodeView extends Morph {
     
     const transactions = new TransactionCollection().add(tx1).add(tx2).finalize();
     const view = new TransactionNetworkView(this, transactions);
+    view.draw();
   }
   
   async __livelyExample2() {
