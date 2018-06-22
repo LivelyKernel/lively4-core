@@ -12,7 +12,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this.nodes.forEach((node) => {
       const option = document.createElement('option');
       option.innerHTML = "Node " + node.wallet.displayName;
-      option.setAttribute('value', node.wallet.hash.digest().data);
+      option.setAttribute('value', node.wallet.hash);
       this.shadowRoot.querySelector('#receiverSelect').appendChild(option);
     });
   }
