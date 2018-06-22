@@ -40,9 +40,13 @@ export default class Wallet {
   }
   
   transactionsChanged() {
-   this._value = this._receivedTransactions.reduce((previousValue, transaction) => {
+   this.value = this._receivedTransactions.reduce((previousValue, transaction) => {
       return previousValue + transaction.outputs.get(this.hash).value;
     }, 0);
+  }
+  
+  set value(value) {
+    this._value = value;
   }
   
   get value() {
@@ -57,10 +61,17 @@ export default class Wallet {
     this.transactionsChanged();
   }
   
-  newTransaction(outgoingTransactions) {
-    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { return sum + transaction.value }, 0);
-    if(inputAmount > this.value) {
+  newTransaction(receivers) {
+    const inputAmount = receivers.reduce((sum, transaction) => { 
+      return sum + transaction.value 
+    }, 0);
+    
+    if (inputAmount > this.value) {
       throw new Error('Can not create transaction - not enough money');
+    }
+    
+    if (inputAmount <= 0) {
+      throw new Error('Can not send transaction with output value <= 0');
     }
     
     const inputCollection = new TransactionInputCollection(this);
@@ -72,8 +83,8 @@ export default class Wallet {
     this.transactionsChanged();
     
     const outputCollection = new TransactionOutputCollection().add(this, inputCollection.value - inputAmount);
-    outgoingTransactions.forEach(transaction => {
-      outputCollection.add(transaction.receiver, transaction.value);
+    receivers.forEach(receiver => {
+      outputCollection.add(receiver.receiver, receiver.value);
     });
     outputCollection.finalize();
     

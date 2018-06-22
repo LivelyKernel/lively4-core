@@ -40,7 +40,7 @@ export default class BlockchainTransactionDialog extends Morph {
   }
   
   onSave() {
-    const transaction = this.node.wallet.newTransaction(this._receivers);
+    const transaction = this.node.sendTransaction(this._receivers);
     this.node.handleTransaction(transaction);
     this.parentNode.parentNode.removeChild(this.parentNode);
   }
@@ -53,7 +53,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this.shadowRoot.querySelector('#receiverList').innerHTML = '';
     this._receivers.forEach(receiver => {
       const listElement = document.createElement('li');
-      listElement.innerHTML = "Node " + receiver.receiver.wallet.displayName + " - $" + receiver.amount;
+      listElement.innerHTML = "Node " + receiver.receiver.displayName + " - $" + receiver.amount;
       lively.components.openIn(this.shadowRoot.querySelector('#receiverList'), listElement).then();
     });
   }
@@ -61,7 +61,7 @@ export default class BlockchainTransactionDialog extends Morph {
   addReceiver() {
     const receiverSelect = this.shadowRoot.querySelector('#receiverSelect');
     const amount = this.shadowRoot.querySelector('#amount').value;
-    const receiver = this.nodes[receiverSelect.selectedIndex - 1];
+    const receiver = this.nodes[receiverSelect.selectedIndex - 1].wallet;
     if(!amount || !receiver) {
       return;
     }

@@ -58,8 +58,22 @@ export default class TransactionOutputCollection {
     return !!this.hash;
   }
   
-  has(outputHash) {
-    return this._transactionOutputs.has(outputHash);
+  hasOutput(outputHash) {
+    let result = false;
+    
+    this._transactionOutputs.forEach((output) => {
+      if (result) {
+        return;
+      }
+      
+      result = output.hash == outputHash;
+    });
+    
+    return result;
+  }
+  
+  has(receiverHash) {
+    return this._transactionOutputs.has(receiverHash);
   }
   
   _calculateValue() {

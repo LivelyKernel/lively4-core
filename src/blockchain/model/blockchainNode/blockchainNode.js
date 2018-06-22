@@ -34,6 +34,13 @@ export default class BlockchainNode {
     await this._miner.mine();
   }
   
+  sendTransaction(receivers) {
+    const tx = this.wallet.newTransaction(receivers);
+    this.propagateTransaction(tx);
+    
+    return tx;
+  }
+  
   blockchainIsValid(blockchain) {
     // Currently double spend check is not implemented
     let currentBlock = blockchain.headOfChain;
