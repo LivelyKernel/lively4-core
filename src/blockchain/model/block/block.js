@@ -34,7 +34,7 @@ export default class Block {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this._hash.substring(0, 10);
   }
   
   isSigned() {
@@ -87,8 +87,8 @@ export default class Block {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       this.timestamp +
       this.minetHash +
       this.minerPublicKey +
@@ -97,5 +97,6 @@ export default class Block {
       this.previousHash +
       this.reward
     );
+    return sha256.digest().toHex();
   }
 }

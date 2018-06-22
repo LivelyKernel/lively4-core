@@ -19,7 +19,7 @@ export default class Wallet {
       return "#NotAName";
     }
     
-    return "#" + this.hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
    
   sign(hash) {
@@ -35,8 +35,9 @@ export default class Wallet {
     const sha256Date = forge.md.sha256.create();
     const dateHash = sha256Date.update(Date.now());
     
-    var sha256Wallet = forge.md.sha256.create();
-    return sha256Wallet.update(this.sign(dateHash));
+    const sha256Wallet = forge.md.sha256.create();
+    sha256Wallet.update(this.sign(dateHash));
+    return sha256Wallet.digest().toHex();
   }
   
   transactionsChanged() {

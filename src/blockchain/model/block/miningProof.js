@@ -17,7 +17,7 @@ export default class MiningProof {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this._hash.substring(0, 10);
   }
   
   async work() {
@@ -37,11 +37,12 @@ export default class MiningProof {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       this.miningDifficulty +
       this.startTimestamp +
       this.finishTimestamp
     );
+    return sha256.digest().toHex();
   }
 }
