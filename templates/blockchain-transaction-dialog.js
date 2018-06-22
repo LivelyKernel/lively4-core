@@ -1,25 +1,20 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
-import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode';
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+
 export default class BlockchainTransactionDialog extends Morph {
   
-  get receiver() {
-    return this._receiver;
+  get nodes() {
+    return this._nodes;
   }
   
-  set receiver(receiver) {
-    this._receiver = receiver;
-    this.update();
-  }
-  
-  get amount() {
-    return this._amount;
-  }
-  
-  set amount(amount) {
-    this._amount = amount;
-    this.update();
+  set nodes(nodes) {
+    this._nodes = nodes;
+    this.nodes.forEach((node) => {
+      const option = document.createElement('option');
+      option.innerHTML = "Node #" + node.wallet.hash.digest().data;
+      option.setAttribute('value', node.wallet.hash.digest().data);
+      this.shadowRoot.querySelector('#receiverSelect').appendChild(option);
+    });
   }
   
   get node() {
@@ -31,19 +26,21 @@ export default class BlockchainTransactionDialog extends Morph {
   }
   
   async initialize() {
-    this._sender = null;
-    this._receiver = null;
-    this._amount = 0;
     this._node = null;
+    this._nodes = [];
+    this._receivers = [];
     
     this.windowTitle = "New Blockchain Transaction";
-    this.parentNode.style.width = "680px";
-    this.parentNode.style.height = "100px";
+    this.parentNode.style.width = "660px";
+    this.parentNode.style.height = "200px";
+
     this.shadowRoot.querySelector('#buttonSave').addEventListener('click', this.onSave.bind(this));
+    this.shadowRoot.querySelector('#buttonSaveReceiver').addEventListener('click', this.addReceiver.bind(this))
   }
   
   onSave() {
-    this.node.handleTransaction();
+    const transaction = this.node.wallet.newTransaction(this._receivers);
+    this.node.handleTransaction(transaction);
     this.parentNode.parentNode.removeChild(this.parentNode);
   }
   
@@ -52,14 +49,32 @@ export default class BlockchainTransactionDialog extends Morph {
   }
   
   async update() {
-    this.shadowRoot.querySelector('#sender').value = this.node.wallet.hash.digest().data;
-    this.shadowRoot.querySelector('#receiver').value = this.receiver;
-    this.shadowRoot.querySelector('#amount').value = this.amount;
+    this.shadowRoot.querySelector('#receiverList').innerHTML = '';
+    this._receivers.forEach(receiver => {
+      const listElement = document.createElement('li');
+      listElement.innerHTML = receiver.receiver.wallet.hash.digest().data + " - $" + receiver.amount;
+      lively.components.openIn(this.shadowRoot.querySelector('#receiverList'), listElement).then();
+    });
   }
   
+  addReceiver() {
+    const receiverSelect = this.shadowRoot.querySelector('#receiverSelect');
+    const amount = this.shadowRoot.querySelector('#amount').value;
+    const receiver = this.nodes[receiverSelect.selectedIndex - 1];
+    if(!amount || !receiver) {
+      return;
+    }
+    
+    this._receivers.push({
+      'receiver': receiver,
+      'amount': amount
+    });
+    this.update();
+  }
   
   async livelyExample() {
     this.node = new BlockchainNode();
+    this.nodes = [this.node];
   }
   
   
