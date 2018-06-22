@@ -17,20 +17,20 @@ class TestClass {
 }
 
 // It also works for functions with parameters
-function /*slider:*//*example:*/max/*{}*//*{"id":"ac09_1857_56af","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"a":{"mode":"input","value":"10"},"b":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(a, b) {
+function /*example:*/max/*{"id":"ac09_1857_56af","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"a":{"mode":"input","value":"10"},"b":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(a, b) {
   if(a > b) {
-    return a;
+    /*probe:*/return/*{}*/ a;
   } else {
     return b;
   }
 }
 
-// Recursion
-function /*example:*/factorial/*{"name":{"mode":"input","value":""},"color":"hsl(280, 30%, 70%)","values":{"x":{"mode":"input","value":""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(x) {
-  return x <= 1 ? 1 : x * factorial(x-1);
+// Arrow functions
+export const /*example:*/fibonacci/*{"id":"4c22_6e4b_fe59","name":{"mode":"input","value":""},"color":"hsl(220, 30%, 70%)","values":{"x":{"mode":"input","value":"1"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/ = (x) => {
+  /*probe:*/return/*{}*/ x <= 1 ? 1 : fibonacci(x-1) + fibonacci(x-2);
 }
 
-// Arrow functions
-export const fibonacci = (x) => {
-  return x <= 1 ? 1 : fibonacci(x-1) + fibonacci(x-2);
+// Recursion
+function /*example:*/factorial/*{"id":"97c4_c756_018c","name":{"mode":"input","value":""},"color":"hsl(110, 30%, 70%)","values":{"x":{"mode":"input","value":"10"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(x) {
+  /*probe:*/return/*{}*/ x <= 1 ? 1 : x * factorial(x-1);
 }/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

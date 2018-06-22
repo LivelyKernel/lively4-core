@@ -1,4 +1,4 @@
-function /*example:*/drawSmiley/*{"id":"2bfb_d5bb_5570","name":{"mode":"input","value":""},"color":"hsl(40, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"2bfb_d5bb_5570_canvas"},"eyeColor":{"mode":"input","value":"\"blue\""},"skinColor":{"mode":"input","value":"\"yellow\""}},"instanceId":{"mode":"input","value":""},"prescript":"canvas.getContext(\"2d\").clearRect(0, 0, canvas.width, canvas.height);","postscript":""}*/(canvas, eyeColor, skinColor) {
+function /*example:*/drawSmiley/*{"id":"2bfb_d5bb_5570","name":{"mode":"input","value":"Simpson"},"color":"hsl(40, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"2bfb_d5bb_5570_canvas"},"eyeColor":{"mode":"input","value":"\"blue\""},"skinColor":{"mode":"input","value":"\"yellow\""}},"instanceId":{"mode":"input","value":""},"prescript":"canvas.getContext(\"2d\").clearRect(0, 0, canvas.width, canvas.height);","postscript":""}*/(canvas, eyeColor, skinColor) {
   if (canvas.getContext) {
     let ctx = canvas.getContext('2d');
     
@@ -22,7 +22,7 @@ function /*example:*/drawSmiley/*{"id":"2bfb_d5bb_5570","name":{"mode":"input","
       ctx.moveTo(eyePosX, 65);
       ctx.arc(eyePosX, 65, 5, 0, Math.PI * 2, true);  // Eye
       ctx.stroke();
-      /*probe:*/ctx/*{}*/.fill();
+      ctx.fill();
     }
   }
 }

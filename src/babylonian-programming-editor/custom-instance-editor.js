@@ -23,7 +23,11 @@ export default class CustomInstanceEditor extends Morph {
     
     this._editor = this.get("#editor");
     this._editor.addEventListener("editor-loaded", () => {
+      // Disable linting and syntax checking (otherwise it warns about 'return outside of funcion')
       this._editor.editor.setOption("lint", false);
+      this._editor.checkSyntax = new Function();
+      
+      // Send feedback to editor on change
       this._editor.editor.on("change", ((value) => {
         if(this._activeInstance) {
           this._activeInstance.code = this._editor.value;

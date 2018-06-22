@@ -96,7 +96,8 @@ export const canBeExample = (path) => {
   const isFunctionName = (functionParent
                           && (functionParent.get("id") === path
                               || functionParent.get("key") === path));
-  return isFunctionName || isArrowFunctionName(path);
+  return (isFunctionName && path.node.name !== "constructor")
+         || isArrowFunctionName(path);
 }
 
 /**

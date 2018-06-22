@@ -775,24 +775,23 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   updateSelectedPathActions() {
-    if(!this._selectedPath) {
-      this._selectedPathActions = [];
-      return;
-    }
+    this._selectedPathActions = [];
     
-    const checkFunctions = {
-      "probe": canBeProbe,
-      "slider": canBeSlider,
-      "replacement": canBeReplacement,
-      "example": canBeExample,
-      "instance": canBeInstance,
-    }
-    
-    Object.keys(checkFunctions).forEach(key => {
-      if(checkFunctions[key](this._selectedPath)) {
-        this._selectedPathActions.push(key);
+    if(this._selectedPath) {
+      const checkFunctions = {
+        "probe": canBeProbe,
+        "slider": canBeSlider,
+        "replacement": canBeReplacement,
+        "example": canBeExample,
+        "instance": canBeInstance,
       }
-    });
+
+      Object.keys(checkFunctions).forEach(key => {
+        if(checkFunctions[key](this._selectedPath)) {
+          this._selectedPathActions.push(key);
+        }
+      });
+    }
     
     this.updateButtons();
   }
