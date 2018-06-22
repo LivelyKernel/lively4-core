@@ -9,7 +9,7 @@
 
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
   }
   lively-code-mirror {
     flex: 1;
@@ -22,14 +22,56 @@
     background-color: lightyellow;
   }
 
+  .type-menu {
+    position: fixed;
+    z-index: 1002;
+  }
+  
+  .type-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    box-sizing: border-box;
+    border: 1px solid #aaa;
+  }
+  
+  .type-menu li {
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .type-menu li:hover {
+    color: #fff;
+    background-color: #789;
+  }
+  
+  .loop-marker {
+    display: hidden;
+    width: 4px;
+    z-index: 1002;
+    background-color: #0f0;
+    position: absolute;
+    right: 0px;
+  }
+  
+  .container {
+    position: relative;
+  }
+  
+  vivide-step-editor {
+    display: block;
+  }
 </style>
-  <div style="display: none;">
-    <vivide-step-editor></vivide-step-editor>
+  <div id="container" class="container">
+    <lively-inspector id="inspector" style="display: none;"></lively-inspector>
+    <div id="editor-list"></div>
+    <button id="addScript">+ Add Script</button>
+    <button id="setLoopStart">Set Loop Start</button>
+    <button id="removeLoop">Remove Loop</button>
+    <div id="loop-marker" class="loop-marker"></div>
   </div>
-  <lively-inspector id="inspector" style="display: none;"></lively-inspector>
-  <div id="editor-list"></div>
-
-  <button id="add-script">+ Add Script</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

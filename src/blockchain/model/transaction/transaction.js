@@ -11,6 +11,14 @@ export default class Transaction {
     this.signature = this._generateSignature(senderWallet);
   }
   
+  get displayName() {
+    if (!this.hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.hash.digest().toHex().substring(0, 10);
+  }
+  
   isSigned() {
     return !!this.signature;
   }
@@ -28,16 +36,16 @@ export default class Transaction {
     return this.senderPublicKey.verify(hash.digest().bytes(), this.signature);
   }
   
-  inputValue() {
-    return this.inputs.value();
+  get inputValue() {
+    return this.inputs.value;
   }
   
-  outputValue() {
-    return this.outputs.value();
+  get outputValue() {
+    return this.outputs.value;
   }
   
-  fees() {
-    return this.inputValue() - this.outputValue();
+  get fees() {
+    return this.inputValue - this.outputValue;
   }
   
   _generateSignature(senderWallet) {
@@ -45,7 +53,7 @@ export default class Transaction {
       return this;
     }
     
-    if (this.fees() < 0) {
+    if (this.fees < 0) {
       throw new Error("Fee must be positive");
     }
     

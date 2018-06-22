@@ -7,13 +7,17 @@ export default class Blockchain {
     this._blocks.set(this.headOfChain.hash, this.headOfChain);
   }
   
+  size() {
+    return this._blocks.size;
+  }
+  
   add(block) {
     if(!block.isVerified()) {
       // only accept valid blocks
       return;
     }
-    if(block.previousHash != this.headOfChain.hash) {
-      return;
+    if(block.previousHash.digest().data != this.headOfChain.hash.digest().data) {
+      throw new Error('The block to be added does not reference the previous block correctly!')
     }
     this._blocks.set(block.hash, block);
     this.headOfChain = block;
@@ -23,7 +27,8 @@ export default class Blockchain {
     return this._blocks.get(hash);
   }
   
-  size() {
-    return this._blocks.size;
+  forEach(callback) {
+    this._blocks.forEach((value) => callback(value));
   }
+
 }

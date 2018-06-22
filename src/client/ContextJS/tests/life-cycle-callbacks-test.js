@@ -44,6 +44,9 @@ describe("Life-cycle Callbacks", () => {
     it("layers respond to onActivate", () => {
       expect(Layer).to.respondTo('onActivate');
     });
+    it("onActivate is chainable", () => {
+      expect(l.onActivate(() => {})).to.equal(l);
+    });
     it("invokes callback on beGlobal", () => {
       const spy = sinon.spy();
 
@@ -216,6 +219,9 @@ describe("Life-cycle Callbacks", () => {
     it("layers respond to onDeactivate", () => {
       expect(Layer).to.respondTo('onDeactivate');
     });
+    it("onDeactivate is chainable", () => {
+      expect(l.onDeactivate(() => {})).to.equal(l);
+    });
     it("invokes callback on beNotGlobal", () => {
       const spy = sinon.spy();
 
@@ -380,6 +386,8 @@ describe("Life-cycle Callbacks", () => {
       });
     });
     // #TODO: how do `layer.onDeactivate` and `object.activeLayers = fn` interact?
+    // -> as `obj.activeLayers` is an instance-specific activation means,
+    // it should probably trigger an `activateFor` event
     xit('invokes callbacks on changes to activeLayers property', () => {});
   });
 });

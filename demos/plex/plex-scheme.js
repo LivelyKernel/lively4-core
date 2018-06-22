@@ -195,3 +195,6 @@ lively.components.addTemplatePath(lively4url + "/demos/plex/")
 lively.components.resetTemplatePathCache()
 
 PolymorphicIdentifier.register(PlexScheme)
+
+console.warn("LOADED plex")
+

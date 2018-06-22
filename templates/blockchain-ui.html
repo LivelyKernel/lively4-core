@@ -1,0 +1,57 @@
+<template id="blockchain-ui" data-class="BlockchainUi">
+<style data-src="/node_modules/bootstrap-css-only/css/bootstrap.min.css"></style>
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  div#content, content {
+    width: 100%;
+    height: 100%;
+  }
+  div.full-height {
+    height: 100%;
+  }
+  div#node-list {
+    width: 100%;
+    height: 100%;
+    overflow: scroll-y;
+    
+  }
+  div#left-sidebar {
+    height: 100%;
+    background: #fdfdfd;
+    border-right: 1px solid #cdcdcd;
+  }
+  div.no-padding {
+    padding:0;
+  }
+  div.no-margin {
+    margin:0;
+  }
+  div.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #ededed;
+  }
+</style>
+<div id="content">
+	<content>
+    <div class="container full-height">
+      <div class="row full-height">
+        <div class="col-6 full-height no-padding" id="left-sidebar">
+          <div id="node-list">
+          </div>
+          <div class="row no-margin sidebar-footer">
+            <button id="new-node-button">New Node</button>
+          </div>
+        </div>
+        <div class="col">
+          Main-Content
+        </div>
+      </div>
+    </div>
+  </content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

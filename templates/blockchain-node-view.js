@@ -1,20 +1,38 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from 'src/external/d3.v3.js';
+
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import TransactionNetworkView from 'src/blockchain/view/transactionNetworkView.js';
+import TransactionCollection from 'src/blockchain/model/transaction/transactionCollection.js';
 
 export default class BlockchainNodeView extends Morph {
   async initialize() {
     this.windowTitle = "BlockchainNodeView";
     this._svg = this.shadowRoot.querySelector("#svgContainer");
+    
+    this._displayedNodes = [];
+    this._displayedLinks = [];
     this._nodes = [];
     this._links = [];
   }
   
+  get nodes() {
+    return this._nodes;
+  }
+  
+  get links() {
+    return this._links;
+  }
+  
   draw() {
+    const that = this;
+    const allNodes = this._displayedNodes.concat(this._nodes);
+    const allLinks = this._displayedLinks.concat(this._links);
     const svg = d3.select(this._svg);
     const width = svg.attr("width");
     const height = svg.attr("height");
+    const newMarker = "newEnd";
+    const oldMarker = "oldEnd";
     
     // remove all elements before drawing new ones
     svg.selectAll("*").remove();
@@ -26,60 +44,148 @@ export default class BlockchainNodeView extends Morph {
       .size([width, height]);
     
     force
-      .nodes(this._nodes)
-      .links(this._links)
-      .linkDistance(60)
+      .nodes(allNodes)
+      .links(allLinks)
       .start();
     
+    this._addMarker(svg, oldMarker, false);
+    this._addMarker(svg, newMarker, true);
+
     const link = svg.selectAll(".link")
-      .data(this._links)
+      .data(allLinks)
       .enter()
       .append("line")
-      .attr("class", "link");
-    
+      .classed("link", true)
+      .each(function(d, i) {
+        if (i < that._displayedLinks.length) {
+          this.setAttribute("marker-end", "url(#" + oldMarker + ")")
+          return;
+        }
+        
+        // overwrite marker end with new marker
+        this.classList.add("animationStroke");
+        this.setAttribute("marker-end", "url(#" + newMarker + ")")
+      });
+
     const node = svg.selectAll(".node")
-      .data(this._nodes)
+      .data(allNodes)
       .enter()
       .append("g")
-      .attr("class", "node")
-      .call(force.drag);
+      .call(force.drag)
+      .classed("node", true)
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+        
+        this.classList.add("animationFill");
+      });
     
-    node.append("circle")
-      .attr("r", "5")
-      .attr("fill", "#2c2c2c")
-      .attr("stroke-width", "2px");
+    node
+      .append("circle")
+      .classed("bubble", true)
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+
+        this.classList.add("animationFill");
+      });
     
     node.append("text")
       .attr("dx", 12)
       .attr("dy", ".35em")
       .text(function(d) { return d.name });
     
+    
     force.on("tick", function() {
       link.attr("x1", function(d) { return d.source.x; })
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
-
+      
       node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
     });
+    
+    this._displayedNodes = allNodes;
+    this._displayedLinks = allLinks;
+    this._nodes = [];
+    this._links = [];
+  }
+  
+  _addMarker(svg, markerName, animation) {
+    // build the arrow.
+    const marker = svg.append("svg:defs").selectAll("marker")
+      .data([markerName])      // Different link/path types can be defined here
+      .enter().append("svg:marker")    // This section adds in the arrows
+      .attr("id", String)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .classed("linkEnd", true);
+    
+    if (!animation) {
+      return marker;
+    }
+    
+    return marker.classed("animationFill", true);
   }
   
   async livelyExample() {
+    console.log("start example...");
+    const node1 = new BlockchainNode();
+    const node2 = new BlockchainNode();
+    const node3 = new BlockchainNode();
+    const node4 = new BlockchainNode();
+    const node5 = new BlockchainNode();
+    
+    for (let i = 0; i < 5; i++) {
+      node1.mine();
+      await new Promise(sleep => setTimeout(sleep, 3000));
+    }
+    
+    console.log(node1.wallet.value);
+    
+    const tx1 = node1.wallet.newTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 20},
+      {"receiver": node3.wallet, "value": node1.wallet.value / 20}
+    ]);
+    
+    const tx2 = node1.wallet.newTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node3.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node4.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node5.wallet, "value": node1.wallet.value / 40}
+    ]);
+    
+    const transactions = new TransactionCollection().add(tx1).add(tx2).finalize();
+    const view = new TransactionNetworkView(this, transactions);
+    view.draw();
+  }
+  
+  async __livelyExample2() {
     this._nodes = [
       {
-        "name": "node1",
+        "name": "#1234567890",
         "group": 1
       },
       {
-        "name": "node2",
+        "name": "#0987654321",
         "group": 1
       },
       {
-        "name": "node3",
+        "name": "#abcdef1234",
         "group": 1
       },
       {
-        "name": "node4",
+        "name": "#0123abcdef",
         "group": 1
       }
     ];

@@ -12,6 +12,14 @@ export default class MiningProof {
     this.hash = null;
   }
   
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.digest().toHex().substring(0, 10);
+  }
+  
   async work() {
     this.startTimestamp = Date.now();
     await this._solveCryptoPuzzle();
@@ -23,9 +31,9 @@ export default class MiningProof {
     return !!this.hash;
   }
   
-  async _solveCryptoPuzzle() {
+  _solveCryptoPuzzle() {
     // simulate proof of work by sleeping
-    await new Promise(sleep => setTimeout(sleep, this.miningDifficulty * 1000));
+    return new Promise(sleep => setTimeout(sleep, this.miningDifficulty * 1000));
   }
   
   _hash() {

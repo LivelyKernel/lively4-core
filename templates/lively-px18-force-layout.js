@@ -26,12 +26,11 @@ export default class LivelyD3Tree extends Morph {
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
-    var nodeId = 3;
     var color = d3.scaleOrdinal(d3.schemeCategory20);
     
-    var addButton = this.get("#addNode")
+    var addButton = this.get("#addNode");
+    var removeButton = this.get("#removeNode");
     addButton.addEventListener("click", addNode);
-    var removeButton = this.get("#removeNode")
     removeButton.addEventListener("click", removeNode);
 
     var simulation = d3.forceSimulation()
@@ -50,52 +49,54 @@ export default class LivelyD3Tree extends Morph {
       .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
       .attr("stroke", "lightgray");
 
-    var a = {id: "a", group: 1},
-        b = {id: "b", group: 2},
-        c = {id: "c", group: 3},
-        nodes = [a, b, c],
-        links = [{source: a, target: b},{source: b, target: c}, {source: c, target: a} ];
+    var nodes = [],
+        links = [];
 
     function addNode() {
-      var newNode = {id: "" + (lastId++), group: 3}
+      var newNode = {id: "" + (lastId++), group: 1}
       nodes.push(newNode);
-      if (lastNode) {
+      if (lastNode !== 'undefined') {
         links.push(
           {source: lastNode, target: newNode});        
       }
       lastNode = newNode;
-      start();
+      restart();
     }
 
     function removeNode() {
-      nodes.pop(); // Remove c.
-      links.pop(); // Remove c-a.
-      links.pop(); // Remove b-c.
-      start();
+      nodes.shift(); // Remove first node
+      links.shift(); // Remove first link
+      if(nodes.length == 0) {
+        lastId = 0;
+        lastNode = 'undefined';
+      }
+      restart();
     }
 
-
-
     async function start() {
+      lastId = 0;
+      lastNode = 'undefined';
+    }
+    
+    function restart() {
       node = node.data(nodes, function(d) { return d.id;});
       node.exit().remove();
       node = node.enter().append("circle")
         .attr("r", 10)
-        .attr("fill", function(d) { return color(d.id); })
+        .attr("fill", function(d) { return color(d.group); })
         .merge(node)
         .call(d3.drag()
           .on("start", dragstarted.bind(this, simulation))
           .on("drag", dragged.bind(this, simulation))
           .on("end", dragended.bind(this, simulation)));
-
-      link = link.data(links, function(d) { return d.source.id + "-" + d.target.id; });
+      
+      
+      link = link.data(links, function(d) { return d.source.id + "-" + d.target.id;         });
       link.exit().remove();
       link = link.enter().append("line")
         .attr("stroke-width", function(d) { return Math.sqrt(d.value); })
         .attr("stroke", "lightgray")
         .merge(link);
-
-      ticked(link, node);
 
       node.append("title")
         .text(function(d) { return d.id; });
@@ -107,13 +108,18 @@ export default class LivelyD3Tree extends Morph {
       simulation.force("link")
         .links(links)
         .distance(100);
+      
+       simulation
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("x", d3.forceX())
+      .force("y", d3.forceY())
+      .alphaTarget(1);
+      
+      ticked(link, node);
 
-      //simulation.restart();
-
-    };
+    }
 
     function ticked(link, node) {
-    //console.log('ticked');
       link
         .attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
@@ -143,15 +149,6 @@ export default class LivelyD3Tree extends Morph {
     }
 
     start();
-  }
-  
-  livelyExample() {
-    
-  }
- 
-  livelyMigrate(other) {
-    this.treeData = other.treeData
-    this.dataName = other.dataName
   }
   
 }

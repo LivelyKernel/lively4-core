@@ -7,6 +7,7 @@ export default class Script {
     this.type = type;
     this.nextScript = null;
     this.updateCallback = null;
+    this.lastScript = false;
   }
   
   set next(value) {

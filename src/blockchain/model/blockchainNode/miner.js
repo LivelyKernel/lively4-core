@@ -2,16 +2,12 @@ import MiningProof from '../block/miningProof.js';
 import Block from '../block/block.js';
 import TransactionCollection from '../transaction/transactionCollection.js';
 
-const MINING_INTERVALL = 6; // in seconds
-
+const MINING_INTERVAL = 6; // in seconds
 
 export default class Miner {
   constructor(blockchainNode) {
     this._blockchainNode = blockchainNode;
     this._transactions = new TransactionCollection();
-    window.setInterval(() => {
-      this.mine();
-    }, MINING_INTERVALL * 1000);
   }
   
   addTransaction(transaction) {
@@ -22,9 +18,10 @@ export default class Miner {
   }
   
   async mine() {
-    if(this._transactions.size() < 1) {
+    if (this._blockchainNode.hasExited) {
       return;
     }
+    
     const miningDifficulty = Math.log10(this._blockchainNode.blockchain.size());
     const miningProof = new MiningProof(miningDifficulty);
     await miningProof.work();
