@@ -1,0 +1,53 @@
+<template id="blockchain-transaction-dialog" data-class="BlockchainTransactionDialog">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/node_modules/bootstrap-css-only/css/bootstrap.min.css"></style>
+<style>
+  .no-margin {
+    margin: 0;
+  }
+  .no-padding {
+    padding: 0;
+  }
+  .margin-row {
+    margin: 10px 0;
+  }
+  #receiverList {
+    min-width: 300px;
+  }
+  .wrapper {
+    padding: 15px;
+  }
+</style>
+<div id="blockchain-transaction-dialog">
+  <div class="wrapper">
+    <div class="row">
+      <div class="col">
+        <div class="row margin-row">
+          <strong>Added transfers</strong>
+          <ul id="receiverList"></ul>
+        </div>
+      </div>
+      <div class="col">
+        <div class="row margin-row">
+          <select id="receiverSelect">
+            <option value="none" selected>--Please choose a node--</option>
+          </select>
+        </div>
+        <div class="row margin-row">
+          <input type="number" placeholder="Amount" id="amount" required>
+        </div>
+        <div class="row margin-row">
+          <button type="button" id="buttonSaveReceiver" class="btn">Add Receiver</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <button type="button" id="buttonSave" class="btn">Send</button>
+      </div>
+    </div>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

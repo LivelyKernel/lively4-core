@@ -39,6 +39,8 @@ self.Promise = function Promise(...args) {
   }
   return new self.OriginalPromise(...args)
 }
+
+debugger
 self.Promise.prototype = self.OriginalPromise.prototype;
 self.Promise.__proto__ = self.OriginalPromise // meta-class inheritance... Promise.all should work
 self.Promise.prototype.constructorHook = function(p, args) {
@@ -59,3 +61,14 @@ cop.layer(self, "ReplayLayerActivationsLayer").refineClass(Promise, {
 })
 
 self.ReplayLayerActivationsLayer.beGlobal()
+
+export function wrapAwait(p) {
+  return p
+  
+  // var a  = currentLayers()
+  // var r = p.then(x => x)
+  // r.isMySpecialAwait = Array.from(LayerStack)
+  // r.isMySpecialAwait = Layers.currentLayers().filter(ea => ea.isAsyncLayer)
+  
+  // return r
+} 

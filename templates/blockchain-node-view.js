@@ -1,7 +1,9 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from 'src/external/d3.v3.js';
+
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import TransactionNetworkView from 'src/blockchain/view/transactionNetworkView.js';
+import TransactionCollection from 'src/blockchain/model/transaction/transactionCollection.js';
 
 export default class BlockchainNodeView extends Morph {
   async initialize() {
@@ -137,6 +139,38 @@ export default class BlockchainNodeView extends Morph {
   }
   
   async livelyExample() {
+    console.log("start example...");
+    const node1 = new BlockchainNode();
+    const node2 = new BlockchainNode();
+    const node3 = new BlockchainNode();
+    const node4 = new BlockchainNode();
+    const node5 = new BlockchainNode();
+    
+    for (let i = 0; i < 5; i++) {
+      node1.mine();
+      await new Promise(sleep => setTimeout(sleep, 3000));
+    }
+    
+    console.log(node1.wallet.value);
+    
+    const tx1 = node1.wallet.newTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 20},
+      {"receiver": node3.wallet, "value": node1.wallet.value / 20}
+    ]);
+    
+    const tx2 = node1.wallet.newTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node3.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node4.wallet, "value": node1.wallet.value / 40},
+      {"receiver": node5.wallet, "value": node1.wallet.value / 40}
+    ]);
+    
+    const transactions = new TransactionCollection().add(tx1).add(tx2).finalize();
+    const view = new TransactionNetworkView(this, transactions);
+    view.draw();
+  }
+  
+  async __livelyExample2() {
     this._nodes = [
       {
         "name": "#1234567890",

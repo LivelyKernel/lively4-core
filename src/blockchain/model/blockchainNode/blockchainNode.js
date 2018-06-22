@@ -30,8 +30,8 @@ export default class BlockchainNode {
     this._hasExited = true;
   }
   
-  mine() {
-    this._miner.mine();
+  async mine() {
+    await this._miner.mine();
   }
   
   blockchainIsValid(blockchain) {
@@ -52,6 +52,7 @@ export default class BlockchainNode {
   }
   
   handleBlock(block) {
+    block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
   }
   
