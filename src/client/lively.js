@@ -802,8 +802,10 @@ export default class Lively {
     })
 
     console.log(window.lively4stamp, "load local lively content ")
+    // #RACE #TODO ... 
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
+    // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();
     // lively.selection;
