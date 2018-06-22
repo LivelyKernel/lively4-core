@@ -11,7 +11,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this._nodes = nodes;
     this.nodes.forEach((node) => {
       const option = document.createElement('option');
-      option.innerHTML = "Node #" + node.wallet.hash.digest().data;
+      option.innerHTML = "Node " + node.wallet.displayName;
       option.setAttribute('value', node.wallet.hash.digest().data);
       this.shadowRoot.querySelector('#receiverSelect').appendChild(option);
     });
@@ -31,6 +31,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this._receivers = [];
     
     this.windowTitle = "New Blockchain Transaction";
+    // Set width & height of window (parent node)
     this.parentNode.style.width = "660px";
     this.parentNode.style.height = "200px";
 
@@ -52,7 +53,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this.shadowRoot.querySelector('#receiverList').innerHTML = '';
     this._receivers.forEach(receiver => {
       const listElement = document.createElement('li');
-      listElement.innerHTML = receiver.receiver.wallet.hash.digest().data + " - $" + receiver.amount;
+      listElement.innerHTML = "Node " + receiver.receiver.wallet.displayName + " - $" + receiver.amount;
       lively.components.openIn(this.shadowRoot.querySelector('#receiverList'), listElement).then();
     });
   }

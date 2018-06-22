@@ -19,11 +19,11 @@ export default class TransactionOutputCollection {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.digest().toHex().substring(0, 10);
   }
   
   add(receiverWallet, value) {
@@ -63,8 +63,8 @@ export default class TransactionOutputCollection {
   }
   
   _calculateValue() {
-    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, output) => {
-      total += output.value;
+    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, entry) => {
+      return total + entry[1].value;
     }, 0);
   }
   

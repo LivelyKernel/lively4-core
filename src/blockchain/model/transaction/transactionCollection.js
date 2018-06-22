@@ -7,11 +7,11 @@ export default class TransactionCollection {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.digest().toHex().substring(0, 10);
   }
   
   add(transaction) {
@@ -24,8 +24,8 @@ export default class TransactionCollection {
   }
   
   fees() {
-    return Array.from(this._transactions.entries()).reduce((total, output) => {
-      total += output.fees;
+    return Array.from(this._transactions.entries()).reduce((total, entry) => {
+      return total + entry[1].fees;
     }, 0);
   }
   

@@ -153,12 +153,12 @@ export default class BlockchainNodeView extends Morph {
     
     console.log(node1.wallet.value);
     
-    const tx1 = node1.wallet.newTransaction(node1.wallet.value / 10, [
+    const tx1 = node1.wallet.newTransaction([
       {"receiver": node2.wallet, "value": node1.wallet.value / 20},
       {"receiver": node3.wallet, "value": node1.wallet.value / 20}
     ]);
     
-    const tx2 = node1.wallet.newTransaction(node1.wallet.value / 10, [
+    const tx2 = node1.wallet.newTransaction([
       {"receiver": node2.wallet, "value": node1.wallet.value / 40},
       {"receiver": node3.wallet, "value": node1.wallet.value / 40},
       {"receiver": node4.wallet, "value": node1.wallet.value / 40},
@@ -167,6 +167,7 @@ export default class BlockchainNodeView extends Morph {
     
     const transactions = new TransactionCollection().add(tx1).add(tx2).finalize();
     const view = new TransactionNetworkView(this, transactions);
+    view.draw();
   }
   
   async __livelyExample2() {
