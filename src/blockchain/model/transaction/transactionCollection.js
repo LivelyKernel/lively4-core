@@ -11,7 +11,7 @@ export default class TransactionCollection {
       return "#NotAName";
     }
     
-    return "#" + this.hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(transaction) {
@@ -55,9 +55,10 @@ export default class TransactionCollection {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactions.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }
