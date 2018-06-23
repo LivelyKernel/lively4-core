@@ -23,7 +23,7 @@ export default class TransactionOutputCollection {
       return "#NotAName";
     }
     
-    return "#" + this.hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(receiverWallet, value) {
@@ -58,8 +58,22 @@ export default class TransactionOutputCollection {
     return !!this.hash;
   }
   
-  has(outputHash) {
-    return this._transactionOutputs.has(outputHash);
+  hasOutput(outputHash) {
+    let result = false;
+    
+    this._transactionOutputs.forEach((output) => {
+      if (result) {
+        return;
+      }
+      
+      result = output.hash == outputHash;
+    });
+    
+    return result;
+  }
+  
+  has(receiverHash) {
+    return this._transactionOutputs.has(receiverHash);
   }
   
   _calculateValue() {
@@ -69,9 +83,10 @@ export default class TransactionOutputCollection {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactionOutputs.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }

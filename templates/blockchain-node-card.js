@@ -30,8 +30,11 @@ export default class BlockchainNodeCard extends Morph {
     if(!node) {
       return;
     }
+    
     this._node = node;
     this.shadowRoot.querySelector('#button-node-mine').onclick=(this._node.mine.bind(this._node));
+    this.node.unsubscribe(this);
+    this.node.subscribe(this, this.update.bind(this));
     this.update();
   }
   

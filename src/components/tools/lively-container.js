@@ -1300,7 +1300,7 @@ export default class Container extends Morph {
     if (markdown.getAttribute("mode") == "presentation") {
       lively.notify("saving in presentation mode not supported yet")
     } else {
-      var source = markdown.htmlAsMarkdownSource()
+      var source = await markdown.htmlAsMarkdownSource()
       return this.saveSource(url, source);
     }   
   }

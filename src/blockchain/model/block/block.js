@@ -25,7 +25,7 @@ export default class Block {
     this._sendReward(minerWallet);
     
     this.previousHash = previousHash;
-    this.hash = this._hash();
+    this.hash = this._hash().digest().toHex();
     this.signature = this._generateSignature(minerWallet);
   }
   
@@ -34,7 +34,7 @@ export default class Block {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this._hash.substring(0, 10);
   }
   
   isSigned() {
@@ -83,11 +83,11 @@ export default class Block {
     // encrypt the hash using the given private key
     // this allows us to decrypt the signature later
     // on using the matching public key
-    return minerWallet.sign(this.hash);
+    return minerWallet.sign(this._hash());
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
+    const sha256 = forge.md.sha256.create();
     return sha256.update(
       this.timestamp +
       this.minetHash +

@@ -18,7 +18,7 @@ export default class TransactionNetworkView {
       nodeIndices.set(transaction.hash, this._nodeView.nodes.length);
       this._nodeView.nodes.push(
         {
-          "name": transaction.hash.digest().toHex(), 
+          "name": transaction.displayName, 
           "group": 1
         }
       );
@@ -35,7 +35,7 @@ export default class TransactionNetworkView {
             return;
           }
           
-          if (!sender.outputs.has(input)) {
+          if (!sender.outputs.hasOutput(input.hash)) {
             return;
           }
           

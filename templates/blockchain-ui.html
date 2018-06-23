@@ -13,7 +13,7 @@
   div#node-list {
     width: 100%;
     height: 100%;
-    overflow: scroll-y;
+    overflow-y: scroll;
     
   }
   div#left-sidebar {
@@ -33,20 +33,26 @@
     width: 100%;
     background: #ededed;
   }
+  div.container {
+    max-width: 100% !important;
+  }
 </style>
 <div id="content">
 	<content>
     <div class="container full-height">
       <div class="row full-height">
-        <div class="col-6 full-height no-padding" id="left-sidebar">
+        <div class="col-3 full-height no-padding" id="left-sidebar">
           <div id="node-list">
           </div>
           <div class="row no-margin sidebar-footer">
             <button id="new-node-button">New Node</button>
           </div>
         </div>
-        <div class="col">
-          Main-Content
+        <div class="col-4">
+          Blockchain View
+        </div>
+        <div class="col-5">
+          Transaction View
         </div>
       </div>
     </div>
