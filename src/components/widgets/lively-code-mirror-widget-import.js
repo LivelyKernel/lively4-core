@@ -90,7 +90,7 @@ export default class LivelyCodeMirrorWidgetImport extends Morph {
     this.modulePath.onfocus= e => lively.notify('FOCUSSED')
     this.modulePath.onblur = e =>{
       lively.notify('BLURRED')
-      // debugger;
+      debugger;
     } 
     
     this.prepareFileList();
@@ -114,19 +114,22 @@ export default class LivelyCodeMirrorWidgetImport extends Morph {
       }
     }}>xxx</button>)
     this.appendChild(<input type="text" value={m[0]}></input>)
+    this.cm.editor.refresh()
   }
   onEnter(direction) {
     lively.success('ENTER FROM ' + direction)
     if (!this.marker.find()) {
       this.cm.editor.refresh();
     } else {
-      this.enter(direction);
+      setTimeout(() => {
+        this.enter(direction);
+      }, 50);
     }
   }
   enter(direction) {
     var module = this.modulePath;
     module.focus();
-    const position = direction === 'left' ? 0 : module.value.length;
-    //module.setSelectionRange(position, position);
+    // const position = direction === 'left' ? 0 : module.value.length;
+    // module.setSelectionRange(position, position);
   }
 }
