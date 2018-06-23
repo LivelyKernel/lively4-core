@@ -18,10 +18,22 @@ export default class BlockchainNodeView extends Morph {
   
   addNode(node) {
     this._newNodes.push(node);
+    return this;
+  }
+  
+  addNodes(nodes) {
+    this._newNodes = this._newNodes.concat(nodes);
+    return this;
   }
   
   addLink(link) {
     this._newLinks.push(link);
+    return this;
+  }
+  
+  addLinks(links) {
+    this._newLinks = this._newLinks.concat(links);
+    return this;
   }
   
   draw() {
@@ -164,10 +176,11 @@ export default class BlockchainNodeView extends Morph {
       {"receiver": node1.wallet, "value": node2.wallet.value / 2},
     ]);
     
-    const view = new TransactionNetworkView(this, [
-      tx1,
-      tx2,
-    ]);
+    const view = new TransactionNetworkView(this)
+      .addTransactions([
+        tx1,
+        tx2,
+      ]);
     view.draw();
   }
   

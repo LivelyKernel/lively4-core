@@ -1,17 +1,22 @@
 
 export default class TransactionNetworkView {
-  constructor(blockchainNodeView, transactions) {
+  constructor(blockchainNodeView) {
     this._nodeView = blockchainNodeView;
     this._nodeView.nodeClickHandler = this._onNodeClick.bind(this);
-    this._transactions = transactions;
     
     this._displayedTransactions = [];
-    this._newTransactions = transactions;
+    this._newTransactions = [];
     this._nodeIndices = new Map();
   }
   
   addTransaction(transaction) {
     this._newTransactions.push(transaction);
+    return this;
+  }
+  
+  addTransactions(transactions) {
+    this._newTransactions = this._newTransactions.concat(transactions);
+    return this;
   }
   
   draw() {
