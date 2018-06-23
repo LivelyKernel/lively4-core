@@ -20,7 +20,7 @@ export default class Block {
     this.minerPublicKey = minerWallet.publicKey;
     this.transactions = transactions;
     this.miningProof = miningProof;
-    this.reward = transactions.fees() + C_BLOCK_REWARD;
+    this.reward = transactions.fees + C_BLOCK_REWARD;
     
     this._sendReward(minerWallet);
     

@@ -9,24 +9,25 @@ export default class BlockchainNodeView extends Morph {
     this.windowTitle = "BlockchainNodeView";
     this._svg = this.shadowRoot.querySelector("#svgContainer");
     
+    this.nodeClickHandler = (node) => { console.log("click! --> " + node.name); }
     this._displayedNodes = [];
     this._displayedLinks = [];
-    this._nodes = [];
-    this._links = [];
+    this._newNodes = [];
+    this._newLinks = [];
   }
   
-  get nodes() {
-    return this._nodes;
+  addNode(node) {
+    this._newNodes.push(node);
   }
   
-  get links() {
-    return this._links;
+  addLink(link) {
+    this._newLinks.push(link);
   }
   
   draw() {
     const that = this;
-    const allNodes = this._displayedNodes.concat(this._nodes);
-    const allLinks = this._displayedLinks.concat(this._links);
+    const allNodes = this._displayedNodes.concat(this._newNodes);
+    const allLinks = this._displayedLinks.concat(this._newLinks);
     const svg = d3.select(this._svg);
     const width = svg.attr("width");
     const height = svg.attr("height");
@@ -72,6 +73,13 @@ export default class BlockchainNodeView extends Morph {
       .append("g")
       .call(force.drag)
       .classed("node", true)
+      .on("click", function(d) {
+        if (!that.nodeClickHandler) {
+          return;
+        }
+        
+        that.nodeClickHandler(d);
+      })
       .each(function(d, i) {
         if (i < that._displayedNodes.length) {
           // must be an old node
@@ -100,7 +108,8 @@ export default class BlockchainNodeView extends Morph {
     
     
     force.on("tick", function() {
-      link.attr("x1", function(d) { return d.source.x; })
+      link
+          .attr("x1", function(d) { return d.source.x; })
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
@@ -110,8 +119,8 @@ export default class BlockchainNodeView extends Morph {
     
     this._displayedNodes = allNodes;
     this._displayedLinks = allLinks;
-    this._nodes = [];
-    this._links = [];
+    this._newNodes = [];
+    this._newLinks = [];
   }
   
   _addMarker(svg, markerName, animation) {
@@ -145,7 +154,7 @@ export default class BlockchainNodeView extends Morph {
     await new Promise(sleep => setTimeout(sleep, 3000));
     
     const tx1 = node1.sendTransaction([
-      {"receiver": node2.wallet, "value": node1.wallet.value / 20}
+      {"receiver": node2.wallet, "value": node1.wallet.value / 2}
     ]);
     
     node1.mine();
@@ -163,7 +172,7 @@ export default class BlockchainNodeView extends Morph {
   }
   
   async __livelyExample2() {
-    this._nodes = [
+    this._newNodes = [
       {
         "name": "#1234567890",
         "group": 1
@@ -182,7 +191,7 @@ export default class BlockchainNodeView extends Morph {
       }
     ];
     
-    this._links = [
+    this._newLinks = [
       {
         "source": 0,
         "target": 1,

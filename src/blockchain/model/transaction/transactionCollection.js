@@ -23,7 +23,7 @@ export default class TransactionCollection {
     return this;
   }
   
-  fees() {
+  get fees() {
     return Array.from(this._transactions.entries()).reduce((total, entry) => {
       return total + entry[1].fees;
     }, 0);
