@@ -4,6 +4,8 @@ import d3 from 'src/external/d3.v3.js';
 import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
 import TransactionNetworkView from 'src/blockchain/view/transactionNetworkView.js';
 
+import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
+
 export default class BlockchainNodeView extends Morph {
   async initialize() {
     this.windowTitle = "BlockchainNodeView";
@@ -176,11 +178,18 @@ export default class BlockchainNodeView extends Morph {
       {"receiver": node1.wallet, "value": node2.wallet.value / 2},
     ]);
     
+    /*
     const view = new TransactionNetworkView(this)
       .addTransactions([
         tx1,
         tx2,
       ]);
+    */
+    
+    const view = new BlockNetworkView(this);
+    
+    node1.blockchain.forEach((block) => view.addBlock(block));
+    
     view.draw();
   }
   
