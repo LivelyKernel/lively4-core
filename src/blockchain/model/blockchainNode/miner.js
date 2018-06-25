@@ -17,6 +17,12 @@ export default class Miner {
     this._transactions.add(transaction);
   }
   
+  invalidateTransactions(block) {
+    block.transactions.forEach(transaction => {
+      this._transactions.remove(transaction);
+    });
+  }
+  
   async mine() {
     if (this._blockchainNode.hasExited) {
       return;

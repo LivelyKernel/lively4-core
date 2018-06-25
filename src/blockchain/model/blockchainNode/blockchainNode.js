@@ -71,6 +71,7 @@ export default class BlockchainNode {
   }
   
   handleBlock(block) {
+    this.miner.invalidateTransactions(block);
     block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
     this._notifySubscribers(block);

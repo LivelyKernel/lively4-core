@@ -23,6 +23,18 @@ export default class TransactionCollection {
     return this;
   }
   
+  remove(transaction) {
+    if (this.isFinalized()) {
+      throw new Error("Cannot remove transaction from finalized transaction collection!");
+    }
+    
+    if (!this._transactions.has(transaction.hash)) {
+      return;
+    }
+    
+    this._transactions.delete(transaction.hash);
+  }
+  
   get fees() {
     return Array.from(this._transactions.entries()).reduce((total, entry) => {
       return total + entry[1].fees;
