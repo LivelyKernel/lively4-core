@@ -37,18 +37,25 @@ export default class BlockchainTransaction extends Morph {
     } else {
       this.shadowRoot.querySelector('#publicKey span').innerHTML = "not signed";
     }
-    const inputList = this.shadowRoot.querySelector('#inputList');
-    const outputList = this.shadowRoot.querySelector('#outputList');
+    this._createInputList();
+    this._createOutputList();
+  }
+  
+  _createInputList() {
+    const inputList = this.shadowRoot.querySelector('#input-list');
     this.transaction.inputs.forEach(input => {
       const transactionInputWrapper = document.createElement('div');
       transactionInputWrapper.innerHTML = '<i class="fa fa-sign-in" aria-hidden="true"></i> ' + input.transactionDisplayName + ' µ' + input.value;
       inputList.appendChild(transactionInputWrapper);
     });
-    
+  }
+  
+  _createOutputList() {
+    const outputList = this.shadowRoot.querySelector('#output-list');
     this.transaction.outputs.forEach(output => {
       const transactionInputWrapper = document.createElement('div');
       transactionInputWrapper.innerHTML = '<i class="fa fa-sign-out" aria-hidden="true"></i> ' + output.receiverDisplayName + ' µ' + output.value;
-      inputList.appendChild(transactionInputWrapper);
+      outputList.appendChild(transactionInputWrapper);
     });
   }
   
