@@ -32,7 +32,6 @@ export default class BlockchainUI extends Morph {
   
   createNewNode() {
     const node = new BlockchainNode();
-    node.subscribe(this, this.update.bind(this));
     this._nodes.push(node);
     const nodeUI = document.createElement('blockchain-node-card');
     nodeUI.node = node;
@@ -55,10 +54,14 @@ export default class BlockchainUI extends Morph {
     this.transactionViewController.reset();
     
     this.createNewNode();
+    this._nodes[0].subscribe(this, this.update.bind(this));
+    this.update(this._nodes[0].blockchain.headOfChain);
   }
   
   async livelyExample() {
     this.createNewNode();
+    this._nodes[0].subscribe(this, this.update.bind(this));
+    this.update(this._nodes[0].blockchain.headOfChain);
   }
   
   

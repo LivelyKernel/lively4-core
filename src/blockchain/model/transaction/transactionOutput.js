@@ -5,6 +5,7 @@ export default class TransactionOutput {
     this.receiverHash = receiverWallet.hash;
     this.value = value;
     this.hash = this._hash();
+    this.transactionHash = "";
   }
   
   get displayName() {
@@ -13,6 +14,14 @@ export default class TransactionOutput {
     }
     
     return "#" + this.hash.substring(0, 10);
+  }
+  
+  get transactionDisplayName() {
+    if (!this.transactionHash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.transactionHash.substring(0, 10);
   }
   
   _hash() {

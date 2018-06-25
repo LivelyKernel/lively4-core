@@ -60,7 +60,7 @@ export default class BlockchainTransactionDialog extends Morph {
   
   addReceiver() {
     const receiverSelect = this.shadowRoot.querySelector('#receiverSelect');
-    const amount = this.shadowRoot.querySelector('#amount').value;
+    const amount = parseInt(this.shadowRoot.querySelector('#amount').value);
     const receiver = this.nodes[receiverSelect.selectedIndex - 1].wallet;
     if(!amount || !receiver) {
       return;
@@ -68,7 +68,7 @@ export default class BlockchainTransactionDialog extends Morph {
     
     this._receivers.push({
       'receiver': receiver,
-      'amount': amount
+      'value': amount
     });
     this.update();
   }
