@@ -11,6 +11,7 @@ export default class BlockchainBlock extends Morph {
     block.transactions.forEach(transaction => {
       this.transactionViewController.addTransaction(transaction);
     });
+    this.transactionViewController.draw();
   }
   
   async initialize() {
