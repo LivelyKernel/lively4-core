@@ -1,12 +1,30 @@
-.lively-slide.fullscreen-standard-vga {
-  position:fixed;
-  width: 1024px;
-  height: 768px;
-  box-sizing: border-box;
-  background-color: #fff;
-  z-index: 10001;
-  border: none;
+.lively-slide.ratio-4-3 {
+  width: 800px;
+  height: 600px;
 }
+
+.lively-slide.ratio-8-5 {
+  width: 1280px;
+  height: 800px;
+}
+
+
+.lively-slide.ratio-16-9 {
+  width: 1280px;
+  height: 720px;
+}
+
+.lively-slide.ratio-16-9 .img-big {
+  position: absolute;
+  left: 100px;
+  top: 120px;
+  width: 1080px;
+  height: auto;
+  /* Reset max width */
+  max-width: 9999px;
+}
+
+/* Prio to request fullscreen and transform */
 
 .lively-slide.fullscreen-hd {
   position:fixed;

@@ -3,7 +3,12 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "standard-vga";
+let presentation = lively.query(this, "lively-presentation");
+let slides = presentation.querySelectorAll('.lively-slide');
+let ratio = "16-9";
+slides.forEach(slide => {
+  slide.classList += " ratio-" + ratio;
+})
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -32,29 +37,23 @@ let presentationSize = "standard-vga";
 </style>
 
 <script>
-let presentation = lively.query(this, "lively-presentation");
 let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
-presentButton.addEventListener("click", () => {
-  let slides = presentation.querySelectorAll('.lively-slide');
+presentButton.addEventListener("click", async () => {
+  document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+  // wait for fullscreen
+  await lively.sleep(100);
+
   let width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
   let height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  
-  // Fit presentation into screen
-  if (width >= 1920 && height >= 1080) {
-    presentationSize = "fullhd";
-  } else if (width >= 1600 && height >= 900) {
-    presentationSize = "hd";
-  } else if (width >= 1280 && height >= 800) {
-    presentationSize = "wxga";
-  } else {
-    presentationSize = "standard-vga"
-  }
-
+  let scaling = width / slides[0].clientWidth;
   
   slides.forEach(slide => {
-    slide.className += ' fullscreen-' + presentationSize;
+    slide.style.transform = 'scale(' + scaling + ')';
+    slide.style.transformOrigin = 'top left';
+    slide.style.position = 'fixed';
   })
+
   presentButton.style.display = 'none';
   prevButton.style.display = 'none';
   nextButton.style.display = 'none';
@@ -104,7 +103,9 @@ presentButton
 <div class="title-1">Context</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Adapted System: Vivide</li>
+<li>VivideJS with asynchronous data processing</li>
+
 </ul>
 
 ---
@@ -124,9 +125,7 @@ presentButton
 ---
 <div class="title-1">Implementation</div>
 
-<ul class="notes notes-big">
-<li></li>
-</ul>
+<img class="img-big" src="./vivide-classes.svg" alt="Vivide Class Hierarchy" />
 
 ---
 <div class="title-1">Demo - Feature Overview</div>
@@ -259,10 +258,12 @@ Formalien:
 let closeButton = document.createElement('button')
 closeButton.innerHTML = 'close';
 closeButton.addEventListener("click", () => {
+  document.webkitCancelFullScreen();
   let slides = presentation.querySelectorAll('.lively-slide');
   
   slides.forEach(slide => {
-    slide.className = slide.className.replace('fullscreen-' + presentationSize, '');
+    slide.style.transform = 'none';
+    slide.style.position = 'relative';
   })
   
   presentButton.style.display = 'inline';
