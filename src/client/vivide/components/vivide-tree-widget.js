@@ -75,7 +75,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltipText.length > 0) {
-      let tooltip = <span class="tooltip">{tooltipText}</span>;
+      let tooltip = <span class="tooltip"></span>;
+      tooltip.innerHTML = tooltipText;
       treeItem.appendChild(tooltip);
       treeItem.addEventListener('mouseover', event => {
         tooltip.remove();

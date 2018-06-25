@@ -46,9 +46,8 @@ presentButton.addEventListener("click", () => {
   } else if (width >= 1600 && height >= 900) {
     presentationSize = "hd";
   } else if (width >= 1280 && height >= 800) {
-    //lively.notify("some strange resolution of HPI beamers")
-  }
-  else {
+    presentationSize = "wxga";
+  } else {
     presentationSize = "standard-vga"
   }
 
@@ -112,7 +111,14 @@ presentButton
 <div class="title-1">Design Space</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Supported: </li>
+  <ul>
+  <li>Asynchronous scripts</li>
+  </ul>
+<li>Dropped:</li>
+  <ul>
+  <li></li>
+  </ul>
 </ul>
 
 ---
@@ -123,10 +129,10 @@ presentButton
 </ul>
 
 ---
-<div class="title-1">Demo</div>
+<div class="title-1">Demo - Feature Overview</div>
 
 <script>
-/*import boundEval from "src/client/bound-eval.js";
+import boundEval from "src/client/bound-eval.js";
 import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
 
 (async () => {
@@ -138,15 +144,60 @@ import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vi
     {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
     {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
   ];
-  vivideView.newDataFromUpstream(exampleData);
-  initialScriptsFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
-    vivideScriptEditor.setView(vivideView);
-    let scripts = vivideView.getScripts();
-    vivideScriptEditor.setScripts(scripts);
-  });
+  let firstScript = await initialScriptsFromTemplate();
+  await vivideView.setFirstScript(firstScript);
+  await vivideScriptEditor.setView(vivideView);
+  await vivideScriptEditor.setScripts(firstScript);
+  await vivideView.newDataFromUpstream(exampleData);
   
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
-})()*/
+})()
+</script>
+
+---
+<div class="title-1">Demo - Example 1</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+
+(async () => {
+  let vivideView = await (<vivide-view></vivide-view>);
+  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
+  let containerClass = "vivide-view-container " + presentationSize;
+  let exampleData = lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js');
+  let firstScript = await initialScriptsFromTemplate();
+  await vivideView.setFirstScript(firstScript);
+  await vivideScriptEditor.setView(vivideView);
+  await vivideScriptEditor.setScripts(firstScript);
+  await vivideView.newDataFromUpstream(exampleData);
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
+})()
+</script>
+
+---
+<div class="title-1">Demo - Example 2</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+
+(async () => {
+  let vivideView = await (<vivide-view></vivide-view>);
+  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
+  let containerClass = "vivide-view-container " + presentationSize;
+  let exampleResponse = await fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'});
+  let exampleJson = await exampleResponse.json();
+  let exampleData = exampleJson.contents;
+  let firstScript = await initialScriptsFromTemplate();
+  await vivideView.setFirstScript(firstScript);
+  await vivideScriptEditor.setView(vivideView);
+  await vivideScriptEditor.setScripts(firstScript);
+  await vivideView.newDataFromUpstream(exampleData);
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
+})()
 </script>
 
 ---
