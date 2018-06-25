@@ -45,7 +45,7 @@ export default class BlockchainTransaction extends Morph {
     const inputList = this.shadowRoot.querySelector('#input-list');
     this.transaction.inputs.forEach(input => {
       const transactionInputWrapper = document.createElement('div');
-      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-in" aria-hidden="true"></i> ' + input.transactionDisplayName + ' µ' + input.value;
+      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-in" aria-hidden="true"></i> ' + input.transactionDisplayName + ' <span class="color-red">µ' + input.value + '</span>';
       inputList.appendChild(transactionInputWrapper);
     });
   }
@@ -54,7 +54,7 @@ export default class BlockchainTransaction extends Morph {
     const outputList = this.shadowRoot.querySelector('#output-list');
     this.transaction.outputs.forEach(output => {
       const transactionInputWrapper = document.createElement('div');
-      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-out" aria-hidden="true"></i> ' + output.receiverDisplayName + ' µ' + output.value;
+      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-out" aria-hidden="true"></i>' + output.receiverDisplayName + ' <span class="color-green">µ' + output.value + '</span>';
       outputList.appendChild(transactionInputWrapper);
     });
   }
