@@ -24,6 +24,20 @@
   max-width: 9999px;
 }
 
+.lively-slide.ratio-16-9 .first-50 {
+  left: 100px;
+  width: 500px;
+  top: 120px;
+  position: absolute;
+}
+
+.lively-slide.ratio-16-9 .second-50 {
+  left: 680px;
+  top: 120px;
+  width: 500px;
+  position: absolute;
+}
+
 /* Prio to request fullscreen and transform */
 
 .lively-slide.fullscreen-hd {
