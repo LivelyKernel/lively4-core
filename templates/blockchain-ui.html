@@ -36,6 +36,13 @@
   div.container {
     max-width: 100% !important;
   }
+  div.border-right {
+    border-right: 1px solid black;
+  }
+  h4.svg-headline {
+    position:relative;
+    z-index: 99;
+  }
 </style>
 <div id="content">
 	<content>
@@ -49,10 +56,12 @@
             <button id="reset-environment">Reset Environment</button>
           </div>
         </div>
-        <div class="col-4 no-padding">
+        <div class="col-4 no-padding border-right">
+          <h4 class="svg-headline">Blockchain</h4>
           <blockchain-node-view id="blockchain-view"></blockchain-node-view>
         </div>
         <div class="col-5 no-padding">
+          <h4 class="svg-headline">Transactions</h4>
           <blockchain-node-view id="transaction-view"></blockchain-node-view>
         </div>
       </div>

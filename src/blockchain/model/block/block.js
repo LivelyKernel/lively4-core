@@ -58,11 +58,16 @@ export default class Block {
     var inputs = new TransactionInputCollection(minerWallet)
                       .addMiningReward(this)
                       .finalize();
+    
     var outputs = new TransactionOutputCollection()
                       .add(minerWallet, this.reward)
                       .finalize();
     
     var transaction = new Transaction(minerWallet, inputs, outputs);
+    
+    // set input transaction to the transaction itself
+    inputs.forEach((input) => input.transactionHash = transaction.hash);    
+    
     this.transactions.add(transaction);
     this.transactions.finalize();
   }

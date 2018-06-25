@@ -16,6 +16,8 @@ export default class BlockchainNodeView extends Morph {
     this._displayedLinks = [];
     this._newNodes = [];
     this._newLinks = [];
+    this._svg.setAttribute('width', this.shadowRoot.querySelector("#content").offsetWidth);
+    this._svg.setAttribute('height', this.shadowRoot.querySelector("#content").offsetHeight);
   }
   
   reset() {

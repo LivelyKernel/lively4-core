@@ -9,6 +9,9 @@ export default class Transaction {
     this.outputs = outputCollection;    
     this.hash = this._hash().digest().toHex();
     this.signature = this._generateSignature(senderWallet);
+    
+    // set transaction hash for outputs
+    this.outputs.forEach((output) => output.transactionHash = this.hash);
   }
   
   get displayName() {

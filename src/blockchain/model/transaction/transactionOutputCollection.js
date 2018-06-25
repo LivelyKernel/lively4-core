@@ -76,6 +76,10 @@ export default class TransactionOutputCollection {
     return this._transactionOutputs.has(receiverHash);
   }
   
+  forEach(callback) {
+    this._transactionOutputs.forEach((value) => callback(value));
+  }
+  
   _calculateValue() {
     this._value = Array.from(this._transactionOutputs.entries()).reduce((total, entry) => {
       return total + entry[1].value;
