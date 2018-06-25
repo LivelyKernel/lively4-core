@@ -786,6 +786,7 @@ export default class Lively {
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
+    persistence.disable();
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     lively.components.loadByName("lively-notification")

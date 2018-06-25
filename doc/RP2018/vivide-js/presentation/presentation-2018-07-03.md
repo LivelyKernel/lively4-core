@@ -130,74 +130,61 @@ presentButton
 ---
 <div class="title-1">Demo - Feature Overview</div>
 
-<script>
-import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+<div class="first-50">
+[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]
+</div>
 
+<div class="second-50">
+<script>
 (async () => {
-  let vivideView = await (<vivide-view></vivide-view>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleData = [
-    {name: "object", subclasses:[{name: "morph"},]},
-    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
-    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
-  ];
-  let firstScript = await initialScriptsFromTemplate();
-  await vivideView.setFirstScript(firstScript);
-  await vivideScriptEditor.setView(vivideView);
-  await vivideScriptEditor.setScripts(firstScript);
-  await vivideView.newDataFromUpstream(exampleData);
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = `[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]`
+  return workspace;
 })()
 </script>
+</div>
 
 ---
 <div class="title-1">Demo - Example 1</div>
 
-<script>
-import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+<div class="first-50">
+lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+</div>
 
+<div class="second-50">
+<script>
 (async () => {
-  let vivideView = await (<vivide-view></vivide-view>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleData = lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js');
-  let firstScript = await initialScriptsFromTemplate();
-  await vivideView.setFirstScript(firstScript);
-  await vivideScriptEditor.setView(vivideView);
-  await vivideScriptEditor.setScripts(firstScript);
-  await vivideView.newDataFromUpstream(exampleData);
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = "lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')";
+  return workspace;
 })()
 </script>
+</div>
 
 ---
 <div class="title-1">Demo - Example 2</div>
 
-<script>
-import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+<div class="first-50">
+lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+</div>
 
+<div class="second-50">
+<script>
 (async () => {
-  let vivideView = await (<vivide-view></vivide-view>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleResponse = await fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'});
-  let exampleJson = await exampleResponse.json();
-  let exampleData = exampleJson.contents;
-  let firstScript = await initialScriptsFromTemplate();
-  await vivideView.setFirstScript(firstScript);
-  await vivideScriptEditor.setView(vivideView);
-  await vivideScriptEditor.setScripts(firstScript);
-  await vivideView.newDataFromUpstream(exampleData);
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = "fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))";
+  return workspace;
 })()
 </script>
+</div>
 
 ---
 <div class="title-1">Insights</div>
