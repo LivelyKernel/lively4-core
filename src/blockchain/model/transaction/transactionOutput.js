@@ -5,6 +5,7 @@ export default class TransactionOutput {
     this.receiverHash = receiverWallet.hash;
     this.value = value;
     this.hash = this._hash();
+    this.transactionHash = "";
   }
   
   get displayName() {
@@ -15,9 +16,26 @@ export default class TransactionOutput {
     return "#" + this.hash.substring(0, 10);
   }
   
+  get transactionDisplayName() {
+    if (!this.transactionHash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.transactionHash.substring(0, 10);
+  }
+  
+  get receiverDisplayName() {
+    if (!this.receiverHash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.receiverHash.substring(0, 10);
+  }
+  
   _hash() {
     const sha256 = forge.md.sha256.create();
     sha256.update(
+      Date.now() + 
       this.receiverHash + 
       this.value
     );

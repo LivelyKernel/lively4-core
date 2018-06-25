@@ -30,11 +30,11 @@ export default class Block {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   isSigned() {
@@ -58,11 +58,16 @@ export default class Block {
     var inputs = new TransactionInputCollection(minerWallet)
                       .addMiningReward(this)
                       .finalize();
+    
     var outputs = new TransactionOutputCollection()
                       .add(minerWallet, this.reward)
                       .finalize();
     
     var transaction = new Transaction(minerWallet, inputs, outputs);
+    
+    // set input transaction to the transaction itself
+    inputs.forEach((input) => input.transactionHash = transaction.hash);    
+    
     this.transactions.add(transaction);
     this.transactions.finalize();
   }

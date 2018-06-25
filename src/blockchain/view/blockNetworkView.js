@@ -2,10 +2,18 @@
 export default class BlockNetworkView {
   constructor(blockchainNodeView) {
     this._nodeView = blockchainNodeView;
-
+    this._nodeView.nodeClickHandler = this._onNodeClick.bind(this);
     this._displayedBlocks = [];
     this._newBlocks = [];
     this._nodeIndices = new Map();
+  }
+  
+  reset() {
+    this._displayedBlocks = [];
+    this._newBlocks = [];
+    this._nodeIndices = new Map();
+    this._nodeView.reset();
+    this.draw();
   }
   
   addBlock(block) {
@@ -71,5 +79,26 @@ export default class BlockNetworkView {
     });
     
     return result;
+  }
+  
+  _onNodeClick(node) {
+    if (!node || !node.hash) {
+      return;
+    }
+    
+    const block = this._getBlock(node.hash);
+    
+    if (!block) {
+      throw new Error("Cannot find transaction to display!");
+    }
+    
+    lively.openComponentInWindow("blockchain-block").then((comp) => {
+      if (!comp) {
+        return;
+      }
+      
+      comp.block = block;
+      return comp;
+    });
   }
 }
