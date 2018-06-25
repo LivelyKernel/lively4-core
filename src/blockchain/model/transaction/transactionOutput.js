@@ -8,18 +8,19 @@ export default class TransactionOutput {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       this.receiverHash + 
       this.value
     );
+    return sha256.digest().toHex();
   }
 }

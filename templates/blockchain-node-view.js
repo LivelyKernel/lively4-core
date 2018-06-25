@@ -3,31 +3,45 @@ import d3 from 'src/external/d3.v3.js';
 
 import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
 import TransactionNetworkView from 'src/blockchain/view/transactionNetworkView.js';
-import TransactionCollection from 'src/blockchain/model/transaction/transactionCollection.js';
+
+import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
 
 export default class BlockchainNodeView extends Morph {
   async initialize() {
     this.windowTitle = "BlockchainNodeView";
     this._svg = this.shadowRoot.querySelector("#svgContainer");
     
+    this.nodeClickHandler = (node) => { console.log("click! --> " + node.name); }
     this._displayedNodes = [];
     this._displayedLinks = [];
-    this._nodes = [];
-    this._links = [];
+    this._newNodes = [];
+    this._newLinks = [];
   }
   
-  get nodes() {
-    return this._nodes;
+  addNode(node) {
+    this._newNodes.push(node);
+    return this;
   }
   
-  get links() {
-    return this._links;
+  addNodes(nodes) {
+    this._newNodes = this._newNodes.concat(nodes);
+    return this;
+  }
+  
+  addLink(link) {
+    this._newLinks.push(link);
+    return this;
+  }
+  
+  addLinks(links) {
+    this._newLinks = this._newLinks.concat(links);
+    return this;
   }
   
   draw() {
     const that = this;
-    const allNodes = this._displayedNodes.concat(this._nodes);
-    const allLinks = this._displayedLinks.concat(this._links);
+    const allNodes = this._displayedNodes.concat(this._newNodes);
+    const allLinks = this._displayedLinks.concat(this._newLinks);
     const svg = d3.select(this._svg);
     const width = svg.attr("width");
     const height = svg.attr("height");
@@ -73,6 +87,13 @@ export default class BlockchainNodeView extends Morph {
       .append("g")
       .call(force.drag)
       .classed("node", true)
+      .on("click", function(d) {
+        if (!that.nodeClickHandler) {
+          return;
+        }
+        
+        that.nodeClickHandler(d);
+      })
       .each(function(d, i) {
         if (i < that._displayedNodes.length) {
           // must be an old node
@@ -101,7 +122,8 @@ export default class BlockchainNodeView extends Morph {
     
     
     force.on("tick", function() {
-      link.attr("x1", function(d) { return d.source.x; })
+      link
+          .attr("x1", function(d) { return d.source.x; })
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
@@ -111,8 +133,8 @@ export default class BlockchainNodeView extends Morph {
     
     this._displayedNodes = allNodes;
     this._displayedLinks = allLinks;
-    this._nodes = [];
-    this._links = [];
+    this._newNodes = [];
+    this._newLinks = [];
   }
   
   _addMarker(svg, markerName, animation) {
@@ -139,38 +161,40 @@ export default class BlockchainNodeView extends Morph {
   }
   
   async livelyExample() {
-    console.log("start example...");
     const node1 = new BlockchainNode();
     const node2 = new BlockchainNode();
-    const node3 = new BlockchainNode();
-    const node4 = new BlockchainNode();
-    const node5 = new BlockchainNode();
     
-    for (let i = 0; i < 5; i++) {
-      node1.mine();
-      await new Promise(sleep => setTimeout(sleep, 3000));
-    }
+    node1.mine();
+    await new Promise(sleep => setTimeout(sleep, 3000));
     
-    console.log(node1.wallet.value);
-    
-    const tx1 = node1.wallet.newTransaction(node1.wallet.value / 10, [
-      {"receiver": node2.wallet, "value": node1.wallet.value / 20},
-      {"receiver": node3.wallet, "value": node1.wallet.value / 20}
+    const tx1 = node1.sendTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 2}
     ]);
     
-    const tx2 = node1.wallet.newTransaction(node1.wallet.value / 10, [
-      {"receiver": node2.wallet, "value": node1.wallet.value / 40},
-      {"receiver": node3.wallet, "value": node1.wallet.value / 40},
-      {"receiver": node4.wallet, "value": node1.wallet.value / 40},
-      {"receiver": node5.wallet, "value": node1.wallet.value / 40}
+    node1.mine();
+    await new Promise(sleep => setTimeout(sleep, 3000));
+    
+    const tx2 = node2.sendTransaction([
+      {"receiver": node1.wallet, "value": node2.wallet.value / 2},
     ]);
     
-    const transactions = new TransactionCollection().add(tx1).add(tx2).finalize();
-    const view = new TransactionNetworkView(this, transactions);
+    /*
+    const view = new TransactionNetworkView(this)
+      .addTransactions([
+        tx1,
+        tx2,
+      ]);
+    */
+    
+    const view = new BlockNetworkView(this);
+    
+    node1.blockchain.forEach((block) => view.addBlock(block));
+    
+    view.draw();
   }
   
   async __livelyExample2() {
-    this._nodes = [
+    this._newNodes = [
       {
         "name": "#1234567890",
         "group": 1
@@ -189,7 +213,7 @@ export default class BlockchainNodeView extends Morph {
       }
     ];
     
-    this._links = [
+    this._newLinks = [
       {
         "source": 0,
         "target": 1,

@@ -11,8 +11,8 @@ export default class BlockchainTransactionDialog extends Morph {
     this._nodes = nodes;
     this.nodes.forEach((node) => {
       const option = document.createElement('option');
-      option.innerHTML = "Node #" + node.wallet.hash.digest().data;
-      option.setAttribute('value', node.wallet.hash.digest().data);
+      option.innerHTML = "Node " + node.wallet.displayName;
+      option.setAttribute('value', node.wallet.hash);
       this.shadowRoot.querySelector('#receiverSelect').appendChild(option);
     });
   }
@@ -31,6 +31,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this._receivers = [];
     
     this.windowTitle = "New Blockchain Transaction";
+    // Set width & height of window (parent node)
     this.parentNode.style.width = "660px";
     this.parentNode.style.height = "200px";
 
@@ -39,7 +40,7 @@ export default class BlockchainTransactionDialog extends Morph {
   }
   
   onSave() {
-    const transaction = this.node.wallet.newTransaction(this._receivers);
+    const transaction = this.node.sendTransaction(this._receivers);
     this.node.handleTransaction(transaction);
     this.parentNode.parentNode.removeChild(this.parentNode);
   }
@@ -52,7 +53,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this.shadowRoot.querySelector('#receiverList').innerHTML = '';
     this._receivers.forEach(receiver => {
       const listElement = document.createElement('li');
-      listElement.innerHTML = receiver.receiver.wallet.hash.digest().data + " - $" + receiver.amount;
+      listElement.innerHTML = "Node " + receiver.receiver.displayName + " - $" + receiver.amount;
       lively.components.openIn(this.shadowRoot.querySelector('#receiverList'), listElement).then();
     });
   }
@@ -60,7 +61,7 @@ export default class BlockchainTransactionDialog extends Morph {
   addReceiver() {
     const receiverSelect = this.shadowRoot.querySelector('#receiverSelect');
     const amount = this.shadowRoot.querySelector('#amount').value;
-    const receiver = this.nodes[receiverSelect.selectedIndex - 1];
+    const receiver = this.nodes[receiverSelect.selectedIndex - 1].wallet;
     if(!amount || !receiver) {
       return;
     }

@@ -3,6 +3,7 @@ import NetworkComponent from "./networkComponent.js";
 import Wallet from "../wallet/wallet.js";
 import Miner from "./miner.js";
 
+
 export default class BlockchainNode {
   
   constructor() {
@@ -12,6 +13,7 @@ export default class BlockchainNode {
     this._networkComponent = new NetworkComponent(this);
     this._miner = new Miner(this);
     this._networkComponent.requestBlockchain();
+    this._subscribers = [];
   }
   
   get blockchain() {
@@ -34,6 +36,23 @@ export default class BlockchainNode {
     await this._miner.mine();
   }
   
+  subscribe(lSubscriber, callback) {
+    this._subscribers.push({subscriber: lSubscriber, callback: callback});
+  }
+  
+  unsubscribe(lSubscriber) {
+    this._subscribers = this._subscribers.filter(
+      item => item.subscriber !== lSubscriber
+    );
+  }
+  
+  sendTransaction(receivers) {
+    const tx = this.wallet.newTransaction(receivers);
+    this.propagateTransaction(tx);
+    
+    return tx;
+  }
+  
   blockchainIsValid(blockchain) {
     // Currently double spend check is not implemented
     let currentBlock = blockchain.headOfChain;
@@ -52,9 +71,9 @@ export default class BlockchainNode {
   }
   
   handleBlock(block) {
-    console.log("block: " + block);
     block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
+    this._notifySubscribers();
   }
   
   handleTransaction(transaction) {
@@ -83,6 +102,10 @@ export default class BlockchainNode {
   propagateTransaction(transaction) {
     this.handleTransaction(transaction);
     this._networkComponent.propagateTransaction(transaction);
+  }
+  
+  _notifySubscribers() {
+    this._subscribers.forEach(item => item.callback());
   }
     
 }

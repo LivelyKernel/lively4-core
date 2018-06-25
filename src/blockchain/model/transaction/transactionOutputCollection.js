@@ -19,11 +19,11 @@ export default class TransactionOutputCollection {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(receiverWallet, value) {
@@ -58,20 +58,35 @@ export default class TransactionOutputCollection {
     return !!this.hash;
   }
   
-  has(outputHash) {
-    return this._transactionOutputs.has(outputHash);
+  hasOutput(outputHash) {
+    let result = false;
+    
+    this._transactionOutputs.forEach((output) => {
+      if (result) {
+        return;
+      }
+      
+      result = output.hash == outputHash;
+    });
+    
+    return result;
+  }
+  
+  has(receiverHash) {
+    return this._transactionOutputs.has(receiverHash);
   }
   
   _calculateValue() {
-    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, output) => {
-      total += output.value;
+    this._value = Array.from(this._transactionOutputs.entries()).reduce((total, entry) => {
+      return total + entry[1].value;
     }, 0);
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactionOutputs.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }

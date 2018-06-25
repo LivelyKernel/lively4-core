@@ -21,11 +21,11 @@ export default class TransactionInputCollection {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(transaction) {
@@ -91,15 +91,16 @@ export default class TransactionInputCollection {
   }
   
   _calculateValue() {
-    this._value = Array.from(this._transactionInputs.entries()).reduce((total, output) => {
-      total += output.value;
+    this._value = Array.from(this._transactionInputs.entries()).reduce((total, entry) => {
+      return total + entry[1].value;
     }, 0);
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactionInputs.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }

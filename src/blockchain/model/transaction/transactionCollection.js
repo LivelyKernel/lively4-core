@@ -7,11 +7,11 @@ export default class TransactionCollection {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(transaction) {
@@ -23,9 +23,9 @@ export default class TransactionCollection {
     return this;
   }
   
-  fees() {
-    return Array.from(this._transactions.entries()).reduce((total, output) => {
-      total += output.fees;
+  get fees() {
+    return Array.from(this._transactions.entries()).reduce((total, entry) => {
+      return total + entry[1].fees;
     }, 0);
   }
   
@@ -55,9 +55,10 @@ export default class TransactionCollection {
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactions.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }

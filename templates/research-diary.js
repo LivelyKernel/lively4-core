@@ -98,7 +98,7 @@ export default class ResearchDiary extends Morph {
 
 - 
 
-## Chore
+## Further Tasks
 
 - 
 
