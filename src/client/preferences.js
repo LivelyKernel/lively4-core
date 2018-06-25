@@ -77,17 +77,16 @@ export default class Preferences {
   }
   
   static get prefsNode() {
-    if (this.node) return this.node
     // #BUG: reloading Preferences causes dataset to be not defined anymore
-    this.node = document.body.querySelector('.lively-preferences');
-    if (!this.node) {
-      lively.notify("create preferneces")
-      this.node = document.createElement('div'); // we cannot use custom comps they are async
-      this.node.classList.add("lively-preferences")
-      this.node.classList.add("lively-content")
-      components.openInBody(this.node)
+    let node = document.body.querySelector('.lively-preferences');
+    if (!node) {
+      lively.notify("Create prefereces")
+      node = document.createElement('div'); // we cannot use custom comps they are async
+      node.classList.add("lively-preferences")
+      node.classList.add("lively-content")
+      components.openInBody(node)
     }
-    return this.node
+    return node
   }
   
   static read(preferenceKey) {
