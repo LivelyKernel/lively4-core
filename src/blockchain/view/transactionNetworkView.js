@@ -9,6 +9,14 @@ export default class TransactionNetworkView {
     this._nodeIndices = new Map();
   }
   
+  reset() {
+    this._displayedTransactions = [];
+    this._newTransactions = [];
+    this._nodeIndices = new Map();
+    this._nodeView.reset();
+    this.draw();
+  }
+  
   addTransaction(transaction) {
     this._newTransactions.push(transaction);
     return this;

@@ -8,6 +8,14 @@ export default class BlockNetworkView {
     this._nodeIndices = new Map();
   }
   
+  reset() {
+    this._displayedBlocks = [];
+    this._newBlocks = [];
+    this._nodeIndices = new Map();
+    this._nodeView.reset();
+    this.draw();
+  }
+  
   addBlock(block) {
     this._newBlocks.push(block);
     return this;

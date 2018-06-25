@@ -73,7 +73,7 @@ export default class BlockchainNode {
   handleBlock(block) {
     block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
-    this._notifySubscribers();
+    this._notifySubscribers(block);
   }
   
   handleTransaction(transaction) {
@@ -104,8 +104,8 @@ export default class BlockchainNode {
     this._networkComponent.propagateTransaction(transaction);
   }
   
-  _notifySubscribers() {
-    this._subscribers.forEach(item => item.callback());
+  _notifySubscribers(block) {
+    this._subscribers.forEach(item => item.callback(block));
   }
     
 }
