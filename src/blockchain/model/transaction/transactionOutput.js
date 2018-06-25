@@ -35,6 +35,7 @@ export default class TransactionOutput {
   _hash() {
     const sha256 = forge.md.sha256.create();
     sha256.update(
+      Date.now() + 
       this.receiverHash + 
       this.value
     );

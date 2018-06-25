@@ -53,7 +53,7 @@ export default class BlockchainTransactionDialog extends Morph {
     this.shadowRoot.querySelector('#receiverList').innerHTML = '';
     this._receivers.forEach(receiver => {
       const listElement = document.createElement('li');
-      listElement.innerHTML = "Node " + receiver.receiver.displayName + " - $" + receiver.amount;
+      listElement.innerHTML = "Node " + receiver.receiver.displayName + " - μ" + receiver.value;
       lively.components.openIn(this.shadowRoot.querySelector('#receiverList'), listElement).then();
     });
   }
