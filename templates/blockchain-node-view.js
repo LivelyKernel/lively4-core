@@ -23,7 +23,6 @@ export default class BlockchainNodeView extends Morph {
     this._displayedLinks = [];
     this._newNodes = [];
     this._newLinks = [];
-    this.draw();
   }
   
   addNode(node) {

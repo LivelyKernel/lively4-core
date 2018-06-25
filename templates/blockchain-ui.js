@@ -51,6 +51,8 @@ export default class BlockchainUI extends Morph {
     while (nodeListView.firstChild) {
         nodeListView.removeChild(nodeListView.firstChild);
     }
+    this.blockchainViewController.reset();
+    this.transactionViewController.reset();
     
     this.createNewNode();
   }
