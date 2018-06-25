@@ -16,6 +16,8 @@ export default class Tracker {
     this.errors = new Map(); // Map(exampleId, errorMsg);
     this.executedBlocks = new Set(); // Set(id)
     this.exampleId = defaultExample().id;
+    this.exampleIds = new Set();
+    this.exampleIds.add(this.exampleId);
     this.timer = new Timer();
     this._identities = new Map(); // Map(identity, symbol)
     this._symbolProvider = new IdentitySymbolProvider();
@@ -27,6 +29,8 @@ export default class Tracker {
     this.errors.clear();
     this.executedBlocks.clear();
     this.exampleId = defaultExample().id;
+    this.exampleIds.clear();
+    this.exampleIds.add(this.exampleId);
     this._identities.clear();
     this._symbolProvider.reset();
   }
@@ -80,6 +84,11 @@ export default class Tracker {
   
   error(errorMsg) {
     this.errors.set(this.exampleId, errorMsg);
+  }
+  
+  example(exampleId) {
+    this.exampleId = exampleId;
+    this.exampleIds.add(this.exampleId);
   }
 }
 

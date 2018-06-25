@@ -1,5 +1,5 @@
 // You can also define examples for class methods
-class /*instance:*/Person/*{"id":"a487_232d_f5b6","name":{"mode":"input","value":"Timmy"},"values":{"name":{"mode":"input","value":"\"Tim\""},"hobby":{"mode":"input","value":"\"cycling\""}}}*/ {
+export default class /*instance:*/Person/*{"id":"a487_232d_f5b6","name":{"mode":"input","value":"Timmy"},"values":{"name":{"mode":"input","value":"\"Tim\""},"hobby":{"mode":"input","value":"\"cycling\""}}}*/ {
   constructor(name, hobby) {
     this.name = name
     this.hobby = hobby;

@@ -44,7 +44,7 @@ import {
 
 
 // Constants
-const COMPONENT_URL = "https://lively-kernel.org/lively4/lively4-babylonian-programming/src/babylonian-programming-editor";
+const COMPONENT_URL = `${lively4url}/src/babylonian-programming-editor`;
 
 
 /**
@@ -64,6 +64,9 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Register editor
     BabylonianWorker.registerEditor(this);
+    this.parentElement.afterWindowClosed = () => {
+      BabylonianWorker.unregisterEditor(this);
+    }
 
     // AST
     this._ast = null; // Node
@@ -355,7 +358,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this._activeExamples,
       this.removeAnnotation.bind(this)
     );
     this._annotations.probes.push(probe);
@@ -376,7 +378,6 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
       this.onSliderChanged.bind(this),
-      this._activeExamples,
       this.removeAnnotation.bind(this)
     );
     this._annotations.sliders.push(slider);
@@ -524,8 +525,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Remove old dead markers
     this._deadMarkers.map(m => m.clear());
 
-    // Don't show dead markers if we have no activated example
-    if(this._activeExamples.length === 0) {
+    // Don't show dead markers if we have no activated example (except the default example)
+    if(BabylonianWorker.activeExamples.length <= 1) {
       return;
     }
 

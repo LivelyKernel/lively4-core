@@ -1,14 +1,14 @@
 import Widget from "./widget.js";
 import { DeleteButton } from "./buttons.js";
 import { defaultExample } from "../utils/defaults.js";
+import BabylonianWorker from "../worker/babylonian-worker.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
 
 export default class ProbeWidget extends Widget {
-  constructor(editor, location, kind, examples, deleteCallback) {
+  constructor(editor, location, kind, deleteCallback) {
     super(editor, location, kind, deleteCallback);
-    this._examples = examples; // [{id, name, color}]
     this._values = new Map(); // Map(exampleId, Map(runId, [{type, value, name}]))
     this._activeRuns = new Map(); // exampleId -> runId
   }
@@ -221,10 +221,7 @@ export default class ProbeWidget extends Widget {
     this._element.innerHTML = "";
     let table = <table></table>;
     this._element.appendChild(table);
-    let examples = Array.from(this._examples);
-    if(this._values.has(defaultExample().id)) {
-      examples.unshift(defaultExample());
-    }
+    let examples = Array.from(BabylonianWorker.activeExamples);
     
     const newChildren = examples.filter((e) => this._values.has(e.id))
                                 .map(elementForExample);

@@ -18,20 +18,28 @@ import {
 /**
  * Receive message from the main thread
  */
-export default onmessage = function(msg) {
-  const { code, annotations, customInstances, sourceUrl } = JSON.parse(msg.data.payload);
+export default onmessage = async function(msg) {
+  const {
+    code, 
+    annotations, 
+    customInstances, 
+    sourceUrl,
+    replacementUrls } = JSON.parse(msg.data.payload);
 
   // Process the code
   try {
     const ast = parse(code);
     ast._sourceUrl = sourceUrl;
-    applyBasicModifications(ast);
+    await applyBasicModifications(ast, replacementUrls);
     const originalAst = deepCopy(ast);
-
-    // Process AST
     generateLocationMap(ast);
+
+    // Apply Probes
     applyReplacements(ast, annotations.replacements);
     applyProbes(ast, annotations.probes);
+    
+    // Generate the code for module loading, but not for direct execution
+    let loadableCode = codeForAst(ast);
     
     // Add trackers for all examples
     applyInstances(ast, annotations.instances, customInstances);
@@ -39,15 +47,16 @@ export default onmessage = function(msg) {
     
     // Apply context
     applyContext(ast, annotations.context);
-    
-    // Insert tracker
-    applyTracker(ast);
 
     // Generate executable code
-    const executableCode = codeForAst(ast);
+    let executableCode = codeForAst(ast);
+    
+    // Insert tracker codes
+    loadableCode = applyTracker(loadableCode);
+    executableCode = applyTracker(executableCode);
 
     // Send result
-    return respond(msg.data.id, originalAst, executableCode);
+    return respond(msg.data.id, originalAst, loadableCode, executableCode);
   } catch (e) {
     console.error(e);
     return respond(msg.data.id);
@@ -57,12 +66,13 @@ export default onmessage = function(msg) {
 /**
  * Sends a response to the main thread
  */
-const respond = (id, ast = null, code = null) =>
+const respond = (id, ast = null, loadableCode = null, executableCode) =>
   /*postMessage*/({
     id: id,
     payload: {
       ast: ast,
-      code: code
+      loadableCode: loadableCode,
+      executableCode: executableCode
     }
   })/*;*/
   

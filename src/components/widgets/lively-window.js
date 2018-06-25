@@ -343,6 +343,9 @@ export default class Window extends Morph {
       this.toggleMaximize()
 
     this.parentNode.removeChild(this);
+    if(this.afterWindowClosed instanceof Function) {
+      this.afterWindowClosed();
+    }
   }
 
   onMenuButtonClicked(evt) {

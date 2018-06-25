@@ -3,9 +3,9 @@ import ProbeWidget from "../ui/probe-widget.js";
 
 
 export default class Probe extends Annotation {
-  constructor(editor, location, examples, deleteCallback) {
+  constructor(editor, location, deleteCallback) {
     super(editor, location, deleteCallback);
-    this._widget = new ProbeWidget(editor, location, this.kind, examples, this._deleteCallback);
+    this._widget = new ProbeWidget(editor, location, this.kind, this._deleteCallback);
   }
   
   setActiveRunForExampleId(exampleId, activeRun) {

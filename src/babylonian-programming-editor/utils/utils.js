@@ -40,3 +40,15 @@ export const stringInsert = (baseString, insertString, index) => {
 export const stringRemove = (baseString, startIndex, endIndex) => {
   return baseString.slice(0, startIndex) + baseString.slice(endIndex);
 }
+
+export const normalizePath = (path) => 
+  path.split("/")
+      .reduce((acc, part) => {
+        if(part === "..") {
+          acc.pop();
+        } else if(part !== ".") {
+          acc.push(part);
+        }
+        return acc;
+      }, [])
+      .join("/")

@@ -73,7 +73,7 @@ export default class ASTWorkerWrapper {
 }
 */
 export default class ASTWorkerWrapper {
-  async process(code, annotations, customInstances, sourceUrl) {
+  async process(code, annotations, customInstances, sourceUrl, replacementUrls) {
     const msgId = globalMsgId++;
     const msg = {
       id: msgId,
@@ -81,11 +81,12 @@ export default class ASTWorkerWrapper {
         code: code,
         annotations: annotations,
         customInstances: customInstances,
-        sourceUrl: sourceUrl
+        sourceUrl: sourceUrl,
+        replacementUrls: replacementUrls
       })
     };
 
-    const result = onmessage({
+    const result = await onmessage({
       data: msg
     });
     

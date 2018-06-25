@@ -1,12 +1,12 @@
 import InputWidget from "./input-widget.js";
 import { DeleteButton } from "./buttons.js";
 import { defaultExample } from "../utils/defaults.js";
+import BabylonianWorker from "../worker/babylonian-worker.js";
 
 
 export default class SliderWidget extends InputWidget {
-  constructor(editor, location, kind, changeCallback, examples, deleteCallback) {
+  constructor(editor, location, kind, changeCallback, deleteCallback) {
     super(editor, location, kind, changeCallback, deleteCallback);
-    this._examples = examples; // [{id, name, color}]
     this._maxValues = new Map() // Map(exampleId, maxValue)
     this._elements = new Map() // Map(exampleId, {element, input})
     this._fireFunctions = new Map(); // Map(exampleId, function)
@@ -117,10 +117,7 @@ export default class SliderWidget extends InputWidget {
     this._element.appendChild(this._table);
     
     // Generate UI for all examples
-    let examples = Array.from(this._examples);
-    if(this._maxValues.has(defaultExample().id)) {
-      examples.unshift(defaultExample());
-    }
+    let examples = Array.from(BabylonianWorker.activeExamples);
     examples.filter((e) => this._maxValues.has(e.id))
             .forEach(updateElementForExample);
     

@@ -139,7 +139,7 @@ const nextId = () => ID_COUNTER++;
 /**
  * Applies basic modifications to the given AST
  */
-export const applyBasicModifications = (ast) => {
+export const applyBasicModifications = async (ast, replacementUrls = {}) => {
   const wrapPropertyOfPath = (path, property) => {
     const oldBody = path.get(property);
     const oldBodyNode = path.node[property];
@@ -159,7 +159,8 @@ export const applyBasicModifications = (ast) => {
     return path;
   }
   
-  // Prepare Tracker and enforce that all bodies are in BlockStatements
+  // Prepare Tracker, enforce that all bodies are in BlockStatements, and collect imports
+  const importNodes = [];
   traverse(ast, {
     BlockParent(path) {
       if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
@@ -180,26 +181,30 @@ export const applyBasicModifications = (ast) => {
       wrapPropertyOfPath(path, "consequent");
     },
     ImportDeclaration(path) {
-      if(!path.get("source").isStringLiteral() || !ast._sourceUrl || !ast._sourceUrl.length) {
-        return;
+      if(path.get("source").isStringLiteral() && ast._sourceUrl && ast._sourceUrl.length) {
+        importNodes.push(path.node);
       }
-      const sourceUrl = path.get("source").node.value;
-      if(ast._sourceUrl.indexOf(lively4url) !== 0 || sourceUrl[0] !== ".") {
-        return;
-      }
-      
-      const prefixParts = ast._sourceUrl.slice(lively4url.length + 1).split("/");
-      prefixParts.pop();
-      path.get("source").node.value = `${prefixParts.join("/")}/${sourceUrl}`;
     }
   });
+  
+  await Promise.all(importNodes.map(async (node) => {
+    // Turn imports into absolute URLs so they work in the temporary workspace
+    const importSource = node.source.value;
+    const importUrl = await System.resolve(importSource, ast._sourceUrl);
+    
+    // Set either the real or the replacement URL
+    if(replacementUrls[importUrl]) {
+      node.source.value = replacementUrls[importUrl];
+    } else {
+      node.source.value = importUrl;
+    }
+  }));
 }
 
-export const applyTracker = (ast) => {
-  ast.program.body.unshift(template("const __connections = this.connections;")());
-  ast.program.body.unshift(template("const __tracker = this.tracker;")());
-  return ast;
-}
+export const applyTracker = (code) => 
+  `const __connections = this.connections;
+   const __tracker = this.tracker;
+   ${code}`;
 
 export const applyContext = (ast, context) => {
   const prescriptNodes = astForCode(context.prescript).program.body;
@@ -350,7 +355,7 @@ export const applyExamples = (ast, examples) => {
       ast.program.body.push(
         template(`
           try {
-            __tracker.exampleId = "${example.id}";
+            __tracker.example("${example.id}");
             const example = function(${parametersNames.join(", ")}) {
               ${example.prescript};
               EXAMPLECALL;
