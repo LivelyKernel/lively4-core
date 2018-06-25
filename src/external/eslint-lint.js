@@ -31,6 +31,7 @@
         CodeMirror: true,
         Map: true,
         Set: true,
+        Float32Array: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {
