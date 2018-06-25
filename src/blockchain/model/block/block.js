@@ -30,11 +30,11 @@ export default class Block {
   }
   
   get displayName() {
-    if (!this._hash) {
+    if (!this.hash) {
       return "#NotAName";
     }
     
-    return "#" + this._hash.substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
   
   isSigned() {
