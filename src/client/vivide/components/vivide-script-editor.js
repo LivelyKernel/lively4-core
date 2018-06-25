@@ -103,7 +103,17 @@ export default class VivideScriptEditor extends Morph {
     
     stepEditor.previousSibling.remove();
     stepEditor.remove();
-    lastScript.nextScript = script.nextScript;
+    
+    if (lastScript) {
+      lastScript.nextScript = script.nextScript;
+    } else {
+      // First script was removed
+      this.script = removedScript.nextScript;
+    }
+    
+    if (this.script) {
+      this.script.update();
+    }
   }
   
   async appendStepEditor(scriptType) {
