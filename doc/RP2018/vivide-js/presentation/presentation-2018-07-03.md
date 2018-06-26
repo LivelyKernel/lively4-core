@@ -99,43 +99,31 @@ presentButton
 </script>
 
 ---
-<div class="title-1">Context</div>
+<div class="title-1">Context - Background</div>
+
+<div class="first-50">
+<ul class="notes-big">
+<li>Adapted System: Vivide</li>
+<li>Work with an OO UI<br><i class="fa fa-arrow-right"></i> Directly working on objects</li>
+<li>Direct data and dataflow manipulation</li>
+<li>Adapt the views while exploring the data</li>
+</ul>
+</div>
+
+<img class="img-1-2" src="vivide.png" />
+
+---
+<div class="title-1">Context - Motivation</div>
+
 
 <ul class="notes notes-big">
-<li>Adapted System: Vivide</li>
-<li>Adapt the views while exploring the data</li>
 <li>Provide data in a task-oriented form</li>
 <li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
 <li>VivideJS: Asynchronous online data processing</li>
 </ul>
 
 ---
-<div class="title-1">Features</div>
-
-<ul class="notes notes-big">
-<li>Supported: </li>
-  <ul>
-  <li>Multilevel hierarchies</li>
-  <li>Async scripts</li>
-  </ul>
-<li>Dropped:</li>
-  <ul>
-  <li>Full asynchronity of scripts</li>
-  <li>Connection management</li>
-  </ul>
-<li>Planned:</li>
-  <ul>
-  <li>Merging source views</li>
-  </ul>
-</ul>
-
----
-<div class="title-1">Implementation</div>
-
-<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
-
----
-<div class="title-1">Demo - Feature Overview</div>
+<div class="title-1">Initial State</div>
 
 <div class="first-50">
 [
@@ -160,7 +148,7 @@ presentButton
 </div>
 
 ---
-<div class="title-1">Demo - Example 1</div>
+<div class="title-1">Features - Async Scripts</div>
 
 <div class="first-50">
 lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
@@ -177,7 +165,7 @@ lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src
 </div>
 
 ---
-<div class="title-1">Demo - Example 2</div>
+<div class="title-1">Features - Multilevel Hierarchies</div>
 
 <div class="first-50">
 fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))
@@ -194,11 +182,17 @@ fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).
 </div>
 
 ---
+<div class="title-1">Implementation</div>
+
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
+
+---
 <div class="title-1">Insights</div>
 
 <ul class="notes notes-big">
 <li>Deferred architecture changes are possibly harmful</li>
-<li>Javascript asynchronity is quite easy to handle</li>
+<li>Javascript asynchronity is not easy to hide</li>
+<li>Resource pointers do not point to the actual object</li>
 </ul>
 
 ---
@@ -206,9 +200,16 @@ fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).
 
 <ul class="notes notes-big">
 <li>Limited number of widgets</li>
+  <ul>
+  <li>List widget</li>
+  <li>Tree widget</li>
+  <li>Box plot widget</li>
+  </ul>
 <li>Asynchronous method calls, but no real asynchronity</li>
+<li>Connection management</li>
 <li>Difficult to explore data structures</li>
 <li>Some remaining UI bugs (e.g. loop marker length)</li>
+<li>Merging source views</li>
 </ul>
 
 ---
@@ -219,6 +220,7 @@ fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).
 <li>Source widget merging strategies</li>
 <li>Further widgets</li>
 <li>Connection management between views</li>
+<li>Integrate vivide into lively<br><i class="fa fa-arrow-right"></i> Replace filebrowser with Vivide</li>
 </ul>
 
 ---
