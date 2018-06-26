@@ -47,6 +47,11 @@ export default class BlockchainNodeView extends Morph {
     return this;
   }
   
+  resize(width, height) {
+    this.svg.setAttribute("width", width);
+    this.svg.setAttribute("height", height);
+  }
+  
   draw() {
     const that = this;
     const allNodes = this._displayedNodes.concat(this._newNodes);
