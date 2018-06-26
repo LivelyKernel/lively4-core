@@ -3,7 +3,12 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "standard-vga";
+let presentation = lively.query(this, "lively-presentation");
+let slides = presentation.querySelectorAll('.lively-slide');
+let ratio = "16-9";
+slides.forEach(slide => {
+  slide.classList += " ratio-" + ratio;
+})
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -32,33 +37,25 @@ let presentationSize = "standard-vga";
 </style>
 
 <script>
-let presentation = lively.query(this, "lively-presentation");
 let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
-presentButton.addEventListener("click", () => {
-  let slides = presentation.querySelectorAll('.lively-slide');
+presentButton.addEventListener("click", async () => {
+  document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+  // wait for fullscreen
+  await lively.sleep(100);
+
   let width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
   let height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  
-  // Fit presentation into screen
-  if (width >= 1920 && height >= 1080) {
-    presentationSize = "fullhd";
-  } else if (width >= 1600 && height >= 900) {
-    presentationSize = "hd";
-  } else if (width >= 1280 && height >= 800) {
-    //lively.notify("some strange resolution of HPI beamers")
-  }
-  else {
-    presentationSize = "standard-vga"
-  }
-
+  let scaling = width / slides[0].clientWidth;
   
   slides.forEach(slide => {
-    slide.className += ' fullscreen-' + presentationSize;
+    slide.style.transform = 'scale(' + scaling + ')';
+    slide.style.transformOrigin = 'top left';
+    slide.style.position = 'fixed';
+    slide.style.zIndex = '10001';
   })
+
   presentButton.style.display = 'none';
-  prevButton.style.display = 'none';
-  nextButton.style.display = 'none';
 })
 
 if (presentation && presentation.slides) {
@@ -105,54 +102,102 @@ presentButton
 <div class="title-1">Context</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Adapted System: Vivide</li>
+<li>Adapt the views while exploring the data</li>
+<li>Provide data in a task-oriented form</li>
+<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>VivideJS: Asynchronous online data processing</li>
 </ul>
 
 ---
-<div class="title-1">Design Space</div>
+<div class="title-1">Features</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Supported: </li>
+  <ul>
+  <li>Multilevel hierarchies</li>
+  <li>Async scripts</li>
+  </ul>
+<li>Dropped:</li>
+  <ul>
+  <li>Full asynchronity of scripts</li>
+  <li>Connection management</li>
+  </ul>
+<li>Planned:</li>
+  <ul>
+  <li>Merging source views</li>
+  </ul>
 </ul>
 
 ---
 <div class="title-1">Implementation</div>
 
-<ul class="notes notes-big">
-<li></li>
-</ul>
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
 
 ---
-<div class="title-1">Demo</div>
+<div class="title-1">Demo - Feature Overview</div>
 
+<div class="first-50">
+[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]
+</div>
+
+<div class="second-50">
 <script>
-/*import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
-
 (async () => {
-  let vivideView = await (<vivide-view></vivide-view>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleData = [
-    {name: "object", subclasses:[{name: "morph"},]},
-    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
-    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
-  ];
-  vivideView.newDataFromUpstream(exampleData);
-  initialScriptsFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
-    vivideScriptEditor.setView(vivideView);
-    let scripts = vivideView.getScripts();
-    vivideScriptEditor.setScripts(scripts);
-  });
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
-})()*/
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = `[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]`
+  return workspace;
+})()
 </script>
+</div>
+
+---
+<div class="title-1">Demo - Example 1</div>
+
+<div class="first-50">
+lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+</div>
+
+<div class="second-50">
+<script>
+(async () => {
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = "lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')";
+  return workspace;
+})()
+</script>
+</div>
+
+---
+<div class="title-1">Demo - Example 2</div>
+
+<div class="first-50">
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))
+</div>
+
+<div class="second-50">
+<script>
+(async () => {
+  let workspace = await (<lively-code-mirror></lively-code-mirror>);
+  workspace.value = "fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))";
+  return workspace;
+})()
+</script>
+</div>
 
 ---
 <div class="title-1">Insights</div>
 
 <ul class="notes notes-big">
+<li>Deferred architecture changes are possibly harmful</li>
 <li></li>
 </ul>
 
@@ -160,14 +205,20 @@ import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vi
 <div class="title-1">Shortcomings</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Limited number of widgets</li>
+<li>Asynchronous method calls, but no real asynchronity</li>
+<li>Difficult to explore data structures</li>
+<li>Some remaining UI bugs (e.g. loop marker length)</li>
 </ul>
 
 ---
-<div class="title-1">Future Work</div>
+<div class="title-1">Open Ends And Future Work</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Bug fixing</li>
+<li>Source widget merging strategies</li>
+<li>Further widgets</li>
+<li>Connection management between views</li>
 </ul>
 
 ---
@@ -207,14 +258,19 @@ Formalien:
 <script>
 let closeButton = document.createElement('button')
 closeButton.innerHTML = 'close';
-closeButton.addEventListener("click", () => {
+closeButton.addEventListener("click", closeFullscreen);
+
+function closeFullscreen() {
+  document.webkitCancelFullScreen();
   let slides = presentation.querySelectorAll('.lively-slide');
-  
   slides.forEach(slide => {
-    slide.className = slide.className.replace('fullscreen-' + presentationSize, '');
+    slide.style.transform = 'none';
+    slide.style.position = 'relative';
+    slide.style.zIndex = '1';
   })
   
   presentButton.style.display = 'inline';
-})
+}
+
 closeButton
 </script>

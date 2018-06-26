@@ -19,7 +19,8 @@
         node: false,
         amd: false,
         mocha: true,
-        jasmine: false
+        jasmine: false,
+        es6: true
     },
     globals: {
         lively: true,

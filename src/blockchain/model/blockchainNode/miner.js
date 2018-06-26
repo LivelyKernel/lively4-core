@@ -17,6 +17,12 @@ export default class Miner {
     this._transactions.add(transaction);
   }
   
+  invalidateTransactions(block) {
+    block.transactions.forEach(transaction => {
+      this._transactions.remove(transaction);
+    });
+  }
+  
   async mine() {
     if (this._blockchainNode.hasExited) {
       return;
@@ -31,8 +37,8 @@ export default class Miner {
       miningProof,
       this._blockchainNode.blockchain.headOfChain.hash
     );
-    this._blockchainNode.propagateBlock(block);
     this._transactions = new TransactionCollection();
+    this._blockchainNode.propagateBlock(block);
     console.log('[BLOCKCHAIN] Successfully mined a new block');
   }
 }

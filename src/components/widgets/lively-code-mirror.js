@@ -364,16 +364,17 @@ export default class LivelyCodeMirror extends HTMLElement {
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
       // TernCodeMirrorWrapper.updateArgHints(cm, this);
-      
-      if (cm.widgetEnter) {
+      const widgetEnter = cm.widgetEnter;
+      cm.widgetEnter = undefined;
+      if (widgetEnter) {
         // check to see if movement is purely navigational, or if it
         // doing something like extending selection
         var cursorHead = cm.getCursor('head');
         var cursorAnchor = cm.getCursor('anchor');
         if (posEq(cursorHead, cursorAnchor)) {
-          cm.widgetEnter();
+          widgetEnter();
         }
-        cm.widgetEnter = undefined;
+        debugger
       }
     });
     editor.setOption("hintOptions", {

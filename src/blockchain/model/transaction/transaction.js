@@ -7,8 +7,11 @@ export default class Transaction {
     this.senderPublicKey = senderWallet.publicKey;
     this.inputs = inputCollection;
     this.outputs = outputCollection;    
-    this.hash = this._hash();
+    this.hash = this._hash().digest().toHex();
     this.signature = this._generateSignature(senderWallet);
+    
+    // set transaction hash for outputs
+    this.outputs.forEach((output) => output.transactionHash = this.hash);
   }
   
   get displayName() {
@@ -60,18 +63,17 @@ export default class Transaction {
     // encrypt the hash using the given private key
     // this allows us to decrypt the signature later
     // on using the matching public key
-    return senderWallet.sign(this.hash);
+    return senderWallet.sign(this._hash());
   }
   
   _hash() {
     const sha256 = forge.md.sha256.create();
-    sha256.update(
+    return sha256.update(
       this.timestamp + 
       this.senderHash + 
       this.senderPublicKey + 
       this.inputs.hash + 
       this.outputs.hash
     );
-    return sha256.digest().toHex();
   }
 }

@@ -91,6 +91,31 @@ export default class VivideScriptEditor extends Morph {
     });
   }
   
+  removeScript(stepEditor, removedScript) {
+    var script = this.script;
+    var lastScript = null
+    
+    while (!script.lastScript && script.nextScript) {
+      if (removedScript === script) break;
+      lastScript = script;
+      script = script.nextScript;
+    }
+    
+    stepEditor.previousSibling.remove();
+    stepEditor.remove();
+    
+    if (lastScript) {
+      lastScript.nextScript = script.nextScript;
+    } else {
+      // First script was removed
+      this.script = removedScript.nextScript;
+    }
+    
+    if (this.script) {
+      this.script.update();
+    }
+  }
+  
   async appendStepEditor(scriptType) {
     let position = this.newScriptPosition != null ? this.newScriptPosition.script : null;
     let script = await this.view.insertScript(scriptType, position);

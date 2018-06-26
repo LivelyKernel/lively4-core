@@ -75,25 +75,25 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltipText.length > 0) {
-      let tooltip = <span class="tooltip">{tooltipText}</span>;
+      let tooltip = <span class="tooltip"></span>;
+      let shownTooltip = null;
+      tooltip.innerHTML = tooltipText;
       treeItem.appendChild(tooltip);
       treeItem.addEventListener('mouseover', event => {
-        tooltip.remove();
-        document.body.appendChild(tooltip);
-        tooltip.style.display = 'inline-block';
-        tooltip.style.top = (event.clientY + 3) + "px";
-        tooltip.style.left = (event.clientX + 3) + "px";
-        tooltip.style.position = 'fixed';
-        tooltip.style.zIndex = 1001;
-        tooltip.style.backgroundColor = '#fff';
-        tooltip.style.border = '1px solid #d5d5d5';
-        tooltip.style.padding = '5px 10px';
+        shownTooltip = tooltip.cloneNode(true);
+        document.body.appendChild(shownTooltip);
+        shownTooltip.style.display = 'inline-block';
+        shownTooltip.style.top = (event.clientY + 3) + "px";
+        shownTooltip.style.left = (event.clientX + 3) + "px";
+        shownTooltip.style.position = 'fixed';
+        shownTooltip.style.zIndex = 1001;
+        shownTooltip.style.backgroundColor = '#fff';
+        shownTooltip.style.border = '1px solid #d5d5d5';
+        shownTooltip.style.padding = '5px 10px';
       });
       
       treeItem.addEventListener('mouseout', event => {
-        tooltip.remove();
-        treeItem.appendChild(tooltip);
-        tooltip.style.display = 'none';
+        shownTooltip.remove();
       });
     }
     

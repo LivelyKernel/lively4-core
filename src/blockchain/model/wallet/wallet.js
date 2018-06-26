@@ -3,6 +3,8 @@ import TransactionInputCollection from 'src/blockchain/model/transaction/transac
 import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
 import Transaction from 'src/blockchain/model/transaction/transaction.js';
 
+const TRANSACTION_FEES = 1.5;
+
 export default class Wallet {
   constructor() {
     var rsaKeyPair = this._generateKeyPair();
@@ -63,9 +65,11 @@ export default class Wallet {
   }
   
   newTransaction(receivers) {
-    const inputAmount = receivers.reduce((sum, transaction) => { 
+    let inputAmount = receivers.reduce((sum, transaction) => { 
       return sum + transaction.value 
     }, 0);
+    
+    inputAmount += TRANSACTION_FEES;
     
     if (inputAmount > this.value) {
       throw new Error('Can not create transaction - not enough money');

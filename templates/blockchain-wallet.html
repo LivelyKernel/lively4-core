@@ -1,4 +1,4 @@
-<template id="blockchain-transaction" data-class="BlockchainTransaction">
+<template id="blockchain-wallet" data-class="BlockchainWallet">
 <style data-src="/node_modules/bootstrap-css-only/css/bootstrap.min.css"></style>
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
@@ -33,32 +33,21 @@
         <div class="container">
           <div class="row">
             <div class="col">
-              <h5>Transaction details</h5>
-              <p id="timestamp"><i class="fa fa-clock-o" aria-hidden="true"></i><span></span></p>
-              <p id="sender"><i class="fa fa-paper-plane" aria-hidden="true"></i><span></span></p>
+              <h5>Wallet details</h5>
               <p id="publicKey"><i class="fa fa-key" aria-hidden="true"></i><span></span></p>
+              <p id="privateKey"><i class="fa fa-key" aria-hidden="true"></i><span></span></p>
+              <p id="value"><i class="fa fa-money" aria-hidden="true"></i><span></span></p>
             </div>
             <div class="col">
-              <h5>Transaction volume</h5>
-              <p id="inputValue"><i class="fa fa-sign-in" aria-hidden="true"></i><span></span></p>
-              <p id="outputValue"><i class="fa fa-sign-out" aria-hidden="true"></i><span></span></p>
-              <p id="fees"><i class="fa fa-money" aria-hidden="true"></i></i><span></span></p>
+              <h5>Value improving transactions</h5>
+              <div id="transaction-list">
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="card-body">
-      <div class="card-text">
-        <div class="container">
-            <div class="row">
-            <div class="col" id="input-list"><h5>Consumed inputs</h5></div> 
-            <div class="col" id="output-list"><h5>Produced outputs</h5></div> 
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
+  </div>
   </content>
 </div>
 </template>
