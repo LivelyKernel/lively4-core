@@ -14,28 +14,143 @@
   height: 720px;
 }
 
-.lively-slide.ratio-16-9 .img-big {
+.lively-slide .img-big {
   position: absolute;
-  left: 100px;
-  top: 120px;
-  width: 1080px;
   height: auto;
   /* Reset max width */
   max-width: 9999px;
 }
 
+.lively-slide.ratio-4-3 .img-big {
+  left: 70px;
+  top: 130px;
+  width: 700px;
+}
+
+.lively-slide.ratio-16-9 .img-big {
+  left: 100px;
+  top: 120px;
+  width: 1080px;
+}
+
+.lively-slide.ratio-4-3 .first-50 {
+  left: 70px;
+  width: 300px;
+  top: 150px;
+  position: absolute;
+}
+
 .lively-slide.ratio-16-9 .first-50 {
   left: 100px;
   width: 500px;
-  top: 120px;
+  top: 150px;
+  position: absolute;
+}
+
+.lively-slide.ratio-4-3 .second-50 {
+  left: 440px;
+  width: 300px;
+  top: 150px;
   position: absolute;
 }
 
 .lively-slide.ratio-16-9 .second-50 {
   left: 680px;
-  top: 120px;
+  top: 150px;
   width: 500px;
   position: absolute;
+}
+
+.lively-slide .title-1 {
+  color: #2B547E;
+  font-weight: bold;
+  font-size: 36pt;
+  position: absolute;
+  top: 40px; 
+  width: calc(100% - 40px);
+  text-align: center;
+}
+
+.lively-slide.ratio-4-3 .title-1 {
+  font-size: 32pt;
+}
+
+.lively-slide.ratio-16-9 .title-1 {
+  font-size: 36pt;
+}
+
+.lively-slide .title-frontpage {
+  color: #2B547E;
+  font-weight: bold;
+  font-size: 26pt;
+  width: calc(100% - 40px);
+  top: 25%;
+  text-align: center;
+  position: absolute;
+}
+
+.lively-slide.ratio-4-3 .title-frontpage {
+  font-size: 22pt;
+}
+
+.lively-slide.ratio-16-9 .title-frontpage {
+  font-size: 32pt;
+}
+
+.lively-slide .authors {
+  position: absolute;
+  width: calc(100% - 40px);
+  text-align: center;
+  top: 300px;
+  font-size: 20pt;
+}
+
+.lively-slide.ratio-16-9 .authors {
+  top: 425px;
+}
+
+.lively-slide .credentials {
+  position: absolute;
+  width: calc(100% - 40px);
+  text-align: center;
+  top: 400px;
+  font-size: 18pt;
+}
+
+.lively-slide.ratio-16-9 .credentials {
+  top: 520px;
+}
+
+.lively-slide .notes {
+  position: absolute;
+  left: 100px;
+  top: 120px;
+}
+
+.lively-slide.ratio-4-3 .notes {
+  position: absolute;
+  left: 70px;
+  top: 130px;
+}
+
+.lively-slide.ratio-16-9 .notes {
+  position: absolute;
+  left: 150px;
+  top: 130px;
+}
+
+.lively-slide .notes li {
+  font-size: 24pt;
+  line-height: 1.5em;
+  padding-left: 10px;
+}
+
+.lively-slide.ratio-4-3 .notes li {
+  font-size: 20pt;
+}
+
+.lively-slide.ratio-16-9 .notes li {
+  font-size: 24pt;
 }
 
 /* Prio to request fullscreen and transform */
@@ -60,30 +175,12 @@
   border: none;
 }
 
-.lively-slide .title-frontpage {
-  color: #2B547E;
-  font-weight: bold;
-  font-size: 26pt;
-  width: calc(100% - 40px);
-  top: 25%;
-  text-align: center;
-  position: absolute;
-}
-
 .lively-slide.fullscreen-hd .title-frontpage {
   font-size: 36pt;
 }
 
 .lively-slide.fullscreen-fullhd .title-frontpage {
   font-size: 44pt;
-}
-
-.lively-slide .authors {
-  position: absolute;
-  width: calc(100% - 40px);
-  text-align: center;
-  top: 300px;
-  font-size: 20pt;
 }
 
 .lively-slide.fullscreen-hd .authors {
@@ -96,14 +193,6 @@
   font-size: 32pt;
 }
 
-.lively-slide .credentials {
-  position: absolute;
-  width: calc(100% - 40px);
-  text-align: center;
-  top: 400px;
-  font-size: 18pt;
-}
-
 .lively-slide.fullscreen-hd .credentials {
   top: 600px;
   font-size: 20pt;
@@ -114,12 +203,6 @@
   font-size: 28pt;
 }
 
-.lively-slide .notes {
-  position: absolute;
-  left: 100px;
-  top: 120px;
-}
-
 .lively-slide.fullscreen-hd .notes {
   left: 170px;
   top: 150px;
@@ -128,12 +211,6 @@
 .lively-slide.fullscreen-fullhd .notes {
   left: 250px;
   top: 200px;
-}
-
-.lively-slide .notes li {
-  font-size: 24pt;
-  line-height: 1.5em;
-  padding-left: 10px;
 }
 
 .lively-slide.fullscreen-hd .notes-big li {
@@ -149,16 +226,6 @@
 .lively-slide.fullscreen-fullhd .notes-small li {
   font-size: 32pt;
   line-height: 2em;
-}
-
-.lively-slide .title-1 {
-  color: #2B547E;
-  font-weight: bold;
-  font-size: 36pt;
-  position: absolute;
-  top: 40px; 
-  width: calc(100% - 40px);
-  text-align: center;
 }
 
 .lively-slide.fullscreen-hd .title-1 {

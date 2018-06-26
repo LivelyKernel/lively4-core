@@ -52,11 +52,10 @@ presentButton.addEventListener("click", async () => {
     slide.style.transform = 'scale(' + scaling + ')';
     slide.style.transformOrigin = 'top left';
     slide.style.position = 'fixed';
+    slide.style.zIndex = '10001';
   })
 
   presentButton.style.display = 'none';
-  prevButton.style.display = 'none';
-  nextButton.style.display = 'none';
 })
 
 if (presentation && presentation.slides) {
@@ -104,28 +103,36 @@ presentButton
 
 <ul class="notes notes-big">
 <li>Adapted System: Vivide</li>
-<li>VivideJS with asynchronous data processing</li>
-
+<li>Adapt the views while exploring the data</li>
+<li>Provide data in a task-oriented form</li>
+<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>VivideJS: Asynchronous online data processing</li>
 </ul>
 
 ---
-<div class="title-1">Design Space</div>
+<div class="title-1">Features</div>
 
 <ul class="notes notes-big">
 <li>Supported: </li>
   <ul>
-  <li>Asynchronous scripts</li>
+  <li>Multilevel hierarchies</li>
+  <li>Async scripts</li>
   </ul>
 <li>Dropped:</li>
   <ul>
-  <li></li>
+  <li>Full asynchronity of scripts</li>
+  <li>Connection management</li>
+  </ul>
+<li>Planned:</li>
+  <ul>
+  <li>Merging source views</li>
   </ul>
 </ul>
 
 ---
 <div class="title-1">Implementation</div>
 
-<img class="img-big" src="./vivide-classes.svg" alt="Vivide Class Hierarchy" />
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
 
 ---
 <div class="title-1">Demo - Feature Overview</div>
@@ -133,7 +140,7 @@ presentButton
 <div class="first-50">
 [
   {name: "object", subclasses:[{name: "morph"},]},
-  {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
   {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
 ]
 </div>
@@ -144,7 +151,7 @@ presentButton
   let workspace = await (<lively-code-mirror></lively-code-mirror>);
   workspace.value = `[
   {name: "object", subclasses:[{name: "morph"},]},
-  {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
   {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
 ]`
   return workspace;
@@ -173,7 +180,7 @@ lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src
 <div class="title-1">Demo - Example 2</div>
 
 <div class="first-50">
-lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))
 </div>
 
 <div class="second-50">
@@ -190,21 +197,28 @@ lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src
 <div class="title-1">Insights</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Deferred architecture changes are possibly harmful</li>
+<li>Javascript asynchronity is quite easy to handle</li>
 </ul>
 
 ---
 <div class="title-1">Shortcomings</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Limited number of widgets</li>
+<li>Asynchronous method calls, but no real asynchronity</li>
+<li>Difficult to explore data structures</li>
+<li>Some remaining UI bugs (e.g. loop marker length)</li>
 </ul>
 
 ---
-<div class="title-1">Future Work</div>
+<div class="title-1">Open Ends And Future Work</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>Bug fixing</li>
+<li>Source widget merging strategies</li>
+<li>Further widgets</li>
+<li>Connection management between views</li>
 </ul>
 
 ---
@@ -244,16 +258,19 @@ Formalien:
 <script>
 let closeButton = document.createElement('button')
 closeButton.innerHTML = 'close';
-closeButton.addEventListener("click", () => {
+closeButton.addEventListener("click", closeFullscreen);
+
+function closeFullscreen() {
   document.webkitCancelFullScreen();
   let slides = presentation.querySelectorAll('.lively-slide');
-  
   slides.forEach(slide => {
     slide.style.transform = 'none';
     slide.style.position = 'relative';
+    slide.style.zIndex = '1';
   })
   
   presentButton.style.display = 'inline';
-})
+}
+
 closeButton
 </script>
