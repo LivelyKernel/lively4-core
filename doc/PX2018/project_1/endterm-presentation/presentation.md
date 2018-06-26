@@ -228,6 +228,43 @@ lively.openComponentInWindow('blockchain-transaction').then(comp => {
 
 ---
 ## Block
+<ul>
+  <li>periodically encapsulates transactions</li>
+  <li>comparable to a ledger's page
+    <ul>
+      <li>each block refers to previous block (chain of blocks &rarr; ledger)</li>
+    </ul>
+  </li>
+  <li>creation of a block is called <i>mining</i>
+    <ul>
+      <li>requires resource intensive / time consuming work to be done</li>
+      <li>mining is rewarded (mining-reward and fees)</li>
+    </ul>
+  </li>
+  <li>transactions mind into a block are interpreted as valid</li>
+</ul>
+
+### Mining Challenge
+
+```javascript {.MiningChallengeExample}
+import forge from 'node_modules/node-forge/dist/forge.min.js';
+
+const sha256 = forge.md.sha256.create();
+
+const block = {'prevHash': "#3eFg7FA", "data": "...", "nonce": 0};
+
+```
+<script>runExampleButton("Setup Mining-Challenge", this, ["MiningChallengeExample"])</script>
+
+```javascript {.MiningChallengeIncraseNonce}
+block['nonce'] = block['nonce'] + 1;
+sha256.update(block);
+sha256.digest().toHex();
+```
+<script>runExampleButton("Run Mining-Challenge", this, ["MiningChallengeIncraseNonce"])</script>
+
+---
+## Block
 
 <script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
 <blockchain-wallet id="blockchain-wallet-block"></blockchain-wallet>
@@ -246,7 +283,6 @@ blockViewController.reset();
 blockViewController.draw();
 const walletView = lively.query(this, '#blockchain-wallet-block');
 lively.query(this, '#blockchain-node-view-block').resize(600, 200).draw();
-
 
 node.subscribe(blockViewController, (block) => {
   blockViewController.addBlock(block);
@@ -269,5 +305,51 @@ node.mine();
 <script>hideHiddenElements(this)</script>
 
 ---
+<h1 class="centralized">Networking</h1>
 
+---
+## Nodes
+<ul>
+  <li>Participants within network are called nodes</li>
+  <li>Each node can perform several actions
+    <ul>
+      <li>Mine new blocks &rarr; Miner</li>
+      <li>Propagate Transactions &rarr; NetworkComponent</li>
+      <li>Maintain it's own Blockchain copy &rarr; Storage</li>
+    </ul>
+  </li>
+</ul>
+
+```javascript {.SimulateNode}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+new BlockchainNode();
+
+```
+<script>runExampleButton("Create Node", this, ["SimulateNode"])</script>
+
+---
+
+## Peer-To-Peer
+
+<ul>
+  <li>New nodes contact long-established ones to get up-to-date copy of Blockchain</li>
+  <li>Consensus rules ensure same Blockchain on majority of nodes
+    <ul>
+      <li>Blocks with solved mining-challenge are valid</li>
+      <li>Longest Blockchain is the only valid one</li>
+      <li>...</li>
+    </ul>
+  </li>
+  <li>Nodes / Miner compete against each other while solving the mining challenge</li>
+</ul>
+
+```javascript {.RunFullDemo}
+lively.openComponentInWindow('blockchain-ui').then(comp => {
+    comp.createNewNode();
+    comp._nodes[0].subscribe(comp, comp.update.bind(comp));
+    comp.update(comp._nodes[0].blockchain.headOfChain);
+});
+
+```
+<script>runExampleButton("Run full Demo", this, ["RunFullDemo"])</script>
 
