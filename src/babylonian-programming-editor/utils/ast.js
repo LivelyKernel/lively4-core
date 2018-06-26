@@ -17,11 +17,7 @@ import { maybeUnpackString } from "./utils.js";
  */
 export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
   try {
-    if(obj instanceof HTMLElement) {
-      /*probe:*/return/*{}*/ obj.cloneNode(true);
-    } else {
-      /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
-    }
+    /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
   } catch(e) {
     console.warn("Could not deeply clone object", obj);
     /*probe:*/return/*{}*/ Object.assign({}, obj);

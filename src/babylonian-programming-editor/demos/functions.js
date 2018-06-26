@@ -31,8 +31,8 @@ export const /*example:*/fibonacci/*{"id":"4c22_6e4b_fe59","name":{"mode":"input
 }
 
 // Recursion
-function /*example:*/factorial/*{"id":"97c4_c756_018c","name":{"mode":"input","value":""},"color":"hsl(110, 30%, 70%)","values":{"x":{"mode":"input","value":"10"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(x) {
-  /*probe:*/return/*{}*/ x <= 1 ? 1 : x * factorial(x-1);
+function /*example:*//*slider:*/factorial/*{"id":"97c4_c756_018c","name":{"mode":"input","value":""},"color":"hsl(110, 30%, 70%)","values":{"x":{"mode":"input","value":"10"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{}*/(x) {
+  /*probe:*/return/*{}*/ x <= 1 ? 1 : /*probe:*/x/*{}*/ * factorial(x-1);
 }
 
 // Intermodule examples

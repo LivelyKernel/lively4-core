@@ -67,14 +67,14 @@ export default onmessage = async function(msg) {
  * Sends a response to the main thread
  */
 const respond = (id, ast = null, loadableCode = null, executableCode) =>
-  /*postMessage*/({
+  postMessage({
     id: id,
     payload: {
       ast: ast,
       loadableCode: loadableCode,
       executableCode: executableCode
     }
-  })/*;*/
+  });
   
 
 /**
@@ -82,7 +82,4 @@ const respond = (id, ast = null, loadableCode = null, executableCode) =>
  */
 const parse = (code) =>
   assignIds(astForCode(code));
-
-
-
 

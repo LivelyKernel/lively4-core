@@ -1,7 +1,7 @@
 import boundEval from 'src/client/bound-eval.js';
 import { setCode } from 'src/client/workspaces.js';
 
-import ASTWorkerWrapper from "./ast-worker-wrapper.js";
+import ASTWorkerPromiseWrapper from "./ast-worker-promise-wrapper.js";
 import {
   generateLocationMap
 } from "../utils/ast.js";
@@ -21,7 +21,7 @@ class BabylonianWorker {
     this._editors = new Set();
     
     // Worker for parsing
-    this._astWorker = new ASTWorkerWrapper();
+    this._astWorker = new ASTWorkerPromiseWrapper();
     
     // Tracker
     this.tracker = new Tracker();
@@ -86,6 +86,9 @@ class BabylonianWorker {
         return;
       }
       
+      // Reset the tracker to write new results
+      this.tracker.reset();
+      
       // Load the loadable version of the module
       const loadResult = await this._load(editor.loadableCode, editor.url, {
         tracker: this.tracker,
@@ -98,7 +101,6 @@ class BabylonianWorker {
       }
 
       // Execute all modules that have active examples
-      this.tracker.reset();
       this.activeExamples = new Set([defaultExample()]);
       for(let someEditor of this._editors) {
         if(!someEditor.activeExamples.length) {

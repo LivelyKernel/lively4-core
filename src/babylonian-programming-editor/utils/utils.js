@@ -52,3 +52,16 @@ export const normalizePath = (path) =>
         return acc;
       }, [])
       .join("/")
+
+export const deepCopy = (obj) => {
+  try {
+    if(obj instanceof HTMLElement) {
+      /*probe:*/return/*{}*/ obj.cloneNode(true);
+    } else {
+      /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
+    }
+  } catch(e) {
+    console.warn("Could not deeply clone object", obj);
+    /*probe:*/return/*{}*/ Object.assign({}, obj);
+  }
+}

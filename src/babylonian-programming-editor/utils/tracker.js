@@ -1,5 +1,5 @@
 import { defaultExample } from "./defaults.js";
-import { deepCopy } from "./ast.js";
+import { deepCopy } from "./utils.js";
 import { DefaultMap } from "./collections.js";
 
 export default class Tracker {

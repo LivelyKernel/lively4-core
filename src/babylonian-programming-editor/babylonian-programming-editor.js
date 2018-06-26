@@ -526,7 +526,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._deadMarkers.map(m => m.clear());
 
     // Don't show dead markers if we have no activated example (except the default example)
-    if(BabylonianWorker.activeExamples.length <= 1) {
+    if(BabylonianWorker.activeExamples.size <= 1) {
       return;
     }
 
