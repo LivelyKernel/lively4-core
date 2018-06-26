@@ -229,6 +229,7 @@ lively.openComponentInWindow('blockchain-transaction').then(comp => {
 ---
 ## Block
 
+<script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
 <blockchain-wallet id="blockchain-wallet-block"></blockchain-wallet>
 <blockchain-node-view id="blockchain-node-view-block"></blockchain-node-view>
 
@@ -238,16 +239,16 @@ import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
 import NetworkComponent from 'src/blockchain/model/blockchainNode/networkComponent.js';
 
 NetworkComponent.peers = [];
-blockViewController.reset();
 
 const node = new BlockchainNode();
 const blockViewController = new BlockNetworkView(lively.query(this, '#blockchain-node-view-block'));
+blockViewController.reset();
+blockViewController.draw();
 const walletView = lively.query(this, '#blockchain-wallet-block');
-lively.query(this, '#blockchain-node-view-block').resize(600, 300).draw();
+lively.query(this, '#blockchain-node-view-block').resize(600, 200).draw();
 
 
 node.subscribe(blockViewController, (block) => {
-  walletView.reset();
   blockViewController.addBlock(block);
   blockViewController.draw();
   walletView.wallet = node.wallet;
@@ -258,10 +259,7 @@ blockViewController
   .draw();
 
 walletView.wallet = node.wallet;
-
-
 ```
-<script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
 ```javascript {.MineBlock .Hidden}
 node.mine();
 
