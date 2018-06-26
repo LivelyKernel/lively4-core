@@ -35,9 +35,11 @@ export default class BlockchainWallet extends Morph {
   
   _createInputList() {
     const inputList = this.shadowRoot.querySelector('#transaction-list');
-    this.wallet._receivedTransactions.forEach(input => {
+    inputList.innerHTML = "";
+    
+    this.wallet._receivedTransactions.forEach(transaction => {
       const transactionInputWrapper = document.createElement('div');
-      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-in" aria-hidden="true"></i> ' + input.transactionDisplayName + ' <span class="color-red">µ' + input.value + '</span>';
+      transactionInputWrapper.innerHTML = '<i class="fa fa-sign-in" aria-hidden="true"></i> ' + transaction.displayName + ' <span class="color-green">µ' + transaction.outputValue + '</span>';
       inputList.appendChild(transactionInputWrapper);
     });
   }

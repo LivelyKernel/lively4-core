@@ -1,10 +1,11 @@
 <!-- markdown-config presentation=true -->
 
-<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
+<!-- begin styles -->
 <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
 <link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_1/endterm-presentation/assets/style.css"  />
+
 <style>
   .lively-slide {
     border: 1px solid rgb(220,220,220)
@@ -13,7 +14,19 @@
   p {
     font-size: 18pt
   }
+  pre:not(#LOG) {
+    background-color:  rgba(240,240,250,1);
+    padding: 6px;
+    width: 800px;
+  }
 </style>
+<!-- end styles -->
+
+<!-- begin script -->
+<script>
+import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "src/client/essay.js";
+</script>
+<!-- end script -->
 
 <div class="title">
   PX 2018: Blockchain - Endterm Presentation
@@ -91,7 +104,169 @@ concept published by Satoshi Nakamoto (pseudonym) in 2008
 
 ---
 ## Wallet
+
 <ul>
-  <li>Necessary to participate in payment transactions</li>
-  <li>Basically set of private &amp; public key</li>
+  <li>
+  Necessary to participate in payment transactions
+  <ul>
+    <li>send transactions</li>
+    <li>receive transactions</li>
+  </ul>
+  </li>
+  <li>Basically set of private &amp; public key
+    <ul>
+      <li>used to sign transactions</li>
+      <li>public key as identifier in payment network</li>
+    </ul>
+  </li>
 </ul>
+
+
+### Usage
+```javascript {.BlockchainImports .Hidden}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import Wallet from 'src/blockchain/model/wallet/wallet.js';
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+import BlockNetworkView from 'src/blockchain/view/blockchainNetworkView.js';
+```
+
+```javascript {.InitializeWallet .NoResult}
+const wallet = new Wallet();
+```
+
+```javascript {.DisplayWallet .Hidden}
+lively.openComponentInWindow('blockchain-wallet').then(comp => {
+  comp.wallet = wallet;
+});
+
+```
+
+<script>runExampleButton("Display Wallet", this, ["BlockchainImports", "InitializeWallet", "DisplayWallet"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+
+
+### Receive payment
+```javascript {.WalletReceiveTransactionPreparation .Hidden}
+const inputCollection = new TransactionInputCollection(wallet);
+inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
+inputCollection.finalize();
+const outputCollection = new TransactionOutputCollection();
+outputCollection.add(wallet, 5);
+outputCollection.finalize();
+const transaction = new Transaction(wallet, inputCollection, outputCollection);
+```
+
+```javascript {.WalletReceiveTransaction}
+wallet.receive(transaction);
+```
+
+<script>runExampleButton("Receive Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayWallet"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Transaction
+<ul style="margin-bottom: 30px">
+  <li>fundamental component of blockchain data structure</li>
+  <li>
+    describes one timestamped change within ecosystem
+    <ul>
+      <li>Bitcoin: single payment flow starting from one wallet</li>
+    </ul>
+  </li>
+</ul>
+<blockchain-transaction id="transaction-view" style="display:none; width: 600px;"></blockchain-transaction>
+
+```javascript {.DisplayTransactionView .Hidden}
+lively.query(this, '#transaction-view').transaction = transaction;
+lively.query(this, '#transaction-view').style.display = 'block';
+```
+
+<script>runExampleButton("Display Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayTransactionView"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Transaction Architecture
+
+<img src="assets/TransactionArchitecture.png" alt="" class="center" />
+
+```javascript {.CreateInputCollection}
+// Creates an inputCollection and defines input values
+const inputCollection = new TransactionInputCollection(wallet);
+// mining reward is used as source of income
+inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
+inputCollection.finalize();
+```
+
+```javascript {.CreateOutputCollection}
+// Creates an outputCollection and defines which wallet will receive money
+const outputCollection = new TransactionOutputCollection();
+outputCollection.add(wallet, 5);
+outputCollection.finalize();
+```
+
+```javascript {.CreateTransaction}
+// Creates an wallet with the predefined input and outputs.
+// Wallet is used to sign the transaction
+const transaction = new Transaction(wallet, inputCollection, outputCollection);
+```
+
+```javascript {.DisplayTransaction .Hidden}
+lively.openComponentInWindow('blockchain-transaction').then(comp => {
+  comp.transaction = transaction;
+});
+```
+
+<script>runExampleButton("Run", this, ["BlockchainImports", "InitializeWallet", "CreateInputCollection", "CreateOutputCollection", "CreateTransaction", "DisplayWallet", "DisplayTransaction"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Block
+
+<blockchain-wallet id="blockchain-wallet-block"></blockchain-wallet>
+<blockchain-node-view id="blockchain-node-view-block" style="width:400px; height: 300px;"></blockchain-node-view>
+
+```javascript {.PrepareMining .Hidden}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
+import NetworkComponent from 'src/blockchain/model/blockchainNode/networkComponent.js';
+
+NetworkComponent.peers = [];
+blockViewController.reset();
+
+const node = new BlockchainNode();
+const blockViewController = new BlockNetworkView(lively.query(this, '#blockchain-node-view-block'));
+const walletView = lively.query(this, '#blockchain-wallet-block');
+
+node.subscribe(blockViewController, (block) => {
+  blockViewController.addBlock(block);
+  blockViewController.draw();
+  walletView.wallet = node.wallet;
+});
+
+blockViewController
+  .addBlock(node.blockchain.headOfChain)
+  .draw();
+
+walletView.wallet = node.wallet;
+
+
+```
+<script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
+```javascript {.MineBlock .Hidden}
+node.mine();
+
+```
+<script>runExampleButton("Mine Block", this, ["MineBlock"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+
+
