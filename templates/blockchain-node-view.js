@@ -47,6 +47,12 @@ export default class BlockchainNodeView extends Morph {
     return this;
   }
   
+  resize(width, height) {
+    this._svg.setAttribute("width", width);
+    this._svg.setAttribute("height", height);
+    return this;
+  }
+  
   draw() {
     const that = this;
     const allNodes = this._displayedNodes.concat(this._newNodes);
@@ -62,7 +68,7 @@ export default class BlockchainNodeView extends Morph {
     
     const force = d3.layout.force()
       .gravity(0.05)
-      .distance(width/2)
+      .distance(Math.min(width, height) / 4)
       .charge(-100)
       .size([width, height]);
     

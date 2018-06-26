@@ -1,10 +1,11 @@
 <!-- markdown-config presentation=true -->
 
-<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
+<!-- begin styles -->
 <link rel="stylesheet" type="text/css" href="doc/PX2018/style.css"  />
 <link rel="stylesheet" type="text/css" href="src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="templates/livelystyle.css"  />
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_1/endterm-presentation/assets/style.css"  />
+
 <style>
   .lively-slide {
     border: 1px solid rgb(220,220,220)
@@ -13,7 +14,19 @@
   p {
     font-size: 18pt
   }
+  pre:not(#LOG) {
+    background-color:  rgba(240,240,250,1);
+    padding: 6px;
+    width: 800px;
+  }
 </style>
+<!-- end styles -->
+
+<!-- begin script -->
+<script>
+import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "src/client/essay.js";
+</script>
+<!-- end script -->
 
 <div class="title">
   PX 2018: Blockchain - Endterm Presentation
@@ -91,7 +104,252 @@ concept published by Satoshi Nakamoto (pseudonym) in 2008
 
 ---
 ## Wallet
+
 <ul>
-  <li>Necessary to participate in payment transactions</li>
-  <li>Basically set of private &amp; public key</li>
+  <li>
+  Necessary to participate in payment transactions
+  <ul>
+    <li>send transactions</li>
+    <li>receive transactions</li>
+  </ul>
+  </li>
+  <li>Basically set of private &amp; public key
+    <ul>
+      <li>used to sign transactions</li>
+      <li>public key as identifier in payment network</li>
+    </ul>
+  </li>
 </ul>
+
+
+### Usage
+```javascript {.BlockchainImports .Hidden}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import Wallet from 'src/blockchain/model/wallet/wallet.js';
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+import BlockNetworkView from 'src/blockchain/view/blockchainNetworkView.js';
+```
+
+```javascript {.InitializeWallet .NoResult}
+const wallet = new Wallet();
+```
+
+```javascript {.DisplayWallet .Hidden}
+lively.openComponentInWindow('blockchain-wallet').then(comp => {
+  comp.wallet = wallet;
+});
+
+```
+
+<script>runExampleButton("Display Wallet", this, ["BlockchainImports", "InitializeWallet", "DisplayWallet"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+
+
+### Receive payment
+```javascript {.WalletReceiveTransactionPreparation .Hidden}
+const inputCollection = new TransactionInputCollection(wallet);
+inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
+inputCollection.finalize();
+const outputCollection = new TransactionOutputCollection();
+outputCollection.add(wallet, 5);
+outputCollection.finalize();
+const transaction = new Transaction(wallet, inputCollection, outputCollection);
+```
+
+```javascript {.WalletReceiveTransaction}
+wallet.receive(transaction);
+```
+
+<script>runExampleButton("Receive Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayWallet"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Transaction
+<ul style="margin-bottom: 30px">
+  <li>fundamental component of blockchain data structure</li>
+  <li>
+    describes one timestamped change within ecosystem
+    <ul>
+      <li>Bitcoin: single payment flow starting from one wallet</li>
+    </ul>
+  </li>
+</ul>
+<blockchain-transaction id="transaction-view" style="display:none; width: 600px;"></blockchain-transaction>
+
+```javascript {.DisplayTransactionView .Hidden}
+lively.query(this, '#transaction-view').transaction = transaction;
+lively.query(this, '#transaction-view').style.display = 'block';
+```
+
+<script>runExampleButton("Display Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayTransactionView"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Transaction Architecture
+
+<img src="assets/TransactionArchitecture.png" alt="" class="center" />
+
+```javascript {.CreateInputCollection}
+// Creates an inputCollection and defines input values
+const inputCollection = new TransactionInputCollection(wallet);
+// mining reward is used as source of income
+inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
+inputCollection.finalize();
+```
+
+```javascript {.CreateOutputCollection}
+// Creates an outputCollection and defines which wallet will receive money
+const outputCollection = new TransactionOutputCollection();
+outputCollection.add(wallet, 5);
+outputCollection.finalize();
+```
+
+```javascript {.CreateTransaction}
+// Creates an wallet with the predefined input and outputs.
+// Wallet is used to sign the transaction
+const transaction = new Transaction(wallet, inputCollection, outputCollection);
+```
+
+```javascript {.DisplayTransaction .Hidden}
+lively.openComponentInWindow('blockchain-transaction').then(comp => {
+  comp.transaction = transaction;
+});
+```
+
+<script>runExampleButton("Run", this, ["BlockchainImports", "InitializeWallet", "CreateInputCollection", "CreateOutputCollection", "CreateTransaction", "DisplayWallet", "DisplayTransaction"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Block
+<ul>
+  <li>periodically encapsulates transactions</li>
+  <li>comparable to a ledger's page
+    <ul>
+      <li>each block refers to previous block (chain of blocks &rarr; ledger)</li>
+    </ul>
+  </li>
+  <li>creation of a block is called <i>mining</i>
+    <ul>
+      <li>requires resource intensive / time consuming work to be done</li>
+      <li>mining is rewarded (mining-reward and fees)</li>
+    </ul>
+  </li>
+  <li>transactions mind into a block are interpreted as valid</li>
+</ul>
+
+### Mining Challenge
+
+```javascript {.MiningChallengeExample}
+import forge from 'node_modules/node-forge/dist/forge.min.js';
+
+const sha256 = forge.md.sha256.create();
+
+const block = {'prevHash': "#3eFg7FA", "data": "...", "nonce": 0};
+
+```
+<script>runExampleButton("Setup Mining-Challenge", this, ["MiningChallengeExample"])</script>
+
+```javascript {.MiningChallengeIncraseNonce}
+block['nonce'] = block['nonce'] + 1;
+sha256.update(block);
+sha256.digest().toHex();
+```
+<script>runExampleButton("Run Mining-Challenge", this, ["MiningChallengeIncraseNonce"])</script>
+
+---
+## Block
+
+<script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
+<blockchain-wallet id="blockchain-wallet-block"></blockchain-wallet>
+<blockchain-node-view id="blockchain-node-view-block"></blockchain-node-view>
+
+```javascript {.PrepareMining .Hidden}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
+import NetworkComponent from 'src/blockchain/model/blockchainNode/networkComponent.js';
+
+NetworkComponent.peers = [];
+
+const node = new BlockchainNode();
+const blockViewController = new BlockNetworkView(lively.query(this, '#blockchain-node-view-block'));
+blockViewController.reset();
+blockViewController.draw();
+const walletView = lively.query(this, '#blockchain-wallet-block');
+lively.query(this, '#blockchain-node-view-block').resize(600, 200).draw();
+
+node.subscribe(blockViewController, (block) => {
+  blockViewController.addBlock(block);
+  blockViewController.draw();
+  walletView.wallet = node.wallet;
+});
+
+blockViewController
+  .addBlock(node.blockchain.headOfChain)
+  .draw();
+
+walletView.wallet = node.wallet;
+```
+```javascript {.MineBlock .Hidden}
+node.mine();
+
+```
+<script>runExampleButton("Mine Block", this, ["MineBlock"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+<h1 class="centralized">Networking</h1>
+
+---
+## Nodes
+<ul>
+  <li>Participants within network are called nodes</li>
+  <li>Each node can perform several actions
+    <ul>
+      <li>Mine new blocks &rarr; Miner</li>
+      <li>Propagate Transactions &rarr; NetworkComponent</li>
+      <li>Maintain it's own Blockchain copy &rarr; Storage</li>
+    </ul>
+  </li>
+</ul>
+
+```javascript {.SimulateNode}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+new BlockchainNode();
+
+```
+<script>runExampleButton("Create Node", this, ["SimulateNode"])</script>
+
+---
+
+## Peer-To-Peer
+
+<ul>
+  <li>New nodes contact long-established ones to get up-to-date copy of Blockchain</li>
+  <li>Consensus rules ensure same Blockchain on majority of nodes
+    <ul>
+      <li>Blocks with solved mining-challenge are valid</li>
+      <li>Longest Blockchain is the only valid one</li>
+      <li>...</li>
+    </ul>
+  </li>
+  <li>Nodes / Miner compete against each other while solving the mining challenge</li>
+</ul>
+
+```javascript {.RunFullDemo}
+lively.openComponentInWindow('blockchain-ui').then(comp => {
+    comp.createNewNode();
+    comp._nodes[0].subscribe(comp, comp.update.bind(comp));
+    comp.update(comp._nodes[0].blockchain.headOfChain);
+});
+
+```
+<script>runExampleButton("Run full Demo", this, ["RunFullDemo"])</script>
+

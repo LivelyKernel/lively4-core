@@ -198,7 +198,7 @@ fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).
 
 <ul class="notes notes-big">
 <li>Deferred architecture changes are possibly harmful</li>
-<li></li>
+<li>Javascript asynchronity is quite easy to handle</li>
 </ul>
 
 ---
