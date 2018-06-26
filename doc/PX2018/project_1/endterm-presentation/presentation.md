@@ -247,6 +247,7 @@ const walletView = lively.query(this, '#blockchain-wallet-block');
 node.subscribe(blockViewController, (block) => {
   blockViewController.addBlock(block);
   blockViewController.draw();
+  walletView.reset();
   walletView.wallet = node.wallet;
 });
 
