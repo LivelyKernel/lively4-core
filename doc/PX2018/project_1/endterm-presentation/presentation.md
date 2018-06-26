@@ -243,6 +243,8 @@ blockViewController.reset();
 const node = new BlockchainNode();
 const blockViewController = new BlockNetworkView(lively.query(this, '#blockchain-node-view-block'));
 const walletView = lively.query(this, '#blockchain-wallet-block');
+lively.query(this, '#blockchain-node-view-block').resize(600, 300).draw();
+
 
 node.subscribe(blockViewController, (block) => {
   walletView.reset();
