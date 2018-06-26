@@ -188,7 +188,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   	this.editView(value)
     this.isLoading = false
     console.log("[editor] #dispatch editor-loaded")   
-    this.dispatchEvent(new CustomEvent("editor-loaded"))
+    var event = new CustomEvent("editor-loaded")
+    // event.stopPropagation();
+    this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
   };
   
@@ -196,7 +198,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(!this["editor-loaded"]) {
       return promisedEvent(this, "editor-loaded");
     }
-  }
+  } 
   
   editView(value) {
     if (!value) value = this.value || "";
@@ -374,7 +376,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         if (posEq(cursorHead, cursorAnchor)) {
           widgetEnter();
         }
-        debugger
       }
     });
     editor.setOption("hintOptions", {
@@ -741,7 +742,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async livelyMigrate(other) {
-    this.addEventListener("editor-loaded", () => {
+    lively.addEventListener("Migrate", this, "editor-loaded", evt => {
+      if (evt.path[0] !== this) return; // bubbled from another place... that is not me!
+      lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {
       	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)        
@@ -920,7 +923,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       // lively.warn('skip because id is not spike')
       return;
     }
-    lively.success('wrap imports in spike')
+    // lively.success('wrap imports in spike')
     
     const getImportDeclarationRegex = () => {
       const LiteralString = `(["][^"\\n\\r]*["]|['][^'\\n\\r]*['])`;
@@ -937,7 +940,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       const ImportNamespaceSpecifier = `(\\*\\s*as\\s+${JavaScriptIdentifier})`;
       const anySpecifier = `(${ImportSpecifier}|${ImportDefaultSpecifier}|${ImportNamespaceSpecifier})`;
       // ImportDeclaration: import [any] from Literal
-      const ImportDeclaration = `import\\s*(${anySpecifier}\\s*\\,\\s*)*${anySpecifier}\\s*from\\s*${LiteralString}\\s*\\;?`;
+      const ImportDeclaration = `import\\s*(${anySpecifier}\\s*\\,\\s*)*${anySpecifier}\\s*from\\s*${LiteralString}(\\s*\\;)?`;
       
       return ImportDeclaration;
     };
@@ -986,14 +989,14 @@ export default class LivelyCodeMirror extends HTMLElement {
             }
             if (evt.keyCode == 37) { // Left
               if (input.selectionStart == 0) {
-                that.editor.setSelection(range.from, range.from)
+                this.editor.setSelection(range.from, range.from)
                 this.focus()
               }
             }
             
             if (evt.keyCode == 39) { // Right
               if (input.selectionStart == input.value.length) {
-                that.editor.setSelection(range.to, range.to)
+                this.editor.setSelection(range.to, range.to)
                 this.focus()
               }
             }

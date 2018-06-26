@@ -1,5 +1,6 @@
 import boundEval from "src/client/bound-eval.js";
 import _ from 'src/external/lodash/lodash.js'
+import { letsScript } from 'src/client/vivide/vivide.js';
 
 export function toggleLayer(name) {
   var checkbox=<input  type="checkbox"></input>
@@ -100,7 +101,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
       // show only the latest result
       var resultElement = code.parentElement.querySelector(".result")
       if (resultElement) resultElement.remove()
-      var result  = await boundEval(code.textContent, ctx);    
+      var result = await boundEval(code.textContent, ctx);    
       if (result.isError) {
         code.parentElement.style.border = "1px solid red";
         lively.showError(result.value)
@@ -144,6 +145,65 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
         } else if (value !== undefined) { 
           element = <div style="color: blue; font-style='italic'"> => {value}</div>
           appendResult(code, element)
+        }
+      }
+    }
+    return  ""
+  });
+  return button
+}
+
+
+
+
+export function runVivideButton(exampleName, ctx, vivideScript, dependencies=[]) {
+  var button=<button>{exampleName}</button>
+  var appendResult = function(code, element) {
+    element.classList.add("result")
+    code.parentElement.insertBefore(element, code.nextSibling)
+  }
+  
+  button.onclick = (async () => {
+    // gather all dependent code blocks
+    var codeBlocks = []
+    dependencies.forEach(ea => {
+      codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + ea), 
+                      ea => lively.getGlobalPosition(ea).y))
+    })
+    var vivideBlock = ctx.parentElement.querySelector("." + vivideScript)
+    codeBlocks.push(vivideBlock)
+    
+  
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // go through all code blocks and (re-)execute them and show result (and errors)
+    
+    ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
+      ea.remove()
+    });
+      
+    
+    var i=1
+    for(var code of codeBlocks) {
+      var result  = await boundEval(code.textContent, ctx);    
+      if (result.isError) {
+        code.parentElement.style.border = "1px solid red";
+        lively.showError(result.value)
+        var error = <div class="result error" style="color: red">Error: {result.value}</div>
+        code.parentElement.insertBefore(error, code.nextSibling)
+        return
+      } else {
+        var value = result.value
+        if (value && value.then) {
+          try {
+            value = await value;
+          } catch(e) {
+            let error = <div class="error" style="color: red">Error in Promise: {e}</div>
+            appendResult(code, error)
+          return    
+          }
+        }
+        if (code === vivideBlock) {
+          letsScript(value)
         }
       }
     }
