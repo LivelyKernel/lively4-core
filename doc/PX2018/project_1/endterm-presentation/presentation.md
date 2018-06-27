@@ -133,6 +133,7 @@ import BlockNetworkView from 'src/blockchain/view/blockchainNetworkView.js';
 ```
 
 ```javascript {.InitializeWallet .NoResult}
+import Wallet from 'src/blockchain/model/wallet/wallet.js';
 const wallet = new Wallet();
 ```
 
@@ -143,7 +144,7 @@ lively.openComponentInWindow('blockchain-wallet').then(comp => {
 
 ```
 
-<script>runExampleButton("Display Wallet", this, ["BlockchainImports", "InitializeWallet", "DisplayWallet"])</script>
+<script>runExampleButton("Display Wallet", this, ["InitializeWallet", "DisplayWallet"])</script>
 
 <script>hideHiddenElements(this)</script>
 
@@ -151,6 +152,10 @@ lively.openComponentInWindow('blockchain-wallet').then(comp => {
 
 ### Receive payment
 ```javascript {.WalletReceiveTransactionPreparation .Hidden}
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+
 const inputCollection = new TransactionInputCollection(wallet);
 inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
 inputCollection.finalize();
@@ -164,7 +169,7 @@ const transaction = new Transaction(wallet, inputCollection, outputCollection);
 wallet.receive(transaction);
 ```
 
-<script>runExampleButton("Receive Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayWallet"])</script>
+<script>runExampleButton("Receive Transaction", this, ["InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayWallet"])</script>
 
 <script>hideHiddenElements(this)</script>
 
@@ -186,7 +191,7 @@ lively.query(this, '#transaction-view').transaction = transaction;
 lively.query(this, '#transaction-view').style.display = 'block';
 ```
 
-<script>runExampleButton("Display Transaction", this, ["BlockchainImports", "InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayTransactionView"])</script>
+<script>runExampleButton("Display Transaction", this, ["InitializeWallet", "WalletReceiveTransactionPreparation", "WalletReceiveTransaction", "DisplayTransactionView"])</script>
 
 <script>hideHiddenElements(this)</script>
 
@@ -196,6 +201,8 @@ lively.query(this, '#transaction-view').style.display = 'block';
 <img src="assets/TransactionArchitecture.png" alt="" class="center" />
 
 ```javascript {.CreateInputCollection}
+import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
+
 // Creates an inputCollection and defines input values
 const inputCollection = new TransactionInputCollection(wallet);
 // mining reward is used as source of income
@@ -204,6 +211,8 @@ inputCollection.finalize();
 ```
 
 ```javascript {.CreateOutputCollection}
+import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
+
 // Creates an outputCollection and defines which wallet will receive money
 const outputCollection = new TransactionOutputCollection();
 outputCollection.add(wallet, 5);
@@ -211,6 +220,8 @@ outputCollection.finalize();
 ```
 
 ```javascript {.CreateTransaction}
+import Transaction from 'src/blockchain/model/transaction/transaction.js';
+
 // Creates an wallet with the predefined input and outputs.
 // Wallet is used to sign the transaction
 const transaction = new Transaction(wallet, inputCollection, outputCollection);
@@ -222,7 +233,7 @@ lively.openComponentInWindow('blockchain-transaction').then(comp => {
 });
 ```
 
-<script>runExampleButton("Run", this, ["BlockchainImports", "InitializeWallet", "CreateInputCollection", "CreateOutputCollection", "CreateTransaction", "DisplayWallet", "DisplayTransaction"])</script>
+<script>runExampleButton("Run", this, ["InitializeWallet", "CreateInputCollection", "CreateOutputCollection", "CreateTransaction", "DisplayWallet", "DisplayTransaction"])</script>
 
 <script>hideHiddenElements(this)</script>
 
@@ -343,7 +354,7 @@ new BlockchainNode();
   <li>Nodes / Miner compete against each other while solving the mining challenge</li>
 </ul>
 
-```javascript {.RunFullDemo}
+```javascript {.RunFullDemo .Hidden}
 lively.openComponentInWindow('blockchain-ui').then(comp => {
     comp.createNewNode();
     comp._nodes[0].subscribe(comp, comp.update.bind(comp));
@@ -352,4 +363,58 @@ lively.openComponentInWindow('blockchain-ui').then(comp => {
 
 ```
 <script>runExampleButton("Run full Demo", this, ["RunFullDemo"])</script>
+<script>hideHiddenElements(this)</script>
+
+---
+## Distributed Trust
+
+<ul>
+  <li>Blocks and Transactions are timestamped &rarr; data is stored sequentially</li>
+  <li>Every Block contains hash of prevoius block &rarr; tampering impossible</li>
+  <li>Thousands of nodes store their copy of the blockchain independently</li>
+  <li>Wallets sign transactions using their <i>private Key</i></li>
+  <li>Fundamental Assumption: Majority of nodes operates trustworthy
+    <ul>
+      <li>enough computational power to assert always providing longest chain</li>
+    </ul>
+  </li>
+</ul>
+
+```javascript {.PrepareBlockchainValidation .Hidden}
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import NetworkComponent from 'src/blockchain/model/blockchainNode/networkComponent.js';
+
+NetworkComponent.peers = [];
+
+const node = new BlockchainNode();
+const blockchain = node.blockchain;
+node.mine();
+node.mine();
+```
+
+```javascript {.ValidateBlockchainSuccessfully}
+blockchain.isValid();
+```
+
+<script>runExampleButton("Validate Blockchain", this, ["PrepareBlockchainValidation", "ValidateBlockchainSuccessfully"])</script>
+
+```javascript {.ValidateBlockchainUnsuccessfully}
+blockchain.headOfChain.timestamp = 123456789;
+blockchain.isValid();
+```
+
+<script>runExampleButton("Validate Blockchain", this, ["PrepareBlockchainValidation", "ValidateBlockchainUnsuccessfully"])</script>
+
+<script>hideHiddenElements(this)</script>
+
+---
+## Blockchain validation
+
+<ul>
+  <li>Novel approach to persist data tamper proof without need for central authority</li>
+  <li>Requires large number of peers to ensure security and tamper-resistants</li>
+  <li>Proof-of-Work-Concept consumes a lot of resources ~ 71 TWh / year &rarr; Energy consumption Czech Republic</li>
+  <li>Waste of storage: Blockchain is duplicated multiple times over all nodes</li>
+  <li>Bad performance in comparison to conventional (distributed) storage solutions</li>
+</ul>
 
