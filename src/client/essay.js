@@ -1,6 +1,7 @@
 import boundEval from "src/client/bound-eval.js";
 import _ from 'src/external/lodash/lodash.js'
 import { letsScript } from 'src/client/vivide/vivide.js';
+import {pt}  from 'src/client/graphics.js'
 
 export function toggleLayer(name) {
   var checkbox=<input  type="checkbox"></input>
@@ -232,4 +233,84 @@ export async function hideHiddenElements(ctx) {
   })
 }
 
+export function presentationPrintButton(ctx) {
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(ctx, "lively-presentation")
+   presentation.print()
+  }
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  return button
+}
+
+
+export function presentationFullscreenButton(ctx) {
+  var button = document.createElement("button")
+  button.textContent = "fullscreen"
+  var fullscreen
+  var container = lively.query(ctx, "lively-container")
+  if (!container) {
+    console.log("presentationFullscreenButton>>not in a container")
+    return 
+  }
+
+  var presentation = lively.query(ctx, "lively-presentation")
+  if (!presentation) {
+    console.log("presentationFullscreenButton>>not in a presentation")
+    return 
+  }
+  var slide = lively.query(ctx, ".lively-slide")
+  if (!presentation) {
+    console.log("presentationFullscreenButton>>not in a slide")
+    reutrn 
+  }
+  
+  button.onclick = async () => {
+    fullscreen = !fullscreen
+    if (fullscreen) {
+  
+      // all back 
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        ea.style.zIndex = 0
+      })
+      
+
+      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+      await lively.sleep(100) // wait for fullscreen
+
+      if (container && !container.isFullscreen()) {
+        // container.hideNavbar()
+        container.onFullscreen()
+      }
+      var slideBounds = slide.getBoundingClientRect()
+      
+      var scaleX = (window.innerWidth - 10)/ slideBounds.width
+      var scaleY = (window.innerHeight - 10)/ slideBounds.height
+      var minScale = Math.min(scaleY, scaleX)
+      lively.setPosition( presentation, pt(0,0))
+      presentation.style.transformOrigin = "0px 0px"
+      presentation.style.transform = `scale(${minScale * 1})`
+
+      await lively.sleep(10) // wait for rendering
+      var scaledBounds = slide.getBoundingClientRect();
+      lively.setPosition(presentation, 
+        pt((window.innerWidth - scaledBounds.width) / 2,
+        ((window.innerHeight - scaledBounds.height) / 2)) )
+
+      container.style.backgroundColor = "black"
+    } else {
+      document.webkitCancelFullScreen()
+      if (container && container.isFullscreen()) {
+        container.onFullscreen()
+        // container.showNavbar()
+      }
+      presentation.style.transform = ""
+      lively.setPosition(presentation, pt(0,0))
+      container.style.backgroundColor = ""
+    }
+  }
+  button.style = "position: absolute; bottom: 10px; left: 80px"
+  return button
+}
 
