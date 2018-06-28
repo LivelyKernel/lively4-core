@@ -1,7 +1,8 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { babel } from 'systemjs-babel-build';
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 
 const filesPromise = new Promise(resolve => {

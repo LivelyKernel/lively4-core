@@ -6,7 +6,8 @@
  */
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
-import {babel} from 'systemjs-babel-build';
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
 import * as cop from "src/client/ContextJS/src/contextjs.js";
 
 export default class FileCache {
