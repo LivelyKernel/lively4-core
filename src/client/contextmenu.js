@@ -232,7 +232,7 @@ export default class ContextMenu {
   }
   
   static worldMenuItems(worldContext) {
-    return  [
+    var items =  [
       ["Workspace", evt => {
         this.hide();
         lively.openWorkspace("", lively.getPosition(evt), worldContext)
@@ -452,21 +452,27 @@ export default class ContextMenu {
           .map(ea => this.preferenceEntry(ea))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(800, 500)), 
-        "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
-      ["save as ..", () => {
-        if (worldContext.onSaveAs)
-          worldContext.onSaveAs() 
-        else html.saveCurrentPageAs();
-      }],
-
-      ["Save", () => {
-          if (worldContext.onSave)
-            worldContext.onSave()
-          else
-            html.saveCurrentPage();
-        },
-        "CMD+S", '<i class="fa fa-cloud-upload" aria-hidden="true"></i>']
+        "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>']
     ];
+    
+    
+    if (worldContext !== document.body) {
+      items.push(...[["save as ..", () => {
+          if (worldContext.onSaveAs)
+            worldContext.onSaveAs() 
+          else html.saveCurrentPageAs();
+        }],
+
+        ["Save", () => {
+            if (worldContext.onSave)
+              worldContext.onSave()
+            else
+              html.saveCurrentPage();
+          },
+          "CMD+S", '<i class="fa fa-cloud-upload" aria-hidden="true"></i>']])      
+    }
+    
+    return items
   }
   
   static items (target, worldContext = document.body) {
