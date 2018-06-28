@@ -140,12 +140,12 @@ export default class Lively {
     delete System.loads[normalizedPath]
   }
 
-  static async reloadModule(path) {
+  static async reloadModule(path, force) {
     // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule];
-    if (!load) {
+    if (!load && !force) {
       await this.unloadModule(path); // just to be sure...
       console.warn("Don't reload non-loaded module");
       return;
