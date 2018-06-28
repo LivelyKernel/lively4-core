@@ -47,30 +47,44 @@ import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "s
 ---
 
 <img src="assets/Introduction_001.png" width="500" alt="" class="center" />
+<p class="center subtitle">Previous century: researches invented continuously</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_002.png" width="500" alt="" class="center" />
+<p class="center subtitle">Problem: same ideas by multiple researchers</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_003.png" width="500" alt="" class="center" />
+<p class="center subtitle">Solution: write down idea and send to yourself</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_004.png" width="500" alt="" class="center" />
+<p class="center subtitle">Post office clerk will stamp each letter with timestamp</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_006.png" width="500" alt="" class="center" />
+<p class="center subtitle">Researcher has proof for invention at specific point of time</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_005.png" width="500" alt="" class="center" />
+<p class="center subtitle">Problem: Post office clerk might not be reliable</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 <img src="assets/Introduction_007.png" width="500" alt="" class="center" />
+<p class="center subtitle">Idea: Researchers maintain ledger collaboratively</p>
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 ## Blockchain
@@ -85,7 +99,7 @@ import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "s
 <ul>
 <li>digital crypto currency
   <ul>
-    <li>peek value in 2017: ~ $18.000</li>
+    <li>value skyrocketed from basically $0 (2009) to ~$18.000 (2017)</li>
   </ul>
 </li>
 
@@ -103,6 +117,27 @@ concept published by Satoshi Nakamoto (pseudonym) in 2008
 <h1 class="centralized">Concepts</h1>
 
 ---
+
+## Wallets transfer money 
+<img src="assets/Overview_001.png" alt="" class="center" width="850" />
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
+
+---
+
+## Transactions gather financials
+<img src="assets/Overview_002.png" alt="" class="center" width="850" />
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
+
+
+---
+
+## Blocks keep track of transactions
+<img src="assets/Overview_003.png" alt="" class="center" height="600" />
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
+
+
+---
+
 ## Wallet
 
 <ul>
@@ -176,14 +211,18 @@ wallet.receive(transaction);
 ---
 ## Transaction
 <ul style="margin-bottom: 30px">
-  <li>fundamental component of blockchain data structure</li>
+  <li>fundamental atomic component of blockchain data structure</li>
   <li>
-    describes one timestamped change within ecosystem
+    describes <strong>one</strong> timestamped change within ecosystem
     <ul>
-      <li>Bitcoin: single payment flow starting from one wallet</li>
+      <li>Bitcoin: single payment flow reserving some value on a wallet</li>
     </ul>
   </li>
+  <li>issued and signed by one wallet</li>
 </ul>
+
+### Visualization
+
 <blockchain-transaction id="transaction-view" style="display:none; width: 600px;"></blockchain-transaction>
 
 ```javascript {.DisplayTransactionView .Hidden}
@@ -196,63 +235,18 @@ lively.query(this, '#transaction-view').style.display = 'block';
 <script>hideHiddenElements(this)</script>
 
 ---
-## Transaction Architecture
 
-<img src="assets/TransactionArchitecture.png" alt="" class="center" />
-
-```javascript {.CreateInputCollection}
-import TransactionInputCollection from 'src/blockchain/model/transaction/transactionInputCollection.js';
-
-// Creates an inputCollection and defines input values
-const inputCollection = new TransactionInputCollection(wallet);
-// mining reward is used as source of income
-inputCollection.addMiningReward({"minerHash": wallet.hash, "reward": 10});
-inputCollection.finalize();
-```
-
-```javascript {.CreateOutputCollection}
-import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
-
-// Creates an outputCollection and defines which wallet will receive money
-const outputCollection = new TransactionOutputCollection();
-outputCollection.add(wallet, 5);
-outputCollection.finalize();
-```
-
-```javascript {.CreateTransaction}
-import Transaction from 'src/blockchain/model/transaction/transaction.js';
-
-// Creates an wallet with the predefined input and outputs.
-// Wallet is used to sign the transaction
-const transaction = new Transaction(wallet, inputCollection, outputCollection);
-```
-
-```javascript {.DisplayTransaction .Hidden}
-lively.openComponentInWindow('blockchain-transaction').then(comp => {
-  comp.transaction = transaction;
-});
-```
-
-<script>runExampleButton("Run", this, ["InitializeWallet", "CreateInputCollection", "CreateOutputCollection", "CreateTransaction", "DisplayWallet", "DisplayTransaction"])</script>
-
-<script>hideHiddenElements(this)</script>
-
----
 ## Block
 <ul>
   <li>periodically encapsulates transactions</li>
-  <li>comparable to a ledger's page
-    <ul>
-      <li>each block refers to previous block (chain of blocks &rarr; ledger)</li>
-    </ul>
-  </li>
+  <li>comparable to a ledger's page</li>
+  <li>transactions summarized into a block are interpreted as valid</li>
   <li>creation of a block is called <i>mining</i>
     <ul>
       <li>requires resource intensive / time consuming work to be done</li>
       <li>mining is rewarded (mining-reward and fees)</li>
     </ul>
   </li>
-  <li>transactions mind into a block are interpreted as valid</li>
 </ul>
 
 ### Mining Challenge
@@ -275,7 +269,18 @@ sha256.digest().toHex();
 <script>runExampleButton("Run Mining-Challenge", this, ["MiningChallengeIncraseNonce"])</script>
 
 ---
-## Block
+## Blockchain
+
+<ul>
+  <li>each block refers it's preceding block (chain of blocks &rarr; chronological order)</li>
+  <li>blockchain as overall ledger: furnishes proof of any change
+    <ul>
+      <li>Bitcoin: any financial transaction</li>
+    </ul>
+  </li>
+</ul>
+
+### Formation of a Blockchain
 
 <script>runExampleButton("Setup Environment", this, ["BlockchainImports", "PrepareMining"])</script>
 <blockchain-wallet id="blockchain-wallet-block"></blockchain-wallet>
@@ -319,8 +324,9 @@ node.mine();
 <h1 class="centralized">Networking</h1>
 
 ---
+
 ## Nodes
-<ul>
+<ul style="width: 500px; float: left">
   <li>Participants within network are called nodes</li>
   <li>Each node can perform several actions
     <ul>
@@ -331,23 +337,24 @@ node.mine();
   </li>
 </ul>
 
-```javascript {.SimulateNode}
-import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
-new BlockchainNode();
-
-```
-<script>runExampleButton("Create Node", this, ["SimulateNode"])</script>
+<img src="assets/Network.png" height="430" style="float:left;" />
+<p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---
 
 ## Peer-To-Peer
 
 <ul>
-  <li>New nodes contact long-established ones to get up-to-date copy of Blockchain</li>
+  <li>New nodes contact long-established ones to get initial information
+    <ul>
+      <li>other peers</li>
+      <li>already existing blockchain</li>
+    </ul>
+  </li>
   <li>Consensus rules ensure same Blockchain on majority of nodes
     <ul>
       <li>Blocks with solved mining-challenge are valid</li>
-      <li>Longest Blockchain is the only valid one</li>
+      <li>Each transaction can only be spent once</li>
       <li>...</li>
     </ul>
   </li>
@@ -372,13 +379,14 @@ lively.openComponentInWindow('blockchain-ui').then(comp => {
   <li>Blocks and Transactions are timestamped &rarr; data is stored sequentially</li>
   <li>Every Block contains hash of prevoius block &rarr; tampering impossible</li>
   <li>Thousands of nodes store their copy of the blockchain independently</li>
-  <li>Wallets sign transactions using their <i>private Key</i></li>
   <li>Fundamental Assumption: Majority of nodes operates trustworthy
     <ul>
       <li>enough computational power to assert always providing longest chain</li>
     </ul>
   </li>
 </ul>
+
+### Trust experiment
 
 ```javascript {.PrepareBlockchainValidation .Hidden}
 import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
@@ -410,8 +418,15 @@ blockchain.isValid();
 ---
 ## Blockchain validation
 
-<ul>
-  <li>Novel approach to persist data tamper proof without need for central authority</li>
+<ul class="positive-list">
+  <li>Novel approach to persist data tamper proof without need for central authority
+    <ul>
+      <li>Researcher: Proof for authorship of ideas / inventions without dependence on mail service</li>
+      <li>Bitcoin: Financial transactions without need for (central) banks clearing every transaction</li>
+    </ul>
+  </li>
+</ul>
+<ul class="negative-list">
   <li>Requires large number of peers to ensure security and tamper-resistants</li>
   <li>Proof-of-Work-Concept consumes a lot of resources ~ 71 TWh / year &rarr; Energy consumption Czech Republic</li>
   <li>Waste of storage: Blockchain is duplicated multiple times over all nodes</li>
