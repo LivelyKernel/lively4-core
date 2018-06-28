@@ -235,7 +235,7 @@ export default class ContextMenu {
     var items =  [
       ["Workspace", evt => {
         this.hide();
-        lively.openWorkspace("", lively.getPosition(evt), worldContext)
+        lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
