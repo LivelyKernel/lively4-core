@@ -80,7 +80,7 @@ export default class Preferences {
     // #BUG: reloading Preferences causes dataset to be not defined anymore
     let node = document.body.querySelector('.lively-preferences');
     if (!node) {
-      lively.notify("Create prefereces")
+      console.log("Create prefereces")
       node = document.createElement('div'); // we cannot use custom comps they are async
       node.classList.add("lively-preferences")
       node.classList.add("lively-content")

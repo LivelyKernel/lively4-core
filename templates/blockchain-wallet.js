@@ -29,7 +29,7 @@ export default class BlockchainWallet extends Morph {
     const sha256PrivateKey = forge.md.sha256.create();
     const privateKeyHash = sha256PrivateKey.update(this._wallet._privateKey.d.data).digest().toHex().substring(0, 10);
     this.shadowRoot.querySelector('#privateKey span').innerHTML = '#' + privateKeyHash;
-    this.shadowRoot.querySelector('#value span').innerHTML = this._wallet.value;
+    this.shadowRoot.querySelector('#value span').innerHTML = "μ" + this._wallet.value;
     this._createInputList();
   }
   

@@ -10,7 +10,6 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
-import { babel } from 'systemjs-babel-build';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
