@@ -74,7 +74,7 @@ import { config } from 'src/client/vivide/utils.js';
 import { config } from 'src/client/vivide/utils.js';
 
 (async item => {
-  let url = item.path === null ? lively4url + '/' + item.name : item.path;
+  let url = item.path == null ? lively4url + '/' + item.name : item.path;
   let response = await fetch(url, {method: 'OPTIONS'});
   let json = await response.json();
   let content = json.contents;
