@@ -51,71 +51,15 @@
 </div>
 
 <script>
-  var button = document.createElement("button")
-  button.textContent = "print"
-  button.onclick = async () => {
-   var presentation = lively.query(this, "lively-presentation")
-   presentation.print()
-  }
-  button.style = "position: absolute; bottom: 10px; left: 10px"
-  button
+  import {presentationPrintButton} from "src/client/essay.js"
+  presentationPrintButton(this)
 </script>
 
 <script>
-  var button = document.createElement("button")
-  button.textContent = "fullscreen"
-  var fullscreen
-  var container = lively.query(this, "lively-container")
-  var presentation = lively.query(this, "lively-presentation")
-  var slide = lively.query(this, ".lively-slide")
-  
-  button.onclick = async () => {
-    fullscreen = !fullscreen
-    if (fullscreen) {
-  
-      // all back 
-      document.body.querySelectorAll("lively-window").forEach(ea => {
-        ea.style.zIndex = 0
-      })
-      
-
-      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
-      await lively.sleep(100) // wait for fullscreen
-
-      if (container && !container.isFullscreen()) {
-        // container.hideNavbar()
-        container.onFullscreen()
-      }
-      var slideBounds = slide.getBoundingClientRect()
-      
-      var scaleX = (window.innerWidth - 10)/ slideBounds.width
-      var scaleY = (window.innerHeight - 10)/ slideBounds.height
-      var minScale = Math.min(scaleY, scaleX)
-      lively.setPosition( presentation, pt(0,0))
-      presentation.style.transformOrigin = "0px 0px"
-      presentation.style.transform = `scale(${minScale * 1})`
-
-      await lively.sleep(10) // wait for rendering
-      var scaledBounds = slide.getBoundingClientRect();
-      lively.setPosition(presentation, 
-        pt((window.innerWidth - scaledBounds.width) / 2,
-        ((window.innerHeight - scaledBounds.height) / 2)) )
-
-      container.style.backgroundColor = "black"
-    } else {
-      document.webkitCancelFullScreen()
-      if (container && container.isFullscreen()) {
-        container.onFullscreen()
-        // container.showNavbar()
-      }
-      presentation.style.transform = ""
-      lively.setPosition(presentation, pt(0,0))
-      container.style.backgroundColor = ""
-    }
-  }
-  button.style = "position: absolute; bottom: 10px; left: 80px"
-  button
+  import {presentationFullscreenButton} from "src/client/essay.js"
+  presentationFullscreenButton(this)
 </script>
+
 
 --- 
 

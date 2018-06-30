@@ -32,7 +32,7 @@ describe('HTML', () => {
       } catch(e) {
         done(e)
       }
-    });
+    }).timeout(30000);
 
     
   })

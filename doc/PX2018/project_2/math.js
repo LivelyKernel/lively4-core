@@ -21,10 +21,6 @@ export default class Math {
     return ExtMath.inv(matrix);
   }
   
-  static derivation(matrix) {
-    
-  }
-  
   static reshape(matrix, num1, num2) {
     return ExtMath.reshape(matrix, [num1, num2]);
   }

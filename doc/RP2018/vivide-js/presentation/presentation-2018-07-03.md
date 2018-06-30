@@ -126,11 +126,12 @@ presentButton
 <div class="title-1">Initial State</div>
 
 <div class="first-50">
-[
-  {name: "object", subclasses:[{name: "morph"},]},
-  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
-  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+<pre><code class="language-javascript">[
+  {<span class="hljs-attr">name</span>: <span class="hljs-string">"object"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"morph"</span>},]},
+  {<span class="hljs-attr">name</span>: <span class="hljs-string">"list"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"linkedlist"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"stack"</span>}]}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"arraylist"</span>}]},
+  {<span class="hljs-attr">name</span>: <span class="hljs-string">"usercontrol"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"textbox"</span>}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"button"</span>}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"label"</span>}]},
 ]
+</code></pre>
 </div>
 
 <div class="second-50">
@@ -150,6 +151,8 @@ presentButton
 ---
 <div class="title-1">Features - Async Scripts</div>
 
+
+
 <div class="first-50">
 lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
 </div>
@@ -165,21 +168,26 @@ lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src
 </div>
 
 ---
+<!--
 <div class="title-1">Features - Multilevel Hierarchies</div>
+-->
 
-<div class="first-50">
-fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))
-</div>
-
-<div class="second-50">
 <script>
-(async () => {
-  let workspace = await (<lively-code-mirror></lively-code-mirror>);
-  workspace.value = "fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'}).then(r => r.json().then(j => j.contents))";
-  return workspace;
-})()
+import {hideHiddenElements, toggleLayer, showVariable, runExampleButton, runVivideButton} from "src/client/essay.js"
+""
 </script>
-</div>
+
+
+```javascript {.first-50 .example1}
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'})
+  .then(r => r.json())
+  .then(j => j.contents)
+```
+<script>
+this.classList.add("second-50")
+runVivideButton("run", this, "example1")
+</script>
+
 
 ---
 <div class="title-1">Implementation</div>
