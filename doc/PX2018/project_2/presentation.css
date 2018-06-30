@@ -34,16 +34,41 @@
   top: 120px;
   width: 1080px;
 }
+/* END: Images */
 
-.lively-slide.ratio-16-9 .img-1-2 {
+/* BEGIN: Positions */
+.lively-slide.ratio-16-9 .h-1-2 {
+  left: 100px;
+  width: 500px;
+  top: 150px;
   position: absolute;
-  top: 170px;
+}
+
+.lively-slide.ratio-16-9 .h-2-2 {
+  position: absolute;
+  top: 150px;
   left: 670px;
   width: 580px;
   height: auto;
 }
 
-.lively-slide.ratio-16-9 .img-2-4 {
+.lively-slide.ratio-16-9 .v-1-2 {
+  position: absolute;
+  top: 150px;
+  left: 150px;
+  width: 1080px;
+  height: auto;
+}
+
+.lively-slide.ratio-16-9 .v-2-2 {
+  position: absolute;
+  top: 450px;
+  left: 150px;
+  width: 1080px;
+  height: auto;
+}
+
+.lively-slide.ratio-16-9 .h-2-4 {
   position: absolute;
   top: 120px;
   left: 830px;
@@ -51,35 +76,20 @@
   height: auto;
 }
 
-/* END: Images */
-
-.lively-slide.ratio-4-3 .first-50 {
+.lively-slide.ratio-4-3 .h-1-2 {
   left: 70px;
   width: 300px;
   top: 150px;
   position: absolute;
 }
 
-.lively-slide.ratio-16-9 .first-50 {
-  left: 100px;
-  width: 500px;
-  top: 150px;
-  position: absolute;
-}
-
-.lively-slide.ratio-4-3 .second-50 {
+.lively-slide.ratio-4-3 .h-2-2 {
   left: 440px;
   width: 300px;
   top: 150px;
   position: absolute;
 }
-
-.lively-slide.ratio-16-9 .second-50 {
-  left: 680px;
-  top: 150px;
-  width: 500px;
-  position: absolute;
-}
+/* END: Positions */
 
 .lively-slide .title-1 {
   color: #2B547E;
@@ -171,6 +181,12 @@
 
 .lively-slide.ratio-16-9 .notes-big li {
   font-size: 24pt;
+}
+
+.lively-slide.ratio-16-9 .example-run {
+  left: 150px;
+  bottom: 70px;
+  position: absolute;
 }
 
 /* Prio to request fullscreen and transform */

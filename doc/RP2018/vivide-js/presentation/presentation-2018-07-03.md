@@ -2,6 +2,7 @@
 
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
+import { hideHiddenElements, toggleLayer, showVariable, runExampleButton, runVivideButton } from "src/client/essay.js"
 
 let presentation = lively.query(this, "lively-presentation");
 let slides = presentation.querySelectorAll('.lively-slide');
@@ -101,7 +102,7 @@ presentButton
 ---
 <div class="title-1">Context - Background</div>
 
-<div class="first-50">
+<div class="h-1-2">
 <ul class="notes-big">
 <li>Adapted System: Vivide</li>
 <li>Work with an OO UI<br><i class="fa fa-arrow-right"></i> Directly working on objects</li>
@@ -110,84 +111,67 @@ presentButton
 </ul>
 </div>
 
-<img class="img-1-2" src="vivide.png" />
+<img class="h-2-2" src="vivide.png" style="padding-top: 30px;"/>
 
 ---
 <div class="title-1">Context - Motivation</div>
 
-
-<ul class="notes notes-big">
+<div class="v-1-2">
+<ul class="notes-big">
 <li>Provide data in a task-oriented form</li>
 <li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
 <li>VivideJS: Asynchronous online data processing</li>
 </ul>
-
----
-<div class="title-1">Initial State</div>
-
-<div class="first-50">
-<pre><code class="language-javascript">[
-  {<span class="hljs-attr">name</span>: <span class="hljs-string">"object"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"morph"</span>},]},
-  {<span class="hljs-attr">name</span>: <span class="hljs-string">"list"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"linkedlist"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"stack"</span>}]}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"arraylist"</span>}]},
-  {<span class="hljs-attr">name</span>: <span class="hljs-string">"usercontrol"</span>, <span class="hljs-attr">subclasses</span>:[{<span class="hljs-attr">name</span>: <span class="hljs-string">"textbox"</span>}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"button"</span>}, {<span class="hljs-attr">name</span>: <span class="hljs-string">"label"</span>}]},
-]
-</code></pre>
 </div>
 
-<div class="second-50">
-<script>
-(async () => {
-  let workspace = await (<lively-code-mirror></lively-code-mirror>);
-  workspace.value = `[
+```javascript {.v-2-2 .example1}
+[
   {name: "object", subclasses:[{name: "morph"},]},
   {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
   {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
-]`
-  return workspace;
-})()
+]
+```
+<script>
+this.classList.add("example-run");
+runVivideButton("run", this, "example1");
 </script>
-</div>
 
 ---
 <div class="title-1">Features - Async Scripts</div>
 
+<div class="v-1-2">
+<ul class="notes-big">
+<li></li>
+</ul>
+</div>
 
-
-<div class="first-50">
+```javascript {.v-2-2 .example2}
 lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
-</div>
-
-<div class="second-50">
-<script>
-(async () => {
-  let workspace = await (<lively-code-mirror></lively-code-mirror>);
-  workspace.value = "lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')";
-  return workspace;
-})()
-</script>
-</div>
-
----
-<!--
-<div class="title-1">Features - Multilevel Hierarchies</div>
--->
-
-<script>
-import {hideHiddenElements, toggleLayer, showVariable, runExampleButton, runVivideButton} from "src/client/essay.js"
-""
-</script>
-
-
-```javascript {.first-50 .example1}
-fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'})
-  .then(r => r.json())
-  .then(j => j.contents)
 ```
 <script>
-this.classList.add("second-50")
-runVivideButton("run", this, "example1")
+this.classList.add("example-run");
+runVivideButton("run", this, "example2");
 </script>
 
+---
+
+<div class="title-1">Features - Multilevel Hierarchies</div>
+
+<div class="v-1-2">
+<ul class="notes-big">
+<li></li>
+</ul>
+</div>
+
+```javascript {.v-2-2 .example3}
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'})
+  .then(r => r.json())
+  .then(j => j.contents);
+```
+<script>
+this.classList.add("example-run");
+runVivideButton("run", this, "example3");
+</script>
 
 ---
 <div class="title-1">Implementation</div>
@@ -228,7 +212,7 @@ runVivideButton("run", this, "example1")
 <li>Source widget merging strategies</li>
 <li>Further widgets</li>
 <li>Connection management between views</li>
-<li>Integrate vivide into lively<br><i class="fa fa-arrow-right"></i> Replace filebrowser with Vivide</li>
+<li>Long-term: Integrate Vivide into Lively<br><i class="fa fa-arrow-right"></i> Replace file browser with Vivide</li>
 </ul>
 
 ---
