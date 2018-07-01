@@ -68,11 +68,19 @@
   height: auto;
 }
 
+.lively-slide.ratio-16-9 .h-1-4 {
+  position: absolute;
+  top: 120px;
+  left: 150px;
+  width: 580px;
+  height: auto;
+}
+
 .lively-slide.ratio-16-9 .h-2-4 {
   position: absolute;
   top: 120px;
-  left: 830px;
-  width: 450px;
+  left: 700px;
+  width: 580px;
   height: auto;
 }
 
@@ -187,6 +195,10 @@
   left: 150px;
   bottom: 70px;
   position: absolute;
+}
+
+.example1, .example2, .example3 {
+  font-size: 16px;
 }
 
 /* Prio to request fullscreen and transform */

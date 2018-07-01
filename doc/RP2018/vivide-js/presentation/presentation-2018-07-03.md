@@ -139,10 +139,15 @@ runVivideButton("run", this, "example1");
 ---
 <div class="title-1">Features - Async Scripts</div>
 
-<div class="v-1-2">
+<div class="h-1-4">
 <ul class="notes-big">
-<li>VivideJS scripts support async/await</li>
+<li>Most online resources are asynchronously accessed</li>
+<li>VivideJS needs to support async/await scripts</li>
 </ul>
+</div>
+
+<div class="h-2-4" style="padding-top: 20px; text-align: center;">
+<img src="async-await.png" alt="Async/Await" />
 </div>
 
 ```javascript {.v-2-2 .example2}
@@ -157,10 +162,16 @@ runVivideButton("run", this, "example2");
 
 <div class="title-1">Features - Multilevel Hierarchies</div>
 
-<div class="v-1-2">
+<div class="h-1-4">
 <ul class="notes-big">
-<li></li>
+<li>Explore hierarchical data relations</li>
+<li>Different scripts hierarchy levels</li>
+<li>Define arbitrary children of objects</li>
 </ul>
+</div>
+
+<div class="h-2-4" style="padding-top: 20px; text-align: center;">
+<img src="hierarchy.png" alt="Hierarchy" />
 </div>
 
 ```javascript {.v-2-2 .example3}
@@ -174,22 +185,18 @@ runVivideButton("run", this, "example3");
 </script>
 
 ---
-<div class="title-1">Implementation</div>
-
-<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
-
----
 <div class="title-1">Insights</div>
 
 <div class="v-1-2">
 <ul class="notes-big">
+<li>OO UIs are great for data exploration</li>
 <li>Deferred architecture changes are possibly harmful</li>
 <li>Javascript asynchronity is not easy to hide</li>
 <li>Resource pointers do not point to the actual object</li>
 </ul>
 </div>
 
-<div class="v-2-2" style="text-align: center">
+<div class="v-2-2" style="padding-left: 100px">
 <img src="url-response.png" alt="Url Reponse" />
 </div>
 
@@ -213,43 +220,24 @@ runVivideButton("run", this, "example3");
 ---
 <div class="title-1">Open Ends And Future Work</div>
 
-<ul class="notes notes-big">
+<div class="h-1-2">
+<ul class="notes-big">
 <li>Bug fixing</li>
 <li>Source widget merging strategies</li>
 <li>Further widgets</li>
 <li>Connection management between views</li>
-<li>Long-term: Integrate Vivide into Lively<br><i class="fa fa-arrow-right"></i> Replace file browser with Vivide</li>
+<li>Long-term: Integrate Vivide into Lively<br><i class="fa fa-arrow-right"></i>E.g.: Replace file browser with Vivide view</li>
 </ul>
+</div>
+
+<div class="h-2-2" style="padding-top: 20px;">
+<img src="vivide-file-browser.png" alt="Vivide File Browser">
+</div>
 
 ---
+<div class="title-1">Implementation</div>
 
-# Todo
-
-- Dauer: Jeweils 20 min. Redezeit + 10 min. Diskussion
-
-- Kontext/Problemstellung/Motivation
-  - An welchem System arbeitet ihr?
-  - Welche Probleme gibt es?
-  - Wie sieht das von euch angestrebte Ziel aus?
-- Literatur / Related Work (falls zutreffend)
-- Designraum
-  - Verfahren/Ideen/Lösungsstrategien, die ihr in Betracht gezogen habt
-  - Abwägung, warum ihr euch für eure letztendliche Lösung entschieden habt
-- Implementierung
-  - Skizze eurer Lösung
-- Demo
-- Insights
-  - High-level Einsichten aus dem Projekt
-- Shortcomings, Open Ends und Future Work
-
-Im Gegensatz zum letzten Mal, liegt hier also der Fokus auf eure Designentscheidungen, die Implementierung, eure Demo sowie Einsichten aus eurem Projekt,
-Worauf genau ihr euren Schwerpunkt legt, bleibt aber euch überlassen, da dies je nach Thema anders aussehen sollte.
-
-Formalien:
-* Titelfolie: Name, Thema, Datum, Seminar, Semester, Fachgebiet
-* Foliennummern auf jeder (außer Titel-) Folie
-* Vortrag und Diskussion sind eine Prüfungsteilleistung
-
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
 
 ---
 
