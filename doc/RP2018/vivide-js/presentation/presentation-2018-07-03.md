@@ -141,7 +141,7 @@ runVivideButton("run", this, "example1");
 
 <div class="v-1-2">
 <ul class="notes-big">
-<li></li>
+<li>VivideJS scripts support async/await</li>
 </ul>
 </div>
 
@@ -181,11 +181,17 @@ runVivideButton("run", this, "example3");
 ---
 <div class="title-1">Insights</div>
 
-<ul class="notes notes-big">
+<div class="v-1-2">
+<ul class="notes-big">
 <li>Deferred architecture changes are possibly harmful</li>
 <li>Javascript asynchronity is not easy to hide</li>
 <li>Resource pointers do not point to the actual object</li>
 </ul>
+</div>
+
+<div class="v-2-2" style="text-align: center">
+<img src="url-response.png" alt="Url Reponse" />
+</div>
 
 ---
 <div class="title-1">Shortcomings</div>
