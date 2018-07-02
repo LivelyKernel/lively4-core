@@ -1,7 +1,7 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
 
-const C_MIN_MINING_DIFFICULTY = 1;
-const C_MAX_MINING_DIFFICULTY = 5;
+const C_MIN_MINING_DIFFICULTY = 3;
+const C_MAX_MINING_DIFFICULTY = 10;
 
 export default class MiningProof {
   constructor(miningDifficulty) {
