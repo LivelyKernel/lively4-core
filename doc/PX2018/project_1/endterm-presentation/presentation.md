@@ -40,6 +40,18 @@ import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "s
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
 </div>
 
+
+<script>
+  import {presentationPrintButton} from "src/client/essay.js"
+  presentationPrintButton(this)
+</script>
+
+<script>
+  import {presentationFullscreenButton} from "src/client/essay.js"
+  presentationFullscreenButton(this)
+</script>
+
+
 ---
 <h1 class="centralized">Introduction</h1>
 
