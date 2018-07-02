@@ -93,7 +93,6 @@ export default class Block {
   
   _hash() {
     const sha256 = forge.md.sha256.create();
-    console.warn(this);
     return sha256.update(
       this.timestamp +
       this.minerHash +

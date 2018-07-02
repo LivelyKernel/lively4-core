@@ -29,4 +29,3 @@ The Livel4 server and GitHub sync tools can check out arbitrary projects, such a
   - Programming Experience [PX 2018](doc/PX2018/index.md)
   - Reactive Programming [RP 2018](doc/RP2018/index.md)
 - [Imprint](imprint.md)
-<div class="lively-content" style="background-color: lightgray; border: 1px solid gray; position: absolute; width: 296.727px; height: 121.455px; left: 356.625px; top: 83.0682px;"></div>

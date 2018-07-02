@@ -12,7 +12,7 @@ export default class BlockchainUI extends Morph {
     this._nodes = [];
     
     // Set width & height of window (parent node)
-    this.parentNode.style.width = "1400px";
+    this.parentNode.style.width = "1600px";
     this.parentNode.style.height = "400px";
     
     this.shadowRoot.querySelector('#new-node-button').addEventListener('click', this.createNewNode.bind(this));
@@ -28,6 +28,11 @@ export default class BlockchainUI extends Morph {
     block.transactions.forEach(transaction => this.transactionViewController.addTransaction(transaction));
     this.blockchainViewController.draw();
     this.transactionViewController.draw();
+    this.updatePendingTransactions();
+  }
+  
+  updateTransactions(transaction) {
+    this.updatePendingTransactions();
   }
   
   createNewNode() {
@@ -44,6 +49,8 @@ export default class BlockchainUI extends Morph {
   }
   
   resetEnvironment() {
+    this._nodes[0].unsubscribe(this);
+    this._nodes[0]._miner.unsubscribe(this);
     this._nodes = [];
     NetworkComponent.peers = [];
     var nodeListView = this.shadowRoot.querySelector('#node-list');
@@ -55,13 +62,25 @@ export default class BlockchainUI extends Morph {
     
     this.createNewNode();
     this._nodes[0].subscribe(this, this.update.bind(this));
+    this._nodes[0]._miner.subscribe(this, this.updateTransactions.bind(this));
     this.update(this._nodes[0].blockchain.headOfChain);
   }
   
   async livelyExample() {
     this.createNewNode();
     this._nodes[0].subscribe(this, this.update.bind(this));
+    this._nodes[0]._miner.subscribe(this, this.updateTransactions.bind(this));
     this.update(this._nodes[0].blockchain.headOfChain);
+  }
+  
+  updatePendingTransactions() {
+    const list = this.shadowRoot.querySelector('#pending-transactions-list');
+    list.innerHTML = '';
+    this._nodes[0]._miner._transactions.forEach(transaction => {
+      const uiTransactionWrapper = document.createElement('li');
+      uiTransactionWrapper.innerHTML = transaction.displayName + " μ" + transaction.inputs.value;
+      list.appendChild(uiTransactionWrapper);
+    });
   }
   
   
