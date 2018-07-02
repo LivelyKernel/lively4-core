@@ -35,11 +35,11 @@ export default class MiningProof {
   _solveCryptoPuzzle() {
     const zeroString = "0".repeat(this.miningDifficulty);
     do {
-      this.hash(this.nonce + 1);
-    } while(this.hash.substring(this.hash.length - 1 - this.miningDifficulty) != zeroString);
+      this.calculateHash(this.nonce + 1);
+    } while(this.hash.substring(this.hash.length - this.miningDifficulty) != zeroString);
   }
   
-  hash(nonce) {
+  calculateHash(nonce) {
     this.nonce = nonce;
     this.hash = this._hash();
     return this.hash;
