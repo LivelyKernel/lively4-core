@@ -57,6 +57,23 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
+# Example 2 - transform (with utils)
+``` javascript
+import { config } from 'src/client/vivide/utils.js';
+import { sortDirectoriesAndFiles } from 'doc/RP2018/vivide-js/presentation/presentation-utils.js'
+
+((input, vivideLayer) => {
+  sortDirectoriesAndFiles(input);
+  
+  for (let item of input) {
+    if (item.name.startsWith('.')) continue;
+    vivideLayer.push(item);
+  }
+})::config({
+  
+})
+```
+
 # Example 2 - extract
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
@@ -74,7 +91,7 @@ import { config } from 'src/client/vivide/utils.js';
 import { config } from 'src/client/vivide/utils.js';
 
 (async item => {
-  let url = item.path === null ? lively4url + '/' + item.name : item.path;
+  let url = item.path == null ? lively4url + '/' + item.name : item.path;
   let response = await fetch(url, {method: 'OPTIONS'});
   let json = await response.json();
   let content = json.contents;
@@ -87,6 +104,24 @@ import { config } from 'src/client/vivide/utils.js';
     } else {
       child.path = lively4url + '/' + item.name + '/' + child.name;
     }
+  }
+  return content;
+  })::config({
+})
+```
+
+# Example 2 - descent (with utils)
+``` javascript
+import { config } from 'src/client/vivide/utils.js';
+import { optionsResult, getPath } from 'doc/RP2018/vivide-js/presentation/presentation-utils.js'
+
+(async item => {
+  let content = await optionsResult(item);
+  
+  if (!content) return [];
+  
+  for (let child of content) {
+    child.path = getPath(child, item);
   }
   return content;
   })::config({

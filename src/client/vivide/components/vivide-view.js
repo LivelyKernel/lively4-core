@@ -121,9 +121,9 @@ export default class VivideView extends Morph {
   }
 
   selectionChanged() {
-    let data = this.getSelectedData();
-    if(data) {
-      this.outportTargets.forEach(target => target.newDataFromUpstream(data));
+    let selection = this.getSelectedData();
+    if(selection) {
+      this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
     }
   }
   

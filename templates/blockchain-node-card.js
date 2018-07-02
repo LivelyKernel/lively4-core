@@ -46,9 +46,18 @@ export default class BlockchainNodeCard extends Morph {
     });
   }
   
+  openWalletView() {
+    const walletDialog = document.createElement('blockchain-wallet');
+    lively.components.openInWindow(walletDialog).then((comp) => {
+      comp.focus();
+      walletDialog.wallet = this.node.wallet;
+    });
+  }
+  
   async initialize() {
     this.blockchainNodeName = 'Unnamed node';
     this.shadowRoot.querySelector('#button-node-send-transaction').addEventListener('click', this.openAddTransactionView.bind(this));
+    this.shadowRoot.querySelector('#left-area').addEventListener('click', this.openWalletView.bind(this));
   }
   
   async update() {

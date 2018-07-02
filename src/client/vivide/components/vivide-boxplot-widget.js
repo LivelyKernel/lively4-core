@@ -24,8 +24,8 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
 
   display(model, config) {
     super.display(model, config);
-
-    let preparedData = model.map(m => {
+    
+    let preparedData = model.objects.map(m => {
       let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
       let dataPoints = m.properties.map(prop => prop.dataPoints).find(dataPoints => dataPoints) || [];
       

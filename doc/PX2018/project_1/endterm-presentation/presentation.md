@@ -40,6 +40,18 @@ import {hideHiddenElements, toggleLayer, showVariable, runExampleButton} from "s
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
 </div>
 
+
+<script>
+  import {presentationPrintButton} from "src/client/essay.js"
+  presentationPrintButton(this)
+</script>
+
+<script>
+  import {presentationFullscreenButton} from "src/client/essay.js"
+  presentationFullscreenButton(this)
+</script>
+
+
 ---
 <h1 class="centralized">Introduction</h1>
 
@@ -142,13 +154,13 @@ concept published by Satoshi Nakamoto (pseudonym) in 2008
 
 <ul>
   <li>
-  Necessary to participate in payment transactions
+  necessary to participate in payment transactions
   <ul>
     <li>send transactions</li>
     <li>receive transactions</li>
   </ul>
   </li>
-  <li>Basically set of private &amp; public key
+  <li>basically set of private &amp; public key
     <ul>
       <li>used to sign transactions</li>
       <li>public key as identifier in payment network</li>
@@ -219,6 +231,12 @@ wallet.receive(transaction);
     </ul>
   </li>
   <li>issued and signed by one wallet</li>
+  <li>consumes outputs of other transactions &rarr; produces new outputs, which can be consumed
+    <ul>
+      <li>transactions form an acyclic, directed graph</li>
+      <li>Bitcoin: cash flow can be reconstructed</li>
+    </ul>
+  </li>
 </ul>
 
 ### Visualization
@@ -327,12 +345,12 @@ node.mine();
 
 ## Nodes
 <ul style="width: 500px; float: left">
-  <li>Participants within network are called nodes</li>
-  <li>Each node can perform several actions
+  <li>participants within network are called nodes</li>
+  <li>each node can perform several actions
     <ul>
-      <li>Mine new blocks &rarr; Miner</li>
-      <li>Propagate Transactions &rarr; NetworkComponent</li>
-      <li>Maintain it's own Blockchain copy &rarr; Storage</li>
+      <li>mine new blocks &rarr; Miner</li>
+      <li>propagate Transactions &rarr; NetworkComponent</li>
+      <li>maintain it's own Blockchain copy &rarr; Storage</li>
     </ul>
   </li>
 </ul>
@@ -345,20 +363,20 @@ node.mine();
 ## Peer-To-Peer
 
 <ul>
-  <li>New nodes contact long-established ones to get initial information
+  <li>new nodes contact long-established ones to get initial information
     <ul>
       <li>other peers</li>
       <li>already existing blockchain</li>
     </ul>
   </li>
-  <li>Consensus rules ensure same Blockchain on majority of nodes
+  <li>consensus rules ensure same Blockchain on majority of nodes
     <ul>
-      <li>Blocks with solved mining-challenge are valid</li>
-      <li>Each transaction can only be spent once</li>
+      <li>blocks with solved mining-challenge are valid</li>
+      <li>each transaction can only be spent once</li>
       <li>...</li>
     </ul>
   </li>
-  <li>Nodes / Miner compete against each other while solving the mining challenge</li>
+  <li>nodes / miner compete against each other while solving the mining challenge</li>
 </ul>
 
 ```javascript {.RunFullDemo .Hidden}
@@ -376,10 +394,10 @@ lively.openComponentInWindow('blockchain-ui').then(comp => {
 ## Distributed Trust
 
 <ul>
-  <li>Blocks and Transactions are timestamped &rarr; data is stored sequentially</li>
-  <li>Every Block contains hash of prevoius block &rarr; tampering impossible</li>
-  <li>Thousands of nodes store their copy of the blockchain independently</li>
-  <li>Fundamental Assumption: Majority of nodes operates trustworthy
+  <li>blocks and transactions are timestamped &rarr; data is stored sequentially</li>
+  <li>every block contains hash of prevoius block &rarr; tampering impossible</li>
+  <li>thousands of nodes store their copy of the blockchain independently</li>
+  <li>fundamental assumption: Majority of nodes operates trustworthy
     <ul>
       <li>enough computational power to assert always providing longest chain</li>
     </ul>
@@ -419,17 +437,17 @@ blockchain.isValid();
 ## Blockchain validation
 
 <ul class="positive-list">
-  <li>Novel approach to persist data tamper proof without need for central authority
+  <li>novel approach to persist data tamper proof without need for central authority
     <ul>
-      <li>Researcher: Proof for authorship of ideas / inventions without dependence on mail service</li>
-      <li>Bitcoin: Financial transactions without need for (central) banks clearing every transaction</li>
+      <li>researcher: Proof for authorship of ideas / inventions without dependence on mail service</li>
+      <li>bitcoin: Financial transactions without need for (central) banks clearing every transaction</li>
     </ul>
   </li>
 </ul>
 <ul class="negative-list">
-  <li>Requires large number of peers to ensure security and tamper-resistants</li>
-  <li>Proof-of-Work-Concept consumes a lot of resources ~ 71 TWh / year &rarr; Energy consumption Czech Republic</li>
-  <li>Waste of storage: Blockchain is duplicated multiple times over all nodes</li>
-  <li>Bad performance in comparison to conventional (distributed) storage solutions</li>
+  <li>requires large number of peers to ensure security and tamper-resistants</li>
+  <li>proof-of-Work-Concept consumes a lot of resources ~ 71 TWh / year &rarr; Energy consumption Czech Republic</li>
+  <li>waste of storage: Blockchain is duplicated multiple times over all nodes</li>
+  <li>bad throughput in comparison to conventional (distributed) storage solutions</li>
 </ul>
 

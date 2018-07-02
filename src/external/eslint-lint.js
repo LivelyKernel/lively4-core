@@ -25,13 +25,10 @@
     globals: {
         lively: true,
         aexpr: false,
-        Promise: true,
         lively4url: true,
         System: true,
         SystemJS: true,
         CodeMirror: true,
-        Map: true,
-        Set: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {
