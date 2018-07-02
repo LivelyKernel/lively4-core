@@ -48,7 +48,8 @@ export default class BlockchainNodeCard extends Morph {
   
   openWalletView() {
     const walletDialog = document.createElement('blockchain-wallet');
-    lively.components.openInWindow(walletDialog).then(() => {
+    lively.components.openInWindow(walletDialog).then((comp) => {
+      comp.focus();
       walletDialog.wallet = this.node.wallet;
     });
   }

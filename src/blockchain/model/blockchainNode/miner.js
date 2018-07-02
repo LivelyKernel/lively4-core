@@ -8,6 +8,15 @@ export default class Miner {
   constructor(blockchainNode) {
     this._blockchainNode = blockchainNode;
     this._transactions = new TransactionCollection();
+    this._subscribers = [];
+  }
+  
+  subscribe(subscriber, callback) {
+    this._subscribers.push({'subscriber': subscriber, 'callback': callback});
+  }
+  
+  unsubscribe(subscriber) {
+    this._subscribers = this._subscribers.filter(subscription => subscription['subscriber'] !== subscriber);
   }
   
   addTransaction(transaction) {
@@ -15,6 +24,7 @@ export default class Miner {
       return;
     }
     this._transactions.add(transaction);
+    this._subscribers.forEach(subscription => subscription['callback'](transaction));
   }
   
   invalidateTransactions(block) {
