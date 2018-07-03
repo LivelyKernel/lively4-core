@@ -3,7 +3,7 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
-
+    min-width: 800px;
   }
   
   #content {
@@ -24,19 +24,42 @@
     margin: 20px 0;
   }
   
-  input {
+  input, output {
     float: right;
     text-align: right;
     margin-right: 20px;
   }
+  
+  /*input[type=range] {
+    -webkit-appearance: none;
+  }
+  input[type=range]:focus {
+
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+
+  }
+  input[type=range]::-webkit-slider-thumb {
+
+  }
+  input[type=range]:focus::-webkit-slider-runnable-track {
+
+  }*/
 </style>
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
-      <label>Speed: </label><input id="speed"  value="20"/><br />
+      <form name="myform" oninput="inputvalue.value = input.valueAsNumber">
+        <label>Young modulus: </label>
+        <output name="inputvalue" for="input" >0.001</output>
+        <input id="input" name="input" type="range" step="0.001" min="0" max="2" value="0.001">
+      </form>
     </div>
-    <div class="input-line">
-      <label>Young modulus: </label><input id="young-modulus" value="0.001"/>
+    <div id="explanation">
+      
+    </div>
+    <!-- <div class="input-line">
+      <label>Speed: </label><input id="speed"  value="20"/><br />
     </div>
     <div class="input-line">
       <label>Extend: </label><input id="extend" value="200"/>
@@ -48,9 +71,9 @@
       <label>Particle Size: </label><input id="particle-size" value="2"/>
     </div>
   </div>
+  -->
   <button id="toggleAnimation">
     start
   </button>
-</template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
