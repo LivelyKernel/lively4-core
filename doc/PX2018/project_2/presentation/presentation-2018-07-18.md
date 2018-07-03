@@ -103,6 +103,21 @@ presentButton
 
 ---
 
+<div class="title-1">Example</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+
+(async() => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  let containerClass = "mpm " + presentationSize;
+
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}>{mpm}</div></div>;
+})()
+</script>
+
+---
+
 # Close
 
 <script>
