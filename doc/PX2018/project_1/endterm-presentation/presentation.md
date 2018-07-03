@@ -451,3 +451,21 @@ blockchain.isValid();
   <li>bad throughput in comparison to conventional (distributed) storage solutions</li>
 </ul>
 
+---
+##  Active Essay / Interactive presentation
+
+### What we did within Lively
+<ul>
+  <li>implemented a basic blockchain (wallet, transactions, -input and -outputs, blocks)</li>
+  <li>simulated an entire peer-to-peer network</li>
+  <li>built multiple visualizations</li>
+  <li>created this interactive presentation</li>
+</ul>
+
+### How does the audience profit from this approach?
+<ul>
+  <li>interactive approach lets user apply gained knowledge</li>
+  <li>visualizations make complex concept more tangible</li>
+  <li>demonstration in separate UI makes collaboration of single concepts better understandable</li>
+</ul>
+</ul>
