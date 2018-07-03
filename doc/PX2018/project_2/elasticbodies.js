@@ -87,6 +87,17 @@ export default class ElasticBodies extends MpmAnimation {
       let esctr = this.element[i];
       let enode = this.node[esctr];
       let mpts = this.mpoints[i];
+      
+      for (let j = 0; j < mpts.length; ++i) {
+        let pid = mpts[j];
+        let pt1 = (2 * this.xp[pid][1] - (enode[1][1] + enode[2][1])) / this.deltaX;      // TODO: finish
+        let pt2 = (2 * this.xp[pid][2] - (enode[2][2] + enode[3][2])) / this.deltaX;      // TODO: finish
+        let dNdxi = null;                                                                 // TODO: finish
+        let N = null;                                                                     // TODO: finish
+        let J0 = Math.transpose(enode) * dNdxi;                                           // TODO: finish
+        let invJ0 = this.invert(J0);
+        let dNdx = Math.multiply(dNdxi, invJ0);
+      }
     }
   }
   
@@ -95,38 +106,39 @@ export default class ElasticBodies extends MpmAnimation {
       let esctr = this.element[i];
       let enode = this.node[esctr];
       let mpts = this.mpoints[i];
-        for (let j = 0; i < mpts.length; ++j) {
-          let pid = mpts[j];
-          let pt1 = (2 * this.xp[pid][1] - (enode[1][1] + enode[2][1])) / this.deltaX;      // TODO: finish
-          let pt2 = (2 * this.xp[pid][2] - (enode[2][2] + enode[3][2])) / this.deltaX;      // TODO: finish
-          let dNdxi = null;                                                                 // TODO: finish
-          let N = null;                                                                     // TODO: finish
-          let J0 = Math.transpose(enode) * dNdxi;                                           // TODO: finish
-          let invJ0 = this.invert(J0);
-          let dNdx = dNdxi * invJ0;
-          let Lp = [[0, 0], [0, 0]];
-          
-          for (let k = 0; k < esctr.length; ++k) {
-            let id = esctr[k];
-            let vI = [0, 0];
-            
-            if (this.nmass[id] > this.tol) {                                                 // TODO: finish
-              this.vp[pid] += this.dtime * N[k] * this.niforce[id] / this.nmass[id];
-              this.xp[pid] += this.dtime * N[k] * this.nmomentum[id] / this.nmass[id];
-              vI = this.nmomentum[id] / this.nmass[id];
-            }
-            
-            Lp = Lp + this.derivation(vI) * dNdx[k];
+      
+      for (let j = 0; i < mpts.length; ++j) {
+        let pid = mpts[j];
+        let pt1 = (2 * this.xp[pid][1] - (enode[1][1] + enode[2][1])) / this.deltaX;      // TODO: finish
+        let pt2 = (2 * this.xp[pid][2] - (enode[2][2] + enode[3][2])) / this.deltaX;      // TODO: finish
+        let dNdxi = null;                                                                 // TODO: finish
+        let N = null;                                                                     // TODO: finish
+        let J0 = Math.transpose(enode) * dNdxi;                                           // TODO: finish
+        let invJ0 = this.invert(J0);
+        let dNdx = dNdxi * invJ0;
+        let Lp = [[0, 0], [0, 0]];
+
+        for (let k = 0; k < esctr.length; ++k) {
+          let id = esctr[k];
+          let vI = [0, 0];
+
+          if (this.nmass[id] > this.tol) {                                                 // TODO: finish
+            this.vp[pid] += this.dtime * N[k] * this.niforce[id] / this.nmass[id];
+            this.xp[pid] += this.dtime * N[k] * this.nmomentum[id] / this.nmass[id];
+            vI = this.nmomentum[id] / this.nmass[id];
           }
-          
-          // This has to be calculate as math matrices not javascript arrays
-          let F = ([[1, 0], [0, 1]] + Lp * this.dtime) * this.reshape(this.Fp[pid], 2, 2);
-          this.Fp[pid] = this.reshape(F, 1, 4);
-          this.Vp[pid] = this.det(F) * this.Vp0(pid);
-          let dEps = this.dtime * 0.5 * (Lp + this.derivation(Lp));
-          let dsigma = this.C * [dEps[1][1], dEps[2][2], 2 * dEps[1][2]];
-          this.s
+
+          Lp = Lp + this.derivation(vI) * dNdx[k];
         }
+
+        // This has to be calculate as math matrices not javascript arrays
+        let F = ([[1, 0], [0, 1]] + Lp * this.dtime) * this.reshape(this.Fp[pid], 2, 2);
+        this.Fp[pid] = this.reshape(F, 1, 4);
+        this.Vp[pid] = this.det(F) * this.Vp0(pid);
+        let dEps = this.dtime * 0.5 * (Lp + this.derivation(Lp));
+        let dsigma = this.C * [dEps[1][1], dEps[2][2], 2 * dEps[1][2]];
+        this.s
+      }
     }
   }
 }

@@ -17,6 +17,10 @@ export default class Math {
     return ExtMath.det(matrix);
   }
   
+  static multiply(matrix1, matrix2) {
+    return ExtMath.multiply(matrix1, matrix2);
+  }
+  
   static inv(matrix) {
     return ExtMath.inv(matrix);
   }
