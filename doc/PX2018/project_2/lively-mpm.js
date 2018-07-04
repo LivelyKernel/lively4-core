@@ -19,44 +19,7 @@ export default class LivelyMpm extends Morph {
       evt => this.onDblClick(evt));
      
     this.canvas = this.get("#mpm");
-    this.speedInput = this.get("#speed");
     this.youngInput = this.get("#young-modulus");
-    this.extendInput = this.get("#extend");
-    this.numParticlesInput = this.get("#num-particles");
-    this.particleSizeInput = this.get("#particle-size");
-    this.animation = new VibratingPoint();
-    this.particleSize = 2;
-
-    $(this.speedInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.speed = this.speedInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.youngInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.young = this.youngInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.extendInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.extend = this.extendInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.numParticlesInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.animation.numParticles = this.numParticlesInput.value;
-    });
-    
-    $(this.particleSizeInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.particleSize = this.particleSizeInput.value;
-    });
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
@@ -67,7 +30,9 @@ export default class LivelyMpm extends Morph {
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      this.context.fillRect(particles[i] + (this.canvas.width / 2) - (this.animation.L / 2), (this.canvas.height / (particles.length + 1)) * (i + 1), this.particleSize, this.particleSize);
+    let posX = particles[i] + (this.canvas.width / 2) - (this.animation.L / 2);
+      let posY = (this.canvas.height / (particles.length + 1)) * (i + 1);
+      this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
     }
   }
   

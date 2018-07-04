@@ -12,9 +12,17 @@ The following scripts have to be executed either with ctrl+alt+v or with letsScr
 ]
 ```
 
-## transform
-
 ## extract
+
+``` javascript
+import { config } from 'src/client/vivide/utils.js';
+
+(async item => (
+  {
+  label: item.name
+}))::config({
+})
+```
 
 # Example 2 - Async Example
 
