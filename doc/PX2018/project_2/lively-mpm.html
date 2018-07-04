@@ -3,7 +3,7 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
-    min-width: 800px;
+
   }
   
   #content {
@@ -24,7 +24,7 @@
     margin: 20px 0;
   }
   
-  input, output {
+  input {
     float: right;
     text-align: right;
     margin-right: 20px;
@@ -33,24 +33,28 @@
   input[type=range] {
     -webkit-appearance: none;
   }
+  
   input[type=range]:focus {
 
   }
-  /*input[type=range]::-webkit-slider-runnable-track {
+  
+  <!--input[type=range]::-webkit-slider-runnable-track {
 
   }
+  
   input[type=range]::-webkit-slider-thumb {
 
   }
+  
   input[type=range]:focus::-webkit-slider-runnable-track {
 
-  }*/
+  }-->
 </style>
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
-      <form name="myform" oninput="inputvalue.value = input.valueAsNumber">
-        <label>Young modulus: </label>
+      <form name="form" oninput="inputvalue.value = input.valueAsNumber">
+        <label id="inputlabel">Young modulus: </label>
         <output name="inputvalue" for="input" >0.001</output>
         <input id="input" name="input" type="range" step="0.001" min="0" max="2" value="0.001">
       </form>
@@ -75,5 +79,6 @@
   <button id="toggleAnimation">
     start
   </button>
+</template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

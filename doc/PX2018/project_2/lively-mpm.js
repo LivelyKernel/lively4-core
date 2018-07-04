@@ -19,13 +19,7 @@ export default class LivelyMpm extends Morph {
       evt => this.onDblClick(evt));
      
     this.canvas = this.get("#mpm");
-    this.speedInput = this.get("#speed");
     this.youngInput = this.get("#young-modulus");
-    this.extendInput = this.get("#extend");
-    this.numParticlesInput = this.get("#num-particles");
-    this.particleSizeInput = this.get("#particle-size");
-    this.animation = new VibratingPoint();
-    this.particleSize = 2;
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
@@ -36,7 +30,7 @@ export default class LivelyMpm extends Morph {
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      let posX = particles[i] + (this.canvas.width / 2) - (this.animation.L / 2);
+    let posX = particles[i] + (this.canvas.width / 2) - (this.animation.L / 2);
       let posY = (this.canvas.height / (particles.length + 1)) * (i + 1);
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
     }
