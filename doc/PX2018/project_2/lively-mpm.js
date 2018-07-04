@@ -17,20 +17,23 @@ export default class LivelyMpm extends Morph {
     
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt));
-     
-    this.canvas = this.get("#mpm");
-    this.speedInput = this.get("#speed");
-    this.youngInput = this.get("#young-modulus");
-    this.extendInput = this.get("#extend");
-    this.numParticlesInput = this.get("#num-particles");
-    this.particleSizeInput = this.get("#particle-size");
-    this.animation = new VibratingPoint();
+    
+    this.variables = {};
     this.particleSize = 2;
+    this.animation = new VibratingPoint();
+    this.canvas = this.get("#mpm");
+    this.youngInput = this.get("#young-modulus");
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    
+    this.input = this.get("#input");
+    let inputUpdate = function() {
+      this.variables[this.input.name] = this.input.value;
+      // Resets particles
+      this.animation.numParticles = this.animation.numParticles;
+    }
+    $(this.input).on("input change", inputUpdate.bind(this));
   }
   
   draw(particles) {
@@ -42,19 +45,34 @@ export default class LivelyMpm extends Morph {
     }
   }
   
+  set explanation(value) {
+    if (!Array.isArray(value)) {
+      console.log('Given object is not of type Array');
+      return;
+    }
+    
+    let explanation = this.get('#explanation');
+    for (let item of value) {
+      let element = <li>{item}</li>;
+      explanation.appendChild(element);
+    }
+  }
+  
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
     
   }
   
   onToggleAnimation() {
+    if (!this.animation) return;
+    
     if (this.animation.running) {
       this.animation.stopAnimating();
-      this.get("#toggleAnimation").innerHTML = "start";
+      this.get("#toggleAnimation").innerHTML = "Start Animation";
     } else {
       // Start animating
       this.animation.startAnimating(this);
-      this.get("#toggleAnimation").innerHTML = "stop";
+      this.get("#toggleAnimation").innerHTML = "Stop Animation";
     }
   }
 

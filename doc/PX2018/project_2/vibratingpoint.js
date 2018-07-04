@@ -43,7 +43,7 @@ export default class VibratingPoint extends MpmAnimation {
   }
   
   calculate(caller) {
-    this.E = caller.young != null ? caller.young * Math.PI * Math.PI : this.E;
+    this.E = caller.variables.youngModulus != null ? caller.variables.youngModulus * Math.PI * Math.PI : this.E;
     this.L = caller.extend != null ? caller.extend : this.L;
     this.dtime = caller.speed != null ? caller.speed : this.dtime;
 
