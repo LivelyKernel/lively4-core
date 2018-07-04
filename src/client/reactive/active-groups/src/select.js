@@ -472,7 +472,7 @@ function removeObsoleteListeners() {
 }
 
 const stopMatchingLoop = new PausableLoop(() => {
-  lively.warn('check stop matching');
+  // lively.warn('check stop matching');
   removeObsoleteListeners();
 });
 
