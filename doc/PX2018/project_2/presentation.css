@@ -206,157 +206,20 @@
   font-size: 16px;
 }
 
-/* Prio to request fullscreen and transform */
-
-.lively-slide.fullscreen-hd {
-  position:fixed;
-  width: 1600px;
-  height: 900px;
-  box-sizing: border-box;
-  background-color: #fff;
-  z-index: 10001;
-  border: none;
-}
-
-.lively-slide.fullscreen-fullhd {
-  position:fixed;
-  width: 1920px;
-  height: 1080px;
-  box-sizing: border-box;
-  background-color: #fff;
-  z-index: 10001;
-  border: none;
-}
-
-.lively-slide.fullscreen-hd .title-frontpage {
-  font-size: 36pt;
-}
-
-.lively-slide.fullscreen-fullhd .title-frontpage {
-  font-size: 44pt;
-}
-
-.lively-slide.fullscreen-hd .authors {
-  top: 450px;
-  font-size: 24pt;
-}
-
-.lively-slide.fullscreen-fullhd .authors {
-  top: 500px;
-  font-size: 32pt;
-}
-
-.lively-slide.fullscreen-hd .credentials {
-  top: 600px;
-  font-size: 20pt;
-}
-
-.lively-slide.fullscreen-fullhd .credentials {
-  top: 700px;
-  font-size: 28pt;
-}
-
-.lively-slide.fullscreen-hd .notes {
-  left: 170px;
-  top: 150px;
-}
-
-.lively-slide.fullscreen-fullhd .notes {
-  left: 250px;
-  top: 200px;
-}
-
-.lively-slide.fullscreen-hd .notes-big li {
-    font-size: 34pt;
-    line-height: 1.7em;
-}
-
-.lively-slide.fullscreen-fullhd .notes-big li {
-  font-size: 36pt;
-  line-height: 2em;
-}
-
-.lively-slide.fullscreen-fullhd .notes-small li {
-  font-size: 32pt;
-  line-height: 2em;
-}
-
-.lively-slide.fullscreen-hd .title-1 {
-  font-size: 44pt;
-  top: 50px;
-}
-
-.lively-slide.fullscreen-fullhd .title-1 {
-  font-size: 50pt;
-  top: 75px; 
-}
-
-.vivide-view-container {
-  position: absolute;
-  left: 90px; 
-  top: 120px;
-  border: 1px solid lightgray;
-  overflow: auto; 
-}
-
-.vivide-view-container.hd {
-  left: 200px;
-  top: 150px;
-}
-
-.vivide-view-container.fullhd {
-  left: 250px;
-  top: 200px;
-}
-
-.vivide-view {
-  width: 250px;
-  height: 550px;
-  float: left;
-  padding: 10px; 
-}
-
-.vivide-view-container.hd .vivide-view {
-  width: 450px;
-  height: 650px;
-}
-
-.vivide-view-container.fullhd .vivide-view {
-  width: 500px;
-  height: 800px;
-}
-
-.vivide-script-editor {
-  width: 550px;
-  height: 550px;
-  float: left;
-  border-left: 1px solid lightgray;
-  padding: 10px; 
-}
-
-.vivide-view-container.hd .vivide-script-editor {
-  width: 750px;
-  height: 650px;
-}
-
-.vivide-view-container.fullhd .vivide-script-editor {
-  width: 900px;
-  height: 800px;
-}
-
 .mpm {
   position: absolute;
-  left: 100px;
-  top: 150px;
-  width: 800px;
+  width: 70%;
+  left: 15%;
+  top: 25%;
 }
 
-.mpm.hd {
-  left: 450px;
-  top: 250px;
+.hidden {
+  display: none;
 }
 
-.mpm.fullhd {
-  left: 550px;
-  top: 350px;
+.details {
+  position: absolute;
+  bottom: 5%;
+  width: 70%;
+  left: 15%;
 }
