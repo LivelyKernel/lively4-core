@@ -26,8 +26,20 @@ export default class LivelyCodecompletion extends Morph {
     var that = this;
     //define extra hotkey to open to completion menue
     var extraKeys=this.codeEditor.editor.getOption("extraKeys")
-    extraKeys["Alt-1"]=function(){that.getHint(that);}
-    this.codeEditor.editor.setOption("extraKeys",extraKeys);
+    // extraKeys["Enter"]=function(cm){that.getHint(that);}
+    extraKeys["Enter"]=function(cm){
+      that.changeHandler(
+        cm,
+        {cancel:function(){},
+          "canceled":true,
+         from:that.codeEditor.editor.cursor,
+        origin:"+input",
+        text:[""],
+        to:that.codeEditor.editor.cursor,
+        update:function(){}}
+      )
+    }
+
     // this.addKeyListener();
     this.codeEditor.editor.on("beforeChange",function(cm,object){
       that.changeHandler(cm,object);
@@ -49,15 +61,12 @@ export default class LivelyCodecompletion extends Morph {
     // replaced during development
   }
   changeHandler(cm,changes){
-    console.log(changes)
     var cursor = changes.from
     var line= this.codeEditor.editor.getLine(cursor.line)
+    console.log("line "+line)
     if(changes.origin==="+input"){
       if(changes.text[0]===""){
-        //return has been hit
         this.codeTree.addNewLine(this.root,changes.from.line+1)
-        console.log(this.root)
-        console.log("test : "+line.substring(changes.from.ch)+"..")
         this.codeTree.updateLine(this.root,cursor.line+1,line.substring(0,cursor.ch).replace(/^\s+/g, "")+"\n");
         if(this.codeEditor.editor.getValue().split("\n")>cursor.line+1){
           this.codeTree.updateLine(this.root,cursor.line+2,line.substring(cursor.ch).replace(/^\s+/g, "")+"\n");
@@ -66,6 +75,7 @@ export default class LivelyCodecompletion extends Morph {
         }
         this.updateValue({line:cursor.line+1,cursor:cursor.ch+1})
       }else{
+        console.log("newline:"+ changes.text[0]+".")
         this.codeTree.updateLine(this.root,cursor.line+1,line.slice(0, cursor.ch).replace(/^\s+/g, "") + changes.text[0] + line.slice(cursor.ch));
         this.updateValue({line:cursor.line,cursor:cursor.ch+1})
       }
@@ -82,8 +92,12 @@ export default class LivelyCodecompletion extends Morph {
         console.log("line: "+line+previousLine)
         this.codeTree.updateLine(this.root,cursor.line,(line+previousLine).replace(/^\s+/g, ""));
         this.updateValue({line:cursor.line-1,ch:previousLine.length})
+      }else{
+        this.codeTree.updateLine(this.root,cursor.line+1,(line).substring(0,line.length-1).replace(/^\s+/g, ""));
+        this.updateValue({line:cursor.line,ch:cursor.ch-1});
       }
     }
+    console.log(changes)
     console.log(this.root)
   }
   updateValue(cursor){
@@ -163,7 +177,7 @@ export default class LivelyCodecompletion extends Morph {
   
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
+    // lively.notify("Key Down!" + evt.charCode)
   }
 
   /* Lively-specific API */

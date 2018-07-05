@@ -2,13 +2,24 @@
 
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
+import { hideHiddenElements, toggleLayer, showVariable, runExampleButton } from "src/client/essay.js";
 
+const showDetails = false;
 let presentation = lively.query(this, "lively-presentation");
 let slides = presentation.querySelectorAll('.lively-slide');
 let ratio = "16-9";
 slides.forEach(slide => {
   slide.classList += " ratio-" + ratio;
-})
+  
+  if (showDetails) {
+    let detailsElements = slide.querySelectorAll('.details');
+    
+    for (let detailsElement of detailsElements) {
+      detailsElement.classList.remove('hidden');
+    }
+  }
+});
+
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -100,6 +111,39 @@ presentButton
 
 ---
 # Introduction
+
+---
+
+<div class="title-1">Young Modulus</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+
+(async() => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  mpm.explanation = ["Alternative name: elastic modulus",
+                    "Describes stiffness of solid materials"];
+  mpm.inputVariable = { "name": "youngModulus", "min": 0.001, "max": 2, "step": 0.001 }
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
+})()
+</script>
+
+<div class="details hidden">
+<audio controls>
+  <source src="young-modulus.ogg" type="audio/ogg">
+  Your browser does not support the audio tag.
+</audio>
+
+```javascript {.ShowCode .Hidden}
+let url = lively4url + '/doc/PX2018/project_2/vibratingpoint.js';
+lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
+```
+<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
+<script>hideHiddenElements(this)</script>
+</div>
+
+
 
 ---
 

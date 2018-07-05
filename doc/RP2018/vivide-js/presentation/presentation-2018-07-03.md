@@ -5,7 +5,13 @@ import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 import { hideHiddenElements, toggleLayer, showVariable, runExampleButton, runVivideButton } from "src/client/essay.js"
 
 let presentation = lively.query(this, "lively-presentation");
-let slides = presentation.querySelectorAll('.lively-slide');
+
+let slides = [];
+
+if (presentation) {
+  slides = presentation.querySelectorAll('.lively-slide');
+}
+
 let ratio = "16-9";
 slides.forEach(slide => {
   slide.classList += " ratio-" + ratio;
@@ -119,7 +125,7 @@ presentButton
 <div class="v-1-2">
 <ul class="notes-big">
 <li>Provide data in a task-oriented form</li>
-<li>Live programming environment in the internet<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>Lively4: Web-based live programming environment<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
 <li>VivideJS: Asynchronous online data processing</li>
 </ul>
 </div>
@@ -203,22 +209,22 @@ runVivideButton("run", this, "example3");
 ---
 <div class="title-1">Shortcomings</div>
 
-<ul class="notes notes-big">
+<ul class="notes">
 <li>Limited number of widgets</li>
   <ul>
   <li>List widget</li>
   <li>Tree widget</li>
   <li>Box plot widget</li>
   </ul>
-<li>Asynchronous method calls, but no real asynchronity</li>
+<li>Views await whole amount of data<br><i class="fa fa-arrow-right"></i> No streaming</li>
 <li>Connection management</li>
 <li>Difficult to explore data structures</li>
-<li>Some remaining UI bugs (e.g. loop marker length)</li>
 <li>Merging source views</li>
+<li>Some remaining UI bugs (e.g. loop marker length)</li>
 </ul>
 
 ---
-<div class="title-1">Open Ends And Future Work</div>
+<div class="title-1">Next Steps And Future Work</div>
 
 <div class="h-1-2">
 <ul class="notes-big">
@@ -233,11 +239,6 @@ runVivideButton("run", this, "example3");
 <div class="h-2-2" style="padding-top: 20px;">
 <img src="vivide-file-browser.png" alt="Vivide File Browser">
 </div>
-
----
-<div class="title-1">Implementation</div>
-
-<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
 
 ---
 
@@ -262,3 +263,10 @@ function closeFullscreen() {
 
 closeButton
 </script>
+
+---
+
+<div class="title-1">Implementation</div>
+
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
+

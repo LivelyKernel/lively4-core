@@ -19,10 +19,8 @@ export async function optionsResult(item) {
 
 export function getPath(item, parent) {
   if (parent.path != null) {
-    console.log("Pname: " + parent.path + '/' + item.name)
     return parent.path + '/' + item.name;
   } else {
-    console.log("Ename: " + lively4url + '/' + parent.name + '/' + item.name)
     return lively4url + '/' + parent.name + '/' + item.name;
   }
 }

@@ -29,7 +29,7 @@ var tokenList = [
             before: "[^(\\+|\\-)]",
             after: "$"
         }],
-        codeEquivalent:"\\s $var $op "
+        codeEquivalent:"$var $op "
     },
     {regex: "{", token: "openBrace", attributes: [],codeEquivalent:"{"},
     {regex: "}", token: "closeBrace", attributes: [],codeEquivalent:"}"},
@@ -41,12 +41,12 @@ var parserList = [
     {
         name: "forLoop",
         context: [{name: "", attribute: []}],
-        regex: "for\\sopenBracket\\sstatement\\scondition\\sincrement\\scloseBracket\\s(openBrace)\\snewline((?!(closeBrace)).)*\\scloseBrace(newline|$)",
+        regex: "for\\sopenBracket\\sstatement\\scondition\\sincrement\\scloseBracket\\s(openBrace)\\snewline((?!(closeBrace)).)*\\scloseBrace(\\snewline|$)",
         attributes: [
             {
                 name: "content",
                 before: "for\\sopenBracket\\sstatement\\scondition\\sincrement\\scloseBracket\\sopenBrace\\snewline",
-                after: "closeBrace(newline|$)"
+                after: "closeBrace(\\snewline|$)"
             }],
     }
 ]
@@ -229,10 +229,11 @@ export default class CodeTree {
      */
     removeLine(topNode, line) {
         var searchedLine = this.findLine(topNode, line, 0);
-        var parent = searchedLine.parent;
+        
         if (searchedLine === null) {
             console.log("Could'nt remove line " + line + ", because line was not found.")
         }
+        var parent = searchedLine.parent;
         if (parent.children.indexOf(searchedLine) !== -1) {
             parent.children.splice(parent.children.indexOf(searchedLine), 1);
 
@@ -257,6 +258,7 @@ export default class CodeTree {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
                     parent.beginning[parent.beginning.indexOf(searchedLine)] = tokenizedLine;
                     this.moveNodeHigher(parent, searchedLine);
+                    this.parse(tokenizedLine)
                 }
                 return tokenizedLine;
             }
@@ -271,6 +273,7 @@ export default class CodeTree {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
                     parent.ending[parent.ending.indexOf(searchedLine)] = tokenizedLine;
                     this.moveNodeHigher(parent, searchedLine);
+                    this.parse(tokenizedLine)
                 }
                 return tokenizedLine;
             }
@@ -349,23 +352,25 @@ export default class CodeTree {
             return newLine;
         }
         var searchedLine = this.findLine(topNode, line, 0);
+     
         if (searchedLine === null) {
             console.log("Error: serachedLine: " + line + " can not be found.")
             return null;
         }
         var parent = searchedLine.parent;
         if (parent && parent.children.indexOf(searchedLine) !== -1) {
+          
             var index = parent.children.indexOf(searchedLine);
             newLine.parent = parent;
             parent.children.splice(index + 1, 0, newLine);
             return newLine;
         }
-        if(parent && parent.beginning.indexOf(searchedLine!==-1)){
+        if(parent && parent.beginning.indexOf(searchedLine)!==-1){
           newLine.parent=parent;
           parent.children.splice(0,0,newLine);
           return newLine;
         }
-      if(parent&&parent.ending.indexOf(searchedLine!==-1)){
+      if(parent&&parent.ending.indexOf(searchedLine)!==-1){
         newLine.parent=parent.parent;
         var index=parent.parent.children.indexOf(parent);
         parent.parent.children.splice(index+1,0,newLine);
@@ -388,6 +393,10 @@ export default class CodeTree {
         var beginningLength = this.calcLength(topNode.beginning);
         var childrenLength = this.calcLength(topNode.children);
         var endingLength = this.calcLength(topNode.ending);
+        console.log(topNode.nameTag+"-> "+line);
+        console.log("beginning: "+beginningLength);
+      console.log("children: "+childrenLength);
+      console.log("ending: "+endingLength)
         if (line <= beginningLength + currentLine) {
             return this.findLineInArray(topNode.beginning, line, currentLine);
         }
@@ -417,11 +426,15 @@ export default class CodeTree {
                 currentLineCounter++;
             } else {
                 lineSearch = this.findLine(nodeArray[i], line, currentLineCounter);
+                if (lineSearch !== null) {
+                    return lineSearch;
+                }else{
+                  console.log("updted currentLine")
+                  currentLineCounter+=this.calcLength([nodeArray[i]]);
+                }
             }
 
-            if (lineSearch !== null) {
-                return lineSearch;
-            }
+            console.log("currentcounter "+currentLineCounter)
             if (currentLineCounter === line) {
                 return nodeArray[i];
             }
@@ -434,13 +447,13 @@ export default class CodeTree {
      * @param array Array with nodes
      * @returns {number} Number of lines
      */
-    calcLength(array) {
+    calcLength(node) {
         var length = 0;
-        for (var i = 0; i < array.length; i++) {
-            if (array[i].nameTag === "line") {
+        for (var i = 0; i < node.length; i++) {
+            if (node[i].nameTag === "line") {
                 length++;
             } else {
-                length += this.calcLength(array[i].beginning) + this.calcLength(array[i].children) + this.calcLength(array[i].ending);
+                length += this.calcLength(node[i].beginning) + this.calcLength(node[i].children) + this.calcLength(node[i].ending);
             }
         }
         return length;
@@ -534,7 +547,7 @@ export default class CodeTree {
     indentString(string,level){
         var indentation="";
         for(var i=0;i<level;i++){
-            indentation+="  ";
+            indentation+=" ";
         }
         return indentation+string;
     }
