@@ -146,6 +146,7 @@ export default class MatchesInShadow extends Morph {
           stopMatchingDetectors.add({
             matchesSelector() {
               const inDOM = targetElement.getRootNode({ composed: true }) === document;
+              // return inDOM && this.getAllSubmorphs(selector).includes(targetElement);
               return inDOM && targetElement.matches(selector);
             },
             removeElement() { view.safeRemove(targetElement); }
