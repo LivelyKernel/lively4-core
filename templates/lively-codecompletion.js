@@ -6,36 +6,42 @@ import CodeTree from "templates/lively-codecompletion-utils/codeTree.js";
 import Print from "templates/lively-codecompletion-utils/print.js";
 import { promisedEvent } from "utils";
 
-var data=[
-  {regex:"^for\\(var .* ",displayText:"for(var i=0;i<gap;i++)",explanation:"",codeLines:["for(var i=0;i< ;i++){","}"]},
-  {regex:"^fo",displayText:"for(var i=0;i<gap;i++)",explanation:"",codeLines:["for(var i=0;i< ;i++){","}"]}
-]
 
 export default class LivelyCodecompletion extends Morph {
   
   get content(){return this.get("#content")}
   get codeEditor() { return this.get('#code-mirror'); }
   async initialize() {
-    this.windowTitle = "LivelyCodecompletion1";
+    this.completions=[
+      {regex:"^for\\(var .* ",displayText:"for(var i=0;i<'gap';i++)",explanation:"",codeLines:["for(var i='gap';i<'gap' ;'gap'++){","}"],contextFunc:this.contextFunc,applyFunc:function(){}},
+      {regex:"^fo",displayText:"for(var i=0;i<<gap>;i++)",explanation:"",codeLines:["for(var i=0;i< ;i++){","}"],contextFunc:this.contextFunc,applyFunc:function(){}}
+    ]
+    this.windowTitle = "LivelyCodecompletion";
     this.codeTree= new CodeTree();
     this.print = new Print();
     this.root= new Node();
     this.root.nameTag="Root";
+    this.codeTree.root=this.root;
     this.codeTree.addNewLine(this.root,0);
     await this.prepareEditor();
     var that = this;
     //define extra hotkey to open to completion menue
     var extraKeys=this.codeEditor.editor.getOption("extraKeys")
-    // extraKeys["Enter"]=function(cm){that.getHint(that);}
+    extraKeys["Alt-1"]=function(cm){
+      that.getHint(that);}
+    extraKeys["Alt-3"]=function(cm){
+      that.nextGap();
+    }
     extraKeys["Enter"]=function(cm){
+      console.log("return")
       that.changeHandler(
         cm,
         {cancel:function(){},
           "canceled":true,
-         from:that.codeEditor.editor.cursor,
+         from:that.codeEditor.editor.getCursor(),
         origin:"+input",
         text:[""],
-        to:that.codeEditor.editor.cursor,
+        to:that.codeEditor.editor.getCursor(),
         update:function(){}}
       )
     }
@@ -60,89 +66,86 @@ export default class LivelyCodecompletion extends Morph {
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
     // replaced during development
   }
+  nextGap(){
+    var cursor=this.codeEditor.editor.getCursor()
+    console.log("_------------------------------"+cursor)
+    console.log(cursor)
+    var newPosition=this.codeTree.findNextGap(cursor.line+1,cursor.ch);
+    this.codeEditor.editor.focus();
+    console.log(newPosition);
+    if(newPosition){
+      this.codeEditor.editor.setCursor({line:newPosition.line-1,ch:newPosition.ch});
+    }else{
+      lively.notify("No more gaps ahead found.")
+    }
+  }
+  
   changeHandler(cm,changes){
-    var cursor = changes.from
+    var cursor = this.codeEditor.editor.getCursor();
+    console.log("cursorchanges")
+    console.log(cursor)
     var line= this.codeEditor.editor.getLine(cursor.line)
-    console.log("line "+line)
     if(changes.origin==="+input"){
       if(changes.text[0]===""){
         this.codeTree.addNewLine(this.root,changes.from.line+1)
         this.codeTree.updateLine(this.root,cursor.line+1,line.substring(0,cursor.ch).replace(/^\s+/g, "")+"\n");
-        if(this.codeEditor.editor.getValue().split("\n")>cursor.line+1){
+        if(this.codeEditor.editor.getValue().split("\n")>cursor.line){
           this.codeTree.updateLine(this.root,cursor.line+2,line.substring(cursor.ch).replace(/^\s+/g, "")+"\n");
         }else{
           this.codeTree.updateLine(this.root,cursor.line+2,line.substring(cursor.ch).replace(/^\s+/g, ""));
         }
-        this.updateValue({line:cursor.line+1,cursor:cursor.ch+1})
+        this.updateValue({line:cursor.line+1,ch:cursor.ch+1})
       }else{
-        console.log("newline:"+ changes.text[0]+".")
-        this.codeTree.updateLine(this.root,cursor.line+1,line.slice(0, cursor.ch).replace(/^\s+/g, "") + changes.text[0] + line.slice(cursor.ch));
-        this.updateValue({line:cursor.line,cursor:cursor.ch+1})
+        if(this.codeEditor.editor.lineCount()-1>cursor.line){
+          this.codeTree.updateLine(this.root,cursor.line+1,line.slice(0, cursor.ch).replace(/^\s+/g, "") + changes.text[0] + line.slice(cursor.ch)+"\n");
+        }else{
+          this.codeTree.updateLine(this.root,cursor.line+1,line.slice(0, cursor.ch).replace(/^\s+/g, "") + changes.text[0] + line.slice(cursor.ch));
+        }
+        this.updateValue({line:cursor.line,ch:cursor.ch+1})
       }
       changes.cancel();
-      
     }
-    cursor=changes.to
+    // cursor=changes.to
     if(changes.origin==="+delete"){
-      if(cursor.ch===0 && cursor.line>0){
-        changes.cancel();
-        this.codeTree.removeLine(this.root,cursor.line+1)
-        let currLine=this.codeEditor.editor.getLine(cursor.line+1)
-        let previousLine = this.codeEditor.editor.getLine(cursor.line);
-        console.log("line: "+line+previousLine)
-        this.codeTree.updateLine(this.root,cursor.line,(line+previousLine).replace(/^\s+/g, ""));
-        this.updateValue({line:cursor.line-1,ch:previousLine.length})
-      }else{
-        this.codeTree.updateLine(this.root,cursor.line+1,(line).substring(0,line.length-1).replace(/^\s+/g, ""));
-        this.updateValue({line:cursor.line,ch:cursor.ch-1});
-      }
+      this.deleteLine(cursor,line,changes);
+    }
+    if(changes.origin==="complete"){
+      this.applyHint(changes);
     }
     console.log(changes)
     console.log(this.root)
   }
-  updateValue(cursor){
-    this.codeEditor.editor.setValue(this.codeTree.tree2Code(this.root,-1))
-    this.codeEditor.editor.focus();
-    this.codeEditor.editor.setCursor(cursor)
-  }
-  addKeyListener(){
-    var that=this;
-    this.addEventListener('keydown', function(event){
-      
-    })
-    this.addEventListener('keyup',function(event){
-    
-      var cursor= that.codeEditor.editor.getCursor();
-      var line = that.codeEditor.editor.getLine(cursor.line)
-      if(event.key!=="Enter"){  
-        var inp = String.fromCharCode(event.keyCode);
-        if(/[a-zA-Z0-9-_ ]/.test(inp)){
-          line+=event.key;
-          cursor.ch+=1;
-        }
-        that.lastCursor=cursor;
-        if(that.codeEditor.editor.getValue().split("\n")>cursor.line){
-          that.codeTree.updateLine(that.root,cursor.line+1,that.codeEditor.editor.getLine(cursor.line).replace(/^\s+/g, "")+"\n");
-        }else{
-          that.codeTree.updateLine(that.root,cursor.line+1,that.codeEditor.editor.getLine(cursor.line).replace(/^\s+/g, ""));
-        }
-        console.log(that.codeTree.tree2Code(that.root,-1))
+  
+  deleteLine(cursor,line,changes){
+    console.log("cursoroodofsdf");
+    console.log(cursor)
+    if(cursor.ch===0 && cursor.line>0){
+        changes.cancel();
+        this.codeTree.removeLine(this.root,cursor.line+1)
+        let currLine=this.codeEditor.editor.getLine(cursor.line)
+        let previousLine = this.codeEditor.editor.getLine(cursor.line-1);
+        console.log("line: "+line+previousLine)
+        this.codeTree.updateLine(this.root,cursor.line,(line+previousLine).replace(/^\s+/g, ""));
+        this.updateValue({line:cursor.line-1,ch:previousLine.length})
       }else{
-        console.log("enter")
-        that.lastCursor=cursor;
-        that.codeTree.addNewLine(that.root,cursor.line-1);
-        that.codeTree.updateLine(that.root,cursor.line,that.codeEditor.editor.getLine(cursor.line-1).replace(/^\s+/g, "")+"\n");
-        if(that.codeEditor.editor.getValue().split("\n")>cursor.line){
-          that.codeTree.updateLine(that.root,cursor.line+1,that.codeEditor.editor.getLine(cursor.line).replace(/^\s+/g, "")+"\n");
+        if(this.codeEditor.editor.lineCount()-1>cursor.line){
+          this.codeTree.updateLine(this.root,cursor.line+1,(line).substring(0,line.length-1).replace(/^\s+/g, "")+"\n");
         }else{
-          that.codeTree.updateLine(that.root,cursor.line+1,that.codeEditor.editor.getLine(cursor.line).replace(/^\s+/g, ""));
+          this.codeTree.updateLine(this.root,cursor.line+1,(line).substring(0,line.length-1).replace(/^\s+/g, ""));
         }
+        this.updateValue({line:cursor.line,ch:cursor.ch-1});
       }
-      that.codeEditor.editor.setValue(that.codeTree.tree2Code(that.root,-1))
-      that.codeEditor.editor.focus();
-      that.codeEditor.editor.setCursor(that.lastCursor)
-      console.log(this.root)
-    })
+  }
+  updateValue(cursor){
+    console.log(this.codeTree.gaps)
+    this.codeEditor.editor.focus();
+    this.codeEditor.editor.doc.setValue(this.codeTree.tree2Code(this.root,-1))
+    console.log(cursor)
+    this.codeEditor.editor.setCursor(cursor.line,cursor.ch)
+    console.log(this.codeEditor.editor.getCursor())
+    
+    console.log("cursor::::::::")
+    console.log(cursor)
   }
   render(parent, data, cur){
     const wrapper = document.createElement('div');
@@ -154,23 +157,51 @@ export default class LivelyCodecompletion extends Morph {
     var cursor= that.codeEditor.editor.getCursor();
     var line = that.codeEditor.editor.getLine(cursor.line)
     var trimmedLine= line.trim()
+    
     //Idee: suche aktiven hint und appende das menue einfach
     var activeHint=this.get(".CodeMirror-hint-active")
+    
+    //Idee: Ende
+    
     that.codeEditor.editor.showHint({"hint":(cm)=>{
           var inner = {from:{line:cursor.line,ch:line.length-trimmedLine.length},to:{line:cursor.line,ch:cursor.ch},list:[]};
-          for(var i=0;i<data.length;i++){
-            var regex= new RegExp(data[i].regex);
+          for(var i=0;i<that.completions.length;i++){
+            var regex= new RegExp(that.completions[i].regex);
             var partialMatchRegex = regex.toPartialMatchRegex();
             var result=partialMatchRegex.exec(trimmedLine);
             var fullmatch= regex.exec(trimmedLine)
-            if((result && result[0])||fullmatch){
-              inner.list.push({text:data[i].codeLines[0],displayText:i,render:that.render})
+            var treeLine=that.codeTree.findLine(that.root,cursor.line+1,0);
+            if(((result && result[0])||fullmatch)&&that.completions[i].contextFunc(treeLine,that.root)){
+              inner.list.push({text:that.completions[i].codeLines,displayText:i,render:that.render})
             }
           }
           return inner;
         }})
   }
   
+  contextFunc(line,root){
+    if(line.parent.nameTag==="forLoop"){
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+  Action that is called when an autocompletion was chosen  
+  **/
+  applyHint(changes){
+    for(var i=0;i<changes.text.length;i++){
+      if(i!==0){
+        console.log("text "+changes.text[i]+" \n")
+        this.codeTree.addNewLine(this.root,changes.from.line+1);
+        this.codeTree.updateLine(this.root,changes.from.line+1+i,changes.text[i]);
+      }else{
+        this.codeTree.updateLine(this.root,changes.from.line+1+i,changes.text[i]+"\n");
+      }
+    }
+    changes.cancel();
+    this.updateValue({line:changes.to.line,cursor:changes.to.ch+1})
+  }
   async prepareEditor(){
     await promisedEvent(this.codeEditor, "editor-loaded");
   }
