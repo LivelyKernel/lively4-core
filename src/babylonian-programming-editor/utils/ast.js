@@ -1,11 +1,13 @@
-import { babel } from 'systemjs-babel-build';
+import systemBabel from 'systemjs-babel-build';
+
+//import { babel } from 'systemjs-babel-build';
 const {
   traverse,
   template,
   types,
   transform,
   transformFromAst
-} = babel;
+} = systemBabel.babel;
 import LocationConverter from "./location-converter.js";
 import DefaultDict from "./default-dict.js";
 import { defaultBabylonConfig } from "./defaults.js";

@@ -1,7 +1,7 @@
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
-import { babel } from 'systemjs-babel-build';
-const { traverse } = babel;
+import systemBabel from 'systemjs-babel-build';
+const { traverse } = systemBabel.babel;
 
 // Custom imports
 import BabylonianWorker from "./worker/babylonian-worker.js";
