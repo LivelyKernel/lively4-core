@@ -1,6 +1,6 @@
 // Make a window object
 self.window = self;
-const lively4url = "https://lively-kernel.org/lively4/lively4-babylonian-programming-multifile";
+const lively4url = self.location.origin + self.location.pathname.split("/").slice(0,3).join("/");
 
 // Load SystemJS
 importScripts("../../external/systemjs/system.src.js")

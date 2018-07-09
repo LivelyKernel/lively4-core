@@ -29,7 +29,7 @@ export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c
  */
 export function /*example:*//*example:*/generateLocationMap/*{"id":"4ebc_b290_28de","name":{"mode":"input","value":"Fibonacci"},"color":"hsl(10, 30%, 70%)","values":{"ast":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"345b_37c4_c8b1","name":{"mode":"input","value":"Simple"},"color":"hsl(300, 30%, 70%)","values":{"ast":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(ast) {
   ast._locationMap = new DefaultDict(Object);
-  
+
   const keywords = {
     "ForStatement": "for",
     "ForInStatement": "for",
@@ -38,21 +38,21 @@ export function /*example:*//*example:*/generateLocationMap/*{"id":"4ebc_b290_28
     "DoWhileStatement": "do",
     "ReturnStatement": "return"
   };
-  
+
   traverse(ast, {
     /*slider:*/enter/*{}*/(path) {
       let location = path.node.loc;
       if(!location) {
         return;
       }
-      
+
       // Some Nodes are only associated with their keywords
       const keyword = keywords[/*probe:*/path.type/*{}*/];
       if(keyword) {
         location.end.line = location.start.line;
         location.end.column = location.start.column + /*probe:*/keyword/*{}*/.length;
       }
-      
+
       ast._locationMap[LocationConverter.astToKey(location)] = path;
     }
   });
@@ -154,7 +154,7 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
     }
     return path;
   }
-  
+
   // Prepare Tracker, enforce that all bodies are in BlockStatements, and collect imports
   const importNodes = [];
   traverse(ast, {
@@ -165,7 +165,7 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
       if(!path.node.body) {
         console.warn("A BlockParent without body: ", path);
       }
-      
+
       wrapPropertyOfPath(path, "body");
     },
     IfStatement(path) {
@@ -182,12 +182,12 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
       }
     }
   });
-  
+
   await Promise.all(importNodes.map(async (node) => {
     // Turn imports into absolute URLs so they work in the temporary workspace
     const importSource = node.source.value;
     const importUrl = await System.resolve(importSource, ast._sourceUrl);
-    
+
     // Set either the real or the replacement URL
     if(replacementUrls[importUrl]) {
       node.source.value = replacementUrls[importUrl];
@@ -197,7 +197,7 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
   }));
 }
 
-export const applyTracker = (code) => 
+export const applyTracker = (code) =>
   `const __connections = this.connections;
    const __tracker = this.tracker;
    ${code}`;
@@ -267,24 +267,24 @@ export const applyProbes = (ast, annotations) => {
 export const applyInstances = (ast, instances, customInstances) => {
   const defaultInstanceNode = template(`const __0 = () => null;`)();
   ast.program.body.push(defaultInstanceNode);
-  
+
   instances.forEach((instance) => {
     const path = ast._locationMap[instance.location];
     const className = path.node.name;
-    
+
     let instanceNode = template(`const __${instance.id} = () => new CLASS(PARAMS);`)({
       CLASS: types.identifier(className),
       PARAMS: instance.values.map(replacementNodeForValue)
     });
-    
+
     if(instanceNode) {
       ast.program.body.push(instanceNode);
     }
   });
-  
-  customInstances.forEach((instance) => {    
+
+  customInstances.forEach((instance) => {
     let instanceNode = template(`const __${instance.id} = () => { ${instance.code} }`)();
-    
+
     if(instanceNode) {
       ast.program.body.push(instanceNode);
     }
@@ -299,7 +299,7 @@ export const applyExamples = (ast, examples) => {
   const functionCall = template("ID.apply(this, PARAMS)");
   const staticMethodCall = template("CLASS.ID.apply(this, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(this, PARAMS)");
-  
+
   // Apply the markers
   examples.forEach((example) => {
     const path = ast._locationMap[example.location];
@@ -311,19 +311,19 @@ export const applyExamples = (ast, examples) => {
     let parametersNamessNode = types.arrayExpression(
       parametersNames.map((s) => types.identifier(s))
     );
-    
+
     if(!parametersValuesNode) {
       parametersValuesNode = types.nullLiteral();
     }
-    
+
     const functionParent = path.getFunctionParent()
     let exampleCallNode;
-    
+
     // Distinguish between Methods and Functions
     if(functionParent.isClassMethod()) {
       // We have a method
       const classIdNode = functionParent.findParent(p => p.type === "ClassDeclaration").get("id").node;
-      
+
       // Distinguish between static and object methods
       if(functionParent.node.static) {
         exampleCallNode = staticMethodCall({
@@ -345,19 +345,19 @@ export const applyExamples = (ast, examples) => {
         PARAMS: parametersNamessNode
       });
     }
-    
+
     // Insert a call at the end of the script
     if(exampleCallNode) {
       ast.program.body.push(
         template(`
           try {
             __tracker.example("${example.id}");
-            const example = function(${parametersNames.join(", ")}) {
+            const example = async function(${parametersNames.join(", ")}) {
               ${example.prescript};
-              EXAMPLECALL;
+              await EXAMPLECALL;
               ${example.postscript};
             };
-            example.apply(INSTANCE, PARAMS);
+            await example.apply(INSTANCE, PARAMS);
           } catch(e) {
             __tracker.error(e.message);
           }`)({
@@ -476,9 +476,9 @@ export const parameterNamesForFunctionIdentifier = (path) => {
   if(isArrowFunctionName(path)) {
     parameterPaths = path.parentPath.get("init").get("params");
   } else {
-    parameterPaths = path.getFunctionParent().get("params"); 
+    parameterPaths = path.getFunctionParent().get("params");
   }
-  
+
   return parameterPaths.map(parameterPath => {
     if(parameterPath.isIdentifier()) {
       return parameterPath.node.name;
@@ -510,11 +510,11 @@ export const constructorParameterNamesForClassIdentifier = (path) => {
 export const replacementNodeForCode = (code) => {
   // The code we get here will be used as the righthand side of an Assignment
   // We we pretend that it is that while parsing
-  
+
   if(!code || !code.length) {
     return types.nullLiteral();
   }
-  
+
   code = `placeholder = ${code}`;
   try {
     const ast = astForCode(code);
@@ -627,7 +627,7 @@ const connectorTemplate = (id) => `__connections["${id}"]`;
 
 const instanceTemplate = (id) => `__${id}()`;
 
-const isArrowFunctionName = path => 
+const isArrowFunctionName = path =>
   (path.isIdentifier()
    && path.parentPath.isVariableDeclarator()
    && path.parentPath.get("id") === path
