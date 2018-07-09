@@ -5,6 +5,8 @@
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
 import VibratingContinuumBar from 'doc/PX2018/project_2/vibratingcontinuumbar.js';
+import ElasticBodies from 'doc/PX2018/project_2/elasticbodies.js';
+import Matrix from 'doc/PX2018/project_2/matrix.js';
 
 export default class LivelyMpm extends Morph {
   async initialize() {
@@ -19,8 +21,8 @@ export default class LivelyMpm extends Morph {
       evt => this.onDblClick(evt));
     
     this.variables = {};
-    this.particleSize = 2;
-    this.animation = new VibratingPoint();
+    this.particleSize = 4;
+    this.animation = new ElasticBodies();
     this.canvas = this.get("#mpm");
     this.youngInput = this.get("#young-modulus");
     
@@ -39,8 +41,8 @@ export default class LivelyMpm extends Morph {
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      let posX = particles[i] + (this.canvas.width / 2) - (this.animation.L / 2);
-      let posY = (this.canvas.height / (particles.length + 1)) * (i + 1);
+      let posX = particles[i].get(0) + (this.canvas.width / 2);
+      let posY = particles[i].get(1) + (this.canvas.height / 2);
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
     }
   }
@@ -53,7 +55,8 @@ export default class LivelyMpm extends Morph {
     
     let explanation = this.get('#explanation');
     for (let item of value) {
-      let element = <li>{item}</li>;
+      let element = <li></li>;
+      element.innerHTML = item;
       explanation.appendChild(element);
     }
   }

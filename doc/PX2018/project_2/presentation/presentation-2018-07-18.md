@@ -3,6 +3,7 @@
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 import { hideHiddenElements, toggleLayer, showVariable, runExampleButton } from "src/client/essay.js";
+import livelyMpm from 'doc/PX2018/project_2/lively-mpm.js'
 
 const showDetails = false;
 let presentation = lively.query(this, "lively-presentation");
@@ -110,7 +111,49 @@ presentButton
 </script>
 
 ---
-# Introduction
+
+<div class="title-1">Introduction</div>
+
+
+- Describe Domain
+- Where is it used
+- Related Work
+
+---
+
+<div class="title-1">Math</div>
+
+- Continuum body Omega discretized into finite set of material points <i>p</i>
+
+---
+
+- <a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a>
+- <a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a>
+
+---
+
+# TODOs
+
+- Connect grid nodes
+- Alter speed
+- Show parts of the animation canvas zoomed
+
+---
+
+<div class="title-1">MPM Steps (TODO: + Example Animation)</div>
+
+<ul class="notes notes-big">
+<li>Particles To Nodes:
+<ul>
+<li></li>
+</ul>
+</li>
+<li>Nodes To Particles:
+<ul>
+<li></li>
+</ul>
+</li>
+</ul>
 
 ---
 
@@ -121,7 +164,7 @@ import boundEval from "src/client/bound-eval.js";
 
 (async() => {
   let mpm = await (<lively-mpm></lively-mpm>);
-  mpm.explanation = ["Alternative name: elastic modulus",
+  mpm.explanation = ["Alternative name: <br> elastic modulus",
                     "Describes stiffness of solid materials"];
   mpm.inputVariable = { "name": "youngModulus", "min": 0.001, "max": 2, "step": 0.001 }
   
@@ -143,7 +186,13 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 <script>hideHiddenElements(this)</script>
 </div>
 
+---
 
+<div class="title-1">Elastic Bodies (Example: Shape Function)</div>
+
+---
+
+<div class="title-1">Elastic Bodies (Example: Movement)</div>
 
 ---
 
