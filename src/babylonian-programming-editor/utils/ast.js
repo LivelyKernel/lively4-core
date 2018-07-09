@@ -352,12 +352,12 @@ export const applyExamples = (ast, examples) => {
         template(`
           try {
             __tracker.example("${example.id}");
-            const example = async function(${parametersNames.join(", ")}) {
+            const example = function(${parametersNames.join(", ")}) {
               ${example.prescript};
-              await EXAMPLECALL;
+              EXAMPLECALL;
               ${example.postscript};
             };
-            await example.apply(INSTANCE, PARAMS);
+            example.apply(INSTANCE, PARAMS);
           } catch(e) {
             __tracker.error(e.message);
           }`)({
