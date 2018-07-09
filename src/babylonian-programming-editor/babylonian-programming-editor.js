@@ -70,7 +70,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // AST
     this._ast = null; // Node
-    
+
     // Selection
     this._selectedLocation = null;
     this._selectedPath = null; // NodePath
@@ -610,15 +610,15 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Event handlers
    */
-  
+
   onChange() {
     // Make sure we have no zombie annotations
     this.cleanupAnnotations()
-    
+
     // Tell worker that the value changed
     BabylonianWorker.onEditorChanged(this);
   }
-  
+
   onTrackerChanged() {
     if(this.hadParseError) {
       this.status("error", "Syntax Error");
@@ -636,7 +636,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       }
     }
   }
-  
+
 
   onSelectionChanged(instance, data) {
     // This needs an AST
@@ -654,7 +654,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     } else {
       this._selectedPath = null;
     }
-    
+
     this.updateSelectedPathActions();
   }
 
@@ -717,10 +717,10 @@ export default class BabylonianProgrammingEditor extends Morph {
   onEvaluationNeeded() {
     this.evaluate();
   }
-  
+
   updateSelectedPathActions() {
     this._selectedPathActions = [];
-    
+
     if(this._selectedPath) {
       const checkFunctions = {
         "probe": canBeProbe,
@@ -736,35 +736,42 @@ export default class BabylonianProgrammingEditor extends Morph {
         }
       });
     }
-    
+
     this.updateButtons();
   }
-  
+
   updateButtons() {
     this._buttons = this.get("#buttons");
     this._buttons.innerHTML = "";
-    
+
     // Always visible
     this._buttons.appendChild(TextButton("", "exchange", this.onEditPrePostScript.bind(this)));
     this._buttons.appendChild(TextButton("", "object-group", this.onEditInstances.bind(this)));
-    
+
     if(!this._selectedPath) {
       return;
     }
-    
+
     // Remove annotations
     for(let annotation of this._annotations.probes.concat(this._annotations.sliders)) {
       if(keyLocationsAreEqual(LocationConverter.markerToKey(annotation.location), this._selectedLocation)) {
-        this._buttons.appendChild(TextButton(annotation.__proto__.constructor.name, "minus", () => {
-          this.removeAnnotation(annotation);
-        }));
+        this._buttons.appendChild(
+          TextButton(
+            this.normalizeButtonName(annotation.__proto__.constructor.name), "minus", () => {
+              this.removeAnnotation(annotation);
+            }
+          )
+        );
       }
     }
-    
+
     // Add annotations
     for(let key of this._selectedPathActions) {
-      const buttonText = key.charAt(0).toUpperCase() + key.slice(1);
-      this._buttons.appendChild(TextButton(buttonText, "plus", this.addAnnotationAtSelection.bind(this, key)));
+      this._buttons.appendChild(
+        TextButton(
+          this.normalizeButtonName(key), "plus", this.addAnnotationAtSelection.bind(this, key)
+        )
+      );
     }
   }
 
@@ -811,11 +818,25 @@ export default class BabylonianProgrammingEditor extends Morph {
   editor() {
     return this.editorComp().editor
   }
-  
+
+  normalizeButtonName(name) {
+    if(name[name.length - 1] === "s") {
+      name = name.slice(0, -1);
+    }
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+
+    switch(name.toLowerCase()) {
+      case "instance":
+        name = "Instance template";
+    }
+
+    return name;
+  }
+
   /**
    * Accessors
    */
-  
+
   get activeExamples() { return this._activeExamples; }
   get annotations() { return this._annotations; }
   set ast(ast) { this._ast = ast; }

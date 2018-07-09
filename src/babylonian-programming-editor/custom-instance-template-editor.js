@@ -6,27 +6,27 @@ import CustomInstance from "./utils/custom-instance.js";
 
 const DEFAULT_CODE = "return null;";
 
-export default class CustomInstanceEditor extends Morph {
- 
+export default class CustomInstanceTemplateEditor extends Morph {
+
   initialize() {
-    this.windowTitle = "Custom Instance Editor";
-    
+    this.windowTitle = "Custom Instance Template Editor";
+
     this._instances = [];
     this._activeInstance = null;
     this._callback = new Function();
-    
+
     this._instanceList = new InstanceList(
       this.get("#instance-list"),
       this._instances,
       (instance) => this.activeInstance = instance
     );
-    
+
     this._editor = this.get("#editor");
     this._editor.addEventListener("editor-loaded", () => {
       // Disable linting and syntax checking (otherwise it warns about 'return outside of funcion')
       this._editor.editor.setOption("lint", false);
       this._editor.checkSyntax = new Function();
-      
+
       // Send feedback to editor on change
       this._editor.editor.on("change", ((value) => {
         if(this._activeInstance) {
@@ -37,7 +37,7 @@ export default class CustomInstanceEditor extends Morph {
         }
       })::debounce(1000));
     });
-    
+
     this._nameInput = this.get("#name-input");
     this._nameInput.addEventListener("change", () => {
       if(this._activeInstance) {
@@ -48,24 +48,24 @@ export default class CustomInstanceEditor extends Morph {
       }
       this._instanceList.render();
     });
-    
+
     this.get("#buttons").appendChild(AddButton(() => {
       this._instances.push(new CustomInstance("New instance"));
       this._instanceList.render();
     }));
   }
-  
+
   setup(instances, callback) {
     this._callback = callback;
     this._instances = instances;
     this._instanceList.instances = instances;
     this.activeInstance = this._instances[0];
   }
-  
+
   get activeInstance() {
     return this._activeInstance;
   }
-  
+
   set activeInstance(instance) {
     if(instance && this._instances.includes(instance)) {
       this._activeInstance = instance;
@@ -83,5 +83,5 @@ export default class CustomInstanceEditor extends Morph {
     }
     this._instanceList.activeInstance = this._activeInstance;
   }
-  
+
 }
