@@ -264,6 +264,10 @@
   margin-right: 1ch;
 }
 
+.icon.on {
+  color: blue;
+}
+
 .switch-button.on::before {
   content: "\f205";
 }
@@ -289,10 +293,6 @@
   opacity: 0.8;
   color: black;
   padding-right: 2px;
-}
-
-.connector.on {
-  color: blue;
 }
 
 .connector.broken {

@@ -44,7 +44,10 @@ export default class ExampleWidget extends FormWidget {
     buttonElement.appendChild(DeleteButton(this._deleteCallback));
     buttonElement.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
                                            this._isOn));
-    buttonElement.appendChild(PrePostscriptButton(this._onPrePostscriptClicked.bind(this)));
+    buttonElement.appendChild(PrePostscriptButton(
+      this._onPrePostscriptClicked.bind(this),
+      this._prescript.length || this._postscript.length
+    ));
     buttonElement.appendChild(ExpandButton(this._onExpandClicked.bind(this)));
     if(this._error) {
       buttonElement.appendChild(ErrorButton(this._error));

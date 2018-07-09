@@ -23,8 +23,12 @@ export function ErrorButton(hoverText) {
   return Button(Function(), ["warn", "space-before"], hoverText);
 }
 
-export function PrePostscriptButton(callback) {
-  return Button(callback, ["exchange", "space-before"], "Edit Pre/Postscript");
+export function PrePostscriptButton(callback, isOn) {
+  const classes = ["exchange", "space-before"];
+  if(isOn) {
+    classes.push("on");
+  }
+  return Button(callback, classes, "Edit Pre/Postscript");
 }
 
 export function InstanceButton(callback) {

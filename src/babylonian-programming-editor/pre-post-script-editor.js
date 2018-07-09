@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { debounce } from "utils";
+import { maybeUnpackString } from "./utils/utils.js"
 
 const HEADER_TEMPLATE = (order, type, keys) => `${order} ${type.toLowerCase()}${keys.length ? " ("+keys.join(", ")+")" : ""}:`;
 const PRE_HEADER_TEMPLATE = (type, keys) => HEADER_TEMPLATE("Before", type, keys);
@@ -57,10 +58,9 @@ export default class PrePostScriptEditor extends Morph {
   }
   
   set name(name) {
+    name = maybeUnpackString(name);
+    
     if(name) {
-      if(name.value) {
-        name = name.value;
-      }
       this._name = name;
       this.windowTitle = `Edit Pre/Postscript for "${this._name}"`;
     } else {
