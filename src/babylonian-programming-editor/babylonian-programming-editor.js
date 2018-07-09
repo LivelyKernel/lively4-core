@@ -668,7 +668,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   async onEditInstances() {
-    let comp = await lively.openComponentInWindow("custom-instance-editor");
+    let comp = await lively.openComponentInWindow("custom-instance-template-editor");
     comp.setup(this._customInstances, this.onEvaluationNeeded.bind(this));
   }
 
