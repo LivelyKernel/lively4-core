@@ -3,6 +3,8 @@ import TransactionInputCollection from 'src/blockchain/model/transaction/transac
 import TransactionOutputCollection from 'src/blockchain/model/transaction/transactionOutputCollection.js';
 import Transaction from 'src/blockchain/model/transaction/transaction.js';
 
+const TRANSACTION_FEES = 1.5;
+
 export default class Wallet {
   constructor() {
     var rsaKeyPair = this._generateKeyPair();
@@ -19,7 +21,7 @@ export default class Wallet {
       return "#NotAName";
     }
     
-    return "#" + this.hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
   }
    
   sign(hash) {
@@ -35,14 +37,19 @@ export default class Wallet {
     const sha256Date = forge.md.sha256.create();
     const dateHash = sha256Date.update(Date.now());
     
-    var sha256Wallet = forge.md.sha256.create();
-    return sha256Wallet.update(this.sign(dateHash));
+    const sha256Wallet = forge.md.sha256.create();
+    sha256Wallet.update(this.sign(dateHash));
+    return sha256Wallet.digest().toHex();
   }
   
   transactionsChanged() {
-   this._value = this._receivedTransactions.reduce((previousValue, transaction) => {
+   this.value = this._receivedTransactions.reduce((previousValue, transaction) => {
       return previousValue + transaction.outputs.get(this.hash).value;
     }, 0);
+  }
+  
+  set value(value) {
+    this._value = value;
   }
   
   get value() {
@@ -57,10 +64,19 @@ export default class Wallet {
     this.transactionsChanged();
   }
   
-  newTransaction(outgoingTransactions) {
-    const inputAmount = outgoingTransactions.reduce((sum, transaction) => { return sum + transaction.value }, 0);
-    if(inputAmount > this.value) {
+  newTransaction(receivers) {
+    let inputAmount = receivers.reduce((sum, transaction) => { 
+      return sum + transaction.value 
+    }, 0);
+    
+    inputAmount += TRANSACTION_FEES;
+    
+    if (inputAmount > this.value) {
       throw new Error('Can not create transaction - not enough money');
+    }
+    
+    if (inputAmount <= 0) {
+      throw new Error('Can not send transaction with output value <= 0');
     }
     
     const inputCollection = new TransactionInputCollection(this);
@@ -72,8 +88,8 @@ export default class Wallet {
     this.transactionsChanged();
     
     const outputCollection = new TransactionOutputCollection().add(this, inputCollection.value - inputAmount);
-    outgoingTransactions.forEach(transaction => {
-      outputCollection.add(transaction.receiver, transaction.value);
+    receivers.forEach(receiver => {
+      outputCollection.add(receiver.receiver, receiver.value);
     });
     outputCollection.finalize();
     

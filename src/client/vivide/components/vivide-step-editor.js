@@ -38,6 +38,12 @@ export default class VivideStepEditor extends Morph {
     this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY, position);
   }
   
+  onRemoveScript() {
+    if (!this.scriptEditor) return;
+    
+    this.scriptEditor.removeScript(this, this.script);
+  }
+  
   setToLoopStart() {
     // Go to last script
     let script = this.script;

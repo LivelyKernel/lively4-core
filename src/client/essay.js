@@ -1,5 +1,7 @@
 import boundEval from "src/client/bound-eval.js";
 import _ from 'src/external/lodash/lodash.js'
+import { letsScript } from 'src/client/vivide/vivide.js';
+import {pt}  from 'src/client/graphics.js'
 
 export function toggleLayer(name) {
   var checkbox=<input  type="checkbox"></input>
@@ -100,7 +102,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
       // show only the latest result
       var resultElement = code.parentElement.querySelector(".result")
       if (resultElement) resultElement.remove()
-      var result  = await boundEval(code.textContent, ctx);    
+      var result = await boundEval(code.textContent, ctx);    
       if (result.isError) {
         code.parentElement.style.border = "1px solid red";
         lively.showError(result.value)
@@ -152,6 +154,65 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
   return button
 }
 
+
+
+
+export function runVivideButton(exampleName, ctx, vivideScript, dependencies=[]) {
+  var button=<button>{exampleName}</button>
+  var appendResult = function(code, element) {
+    element.classList.add("result")
+    code.parentElement.insertBefore(element, code.nextSibling)
+  }
+  
+  button.onclick = (async () => {
+    // gather all dependent code blocks
+    var codeBlocks = []
+    dependencies.forEach(ea => {
+      codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + ea), 
+                      ea => lively.getGlobalPosition(ea).y))
+    })
+    var vivideBlock = ctx.parentElement.querySelector("." + vivideScript)
+    codeBlocks.push(vivideBlock)
+    
+  
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // go through all code blocks and (re-)execute them and show result (and errors)
+    
+    ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
+      ea.remove()
+    });
+      
+    
+    var i=1
+    for(var code of codeBlocks) {
+      var result  = await boundEval(code.textContent, ctx);    
+      if (result.isError) {
+        code.parentElement.style.border = "1px solid red";
+        lively.showError(result.value)
+        var error = <div class="result error" style="color: red">Error: {result.value}</div>
+        code.parentElement.insertBefore(error, code.nextSibling)
+        return
+      } else {
+        var value = result.value
+        if (value && value.then) {
+          try {
+            value = await value;
+          } catch(e) {
+            let error = <div class="error" style="color: red">Error in Promise: {e}</div>
+            appendResult(code, error)
+          return    
+          }
+        }
+        if (code === vivideBlock) {
+          letsScript(value)
+        }
+      }
+    }
+    return  ""
+  });
+  return button
+}
+
 export async function inspectVariable(name) {
   var inspector = await (<lively-inspector></lively-inspector>)
   var result  = await boundEval(name);    
@@ -172,4 +233,84 @@ export async function hideHiddenElements(ctx) {
   })
 }
 
+export function presentationPrintButton(ctx) {
+  var button = document.createElement("button")
+  button.textContent = "print"
+  button.onclick = async () => {
+   var presentation = lively.query(ctx, "lively-presentation")
+   presentation.print()
+  }
+  button.style = "position: absolute; bottom: 10px; left: 10px"
+  return button
+}
+
+
+export function presentationFullscreenButton(ctx) {
+  var button = document.createElement("button")
+  button.textContent = "fullscreen"
+  var fullscreen
+  var container = lively.query(ctx, "lively-container")
+  if (!container) {
+    console.log("presentationFullscreenButton>>not in a container")
+    return 
+  }
+
+  var presentation = lively.query(ctx, "lively-presentation")
+  if (!presentation) {
+    console.log("presentationFullscreenButton>>not in a presentation")
+    return 
+  }
+  var slide = lively.query(ctx, ".lively-slide")
+  if (!presentation) {
+    console.log("presentationFullscreenButton>>not in a slide")
+    reutrn 
+  }
+  
+  button.onclick = async () => {
+    fullscreen = !fullscreen
+    if (fullscreen) {
+  
+      // all back 
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        ea.style.zIndex = 0
+      })
+      
+
+      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+      await lively.sleep(100) // wait for fullscreen
+
+      if (container && !container.isFullscreen()) {
+        // container.hideNavbar()
+        container.onFullscreen()
+      }
+      var slideBounds = slide.getBoundingClientRect()
+      
+      var scaleX = (window.innerWidth - 10)/ slideBounds.width
+      var scaleY = (window.innerHeight - 10)/ slideBounds.height
+      var minScale = Math.min(scaleY, scaleX)
+      lively.setPosition( presentation, pt(0,0))
+      presentation.style.transformOrigin = "0px 0px"
+      presentation.style.transform = `scale(${minScale * 1})`
+
+      await lively.sleep(10) // wait for rendering
+      var scaledBounds = slide.getBoundingClientRect();
+      lively.setPosition(presentation, 
+        pt((window.innerWidth - scaledBounds.width) / 2,
+        ((window.innerHeight - scaledBounds.height) / 2)) )
+
+      container.style.backgroundColor = "black"
+    } else {
+      document.webkitCancelFullScreen()
+      if (container && container.isFullscreen()) {
+        container.onFullscreen()
+        // container.showNavbar()
+      }
+      presentation.style.transform = ""
+      lively.setPosition(presentation, pt(0,0))
+      container.style.backgroundColor = ""
+    }
+  }
+  button.style = "position: absolute; bottom: 10px; left: 80px"
+  return button
+}
 

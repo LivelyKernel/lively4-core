@@ -30,8 +30,11 @@ export default class BlockchainNodeCard extends Morph {
     if(!node) {
       return;
     }
+    
     this._node = node;
     this.shadowRoot.querySelector('#button-node-mine').onclick=(this._node.mine.bind(this._node));
+    this.node.unsubscribe(this);
+    this.node.subscribe(this, this.update.bind(this));
     this.update();
   }
   
@@ -43,9 +46,18 @@ export default class BlockchainNodeCard extends Morph {
     });
   }
   
+  openWalletView() {
+    const walletDialog = document.createElement('blockchain-wallet');
+    lively.components.openInWindow(walletDialog).then((comp) => {
+      comp.focus();
+      walletDialog.wallet = this.node.wallet;
+    });
+  }
+  
   async initialize() {
     this.blockchainNodeName = 'Unnamed node';
     this.shadowRoot.querySelector('#button-node-send-transaction').addEventListener('click', this.openAddTransactionView.bind(this));
+    this.shadowRoot.querySelector('#left-area').addEventListener('click', this.openWalletView.bind(this));
   }
   
   async update() {

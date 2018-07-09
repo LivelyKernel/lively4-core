@@ -121,9 +121,9 @@ export default class VivideView extends Morph {
   }
 
   selectionChanged() {
-    let data = this.getSelectedData();
-    if(data) {
-      this.outportTargets.forEach(target => target.newDataFromUpstream(data));
+    let selection = this.getSelectedData();
+    if(selection) {
+      this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
     }
   }
   
@@ -355,6 +355,11 @@ export default class VivideView extends Morph {
     
     if (prevScript) {
       script = prevScript;
+      
+      if (prevScript.lastScript) {
+        prevScript.lastScript = false;
+        newScript.lastScript = true;
+      }
     } else {
       while (!script.lastScript) {
         script = script.nextScript;

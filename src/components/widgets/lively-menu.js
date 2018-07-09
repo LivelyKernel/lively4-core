@@ -1,15 +1,14 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt, rect} from 'src/client/graphics.js';
+import {pt} from 'src/client/graphics.js';
 import html from  'src/client/html.js'
 
 export default class LivelyMenu extends Morph {
 
   initialize() {
-  	this.setAttribute("tabindex", 0) // we want keuboard events
-  	html.registerKeys(this, "Menu", this, true)
+    this.setAttribute("tabindex", 0) // we want keuboard events
+    html.registerKeys(this, "Menu", this, true)
   }
 
-  
   moveInsideWindow() {
     var w =  pt(window.innerWidth - 12, window.innerHeight - 12)
     var b = lively.getGlobalBounds(this)
@@ -86,7 +85,7 @@ export default class LivelyMenu extends Morph {
 
     var entry = this.currentItem.entry
     if (entry[1] instanceof Function) {
-      entry[1](evt);
+      entry[1](evt, this.currentItem);
     }
   }
 
@@ -97,7 +96,6 @@ export default class LivelyMenu extends Morph {
     if (!items) {
       console.log("WARNING: no items to open")
       return Promise.resolve()
-      return;
     }
     items.forEach((ea) => {
       var item = document.createElement("li");

@@ -2,8 +2,20 @@
 
 <script>
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
+import { hideHiddenElements, toggleLayer, showVariable, runExampleButton, runVivideButton } from "src/client/essay.js"
 
-let presentationSize = "standard-vga";
+let presentation = lively.query(this, "lively-presentation");
+
+let slides = [];
+
+if (presentation) {
+  slides = presentation.querySelectorAll('.lively-slide');
+}
+
+let ratio = "16-9";
+slides.forEach(slide => {
+  slide.classList += " ratio-" + ratio;
+})
 </script>
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/utils.css">
 <link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css">
@@ -32,33 +44,25 @@ let presentationSize = "standard-vga";
 </style>
 
 <script>
-let presentation = lively.query(this, "lively-presentation");
 let presentButton = document.createElement('button');
 presentButton.innerHTML = 'present';
-presentButton.addEventListener("click", () => {
-  let slides = presentation.querySelectorAll('.lively-slide');
+presentButton.addEventListener("click", async () => {
+  document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+  // wait for fullscreen
+  await lively.sleep(100);
+
   let width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
   let height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  
-  // Fit presentation into screen
-  if (width >= 1920 && height >= 1080) {
-    presentationSize = "fullhd";
-  } else if (width >= 1600 && height >= 900) {
-    presentationSize = "hd";
-  } else if (width >= 1280 && height >= 800) {
-    //lively.notify("some strange resolution of HPI beamers")
-  }
-  else {
-    presentationSize = "standard-vga"
-  }
-
+  let scaling = width / slides[0].clientWidth;
   
   slides.forEach(slide => {
-    slide.className += ' fullscreen-' + presentationSize;
+    slide.style.transform = 'scale(' + scaling + ')';
+    slide.style.transformOrigin = 'top left';
+    slide.style.position = 'fixed';
+    slide.style.zIndex = '10001';
   })
+
   presentButton.style.display = 'none';
-  prevButton.style.display = 'none';
-  nextButton.style.display = 'none';
 })
 
 if (presentation && presentation.slides) {
@@ -102,103 +106,139 @@ presentButton
 </script>
 
 ---
-<div class="title-1">Context</div>
+<div class="title-1">Context - Background</div>
 
-<ul class="notes notes-big">
-<li></li>
+<div class="h-1-2">
+<ul class="notes-big">
+<li>Adapted System: Vivide</li>
+<li>Work with an OO UI<br><i class="fa fa-arrow-right"></i> Directly working on objects</li>
+<li>Direct data and dataflow manipulation</li>
+<li>Adapt the views while exploring the data</li>
 </ul>
+</div>
+
+<img class="h-2-2" src="vivide.png" style="padding-top: 30px;"/>
 
 ---
-<div class="title-1">Design Space</div>
+<div class="title-1">Context - Motivation</div>
 
-<ul class="notes notes-big">
-<li></li>
+<div class="v-1-2">
+<ul class="notes-big">
+<li>Provide data in a task-oriented form</li>
+<li>Lively4: Web-based live programming environment<br><i class="fa fa-arrow-right"></i> Provide insights into the processed data</li>
+<li>VivideJS: Asynchronous online data processing</li>
 </ul>
+</div>
 
----
-<div class="title-1">Implementation</div>
-
-<ul class="notes notes-big">
-<li></li>
-</ul>
-
----
-<div class="title-1">Demo</div>
-
+```javascript {.v-2-2 .example1}
+[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]
+```
 <script>
-/*import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate } from 'src/client/vivide/vivide.js';
+this.classList.add("example-run");
+runVivideButton("run", this, "example1");
+</script>
 
-(async () => {
-  let vivideView = await (<vivide-view></vivide-view>);
-  let vivideScriptEditor = await (<vivide-script-editor></vivide-script-editor>);
-  let containerClass = "vivide-view-container " + presentationSize;
-  let exampleData = [
-    {name: "object", subclasses:[{name: "morph"},]},
-    {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
-    {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
-  ];
-  vivideView.newDataFromUpstream(exampleData);
-  initialScriptsFromTemplate().then(scripts => vivideView.setScripts(scripts)).then(() => {
-    vivideScriptEditor.setView(vivideView);
-    let scripts = vivideView.getScripts();
-    vivideScriptEditor.setScripts(scripts);
-  });
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class={containerClass}><div class="vivide-view">{vivideView}</div><div class="vivide-script-editor">{vivideScriptEditor}</div></div></div>;
-})()*/
+---
+<div class="title-1">Features - Async Scripts</div>
+
+<div class="h-1-4">
+<ul class="notes-big">
+<li>Most online resources are asynchronously accessed</li>
+<li>VivideJS needs to support async/await scripts</li>
+</ul>
+</div>
+
+<div class="h-2-4" style="padding-top: 20px; text-align: center;">
+<img src="async-await.png" alt="Async/Await" />
+</div>
+
+```javascript {.v-2-2 .example2}
+lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+```
+<script>
+this.classList.add("example-run");
+runVivideButton("run", this, "example2");
+</script>
+
+---
+
+<div class="title-1">Features - Multilevel Hierarchies</div>
+
+<div class="h-1-4">
+<ul class="notes-big">
+<li>Explore hierarchical data relations</li>
+<li>Different scripts hierarchy levels</li>
+<li>Define arbitrary children of objects</li>
+</ul>
+</div>
+
+<div class="h-2-4" style="padding-top: 20px; text-align: center;">
+<img src="hierarchy.png" alt="Hierarchy" />
+</div>
+
+```javascript {.v-2-2 .example3}
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'})
+  .then(r => r.json())
+  .then(j => j.contents);
+```
+<script>
+this.classList.add("example-run");
+runVivideButton("run", this, "example3");
 </script>
 
 ---
 <div class="title-1">Insights</div>
 
-<ul class="notes notes-big">
-<li></li>
+<div class="v-1-2">
+<ul class="notes-big">
+<li>OO UIs are great for data exploration</li>
+<li>Deferred architecture changes are possibly harmful</li>
+<li>Javascript asynchronity is not easy to hide</li>
+<li>Resource pointers do not point to the actual object</li>
 </ul>
+</div>
+
+<div class="v-2-2" style="padding-left: 100px">
+<img src="url-response.png" alt="Url Reponse" />
+</div>
 
 ---
 <div class="title-1">Shortcomings</div>
 
-<ul class="notes notes-big">
-<li></li>
+<ul class="notes">
+<li>Limited number of widgets</li>
+  <ul>
+  <li>List widget</li>
+  <li>Tree widget</li>
+  <li>Box plot widget</li>
+  </ul>
+<li>Views await whole amount of data<br><i class="fa fa-arrow-right"></i> No streaming</li>
+<li>Connection management</li>
+<li>Difficult to explore data structures</li>
+<li>Merging source views</li>
+<li>Some remaining UI bugs (e.g. loop marker length)</li>
 </ul>
 
 ---
-<div class="title-1">Future Work</div>
+<div class="title-1">Next Steps And Future Work</div>
 
-<ul class="notes notes-big">
-<li></li>
+<div class="h-1-2">
+<ul class="notes-big">
+<li>Bug fixing</li>
+<li>Source widget merging strategies</li>
+<li>Further widgets</li>
+<li>Connection management between views</li>
+<li>Long-term: Integrate Vivide into Lively<br><i class="fa fa-arrow-right"></i>E.g.: Replace file browser with Vivide view</li>
 </ul>
+</div>
 
----
-
-# Todo
-
-- Dauer: Jeweils 20 min. Redezeit + 10 min. Diskussion
-
-- Kontext/Problemstellung/Motivation
-  - An welchem System arbeitet ihr?
-  - Welche Probleme gibt es?
-  - Wie sieht das von euch angestrebte Ziel aus?
-- Literatur / Related Work (falls zutreffend)
-- Designraum
-  - Verfahren/Ideen/Lösungsstrategien, die ihr in Betracht gezogen habt
-  - Abwägung, warum ihr euch für eure letztendliche Lösung entschieden habt
-- Implementierung
-  - Skizze eurer Lösung
-- Demo
-- Insights
-  - High-level Einsichten aus dem Projekt
-- Shortcomings, Open Ends und Future Work
-
-Im Gegensatz zum letzten Mal, liegt hier also der Fokus auf eure Designentscheidungen, die Implementierung, eure Demo sowie Einsichten aus eurem Projekt,
-Worauf genau ihr euren Schwerpunkt legt, bleibt aber euch überlassen, da dies je nach Thema anders aussehen sollte.
-
-Formalien:
-* Titelfolie: Name, Thema, Datum, Seminar, Semester, Fachgebiet
-* Foliennummern auf jeder (außer Titel-) Folie
-* Vortrag und Diskussion sind eine Prüfungsteilleistung
-
+<div class="h-2-2" style="padding-top: 20px;">
+<img src="vivide-file-browser.png" alt="Vivide File Browser">
+</div>
 
 ---
 
@@ -207,14 +247,26 @@ Formalien:
 <script>
 let closeButton = document.createElement('button')
 closeButton.innerHTML = 'close';
-closeButton.addEventListener("click", () => {
+closeButton.addEventListener("click", closeFullscreen);
+
+function closeFullscreen() {
+  document.webkitCancelFullScreen();
   let slides = presentation.querySelectorAll('.lively-slide');
-  
   slides.forEach(slide => {
-    slide.className = slide.className.replace('fullscreen-' + presentationSize, '');
+    slide.style.transform = 'none';
+    slide.style.position = 'relative';
+    slide.style.zIndex = '1';
   })
   
   presentButton.style.display = 'inline';
-})
+}
+
 closeButton
 </script>
+
+---
+
+<div class="title-1">Implementation</div>
+
+<img class="img-big" src="vivide-classes.svg" alt="Vivide Class Hierarchy" />
+

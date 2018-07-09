@@ -5,6 +5,8 @@
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
 import VibratingContinuumBar from 'doc/PX2018/project_2/vibratingcontinuumbar.js';
+import ElasticBodies from 'doc/PX2018/project_2/elasticbodies.js';
+import Matrix from 'doc/PX2018/project_2/matrix.js';
 
 export default class LivelyMpm extends Morph {
   async initialize() {
@@ -17,57 +19,45 @@ export default class LivelyMpm extends Morph {
     
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt));
-     
+    
+    this.variables = {};
+    this.particleSize = 4;
+    this.animation = new ElasticBodies();
     this.canvas = this.get("#mpm");
-    this.speedInput = this.get("#speed");
     this.youngInput = this.get("#young-modulus");
-    this.extendInput = this.get("#extend");
-    this.numParticlesInput = this.get("#num-particles");
-    this.particleSizeInput = this.get("#particle-size");
-    this.animation = new VibratingPoint();
-    this.particleSize = 2;
-
-    $(this.speedInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.speed = this.speedInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.youngInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.young = this.youngInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.extendInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.extend = this.extendInput.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
-    });
-    
-    $(this.numParticlesInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.animation.numParticles = this.numParticlesInput.value;
-    });
-    
-    $(this.particleSizeInput).keyup(event => {
-      if (event.keyCode != 13) return; // ENTER
-      this.particleSize = this.particleSizeInput.value;
-    });
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    
+    this.input = this.get("#input");
+    let inputUpdate = function() {
+      this.variables[this.input.name] = this.input.value;
+      // Resets particles
+      this.animation.numParticles = this.animation.numParticles;
+    }
+    $(this.input).on("input change", inputUpdate.bind(this));
   }
   
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      this.context.fillRect(particles[i] + (this.canvas.width / 2) - (this.animation.L / 2), (this.canvas.height / (particles.length + 1)) * (i + 1), this.particleSize, this.particleSize);
+      let posX = particles[i].get(0) + (this.canvas.width / 2);
+      let posY = particles[i].get(1) + (this.canvas.height / 2);
+      this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
+    }
+  }
+  
+  set explanation(value) {
+    if (!Array.isArray(value)) {
+      console.log('Given object is not of type Array');
+      return;
+    }
+    
+    let explanation = this.get('#explanation');
+    for (let item of value) {
+      let element = <li></li>;
+      element.innerHTML = item;
+      explanation.appendChild(element);
     }
   }
   
@@ -77,13 +67,15 @@ export default class LivelyMpm extends Morph {
   }
   
   onToggleAnimation() {
+    if (!this.animation) return;
+    
     if (this.animation.running) {
       this.animation.stopAnimating();
-      this.get("#toggleAnimation").innerHTML = "start";
+      this.get("#toggleAnimation").innerHTML = "Start Animation";
     } else {
       // Start animating
       this.animation.startAnimating(this);
-      this.get("#toggleAnimation").innerHTML = "stop";
+      this.get("#toggleAnimation").innerHTML = "Stop Animation";
     }
   }
 

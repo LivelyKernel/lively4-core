@@ -5,6 +5,7 @@ export default class TransactionOutput {
     this.receiverHash = receiverWallet.hash;
     this.value = value;
     this.hash = this._hash();
+    this.transactionHash = "";
   }
   
   get displayName() {
@@ -12,14 +13,32 @@ export default class TransactionOutput {
       return "#NotAName";
     }
     
-    return "#" + this.hash.digest().toHex().substring(0, 10);
+    return "#" + this.hash.substring(0, 10);
+  }
+  
+  get transactionDisplayName() {
+    if (!this.transactionHash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.transactionHash.substring(0, 10);
+  }
+  
+  get receiverDisplayName() {
+    if (!this.receiverHash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.receiverHash.substring(0, 10);
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
+      Date.now() + 
       this.receiverHash + 
       this.value
     );
+    return sha256.digest().toHex();
   }
 }
