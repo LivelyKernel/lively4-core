@@ -135,31 +135,30 @@ export default class ElasticBodies extends MpmAnimation {
         let dNdxi = this.interpGradient(x, y);                                                                 // TODO: finish
         let transposed = enode.transpose();
         let J0 = transposed.multiply(dNdxi);
-        debugger;
         let invJ0 = J0.invert();
-        //let dNdx = dNdxi.multiply(invJ0);
+        let dNdx = dNdxi.multiply(invJ0);
+        let stress = this.s[pid];
       }
     }
   }
   
-  /*nodesToParticles() {
+  nodesToParticles() {
     for (let i = 0; i < this.pCount; ++i) {
-      let esctr = this.element[i];
-      let enode = this.node[esctr];
-      let mpts = this.mpoints[i];
+      let enode = this.getElementNodes(i);
+      let mpts = this.mPoints[i];
       
       for (let j = 0; i < mpts.length; ++j) {
         let pid = mpts[j];
-        let pt1 = (2 * this.xp[pid][1] - (enode[1][1] + enode[2][1])) / this.deltaX;      // TODO: finish
-        let pt2 = (2 * this.xp[pid][2] - (enode[2][2] + enode[3][2])) / this.deltaY;      // TODO: finish
-        let dNdxi = null;                                                                 // TODO: finish
-        let N = null;                                                                     // TODO: finish
-        let J0 = Math.transpose(enode) * dNdxi;                                           // TODO: finish
-        let invJ0 = this.invert(J0);
-        let dNdx = dNdxi * invJ0;
-        let Lp = [[0, 0], [0, 0]];
+        let x = (2 * this.xp[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        let y = (2 * this.xp[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        let N = this.interpValue(x, y);
+        let dNdxi = this.interpGradient(x, y);
+        let J0 = enode.transpose().multiply(dNdxi);
+        let invJ0 = J0.invert();
+        let dNdx = dNdxi.multiply(invJ0);
+        let Lp = Matrix.zeros(2, 2);
 
-        for (let k = 0; k < esctr.length; ++k) {
+        /*for (let k = 0; k < esctr.length; ++k) {
           let id = esctr[k];
           let vI = [0, 0];
 
@@ -178,10 +177,10 @@ export default class ElasticBodies extends MpmAnimation {
         this.Vp[pid] = this.det(F) * this.Vp0(pid);
         let dEps = this.dtime * 0.5 * (Lp + this.derivation(Lp));
         let dsigma = this.C * [dEps[1][1], dEps[2][2], 2 * dEps[1][2]];
-        this.s
+        this.s*/
       }
     }
-  }*/
+  }
   
   /**
    * Returns the element of a given particle
@@ -203,11 +202,17 @@ export default class ElasticBodies extends MpmAnimation {
     
     return new Matrix(nodes);
   }
+        
+  getNodeId(x, y) {
+    
+  }
   
   // The example uses linear interpolation
   // Taken from https://www.osti.gov/servlets/purl/537397
   
-  
+  /**
+   *
+   */
   interpValue(x, y) {
     let N = Matrix.zeros(4, 1);
     N.set(0, 0, (1 - x) * (1 - y));
