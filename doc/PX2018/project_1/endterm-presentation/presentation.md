@@ -168,6 +168,11 @@ concept published by Satoshi Nakamoto (pseudonym) in 2008
   </li>
 </ul>
 
+```javascript {.OpenImplementationWallet .Hidden}
+lively.openFile('https://lively-kernel.org/lively4/lively4-core/src/blockchain/model/wallet/wallet.js')
+```
+<script>runExampleButton("Display Implementation", this, ["OpenImplementationWallet"])</script>
+
 
 ### Usage
 ```javascript {.BlockchainImports .Hidden}
@@ -239,6 +244,12 @@ wallet.receive(transaction);
   </li>
 </ul>
 
+```javascript {.OpenImplementationTransaction .Hidden}
+lively.openFile('https://lively-kernel.org/lively4/lively4-core/src/blockchain/model/transaction/transaction.js', false)
+```
+<script>runExampleButton("Display Implementation", this, ["OpenImplementationTransaction"])</script>
+
+
 ### Visualization
 
 <blockchain-transaction id="transaction-view" style="display:none; width: 600px;"></blockchain-transaction>
@@ -266,6 +277,13 @@ lively.query(this, '#transaction-view').style.display = 'block';
     </ul>
   </li>
 </ul>
+
+```javascript {.OpenImplementationBlock .Hidden}
+lively.openFile('https://lively-kernel.org/lively4/lively4-core/src/blockchain/model/block/block.js', false)
+```
+<script>runExampleButton("Display Implementation", this, ["OpenImplementationBlock"])</script>
+<script>hideHiddenElements(this)</script>
+
 
 ### Mining Challenge
 
@@ -297,6 +315,11 @@ sha256.digest().toHex();
     </ul>
   </li>
 </ul>
+
+```javascript {.OpenImplementationBlockchain .Hidden}
+lively.openFile('https://lively-kernel.org/lively4/lively4-core/src/blockchain/model/blockchain/blockchain.js', false)
+```
+<script>runExampleButton("Display Implementation", this, ["OpenImplementationBlockchain"])</script>
 
 ### Formation of a Blockchain
 
@@ -355,7 +378,14 @@ node.mine();
   </li>
 </ul>
 
-<img src="assets/Network.png" height="430" style="float:left;" />
+<img src="assets/Network.png" height="430" style="float:left; clear: right;" />
+
+```javascript {.OpenImplementationBlock .Hidden}
+lively.openFile('https://lively-kernel.org/lively4/lively4-core/src/blockchain/model/blockchainNode/blockchainNode.js', false)
+```
+<script>runExampleButton("Display Implementation", this, ["OpenImplementationBlock"])</script>
+<script>hideHiddenElements(this)</script>
+
 <p class="credits">Icons made by <a href="https://www.freepik.com/">Freepik</a> from <a href="https://flaticon.com">www.flaticon.com</a></p>
 
 ---

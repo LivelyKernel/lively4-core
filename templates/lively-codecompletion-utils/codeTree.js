@@ -3,6 +3,7 @@ import PrintUtils from './print.js'
 
 var tokenList = [
     {regex:"\n",token:"newline",attributes:[],codeEquivalent:""},
+    {regex: "<gap>",token:"gap",attributes:[],codeEquivalent:""},
     {regex: "for", token: "for", attributes: [],codeEquivalent:"for"},
     {
         regex: "var .*?=.*?;",
@@ -26,7 +27,7 @@ var tokenList = [
         token: "increment",
         attributes: [{name: "var", before: "", after: "(\\+\\+|\\-\\-)"}, {
             name: "op",
-            before: "[^(\\+|\\-)]",
+            before: "^[^(\\+|\\-)]*",
             after: "$"
         }],
         codeEquivalent:"$var $op "
@@ -51,6 +52,11 @@ var parserList = [
     }
 ]
 export default class CodeTree {
+  
+    constructor() {
+        this.gaps=[]
+        this.root=null;
+    }
     /**
      * Uses the tokenizelist to tokenize a given line
      * @param line Line which is to be tokenized
@@ -241,6 +247,108 @@ export default class CodeTree {
             this.moveNodeHigher(parent, searchedLine);
         }
     }
+    registerGapsInLine(tokenizedLine,line){
+      for(var i=0;i<tokenizedLine.children.length;i++){
+        for(var key in tokenizedLine.children[i].attributes){
+          if(tokenizedLine.children[i].attributes[key].value==="'gap'"){
+            this.gaps.push({attribute:tokenizedLine.children[i].attributes[key],line:line});
+          }
+        }
+      }
+      this.gaps.sort(this.gapSortFunction);
+    }
+    /**
+    Removes a given attribute from the list of gaps
+    */
+    removeAttributeInGaps(attribute){
+      for(var i=0;i<this.gaps.length;i++){
+        if(this.gaps[i].attribute===attribute){
+          this.gaps.splice(i,1);
+        }
+      }
+    }
+  gapSortFunction(a,b){
+    if(a.line<b){
+      return -1;
+    }
+    if(a.line>b){
+      return 1;
+    }
+    return 0;
+  }
+  /**
+  Finds the position of an attribute in a line and returns the character position
+  */
+    getGapCh(line,attribute){
+      var searchedLine= this.findLine(this.root,line,0);
+      var parent=searchedLine;
+      var codeString="";
+      var level=-1;
+      console.log("searched")
+      console.log(searchedLine);
+      while(parent.parent){
+        if(parent.parent.children.indexOf(parent)!==-1){
+           level++;
+        }
+        parent=parent.parent;
+      }
+      console.log("level: "+level)
+      // codeString=codeString.substring(1);
+    
+      for(var i=0;i<searchedLine.children.length;i++){
+        var token= searchedLine.children[i];
+        var index= this.findTokenIndex(token.nameTag);
+        var syms=tokenList[index].codeEquivalent.split(" ");
+        
+        if(token.nameTag==="unfinished"){
+              codeString+=token.matchedCode;
+              continue;
+          }
+          for(var j=0;j<syms.length;j++){
+            console.log("sym: "+codeString);
+              if(syms[j].startsWith("$")){
+                  if(token.attributes[syms[j].substring(1)]){
+                    if(token.attributes[syms[j].substring(1)].value!=="'gap'"){
+                      codeString+=token.attributes[syms[j].substring(1)].value;
+                    }else{
+                      if(token.attributes[syms[j].substring(1)]===attribute){
+                        return codeString.length+level;
+                      }
+                    }
+                  }
+              }else{
+                  if(syms[j]==="\\s"){
+                      codeString+=" ";
+                  }else{
+                      codeString+=syms[j];
+                  }
+              }
+          }
+      }
+      return -1;
+    }
+    findNextGap(line,ch){
+      var possibleGaps=[];
+      for(var i=0;i<this.gaps.length;i++){
+        if(this.gaps[i].line>=line){
+          possibleGaps.push(this.gaps[i]);
+        }
+      }
+      var posSol=null;
+      console.log("possibleGaps");
+      console.log(possibleGaps)
+      for(var i=0;i<possibleGaps.length;i++){
+        if(posSol===null||(possibleGaps[i].line<=posSol.line)&&possibleGaps[i].ch<posSol.ch){
+          var newCh= this.getGapCh(possibleGaps[i].line,possibleGaps[i].attribute);
+          console.log("newCH "+possibleGaps[i].attribute)
+          console.log(newCh)
+          if(possibleGaps[i].line>line||(possibleGaps[i].line===line&&newCh>ch)){
+            posSol={line:possibleGaps[i].line,ch:newCh};
+          }
+        }
+      }
+      return posSol;
+    }
     /**
      * Updates a single line of code with a tokenized string.
      * @param topNode Root Node
@@ -256,6 +364,7 @@ export default class CodeTree {
             tokenizedLine.parent = parent;
             if (parent.beginning.indexOf(searchedLine) !== -1) {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
+                    this.registerGapsInLine(tokenizedLine,line);
                     parent.beginning[parent.beginning.indexOf(searchedLine)] = tokenizedLine;
                     this.moveNodeHigher(parent, searchedLine);
                     this.parse(tokenizedLine)
@@ -264,6 +373,7 @@ export default class CodeTree {
             }
             if (parent.children.indexOf(searchedLine) !== -1) {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
+                    this.registerGapsInLine(tokenizedLine,line);
                     parent.children[parent.children.indexOf(searchedLine)] = tokenizedLine;
                     this.parse(tokenizedLine)
                 }
@@ -271,6 +381,7 @@ export default class CodeTree {
             }
             if (parent.ending.indexOf(searchedLine) !== -1) {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
+                    this.registerGapsInLine(tokenizedLine,line);
                     parent.ending[parent.ending.indexOf(searchedLine)] = tokenizedLine;
                     this.moveNodeHigher(parent, searchedLine);
                     this.parse(tokenizedLine)
@@ -299,8 +410,17 @@ export default class CodeTree {
             }
         }
         for(var i=0;i<searchedLine.children.length;i++){
-            searchedLine.children[i].attributes=tokenizedLine.children[i].attributes;
-            searchedLine.children[i].matchedCode=tokenizedLine.children[i].matchedCode;
+          for (var key in searchedLine.children[i].attributes) {
+            if(searchedLine.children[i].attributes[key].value==="'gap'"&&tokenizedLine.children[i].attributes[key]&&tokenizedLine.children[i].attributes[key].value===""){  
+              console.log("gap not replaced")
+            }else{
+              if(searchedLine.children[i].attributes[key].value==="'gap'"){
+                this.removeAttributeInGaps(searchedLine.children[i].attributes[key]);
+              }
+              searchedLine.children[i].attributes[key].value=tokenizedLine.children[i].attributes[key].value;
+            }
+          }
+          searchedLine.children[i].matchedCode=tokenizedLine.children[i].matchedCode;
 
         }
         console.log("nothing has changed")
@@ -524,7 +644,7 @@ export default class CodeTree {
             var syms=tokenList[index].codeEquivalent.split(" ");
             for(var j=0;j<syms.length;j++){
                 if(syms[j].startsWith("$")){
-                    if(tokens[i].attributes[syms[j].substring(1)]){
+                    if(tokens[i].attributes[syms[j].substring(1)]&&tokens[i].attributes[syms[j].substring(1)].value!=="'gap'"){
                         result+=tokens[i].attributes[syms[j].substring(1)].value;
                     }
                 }else{
@@ -551,6 +671,7 @@ export default class CodeTree {
         }
         return indentation+string;
     }
+
 }
 
 
