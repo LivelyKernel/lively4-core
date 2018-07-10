@@ -129,6 +129,7 @@ presentButton
 
 - <a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a>
 - <a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a>
+- <a href="https://infoscience.epfl.ch/record/255783/files/Bachelor%20Project%20Report%20MPM.pdf">Shape functions AAAAAAAAHHHHHHHHHH</a>
 
 ---
 
@@ -189,6 +190,11 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 ---
 
 <div class="title-1">Elastic Bodies (Example: Shape Function)</div>
+
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js"
+latexconv.convertLaTeXToUnicode("\\sigma + \\alpha + \\Omega + n\\sub{p} = 5")
+</script>
 
 ---
 

@@ -41,8 +41,8 @@ export default class LivelyMpm extends Morph {
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     for (let i = 0; i < particles.length; ++i) {
-      let posX = particles[i].get(0) + (this.canvas.width / 2);
-      let posY = particles[i].get(1) + (this.canvas.height / 2);
+      let posX = particles[i].get(0);
+      let posY = particles[i].get(1);
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
     }
   }

@@ -54,7 +54,7 @@ export default class Matrix {
   /**
    * Returns the inverted matrix
    */
-  inv() {
+  invert() {
     let result = new Matrix();
     result._matrix = ExtMath.inv(this._matrix);
     return result;
@@ -69,7 +69,7 @@ export default class Matrix {
   /**
    * Returns the transposed matrix
    */
-  transpose(matrix) {
+  transpose() {
     let result = new Matrix();
     result._matrix = ExtMath.transpose(this._matrix);
     return result;
@@ -97,10 +97,6 @@ export default class Matrix {
   }
   
   set(x, y, value) {
-    if (y === undefined) {
-      this._matrix.set([x], value);
-    } else {
-      this._matrix.set([x, y], value);
-    }
+    this._matrix.set([x, y], value);
   }
 }
