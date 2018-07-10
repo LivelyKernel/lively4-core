@@ -6,6 +6,8 @@ export default class Script {
     this.source = source;
     this.type = type;
     this.nextScript = null;
+    this.updateCallback = null;
+    this.lastScript = false;
   }
   
   set next(value) {
@@ -14,5 +16,11 @@ export default class Script {
     }
     
     this.nextScript = value;
+  }
+  
+  update() {
+    if (typeof this.updateCallback === 'function') {
+      this.updateCallback();
+    }
   }
 }

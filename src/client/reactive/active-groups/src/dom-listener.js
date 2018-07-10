@@ -42,7 +42,12 @@ from { outline-color: #fff; } to { outline-color: #000; }
 }`);
     keyframes.appendChild(node);
     styles.sheet.insertRule(selector + prefix.properties.replace(/SelectorListener/g, key), 0);
-    events[key] = { count: 1, selector: selector, keyframe: node, rule: styles.sheet.cssRules[0] };
+    events[key] = {
+      count: 1,
+      selector: selector,
+      keyframe: node,
+      rule: styles.sheet.cssRules[0]
+    };
   } 
 
   if (listeners.count) {
@@ -81,8 +86,8 @@ HTMLDocument.prototype.removeSelectorListener = HTMLElement.prototype.removeSele
   }
 };
 
-document.addSelectorListener('lively-window:hover', animationEvent => {
-  lively.success("WINDOW7!");
+document.addSelectorListener('lively-window', animationEvent => {
+  lively.success("WINDOW8!");
   lively.showElement(animationEvent.target, 2000);
 });
 document.addSelectorListener('input[value="foobar"]', () => lively.success("INPUT!"));

@@ -3,17 +3,22 @@ For now a copy of the d3 labeler from https://github.com/tinker10/D3-Labeler, to
 */
 import d3 from "src/external/d3.v5.js"
 
-(function() {
-
-d3.graphAnneal = function() {
+export default function() {
   var nodes = [],
       links = [],
-      w = 1, // box width
-      h = 1, // box width
+      w = 900, // box width
+      h = 500, // box width
+      updateFunction = function() {},
+      timeout = 0, // timeout between move operations
       graphAnneal = {};
 
-  var max_move = 5.0;
-
+  var max_move = 500.0;
+  
+   // weights
+  var w_node_overlap = 30.0, // Node-overlap 
+      w_edge_overlap = 30.0, // Edge-overlap
+      w_edge_node_overlap = 10.0; // Edge-Node-overlap
+  
   // booleans for user defined functions
   var user_energy = false,
       user_defined_energy,
@@ -23,22 +28,81 @@ d3.graphAnneal = function() {
   var energy = function(index) {
   // energy function, to be tailored for node placement
 
-      var v = nodes.length,
-          e = links.length,
-          ener = 0;
+    let v = nodes.length,
+        e = links.length,
+        ener = 0;
     
-      for (var i = 0; i < e; i++) {
+    for (let i = 0; i < e; i++) {
+      for (let j = i + 1; j < e; j++) {
         // Penalty for edge intersection
+        let x1 = links[i].source.x,
+            x2 = links[i].target.x,
+            y1 = links[i].source.y,
+            y2 = links[i].target.y,
+            x3 = links[j].source.x,
+            x4 = links[j].target.x,
+            y3 = links[j].source.y,
+            y4 = links[j].target.y;
+        
+        if (intersect(x1, x2, x3, x4, y1, y2, y3, y4)) {
+          ener += w_edge_overlap;
+        } 
       }
+    }
+    
+    for (let i = 0; i < e; i++) {
+      for (let n = 0; n < v; n++) {
+        // Penalty for edge-node intersection
+        if (nodes[n] !== links[i].source && nodes[n] !== links[i].target) {
+          let x1 = links[i].source.x,
+              x2 = links[i].target.x,
+              y1 = links[i].source.y,
+              y2 = links[i].target.y,
+              cx = nodes[n].x,
+              cy = nodes[n].y,
+              r = nodes[n].r;
 
-      for (i = 0; i < v; i++) {
-        if (i != index) {
-          // Penalty for node intersection
+          if (lineCircleIntersect(x1, x2, y1, y2, cx, cy, r)) {
+            //ener += w_edge_node_overlap;
+          } 
         }
-
       }
-      return ener;
+    }
+
+    for (let i = 0; i < v; i++) {
+      if (i != index) {
+        // Penalty for node intersection
+        var nx1 = nodes[index].x,
+            ny1 = nodes[index].y,
+            r1 = nodes[index].r,
+            nx2 = nodes[i].x,
+            ny2 = nodes[i].y,
+            r2 = nodes[i].r;
+
+        if (collision(nx1, ny1, r1, nx2, ny2, r2)) {
+          ener += w_node_overlap; 
+        }
+      }
+
+    }
+    return ener;
   };
+  
+  var collision = function(p1x, p1y, r1, p2x, p2y, r2) {
+    var a;
+    var x;
+    var y;
+
+    a = r1 + r2;
+    x = p1x - p2x;
+    y = p1y - p2y;
+
+    if ( a > Math.sqrt( (x*x) + (y*y) ) ) {
+        return true;
+    } else {
+        return false;
+    }   
+  }
 
   var mcmove = function(currT) {
   // Monte Carlo translation move
@@ -82,7 +146,6 @@ d3.graphAnneal = function() {
   };
 
   var intersect = function(x1, x2, x3, x4, y1, y2, y3, y4) {
-  // Not sure if we need this still, but ill keep it for now
   // returns true if two lines intersect, else false
   // from http://paulbourke.net/geometry/lineline2d/
 
@@ -101,6 +164,28 @@ d3.graphAnneal = function() {
     }
     return false;
   }
+  
+  var lineCircleIntersect = function(x1, x2, y1, y2, cx, cy, r) {
+    var b, c, d, u1, u2, ret, retP1, retP2, v1, v2;
+    v1 = {};
+    v2 = {};
+    v1.x = x2 - x1;
+    v1.y = y2 - y1;
+    v2.x = x1 - cx;
+    v2.y = y1 - cy;
+    b = (v1.x * v2.x + v1.y * v2.y);
+    c = 2 * (v1.x * v1.x + v1.y * v1.y);
+    b *= -2;
+    d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - r * r));
+    if(isNaN(d)){ // no intercept
+        return [];
+    }
+    u1 = (b - d) / c;  // these represent the unit distance of point one and two on the line
+    u2 = (b + d) / c;    
+    if(u1 <= 1 && u1 >= 0 || u2 <= 1 && u2 >= 0)
+      return true;
+    return false;
+  }
 
   var cooling_schedule = function(currT, initialT, nsweeps) {
   // linear cooling
@@ -108,19 +193,27 @@ d3.graphAnneal = function() {
   }
 
   graphAnneal.start = function(nsweeps) {
-    
-  console.log(nodes, links)
   // main simulated annealing function
-      var m = nodes.length,
-          currT = 1.0,
-          initialT = 1.0;
-
-      for (var i = 0; i < nsweeps; i++) {
-        for (var j = 0; j < m; j++) { 
-          mcmove(currT);
-        }
-        currT = cooling_schedule(currT, initialT, nsweeps);
+    var m = nodes.length,
+        currT = 1.0,
+        initialT = 1.0;
+    for (var i = 0; i < m; i++) {
+      nodes[i].x = 0;
+      nodes[i].y = 0;
+    }
+    
+    function anneal(sweepsDone) {
+      for (var i = 0; i < m; i++) { 
+        mcmove(currT);
       }
+      currT = cooling_schedule(currT, initialT, nsweeps);
+      updateFunction();
+      if (sweepsDone > 0) {
+        setTimeout(() => anneal(sweepsDone - 1), 0);
+      }
+    }
+    anneal(nsweeps);
+    console.log(nodes, links)
   };
 
   graphAnneal.width = function(x) {
@@ -166,8 +259,20 @@ d3.graphAnneal = function() {
     user_schedule = true;
     return graphAnneal;
   };
+  
+  graphAnneal.updateFunction = function(x) {
+  // user defined callback for node updates
+    if (!arguments.length) return  updateFunction;
+    updateFunction = x;
+    return graphAnneal;
+  };
+  
+  graphAnneal.timeout = function(x) {
+  // user defined timeout between annealing
+    if (!arguments.length) return  timeout;
+    timeout = x;
+    return graphAnneal;
+  };
 
   return graphAnneal;
-};
-
-})();
+}

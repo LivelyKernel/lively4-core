@@ -4,7 +4,7 @@
 // TODO: 
 import { openBrowser, openComponent } from "doc/PX2018/project_2/utils.js"
 
-let presentationSize = "standard-vga";
+let presentationSize = "hd";
 
 lively.components.addTemplatePath(lively4url + "/doc/PX2018/project_2/")
 lively.components.resetTemplatePathCache()
@@ -52,6 +52,9 @@ presentButton.addEventListener("click", () => {
   } //else if (width >= 1280 && height >= 800) {
     //lively.notify("some strange resolution of HPI beamers")
   //}
+  else {
+    presentationSize = "standard-vga"
+  }
 
   
   slides.forEach(slide => {
@@ -131,7 +134,6 @@ presentButton
 
 <script>
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 
 (async () => {
   let mpm = await (<lively-mpm></lively-mpm>);

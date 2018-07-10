@@ -1,7 +1,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
+import VivideLayer from 'src/client/vivide/vividelayer.js';
+import VivideObject from 'src/client/vivide/vivideobject.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -119,9 +121,9 @@ export default class VivideView extends Morph {
   }
 
   selectionChanged() {
-    let data = this.getSelectedData();
-    if(data) {
-      this.outportTargets.forEach(target => target.newDataFromUpstream(data));
+    let selection = this.getSelectedData();
+    if(selection) {
+      this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
     }
   }
   
@@ -141,6 +143,7 @@ export default class VivideView extends Morph {
 
   async initialize() {
     this.windowTitle = "VivideView";
+    this.addEventListener('extent-changed', evt => this.onExtentChanged(evt));
     
     this.addEventListener('dragenter', evt => this.dragenter(evt), false);
     this.addEventListener('dragover', evt => this.dragover(evt), false);
@@ -148,6 +151,13 @@ export default class VivideView extends Morph {
     this.addEventListener('drop', evt => this.drop(evt), false);
 
     this.input = this.input || [];
+  }
+  onExtentChanged() {
+    this.childNodes.forEach(childNode => {
+      if(childNode.dispatchEvent) {
+        childNode.dispatchEvent(new CustomEvent("extent-changed"));
+      }
+    })
   }
   
   dragenter(evt) {}
@@ -222,19 +232,32 @@ export default class VivideView extends Morph {
     }
   }
   
-  setScripts(scripts) {
-    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
-    return scripts;
+  setFirstScript(firstScript) {
+    this.firstScript = firstScript;
+    this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
+    let script = this.firstScript;
+    
+    while (script.nextScript != null) {
+      script = script.nextScript;
+      script.updateCallback = this.scriptGotUpdated.bind(this);
+      
+      if (script.lastScript) break;
+     }
+    //this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
+
+    return this.firstScript;
   }
   
-  getScripts() {
-    return this.getJSONAttribute(VivideView.scriptAttribute);
+  getFirstScript() {
+    //this.getJSONAttribute(VivideView.scriptAttribute);
+    
+    return this.firstScript;
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if(this.getScripts()) {
+    if (this.getFirstScript()) {
       await this.calculateOutputModel();
     } else {
       this.modelToDisplay = VivideView.dataToModel(this.input);
@@ -252,42 +275,61 @@ export default class VivideView extends Morph {
   }
   
   async calculateOutputModel() {
-    let scripts = this.getScripts();
-    let transforms = await Promise.all(scripts.transform.map(script => this.updateScript(script)));
-    let extracts = await Promise.all(scripts.extract.map(script => this.updateScript(script)));
-    let descents = await Promise.all(scripts.descent.map(script => this.updateScript(script)));
-    let transformedData = transforms.reduce((data, transform) => {
-      let output = [];
-      transform.value(data, output);
-      return output;
-    }, this.input);
-    let annotatedModel = transformedData.map(object => {
-      let children = [];
-      descents.map(descent => children.push(...descent.value(object).map(c => ({ object: c, properties: [], children: [] }))));     
-      return {
-        object,
-        properties: extracts.map(extract => extract.value(object)),
-        children: children
-      };
-    });
-    this.modelToDisplay = annotatedModel;
-    this.viewConfig = transforms.concat(extracts).map(step => { step.value.__vivideStepConfig__ } );
+    this.viewConfig = [];
+    let script = this.getFirstScript();
+    
+    this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
   }
   
-  async updateScript(script) {
+  async evalScript(script) {
     let module = await boundEval(script.source);
     return module;
   }
   
-  async scriptGotUpdated(scripts) {
-    this.setScripts(scripts);
-    
+  async scriptGotUpdated() {
     await this.calculateOutputModel();
     await this.updateWidget();
   }
+  
+  async computeModel(data, script) {
+    let vivideLayer = new VivideLayer(data);
+    
+    await this.applyScript(script, vivideLayer);
+    while (script.nextScript) {
+      script = script.nextScript;
+      await this.applyScript(script, vivideLayer);
+      
+      if (script.type == 'descent' || script.lastScript) break;
+    }
+    await vivideLayer.processData();
+    
+    return vivideLayer;
+  }
+  
+  async applyScript(script, vivideLayer) {
+    let module = await this.evalScript(script);
+    if (script.type == 'transform') {
+      vivideLayer.addModule(module, 'transform');
+    } else if (script.type == 'extract') {
+      vivideLayer.addModule(module, 'extract');
+    } else if (script.type == 'descent') {
+      vivideLayer.childScript = script.nextScript;
+      vivideLayer.addModule(module, 'descent');
+    }
+    
+    this.viewConfig.push(module.value.__vivideStepConfig__);
+  }
 
-  findAppropriateWidget(model) {
-    if(model.length > 0) {
+  findAppropriateWidget(model) {    
+    if (this.viewConfig) {
+      for (let config of this.viewConfig) {
+        if (!config.widget) continue;
+        
+        return config.widget;
+      }
+    }
+    
+    if (model.length > 0) {
       let m = model[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')
@@ -303,18 +345,48 @@ export default class VivideView extends Morph {
     let widget = await lively.create(this.findAppropriateWidget(this.modelToDisplay));
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
-    widget.display(this.modelToDisplay, this.viewConfig || []);
+    widget.expandChild = this.computeModel.bind(this);
+    await widget.display(this.modelToDisplay, this.viewConfig || []);
+  }
+  
+  async insertScript(scriptType, prevScript = null) {
+    let newScript = await newScriptFromTemplate(scriptType);
+    let script = this.getFirstScript();
+    
+    if (prevScript) {
+      script = prevScript;
+      
+      if (prevScript.lastScript) {
+        prevScript.lastScript = false;
+        newScript.lastScript = true;
+      }
+    } else {
+      while (!script.lastScript) {
+        script = script.nextScript;
+      }
+      
+      script.lastScript = false;
+      newScript.lastScript = true;
+    }
+    
+    newScript.updateCallback = this.scriptGotUpdated.bind(this);
+    newScript.nextScript = script.nextScript;
+    script.nextScript = newScript;
+    
+    return newScript;
   }
   
   livelyExample() {
     let exampleData = [
       {name: "object", subclasses:[{name: "morph"},]},
-      {name: "list", subclasses:[{name: "linkedlist"}, {name: "arraylist"}]},
+      {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
       {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
     ];
     
-    this.newDataFromUpstream(exampleData);
-    newScriptFromTemplate().then(scripts => this.setScripts(scripts)).then(() => createScriptEditorFor(this));
+    let initialScriptPromise = initialScriptsFromTemplate().then(script => this.setFirstScript(script));
+    initialScriptPromise.then(() => {
+      createScriptEditorFor(this).then(() => this.newDataFromUpstream(exampleData))
+    });
   }
   
   livelyMigrate(other) {

@@ -1,0 +1,11 @@
+<h1>hello module</h1>
+
+<script>
+  
+self.import = function(...args) {
+  console.log("import", ...args)
+  return import(args[0])
+}
+
+</script>
+<script type="module" src="m1.js"></script>

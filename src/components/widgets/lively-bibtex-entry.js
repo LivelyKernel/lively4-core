@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'src/external/bibtexParse.js';
 import latexconv from "src/external/latex-to-unicode-converter.js"
+import Strings from 'src/client/strings.js'
 
 export default class LivelyBibtexEntry extends Morph {
   async initialize() {
@@ -67,12 +68,31 @@ export default class LivelyBibtexEntry extends Morph {
   updateView() {
     if (!this.value || !this.value.entryTags ) return;
     this.get("#key").textContent = this.key
-    this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ")
+    try {
+      this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ")
+    } catch(e) {
+      this.get("#author").textContent = this.author
+    }
     this.get("#year").textContent = this.year
-    this.get("#title").textContent = latexconv.convertLaTeXToUnicode(this.title)
+    try {
+      this.get("#title").textContent = latexconv.convertLaTeXToUnicode(this.title)
+    } catch(e) {
+      this.get("#title").textContent = this.title
+                                                                       
+    }
+    
+    
+    this.get("#filename").textContent = "// " + this.generateFilename() +""
   }
   
-    
+  generateFilename() {
+    try {
+      return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join("") +`_${this.year}_${Strings.toUpperCaseFirst(Strings.toCamelCase(latexconv.convertLaTeXToUnicode(this.title).replace(/(^| )[aA] /,"")).replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g,""))}` 
+    } catch(e) {
+      return ""
+    }
+  }
+  
   
   // #TODO refactor those accessors
   get key() {

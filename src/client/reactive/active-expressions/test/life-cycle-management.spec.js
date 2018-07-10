@@ -7,6 +7,8 @@ chai.use(sinonChai);
 import { BaseActiveExpression } from 'src/client/reactive/active-expressions/active-expressions/src/base/base-active-expressions.js';
 import * as frameBasedAExpr from "frame-based-aexpr";
 
+import { wait } from 'utils';
+
 describe("life-cycle management", function() {
   describe("(de)activate", function() {
     xit("aexprs define activate and deactivate", () => {
@@ -54,10 +56,6 @@ describe("life-cycle management", function() {
   });
 
   describe("dispose", function() {
-    function wait(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
     it("aexprs define dispose", () => {
       expect(aexpr(() => {})).to.respondTo('dispose');
     });

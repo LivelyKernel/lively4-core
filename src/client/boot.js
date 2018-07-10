@@ -11,6 +11,10 @@
   - currently we have different entry points we should unify
  */
 
+
+// #BUG the browser cache API blocks (promises does not resolve) sometimes?
+// #BUG the performance, in our alternative to use IndexedDB can quickly degrate when DB gets to big...
+// window.localStorage["livel4systemjscache"] = false
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
 
 async function invalidateFileCaches()  {
@@ -229,6 +233,7 @@ if (window.lively && window.lively4url) {
           'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
           'babel-plugin-syntax-do-expressions': lively4url + '/src/external/babel-plugin-syntax-do-expressions.js',
           'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
+          'babel-plugin-syntax-async-generators': lively4url + '/src/external/babel-plugin-syntax-async-generators.js',
 
           // support for doits
           'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
@@ -261,6 +266,7 @@ if (window.lively && window.lively4url) {
             'babel-plugin-jsx-lively',
             'babel-plugin-transform-do-expressions',
             'babel-plugin-transform-function-bind',
+            'babel-plugin-syntax-async-generators',
             'babel-plugin-locals', // #TODO: remove this plugin from here
             'babel-plugin-var-recorder'
           ]
@@ -276,6 +282,7 @@ if (window.lively && window.lively4url) {
             'babel-plugin-jsx-lively',
             'babel-plugin-transform-do-expressions',
             'babel-plugin-transform-function-bind',
+            'babel-plugin-syntax-async-generators',
             'babel-plugin-var-recorder',
             ['babel-plugin-aexpr-source-transformation', {
               enableViaDirective: true
@@ -333,6 +340,7 @@ if (window.lively && window.lively4url) {
                 'babel-plugin-jsx-lively',
                 'babel-plugin-transform-do-expressions',
                 'babel-plugin-transform-function-bind',
+                'babel-plugin-syntax-async-generators',
                 'babel-plugin-locals',
                 'babel-plugin-doit-result',
                 'babel-plugin-doit-this-ref',
@@ -351,6 +359,7 @@ if (window.lively && window.lively4url) {
                 'babel-plugin-jsx-lively',
                 'babel-plugin-transform-do-expressions',
                 'babel-plugin-transform-function-bind',
+                'babel-plugin-syntax-async-generators',
                 'babel-plugin-locals',
                 'babel-plugin-doit-result',
                 'babel-plugin-doit-this-ref',
@@ -368,6 +377,7 @@ if (window.lively && window.lively4url) {
                 'babel-plugin-jsx-lively',
                 'babel-plugin-transform-do-expressions',
                 'babel-plugin-transform-function-bind',
+                'babel-plugin-syntax-async-generators',
                 'babel-plugin-locals',
                 'babel-plugin-doit-result',
                 'babel-plugin-doit-this-ref',
@@ -384,11 +394,18 @@ if (window.lively && window.lively4url) {
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
 
+          
           groupedMessage(1, 4, 'Invalidate Caches');
           await invalidateFileCaches()
           groupedMessageEnd();
 
+          
+//           groupedMessage(2, 4, 'Load foo.js');
+//           const { contextJS } = await System.import(lively4url + "/foo.js");
+          
+          
           groupedMessage(2, 4, 'Wait for Service Worker');
+          
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
           await new Promise(whenLoaded);
           groupedMessageEnd();

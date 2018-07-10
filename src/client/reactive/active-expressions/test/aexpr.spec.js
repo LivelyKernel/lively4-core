@@ -190,6 +190,20 @@ describe('Propagation Logic', function() {
 
     expect(spy.withArgs(3)).to.be.calledOnce;
   });
+  
+  it('reset all active expressions', () => {
+    const obj = {
+      get calcProp() { return this.x + this.y; },
+      x: 42,
+      y: 17
+    },
+        spy = sinon.spy();
+
+    aexpr(() => obj.calcProp).onChange(spy);
+
+    obj.x = 33;
+    expect(spy).to.be.calledWith(50);
+  });
 
   it('reset all active expressions', () => {
     let obj = { prop: 42 },
@@ -557,6 +571,23 @@ describe('Propagation Logic', function() {
         a.b().c.d().e = { f() { return 6; }};
         expect(spy).to.be.calledWithMatch(6);
       });
+    });
+    it('binds `this` correctly', () => {
+      const obj = {
+        get computedProp() { return this.basicProp + 1 },
+        set computedProp(value) { return this.basicProp = value -1; },
+        basicProp: 'basicProp'
+      }
+      const spy = sinon.spy();
+
+      expect(obj.computedProp).to.equal(obj.basicProp + 1);
+      
+      aexpr(() => obj.computedProp).onChange(spy);
+
+      obj.computedProp = 5;
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWith(5);
+      expect(obj.basicProp).to.equal(4);
     });
   });
 });

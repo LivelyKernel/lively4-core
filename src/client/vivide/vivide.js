@@ -3,22 +3,29 @@ import { stepFolder, scriptFolder } from './utils.js';
 import { pt } from 'src/client/graphics.js';
 import Script from 'src/client/vivide/script.js';
 
-export async function newScriptFromTemplate() {
-  async function copyStep(type) {
-    let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-    let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
-    let script = new Script(stepTemplate, type);
-    
-    return script;
-  }
+export async function newScriptFromTemplate(type) {
+  let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
+  let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
+  let script = new Script(stepTemplate, type);
+
+  return script;
+}
+
+export async function initialScriptsFromTemplate() {  
+  let scripts = [];
+  let transform = await newScriptFromTemplate('transform');
+  let extract = await newScriptFromTemplate('extract');
+  let descent = await newScriptFromTemplate('descent');
   
-  let scripts = {
-    transform: [await copyStep('transform')],
-    extract: [await copyStep('extract')],
-    descent: [await copyStep('descent')]
-  }
+  transform.nextScript = extract;
+  extract.nextScript = descent;
+  descent.lastScript = true;
   
-  return scripts;
+  scripts.push(transform);
+  scripts.push(extract);
+  scripts.push(descent);
+  
+  return transform;
 }
 
 export async function createScriptEditorFor(view) {
@@ -30,8 +37,8 @@ export async function createScriptEditorFor(view) {
   let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
 
   scriptEditor.setView(view);
-  let scripts = view.getScripts();
-  scriptEditor.setScripts(scripts);
+  let firstScript = view.getFirstScript();
+  scriptEditor.setScripts(firstScript);
 
   return scriptEditor;
 }
@@ -44,8 +51,8 @@ export async function letsScript(object, evt, sourceView) {
 
   let view = await lively.openComponentInWindow('vivide-view', pos);
 
-  let scripts = await newScriptFromTemplate();
-  view.setScripts(scripts);
+  let firstScript = await initialScriptsFromTemplate();
+  view.setFirstScript(firstScript);
   view.newDataFromUpstream(object);
 
   if(evt && evt.shiftKey) {

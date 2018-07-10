@@ -199,11 +199,11 @@ export default class LivelyMarkdown extends Morph {
   
   async startPresentation() {
     this.setAttribute("mode", "presentation")
-    if (this.parentElement.tagName == "LIVELY-CONTAINER") {
+    if (this.parentElement && this.parentElement.tagName == "LIVELY-CONTAINER") {
       this.parentElement.setAttribute("mode", "presentation")
     }
     if (this.get("lively-presentation")) {
-      return
+      return this.get("lively-presentation")
     }
     
     var comp = document.createElement("lively-presentation")

@@ -25,8 +25,8 @@ export default class VivideListWidget extends VivideMultiSelectionWidget {
     this.dataByListItem = new Map();
     
     this.list.innerHTML = '';
-    model.forEach(m => {
-      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
+    model.objects.forEach(m => {
+      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.data);
       
       let listItem = <li>{label}</li>;
       this.multiSelection.addItem(listItem);

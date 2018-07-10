@@ -1,0 +1,36 @@
+<template id="matches-in-shadow" data-class="MatchesInShadow">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+@keyframes MyKeyframes {
+  from { outline-color: #fff; }
+  to { outline-color: #000; }
+}
+button:hover {
+  animation-duration: 0.001s;
+  animation-name: MyKeyframes !important;
+}
+:host {
+  
+}
+#content {
+  background-color: gray;
+}
+  
+  @keyframes MyKeyframes2 {
+  from { outline-color: #fff; }
+  to { outline-color: #000; }
+}
+content button:hover {
+  animation-duration: 0.001s;
+  animation-name: MyKeyframes2 !important;
+}
+</style>
+This is a template component
+  <button id="firstButton">button</button>
+<div id="content">
+	<content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
