@@ -61,7 +61,28 @@
   #explanation li {
     padding: 5px 0;
   }
+  
+  #numbers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 400px;
+  }
+  
+  .number {
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+  }
+  
+  .hidden {
+    display: none;
+  }
 </style>
+  <div id="numbers" class="hidden">
+    
+  </div>
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
@@ -73,6 +94,9 @@
     </div>
   </div>
   <ul id="explanation"></ul>
-  <button id="toggleAnimation">Start Animation</button>
+  <button id="toggleAnimation">Start Animation</button><br>
+  <button id="step">Step</button><br>
+  <button id="showGrid">Show Grid</button><br>
+  <button id="reset">Reset</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

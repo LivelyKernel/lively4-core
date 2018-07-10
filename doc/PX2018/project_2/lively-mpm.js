@@ -12,7 +12,7 @@ export default class LivelyMpm extends Morph {
   async initialize() {
     this.algorithms = { "Vibrating Poin": VibratingPoint, "Vibrating Continuum Bar": VibratingContinuumBar };
     this.windowTitle = "Lively Material Point Method Demo";
-    this.registerButtons()
+    this.registerButtons();
     this.time = 1;
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
@@ -22,20 +22,32 @@ export default class LivelyMpm extends Morph {
     
     this.variables = {};
     this.particleSize = 4;
-    this.animation = new ElasticBodies();
+    
     this.canvas = this.get("#mpm");
-    this.youngInput = this.get("#young-modulus");
+    //this.youngInput = this.get("#young-modulus");
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    this.input = this.get("#input");
+    /*this.input = this.get("#input");
     let inputUpdate = function() {
       this.variables[this.input.name] = this.input.value;
       // Resets particles
       this.animation.numParticles = this.animation.numParticles;
     }
-    $(this.input).on("input change", inputUpdate.bind(this));
+    $(this.input).on("input change", inputUpdate.bind(this));*/
+    
+    this.animation = new ElasticBodies();
+    
+    if (this.animation.showElements) {
+      let numbers = this.get("#numbers");
+      for (let i = 0; i < this.animation.numElements; ++i) {
+        numbers.appendChild(<div class="number">{i}</div>)
+      }
+    }
+    
+    await this.animation.init();
+    this.draw(this.animation.particles);
   }
   
   draw(particles) {
@@ -77,6 +89,23 @@ export default class LivelyMpm extends Morph {
       this.animation.startAnimating(this);
       this.get("#toggleAnimation").innerHTML = "Stop Animation";
     }
+  }
+  
+  onStep() {
+    if (!this.animation) return;
+    this.animation.step(this);
+  }
+  
+  onShowGrid() {
+    if (!this.animation.showElements) return;
+    
+    let numbers = this.get("#numbers");
+    numbers.classList.toggle("hidden");
+  }
+  
+  onReset() {
+    this.animation = new ElasticBodies();
+    this.animation.init().then(() => this.draw(this.animation.particles));
   }
 
   /* Lively-specific API */

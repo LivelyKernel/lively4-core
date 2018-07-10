@@ -13,17 +13,22 @@ export default class ElasticBodies extends MpmAnimation {
   constructor() {
     super();
     
-    this.deltaX = 20;
-    this.deltaY = 20;
-    this.elementCount = 400;
-    this.elementCountX = 20;
+    this.deltaX = 40;
+    this.deltaY = 40;
+    this.elementCount = 100;
+    this.elementCountX = 10;
     this.elementCountY = this.elementCount / this.elementCountX;
     this.nCount = (this.elementCountX + 1) * (this.elementCountY + 1);
-    this.v = 0.3;
-    this.dtime = 0.01;
-    
+    this.v = 5;
+    this.dtime = 1;
+    this.tol = 1;
+    this.rho = 2;
+  }
+  
+  async init() {
     // Load particles to initialize data structures
-    this.loadCircleMesh().then(() => this.initParticles());    
+    await this.loadCircleMesh();  
+    this.initParticles();
   }
   
   async loadCircleMesh() {
@@ -39,7 +44,15 @@ export default class ElasticBodies extends MpmAnimation {
     }
   }
   
-  async initParticles() {
+  get showElements() {
+    return true;
+  }
+  
+  get numElements() {
+    return this.elementCount;
+  }
+  
+  initParticles() {
     this.pCount = this.particles.length;
     this.Mp = Matrix.ones(this.pCount, 1);
     this.Vp = Matrix.ones(this.pCount, 1);
@@ -47,18 +60,9 @@ export default class ElasticBodies extends MpmAnimation {
     this.s = [];
     this.eps = Matrix.zeros(this.pCount, 3);
     this.vp = [];
-    this.xp = [];
-    this.rho = 0.2;                                                             // TODO: finish (what is rho?)
     this.pElements = [];
     this.mPoints = [];
-    
-    // Storages for plotting (probably not needed because emited after each frame)
-    this.pos = {};
-    this.vel = {};
-    // Number probably used for indexing plotting variables
-    this.istep = 0;
-    
-    this.C = null;                                                              // TODO: finish
+    this.C = 1;
     
     // The initialisation code does not make much sense in the paper
     for (let i = 0; i < this.pCount; ++i) {
@@ -68,9 +72,8 @@ export default class ElasticBodies extends MpmAnimation {
       
       this.Vp.set(i, 0, a);
       this.Mp.set(i, 0, a * this.rho);
-      this.xp.push(particle);
       
-      if (particle.get(1) < 0.5) {
+      if (particle.get(1) < (this.deltaX * this.elementCountX / 2)) {
         this.vp.push(new Matrix([this.v, this.v]));
       } else {
         this.vp.push(new Matrix([-this.v, -this.v]));
@@ -100,19 +103,15 @@ export default class ElasticBodies extends MpmAnimation {
     this.nmomentum = Matrix.zeros(this.nCount, 2);
     this.niforce = Matrix.zeros(this.nCount, 2);
     for (let i = 0; i < this.nCount; ++i) {
-      this.nmass.push(Matrix.zeros(1));
+      this.nmass.push(0);
     }
     
     this.particlesToNodes();
     
-    console.log(this.niforce);
     // This has to be calculate as math matrices not javascript arrays
     this.nmomentum = this.nmomentum.add(this.niforce.multiply(this.dtime));
     
     this.nodesToParticles();
-    
-    this.pos[this.istep] = this.xp;
-    this.vel[this.istep] = this.vp;
     
     this.updateParticleNodeRelation();
   }
@@ -125,8 +124,8 @@ export default class ElasticBodies extends MpmAnimation {
       
       for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        let x = (2 * this.xp[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        let y = (2 * this.xp[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
         let N = this.interpValue(x, y);
         let dNdxi = this.interpGradient(x, y);                                                                 // TODO: finish
         let transposed = enode.transpose();
@@ -138,7 +137,7 @@ export default class ElasticBodies extends MpmAnimation {
           let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
           let dNIdx = dNdx.get(k, 0);
           let dNIdy = dNdx.get(k, 1);
-          this.nmass[nodeId] += N.get(k, 0) * this.Mp.get(pid, 0);
+          this.nmass[nodeId] = this.nmass[nodeId] + N.get(k, 0) * this.Mp.get(pid, 0);
           let curMomentum = new Matrix([this.nmomentum.get(nodeId, 0), this.nmomentum.get(nodeId, 1)]);
           curMomentum = curMomentum.add(this.vp[pid].multiply(N.get(k, 0) * this.Mp.get(pid, 0)));
           this.nmomentum.set(nodeId, 0, curMomentum.get(0));
@@ -153,14 +152,16 @@ export default class ElasticBodies extends MpmAnimation {
   }
   
   nodesToParticles() {
-    for (let i = 0; i < this.pCount; ++i) {
-      let enode = this.getElementNodes(i);
+    for (let i = 0; i < this.elementCount; ++i) {
+      let nodes = this.getElementNodes(i);
+      let enode = new Matrix(nodes);
       let mpts = this.mPoints[i];
+      debugger;
       
-      for (let j = 0; i < mpts.length; ++j) {
+      for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        let x = (2 * this.xp[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        let y = (2 * this.xp[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
         let N = this.interpValue(x, y);
         let dNdxi = this.interpGradient(x, y);
         let J0 = enode.transpose().multiply(dNdxi);
@@ -168,26 +169,31 @@ export default class ElasticBodies extends MpmAnimation {
         let dNdx = dNdxi.multiply(invJ0);
         let Lp = Matrix.zeros(2, 2);
 
-        /*for (let k = 0; k < esctr.length; ++k) {
-          let id = esctr[k];
-          let vI = [0, 0];
-
-          if (this.nmass[id] > this.tol) {                                                 // TODO: finish
-            this.vp[pid] += this.dtime * N[k] * this.niforce[id] / this.nmass[id];
-            this.xp[pid] += this.dtime * N[k] * this.nmomentum[id] / this.nmass[id];
-            vI = Math.divide(this.nmomentum[id], this.nmass[id]);
+        for (let k = 0; k < nodes.length; ++k) {
+          let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
+          let vI = new Matrix([0, 0]);
+          
+          if (this.nmass[nodeId] > this.tol) {
+            let niforce = new Matrix([this.niforce.get(nodeId, 0), this.niforce.get(nodeId, 1)]);
+            let nmomentum = new Matrix([this.nmomentum.get(nodeId, 0), this.nmomentum.get(nodeId, 1)]);
+            this.vp[pid] = this.vp[pid].add(niforce.multiply(this.dtime * N.get(k, 0)).divide(this.nmass[nodeId]));
+            let add = nmomentum.multiply(this.dtime * N.get(k, 0)).divide(this.nmass[nodeId]);
+            debugger;
+            this.particles[pid] = this.particles[pid].add(add);
+            let curMomentum = new Matrix([this.nmomentum.get(nodeId, 0), this.nmomentum.get(nodeId, 1)]);
+            vI = curMomentum.divide(this.nmass[nodeId]);
           }
 
-          Lp = Math.add(Lp, Math.multiply(this.derivation(vI), dNdx[k]));
+          let dNdxSingle = new Matrix([dNdx.get(k, 0), dNdx.get(k, 1)]);
+          Lp = Lp.add(vI.transpose().multiply(dNdxSingle));
         }
 
-        // This has to be calculate as math matrices not javascript arrays
-        let F = ([[1, 0], [0, 1]] + Lp * this.dtime) * this.reshape(this.Fp[pid], 2, 2);
-        this.Fp[pid] = this.reshape(F, 1, 4);
-        this.Vp[pid] = this.det(F) * this.Vp0(pid);
-        let dEps = this.dtime * 0.5 * (Lp + this.derivation(Lp));
-        let dsigma = this.C * [dEps[1][1], dEps[2][2], 2 * dEps[1][2]];
-        this.s*/
+        let F = (new Matrix([[1, 0], [0, 1]]).add(Lp.multiply(this.dtime))).multiply(this.Fp[pid].reshape(2, 2));
+        this.Fp[pid] = F.reshape(1, 4);
+        this.Vp.set(pid, 0, F.det() * this.Vp0.get(pid, 0));
+        let dEps = Lp.add(Lp.transpose()).multiply(this.dtime * 0.5);
+        let dsigma = (new Matrix([dEps.get(0, 0), dEps.get(1, 1), 2 * dEps.get(0, 1)])).multiply(this.C);
+        this.s[pid] = this.s[pid].add(dsigma.transpose());
       }
     }
   }
@@ -196,8 +202,8 @@ export default class ElasticBodies extends MpmAnimation {
     // Update particle list
     this.pElements.length = 0;
     for (let i = 0; i < this.pCount; ++i) {
-      let x = this.xp[i].get(0);
-      let y = this.xp[i].get(1);
+      let x = this.particles[i].get(0);
+      let y = this.particles[i].get(1);
       let e = this.findParticleElement(x, y);
       this.pElements.push(e);
     }
