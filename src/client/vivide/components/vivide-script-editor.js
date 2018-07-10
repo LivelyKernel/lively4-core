@@ -11,6 +11,9 @@ export default class VivideScriptEditor extends Morph {
     this.view = view;
     return view;
   }
+  getView() {
+    return this.view;
+  }
   
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
@@ -157,6 +160,9 @@ export default class VivideScriptEditor extends Morph {
     this.lastScript = script;
     this.updateLoopState();
   }
+  getScripts() {
+    return this.script;
+  }
   
   async createStepEditorFor(script) {
     let stepEditor = await (<vivide-step-editor></vivide-step-editor>);
@@ -179,5 +185,10 @@ export default class VivideScriptEditor extends Morph {
       this.editorList.appendChild(<span>-- {script.type} --</span>);
       this.editorList.appendChild(stepEditor);
     }
+  }
+  
+  livelyMigrate(other) {
+    this.setView(other.getView());
+    this.setScripts(other.getScripts());
   }
 }

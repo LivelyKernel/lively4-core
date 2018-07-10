@@ -98,6 +98,15 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(59);
   });
   xit('for-of/local variable (var)', () => {
+    for (var a of [1,2,3]) {
+      lively.notify(a)
+    }
+  });
+  xit('for-of/local variable (var, defined outside)', () => {
+    // var a;
+    // for (a of [1,2,3]) {
+    //   lively.notify(a)
+    // }
   });
   xit('for-of/local variable (let)', () => {
   });
