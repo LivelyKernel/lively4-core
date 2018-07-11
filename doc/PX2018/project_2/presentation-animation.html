@@ -15,21 +15,26 @@
     float: left;
   }
   
-  #explanation {
-    position: absolute;
-    left: 450px;
-    top: 60px;
-    font-size: 22pt;
-    line-height: 1.5em;
+  .container {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    min-width: 400px
   }
   
-  #explanation li {
-    padding: 5px 0;
+  .button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
   }
 </style>
+<div class="container">
   <canvas id="animation" width="400" height="400"></canvas>
-  <ul id="explanation"></ul>
-  <button id="next">Next</button>
-  <button id="next">Previous</button>
+  <br>
+  <div class="button-container">
+    <button id="previous">Previous</button>
+    <button id="next">Next</button>
+  </div>
+</div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

@@ -15,6 +15,7 @@ import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 // Some other interpolation formulars
 // https://github.com/mjrodriguez/mpm_lab_2d/blob/master/source/INTERPOLATION.cpp
 // https://mospace.umsystem.edu/xmlui/bitstream/handle/10355/46077/research.pdf?sequence=1
+// FEM: https://www.codeproject.com/script/Articles/ViewDownloads.aspx?aid=579983
 
 export default class ElasticBodies extends MpmAnimation {
   constructor() {

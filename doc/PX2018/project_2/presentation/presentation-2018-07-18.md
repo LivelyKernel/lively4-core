@@ -7,8 +7,12 @@ import livelyMpm from 'doc/PX2018/project_2/lively-mpm.js'
 
 const showDetails = false;
 let presentation = lively.query(this, "lively-presentation");
-let slides = presentation.querySelectorAll('.lively-slide');
+let slides = [];
 let ratio = "16-9";
+
+if (presentation) {
+  slides = presentation.querySelectorAll('.lively-slide');
+}
 slides.forEach(slide => {
   slide.classList += " ratio-" + ratio;
   
@@ -114,10 +118,15 @@ presentButton
 
 <div class="title-1">Introduction</div>
 
+<div class="h-1-2 notes-big">
+<ul>
+<li>Physic simulations</li>
+<li>Simulating behavior of:<br>solids, fluids, gas</li>
+<li>Frozen: Snow animation</li>
+</ul>
+</div>
 
-- Describe Domain
-- Where is it used
-- Related Work
+<img src="frozen-snow.jpg" class="h-2-2" alt="Snow in Frozen" style="padding-top: 80px"/>
 
 ---
 
@@ -156,12 +165,13 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 <ul class="notes notes-big">
 <li><a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a></li>
 <li><a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a></li>
-<li><a href="https://infoscience.epfl.ch/record/255783/files/Bachelor%20Project%20Report%20MPM.pdf">Shape functions</a></li>
+<li><a href="https://www.math.ucla.edu/~jteran/papers/SSCTS13.pdf">A material point method for snow simulation</a></li>
+<li><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.140.2649&rep=rep1&type=pdf">Analysis and reduction of quadrature errors in the<br>material point method (MPM)</a></li>
 </ul>
 
 ---
 
-<div class="title-1">Math</div>
+<div class="title-1">MPM Overview</div>
 
 <div class="notes h-1-2">
 <ul class="notes-big">
@@ -170,7 +180,9 @@ import latexconv from "src/external/latex-to-unicode-converter.js";
 "Continuum body <strong>" + latexconv.convertLaTeXToUnicode("\\Omega") + "</strong> discretized into material points <strong>p</strong>";
 </script> 
 </li>
-<li><strong>p</strong></li>
+<li>Particles are called<br>Lagrangian elements</li>
+<li>Located in grid with <strong>e</strong> cells (Lagrangian Frame)</li>
+<li>Grid has <strong>n</strong> nodes<br>(2D: n = (e + 1)²)</li>
 </ul>
 </div>
 
@@ -180,11 +192,95 @@ import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 import boundEval from "src/client/bound-eval.js";
 (async() => {
   let animation = await (<presentation-animation></presentation-animation>);
-  let points = await CircleMesh.gmsh(50, 300, 100);
+  animation.startStep = 0;
+  let points = await CircleMesh.gmsh(100, 200, 200);
+  let nodeSize = 8;
+  let nodes = [];
+  for (var i = 0; i < 5; ++i) {
+    for (var j = 0; j < 5; ++j) {
+      let x = i > 0 ? 100 * i - nodeSize / 2 : 100 * i;
+      let y = j > 0 ? 100 * j - nodeSize / 2 : 100 * j;
+      nodes.push([x, y]);
+    }
+  }
   let steps = [];
-  steps.push({ "body": { type: "circle", radius: 50, x: 300, y: 100, color: "rgba(255, 0, 0, 1)", filled: true } });
+  steps.push({ "body": { type: "circle", radius: 100, x: 200, y: 200, color: "rgba(255, 0, 0, 1)", filled: true } });
   steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)" } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)" },
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize }});
   animation.animationSteps = steps;  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+})()
+</script>
+</div>
+
+---
+
+<div class="title-1">Shape Function</div>
+
+<div class="notes h-1-2">
+<ul class="notes-big">
+<li></li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<script>
+import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
+import boundEval from "src/client/bound-eval.js";
+(async() => {
+  let animation = await (<presentation-animation></presentation-animation>);
+  animation.startStep = 0;
+  let steps = [];
+  //animation.animationSteps = steps;  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+})()
+</script>
+</div>
+
+---
+
+<div class="title-1">Particles To Nodes</div>
+
+<div class="notes h-1-2">
+<ul class="notes-big">
+<li></li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<script>
+import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
+import boundEval from "src/client/bound-eval.js";
+(async() => {
+  let animation = await (<presentation-animation></presentation-animation>);
+  animation.startStep = 0;
+  let steps = [];
+  //animation.animationSteps = steps;  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+})()
+</script>
+</div>
+
+---
+
+<div class="title-1">Nodes To Particles</div>
+
+<div class="notes h-1-2">
+<ul class="notes-big">
+<li></li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<script>
+import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
+import boundEval from "src/client/bound-eval.js";
+(async() => {
+  let animation = await (<presentation-animation></presentation-animation>);
+  animation.startStep = 0;
+  let steps = [];
+  //animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
 </script>
@@ -194,39 +290,13 @@ import boundEval from "src/client/bound-eval.js";
 
 # TODOs
 
-- Connect grid nodes
 - Alter speed
 - Show parts of the animation canvas zoomed
 
----
-
-<div class="title-1">MPM Steps (TODO: + Example Animation)</div>
-
-<ul class="notes notes-big">
-<li>Particles To Nodes:
-<ul>
-<li></li>
-</ul>
-</li>
-<li>Nodes To Particles:
-<ul>
-<li></li>
-</ul>
-</li>
-</ul>
-
----
-
-<div class="title-1">Elastic Bodies (Example: Shape Function)</div>
-
 <script>
-import latexconv from "src/external/latex-to-unicode-converter.js"
-latexconv.convertLaTeXToUnicode("\\sigma + \\alpha + \\Omega + n\\sub{p} = 5")
+//import latexconv from "src/external/latex-to-unicode-converter.js"
+//latexconv.convertLaTeXToUnicode("\\sigma + \\alpha + \\Omega + n\\sub{p} = 5")
 </script>
-
----
-
-<div class="title-1">Elastic Bodies (Example: Movement)</div>
 
 ---
 

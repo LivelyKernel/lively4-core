@@ -47,6 +47,10 @@ export default class LivelyMpm extends Morph {
         number.style.height = this.animation.elementSize[1] + "px";
         numbers.appendChild(number);
       }
+      
+      let canvasRect = this.canvas.getBoundingClientRect();
+      numbers.style.top = (this.canvas.offsetTop + 1) + "px";
+      numbers.style.left = (this.canvas.offsetLeft + 1) + "px";
     }
     
     await this.animation.init();

@@ -14,15 +14,31 @@ export default class PresentationAnimation extends Morph {
     
     this.canvas = this.get("#animation");
     this.context = this.canvas.getContext("2d");
+    this.startStep = 0;
   }
   
   set animationSteps(value) {
     this._animationSteps = value;
-    this.draw(this._animationSteps[0]);
-    this.curAnimationStep = 0;
+    this.draw(this._animationSteps[this.startStep]);
+    this.curAnimationStep = this.startStep;
+  }
+  
+  onNext() {
+    if (this.curAnimationStep == this._animationSteps.length - 1) return;
+    
+    ++this.curAnimationStep;
+    this.draw(this._animationSteps[this.curAnimationStep]);
+  }
+  
+  onPrevious() {
+    if (this.curAnimationStep == 0) return;
+    
+    --this.curAnimationStep;
+    this.draw(this._animationSteps[this.curAnimationStep]);
   }
   
   draw(jsonObject) {
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // Draw the animation step save in the object
     for (let key in jsonObject) {
       this.context.fillStyle = jsonObject[key].color;
@@ -30,6 +46,7 @@ export default class PresentationAnimation extends Morph {
         for (let i = 0; i < jsonObject[key].value.length; ++i) {
           let posX = jsonObject[key].value[i][0];
           let posY = jsonObject[key].value[i][1];
+          let size = jsonObject[key].size != undefined ? jsonObject[key].size : 4;
           this.context.fillRect(posX, posY, 4, 4);
         }
       }
