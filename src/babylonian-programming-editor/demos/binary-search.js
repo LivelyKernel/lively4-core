@@ -2,13 +2,13 @@ function /*example:*//*example:*/binarySearch/*{"id":"e398_2309_1a4a","name":{"m
     var low = 0; 
     var high = array.length - 1; 
     
-    /*slider:*/while/*{}*/ (/*probe:*/low/*{}*/ <= high) {
+    /*slider:*/while/*{}*/ (/*probe:*/low/*{}*/ <= /*probe:*/high/*{}*/) {
         
         var /*probe:*/mid/*{}*/ = Math.floor((low + high)/2);
         var /*probe:*/value/*{}*/ = array[mid];
 
         if (value < key)
-            /*probe:*/low/*{}*/ = mid + 1; 
+            low = mid + 1; 
         else if (value > key)
             high = mid - 1;
         else

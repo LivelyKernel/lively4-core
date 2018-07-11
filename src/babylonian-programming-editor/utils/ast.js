@@ -490,21 +490,13 @@ const insertIterationTracker = (path) => {
     return;
   }
   
-  let prefix = "let ";
-  let parentCounterTemplate = "let __parentIterationCount = 0"; 
-  if(path.parentPath) {
-    prefix = "";
-    parentCounterTemplate = "__parentIterationCount = __iterationCount";
-  }
-  
-  const iterationId = template(prefix + "__iterationId = ID")({
+  const iterationId = template("const __iterationId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const iterationCounter = template(prefix + "__iterationCount = __tracker.iteration(__iterationId)")();
+  const iterationCounter = template("const __iterationCount = __tracker.iteration(__iterationId)")();
   
   path.unshiftContainer("body", iterationCounter);
   path.unshiftContainer("body", iterationId);
-  path.unshiftContainer("body", template(parentCounterTemplate)());
 };
 
 
