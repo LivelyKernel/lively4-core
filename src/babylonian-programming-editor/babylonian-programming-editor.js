@@ -104,7 +104,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/benchmark/baseline.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -475,8 +475,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update sliders
     for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(BabylonianWorker.tracker.blocks.has(node._id)) {
-        slider.maxValues = BabylonianWorker.tracker.blocks.get(node._id);
+      if(BabylonianWorker.tracker.iterations.has(node._id)) {
+        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -678,7 +678,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     comp.setup(this._customInstances, this.onEvaluationNeeded.bind(this));
   }
 
-  onSliderChanged(slider, exampleId, value) {
+  onSliderChanged(slider, exampleId, value) { 
     // Get the location for the body
     const bodyPath = bodyForPath(this.pathForAnnotation(slider));
     const includedIds = [];
@@ -692,10 +692,10 @@ export default class BabylonianProgrammingEditor extends Morph {
         MemberExpression(path) {
           includedIds.push(path.node._id);
         },
-        BlockStatement(path) {
+        Function(path) {
           path.skip();
         },
-        BlockParent(path) {
+        Loop(path) {
           path.skip();
         }
       },

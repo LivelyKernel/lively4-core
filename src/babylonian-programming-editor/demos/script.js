@@ -4,8 +4,12 @@ let fahrenheit = celcius * 9/5 + 32;
 
 // Track loop variables
 let fact = 1;
-for(let i = 1; i < 50; i++) {
-  fact *= i;
+/*slider:*/for/*{}*/(let i = 1; i < 50; i++) {
+  /*probe:*/fact/*{}*/ *= /*probe:*/i/*{}*/;
+  if(i > 20) {
+    console.log(/*probe:*/i/*{}*/)
+    /*probe:*/i/*{}*/ += 2;
+  }
 }
 
 // Some object tests
@@ -28,9 +32,10 @@ arr.pop()
 // Nested loops
 let outerSum = 0;
 let innerSum = 0;
-for(let i = 0; i < 5; i++) {
-  outerSum += i;
-  for(let j = 0; j < 3; j++) {
-    innerSum += j;
+/*slider:*/for/*{}*/(let i = 0; i < 5; i++) {
+  /*probe:*/outerSum/*{}*/ += i;
+  /*slider:*/for/*{}*/(let j = 0; j < 3; j++) {
+    /*probe:*/innerSum/*{}*/ += j;
   }
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

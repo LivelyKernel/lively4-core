@@ -44,6 +44,7 @@ export default class ProbeWidget extends Widget {
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
       let runElement = null;
+      
       // run: {before, after: {type, value, name}}
       if(run.after.value instanceof Array) {
         // We have an array
@@ -139,7 +140,7 @@ export default class ProbeWidget extends Widget {
         // We can just print the value
         if(!run.before ||
            run.before.value === run.after.value ||
-           (prevRun && prevRun.after.value === run.before.value)) {
+           (prevRun && prevRun.after && prevRun.after.value === run.before.value)) {
           runElement = <span class="run">
             <span class="new-value">{renderValue(run.after.value)}</span>
           </span>;
@@ -165,15 +166,20 @@ export default class ProbeWidget extends Widget {
       
       if(this._activeRuns.has(example.id)
          && this._activeRuns.get(example.id) !== -1) {
-        valueElement.appendChild(
-          elementForRun(runs.get(this._activeRuns.get(example.id)), null)
-        );
+        const run = runs.get(this._activeRuns.get(example.id));
+        if(run.before || run.after) {
+          valueElement.appendChild(
+            elementForRun(run, null)
+          );
+        }
       } else {
         Array.from(runs.entries())
              .sort((a, b) => a[0] - b[0])
              .forEach((entry, i, arr) => {
                const prevRun = i > 0 ? arr[i-1][1] : null;
-               valueElement.appendChild(elementForRun(entry[1], prevRun))
+               if(entry[1].before || entry[1].after) {
+                 valueElement.appendChild(elementForRun(entry[1], prevRun))
+               }
              });
       }
       

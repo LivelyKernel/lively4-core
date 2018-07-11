@@ -8,7 +8,7 @@ function /*example:*//*example:*/binarySearch/*{"id":"e398_2309_1a4a","name":{"m
         var /*probe:*/value/*{}*/ = array[mid];
 
         if (value < key)
-            low = mid + 1; 
+            /*probe:*/low/*{}*/ = mid + 1; 
         else if (value > key)
             high = mid - 1;
         else

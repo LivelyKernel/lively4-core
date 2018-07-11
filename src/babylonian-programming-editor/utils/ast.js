@@ -273,10 +273,14 @@ export const applyProbes = (ast, annotations) => {
       insertReturnTracker(path);
     },
     BlockStatement(path) {
+      if(path.parentPath.isFunction() || path.parentPath.isLoop()) {
+        insertIterationTracker(path, true);
+      }
       insertBlockTracker(path);
       insertTimer(path);
     },
     Program(path) {
+      insertIterationTracker(path, false);
       insertBlockTracker(path);
       insertTimer(path, true);
     }
@@ -397,7 +401,7 @@ export const applyExamples = (ast, examples) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __blockCount, VALUE, NAME, KEYWORD)");
+  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __iterationCount, VALUE, NAME, KEYWORD)");
   const trackerBuilder = (keyword = "after") => trackerTemplate({
     ID:      types.numericLiteral(path.node._id),
     VALUE:   deepCopy(path.node),
@@ -455,7 +459,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __blockCount, VALUE, NAME)")({
+  const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __iterationCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")
@@ -473,9 +477,34 @@ const insertBlockTracker = (path) => {
   const blockId = template("const __blockId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
-  const tracker = template("const __blockCount = __tracker.block(__blockId)")();
+  const tracker = template("__tracker.block(__blockId)")();
   path.unshiftContainer("body", tracker);
   path.unshiftContainer("body", blockId);
+};
+
+/**
+ * Inserts a tracker to count iterations
+ */
+const insertIterationTracker = (path) => {
+  if(typeof path.node._id === "undefined") {
+    return;
+  }
+  
+  let prefix = "let ";
+  let parentCounterTemplate = "let __parentIterationCount = 0"; 
+  if(path.parentPath) {
+    prefix = "";
+    parentCounterTemplate = "__parentIterationCount = __iterationCount";
+  }
+  
+  const iterationId = template(prefix + "__iterationId = ID")({
+    ID: types.numericLiteral(path.node._id)
+  });
+  const iterationCounter = template(prefix + "__iterationCount = __tracker.iteration(__iterationId)")();
+  
+  path.unshiftContainer("body", iterationCounter);
+  path.unshiftContainer("body", iterationId);
+  path.unshiftContainer("body", template(parentCounterTemplate)());
 };
 
 
