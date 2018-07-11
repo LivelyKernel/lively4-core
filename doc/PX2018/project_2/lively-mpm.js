@@ -1,7 +1,5 @@
 "enable aexpr";
 
-// TODO: Animation start/stop button
-
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
 import VibratingContinuumBar from 'doc/PX2018/project_2/vibratingcontinuumbar.js';
@@ -24,25 +22,30 @@ export default class LivelyMpm extends Morph {
     this.particleSize = 4;
     
     this.canvas = this.get("#mpm");
-    //this.youngInput = this.get("#young-modulus");
     
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    /*this.input = this.get("#input");
+    this.input = this.get("#input");
     let inputUpdate = function() {
       this.variables[this.input.name] = this.input.value;
-      // Resets particles
-      this.animation.numParticles = this.animation.numParticles;
+      
+      if (this.input.name == "opacity") {
+        let numbers = this.get("#numbers");
+        numbers.style.opacity = this.input.value;
+      }
     }
-    $(this.input).on("input change", inputUpdate.bind(this));*/
+    $(this.input).on("input change", inputUpdate.bind(this));
     
     this.animation = new ElasticBodies();
     
     if (this.animation.showElements) {
       let numbers = this.get("#numbers");
       for (let i = 0; i < this.animation.numElements; ++i) {
-        numbers.appendChild(<div class="number">{i}</div>)
+        let number = <div class="number"><span>{i}</span></div>;
+        number.style.width = this.animation.elementSize[0] + "px";
+        number.style.height = this.animation.elementSize[1] + "px";
+        numbers.appendChild(number);
       }
     }
     
@@ -96,7 +99,7 @@ export default class LivelyMpm extends Morph {
     this.animation.step(this);
   }
   
-  onShowGrid() {
+  onToggleGrid() {
     if (!this.animation.showElements) return;
     
     let numbers = this.get("#numbers");
@@ -104,6 +107,8 @@ export default class LivelyMpm extends Morph {
   }
   
   onReset() {
+    if (this.animation.running) return;
+    
     this.animation = new ElasticBodies();
     this.animation.init().then(() => this.draw(this.animation.particles));
   }

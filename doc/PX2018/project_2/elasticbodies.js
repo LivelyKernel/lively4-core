@@ -9,6 +9,13 @@ import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 //   to json object functionality
 // -
 
+// Link that uses linear interpolation with normal formulars:
+// https://github.com/dsrim/mpm-matlab/blob/master/mpmtools/I2p.m
+
+// Some other interpolation formulars
+// https://github.com/mjrodriguez/mpm_lab_2d/blob/master/source/INTERPOLATION.cpp
+// https://mospace.umsystem.edu/xmlui/bitstream/handle/10355/46077/research.pdf?sequence=1
+
 export default class ElasticBodies extends MpmAnimation {
   constructor() {
     super();
@@ -19,10 +26,10 @@ export default class ElasticBodies extends MpmAnimation {
     this.elementCountX = 10;
     this.elementCountY = this.elementCount / this.elementCountX;
     this.nCount = (this.elementCountX + 1) * (this.elementCountY + 1);
-    this.v = 5;
-    this.dtime = 1;
-    this.tol = 1;
-    this.rho = 2;
+    this.v = 3;
+    this.dtime = 0.1;
+    this.tol = 0.001;
+    this.rho = 0.2;
   }
   
   async init() {
@@ -50,6 +57,10 @@ export default class ElasticBodies extends MpmAnimation {
   
   get numElements() {
     return this.elementCount;
+  }
+  
+  get elementSize() {
+    return [this.deltaX, this.deltaY];
   }
   
   initParticles() {
@@ -124,14 +135,16 @@ export default class ElasticBodies extends MpmAnimation {
       
       for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        //let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        //let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
+        let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
         let N = this.interpValue(x, y);
-        let dNdxi = this.interpGradient(x, y);                                                                 // TODO: finish
-        let transposed = enode.transpose();
-        let J0 = transposed.multiply(dNdxi);
-        let invJ0 = J0.invert();
-        let dNdx = dNdxi.multiply(invJ0);
+        let dNdxi = this.interpGradient(x, y);
+        //let transposed = enode.transpose();
+        //let J0 = transposed.multiply(dNdxi);
+        //let invJ0 = J0.invert();
+        let dNdx = dNdxi;//.multiply(invJ0);
         let stress = this.s[pid];
         for (let k = 0; k < nodes.length; ++k) {
           let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
@@ -156,17 +169,18 @@ export default class ElasticBodies extends MpmAnimation {
       let nodes = this.getElementNodes(i);
       let enode = new Matrix(nodes);
       let mpts = this.mPoints[i];
-      debugger;
       
       for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        //let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        //let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
+        let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
         let N = this.interpValue(x, y);
         let dNdxi = this.interpGradient(x, y);
-        let J0 = enode.transpose().multiply(dNdxi);
-        let invJ0 = J0.invert();
-        let dNdx = dNdxi.multiply(invJ0);
+        //let J0 = enode.transpose().multiply(dNdxi);
+        //let invJ0 = J0.invert();
+        let dNdx = dNdxi;//.multiply(invJ0);
         let Lp = Matrix.zeros(2, 2);
 
         for (let k = 0; k < nodes.length; ++k) {
@@ -178,7 +192,6 @@ export default class ElasticBodies extends MpmAnimation {
             let nmomentum = new Matrix([this.nmomentum.get(nodeId, 0), this.nmomentum.get(nodeId, 1)]);
             this.vp[pid] = this.vp[pid].add(niforce.multiply(this.dtime * N.get(k, 0)).divide(this.nmass[nodeId]));
             let add = nmomentum.multiply(this.dtime * N.get(k, 0)).divide(this.nmass[nodeId]);
-            debugger;
             this.particles[pid] = this.particles[pid].add(add);
             let curMomentum = new Matrix([this.nmomentum.get(nodeId, 0), this.nmomentum.get(nodeId, 1)]);
             vI = curMomentum.divide(this.nmass[nodeId]);
@@ -242,17 +255,22 @@ export default class ElasticBodies extends MpmAnimation {
   }
         
   getNodeId(x, y) {
-    let test = x % this.deltaX + Math.floor(y / this.deltaY) * this.elementCountX;
-    return test;
+    let id = x % this.deltaX + Math.floor(y / this.deltaY) * this.elementCountX;
+    return id;
+  }
+  
+  interpValue(x, y) {
+    return this.interpValue1(x, y);
+  }
+  
+  interpGradient(x, y) {
+    return this.interpGradient1(x, y);
   }
   
   // The example uses linear interpolation
-  // Taken from https://www.osti.gov/servlets/purl/537397
-  
-  /**
-   *
-   */
-  interpValue(x, y) {
+  // 1: According to Stefans paper; Requires 0 <= x <= 1 && 0 <= y <= 1
+  // https://www.osti.gov/servlets/purl/537397
+  interpValue1(x, y) {
     let N = Matrix.zeros(4);
     N.set(0, 0, (1 - x) * (1 - y));
     N.set(1, 0, x * (1 - y));
@@ -262,7 +280,7 @@ export default class ElasticBodies extends MpmAnimation {
     return N;
   }
   
-  interpGradient(x, y) {
+  interpGradient1(x, y) {
     let G = Matrix.zeros(4, 2);
     // G_x
     G.set(0, 0, -(1 - y) / this.deltaX);
@@ -277,4 +295,35 @@ export default class ElasticBodies extends MpmAnimation {
     
     return G;
   }
+  
+  // 2: According to https://mospace.umsystem.edu/xmlui/bitstream/handle/10355/46077/research.pdf?sequence=1
+  // Interpolation coordinates are more like in https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications
+  interpValue2(x, y) {
+    let N = Matrix.zeros(4);
+    N.set(0, 0, 0);
+    N.set(1, 0, 0);
+    N.set(2, 0, 0);
+    N.set(3, 0, 0);
+    
+    return N;
+  }
+  
+  interpGradient2(x, y) {
+    let G = Matrix.zeros(4, 2);
+    // G_x
+    G.set(0, 0, 0);
+    G.set(1, 0, 0);
+    G.set(2, 0, 0);
+    G.set(3, 0, 0);
+    // G_y
+    G.set(0, 1, 0);
+    G.set(1, 1, 0);
+    G.set(2, 1, 0);
+    G.set(3, 1, 0);
+    
+    return G;
+  }
+  
+  // Bipolar interpolation
+  // https://stackoverflow.com/questions/23920976/bilinear-interpolation-with-non-aligned-input-points
 }

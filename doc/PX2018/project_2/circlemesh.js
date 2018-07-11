@@ -17,14 +17,6 @@ export default class CircleMesh {
        let x = Math.cos(i) *radius; // I calc the position
        let y = Math.sin(i) * radius;
        points.push([x, y]);
-       //uv[i] = new Vector3(x, y);
-       //tri[(i-1)*3] = 0; // I don't know if triangles should work like this,
-       //tri[(i-1)*3+1] = i; // here I think that triangle is the index of a vertice
-       /*if ((i+1 > 360)) {
-           tri[(i-1)*3 + 2] = 1;
-       } else {
-           tri[(i-1)*3 + 2] = i+1;
-       }*/
      }
     return points;
   }

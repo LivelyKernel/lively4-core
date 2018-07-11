@@ -121,15 +121,74 @@ presentButton
 
 ---
 
-<div class="title-1">Math</div>
+<div class="title-1">Demo</div>
 
-- Continuum body Omega discretized into finite set of material points <i>p</i>
+<script>
+import boundEval from "src/client/bound-eval.js";
+
+(async() => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  mpm.explanation = ["Grid elements with adjacent nodes",
+                    "Particles (Mesh generator: gmsh)"];
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
+})()
+</script>
+
+<div class="details hidden">
+<!--<audio controls>
+  <source src="young-modulus.ogg" type="audio/ogg">
+  Your browser does not support the audio tag.
+</audio>-->
+
+```javascript {.ShowCode .Hidden}
+let url = lively4url + '/doc/PX2018/project_2/elasticbodies.js';
+lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
+```
+<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
+<script>hideHiddenElements(this)</script>
+</div>
 
 ---
 
-- <a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a>
-- <a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a>
-- <a href="https://infoscience.epfl.ch/record/255783/files/Bachelor%20Project%20Report%20MPM.pdf">Shape functions AAAAAAAAHHHHHHHHHH</a>
+<div class="title-1">Related Work</div>
+
+<ul class="notes notes-big">
+<li><a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a></li>
+<li><a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a></li>
+<li><a href="https://infoscience.epfl.ch/record/255783/files/Bachelor%20Project%20Report%20MPM.pdf">Shape functions</a></li>
+</ul>
+
+---
+
+<div class="title-1">Math</div>
+
+<div class="notes h-1-2">
+<ul class="notes-big">
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Continuum body <strong>" + latexconv.convertLaTeXToUnicode("\\Omega") + "</strong> discretized into material points <strong>p</strong>";
+</script> 
+</li>
+<li><strong>p</strong></li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<script>
+import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
+import boundEval from "src/client/bound-eval.js";
+(async() => {
+  let animation = await (<presentation-animation></presentation-animation>);
+  let points = await CircleMesh.gmsh(50, 300, 100);
+  let steps = [];
+  steps.push({ "body": { type: "circle", radius: 50, x: 300, y: 100, color: "rgba(255, 0, 0, 1)", filled: true } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)" } });
+  animation.animationSteps = steps;  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+})()
+</script>
+</div>
 
 ---
 
@@ -155,37 +214,6 @@ presentButton
 </ul>
 </li>
 </ul>
-
----
-
-<div class="title-1">Young Modulus</div>
-
-<script>
-import boundEval from "src/client/bound-eval.js";
-
-(async() => {
-  let mpm = await (<lively-mpm></lively-mpm>);
-  mpm.explanation = ["Alternative name: <br> elastic modulus",
-                    "Describes stiffness of solid materials"];
-  mpm.inputVariable = { "name": "youngModulus", "min": 0.001, "max": 2, "step": 0.001 }
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
-})()
-</script>
-
-<div class="details hidden">
-<audio controls>
-  <source src="young-modulus.ogg" type="audio/ogg">
-  Your browser does not support the audio tag.
-</audio>
-
-```javascript {.ShowCode .Hidden}
-let url = lively4url + '/doc/PX2018/project_2/vibratingpoint.js';
-lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
-```
-<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
-<script>hideHiddenElements(this)</script>
-</div>
 
 ---
 
