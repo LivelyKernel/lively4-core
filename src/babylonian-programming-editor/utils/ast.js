@@ -72,9 +72,13 @@ export function /*example:*//*example:*/canBeProbe/*{"id":"6104_8577_2ac3","name
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
                                  && (path.parentPath !== path.getFunctionParent());
+  const isTrackableParameter = path.getFunctionParent().node.params 
+                               && (path.parentPath === path.getFunctionParent())
+                               && (path.getFunctionParent().node.params.includes(path.node));
   const /*probe:*/isTrackableMemberExpression/*{}*/ = path.isMemberExpression();
   const /*probe:*/isTrackableReturnStatement/*{}*/ = path.isReturnStatement();
   /*probe:*/return/*{}*/ isTrackableIdentifier
+         || isTrackableParameter
          || isTrackableMemberExpression
          || isTrackableReturnStatement;
 }

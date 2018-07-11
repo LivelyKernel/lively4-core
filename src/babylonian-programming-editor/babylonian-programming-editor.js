@@ -46,6 +46,7 @@ import Performance from "./utils/performance.js";
 
 // Constants
 const COMPONENT_URL = `${lively4url}/src/babylonian-programming-editor`;
+const DEFAULT_FILE_URL = `${COMPONENT_URL}/demos/tree-improved.js`;
 
 
 /**
@@ -104,7 +105,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/binary-search.js`);
+      this.livelyEditor().setURL(DEFAULT_FILE_URL);
       this.livelyEditor().loadFile();
 
       // Event listeners

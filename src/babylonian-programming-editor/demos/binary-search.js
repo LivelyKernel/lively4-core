@@ -4,7 +4,7 @@ function /*example:*//*example:*/binarySearch/*{"id":"e398_2309_1a4a","name":{"m
     
     /*slider:*/while/*{}*/ (/*probe:*/low/*{}*/ <= /*probe:*/high/*{}*/) {
         
-        var /*probe:*/mid/*{}*/ = Math.floor((low + high)/2);
+        var /*probe:*/mid/*{}*/ = Math.floor((low + high) / 2);
         var /*probe:*/value/*{}*/ = array[mid];
 
         if (value < key)
