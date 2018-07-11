@@ -10,6 +10,7 @@ import {
   defaultExample
 } from "../utils/defaults.js";
 import Tracker from "../utils/tracker.js";
+import Performance from "../utils/performance.js";
 
 
 /**
@@ -63,6 +64,9 @@ class BabylonianWorker {
 
     // Serialize context
     serializedAnnotations.context = editor.context;
+    
+    // Performance
+    Performance.step("parse_and_transform");
 
     // Generate AST and modified code
     const { ast, loadableCode, executableCode } = await this._astWorker.process(
@@ -81,10 +85,13 @@ class BabylonianWorker {
       editor.ast = ast;
       editor.loadableCode = loadableCode;
       editor.executableCode = executableCode;
-
+      
       if(!execute) {
         return;
       }
+      
+      // Performance
+      Performance.step("execute");
       
       // Reset the tracker to write new results
       this.tracker.reset();
@@ -119,9 +126,15 @@ class BabylonianWorker {
         }
       }
     }
+    
+    // Performance
+    Performance.step("update");
   
     // Tell editors that the tracker has changed
     this.updateEditors();
+    
+    // Performance
+    Performance.stop();
   }
   
   async _load(code, url, thisReference) {

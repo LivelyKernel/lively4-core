@@ -13,12 +13,16 @@ import {
   applyTracker,
   applyContext,
 } from "../utils/ast.js";
-
+import Performance from "../utils/performance.js";
 
 /**
  * Receive message from the main thread
  */
 export default onmessage = async function(msg) {
+  
+  // Performance
+  Performance.step("parse");
+  
   const {
     code, 
     annotations, 
@@ -29,6 +33,10 @@ export default onmessage = async function(msg) {
   // Process the code
   try {
     const ast = parse(code);
+    
+    // Performance
+    Performance.step("transform");
+    
     ast._sourceUrl = sourceUrl;
     await applyBasicModifications(ast, replacementUrls);
     const originalAst = deepCopy(ast);
@@ -54,6 +62,9 @@ export default onmessage = async function(msg) {
     // Insert tracker codes
     loadableCode = applyTracker(loadableCode);
     executableCode = applyTracker(executableCode);
+    
+    // Performance
+    Performance.stop();
 
     // Send result
     return respond(msg.data.id, originalAst, loadableCode, executableCode);

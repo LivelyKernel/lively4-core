@@ -41,6 +41,7 @@ import {
   stringInsert,
   stringRemove
 } from "./utils/utils.js";
+import Performance from "./utils/performance.js";
 
 
 // Constants
@@ -103,7 +104,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/functions.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/benchmark/baseline.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -601,8 +602,15 @@ export default class BabylonianProgrammingEditor extends Morph {
     if(this._evaluationLocked && !ignoreLock) {
       return;
     }
+    
+    // Performance
+    Performance.step("prep");
+    
+    // Make sure we have no zombie annotations
+    this.cleanupAnnotations()
 
     this.status("evaluating");
+    
     await BabylonianWorker.evaluateEditor(this);
   }
 
@@ -610,14 +618,6 @@ export default class BabylonianProgrammingEditor extends Morph {
   /**
    * Event handlers
    */
-
-  onChange() {
-    // Make sure we have no zombie annotations
-    this.cleanupAnnotations()
-
-    // Tell worker that the value changed
-    BabylonianWorker.onEditorChanged(this);
-  }
 
   onTrackerChanged() {
     if(this.hadParseError) {
@@ -635,6 +635,9 @@ export default class BabylonianProgrammingEditor extends Morph {
         this.status();
       }
     }
+    
+    // Performance
+    Performance.stop();
   }
 
 
@@ -650,7 +653,10 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Check if we selected a node
     if(this._selectedLocation in this._ast._locationMap) {
-      this._selectedPath = this._ast._locationMap[this._selectedLocation];
+      const selectedPath = this._ast._locationMap[this._selectedLocation];
+      if(selectedPath && !selectedPath.isProgram()) {
+        this._selectedPath = selectedPath;
+      }
     } else {
       this._selectedPath = null;
     }
@@ -747,7 +753,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Always visible
     this._buttons.appendChild(TextButton("", "exchange", this.onEditPrePostScript.bind(this)));
     this._buttons.appendChild(TextButton("", "object-group", this.onEditInstances.bind(this)));
-
+    this._buttons.appendChild(TextButton("", "", this.onBenchmark.bind(this)));
+    
     if(!this._selectedPath) {
       return;
     }
@@ -773,6 +780,26 @@ export default class BabylonianProgrammingEditor extends Morph {
         )
       );
     }
+  }
+  
+  onBenchmark() {
+    let counter = 0;
+    let numTests = 100;
+    const doBenchmark = () => {
+      console.log(`Benchmark ${counter} of ${numTests}`);
+      
+      // Benchmark actions
+      this.evaluate();
+      
+      // Repeat
+      counter++;
+      if(counter < numTests) {
+        setTimeout(doBenchmark, 2000);
+      }
+    }
+    
+    Performance.reset();
+    doBenchmark();
   }
 
 

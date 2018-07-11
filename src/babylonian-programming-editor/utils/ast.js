@@ -64,6 +64,10 @@ export function /*example:*//*example:*/generateLocationMap/*{"id":"4ebc_b290_28
  * Checks whether a path can be probed
  */
 export function /*example:*//*example:*/canBeProbe/*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+  if(!path) {
+    return false;
+  }
+  
   const /*probe:*/isTrackableIdentifier/*{}*/ = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
@@ -79,6 +83,10 @@ export function /*example:*//*example:*/canBeProbe/*{"id":"6104_8577_2ac3","name
  * Checks whether a path can be a slider
  */
 export function canBeSlider(path) {
+  if(!path) {
+    return false;
+  }
+  
   const isTrackableIdentifier = path.isIdentifier()
                                 && path.parentPath === path.getFunctionParent();
   const isTrackableLoop = path.isLoop();
@@ -89,6 +97,10 @@ export function canBeSlider(path) {
  * Checks whether a path can be an example
  */
 export const canBeExample = (path) => {
+  if(!path) {
+    return false;
+  }
+  
   // We have to be the name of a function
   const functionParent = path.getFunctionParent();
   const isFunctionName = (functionParent
@@ -102,6 +114,10 @@ export const canBeExample = (path) => {
  * Checks whether a path can be an instance
  */
 export const canBeInstance  = (path) => {
+  if(!path) {
+    return false;
+  }
+  
   // We have to be the name of a class
   const isClassName = (path.parentPath.isClassDeclaration() && path.parentKey === "id");
   return isClassName;
@@ -111,6 +127,10 @@ export const canBeInstance  = (path) => {
  * Checks whether a path can be replaced
  */
 export const canBeReplacement = (path) => {
+  if(!path) {
+    return false;
+  }
+  
   // We have to be the righthand side of an assignment
   return ((path.parentPath.isVariableDeclarator() && path.parentKey === "init")
           || (path.parentPath.isAssignmentExpression() && path.parentKey === "right"));
