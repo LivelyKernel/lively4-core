@@ -10,6 +10,7 @@ export default class Tracker {
         DefaultMap.builder(Object)
       )
     );
+    this.idIterationParents = new DefaultMap(0); // Map(id, iterationId); 
     this.iterations = new DefaultMap( // Map(id, Map(exampleId, iterationCounter))
       DefaultMap.builder(0)
     );
@@ -25,6 +26,7 @@ export default class Tracker {
   
   reset() {
     this.ids.clear();
+    this.idIterationParents.clear();
     this.iterations.clear();
     this.errors.clear();
     this.executedBlocks.clear();
@@ -35,10 +37,11 @@ export default class Tracker {
     this._symbolProvider.reset();
   }
 
-  id(id, exampleId, runId, value, name, keyword = "after") {
+  id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
     if(!["before", "after"].includes(keyword)) {
       return value;
     }
+    this.idIterationParents.set(id, iterationParentId);
    
     // Check and assign object identity
     if(value instanceof Object) {
@@ -80,8 +83,9 @@ export default class Tracker {
   }
   
   iteration(id) {
-    const iterationCount = this.iterations.get(id).get(this.exampleId);
-    this.iterations.get(id).set(this.exampleId, iterationCount + 1);
+    const iterationMap = this.iterations.get(id);
+    const iterationCount = iterationMap.get(this.exampleId);
+    iterationMap.set(this.exampleId, iterationCount + 1);
     return iterationCount;
   }
   

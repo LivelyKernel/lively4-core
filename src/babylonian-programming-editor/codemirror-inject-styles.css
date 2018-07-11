@@ -155,6 +155,11 @@
   margin-right: 0;
 }
 
+.probe-value .run.noexec {
+  cursor: inherit !important;
+  color: #666;
+}
+
 .probe-value canvas {
   height: 100px;
 }

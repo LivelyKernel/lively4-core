@@ -401,7 +401,7 @@ export const applyExamples = (ast, examples) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __iterationCount, VALUE, NAME, KEYWORD)");
+  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __iterationId, __iterationCount, VALUE, NAME, KEYWORD)");
   const trackerBuilder = (keyword = "after") => trackerTemplate({
     ID:      types.numericLiteral(path.node._id),
     VALUE:   deepCopy(path.node),
@@ -459,7 +459,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-  const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __iterationCount, VALUE, NAME)")({
+const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __iterationId, __iterationCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")

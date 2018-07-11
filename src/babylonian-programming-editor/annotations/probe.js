@@ -20,6 +20,10 @@ export default class Probe extends Annotation {
     this._widget.values = values;
   }
   
+  set iterationParentId(parentId) {
+    this._widget.iterationParentId = parentId;
+  }
+  
   empty() {
     this._widget.values = new Map();
   }

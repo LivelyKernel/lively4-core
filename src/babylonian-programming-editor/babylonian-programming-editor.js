@@ -104,7 +104,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/script.js`);
+      this.livelyEditor().setURL(`${COMPONENT_URL}/demos/binary-search.js`);
       this.livelyEditor().loadFile();
 
       // Event listeners
@@ -486,6 +486,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
       if(BabylonianWorker.tracker.ids.has(node._id)) {
+        probe.iterationParentId = BabylonianWorker.tracker.idIterationParents.get(node._id);
         probe.values = BabylonianWorker.tracker.ids.get(node._id);
       } else {
         probe.empty();
@@ -679,30 +680,29 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   onSliderChanged(slider, exampleId, value) { 
-    // Get the location for the body
-    const bodyPath = bodyForPath(this.pathForAnnotation(slider));
     const includedIds = [];
-    traverse(bodyPath.node, {
-        Identifier(path) {
-          includedIds.push(path.node._id);
-        },
-        ReturnStatement(path) {
-          includedIds.push(path.node._id);
-        },
-        MemberExpression(path) {
-          includedIds.push(path.node._id);
-        },
-        Function(path) {
-          path.skip();
-        },
-        Loop(path) {
-          path.skip();
-        }
+    const visitor = {
+      Identifier(path) {
+        includedIds.push(path.node._id);
       },
-      bodyPath.scope,
-      bodyPath
-    );
-
+      ReturnStatement(path) {
+        includedIds.push(path.node._id);
+      },
+      MemberExpression(path) {
+        includedIds.push(path.node._id);
+      },
+      Function(path) {
+        path.skip();
+      },
+      Loop(path) {
+        path.skip();
+      }
+    };
+    
+    // Find in body
+    const loopPath = bodyForPath(this.pathForAnnotation(slider)).parentPath;
+    traverse(loopPath.node, visitor, loopPath.scope, loopPath);
+    
     // Get all probes directly in the body
     this._annotations.probes.forEach((probe) => {
       if(includedIds.includes(this.nodeForAnnotation(probe)._id)) {

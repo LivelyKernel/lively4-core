@@ -11,6 +11,7 @@ export default class ProbeWidget extends Widget {
     super(editor, location, kind, deleteCallback);
     this._values = new Map(); // Map(exampleId, Map(runId, [{type, value, name}]))
     this._activeRuns = new Map(); // exampleId -> runId
+    this.iterationParentId = -1;
   }
   
   set values(values) {
@@ -44,6 +45,10 @@ export default class ProbeWidget extends Widget {
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
       let runElement = null;
+      
+      if(!run || !(run.before || run.after)) {
+        return <span class="run noexec">/</span>
+      }
       
       // run: {before, after: {type, value, name}}
       if(run.after.value instanceof Array) {
@@ -167,20 +172,19 @@ export default class ProbeWidget extends Widget {
       if(this._activeRuns.has(example.id)
          && this._activeRuns.get(example.id) !== -1) {
         const run = runs.get(this._activeRuns.get(example.id));
-        if(run.before || run.after) {
           valueElement.appendChild(
             elementForRun(run, null)
           );
-        }
       } else {
-        Array.from(runs.entries())
-             .sort((a, b) => a[0] - b[0])
-             .forEach((entry, i, arr) => {
-               const prevRun = i > 0 ? arr[i-1][1] : null;
-               if(entry[1].before || entry[1].after) {
-                 valueElement.appendChild(elementForRun(entry[1], prevRun))
-               }
-             });
+        let maxRunId = BabylonianWorker.tracker.iterations.get(this.iterationParentId).get(example.id);
+        
+        for(let runId = 0; runId < maxRunId; runId++) {
+          const prevRun = runId > 0 ? runs.get(runId-1) : null;
+          const run = runs.get(runId);
+            valueElement.appendChild(
+              elementForRun(run, prevRun)
+            );
+        }
       }
       
       // Show some UI only for the first element
