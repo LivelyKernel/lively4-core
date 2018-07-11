@@ -41,7 +41,7 @@ export default class PresentationAnimation extends Morph {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // Draw the animation step save in the object
     for (let key in jsonObject) {
-      this.context.fillStyle = jsonObject[key].color;
+      this.context.fillStyle = jsonObject[key].color != undefined ? jsonObject[key].color : '#000';
       if (jsonObject[key].type === "points") {
         for (let i = 0; i < jsonObject[key].value.length; ++i) {
           let posX = jsonObject[key].value[i][0];
@@ -54,13 +54,18 @@ export default class PresentationAnimation extends Morph {
         this.context.beginPath();
         this.context.arc(jsonObject[key].x, jsonObject[key].y, jsonObject[key].radius, 0, 2 * Math.PI);
         this.context.closePath();
-        
-        if (jsonObject[key].filled) {
-          this.context.fill();
-        } else {
-          this.context.strokeStyle = jsonObject[key].color;
-          this.context.stroke();
-        }
+      }
+      if (jsonObject[key].type === "rect") {
+        this.context.beginPath();
+        this.context.rect(jsonObject[key].x, jsonObject[key].y, jsonObject[key].width, jsonObject[key].height);
+        this.context.closePath();
+      }
+      
+      if (jsonObject[key].filled !== undefined && jsonObject[key].filled) {
+        this.context.fill();
+      } else if (jsonObject[key].filled !== undefined) {
+        this.context.strokeStyle = jsonObject[key].color;
+        this.context.stroke();
       }
     }
   }
