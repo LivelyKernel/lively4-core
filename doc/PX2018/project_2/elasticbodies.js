@@ -2,12 +2,10 @@ import MpmAnimation from './mpmanimation.js';
 import Matrix from './matrix.js';
 import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 
-// Original Source: https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications?_sg=yZLOSAsv6oOMKU62vzSyDBmCJ7kCJ6-Qwo0stHaGzQfzVzpwgp30HzJWVvrSqp70tW43-Rg7dQ
-// 
-// Notes:
-// - { } is the so called brace indexer to index cells equivalent
-//   to json object functionality
-// -
+// Original Source:
+//  Title: Material point method: basics and applications
+//  Link: https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications?_sg=yZLOSAsv6oOMKU62vzSyDBmCJ7kCJ6-Qwo0stHaGzQfzVzpwgp30HzJWVvrSqp70tW43-Rg7dQ
+
 
 // Link that uses linear interpolation with normal formulars:
 // https://github.com/dsrim/mpm-matlab/blob/master/mpmtools/I2p.m
@@ -85,10 +83,12 @@ export default class ElasticBodies extends MpmAnimation {
       this.Vp.set(i, 0, a);
       this.Mp.set(i, 0, a * this.rho);
       
-      if (particle.get(1) < (this.deltaX * this.elementCountX / 2)) {
-        this.vp.push(new Matrix([this.v, this.v]));
+      // The initial velocities need to be adjusted to fit canvas coordinates
+      // and not the coordinates given in the paper.
+      if (particle.get(1) > (this.deltaX * this.elementCountX / 2)) {
+        this.vp.push(new Matrix([this.v, -this.v]));
       } else {
-        this.vp.push(new Matrix([-this.v, -this.v]));
+        this.vp.push(new Matrix([-this.v, this.v]));
       }
       
       this.Fp.push(new Matrix([[1, 0], [0, 1]]));
