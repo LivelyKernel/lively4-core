@@ -71,8 +71,9 @@
 
     #buttons {
       border-top: 1px solid rgb(221, 221, 221);
-      padding: 0.1em;
       text-align: center;
+      display: flex;
+      justify-content: space-evenly;
     }
 
     .icon {
@@ -82,10 +83,15 @@
       opacity: 0.8;
       min-width: 1em;
       text-align: center;
+      padding: 0.2em;
     }
 
     .icon.plus::before {
       content: "\f067";
+    }
+    
+    .icon.minus::before {
+      content: "\f068";
     }
   </style>
 

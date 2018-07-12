@@ -39,6 +39,10 @@ export function AddButton(callback) {
   return Button(callback, ["plus"], "Add");
 }
 
+export function MinusButton(callback) {
+  return Button(callback, ["minus"], "Delete");
+}
+
 export function TextButton(text, cls, callback) {
   let button = <button>
         <span class={"icon " + cls} title={text}></span>

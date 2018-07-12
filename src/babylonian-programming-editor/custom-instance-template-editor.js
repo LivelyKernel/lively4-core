@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { debounce } from "utils";
 import InstanceList from "./ui/instance-list.js";
-import { AddButton } from "./ui/buttons.js";
+import { AddButton, MinusButton } from "./ui/buttons.js";
 import CustomInstance from "./utils/custom-instance.js";
 
 const DEFAULT_CODE = "return null;";
@@ -49,9 +49,24 @@ export default class CustomInstanceTemplateEditor extends Morph {
       this._instanceList.render();
     });
 
-    this.get("#buttons").appendChild(AddButton(() => {
+    const buttons = this.get("#buttons");
+    
+    buttons.appendChild(AddButton(() => {
       this._instances.push(new CustomInstance("New instance"));
       this._instanceList.render();
+    }));
+    
+    buttons.appendChild(MinusButton(() => {
+      if(this._activeInstance) {
+        this._instances.splice(this._instances.indexOf(this._activeInstance), 1);
+        
+        this.activeInstance = null;
+        this._instanceList.render();
+        
+        if(this._callback) {
+          this._callback();
+        }
+      }
     }));
   }
 
