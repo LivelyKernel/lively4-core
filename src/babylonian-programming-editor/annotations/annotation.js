@@ -59,15 +59,19 @@ export default class Annotation {
     return this.__proto__.constructor.name.toLowerCase();
   }
   
-  serializeForSave() {
+  _serialize() {
     return {
       kind: this.kind,
       location: this.locationAsKey
     };
   }
   
+  serializeForSave() {
+    return this._serialize();
+  }
+  
   serializeForWorker() {
-    return this.serializeForSave();
+    return this._serialize();
   }
   
   load(serialized) {

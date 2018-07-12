@@ -1,6 +1,7 @@
 // Try out replacement
-let celcius = 24;
-let fahrenheit = celcius * 9/5 + 32;
+
+let celcius = /*replacement:*/prompt("Temperature to convert:")/*{"id":"c2a5_4257_6c02","value":{"mode":"input","value":"24"}}*/;
+let /*probe:*/fahrenheit/*{}*/ = celcius * 9/5 + 32;
 
 // Track loop variables
 let fact = 1;

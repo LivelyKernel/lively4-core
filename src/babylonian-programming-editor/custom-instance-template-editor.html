@@ -8,18 +8,23 @@
     #list-container {
       display: flex;
       flex-direction: column;
-      width: 200px;
+      width: calc(30% - 1px);
+      height: 100%;
       border-right: 1px solid rgba(0, 0, 0, 0.3);
     }
 
     #editor-container {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
+      position: absolute;
+      left: 30%;
+      display: block;
+      width: 70%;
+      height: 100%;
     }
 
     #editor {
-      flex: 1;
+      position: absolute;
+      width: 100%;
+      height: calc(100% - 60px);
     }
 
     #instance-list {
@@ -50,6 +55,7 @@
 
     .header {
       border-bottom: 1px solid rgb(221, 221, 221);
+      height: 29px;
     }
 
     #name-container {
@@ -84,7 +90,9 @@
   </style>
 
   <div id="list-container">
-    <h5 class="header">Custom templates:</h5>
+    <div class="header">
+      <h5>Custom templates:</h5>
+    </div>
     <ul id="instance-list">
       <li></li>
     </ul>
@@ -98,7 +106,9 @@
       <h5>Instance name:</h5>
       <input id="name-input">
     </div>
-    <h5 class="header">Instance creation (return new instance):</h5>
+    <div class="header">
+      <h5>Instance creation (return new instance):</h5>
+    </div>
     <lively-code-mirror  id="editor" ></lively-code-mirror>
   </div>
 

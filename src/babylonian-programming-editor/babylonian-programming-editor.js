@@ -795,7 +795,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       // Repeat
       counter++;
       if(counter < numTests) {
-        setTimeout(doBenchmark, 2000);
+        setTimeout(doBenchmark, 5000);
       }
     }
     

@@ -13,7 +13,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"093a_a0fc_333a","name":{"mode"
   }
   
   // Scene
-  /*example:*//*example:*/drawTo/*{"id":"b399_785f_5374","name":{"mode":"input","value":""},"color":"hsl(30, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"b399_785f_5374_canvas"}},"instanceId":{"mode":"select","value":"093a_a0fc_333a"},"prescript":"","postscript":""}*//*{"id":"60bc_a4a6_7b11","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"60bc_a4a6_7b11_canvas"}},"instanceId":{"mode":"select","value":"4e7a_5f39_3409"},"prescript":"","postscript":""}*/(canvas) {
+  /*example:*//*example:*/drawTo/*{"id":"b399_785f_5374","name":{"mode":"input","value":"Cherry at day"},"color":"hsl(30, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"b399_785f_5374_canvas"}},"instanceId":{"mode":"select","value":"093a_a0fc_333a"},"prescript":"","postscript":""}*//*{"id":"60bc_a4a6_7b11","name":{"mode":"input","value":"Birch at night"},"color":"hsl(150, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"60bc_a4a6_7b11_canvas"}},"instanceId":{"mode":"select","value":"4e7a_5f39_3409"},"prescript":"","postscript":""}*/(canvas) {
     this.ctx = canvas.getContext('2d');
 
     this.canvasWidth = canvas.width;
@@ -55,7 +55,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"093a_a0fc_333a","name":{"mode"
     this.drawMountain(50, this.timeProps.mountainColors[1]);
   }
 
-  drawMountain (offset, fillStyle) {
+  /*slider:*/drawMountain/*{}*/ (offset, fillStyle) {
     var x = 0;
     var y = this.canvasHeight - offset;
 

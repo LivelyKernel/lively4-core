@@ -115,7 +115,7 @@ class BabylonianWorker {
         }
         someEditor.activeExamples.forEach(e => this.activeExamples.add(e));
 
-        console.log(`Executing ${someEditor.url}`, someEditor.executableCode);
+        console.log(`Executing ${someEditor.url}`);
         const evalResult = await boundEval(someEditor.executableCode, {
           tracker: this.tracker,
           connections: defaultConnections(),
