@@ -1,5 +1,36 @@
+# Introduction
 
-# Example 1 - transform
+The following scripts have to be executed either with ctrl+alt+v or with letsScript() in Lively4.
+
+# Example 1 - Initial Example
+
+```javascript
+[
+  {name: "object", subclasses:[{name: "morph"},]},
+  {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
+  {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+]
+```
+
+## extract
+
+``` javascript
+import { config } from 'src/client/vivide/utils.js';
+
+(async item => (
+  {
+  label: item.name
+}))::config({
+})
+```
+
+# Example 2 - Async Example
+
+```javascript
+lively.findDependedModules('https://lively-kernel.org/lively4/lively4-thulur/src/client/lively.js')
+```
+
+## transform
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -12,7 +43,7 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
-# Example 1 - extract
+## extract
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -24,7 +55,7 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
-# Example 1 - descent
+## descent
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -32,8 +63,15 @@ import { config } from 'src/client/vivide/utils.js';
   
 })
 ```
+# Example 3 - Multilevel Hierarchy Example
 
-# Example 2 - transform
+```javascript
+fetch('https://lively-kernel.org/lively4/lively4-thulur/', {method: 'OPTIONS'})
+  .then(r => r.json())
+  .then(j => j.contents);
+```
+
+## transform
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -57,7 +95,7 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
-# Example 2 - transform (with utils)
+## transform (with utils)
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 import { sortDirectoriesAndFiles } from 'doc/RP2018/vivide-js/presentation/presentation-utils.js'
@@ -74,7 +112,7 @@ import { sortDirectoriesAndFiles } from 'doc/RP2018/vivide-js/presentation/prese
 })
 ```
 
-# Example 2 - extract
+## extract
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -86,7 +124,7 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
-# Example 2 - descent
+## descent
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 
@@ -110,7 +148,7 @@ import { config } from 'src/client/vivide/utils.js';
 })
 ```
 
-# Example 2 - descent (with utils)
+## descent (with utils)
 ``` javascript
 import { config } from 'src/client/vivide/utils.js';
 import { optionsResult, getPath } from 'doc/RP2018/vivide-js/presentation/presentation-utils.js'

@@ -3,7 +3,8 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
-
+    padding: 3px;
+    min-width: 850px;
   }
   
   #content {
@@ -13,6 +14,7 @@
   canvas {
     border: 1px solid black;
     float: left;
+    margin-right: 5px;
   }    
   
   .inputs {
@@ -21,7 +23,7 @@
   }
   
   .input-line {
-    margin: 20px 0;
+    margin-bottom: 20px;
   }
   
   input {
@@ -29,28 +31,92 @@
     text-align: right;
     margin-right: 20px;
   }
+  
+  input[type=range] {
+    -webkit-appearance: none;
+  }
+  
+  input[type=range]:focus {
+
+  }
+  
+  input[type=range]::-webkit-slider-runnable-track {
+
+  }
+  
+  input[type=range]::-webkit-slider-thumb {
+
+  }
+  
+  input[type=range]:focus::-webkit-slider-runnable-track {
+
+  }
+  
+  #explanation {
+    position: absolute;
+    left: 450px;
+    top: 110px;
+    font-size: 22pt;
+    line-height: 1.5em;
+  }
+  
+  #explanation li {
+    padding: 5px 0;
+  }
+  
+  #numbers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 400px;
+    opacity: 1;
+  }
+  
+  .number {
+    width: 40px;
+    height: 40px;
+    display: table;
+    float: left;
+    border: 1px solid #777;
+    box-sizing: border-box;
+  }
+  
+  .number span {
+    text-align: center;
+    display: table-cell;
+    vertical-align: middle;
+  }
+  
+  .hidden {
+    display: none;
+  }
 </style>
+  <div id="numbers" class="hidden">
+    
+  </div>
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
-      <label>Speed: </label><input id="speed"  value="20"/><br />
+      <form name="form" oninput="inputvalue.value = input.valueAsNumber">
+        <label id="inputlabel">Grid opacity: </label>
+        <output name="inputvalue" for="input" >1</output>
+        <input id="input" name="opacity" type="range" step="0.1" min="0.1" max="1" value="1">
+      </form>
     </div>
     <div class="input-line">
-      <label>Young modulus: </label><input id="young-modulus" value="0.001"/>
-    </div>
-    <div class="input-line">
-      <label>Extend: </label><input id="extend" value="200"/>
-    </div>
-    <div class="input-line">
-      <label># Particles: </label><input id="num-particles" value="1"/>
-    </div>
-    <div class="input-line">
-      <label>Particle Size: </label><input id="particle-size" value="2"/>
+      <form name="form" oninput="inputvalue.value = input.valueAsNumber">
+        <label id="inputlabel">Speed: </label>
+        <output name="inputvalue" for="input" >0.1</output>
+        <input id="input" name="speed" type="range" step="0.01" min="0.01" max="1" value="0.1">
+      </form>
     </div>
   </div>
-  <button id="toggleAnimation">
-    start
-  </button>
+  <ul id="explanation"></ul>
+  <button id="toggleAnimation">Start Animation</button><br>
+  <button id="step">Step</button><br>
+  <button id="toggleGrid">Toogle Grid</button><br>
+  <button id="reset">Reset</button><br>
+  <button id="toggleParticleList" disabled>Toogle Particle List</button>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
-

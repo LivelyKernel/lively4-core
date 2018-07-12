@@ -23,12 +23,21 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
 
   async display(vivideLayer, config) {
     super.display(vivideLayer, config);
-
+    
+    // Clean up
+    this.tree.innerHTML = '';
+    // Remove stuck tooltips
+    let oldTooltips = document.body.getElementsByClassName('tooltip');
+    if (oldTooltips) {
+      for (let oldTooltip of oldTooltips) {
+        oldTooltip.remove();
+      }  
+    }
+    
     this.dataByTreeItem = new Map();
     this.childLayerByTreeItem = new Map();
     this.childScriptByTreeItem = new Map();
     
-    this.tree.innerHTML = '';
     for (let object of vivideLayer.objects) {
       await this.processObject(object, this.tree);
     }
