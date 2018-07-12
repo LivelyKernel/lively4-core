@@ -25,9 +25,9 @@ export default class ElasticBodies extends MpmAnimation {
     this.elementCountX = 10;
     this.elementCountY = this.elementCount / this.elementCountX;
     this.nCount = (this.elementCountX + 1) * (this.elementCountY + 1);
-    this.v = 3;
-    this.dtime = 0.1;
-    this.tol = 0.001;
+    this.v = 10;
+    this.dtime = 0.05;
+    this.tol = 5;
     this.rho = 0.2;
   }
   
@@ -77,11 +77,11 @@ export default class ElasticBodies extends MpmAnimation {
     // The initialisation code does not make much sense in the paper
     for (let i = 0; i < this.pCount; ++i) {
       let particle = this.particles[i];
-      let square = new Matrix([[particle.get(0), particle.get(1)], [1, 1]]);
+      let square = new Matrix([[particle.get(0), particle.get(1)], [400, 400]]);
       let a = square.det() / 2;
       
       this.Vp.set(i, 0, a);
-      this.Mp.set(i, 0, a * this.rho);
+      this.Mp.set(i, 0, 450);//a * this.rho);
       
       // The initial velocities need to be adjusted to fit canvas coordinates
       // and not the coordinates given in the paper.
@@ -183,7 +183,6 @@ export default class ElasticBodies extends MpmAnimation {
         //let invJ0 = J0.invert();
         let dNdx = dNdxi;//.multiply(invJ0);
         let Lp = Matrix.zeros(2, 2);
-
         for (let k = 0; k < nodes.length; ++k) {
           let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
           let vI = new Matrix([0, 0]);
