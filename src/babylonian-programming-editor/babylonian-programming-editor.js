@@ -212,13 +212,16 @@ export default class BabylonianProgrammingEditor extends Morph {
     text = lines.join("\n");
 
     // Add context
-    const matches = text.match(/\/\* Context: (.*) \*\//);
-    if(matches) {
-      text = text.replace(matches[matches.length-2], "");
-      const data = JSON.parse(matches[matches.length-1]);
-      this._context = data.context ? data.context : defaultContext();
-      if(data.customInstances) {
-        data.customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
+    if(comments.length) {
+      const lastComment = comments[comments.length-1].value;
+      const matches = lastComment.match(/^\s*Context: (.*)\s*/);
+      if(matches) {
+        text = text.replace(`/*${matches[0]}*/`, "");
+        const data = JSON.parse(matches[1]);
+        this._context = data.context ? data.context : defaultContext();
+        if(data.customInstances) {
+          data.customInstances.forEach(i => this._customInstances.push(new CustomInstance().load(i)));
+        }
       }
     }
 
@@ -472,12 +475,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
 
-  updateAnnotations() {
+  /*example:*/updateAnnotations/*{"id":"8de8_4761_b269","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"8de8_4761_b269_this"},"prescript":"","postscript":""}*/() {
     // Update sliders
-    for(let slider of this._annotations.sliders) {
+    for(let /*probe:*/slider/*{}*/ of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
       if(BabylonianWorker.tracker.iterations.has(node._id)) {
-        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
+        /*probe:*/slider.maxValues/*{}*/ = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -754,7 +757,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Always visible
     this._buttons.appendChild(TextButton("", "exchange", this.onEditPrePostScript.bind(this)));
     this._buttons.appendChild(TextButton("", "object-group", this.onEditInstances.bind(this)));
-    this._buttons.appendChild(TextButton("", "", this.onBenchmark.bind(this)));
+    //this._buttons.appendChild(TextButton("", "", this.onBenchmark.bind(this)));
     
     if(!this._selectedPath) {
       return;
@@ -847,7 +850,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this.editorComp().editor
   }
 
-  normalizeButtonName(name) {
+  /*example:*//*example:*/normalizeButtonName/*{"id":"8943_87e4_9899","name":{"mode":"input","value":"Invalid"},"color":"hsl(350, 30%, 70%)","values":{"name":{"mode":"input","value":"\"Hello\""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"49e7_b2c7_0340","name":{"mode":"input","value":"Instance"},"color":"hsl(180, 30%, 70%)","values":{"name":{"mode":"input","value":"\"Instance\""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(name) {
     if(name[name.length - 1] === "s") {
       name = name.slice(0, -1);
     }
@@ -858,7 +861,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         name = "Instance template";
     }
 
-    return name;
+    /*probe:*/return/*{}*/ name;
   }
 
   /**
@@ -874,3 +877,4 @@ export default class BabylonianProgrammingEditor extends Morph {
   get value() { return this.editor().getValue(); }
 
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

@@ -13,7 +13,8 @@
 }
 
 .widget.probe, .widget.slider {
-  padding: 0;  
+  padding: 0;
+  margin-bottom: -3px;
 }
 
 .widget.slider .probe-meta {

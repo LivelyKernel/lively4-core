@@ -56,7 +56,7 @@ export default class Tracker {
    
     // Check and store object type
     let type = typeof(value);
-    if(value.constructor && value.constructor.name) {
+    if(value && value.constructor && value.constructor.name) {
       type = value.constructor.name;
     }
     

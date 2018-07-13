@@ -4,7 +4,7 @@ import ExampleWidget from "../ui/example-widget.js";
 
 export default class Example extends InputAnnotation {
   constructor(editor, location, changeCallback, deleteCallback, stateCallback, defaultIsOn, instances, customInstances) {
-    super(editor, location, changeCallback, null, deleteCallback);
+    super(editor, location, changeCallback, deleteCallback);
     let newStateCallback = (newState) => {
       stateCallback(this, newState);
     }

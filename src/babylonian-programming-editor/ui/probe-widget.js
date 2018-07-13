@@ -128,14 +128,16 @@ export default class ProbeWidget extends Widget {
         
         // Check the identity
         let identityElement = <span class="identity space-after"></span>;
-        if(combinedObj.__tracker_identity[0] !== combinedObj.__tracker_identity[1] && !noBefore) {
-          identityElement.appendChild(<span class="old-value emoji ">
-              {combinedObj.__tracker_identity[0]}
+        if(combinedObj.__tracker_identity) {
+          if(combinedObj.__tracker_identity[0] && combinedObj.__tracker_identity[0] !== combinedObj.__tracker_identity[1] && !noBefore) {
+            identityElement.appendChild(<span class="old-value emoji ">
+                {combinedObj.__tracker_identity[0]}
+              </span>);
+          }
+          identityElement.appendChild(<span class="new-value emoji">
+              {combinedObj.__tracker_identity[1]}
             </span>);
         }
-        identityElement.appendChild(<span class="new-value emoji">
-            {combinedObj.__tracker_identity[1]}
-          </span>);
         
         runElement = <span class="run object">
             {identityElement}

@@ -15,12 +15,20 @@ export default class CustomInstanceTemplateEditor extends Morph {
     this._activeInstance = null;
     this._callback = new Function();
 
+    this.initInstanceList();
+    this.initEditor();
+    this.initButtons();
+  }
+  
+  /*example:*/initInstanceList/*{"id":"3d56_9324_7687","name":{"mode":"input","value":""},"color":"hsl(290, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"3d56_9324_7687_this"},"prescript":"","postscript":""}*/() {
     this._instanceList = new InstanceList(
       this.get("#instance-list"),
       this._instances,
       (instance) => this.activeInstance = instance
     );
-
+  }
+  
+  initEditor() {
     this._editor = this.get("#editor");
     this._editor.addEventListener("editor-loaded", () => {
       // Disable linting and syntax checking (otherwise it warns about 'return outside of funcion')
@@ -37,7 +45,7 @@ export default class CustomInstanceTemplateEditor extends Morph {
         }
       })::debounce(1000));
     });
-
+    
     this._nameInput = this.get("#name-input");
     this._nameInput.addEventListener("change", () => {
       if(this._activeInstance) {
@@ -48,8 +56,11 @@ export default class CustomInstanceTemplateEditor extends Morph {
       }
       this._instanceList.render();
     });
-
+  }
+  
+  initButtons() {
     const buttons = this.get("#buttons");
+    buttons.innerHTML = "";
     
     buttons.appendChild(AddButton(() => {
       this._instances.push(new CustomInstance("New instance"));
@@ -69,6 +80,8 @@ export default class CustomInstanceTemplateEditor extends Morph {
       }
     }));
   }
+  
+  
 
   setup(instances, callback) {
     this._callback = callback;
@@ -100,3 +113,4 @@ export default class CustomInstanceTemplateEditor extends Morph {
   }
 
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

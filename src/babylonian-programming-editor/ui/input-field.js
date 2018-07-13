@@ -28,7 +28,7 @@ export default class InputField {
     this._select.addEventListener("change", this._onSelectChange.bind(this));
     
     // Connect
-    this._connector = new Connector(this, this._onConnectorChange.bind(this), "canvas");
+    this._connector = new Connector(this, this._onConnectorChange.bind(this));
     
     // Element
     this._element = <span class={"input-field " + className} style={style}>

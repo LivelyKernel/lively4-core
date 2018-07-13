@@ -1,3 +1,6 @@
+import jsx from 'babel-plugin-jsx-lively';
+import bind from 'babel-plugin-transform-function-bind';
+
 export const defaultExample = () => ({
   id: 0,
   name: "script",
@@ -11,7 +14,10 @@ export const defaultInstance = () => ({
 
 export const defaultBabylonConfig = () => ({
   babelrc: false,
-  plugins: [],
+  plugins: [
+    jsx,
+    bind
+  ],
   presets: [],
   filename: undefined,
   sourceFileName: undefined,

@@ -12,6 +12,10 @@ export default class Slider extends InputAnnotation {
     this._widget.maxValues = maxValues;
   }
   
+  get maxValues() {
+    return this._widget.maxValues;
+  }
+  
   empty() {
     this._widget.maxValues = new Map();
   }

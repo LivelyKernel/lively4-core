@@ -8,8 +8,12 @@ import {sortAlphaNum} from "src/client/sort.js"
 import { getTempKeyFor } from 'utils';
 
 function truncateString(s, length, truncation) {
+  if(!s) {
+    return "";
+  }
+  
   length = length || 30;
-  truncation = truncation === undefined ? '...' : truncation;
+  truncation = truncation ? '...' : truncation;
   return s.length > length ? s.slice(0, length - truncation.length) + truncation : String(s);
 }
 // truncateString("Hello World", 8, "...")
@@ -126,7 +130,7 @@ export default class Inspector   extends Morph {
           return
         }
         if (value == null) return;  
-        var childNode = this.displayObject(value, false, ea, obj)
+        var childNode = this.display(value, false, ea, obj)
         if (childNode) contentNode.appendChild(childNode); // force object display        
       });
     }

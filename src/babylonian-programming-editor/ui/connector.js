@@ -2,11 +2,11 @@ import { defaultConnections } from "../utils/defaults.js";
 
 export default class Connector {
   
-  constructor(source, changeCallback, targetKind) {
+  constructor(source, changeCallback) {
     this._source = source;
     this._target = null;
     this._changeCallback = changeCallback;
-    this._targetKind = targetKind;
+    this._targetKind = null;
     this._isConnected = false;
     this._isBroken = false;
     
@@ -25,15 +25,17 @@ export default class Connector {
   }
   
   _onTargetSelect(event) {
-    switch(this._targetKind) {
-      case "canvas":
-        this.target = event.target.shadowRoot ?
-                      event.target.shadowRoot.querySelector("canvas") :
-                      event.target.querySelector("canvas");
-        break;
-      case "component":
-        this.target = event.target;
-        break;
+    // Connect to the canvas if there is one
+    const canvas = event.target.shadowRoot ?
+                   event.target.shadowRoot.querySelector("canvas") :
+                   event.target.querySelector("canvas");
+    
+    if(canvas) {
+      this.target = canvas;
+      this._targetKind = "canvas";
+    } else {
+      this.target = event.target;
+      this._targetKind = "component";
     }
   }
   

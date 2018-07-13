@@ -12,6 +12,10 @@ export default class SliderWidget extends InputWidget {
     this._fireFunctions = new Map(); // Map(exampleId, function)
   }
   
+  get maxValues() {
+    return this._maxValues;
+  }
+  
   set maxValues(maxValues) {
     this._maxValues = maxValues;
     this._update();

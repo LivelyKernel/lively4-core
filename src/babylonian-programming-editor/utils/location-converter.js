@@ -3,8 +3,8 @@
  */
 export default class LocationConverter {
 
-  static astToKey(loc) {
-    return [
+  static /*slider:*//*example:*/astToKey/*{}*//*{"id":"7029_704f_e0b8","name":{"mode":"input","value":"Normal"},"color":"hsl(220, 30%, 70%)","values":{"loc":{"mode":"input","value":"{start:{line:4,column:5},end:{line:6,column:7}}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(loc) {
+    /*probe:*/return/*{}*/ [
       loc.start.line, loc.start.column,
       loc.end.line, loc.end.column
     ];
@@ -58,4 +58,4 @@ export default class LocationConverter {
       }
     };
   }
-}
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
