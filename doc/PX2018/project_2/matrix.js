@@ -63,6 +63,18 @@ export default class Matrix {
     return result;
   }
   
+  divide(value) {
+    let result = new Matrix();
+    
+    if (value instanceof Matrix) {
+      result._matrix = ExtMath.divide(this._matrix, value._matrix);
+    } else {
+      result._matrix = ExtMath.divide(this._matrix, value);
+    }
+    
+    return result;
+  }
+  
   /**
    * Returns the inverted matrix
    */
@@ -72,9 +84,12 @@ export default class Matrix {
     return result;
   }
   
-  reshape(matrix, num1, num2) {
+  reshape(num1, num2) {
     let result = new Matrix();
+    // Do not change the current matrix only the return value
+    let tmp = ExtMath.multiply(this._matrix, 1);
     result._matrix = ExtMath.reshape(this._matrix, [num1, num2]);
+    this._matrix = tmp;
     return result;
   }
   
