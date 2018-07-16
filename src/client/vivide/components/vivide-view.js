@@ -326,8 +326,9 @@ export default class VivideView extends Morph {
       return this.viewConfig.get('widget');
     }
     
-    if (model.length > 0) {
-      let m = model[0];
+    // #TODO: this is too dependent on internal structure of the model/VivideObject
+    if (model.objects && model.objects.length > 0) {
+      let m = model.objects[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')
       ) {
