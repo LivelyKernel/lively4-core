@@ -19,6 +19,7 @@ describe('Annotations (AExprs/Vivide)', () => {
     expect(Annotations).to.respondTo('keys');
     expect(Annotations).to.respondTo('get');
     expect(Annotations).to.respondTo('getAll');
+    expect(Annotations).to.respondTo('squash');
   });
 
   it("adds annotations", () => {
@@ -71,5 +72,22 @@ describe('Annotations (AExprs/Vivide)', () => {
     ann.add({ value: 17, prop: 33 });
     expect(ann.getAll('value')).to.eql([42, 17]);
     expect(ann.getAll('prop')).to.eql([33]);
+  });
+
+  it("squash into a single config object", () => {
+    const ann = new Annotations();
+    ann.add({ value: 17, prop: 33 });
+    ann.add({ value: 42 });
+
+    const squashed = ann.squash();
+    expect(squashed).to.have.property('value', 42);
+    expect(squashed).to.have.property('prop', 33);
+    expect(squashed).not.to.have.key('attribute');
+    
+    ann.add({ value: 50, attribute: 12 });
+    const newSquashed = ann.squash();
+    expect(newSquashed).to.have.property('value', 50);
+    expect(newSquashed).to.have.property('prop', 33);
+    expect(newSquashed).to.have.property('attribute', 12);
   });
 });

@@ -4,6 +4,7 @@ import boundEval from "src/client/bound-eval.js";
 import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
+import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -275,7 +276,7 @@ export default class VivideView extends Morph {
   }
   
   async calculateOutputModel() {
-    this.viewConfig = [];
+    this.viewConfig = new Annotations();
     let script = this.getFirstScript();
     
     this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
@@ -317,20 +318,18 @@ export default class VivideView extends Morph {
       vivideLayer.addModule(module, 'descent');
     }
     
-    this.viewConfig.push(module.value.__vivideStepConfig__);
+    this.viewConfig.add(module.value.__vivideStepConfig__);
   }
 
-  findAppropriateWidget(model) {    
-    if (this.viewConfig) {
-      for (let config of this.viewConfig) {
-        if (!config.widget) continue;
-        
-        return config.widget;
-      }
+  getPreferredWidgetType(model) {
+    // #TODO: lazily initialze viewConfig
+    if (this.viewConfig && this.viewConfig.has('widget')) {
+      return this.viewConfig.get('widget');
     }
     
-    if (model.length > 0) {
-      let m = model[0];
+    // #TODO: this is too dependent on internal structure of the model/VivideObject
+    if (model.objects && model.objects.length > 0) {
+      let m = model.objects[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
                            typeof prop.dataPoints[0] === 'number')
       ) {
@@ -339,6 +338,17 @@ export default class VivideView extends Morph {
     }
     return 'vivide-tree-widget';
   }
+  findAppropriateWidget(model) {
+    const type = this.getPreferredWidgetType(model);
+    
+    // full type specified
+    if(type.includes('-')) {
+      return type;
+    }
+    
+    // shorthand notation used
+    return `vivide-${type}-widget`;
+  }
 
   async updateWidget() {
     this.innerHTML = '';
@@ -346,7 +356,7 @@ export default class VivideView extends Morph {
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
     widget.expandChild = this.computeModel.bind(this);
-    await widget.display(this.modelToDisplay, this.viewConfig || []);
+    await widget.display(this.modelToDisplay, this.viewConfig || new Annotations());
   }
   
   async insertScript(scriptType, prevScript = null) {
