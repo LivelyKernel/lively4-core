@@ -321,7 +321,8 @@ export default class VivideView extends Morph {
     this.viewConfig.add(module.value.__vivideStepConfig__);
   }
 
-  findAppropriateWidget(model) {
+  getPreferredWidgetType(model) {
+    // #TODO: lazily initialze viewConfig
     if (this.viewConfig && this.viewConfig.has('widget')) {
       return this.viewConfig.get('widget');
     }
@@ -336,6 +337,17 @@ export default class VivideView extends Morph {
       }
     }
     return 'vivide-tree-widget';
+  }
+  findAppropriateWidget(model) {
+    const type = this.getPreferredWidgetType(model);
+    
+    // full type specified
+    if(type.includes('-')) {
+      return type;
+    }
+    
+    // shorthand notation used
+    return `vivide-${type}-widget`;
   }
 
   async updateWidget() {
