@@ -2,13 +2,12 @@
 
 import Morph from'src/components/widgets/lively-morph.js';
 import VibratingPoint from 'doc/PX2018/project_2/vibratingpoint.js';
-import VibratingContinuumBar from 'doc/PX2018/project_2/vibratingcontinuumbar.js';
 import ElasticBodies from 'doc/PX2018/project_2/elasticbodies.js';
 import Matrix from 'doc/PX2018/project_2/matrix.js';
 
 export default class LivelyMpm extends Morph {
   async initialize() {
-    this.algorithms = { "Vibrating Poin": VibratingPoint, "Vibrating Continuum Bar": VibratingContinuumBar };
+    this.algorithms = { "Elastic Bodies": ElasticBodies };
     this.windowTitle = "Lively Material Point Method Demo";
     this.registerButtons();
     this.time = 1;
@@ -139,8 +138,6 @@ export default class LivelyMpm extends Morph {
   async livelyExample() {
     // Add mpm data here later
   }
-  
-  
 }
 
 lively.components.addTemplatePath(lively4url + "/doc/PX2018/project_2/")

@@ -91,6 +91,15 @@
   .hidden {
     display: none;
   }
+  
+  #log {
+    position: absolute;
+    top: 420px;
+    left: 0;
+    width: 100%;
+    min-height: 10px;
+    background-color: #aaa;
+  }
 </style>
   <div id="numbers" class="hidden">
     
@@ -117,6 +126,7 @@
   <button id="step">Step</button><br>
   <button id="toggleGrid">Toogle Grid</button><br>
   <button id="reset">Reset</button><br>
-  <button id="toggleParticleList" disabled>Toogle Particle List</button>
+  <button id="toggleLog" disabled>Toogle Log</button>
+  <div id="log" class="hidden"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

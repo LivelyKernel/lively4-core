@@ -1,5 +1,7 @@
 import MpmAnimation from './mpmanimation.js';
 
+// DEPRECATED: The MPM component is now working with proper
+//   MPM coordinates, thus it is not compatible with the VibratingPoint.
 export default class VibratingPoint extends MpmAnimation {
   constructor() {
     super();

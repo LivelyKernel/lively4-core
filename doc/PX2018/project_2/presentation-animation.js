@@ -38,6 +38,11 @@ export default class PresentationAnimation extends Morph {
   }
   
   draw(jsonObject) {
+    let overlay = this.get('#overlay');
+    if (!overlay.classList.contains('hidden')) {
+      overlay.classList.toggle('hidden');
+    }
+    
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // Draw the animation step save in the object
     for (let key in jsonObject) {
@@ -47,14 +52,21 @@ export default class PresentationAnimation extends Morph {
           let posX = jsonObject[key].value[i][0];
           let posY = jsonObject[key].value[i][1];
           let size = jsonObject[key].size != undefined ? jsonObject[key].size : 4;
-          this.context.fillRect(posX, posY, 4, 4);
+          this.context.fillRect(posX, posY, size, size);
         }
       }
+      
+      if (jsonObject[key].type === "overlay") {
+        overlay.appendChild(jsonObject[key].value);
+        overlay.classList.toggle('hidden');
+      }
+      
       if (jsonObject[key].type === "circle") {
         this.context.beginPath();
         this.context.arc(jsonObject[key].x, jsonObject[key].y, jsonObject[key].radius, 0, 2 * Math.PI);
         this.context.closePath();
       }
+      
       if (jsonObject[key].type === "rect") {
         this.context.beginPath();
         this.context.rect(jsonObject[key].x, jsonObject[key].y, jsonObject[key].width, jsonObject[key].height);

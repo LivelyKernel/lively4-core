@@ -27,9 +27,22 @@
     flex-direction: row;
     justify-content: space-between;
   }
+  
+  .overlay {
+    width: 400px;
+    height: 400px;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+  }
+  
+  .hidden {
+    display: none;
+  }
 </style>
 <div class="container">
   <canvas id="animation" width="400" height="400"></canvas>
+  <div id="overlay" class="overlay hidden"></div>
   <br>
   <div class="button-container">
     <button id="previous">Previous</button>

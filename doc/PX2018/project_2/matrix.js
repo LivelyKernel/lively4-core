@@ -51,6 +51,12 @@ export default class Matrix {
     return result;
   }
   
+  subtract(matrix2) {
+    let result = new Matrix();
+    result._matrix = ExtMath.subtract(this._matrix, matrix2._matrix);
+    return result;
+  }
+  
   multiply(value) {
     let result = new Matrix();
     

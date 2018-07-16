@@ -28,7 +28,8 @@ export default class ElasticBodies extends MpmAnimation {
     this.v = 10;
     this.dtime = 0.05;
     this.tol = 5;
-    this.rho = 0.2;
+    this.rho = 10;
+    this.r = 50;
   }
   
   async init() {
@@ -40,11 +41,11 @@ export default class ElasticBodies extends MpmAnimation {
   async loadCircleMesh() {
     this.particles = [];
     
-    let points1 = await CircleMesh.gmsh(50, 300, 100);
+    let points1 = await CircleMesh.gmsh(this.r, 100, 300);
     for (let point of points1) {
       this.particles.push(new Matrix(point));
     }
-    let points2 = await CircleMesh.gmsh(50, 100, 300);
+    let points2 = await CircleMesh.gmsh(this.r, 300, 100);
     for (let point of points2) {
       this.particles.push(new Matrix(point));
     }
@@ -68,20 +69,17 @@ export default class ElasticBodies extends MpmAnimation {
     this.Vp = Matrix.ones(this.pCount, 1);
     this.Fp = [];
     this.s = [];
-    this.eps = Matrix.zeros(this.pCount, 3);
     this.vp = [];
     this.pElements = [];
     this.mPoints = [];
-    this.C = 1;
+    this.C = 100;
     
     // The initialisation code does not make much sense in the paper
     for (let i = 0; i < this.pCount; ++i) {
       let particle = this.particles[i];
-      let square = new Matrix([[particle.get(0), particle.get(1)], [400, 400]]);
-      let a = square.det() / 2;
       
-      this.Vp.set(i, 0, a);
-      this.Mp.set(i, 0, 450);//a * this.rho);
+      this.Vp.set(i, 0, Math.PI * this.r * this.r);
+      this.Mp.set(i, 0, Math.PI * this.r * this.r * this.rho);
       
       // The initial velocities need to be adjusted to fit canvas coordinates
       // and not the coordinates given in the paper.
@@ -136,16 +134,16 @@ export default class ElasticBodies extends MpmAnimation {
       
       for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        //let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        //let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
-        let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
-        let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
+        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        //let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
+        //let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
         let N = this.interpValue(x, y);
         let dNdxi = this.interpGradient(x, y);
-        //let transposed = enode.transpose();
-        //let J0 = transposed.multiply(dNdxi);
-        //let invJ0 = J0.invert();
-        let dNdx = dNdxi;//.multiply(invJ0);
+        let transposed = enode.transpose();
+        let J0 = transposed.multiply(dNdxi);
+        let invJ0 = J0.invert();
+        let dNdx = dNdxi.multiply(invJ0);
         let stress = this.s[pid];
         for (let k = 0; k < nodes.length; ++k) {
           let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
@@ -156,10 +154,12 @@ export default class ElasticBodies extends MpmAnimation {
           curMomentum = curMomentum.add(this.vp[pid].multiply(N.get(k, 0) * this.Mp.get(pid, 0)));
           this.nmomentum.set(nodeId, 0, curMomentum.get(0));
           this.nmomentum.set(nodeId, 1, curMomentum.get(1));
-          let niforceX = this.niforce.get(nodeId, 0) - this.Vp.get(pid, 0) * (stress.get(0) * dNIdx + stress.get(2) * dNIdy);
-          let niforceY = this.niforce.get(nodeId, 1) - this.Vp.get(pid, 0) * (stress.get(2) * dNIdx + stress.get(1) * dNIdy);
+          let niforceX = this.niforce.get(nodeId, 0) + N.get(k, 0) * this.niforce.get(nodeId, 0) - this.Vp.get(pid, 0) * (stress.get(0) * dNIdx + stress.get(2) * dNIdy);
+          let niforceY = this.niforce.get(nodeId, 1) + N.get(k, 0) * this.niforce.get(nodeId, 1) - this.Vp.get(pid, 0) * (stress.get(2) * dNIdx + stress.get(1) * dNIdy);
           this.niforce.set(nodeId, 0, niforceX);
           this.niforce.set(nodeId, 1, niforceY);
+          
+          
         }
       }
     }
@@ -173,15 +173,16 @@ export default class ElasticBodies extends MpmAnimation {
       
       for (let j = 0; j < mpts.length; ++j) {
         let pid = mpts[j];
-        //let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
-        //let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
-        let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
-        let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
+        let x = (2 * this.particles[pid].get(0) - (enode.get(0, 0) + enode.get(1, 0))) / this.deltaX;
+        let y = (2 * this.particles[pid].get(1) - (enode.get(1, 1) + enode.get(2, 1))) / this.deltaY;
+        //let x = (this.particles[pid].get(0) - enode.get(0, 0)) / this.deltaX;
+        //let y = (this.particles[pid].get(1) - enode.get(0, 1)) / this.deltaY;
         let N = this.interpValue(x, y);
         let dNdxi = this.interpGradient(x, y);
-        //let J0 = enode.transpose().multiply(dNdxi);
-        //let invJ0 = J0.invert();
-        let dNdx = dNdxi;//.multiply(invJ0);
+        let transposed = enode.transpose();
+        let J0 = transposed.multiply(dNdxi);
+        let invJ0 = J0.invert();
+        let dNdx = dNdxi.multiply(invJ0);
         let Lp = Matrix.zeros(2, 2);
         for (let k = 0; k < nodes.length; ++k) {
           let nodeId = this.getNodeId(nodes[k][0], nodes[k][1]);
@@ -239,7 +240,8 @@ export default class ElasticBodies extends MpmAnimation {
    * @param y y-coordinate of the particle
    */
   findParticleElement(x, y) {
-    return Math.floor(x / this.deltaX) + this.elementCountX * Math.floor(y / this.deltaY);
+    let element = Math.floor(x / this.deltaX) + this.elementCountX * Math.floor(y / this.deltaY);
+    return element;
   }
   
   getElementNodes(element) {
@@ -248,8 +250,8 @@ export default class ElasticBodies extends MpmAnimation {
     let y = Math.floor(element / this.elementCountX);
     nodes.push([x * this.deltaX, y * this.deltaY]);
     nodes.push([(x + 1) * this.deltaX, y * this.deltaY]);
-    nodes.push([x * this.deltaX, (y + 1) * this.deltaY]);
     nodes.push([(x + 1) * this.deltaX, (y + 1) * this.deltaY]);
+    nodes.push([x * this.deltaX, (y + 1) * this.deltaY]);
     
     return nodes;
   }
@@ -272,10 +274,10 @@ export default class ElasticBodies extends MpmAnimation {
   // https://www.osti.gov/servlets/purl/537397
   interpValue1(x, y) {
     let N = Matrix.zeros(4);
-    N.set(0, 0, (1 - x) * (1 - y));
-    N.set(1, 0, x * (1 - y));
-    N.set(2, 0, x * y);
-    N.set(3, 0, (1 - x) * y);
+    N.set(3, 0, (1 - x) * (1 - y));
+    N.set(2, 0, x * (1 - y));
+    N.set(1, 0, x * y);
+    N.set(0, 0, (1 - x) * y);
     
     return N;
   }
@@ -283,27 +285,29 @@ export default class ElasticBodies extends MpmAnimation {
   interpGradient1(x, y) {
     let G = Matrix.zeros(4, 2);
     // G_x
-    G.set(0, 0, -(1 - y) / this.deltaX);
-    G.set(1, 0, (1 - y) / this.deltaX);
-    G.set(2, 0, y / this.deltaX);
-    G.set(3, 0, -y / this.deltaX);
+    G.set(3, 0, -(1 - y) / this.deltaX);
+    G.set(2, 0, (1 - y) / this.deltaX);
+    G.set(1, 0, y / this.deltaX);
+    G.set(0, 0, -y / this.deltaX);
     // G_y
-    G.set(0, 1, -(1 - x) / this.deltaY);
-    G.set(1, 1, -x / this.deltaY);
-    G.set(2, 1, x / this.deltaY);
-    G.set(3, 1, (1 - x) / this.deltaY);
+    G.set(3, 1, -(1 - x) / this.deltaY);
+    G.set(2, 1, -x / this.deltaY);
+    G.set(1, 1, x / this.deltaY);
+    G.set(0, 1, (1 - x) / this.deltaY);
     
     return G;
   }
   
-  // 2: According to https://mospace.umsystem.edu/xmlui/bitstream/handle/10355/46077/research.pdf?sequence=1
+  // 2: According to http://pure.au.dk/portal/files/116802415/Material-point_method_analysis_of_bending_in_elastic_beams
   // Interpolation coordinates are more like in https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications
+  // Math behind: http://www.iws.uni-stuttgart.de/institut/hydrosys/lehre/mhs/English/Lecture/4_fem_isopara.pdf
   interpValue2(x, y) {
     let N = Matrix.zeros(4);
-    N.set(0, 0, 0);
-    N.set(1, 0, 0);
-    N.set(2, 0, 0);
-    N.set(3, 0, 0);
+    
+    N.set(0, 0, 1/4 * (1 - x) * (1 - y));
+    N.set(1, 0, 1/4 * (1 + x) * (1 - y));
+    N.set(2, 0, 1/4 * (1 + x) * (1 + y));
+    N.set(3, 0, 1/4 * (1 - x) * (1 + y));
     
     return N;
   }
@@ -311,19 +315,16 @@ export default class ElasticBodies extends MpmAnimation {
   interpGradient2(x, y) {
     let G = Matrix.zeros(4, 2);
     // G_x
-    G.set(0, 0, 0);
-    G.set(1, 0, 0);
-    G.set(2, 0, 0);
-    G.set(3, 0, 0);
+    G.set(0, 0, (y - 1) / 4);
+    G.set(1, 0, -(y - 1) / 4);
+    G.set(2, 0, (y + 1) / 4);
+    G.set(3, 0, -(y + 1) / 4);
     // G_y
-    G.set(0, 1, 0);
-    G.set(1, 1, 0);
-    G.set(2, 1, 0);
-    G.set(3, 1, 0);
+    G.set(0, 1, (x - 1) / 4);
+    G.set(1, 1, -(x + 1) / 4);
+    G.set(2, 1, (x + 1) / 4);
+    G.set(3, 1, -(x - 1) / 4);
     
     return G;
   }
-  
-  // Bipolar interpolation
-  // https://stackoverflow.com/questions/23920976/bilinear-interpolation-with-non-aligned-input-points
 }

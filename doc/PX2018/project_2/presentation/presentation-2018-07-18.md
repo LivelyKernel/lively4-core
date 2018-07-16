@@ -133,46 +133,6 @@ presentButton
 
 ---
 
-<div class="title-1">Demo</div>
-
-<script>
-import boundEval from "src/client/bound-eval.js";
-
-(async() => {
-  let mpm = await (<lively-mpm></lively-mpm>);
-  mpm.explanation = ["Particles created with:<br>mesh generator gmsh"];
-  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
-})()
-</script>
-
-<div class="details hidden">
-<!--<audio controls>
-  <source src="young-modulus.ogg" type="audio/ogg">
-  Your browser does not support the audio tag.
-</audio>-->
-
-```javascript {.ShowCode .Hidden}
-let url = lively4url + '/doc/PX2018/project_2/elasticbodies.js';
-lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
-```
-<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
-<script>hideHiddenElements(this)</script>
-</div>
-
----
-
-<div class="title-1">Related Work</div>
-
-<ul class="notes notes-big">
-<li>Original paper:<br><a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a></li>
-<li>Basic examples:<br><a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a></li>
-<li>Snow simulation:<br><a href="https://www.math.ucla.edu/~jteran/papers/SSCTS13.pdf">A material point method for snow simulation</a></li>
-<li>Interpolation:<br><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.140.2649&rep=rep1&type=pdf">Analysis and reduction of quadrature errors in the<br>material point method (MPM)</a></li>
-</ul>
-
----
-
 <div class="title-1">MPM Overview</div>
 
 <div class="notes h-1-2">
@@ -196,6 +156,7 @@ import boundEval from "src/client/bound-eval.js";
   animation.startStep = 0;
   let points = await CircleMesh.gmsh(100, 200, 200);
   let nodeSize = 8;
+  let particleSize = 8;
   let nodes = [];
   for (var i = 0; i < 5; ++i) {
     for (var j = 0; j < 5; ++j) {
@@ -204,11 +165,18 @@ import boundEval from "src/client/bound-eval.js";
       nodes.push([x, y]);
     }
   }
+  let overlay = <div style="display: table; "></div>;
+  for (var i = 0; i < 16; ++i) {
+    overlay.appendChild(<div style="display: table-cell; float: left; width: 100px; height: 100px; border: 1px solid #000; box-sizing: border-box; "></div>);
+  }
   let steps = [];
   steps.push({ "body": { type: "circle", radius: 100, x: 200, y: 200, color: "rgba(255, 0, 0, 1)", filled: true } });
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)" } });
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)" },
-              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize }});
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "grid": { type: "overlay", value: overlay } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay } });
   animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
@@ -217,29 +185,37 @@ import boundEval from "src/client/bound-eval.js";
 
 ---
 
-<div class="title-1">Shape Function</div>
+<div class="title-1">Demo</div>
 
-<div class="notes h-1-2">
-<ul class="notes-big">
-<li>Degree of influence of<br>nodes on particles and vice versa</li>
-<li>Simple approach:<br>linear interpolation</li>
-</ul>
-</div>
-
-<div class="h-2-2">
 <script>
-import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 import boundEval from "src/client/bound-eval.js";
+
 (async() => {
-  let animation = await (<presentation-animation></presentation-animation>);
-  animation.startStep = 0;
-  let steps = [];
-  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: false, color: '#000' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: false, color: '#000' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: false, color: '#000' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: false, color: '#000' } });
-  animation.animationSteps = steps;  
-  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+  let mpm = await (<lively-mpm></lively-mpm>);
+  mpm.explanation = ["Particles created with:<br>mesh generator gmsh"];
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
 })()
 </script>
+
+```javascript {.ShowCode .Hidden}
+let url = lively4url + '/doc/PX2018/project_2/elasticbodies.js';
+lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
+```
+<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
+<script>hideHiddenElements(this)</script>
 </div>
+
+---
+
+<div class="title-1">Related Work</div>
+
+<ul class="notes notes-big">
+<li>Original paper:<br><a href="http://prod.sandia.gov/techlib/access-control.cgi/1993/937044.pdf">A particle method for history-dependent materials</a></li>
+<li>Basic examples:<br><a href="https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications">Material point method: basics and applications</a></li>
+<li>Snow simulation:<br><a href="https://www.math.ucla.edu/~jteran/papers/SSCTS13.pdf">A material point method for snow simulation</a></li>
+<li>Interpolation:<br><a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.140.2649&rep=rep1&type=pdf">Analysis and reduction of quadrature errors in the<br>material point method (MPM)</a></li>
+</ul>
 
 ---
 
@@ -291,7 +267,49 @@ import boundEval from "src/client/bound-eval.js";
 
 ---
 
-<div class="title-1">MPM Variables</div>
+<div class="title-1">Shape Function</div>
+
+<div class="notes h-1-2">
+<ul class="notes-big">
+<li>Degree of influence of<br>nodes on particles<br>and vice versa</li>
+<li>Simple approach:<br>linear interpolation</li>
+<li>1D: Nx = </li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<script>
+import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
+import boundEval from "src/client/bound-eval.js";
+(async() => {
+  let animation = await (<presentation-animation></presentation-animation>);
+  animation.startStep = 0;
+  let steps = [];
+  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: false, color: '#000' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: false, color: '#000' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: false, color: '#000' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: false, color: '#000' } });
+  animation.animationSteps = steps;  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
+})()
+</script>
+</div>
+
+---
+
+<div class="title-1">Step: Particles To Nodes - Details</div>
+
+<ul class="notes notes-big">
+<li>Mass <strong>m</strong></li>
+<li>Velocity <strong>v</strong></li>
+<li>Internal force <strong>f</strong></li>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Cauchy stress tensor <strong>" + latexconv.convertLaTeXToUnicode("\\sigma") + "</strong>";
+</script> 
+</li>
+</ul>
+
+---
+
+<div class="title-1">Step: Nodes To Particles - Details</div>
 
 <ul class="notes notes-big">
 <li>Mass <strong>m</strong></li>
