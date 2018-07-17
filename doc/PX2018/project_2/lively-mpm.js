@@ -19,6 +19,7 @@ export default class LivelyMpm extends Morph {
     
     this.variables = {};
     this.particleSize = 4;
+    this.oneDisk = false;
     
     this.canvas = this.get("#mpm");
     
@@ -124,10 +125,15 @@ export default class LivelyMpm extends Morph {
     numbers.classList.toggle("hidden");
   }
   
-  onReset(oneDisk = false) {
+  reset(oneDisk = false) {
+    this.oneDisk = oneDisk;
+    this.onReset();
+  }
+  
+  onReset() {
     if (this.animation.running) return;
     
-    this.animation = new ElasticBodies(oneDisk);
+    this.animation = new ElasticBodies(this.oneDisk);
     
     if (this.speed != undefined) {
       this.animation.speed = this.speed;

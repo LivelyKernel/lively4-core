@@ -121,9 +121,8 @@ presentButton
 <div class="h-1-2 notes-big">
 <ul>
 <li>Abbreviation: MPM</li>
-<li>Is a physic simulation</li>
 <li>Simulating behavior of:<br>solids, fluids, gas</li>
-<li>Based on PIC & FEM</li>
+<li>Based on<br>Particle-In-Cell Method &<br>Finite Element Method</li>
 <li>Frozen: snow animation</li>
 <li><i>Short: tons of formulas</i></li>
 </ul>
@@ -192,7 +191,7 @@ import boundEval from "src/client/bound-eval.js";
 
 (async() => {
   let mpm = await (<lively-mpm></lively-mpm>);
-  mpm.onReset(true);
+  mpm.reset(true);
   mpm.explanation = ["Particles created with:<br>mesh generator gmsh"];
   
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
@@ -247,6 +246,24 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 
 ---
 
+<div class="title-1">Processing Loop</div>
+
+<ul class="notes notes-big">
+<li>Preparation:
+<li>Init particle mass, volume and force</li>
+</li>
+<li>Loop:
+<ul>
+<li>Particles to nodes</li>
+<li>Apply force to momtentum</li>
+<li>Nodes to particles</li>
+<li>Nodes to particles</li>
+</ul>
+</li>
+</ul>
+
+---
+
 <div class="title-1">Step: Particles To Nodes</div>
 
 <div class="notes h-1-2">
@@ -281,28 +298,31 @@ import boundEval from "src/client/bound-eval.js";
 (async() => {
   let animation = await (<presentation-animation></presentation-animation>);
   animation.startStep = 0;
-  let points = [[250, 300], [340, 285], [150, 100], [ 350, 80], [40, 280]];
+  let points2 = [[250, 300], [340, 285], [150, 100], [ 350, 80], [40, 280]];
   let nodeSize = 8;
   let particleSize = 8;
-  let nodes = [];
-  for (var i = 0; i < 1; ++i) {
-    for (var j = 0; j < 1; ++j) {
+  let nodes2 = [];
+  for (var i = 0; i < 3; ++i) {
+    for (var j = 0; j < 3; ++j) {
       let x = i > 0 ? 200 * i - nodeSize / 2 : 200 * i;
       let y = j > 0 ? 200 * j - nodeSize / 2 : 200 * j;
-      nodes.push([x, y]);
+      nodes2.push([x, y]);
     }
   }
   let overlay = <div style="display: table; "></div>;
-  for (var i = 0; i < 16; ++i) {
+  for (var i = 0; i < 4; ++i) {
     overlay.appendChild(<div style="display: table-cell; float: left; width: 200px; height: 200px; border: 1px solid #000; box-sizing: border-box; "></div>);
   }
   let steps = [];
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize } });
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+  steps.push({ "particles": { type: "points", value: points2, color: "rgba(255, 0, 0, 1)", size: particleSize } });
+  steps.push({ "particles": { type: "points", value: points2, color: "rgba(255, 0, 0, 1)", size: particleSize },
               "grid": { type: "overlay", value: overlay } });
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
-              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize },
-              "grid": { type: "overlay", value: overlay } });
+  steps.push({ "particles": { type: "points", value: points2, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "nodes": { type: "points", value: nodes2, color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay }, "arrow1": { type: "arrow", x1: 250, y1: 300, x2: 200, y2: 200 }, "arrow2": { type: "arrow", x1: 340, y1: 285, x2: 200, y2: 200 }, "arrow3": { type: "arrow", x1: 154, y1: 104, x2: 200, y2: 200 }, "arrow4": { type: "arrow", x1: 350, y1: 84, x2: 200, y2: 200 }, "arrow5": { type: "arrow", x1: 44, y1: 280, x2: 200, y2: 200 } });
+  steps.push({ "particles": { type: "points", value: points2, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "nodes": { type: "points", value: nodes2, color: "#555", size: nodeSize }, "moved-node": { type: "points", value: [[218, 178]], color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay }, "line1": { type: "dashed-line", x1: 200, y1: 0, x2: 220, y2: 180 }, "line2": { type: "dashed-line", x1: 0, y1: 200, x2: 220, y2: 180 }, "line3": { type: "dashed-line", x1: 400, y1: 200, x2: 220, y2: 180 }, "line4": { type: "dashed-line", x1: 200, y1: 400, x2: 220, y2: 180 } });
   animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
@@ -333,7 +353,7 @@ import boundEval from "src/client/bound-eval.js";
   <li>
   <script>
   import latexconv from "src/external/latex-to-unicode-converter.js";
-  latexconv.convertLaTeXToUnicode("Stress \\sigma\\sub{p}");
+  latexconv.convertLaTeXToUnicode("Deformation Gradient L\\sub{p}");
   </script>
   </li>
   </ul>
@@ -349,28 +369,31 @@ import boundEval from "src/client/bound-eval.js";
   let animation = await (<presentation-animation></presentation-animation>);
   animation.startStep = 0;
   let points = [[250, 300], [340, 285], [150, 100], [ 350, 80], [40, 280]];
+  let movedPoints = [[270, 280], [360, 265], [170, 80], [ 370, 60], [60, 260]];
   let nodeSize = 8;
   let particleSize = 8;
   let nodes = [];
-  for (var i = 0; i < 1; ++i) {
-    for (var j = 0; j < 1; ++j) {
+  for (var i = 0; i < 3; ++i) {
+    for (var j = 0; j < 3; ++j) {
       let x = i > 0 ? 200 * i - nodeSize / 2 : 200 * i;
       let y = j > 0 ? 200 * j - nodeSize / 2 : 200 * j;
       nodes.push([x, y]);
     }
   }
   let overlay = <div style="display: table; "></div>;
-  for (var i = 0; i < 16; ++i) {
+  for (var i = 0; i < 4; ++i) {
     overlay.appendChild(<div style="display: table-cell; float: left; width: 200px; height: 200px; border: 1px solid #000; box-sizing: border-box; "></div>);
   }
   let steps = [];
-  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize } });
   steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
-              "grid": { type: "overlay", value: overlay } });
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize }, "moved-node": { type: "points", value: [[218, 178]], color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay }, "line1": { type: "dashed-line", x1: 200, y1: 0, x2: 220, y2: 180 }, "line2": { type: "dashed-line", x1: 0, y1: 200, x2: 220, y2: 180 }, "line3": { type: "dashed-line", x1: 400, y1: 200, x2: 220, y2: 180 }, "line4": { type: "dashed-line", x1: 200, y1: 400, x2: 220, y2: 180 } });
   steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
-              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize },
-              "grid": { type: "overlay", value: overlay } });
-  animation.animationSteps = steps;  
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize }, "moved-node": { type: "points", value: [[218, 178]], color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay }, "arrow1": { type: "arrow", x2: 250, y2: 300, x1: 220, y1: 180 }, "arrow2": { type: "arrow", x2: 344, y2: 289, x1: 220, y1: 180 }, "arrow3":  { type: "arrow", x2: 154, y2: 104, x1: 220, y1: 180 }, "arrow4": { type: "arrow", x2: 350, y2: 84, x1: 220, y1: 180 }, "arrow5": { type: "arrow", x2: 49, y2: 280, x1: 220, y1: 180 } });
+  steps.push({ "particles": { type: "points", value: movedPoints, color: "rgba(255, 0, 0, 1)", size: particleSize },
+  "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize }, "grid": { type: "overlay", value: overlay } });
+  animation.animationSteps = steps;
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
 </script>
@@ -393,7 +416,7 @@ latexconv.convertLaTeXToUnicode("\\xi = (2 * x - (x\\sub{n1}+x\\sub{n2})) / \\De
 </li>
 <li><script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("\\eta = (2 * y - (y\\sub{n1}+x\\sub{n4})) / \\Delta y");
+latexconv.convertLaTeXToUnicode("\\eta = (2 * y - (y\\sub{n1}+y\\sub{n4})) / \\Delta y");
 </script>
 </li>
 </ul>
@@ -410,16 +433,21 @@ import boundEval from "src/client/bound-eval.js";
   animation.startStep = 0;
   let steps = [];
   let overlay1 = <div></div>;
-  overlay1.appendChild(<div style="position: absolute; top: 250px; left: 150px;">(x,y)</div>);
+  overlay1.appendChild(<div style="position: absolute; top: 252px; left: 152px;">(x,y)</div>);
+  overlay1.appendChild(<div style="position: absolute; top: 0; left: 5px;">N1</div>);
+  overlay1.appendChild(<div style="position: absolute; top: 380px; left: 5px;">N4</div>);
+  overlay1.appendChild(<div style="position: absolute; top: 0; left: 370px;">N2</div>);
+  overlay1.appendChild(<div style="position: absolute; top: 380px; left: 370px;">N3</div>);
   let overlay2 = <div></div>;
   let xi = latexconv.convertLaTeXToUnicode("\\xi");
   let eta = latexconv.convertLaTeXToUnicode("\\eta");
-  overlay2.appendChild(<div style="position: absolute; top: 0; left: 0;">(-{xi}, -{eta})</div>);
-  overlay2.appendChild(<div style="position: absolute; top: 380px; left: 0;">(-{xi}, {eta})</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 252px; left: 152px;">(x,y)</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 0; left: 5px;">(-{xi}, -{eta})</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 380px; left: 5px;">(-{xi}, {eta})</div>);
   overlay2.appendChild(<div style="position: absolute; top: 0; left: 350px;">({xi}, -{eta})</div>);
   overlay2.appendChild(<div style="position: absolute; top: 380px; left: 360px;">({xi}, {eta})</div>);
-  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay1 }});
-  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay2 }});
+  steps.push({ "rect1": { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, "rect2": { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay1 }, "particle": { type: "points", value: [[147, 247]], size: 6, color: '#f00' }, "nodes": { type: "points", value: [[0, 0], [0, 394], [394, 0], [394, 394]], size: 6, color: '#555' }});
+  steps.push({ "rect1": { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, "rect2": { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay2 }, "particle": { type: "points", value: [[147, 247]], size: 6, color: '#f00' }, "nodes": { type: "points", value: [[0, 0], [0, 394], [394, 0], [394, 394]], size: 6, color: '#555' } });
   animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
@@ -548,26 +576,13 @@ import latexconv from "src/external/latex-to-unicode-converter.js";
 </li>
 </ul>
 </ul>
-<br>
-<ul>
-<li>Between "Particles To Nodes" & "Nodes To Particles":
-<ul>
-<li>
-<script>
-import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("V += F * dT");
-</script>
-</li>
-</ul>
-</li>
-</ul>
 </div>
 
 ---
 
 <div class="title-1">Step: Nodes To Particles - Details</div>
 
-<div class="h-1-2 notes-big">
+<div class="notes notes-big">
 <ul>
 <li>For each node of every element:</li>
 <ul>
@@ -605,31 +620,6 @@ latexconv.convertLaTeXToUnicode("v\\sub{p} = det(L\\sub{p}) * V\\sub{0_p}");
 </script> 
 </li>
 </ul>
-</ul>
-</div>
-
-<div class="h-2-2 notes-big">
-<ul>
-<li>Reset grid after "Nodes To Particles":
-<ul>
-<li>
-<script>
-import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("M = Matrix.zeros(|N|, 1)");
-</script>
-</li>
-<li>
-<script>
-import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("MV = Matrix.zeros(|N|, 2)");
-</script>
-</li>
-<li>
-<script>
-import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("V = Matrix.zeros(|N|, 2)");
-</script>
-</li>
 </ul>
 </div>
 
