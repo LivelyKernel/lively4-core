@@ -25,16 +25,17 @@ export default class LivelyMpm extends Morph {
     this.context = this.canvas.getContext("2d");
     this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
     
-    this.input = this.get("#input");
-    let inputUpdate = function() {
-      this.variables[this.input.name] = this.input.value;
-      
-      if (this.input.name == "opacity") {
-        let numbers = this.get("#numbers");
-        numbers.style.opacity = this.input.value;
-      }
+    this.opacityInput = this.get("#opacity");
+    this.speedInput = this.get("#speed");
+    let opacityUpdate = function() {      
+      let numbers = this.get("#numbers");
+      numbers.style.opacity = this.opacityInput.value;
     }
-    $(this.input).on("input change", inputUpdate.bind(this));
+    let speedUpdate = function() {
+      this.speed = this.speedInput.value;
+    }
+    $(this.opacityInput).on("input change", opacityUpdate.bind(this));
+    $(this.speedInput).on("input change", speedUpdate.bind(this));
     
     this.animation = new ElasticBodies();
     
@@ -58,10 +59,24 @@ export default class LivelyMpm extends Morph {
   
   draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    let log = this.get("#log");
+    let table = null;
+    if (!log.classList.contains('hidden')) {
+      log.innerHTML = '';
+      table = <table><tr><th>x</th><th>y</th></tr></table>;
+    }
     for (let i = 0; i < particles.length; ++i) {
       let posX = particles[i].get(0);
       let posY = particles[i].get(1);
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
+      
+      if (!table) continue;
+     
+      let row = <tr></tr>
+      row.appendChild(<td width="100">{Math.round(particles[i].get(0) * 100) / 100}</td>);
+      row.appendChild(<td width="100">{Math.round(particles[i].get(1) * 100) / 100}</td>);
+      table.appendChild(row);
+      log.appendChild(table);
     }
   }
   
@@ -109,11 +124,21 @@ export default class LivelyMpm extends Morph {
     numbers.classList.toggle("hidden");
   }
   
-  onReset() {
+  onReset(oneDisk = false) {
     if (this.animation.running) return;
     
-    this.animation = new ElasticBodies();
+    this.animation = new ElasticBodies(oneDisk);
+    
+    if (this.speed != undefined) {
+      this.animation.speed = this.speed;
+    }
+    
     this.animation.init().then(() => this.draw(this.animation.particles));
+  }
+  
+  onToggleLog() {
+    let log = this.get("#log");
+    log.classList.toggle("hidden");
   }
 
   /* Lively-specific API */

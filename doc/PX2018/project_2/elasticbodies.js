@@ -16,7 +16,7 @@ import CircleMesh from 'doc/PX2018/project_2/circlemesh.js';
 // FEM: https://www.codeproject.com/script/Articles/ViewDownloads.aspx?aid=579983
 
 export default class ElasticBodies extends MpmAnimation {
-  constructor() {
+  constructor(oneDisk = false) {
     super();
     
     this.deltaX = 40;
@@ -30,6 +30,11 @@ export default class ElasticBodies extends MpmAnimation {
     this.tol = 5;
     this.rho = 10;
     this.r = 50;
+    this.oneDisk = oneDisk;
+  }
+  
+  set speed(value) {
+    this.dtime = value;
   }
   
   async init() {
@@ -45,6 +50,9 @@ export default class ElasticBodies extends MpmAnimation {
     for (let point of points1) {
       this.particles.push(new Matrix(point));
     }
+    
+    if (this.oneDisk) return;
+      
     let points2 = await CircleMesh.gmsh(this.r, 300, 100);
     for (let point of points2) {
       this.particles.push(new Matrix(point));
@@ -274,10 +282,10 @@ export default class ElasticBodies extends MpmAnimation {
   // https://www.osti.gov/servlets/purl/537397
   interpValue1(x, y) {
     let N = Matrix.zeros(4);
-    N.set(3, 0, (1 - x) * (1 - y));
+    N.set(0, 0, x * y);
+    N.set(1, 0, (1 - x) * y);
     N.set(2, 0, x * (1 - y));
-    N.set(1, 0, x * y);
-    N.set(0, 0, (1 - x) * y);
+    N.set(3, 0, (1 - x) * (1 - y));
     
     return N;
   }
@@ -301,6 +309,7 @@ export default class ElasticBodies extends MpmAnimation {
   // 2: According to http://pure.au.dk/portal/files/116802415/Material-point_method_analysis_of_bending_in_elastic_beams
   // Interpolation coordinates are more like in https://www.researchgate.net/publication/262415477_Material_point_method_basics_and_applications
   // Math behind: http://www.iws.uni-stuttgart.de/institut/hydrosys/lehre/mhs/English/Lecture/4_fem_isopara.pdf
+  //              http://www.uniroma2.it/didattica/TCM/deposito/2-D_elements.pdf
   interpValue2(x, y) {
     let N = Matrix.zeros(4);
     

@@ -5,6 +5,8 @@
   :host {
     padding: 3px;
     min-width: 850px;
+    overflow: scroll;
+    overscroll-behavior: contain;
   }
   
   #content {
@@ -55,7 +57,7 @@
   #explanation {
     position: absolute;
     left: 450px;
-    top: 110px;
+    top: 140px;
     font-size: 22pt;
     line-height: 1.5em;
   }
@@ -98,7 +100,10 @@
     left: 0;
     width: 100%;
     min-height: 10px;
-    background-color: #aaa;
+  }
+  
+  td, th {
+    text-align: right;
   }
 </style>
   <div id="numbers" class="hidden">
@@ -107,17 +112,17 @@
   <canvas id="mpm" width="400" height="400"></canvas>
   <div class="inputs">
     <div class="input-line">
-      <form name="form" oninput="inputvalue.value = input.valueAsNumber">
+      <form name="form" oninput="inputvalue.value = opacity.valueAsNumber">
         <label id="inputlabel">Grid opacity: </label>
-        <output name="inputvalue" for="input" >1</output>
-        <input id="input" name="opacity" type="range" step="0.1" min="0.1" max="1" value="1">
+        <output name="inputvalue" for="opacity" >1</output>
+        <input id="opacity" name="opacity" type="range" step="0.1" min="0.1" max="1" value="1">
       </form>
     </div>
     <div class="input-line">
-      <form name="form" oninput="inputvalue.value = input.valueAsNumber">
+      <form name="form" oninput="inputvalue.value = speed.valueAsNumber">
         <label id="inputlabel">Speed: </label>
-        <output name="inputvalue" for="input" >0.1</output>
-        <input id="input" name="speed" type="range" step="0.01" min="0.01" max="1" value="0.1">
+        <output name="inputvalue" for="speed" >0.05</output>
+        <input id="speed" name="speed" type="range" step="0.01" min="0.01" max="1" value="0.05">
       </form>
     </div>
   </div>
@@ -126,7 +131,7 @@
   <button id="step">Step</button><br>
   <button id="toggleGrid">Toogle Grid</button><br>
   <button id="reset">Reset</button><br>
-  <button id="toggleLog" disabled>Toogle Log</button>
+  <button id="toggleLog">Toogle Log</button>
   <div id="log" class="hidden"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

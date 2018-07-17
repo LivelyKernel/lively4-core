@@ -185,7 +185,33 @@ import boundEval from "src/client/bound-eval.js";
 
 ---
 
-<div class="title-1">Demo</div>
+<div class="title-1">Demo 1</div>
+
+<script>
+import boundEval from "src/client/bound-eval.js";
+
+(async() => {
+  let mpm = await (<lively-mpm></lively-mpm>);
+  mpm.onReset(true);
+  mpm.explanation = ["Particles created with:<br>mesh generator gmsh"];
+  
+  return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
+})()
+</script>
+
+<div class="details hidden">
+
+```javascript {.ShowCode .Hidden}
+let url = lively4url + '/doc/PX2018/project_2/elasticbodies.js';
+lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" + url));
+```
+<script>runExampleButton("Show Code", this, ["ShowCode"])</script>
+<script>hideHiddenElements(this)</script>
+</div>
+
+---
+
+<div class="title-1">Demo 2</div>
 
 <script>
 import boundEval from "src/client/bound-eval.js";
@@ -197,6 +223,8 @@ import boundEval from "src/client/bound-eval.js";
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="mpm">{mpm}</div></div>;
 })()
 </script>
+
+<div class="details hidden">
 
 ```javascript {.ShowCode .Hidden}
 let url = lively4url + '/doc/PX2018/project_2/elasticbodies.js';
@@ -223,7 +251,26 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 
 <div class="notes h-1-2">
 <ul class="notes-big">
-<li>FE shape functions</li>
+<li>Maps material points<br>to grid nodes</li>
+<li>Calculate node values:</li>
+<ul>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Mass " + latexconv.convertLaTeXToUnicode("M\\sub{i}");
+</script>
+</li>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Velocity " + latexconv.convertLaTeXToUnicode("V\\sub{i}");
+</script>
+</li>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Force " + latexconv.convertLaTeXToUnicode("F\\sub{i}");
+</script>
+</li>
+</ul>
+<li>Create Lagrange grid</li>
 </ul>
 </div>
 
@@ -234,8 +281,29 @@ import boundEval from "src/client/bound-eval.js";
 (async() => {
   let animation = await (<presentation-animation></presentation-animation>);
   animation.startStep = 0;
+  let points = [[250, 300], [340, 285], [150, 100], [ 350, 80], [40, 280]];
+  let nodeSize = 8;
+  let particleSize = 8;
+  let nodes = [];
+  for (var i = 0; i < 1; ++i) {
+    for (var j = 0; j < 1; ++j) {
+      let x = i > 0 ? 200 * i - nodeSize / 2 : 200 * i;
+      let y = j > 0 ? 200 * j - nodeSize / 2 : 200 * j;
+      nodes.push([x, y]);
+    }
+  }
+  let overlay = <div style="display: table; "></div>;
+  for (var i = 0; i < 16; ++i) {
+    overlay.appendChild(<div style="display: table-cell; float: left; width: 200px; height: 200px; border: 1px solid #000; box-sizing: border-box; "></div>);
+  }
   let steps = [];
-  //animation.animationSteps = steps;  
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "grid": { type: "overlay", value: overlay } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay } });
+  animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
 </script>
@@ -247,7 +315,29 @@ import boundEval from "src/client/bound-eval.js";
 
 <div class="notes h-1-2">
 <ul class="notes-big">
-<li></li>
+<li>Map Lagrange grid to particles</li>
+<li>Calculate particle values:
+  <ul>
+  <li>
+  <script>
+  import latexconv from "src/external/latex-to-unicode-converter.js";
+  latexconv.convertLaTeXToUnicode("Velocity v\\sub{p}");
+  </script>
+  </li>
+  <li>
+  <script>
+  import latexconv from "src/external/latex-to-unicode-converter.js";
+  latexconv.convertLaTeXToUnicode("Position x\\sub{p}");
+  </script>
+  </li>
+  <li>
+  <script>
+  import latexconv from "src/external/latex-to-unicode-converter.js";
+  latexconv.convertLaTeXToUnicode("Stress \\sigma\\sub{p}");
+  </script>
+  </li>
+  </ul>
+</li>
 </ul>
 </div>
 
@@ -258,8 +348,29 @@ import boundEval from "src/client/bound-eval.js";
 (async() => {
   let animation = await (<presentation-animation></presentation-animation>);
   animation.startStep = 0;
+  let points = [[250, 300], [340, 285], [150, 100], [ 350, 80], [40, 280]];
+  let nodeSize = 8;
+  let particleSize = 8;
+  let nodes = [];
+  for (var i = 0; i < 1; ++i) {
+    for (var j = 0; j < 1; ++j) {
+      let x = i > 0 ? 200 * i - nodeSize / 2 : 200 * i;
+      let y = j > 0 ? 200 * j - nodeSize / 2 : 200 * j;
+      nodes.push([x, y]);
+    }
+  }
+  let overlay = <div style="display: table; "></div>;
+  for (var i = 0; i < 16; ++i) {
+    overlay.appendChild(<div style="display: table-cell; float: left; width: 200px; height: 200px; border: 1px solid #000; box-sizing: border-box; "></div>);
+  }
   let steps = [];
-  //animation.animationSteps = steps;  
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "grid": { type: "overlay", value: overlay } });
+  steps.push({ "particles": { type: "points", value: points, color: "rgba(255, 0, 0, 1)", size: particleSize },
+              "nodes": { type: "points", value: nodes, color: "#555", size: nodeSize },
+              "grid": { type: "overlay", value: overlay } });
+  animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
 </script>
@@ -269,11 +380,24 @@ import boundEval from "src/client/bound-eval.js";
 
 <div class="title-1">Shape Function</div>
 
-<div class="notes h-1-2">
+<div class="h-1-2">
 <ul class="notes-big">
 <li>Degree of influence of<br>nodes on particles<br>and vice versa</li>
 <li>Simple approach:<br>linear interpolation</li>
-<li>1D: Nx = </li>
+<li>Transform into natural coordinates: 
+<ul>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("\\xi = (2 * x - (x\\sub{n1}+x\\sub{n2})) / \\Delta x");
+</script>
+</li>
+<li><script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("\\eta = (2 * y - (y\\sub{n1}+x\\sub{n4})) / \\Delta y");
+</script>
+</li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -285,7 +409,17 @@ import boundEval from "src/client/bound-eval.js";
   let animation = await (<presentation-animation></presentation-animation>);
   animation.startStep = 0;
   let steps = [];
-  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: false, color: '#000' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: false, color: '#000' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: false, color: '#000' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: false, color: '#000' } });
+  let overlay1 = <div></div>;
+  overlay1.appendChild(<div style="position: absolute; top: 250px; left: 150px;">(x,y)</div>);
+  let overlay2 = <div></div>;
+  let xi = latexconv.convertLaTeXToUnicode("\\xi");
+  let eta = latexconv.convertLaTeXToUnicode("\\eta");
+  overlay2.appendChild(<div style="position: absolute; top: 0; left: 0;">(-{xi}, -{eta})</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 380px; left: 0;">(-{xi}, {eta})</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 0; left: 350px;">({xi}, -{eta})</div>);
+  overlay2.appendChild(<div style="position: absolute; top: 380px; left: 360px;">({xi}, {eta})</div>);
+  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay1 }});
+  steps.push({ rect1: { type: "rect", x: 0, y: 0, width: 150, height: 250, filled: true, color: 'rgb(100, 255, 255, 0.6)' }, rect2: { type: "rect", x: 0, y: 250, width: 150, height: 150, filled: true, color: 'rgb(100, 100, 255, 0.6)' }, rect3: { type: "rect", x: 150, y: 0, width: 250, height: 250, filled: true, color: 'rgb(55, 127, 55, 0.4)' }, rect4: { type: "rect", x: 150, y: 250, width: 250, height: 150, filled: true, color: 'rgb(127, 55, 55, 0.4)' }, "overlay": { type: "overlay", value: overlay2 }});
   animation.animationSteps = steps;  
   return <div><link rel="stylesheet" type="text/css" href="doc/PX2018/project_2/presentation.css" /><div class="animation">{animation}</div></div>;
 })()
@@ -294,57 +428,227 @@ import boundEval from "src/client/bound-eval.js";
 
 ---
 
-<div class="title-1">Step: Particles To Nodes - Details</div>
+<div class="title-1">Shape Function (Linear Interpolation)</div>
 
-<ul class="notes notes-big">
-<li>Mass <strong>m</strong></li>
-<li>Velocity <strong>v</strong></li>
-<li>Internal force <strong>f</strong></li>
-<li><script>
+<div class="h-1-2">
+<ul class="notes-big">
+<li>Shape Function: 
+<ul>
+<li>
+<script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-"Cauchy stress tensor <strong>" + latexconv.convertLaTeXToUnicode("\\sigma") + "</strong>";
-</script> 
+latexconv.convertLaTeXToUnicode("N\\sub{1} = \\frac{1}{4} * (1 - \\xi) * (1 - \\eta)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("N\\sub{2} = \\frac{1}{4} * (1 + \\xi) * (1 - \\eta)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("N\\sub{3} = \\frac{1}{4} * (1 + \\xi) * (1 + \\eta)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("N\\sub{4} = \\frac{1}{4} * (1 - \\xi) * (1 + \\eta)");
+</script>
 </li>
 </ul>
+</li>
+</ul>
+</div>
+
+<div class="h-2-2">
+<ul class="notes-big">
+<li>Gradient:
+<ul>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndx\\sub{1} = \\frac{1}{4} * (\\eta - 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndx\\sub{2} = \\frac{1}{4} * -(\\eta - 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndx\\sub{3} = \\frac{1}{4} * (\\eta + 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndx\\sub{4} = \\frac{1}{4} * -(\\eta + 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndy\\sub{1} = \\frac{1}{4} * (\\xi - 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndy\\sub{2} = \\frac{1}{4} * -(\\eta + 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndy\\sub{3} = \\frac{1}{4} * (\\xi + 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("Ndy\\sub{4} = \\frac{1}{4} * -(\\xi - 1)");
+</script>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+---
+
+<div class="title-1">Step: Particles To Nodes - Details</div>
+
+<div class="notes">
+<ul class="notes-big">
+<li>For each node of every element:</li>
+<ul>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Mass: " + latexconv.convertLaTeXToUnicode("M\\sub{i} += m\\sub{p} * N\\sub{i}");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Node Momentum: " + latexconv.convertLaTeXToUnicode("MV\\sub{i} += N\\sub{i} * m\\sub{p} * v\\sub{p}");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+"Force: " + latexconv.convertLaTeXToUnicode("F\\sub{i} = N\\sub{i} * f\\sub{p} - Nd\\sub{i} * \\sigma \\sub{p} *  v\\sub{p}");
+</script>
+</li>
+</ul>
+</ul>
+<br>
+<ul>
+<li>Between "Particles To Nodes" & "Nodes To Particles":
+<ul>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("V += F * dT");
+</script>
+</li>
+</ul>
+</li>
+</ul>
+</div>
 
 ---
 
 <div class="title-1">Step: Nodes To Particles - Details</div>
 
-<ul class="notes notes-big">
-<li>Mass <strong>m</strong></li>
-<li>Velocity <strong>v</strong></li>
-<li>Internal force <strong>f</strong></li>
-<li><script>
+<div class="h-1-2 notes-big">
+<ul>
+<li>For each node of every element:</li>
+<ul>
+<li>
+<script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-"Cauchy stress tensor <strong>" + latexconv.convertLaTeXToUnicode("\\sigma") + "</strong>";
+latexconv.convertLaTeXToUnicode("v\\sub{p} = N\\sub{i} * F\\sub{i} / M\\sub{i} * dT");
+</script> 
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("pos\\sub{p} += N\\sub{i} * MV\\sub{i} / M\\sub{i} * dT");
+</script> 
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("\\Delta L += v\\sub{p} * Nd' * dT");
 </script> 
 </li>
 </ul>
+<li>For every element:</li>
+<ul>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("L\\sub{p} = L\\sub{p} * \\Delta L");
+</script> 
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("v\\sub{p} = det(L\\sub{p}) * V\\sub{0_p}");
+</script> 
+</li>
+</ul>
+</ul>
+</div>
+
+<div class="h-2-2 notes-big">
+<ul>
+<li>Reset grid after "Nodes To Particles":
+<ul>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("M = Matrix.zeros(|N|, 1)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("MV = Matrix.zeros(|N|, 2)");
+</script>
+</li>
+<li>
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js";
+latexconv.convertLaTeXToUnicode("V = Matrix.zeros(|N|, 2)");
+</script>
+</li>
+</ul>
+</div>
 
 ---
 
-<div class="title-1">Learnings</div>
+<div class="title-1">Outcomes & Learnings</div>
 
 <ul class="notes notes-big">
-<li></li>
+<li>MPM is cool (when it works)</li>
+<li>Large number of MPM variables complicates the understanding</li>
+<li>Many MPM papers contain incomplete explanations</li>
+<li>Few code examples only complex systems</li>
+<li>Utilize proper language function when possible (requestAnimationFrame)</li>
+<li>Math.js has an inconvenient syntax</li>
 </ul>
 
 ---
 
-# TODOs
-
-- Alter speed
-- Show parts of the animation canvas zoomed
-
-<script>
-//import latexconv from "src/external/latex-to-unicode-converter.js"
-//latexconv.convertLaTeXToUnicode("\\sigma + \\alpha + \\Omega + n\\sub{p} = 5")
-</script>
-
----
-
-# Close
+<div class="title-1">Close Presentation</div>
 
 <script>
 let closeButton = document.createElement('button')
@@ -364,4 +668,16 @@ function closeFullscreen() {
 }
 
 closeButton
+</script>
+
+---
+
+# TODOs
+
+- Alter speed
+- Show parts of the animation canvas zoomed
+
+<script>
+import latexconv from "src/external/latex-to-unicode-converter.js"
+latexconv.convertLaTeXToUnicode("\\sigma + \\alpha + \\Omega + n\\sub{p} = 5")
 </script>
