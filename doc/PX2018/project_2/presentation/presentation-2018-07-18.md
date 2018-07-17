@@ -235,6 +235,12 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 
 ---
 
+<div class="title-1">Correct Result</div>
+
+<img src="correct-result.png" alt="Correct Result" style="position: absolute; top: 100px; left: 270px; width: 800px" />
+
+---
+
 <div class="title-1">Related Work</div>
 
 <ul class="notes notes-big">
@@ -250,14 +256,17 @@ lively.openComponentInWindow("lively-container").then(comp => comp.editFile("" +
 
 <ul class="notes notes-big">
 <li>Preparation:
+<ul>
 <li>Init particle mass, volume and force</li>
+<li>Init grid</li>
+</ul>
 </li>
 <li>Loop:
 <ul>
 <li>Particles to nodes</li>
 <li>Apply force to momtentum</li>
 <li>Nodes to particles</li>
-<li>Nodes to particles</li>
+<li>Reset grid</li>
 </ul>
 </li>
 </ul>
@@ -601,7 +610,7 @@ latexconv.convertLaTeXToUnicode("pos\\sub{p} += N\\sub{i} * MV\\sub{i} / M\\sub{
 <li>
 <script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("\\Delta L += v\\sub{p} * Nd' * dT");
+latexconv.convertLaTeXToUnicode("\\Delta L += V\\sub{i} * Nd' * dT");
 </script> 
 </li>
 </ul>
@@ -616,7 +625,7 @@ latexconv.convertLaTeXToUnicode("L\\sub{p} = L\\sub{p} * \\Delta L");
 <li>
 <script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("v\\sub{p} = det(L\\sub{p}) * V\\sub{0_p}");
+latexconv.convertLaTeXToUnicode("V\\sub{p} = det(L\\sub{p}) * V\\sub{0_p}");
 </script> 
 </li>
 </ul>
