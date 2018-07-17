@@ -64,7 +64,15 @@ export default class LivelyMpm extends Morph {
     let table = null;
     if (!log.classList.contains('hidden')) {
       log.innerHTML = '';
-      table = <table><tr><th>x</th><th>y</th></tr></table>;
+      let cols = <tr><th>x</th><th>y</th></tr>;
+      table = <table></table>;
+      for (let variable in this.animation.displayVariables) {
+        cols.appendChild(<th>{variable}</th>); 
+      }
+      table.appendChild(cols);
+      this.animation.showVariables = true;
+    } else {
+      this.animation.showVariables = false;
     }
     for (let i = 0; i < particles.length; ++i) {
       let posX = particles[i].get(0);
@@ -76,6 +84,11 @@ export default class LivelyMpm extends Morph {
       let row = <tr></tr>
       row.appendChild(<td width="100">{Math.round(particles[i].get(0) * 100) / 100}</td>);
       row.appendChild(<td width="100">{Math.round(particles[i].get(1) * 100) / 100}</td>);
+      
+      for (let variable in this.animation.displayVariables) {
+        row.appendChild(<td width="300">{this.animation.displayVariables[variable][i]}</td>);
+      }
+      
       table.appendChild(row);
       log.appendChild(table);
     }

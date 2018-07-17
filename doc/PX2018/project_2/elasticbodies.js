@@ -31,6 +31,10 @@ export default class ElasticBodies extends MpmAnimation {
     this.rho = 10;
     this.r = 50;
     this.oneDisk = oneDisk;
+    
+    // Stores information for visualisation
+    this._displayVariables = {};
+    this._showVariables = false;
   }
   
   set speed(value) {
@@ -69,6 +73,18 @@ export default class ElasticBodies extends MpmAnimation {
   
   get elementSize() {
     return [this.deltaX, this.deltaY];
+  }
+  
+  get displayVariables() {
+    return this._displayVariables;
+  }
+  
+  set showVariables(value) {
+    this._showVariables = value;
+  }
+  
+  get showVariables() {
+    return this._showVariables;
   }
   
   initParticles() {
@@ -117,6 +133,7 @@ export default class ElasticBodies extends MpmAnimation {
   }
   
   calculate(caller) {
+    this._displayVariables = {};
     this.nmass.length = 0;
     this.nmomentum = Matrix.zeros(this.nCount, 2);
     this.niforce = Matrix.zeros(this.nCount, 2);
@@ -130,6 +147,15 @@ export default class ElasticBodies extends MpmAnimation {
     this.nmomentum = this.nmomentum.add(this.niforce.multiply(this.dtime));
     
     this.nodesToParticles();
+    
+    if (this._showVariables) {
+      this._displayVariables["pVelocity"] = [];
+      this._displayVariables["Stress"] = [];
+      for (let i = 0; i < this.pCount; ++i) {
+        this._displayVariables["pVelocity"].push("(" + Math.round(this.vp[i].get(0) * 100) / 100 + ", " + Math.round(this.vp[i].get(1) * 100) / 100 + ")");
+        this._displayVariables["Stress"].push("(" + this.s[i].get(0) + ", " + this.s[i].get(1) + ", " + this.s[i].get(2) + ")");
+      }
+    }
     
     this.updateParticleNodeRelation();
   }
