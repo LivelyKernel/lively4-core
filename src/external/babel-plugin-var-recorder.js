@@ -141,14 +141,14 @@ export default function({ types: t, template, traverse, }) {
           }
           
           if(partOfForStatement(binding)) {
-            console.error("sort out", binding.identifier.name)
-            console.warn(binding)
+            // console.error("sort out", binding.identifier.name)
+            // console.warn(binding)
             binding.__ignoreRecorder__ = true;
             return;
             
           } else {
-            console.error("not matching", binding.identifier.name)
-            console.warn(binding)
+            // console.error("not matching", binding.identifier.name)
+            // console.warn(binding)
           }
           
           binding.referencePaths
