@@ -41,33 +41,42 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     return label;
   }
   async attachChildren(model, treeNode) {
-    // console.log('attach children', model.object && model.object.name)
-    let children = model.children;
-    if (children && children.length > 0) {
-      if (model.childScript) {
-        let test = children.map(c => c.object);
-        let x = await this.expandChild(test, model.childScript);
-        if (x && x.length > 0) {
-          treeNode.children = [];
-          await Promise.all(x.map(async child => {
-            const label = this.labelForModel(child);
-            const childNode = this.createTreeNodeForLabel(label);
-            treeNode.children.push(childNode);
-            return await this.attachChildren(child, childNode);
-          }));
-          return;
-        }
-      }
+    let childLayer = model.childLayer;
+    
+    if (!childLayer || !childLayer.objects.length) {
+      treeNode.size = 1;
+      return;
     }
-    treeNode.size = 1;
+
+    if (childLayer.script) {
+      let childData = childLayer.objects.map(c => c.data);
+      model.childLayer = await this.expandChild(childData, childLayer.script);
+      childLayer = model.childLayer;
+    } else {
+      treeNode.size = 1;
+      return;
+    }
+
+    if(!childLayer.objects || childLayer.objects.length === 0) {
+      treeNode.size = 1;
+      return;
+    }
+    for (let child of childLayer.objects) {
+      treeNode.children = treeNode.children || [];
+
+      const label = this.labelForModel(child);
+      const childNode = this.createTreeNodeForLabel(label);
+      treeNode.children.push(childNode);
+      await this.attachChildren(child, childNode);
+    }
   }
-  async display(model, config) {
-    super.display(model, config);
+  async display(vivideLayer, config) {
+    super.display(vivideLayer, config);
     this.innerHTML = '';
     
     this.treeData = this.createTreeNodeForLabel('Top Level');
 
-    for(var m of model) {
+    for(var m of vivideLayer.objects) {
       await this.attachChildren(m, this.treeData);
     }
     
@@ -80,58 +89,6 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     let widget = this.d3treemap;
     widget.setTreeData(this.treeData);
   }
-  
-//   async toggleTree(treeItem, expander) {
-//     let children = this.childrenByTreeItem.get(treeItem);
-    
-//     if (!children || !children.length) return;
-    
-//     let sub = treeItem.querySelector("#child");
-//     if (sub.innerHTML.length == 0) {
-//       treeItem.className += " expanded"
-//       let childScript = this.childScriptByTreeItem.get(treeItem);
-      
-//       if (childScript) {
-//         let test = children.map(c => c.object);
-//         children = await this.expandChild(test, childScript);
-//       }
-      
-//       this.childrenByTreeItem.set(treeItem, children);
-      
-//       for (let child of children) {  
-//         this.processModel(child, sub);
-//       }
-//       treeItem.appendChild(sub);
-//       expander.classList.remove("fa-caret-right");
-//       expander.classList += " fa-caret-down";
-//     } else if (treeItem.classList.contains("expanded")) {
-//       treeItem.classList.remove("expanded");
-//       expander.classList.remove("fa-caret-down");
-//       expander.classList += " fa-caret-right";
-//     } else {
-//       treeItem.classList += " expanded";
-//       expander.classList.remove("fa-caret-right");
-//       expander.classList += " fa-caret-down";
-//     }
-//   }
-  
-//   async processModel(model, parent) {    
-//     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
-//     let treeItem = <li>{label}<ul id="child"></ul></li>;
-//     let symbolClasses = "expander fa";
-//     // Items with no children have no symbol, because FontAwesome does not supply a good one
-//     symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
-//     let expander = <span id="expander" class={symbolClasses}></span>;
-    
-//     treeItem.prepend(expander);
-//     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
-//     this.multiSelection.addItem(treeItem);
-//     this.addDragEventTo(treeItem);
-//     this.dataByTreeItem.set(treeItem, model.object);
-//     this.childrenByTreeItem.set(treeItem, model.children);
-//     this.childScriptByTreeItem.set(treeItem, model.childScript);
-//     parent.appendChild(treeItem);
-//   }
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view

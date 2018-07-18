@@ -336,7 +336,7 @@ export default class VivideView extends Morph {
         return 'vivide-boxplot-widget';
       }
     }
-    return 'vivide-tree-widget';
+    return 'vivide-treemap-widget';
   }
   findAppropriateWidget(model) {
     const type = this.getPreferredWidgetType(model);
