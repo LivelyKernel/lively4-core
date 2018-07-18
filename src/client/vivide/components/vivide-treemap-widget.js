@@ -41,28 +41,33 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     return label;
   }
   async attachChildren(model, treeNode) {
-    let childLayer = model.childLayer;
-    
-    if (!childLayer || !childLayer.objects.length) {
-      treeNode.size = 1;
-      return;
-    }
+    const getChildrenOfVivideObject = async (model) => {
+      let childLayer = model.childLayer;
+      
+      if (!childLayer || !childLayer.objects.length) {
+        return;
+      }
 
-    if (childLayer.script) {
+      if (!childLayer.script) {
+        return;
+      }
+      
       let childData = childLayer.objects.map(c => c.data);
       model.childLayer = await this.expandChild(childData, childLayer.script);
       childLayer = model.childLayer;
-    } else {
+      
+      return childLayer;
+    }
+    
+    var childLayer = await getChildrenOfVivideObject(model);
+
+    if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
       treeNode.size = 1;
       return;
     }
 
-    if(!childLayer.objects || childLayer.objects.length === 0) {
-      treeNode.size = 1;
-      return;
-    }
+    treeNode.children = treeNode.children || [];
     for (let child of childLayer.objects) {
-      treeNode.children = treeNode.children || [];
 
       const label = this.labelForModel(child);
       const childNode = this.createTreeNodeForLabel(label);
