@@ -64,7 +64,8 @@ export default class LivelyMenu extends Morph {
     this.items.forEach(item => item.classList.remove('filtered-out'));
     this.nonMatchingItems.forEach(item => item.classList.add('filtered-out'));
     
-    if(this.nonMatchingItems.includes(this.currentItem) && this.matchingItems.length > 0) {
+    lively.notify(this.matchingItems.length, this.nonMatchingItems.length)
+    if(!this.currentItem || (this.nonMatchingItems.includes(this.currentItem) && this.matchingItems.length > 0)) {
       this.selectItem(this.matchingItems[0]);
     }
   }
