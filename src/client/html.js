@@ -14,6 +14,7 @@ class KeyboardHandler {
   // Generic Keyboad handler to get rid of the magic keycode numbers 
   static getDispatchHandler(key) {
     return ({
+      "32": "onSpace",
       "37": "onLeft",
       "38": "onUp",
       "39": "onRight",
