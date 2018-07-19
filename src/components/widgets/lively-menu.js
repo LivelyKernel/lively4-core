@@ -1,11 +1,16 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt} from 'src/client/graphics.js';
+import { pt } from 'src/client/graphics.js';
 import html from  'src/client/html.js'
 
-export default class LivelyMenu extends Morph {
+const FILTER_KEY_BLACKLIST = [
+  'Control', 'Shift', 'Capslock', 'Alt',
+  ' ', 'Enter', 'Escape',
+  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'
+];
 
+export default class LivelyMenu extends Morph {
   initialize() {
-    this.setAttribute("tabindex", 0) // we want keuboard events
+    this.setAttribute("tabindex", 0) // we want keyboard events
     html.registerKeys(this, "Menu", this, true)
   }
 
@@ -39,45 +44,98 @@ export default class LivelyMenu extends Morph {
     }
   }
   
+  // lazy filter property
+  get filter() { return this._filter = this._filter || ''; }
+  set filter(value) { return this._filter = value; }
+  
+  onKeyDown(evt) {
+    if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
+
+    if(['Backspace', 'Delete'].includes(evt.key)) {
+      this.filter = '';
+    } else {
+      this.filter += evt.key;
+    }
+    
+    this.get('#filter-hint').innerHTML = this.filter;
+    
+    lively.warn(evt.key, this.filter)
+    
+    this.items.forEach(item => item.classList.remove('filtered-out'));
+    this.nonMatchingItems.forEach(item => item.classList.add('filtered-out'));
+    
+    if(this.nonMatchingItems.includes(this.currentItem) && this.matchingItems.length > 0) {
+      this.selectItem(this.matchingItems[0]);
+    }
+  }
+  
+  get items() {
+    return Array.from(this.get(".container").querySelectorAll("li"));
+  }
+  
+  matchFilter(item) {
+    if(!item || !item.entry || typeof item.entry[0] !== 'string') { return false; }
+    return item.entry[0].toLowerCase().includes(this.filter.toLowerCase());
+  }
+  
+  get matchingItems() {
+    return this.items.filter(item => this.matchFilter(item));
+  }
+  
+  get nonMatchingItems() {
+    return this.items.filter(item => !this.matchFilter(item));
+  }
+
+  onSpaceDown(evt) {
+    lively.warn('should toggle binary Preferences');
+  }
+
   onUpDown(evt) {
-    this.sellectUpOrDown(evt, -1)
+    this.sellectUpOrDown(evt, -1);
   }
 
   onDownDown(evt) {
-    this.sellectUpOrDown(evt, 1)
+    this.sellectUpOrDown(evt, 1);
   }
   
   onEscDown(evt) {
-   this.remove() 
+    // #TODO: check if we are in a submenu
+    if (this.parentMenu) {
+      this.parentMenu.onEscDown(evt);
+    }
+    this.remove();
   }
   
-  sellectUpOrDown(evt, offset) {
-    var menu = this.get(".container")
+  sellectUpOrDown(evt, offset = 0) {
     if (!this.currentItem) {
-      this.selectItem(menu.childNodes[0])
+      this.selectItem(this.items[0]);
     } else {
-      var items = Array.from(menu.querySelectorAll("li"))
-      var nextIdx = items.indexOf(this.currentItem)
-      this.selectItem(items[nextIdx + offset])
+      var matchingItems = this.matchingItems;
+      var targetIndex = matchingItems.indexOf(this.currentItem) + offset;
+      targetIndex = Math.max(targetIndex, 0);
+      targetIndex = Math.min(targetIndex, matchingItems.length - 1);
+      this.selectItem(matchingItems[targetIndex]);
     }
   }
 
   onLeftDown(evt) {
     if (this.parentMenu) {
       lively.focusWithoutScroll(this.parentMenu)
-      this.parentMenu.sellectUpOrDown(evt, 0)
+      this.parentMenu.sellectUpOrDown(evt)
     }
   }
-
   
   onRightDown(evt) {
     if (!this.currentItem) return
   
     var entry = this.currentItem.entry
     if (entry[1] instanceof Array) {
-      lively.focusWithoutScroll(this.submenu)
-      this.submenu.sellectUpOrDown(evt, 0)
+      this.enterSubmenu(evt);
     }
+  }
+  enterSubmenu(evt) {
+    lively.focusWithoutScroll(this.submenu);
+    this.submenu.sellectUpOrDown(evt);
   }
 
   onEnterDown(evt) {
@@ -86,6 +144,8 @@ export default class LivelyMenu extends Morph {
     var entry = this.currentItem.entry
     if (entry[1] instanceof Function) {
       entry[1](evt, this.currentItem);
+    } else if(entry[1] instanceof Array) {
+      this.enterSubmenu(evt);
     }
   }
 
@@ -115,8 +175,10 @@ export default class LivelyMenu extends Morph {
         item.addEventListener("click", evt => func(evt, item));
       }
 
-      item.addEventListener("mouseenter", async (evt) => {
-        this.selectItem(item)
+      item.addEventListener("mouseenter", async evt => {
+        if(this.matchingItems.includes(item)) {
+          this.selectItem(item);
+        }
       })
       menu.appendChild(item);
     });
@@ -148,6 +210,4 @@ export default class LivelyMenu extends Morph {
       // lively.moveBy(this, delta)
     }
   }
-  
-  
 }
