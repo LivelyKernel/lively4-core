@@ -19,7 +19,7 @@ export default class VivideView extends Morph {
   
   static get outportAttribute() { return 'outport-target'; }
   
-  static get scriptAttribute() { return 'vivide-script-url'; }
+  static get scriptAttribute() { return 'vivide-script'; }
   
   static get widgetId() { return 'widget'; }
   
@@ -122,6 +122,10 @@ export default class VivideView extends Morph {
   }
 
   selectionChanged() {
+    this.updateOutportTargets();
+  }
+  
+  updateOutportTargets() {
     let selection = this.getSelectedData();
     if(selection) {
       this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
@@ -130,10 +134,10 @@ export default class VivideView extends Morph {
   
   addDragInfoTo(evt) {
     const dt = evt.dataTransfer;
-
-    let data = this.getSelectedData();
-    if(data) {
-      dt.setData("javascript/object", getTempKeyFor(data));
+    // #TODO: An improved fix would be to change what is returned by the widget selection
+    let selection = this.getSelectedData();
+    if(selection) {
+      dt.setData("javascript/object", getTempKeyFor(selection.map(item => item.data)));
     } else {
       lively.error('could not add drag data');
     }
@@ -153,6 +157,7 @@ export default class VivideView extends Morph {
 
     this.input = this.input || [];
   }
+  
   onExtentChanged() {
     this.childNodes.forEach(childNode => {
       if(childNode.dispatchEvent) {
@@ -243,7 +248,7 @@ export default class VivideView extends Morph {
       script.updateCallback = this.scriptGotUpdated.bind(this);
       
       if (script.lastScript) break;
-     }
+    }
     //this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
 
     return this.firstScript;
@@ -251,7 +256,6 @@ export default class VivideView extends Morph {
   
   getFirstScript() {
     //this.getJSONAttribute(VivideView.scriptAttribute);
-    
     return this.firstScript;
   }
   
@@ -287,6 +291,8 @@ export default class VivideView extends Morph {
   async scriptGotUpdated() {
     await this.calculateOutputModel();
     await this.updateWidget();
+    // Update outport views
+    this.updateOutportTargets();
   }
   
   async computeModel(data, script) {
@@ -325,6 +331,11 @@ export default class VivideView extends Morph {
     }
     
     // #TODO: this is too dependent on internal structure of the model/VivideObject
+    // PROPOSAL: Models should not know about views, therefore they cannot return
+    //   a suggested view, but they could return a data type suggestion like:
+    //     model.dataType == "data-points" || "list" || "text"
+    //   Additionally, this data type could be set manually or via an "intelligent"
+    //   algorithm.
     if (model.objects && model.objects.length > 0) {
       let m = model.objects[0];
       if(m.properties.find(prop => prop.dataPoints instanceof Array &&
@@ -333,7 +344,7 @@ export default class VivideView extends Morph {
         return 'vivide-boxplot-widget';
       }
     }
-    return 'vivide-treemap-widget';
+    return 'vivide-tree-widget';
   }
   findAppropriateWidget(model) {
     const type = this.getPreferredWidgetType(model);
@@ -363,6 +374,8 @@ export default class VivideView extends Morph {
     if (prevScript) {
       script = prevScript;
       
+      // If the predecessor was the last script before, the
+      // attribute needs to be passed to the appended script.
       if (prevScript.lastScript) {
         prevScript.lastScript = false;
         newScript.lastScript = true;
@@ -397,6 +410,7 @@ export default class VivideView extends Morph {
   }
   
   livelyMigrate(other) {
+    this.setFirstScript(other.getFirstScript());
     this.newDataFromUpstream(other.input);
   }
   
