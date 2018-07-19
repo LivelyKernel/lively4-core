@@ -40,98 +40,64 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       .find(label => label) || textualRepresentation(model.object);
     return label;
   }
-  async attachChildren(model, treeNode) {
-    // console.log('attach children', model.object && model.object.name)
-    let children = model.children;
-    if (children && children.length > 0) {
-      if (model.childScript) {
-        let test = children.map(c => c.object);
-        let x = await this.expandChild(test, model.childScript);
-        if (x && x.length > 0) {
-          treeNode.children = [];
-          await Promise.all(x.map(async child => {
-            const label = this.labelForModel(child);
-            const childNode = this.createTreeNodeForLabel(label);
-            treeNode.children.push(childNode);
-            return await this.attachChildren(child, childNode);
-          }));
-          return;
-        }
+  async attachChildrenFromModel(model, treeNode) {
+    const getChildLayerOfVivideObject = async (model) => {
+      let childLayer = model.childLayer;
+      
+      if (!childLayer || !childLayer.objects.length) {
+        return;
       }
+
+      if (!childLayer.script) {
+        return childLayer;
+      }
+      
+      let childData = childLayer.objects.map(c => c.data);
+      model.childLayer = await this.expandChild(childData, childLayer.script);
+      childLayer = model.childLayer;
+      
+      return childLayer;
     }
-    treeNode.size = 1;
+    
+    var childLayer = await getChildLayerOfVivideObject(model);
+
+    if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
+      treeNode.size = 1;
+      return;
+    }
+
+    return await this.attachAllChildren(childLayer, treeNode);
   }
-  async display(model, config) {
-    super.display(model, config);
+  async attachAllChildren(vivideLayer, parentNode) {
+    for (let child of vivideLayer.objects) {
+      await this.attachAChild(child, parentNode);
+    }
+  }
+  async attachAChild(model, parentNode) {
+    const label = this.labelForModel(model);
+    const childNode = this.createTreeNodeForLabel(label);
+
+    parentNode.children = parentNode.children || [];
+    parentNode.children.push(childNode);
+    
+    return await this.attachChildrenFromModel(model, childNode);
+  }
+  async display(vivideLayer, config) {
+    super.display(vivideLayer, config);
     this.innerHTML = '';
     
-    this.treeData = this.createTreeNodeForLabel('Top Level');
+    const treeData = this.createTreeNodeForLabel('Top Level');
 
-    for(var m of model) {
-      await this.attachChildren(m, this.treeData);
-    }
+    await this.attachAllChildren(vivideLayer, treeData);
     
-    console.warn(this.treeData);
-    const outputWorkspace = document.body.querySelector('#output-dump');
-    if(outputWorkspace) {
-      outputWorkspace.value = JSON.stringify(this.treeData, null, 2)
-    }
+    // console.warn(treeData);
+    // const outputWorkspace = document.body.querySelector('#output-dump');
+    // if(outputWorkspace) {
+    //   outputWorkspace.value = JSON.stringify(treeData, null, 2)
+    // }
 
-    let widget = this.d3treemap;
-    widget.setTreeData(this.treeData);
+    this.d3treemap.setTreeData(treeData);
   }
-  
-//   async toggleTree(treeItem, expander) {
-//     let children = this.childrenByTreeItem.get(treeItem);
-    
-//     if (!children || !children.length) return;
-    
-//     let sub = treeItem.querySelector("#child");
-//     if (sub.innerHTML.length == 0) {
-//       treeItem.className += " expanded"
-//       let childScript = this.childScriptByTreeItem.get(treeItem);
-      
-//       if (childScript) {
-//         let test = children.map(c => c.object);
-//         children = await this.expandChild(test, childScript);
-//       }
-      
-//       this.childrenByTreeItem.set(treeItem, children);
-      
-//       for (let child of children) {  
-//         this.processModel(child, sub);
-//       }
-//       treeItem.appendChild(sub);
-//       expander.classList.remove("fa-caret-right");
-//       expander.classList += " fa-caret-down";
-//     } else if (treeItem.classList.contains("expanded")) {
-//       treeItem.classList.remove("expanded");
-//       expander.classList.remove("fa-caret-down");
-//       expander.classList += " fa-caret-right";
-//     } else {
-//       treeItem.classList += " expanded";
-//       expander.classList.remove("fa-caret-right");
-//       expander.classList += " fa-caret-down";
-//     }
-//   }
-  
-//   async processModel(model, parent) {    
-//     let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
-//     let treeItem = <li>{label}<ul id="child"></ul></li>;
-//     let symbolClasses = "expander fa";
-//     // Items with no children have no symbol, because FontAwesome does not supply a good one
-//     symbolClasses += model.children && model.children.length > 0 ? " fa-caret-right" : " fa-circle small";
-//     let expander = <span id="expander" class={symbolClasses}></span>;
-    
-//     treeItem.prepend(expander);
-//     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
-//     this.multiSelection.addItem(treeItem);
-//     this.addDragEventTo(treeItem);
-//     this.dataByTreeItem.set(treeItem, model.object);
-//     this.childrenByTreeItem.set(treeItem, model.children);
-//     this.childScriptByTreeItem.set(treeItem, model.childScript);
-//     parent.appendChild(treeItem);
-//   }
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view

@@ -109,7 +109,7 @@ export default class LivelyD3Treemap extends Morph {
       .enter().append("tspan")
         .attr("x", 4)
         .attr("y", function(d, i) { return 13 + i * 10; })
-        .text(function(d) { debugger; return d; });
+        .text(function(d) { return d; });
 
     cell.append("title")
         .text(d => this.dataTitle ? this.dataTitle(d.data) : d.data.id + "\n" + format(d.value) );

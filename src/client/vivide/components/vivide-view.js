@@ -271,9 +271,6 @@ export default class VivideView extends Morph {
   getInputData() {
     return this.input;
   }
-  getModelToDisplay() {
-    return this.modelToDisplay;
-  }
   
   async calculateOutputModel() {
     this.viewConfig = new Annotations();
@@ -336,7 +333,7 @@ export default class VivideView extends Morph {
         return 'vivide-boxplot-widget';
       }
     }
-    return 'vivide-tree-widget';
+    return 'vivide-treemap-widget';
   }
   findAppropriateWidget(model) {
     const type = this.getPreferredWidgetType(model);
