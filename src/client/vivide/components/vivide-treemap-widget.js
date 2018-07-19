@@ -40,7 +40,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       .find(label => label) || textualRepresentation(model.object);
     return label;
   }
-  async attachChildren(model, treeNode) {
+  async attachChildrenFromModel(model, treeNode) {
     const getChildrenOfVivideObject = async (model) => {
       let childLayer = model.childLayer;
       
@@ -66,46 +66,37 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       return;
     }
 
-    treeNode.children = treeNode.children || [];
-    for (let child of childLayer.objects) {
-      const label = this.labelForModel(child);
-      const childNode = this.createTreeNodeForLabel(label);
-      treeNode.children.push(childNode);
-      await this.attachChildren(child, childNode);
-
-      lively.success(child.data || child.object);
+    return await this.attachAllChildren(childLayer, treeNode);
+  }
+  async attachAllChildren(vivideLayer, parentNode) {
+    for (let child of vivideLayer.objects) {
+      await this.attachAChild(child, parentNode);
     }
   }
   async attachAChild(model, parentNode) {
-    const label = this.labelForModel(model);    
+    const label = this.labelForModel(model);
     const childNode = this.createTreeNodeForLabel(label);
+
+    parentNode.children = parentNode.children || [];
     parentNode.children.push(childNode);
-    return await this.attachChildren(model, childNode);
+    
+    return await this.attachChildrenFromModel(model, childNode);
   }
   async display(vivideLayer, config) {
     super.display(vivideLayer, config);
     this.innerHTML = '';
     
-    this.treeData = this.createTreeNodeForLabel('Top Level');
-    this.treeData.children = [];
+    const treeData = this.createTreeNodeForLabel('Top Level');
 
-    for(var m of vivideLayer.objects) {
-      lively.warn('num childs', vivideLayer.objects.length)
-
-      const label = this.labelForModel(m);
-      const childNode = this.createTreeNodeForLabel(label);
-      this.treeData.children.push(childNode);
-      await this.attachChildren(m, childNode);
-    }
+    await this.attachAllChildren(vivideLayer, treeData);
     
-    console.warn(this.treeData);
-    const outputWorkspace = document.body.querySelector('#output-dump');
-    if(outputWorkspace) {
-      outputWorkspace.value = JSON.stringify(this.treeData, null, 2)
-    }
+    // console.warn(treeData);
+    // const outputWorkspace = document.body.querySelector('#output-dump');
+    // if(outputWorkspace) {
+    //   outputWorkspace.value = JSON.stringify(treeData, null, 2)
+    // }
 
-    let widget = this.d3treemap;
-    widget.setTreeData(this.treeData);
+    this.d3treemap.setTreeData(treeData);
   }
   
   livelyExample() {
