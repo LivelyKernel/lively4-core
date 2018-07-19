@@ -610,7 +610,7 @@ latexconv.convertLaTeXToUnicode("pos\\sub{p} += N\\sub{i} * MV\\sub{i} / M\\sub{
 <li>
 <script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("\\Delta L += V\\sub{i} * Nd' * dT");
+latexconv.convertLaTeXToUnicode("\\Delta L += v\\sub{i} * Nd' * dT");
 </script> 
 </li>
 </ul>

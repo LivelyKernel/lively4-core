@@ -18,7 +18,7 @@ export default class LivelyMpm extends Morph {
       evt => this.onDblClick(evt));
     
     this.variables = {};
-    this.particleSize = 4;
+    this.particleSize = 6;
     this.oneDisk = false;
     
     this.canvas = this.get("#mpm");
@@ -38,7 +38,7 @@ export default class LivelyMpm extends Morph {
     $(this.opacityInput).on("input change", opacityUpdate.bind(this));
     $(this.speedInput).on("input change", speedUpdate.bind(this));
     
-    this.animation = new ElasticBodies();
+    this.animation = new ElasticBodies(true);
     
     if (this.animation.showElements) {
       let numbers = this.get("#numbers");
@@ -77,6 +77,13 @@ export default class LivelyMpm extends Morph {
     for (let i = 0; i < particles.length; ++i) {
       let posX = particles[i].get(0);
       let posY = particles[i].get(1);
+      
+      if (i == 0) {
+        this.context.fillStyle = "rgba(" + 0 + "," + 0 + "," + 255 + "," + 1 + ")";
+      } else {
+        this.context.fillStyle = "rgba(" + 255 + "," + 0 + "," + 0 + "," + 1 + ")";
+      }
+      
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
       
       if (!table) continue;
