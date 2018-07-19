@@ -255,7 +255,6 @@ export default class VivideView extends Morph {
   
   getFirstScript() {
     //this.getJSONAttribute(VivideView.scriptAttribute);
-    
     return this.firstScript;
   }
   
@@ -403,6 +402,7 @@ export default class VivideView extends Morph {
   }
   
   livelyMigrate(other) {
+    this.setFirstScript(other.getFirstScript());
     this.newDataFromUpstream(other.input);
   }
   
