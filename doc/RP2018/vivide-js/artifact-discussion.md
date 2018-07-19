@@ -1,7 +1,16 @@
 # Implementation
 - Used existing: View, Widget
 - Introduced: Script, Layer, Object, TreeWidget
-- Features: 
+
+
+## Architecture
+
+## Features
+- Features: Children
+
+## VivideLayer & VivideObjects
+
+## Scripts as List vs Array/JsonObject
 
 # Limitations
 - only a few widgets
