@@ -49,7 +49,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       }
 
       if (!childLayer.script) {
-        return;
+        return childLayer;
       }
       
       let childData = childLayer.objects.map(c => c.data);
@@ -68,21 +68,34 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
 
     treeNode.children = treeNode.children || [];
     for (let child of childLayer.objects) {
-
       const label = this.labelForModel(child);
       const childNode = this.createTreeNodeForLabel(label);
       treeNode.children.push(childNode);
       await this.attachChildren(child, childNode);
+
+      lively.success(child.data || child.object);
     }
+  }
+  async attachAChild(model, parentNode) {
+    const label = this.labelForModel(model);    
+    const childNode = this.createTreeNodeForLabel(label);
+    parentNode.children.push(childNode);
+    return await this.attachChildren(model, childNode);
   }
   async display(vivideLayer, config) {
     super.display(vivideLayer, config);
     this.innerHTML = '';
     
     this.treeData = this.createTreeNodeForLabel('Top Level');
+    this.treeData.children = [];
 
     for(var m of vivideLayer.objects) {
-      await this.attachChildren(m, this.treeData);
+      lively.warn('num childs', vivideLayer.objects.length)
+
+      const label = this.labelForModel(m);
+      const childNode = this.createTreeNodeForLabel(label);
+      this.treeData.children.push(childNode);
+      await this.attachChildren(m, childNode);
     }
     
     console.warn(this.treeData);
