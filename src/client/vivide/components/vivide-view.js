@@ -122,6 +122,10 @@ export default class VivideView extends Morph {
   }
 
   selectionChanged() {
+    this.updateOutportTargets();
+  }
+  
+  updateOutportTargets() {
     let selection = this.getSelectedData();
     if(selection) {
       this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
@@ -287,6 +291,8 @@ export default class VivideView extends Morph {
   async scriptGotUpdated() {
     await this.calculateOutputModel();
     await this.updateWidget();
+    // Update outport views
+    this.updateOutportTargets();
   }
   
   async computeModel(data, script) {
@@ -333,7 +339,7 @@ export default class VivideView extends Morph {
         return 'vivide-boxplot-widget';
       }
     }
-    return 'vivide-treemap-widget';
+    return 'vivide-tree-widget';
   }
   findAppropriateWidget(model) {
     const type = this.getPreferredWidgetType(model);
