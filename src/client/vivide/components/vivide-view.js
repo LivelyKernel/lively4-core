@@ -271,9 +271,6 @@ export default class VivideView extends Morph {
   getInputData() {
     return this.input;
   }
-  getModelToDisplay() {
-    return this.modelToDisplay;
-  }
   
   async calculateOutputModel() {
     this.viewConfig = new Annotations();

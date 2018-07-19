@@ -41,7 +41,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     return label;
   }
   async attachChildrenFromModel(model, treeNode) {
-    const getChildrenOfVivideObject = async (model) => {
+    const getChildLayerOfVivideObject = async (model) => {
       let childLayer = model.childLayer;
       
       if (!childLayer || !childLayer.objects.length) {
@@ -59,7 +59,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       return childLayer;
     }
     
-    var childLayer = await getChildrenOfVivideObject(model);
+    var childLayer = await getChildLayerOfVivideObject(model);
 
     if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
       treeNode.size = 1;
