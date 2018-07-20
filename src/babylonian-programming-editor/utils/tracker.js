@@ -126,7 +126,15 @@ class Timer {
     this._startTime = (+new Date());
   }
   
+  reset() {
+    this._startTime = null;
+  }
+  
   check() {
+    if(this._startTime === null) {
+      return;
+    }
+    
     const time = (+new Date());
     if(time - this._startTime > this._maxRuntime) {
       throw new Error("Timeout reached. Maybe there is an inifinite loop?");

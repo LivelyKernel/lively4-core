@@ -225,8 +225,9 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
 
 export const applyTracker = (code) =>
   `const __connections = this.connections;
-   const __tracker = this.tracker;
-   ${code}`;
+const __tracker = this.tracker;
+${code};
+__tracker.timer.reset();`;
 
 export const applyContext = (ast, context) => {
   const prescriptNodes = astForCode(context.prescript).program.body;
