@@ -1,13 +1,13 @@
 import { uuid } from 'utils';
 
 export default class Script {
-  constructor(source, type) {
-    this.id = uuid();
+  constructor(source, type, id = null, lastScript = false) {
+    this.id = id != null ? id : uuid();
     this.source = source;
     this.type = type;
     this.nextScript = null;
     this.updateCallback = null;
-    this.lastScript = false;
+    this.lastScript = lastScript;
   }
   
   set next(value) {

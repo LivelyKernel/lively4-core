@@ -5,6 +5,7 @@ import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplat
 import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+import Script from 'src/client/vivide/script.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -239,23 +240,54 @@ export default class VivideView extends Morph {
   }
   
   setFirstScript(firstScript) {
+    if (!(firstScript instanceof Script)) return;
+    
     this.firstScript = firstScript;
     this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
     let script = this.firstScript;
+    let scripts = {  };
+    this.scriptToJson(script, scripts);
     
     while (script.nextScript != null) {
       script = script.nextScript;
       script.updateCallback = this.scriptGotUpdated.bind(this);
+      this.scriptToJson(script, scripts);
       
       if (script.lastScript) break;
     }
-    //this.setJSONAttribute(VivideView.scriptAttribute, this.scripts);
+    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
 
     return this.firstScript;
   }
   
+  scriptToJson(script, jsonContainer) {
+    let scriptJson = { lastScript: script.lastScript, 
+                        type: script.type,
+                        source: script.source };
+    if (script.nextScript) {
+      scriptJson.nextScriptId = script.nextScript.id
+    }
+        
+    jsonContainer[script.id] = scriptJson;
+  }
+  
   getFirstScript() {
-    //this.getJSONAttribute(VivideView.scriptAttribute);
+    let jsonScripts = this.getJSONAttribute(VivideView.scriptAttribute);
+    let scripts = {};
+    
+    for (let scriptId in jsonScripts) {
+      scripts[scriptId] = new Script(jsonScripts[scriptId].source,
+                                     jsonScripts[scriptId].type,
+                                     scriptId,
+                                     jsonScripts[scriptId].lastScript);
+    }
+    
+    for (let scriptId in jsonScripts) {
+      if (!jsonScripts[scriptId].nextScriptId) continue;
+      
+      scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
+    }
+    
     return this.firstScript;
   }
   
