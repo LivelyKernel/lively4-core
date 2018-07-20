@@ -1,11 +1,35 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
 import boundEval from "src/client/bound-eval.js";
-import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplate } from 'src/client/vivide/vivide.js';
 import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
+import { stepFolder, scriptFolder } from 'src/client/vivide/utils.js';
+
+async function newScriptFromTemplate(type) {
+  const stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
+  const stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
+
+  return new ScriptStep(stepTemplate, type);
+}
+
+async function initialScriptsFromTemplate() {
+  const scripts = [];
+  const transform = await newScriptFromTemplate('transform');
+  const extract = await newScriptFromTemplate('extract');
+  const descent = await newScriptFromTemplate('descent');
+  
+  transform.nextStep = extract;
+  extract.nextStep = descent;
+  descent.lastScript = true;
+  
+  scripts.push(transform);
+  scripts.push(extract);
+  scripts.push(descent);
+  
+  return transform;
+}
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -239,6 +263,10 @@ export default class VivideView extends Morph {
     }
   }
   
+  async initDefaultScript() {
+    let firstScript = await initialScriptsFromTemplate();
+    this.setFirstScript(firstScript);
+  }
   setFirstScript(firstScript) {
     if (!(firstScript instanceof ScriptStep)) return;
     
@@ -269,10 +297,12 @@ export default class VivideView extends Morph {
     let scripts = {};
     
     for (let scriptId in jsonScripts) {
-      scripts[scriptId] = new ScriptStep(jsonScripts[scriptId].source,
-                                     jsonScripts[scriptId].type,
-                                     scriptId,
-                                     jsonScripts[scriptId].lastScript);
+      scripts[scriptId] = new ScriptStep(
+        jsonScripts[scriptId].source,
+        jsonScripts[scriptId].type,
+        scriptId,
+        jsonScripts[scriptId].lastScript
+      );
     }
     
     for (let scriptId in jsonScripts) {
@@ -373,10 +403,10 @@ export default class VivideView extends Morph {
       if(m.properties.has('dataPoints') &&
          typeof m.properties.get('dataPoints')[0] === 'number'
       ) {
-        return 'vivide-boxplot-widget';
+        return 'boxplot';
       }
     }
-    return 'vivide-tree-widget';
+    return 'tree';
   }
   findAppropriateWidget(model) {
     const type = this.getPreferredWidgetType(model);
@@ -428,17 +458,32 @@ export default class VivideView extends Morph {
     return newScript;
   }
   
-  livelyExample() {
+  
+  async createScriptEditor() {
+    const viewWindow = lively.findWindow(this);
+    const reference = viewWindow && viewWindow.tagName === "LIVELY-WINDOW" ?
+        viewWindow : this;
+    const pos = lively.getGlobalBounds(reference).topRight();
+
+    const scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
+
+    scriptEditor.setView(this);
+    // #TODO: only do setView with this as argument, the following line should not be required
+    scriptEditor.setScripts(this.getFirstScript());
+
+    return scriptEditor;
+  }
+  
+  async livelyExample() {
     let exampleData = [
       {name: "object", subclasses:[{name: "morph"},]},
       {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
       {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
     ];
     
-    let initialScriptPromise = initialScriptsFromTemplate().then(script => this.setFirstScript(script));
-    initialScriptPromise.then(() => {
-      createScriptEditorFor(this).then(() => this.newDataFromUpstream(exampleData))
-    });
+    await this.initDefaultScript();
+    await this.createScriptEditor();
+    await this.newDataFromUpstream(exampleData);
   }
   
   livelyMigrate(other) {

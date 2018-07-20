@@ -1,47 +1,10 @@
-import { stepFolder, scriptFolder } from './utils.js';
-import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 
-export async function newScriptFromTemplate(type) {
-  let stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-  let stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
-  let script = new ScriptStep(stepTemplate, type);
-
-  return script;
-}
-
-export async function initialScriptsFromTemplate() {  
-  let scripts = [];
-  let transform = await newScriptFromTemplate('transform');
-  let extract = await newScriptFromTemplate('extract');
-  let descent = await newScriptFromTemplate('descent');
-  
-  transform.nextStep = extract;
-  extract.nextStep = descent;
-  descent.lastScript = true;
-  
-  scripts.push(transform);
-  scripts.push(extract);
-  scripts.push(descent);
-  
-  return transform;
-}
-
-export async function createScriptEditorFor(view) {
-  let viewWindow = lively.findWindow(view);
-  let reference = viewWindow && viewWindow.tagName === "LIVELY-WINDOW" ?
-      viewWindow : view;
-  let pos = lively.getGlobalBounds(reference).topRight();
-
-  let scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
-
-  scriptEditor.setView(view);
-  let firstScript = view.getFirstScript();
-  scriptEditor.setScripts(firstScript);
-
-  return scriptEditor;
-}
-
+/**
+ * The high level entry point to vivide
+ * call at least with some data as Array as argument
+ */
 export async function letsScript(object, evt, sourceView) {
+  lively.success('LETS_SCRIPT')
   let pos;
   if(evt) {
     pos = lively.getPosition(evt);
@@ -49,12 +12,11 @@ export async function letsScript(object, evt, sourceView) {
 
   let view = await lively.openComponentInWindow('vivide-view', pos);
 
-  let firstScript = await initialScriptsFromTemplate();
-  view.setFirstScript(firstScript);
+  await view.initDefaultScript();
   view.newDataFromUpstream(object);
 
   if(evt && evt.shiftKey) {
-    await createScriptEditorFor(view);
+    await view.createScriptEditor();
   }
   
   if(sourceView) {
