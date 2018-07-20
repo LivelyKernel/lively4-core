@@ -26,4 +26,17 @@ export default class ScriptStep {
       this.updateCallback();
     }
   }
+  
+  toJSON() {
+    const scriptJson = {
+      lastScript: this.lastScript, 
+      type: this.type,
+      source: this.source
+    };
+    if (this.nextStep) {
+      scriptJson.nextScriptId = this.nextStep.id;
+    }
+    
+    return scriptJson
+  }
 }

@@ -261,14 +261,7 @@ export default class VivideView extends Morph {
   }
   
   scriptToJson(script, jsonContainer) {
-    let scriptJson = { lastScript: script.lastScript, 
-                        type: script.type,
-                        source: script.source };
-    if (script.nextStep) {
-      scriptJson.nextScriptId = script.nextStep.id
-    }
-        
-    jsonContainer[script.id] = scriptJson;
+    jsonContainer[script.id] = script.toJSON();
   }
   
   getFirstScript() {

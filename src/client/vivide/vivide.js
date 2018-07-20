@@ -1,6 +1,4 @@
-import { uuid } from 'utils';
 import { stepFolder, scriptFolder } from './utils.js';
-import { pt } from 'src/client/graphics.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 
 export async function newScriptFromTemplate(type) {
