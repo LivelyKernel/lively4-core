@@ -120,35 +120,23 @@ export default function({ types: t, template, traverse, }) {
 
         // iterate all module wide bindings
         Object.values(bindings).forEach(binding => {
-
           
-          function partOfForStatement(binding) {
-            const parentPath = binding.path.parentPath; 
-            const shouldSortOut = binding.path.isVariableDeclarator() &&
-              parentPath.isVariableDeclaration() &&
-              parentPath.node.kind === "var" && ((
-                (
-                parentPath.parentPath.isForAwaitStatement() ||
-                parentPath.parentPath.isForInStatement() ||
-                parentPath.parentPath.isForOfStatement()
-                ) && parentPath.parentKey === "left"
-              ) || (
-                parentPath.parentPath.isForStatement()
-                && parentPath.parentKey ===  "init"
-              )
-              );
-            return shouldSortOut;
-          }
-          
-          if(partOfForStatement(binding)) {
-            // console.error("sort out", binding.identifier.name)
-            // console.warn(binding)
+          const parentPath = binding.path.parentPath; 
+          const shouldSortOut = binding.path.isVariableDeclarator() &&
+            parentPath.isVariableDeclaration() &&
+            parentPath.node.kind === "var" 
+           &&
+            (parentPath.parentPath.isForInStatement() || parentPath.parentPath.isForOfStatement()||parentPath.parentPath.isForAwaitStatement())
+          && parentPath.parentKey === "left"
+          if(shouldSortOut) {
+            console.error("sort out", binding.identifier.name)
+            console.warn(binding)
             binding.__ignoreRecorder__ = true;
-            return;
+            return
             
           } else {
-            // console.error("not matching", binding.identifier.name)
-            // console.warn(binding)
+            console.error("not matching", binding.identifier.name)
+            console.warn(binding)
           }
           
           binding.referencePaths

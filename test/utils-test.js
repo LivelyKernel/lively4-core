@@ -1,4 +1,4 @@
-import { isFunction, functionMetaInfo } from 'utils';
+import { isFunction, functionMetaInfo, CallableObject } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -66,3 +66,10 @@ describe('Dynamic type checks', function() {
 
   });
 });
+
+describe('Callable Object', () => {
+  it('defines CallableObject', () => {
+    expect(CallableObject).to.be.ok;
+  });
+});
+

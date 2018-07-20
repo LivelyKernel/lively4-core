@@ -7,10 +7,15 @@ export default class VivideLayer {
   constructor(data) {
     this._objects = [];
     this._rawData = data;
-    this._modules = {'transform': [], 'extract': [], 'descent': []};
+    this._modules = {
+      transform: [],
+      extract: [],
+      descent: []
+    };
     this._script = null;
     this._childScript = null;
     
+    // #TODO: this loop degrades to wrapping _rawData in VivideObjects each and assign the result to _objects
     for (let entry of data) {
       let object = new VivideObject(entry);
       this.processData(object);
@@ -21,23 +26,11 @@ export default class VivideLayer {
     return this._objects;
   }
   
-  get script() {
-    return this._script;
-  }
+  get script() { return this._script; }
+  set script(value) { return this._script = value; }
   
-  set script(value) {
-    this._script = value;
-    return this._script;
-  }
-  
-  get childScript() {
-    return this._childScript;
-  }
-  
-  set childScript(value) {
-    this._childScript = value;
-    return this._childScript;
-  }
+  get childScript() { return this._childScript; }
+  set childScript(value) { return this._childScript = value; }
   
   clearData() {
     this._rawData.length = 0;
@@ -71,7 +64,7 @@ export default class VivideLayer {
   async extract() {
     for (let module of this._modules.extract) {
       for (let object of this._objects) {
-        object.addProperties(await module.value(object.data));
+        object.properties.add(await module.value(object.data));
       }
     }
   }

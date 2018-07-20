@@ -23,23 +23,35 @@ Semantic Source Code Navigation Abstract Web-based Development Environments WS 1
 import {SignatureManipulator} from "src/client/signature-db.js"
 
 var sig = new SignatureManipulator()
-var data 
 (async () => {
-data = await sig.parseAndExtractFile("demos/systembrowser/testFile2.js")
-  return data
+ var data = await sig.parseAndExtractFile("demos/systembrowser/testFile2.js")
+ return data
 })()
 ```
 
 ## Resulting Data
 <script>
+Promise.resolve("hello" )
+import boundEval from "src/client/bound-eval.js";
+// boundEval("3 + 4").then(r => r.value)
+
+(async () => {
+return (await boundEval("3 + 4")).value
+
+})()
+</script>
+
+
+<script>
  import boundEval from "src/client/bound-eval.js";
 (async () => {
-  var src = lively.query(this,"#example").textContent // reference to previous <code> element 
-  var result  = await boundEval(src);
-  if (result.value && result.value.then) result = await result.value
-  var inspector = await (<lively-inspector></lively-inspector>)
-  inspector.inspect(result)
-  return <div style="border: 2px solid lightgray">{inspector}</div>
+   var src = lively.query(this,"#example").textContent // reference to previous <code> element 
+   var result  = await boundEval(src);
+   return "xxx"
+//   if (result.value && result.value.then) result = await result.value
+//   var inspector = await (<lively-inspector></lively-inspector>)
+//   inspector.inspect(result)
+//   return <div style="border: 2px solid lightgray">{inspector}</div>
 })()
 </script>
 
