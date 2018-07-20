@@ -325,7 +325,6 @@ export default class VivideView extends Morph {
   }
 
   getPreferredWidgetType(model) {
-    // #TODO: lazily initialze viewConfig
     if (this.viewConfig && this.viewConfig.has('widget')) {
       return this.viewConfig.get('widget');
     }
