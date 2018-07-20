@@ -31,7 +31,7 @@ export default class VivideView extends Morph {
   }
   
   static dataToModel(data) {
-    return data.map(d => ({ object: d, properties: [], children: []}));
+    return data.map(d => ({ object: d, properties: new Annotations(), children: []}));
   }
 
   get widget() { return this.get(VivideView.widgetSelector); }
@@ -375,9 +375,10 @@ export default class VivideView extends Morph {
     //   Additionally, this data type could be set manually or via an "intelligent"
     //   algorithm.
     if (model.objects && model.objects.length > 0) {
+      // #Question: this model has an objects array, what is the data structure of this model?
       let m = model.objects[0];
-      if(m.properties.find(prop => prop.dataPoints instanceof Array &&
-                           typeof prop.dataPoints[0] === 'number')
+      if(m.properties.has('dataPoints') &&
+         typeof m.properties.get('dataPoints')[0] === 'number'
       ) {
         return 'vivide-boxplot-widget';
       }

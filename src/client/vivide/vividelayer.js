@@ -64,7 +64,7 @@ export default class VivideLayer {
   async extract() {
     for (let module of this._modules.extract) {
       for (let object of this._objects) {
-        object.addProperties(await module.value(object.data));
+        object.properties.add(await module.value(object.data));
       }
     }
   }

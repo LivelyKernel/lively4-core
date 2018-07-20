@@ -27,8 +27,8 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
     super.display(model, config);
     
     let preparedData = model.objects.map(m => {
-      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
-      let dataPoints = m.properties.map(prop => prop.dataPoints).find(dataPoints => dataPoints) || [];
+      let label = m.properties.get('label') || textualRepresentation(m.object);
+      let dataPoints = m.properties.get('dataPoints') || [];
       
       if(!dataPoints) {
         lively.error('No dataPoints property given for ' + label);
