@@ -1,21 +1,24 @@
 import { uuid } from 'utils';
 
-export default class Script {
+export default class ScriptStep {
   constructor(source, type, id = null, lastScript = false) {
     this.id = id != null ? id : uuid();
     this.source = source;
     this.type = type;
-    this.nextScript = null;
+    this.nextStep = null;
     this.updateCallback = null;
     this.lastScript = lastScript;
   }
   
+  get nextStep() { return this._nextStep; }
+  set nextStep(step) { return this._nextStep = step; }
+  
   set next(value) {
-    if (!(value instanceof Script)) {
-      throw "Value not of type Script";
+    if (!(value instanceof ScriptStep)) {
+      throw "Value not of type ScriptStep";
     }
     
-    this.nextScript = value;
+    this.nextStep = value;
   }
   
   update() {
