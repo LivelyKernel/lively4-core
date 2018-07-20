@@ -35,10 +35,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     });
   }
   labelForModel(model) {
-    const label = model.properties
-      .map(prop => prop.label)
-      .find(label => label) || textualRepresentation(model.object);
-    return label;
+    return model.properties.get('label') || textualRepresentation(model.object);
   }
   async attachChildrenFromModel(model, treeNode) {
     const getChildLayerOfVivideObject = async (model) => {
