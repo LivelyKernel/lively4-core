@@ -5,7 +5,7 @@ import { createScriptEditorFor, initialScriptsFromTemplate, newScriptFromTemplat
 import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
-import Script from 'src/client/vivide/script.js';
+import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 
 export default class VivideView extends Morph {
   static findViewWithId(id) {
@@ -240,7 +240,7 @@ export default class VivideView extends Morph {
   }
   
   setFirstScript(firstScript) {
-    if (!(firstScript instanceof Script)) return;
+    if (!(firstScript instanceof ScriptStep)) return;
     
     this.firstScript = firstScript;
     this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
@@ -248,8 +248,8 @@ export default class VivideView extends Morph {
     let scripts = {  };
     this.scriptToJson(script, scripts);
     
-    while (script.nextScript != null) {
-      script = script.nextScript;
+    while (script.nextStep != null) {
+      script = script.nextStep;
       script.updateCallback = this.scriptGotUpdated.bind(this);
       this.scriptToJson(script, scripts);
       
@@ -264,8 +264,8 @@ export default class VivideView extends Morph {
     let scriptJson = { lastScript: script.lastScript, 
                         type: script.type,
                         source: script.source };
-    if (script.nextScript) {
-      scriptJson.nextScriptId = script.nextScript.id
+    if (script.nextStep) {
+      scriptJson.nextScriptId = script.nextStep.id
     }
         
     jsonContainer[script.id] = scriptJson;
@@ -276,7 +276,7 @@ export default class VivideView extends Morph {
     let scripts = {};
     
     for (let scriptId in jsonScripts) {
-      scripts[scriptId] = new Script(jsonScripts[scriptId].source,
+      scripts[scriptId] = new ScriptStep(jsonScripts[scriptId].source,
                                      jsonScripts[scriptId].type,
                                      scriptId,
                                      jsonScripts[scriptId].lastScript);
@@ -308,8 +308,15 @@ export default class VivideView extends Morph {
     return this.input;
   }
   
+  
+  get viewConfig() {
+    return this._viewConfig = this._viewConfig || new Annotations();
+  }
+  resetViewConfig() {
+    this._viewConfig = undefined;
+  }
   async calculateOutputModel() {
-    this.viewConfig = new Annotations();
+    this.resetViewConfig();
     let script = this.getFirstScript();
     
     this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
@@ -331,8 +338,8 @@ export default class VivideView extends Morph {
     let vivideLayer = new VivideLayer(data);
     
     await this.applyScript(script, vivideLayer);
-    while (script.nextScript) {
-      script = script.nextScript;
+    while (script.nextStep) {
+      script = script.nextStep;
       await this.applyScript(script, vivideLayer);
       
       if (script.type == 'descent' || script.lastScript) break;
@@ -349,7 +356,7 @@ export default class VivideView extends Morph {
     } else if (script.type == 'extract') {
       vivideLayer.addModule(module, 'extract');
     } else if (script.type == 'descent') {
-      vivideLayer.childScript = script.nextScript;
+      vivideLayer.childScript = script.nextStep;
       vivideLayer.addModule(module, 'descent');
     }
     
@@ -357,8 +364,7 @@ export default class VivideView extends Morph {
   }
 
   getPreferredWidgetType(model) {
-    // #TODO: lazily initialze viewConfig
-    if (this.viewConfig && this.viewConfig.has('widget')) {
+    if (this.viewConfig.has('widget')) {
       return this.viewConfig.get('widget');
     }
     
@@ -396,7 +402,7 @@ export default class VivideView extends Morph {
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
     widget.expandChild = this.computeModel.bind(this);
-    await widget.display(this.modelToDisplay, this.viewConfig || new Annotations());
+    await widget.display(this.modelToDisplay, this.viewConfig);
   }
   
   async insertScript(scriptType, prevScript = null) {
@@ -414,7 +420,7 @@ export default class VivideView extends Morph {
       }
     } else {
       while (!script.lastScript) {
-        script = script.nextScript;
+        script = script.nextStep;
       }
       
       script.lastScript = false;
@@ -422,8 +428,8 @@ export default class VivideView extends Morph {
     }
     
     newScript.updateCallback = this.scriptGotUpdated.bind(this);
-    newScript.nextScript = script.nextScript;
-    script.nextScript = newScript;
+    newScript.nextStep = script.nextStep;
+    script.nextStep = newScript;
     
     return newScript;
   }

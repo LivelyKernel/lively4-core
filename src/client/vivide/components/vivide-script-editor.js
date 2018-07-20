@@ -48,11 +48,11 @@ export default class VivideScriptEditor extends Morph {
     if (!this.script) return;
     
     let script = this.script;
-    while (!script.lastScript && script.nextScript) {
-      script = script.nextScript;
+    while (!script.lastScript && script.nextStep) {
+      script = script.nextStep;
     }
     
-    script.nextScript = null;
+    script.nextStep = null;
     this.get('#loop-marker').style.display = "none";
     this.script.update();
   }
@@ -98,20 +98,20 @@ export default class VivideScriptEditor extends Morph {
     var script = this.script;
     var lastScript = null
     
-    while (!script.lastScript && script.nextScript) {
+    while (!script.lastScript && script.nextStep) {
       if (removedScript === script) break;
       lastScript = script;
-      script = script.nextScript;
+      script = script.nextStep;
     }
     
     stepEditor.previousSibling.remove();
     stepEditor.remove();
     
     if (lastScript) {
-      lastScript.nextScript = script.nextScript;
+      lastScript.nextStep = script.nextStep;
     } else {
       // First script was removed
-      this.script = removedScript.nextScript;
+      this.script = removedScript.nextStep;
     }
     
     if (this.script) {
@@ -133,7 +133,7 @@ export default class VivideScriptEditor extends Morph {
   
   updateLoopState() {
     let editorListContent = this.editorList.children;
-    let loopStart = this.lastScript.nextScript;
+    let loopStart = this.lastScript.nextStep;
     for (let element of editorListContent) {
       if (element.localName != 'vivide-step-editor') continue;
       if (!element.containsScript(loopStart)) continue;
@@ -150,8 +150,8 @@ export default class VivideScriptEditor extends Morph {
     this.script = script;
     
     await this.createStepEditorFor(script);
-    while (script.nextScript != null) {
-      script = script.nextScript;
+    while (script.nextStep != null) {
+      script = script.nextStep;
       await this.createStepEditorFor(script);
       
       if (script.lastScript) break;
