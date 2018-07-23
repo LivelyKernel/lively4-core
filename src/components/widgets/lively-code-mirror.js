@@ -494,6 +494,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   
   async printResult(result, obj, isPromise) {
+    debugger
     var editor = this.editor;
     var text = result
     var isAsync = false
@@ -531,6 +532,9 @@ export default class LivelyCodeMirror extends HTMLElement {
           return table
         })
       }
+    } else if(objClass ==  "Matrix") {
+      // obj = obj.toString() 
+      debugger
     } else if ((typeof obj == 'object') && (obj !== null)) {
       promisedWidget = this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
