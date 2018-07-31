@@ -18,9 +18,6 @@ describe('HTML', () => {
       try {
         var url = await lively.html.saveAsPNG(lively4url + "/test/sample-a.html")
         expect(url).to.match(/png$/)
-        await fetch(url, {
-          method: "DELETE"
-        })
         done()        
       } catch(e) {
         done(e)
@@ -31,14 +28,11 @@ describe('HTML', () => {
       try {
         var url = await lively.html.saveAsPNG(lively4url + "/test/sample-b.html")
         expect(url).to.match(/png$/)
-        await fetch(url, {
-          method: "DELETE"
-        })
         done()        
       } catch(e) {
         done(e)
       }
-    }).timeout(30000);
+    });
 
     
   })

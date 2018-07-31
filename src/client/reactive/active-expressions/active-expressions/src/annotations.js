@@ -69,8 +69,4 @@ export default class Annotations {
       .filter(obj => obj.hasOwnProperty(propName))
       .map(obj => obj[propName]);
   }
-  
-  squash() {
-    return Object.assign({}, ...this._annotations);
-  }
 }

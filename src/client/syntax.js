@@ -1,7 +1,6 @@
 
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+import {babel} from 'systemjs-babel-build';
 
 import jsx from "babel-plugin-syntax-jsx";
 import doExpressions from "babel-plugin-syntax-do-expressions";

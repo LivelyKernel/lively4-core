@@ -2,6 +2,8 @@
 
 import * as _ from '../external/underscore.js';
 
+import {babel} from 'systemjs-babel-build'
+
 export function functionFromString(funcOrString) {
     if (typeof funcOrString === 'function') {
         return funcOrString;

@@ -1,15 +1,7 @@
 export default class MpmAnimation {
   constructor() {
-    this._particles = [];
+    this.particles = [];
     this.animating = false;
-  }
-  
-  get particles() {
-    return this._particles;
-  }
-  
-  set particles(value) {
-    return this._particles = value;
   }
   
   stopAnimating() {
@@ -23,6 +15,7 @@ export default class MpmAnimation {
   
   animate(caller) {
     this.calculate(caller);
+    
     caller.draw(this.particles);
     
     if (this.animating) {
@@ -30,11 +23,6 @@ export default class MpmAnimation {
     }
   }
 
-  step(caller) {
-    this.calculate(caller);
-    caller.draw(this.particles);
-  }
-  
   get running() {
     return this.animating;
   }

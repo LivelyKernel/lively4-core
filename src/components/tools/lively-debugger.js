@@ -1,8 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import sourcemap from 'src/external/source-map.min.js'
 
-import babelDefault from 'systemjs-babel-build';
-const {babel, modulesRegister} = babelDefault;
+import {babel, modulesRegister} from 'systemjs-babel-build';
 
 import babelPluginLocals from 'babel-plugin-locals';
 import babelPluginVarRecorder from 'babel-plugin-var-recorder';

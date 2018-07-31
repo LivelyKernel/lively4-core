@@ -1,7 +1,6 @@
 import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
 export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
   get multiSelectionConfig() {
@@ -25,10 +24,10 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
 
   display(model, config) {
     super.display(model, config);
-    
-    let preparedData = model.objects.map(m => {
-      let label = m.properties.get('label') || textualRepresentation(m.object);
-      let dataPoints = m.properties.get('dataPoints') || [];
+
+    let preparedData = model.map(m => {
+      let label = m.properties.map(prop => prop.label).find(label => label) || textualRepresentation(m.object);
+      let dataPoints = m.properties.map(prop => prop.dataPoints).find(dataPoints => dataPoints) || [];
       
       if(!dataPoints) {
         lively.error('No dataPoints property given for ' + label);
@@ -41,7 +40,8 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
       }
     })
     
-    this.innerPlot.display(preparedData, config.squash());
+    lively.success(config, 'BLUB')
+    this.innerPlot.display(preparedData, Object.assign({}, ...config));
     let groups = this.innerPlot.getAllSubmorphs('g.selectable-group');
     groups.forEach(g => this.multiSelection.addItem(g));
     groups.forEach(g => this.addDragEventTo(g));
@@ -54,6 +54,6 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
     }, {
       dataPoints: [2,3,4,5,4,3,4,5,4,3,2,3,4,5],
       label: "world"
-    }], new Annotations());
+    }], {});
   }
 }

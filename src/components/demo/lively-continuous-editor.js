@@ -1,6 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+import {babel} from 'systemjs-babel-build';
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 import boundEval from 'src/client/bound-eval.js';

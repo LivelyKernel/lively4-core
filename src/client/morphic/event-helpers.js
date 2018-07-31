@@ -14,23 +14,8 @@ export function globalPosition(e) {
 }
 
 export function elementsUnder(e) {
-  
   var pos = globalPosition(e);
-  var elements = Array.from(document.elementsFromPoint(e.clientX, e.clientY));
-  
-  var result = Array.from(elements).filter(ea => !ea.isMetaNode)
-  // go deep one level #ContinueHere
-  for(var ea of elements.reverse()) {
-    if (ea.shadowRoot && ea.shadowRoot.elementsFromPoint) {
-      result.unshift(...Array.from(ea.shadowRoot.elementsFromPoint(e.clientX, e.clientY)).filter(ea => !ea.isMetaNode))
-      
-    }
-  }
-  if (result.find(ea => ea.tagName && ea.tagName.match("HALO"))) {
-      debugger
-  }
-                  
-  return result
+  return document.elementsFromPoint(e.clientX, e.clientY);
 }
 
 export function distanceTo(e, pos) {

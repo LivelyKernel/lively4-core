@@ -214,7 +214,6 @@ export default class Container extends Morph {
   }
 
   reloadModule(url) {
-    console.log("reloadModule " + url)
     var urlString = url.toString()
     lively.unloadModule(urlString)
     return System.import(urlString).then( m => {
@@ -240,8 +239,7 @@ export default class Container extends Morph {
   }
 
   loadModule(url) {
-    lively.notify("load module")
-    lively.reloadModule("" + url, true).then(module => {
+    lively.reloadModule("" + url).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
       this.resetLoadingFailed();
@@ -480,16 +478,15 @@ export default class Container extends Morph {
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url);
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-            lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
               this.loadTestModule(ea);
             }
           })
-        } else {
-          lively.notify("ignore module " + moduleName)
         }
+
+
       }
     }).then(() => this.showNavbar());
   }
@@ -1303,7 +1300,7 @@ export default class Container extends Morph {
     if (markdown.getAttribute("mode") == "presentation") {
       lively.notify("saving in presentation mode not supported yet")
     } else {
-      var source = await markdown.htmlAsMarkdownSource()
+      var source = markdown.htmlAsMarkdownSource()
       return this.saveSource(url, source);
     }   
   }

@@ -13,53 +13,40 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
-    // Callback set in the view
-    this.expandChild = null;
   }
   
   dataForDOMNode(treeItem) {
     return this.dataByTreeItem.get(treeItem);
   }
 
-  async display(vivideLayer, config) {
-    super.display(vivideLayer, config);
-    
-    // Clean up
-    this.tree.innerHTML = '';
-    // Remove stuck tooltips
-    let oldTooltips = document.body.getElementsByClassName('tooltip');
-    if (oldTooltips) {
-      for (let oldTooltip of oldTooltips) {
-        oldTooltip.remove();
-      }  
-    }
-    
+  async display(model, config) {
+    super.display(model, config);
+
     this.dataByTreeItem = new Map();
-    this.childLayerByTreeItem = new Map();
+    this.childrenByTreeItem = new Map();
     this.childScriptByTreeItem = new Map();
     
-    for (let object of vivideLayer.objects) {
-      await this.processObject(object, this.tree);
+    this.tree.innerHTML = '';
+    for (let m of model) {
+      await this.processModel(m, this.tree);
     }
   }
   
   async toggleTree(treeItem, expander) {
-    let object = this.dataByTreeItem.get(treeItem);
-    let childLayer = object.childLayer;
+    let children = this.childrenByTreeItem.get(treeItem);
     
-    if (!childLayer || !childLayer.objects.length) return;
+    if (!children || !children.length) return;
     
     let sub = treeItem.querySelector("#child");
     if (sub.innerHTML.length == 0) {
       treeItem.className += " expanded"
-      if (childLayer.script) {
-        let childData = childLayer.objects.map(c => c.data);
-        object.childLayer = await this.expandChild(childData, childLayer.script);
-        childLayer = object.childLayer;
-      }
+      let childScript = this.childScriptByTreeItem.get(treeItem);
+      let childObjects = children.map(c => c.object);
+      children = await this.expandChild(childObjects, childScript);
+      this.childrenByTreeItem.set(treeItem, children);
       
-      for (let child of childLayer.objects) {  
-        this.processObject(child, sub);
+      for (let child of children) {  
+        this.processModel(child, sub);
       }
       treeItem.appendChild(sub);
       expander.classList.remove("fa-caret-right");
@@ -75,42 +62,18 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     }
   }
   
-  async processObject(object, parent) {
-    let label = object.properties.get('label') || textualRepresentation(object.data);
-    let tooltipText = object.properties.get('tooltip') || "";
+  async processModel(model, parent) {    
+    let label = model.properties.map(prop => prop.label).find(label => label) || textualRepresentation(model.object);
     let treeItem = <li>{label}<ul id="child"></ul></li>;
-    let symbolClasses = "expander fa";
-    symbolClasses += object.hasChildren > 0 ? " fa-caret-right" : " fa-circle small";
-    let expander = <span id="expander" class={symbolClasses}></span>;
-    
-    if (tooltipText.length > 0) {
-      let tooltip = <span class="tooltip"></span>;
-      let shownTooltip = null;
-      tooltip.innerHTML = tooltipText;
-      treeItem.appendChild(tooltip);
-      treeItem.addEventListener('mouseover', event => {
-        shownTooltip = tooltip.cloneNode(true);
-        document.body.appendChild(shownTooltip);
-        shownTooltip.style.display = 'inline-block';
-        shownTooltip.style.top = (event.clientY + 3) + "px";
-        shownTooltip.style.left = (event.clientX + 3) + "px";
-        shownTooltip.style.position = 'fixed';
-        shownTooltip.style.zIndex = 1001;
-        shownTooltip.style.backgroundColor = '#fff';
-        shownTooltip.style.border = '1px solid #d5d5d5';
-        shownTooltip.style.padding = '5px 10px';
-      });
-      
-      treeItem.addEventListener('mouseout', event => {
-        shownTooltip.remove();
-      });
-    }
+    let expander = <span id="expander" class="expander fa fa-caret-right"></span>;
     
     treeItem.prepend(expander);
     expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
     this.multiSelection.addItem(treeItem);
     this.addDragEventTo(treeItem);
-    this.dataByTreeItem.set(treeItem, object);
+    this.dataByTreeItem.set(treeItem, model.object);
+    this.childrenByTreeItem.set(treeItem, model.children);
+    this.childScriptByTreeItem.set(treeItem, model.childScript);
     parent.appendChild(treeItem);
   }
   

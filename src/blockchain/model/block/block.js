@@ -20,21 +20,13 @@ export default class Block {
     this.minerPublicKey = minerWallet.publicKey;
     this.transactions = transactions;
     this.miningProof = miningProof;
-    this.reward = transactions.fees + C_BLOCK_REWARD;
+    this.reward = transactions.fees() + C_BLOCK_REWARD;
     
     this._sendReward(minerWallet);
     
     this.previousHash = previousHash;
-    this.hash = this._hash().digest().toHex();
+    this.hash = this._hash();
     this.signature = this._generateSignature(minerWallet);
-  }
-  
-  get displayName() {
-    if (!this.hash) {
-      return "#NotAName";
-    }
-    
-    return "#" + this.hash.substring(0, 10);
   }
   
   isSigned() {
@@ -58,16 +50,11 @@ export default class Block {
     var inputs = new TransactionInputCollection(minerWallet)
                       .addMiningReward(this)
                       .finalize();
-    
     var outputs = new TransactionOutputCollection()
                       .add(minerWallet, this.reward)
                       .finalize();
     
     var transaction = new Transaction(minerWallet, inputs, outputs);
-    
-    // set input transaction to the transaction itself
-    inputs.forEach((input) => input.transactionHash = transaction.hash);    
-    
     this.transactions.add(transaction);
     this.transactions.finalize();
   }
@@ -88,14 +75,15 @@ export default class Block {
     // encrypt the hash using the given private key
     // this allows us to decrypt the signature later
     // on using the matching public key
-    return minerWallet.sign(this._hash());
+    return minerWallet.sign(this.hash);
   }
   
   _hash() {
-    const sha256 = forge.md.sha256.create();
+    var sha256 = forge.md.sha256.create();
     return sha256.update(
       this.timestamp +
-      this.minerHash +
+      this.minetHash +
+      this.minerPublicKey +
       this.transactions.hash +
       this.miningProof.hash + 
       this.previousHash +

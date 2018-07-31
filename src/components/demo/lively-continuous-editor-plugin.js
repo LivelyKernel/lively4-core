@@ -1,4 +1,5 @@
 import { uuid as generateUUID } from 'utils'; 
+import {babel} from 'systemjs-babel-build';
 
 var expressions
 var statements

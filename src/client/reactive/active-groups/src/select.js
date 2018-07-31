@@ -1,4 +1,3 @@
-export { default as View} from './view.js';
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import { BaseActiveExpression } from "active-expressions";
@@ -472,7 +471,7 @@ function removeObsoleteListeners() {
 }
 
 const stopMatchingLoop = new PausableLoop(() => {
-  // lively.warn('check stop matching');
+  lively.warn('check stop matching');
   removeObsoleteListeners();
 });
 

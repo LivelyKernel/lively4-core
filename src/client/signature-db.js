@@ -1,5 +1,4 @@
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+import {babel} from 'systemjs-babel-build';
 import plugin from 'src/external/babel-plugin-syntax-all.js';
 
 export const NodeTypes = Object.freeze({'FILE': "File",

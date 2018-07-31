@@ -13,6 +13,8 @@ export default class Console extends Morph {
     // });
 
     this.registerButtons();
+    
+    console.log('Hallo Theresa!')
 
     this.addEventListener("focus", evt => this.onFocus(evt))
     this.setAttribute('tabindex', 0)

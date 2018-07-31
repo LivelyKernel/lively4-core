@@ -6,14 +6,6 @@ export default class TransactionCollection {
     this.hash = null;
   }
   
-  get displayName() {
-    if (!this.hash) {
-      return "#NotAName";
-    }
-    
-    return "#" + this.hash.substring(0, 10);
-  }
-  
   add(transaction) {
     if (this.isFinalized()) {
       return this;
@@ -23,21 +15,9 @@ export default class TransactionCollection {
     return this;
   }
   
-  remove(transaction) {
-    if (this.isFinalized()) {
-      throw new Error("Cannot remove transaction from finalized transaction collection!");
-    }
-    
-    if (!this._transactions.has(transaction.hash)) {
-      return;
-    }
-    
-    this._transactions.delete(transaction.hash);
-  }
-  
-  get fees() {
-    return Array.from(this._transactions.entries()).reduce((total, entry) => {
-      return total + entry[1].fees;
+  fees() {
+    return Array.from(this._transactions.entries()).reduce((total, output) => {
+      total += output.fees();
     }, 0);
   }
   
@@ -67,10 +47,9 @@ export default class TransactionCollection {
   }
   
   _hash() {
-    const sha256 = forge.md.sha256.create();
-    sha256.update(
+    var sha256 = forge.md.sha256.create();
+    return sha256.update(
       Array.from(this._transactions.keys()).join('')
     );
-    return sha256.digest().toHex();
   }
 }

@@ -6,30 +6,26 @@ let expressionAnalysisMode = false;
 class ExpressionAnalysis {
     // Do the function execution in ExpressionAnalysisMode
     static check(aexpr) {
-      try {
         expressionAnalysisMode = true;
         aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
-      } finally {
         expressionAnalysisMode = !!aexprStack.top();
-      }
     }
 }
 
 // TODO: CompositeKeyStore as separate Module
 const compositeKeyStore = new Map();
 class CompositeKey {
-    static getByPrimaryKey(obj1) {
+    static get(obj1, obj2) {
         if(!compositeKeyStore.has(obj1)) {
-          compositeKeyStore.set(obj1, new Map());
+            compositeKeyStore.set(obj1, new Map());
         }
 
-        return compositeKeyStore.get(obj1);
-    }
-    static get(obj1, obj2) {
-        const secondKeyMap = this.getByPrimaryKey(obj1);
+        let secondKeyMap = compositeKeyStore.get(obj1);
+
         if(!secondKeyMap.has(obj2)) {
             secondKeyMap.set(obj2, {});
         }
+
         return secondKeyMap.get(obj2);
     }
     static clear() {
@@ -54,11 +50,8 @@ class HookStorage {
         // objPropSet.add(CompositeKey.get(obj, prop));
 
         // ---
-      
-        if(aexpr == undefined)
-            throw new Error('aexpr is undefined');
 
-        const key = CompositeKey.get(obj, prop);
+        let key = CompositeKey.get(obj, prop);
         if(!this.aexprsByObjProp.has(key)) {
             this.aexprsByObjProp.set(key, new Set());
         }
@@ -77,7 +70,7 @@ class HookStorage {
     }
 
     getAExprsFor(obj, prop) {
-        const key = CompositeKey.get(obj, prop);
+        let key = CompositeKey.get(obj, prop);
         if(!this.aexprsByObjProp.has(key)) {
             return [];
         }
@@ -118,56 +111,9 @@ class RewritingActiveExpression extends BaseActiveExpression {
 }
 
 export function aexpr(func, ...params) {
+    // console.log('aexpr', func);
     return new RewritingActiveExpression(func, ...params);
 }
-
-function checkAndNotifyAExprs(aexprs) {
-    aexprs.forEach(aexpr => {
-        aexprStorage.disconnectAll(aexpr);
-        ExpressionAnalysis.check(aexpr);
-    });
-    aexprs.forEach(aexpr => aexpr.checkAndNotify());
-}
-
-function checkDependentAExprs(obj, prop) {
-    const aexprs = aexprStorage.getAExprsFor(obj, prop);
-    transactionContext.tryToTrigger(obj, aexprs);
-}
-
-class TransactionContext {
-    constructor() {
-        this.suppressed = new Map();
-    }
-  
-    retain(obj) {
-        if(!this.suppressed.has(obj))
-            this.suppressed.set(obj, {count:1, aexprs: new Set()});
-        else
-            ++this.suppressed.get(obj).count;
-    }
-  
-    release(obj) {
-        const supressed = this.suppressed.get(obj);
-        if(!supressed)
-            console.error('Tried to release object which is not supressed');
-        if(supressed.count == 1) {
-            checkAndNotifyAExprs(supressed.aexprs);
-            this.suppressed.delete(obj);
-        }
-        --supressed.count;
-    }
-  
-    tryToTrigger(obj, aexprs) {
-        const supressed = this.suppressed.get(obj);
-        if(supressed) {
-            aexprs.forEach(aexpr => {
-                supressed.aexprs.add(aexpr);
-            });
-        } else
-            checkAndNotifyAExprs(aexprs);
-    }
-}
-const transactionContext = new TransactionContext();
 
 /*
  * Disconnects all associations between active expressions and object properties
@@ -183,132 +129,121 @@ export function reset() {
 }
 
 export function traceMember(obj, prop) {
-    if(expressionAnalysisMode) {
-        aexprStorage.associate(aexprStack.top(), obj, prop);
-    }
+  if(expressionAnalysisMode) {
+    aexprStorage.associate(aexprStack.top(), obj, prop);
+  }
 }
 
-export function getMember(obj, prop) {
+export function getMember(obj, prop, ...params) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);
     }
-    transactionContext.retain(obj);
-    const result = obj[prop];
-    transactionContext.release(obj);
-    return result;
+    return obj[prop];
 }
 
 export function getAndCallMember(obj, prop, args = []) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);
     }
-    transactionContext.retain(obj);
-    const result = obj[prop](...args);
-    transactionContext.release(obj);
-    return result;
+    return obj[prop](...args);
+}
+
+function checkDependentAExprs(obj, prop) {
+    let affectedAExprs = aexprStorage.getAExprsFor(obj, prop);
+    affectedAExprs.forEach(aexpr => {
+        aexprStorage.disconnectAll(aexpr);
+        ExpressionAnalysis.check(aexpr);
+    });
+    affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
+}
+
+function checkDependentAExprsForLocals(obj, prop) {
+    let affectedAExprs = aexprStorageForLocals.getAExprsFor(obj, prop);
+    affectedAExprs.forEach(aexpr => {
+        aexprStorageForLocals.disconnectAll(aexpr);
+        ExpressionAnalysis.check(aexpr);
+    });
+    affectedAExprs.forEach(aexpr => aexpr.checkAndNotify());
 }
 
 export function setMember(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] = val;
+    let result = obj[prop] = val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
+
 }
 
 export function setMemberAddition(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] += val;
+    let result = obj[prop] += val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberSubtraction(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] -= val;
+    let result = obj[prop] -= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberMultiplication(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] *= val;
+    let result = obj[prop] *= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberDivision(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] /= val;
+    let result = obj[prop] /= val;
     checkDependentAExprs(obj, prop);
     return result;
 }
 
 export function setMemberRemainder(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] %= val;
+    let result = obj[prop] %= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 /*
 export function setMemberExponentiation(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] **= val;
+    let result = obj[prop] **= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 */
 
 export function setMemberLeftShift(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] <<= val;
+    let result = obj[prop] <<= val;
     checkDependentAExprs(obj, prop);
     return result;
 }
 
 export function setMemberRightShift(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] >>= val;
+    let result = obj[prop] >>= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberUnsignedRightShift(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] >>>= val;
+    let result = obj[prop] >>>= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseAND(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] &= val;
+    let result = obj[prop] &= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseXOR(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] ^= val;
+    let result = obj[prop] ^= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseOR(obj, prop, val) {
-    transactionContext.retain(obj);
-    const result = obj[prop] |= val;
+    let result = obj[prop] |= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
@@ -317,10 +252,8 @@ export function getLocal(scope, varName) {
         aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
     }
 }
-
 export function setLocal(scope, varName) {
-    const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
-    checkAndNotifyAExprs(affectedAExprs);
+    checkDependentAExprsForLocals(scope, varName);
 }
 
 const globalRef = typeof window !== "undefined" ? window : // browser tab

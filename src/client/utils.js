@@ -235,26 +235,9 @@ export function copyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
-export function functionMetaInfo(functionToCheck) {
-  if(functionToCheck === undefined) { return {
-    isFunction: false,
-    isAsync: false,
-    isGenerator: false
-  }; }
-  
-  const description = ({}).toString.call(functionToCheck)
-  return {
-    isFunction: !!description.match(/\[object (Async)?(Generator)?Function\]/),
-    isAsync: !!description.match(/\[object Async(Generator)?Function\]/),
-    isGenerator: !!description.match(/\[object (Async)?GeneratorFunction\]/)
-  };
-}
 // taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
 export function isFunction(functionToCheck) {
-  if(functionToCheck === undefined) { return false; }
-  let isFunc = ({}).toString.call(functionToCheck) === '[object Function]';
-  let isAsyncFunc = ({}).toString.call(functionToCheck) === '[object AsyncFunction]';
-  return isFunc || isAsyncFunc;
+  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }
 
 export function cancelEvent(evt) {
@@ -305,8 +288,4 @@ export function parseQuery(queryString) {
 
 export function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export class CallableObject {
-  // #TODO: implement this
 }

@@ -1,106 +1,56 @@
 
 export default class TransactionNetworkView {
-  constructor(blockchainNodeView) {
+  constructor(blockchainNodeView, transactions) {
     this._nodeView = blockchainNodeView;
-    this._nodeView.nodeClickHandler = this._onNodeClick.bind(this);
-    
-    this._displayedTransactions = [];
-    this._newTransactions = [];
-    this._nodeIndices = new Map();
-  }
-  
-  reset() {
-    this._displayedTransactions = [];
-    this._newTransactions = [];
-    this._nodeIndices = new Map();
-    this._nodeView.reset();
-    this.draw();
-  }
-  
-  addTransaction(transaction) {
-    this._newTransactions.push(transaction);
-    return this;
-  }
-  
-  addTransactions(transactions) {
-    this._newTransactions = this._newTransactions.concat(transactions);
-    return this;
+    this._transactions = transactions;
   }
   
   draw() {
-    this._constructNodes();
-    this._constructLinks();
+    const nodeIndices = this._constructNodes();
+    this._constructLinks(nodeIndices);
     this._nodeView.draw();
-    
-    this._displayedTransactions = this._displayedTransactions.concat(this._newTransactions);
-    this._newTransactions = [];
   }
   
   _constructNodes() {
-    this._newTransactions.forEach((transaction) => {
-      this._nodeIndices.set(transaction.hash, this._nodeIndices.size);
-      this._nodeView.addNode(
+    const nodeIndices = new Map();
+    this._nodeView.nodes = [];
+    
+    this._transactions.forEach((transaction) => {
+      nodeIndices.set(transaction.hash, this._nodeView.nodes.length);
+      this._nodeView.nodes.push(
         {
-          "name": transaction.displayName, 
-          "group": 1,
-          "hash": transaction.hash
+          "name": transaction.hash.digest().toHex(), 
+          "group": 1
         }
       );
     });
+    
+    return nodeIndices;
   }
   
-  _constructLinks() {
-    const allTransactions = this._displayedTransactions.concat(this._newTransactions);
+  _constructLinks(nodeIndices) {
+    this._nodeView.links = [];
     
-    this._newTransactions.forEach((receiver) => {
+    this._transactions.forEach((receiver) => {
       receiver.inputs.forEach((input) => {
-        allTransactions.forEach((sender) => {
+        this._transactions.forEach((sender) => {
           if (sender === receiver) {
             return;
           }
           
-          if (!sender.outputs.hasOutput(input.hash)) {
+          if (!sender.outputs.has(input)) {
             return;
           }
           
-          this._nodeView.addLink(
+          this._nodeView.links.push(
             {
-              "source": this._nodeIndices.get(sender.hash),
-              "target": this._nodeIndices.get(receiver.hash),
+              "source": nodeIndices.get(sender.hash),
+              "target": nodeIndices.get(receiver.hash),
               "value": input.amount
             }
           );
         });
       });
-    });
-  }
-  
-  _onNodeClick(node) {
-    if (!node || !node.hash) {
-      return;
-    }
-    
-    let transaction = null;
-    
-    this._displayedTransactions.forEach((tx) => {
-      if (transaction || tx.hash != node.hash) {
-        return;
-      }
-      
-      transaction = tx;
-    });
-    
-    if (!transaction) {
-      throw new Error("Cannot find transaction to display!");
-    }
-    
-    lively.openComponentInWindow("blockchain-transaction").then((comp) => {
-      if (!comp) {
-        return;
-      }
-      
-      comp.transaction = transaction;
-      return comp;
     });
   }
 }

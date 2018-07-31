@@ -1441,11 +1441,7 @@ describe('contextjs', function () {
         beforeEach('initialize the test object', function () {
             o = new DummyLayerableObject();
         });
-        beforeEach('reset global layer', function () {
-            DummyLayer.beNotGlobal()
-        });
 
-      
         it('holds a set of activated layers', function() {
             o.setWithLayers([DummyLayer]);
             const layers = o.withLayers;
@@ -1459,42 +1455,9 @@ describe('contextjs', function () {
             });
         });
 
-        
-        it('supports global layer activation', function() {
-            assert.equal(o.f(), 3, " default fails");
-            DummyLayer.beGlobal()
-            assert.equal(o.f(), 4, " global layer activation is broken");
-        });
-
-
-        it('supports dynamic layer deactivation of global layers', function() {
-            DummyLayer.beGlobal()
-            withoutLayers([DummyLayer], () => {
-                assert.equal(o.f(), 3, " dynamic layer deactivation is broken");
-            });
-        });
-      
-        it('supports dynamic layer deactivation of structural layers', function() {
-            assert.equal(o.f(), 3, " default fails");
-            o.setWithLayers([DummyLayer]);
-            assert.equal(o.f(), 4, " structural layer activation is broken");
-            withoutLayers([DummyLayer], () => {
-                assert.equal(o.f(), 3, " dynamic layer deactivation is broken");
-            });
-        });
-
-
-        it('supports dynamic layer deactivation of global layers', function() {
-            assert.equal(o.f(), 3, " default fails");
-            DummyLayer.beGlobal()
-            withoutLayers([DummyLayer], () => {
-                assert.equal(o.f(), 3, " dynamic layer deactivation is broken");
-            });
-        });
-      
         it('applies layers activated on itself to its behavior', function() {
             o.setWithLayers([DummyLayer]);
-            const r = cop.structuralLayers({withLayers: [], withoutLayers: []}, o)
+            const r = o.structuralLayers({withLayers: [], withoutLayers: []})
             assert.strictEqual(r.withLayers[0], DummyLayer, "layer not set");
             assert.equal(o.f(), 4, " layered object broken");
         });
@@ -1538,7 +1501,7 @@ describe('contextjs', function () {
         it('activates each layer only once even if owned objects activate the same layer again', function() {
             o.setWithLayers([DummyLayer]);
             o.myObject.setWithLayers([DummyLayer]);
-            const r = cop.structuralLayers({withLayers: [], withoutLayers: []}, o)
+            const r = o.structuralLayers({withLayers: [], withoutLayers: []})
             assert.equal(r.withLayers.length, 1);
         });
 
