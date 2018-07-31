@@ -1,0 +1,93 @@
+<template id="lively-px18-graph-drawing" data-class="LivelyPx18GraphDrawing">
+<html>
+  <head>
+    <style>
+      /* HTML styles */
+      html{ width: 100%; }
+      body{ 
+        width: 100%; 
+        margin: 0; padding: 0; 
+        display: flex; 
+        font-family: sans-serif; font-size: 75%; }
+      .controls {
+        flex-basis: 200px;
+        padding: 0 5px;
+        width: 100%;
+        float: left;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .controls .force {
+        background-color:#cacaca;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0;
+        height: 5%;
+      }
+
+      /* SVG styles */
+      svg {
+        flex-basis: 100%;
+        min-width: 200px;
+        height: 100%;
+      }
+      .links line {
+        stroke: #aaa;
+      }
+      .nodes circle {
+        pointer-events: all;
+      }
+      
+      .energy {
+        float: right;
+        margin-right: 20px;
+      }
+      
+      .graph-container {
+        width: 100%;
+        display: flex;
+        height: 95%;
+      }
+
+      .force-svg-parent {
+        flex: 0 0 50%;
+      }
+      .annealing-svg-parent {
+        flex: 1;
+        margin-left: 20px;
+      }
+      .verticalLine {
+        border-left: thick solid grey;
+        height: 550px;
+      }
+      
+    </style>
+  </head>
+  <body>
+      <div class="controls">
+        <div class="force alpha">
+          <button id="startAnneal">Refresh Annealing</button>
+          <select id="graphSelect">
+            <option value="small">Small Graph</option>
+            <option value="medium" selected>Medium Graph</option>
+            <option value="medium2">Medium Graph 2</option>
+            <option value="large">Large Graph (Modules)</option>
+          </select> <span class="energy">
+            Graph Energy: <span id="currentEnergy">N/A</span>
+          </span>
+        </div>
+
+      </div>
+    <div class="row graph-container">
+      <div class="force-svg-parent">
+        <svg id="force-svg"></svg>
+      </div>
+      <div class="verticalLine"></div>
+      <div class="annealing-svg-parent">
+        <svg id="annealing-svg"></svg>
+      </div>      
+    </div>
+  </body>
+</html>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
