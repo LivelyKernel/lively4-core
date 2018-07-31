@@ -537,7 +537,7 @@ latexconv.convertLaTeXToUnicode("Ndy\\sub{1} = \\frac{1}{4} * (\\xi - 1)");
 <li>
 <script>
 import latexconv from "src/external/latex-to-unicode-converter.js";
-latexconv.convertLaTeXToUnicode("Ndy\\sub{2} = \\frac{1}{4} * -(\\eta + 1)");
+latexconv.convertLaTeXToUnicode("Ndy\\sub{2} = \\frac{1}{4} * -(\\xi + 1)");
 </script>
 </li>
 <li>

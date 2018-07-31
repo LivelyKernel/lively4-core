@@ -313,9 +313,9 @@ export default class ElasticBodies extends MpmAnimation {
         this.Vp.set(pid, 0, F.det() * this.Vp0.get(pid, 0));
         
         let dEps = Lp.add(Lp.transpose()).multiply(this.dtime * 0.5);
-        let dsigma = (new Matrix([[dEps.get(0, 0)], [dEps.get(1, 1)], [2 * dEps.get(0, 1)]])).multiply(this.C);
+        let dsigma = (new Matrix([dEps.get(0, 0), dEps.get(1, 1), 2 * dEps.get(0, 1)])).multiply(this.C);
         this.s[pid] = this.s[pid].add(dsigma.transpose());
-        this.eps[pid] = this.eps[pid].add(new Matrix([[dEps.get(0,0), dEps.get(1,1), 2*dEps.get(0,1)]])); 
+        this.eps[pid] = this.eps[pid].add(new Matrix([dEps.get(0,0), dEps.get(1,1), 2*dEps.get(0,1)])); 
         
       }
     }
