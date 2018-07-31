@@ -3,17 +3,17 @@ import NetworkComponent from "./networkComponent.js";
 import Wallet from "../wallet/wallet.js";
 import Miner from "./miner.js";
 
+
 export default class BlockchainNode {
   
-  constructor(firstNode = false) {
+  constructor() {
     this._hasExited = false;
     this._wallet = new Wallet();
-    this._blockchain = null;
-    if(firstNode) {
-      this._blockchain = new Blockchain(this._wallet);
-    }
+    this._blockchain = new Blockchain(this._wallet);
     this._networkComponent = new NetworkComponent(this);
     this._miner = new Miner(this);
+    this._networkComponent.requestBlockchain();
+    this._subscribers = [];
   }
   
   get blockchain() {
@@ -30,6 +30,27 @@ export default class BlockchainNode {
   
   exit() {
     this._hasExited = true;
+  }
+  
+  async mine() {
+    await this._miner.mine();
+  }
+  
+  subscribe(lSubscriber, callback) {
+    this._subscribers.push({subscriber: lSubscriber, callback: callback});
+  }
+  
+  unsubscribe(lSubscriber) {
+    this._subscribers = this._subscribers.filter(
+      item => item.subscriber !== lSubscriber
+    );
+  }
+  
+  sendTransaction(receivers) {
+    const tx = this.wallet.newTransaction(receivers);
+    this.propagateTransaction(tx);
+    
+    return tx;
   }
   
   blockchainIsValid(blockchain) {
@@ -50,7 +71,10 @@ export default class BlockchainNode {
   }
   
   handleBlock(block) {
+    this._miner.invalidateTransactions(block);
+    block.transactions.forEach(transaction => this.wallet.receive(transaction));
     this._blockchain.add(block);
+    this._notifySubscribers(block);
   }
   
   handleTransaction(transaction) {
@@ -62,10 +86,11 @@ export default class BlockchainNode {
   }
   
   handleBlockchain(blockchain) {
-    if(blockchain) {
+    if(!blockchain) {
       return;
     }
     //TODO: Validate blockchain before saving
+    this._blockchain = blockchain;
   }
   
   // Sending to other nodes (via network component)
@@ -78,6 +103,10 @@ export default class BlockchainNode {
   propagateTransaction(transaction) {
     this.handleTransaction(transaction);
     this._networkComponent.propagateTransaction(transaction);
+  }
+  
+  _notifySubscribers(block) {
+    this._subscribers.forEach(item => item.callback(block));
   }
     
 }

@@ -98,6 +98,15 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(59);
   });
   xit('for-of/local variable (var)', () => {
+    for (var a of [1,2,3]) {
+      lively.notify(a)
+    }
+  });
+  xit('for-of/local variable (var, defined outside)', () => {
+    // var a;
+    // for (a of [1,2,3]) {
+    //   lively.notify(a)
+    // }
   });
   xit('for-of/local variable (let)', () => {
   });
@@ -571,6 +580,23 @@ describe('Propagation Logic', function() {
         a.b().c.d().e = { f() { return 6; }};
         expect(spy).to.be.calledWithMatch(6);
       });
+    });
+    it('binds `this` correctly', () => {
+      const obj = {
+        get computedProp() { return this.basicProp + 1 },
+        set computedProp(value) { return this.basicProp = value -1; },
+        basicProp: 'basicProp'
+      }
+      const spy = sinon.spy();
+
+      expect(obj.computedProp).to.equal(obj.basicProp + 1);
+      
+      aexpr(() => obj.computedProp).onChange(spy);
+
+      obj.computedProp = 5;
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWith(5);
+      expect(obj.basicProp).to.equal(4);
     });
   });
 });

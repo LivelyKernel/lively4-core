@@ -1,39 +1,161 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from 'src/external/d3.v3.js';
+
+import BlockchainNode from 'src/blockchain/model/blockchainNode/blockchainNode.js';
+import TransactionNetworkView from 'src/blockchain/view/transactionNetworkView.js';
+
+import BlockNetworkView from 'src/blockchain/view/blockNetworkView.js';
 
 export default class BlockchainNodeView extends Morph {
   async initialize() {
     this.windowTitle = "BlockchainNodeView";
     this._svg = this.shadowRoot.querySelector("#svgContainer");
-    this._nodes = [];
-    this._links = [];
+    
+    this.nodeClickHandler = (node) => { console.log("click! --> " + node.name); }
+    this._displayedNodes = [];
+    this._displayedLinks = [];
+    this._newNodes = [];
+    this._newLinks = [];
+    this._svg.setAttribute('width', this.shadowRoot.querySelector("#content").offsetWidth);
+    this._svg.setAttribute('height', this.shadowRoot.querySelector("#content").offsetHeight);
+  }
+  
+  reset() {
+    this._displayedNodes = [];
+    this._displayedLinks = [];
+    this._newNodes = [];
+    this._newLinks = [];
+  }
+  
+  addNode(node) {
+    this._newNodes.push(node);
+    return this;
+  }
+  
+  addNodes(nodes) {
+    this._newNodes = this._newNodes.concat(nodes);
+    return this;
+  }
+  
+  addLink(link) {
+    this._newLinks.push(link);
+    return this;
+  }
+  
+  addLinks(links) {
+    this._newLinks = this._newLinks.concat(links);
+    return this;
+  }
+  
+  resize(width, height) {
+    this._svg.setAttribute("width", width);
+    this._svg.setAttribute("height", height);
+    return this;
   }
   
   draw() {
+    const that = this;
+    const allNodes = this._displayedNodes.concat(this._newNodes);
+    const allLinks = this._displayedLinks.concat(this._newLinks);
     const svg = d3.select(this._svg);
     const width = svg.attr("width");
     const height = svg.attr("height");
+    const newMarker = "newEnd";
+    const oldMarker = "oldEnd";
     
     // remove all elements before drawing new ones
     svg.selectAll("*").remove();
     
     const force = d3.layout.force()
       .gravity(0.05)
-      .distance(100)
+      .distance(Math.min(width, height) / 4)
       .charge(-100)
       .size([width, height]);
     
     force
-      .nodes(this._nodes)
-      .links(this._links)
-      .linkDistance(60)
+      .nodes(allNodes)
+      .links(allLinks)
       .start();
     
+    this._addMarker(svg, oldMarker, false);
+    this._addMarker(svg, newMarker, true);
+
+    const link = svg.selectAll(".link")
+      .data(allLinks)
+      .enter()
+      .append("line")
+      .classed("link", true)
+      .each(function(d, i) {
+        if (i < that._displayedLinks.length) {
+          this.setAttribute("marker-end", "url(#" + oldMarker + ")")
+          return;
+        }
+        
+        // overwrite marker end with new marker
+        this.classList.add("animationStroke");
+        this.setAttribute("marker-end", "url(#" + newMarker + ")")
+      });
+
+    const node = svg.selectAll(".node")
+      .data(allNodes)
+      .enter()
+      .append("g")
+      .call(force.drag)
+      .classed("node", true)
+      .on("click", function(d) {
+        if (!that.nodeClickHandler) {
+          return;
+        }
+        
+        that.nodeClickHandler(d);
+      })
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+        
+        this.classList.add("animationFill");
+      });
+    
+    node
+      .append("circle")
+      .classed("bubble", true)
+      .each(function(d, i) {
+        if (i < that._displayedNodes.length) {
+          // must be an old node
+          return;
+        }
+
+        this.classList.add("animationFill");
+      });
+    
+    node.append("text")
+      .attr("dx", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name });
+    
+    
+    force.on("tick", function() {
+      link
+          .attr("x1", function(d) { return d.source.x; })
+          .attr("y1", function(d) { return d.source.y; })
+          .attr("x2", function(d) { return d.target.x; })
+          .attr("y2", function(d) { return d.target.y; });
+      
+      node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+    });
+    
+    this._displayedNodes = allNodes;
+    this._displayedLinks = allLinks;
+    this._newNodes = [];
+    this._newLinks = [];
+  }
+  
+  _addMarker(svg, markerName, animation) {
     // build the arrow.
-    svg.append("svg:defs").selectAll("marker")
-      .data(["end"])      // Different link/path types can be defined here
+    const marker = svg.append("svg:defs").selectAll("marker")
+      .data([markerName])      // Different link/path types can be defined here
       .enter().append("svg:marker")    // This section adds in the arrows
       .attr("id", String)
       .attr("viewBox", "0 -5 10 10")
@@ -43,63 +165,70 @@ export default class BlockchainNodeView extends Morph {
       .attr("markerHeight", 6)
       .attr("orient", "auto")
       .append("svg:path")
-      .attr("d", "M0,-5L10,0L0,5");
+      .attr("d", "M0,-5L10,0L0,5")
+      .classed("linkEnd", true);
     
-    const link = svg.selectAll(".link")
-      .data(this._links)
-      .enter()
-      .append("line")
-      .attr("class", "link")
-      .attr("marker-end", "url(#end)");
+    if (!animation) {
+      return marker;
+    }
     
-    const node = svg.selectAll(".node")
-      .data(this._nodes)
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .call(force.drag);
-    
-    node.append("circle")
-      .attr("r", "5")
-      .attr("fill", "#2c2c2c")
-      .attr("stroke-width", "2px");
-    
-    node.append("text")
-      .attr("dx", 12)
-      .attr("dy", ".35em")
-      .text(function(d) { return d.name });
-    
-    force.on("tick", function() {
-      link.attr("x1", function(d) { return d.source.x; })
-          .attr("y1", function(d) { return d.source.y; })
-          .attr("x2", function(d) { return d.target.x; })
-          .attr("y2", function(d) { return d.target.y; });
-      
-      node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-    });
+    return marker.classed("animationFill", true);
   }
   
   async livelyExample() {
-    this._nodes = [
+    const node1 = new BlockchainNode();
+    const node2 = new BlockchainNode();
+    
+    node1.mine();
+    await new Promise(sleep => setTimeout(sleep, 3000));
+    
+    const tx1 = node1.sendTransaction([
+      {"receiver": node2.wallet, "value": node1.wallet.value / 2}
+    ]);
+    
+    node1.mine();
+    await new Promise(sleep => setTimeout(sleep, 3000));
+    
+    const tx2 = node2.sendTransaction([
+      {"receiver": node1.wallet, "value": node2.wallet.value / 2},
+    ]);
+    
+    /*
+    const view = new TransactionNetworkView(this)
+      .addTransactions([
+        tx1,
+        tx2,
+      ]);
+    */
+    
+    const view = new BlockNetworkView(this);
+    
+    node1.blockchain.forEach((block) => view.addBlock(block));
+    
+    view.draw();
+  }
+  
+  async __livelyExample2() {
+    this._newNodes = [
       {
-        "name": "node1",
+        "name": "#1234567890",
         "group": 1
       },
       {
-        "name": "node2",
+        "name": "#0987654321",
         "group": 1
       },
       {
-        "name": "node3",
+        "name": "#abcdef1234",
         "group": 1
       },
       {
-        "name": "node4",
+        "name": "#0123abcdef",
         "group": 1
       }
     ];
     
-    this._links = [
+    this._newLinks = [
       {
         "source": 0,
         "target": 1,

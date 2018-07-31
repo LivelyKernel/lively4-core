@@ -16,7 +16,16 @@ export default class TransactionInputCollection {
     this._senderWallet = senderWallet;
     this._transactionInputs = new Map();
     this._containsMiningReward = false;
+    this._value = 0;
     this.hash = null;
+  }
+  
+  get displayName() {
+    if (!this.hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this.hash.substring(0, 10);
   }
   
   add(transaction) {
@@ -31,6 +40,7 @@ export default class TransactionInputCollection {
     }
     
     this._transactionInputs.set(output.hash, output);
+    this._calculateValue();
     return this;
   }
   
@@ -51,13 +61,12 @@ export default class TransactionInputCollection {
     var output = new TransactionOutput(this._senderWallet, block.reward);
     this._transactionInputs.set(output.hash, output);
     this._containsMiningReward = true;
+    this._calculateValue();
     return this;
   }
   
-  value() {
-    return Array.from(this._transactionInputs.entries()).reduce((total, output) => {
-      total += output.amount;
-    }, 0);
+  get value() {
+    return this._value;
   }
   
   finalize() {
@@ -81,10 +90,17 @@ export default class TransactionInputCollection {
     return this._transactionInputs.has(outputHash);
   }
   
+  _calculateValue() {
+    this._value = Array.from(this._transactionInputs.entries()).reduce((total, entry) => {
+      return total + entry[1].value;
+    }, 0);
+  }
+  
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
       Array.from(this._transactionInputs.keys()).join('')
     );
+    return sha256.digest().toHex();
   }
 }

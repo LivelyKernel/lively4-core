@@ -1,64 +1,108 @@
 "enable aexpr";
+import { debounce } from "utils";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
+import MultiSelection from 'src/client/vivide/multiselection.js';
+import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
 
-export default class VivideTreemapWidget extends Morph {
+export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
+  get multiSelectionConfig() {
+    return [this, {
+      onSelectionChanged: selection => this.selectionChanged(selection)
+    }];
+  }
+  
+  get tree() { return this.get('#tree'); }
+  get d3treemap() { return this.get('#d3-treemap'); }
+  
   async initialize() {
-    this.windowTitle = "VivideTreemapWidget";
-    this.registerButtons()
+    this.windowTitle = "VivideTreeWidget";
+    // Callback set in the view
+    this.expandChild = null;
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+  }
+  onExtentChanged(evt) {
+    this.d3treemap && this.d3treemap.updateViz && this.d3treemap.updateViz();
+  }
+  dataForDOMNode(treeItem) {
+    return this.dataByTreeItem.get(treeItem);
+  }
 
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+  createTreeNodeForLabel(label) {
+    return ({
+      name: label
+    });
+  }
+  labelForModel(model) {
+    return model.properties.get('label') || textualRepresentation(model.object);
+  }
+  async attachChildrenFromModel(model, treeNode) {
+    const getChildLayerOfVivideObject = async (model) => {
+      let childLayer = model.childLayer;
+      
+      if (!childLayer || !childLayer.objects.length) {
+        return;
+      }
+
+      if (!childLayer.script) {
+        return childLayer;
+      }
+      
+      let childData = childLayer.objects.map(c => c.data);
+      model.childLayer = await this.expandChild(childData, childLayer.script);
+      childLayer = model.childLayer;
+      
+      return childLayer;
+    }
     
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
+    var childLayer = await getChildLayerOfVivideObject(model);
+
+    if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
+      treeNode.size = 1;
+      return;
+    }
+
+    return await this.attachAllChildren(childLayer, treeNode);
+  }
+  async attachAllChildren(vivideLayer, parentNode) {
+    for (let child of vivideLayer.objects) {
+      await this.attachAChild(child, parentNode);
+    }
+  }
+  async attachAChild(model, parentNode) {
+    const label = this.labelForModel(model);
+    const childNode = this.createTreeNodeForLabel(label);
+
+    parentNode.children = parentNode.children || [];
+    parentNode.children.push(childNode);
+    
+    return await this.attachChildrenFromModel(model, childNode);
+  }
+  async display(vivideLayer, config) {
+    super.display(vivideLayer, config);
+    this.innerHTML = '';
+    
+    const treeData = this.createTreeNodeForLabel('Top Level');
+
+    await this.attachAllChildren(vivideLayer, treeData);
+    
+    // console.warn(treeData);
+    // const outputWorkspace = document.body.querySelector('#output-dump');
+    // if(outputWorkspace) {
+    //   outputWorkspace.value = JSON.stringify(treeData, null, 2)
+    // }
+
+    this.d3treemap.setTreeData(treeData);
   }
   
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
-  
-  // this method is automatically registered as handler through ``registerButtons``
-  onFirstButton() {
-    lively.notify("hello")
-  }
-
-  /* Lively-specific API */
-
-  livelyPreMigrate() {
-    // is called on the old object before the migration
+  livelyExample() {
+    // Displaying a vivide tree widget is only meaningful in a vivide view
   }
   
   livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
+    lively.warn('MIGRATE')
+    this.expandChild = other.expandChild;
+    super.display(other);
   }
-  
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-  
-  livelyPrepareSave() {
-    
-  }
-  
-  
-  async livelyExample() {
-    // this customizes a default instance to a pretty example
-    // this is used by the 
-    this.style.backgroundColor = "red"
-    this.someJavaScriptProperty = 42
-    this.appendChild(<div>This is my content</div>)
-  }
-  
-  
 }

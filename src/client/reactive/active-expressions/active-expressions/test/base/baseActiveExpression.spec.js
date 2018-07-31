@@ -13,7 +13,7 @@ describe('Base Active Expressions', () => {
             obj = {a:1},
             aexpr = new BaseActiveExpression(() => obj.a)
                 .onChange(spy);
-
+      
         expect(spy).not.to.be.called;
 
         obj.a = 2;
@@ -21,6 +21,28 @@ describe('Base Active Expressions', () => {
 
         expect(spy).to.be.calledOnce;
     });
+  
+    it("works with promises", (done) => {
+          let spy = sinon.spy(),
+              obj = {a:1},
+              aexpr = new BaseActiveExpression(() => {
+                return new Promise((resolve, reject) => {
+                  setTimeout(resolve, 1, obj.a);
+                });
+              }).onChange(spy);
+
+          setTimeout(() => {
+            expect(spy).not.to.be.called;
+
+            obj.a = 2;
+            aexpr.checkAndNotify();
+
+            setTimeout(() => {
+              expect(spy).to.be.calledOnce;
+              done();
+            }, 2);
+          }, 2);
+      });
 
     describe('Parameters', () => {
         it("single parameter", () => {

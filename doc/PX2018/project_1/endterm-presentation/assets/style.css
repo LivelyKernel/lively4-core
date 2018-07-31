@@ -1,0 +1,96 @@
+.centralized {
+  margin: 250px auto;
+  text-align: center;
+}
+
+.center {
+  display: inherit !important;
+  margin: 0 auto;
+}
+
+.subtitle {
+  width: auto;
+  text-align: center;
+}
+
+div.quotation {
+  width: 85%;
+  margin: 20% auto;
+  text-align: center;
+  display: block;
+  font-size: 24px;
+}
+
+div.quotation .author {
+  width: 50%;
+  float: right;
+  display: block;
+  font-size: 16px;
+  color: grey;
+  clear: both;
+  margin-top: 20px;
+}
+
+div.highlight {
+  padding: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f7f7f9;
+}
+
+.position-right-upper-corner {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  z-index: 99;
+}
+
+.credits {
+  text-decoration: none;
+  font-size: 8px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+
+.positive-list {
+  list-style-type: none;
+}
+  
+.positive-list li:before {    
+  font-family: 'FontAwesome';
+  content: '\f067';
+  margin: 0 10px 0 -25px;
+  color: #006400;
+}
+  
+.positive-list ul {
+  list-style-type: circle;
+}
+  
+.positive-list ul li:before {
+  content: '';
+  margin: 0;
+}
+
+.negative-list {
+  list-style-type: none;
+}
+  
+.negative-list li:before {    
+  font-family: 'FontAwesome';
+  content: '\f068';
+  margin: 0 10px 0 -25px;
+  color: #B22222;
+}
+  
+.negative-list ul {
+  list-style-type: circle;
+}
+  
+.negative-list ul li:before {
+  margin: 0;
+  content: '';
+}
+

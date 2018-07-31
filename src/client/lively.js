@@ -140,12 +140,12 @@ export default class Lively {
     delete System.loads[normalizedPath]
   }
 
-  static async reloadModule(path) {
+  static async reloadModule(path, force) {
     // console.log("reload module " + path)
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule];
-    if (!load) {
+    if (!load && !force) {
       await this.unloadModule(path); // just to be sure...
       console.warn("Don't reload non-loaded module");
       return;
@@ -469,6 +469,7 @@ export default class Lively {
   // Example: lively.getPosition(that)
 
   static getPosition(obj) {
+    
     var pos;
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
@@ -489,6 +490,10 @@ export default class Lively {
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
+    }
+    
+    if(obj instanceof KeyboardEvent) {
+      return;
     }
     // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
     if (isNaN(pos.x) || isNaN(pos.y)) {
@@ -786,6 +791,7 @@ export default class Lively {
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
+    persistence.disable();
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     lively.components.loadByName("lively-notification")
@@ -802,8 +808,10 @@ export default class Lively {
     })
 
     console.log(window.lively4stamp, "load local lively content ")
+    // #RACE #TODO ... 
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
+    // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();
     // lively.selection;

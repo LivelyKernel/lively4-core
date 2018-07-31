@@ -1,0 +1,32 @@
+<template id="lively-code-mirror-widget-import" data-class="LivelyCodeMirrorWidgetImport">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/vivide/components/vivide.css"></style>
+<style>
+:host {
+  border: 
+  display: inline;
+  background-color: lightgray;
+  display: inline-block;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 5px;
+}
+content {
+  background-color: blue;
+}
+</style>
+<span data-tooltip="The module to be imported">
+  <label id="label" for="input">from</label>
+  <input type="text" id="modulePath" placeholder="module" list="fileList">
+  <datalist id="fileList"></datalist>
+</span>
+import <i><ul id="importSpecifier">
+  <li>hellooo</li>
+  <li>world</li>
+</ul></i>
+<content></content>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

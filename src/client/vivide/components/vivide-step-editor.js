@@ -1,6 +1,4 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { scriptFolder, stepFolder } from 'src/client/vivide/utils.js';
-import Script from 'src/client/vivide/script.js';
 
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
@@ -38,15 +36,21 @@ export default class VivideStepEditor extends Morph {
     this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY, position);
   }
   
+  onRemoveScript() {
+    if (!this.scriptEditor) return;
+    
+    this.scriptEditor.removeScript(this, this.script);
+  }
+  
   setToLoopStart() {
     // Go to last script
     let script = this.script;
-    while (script.nextScript != null && !script.lastScript) {
-      script = script.nextScript;
+    while (script.nextStep != null && !script.lastScript) {
+      script = script.nextStep;
     }
     
     // Reconfigure loop
-    script.nextScript = this.script;
+    script.nextStep = this.script;
   }
   
   setStepScript(script) {
