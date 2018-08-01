@@ -7,6 +7,7 @@ export default class Node {
         this.children = [];
         this.matchedCode = "";
         this.parent = null;
+        this.protected=false;
     }
 
     setNext(next) {
