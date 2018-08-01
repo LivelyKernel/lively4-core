@@ -93,7 +93,9 @@ export default class LivelyD3Treemap extends Morph {
           // fill: cadetblue;
           // opacity: 0.3;
           // stroke: white;
-        });
+        })
+    
+    cell.classed('small', d => (d.y1 - d.y0) < 20);
 
     cell.append("clipPath")
         .attr("id", function(d) { return "clip-" + d.data.id; })
@@ -103,7 +105,7 @@ export default class LivelyD3Treemap extends Morph {
     cell.append("text")
         .attr("clip-path", function(d) { return "url(#clip-" + d.data.id + ")"; })
       .selectAll("tspan")
-        .data(function(d) { return d.data.name.split(/(?=[A-Z][^A-Z])/g); })
+        .data((d) => { return this.dataName ? this.dataName(d.data) : d.data.name.split(/(?=[A-Z][^A-Z])/g); })
       .enter().append("tspan")
         .attr("x", 4)
         .attr("y", function(d, i) { return 13 + i * 10; })
@@ -123,7 +125,7 @@ export default class LivelyD3Treemap extends Morph {
  
   livelyMigrate(other) {
     this.treeData = other.treeData
-    this.dataName = other.dataName
+    this.dataTitle = other.dataTitle
     this.dataColor = other.dataColor
 
   }

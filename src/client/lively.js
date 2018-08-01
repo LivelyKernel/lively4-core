@@ -469,6 +469,7 @@ export default class Lively {
   // Example: lively.getPosition(that)
 
   static getPosition(obj) {
+    
     var pos;
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
@@ -489,6 +490,10 @@ export default class Lively {
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
+    }
+    
+    if(obj instanceof KeyboardEvent) {
+      return;
     }
     // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
     if (isNaN(pos.x) || isNaN(pos.y)) {

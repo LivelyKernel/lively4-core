@@ -1,0 +1,53 @@
+<template id="presentation-animation" data-class="PresentationAnimation">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+
+  }
+  
+  #content {
+    background-color: gray;
+  }
+  
+  canvas {
+    border: 1px solid black;
+    float: left;
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+    min-width: 400px
+  }
+  
+  .button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .overlay {
+    width: 400px;
+    height: 400px;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+</style>
+<div class="container">
+  <canvas id="animation" width="400" height="400"></canvas>
+  <div id="overlay" class="overlay hidden"></div>
+  <br>
+  <div class="button-container">
+    <button id="previous">Previous</button>
+    <button id="next">Next</button>
+  </div>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

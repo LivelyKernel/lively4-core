@@ -306,3 +306,7 @@ export function parseQuery(queryString) {
 export function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export class CallableObject {
+  // #TODO: implement this
+}

@@ -1,8 +1,22 @@
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+import CachingFetch from './caching-fetch.js';
+import CachingPromise from './caching-promise.js';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
+
+function isPromise(obj) {
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
+}
+
+function resolveValue(value, func) {
+  if(isPromise(value)) {
+    value.then(func);
+  } else {
+    func(value);
+  }
+}
 
 export class BaseActiveExpression {
 
@@ -14,11 +28,19 @@ export class BaseActiveExpression {
   constructor(func, ...params) {
     this.func = func;
     this.params = params;
-    this.lastValue = this.getCurrentValue();
+    this.cachingFetch = new CachingFetch();
+    this.cachingPromise = new CachingPromise(this.cachingFetch);
+    let currentValue = this.getCurrentValue();
+    if(isPromise(currentValue)) {
+      this.isAsync = true;
+    }
+    resolveValue(currentValue, (value) => {
+      this.lastValue = value;
+    })
     this.callbacks = [];
     this._isDisposed = false;
     this._shouldDisposeOnLastCallbackDetached = false;
-    
+
     this._annotations = new Annotations();
   }
 
@@ -29,7 +51,11 @@ export class BaseActiveExpression {
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
-    return this.func(...(this.params));
+    return this.cachingFetch.trace(() => {
+      return this.cachingPromise.trace(() => {
+        return this.func(...(this.params));
+      });
+    });
   }
 
   /**
@@ -62,13 +88,14 @@ export class BaseActiveExpression {
    */
   checkAndNotify() {
     let currentValue = this.getCurrentValue();
-    if(this.lastValue === currentValue) { return; }
+    resolveValue(currentValue, (value) => {
+      if(this.lastValue == value) { return; }
+      let lastValue = this.lastValue;
+      this.lastValue = value;
 
-    let lastValue = this.lastValue;
-    this.lastValue = currentValue;
-
-    this.notify(currentValue, {
-      lastValue
+      this.notify(value, {
+        lastValue
+      });
     });
   }
 
@@ -93,9 +120,9 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    if(this.getCurrentValue()) {
-      callback();
-    }
+    resolveValue(this.getCurrentValue(), (value) => {
+      if(value) { callback() }
+    });
 
     return this;
   }
@@ -108,9 +135,9 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    if(!this.getCurrentValue()) {
-      callback();
-    }
+    resolveValue(this.getCurrentValue(), (value) => {
+      if(!value) { callback() }
+    });
 
     return this;
   }
@@ -121,15 +148,17 @@ export class BaseActiveExpression {
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
-    this.notify(this.getCurrentValue(), {});
+    resolveValue(this.getCurrentValue(), (value) => {
+      this.notify(value, {});
+    });
 
     return this;
   }
-  
+
   dispose() {
     this._isDisposed = true;
   }
-  
+
   isDisposed() {
     return this._isDisposed;
   }
@@ -145,7 +174,7 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = true;
     return this;
   }
-  
+
   meta(annotation) {
     if(annotation) {
       this._annotations.add(annotation);
@@ -161,4 +190,3 @@ export function aexpr(func, ...params) {
 }
 
 export default BaseActiveExpression;
-
