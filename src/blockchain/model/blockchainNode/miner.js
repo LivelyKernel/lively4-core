@@ -2,16 +2,21 @@ import MiningProof from '../block/miningProof.js';
 import Block from '../block/block.js';
 import TransactionCollection from '../transaction/transactionCollection.js';
 
-const MINING_INTERVALL = 6; // in seconds
-
+const MINING_INTERVAL = 6; // in seconds
 
 export default class Miner {
   constructor(blockchainNode) {
     this._blockchainNode = blockchainNode;
     this._transactions = new TransactionCollection();
-    window.setInterval(() => {
-      this.mine();
-    }, MINING_INTERVALL * 1000);
+    this._subscribers = [];
+  }
+  
+  subscribe(subscriber, callback) {
+    this._subscribers.push({'subscriber': subscriber, 'callback': callback});
+  }
+  
+  unsubscribe(subscriber) {
+    this._subscribers = this._subscribers.filter(subscription => subscription['subscriber'] !== subscriber);
   }
   
   addTransaction(transaction) {
@@ -19,12 +24,20 @@ export default class Miner {
       return;
     }
     this._transactions.add(transaction);
+    this._subscribers.forEach(subscription => subscription['callback'](transaction));
+  }
+  
+  invalidateTransactions(block) {
+    block.transactions.forEach(transaction => {
+      this._transactions.remove(transaction);
+    });
   }
   
   async mine() {
-    if(this._transactions.size() < 1) {
+    if (this._blockchainNode.hasExited) {
       return;
     }
+    
     const miningDifficulty = Math.log10(this._blockchainNode.blockchain.size());
     const miningProof = new MiningProof(miningDifficulty);
     await miningProof.work();
@@ -34,8 +47,8 @@ export default class Miner {
       miningProof,
       this._blockchainNode.blockchain.headOfChain.hash
     );
-    this._blockchainNode.propagateBlock(block);
     this._transactions = new TransactionCollection();
+    this._blockchainNode.propagateBlock(block);
     console.log('[BLOCKCHAIN] Successfully mined a new block');
   }
 }

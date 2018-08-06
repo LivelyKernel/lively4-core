@@ -1,15 +1,24 @@
 import forge from 'node_modules/node-forge/dist/forge.min.js';
 
-const C_MIN_MINING_DIFFICULTY = 1;
-const C_MAX_MINING_DIFFICULTY = 60;
+const C_MIN_MINING_DIFFICULTY = 3;
+const C_MAX_MINING_DIFFICULTY = 10;
 
 export default class MiningProof {
   constructor(miningDifficulty) {
     this.miningDifficulty = Math.max(C_MIN_MINING_DIFFICULTY,
-                                     Math.min(C_MAX_MINING_DIFFICULTY, miningDifficulty));
+                                     Math.min(C_MAX_MINING_DIFFICULTY, Math.round(miningDifficulty)));
     this.startTimestamp = null;
     this.finishTimestamp = null;
     this.hash = null;
+    this.nonce = 0;
+  }
+  
+  get displayName() {
+    if (!this._hash) {
+      return "#NotAName";
+    }
+    
+    return "#" + this._hash.substring(0, 10);
   }
   
   async work() {
@@ -23,17 +32,27 @@ export default class MiningProof {
     return !!this.hash;
   }
   
-  async _solveCryptoPuzzle() {
-    // simulate proof of work by sleeping
-    await new Promise(sleep => setTimeout(sleep, this.miningDifficulty * 1000));
+  _solveCryptoPuzzle() {
+    const zeroString = "0".repeat(this.miningDifficulty);
+    do {
+      this.calculateHash(this.nonce + 1);
+    } while(this.hash.substring(this.hash.length - this.miningDifficulty) != zeroString);
+  }
+  
+  calculateHash(nonce) {
+    this.nonce = nonce;
+    this.hash = this._hash();
+    return this.hash;
   }
   
   _hash() {
-    var sha256 = forge.md.sha256.create();
-    return sha256.update(
+    const sha256 = forge.md.sha256.create();
+    sha256.update(
+      this.nonce +
       this.miningDifficulty +
       this.startTimestamp +
       this.finishTimestamp
     );
+    return sha256.digest().toHex();
   }
 }

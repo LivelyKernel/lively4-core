@@ -1,0 +1,27 @@
+.wrapper {
+  padding-right: 10px;
+}
+
+.center {
+  text-align: center;
+  div {
+    width: auto;
+    margin: 0 auto;
+  }
+}
+
+img {
+    float: left;
+    margin: 0 20px 5px 0;
+}
+
+p {
+    text-align: justify;
+}
+
+#blockchain-essay-transaction-visualization {
+  width: 50%;
+  min-width: 300px;
+  float: left;
+  margin: 10px 20px 10px 0;
+}

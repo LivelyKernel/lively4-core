@@ -19,18 +19,16 @@
         node: false,
         amd: false,
         mocha: true,
-        jasmine: false
+        jasmine: false,
+        es6: true
     },
     globals: {
         lively: true,
         aexpr: false,
-        Promise: true,
         lively4url: true,
         System: true,
         SystemJS: true,
         CodeMirror: true,
-        Map: true,
-        Set: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {

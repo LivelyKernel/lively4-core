@@ -79,7 +79,12 @@ export default class Persistence {
     var div = document.createElement("div")
     div.innerHTML = source
     var objs = Array.from(div.childNodes)
-    objs.map(ea => { target.appendChild(ea)})
+    objs.map(ea => {
+      if(ea.classList && ea.classList.contains('lively-preferences')) {
+        target.querySelectorAll('div.lively-preferences').forEach(ele => ele.remove());
+      }
+      target.appendChild(ea);
+    });
     await lively.components.loadUnresolved(target)
     objs.map(ea => { Persistence.initLivelyObject(ea)})
     return 

@@ -41,6 +41,10 @@ module.exports = function(config) {
       
       {pattern: 'test/**/*.js', included: false},
       {pattern: 'test/**/*.html', included: false},
+
+      {pattern: 'demos/**/*.js', included: false},
+      {pattern: 'demos/**/*.html', included: false},
+
       
       {pattern: 'vendor/**/*.js', included: false},
       {pattern: 'templates/**/*', included: false},
@@ -56,6 +60,7 @@ module.exports = function(config) {
       '/node_modules/mocha/mocha.js': '/base/node_modules/mocha/mocha.js',
       '/src/': '/base/src/',
       '/test/': '/base/test/',
+      '/demos/': '/base/demos/',
       '/templates/': '/base/templates/',
       '/package.json': '/base/package.json',
       '/swx-boot.js': '/base/swx-boot.js',

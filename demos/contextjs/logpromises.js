@@ -4,29 +4,7 @@
 
 import * as cop  from "src/client/ContextJS/src/contextjs.js"
 import * as Layers  from "src/client/ContextJS/src/Layers.js"
-
-// BEGIN #TODO #ContextJS cannot layer constructors
-if (!self.OriginalPromise) {
-  self.OriginalPromise = Promise;
-}
-self.Promise = function Promise(...args) {
-  
-  this.is_not_a_promise = true;
-  if (this.constructorHook) {
-    var p = (...rest) => {
-      return new OriginalPromise(...rest)
-    }
-    return this.constructorHook(p, args)
-  }
-  return new OriginalPromise(...args)
-};
-self.Promise.prototype = OriginalPromise.prototype;
-self.Promise.prototype.constructorHook = function(p, args) {
- return p(...args)
-}
-self.Promise.__proto__ = OriginalPromise
-// END
-
+import "./adaptablepromise.js"
 
 export function defereLogging(msg) {
   return LogPromises.defereLogging(this)
@@ -186,11 +164,11 @@ export default class LogPromises {
 LogPromises.resetLogs()
 
 cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
-  constructorHook(proceed, args) {
-    var func = args[0]
+  initialize(resolve, reject) {
     var oldPromise = this;
-    if (func) {
-      args[0] = (...rest) => {
+    if (resolve) {
+      var oldResolve = resolve
+      resolve = (...rest) => {
         LogPromises.ensureDebugId(this)
         if (oldPromise) {
           LogPromises.addDependend(LogPromises.currrentPromise, oldPromise)
@@ -199,14 +177,13 @@ cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
         }
         var r
         cop.withLayers([LogPromisesLayer, LogPromises.currentPromiseLayer(oldPromise)], () => {
-          r =  func(...rest)
+          r =  oldResolve(...rest)
         })
         return r
       }
     }
-    var result = cop.proceed(proceed, args)
+    var result = cop.proceed(...args)
     LogPromises.ensureDebugId(result)
-
     this.replace_with = result
     LogPromises.replacePlaceholder(this, result)
     return result

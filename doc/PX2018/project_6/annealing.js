@@ -1,72 +1,110 @@
 /**
-For now a copy of the d3 labeler from https://github.com/tinker10/D3-Labeler, to be adjusted with our own functions
+Provides functionality for layouting a graph using simulated annealing, inspired by https://github.com/tinker10/D3-Labeler
 */
-import d3 from "src/external/d3.v5.js"
 
 export default function() {
   var nodes = [],
       links = [],
       w = 900, // box width
       h = 500, // box width
+      updateFunction = function() {},
+      sweepsPerStep = 1000, 
       graphAnneal = {};
-
-  var max_move = 500.0;
   
    // weights
   var w_node_overlap = 30.0, // Node-overlap 
-      w_edge_overlap = 10;   // Edge-overlap
+      w_edge_overlap = 30.0, // Edge-overlap
+      w_edge_node_overlap = 30.0, // Edge-Node-overlap
+      w_edge_length = 0.1,
+      node_overlap = true,
+      edge_overlap = true,
+      edge_node_overlap = true,
+      edge_length = true,
+      tolerate_line = 20;
   
-  // booleans for user defined functions
-  var user_energy = false,
-      user_defined_energy,
-      user_schedule = false,
-      user_defined_schedule;
+  var energy = function() {
+  // energy function to evaluate fitness of graph state
 
-  var energy = function(index) {
-  // energy function, to be tailored for node placement
-
-    var v = nodes.length,
+    let v = nodes.length,
         e = links.length,
         ener = 0;
     
-    for (var i = 0; i < e; i++) {
-      for (var j = i + 1; j < e; j++) {
-        // Penalty for edge intersection
-        var x1 = links[i].source.x,
-            x2 = links[i].target.x,
-            y1 = links[i].source.y,
-            y2 = links[i].target.y,
-            x3 = links[j].source.x,
-            x4 = links[j].target.x,
-            y3 = links[j].source.y,
-            y4 = links[j].target.y;
-        
-        if (intersect(x1, x2, x3, x4, y1, y2, y3, y4)) {
-          ener += w_edge_overlap;
-        } 
+    if (edge_overlap) {
+    // Penalty for edge intersection
+      for (let i = 0; i < e; i++) {
+        let changedEdge = links[i];        
+        for (let j = 0; j < e; j++) {
+          if (j !== i && changedEdge.source.id !== links[j].source.id
+             && changedEdge.source.id !== links[j].target.id
+             && changedEdge.target.id !== links[j].source.id
+             && changedEdge.target.id !== links[j].target.id) {
+            let x1 = changedEdge.source.x,
+                x2 = changedEdge.target.x,
+                y1 = changedEdge.source.y,
+                y2 = changedEdge.target.y,
+                x3 = links[j].source.x,
+                x4 = links[j].target.x,
+                y3 = links[j].source.y,
+                y4 = links[j].target.y;
+
+            if (intersect(x1, x2, x3, x4, y1, y2, y3, y4)) {
+              ener += w_edge_overlap;
+            } 
+          }
+        }
+        if (edge_length) {
+        // Penalty for long edges
+          ener += Math.max(0,
+            (lineLength(changedEdge.source,
+                        changedEdge.target) - tolerate_line) * w_edge_length);
+        }
+      }
+    }
+    
+    if (edge_node_overlap) {
+    // Penalty for edge-node intersection
+      for (let i = 0; i < e; i++) {
+        for (let n = 0; n < v; n++) {
+          if (nodes[n] !== links[i].source && nodes[n] !== links[i].target) {
+            let x1 = links[i].source.x,
+                x2 = links[i].target.x,
+                y1 = links[i].source.y,
+                y2 = links[i].target.y,
+                cx = nodes[n].x,
+                cy = nodes[n].y,
+                r = nodes[n].r;
+
+            if (lineCircleIntersect(x1, x2, y1, y2, cx, cy, r)) {
+              ener += w_edge_node_overlap;
+            } 
+          }
+        }
       }
     }
 
-    for (i = 0; i < v; i++) {
-      if (i != index) {
-        // Penalty for node intersection
-        var nx1 = nodes[index].x,
-            ny1 = nodes[index].y,
-            r1 = nodes[index].r,
-            nx2 = nodes[i].x,
-            ny2 = nodes[i].y,
-            r2 = nodes[i].r;
+    if (node_overlap) {
+    // Penalty for node intersection
+      for (let i = 0; i < v; i++) {
+        for (let j = i+1; j < v; j++) {
+          let nx1 = nodes[j].x,
+              ny1 = nodes[j].y,
+              r1 = nodes[j].r,
+              nx2 = nodes[i].x,
+              ny2 = nodes[i].y,
+              r2 = nodes[i].r;
 
-        if (collision(nx1, ny1, r1, nx2, ny2, r2)) {
-          ener += w_node_overlap; 
+          if (collision(nx1, ny1, r1, nx2, ny2, r2)) {
+            ener += w_node_overlap;
+          }
         }
-      }
 
+      }
     }
     return ener;
   };
   
   var collision = function(p1x, p1y, r1, p2x, p2y, r2) {
+    // Tests collision of two circles
     var a;
     var x;
     var y;
@@ -82,67 +120,91 @@ export default function() {
     }   
   }
 
-  var mcmove = function(currT) {
+  var mcmove = function(currT, old_energy) {
   // Monte Carlo translation move
 
-      // select a random node
-      var i = Math.floor(Math.random() * nodes.length); 
-
-      // save old coordinates
-      var x_old = nodes[i].x;
-      var y_old = nodes[i].y;
-
-      // old energy
-      var old_energy;
-      if (user_energy) {old_energy = user_defined_energy(i, nodes, links)}
-      else {old_energy = energy(i)}
-
-      // random translation
-      nodes[i].x += (Math.random() - 0.5) * max_move;
-      nodes[i].y += (Math.random() - 0.5) * max_move;
-
-      // hard wall boundaries
-      if (nodes[i].x > w) nodes[i].x = x_old;
-      if (nodes[i].x < 0) nodes[i].x = x_old;
-      if (nodes[i].y > h) nodes[i].y = y_old;
-      if (nodes[i].y < 0) nodes[i].y = y_old;
-
-      // new energy
-      var new_energy;
-      if (user_energy) {new_energy = user_defined_energy(i, nodes, links)}
-      else {new_energy = energy(i)}
-
-      // delta E
-      var delta_energy = new_energy - old_energy;
-
-      if (Math.random() >= Math.exp(-delta_energy / currT)) {
-        // move back to old coordinates, else accept
-        nodes[i].x = x_old;
-        nodes[i].y = y_old;
+    if (old_energy < 0) {
+      for (let n of nodes) {
+        // If this is the first call, randomly move all nodes
+        n.x += Math.random() * w;
+        n.y += Math.random() * h;
       }
+      old_energy = energy();
+    }
+
+    // select a random node
+    var i = Math.floor(Math.random() * nodes.length);
+
+    // save old coordinates
+    var x_old = nodes[i].x;
+    var y_old = nodes[i].y;
+
+    // random translation
+    nodes[i].x = Math.random() * w;
+    nodes[i].y = Math.random() * h;
+
+    var new_energy = energy(i);
+    var delta_energy = new_energy - old_energy;
+
+    if (Math.random() >= Math.exp(-delta_energy / currT)) {
+      // randomly (considering temperature) decide whether to keep new status
+      nodes[i].x = x_old;
+      nodes[i].y = y_old;
+      return old_energy;
+    }
+    return new_energy;
 
   };
 
   var intersect = function(x1, x2, x3, x4, y1, y2, y3, y4) {
-  // Not sure if we need this still, but ill keep it for now
-  // returns true if two lines intersect, else false
-  // from http://paulbourke.net/geometry/lineline2d/
-
-    var mua, mub;
-    var denom, numera, numerb;
-
-    denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-    numera = (x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3);
-    numerb = (x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3);
-
-    /* Is the intersection along the the segments */
-    mua = numera / denom;
-    mub = numerb / denom;
-    if (!(mua < 0 || mua > 1 || mub < 0 || mub > 1)) {
-        return true;
+    // Calculates intersection between two lines
+    var det, gamma, lambda;
+    det = (x2 - x1) * (y4 - y3) - (x4 - x3) * (y2 - y1);
+    if (det === 0) {
+      return false;
+    } else {
+      lambda = ((y4 - y3) * (x4 - x1) + (x3 - x4) * (y4 - y1)) / det;
+      gamma = ((y1 - y2) * (x4 - x1) + (x2 - x1) * (y4 - y1)) / det;
+      return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
     }
+  }
+  
+  var lineCircleIntersect = function(x1, x2, y1, y2, cx, cy, r) {
+    // Calculates intersection between a line and a circle
+    var b, c, d, u1, u2, v1, v2;
+    v1 = {};
+    v2 = {};
+    v1.x = x2 - x1;
+    v1.y = y2 - y1;
+    v2.x = x1 - cx;
+    v2.y = y1 - cy;
+    b = (v1.x * v2.x + v1.y * v2.y);
+    c = 2 * (v1.x * v1.x + v1.y * v1.y);
+    b *= -2;
+    d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - r * r));
+    if(isNaN(d)){
+        return false;
+    }
+    u1 = (b - d) / c;
+    u2 = (b + d) / c;    
+    if(u1 <= 1 && u1 >= 0 || u2 <= 1 && u2 >= 0)
+      return true;
     return false;
   }
+  
+  var lineLength = function( point1, point2 ){
+    // Returns the length of a line
+    var xs = 0;
+    var ys = 0;
+
+    xs = Math.abs(point2.x - point1.x);
+    xs = xs * xs;
+
+    ys = Math.abs(point2.y - point1.y);
+    ys = ys * ys;
+
+    return Math.sqrt( xs + ys );
+}
 
   var cooling_schedule = function(currT, initialT, nsweeps) {
   // linear cooling
@@ -150,68 +212,87 @@ export default function() {
   }
 
   graphAnneal.start = function(nsweeps) {
-    
-  console.log(nodes, links)
   // main simulated annealing function
     var m = nodes.length,
         currT = 1.0,
         initialT = 1.0;
-    for (i = 0; i < m; i++) {
+    for (var i = 0; i < m; i++) {
       nodes[i].x = 0;
       nodes[i].y = 0;
     }
-
-    for (var i = 0; i < nsweeps; i++) {
-      for (var j = 0; j < m; j++) { 
-        mcmove(currT);
+    var currentEnergy = -1;
+    function annealForSweeps(totalSweepsLeft) {
+      // Anneal for sweepsPerStep, then update visuals
+      let sweepsLeft = Math.min(sweepsPerStep, totalSweepsLeft);
+       do {
+        currentEnergy = mcmove(currT, currentEnergy);
+        currT = cooling_schedule(currT, initialT, nsweeps);
+        sweepsLeft -= 1;
+      } while (sweepsLeft > 0 && currentEnergy > 0);
+      updateFunction(Math.round(currentEnergy));
+      totalSweepsLeft -= sweepsPerStep;
+      if (totalSweepsLeft > 0 && currentEnergy > 0) {
+        setTimeout(() => annealForSweeps(totalSweepsLeft), 0);
       }
-      currT = cooling_schedule(currT, initialT, nsweeps);
     }
+    annealForSweeps(nsweeps);
   };
 
   graphAnneal.width = function(x) {
-  // users insert graph width
+  // user defined graph width
     if (!arguments.length) return w;
     w = x;
     return graphAnneal;
   };
 
   graphAnneal.height = function(x) {
-  // users insert graph height
+  // user defined graph height
     if (!arguments.length) return h;
     h = x;    
     return graphAnneal;
   };
 
   graphAnneal.nodes = function(x) {
-  // users insert label positions
+  // user defined label positions
     if (!arguments.length) return nodes;
     nodes = x;
     return graphAnneal;
   };
 
   graphAnneal.links = function(x) {
-  // users insert anchor positions
+  // user defined anchor positions
     if (!arguments.length) return links;
     links = x;
     return graphAnneal;
   };
-
-  graphAnneal.alt_energy = function(x) {
-  // user defined energy
-    if (!arguments.length) return energy;
-    user_defined_energy = x;
-    user_energy = true;
+  
+  graphAnneal.updateFunction = function(x) {
+  // user defined callback for node updates
+    if (!arguments.length) return  updateFunction;
+    updateFunction = x;
     return graphAnneal;
   };
-
-  graphAnneal.alt_schedule = function(x) {
-  // user defined cooling_schedule
-    if (!arguments.length) return  cooling_schedule;
-    user_defined_schedule = x;
-    user_schedule = true;
+  
+  graphAnneal.sweepsPerStep = function(x) {
+  // user defined amount of iterations between visual updates
+    if (!arguments.length) return  sweepsPerStep;
+    sweepsPerStep = x;
+    return graphAnneal;
+  };
+  
+  graphAnneal.weights = function(x) {
+  // user defined weights
+    node_overlap = x.nodeIntersection.enabled; // Node-overlap 
+    edge_overlap = x.edgeIntersection.enabled; // Edge-overlap
+    edge_node_overlap = x.edgeNodeIntersection.enabled; // Edge-Node-overlap
+    w_node_overlap = x.nodeIntersection.weight;
+    w_edge_overlap = x.edgeIntersection.weight;
+    w_edge_node_overlap = x.edgeNodeIntersection.weight;
+    w_edge_length = x.edgeLength.weight;
+    edge_length = x.edgeLength.enabled;
+    tolerate_line = x.edgeLength.tolerated;
     return graphAnneal;
   };
 
   return graphAnneal;
-};
+}

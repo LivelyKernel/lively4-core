@@ -26,6 +26,18 @@
   
 </style>
 
+<!--
+<script>
+  var thatIsMe  = this
+  var button = document.createElement("button")
+  button.textContent = "show me"
+  button.onclick = async () => {
+    lively.showElement(thatIsMe)
+  }
+  button
+</script>
+-->
+
 <div class="title">
   PX 2018: Seminar on Programming Experience
 </div>
@@ -39,14 +51,13 @@
 </div>
 
 <script>
-  var button = document.createElement("button")
-  button.textContent = "print"
-  button.onclick = async () => {
-   var presentation = lively.query(this, "lively-presentation")
-   presentation.print()
-  }
-  button.style = "position: absolute; bottom: 10px; left: 10px"
-  button
+  import {presentationPrintButton} from "src/client/essay.js"
+  presentationPrintButton(this)
+</script>
+
+<script>
+  import {presentationFullscreenButton} from "src/client/essay.js"
+  presentationFullscreenButton(this)
 </script>
 
 
@@ -118,6 +129,7 @@ By using our live collaborative development environment, [Lively4](https://livel
 // Poor men's: Table of Content / Topic list... I always wanted to do this in PowerPoint... but I did not know how to use Macros...
 (async () => {
   var container = lively.query(this, "lively-container")
+  if (!container || container.getURL) return
   var source = await fetch(container.getURL()).then(r => r.text())
   var topics = source.split("\n").filter(ea => ea.match(/^# Topic( \d\d)?:/)).map(ea => <li>{ea.replace(/# Topic/,"").replace(/:/,"").replace(/<.*>/,"")}</li>)
 

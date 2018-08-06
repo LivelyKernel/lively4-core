@@ -1,0 +1,175 @@
+<h1>Supporting Asynchronicity in Active Expressions for accessing Remote Data</h1>
+
+<h2>Demo 1: Frame-based Active Expressions</h2>
+
+<lively-markdown>
+This demo shows the basic operation of Frame-Based Active Expressions with a synchronous expression. The value of the expression is the value of the text input field below.
+
+When entering text into the input field the `onChange` callback is fired instantly and the given text is displayed as output.
+
+```javascript
+aexpr(() => {
+  let input = document.querySelector("#demo1-input");
+  if(input !== null) {
+    return input.value;
+  }
+}).onChange(value => {
+  let output = document.querySelector("#demo1-output");
+  if(output !== null) {
+    output.innerHTML = value;
+  }
+});
+```
+</lively-markdown>
+
+<table>
+  <tr>
+    <td>Input:</td>
+    <td><input type="text" id="demo1-input"></td>
+  </tr>
+  <tr>
+    <td>Output:</td>
+    <td id="demo1-output"></td>
+  </tr>
+</table>
+
+<lively-script><script>
+import { aexpr } from "frame-based-aexpr";
+
+aexpr(() => {
+  let input = document.querySelector("#demo1-input");
+  if(input !== null) {
+    return input.value;
+  }
+}).onChange(value => {
+  let output = document.querySelector("#demo1-output");
+  if(output !== null) {
+    output.innerHTML = value;
+  }
+});
+''
+</script></lively-script>
+
+
+<h2>Demo 2: Throttled Evaluation</h2>
+
+<lively-markdown>
+The second demo wraps the expression's return value in a Promise. If the return value is a Promise the framework applies throttling so that the expression function is executed only every five seconds. The reasoning is that it's not desirable to run the expression function as often as possible for asynchronous data sources because of problems like API rate limiting.
+
+When entering text into the input field, note that the output only changes every five seconds.
+
+```javascript
+aexpr(() => {
+  return new Promise((resolve, reject) => {
+    let input = document.querySelector("#demo2-input");
+    if(input !== null) {
+      resolve(input.value);
+    }
+  });
+}).onChange(value => {
+  let output = document.querySelector("#demo2-output");
+  if(output !== null) {
+    output.innerHTML = value;
+  }
+});
+```
+</lively-markdown>
+
+<table>
+  <tr>
+    <td>Input:</td>
+    <td><input type="text" id="demo2-input"></td>
+  </tr>
+  <tr>
+    <td>Output:</td>
+    <td id="demo2-output"></td>
+  </tr>
+</table>
+
+<lively-script><script>
+import { aexpr } from "frame-based-aexpr";
+
+aexpr(() => {
+  return new Promise((resolve, reject) => {
+    let input = document.querySelector("#demo2-input");
+    if(input !== null) {
+      resolve(input.value);
+    }
+  });
+}).onChange(value => {
+  let output = document.querySelector("#demo2-output");
+  if(output !== null) {
+    output.innerHTML = value;
+  }
+});
+''
+</script></lively-script>
+
+
+<h2>Demo 3: Caching Fetch</h2>
+
+<lively-markdown>
+In order to make it possible to implement applications using asynchronous Active Expressions, throttling provides a sub-par user experience because the UI constantly lags behind. We implemented `CachingFetch` as an alternative throttling strategy. If the framework detects that `Window.fetch` is used, the alternative strategy is activated. Here, calls to `Window.fetch` will be intercepted and the returned Promises will be replaced by cached ones. A new request is only allowed after five seconds. This strategy solves the problem of making too many requests while preserving the responsiveness of the application.
+
+The demo fetches a JSON file which is served by Lively at `demos/async-aexpr.json` and implements a prefix search on the returned data.
+
+Note:
+  - The result of the prefix search is updated instantly.
+  - When adding, modifying or deleting a todo from `demos/async-aexpr.json`, the updated data is visible after a maximum of five seconds.
+
+```javascript
+aexpr(() => {
+  return TodoAPI.getAll().then(todos => {
+    let input = document.querySelector("#demo3-input");
+    if(input !== null && input.value.length > 0) {
+      return todos.filter(todo => todo.title.startsWith(input.value));
+    } else {
+      return todos;
+    }
+  });
+}).onChange(todos => {
+  let list = document.querySelector("#demo3-output");
+  if(list !== null) {
+    list.innerHTML = todos.map(todo => `<li>${todo.title}</li>`).join('');
+  }
+});
+```
+</lively-markdown>
+
+<table>
+  <tr>
+    <td>Search:</td>
+    <td><input type="text" id="demo3-input"></td>
+  </tr>
+  <tr>
+    <td>Output:</td>
+    <td><ul id="demo3-output"></ul></td>
+  </tr>
+</table>
+
+<lively-script><script>
+import { aexpr } from "frame-based-aexpr";
+
+let TodoAPI = {
+  getAll: function() {
+    return fetch('demos/async-aexpr.json').then(response => response.json());
+  }
+};
+
+aexpr(() => {
+  return TodoAPI.getAll().then(todos => {
+    let input = document.querySelector("#demo3-input");
+    if(input !== null && input.value.length > 0) {
+      return todos.filter(todo => todo.title.startsWith(input.value));
+    } else {
+      return todos;
+    }
+  });
+}).onChange(todos => {
+  let list = document.querySelector("#demo3-output");
+  if(list !== null) {
+    list.innerHTML = todos.map(todo => `<li>${todo.title}</li>`).join('');
+  }
+});
+''
+</script></lively-script>

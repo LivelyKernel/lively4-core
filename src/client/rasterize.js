@@ -94,10 +94,14 @@ export class CloneDeepHTML {
       
       var beforeElementStyle = getComputedStyle(obj, ':before')
       var beforeContent = beforeElementStyle.content
-      if (beforeContent && beforeContent.length > 0) {
+      if (beforeContent && beforeContent.length > 0 && beforeContent !== 'none') {
         var text = document.createElement("span")
         
-        text.textContent = "" + JSON.parse(beforeContent)
+        try {
+          text.textContent = "" + JSON.parse(beforeContent)
+        } catch(e) {
+          lively.warn('could not parse ' + beforeContent, e);
+        }
         text.style  = beforeContent.cssText
         node.appendChild(text)
       }

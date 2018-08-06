@@ -1,0 +1,62 @@
+<template id="blockchain-node-view" data-class="BlockchainNodeView">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+
+  @-webkit-keyframes fillGray {
+    0% { fill: #ff2c2c; }
+    100% { fill: #2c2c2c; }
+  }
+  
+  @-webkit-keyframes strokeGray {
+    0% { stroke: #ff2c2c; }
+    100% { stroke: #2c2c2c; }
+  }
+  
+  .animationFill {
+    -webkit-animation-name: fillGray;
+    -webkit-animation-duration: 60s;
+  }
+  
+  .animationStroke {
+    -webkit-animation-name: strokeGray;
+    -webkit-animation-duration: 60s;
+  }
+  
+  .link {
+    stroke: #2c2c2c;
+  }
+  
+  .linkEnd {
+    fill: #2c2c2c;
+  }
+
+  .bubble {
+    r: 5;
+    fill: #2c2c2c;
+    stroke-width: 2px;
+  }
+  
+  .node text {
+    pointer-events: none;
+    font: 10px sans-serif;
+  }
+  
+  #svgContainer {
+    width: 100%;
+    height: 100%;
+  }
+  
+  #content {
+    height: 100%;
+    width: 100%;
+  }
+  
+</style>
+  
+<div id="content">
+  <svg id="svgContainer" />
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

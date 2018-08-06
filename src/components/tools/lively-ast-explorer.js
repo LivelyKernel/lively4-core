@@ -1,10 +1,10 @@
 'use strict';
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { babel } from 'systemjs-babel-build';
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
 import SyntaxChecker from 'src/client/syntax.js'
 import sourcemap from 'src/external/source-map.min.js'
-import { modulesRegister } from 'systemjs-babel-build';
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 
 export default class AstExplorer extends Morph {
@@ -112,7 +112,8 @@ export default class AstExplorer extends Morph {
     const syntaxPlugins = (await Promise.all([
       'babel-plugin-syntax-jsx',
       'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind'
+      'babel-plugin-syntax-function-bind',
+      'babel-plugin-syntax-async-generators'
     ]
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);
@@ -205,7 +206,9 @@ export default class AstExplorer extends Morph {
           // logNode.appendChild(<div>{toPrint[0]}</div>)
           logNode.textContent += fragments.join(', ') + "\n"
         }
+        // #TODO active expressions...
         var result ='' + (await this.outputEditor.boundEval(this.outputEditor.editor.getValue())).value;
+        // var result ='' + eval(this.outputEditor.editor.getValue());
         this.get("#result").textContent += "-> " + result;       
       } catch(e) {
         console.error(e);

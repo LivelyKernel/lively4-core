@@ -33,7 +33,13 @@ class DropOnBodyHandler {
     
     const element = this.handler(dt.getData(this.mimeType));
     if(element) {
-      appendToBodyAt(element, evt);
+      if(element.then) {
+        element.then( r => {
+          appendToBodyAt(r, evt);  
+        })
+      } else {
+        appendToBodyAt(element, evt);
+      }
       return true;
     } else {
       return false;
@@ -179,33 +185,12 @@ const dropOnDocumentBehavior = {
 
       new DropOnBodyHandler('text/uri-list', urlString => {
         if (!urlString.match(/^plex:\//)) { return false; }
-        var link = <div class="lively-content" style="width: 150px; text-align: center"><a href={urlString}>
-          <img id="thumb" style="width:100px"></img><br />
-          <span id="title">{urlString}</span>
-        </a></div>;
-        fetch(urlString.replace(/\?.*/,"") + "?json").then(r => r.json()).then(json => {
-          var media = json
-          if (media.children.length == 1) {
-            media =  media.children[0]
-          }
-          
-          link.querySelector("#thumb").src = lively.swxURL("plex:/" + media.thumb)
-          link.querySelector("#title").innerHTML = 
-            (media.title ?
-              ("<b>" + media.parentTitle + "</b><br>" + media.title) :      
-              ("" + media.title1 + "<br>"+ media.title2))
-          // lively.openInspector(media)
-        })
-
-        // register the event... to be able to remove it again...
-        lively.addEventListener("link", link, "click", evt => {
-          // #TODO make this bevior persistent?
-          evt.preventDefault();
-          evt.stopPropagation();
-          lively.openBrowser(urlString, false, "xxx"); // no navigation #TODO refactor API
-          return true;
-        })
-        return link
+        var existing = document.body.querySelector(`plex-link[src="${urlString}"]`)
+        if (existing) {
+          existing.remove()
+        }
+        lively.notify("dropped " + urlString)
+        return <plex-link src={urlString}></plex-link>
       }),
 
       

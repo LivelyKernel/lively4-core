@@ -98,11 +98,11 @@ export default class ResearchDiary extends Morph {
 
 - 
 
-## Chore
+## Further Tasks
 
 - 
 
-## Todo for Tomorrow
+## Big Rocks (for the week)
 
 - 
 `;

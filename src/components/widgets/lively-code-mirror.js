@@ -1,4 +1,4 @@
-import { uuid as generateUUID, promisedEvent } from 'utils';
+import { promisedEvent, through, uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js"
 import diff from 'src/external/diff-match-patch.js';
@@ -10,13 +10,15 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
+import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
-
 
 import {isSet} from 'utils'
 
 let loadPromise = undefined;
+
+function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 // BEGIN #copied from emacs.js
 function repeated(cmd) {
@@ -72,6 +74,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     loadPromise = (async () => {
 
       await this.loadModule("lib/codemirror.js")
+
+      await this.loadModule("addon/fold/foldcode.js")
 
       await this.loadModule("mode/javascript/javascript.js")
       await this.loadModule("mode/xml/xml.js")
@@ -183,7 +187,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   	this.editView(value)
     this.isLoading = false
     console.log("[editor] #dispatch editor-loaded")   
-    this.dispatchEvent(new CustomEvent("editor-loaded"))
+    var event = new CustomEvent("editor-loaded")
+    // event.stopPropagation();
+    this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
   };
   
@@ -191,7 +197,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if(!this["editor-loaded"]) {
       return promisedEvent(this, "editor-loaded");
     }
-  }
+  } 
   
   editView(value) {
     if (!value) value = this.value || "";
@@ -335,6 +341,16 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Shift-Alt-.": cm => {
         TernCodeMirrorWrapper.showReferences(cm, this);
       },
+      // #TODO
+      // #KeyboardShortcut Alt-Right inverse code folding (indent)
+      "Alt-Right": cm => {
+        lively.warn('Inverse Code Folding not yet implemented')
+      },
+      // #TODO
+      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
+      "Alt-Left": cm => {
+        lively.warn('Inverse Code Folding not yet implemented')
+      },      
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
@@ -346,6 +362,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     }),
     });
     editor.on("cursorActivity", cm => TernCodeMirrorWrapper.updateArgHints(cm, this));
+    // http://bl.ocks.org/jasongrout/5378313#fiddle.js
+    editor.on("cursorActivity", cm => {
+      // TernCodeMirrorWrapper.updateArgHints(cm, this);
+      const widgetEnter = cm.widgetEnter;
+      cm.widgetEnter = undefined;
+      if (widgetEnter) {
+        // check to see if movement is purely navigational, or if it
+        // doing something like extending selection
+        var cursorHead = cm.getCursor('head');
+        var cursorAnchor = cm.getCursor('anchor');
+        if (posEq(cursorHead, cursorAnchor)) {
+          widgetEnter();
+        }
+      }
+    });
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this,
@@ -452,14 +483,18 @@ export default class LivelyCodeMirror extends HTMLElement {
       comp.style.minWidth = "20px"
       comp.style.minHeight = "20px"
     })
-    this.editor.doc.markText(from, to, {
+    // #TODO, we assume that it will keep the first widget, and further replacements do not work.... and get therefore thrown away
+    var marker = this.editor.doc.markText(from, to, {
       replacedWith: widget
     }); 
+    promise.then(comp => comp.marker = marker)
+    
     return promise
   }
   
   
   async printResult(result, obj, isPromise) {
+    debugger
     var editor = this.editor;
     var text = result
     var isAsync = false
@@ -497,6 +532,9 @@ export default class LivelyCodeMirror extends HTMLElement {
           return table
         })
       }
+    } else if(objClass ==  "Matrix") {
+      // obj = obj.toString() 
+      debugger
     } else if ((typeof obj == 'object') && (obj !== null)) {
       promisedWidget = this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
@@ -707,7 +745,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   async livelyMigrate(other) {
-    this.addEventListener("editor-loaded", () => {
+    lively.addEventListener("Migrate", this, "editor-loaded", evt => {
+      if (evt.path[0] !== this) return; // bubbled from another place... that is not me!
+      lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {
       	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)        
@@ -877,12 +917,109 @@ export default class LivelyCodeMirror extends HTMLElement {
         })
 
       }
-    } while (m);    
+    } while (m);
+  }
+  
+  async wrapImports() {
+    // dev mode alternative to #DevLayers, a #S3Pattern: add code the scopes your dev example inline while developing
+    if(this.id !== 'spike') {
+      // lively.warn('skip because id is not spike')
+      return;
+    }
+    // lively.success('wrap imports in spike')
+    
+    const getImportDeclarationRegex = () => {
+      const LiteralString = `(["][^"\\n\\r]*["]|['][^'\\n\\r]*['])`;
+      const JavaScriptIdentifier = '([a-zA-Z$_][a-zA-Z0-9$_]*)'
+
+      const ImportSpecifierPartSimple = `(${JavaScriptIdentifier})`;
+      const ImportSpecifierPartRename = `(${JavaScriptIdentifier}\\s+as\\s+${JavaScriptIdentifier})`;
+      const ImportSpecifierPart = `(${ImportSpecifierPartSimple}|${ImportSpecifierPartRename})`;
+      // ImportSpecifier: {foo} or {foo as bar}
+      const ImportSpecifier = `({\\s*((${ImportSpecifierPart}\\s*\\,\\s*)*${ImportSpecifierPart}\\,?)?\\s*})`;
+      // ImportDefaultSpecifier: foo
+      const ImportDefaultSpecifier = `(${JavaScriptIdentifier})`;
+      // ImportNamespaceSpecifier: * as foo
+      const ImportNamespaceSpecifier = `(\\*\\s*as\\s+${JavaScriptIdentifier})`;
+      const anySpecifier = `(${ImportSpecifier}|${ImportDefaultSpecifier}|${ImportNamespaceSpecifier})`;
+      // ImportDeclaration: import [any] from Literal
+      const ImportDeclaration = `import\\s*(${anySpecifier}\\s*\\,\\s*)*${anySpecifier}\\s*from\\s*${LiteralString}(\\s*\\;)?`;
+      
+      return ImportDeclaration;
+    };
+
+    var regEx = new RegExp(getImportDeclarationRegex(), 'g');
+
+    do {
+      var m = regEx.exec(this.value);
+      if (m) {
+        await LivelyCodeMirrorWidgetImport.importWidgetForRange(this, m);
+      }
+    } while (m);
+  }
+  
+   async wrapLinks() {
+    // dev mode
+    if(this !== window.that) {
+      return;
+    }
+    var regEx = new RegExp("\<([a-zA-Z0-9]+\:\/\/[^ ]+)\>", "g");
+    do {
+      var m = regEx.exec(this.value);
+      if (m) {
+        lively.warn("wrap link: " + m[0])
+        var from = m.index 
+        var to = m.index + m[0].length 
+        var link = m[1]
+        // #TODO check for an existing widget and reuse / update it...
+        await this.wrapWidget("span", this.editor.posFromIndex(from), 
+                              this.editor.posFromIndex(to)).then(widget => {
+          window.lastWidget = widget
+          
+          widget.style.backgroundColor = "rgb(120,120, 240)"
+          var input = <input></input>
+          input.value = m[0]  
+          
+          lively.warn("new input " + input)
+          
+          
+          input.addEventListener("keydown", evt => {
+            var range = widget.marker.find()
+            if (evt.keyCode == 13) { // ENTER
+              // #TODO how to replace // update text without replacing widgets
+              this.editor.replaceRange(input.value, range.from, range.to) // @Stefan, your welcome! ;-)
+              this.wrapLinks() // don't wait and do what you can now
+            }
+            if (evt.keyCode == 37) { // Left
+              if (input.selectionStart == 0) {
+                this.editor.setSelection(range.from, range.from)
+                this.focus()
+              }
+            }
+            
+            if (evt.keyCode == 39) { // Right
+              if (input.selectionStart == input.value.length) {
+                this.editor.setSelection(range.to, range.to)
+                this.focus()
+              }
+            }
+          })
+          
+          widget.appendChild(input)
+          // widget.appendChild(<button click={e => {
+          //   lively.openBrowser(link)  // #TODO fix browse and open browser...    
+          // }}>browse</button>)
+        })
+
+      }
+    } while (m);
   }
   
   checkSyntax() {
     if (this.isJavaScript) {
-       SyntaxChecker.checkForSyntaxErrors(this.editor);
+      SyntaxChecker.checkForSyntaxErrors(this.editor);
+      this.wrapImports();
+      this.wrapLinks();
     }
     if (this.isMarkdown || this.isHTML) {
       this.hideDataURLs() 

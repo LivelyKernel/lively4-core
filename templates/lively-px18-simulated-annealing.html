@@ -1,0 +1,146 @@
+<template id="lively-px18-simulated-annealing" data-class="LivelyPx18SimulatedAnnealing">
+<html>
+  <head>
+    <style>
+      /* HTML styles */
+      html{ width: 100%; }
+      body{ 
+        width: 100%; 
+        margin: 0; padding: 0; 
+        display: flex; 
+        font-family: sans-serif; font-size: 75%; }
+      .controls {
+        flex-basis: 200px;
+        padding: 0 5px;
+        width: 40%;
+        float: left;
+        overflow: hidden;
+        font-size: 15px;
+      }
+      .controls .force {
+        background-color:#cacaca;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0;
+      }
+      .controls .force p label { margin-right: .5em; font-size: 120%; font-weight: bold;}
+      .controls .force p { margin-top: 0;}
+      .controls .force label { display: inline-block; }
+      .controls input[type="checkbox"] { transform: scale(1.2, 1.2); }
+      .controls input[type="range"] { margin: 0 5% 0.5em 5%; width: 90%; }
+      /* alpha viewer */
+      .controls .alpha p { margin-bottom: .25em; }
+      .controls .alpha .alpha_bar { height: .5em; border: 1px #777 solid; border-radius: 2px; padding: 1px; display: flex; }
+      .controls .alpha .alpha_bar #alpha_value { background-color: #555; border-radius: 1px; flex-basis: 100% }
+      .controls .alpha .alpha_bar:hover { border-width: 2px; margin:-1px; }
+      .controls .alpha .alpha_bar:active #alpha_value { background-color: #222 }
+
+      /* SVG styles */
+      svg {
+        flex-basis: 100%;
+        min-width: 200px;
+        height: 100%;
+        padding-left: 100px;
+        padding-top: 10px;
+      }
+      .links line {
+        stroke: #aaa;
+      }
+      .nodes circle {
+        pointer-events: all;
+      }
+
+      .svg-parent {
+        flex-basis: auto;
+        width: 58%;
+        float: right;
+        height: 700px;
+      }
+    </style>
+  </head>
+  <body>
+      <div class="controls">
+        <div class="force alpha">
+          <button id="startAnneal">Start Annealing</button>
+          <select id="graphSelect">
+            <option value="small">Small Graph</option>
+            <option value="medium">Medium Graph</option>
+            <option value="medium2">Medium Graph 2</option>
+            <option value="large">Large Graph (Modules)</option>
+          </select>
+          <p>
+            Current Energy: <span id="currentEnergy">N/A</span>
+          </p>
+        </div>
+        <div class="force">
+          <p><label><input type="checkbox" checked id="weight_nodeIntersection"> node intersection</label> Prevents nodes from overlapping.</p>
+          <label title="Weight of node intersection, the higher the weight, the higher the energy of the state on node collision.">
+            weight
+            <output id="nodeIntersection_SliderOutput">30.0</output>
+            <input type="range" min="1" max="50" value="30.0" step=".1" id="nodeIntersection_SliderInput">
+          </label>
+        </div>
+
+        <div class="force">
+          <p><label><input type="checkbox" checked id="weight_edgeIntersection"> edge intersection</label> Prevents edges from overlapping.</p>
+          <label title="Weight of edge intersection, the higher the weight, the higher the energy of the state on overlapping edges.">
+            weight
+            <output id="edgeIntersection_SliderOutput">30.0</output>
+            <input type="range" min="1" max="50" value="30.0" step=".1" id="edgeIntersection_SliderInput">
+          </label>
+        </div>
+
+        <div class="force">
+          <p><label><input type="checkbox" id="weight_edgeNodeIntersection"> edge-node intersection</label> Prevents edges from passing through nodes.</p>
+          <label title="Weight of edge-node intersection, the higher the weight, the higher the energy of the state when an edge crosses a node.">
+            weight
+            <output id="edgeNodeIntersection_SliderOutput">10.0</output>
+            <input type="range" min="1" max="50" value="10.0" step=".1" id="edgeNodeIntersection_SliderInput">
+          </label>
+        </div>
+        
+        <div class="force">
+          <p><label><input type="checkbox" id="edgeLength_checkbox"> edge length</label> Penalty for length of edges.</p>
+          <label title="Length which is considered 'good' and does not add energy to the energy function."  class="controls-width">
+          Tolerated Length:
+          <output id="edgeLength_SliderOutput">20</output>
+          <input type="range" min="1" max="100" value="20" step="1" id="edgeLength_SliderInput">
+          </label>
+          <label title="Penalty for each pixel more than the tolerated length."  class="controls-width">
+          Weight
+          <output id="edgeLengthWeight_SliderOutput">0.1</output>
+          <input type="range" min="0.1" max="2" value="0.1" step="0.1" id="edgeLengthWeight_SliderInput">
+          </label>
+        </div>
+
+        <div class="force">
+          <p><label>iterations</label> Amount of the iterations for the annealing.</p>
+          <label>
+            iterations
+            <output id="iterations_SliderOutput">1000</output>
+            <input type="range" min="10" max="10000" value="1000" step="10" id="iterations_SliderInput">
+          </label>
+          <label title="Number of iterations done between updating the visuals">
+            iterations per call:
+            <output id="timeout_SliderOutput">1</output>
+            <input type="range" min="1" max="1000" value="1" step="1" id="timeout_SliderInput">
+          </label>
+        </div>
+        
+        <div class="force">
+          <p><label>graph properties</label></p>
+          <label title="Size of nodes"  class="controls-width">
+          Node Size
+          <output id="nodeSize_SliderOutput">5</output>
+          <input type="range" min="0" max="100" value="5" step="1" id="nodeSize_SliderInput">
+        </label>
+        </div>
+
+      </div>
+      <div class="svg-parent">
+        <svg id="svg"></svg>
+      </div>
+  </body>
+</html>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

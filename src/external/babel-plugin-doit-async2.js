@@ -1,7 +1,7 @@
 
 
-import {babel} from 'systemjs-babel-build';
-var tt = babel.types
+import babelDefault from 'systemjs-babel-build';
+const tt = babelDefault.babel.types
 
 import { plugins} from "babylon/lib/parser";
 

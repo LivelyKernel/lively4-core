@@ -9,15 +9,34 @@ export default class NetworkComponent {
     this._addSelfToGlobalListOfPeers();
   }
   
-  requestBlockchain() {
-    // select random peer
-    const peer = NetworkComponent.peers[Math.floor(Math.random() *  NetworkComponent.peers.length) + 1];
-    // request blockchain
-    this._simulateNetwork(peer.provideBlockchain.bind(this, this));
+  getBlockchainLength() {
+    return this._node.blockchain.size();
   }
   
-  provideBlockchain(peer) {
-    peer.receiveBlockchain(this._node._blockchain);
+  getLatestBlockDate() {
+    return this._node.blockchain.headOfChain.timestamp;
+  }
+  
+  requestBlockchain() {
+    // select random peer
+    let relevantBlockchainProvider = null;
+    NetworkComponent.peers.forEach(peer => {
+      if(peer !== this) {
+        if (relevantBlockchainProvider == null || relevantBlockchainProvider.getBlockchainLength() < peer.getBlockchainLength()
+           || (relevantBlockchainProvider.getBlockchainLength() == peer.getBlockchainLength()
+                && relevantBlockchainProvider.getLatestBlockDate() < peer.getLatestBlockDate()
+              )
+           ) {
+          relevantBlockchainProvider = peer;
+        } 
+      }
+    });
+    if(!relevantBlockchainProvider) {
+      return;
+    }
+    // request blockchain
+    this.receiveBlockchain(cloneDeep(relevantBlockchainProvider._node._blockchain));
+    //this._simulateNetwork(() => peer.provideBlockchain(this));
   }
   
   // simplified Peer-Handling: All peers are known via central source of truth
@@ -37,14 +56,17 @@ export default class NetworkComponent {
   
   propagateTransaction(transaction) {
     NetworkComponent.peers.forEach(peer => {
-      console.log(peer);
-      this._simulateNetwork(peer.receiveTransaction.bind(this, cloneDeep(transaction)));
+      if(peer !== this) {
+        this._simulateNetwork(peer.receiveTransaction.bind(peer, cloneDeep(transaction)));
+      }
     });
   }
   
   propagateBlock(block) {
     NetworkComponent.peers.forEach(peer => {
-      this._simulateNetwork(peer.receiveBlock.bind(this, cloneDeep(block)));
+      if(peer !== this) {
+        this._simulateNetwork(peer.receiveBlock.bind(peer, cloneDeep(block)));
+      }
     });
   }
   

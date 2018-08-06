@@ -14,7 +14,7 @@ import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
-
+  
   get target() { return this.childNodes[0] }
 
   initialize() {
@@ -214,6 +214,7 @@ export default class Container extends Morph {
   }
 
   reloadModule(url) {
+    console.log("reloadModule " + url)
     var urlString = url.toString()
     lively.unloadModule(urlString)
     return System.import(urlString).then( m => {
@@ -239,7 +240,8 @@ export default class Container extends Morph {
   }
 
   loadModule(url) {
-    lively.reloadModule("" + url).then(module => {
+    lively.notify("load module")
+    lively.reloadModule("" + url, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
       this.resetLoadingFailed();
@@ -478,15 +480,16 @@ export default class Container extends Morph {
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url);
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
+            lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
               this.loadTestModule(ea);
             }
           })
+        } else {
+          lively.notify("ignore module " + moduleName)
         }
-
-
       }
     }).then(() => this.showNavbar());
   }
@@ -1151,7 +1154,9 @@ export default class Container extends Morph {
   }
 
   hideNavbar() {
-    this.get('lively-separator').onClick()
+    if (lively.getExtent(this).x > 1 ) {
+      this.get('lively-separator').onClick()
+    }
   }
 
   async showNavbar() {
@@ -1192,6 +1197,7 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "block"
     this.get("#container-navigation").style.display  = "none";
     this.get("#container-leftpane").style.display  = "none";
+    this.get("#container-rightpane").style.flex = 1
     this.get("lively-separator").style.display  = "none";
   }
 
@@ -1200,6 +1206,7 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
+    this.get("#container-rightpane").style.flex = 0.8
     this.get("lively-separator").style.display  = "";
   }
 
@@ -1296,7 +1303,7 @@ export default class Container extends Morph {
     if (markdown.getAttribute("mode") == "presentation") {
       lively.notify("saving in presentation mode not supported yet")
     } else {
-      var source = markdown.htmlAsMarkdownSource()
+      var source = await markdown.htmlAsMarkdownSource()
       return this.saveSource(url, source);
     }   
   }

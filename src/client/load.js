@@ -1,7 +1,5 @@
 /* Load Lively */
 
-debugger
-
 var loadCallbacks = [];
 export function whenLoaded(cb) {
     loadCallbacks.push(cb);
