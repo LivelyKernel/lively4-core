@@ -311,6 +311,34 @@ export class CallableObject {
   // #TODO: implement this
 }
 
+/**
+ * Executes the given function considering the given context objects.
+ * @param {Array<ContextManager>} contexts
+ * @param {function} callback
+ * @return {Object} result - The callback's evaluation result.
+ *
+ * @class ContextManager
+ * @classdesc Used to specify the setup and teardown of the function call.
+ * @method {__enter__} enter callback - called before the function call. Put setup code here.
+ * @method {__exit__} exit callback - called after the funciton call. Put teardown code here.
+
+ * @example <caption>Poor mans COP.</caption>
+ * import { using }from "utils";
+ * 
+ * const silentFetch = {
+ *   __enter__() {
+ *     this.originalFetch = window.fetch;
+ *     window.fetch = () => {};
+ *   }
+ *   __exit__() {
+ *     window.fetch = this.originalFetch; // restore the original fetch 
+ *   }
+ * }
+ *
+ * using([silentFetch], () => {
+ *   lively.notify(fetch('https://lively-kernel.org/lively4/')) // logs nothing
+ * });
+ */
 export function using(contextManagerIterable, callback) {
   let result;
   let error;
