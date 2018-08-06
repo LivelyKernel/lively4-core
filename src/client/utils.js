@@ -311,10 +311,10 @@ export class CallableObject {
   // #TODO: implement this
 }
 
-export function using(iterable, callback) {
+export function using(contextManagerIterable, callback) {
   let result;
   let error;
-  const contextManagers = Array.from(iterable);
+  const contextManagers = Array.from(contextManagerIterable);
   
   contextManagers.forEach(cm => cm.__enter__());
   try {
