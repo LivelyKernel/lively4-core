@@ -9,7 +9,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var allClientTestFiles = [];
   var allSWTestFiles = [];
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
-  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS))\/.*(\.|-)(spec|test)\.js$/i;
+  var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive))\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
 
   // Get a list of all the test files to include
@@ -21,13 +21,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       allClientTestFiles.push(normalizedTestModule);
       console.log('Test to load: ' + normalizedTestModule);
     }
-
+/*
     if (TEST_REACTIVE_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
       console.log('Reactive Test to load: ' + normalizedTestModule);
     }
-
+*/
     if (TEST_SW_REGEXP.test(file)) {
       let normalizedTestModule = file;
       allSWTestFiles.push(normalizedTestModule);
