@@ -21,13 +21,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
       allClientTestFiles.push(normalizedTestModule);
       console.log('Test to load: ' + normalizedTestModule);
     }
-/*
+
     if (TEST_REACTIVE_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
       console.log('Reactive Test to load: ' + normalizedTestModule);
     }
-*/
+
     if (TEST_SW_REGEXP.test(file)) {
       let normalizedTestModule = file;
       allSWTestFiles.push(normalizedTestModule);
