@@ -310,3 +310,23 @@ export function wait(ms) {
 export class CallableObject {
   // #TODO: implement this
 }
+
+export function using(iterable, callback) {
+  let result;
+  let error;
+  const contextManagers = Array.from(iterable);
+  
+  contextManagers.forEach(cm => cm.__enter__());
+  try {
+    result = callback();
+  } catch(e) {
+    error = e;
+  } finally {
+    contextManagers.reverse().forEach(cm => cm.__exit__(error));
+  }
+  if(error !== undefined) {
+    throw error;
+  }
+  return result;
+}
+
