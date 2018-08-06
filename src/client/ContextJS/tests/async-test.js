@@ -23,36 +23,38 @@
 
 import chai, {expect} from 'src/external/chai.js';
 
-import * as cop from '../src/Layers.js';
+import * as cop from '../src/contextjs.js';
 
-import wrapAwait from '../src/async.js';
+import { wrapAwait } from '../src/async.js';
 
 describe("Async Activation", async () => {
+  xit("Async Activation", async () => {
 
-  var o = {m() { return 3}}
-  var l = cop.layer(window, "AsyncLayer").refineObject(o, {
-    m() { return cop.proceed() + 4}
+    var o = {m() { return 3}}
+    var l = cop.layer(window, "AsyncLayer").refineObject(o, {
+      m() { return cop.proceed() + 4}
+    });
+
+    var p = Promise.resolve();
+
+    expect(o.m(),"(a)").equals
+    var ignorePromise = cop.withLayers([l], async () => {
+
+      expect( o.m(), "(b)").equals(7) 
+      await wrapAwait(p)
+
+      expect( o.m(), "(c)").equals(7) 
+      await wrapAwait(Promise.resolve())
+
+      expect( o.m(), "(d)").equals(7) 
+      await wrapAwait(Promise.resolve())
+
+      expect( o.m(), "(e)").equals(7) 
+
+    });
+    expect(o.m(), "(f)").equals(3)
+
+    await ignorePromise;
   });
-
-  var p = Promise.resolve();
-
-  expect(o.m(),"(a)").equals
-  var ignorePromise = cop.withLayers([l], async () => {
-
-    expect( o.m(), "(b)").equals(7) 
-    await wrapAwait(p)
-
-    expect( o.m(), "(c)").equals(7) 
-    await wrapAwait(Promise.resolve())
-
-    expect( o.m(), "(d)").equals(7) 
-    await wrapAwait(Promise.resolve())
-
-    expect( o.m(), "(e)").equals(7) 
-
-  });
-  expect(o.m(), "(f)").equals(3)
-
-  await ignorePromise;
 });
 
