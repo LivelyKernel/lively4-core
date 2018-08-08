@@ -283,6 +283,7 @@ const dropOnDocumentBehavior = {
   },
   
   async onDrop(evt) {
+    // var target = evt.path.find(ea => ea.classList.contains("lively-content") )
     const dt = evt.dataTransfer;
     
     /*
@@ -304,8 +305,25 @@ const dropOnDocumentBehavior = {
         return;
       }
     }
+    var cssText = evt.dataTransfer.getData("lively/cssText")
+    if (this.lastDropTarget && cssText) {
+      cssText.split(/; */).forEach(pair => {
+        var name, value;
+        [name,value] = pair.split(/: */)
+        lively.notify("set " + this.lastDropTarget + "'s " + name + " to " + value)
+        name = name.replace(/ /g,"")
+        this.lastDropTarget.style[name] = value
+        // window.LastDT = this.lastDropTarget
+        // window.LastName = name
+        // window.LastCSS = value
+        // target.style["background"] = "red"
+      })
+        
+      } else {
+      
+      lively.warn("Dragged content contained neither files nor handled items");
+    }
     
-    lively.warn("Dragged content contained neither files nor handled items");
   }
 }
 

@@ -9,7 +9,7 @@ export default class MpmAnimation {
   }
   
   set particles(value) {
-    return this._particles;
+    return this._particles = value;
   }
   
   stopAnimating() {

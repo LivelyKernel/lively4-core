@@ -1,18 +1,24 @@
 import { BaseActiveExpression } from 'active-expressions';
 import Stack from 'stack-es2015-modules';
+import { using } from 'utils';
 
 let expressionAnalysisMode = false;
 
+const analysisModeManager = {
+  __enter__() {
+    expressionAnalysisMode = true;
+  },
+  __exit__() {
+    expressionAnalysisMode = !!aexprStack.top();
+  }
+}
 class ExpressionAnalysis {
-    // Do the function execution in ExpressionAnalysisMode
-    static check(aexpr) {
-      try {
-        expressionAnalysisMode = true;
-        aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
-      } finally {
-        expressionAnalysisMode = !!aexprStack.top();
-      }
-    }
+  // Do the function execution in ExpressionAnalysisMode
+  static check(aexpr) {
+    using([analysisModeManager], () => {
+      aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
+    });
+  }
 }
 
 // TODO: CompositeKeyStore as separate Module

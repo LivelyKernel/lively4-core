@@ -132,4 +132,8 @@ export default class Matrix {
   set(x, y, value) {
     this._matrix.set([x, y], value);
   }
+  
+  toString() {
+    return ExtMath.round(this._matrix, 3).toString()
+  }
 }

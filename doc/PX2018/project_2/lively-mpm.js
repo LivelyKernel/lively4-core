@@ -14,8 +14,8 @@ export default class LivelyMpm extends Morph {
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt));
+    // lively.addEventListener("template", this, "dblclick", 
+    //   evt => this.onDblClick(evt));
     
     this.variables = {};
     this.particleSize = 6;
@@ -38,39 +38,24 @@ export default class LivelyMpm extends Morph {
     $(this.opacityInput).on("input change", opacityUpdate.bind(this));
     $(this.speedInput).on("input change", speedUpdate.bind(this));
     
-    this.animation = new ElasticBodies(true);
-    
-    if (this.animation.showElements) {
-      let numbers = this.get("#numbers");
-      for (let i = 0; i < this.animation.numElements; ++i) {
-        let number = <div class="number"><span>{i}</span></div>;
-        number.style.width = this.animation.elementSize[0] + "px";
-        number.style.height = this.animation.elementSize[1] + "px";
-        numbers.appendChild(number);
-      }
-      
-      let canvasRect = this.canvas.getBoundingClientRect();
-      numbers.style.top = (this.canvas.offsetTop + 1) + "px";
-      numbers.style.left = (this.canvas.offsetLeft + 1) + "px";
+    if (!this.animation)  {
+      this.animation = new ElasticBodies();
+      await this.animation.init();
+      this.updateGrid();
     }
     
-    await this.animation.init();
+    
+    
     this.draw(this.animation.particles);
   }
   
-  draw(particles) {
+  async draw(particles) {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     let log = this.get("#log");
     let table = null;
     if (!log.classList.contains('hidden')) {
-      log.innerHTML = '';
-      let cols = <tr><th>x</th><th>y</th></tr>;
-      table = <table></table>;
-      for (let variable in this.animation.displayVariables) {
-        cols.appendChild(<th>{variable}</th>); 
-      }
-      table.appendChild(cols);
       this.animation.showVariables = true;
+      table = this.get("lively-table")
     } else {
       this.animation.showVariables = false;
     }
@@ -86,18 +71,10 @@ export default class LivelyMpm extends Morph {
       
       this.context.fillRect(posX, posY, this.particleSize, this.particleSize);
       
-      if (!table) continue;
-     
-      let row = <tr></tr>
-      row.appendChild(<td width="100">{Math.round(particles[i].get(0) * 100) / 100}</td>);
-      row.appendChild(<td width="100">{Math.round(particles[i].get(1) * 100) / 100}</td>);
+    }
+    if (table && this.animation.displayVariables) {
       
-      for (let variable in this.animation.displayVariables) {
-        row.appendChild(<td width="300">{this.animation.displayVariables[variable][i]}</td>);
-      }
-      
-      table.appendChild(row);
-      log.appendChild(table);
+      table.setFromJSO(this.animation.displayVariables)
     }
   }
   
@@ -135,14 +112,68 @@ export default class LivelyMpm extends Morph {
   
   onStep() {
     if (!this.animation) return;
+    if (this.speed) {
+      this.animation.speed = this.speed;
+    }
+    
     this.animation.step(this);
   }
   
+  updateGrid() {
+    let numbers = this.get("#numbers");
+    numbers.innerHTML = ""        
+    for (let i = 0; i < this.animation.numElements; ++i) {
+      let number = <div class="number"><span>{i}</span></div>;
+      number.style.width = this.animation.elementSize[0] + "px";
+      number.style.height = this.animation.elementSize[1] + "px";
+      numbers.appendChild(number);
+    }
+    if (this.canvas) {
+      // #FIXME
+      let canvasRect = this.canvas.getBoundingClientRect();
+      numbers.style.top = (this.canvas.offsetTop + 1) + "px";
+      numbers.style.left = (this.canvas.offsetLeft + 1) + "px";
+    }
+  }
+  
+  enableGrid() {
+    let numbers = this.get("#numbers");
+    numbers.innerHTML = ""        
+    for (let i = 0; i < this.animation.numElements; ++i) {
+      let number = <div class="number"><span>{i}</span></div>;
+      number.style.width = this.animation.elementSize[0] + "px";
+      number.style.height = this.animation.elementSize[1] + "px";
+      numbers.appendChild(number);
+    }
+
+    let canvasRect = this.canvas.getBoundingClientRect();
+    numbers.style.top = (this.canvas.offsetTop + 1) + "px";
+    numbers.style.left = (this.canvas.offsetLeft + 1) + "px";
+    numbers.classList.remove("hidden");
+  }
+  
+  
+  disableGrid() {
+    let numbers = this.get("#numbers");
+    numbers.classList.add("hidden");
+  }
+  
   onToggleGrid() {
+    
+    
     if (!this.animation.showElements) return;
     
     let numbers = this.get("#numbers");
-    numbers.classList.toggle("hidden");
+    if (numbers.classList.contains("hidden")) {
+      this.enableGrid()
+    } else {
+      this.disableGrid()
+    }
+    // lazy initialize grid
+    
+
+   
+    
   }
   
   reset(oneDisk = false) {
@@ -174,7 +205,15 @@ export default class LivelyMpm extends Morph {
   }
   
   livelyMigrate(other) {
-    
+    this.animation = other.animation
+    // if (!other.get("#numbers").classList.contains("hidden")) {
+    if (other.get("#numbers").classList.contains("hidden")) {
+      this.get("#numbers").classList.add("hidden")
+    } else {
+      this.get("#numbers").classList.remove("hidden")
+    }
+    this.updateGrid()
+    //}
   }
   
   livelyInspect(contentNode, inspector) {

@@ -1,6 +1,7 @@
 <template id="lively-mpm" data-class="LivelyMpm">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/lively.css"></style>
 <style>
   :host {
     padding: 3px;
@@ -132,6 +133,8 @@
   <button id="toggleGrid">Toogle Grid</button><br>
   <button id="reset">Reset</button><br>
   <button id="toggleLog">Toogle Log</button>
-  <div id="log" class="hidden"></div>
+  <div id="log" class="hidden">
+    <lively-table></lively-table>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

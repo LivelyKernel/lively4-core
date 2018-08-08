@@ -310,3 +310,66 @@ export function wait(ms) {
 export class CallableObject {
   // #TODO: implement this
 }
+
+/**
+ * Executes the given function considering the given context objects.
+ * @param {Array<ContextManager>} contexts
+ * @param {function} callback
+ * @return {Object} result - The callback's evaluation result.
+ *
+ * @class ContextManager
+ * @classdesc Used to specify the setup and teardown of the function call.
+ * @method {__enter__} enter callback - called before the function call. Put setup code here.
+ * @method {__exit__} exit callback - called after the funciton call. Put teardown code here.
+
+ * @example <caption>Poor mans COP.</caption>
+ * import { using }from "utils";
+ * 
+ * const silentFetch = {
+ *   __enter__() {
+ *     this.originalFetch = window.fetch;
+ *     window.fetch = () => {};
+ *   }
+ *   __exit__() {
+ *     window.fetch = this.originalFetch; // restore the original fetch 
+ *   }
+ * }
+ *
+ * using([silentFetch], () => {
+ *   lively.notify(fetch('https://lively-kernel.org/lively4/')) // logs nothing
+ * });
+ */
+export function using(contextManagerIterable, callback) {
+  let result;
+  let error;
+  const contextManagers = Array.from(contextManagerIterable);
+  
+  contextManagers.forEach(cm => cm.__enter__());
+  try {
+    result = callback();
+  } catch(e) {
+    error = e;
+  } finally {
+    contextManagers.reverse().forEach(cm => cm.__exit__(error));
+  }
+  if(error !== undefined) {
+    throw error;
+  }
+  return result;
+}
+
+/**
+ * Get notified, whenever the style attribute of given target changes
+ */
+export function onStyleChange(target, callback) {
+  const styleObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {  
+      if(mutation.type == "attributes" && mutation.attributeName == "style") {
+          callback();
+      }
+    });
+  });
+  styleObserver.observe(target, { attributes: true });
+
+  return styleObserver;
+}

@@ -14,13 +14,14 @@ class KeyboardHandler {
   // Generic Keyboad handler to get rid of the magic keycode numbers 
   static getDispatchHandler(key) {
     return ({
+      "9": "onTab",
+      "13": "onEnter",
+      "27": "onEsc",
       "32": "onSpace",
       "37": "onLeft",
       "38": "onUp",
       "39": "onRight",
       "40": "onDown",
-      "13": "onEnter",
-      "27": "onEsc",
     })[key]
   }
   
