@@ -1,3 +1,4 @@
+import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
 
 export default class ScriptStep {
@@ -38,5 +39,11 @@ export default class ScriptStep {
     }
     
     return scriptJson
+  }
+  
+  async getExecutable() {
+    const module = await boundEval(this.source);
+    
+    return module.value;
   }
 }

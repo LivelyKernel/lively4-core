@@ -15,11 +15,7 @@ export default class VivideLayer {
     this._script = null;
     this._childScript = null;
     
-    // #TODO: this loop degrades to wrapping _rawData in VivideObjects each and assign the result to _objects
-    for (let entry of data) {
-      let object = new VivideObject(entry);
-      this.processData(object);
-    }
+    this.makeObjectsFromRawData();
   }
   
   get objects() {
@@ -27,10 +23,10 @@ export default class VivideLayer {
   }
   
   get script() { return this._script; }
-  set script(value) { return this._script = value; }
+  set script(script) { return this._script = script; }
   
   get childScript() { return this._childScript; }
-  set childScript(value) { return this._childScript = value; }
+  set childScript(childScript) { return this._childScript = childScript; }
   
   clearData() {
     this._rawData.length = 0;
@@ -40,31 +36,34 @@ export default class VivideLayer {
     this._rawData.push(data);
   }
   
-  async processData() {
-    await this.transform();
-    
-    // Reset object array and insert new transformed data
+  makeObjectsFromRawData() {
     this._objects.length = 0;
     for (let entry of this._rawData) {
       this._objects.push(new VivideObject(entry));
     }
+  }
+  
+  async processData() {
+    await this.transform();
+    
+    this.makeObjectsFromRawData();
     
     await this.extract();
     await this.descent();
   }
   
   async transform() {
-    for (let transform of this._modules.transform) {
+    for (let module of this._modules.transform) {
       let tmp = this._rawData.slice(0);
       this.clearData();
-      await transform.value(tmp, this);
+      await module(tmp, this);
     }
   }
   
   async extract() {
     for (let module of this._modules.extract) {
       for (let object of this._objects) {
-        object.properties.add(await module.value(object.data));
+        object.properties.add(await module(object.data));
       }
     }
   }
@@ -72,7 +71,7 @@ export default class VivideLayer {
   async descent() {
     for (let module of this._modules.descent) {
       for (let object of this._objects) {
-        let childData = await module.value(object.data);
+        let childData = await module(object.data);
         
         if (!childData) continue;
         

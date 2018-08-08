@@ -360,10 +360,6 @@ export default class VivideView extends Morph {
     this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
   }
   
-  async evalStep(script) {
-    return await boundEval(script.source);
-  }
-  
   async scriptGotUpdated() {
     // #TODO: save script to web-component
     // #TODO: later support multiple profiles
@@ -374,7 +370,7 @@ export default class VivideView extends Morph {
     this.updateOutportTargets();
   }
   
-  // #TODO: extract to a separate 
+  // #TODO: extract to a separate ScriptProcessor, or Script itself
   async computeModel(data, script) {
     let vivideLayer = new VivideLayer(data);
     
@@ -390,7 +386,7 @@ export default class VivideView extends Morph {
     return vivideLayer;
   }
   async applyScript(step, vivideLayer) {
-    let module = await this.evalStep(step);
+    let module = await step.getExecutable();
     if (step.type == 'transform') {
       vivideLayer.addModule(module, 'transform');
     } else if (step.type == 'extract') {
@@ -401,7 +397,7 @@ export default class VivideView extends Morph {
     }
     
     // #TODO, #ERROR: this adds the config too late
-    this.viewConfig.add(module.value.__vivideStepConfig__);
+    this.viewConfig.add(module.__vivideStepConfig__);
   }
 
   getPreferredWidgetType(model) {
@@ -475,7 +471,6 @@ export default class VivideView extends Morph {
     
     return newScript;
   }
-  
   
   async createScriptEditor() {
     const viewWindow = lively.findWindow(this);
