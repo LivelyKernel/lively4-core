@@ -3,6 +3,7 @@
  *
  */
 import Morph from 'src/components/widgets/lively-morph.js';
+import { onStyleChange } from 'utils';
 
 class HTMLElementStyleProxy {
   constructor(target) {
@@ -14,6 +15,7 @@ class HTMLElementStyleProxy {
   toString() {
     return "["+this.constructor.name + " on: " + this.target+"]"
   }
+  
   setupAccessors() {    
     this.createAttributeAccessor("fill", "backgroundColor")
     this.createAttributeAccessor("strokeColor", "borderColor")
@@ -125,6 +127,11 @@ export default class LivelyStyleEditor extends Morph {
     this.shadowRoot.querySelectorAll("lively-crayoncolors").forEach(ea => {
       ea.useAlwaysCustom();
     })
+    
+    if (this.target) {
+      this.setTarget(this.target)
+    }
+   
   }
   
   register(elementSelector, styleName, eventName="value-changed", map= (e,c) => e.detail.value) {
@@ -153,6 +160,8 @@ export default class LivelyStyleEditor extends Morph {
     
     this.onUpdateTarget(target)
   }
+
+  
   
   hideTargetButton() {
     this.get("lively-target-button").style.display = "none"
@@ -168,6 +177,45 @@ export default class LivelyStyleEditor extends Morph {
     this.choosers.forEach((style, chooser) => {
       chooser.value = this.proxy[style] 
     })
+
+    if (this.styleObserver) this.styleObserver.disconnect();
+    this.styleObserver = onStyleChange(this.target, () => this.updateStyles());
+    
+    this.updateStyles()
+    
     this.isInitializing = false;
+    
+    
+    
   }  
+  
+  
+  updateStyles() {
+    var styles = this.get("#styles")
+    styles.innerHTML = ""
+    this.target.style.cssText.split(";").forEach(ea => {
+      let name, value;
+      [name, value] = ea.split(/: /)
+      if (name && value) {
+        var item = <div class="styleitem"><b>{name}</b> {value}</div> 
+        item.draggable = true
+        item.addEventListener("dragstart", evt => {      
+          evt.dataTransfer.setData("lively/cssText", `${name}: ${value}`)
+          evt.stopPropagation();
+        })
+        item.addEventListener("click", evt => {
+          item.classList.toggle("selected")
+        })
+        styles.appendChild(item)
+          
+      }
+    })
+
+  }
+  
+  
+  livelyMigrate(other) {
+    this.target  = other.target
+    
+  }
 }

@@ -358,3 +358,18 @@ export function using(contextManagerIterable, callback) {
   return result;
 }
 
+/**
+ * Get notified, whenever the style attribute of given target changes
+ */
+export function onStyleChange(target, callback) {
+  const styleObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {  
+      if(mutation.type == "attributes" && mutation.attributeName == "style") {
+          callback();
+      }
+    });
+  });
+  styleObserver.observe(target, { attributes: true });
+
+  return styleObserver;
+}
