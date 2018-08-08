@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid } from 'utils';
+import ContextMenu from "src/client/contextmenu.js";
 
 export default class VivideScriptEditor extends Morph {
   static get vivideScript() { return 'vivide_script_id'; }
@@ -7,27 +8,15 @@ export default class VivideScriptEditor extends Morph {
   get editorList() { return this.get('#editor-list'); }
   get inspector() { return this.get('#inspector'); }
   
-  setView(view) {
-    this.view = view;
-    return view;
-  }
-  getView() {
-    return this.view;
-  }
+  setView(view) { return this.view = view; }
+  getView() { return this.view; }
   
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
     this.inspector.hideWorkspace();
     this.registerButtons();
     
-    // Show script type dialog at mouse position
-    this.get('#addScript').addEventListener("mousedown", event => {
-      this.addScriptX = event.clientX;
-      this.addScriptY = event.clientY;
-    });
-    
     this.container = this.get('#container');
-    this.createTypeMenu();
     this.settingLoopStart = false;
     this.newScriptPosition = null;
   }
@@ -36,8 +25,8 @@ export default class VivideScriptEditor extends Morph {
     
   }
   
-  onAddScript() {
-    this.showTypeMenu(this.addScriptX, this.addScriptY);
+  onAddScript(evt) {
+    this.showTypeMenu(evt);
   }
   
   onSetLoopStart() {
@@ -57,41 +46,20 @@ export default class VivideScriptEditor extends Morph {
     this.script.update();
   }
   
-  showTypeMenu(posX, posY, position = null) {
+  async showTypeMenu(evt, position = null) {
     this.newScriptPosition = position;
-    this.typeMenu.style.left = posX + "px";
-    this.typeMenu.style.top = posY + "px";
-    this.container.insertBefore(this.typeMenu, this.editorList);
-  }
-  
-  /**
-   * Creates and initializes the context menu used to add
-   * additional scripts.
-   */
-  createTypeMenu() {
-    this.typeMenu = document.createElement('div');
-    this.typeMenu.classList = "type-menu";
+    
+    const menuItems = ['Transform', 'Extract', 'Descent'].map(type => {
+      return [
+        type,
+        evt => {
+          menu.remove();
+          this.appendStepEditor(type.toLowerCase());
+        }, type, '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
+      ]
+    })
 
-    let list = document.createElement('ul');
-    let createListItem = (type) => {
-      let listItem = document.createElement('li');
-      listItem.setAttribute('data-type', type.toLowerCase());
-      listItem.innerHTML = type;
-      listItem.addEventListener("mousedown", () => {
-        this.typeMenu.chosenType = listItem.dataset.type;
-      });
-      
-      return listItem;
-    }
-    list.appendChild(createListItem('Transform'));
-    list.appendChild(createListItem('Extract'));
-    list.appendChild(createListItem('Descent'));
-
-    this.typeMenu.appendChild(list);
-    this.typeMenu.addEventListener("mousedown", () => {
-      this.typeMenu.remove();
-      this.appendStepEditor(this.typeMenu.chosenType);
-    });
+    const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
   }
   
   removeScript(stepEditor, removedScript) {

@@ -7,6 +7,32 @@ import Annotations from 'src/client/reactive/active-expressions/active-expressio
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 import { stepFolder, scriptFolder } from 'src/client/vivide/utils.js';
 
+class Script {
+  constructor(view) {
+    this._view = view;
+  }
+  setInitialStep(step) { return this.initialStep = step; }
+  getInitialStep() { return this.initialStep; }
+  
+  toJSON() {
+    const jsonContainer = {};
+    let step = this.getInitialStep();
+    // #TODO: this is misplaced here
+    step.updateCallback = this._view.scriptGotUpdated.bind(this._view);
+    jsonContainer[step.id] = step.toJSON();
+    
+    while (step.nextStep != null) {
+      step = step.nextStep;
+      step.updateCallback = this._view.scriptGotUpdated.bind(this._view);
+      jsonContainer[step.id] = step.toJSON();
+      
+      if (step.lastScript) break;
+    }
+    
+    return jsonContainer;
+  }
+}
+
 async function newScriptFromTemplate(type) {
   const stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
   const stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
@@ -263,61 +289,49 @@ export default class VivideView extends Morph {
     }
   }
   
-  async initDefaultScript() {
-    let firstScript = await initialScriptsFromTemplate();
-    this.setFirstScript(firstScript);
-  }
-  setFirstScript(firstScript) {
-    if (!(firstScript instanceof ScriptStep)) return;
-    
-    this.firstScript = firstScript;
-    this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
-    let script = this.firstScript;
-    let scripts = {  };
-    this.scriptToJson(script, scripts);
-    
-    while (script.nextStep != null) {
-      script = script.nextStep;
-      script.updateCallback = this.scriptGotUpdated.bind(this);
-      this.scriptToJson(script, scripts);
-      
-      if (script.lastScript) break;
-    }
-    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
+  get myCurrentScript() { return this._myCurrentScript; }
+  set myCurrentScript(script) { return this._myCurrentScript = script; }
 
-    return this.firstScript;
+  async initDefaultScript() {
+    this.setFirstStep(await initialScriptsFromTemplate());
+  }
+  setFirstStep(firstStep) {
+    lively.warn('set script')
+    if (!(firstStep instanceof ScriptStep)) return;
+    
+    this.myCurrentScript = new Script(this);
+    this.myCurrentScript.setInitialStep(firstStep);
+    
+    this.setJSONAttribute(VivideView.scriptAttribute, this.myCurrentScript.toJSON());
   }
   
-  scriptToJson(script, jsonContainer) {
-    jsonContainer[script.id] = script.toJSON();
-  }
-  
-  getFirstScript() {
-    let jsonScripts = this.getJSONAttribute(VivideView.scriptAttribute);
-    let scripts = {};
+  getFirstStep() {
+    // this is deserialization of a script
+//     let jsonScripts = this.getJSONAttribute(VivideView.scriptAttribute);
+//     let scripts = {};
     
-    for (let scriptId in jsonScripts) {
-      scripts[scriptId] = new ScriptStep(
-        jsonScripts[scriptId].source,
-        jsonScripts[scriptId].type,
-        scriptId,
-        jsonScripts[scriptId].lastScript
-      );
-    }
+//     for (let scriptId in jsonScripts) {
+//       scripts[scriptId] = new ScriptStep(
+//         jsonScripts[scriptId].source,
+//         jsonScripts[scriptId].type,
+//         scriptId,
+//         jsonScripts[scriptId].lastScript
+//       );
+//     }
     
-    for (let scriptId in jsonScripts) {
-      if (!jsonScripts[scriptId].nextScriptId) continue;
+//     for (let scriptId in jsonScripts) {
+//       if (!jsonScripts[scriptId].nextScriptId) continue;
       
-      scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
-    }
+//       scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
+//     }
     
-    return this.firstScript;
+    return this.myCurrentScript.getInitialStep();
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if (this.getFirstScript()) {
+    if (this.getFirstStep()) {
       await this.calculateOutputModel();
     } else {
       this.modelToDisplay = VivideView.dataToModel(this.input);
@@ -338,25 +352,29 @@ export default class VivideView extends Morph {
   resetViewConfig() {
     this._viewConfig = undefined;
   }
+  
   async calculateOutputModel() {
     this.resetViewConfig();
-    let script = this.getFirstScript();
+    let script = this.getFirstStep();
     
     this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
   }
   
-  async evalScript(script) {
-    let module = await boundEval(script.source);
-    return module;
+  async evalStep(script) {
+    return await boundEval(script.source);
   }
   
   async scriptGotUpdated() {
+    // #TODO: save script to web-component
+    // #TODO: later support multiple profiles
+    lively.warn('script updated -> should save');
     await this.calculateOutputModel();
     await this.updateWidget();
     // Update outport views
     this.updateOutportTargets();
   }
   
+  // #TODO: extract to a separate 
   async computeModel(data, script) {
     let vivideLayer = new VivideLayer(data);
     
@@ -371,23 +389,23 @@ export default class VivideView extends Morph {
     
     return vivideLayer;
   }
-  
-  async applyScript(script, vivideLayer) {
-    let module = await this.evalScript(script);
-    if (script.type == 'transform') {
+  async applyScript(step, vivideLayer) {
+    let module = await this.evalStep(step);
+    if (step.type == 'transform') {
       vivideLayer.addModule(module, 'transform');
-    } else if (script.type == 'extract') {
+    } else if (step.type == 'extract') {
       vivideLayer.addModule(module, 'extract');
-    } else if (script.type == 'descent') {
-      vivideLayer.childScript = script.nextStep;
+    } else if (step.type == 'descent') {
+      vivideLayer.childScript = step.nextStep;
       vivideLayer.addModule(module, 'descent');
     }
     
+    // #TODO, #ERROR: this adds the config too late
     this.viewConfig.add(module.value.__vivideStepConfig__);
   }
 
   getPreferredWidgetType(model) {
-    if (this.viewConfig.has('widget')) {
+    if (this.viewConfig.has('widget')) { 
       return this.viewConfig.get('widget');
     }
     
@@ -431,7 +449,7 @@ export default class VivideView extends Morph {
   
   async insertScript(scriptType, prevScript = null) {
     let newScript = await newScriptFromTemplate(scriptType);
-    let script = this.getFirstScript();
+    let script = this.getFirstStep();
     
     if (prevScript) {
       script = prevScript;
@@ -469,7 +487,7 @@ export default class VivideView extends Morph {
 
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScripts(this.getFirstScript());
+    scriptEditor.setScripts(this.getFirstStep());
 
     return scriptEditor;
   }
@@ -487,7 +505,7 @@ export default class VivideView extends Morph {
   }
   
   livelyMigrate(other) {
-    this.setFirstScript(other.getFirstScript());
+    this.setFirstStep(other.getFirstStep());
     this.newDataFromUpstream(other.input);
   }
   
@@ -498,17 +516,17 @@ export default class VivideView extends Morph {
         halo.get('#vivide-items').style.display = 'flex';
 
         // dynamically create outport connection visualizations
-        let outportContainer = halo.get('#vivide-outport-connection-items');
+        const outportContainer = halo.get('#vivide-outport-connection-items');
         this.outportTargets.forEach(target => {
-          let item = document.createElement('lively-halo-vivide-outport-connection-item')
+          const item = document.createElement('lively-halo-vivide-outport-connection-item')
           item.classList.add('halo');
           item.setTarget(target);
           outportContainer.appendChild(item);
         });
         
-        let inportContainer = halo.get('#vivide-inport-connection-items');
+        const inportContainer = halo.get('#vivide-inport-connection-items');
         this.inportSources.forEach(source => {
-          let item = document.createElement('lively-halo-vivide-inport-connection-item')
+          const item = document.createElement('lively-halo-vivide-inport-connection-item')
           item.classList.add('halo');
           item.setSource(source);
           inportContainer.appendChild(item);

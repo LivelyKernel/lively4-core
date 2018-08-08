@@ -11,12 +11,6 @@ export default class VivideStepEditor extends Morph {
       this.editor.value = 'Initializing Script...';
     }
     this.editor.doSave = text => this.stepSaved(text);
-    
-    // Show script type dialog at mouse position
-    this.get('#insertScript').addEventListener("mousedown", event => {
-      this.insertScriptX = event.clientX;
-      this.insertScriptY = event.clientY;
-    });
   }
   
   containsScript(script) {
@@ -27,13 +21,13 @@ export default class VivideStepEditor extends Morph {
     this.scriptEditor = scriptEditor;
   }
   
-  onInsertScript() {
+  onInsertScript(evt) {
     if (!this.scriptEditor) return;
     
     let position = {};
     position.editor = this;
     position.script = this.script;
-    this.scriptEditor.showTypeMenu(this.insertScriptX, this.insertScriptY, position);
+    this.scriptEditor.showTypeMenu(evt, position);
   }
   
   onRemoveScript() {
