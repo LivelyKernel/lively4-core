@@ -15,35 +15,52 @@ export default class VivideStepEditor extends Morph {
   editorConfig() {
     this.editor.setOption('viewportMargin', Infinity);
     if (!this.editor.value) {
-      this.editor.value = 'Initializing Script...';
+      this.editor.value = 'Initializing Step...';
     }
-    this.editor.setOption("extraKeys", {
-      // #KeyboardShortcut Alt-N insert new vivide script step after this one 
-      "Alt-N": cm => {
+    this.cm.addKeyMap({
+      // #KeyboardShortcut Alt-Enter insert new vivide script step after this one 
+      "Alt-Enter": cm => {
         this.showTypeMenu();
       },
       // #TODO: implement
-      // #KeyboardShortcut Alt-Shift-N insert new vivide script step before this one 
-      "Alt-Shift-N": cm => {
-        lively.warn("'Insert Before' not yet implemented");
+      // #KeyboardShortcut Alt-Shift-Enter insert new vivide script step before this one 
+      "Alt-Shift-Enter": cm => {
+        lively.warn("'Insert Before' not yet implemented", 'fallback to insertAfter');
+        this.showTypeMenu();
       },
       // #KeyboardShortcut Alt-D remove this step from vivide script
       "Alt-D": cm => {
         this.onRemoveStep();
+        // #TODO: should focus next step editor
       },
       // #KeyboardShortcut Alt-Up focus previous step editor
       "Alt-Up": cm => {
-        lively.warn("'Up");
         this.scriptEditor &&this.scriptEditor.navigateStepEditors(this, false);
       },
       // #KeyboardShortcut Alt-Down focus next step editor
       "Alt-Down": cm => {
-        lively.warn("'Down");
         this.scriptEditor &&this.scriptEditor.navigateStepEditors(this, true);
       },
+      // #TODO: implement
+      // #KeyboardShortcut Alt-Right inverse code folding (indent)
+      "Alt-Right": cm => {
+        lively.warn('\'Inverse Code Folding\' not yet implemented');
+      },
+      // #TODO: implement
+      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
+      "Alt-Left": cm => {
+        lively.warn('\'Inverse Code Folding\' not yet implemented');
+      },      
     });
     
     this.editor.doSave = text => this.stepSaved(text);
+  }
+  
+  setFocus() {
+    this.editor.editorLoaded().then(() => this.cm.focus());
+  }
+  delayedFocus() {
+    setTimeout(() => this.setFocus());
   }
   
   containsStep(step) {
@@ -100,7 +117,8 @@ export default class VivideStepEditor extends Morph {
     this.get('#stepType').innerHTML = step.type;
     this.editor.editorLoaded().then(() => {
       this.editor.value = step.source;
-      this.cm.setCursor(this.cm.lineCount(), 0);
+      // #TODO: this selection is only valid for default scripts, but fails on already edited scripts
+      this.cm.setSelection(...this.step.getDefaultCursorPosition(), {scroll: true});
     });
   }
 

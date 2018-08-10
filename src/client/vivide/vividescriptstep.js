@@ -11,6 +11,18 @@ export default class ScriptStep {
     this.lastScript = lastScript;
   }
   
+  getDefaultCursorPosition() {
+    if(this.type === "transform") {
+      return [{ line: 2, ch: 21}, { line: 2, ch: 25}];
+    } else if(this.type === "extract") {
+      return [{ line: 1, ch: 2}, { line: 1, ch: 2}];
+    } else if(this.type === "descent") {
+      return [{ line: 0, ch: 10}, { line: 0, ch: 10}];
+    }
+    lively.error('unexpected step type encountered', 'fallback for defaultCursorPosition')
+    return [{ line: 1, ch: 0}, { line: 1, ch: 0}];
+  }
+  
   get nextStep() { return this._nextStep; }
   set nextStep(step) { return this._nextStep = step; }
   

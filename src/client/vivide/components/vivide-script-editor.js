@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { uuid } from 'utils';
+import { clamp, uuid } from 'utils';
 
 export default class VivideScriptEditor extends Morph {
   static get vivideScript() { return 'vivide_script_id'; }
@@ -21,7 +21,14 @@ export default class VivideScriptEditor extends Morph {
   }
   
   initialFocus() {
-    
+    setTimeout(() => {
+      const editor = this.get('vivide-step-editor');
+      this.delayedFocusOnStepEditor(editor);
+      
+    }, 1000)
+  }
+  delayedFocusOnStepEditor(stepEditor) {
+    stepEditor.delayedFocus();
   }
   
   onSetLoopStart() {
@@ -39,23 +46,32 @@ export default class VivideScriptEditor extends Morph {
   }
   
   // #TODO: terminology
-  removeStep(stepEditor, removedScript) {
-    var script = this.script;
-    var lastScript = null
+  // #TODO: last script should not be removeable
+  removeStep(stepEditor, stepToBeRemoved) {
+    let script = this.script;
+    let lastStep = null;
     
     while (!script.lastScript && script.nextStep) {
-      if (removedScript === script) break;
-      lastScript = script;
+      if (stepToBeRemoved === script) break;
+      lastStep = script;
       script = script.nextStep;
     }
     
-    stepEditor.remove();
+    // #TODO: save editor index
+    const editors = this.getAllSubmorphs('vivide-step-editor');
+    let index = editors.indexOf(stepEditor);
     
-    if (lastScript) {
-      lastScript.nextStep = script.nextStep;
+    stepEditor.remove();
+
+    const updatedEditors = this.getAllSubmorphs('vivide-step-editor');
+    index = clamp.call(index, 0, updatedEditors.length - 1);
+    this.delayedFocusOnStepEditor(updatedEditors[index]);
+
+    if (lastStep) {
+      lastStep.nextStep = script.nextStep;
     } else {
       // First script was removed
-      this.script = removedScript.nextStep;
+      this.script = stepToBeRemoved.nextStep;
     }
     
     if (this.script) {
@@ -70,8 +86,9 @@ export default class VivideScriptEditor extends Morph {
       this.lastScript = script;
     }
     
-    this.insertNewStepEditorAfter(script, prevEditor);
+    const stepEditor = await this.insertNewStepEditorAfter(script, prevEditor);
     this.updateLoopState();
+    stepEditor.setFocus();
   }
   
   updateLoopState() {
@@ -126,6 +143,8 @@ export default class VivideScriptEditor extends Morph {
   async insertNewStepEditorAfter(script, prevEditor) {
     const stepEditor = await this.createStepEditorFor(script);
     this.editorList.insertBefore(stepEditor, prevEditor.nextSibling);
+    
+    return stepEditor;
   }
   async appendNewStepEditorFor(script) {
     const stepEditor = await this.createStepEditorFor(script);
@@ -135,11 +154,8 @@ export default class VivideScriptEditor extends Morph {
   navigateStepEditors(from, moveDownwards) {
     const editors = this.getAllSubmorphs('vivide-step-editor');
     let index = editors.indexOf(from) + (moveDownwards ? 1 : -1);
-    index = Math.min(index, editors.length - 1);
-    index = Math.max(0, index);
-    setTimeout(() => {
-      editors[index].editor.focus();
-    });
+    index = clamp.call(index, 0, editors.length - 1);
+    this.delayedFocusOnStepEditor(editors[index]);
   }
   
   livelyMigrate(other) {

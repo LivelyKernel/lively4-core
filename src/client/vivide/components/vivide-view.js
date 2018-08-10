@@ -392,13 +392,24 @@ export default class VivideView extends Morph {
   }
   async applyScript(step, vivideLayer, _modules) {
     let module = await step.getExecutable();
+    let fun;
+    let config;
+    if(module instanceof Function) {
+      fun = module;
+    } else if(module instanceof Array && module[0] instanceof Function) {
+      fun = module[0];
+      config = module[1];
+    }
+    
     if (step.type == 'descent') {
       vivideLayer.childScript = step.nextStep;
     }
-    _modules[step.type].push(module);
+    _modules[step.type].push(fun);
     
-    // #TODO, #ERROR: this adds the config too late
-    this.viewConfig.add(module.__vivideStepConfig__);
+    if(config) {
+      // #TODO, #ERROR: this adds the config too late
+      this.viewConfig.add(config);
+    }
   }
   async processData(vivideLayer, _modules) {
     await this.transform(vivideLayer, _modules);
