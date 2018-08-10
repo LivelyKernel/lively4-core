@@ -22,9 +22,38 @@ export default class ScriptStep {
     this.nextStep = value;
   }
   
+  insertAfter(step) {
+    // If the predecessor was the last script before, the
+    // attribute needs to be passed to the appended script.
+    if (this.lastScript) {
+      this.lastScript = false;
+      step.lastScript = true;
+    }
+
+    step.nextStep = this.nextStep;
+    this.nextStep = step;
+  }
+  
+  insertAsLastStep(step) {
+    const lastStep = this.getLastStep();
+    lastStep.insertAfter(step);
+  }
+  
+  getLastStep() {
+    let step = this;
+    while (step.nextStep != null && !step.lastScript) {
+      step = step.nextStep;
+    }
+    
+    return step;
+  }
+  
   update() {
+    lively.warn('Step was updated')
     if (typeof this.updateCallback === 'function') {
       this.updateCallback();
+    } else {
+      lively.error('but no updateCallback')
     }
   }
   

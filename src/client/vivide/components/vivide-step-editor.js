@@ -1,58 +1,111 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import ContextMenu from "src/client/contextmenu.js";
 
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
+  get cm() { return this.editor.editor; }
   
   async initialize() {
     this.windowTitle = "VivideStepEditor";
-    this.editor.setOption('viewportMargin', Infinity);
+    
     this.registerButtons();
+    
+    this.editor.editorLoaded().then(() => this.editorConfig());
+  }
+  editorConfig() {
+    this.editor.setOption('viewportMargin', Infinity);
     if (!this.editor.value) {
       this.editor.value = 'Initializing Script...';
     }
+    this.editor.setOption("extraKeys", {
+      // #KeyboardShortcut Alt-N insert new vivide script step after this one 
+      "Alt-N": cm => {
+        this.showTypeMenu();
+      },
+      // #TODO: implement
+      // #KeyboardShortcut Alt-Shift-N insert new vivide script step before this one 
+      "Alt-Shift-N": cm => {
+        lively.warn("'Insert Before' not yet implemented");
+      },
+      // #KeyboardShortcut Alt-D remove this step from vivide script
+      "Alt-D": cm => {
+        this.onRemoveStep();
+      },
+      // #KeyboardShortcut Alt-Up focus previous step editor
+      "Alt-Up": cm => {
+        lively.warn("'Up");
+        this.scriptEditor &&this.scriptEditor.navigateStepEditors(this, false);
+      },
+      // #KeyboardShortcut Alt-Down focus next step editor
+      "Alt-Down": cm => {
+        lively.warn("'Down");
+        this.scriptEditor &&this.scriptEditor.navigateStepEditors(this, true);
+      },
+    });
+    
     this.editor.doSave = text => this.stepSaved(text);
   }
   
-  containsScript(script) {
-    return script === this.script;
+  containsStep(step) {
+    return step === this.step;
   }
   
   setScriptEditor(scriptEditor) {
     this.scriptEditor = scriptEditor;
   }
   
-  onInsertScript(evt) {
-    if (!this.scriptEditor) return;
-    
-    let position = {};
-    position.editor = this;
-    position.script = this.script;
-    this.scriptEditor.showTypeMenu(evt, position);
+  onInsertStepAfter(evt) {
+    if (!this.scriptEditor) {
+      lively.error('no ScriptEditor found (onInsertStepAfter)')
+      return;
+    }
+
+    this.showTypeMenu(evt);
   }
   
-  onRemoveScript() {
-    if (!this.scriptEditor) return;
+  async showTypeMenu(evt) {
+    const menuItems = ['transform', 'extract', 'descent'].map(type => {
+      return [
+        type,
+        evt => {
+          menu.remove();
+          this.scriptEditor.insertStepAfter(type, this.step, this);
+        },
+        type,
+        '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
+      ]
+    })
+
+    const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
+  }
+  
+  onRemoveStep() {
+    if (!this.scriptEditor) {
+      lively.error('no ScriptEditor found (onRemoveStep)')
+      return;
+    }
     
-    this.scriptEditor.removeScript(this, this.script);
+    this.scriptEditor.removeStep(this, this.step);
   }
   
   setToLoopStart() {
-    // Go to last script
-    let script = this.script;
-    while (script.nextStep != null && !script.lastScript) {
-      script = script.nextStep;
-    }
+    const lastStep = this.step.getLastStep();
     
     // Reconfigure loop
-    script.nextStep = this.script;
+    lastStep.nextStep = this.step;
   }
   
-  setStepScript(script) {
-    this.script = script;
-    this.editor.value = script.source;
+  setStep(step) {
+    this.step = step;
+    this.get('#stepType').innerHTML = step.type;
+    this.editor.editorLoaded().then(() => {
+      this.editor.value = step.source;
+      this.cm.setCursor(this.cm.lineCount(), 0);
+    });
   }
+
   async stepSaved(text) {
-    this.script.source = text;
-    this.script.update();
+    this.step.source = text;
+    this.step.update();
   }
 }
