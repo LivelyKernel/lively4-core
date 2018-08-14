@@ -1,21 +1,24 @@
-Vivide stuff
+# Vivide stuff
 
 
-```javascript
-((input, output) => {
-  
-})::config({
-  
-})
+
+
+```
+arg => {
+  foo.bar
+}
 ```
 
-```javascript
-import { config } from './../utils.js';
-import { VivideListView } from './../components/vividelistview.js';
+# transform steps
 
-export default ((input, output) => {
-  input.forEach(item => output.push(item));
-})::config({
-  widget: VivideListView
-})
 ```
+[(input, vivideLayer) => {
+  for (let item of input) {
+    vivideLayer.push(item);
+  }
+}, {
+  
+}]
+```
+
+

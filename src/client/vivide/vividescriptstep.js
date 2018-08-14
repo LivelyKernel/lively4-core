@@ -13,7 +13,7 @@ export default class ScriptStep {
   
   getDefaultCursorPosition() {
     if(this.type === "transform") {
-      return [{ line: 2, ch: 21}, { line: 2, ch: 25}];
+      return [{ line: 2, ch: 17}, { line: 2, ch: 21}];
     } else if(this.type === "extract") {
       return [{ line: 1, ch: 2}, { line: 1, ch: 2}];
     } else if(this.type === "descent") {
