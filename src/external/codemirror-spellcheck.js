@@ -72,7 +72,7 @@ export async  function startSpellCheck(cm, typo) {
       // var cm = that.editor
       
       
-			if (!/[a-z]/i.test(word)) return null; // no letters
+			if (!/[a-zöäüß]/i.test(word)) return null; // no letters
 			
       // console.log("w", word, "stream ", stream)
       // var token = cm.getTokenAt(cm.doc.posFromIndex(stream.pos))
