@@ -3,6 +3,7 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
+  border: solid 1px lightgrey;
   background-color: lightgreen;
   margin: 100%
   padding: 100%
@@ -10,6 +11,10 @@
   display: flex;
   flex-direction: column;
 }
+:host(:focus), :host(:focus-within) {
+  border: solid 1px blue;
+}
+
 lively-code-mirror {
   flex: 1;
   min-height: unset;
@@ -33,11 +38,26 @@ lively-code-mirror {
 .container {
   position: relative
 }
+  span#typeHint {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    z-index: 1002;
+    
+    background-color: lightgray;
+    border-bottom-left-radius: 5px;
+    font-size: small;
+    padding-left: 3px;
+    padding-bottom: 3px;
+    padding-right: 3px;
+    color: white;
+  }
 </style>
 <div class="container">
   <lively-code-mirror id="editor"></lively-code-mirror>
-  <button id="insertScript" class="insert-button">+ Insert Script</button>
-  <button id="removeScript" class="remove-button">- Remove Script</button>
+  <button id="insertStepAfter" class="insert-button">+ Insert Step after</button>
+  <button id="removeStep" class="remove-button">- Remove this Step</button>
+  <span id="typeHint"><span id="stepType">stepType</span></span>
 </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

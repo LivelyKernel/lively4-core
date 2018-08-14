@@ -1,6 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
-import boundEval from "src/client/bound-eval.js";
 import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
@@ -31,9 +30,30 @@ class Script {
     
     return jsonContainer;
   }
+  
+  static fromJSON() {
+//     // this is deserialization of a script
+//     let jsonScripts = this._view.getJSONAttribute(VivideView.scriptAttribute);
+//     let scripts = {};
+    
+//     for (let scriptId in jsonScripts) {
+//       scripts[scriptId] = new ScriptStep(
+//         jsonScripts[scriptId].source,
+//         jsonScripts[scriptId].type,
+//         scriptId,
+//         jsonScripts[scriptId].lastScript
+//       );
+//     }
+    
+//     for (let scriptId in jsonScripts) {
+//       if (!jsonScripts[scriptId].nextScriptId) continue;
+      
+//       scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
+//     }
+  }
 }
 
-async function newScriptFromTemplate(type) {
+async function newStepFromTemplate(type) {
   const stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
   const stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
 
@@ -41,18 +61,13 @@ async function newScriptFromTemplate(type) {
 }
 
 async function initialScriptsFromTemplate() {
-  const scripts = [];
-  const transform = await newScriptFromTemplate('transform');
-  const extract = await newScriptFromTemplate('extract');
-  const descent = await newScriptFromTemplate('descent');
+  const transform = await newStepFromTemplate('transform');
+  const extract = await newStepFromTemplate('extract');
+  const descent = await newStepFromTemplate('descent');
   
-  transform.nextStep = extract;
-  extract.nextStep = descent;
+  transform.insertAfter(extract);
+  extract.insertAfter(descent);
   descent.lastScript = true;
-  
-  scripts.push(transform);
-  scripts.push(extract);
-  scripts.push(descent);
   
   return transform;
 }
@@ -306,25 +321,7 @@ export default class VivideView extends Morph {
   }
   
   getFirstStep() {
-    // this is deserialization of a script
-//     let jsonScripts = this.getJSONAttribute(VivideView.scriptAttribute);
-//     let scripts = {};
-    
-//     for (let scriptId in jsonScripts) {
-//       scripts[scriptId] = new ScriptStep(
-//         jsonScripts[scriptId].source,
-//         jsonScripts[scriptId].type,
-//         scriptId,
-//         jsonScripts[scriptId].lastScript
-//       );
-//     }
-    
-//     for (let scriptId in jsonScripts) {
-//       if (!jsonScripts[scriptId].nextScriptId) continue;
-      
-//       scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
-//     }
-    
+    // script.deserializeFromJSON();
     return this.myCurrentScript.getInitialStep();
   }
   
@@ -334,6 +331,7 @@ export default class VivideView extends Morph {
     if (this.getFirstStep()) {
       await this.calculateOutputModel();
     } else {
+      // #TODO: is this obsolete?
       this.modelToDisplay = VivideView.dataToModel(this.input);
     }
 
@@ -373,33 +371,91 @@ export default class VivideView extends Morph {
   // #TODO: extract to a separate ScriptProcessor, or Script itself
   async computeModel(data, script) {
     let vivideLayer = new VivideLayer(data);
+    const _modules = {
+      transform: [],
+      extract: [],
+      descent: []
+    };
     
-    await this.applyScript(script, vivideLayer);
+    await this.applyScript(script, vivideLayer, _modules);
     while (script.nextStep) {
       script = script.nextStep;
-      await this.applyScript(script, vivideLayer);
+      await this.applyScript(script, vivideLayer, _modules);
       
+      // #TODO: this break condition is errornous, e.g. when the last step is not a descent step, but we still have a loop, it will break at that last step nonetheless
       if (script.type == 'descent' || script.lastScript) break;
     }
-    await vivideLayer.processData();
+    
+    await this.processData(vivideLayer, _modules);
     
     return vivideLayer;
   }
-  async applyScript(step, vivideLayer) {
+  async applyScript(step, vivideLayer, _modules) {
     let module = await step.getExecutable();
-    if (step.type == 'transform') {
-      vivideLayer.addModule(module, 'transform');
-    } else if (step.type == 'extract') {
-      vivideLayer.addModule(module, 'extract');
-    } else if (step.type == 'descent') {
-      vivideLayer.childScript = step.nextStep;
-      vivideLayer.addModule(module, 'descent');
+    let fun;
+    let config;
+    if(module instanceof Function) {
+      fun = module;
+    } else if(module instanceof Array && module[0] instanceof Function) {
+      fun = module[0];
+      config = module[1];
     }
     
-    // #TODO, #ERROR: this adds the config too late
-    this.viewConfig.add(module.__vivideStepConfig__);
+    if (step.type == 'descent') {
+      vivideLayer.childScript = step.nextStep;
+    }
+    _modules[step.type].push(fun);
+    
+    if(config) {
+      // #TODO, #ERROR: this adds the config too late
+      this.viewConfig.add(config);
+    }
   }
+  async processData(vivideLayer, _modules) {
+    await this.transform(vivideLayer, _modules);
+    await this.extract(vivideLayer, _modules);
+    await this.descent(vivideLayer, _modules);
+  }
+  
+  async transform(vivideLayer, _modules) {
+    let input = vivideLayer._rawData.slice(0);
+    let output = [];
+    
+    for (let module of _modules.transform) {
+      await module(input, output);
+      input = output.slice(0);
+      output = [];
+    }
 
+    vivideLayer._rawData = input;
+    vivideLayer.makeObjectsFromRawData();
+  }
+  
+  async extract(vivideLayer, _modules) {
+    for (let module of _modules.extract) {
+      for (let object of vivideLayer._objects) {
+        object.properties.add(await module(object.data));
+      }
+    }
+  }
+  
+  async descent(vivideLayer, _modules) {
+    for (let module of _modules.descent) {
+      for (let object of vivideLayer._objects) {
+        const childData = await module(object.data);
+        
+        if (!childData) continue;
+        
+        const childLayer = new VivideLayer(childData);
+        childLayer.script = vivideLayer.childScript;
+        object.childLayer = childLayer;
+      }
+    }
+  }
+  
+  /**
+   * Smart widget choosing
+   */
   getPreferredWidgetType(model) {
     if (this.viewConfig.has('widget')) { 
       return this.viewConfig.get('widget');
@@ -443,33 +499,18 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig);
   }
   
-  async insertScript(scriptType, prevScript = null) {
-    let newScript = await newScriptFromTemplate(scriptType);
-    let script = this.getFirstStep();
+  async insertStepAfter(scriptType, prevStep = null) {
+    let newStep = await newStepFromTemplate(scriptType);
+    newStep.updateCallback = this.scriptGotUpdated.bind(this);
     
-    if (prevScript) {
-      script = prevScript;
-      
-      // If the predecessor was the last script before, the
-      // attribute needs to be passed to the appended script.
-      if (prevScript.lastScript) {
-        prevScript.lastScript = false;
-        newScript.lastScript = true;
-      }
+    if (prevStep) {
+      prevStep.insertAfter(newStep);
     } else {
-      while (!script.lastScript) {
-        script = script.nextStep;
-      }
-      
-      script.lastScript = false;
-      newScript.lastScript = true;
+      let firstStep = this.getFirstStep();
+      firstStep.insertAsLastStep(newStep);
     }
     
-    newScript.updateCallback = this.scriptGotUpdated.bind(this);
-    newScript.nextStep = script.nextStep;
-    script.nextStep = newScript;
-    
-    return newScript;
+    return newStep;
   }
   
   async createScriptEditor() {

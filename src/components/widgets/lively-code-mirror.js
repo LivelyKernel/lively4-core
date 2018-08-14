@@ -341,16 +341,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Shift-Alt-.": cm => {
         TernCodeMirrorWrapper.showReferences(cm, this);
       },
-      // #TODO
-      // #KeyboardShortcut Alt-Right inverse code folding (indent)
-      "Alt-Right": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },
-      // #TODO
-      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
-      "Alt-Left": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },      
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
