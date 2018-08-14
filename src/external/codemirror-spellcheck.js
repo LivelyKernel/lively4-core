@@ -45,6 +45,8 @@ async function saveIgnoreDict(dict) {
 export var ignoreDict
 
 export async  function startSpellCheck(cm, typo) {
+  // console.log("start spellcheck " + typo.dictionary)
+  
 	if (!cm || !typo) return; // sanity
 
 	// ignoreDict = {}; // dictionary of ignored words
@@ -55,8 +57,15 @@ export async  function startSpellCheck(cm, typo) {
 	// Define what separates a word
 	var rx_word = '!\'\"#$%&()*+,-./:;<=>?@[\\]^_`{|}~ ';
 
+  if (cm.spellcheckOverlay) {
+    // console.log("remove spellcheck overlay")
+    cm.removeOverlay("spellcheck");
+  }
+  
 	cm.spellcheckOverlay = {
+    name: "spellcheck",
 		token: function(stream, state) {
+      
 			var ch = stream.peek();
 			var word = "";
 			if (rx_word.includes(ch) || ch === '\uE000' || ch === '\uE001') {
@@ -80,14 +89,21 @@ export async  function startSpellCheck(cm, typo) {
       // if (token.type && token.type.match("url")) return null; 
 
       if (ignoreDict && ignoreDict[word]) return null;
+      // console.log("check " + word + " in " + typo.dictionary + " " + typo.check(word))
 			if (!typo.check(word)) return "spell-error"; // CSS class: cm-spell-error
 		}
 	}
 	cm.addOverlay(cm.spellcheckOverlay);
 
+  
+  var box = document.getElementById('suggestBox');
+  if (box) box.remove()
+  
 	// initialize the suggestion box
-	let sbox = getSuggestionBox(typo);
-	cm.getWrapperElement().oncontextmenu = (e => {
+	var sbox = getSuggestionBox(typo);
+  // console.log("register context menu spell checker")
+  lively.removeEventListener("spellcheck", cm.getWrapperElement(), "contextmenu")
+	lively.addEventListener("spellcheck", cm.getWrapperElement(), "contextmenu", e => {
 		e.preventDefault();
 		e.stopPropagation();
 		sbox.suggest(cm, e);
@@ -97,6 +113,7 @@ export async  function startSpellCheck(cm, typo) {
 
 export function getSuggestionBox(typo) {
 	function sboxShow(cm, sbox, items, x, y, hourglass) {
+    // console.log("get suggestion box " + typo.dictionary)
 		let selwidget = sbox.children[0];
 
 		var isSafari = navigator.vendor && navigator.vendor.indexOf('Apple') > -1 &&  navigator.userAgent && !navigator.userAgent.match('CriOS');
@@ -106,7 +123,7 @@ export function getSuggestionBox(typo) {
 		items.forEach(s => options += '<option value="' + s + '">' + s + '</option>');
 		if (hourglass) options += '<option disabled="disabled">&nbsp;&nbsp;&nbsp;&#8987;</option>';
 		if (separator) options += '<option style="min-height:1px; max-height:1px; padding:0; background-color: #000000;" disabled>&nbsp;</option>';
-		options += '<option value="##ignoreall##">Ignore&nbsp;All</option>';
+		options += `<option value="##ignoreall##">Ignore&nbsp;all&nbsp;${typo.dictionary}</option>`;
 
 		let indexInParent=[].slice.call(selwidget.parentElement.children).indexOf(selwidget);
 		selwidget.innerHTML=options;
@@ -120,12 +137,13 @@ export function getSuggestionBox(typo) {
 
 		// position widget inside cm
 		let cmrect = cm.getWrapperElement().getBoundingClientRect();
-		sbox.style.left = x + 'px';
-		sbox.style.top = (y - sbox.offsetHeight / 2) + 'px';
+    sbox.style.left = x + 'px';
+		sbox.style.top = ((y - sbox.offsetHeight / 2) - document.body.parentElement.scrollTop) + 'px';
 		let widgetRect = sbox.getBoundingClientRect();
 		if (widgetRect.top < cmrect.top) sbox.style.top = (cmrect.top + 2) + 'px';
 		if (widgetRect.right > cmrect.right) sbox.style.left = (cmrect.right - widgetRect.width - 2) + 'px';
 		if (widgetRect.bottom > cmrect.bottom) sbox.style.top = (cmrect.bottom - widgetRect.height - 2) + 'px';
+  
 	}
 
 	function sboxHide(sbox) {
@@ -162,10 +180,11 @@ export function getSuggestionBox(typo) {
 			sbox.cmpos={ line: start.line, start: start.ch, end: end.ch};
 
 			// show hourglass
-			sboxShow(cm, sbox, [], e.pageX, e.pageY, true);
+			// sboxShow(cm, sbox, [], e.pageX, e.pageY, true);
       
 			var results = [];
-			// async 
+	
+      // async 
 			typo.suggest(token, null, all => {
 				//console.log('done');
 				sboxShow(cm, sbox, results, e.pageX, e.pageY);
@@ -176,7 +195,7 @@ export function getSuggestionBox(typo) {
 			});
 
 			// non async 
-			//sboxShow(cm, sbox, typo.suggest(token), e.pageX, e.pageY);
+			// sboxShow(cm, sbox, typo.suggest(token), e.pageX, e.pageY);
 
 			e.preventDefault();
 

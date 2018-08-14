@@ -484,7 +484,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   
   async printResult(result, obj, isPromise) {
-    debugger
     var editor = this.editor;
     var text = result
     var isAsync = false
