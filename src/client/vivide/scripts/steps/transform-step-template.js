@@ -1,7 +1,7 @@
 [(input, vivideLayer) => {
-  for (let item of input) {
-    vivideLayer.push(item);
-  }
+  input
+    .map(item => item)
+    .forEach(item => vivideLayer.push(item))
 }, {
-  
+  isNew: true
 }]
