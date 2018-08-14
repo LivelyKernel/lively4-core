@@ -1,62 +1,33 @@
-# This is the affix file of the de_DE-frami Hunspell dictionary
-# derived from the igerman98 dictionary
-#
-# Version: 20120607+frami20120609 (build 20120609)
-#
-# Copyright (C) 1998-2012 Bjoern Jacke <bjoern@j3e.de>; for the Addon: Franz Michael Baumann <fm.baumann@uni-muenster.de>
-#
-# License: GPLv2, GPLv3 or OASIS distribution license agreement
-# There should be a copy of both of this licenses included
-# with every distribution of this dictionary. Modified
-# versions using the GPL may only include the GPL
+SET ISO8859-1
+TRY esianrtolcdugmphbyfvkw‰¸ˆﬂ·ÈÍ‡‚ÒESIANRTOLCDUGMPHBYFVKWƒ‹÷
 
-SET UTF-8
-TRY esijanrtolcdugmphbyfvkwqxz√§√º√∂√ü√°√©√™√†√¢√±ESIJANRTOLCDUGMPHBYFVKWQXZ√Ñ√ú√ñ√â-.
+
+PFX G N 1
+PFX G   0     ge           .
+
+
 
 PFX U Y 1
-PFX U   0     un       .
+PFX U   0     un           .
+
+
 
 PFX V Y 1
-PFX V   0     ver      .
+PFX V   0     ver          .
 
-SFX F Y 35
-SFX F   0     nen        in
-SFX F   e     in         e
-SFX F   e     innen      e
-SFX F   0     in         [^i]n
-SFX F   0     innen      [^i]n
-SFX F   0     in         [^enr]
-SFX F   0     innen      [^enr]
-SFX F   0     in         [^e]r
-SFX F   0     innen      [^e]r
-SFX F   0     in         [^r]er
-SFX F   0     innen      [^r]er
-SFX F   0     in         [^e]rer
-SFX F   0     innen      [^e]rer
-SFX F   0     in         ierer
-SFX F   0     innen      ierer
-SFX F   er    in         [^i]erer
-SFX F   er    innen      [^i]erer
-SFX F   in    In         in
-SFX F   in    Innen      in
-SFX F   e     In         e
-SFX F   e     Innen      e
-SFX F   0     In         [^i]n
-SFX F   0     Innen      [^i]n
-SFX F   0     In         [^en]
-SFX F   0     Innen      [^en]
-SFX F   0     In         [^e]r
-SFX F   0     Innen      [^e]r
-SFX F   0     In         [^r]er
-SFX F   0     Innen      [^r]er
-SFX F   0     In         [^e]rer
-SFX F   0     Innen      [^e]rer
-SFX F   0     In         ierer
-SFX F   0     Innen      ierer
-SFX F   er    In         [^i]erer
-SFX F   er    Innen      [^i]erer
-#SFX F   en    innen        en
-#SFX F   en    Innen        en
+
+
+SFX F N 7
+SFX F   0     nen          in
+SFX F   e     in           e
+SFX F   e     innen        e
+SFX F   0     in           [^i]n
+SFX F   0     innen        [^i]n
+SFX F   0     in           [^en]
+SFX F   0     innen        [^en]
+
+
+
 
 
 SFX L N 12
@@ -74,27 +45,35 @@ SFX L   0       lichem     [^n]
 SFX L   0       lichen     [^n]
 
 
-#SFX H N 2
-#SFX H   0       heit       .
-#SFX H   0       heiten     .
 
 
-#SFX K N 2
-#SFX K   0       keit       .
-#SFX K   0       keiten     .
 
 
-SFX M N 10
-SFX M   0       chen       [^se]
-SFX M   0       chens      [^se]
-SFX M   ass     √§sschen    ass
-SFX M   ass     √§sschens   ass
-SFX M   oss     √∂sschen    oss
-SFX M   oss     √∂sschens   oss
-SFX M   uss     √ºsschen    uss
-SFX M   uss     √ºsschens   uss
+SFX H N 2
+SFX H   0       heit       .
+SFX H   0       heiten     .
+
+
+SFX K N 2
+SFX K   0       keit       .
+SFX K   0       keiten     .
+
+
+
+SFX M N 12
+SFX M   0       chen       [^s][^s]
+SFX M   0       chens      [^s][^s]
+SFX M   0       chen       [^e]
+SFX M   0       chens      [^e]
+SFX M   ass     ‰sschen    ass
+SFX M   ass     ‰sschens   ass
+SFX M   oss     ˆsschen    oss
+SFX M   oss     ˆsschens   oss
+SFX M   uss     ¸sschen    uss
+SFX M   uss     ¸sschens   uss
 SFX M   e       chen       e
 SFX M   e       chens      e
+
 
 
 SFX A Y 46
@@ -132,12 +111,12 @@ SFX A   el      ler        [^eil]el
 SFX A   el      len        [^eil]el
 SFX A   el      lem        [^eil]el
 SFX A   el      les        [^eil]el
-SFX A   lig     elig       [^aeiouhlr√§√º√∂]lig
-SFX A   lig     elige      [^aeiouhlr√§√º√∂]lig
-SFX A   lig     eliger     [^aeiouhlr√§√º√∂]lig
-SFX A   lig     eligen     [^aeiouhlr√§√º√∂]lig
-SFX A   lig     eligem     [^aeiouhlr√§√º√∂]lig
-SFX A   lig     eliges     [^aeiouhlr√§√º√∂]lig
+SFX A   lig     elig       [^aeiouhlr‰¸ˆ]lig
+SFX A   lig     elige      [^aeiouhlr‰¸ˆ]lig
+SFX A   lig     eliger     [^aeiouhlr‰¸ˆ]lig
+SFX A   lig     eligen     [^aeiouhlr‰¸ˆ]lig
+SFX A   lig     eligem     [^aeiouhlr‰¸ˆ]lig
+SFX A   lig     eliges     [^aeiouhlr‰¸ˆ]lig
 SFX A   erig    rig        [^hi]erig
 SFX A   erig    rige       [^hi]erig
 SFX A   erig    riger      [^hi]erig
@@ -146,7 +125,8 @@ SFX A   erig    rigem      [^hi]erig
 SFX A   erig    riges      [^hi]erig
 
 
-SFX C Y 88
+
+SFX C Y 80
 SFX C   0       ere        [^elr]
 SFX C   0       erer       [^elr]
 SFX C   0       eren       [^elr]
@@ -177,64 +157,60 @@ SFX C   0       erer       [^u]er
 SFX C   0       eren       [^u]er
 SFX C   0       erem       [^u]er
 SFX C   0       eres       [^u]er
-SFX C   lig     eligere    [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligerer   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligeren   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligerem   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligeres   [^aeiouhlr√§√º√∂]lig
+SFX C   lig     eligere    [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligerer   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligeren   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligerem   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligeres   [^aeiouhlr‰¸ˆ]lig
 SFX C   erig    rigere     [^hi]erig
 SFX C   erig    rigerer    [^hi]erig
 SFX C   erig    rigeren    [^hi]erig
 SFX C   erig    rigerem    [^hi]erig
 SFX C   erig    rigeres    [^hi]erig
-SFX C   0       est        [k√üsuxz]
-SFX C   0       este       [k√üsuxz]
-SFX C   0       ester      [k√üsuxz]
-SFX C   0       esten      [k√üsuxz]
-SFX C   0       estem      [k√üsuxz]
-SFX C   0       estes      [k√üsuxz]
-SFX C   0       st         et
+SFX C   0       este       [kﬂsuxz]
+SFX C   0       ester      [kﬂsuxz]
+SFX C   0       esten      [kﬂsuxz]
+SFX C   0       estem      [kﬂsuxz]
+SFX C   0       estes      [kﬂsuxz]
 SFX C   0       ste        et
 SFX C   0       ster       et
 SFX C   0       sten       et
 SFX C   0       stem       et
 SFX C   0       stes       et
-SFX C   0       est        [^e]t
 SFX C   0       este       [^e]t
 SFX C   0       ester      [^e]t
 SFX C   0       esten      [^e]t
 SFX C   0       estem      [^e]t
 SFX C   0       estes      [^e]t
-SFX C   0       st         [^k√üstxz]
-SFX C   0       ste        [^k√üstxz]
-SFX C   0       ster       [^k√üstxz]
-SFX C   0       sten       [^k√üstxz]
-SFX C   0       stem       [^k√üstxz]
-SFX C   0       stes       [^k√üstxz]
-SFX C   0       st         nd
+SFX C   0       ste        [^kﬂstxz]
+SFX C   0       ster       [^kﬂstxz]
+SFX C   0       sten       [^kﬂstxz]
+SFX C   0       stem       [^kﬂstxz]
+SFX C   0       stes       [^kﬂstxz]
 SFX C   0       ste        nd
 SFX C   0       ster       nd
 SFX C   0       sten       nd
 SFX C   0       stem       nd
 SFX C   0       stes       nd
-SFX C   0       est        [^n]d
 SFX C   0       este       [^n]d
 SFX C   0       ester      [^n]d
 SFX C   0       esten      [^n]d
 SFX C   0       estem      [^n]d
 SFX C   0       estes      [^n]d
-SFX C   lig     eligst     [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligste    [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligster   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligsten   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligstem   [^aeiouhlr√§√º√∂]lig
-SFX C   lig     eligstes   [^aeiouhlr√§√º√∂]lig
-SFX C   erig    rigst      [^hi]erig
+SFX C   lig     eligste    [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligster   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligsten   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligstem   [^aeiouhlr‰¸ˆ]lig
+SFX C   lig     eligstes   [^aeiouhlr‰¸ˆ]lig
 SFX C   erig    rigste     [^hi]erig
 SFX C   erig    rigster    [^hi]erig
 SFX C   erig    rigsten    [^hi]erig
 SFX C   erig    rigstem    [^hi]erig
 SFX C   erig    rigstes    [^hi]erig
+
+
+
+
 
 
 SFX E Y 1
@@ -256,34 +232,35 @@ SFX P Y 1
 SFX P   0       en         .
 
 
-SFX p Y 26
-SFX p   auf     √§ufe      auf
-SFX p   auf     √§ufen     auf
-SFX p   aus     √§user     [hH]aus
-SFX p   aus     √§usern    [hH]aus
-SFX p   arkt    √§rkte     [mM]arkt
-SFX p   arkt    √§rkten    [mM]arkt
-SFX p   ang     √§nge      ang
-SFX p   ang     √§ngen     ang
-SFX p   u√ü      √º√üe       u√ü
-SFX p   u√ü      √º√üen      u√ü
-SFX p   o√ü      √∂√üe       o√ü
-SFX p   o√ü      √∂√üen      o√ü
-SFX p   aum     √§ume      aum
-SFX p   aum     √§umen     aum
-SFX p   ag      √§ge       ag
-SFX p   ag      √§gen      ag
-SFX p   ug      √ºge       ug
-SFX p   ug      √ºgen      ug
-SFX p   all     √§lle      all
-SFX p   all     √§llen     all
-SFX p   ass     √§sse      ass
-SFX p   ass     √§ssen     ass
-SFX p   uss     √ºsse      uss
-SFX p   uss     √ºssen     uss
-SFX p   oss     √∂sse      oss
-SFX p   oss     √∂ssen     oss
-# last ...oss rules are for swiss de_CH only - but do not affect de_DE
+
+SFX p Y 24
+SFX p   auf     ‰ufe      auf
+SFX p   auf     ‰ufen     auf
+SFX p   aus     ‰user     haus
+SFX p   aus     ‰usern    haus
+SFX p   arkt    ‰rkte     markt
+SFX p   arkt    ‰rkten    markt
+SFX p   ang     ‰nge      ang
+SFX p   ang     ‰ngen     ang
+SFX p   uﬂ      ¸ﬂe       uﬂ
+SFX p   uﬂ      ¸ﬂen      uﬂ
+SFX p   oﬂ      ˆﬂe       oﬂ
+SFX p   oﬂ      ˆﬂen      oﬂ
+SFX p   aum     ‰ume      aum
+SFX p   aum     ‰umen     aum
+SFX p   ag      ‰ge       ag
+SFX p   ag      ‰gen      ag
+SFX p   ug      ¸ge       ug
+SFX p   ug      ¸gen      ug
+SFX p   all     ‰lle      all
+SFX p   all     ‰llen     all
+SFX p   ass     ‰sse      ass
+SFX p   ass     ‰ssen     ass
+SFX p   uss     ¸sse      uss
+SFX p   uss     ¸ssen     uss
+
+
+
 
 
 SFX R Y 3
@@ -297,23 +274,28 @@ SFX S   0       s          .
 
 
 SFX q Y 2
-SFX q   0       se        s
-SFX q   0       sen       s
+SFX q   s       sse        s
+SFX q   s       ssen       s
 
 
-SFX Q Y 1
-SFX Q   0       ses       s
-#SFX Q   0       se        s
-#SFX Q   0       sen       s
+SFX Q Y 3
+SFX Q   s       sse        s
+SFX Q   s       ssen       s
+SFX Q   s       sses       s
+
+
+
 
 
 SFX T Y 1
 SFX T   0       es         .
 
 
+
+
 SFX J Y 12
-SFX J   n       ung        [bgkp√üsz]eln
-SFX J   n       ungen      [bgkp√üsz]eln
+SFX J   n       ung        [bgkpﬂsz]eln
+SFX J   n       ungen      [bgkpﬂsz]eln
 SFX J   eln     lung       eln
 SFX J   n       ung        ern
 SFX J   en      ung        en
@@ -351,12 +333,26 @@ SFX D   0       dem        n
 
 
 
-SFX W Y 5
-SFX W   en      0          en
-SFX W   n       0          [^e]n
+SFX W Y 8
+SFX W   en      0          [^imn]en
+SFX W   en      0          eien
+SFX W   en      0          [^bght][mn]en
+SFX W   en      0          [^c]hnen
+SFX W   n       0          e[lr]n
 SFX W   st      0          [^s]st
 SFX W   t       0          sst
 SFX W   t       0          [^s]t
+
+
+
+
+
+
+
+
+
+
+
 
 
 SFX I Y 16
@@ -372,8 +368,8 @@ SFX I   en      t          eien
 SFX I   n       t          [^e]ien
 SFX I   n       t          chnen
 SFX I   en      t          [^c]h[mn]en
-SFX I   n       t          [^a√§ehilmno√∂u√ºr][mn]en
-SFX I   en      t          [a√§eilmno√∂u√ºr][mn]en
+SFX I   n       t          [^a‰ehilmnoˆu¸r][mn]en
+SFX I   en      t          [a‰eilmnoˆu¸r][mn]en
 SFX I   n       e          un
 SFX I   n       t          un
 
@@ -386,21 +382,21 @@ SFX X   n       t          [^e]ien
 SFX X   en      t          [^ditmnw]en
 SFX X   n       t          chnen
 SFX X   en      t          [^c]h[mn]en
-SFX X   n       t          [^a√§ehilmno√∂u√ºr][mn]en
-SFX X   en      t          [a√§eilmno√∂u√ºr][mn]en
+SFX X   n       t          [^a‰ehilmnoˆu¸r][mn]en
+SFX X   en      t          [a‰eilmnoˆu¸r][mn]en
 SFX X   n       t          un
 SFX X   st      0          tst
 SFX X   n       st         e[lr]n
 SFX X   n       st         [dtw]en
-SFX X   en      st         [^dimn√üstwzx]en
+SFX X   en      st         [^dimnﬂstwzx]en
 SFX X   en      st         eien
 SFX X   n       st         [^e]ien
 SFX X   n       st         chnen
 SFX X   en      st         [^c]h[mn]en
-SFX X   n       st         [^a√§ehilmno√∂u√ºr][mn]en
-SFX X   en      st         [a√§eilmno√∂u√ºr][mn]en
+SFX X   n       st         [^a‰ehilmnoˆu¸r][mn]en
+SFX X   en      st         [a‰eilmnoˆu¸r][mn]en
 SFX X   n       st         un
-SFX X   n       st         [√üsxz]en
+SFX X   n       st         [ﬂsxz]en
 SFX X   n       st         ssen
 SFX X   n       st         schen
 SFX X   t       st         [^sz]t
@@ -415,8 +411,8 @@ SFX Y   en      te         eien
 SFX Y   n       te         [^e]ien
 SFX Y   n       te         chnen
 SFX Y   en      te         [^c]h[mn]en
-SFX Y   n       te         [^a√§ehilmno√∂u√ºr][mn]en
-SFX Y   en      te         [a√§eilmno√∂u√ºr][mn]en
+SFX Y   n       te         [^a‰ehilmnoˆu¸r][mn]en
+SFX Y   en      te         [a‰eilmnoˆu¸r][mn]en
 SFX Y   n       test       e[lr]n
 SFX Y   n       test       [dtw]en
 SFX Y   en      test       [^dimntw]en
@@ -424,8 +420,8 @@ SFX Y   en      test       eien
 SFX Y   n       test       [^e]ien
 SFX Y   n       test       chnen
 SFX Y   en      test       [^c]h[mn]en
-SFX Y   n       test       [^a√§ehilmno√∂u√ºr][mn]en
-SFX Y   en      test       [a√§eilmno√∂u√ºr][mn]en
+SFX Y   n       test       [^a‰ehilmnoˆu¸r][mn]en
+SFX Y   en      test       [a‰eilmnoˆu¸r][mn]en
 SFX Y   n       tet        e[lr]n
 SFX Y   n       tet        [dtw]en
 SFX Y   en      tet        [^dimntw]en
@@ -433,8 +429,8 @@ SFX Y   en      tet        eien
 SFX Y   n       tet        [^e]ien
 SFX Y   n       tet        chnen
 SFX Y   en      tet        [^c]h[mn]en
-SFX Y   n       tet        [^a√§ehilmno√∂u√ºr][mn]en
-SFX Y   en      tet        [a√§eilmno√∂u√ºr][mn]en
+SFX Y   n       tet        [^a‰ehilmnoˆu¸r][mn]en
+SFX Y   en      tet        [a‰eilmnoˆu¸r][mn]en
 SFX Y   n       ten        e[lr]n
 SFX Y   n       ten        [dtw]en
 SFX Y   en      ten        [^dimntw]en
@@ -442,27 +438,25 @@ SFX Y   en      ten        eien
 SFX Y   n       ten        [^e]ien
 SFX Y   n       ten        chnen
 SFX Y   en      ten        [^c]h[mn]en
-SFX Y   n       ten        [^a√§ehilmno√∂u√ºr][mn]en
-SFX Y   en      ten        [a√§eilmno√∂u√ºr][mn]en
+SFX Y   n       ten        [^a‰ehilmnoˆu¸r][mn]en
+SFX Y   en      ten        [a‰eilmnoˆu¸r][mn]en
 
 
-SFX Z Y 15
-SFX Z   0       st         [^h√üsz]
+
+SFX Z Y 13
+SFX Z   0       st         [^hﬂsz]
 SFX Z   0       st         [^c]h
 SFX Z   0       st         [^s]ch
 SFX Z   0       est        [dfkstz]
 SFX Z   0       est        ch
-SFX Z   0       est        [au]√ü
-SFX Z   0       est        ie√ü
+SFX Z   0       est        [au]ﬂ
+SFX Z   0       est        ieﬂ
 SFX Z   0       est        [io]ss
 SFX Z   0       t          [^dt]
 SFX Z   0       et         [dt]
 SFX Z   0       n          e
 SFX Z   0       en         ie
 SFX Z   0       en         [^e]
-SFX Z   0       est        iess
-SFX Z   0       est        [au]ss
-# last two ...ss rules only used for swiss de_CH - but de_DE is unaffected
 
 
 SFX O Y 21
@@ -471,28 +465,28 @@ SFX O   n       tes        [dtw]en
 SFX O   en      tes        [^dmntw]en
 SFX O   n       tes        chnen
 SFX O   en      tes        [^c]h[mn]en
-SFX O   n       tes        [^a√§ehilmno√∂u√ºr][mn]en
-SFX O   en      tes        [a√§eilmno√∂u√ºr][mn]en
+SFX O   n       tes        [^a‰ehilmnoˆu¸r][mn]en
+SFX O   en      tes        [a‰eilmnoˆu¸r][mn]en
 SFX O   n       ter        e[lr]n
 SFX O   n       ter        [dtw]en
 SFX O   en      ter        [^dmntw]en
 SFX O   n       ter        chnen
 SFX O   en      ter        [^c]h[mn]en
-SFX O   n       ter        [^a√§ehilmno√∂u√ºr][mn]en
-SFX O   en      ter        [a√§eilmno√∂u√ºr][mn]en
+SFX O   n       ter        [^a‰ehilmnoˆu¸r][mn]en
+SFX O   en      ter        [a‰eilmnoˆu¸r][mn]en
 SFX O   n       tem        e[lr]n
 SFX O   n       tem        [dtw]en
 SFX O   en      tem        [^dmntw]en
 SFX O   n       tem        chnen
 SFX O   en      tem        [^c]h[mn]en
-SFX O   n       tem        [^a√§ehilmno√∂u√ºr][mn]en
-SFX O   en      tem        [a√§eilmno√∂u√ºr][mn]en
+SFX O   n       tem        [^a‰ehilmnoˆu¸r][mn]en
+SFX O   en      tem        [a‰eilmnoˆu¸r][mn]en
 
-REP 28
+REP 15
 REP f ph
 REP ph f
-REP √ü ss
-REP ss √ü
+REP ﬂ ss
+REP ss ﬂ
 REP s ss
 REP ss s
 REP i ie
@@ -504,214 +498,4 @@ REP a ah
 REP ah a
 REP e eh
 REP eh e
-REP ae √§
-REP oe √∂
-REP ue √º
-REP Ae √Ñ
-REP Oe √ñ
-REP Ue √ú
-REP d t
-REP t d
-REP th t
-REP t th
-REP r rh
-REP ch k
-REP k ch
-#REP eee ee-E
-
-
-# this one will allow "-Eltern" - Hunspell 1.1.5 bug, but CHECKSHARPS obsoletes LANG de_DE
-#LANG de_DE
-CHECKSHARPS
-
-
-COMPOUNDBEGIN x
-COMPOUNDMIDDLE y
-COMPOUNDEND z
-FORBIDDENWORD d
-
-# Prefixes are allowed at the beginning of compounds,
-# suffixes are allowed at the end of compounds by default:
-# (prefix)?(root)+(affix)?
-# Affixes with COMPOUNDPERMITFLAG may be inside of compounds.
-COMPOUNDPERMITFLAG c
-
-ONLYINCOMPOUND o
-
-# my PSEUDOROOT h(elper) flag
-NEEDAFFIX h
-
-# forbid uppercase characters at compound word bounds
-# BUT I want to take care about it myself ;-)
-# CHECKCOMPOUNDCASE
-KEEPCASE w
-
-# Affixes  signed  with CIRCUMFIX flag may be on a word when this word also has a prefix with CIRCUMFIX flag and vice versa.
-# for decapitalizing nouns with fogemorphemes
-CIRCUMFIX f
-
-# this one would make a separate dict entry "Denkmalsschutz" invalidate the
-# compound of "Denkmal"+"schutz". We do not want this feature here...
-# CHECKCOMPOUNDREP
-
-# make not all possible suggestions for typos of Flicken or some rare words
-NOSUGGEST n
-
-WORDCHARS √ü-.
-
-# - setting this to 2 decreases performance by 1/10 but is needed for "√∂l" and "ei"
-# - setting this to 1 for handling Fuge-elements with dashes (Arbeits-) dash will 
-#   be a special word but - is handled as a affix now
-COMPOUNDMIN 2
-
-# this ones are for Duden R36 (old orthography)
-#CHECKCOMPOUNDPATTERN 2  #oldspell
-#CHECKCOMPOUNDPATTERN ee e #oldspell
-#CHECKCOMPOUNDPATTERN oo o #oldspell
-# also need oo o
-
-# this one needs to be flagable to be used for old orthography
-#CHECKCOMPOUNDTRIPLE
-
-
-PFX i Y 1
-PFX i 0 -/coyf .
-
-SFX j Y 3
-SFX j 0 0/xoc .
-SFX j 0 -/zocf .
-SFX j 0 -/cz .
-
-# Female forms for compound/Compound words:
-# attention: [^e][^n] does also filter out "...er" !
-SFX g Y 12
-SFX g 0  innen/xyoc [^n]
-SFX g en innen/xyoc en
-SFX g 0  Innen/xyoc [^n]
-SFX g en Innen/xyoc en
-SFX g 0  innen/xyocf [^n]
-SFX g en innen/xyocf en
-SFX g 0  Innen/xyocf [^n]
-SFX g en Innen/xyocf en
-SFX g 0  innen-/cz [^n]
-SFX g en innen-/cz en
-SFX g 0  Innen-/cz [^n]
-SFX g en Innen-/cz en
-
-
-PFX k Y 2
-PFX k 0 -/coxf .
-PFX k 0 0/coy .
-
-SFX e Y 2
-SFX e 0 0/yoc .
-SFX e 0 -/zc .
-
-# for Uppercased end-words to prepend - and lowercase: (Tier/EPSm) (EX: Bettbez√ºge und *-laken*)
-# AND
-# for lowercased end-words to prepend - and re-uppercase : (tier/EPSozm) (EX: Arbeits*-Tier*)
-#PFX m A -a/co A
-#PFX m a -/ a
-PFX m Y 58
-PFX m A -a A
-PFX m B -b B
-PFX m C -c C
-PFX m D -d D
-PFX m E -e E
-PFX m F -f F
-PFX m G -g G
-PFX m H -h H
-PFX m I -i I
-PFX m J -j J
-PFX m K -k K
-PFX m L -l L
-PFX m M -m M
-PFX m N -n N
-PFX m O -o O
-PFX m P -p P
-PFX m Q -q Q
-PFX m R -r R
-PFX m S -s S
-PFX m T -t T
-PFX m U -u U
-PFX m V -v V
-PFX m W -w W
-PFX m X -x X
-PFX m Y -y Y
-PFX m Z -z Z
-PFX m √Ñ -√§ √Ñ
-PFX m √ñ -√∂ √ñ
-PFX m √ú -√º √ú
-PFX m a -A/co a
-PFX m b -B/co b
-PFX m c -C/co c
-PFX m d -D/co d
-PFX m e -E/co e
-PFX m f -F/co f
-PFX m g -G/co g
-PFX m h -H/co h
-PFX m i -I/co i
-PFX m j -J/co j
-PFX m k -K/co k
-PFX m l -L/co l
-PFX m m -M/co m
-PFX m n -N/co n
-PFX m o -O/co o
-PFX m p -P/co p
-PFX m q -Q/co q
-PFX m r -R/co r
-PFX m s -S/co s
-PFX m t -T/co t
-PFX m u -U/co u
-PFX m v -V/co v
-PFX m w -W/co w
-PFX m x -X/co x
-PFX m y -Y/co y
-PFX m z -Z/co z
-PFX m √§ -√Ñ/co √§
-PFX m √∂ -√ñ/co √∂
-PFX m √º -√ú/co √º
-
-
-# Decapitalizing: (not used ATM... )
-# /co(f) : compound permit, in coumpount only, (decapitalizing with fogemorphemes)
-#PFX l Y 29
-#PFX l A a/co A
-#PFX l √Ñ √§/co √Ñ
-#PFX l B b/co B
-#PFX l C c/co C
-#PFX l D d/co D
-#PFX l E e/co E
-#PFX l F f/co F
-#PFX l G g/co G
-#PFX l H h/co H
-#PFX l I i/co I
-#PFX l J j/co J
-#PFX l K k/co K
-#PFX l L l/co L
-#PFX l M m/co M
-#PFX l N n/co N
-#PFX l O o/co O
-#PFX l √ñ √∂/co √ñ
-#PFX l P p/co P
-#PFX l Q q/co Q
-#PFX l R r/co R
-#PFX l S s/co S
-#PFX l T t/co T
-#PFX l U u/co U
-#PFX l √ú √º/co √ú
-#PFX l V v/co V
-#PFX l W w/co W
-#PFX l X x/co X
-#PFX l Y y/co Y
-#PFX l Z z/co Z
-
-# private hunspell flags:
-# --x : not for capmain (rare words)
-
-# With "BREAK -" some wrong forms are accepted but that is needed for US-Wirtschaft etc.
-# So enabling this is the lesser evil. No perfect solution found so far...
-BREAK 2
-BREAK -
-BREAK .
 
