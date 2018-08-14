@@ -705,7 +705,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (mode == "gfm") {
       // #TODO make language customizable
-      spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      var m = this.value.match(/^.*lang\:(.._..)/)
+      if (m) {
+        var lang = m[1]
+        var dict = await spellCheck.loadDictLang(lang)
+        if (dict) {
+          lively.notify("start spell checking lang: " + lang)
+          spellCheck.startSpellCheck(this.editor, dict)
+        } else {
+          console.log("spellchecking language not found: " + lang)
+        }
+      } else {
+        spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      }
     }
     
   }

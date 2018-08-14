@@ -16,11 +16,16 @@ export async function loadDict(name, aff, dic) {
 }
 
 export function current() {
-  return loadDict(
-    "en_US",
-    lively4url + '/src/external/dicts/en_US.aff',
-    lively4url + '/src/external/dicts/en_US.dic')  
+  return loadDictLang("en_US")
 }
+
+export function loadDictLang(lang="en_US") {
+  return loadDict(
+    lang,
+    lively4url + `/src/external/dicts/${lang}.aff`,
+    lively4url + `/src/external/dicts/${lang}.dic`)  
+}
+
 
 current()
 
@@ -67,7 +72,7 @@ export async  function startSpellCheck(cm, typo) {
       // var cm = that.editor
       
       
-			if (!/[a-z]/i.test(word)) return null; // no letters
+			if (!/[a-zöäüß]/i.test(word)) return null; // no letters
 			
       // console.log("w", word, "stream ", stream)
       // var token = cm.getTokenAt(cm.doc.posFromIndex(stream.pos))
