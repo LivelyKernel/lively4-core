@@ -47,6 +47,7 @@ export default class VivideScriptEditor extends Morph {
   
   // #TODO: terminology
   // #TODO: last script should not be removeable
+  // #TODO: should focus next step editor
   removeStep(stepEditor, stepToBeRemoved) {
     let script = this.script;
     let lastStep = null;
