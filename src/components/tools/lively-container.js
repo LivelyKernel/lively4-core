@@ -1549,6 +1549,16 @@ export default class Container extends Morph {
     return this.followPath(lively4url + "/README.md")
   }
 
+  // customize clipboard interaction... etc
+  // navigating in this multidimensional space can be hard
+  livelyTarget() {
+    var markdownElement = this.get("lively-markdown")
+    if (markdownElement) {
+      return markdownElement.get("#content")
+    }
+    return this
+  }
+  
   livelyMigrate(other) {
     // other = that
     this.isMigrating = true;
