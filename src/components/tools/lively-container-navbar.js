@@ -191,18 +191,40 @@ export default class LivelyContainerNavbar extends Morph {
     return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
   }
   
-  async show(targetUrl, sourceContent) {
+  async show(targetURL, sourceContent, contextURL) {
     
     this.sourceContent = sourceContent;
-    this.url = "" + targetUrl;
+    this.url = "" + targetURL;
+    
+    if (contextURL && contextURL != this.url) {
+      let urlWithoutIndex = this.url.replace(/index\.((html)|(md))$/,"")
+      this.targetItem = _.find(this.get("#navbar").querySelectorAll("li"), ea => {
+        if (ea.textContent == "../") return false
+        var link = ea.querySelector("a")
+        
+        return link && (link.href == this.url || link.href == urlWithoutIndex)
+      })
+      if (this.targetItem) {
+        
+        this.get("#navbar").querySelectorAll(".selected").forEach(ea => ea.classList.remove("selected"))
+        this.targetItem.classList.add("selected");
+        
+        this.showSublist()
+        return         
+      }
+    }
+    
     var filename = this.getFilename();
     var root = this.getRoot();
     this.currentDir = root;
+
+    
+    
     var stats = await fetch(root, {
       method: "OPTIONS",
     }).then(r => r.status == 200 ? r.json() : {})
     
-    var mystats = await fetch(targetUrl, {
+    var mystats = await fetch(targetURL, {
       method: "OPTIONS",
     }).then(r => r.status == 200 ? r.json() : {})
     
@@ -238,7 +260,6 @@ export default class LivelyContainerNavbar extends Morph {
         if (a.type < b.type) {
           return -1;
         }
-        
         // #Hack, date based filenames are sorted so lastest are first
         if (a.name.match(/\d\d\d\d-\d\d-\d\d/) && b.name.match(/\d\d\d\d-\d\d-\d\d/)) {
           return (a.name >= b.name) ? -1 : 1;          
@@ -247,8 +268,6 @@ export default class LivelyContainerNavbar extends Morph {
         return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
-    
-      
 
     files.unshift({name: "..", type: "directory"});
     files.forEach((ea) => {
@@ -261,14 +280,15 @@ export default class LivelyContainerNavbar extends Morph {
 
       var element = document.createElement("li");
       var link = document.createElement("a");
-
       
-      if (ea.name == filename) this.targetItem = element;
+      
+      if (ea.name == filename) {
+        this.targetItem = element;
+      }
       
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
-     
       var icon;
       if (ea.type == "directory" && !ea.name.match(/\.l4d/)) {
         name += "/";
@@ -323,7 +343,8 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.lastSelection = []
     }
-    this.followPath(link.href );
+    this.followPath(link.href, this.lastPath);
+    this.lastPath = link.href
   }
   
   async editWithSyvis (url) {
@@ -364,8 +385,8 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify(`please implement navigateToName(${url})`)
   }
 
-  followPath(url) {
-    this.show(new URL(url),"")
+  followPath(url, lastPath) {
+    this.show(new URL(url), "", lastPath)
   }
 
   showSublistHTML(subList) {
@@ -466,9 +487,9 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   async showSublist() {
-    debugger
     if (!this.targetItem) return 
     var subList = document.createElement("ul");
+    this.get("#navbar").querySelectorAll("ul").forEach(ea => ea.remove())
     this.targetItem.appendChild(subList);
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
@@ -476,7 +497,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.showSublistJS(subList)
     } else if (this.url.match(/\.md$/)) {
       this.showSublistMD(subList)
-      if (this.url.match(/\.l4d/)) {
+      if (this.url.match(/((\.l4d)|(index\.md))$/)) {
         this.showSublistOptions(subList, this.url.replace(/[^/]*$/,"")) // add external contents 
       }
     } else {
