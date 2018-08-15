@@ -1,26 +1,35 @@
 import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
+import { stepFolder } from 'src/client/vivide/utils.js';
 
 export default class ScriptStep {
-  constructor(source, type, id = null, lastScript = false) {
+  constructor(source, type, id = null, lastScript = false, json) {
     this.id = id != null ? id : uuid();
     this.source = source;
     this.type = type;
+    this.cursor = json ? json.cursor : undefined;
+    this.route = json ? json.route : undefined;
     this.nextStep = null;
     this.updateCallback = null;
     this.lastScript = lastScript;
   }
   
-  getDefaultCursorPosition() {
-    if(this.type === "transform") {
-      return [{ line: 2, ch: 17}, { line: 2, ch: 21}];
-    } else if(this.type === "extract") {
-      return [{ line: 1, ch: 2}, { line: 1, ch: 2}];
-    } else if(this.type === "descent") {
-      return [{ line: 0, ch: 10}, { line: 0, ch: 10}];
+  getCursorPosition() {
+    if(this.cursor) {
+      return [this.cursor.anchor, this.cursor.head];
     }
-    lively.error('unexpected step type encountered', 'fallback for defaultCursorPosition')
+    lively.error('no cursor available', 'fallback for default cursor position')
     return [{ line: 1, ch: 0}, { line: 1, ch: 0}];
+  }
+  setCursorPosition(anchor, head) {
+    this.cursor = { anchor, head };
+  }
+  
+  getRoute() {
+    return this.route && this.route.slice();
+  }
+  setRoute(route) {
+    this.route = route.slice();
   }
   
   get nextStep() { return this._nextStep; }
@@ -73,8 +82,11 @@ export default class ScriptStep {
     const scriptJson = {
       lastScript: this.lastScript, 
       type: this.type,
-      source: this.source
+      source: this.source,
+      cursor: this.cursor,
+      route: this.route
     };
+    
     if (this.nextStep) {
       scriptJson.nextScriptId = this.nextStep.id;
     }
@@ -86,5 +98,16 @@ export default class ScriptStep {
     const module = await boundEval(this.source);
     
     return module.value;
+  }
+  
+  static async newFromTemplate(type) {
+    const stepTemplateURL = new URL(type + '-step-template.json', stepFolder);
+    const stepTemplate = await fetch(stepTemplateURL).then(r => r.json());
+
+    return this.newFromJSON(stepTemplate);
+  }
+  
+  static newFromJSON(json) {
+    return new ScriptStep(json.script, json.type, undefined, undefined, json);
   }
 }

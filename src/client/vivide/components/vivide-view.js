@@ -4,7 +4,6 @@ import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
-import { stepFolder, scriptFolder } from 'src/client/vivide/utils.js';
 
 class Script {
   constructor(view) {
@@ -53,17 +52,10 @@ class Script {
   }
 }
 
-async function newStepFromTemplate(type) {
-  const stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-  const stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
-
-  return new ScriptStep(stepTemplate, type);
-}
-
 async function initialScriptsFromTemplate() {
-  const transform = await newStepFromTemplate('transform');
-  const extract = await newStepFromTemplate('extract');
-  const descent = await newStepFromTemplate('descent');
+  const transform = await ScriptStep.newFromTemplate('transform');
+  const extract = await ScriptStep.newFromTemplate('extract');
+  const descent = await ScriptStep.newFromTemplate('descent');
   
   transform.insertAfter(extract);
   extract.insertAfter(descent);
@@ -491,8 +483,9 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig);
   }
   
-  async insertStepAfter(scriptType, prevStep = null) {
-    let newStep = await newStepFromTemplate(scriptType);
+  // #TODO: move to VivideScript
+  async insertStepAfter(stepType, prevStep = null) {
+    let newStep = await ScriptStep.newFromTemplate(stepType);
     newStep.updateCallback = this.scriptGotUpdated.bind(this);
     
     if (prevStep) {

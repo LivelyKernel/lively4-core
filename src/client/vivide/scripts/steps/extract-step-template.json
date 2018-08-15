@@ -1,0 +1,8 @@
+{
+    "script": "[item => ({\n  \n}), {\n  \n}]",
+    "cursor": {
+      "anchor": { "line": 1, "ch": 2},
+      "head": { "line": 1, "ch": 2}
+    },
+    "type": "extract"
+}

@@ -24,8 +24,7 @@ export default class VivideScriptEditor extends Morph {
     setTimeout(() => {
       const editor = this.get('vivide-step-editor');
       this.delayedFocusOnStepEditor(editor);
-      
-    }, 1000)
+    }, 1000);
   }
   delayedFocusOnStepEditor(stepEditor) {
     stepEditor.delayedFocus();
@@ -80,14 +79,14 @@ export default class VivideScriptEditor extends Morph {
     }
   }
   
-  async insertStepAfter(scriptType, prevStep, prevEditor) {
-    let script = await this.view.insertStepAfter(scriptType, prevStep);
+  async insertStepAfter(stepType, prevStep, prevEditor) {
+    let step = await this.view.insertStepAfter(stepType, prevStep);
 
-    if (script.lastScript) {
-      this.lastScript = script;
+    if (step.lastScript) {
+      this.lastScript = step;
     }
     
-    const stepEditor = await this.insertNewStepEditorAfter(script, prevEditor);
+    const stepEditor = await this.insertNewStepEditorAfter(step, prevEditor);
     this.updateLoopState();
     stepEditor.setFocus();
   }

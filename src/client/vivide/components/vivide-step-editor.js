@@ -19,8 +19,6 @@ export default class VivideStepEditor extends Morph {
     this.routeToShownPath = [];
     this.markerWrappers = [];
     
-    this.registerButtons();
-    
     this.editor.editorLoaded().then(() => this.editorConfig());
   }
   editorConfig() {
@@ -376,18 +374,29 @@ export default class VivideStepEditor extends Morph {
   }
   
   async showTypeMenu(evt) {
-    const menuItems = ['transform', 'extract', 'descent'].map(type => {
-      return [
-        type,
-        evt => {
-          menu.remove();
-          this.scriptEditor.insertStepAfter(type, this.step, this);
-        },
-        type,
-        '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
-      ]
-    })
+    const createStepAfterThisOne = type => {
+      menu.remove();
+      this.scriptEditor.insertStepAfter(type, this.step, this);
+    };
+    
+    const menuItems = [[
+      'transform',
+      evt => createStepAfterThisOne('transform'),
+      'Alt+T',
+      '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
+    ], [
+      'extract',
+      evt => createStepAfterThisOne('extract'),
+      'Alt+E',
+      '<i class="fa fa-image" aria-hidden="true"></i>'
+    ], [
+      'descent',
+      evt => createStepAfterThisOne('descent'),
+      'Alt+D',
+      '<i class="fa fa-arrow-down" aria-hidden="true"></i>'
+    ]];
 
+    // #TODO: is there a better way to position the menu? @Jens
     const menu = await ContextMenu.openIn(this.get('#menu-holder'), evt, undefined, document.body, menuItems);
   }
   
@@ -403,9 +412,16 @@ export default class VivideStepEditor extends Morph {
     this.get('#stepType').innerHTML = step.type;
     this.editor.editorLoaded().then(() => {
       this.editor.value = step.source;
-      // #TODO: this selection is only valid for default scripts, but fails on already edited scripts
-      this.cm.setSelection(...this.step.getDefaultCursorPosition(), {scroll: true});
-      this.autoFoldMax();
+      
+      this.cm.setSelection(...this.step.getCursorPosition(), {scroll: true});
+      
+      const route = this.step.getRoute();
+      if(route) {
+        this.routeToShownPath = route;
+        this.foldPath(this.getPathForRoute(route));
+      } else {
+        this.autoFoldMax();
+      }
       
       requestAnimationFrame(() => this.cm.refresh());
     });
@@ -413,6 +429,9 @@ export default class VivideStepEditor extends Morph {
 
   async stepSaved(text) {
     this.step.source = text;
+    this.step.setCursorPosition(this.cm.getCursor('anchor'), this.cm.getCursor('head'));
+    this.step.setRoute(this.routeToShownPath);
+
     this.step.update();
   }
 }
