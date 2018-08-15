@@ -1,4 +1,4 @@
-# 2018-08-15 #Lively4Bundles 
+# 2018-08-15 #L4D #Lively4Documents 
 
 So, instead of embedding content directly into one file and having the #CodeMirror deal with it... we can opt for making our "documents" not single files, but bundle them into a directory. This breaks compatibility with other mechanisms, like drag and drop, but since we are in control of it, be should be able to deal with it....
 
