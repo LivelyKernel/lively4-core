@@ -52,12 +52,19 @@ lively-code-mirror {
     padding-right: 3px;
     color: white;
   }
+  div#menu-holder {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1003;
+    width: 0px;
+    height: 0px;
+  }
 </style>
 <div class="container">
   <lively-code-mirror id="editor"></lively-code-mirror>
-  <button id="insertStepAfter" class="insert-button"><i class="fa fa-plus"></i></button>
-  <button id="removeStep" class="remove-button"><i class="fa fa-trash"></i></button>
   <span id="typeHint"><span id="stepType">stepType</span></span>
+  <div id="menu-holder"></div>
 </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

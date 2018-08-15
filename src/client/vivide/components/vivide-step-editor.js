@@ -9,8 +9,6 @@ import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
 
-
-
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
   get cm() { return this.editor.editor; }
@@ -35,23 +33,50 @@ export default class VivideStepEditor extends Morph {
     this.editor.doSave = text => this.stepSaved(text);
 
     this.cm.addKeyMap({
-      // #KeyboardShortcut Alt-Enter insert new vivide script step after this one 
+      // #KeyboardShortcut Alt-Enter insert new vivide script step after this one
       "Alt-Enter": cm => {
         this.showTypeMenu();
       },
+      // #KeyboardShortcut Alt-T insert new transform step after this one
+      "Alt-T": cm => {
+        this.scriptEditor.insertStepAfter('transform', this.step, this);
+      },
+      // #KeyboardShortcut Alt-E insert new extract step after this one
+      "Alt-E": cm => {
+        this.scriptEditor.insertStepAfter('extract', this.step, this);
+      },
+      // #KeyboardShortcut Alt-D insert new descent step after this one
+      "Alt-D": cm => {
+        this.scriptEditor.insertStepAfter('descent', this.step, this);
+      },
       // #TODO: implement
-      // #KeyboardShortcut Alt-Shift-Enter insert new vivide script step before this one 
-      "Alt-Shift-Enter": cm => {
+      // #KeyboardShortcut Alt-Shift-Enter insert new vivide script step before this one
+      "Shift-Alt-Enter": cm => {
         lively.warn("'Insert Before' not yet implemented", 'fallback to insertAfter');
         this.showTypeMenu();
       },
+      // #KeyboardShortcut Alt-Shift-T insert new transform step before this one
+      "Shift-Alt-T": cm => {
+        lively.warn("'Insert Before' not yet implemented", 'fallback to insertAfter');
+        this.scriptEditor.insertStepAfter('transform', this.step, this);
+      },
+      // #KeyboardShortcut Alt-Shift-E insert new extract step before this one
+      "Shift-Alt-E": cm => {
+        lively.warn("'Insert Before' not yet implemented", 'fallback to insertAfter');
+        this.scriptEditor.insertStepAfter('extract', this.step, this);
+      },
+      // #KeyboardShortcut Alt-Shift-D insert new descent step before this one
+      "Shift-Alt-D": cm => {
+        lively.warn("'Insert Before' not yet implemented", 'fallback to insertAfter');
+        this.scriptEditor.insertStepAfter('descent', this.step, this);
+      },
       // #KeyboardShortcut Alt-Delete remove this step from vivide script
       "Alt-Delete": cm => {
-        this.onRemoveStep();
+        this.scriptEditor.removeStep(this, this.step);
       },
       // #KeyboardShortcut Alt-Backspace remove this step from vivide script
       "Alt-Backspace": cm => {
-        this.onRemoveStep();
+        this.scriptEditor.removeStep(this, this.step);
       },
       // #KeyboardShortcut Alt-Up focus previous step editor
       "Alt-Up": cm => {
@@ -61,68 +86,98 @@ export default class VivideStepEditor extends Morph {
       "Alt-Down": cm => {
         this.scriptEditor && this.scriptEditor.navigateStepEditors(this, true);
       },
-      // #KeyboardShortcut Alt-Right inverse code folding (indent)
+      // #KeyboardShortcut Alt-Right fold (inverse code folding)
       "Alt-Right": cm => {
-        this.indent(); // #TODO: rename indent to fold and dedent to unfold
+        this.fold(); // #TODO: rename indent to fold and dedent to unfold
       },
-      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
+      // #KeyboardShortcut Alt-Left unfold (inverse code folding)
       "Alt-Left": cm => {
-        this.dedent();
+        this.unfold();
       },
-      // #TODO: implement
       // #KeyboardShortcut Alt-U make the current selection bigger
       "Alt-U": cm => {
-        lively.warn('\'make the current selection bigger');
-        this.expandSelection()
+        this.expandSelection();
       },
     });
   }
   
-  // #TODO: refactor
-  // #TODO: split generic iteration and specific conditions
-  nextCursorPath(startingPath) {
-    let myself = this;
-
-    let forcedDone = false;
-    let pathToShow;
-    const nodesToLookFor = {
-      enter(path) {
-        if(forcedDone) { return; }
-
-        const location = path.node.loc;
-        if(!myself.isCursorIn(location, 'from')) { return; }
-        if(!myself.isCursorIn(location, 'to')) { return; }
-
-        pathToShow = path;
-        forcedDone = true;
-      }
-    }
-
-    startingPath.traverse(nodesToLookFor);
+  /**
+   * Generic path utilities
+   */
+  ast() {
+    const syntaxPlugins = [
+      syntaxJsx,
+      doExpressions,
+      functionBind,
+      asyncGenerators
+    ];
     
+    const src = this.editor.value;
+    const result = babel.transform(src, {
+      babelrc: false,
+      plugins: syntaxPlugins,
+      presets: [],
+      filename: undefined,
+      sourceFileName: undefined,
+      moduleIds: false,
+      sourceMaps: false,
+      compact: false,
+      comments: true,
+      code: true,
+      ast: true,
+      resolveModuleSource: undefined
+    });
+    
+    return result.ast;
+  }
+  
+  nextPath(startingPath, isValid) {
+    let pathToShow;
+
+    startingPath.traverse({
+      enter(path) {
+        if(!pathToShow && isValid(path)) {
+          pathToShow = path;
+        }
+      }
+    });
+
     return pathToShow;
   }
-  expandSelection() {
-    let programPath = this.getPathForRoute([]);
-    
-    // go down to minimal selected node
-    let pathToShow = programPath;
+  
+  getInnermostPath(startingPath, nextPathCallback) {
+    let pathToShow = startingPath;
     while(true) {
-      let nextPath = this.nextCursorPath(pathToShow);
+      let nextPath = nextPathCallback(pathToShow);
       if(nextPath) {
-        lively.notify(nextPath.node.type)
         pathToShow = nextPath;
       } else {
         break;
       }
     }
+
+    return pathToShow;
+  }
+
+  /**
+   * Selections
+   */
+  nextPathContainingCursor(startingPath) {
+    return this.nextPath(startingPath, path => {
+      const location = path.node.loc;
+      return this.isCursorIn(location, 'from') && this.isCursorIn(location, 'to');
+    });
+  }
+  expandSelection() {
+    const programPath = this.getPathForRoute([]);
+    // go down to minimal selected node
+    const pathToShow = this.getInnermostPath(programPath, prevPath => this.nextPathContainingCursor(prevPath));
     
     if(pathToShow) {
       // go up again
       let selectionStart = this.cm.getCursor('anchor');
       let selectionEnd = this.cm.getCursor();
       let maxPath = pathToShow.find(path => {
-        // lively.notify(path.node.type)
         const pathLocation = path.node.loc;
         const pathStart = this.toCMPosition(pathLocation.start);
         const pathEnd = this.toCMPosition(pathLocation.end);
@@ -142,37 +197,9 @@ export default class VivideStepEditor extends Morph {
     });
   }
   
-  ast() {
-    const syntaxPlugins = [
-      syntaxJsx,
-      doExpressions,
-      functionBind,
-      asyncGenerators
-    ];
-    
-    // try {
-      var src = this.editor.value;
-      const result = babel.transform(src, {
-        babelrc: false,
-        plugins: syntaxPlugins,
-        presets: [],
-        filename: undefined,
-        sourceFileName: undefined,
-        moduleIds: false,
-        sourceMaps: false,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-      })
-    // } catch(err) {
-    //   this.get("#log").innerHTML = "" + err
-    // }
-    
-    return result.ast;
-  }
-  
+  /**
+   * Code folding
+   */
   isBefore(small, big) {
     return small.line < big.line ||
       small.line === big.line && small.ch <= big.ch;
@@ -206,75 +233,50 @@ export default class VivideStepEditor extends Morph {
     
     return isBefore(start, cursor) && isBefore(cursor, end);
   }
-  dedent() {
+  unfold() {
     const prevPath = this.getPathForRoute(this.routeToShownPath)
 
-    const pathToShow = prevPath.findParent(path => this.isValidIndentionPath(path));
+    const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
     
     if(pathToShow) {
-      this.applyIndentionFor(pathToShow);
+      this.foldPath(pathToShow);
     } else {
-      lively.warn("No new indention level for dedent found");
+      lively.warn("No previous folding level found");
     }
   }
-  isValidIndentionPath(path) {
+  isValidFoldPath(path) {
     return path.isProgram() ||
       path.isForOfStatement() ||
       path.isArrowFunctionExpression();
   }
-  nextIndentionPath(startingPath, obeyCursor) {
-    let myself = this;
+  nextFoldingPath(startingPath, obeyCursor) {
+    return this.nextPath(startingPath, path => {
+      const location = path.node.loc;
+      if(obeyCursor && !this.isCursorIn(location, 'anchor')) { return false; }
+      if(obeyCursor && !this.isCursorIn(location, 'head')) { return false; }
 
-    let forcedDone = false;
-    let pathToShow;
-    const nodesToLookFor = {
-      enter(path) {
-        if(forcedDone) { return; }
-
-        if(!myself.isValidIndentionPath(path)) { return; }
-
-        const location = path.node.loc;
-        if(obeyCursor && !myself.isCursorIn(location, 'anchor')) { return; }
-        if(obeyCursor && !myself.isCursorIn(location, 'head')) { return; }
-
-        pathToShow = path;
-        forcedDone = true;
-      }
-    }
-
-    startingPath.traverse(nodesToLookFor);
-    
-    return pathToShow;
+      return this.isValidFoldPath(path);
+    });
   }
-  indent() {
+  fold() {
     const prevPath = this.getPathForRoute(this.routeToShownPath)
     
-    let pathToShow = this.nextIndentionPath(prevPath, true);
+    let pathToShow = this.nextFoldingPath(prevPath, true);
     
     if(pathToShow) {
-      this.applyIndentionFor(pathToShow);
+      this.foldPath(pathToShow);
     } else {
-      lively.warn("No new indention level for indent found");
+      lively.warn("No next folding level found");
     }
   }
-  autoIndentMax() {
-    let prevPath = this.getPathForRoute(this.routeToShownPath)
-    
-    let pathToShow = prevPath;
-    while(true) {
-      let nextPath = this.nextIndentionPath(pathToShow, false);
-      if(nextPath) {
-        lively.notify(nextPath.node.type)
-        pathToShow = nextPath;
-      } else {
-        break;
-      }
-    }
+  autoFoldMax() {
+    const programPath = this.getPathForRoute([]);
+    const pathToShow = this.getInnermostPath(programPath, prevPath => this.nextFoldingPath(prevPath, false));
     
     if(pathToShow) {
-      this.applyIndentionFor(pathToShow);
+      this.foldPath(pathToShow);
     } else {
-      lively.warn("No new indention level for indent found");
+      lively.warn("No folding level for automatic fold found");
     }
   }
   getRouteForPath(path) {
@@ -315,8 +317,8 @@ export default class VivideStepEditor extends Morph {
     
     return path;
   }
-  applyIndentionFor(path) {
-    this.removeIndention();
+  foldPath(path) {
+    this.removeFolding();
 
     this.routeToShownPath = this.getRouteForPath(path);
 
@@ -353,7 +355,7 @@ export default class VivideStepEditor extends Morph {
       this.markerWrappers.push(div);
     });
   }
-  removeIndention() {
+  removeFolding() {
     this.markerWrappers.forEach(wrapper => wrapper.marker.clear());
     this.markerWrappers.length = 0;
   }
@@ -373,15 +375,6 @@ export default class VivideStepEditor extends Morph {
     this.scriptEditor = scriptEditor;
   }
   
-  onInsertStepAfter(evt) {
-    if (!this.scriptEditor) {
-      lively.error('no ScriptEditor found (onInsertStepAfter)')
-      return;
-    }
-
-    this.showTypeMenu(evt);
-  }
-  
   async showTypeMenu(evt) {
     const menuItems = ['transform', 'extract', 'descent'].map(type => {
       return [
@@ -395,18 +388,7 @@ export default class VivideStepEditor extends Morph {
       ]
     })
 
-    const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
-  }
-  
-  onRemoveStep() {
-    if (!this.scriptEditor) {
-      lively.error('no ScriptEditor found (onRemoveStep)')
-      return;
-    }
-    
-    this.scriptEditor.removeStep(this, this.step);
-    
-    // #TODO: should focus next step editor
+    const menu = await ContextMenu.openIn(this.get('#menu-holder'), evt, undefined, document.body, menuItems);
   }
   
   setToLoopStart() {
@@ -423,11 +405,9 @@ export default class VivideStepEditor extends Morph {
       this.editor.value = step.source;
       // #TODO: this selection is only valid for default scripts, but fails on already edited scripts
       this.cm.setSelection(...this.step.getDefaultCursorPosition(), {scroll: true});
-      this.autoIndentMax();
+      this.autoFoldMax();
       
-      requestAnimationFrame(() => {
-        this.cm.refresh();
-      });
+      requestAnimationFrame(() => this.cm.refresh());
     });
   }
 
