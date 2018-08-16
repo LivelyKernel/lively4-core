@@ -291,8 +291,6 @@ export default class VivideStepEditor extends Morph {
       
       return false;
     })
-
-    lively.notify(route);
     
     return route;
   }
