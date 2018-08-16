@@ -441,7 +441,7 @@ export default class ElasticBodies extends MpmAnimation {
 
 // live dev
 
-
+// #UPDATE_INSTANCES
 document.querySelectorAll("lively-mpm").forEach(mpm => {
 
   //after updating elasticbodies.js, the class changes

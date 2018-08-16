@@ -434,6 +434,7 @@ export default class VivideStepEditor extends Morph {
   }
 }
 
+// #UPDATE_INSTANCES
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
 document.querySelectorAll("vivide-script-editor").forEach(se => {

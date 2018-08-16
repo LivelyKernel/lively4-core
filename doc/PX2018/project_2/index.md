@@ -30,6 +30,7 @@ mpm.animation.initParticles()
 
 import ElasticBodies from "doc/PX2018/project_2/elasticbodies.js"
 
+// #UPDATE_INSTANCES
 // after updating elasticbodies.js, the class changes
 mpm.animation.constructor === ElasticBodies
 

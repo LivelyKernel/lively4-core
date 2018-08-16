@@ -12,6 +12,8 @@ export default class ScriptStep {
     this.nextStep = null;
     this.updateCallback = null;
     this.lastScript = lastScript;
+  
+    this.isScriptStep = true;
   }
   
   getCursorPosition() {
@@ -111,3 +113,23 @@ export default class ScriptStep {
     return new ScriptStep(json.script, json.type, undefined, undefined, json);
   }
 }
+
+// #UPDATE_INSTANCES
+// #TODO: idea: using a list of all object, we can make them become anew
+// go through all object reachable from window
+document.querySelectorAll("vivide-view").forEach(vv => {
+  let step = vv.getFirstStep();
+  
+  while(step) {
+    // evil live programming
+    step.constructor === ScriptStep;
+
+    // we can fix this, so we can do live development again....
+    step.__proto__ = ScriptStep.prototype;
+    
+    if(step.lastScript) {
+      break;
+    }
+    step = step.nextStep;
+  }
+})

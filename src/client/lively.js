@@ -169,7 +169,7 @@ export default class Lively {
       dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
       // #TODO: duplicated code #refactor
     } else if(path.match('client/vivide')) {
-      // For reactive, find modules recursive, but cut modules not in 'client/vivide' folder
+      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
     } else {
