@@ -30,13 +30,12 @@ export default class VivideScriptEditor extends Morph {
   }
   
   removeLoop() {
-    lively.warn("remove loop")
     if (!this.firstStep) return;
     
     let script = this.firstStep.getLastStep();
     
     script.nextStep = null;
-    this.updateLoopState()
+    this.updateLoopState();
     this.firstStep.update();
   }
   
@@ -70,18 +69,14 @@ export default class VivideScriptEditor extends Morph {
   async insertStepAfter(stepType, prevStep, prevEditor) {
     let step = await this.view.insertStepAfter(stepType, prevStep);
 
-    if (step.lastScript) {
-      this.lastScript = step;
-    }
-    
     const stepEditor = await this.insertNewStepEditorAfter(step, prevEditor);
     this.updateLoopState();
     stepEditor.setFocus();
   }
   
   updateLoopState() {
-    let editorListContent = Array.from(this.editorList.children);
-    let loopStart = this.lastScript.nextStep;
+    const editorListContent = Array.from(this.editorList.children);
+    const loopStart = this.currentScript.getLoopStartStep();
     
     editorListContent.forEach(stepEditor => stepEditor.hideLoopMarker());
     if(loopStart) {
@@ -90,23 +85,19 @@ export default class VivideScriptEditor extends Morph {
     }
   }
   
-  async setScripts(currentScript) {
-    this.editorList.innerHTML = '';
+  async setScript(currentScript) {
     this.currentScript = currentScript;
     
+    this.editorList.innerHTML = '';
     this.firstStep.iterateLinearAsync(async step => {
       return await this.appendNewStepEditorFor(step);
     });
     
-    this.lastScript = this.firstStep.getLastStep();
     this.updateLoopState();
   }
   
   get firstStep() {
     return this.currentScript && this.currentScript.getInitialStep();
-  }
-  getScripts() {
-    return this.firstStep;
   }
   
   async createStepEditorFor(script) {
@@ -142,6 +133,6 @@ export default class VivideScriptEditor extends Morph {
   
   livelyMigrate(other) {
     this.setView(other.getView());
-    this.setScripts(other.currentScript);
+    this.setScript(other.currentScript);
   }
 }

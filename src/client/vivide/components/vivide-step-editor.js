@@ -92,8 +92,8 @@ export default class VivideStepEditor extends Morph {
       "Alt-Left": cm => {
         this.unfold();
       },
-      // #KeyboardShortcut Ctrl-A expand current selection
-      "Ctrl-A": cm => {
+      // #KeyboardShortcut Alt-A expand current selection
+      "Alt-A": cm => {
         this.expandSelection();
       },
       // #KeyboardShortcut Alt-L set this step as loop start

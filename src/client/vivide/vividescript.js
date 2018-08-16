@@ -9,6 +9,11 @@ export default class Script {
   setInitialStep(step) { return this.initialStep = step; }
   getInitialStep() { return this.initialStep; }
   
+  getLoopStartStep() {
+    const firstStep = this.getInitialStep();
+    return firstStep && firstStep.getLastStep().nextStep;
+  }
+  
   numberOfSteps() {
     let length = 0
     this.getInitialStep().iterateLinear(() => length++);

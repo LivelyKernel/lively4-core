@@ -470,7 +470,7 @@ export default class VivideView extends Morph {
 
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScripts(this.myCurrentScript);
+    scriptEditor.setScript(this.myCurrentScript);
 
     return scriptEditor;
   }
