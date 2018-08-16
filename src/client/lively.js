@@ -895,6 +895,11 @@ export default class Lively {
     lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
+  /*
+   * After changing code... we have to update intances...
+   * a) don't touch the instance, just update the class
+   *
+   */
   static async updateTemplate(html) {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
@@ -949,8 +954,19 @@ export default class Lively {
           inspector.inspect(newInstance)
         }
       })
-
     });
+  
+
+    // new (old) strategy... don't throw away the instance... just update them inplace?
+    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach( ea => {
+      if (ea.livelyUpdate) {
+        try {
+          ea.livelyUpdate()
+        } catch(e) {
+          console.error(e)
+        }
+      }
+    })
   }
 
   static showInfoBox(target) {
@@ -1680,6 +1696,10 @@ export default class Lively {
     return all
   }
 
+  static findAllElements(filterFunc, deep) {
+    return Array.from(this.allElements(deep)).filter(filterFunc)
+  }
+  
   static allParents(element, parents=[]) {
     if (!element.parentElement) {
       return parents

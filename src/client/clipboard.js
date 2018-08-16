@@ -217,6 +217,14 @@ export default class Clipboard {
         var container = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
         if (container && !container.isEditing()) {
           target = container
+          var activeElement = container.shadowRoot.activeElement
+          if (activeElement && 
+              (activeElement.tagName == "INPUT" || activeElement.contentEditable)) {         
+          // the element itself will handle the paste
+            this.lastTarget = null
+            this.lastClickPos = null
+            return 
+          }
         } else {
             // this.lastTarget = container
           // } else {

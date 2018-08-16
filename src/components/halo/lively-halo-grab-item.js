@@ -17,9 +17,9 @@ export default class HaloGrabItem extends HaloItem {
  
  static get droppingBlacklist() {
       return {"*": 
-        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector", "lively-markdown", "lively-presentation"]
+        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector", "lively-code-mirror", "lively-markdown", "lively-presentation"]
       }
-  };
+  }
  
   initialize() {
     this.registerMouseEvents()
@@ -146,14 +146,15 @@ export default class HaloGrabItem extends HaloItem {
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
       if (this.dropIndicator) this.dropIndicator.remove()
       this.dropIndicator = lively.showElement(droptarget)
-      this.dropIndicator.style.border = "3px solid green"
-      this.dropIndicator.querySelector("pre").style.color = "green"
+      this.dropIndicator.textContent = ""
+      this.dropIndicator.style.border = "1px dashed lightgray"
+      this.dropIndicator.classList.add("no")
       
       if (this.dropTargetIndicator) this.dropTargetIndicator.remove()
       this.dropTargetIndicator = lively.showElement(grabShadow)
-      this.dropTargetIndicator.style.border = "1px solid blue"
-      this.dropTargetIndicator.querySelector("pre").style.color = "blue"
-      this.dropTargetIndicator.querySelector("pre").textContent = "drop x"
+      this.dropTargetIndicator.textContent = ""
+
+      this.dropTargetIndicator.style.border = "1px dashed gray"
       // lively.showPoint(lively.getGlobalPosition(grabShadow))
       lively.setGlobalPosition(this.dropTargetIndicator, 
         lively.getGlobalPosition(grabShadow))
@@ -234,7 +235,14 @@ export default class HaloGrabItem extends HaloItem {
   static canDropInto(node, targetNode) {
     if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
+    
+    var worldContext = lively.findWorldContext(targetNode);
+    if (!(worldContext === document.body 
+      || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN")
+      || worldContext.tagName == "LIVELY-CONTAINER")) return false;
+    
     return node !== targetNode &&
+      !targetNode.isMetaNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
       !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
       !(this.droppingBlacklist['*'] || []).includes(targetTag) && 
@@ -248,4 +256,12 @@ export default class HaloGrabItem extends HaloItem {
     var below = bounds.top > pos.y;
     return toTheRight || below;
   }
+  
+  // called after code changes...
+  livelyUpdate() {
+    // this.style.backgroundColor = ""
+  }
+  
 }
+
+
