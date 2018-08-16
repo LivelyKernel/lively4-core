@@ -46,7 +46,7 @@ export default class Keys {
         ["Open Workspace", ctrl && char == "K", evt => {
           lively.openWorkspace("")
         }],
-        // #KeyboardShortcut Ctrl-Shift-F search in files
+        // #KeyboardShortcut Ctrl-Shift-F search throughout the whole repository
         ["Search", ctrl && shiftKey && char == "F", evt => {
           lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
