@@ -96,6 +96,14 @@ export default class VivideStepEditor extends Morph {
       "Ctrl-A": cm => {
         this.expandSelection();
       },
+      // #KeyboardShortcut Alt-L set this step as loop start
+      "Alt-L": cm => {
+        this.setToLoopStart();
+      },
+      // #KeyboardShortcut Shift-Alt-L expand current selection
+      "Shift-Alt-L": cm => {
+        this.scriptEditor && this.scriptEditor.removeLoop();
+      },
     });
   }
   
@@ -403,6 +411,15 @@ export default class VivideStepEditor extends Morph {
     
     // Reconfigure loop
     lastStep.nextStep = this.step;
+    
+    this.scriptEditor.updateLoopState();
+    this.scriptEditor.firstStep.update();
+  }
+  showLoopMarker() {
+    this.get('#loopMarker').classList.add('loop-start');
+  }
+  hideLoopMarker() {
+    this.get('#loopMarker').classList.remove('loop-start');
   }
   
   setStep(step) {

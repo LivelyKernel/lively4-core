@@ -9,14 +9,15 @@
 
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
     overflow-y: auto;
   }
+  
   lively-code-mirror {
     flex: 1;
     min-height: unset;
     height: auto;
   }
-  
 
   :host(:focus-within), :host(:hover) {
     background-color: lightyellow;
@@ -38,12 +39,14 @@
   vivide-step-editor {
     display: block;
   }
+  
+  lively-inspector {
+    display: none;
+  }
 </style>
   <div id="container" class="container">
-    <lively-inspector id="inspector" style="display: none;"></lively-inspector>
+    <lively-inspector id="inspector"></lively-inspector>
     <div id="editor-list"></div>
-    <button id="setLoopStart">Set Loop Start</button>
-    <button id="removeLoop">Remove Loop</button>
     <div id="loop-marker" class="loop-marker"></div>
   </div>
 </template>

@@ -38,20 +38,7 @@ lively-code-mirror {
 .container {
   position: relative
 }
-  span#typeHint {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    z-index: 1002;
-    
-    background-color: lightgray;
-    border-bottom-left-radius: 5px;
-    font-size: small;
-    padding-left: 3px;
-    padding-bottom: 3px;
-    padding-right: 3px;
-    color: white;
-  }
+
   div#menu-holder {
     position: absolute;
     top: 0px;
@@ -60,10 +47,38 @@ lively-code-mirror {
     width: 0px;
     height: 0px;
   }
+
+  span.hint {
+    position: absolute;
+    z-index: 1002;
+    background-color: lightgray;
+    font-size: small;
+    padding-left: 3px;
+    padding-right: 3px;
+    color: white;
+  }
+  #typeHint {
+    top: 0px;
+    right: 0px;
+    padding-bottom: 3px;
+    border-bottom-left-radius: 5px;
+  }
+  #loopMarker {
+    bottom: 0px;
+    left: 0px;
+    padding-top: 3px;
+    border-top-right-radius: 5px;
+    
+    visibility: hidden;
+  }
+  #loopMarker.loop-start {
+    visibility: visible;
+  }
 </style>
 <div class="container">
   <lively-code-mirror id="editor"></lively-code-mirror>
-  <span id="typeHint"><span id="stepType">stepType</span></span>
+  <span id="typeHint" class="hint"><span id="stepType">stepType</span></span>
+  <span id="loopMarker" class="hint"><i class="fa fa-undo"></i></span>
   <div id="menu-holder"></div>
 </div>
 </template>

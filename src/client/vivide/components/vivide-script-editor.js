@@ -14,7 +14,6 @@ export default class VivideScriptEditor extends Morph {
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
     this.inspector.hideWorkspace();
-    this.registerButtons();
     
     this.container = this.get('#container');
     this.settingLoopStart = false;
@@ -30,17 +29,14 @@ export default class VivideScriptEditor extends Morph {
     stepEditor.delayedFocus();
   }
   
-  onSetLoopStart() {
-    this.settingLoopStart = true;
-  }
-  
-  onRemoveLoop() {
+  removeLoop() {
+    lively.warn("remove loop")
     if (!this.firstStep) return;
     
     let script = this.firstStep.getLastStep();
     
     script.nextStep = null;
-    this.loopMarker.style.display = "none";
+    this.updateLoopState()
     this.firstStep.update();
   }
   
@@ -84,17 +80,13 @@ export default class VivideScriptEditor extends Morph {
   }
   
   updateLoopState() {
-    let editorListContent = this.editorList.children;
+    let editorListContent = Array.from(this.editorList.children);
     let loopStart = this.lastScript.nextStep;
-    for (let element of editorListContent) {
-      if (element.localName != 'vivide-step-editor') continue;
-      if (!element.containsStep(loopStart)) continue;
-      
-      Object.assign(this.loopMarker.style, {
-        display: "inline-block",
-        top: element.offsetTop + "px",
-        height: element.offsetHeight + "px"
-      });
+    
+    editorListContent.forEach(stepEditor => stepEditor.hideLoopMarker());
+    if(loopStart) {
+      const loopEditor = editorListContent.find(stepEditor => stepEditor.containsStep(loopStart));
+      loopEditor && loopEditor.showLoopMarker();
     }
   }
   
@@ -125,8 +117,6 @@ export default class VivideScriptEditor extends Morph {
       if (!this.settingLoopStart) return;
       
       stepEditor.setToLoopStart();
-      this.updateLoopState();
-      this.firstStep.update();
       this.settingLoopStart = false;
     });
     

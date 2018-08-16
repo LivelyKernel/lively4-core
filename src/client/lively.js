@@ -1677,7 +1677,7 @@ export default class Lively {
   static halt(time=1000) {
     window.setTimeout(() => {
       debugger
-    },time)
+    }, time);
   }
 
   static sleep(time=1000) {
