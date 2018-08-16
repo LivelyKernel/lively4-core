@@ -20,7 +20,7 @@ export default class ScriptStep {
     if(this.cursor) {
       return [this.cursor.anchor, this.cursor.head];
     }
-    lively.error('no cursor available', 'fallback for default cursor position')
+    lively.error('no cursor available', 'fallback for default cursor position');
     return [{ line: 1, ch: 0}, { line: 1, ch: 0}];
   }
   setCursorPosition(anchor, head) {
@@ -34,11 +34,30 @@ export default class ScriptStep {
     this.route = route.slice();
   }
   
+  iterateLinear(cb) {
+    cb(this);
+    
+    if(this.lastScript) { return; }
+    if(this.nextStep) {
+      this.nextStep.iterateLinear(cb);
+    }
+  }
+  
+  // #TODO: remove duplicate
+  async iterateLinearAsync(cb) {
+    await cb(this);
+    
+    if(this.lastScript) { return; }
+    if(this.nextStep) {
+      this.nextStep.iterateLinear(cb);
+    }
+  }
+  
   get nextStep() { return this._nextStep; }
   set nextStep(step) { return this._nextStep = step; }
   
   set next(value) {
-    if (!(value instanceof ScriptStep)) {
+    if (!value || !value.isScriptStep) {
       throw "Value not of type ScriptStep";
     }
     
@@ -118,18 +137,13 @@ export default class ScriptStep {
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
-  let step = vv.getFirstStep();
+  let step = vv.getFirstStep && vv.getFirstStep();
   
-  while(step) {
+  step && step.iterateLinear(s => {
     // evil live programming
-    step.constructor === ScriptStep;
+    s.constructor === ScriptStep;
 
     // we can fix this, so we can do live development again....
-    step.__proto__ = ScriptStep.prototype;
-    
-    if(step.lastScript) {
-      break;
-    }
-    step = step.nextStep;
-  }
+    s.__proto__ = ScriptStep.prototype;
+  });
 })

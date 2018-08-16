@@ -35,20 +35,25 @@ export default class VivideScriptEditor extends Morph {
   }
   
   onRemoveLoop() {
-    if (!this.script) return;
+    if (!this.firstStep) return;
     
-    let script = this.script.getLastStep();
+    let script = this.firstStep.getLastStep();
     
     script.nextStep = null;
     this.loopMarker.style.display = "none";
-    this.script.update();
+    this.firstStep.update();
   }
   
   // #TODO: terminology
-  // #TODO: last script should not be removeable
+  // #TODO: the final script should not be removeable
   // #TODO: should focus next step editor
   removeStep(stepEditor, stepToBeRemoved) {
-    let script = this.script;
+    if(this.firstStep === this.firstStep.getLastStep()) {
+      lively.warn('Do not remove the final script step.');
+      return;
+    }
+    
+    let script = this.firstStep;
     let lastStep = null;
     
     while (!script.lastScript && script.nextStep) {
@@ -71,11 +76,11 @@ export default class VivideScriptEditor extends Morph {
       lastStep.nextStep = script.nextStep;
     } else {
       // First script was removed
-      this.script = stepToBeRemoved.nextStep;
+      this.firstStep = stepToBeRemoved.nextStep;
     }
     
-    if (this.script) {
-      this.script.update();
+    if (this.firstStep) {
+      this.firstStep.update();
     }
   }
   
@@ -106,23 +111,19 @@ export default class VivideScriptEditor extends Morph {
     }
   }
   
-  async setScripts(script) {    
+  async setScripts(firstStep) {    
     this.editorList.innerHTML = '';
-    this.script = script;
+    this.firstStep = firstStep;
     
-    await this.appendNewStepEditorFor(script);
-    while (script.nextStep != null) {
-      script = script.nextStep;
-      await this.appendNewStepEditorFor(script);
-      
-      if (script.lastScript) break;
-    }
+    firstStep.iterateLinearAsync(async step => {
+      return await this.appendNewStepEditorFor(step);
+    });
     
-    this.lastScript = script;
+    this.lastScript = firstStep.getLastStep();
     this.updateLoopState();
   }
   getScripts() {
-    return this.script;
+    return this.firstStep;
   }
   
   async createStepEditorFor(script) {
@@ -134,7 +135,7 @@ export default class VivideScriptEditor extends Morph {
       
       stepEditor.setToLoopStart();
       this.updateLoopState();
-      this.script.update();
+      this.firstStep.update();
       this.settingLoopStart = false;
     });
     
