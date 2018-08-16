@@ -17,8 +17,8 @@ export default class LivelyContainerNavbar extends Morph {
     this.lastSelection = [];
   }
   
-  clear() {
-    this.get("#navbar").innerHTML = ""
+  clear(parentElement=this.get("#navbar")) {
+    parentElement.innerHTML = ""
   }
   
   async dragFilesAsZip(urls, evt) {
@@ -191,10 +191,13 @@ export default class LivelyContainerNavbar extends Morph {
     return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
   }
   
-  async show(targetURL, sourceContent, contextURL) {
+  async show(targetURL, sourceContent, contextURL, parentElement, showSublist=true) {
+    var navbar = this.get("#navbar")
+    parentElement = parentElement || navbar
     
     this.sourceContent = sourceContent;
     this.url = "" + targetURL;
+    this.contextURL = contextURL;
     
     if (contextURL && contextURL != this.url) {
       let urlWithoutIndex = this.url.replace(/index\.((html)|(md))$/,"")
@@ -217,8 +220,6 @@ export default class LivelyContainerNavbar extends Morph {
     var filename = this.getFilename();
     var root = this.getRoot();
     this.currentDir = root;
-
-    
     
     var stats = await fetch(root, {
       method: "OPTIONS",
@@ -246,9 +247,8 @@ export default class LivelyContainerNavbar extends Morph {
         });
       });
     }
-    this.clear();
-    var navbar = this.get("#navbar")
-      
+    this.clear(parentElement);
+     
     var names = {};
     stats.contents.forEach(ea => names[ea.name] = ea);
     
@@ -332,9 +332,11 @@ export default class LivelyContainerNavbar extends Morph {
           }
       }, false);
       element.appendChild(link);
-      navbar.appendChild(element);
+      parentElement.appendChild(element);
     });
-    this.showSublist()
+    if (showSublist) {
+      this.showSublist()
+    }
   }
   
   onItemClick(link, evt) {
@@ -487,19 +489,22 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   async showSublist() {
+     
     if (!this.targetItem) return 
     var subList = document.createElement("ul");
     this.get("#navbar").querySelectorAll("ul").forEach(ea => ea.remove())
     this.targetItem.appendChild(subList);
+    if (this.url !== this.contextURL) {
+      return 
+    }
+      
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
     } else if (this.url.match(/\.js$/)) {
       this.showSublistJS(subList)
     } else if (this.url.match(/\.md$/)) {
       this.showSublistMD(subList)
-      if (this.url.match(/((\.l4d)|(index\.md))$/)) {
-        this.showSublistOptions(subList, this.url.replace(/[^/]*$/,"")) // add external contents 
-      }
+
     } else {
       this.showSublistOptions(subList)
     }
@@ -507,9 +512,12 @@ export default class LivelyContainerNavbar extends Morph {
   
   async livelyMigrate(other) {
     await this.show(other.url, other.sourceContent)
-    this.showSublist()
   }
 
+  livelyUpdate() {
+    this.show(this.url,this.sourceContent, this.contextURL)
+  }
+  
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
