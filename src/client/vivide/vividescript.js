@@ -9,6 +9,34 @@ export default class Script {
   setInitialStep(step) { return this.initialStep = step; }
   getInitialStep() { return this.initialStep; }
   
+  numberOfSteps() {
+    let length = 0
+    this.getInitialStep().iterateLinear(() => length++);
+    return length;
+  }
+  
+  gotUpdated() {
+    const initialStep = this.getInitialStep();
+    
+    if(initialStep) {
+      initialStep.update();
+    }
+  }
+  
+  getPrevStep(step) {
+    return this.getInitialStep().find(s => s.nextStep === step);
+  }
+  
+  removeStep(stepToBeRemoved) {
+    const prevStep = this.getPrevStep(stepToBeRemoved);
+    if (prevStep) {
+      prevStep.nextStep = stepToBeRemoved.nextStep;
+    } else {
+      // First script was removed
+      this.setInitialStep(stepToBeRemoved.nextStep);
+    }
+  }
+  
   toJSON() {
     const jsonContainer = {};
     let step = this.getInitialStep();
@@ -48,3 +76,18 @@ export default class Script {
 //     }
   }
 }
+
+// #UPDATE_INSTANCES
+// #TODO: idea: using a list of all object, we can make them become anew
+// go through all object reachable from window
+document.querySelectorAll("vivide-view").forEach(vv => {
+  let script = vv.myCurrentScript;
+  
+  if(script) {
+    // evil live programming
+    script.constructor === Script;
+
+    // we can fix this, so we can do live development again....
+    script.__proto__ = Script.prototype;
+  }
+});

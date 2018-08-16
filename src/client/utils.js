@@ -373,3 +373,27 @@ export function onStyleChange(target, callback) {
 
   return styleObserver;
 }
+
+/**
+ * shakes given element using css transformations
+ */
+export function shake(target) {
+  target.animate([
+    { transform: 'translate(1px, 1px) rotate(0deg)' },
+    { transform: 'translate(-1px, -2px) rotate(-1deg)' },
+    { transform: 'translate(-3px, 0px) rotate(1deg)' },
+    { transform: 'translate(3px, 2px) rotate(0deg)' },
+    { transform: 'translate(1px, -1px) rotate(1deg)' },
+    { transform: 'translate(-1px, 2px) rotate(-1deg)' },
+    { transform: 'translate(-3px, 1px) rotate(0deg)' },
+    { transform: 'translate(3px, 1px) rotate(-1deg)' },
+    { transform: 'translate(-1px, -1px) rotate(1deg)' },
+    { transform: 'translate(1px, 2px) rotate(0deg)' },
+    { transform: 'translate(1px, -2px) rotate(-1deg)' },
+  ], { 
+    // timing options
+    duration: 100,
+    iterations: 1,
+    // easing: 'cubic-bezier(0.42, 0, 0.58, 1)'
+  });
+}

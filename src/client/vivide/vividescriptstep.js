@@ -34,6 +34,18 @@ export default class ScriptStep {
     this.route = route.slice();
   }
   
+  find(condition) {
+    let found;
+    
+    this.iterateLinear(step => {
+      if(!found && condition(step)) {
+        found = step;
+      }
+    });
+    
+    return found;
+  }
+  
   iterateLinear(cb) {
     cb(this);
     

@@ -330,6 +330,7 @@ export default class VivideView extends Morph {
       descent: []
     };
     
+    // problem if first step is a descent step
     await this.applyScript(script, vivideLayer, _modules);
     while (script.nextStep) {
       script = script.nextStep;
@@ -469,7 +470,7 @@ export default class VivideView extends Morph {
 
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScripts(this.getFirstStep());
+    scriptEditor.setScripts(this.myCurrentScript);
 
     return scriptEditor;
   }
