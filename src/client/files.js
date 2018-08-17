@@ -151,36 +151,43 @@ export default class Files {
     return files;
   }
 
-
+  // #Depricated
   static async existFile(urlString){
-    urlString = this.resolve(urlString)
+    return this.exists(urlString)
+  }
 
-  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
+  static async stats(url) {
+    return fetch(url, {method: "OPTIONS"}).then(r => r.json())
+  }
+
+  static async type(url) {
+    return (await this.stats(url)).type
+  }
+
+  static async exists(urlString){
+    return (await fetch(urlString, {method: "OPTIONS"})).status == 200
   }
 
   static isURL(urlString) {
     return ("" + urlString).match(/^([a-z]+:)?\/\//) ? true : false;
   }
-
-  static resolve(string) {
-    if (!this.isURL(string)) {
-      var result = lively.location.href.replace(/[^/]*$/, string)
-    } else {
-      result = string.toString()
-    }
-    // get rid of ..
-    result = result.replace(/[^/]+\/\.\.\//g,"")
-    // and .
-    result = result.replace(/\/\.\//g,"/")
-    
-    return result
+  
+  static async isFile(url) {
+    return (await this.type(url)) == "file"
   }
+
+  static async isDirectory(url) {
+    return (await this.type(url)) == "file"
+  }
+
 
   static directory(string) {
     string = string.toString()
     return string.replace(/([^/]+|\/)$/,"")
   }
+
   
+  // #Depricated    
   static resolve(string) {
     if (!this.isURL(string)) {
       var result = lively.location.href.replace(/[^/]*$/, string)

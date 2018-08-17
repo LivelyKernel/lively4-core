@@ -442,8 +442,19 @@ export default class LivelyContainerNavbar extends Morph {
     this.show(new URL(url), "", this.contextURL)
   }
 
-  convertFileToBundle(url) {
-    lively.notify("TODO convert " + url)
+  async convertFileToBundle(url) {
+    // var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/2018-08-17.md"
+    if (!await lively.files.isFile(url)) {
+      lively.notify("Converion failed: " + url + " is no file!")
+      return
+    }
+    var contents = await fetch(url).then(r => r.text());
+    await fetch(url, {method: 'DELETE'})
+    
+    await fetch(url + "/", {method: 'MKCOL'});
+    var newURL = url + "/" + "index.md"
+    await fetch(newURL, {method: 'PUT', body: contents});
+    this.followPath(newURL);
   }
 
   showSublistHTML(subList) {

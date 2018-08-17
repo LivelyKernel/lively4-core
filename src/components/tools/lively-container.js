@@ -809,7 +809,7 @@ export default class Container extends Morph {
       opts="&fullscreen=true"
     }
 
-    if (this.isEditing() && !path.match(/\/$/)) {
+    if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
           'view ' + path, window.location.pathname + "?edit="+path  + opts);
