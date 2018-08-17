@@ -4,8 +4,10 @@
 <style>
   :host {
     background-color: lightgray;
-    margin: 100%
-    padding: 100%
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
 
     display: flex;
     flex-direction: column;
@@ -23,15 +25,6 @@
     background-color: lightyellow;
   }
 
-  .loop-marker {
-    display: hidden;
-    width: 4px;
-    z-index: 1002;
-    background-color: #0f0;
-    position: absolute;
-    right: 0px;
-  }
-  
   .container {
     position: relative;
   }
@@ -41,13 +34,12 @@
   }
   
   lively-inspector {
-    display: none;
+    display: hidden;
   }
 </style>
   <div id="container" class="container">
     <lively-inspector id="inspector"></lively-inspector>
     <div id="editor-list"></div>
-    <div id="loop-marker" class="loop-marker"></div>
   </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

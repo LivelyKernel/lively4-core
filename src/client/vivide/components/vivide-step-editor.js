@@ -86,7 +86,7 @@ export default class VivideStepEditor extends Morph {
       },
       // #KeyboardShortcut Alt-Right fold (inverse code folding)
       "Alt-Right": cm => {
-        this.fold(); // #TODO: rename indent to fold and dedent to unfold
+        this.fold();
       },
       // #KeyboardShortcut Alt-Left unfold (inverse code folding)
       "Alt-Left": cm => {
@@ -98,7 +98,7 @@ export default class VivideStepEditor extends Morph {
       },
       // #KeyboardShortcut Alt-L set this step as loop start
       "Alt-L": cm => {
-        this.setToLoopStart();
+        this.scriptEditor && this.scriptEditor.setLoopStart(this.step);
       },
       // #KeyboardShortcut Shift-Alt-L expand current selection
       "Shift-Alt-L": cm => {
@@ -406,15 +406,6 @@ export default class VivideStepEditor extends Morph {
     const menu = await ContextMenu.openIn(this.get('#menu-holder'), evt, undefined, document.body, menuItems);
   }
   
-  setToLoopStart() {
-    const lastStep = this.step.getLastStep();
-    
-    // Reconfigure loop
-    lastStep.nextStep = this.step;
-    
-    this.scriptEditor.updateLoopState();
-    this.scriptEditor.firstStep.update();
-  }
   showLoopMarker() {
     this.get('#loopMarker').classList.add('loop-start');
   }

@@ -1,17 +1,27 @@
 import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
+import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 
 export default class Script {
   constructor(view) {
     this._view = view;
   }
+  
+  /**
+   * Access
+   */
   setInitialStep(step) { return this.initialStep = step; }
   getInitialStep() { return this.initialStep; }
-  
-  getLoopStartStep() {
+
+  getLastStep() {
     const firstStep = this.getInitialStep();
-    return firstStep && firstStep.getLastStep().nextStep;
+    return firstStep && firstStep.getLastStep();
+  }
+
+  getLoopStartStep() {
+    const lastStep = this.getLastStep();
+    return lastStep && lastStep.nextStep;
   }
   
   numberOfSteps() {
@@ -20,16 +30,24 @@ export default class Script {
     return length;
   }
   
-  gotUpdated() {
-    const initialStep = this.getInitialStep();
-    
-    if(initialStep) {
-      initialStep.update();
-    }
-  }
-  
   getPrevStep(step) {
     return this.getInitialStep().find(s => s.nextStep === step);
+  }
+  
+  async forEachStepAsync(cb) {
+    this.getInitialStep().iterateLinearAsync(cb);
+  }
+  
+  /**
+   * Modify
+   */
+  async insertStepAfter(stepType, prevStep) {
+    const newStep = await ScriptStep.newFromTemplate(stepType);
+    newStep.updateCallback = () => this._view.scriptGotUpdated();
+    
+    prevStep.insertAfter(newStep);
+    
+    return newStep;
   }
   
   removeStep(stepToBeRemoved) {
@@ -41,17 +59,43 @@ export default class Script {
       this.setInitialStep(stepToBeRemoved.nextStep);
     }
   }
+
+  removeLoop() {
+    const lastStep = this.getLastStep();
+    lastStep.nextStep = null;
+  }
+
+  setLoopStart(step) {
+    const lastStep = step.getLastStep();
+    
+    // Reconfigure loop
+    lastStep.nextStep = step;
+  }
   
+  /**
+   * Handling script execution
+   */
+  gotUpdated() {
+    const initialStep = this.getInitialStep();
+    
+    if(initialStep) {
+      initialStep.update();
+    }
+  }
+  
+  /**
+   * Serialization
+   */
   toJSON() {
     const jsonContainer = {};
     let step = this.getInitialStep();
     // #TODO: this is misplaced here
-    step.updateCallback = this._view.scriptGotUpdated.bind(this._view);
+    step.updateCallback = () => this._view.scriptGotUpdated();
     jsonContainer[step.id] = step.toJSON();
     
     while (step.nextStep != null) {
       step = step.nextStep;
-      step.updateCallback = this._view.scriptGotUpdated.bind(this._view);
+      step.updateCallback = () => this._view.scriptGotUpdated();
       jsonContainer[step.id] = step.toJSON();
       
       if (step.lastScript) break;
