@@ -299,6 +299,7 @@ export default class Container extends Morph {
   }
 
   onHome() {
+    this.clearNavbar()
     this.followPath(lively4url)
   }
 
