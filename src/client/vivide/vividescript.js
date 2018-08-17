@@ -40,6 +40,13 @@ export default class Script {
     await this.getInitialStep().iterateLinearAsync(cb);
   }
   
+  stepsAsArray() {
+    const arr = [];
+    this.getInitialStep().iterateLinear(step => arr.push(step));
+
+    return arr;
+  }
+  
   /**
    * Modify
    */
@@ -90,11 +97,12 @@ export default class Script {
    */
   async getViewConfig() {
     const viewConfig = new Annotations();
-    
-    await this.forEachStepAsync(async step => {
+    const steps = this.stepsAsArray();
+
+    for (let step of steps) {
       const [fn, config] = await step.getExecutable();
-      viewConfig.add(config);  
-    });
+      viewConfig.add(config);
+    }
     
     return viewConfig;
   }

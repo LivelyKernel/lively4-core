@@ -336,16 +336,7 @@ export default class VivideView extends Morph {
     return this.input;
   }
   
-  
-  get viewConfig() {
-    return this._viewConfig = this._viewConfig || new Annotations();
-  }
-  resetViewConfig() {
-    this._viewConfig = undefined;
-  }
-  
   async calculateOutputModel() {
-    this.resetViewConfig();
     let script = this.getFirstStep();
     
     this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
@@ -370,14 +361,13 @@ export default class VivideView extends Morph {
     this.innerHTML = '';
 
     const viewConfig = await this.myCurrentScript.getViewConfig();
-    debugger;
     const chosenWidgetType = WidgetChooser.findAppropriateWidget(this.modelToDisplay, viewConfig);
 
     const widget = await lively.create(chosenWidgetType);
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
     widget.expandChild = this.computeModel.bind(this);
-    await widget.display(this.modelToDisplay, this.viewConfig);
+    await widget.display(this.modelToDisplay, viewConfig);
   }
   
   async createScriptEditor() {
