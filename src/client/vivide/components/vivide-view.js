@@ -445,21 +445,6 @@ export default class VivideView extends Morph {
     await widget.display(this.modelToDisplay, this.viewConfig);
   }
   
-  // #TODO: move to VivideScript
-  async insertStepAfter(stepType, prevStep = null) {
-    let newStep = await ScriptStep.newFromTemplate(stepType);
-    newStep.updateCallback = this.scriptGotUpdated.bind(this);
-    
-    if (prevStep) {
-      prevStep.insertAfter(newStep);
-    } else {
-      let firstStep = this.getFirstStep();
-      firstStep.insertAsLastStep(newStep);
-    }
-    
-    return newStep;
-  }
-  
   async createScriptEditor() {
     const viewWindow = lively.findWindow(this);
     const reference = viewWindow && viewWindow.tagName === "LIVELY-WINDOW" ?
@@ -470,7 +455,7 @@ export default class VivideView extends Morph {
 
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScripts(this.myCurrentScript);
+    scriptEditor.setScript(this.myCurrentScript);
 
     return scriptEditor;
   }

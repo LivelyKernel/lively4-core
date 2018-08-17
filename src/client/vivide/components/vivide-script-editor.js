@@ -6,41 +6,39 @@ export default class VivideScriptEditor extends Morph {
   
   get editorList() { return this.get('#editor-list'); }
   get inspector() { return this.get('#inspector'); }
-  get loopMarker() { return this.get('#loop-marker'); }
   
   setView(view) { return this.view = view; }
   getView() { return this.view; }
   
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
+
     this.inspector.hideWorkspace();
-    
-    this.container = this.get('#container');
-    this.settingLoopStart = false;
   }
   
   initialFocus() {
     setTimeout(() => {
-      const editor = this.get('vivide-step-editor');
-      this.delayedFocusOnStepEditor(editor);
+      const stepEditor = this.get('vivide-step-editor');
+      this.delayedFocusOnStepEditor(stepEditor);
     }, 1000);
   }
   delayedFocusOnStepEditor(stepEditor) {
-    stepEditor.delayedFocus();
+    stepEditor && stepEditor.delayedFocus && stepEditor.delayedFocus();
   }
   
   removeLoop() {
-    lively.warn("remove loop")
-    if (!this.firstStep) return;
+    this.currentScript.removeLoop();
     
-    let script = this.firstStep.getLastStep();
+    this.updateLoopState();
+    this.currentScript.gotUpdated();
+  }
+  setLoopStart(step) {
+    this.currentScript.setLoopStart(step);
     
-    script.nextStep = null;
-    this.updateLoopState()
-    this.firstStep.update();
+    this.updateLoopState();
+    this.currentScript.gotUpdated();
   }
   
-  // #TODO: terminology and reuse
   removeStep(stepEditor, stepToBeRemoved) {
     if(this.currentScript.numberOfSteps() <= 1) {
       lively.warn('Do not remove the final script step.');
@@ -49,9 +47,7 @@ export default class VivideScriptEditor extends Morph {
     }
     
     this.removeStepEditor(stepEditor);
-
     this.currentScript.removeStep(stepToBeRemoved);
-    
     this.currentScript.gotUpdated();
   }
   removeStepEditor(stepEditor) {
@@ -68,68 +64,54 @@ export default class VivideScriptEditor extends Morph {
   }
   
   async insertStepAfter(stepType, prevStep, prevEditor) {
-    let step = await this.view.insertStepAfter(stepType, prevStep);
+    const step = await this.currentScript.insertStepAfter(stepType, prevStep);
 
-    if (step.lastScript) {
-      this.lastScript = step;
-    }
-    
     const stepEditor = await this.insertNewStepEditorAfter(step, prevEditor);
     this.updateLoopState();
     stepEditor.setFocus();
   }
   
   updateLoopState() {
-    let editorListContent = Array.from(this.editorList.children);
-    let loopStart = this.lastScript.nextStep;
+    const stepEditors = this.getAllSubmorphs('vivide-step-editor');
+    stepEditors.forEach(stepEditor => stepEditor.hideLoopMarker());
     
-    editorListContent.forEach(stepEditor => stepEditor.hideLoopMarker());
-    if(loopStart) {
-      const loopEditor = editorListContent.find(stepEditor => stepEditor.containsStep(loopStart));
-      loopEditor && loopEditor.showLoopMarker();
+    const loopStart = this.currentScript.getLoopStartStep();
+    if(!loopStart) { return; }
+    
+    const loopEditor = stepEditors.find(stepEditor => stepEditor.containsStep(loopStart));
+    if(loopEditor) {
+      loopEditor.showLoopMarker();
     }
   }
   
-  async setScripts(currentScript) {
-    this.editorList.innerHTML = '';
+  getScript() { return this.currentScript; }
+  async setScript(currentScript) {
     this.currentScript = currentScript;
     
-    this.firstStep.iterateLinearAsync(async step => {
-      return await this.appendNewStepEditorFor(step);
-    });
+    this.editorList.innerHTML = '';
+    await this.currentScript.forEachStepAsync(
+      async step => await this.appendNewStepEditorFor(step)
+    );
     
-    this.lastScript = this.firstStep.getLastStep();
     this.updateLoopState();
   }
   
-  get firstStep() {
-    return this.currentScript && this.currentScript.getInitialStep();
-  }
-  getScripts() {
-    return this.firstStep;
-  }
-  
-  async createStepEditorFor(script) {
+  async createStepEditorFor(step) {
     const stepEditor = await (<vivide-step-editor></vivide-step-editor>);
-    stepEditor.setStep(script);
-    stepEditor.setScriptEditor(this);
-    stepEditor.addEventListener('mousedown', () => {
-      if (!this.settingLoopStart) return;
-      
-      stepEditor.setToLoopStart();
-      this.settingLoopStart = false;
-    });
     
+    stepEditor.setStep(step);
+    stepEditor.setScriptEditor(this);
+
     return stepEditor;
   }
-  async insertNewStepEditorAfter(script, prevEditor) {
-    const stepEditor = await this.createStepEditorFor(script);
+  async insertNewStepEditorAfter(step, prevEditor) {
+    const stepEditor = await this.createStepEditorFor(step);
     this.editorList.insertBefore(stepEditor, prevEditor.nextSibling);
     
     return stepEditor;
   }
-  async appendNewStepEditorFor(script) {
-    const stepEditor = await this.createStepEditorFor(script);
+  async appendNewStepEditorFor(step) {
+    const stepEditor = await this.createStepEditorFor(step);
     this.editorList.appendChild(stepEditor);
   }
   
@@ -142,6 +124,9 @@ export default class VivideScriptEditor extends Morph {
   
   livelyMigrate(other) {
     this.setView(other.getView());
-    this.setScripts(other.currentScript);
+    this.setScript(other.currentScript);
+    
+    // we are missing the loop indecator otherwise, even though we update it
+    requestAnimationFrame(() => this.updateLoopState());
   }
 }
