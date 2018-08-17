@@ -6,6 +6,45 @@ import Annotations from 'src/client/reactive/active-expressions/active-expressio
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 import Script from 'src/client/vivide/vividescript.js';
 
+/**
+ * Smart widget choosing
+ */
+class WidgetChooser {
+  static getPreferredWidgetType(model, viewConfig) {
+    if (viewConfig.has('widget')) { 
+      return viewConfig.get('widget');
+    }
+    
+    // #TODO: this is too dependent on internal structure of the model/VivideObject
+    // PROPOSAL: Models should not know about views, therefore they cannot return
+    //   a suggested view, but they could return a data type suggestion like:
+    //     model.dataType == "data-points" || "list" || "text"
+    //   Additionally, this data type could be set manually or via an "intelligent"
+    //   algorithm.
+    if (model.objects && model.objects.length > 0) {
+      // #Question: this model has an objects array, what is the data structure of this model?
+      let m = model.objects[0];
+      if(m.properties.has('dataPoints') &&
+         typeof m.properties.get('dataPoints')[0] === 'number'
+      ) {
+        return 'boxplot';
+      }
+    }
+    return 'tree';
+  }
+  static findAppropriateWidget(model, viewConfig) {
+    const type = this.getPreferredWidgetType(model, viewConfig);
+    
+    // full type specified
+    if(type.includes('-')) {
+      return type;
+    }
+    
+    // shorthand notation used
+    return `vivide-${type}-widget`;
+  }
+}
+
 async function initialScriptsFromTemplate() {
   const transform = await ScriptStep.newFromTemplate('transform');
   const extract = await ScriptStep.newFromTemplate('extract');
@@ -285,6 +324,7 @@ export default class VivideView extends Morph {
       await this.calculateOutputModel();
     } else {
       // #TODO: is this obsolete?
+      lively.error('No first step, something is broken');
       this.modelToDisplay = VivideView.dataToModel(this.input);
     }
 
@@ -322,123 +362,18 @@ export default class VivideView extends Morph {
   }
   
   // #TODO: extract to a separate ScriptProcessor, or Script itself
-  async computeModel(data, script) {
-    let vivideLayer = new VivideLayer(data);
-    const _modules = {
-      transform: [],
-      extract: [],
-      descent: []
-    };
-    
-    // problem if first step is a descent step
-    await this.applyScript(script, vivideLayer, _modules);
-    while (script.nextStep) {
-      script = script.nextStep;
-      await this.applyScript(script, vivideLayer, _modules);
-      
-      // #TODO: this break condition is errornous, e.g. when the last step is not a descent step, but we still have a loop, it will break at that last step nonetheless
-      if (script.type == 'descent' || script.lastScript) break;
-    }
-    
-    await this.processData(vivideLayer, _modules);
-    
-    return vivideLayer;
-  }
-  async applyScript(step, vivideLayer, _modules) {
-    const [fun, config] = await step.getExecutable();
-    
-    if (step.type == 'descent') {
-      vivideLayer.childScript = step.nextStep;
-    }
-    _modules[step.type].push(fun);
-    
-    if(config) {
-      // #TODO, #ERROR: this adds the config too late
-      this.viewConfig.add(config);
-    }
-  }
-  async processData(vivideLayer, _modules) {
-    await this.transform(vivideLayer, _modules);
-    await this.extract(vivideLayer, _modules);
-    await this.descent(vivideLayer, _modules);
+  async computeModel(data, step) {
+    return await this.myCurrentScript.computeModel(data, step);
   }
   
-  async transform(vivideLayer, _modules) {
-    let input = vivideLayer._rawData.slice(0);
-    let output = [];
-    
-    for (let module of _modules.transform) {
-      await module(input, output);
-      input = output.slice(0);
-      output = [];
-    }
-
-    vivideLayer._rawData = input;
-    vivideLayer.makeObjectsFromRawData();
-  }
-  
-  async extract(vivideLayer, _modules) {
-    for (let module of _modules.extract) {
-      for (let object of vivideLayer._objects) {
-        object.properties.add(await module(object.data));
-      }
-    }
-  }
-  
-  async descent(vivideLayer, _modules) {
-    for (let module of _modules.descent) {
-      for (let object of vivideLayer._objects) {
-        const childData = await module(object.data);
-        
-        if (!childData) continue;
-        
-        const childLayer = new VivideLayer(childData);
-        childLayer.script = vivideLayer.childScript;
-        object.childLayer = childLayer;
-      }
-    }
-  }
-  
-  /**
-   * Smart widget choosing
-   */
-  getPreferredWidgetType(model) {
-    if (this.viewConfig.has('widget')) { 
-      return this.viewConfig.get('widget');
-    }
-    
-    // #TODO: this is too dependent on internal structure of the model/VivideObject
-    // PROPOSAL: Models should not know about views, therefore they cannot return
-    //   a suggested view, but they could return a data type suggestion like:
-    //     model.dataType == "data-points" || "list" || "text"
-    //   Additionally, this data type could be set manually or via an "intelligent"
-    //   algorithm.
-    if (model.objects && model.objects.length > 0) {
-      // #Question: this model has an objects array, what is the data structure of this model?
-      let m = model.objects[0];
-      if(m.properties.has('dataPoints') &&
-         typeof m.properties.get('dataPoints')[0] === 'number'
-      ) {
-        return 'boxplot';
-      }
-    }
-    return 'tree';
-  }
-  findAppropriateWidget(model) {
-    const type = this.getPreferredWidgetType(model);
-    
-    // full type specified
-    if(type.includes('-')) {
-      return type;
-    }
-    
-    // shorthand notation used
-    return `vivide-${type}-widget`;
-  }
-
   async updateWidget() {
     this.innerHTML = '';
-    let widget = await lively.create(this.findAppropriateWidget(this.modelToDisplay));
+
+    const viewConfig = await this.myCurrentScript.getViewConfig();
+    debugger;
+    const chosenWidgetType = WidgetChooser.findAppropriateWidget(this.modelToDisplay, viewConfig);
+
+    const widget = await lively.create(chosenWidgetType);
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
     widget.expandChild = this.computeModel.bind(this);
