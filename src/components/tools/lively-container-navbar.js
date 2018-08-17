@@ -366,6 +366,11 @@ export default class LivelyContainerNavbar extends Morph {
         this.onItemClick(link, evt); 
         return false
       };
+      link.ondblclick = (evt) => { 
+        this.onItemDblClick(link, evt); 
+        return false
+      };
+
       link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
       link.addEventListener('contextmenu', (evt) => {
           if (!evt.shiftKey) {
@@ -387,10 +392,13 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.lastSelection = []
     }
-    this.followPath(link.href, this.lastPath);
-    this.lastPath = link.href
+    this.followPath(link.href);
   }
   
+  onItemDblClick(link, evt) {
+    this.clear()
+    this.followPath(link.href);
+  }
   async editWithSyvis (url) {
     const editor = await components.createComponent('syvis-editor');
     await editor.loadUrl(url);
