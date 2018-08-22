@@ -9,21 +9,21 @@ export default class InstanceList {
   }
   
   render() {
-    this._element.innerHTML = "";
+    /*probe:*/this._element.innerHTML/*{}*/ = "";
     for(let instance of this._instances) {
-      this._element.appendChild(this._renderInstance(instance))
+      /*probe:*/this._element/*{}*/.appendChild(this._renderInstance(instance))
     }
   }
   
   _renderInstance(instance) {
-    const listItem = <li>{instance.name}</li>;
+    const listItem = <li>{/*probe:*/instance.name/*{}*/}</li>;
     if(instance === this._activeInstance) {
       listItem.classList.add("active");
     }
     listItem.addEventListener("click", () => {
       this._selectionCallback(instance);
     });
-    return listItem;
+    /*probe:*/return/*{}*/ listItem;
   }
   
   set activeInstance(instance) {
@@ -36,4 +36,4 @@ export default class InstanceList {
     this.render();
   }
   
-}
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

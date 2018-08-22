@@ -21,7 +21,7 @@ export default class CustomInstanceTemplateEditor extends Morph {
   }
   
   /*example:*/initInstanceList/*{"id":"3d56_9324_7687","name":{"mode":"input","value":""},"color":"hsl(290, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"3d56_9324_7687_this"},"prescript":"","postscript":""}*/() {
-    this._instanceList = new InstanceList(
+    /*probe:*/this._instanceList/*{}*/ = new InstanceList(
       this.get("#instance-list"),
       this._instances,
       (instance) => this.activeInstance = instance
@@ -113,4 +113,4 @@ export default class CustomInstanceTemplateEditor extends Morph {
   }
 
 }
-/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"cca8_9ef5_45ae","name":"Test Person","code":"return null;"}]} */
