@@ -6,6 +6,7 @@ import components from 'src/client/morphic/component-loader.js';
 import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
+import moment from "src/external/moment.js";
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -16,8 +17,8 @@ export default class LivelyContainerNavbar extends Morph {
     this.lastSelection = [];
   }
   
-  clear() {
-    this.get("#navbar").innerHTML = ""
+  clear(parentElement=this.get("#navbar")) {
+    parentElement.innerHTML = ""
   }
   
   async dragFilesAsZip(urls, evt) {
@@ -87,16 +88,38 @@ export default class LivelyContainerNavbar extends Morph {
       return;
     }
     
-    if (DropElementHandler.handle(evt, this, (element, evt) => {
-      lively.notify("handle " + element)
-    })) return;
-    
-    var data = evt.dataTransfer.getData("text");
+    if (DropElementHandler.handle(evt, this, 
+        (element, evt) => {lively.notify("handle " + element)})
+    ) {
+      return;
+    }
+       
+    var data = evt.dataTransfer.getData("text");   
+    var htmlData = evt.dataTransfer.getData("text/html");    
     if (data.match("^https?://") || data.match(/^data\:image\/png;/)) {
       this.copyFromURL(data);        
+    } else if (htmlData) {
+      data = evt.dataTransfer.getData();
+      this.dropHTMLAsURL(htmlData)
     } else {
       console.log('ignore data ' + data);
     }
+  }
+  /* 
+   *  Upload the dragged contents into a file.. and make up a name. 
+   *  #Idea, instead of using a timestamp should be able to store a name in the data?
+   */
+  async dropHTMLAsURL(data) {
+    var targetDir = lively.files.directory(this.url)
+    var name = "dropped_" + moment(new Date()).format("YYMMDD_hhmmss")
+    var newurl = targetDir + "/" + name + ".html"
+    await fetch(newurl, {
+      method: "PUT",
+      body: data
+    })
+    this.update()
+    this.updateOtherNavbars(this.getRoot(newurl))
+    console.log("dropped " + newurl)
   }
   
   async copyFromURL(data) {
@@ -152,12 +175,14 @@ export default class LivelyContainerNavbar extends Morph {
   
   getRoot(url) {
     url = url || this.url;
-    return url.replace(/\/[^\/]+$/,"/")
+    return url.toString().replace(/\/[^\/]+$/,"/") 
+    /// return url.toString().replace(/\.l4d\/(index\.md)?$/,"").replace(/\/[^\/]+$/,"/") // .l4d directories are treated as files
   }
   
   getFilename(url) {
     url = url || this.url;
     return url.replace(/.*\//,"")
+    // return url.replace(/\.l4d\/(index\.md)?$/,".l4d").replace(/.*\//,"")
   }
   
   async update() {
@@ -168,20 +193,61 @@ export default class LivelyContainerNavbar extends Morph {
     return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
   }
   
-  async show(targetUrl, sourceContent) {
-    
+  selectItem(item) {
+    this.get("#navbar").querySelectorAll(".selected").forEach(ea => ea.classList.remove("selected"))
+    item.classList.add("selected");      
+  }
+  
+  getRootElement() {
+    return this.get("#navbar")
+  }
+  
+  async show(targetURL, sourceContent, contextURL, force=false) {
+    console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    var lastURL = this.url
+    this.url = "" + targetURL;
+    var lastContent = this.sourceContent
     this.sourceContent = sourceContent;
-    this.url = "" + targetUrl;
-    var filename = this.getFilename();
-    var root = this.getRoot();
-    this.currentDir = root;
+    console.log("contextURL " + contextURL)
+    
+    this.contextURL = contextURL;
+    var lastDir = this.currentDir
+    this.currentDir = this.getRoot(targetURL);
+
+
+    let urlWithoutIndex = this.url.replace(/index\.((html)|(md))$/,"")
+    this.targetItem = _.find(this.getRootElement().querySelectorAll("li"), ea => {
+      if (ea.textContent == "../") return false
+      var link = ea.querySelector("a")
+
+      return link && (link.href == this.url || link.href == urlWithoutIndex)
+    })
+    if (this.targetItem) {
+      this.selectItem(this.targetItem)
+      if (lastDir !== this.currentDir) {
+        this.showSublist()
+      } else if (lastURL !== this.url) {
+        lively.notify("update " + this.url)
+        this.showSublist()
+      } else if (lastContent != this.sourceContent) {
+        lively.notify("update content")
+        this.showSublisContent(true)
+      }
+
+      return         
+    } else {
+      await this.showDirectory(targetURL, this.get("#navbar"))
+      this.showSublist()    
+    }
+  }
+  
+  async fetchStats(targetURL) {
+    
+    var root = this.getRoot(targetURL)
     var stats = await fetch(root, {
       method: "OPTIONS",
     }).then(r => r.status == 200 ? r.json() : {})
     
-    var mystats = await fetch(targetUrl, {
-      method: "OPTIONS",
-    }).then(r => r.status == 200 ? r.json() : {})
     
     if (!stats || !stats.type) {
       stats = {};// fake it
@@ -201,22 +267,25 @@ export default class LivelyContainerNavbar extends Morph {
         });
       });
     }
-    this.clear();
-    var navbar = this.get("#navbar")
-      
-    var names = {};
-    stats.contents.forEach(ea => names[ea.name] = ea);
-    
+    return stats
+  }
+  
+  fileType(file) {
+    // l4d bundle should sort like files
+    if (file.name.match(/\.((l4d)|(md))$/)) return "file"
+    return file.type
+  }
+  
+  filesFromStats(stats) {
     var files = stats.contents
-      .sort((a, b) => {
-        if (a.type > b.type) {
+      .sort((a, b) => {        
+        if (this.fileType(a) > this.fileType(b)) {
           return 1;
         }
-        if (a.type < b.type) {
+        if (this.fileType(a) < this.fileType(b)) {
           return -1;
         }
-        
-        // date based filenames are sorted so lastest are first
+        // #Hack, date based filenames are sorted so lastest are first
         if (a.name.match(/\d\d\d\d-\d\d-\d\d/) && b.name.match(/\d\d\d\d-\d\d-\d\d/)) {
           return (a.name >= b.name) ? -1 : 1;          
         }
@@ -224,37 +293,60 @@ export default class LivelyContainerNavbar extends Morph {
         return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
+    files.unshift({name: "..", type: "directory", url: stats.parent});
+    return files
+  }
+  
+
+  async showDirectory(targetURL, parentElement) {
     
-      
-
-    files.unshift({name: "..", type: "directory"});
+    var filename = this.getFilename();
+    
+    var stats = await this.fetchStats(targetURL)
+    this.clear(parentElement);
+     
+    var names = {};
+    stats.contents.forEach(ea => names[ea.name] = ea);
+    
+    var files = this.filesFromStats(stats).filter(ea =>
+      !(ea.name == ".." && parentElement !== this.getRootElement()))
+    
+   
     files.forEach((ea) => {
-
-      // if there is an Markdown File, ignore the rest
-      // #TODO should we make this an option?
-      // var m = ea.name.match(/(.*)\.(.*)/);
-      // if (m && m[2] != "md" && names[m[1]+".md"]) return;
-      // if (m && m[2] != "livelymd" && names[m[1]+".livelymd"]) return;
 
       var element = document.createElement("li");
       var link = document.createElement("a");
-
-      if (ea.name == filename) this.targetItem = element;
+      
+      
+      if (ea.name == filename) {
+        this.targetItem = element;
+      }
       
       if (this.targetItem) this.targetItem.classList.add("selected");
       
       var name = ea.name;
-     
       var icon;
-      if (ea.type == "directory") {
+      if (ea.name.match(/\.l4d$/) || ea.name.match(/\.md$/)) {
+        icon = '<i class="fa fa-file"></i>';
+        // some directories in lively are considered bundles and should behave like documents
+        if (ea.type == "directory") {
+          element.classList.add("directory")
+        } else {
+          element.classList.add("file")
+        }
+      } else if (ea.type == "directory") {
         name += "/";
         icon = '<i class="fa fa-folder"></i>';
+        element.classList.add("directory")
       } else if (ea.type == "link") {
         icon = '<i class="fa fa-arrow-circle-o-right"></i>';
+        element.classList.add("link")
       } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
         icon = '<i class="fa fa-check-square-o"></i>'
+        element.classList.add("test")
       } else {
         icon = '<i class="fa fa-file"></i>';
+        element.classList.add("file")
       }
       var title = ea.title || name
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
@@ -263,12 +355,8 @@ export default class LivelyContainerNavbar extends Morph {
       if (ea.type == "directory" && !href.endsWith("/")) {
         href += "/"
       }
-      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : root + "" + href;
-      if (mystats.parent && ea.name == "..") {        
-        otherUrl = mystats.parent
-      }
-      link.href = otherUrl;
-      
+      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
+      link.href = ea.url || otherUrl;
       
       if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
         element.classList.add("selected")
@@ -278,6 +366,11 @@ export default class LivelyContainerNavbar extends Morph {
         this.onItemClick(link, evt); 
         return false
       };
+      link.ondblclick = (evt) => { 
+        this.onItemDblClick(link, evt); 
+        return false
+      };
+
       link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
       link.addEventListener('contextmenu', (evt) => {
           if (!evt.shiftKey) {
@@ -288,9 +381,9 @@ export default class LivelyContainerNavbar extends Morph {
           }
       }, false);
       element.appendChild(link);
-      navbar.appendChild(element);
+      parentElement.appendChild(element);
     });
-    this.showSublist()
+    // this.clearSublists()
   }
   
   onItemClick(link, evt) {
@@ -299,9 +392,13 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.lastSelection = []
     }
-    this.followPath(link.href );
+    this.followPath(link.href);
   }
   
+  onItemDblClick(link, evt) {
+    this.clear()
+    this.followPath(link.href);
+  }
   async editWithSyvis (url) {
     const editor = await components.createComponent('syvis-editor');
     await editor.loadUrl(url);
@@ -312,6 +409,7 @@ export default class LivelyContainerNavbar extends Morph {
     const menuElements = [
       ["delete file", () => this.deleteFile(otherUrl)],
       ["rename file", () => this.renameFile(otherUrl)],
+      ["become bundle", () => this.convertFileToBundle(otherUrl)],
       ["new file", () => this.newfile(otherUrl)],
       ["edit", () => lively.openBrowser(otherUrl, true)],
       ["browse", () => lively.openBrowser(otherUrl)],
@@ -340,8 +438,23 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify(`please implement navigateToName(${url})`)
   }
 
-  followPath(url) {
-    this.show(new URL(url),"")
+  followPath(url, lastPath) {
+    this.show(new URL(url), "", this.contextURL)
+  }
+
+  async convertFileToBundle(url) {
+    // var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/2018-08-17.md"
+    if (!await lively.files.isFile(url)) {
+      lively.notify("Converion failed: " + url + " is no file!")
+      return
+    }
+    var contents = await fetch(url).then(r => r.text());
+    await fetch(url, {method: 'DELETE'})
+    
+    await fetch(url + "/", {method: 'MKCOL'});
+    var newURL = url + "/" + "index.md"
+    await fetch(newURL, {method: 'PUT', body: contents});
+    this.followPath(newURL);
   }
 
   showSublistHTML(subList) {
@@ -401,6 +514,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   showSublistMD(subList) {
+    console.log("sublist md " + this.sourceContent.length)
     if (!this.sourceContent) return;
     let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
     let m;
@@ -426,44 +540,86 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
 
-  async showSublistOptions(subList) {
-    var options = await fetch(this.url, {method: "OPTIONS"})
+  async showSublistOptions(subList, url) {
+    url = url || this.url
+    var options = await fetch(url, {method: "OPTIONS"})
       .then(r => r.status == 200 ? r.json() : {})
     if (!options.contents) return;
-    for(var ea of options.contents) {
-      var element = <li 
-          class="link subitem">{ea.name}</li>
+    for(let ea of options.contents) { // #Bug for(var ea) vs for(let)
+      let element = <li 
+          class="link subitem" title={ea.name}>{ea.name}</li>
       subList.appendChild(element);
       element.onclick = () => {
         lively.notify("follow " + ea.name)
-        this.followPath(this.url + "/" + ea.name)
+        this.followPath(url + "/" + ea.name)
       }
     }
   }
   
+  clearSublists() {
+    console.log("clear sublists")
+    var parents = this.targetItem ? lively.allParents(this.targetItem) : [];
+    // remove all sublists... but my own tree
+    Array.from(this.get("#navbar").querySelectorAll("ul"))
+      .filter(ea => !parents.includes(ea) && !lively.allParents(ea).includes(this.targetItem))
+      .forEach(ea => ea.remove())    
+
+    Array.from(this.get("#navbar").querySelectorAll(".subitem"))
+      .forEach(ea => ea.remove())    
+
+  }
+  
   async showSublist() {
+    console.log("show sublist " + this.url)
+     
     if (!this.targetItem) return 
+    if (this.targetItem.querySelector("ul")) return // has sublist
+    
     var subList = document.createElement("ul");
     this.targetItem.appendChild(subList);
+    if (this.url !== this.contextURL && this.targetItem.classList.contains("directory")) {
+      var optionsWasHandles = true
+      await this.showDirectory(this.url, subList)
+    }
+    this.showSublisContent(optionsWasHandles)
+  } 
+  
+  
+  async showSublisContent(optionsWasHandles) {
+    console.log("show sublist content " + this.url)
+     
+    if (!this.targetItem) return 
+    var subList = this.targetItem.querySelector("ul")
+    if (!subList) return // we are a sublist item?
+    this.clearSublists()
+     console.log("show sublist xxx " + this.url)
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
     } else if (this.url.match(/\.js$/)) {
       this.showSublistJS(subList)
     } else if (this.url.match(/\.md$/)) {
+      console.log("show sublist md" + this.url)
+
       this.showSublistMD(subList)
     } else {
-      this.showSublistOptions(subList)
+      if (!optionsWasHandles) {
+        this.showSublistOptions(subList)
+      }
     }
   } 
-  
   async livelyMigrate(other) {
-    await this.show(other.url, other.sourceContent)
-    this.showSublist()
+    await this.show(other.url, other.sourceContentthis, other.contextURL, true)
   }
 
+  livelyUpdate() {
+    this.clear()
+    this.show(this.url,this.sourceContent, this.contextURL, true)
+  }
+  
   async livelyExample() {
     // var url = lively4url + "/README.md"
-    var url = "innerhtml://"
+    // var url = "innerhtml://"
+    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
   }

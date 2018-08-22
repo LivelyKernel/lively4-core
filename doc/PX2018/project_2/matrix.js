@@ -18,7 +18,7 @@ export default class Matrix {
     let matrix = new Matrix();
     
     if (dimB === undefined) {
-      matrix._matrix = ExtMath.ones(dimA, 1);
+      matrix._matrix = ExtMath.ones(dimA);
     } else {
       matrix._matrix = ExtMath.ones(dimA, dimB);
     }
@@ -30,7 +30,7 @@ export default class Matrix {
     let matrix = new Matrix();
     
     if (dimB === undefined) {
-      matrix._matrix = ExtMath.zeros(dimA, 1);
+      matrix._matrix = ExtMath.zeros(dimA);
     } else {
       matrix._matrix = ExtMath.zeros(dimA, dimB);
     }
@@ -45,31 +45,64 @@ export default class Matrix {
     return ExtMath.det(this._matrix);
   }
   
-  multiply(matrix2) {
+  add(matrix2) {
     let result = new Matrix();
-    result._matrix = ExtMath.multiply(this._matrix, matrix2._matrix);
+    result._matrix = ExtMath.add(this._matrix, matrix2._matrix);
+    return result;
+  }
+  
+  subtract(matrix2) {
+    let result = new Matrix();
+    result._matrix = ExtMath.subtract(this._matrix, matrix2._matrix);
+    return result;
+  }
+  
+  multiply(value) {
+    let result = new Matrix();
+    
+    if (value instanceof Matrix) {
+      result._matrix = ExtMath.multiply(this._matrix, value._matrix);
+    } else {
+      result._matrix = ExtMath.multiply(this._matrix, value);
+    }
+    
+    return result;
+  }
+  
+  divide(value) {
+    let result = new Matrix();
+    
+    if (value instanceof Matrix) {
+      result._matrix = ExtMath.divide(this._matrix, value._matrix);
+    } else {
+      result._matrix = ExtMath.divide(this._matrix, value);
+    }
+    
     return result;
   }
   
   /**
    * Returns the inverted matrix
    */
-  inv() {
+  invert() {
     let result = new Matrix();
     result._matrix = ExtMath.inv(this._matrix);
     return result;
   }
   
-  reshape(matrix, num1, num2) {
+  reshape(num1, num2) {
     let result = new Matrix();
+    // Do not change the current matrix only the return value
+    let tmp = ExtMath.multiply(this._matrix, 1);
     result._matrix = ExtMath.reshape(this._matrix, [num1, num2]);
+    this._matrix = tmp;
     return result;
   }
   
   /**
    * Returns the transposed matrix
    */
-  transpose(matrix) {
+  transpose() {
     let result = new Matrix();
     result._matrix = ExtMath.transpose(this._matrix);
     return result;
@@ -97,10 +130,10 @@ export default class Matrix {
   }
   
   set(x, y, value) {
-    if (y === undefined) {
-      this._matrix.set([x], value);
-    } else {
-      this._matrix.set([x, y], value);
-    }
+    this._matrix.set([x, y], value);
+  }
+  
+  toString() {
+    return ExtMath.round(this._matrix, 3).toString()
   }
 }

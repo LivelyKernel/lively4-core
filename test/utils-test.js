@@ -1,4 +1,4 @@
-import { isFunction, functionMetaInfo } from 'utils';
+import { isFunction, functionMetaInfo, CallableObject, using } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -66,3 +66,114 @@ describe('Dynamic type checks', function() {
 
   });
 });
+
+describe('Callable Object', () => {
+  it('defines CallableObject', () => {
+    expect(CallableObject).to.be.ok;
+  });
+});
+
+// === Python's with statement
+describe('using', () => {
+  class TestContextManager {
+    constructor() {
+      this.__enter__ = sinon.spy();
+      this.__exit__ = sinon.spy();
+    }
+  }
+  
+  it('using is defined', () => {
+    expect(using).to.be.ok;
+  });
+
+  it('using calls the specified function', () => {
+    const spy = sinon.spy();
+    
+    const actual = using([], spy);
+    expect(spy).to.be.calledOnce;
+  });
+
+  it("using returns the callback's value", () => {
+    const expected = 42;
+    
+    const actual = using([], () => expected);
+    expect(actual).to.equal(expected);
+  });
+
+  it('calls __enter__ and __exit__ of one context manager', () => {
+    const callbackSpy = sinon.spy();
+    const contextManager = new TestContextManager();
+        
+    using([contextManager], callbackSpy);
+    expect(contextManager.__enter__).to.be.calledOnce;
+    expect(callbackSpy).to.be.calledOnce;
+    expect(contextManager.__exit__).to.be.calledOnce;
+    expect(contextManager.__enter__).to.be.calledBefore(callbackSpy)
+    expect(callbackSpy).to.be.calledBefore(contextManager.__exit__)
+  });
+
+  it('calls __enter__ and __exit__ of multiple context managers', () => {
+    const callbackSpy = sinon.spy();
+    const contextManager1 = new TestContextManager();
+    const contextManager2 = new TestContextManager();
+
+    using([contextManager1, contextManager2], callbackSpy);
+    
+    expect(contextManager1.__enter__).to.be.calledOnce;
+    expect(contextManager2.__enter__).to.be.calledOnce;
+    expect(callbackSpy).to.be.calledOnce;
+    expect(contextManager2.__exit__).to.be.calledOnce;
+    expect(contextManager1.__exit__).to.be.calledOnce;
+
+    expect(contextManager1.__enter__).to.be.calledBefore(contextManager2.__enter__)
+    expect(contextManager2.__enter__).to.be.calledBefore(callbackSpy)
+    expect(callbackSpy).to.be.calledBefore(contextManager2.__exit__)
+    expect(contextManager2.__exit__).to.be.calledBefore(contextManager1.__exit__)
+  });
+
+  it('nested usings call respective context managers', () => {
+    const callbackSpy = sinon.spy();
+    const contextManager1 = new TestContextManager();
+    const contextManager2 = new TestContextManager();
+
+    using([contextManager1], () =>
+      using([contextManager2], callbackSpy)
+    );
+    
+    expect(contextManager1.__enter__).to.be.calledOnce;
+    expect(contextManager2.__enter__).to.be.calledOnce;
+    expect(callbackSpy).to.be.calledOnce;
+    expect(contextManager2.__exit__).to.be.calledOnce;
+    expect(contextManager1.__exit__).to.be.calledOnce;
+
+    expect(contextManager1.__enter__).to.be.calledBefore(contextManager2.__enter__)
+    expect(contextManager2.__enter__).to.be.calledBefore(callbackSpy)
+    expect(callbackSpy).to.be.calledBefore(contextManager2.__exit__)
+    expect(contextManager2.__exit__).to.be.calledBefore(contextManager1.__exit__)
+  });
+
+  it('using calls context managers with error in case of exceptions', () => {
+    const expectedError = new Error('test error');
+    const contextManager1 = new TestContextManager();
+    const contextManager2 = new TestContextManager();
+
+    function errornousFunction() {
+      using([contextManager1], () =>
+        using([contextManager2], (callbackSpy => {
+          throw expectedError;
+        }))
+      );
+    }
+    
+    expect(errornousFunction).to.throw(expectedError);
+    
+    expect(contextManager2.__exit__).to.be.calledOnce;
+    expect(contextManager2.__exit__).to.be.calledWith(expectedError);
+
+    expect(contextManager1.__exit__).to.be.calledOnce;
+    expect(contextManager1.__exit__).to.be.calledWith(expectedError);
+
+    expect(contextManager2.__exit__).to.be.calledBefore(contextManager1.__exit__)
+  });
+});
+

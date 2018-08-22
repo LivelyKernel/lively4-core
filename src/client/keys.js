@@ -11,7 +11,6 @@
 
 import boundEval from "src/client/bound-eval.js";
 import GraphControl from "templates/graph-control.js";
-import { letsScript } from 'src/client/vivide/vivide.js';
 
 export default class Keys {
 
@@ -46,7 +45,7 @@ export default class Keys {
         ["Open Workspace", ctrl && char == "K", evt => {
           lively.openWorkspace("")
         }],
-        // #KeyboardShortcut Ctrl-Shift-F search in files
+        // #KeyboardShortcut Ctrl-Shift-F search throughout the whole repository
         ["Search", ctrl && shiftKey && char == "F", evt => {
           lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
         }],
@@ -89,6 +88,9 @@ export default class Keys {
           }
           let str = window.getSelection().toLocaleString();
           try {
+            const letsScript = await System.import('src/client/vivide/vivide.js')
+              .then(m => m.letsScript);
+
             letsScript(await boundEval(str));
           } catch(e) {
             lively.handleError(e);

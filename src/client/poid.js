@@ -533,6 +533,7 @@ window.fetch = async function(request, options, ...rest) {
   return window.originalFetch.apply(window, [request, options, ...rest])
 }
 
+42;
 
 lively.removeEventListener("poid", navigator.serviceWorker)
 lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {

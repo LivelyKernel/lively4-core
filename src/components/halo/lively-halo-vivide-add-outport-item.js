@@ -15,7 +15,7 @@ export default class HaloVivideAddOutportItem extends HaloItem {
     this.style['user-drag'] = 'element';
     this.addEventListener('dragstart', evt => this.startMyDrag(evt));
     this.addEventListener('drag', evt => {
-      lively.success('drag');
+      lively.warn('drag');
     });
     this.addEventListener('dragend', evt => {
       HaloService.hideHalos();

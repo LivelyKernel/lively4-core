@@ -49,8 +49,8 @@ export default class upndown {
         this.walkNodes(dom, { keepHtml })
             .then(function(markdown) {
                 if(!markdown) { markdown = ''; }
-                let regx = new RegExp(this.nbsp, 'g');
-                cbk(null, markdown.trim().replace(regx, ' '));
+                  let regx = new RegExp(this.nbsp, 'g');
+                  cbk(null, markdown.trim().replace(regx, ' '));
             }.bind(this))
             .catch(function(err) {
                 debugger

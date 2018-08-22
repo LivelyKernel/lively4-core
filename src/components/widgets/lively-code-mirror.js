@@ -341,16 +341,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Shift-Alt-.": cm => {
         TernCodeMirrorWrapper.showReferences(cm, this);
       },
-      // #TODO
-      // #KeyboardShortcut Alt-Right inverse code folding (indent)
-      "Alt-Right": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },
-      // #TODO
-      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
-      "Alt-Left": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },      
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
@@ -472,24 +462,26 @@ export default class LivelyCodeMirror extends HTMLElement {
     return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
   }
   
-  wrapWidget(name, from, to) {
-    var widget = document.createElement("span")
-    widget.style.whiteSpace = "normal"
-    var promise = lively.create(name, widget)
+  wrapWidget(name, from, to, options) {
+    var widget = document.createElement("span");
+    widget.style.whiteSpace = "normal";
+    var promise = lively.create(name, widget);
     promise.then(comp => {
-      comp.style.display = "inline"
-      comp.style.backgroundColor = "rgb(250,250,250)"
-      comp.style.display = "inline-block"
-      comp.style.minWidth = "20px"
-      comp.style.minHeight = "20px"
-    })
+      Object.assign(comp.style, {
+        display: "inline",
+        backgroundColor: "rgb(250,250,250)",
+        display: "inline-block",
+        minWidth: "20px",
+        minHeight: "20px"
+      });
+    });
     // #TODO, we assume that it will keep the first widget, and further replacements do not work.... and get therefore thrown away
-    var marker = this.editor.doc.markText(from, to, {
+    var marker = this.editor.doc.markText(from, to, Object.assign({
       replacedWith: widget
-    }); 
-    promise.then(comp => comp.marker = marker)
+    }, options));
+    promise.then(comp => comp.marker = marker);
     
-    return promise
+    return promise;
   }
   
   
@@ -531,6 +523,9 @@ export default class LivelyCodeMirror extends HTMLElement {
           return table
         })
       }
+    } else if(objClass ==  "Matrix") {
+      // obj = obj.toString() 
+      debugger
     } else if ((typeof obj == 'object') && (obj !== null)) {
       promisedWidget = this.printWidget("lively-inspector").then( inspector => {
         inspector.inspect(obj)
@@ -710,7 +705,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (mode == "gfm") {
       // #TODO make language customizable
-      spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      var m = this.value.match(/^.*lang\:(.._..)/)
+      if (m) {
+        var lang = m[1]
+        var dict = await spellCheck.loadDictLang(lang)
+        if (dict) {
+          lively.notify("start spell checking lang: " + lang)
+          spellCheck.startSpellCheck(this.editor, dict)
+        } else {
+          console.log("spellchecking language not found: " + lang)
+        }
+      } else {
+        spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      }
     }
     
   }

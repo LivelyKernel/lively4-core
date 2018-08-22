@@ -167,6 +167,11 @@ export default class Lively {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+      // #TODO: duplicated code #refactor
+    } else if(path.match('client/vivide')) {
+      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
+      dependedModules = lively.findDependedModules(path, true);
+      dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
     } else {
       // Find all modules that depend on me
       dependedModules = lively.findDependedModules(path);
@@ -469,6 +474,7 @@ export default class Lively {
   // Example: lively.getPosition(that)
 
   static getPosition(obj) {
+    
     var pos;
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
@@ -489,6 +495,10 @@ export default class Lively {
       return pt(obj.clientX, obj.clientY);
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
+    }
+    
+    if(obj instanceof KeyboardEvent) {
+      return;
     }
     // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
     if (isNaN(pos.x) || isNaN(pos.y)) {
@@ -633,7 +643,7 @@ export default class Lively {
 
   static openContextMenu(container, evt, target, worldContext) {
 
-    if (HaloService.areHalosActive() ||
+    if (window.HaloService && HaloService.areHalosActive() ||
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that;
     }
@@ -885,6 +895,11 @@ export default class Lively {
     lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
+  /*
+   * After changing code... we have to update intances...
+   * a) don't touch the instance, just update the class
+   *
+   */
   static async updateTemplate(html) {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
@@ -939,8 +954,19 @@ export default class Lively {
           inspector.inspect(newInstance)
         }
       })
-
     });
+  
+
+    // new (old) strategy... don't throw away the instance... just update them inplace?
+    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach( ea => {
+      if (ea.livelyUpdate) {
+        try {
+          ea.livelyUpdate()
+        } catch(e) {
+          console.error(e)
+        }
+      }
+    })
   }
 
   static showInfoBox(target) {
@@ -1651,7 +1677,7 @@ export default class Lively {
   static halt(time=1000) {
     window.setTimeout(() => {
       debugger
-    },time)
+    }, time);
   }
 
   static sleep(time=1000) {
@@ -1670,6 +1696,10 @@ export default class Lively {
     return all
   }
 
+  static findAllElements(filterFunc, deep) {
+    return Array.from(this.allElements(deep)).filter(filterFunc)
+  }
+  
   static allParents(element, parents=[]) {
     if (!element.parentElement) {
       return parents

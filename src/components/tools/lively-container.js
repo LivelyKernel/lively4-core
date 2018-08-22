@@ -240,7 +240,6 @@ export default class Container extends Morph {
   }
 
   loadModule(url) {
-    lively.notify("load module")
     lively.reloadModule("" + url, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
@@ -300,6 +299,7 @@ export default class Container extends Morph {
   }
 
   onHome() {
+    this.clearNavbar()
     this.followPath(lively4url)
   }
 
@@ -454,10 +454,10 @@ export default class Container extends Morph {
     return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
-      lively.notify("!!!saved " + url)
+      // lively.notify("!!!saved " + url)
       window.LastURL = url
       if (await this.urlInTemplate(url)) {
-        lively.notify("update template")
+        // lively.notify("update template")
         if (url.toString().match(/\.html/)) {
           // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
           var templateSourceCode = sourceCode
@@ -480,7 +480,7 @@ export default class Container extends Morph {
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url);
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-            lively.notify("load module " + moduleName)
+          // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
@@ -809,7 +809,7 @@ export default class Container extends Morph {
       opts="&fullscreen=true"
     }
 
-    if (this.isEditing() && !path.match(/\/$/)) {
+    if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
           'view ' + path, window.location.pathname + "?edit="+path  + opts);
@@ -933,7 +933,9 @@ export default class Container extends Morph {
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
-        lively.notify("found index" + index)
+        // lively.notify("found index" + index)
+        // this.contextURL
+        
         return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
       // return Promise.resolve(""); // DISABLE Listings
@@ -1033,6 +1035,8 @@ export default class Container extends Morph {
     url = this.getURL();
     
     this.content = ""
+    
+    
     this.showNavbar();
     
     
@@ -1168,10 +1172,13 @@ export default class Container extends Morph {
     navbar.deleteFile = (url) => { this.deleteFile(url) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newfile = (url) => { this.newfile(url) }
-    navbar.followPath = (path) => { this.followPath(path) }
+    navbar.followPath = (path, lastPath) => { 
+      this.contextURL = lastPath
+      this.followPath(path) 
+    }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-    await navbar.show(this.getURL(), this.content)
+    await navbar.show(this.getURL(), this.content, navbar.contextURL)
   }
 
   isFullscreen() {
@@ -1542,6 +1549,16 @@ export default class Container extends Morph {
     return this.followPath(lively4url + "/README.md")
   }
 
+  // customize clipboard interaction... etc
+  // navigating in this multidimensional space can be hard
+  livelyTarget() {
+    var markdownElement = this.get("lively-markdown")
+    if (markdownElement) {
+      return markdownElement.get("#content")
+    }
+    return this
+  }
+  
   livelyMigrate(other) {
     // other = that
     this.isMigrating = true;

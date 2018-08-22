@@ -13,8 +13,6 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
-    // Callback set in the view
-    this.expandChild = null;
   }
   
   dataForDOMNode(treeItem) {
@@ -54,7 +52,7 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
       treeItem.className += " expanded"
       if (childLayer.script) {
         let childData = childLayer.objects.map(c => c.data);
-        object.childLayer = await this.expandChild(childData, childLayer.script);
+        object.childLayer = await this.getView().computeModel(childData, childLayer.script);
         childLayer = object.childLayer;
       }
       
@@ -76,8 +74,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   }
   
   async processObject(object, parent) {
-    let label = object.properties.map(prop => prop.label).find(label => label) || textualRepresentation(object.data);
-    let tooltipText = object.properties.map(prop => prop.tooltip).find(tooltip => tooltip) || "";
+    let label = object.properties.get('label') || textualRepresentation(object.data);
+    let tooltipText = object.properties.get('tooltip') || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let symbolClasses = "expander fa";
     symbolClasses += object.hasChildren > 0 ? " fa-caret-right" : " fa-circle small";

@@ -15,3 +15,28 @@ import { createNewFileButton } from "doc/PX2018/project_2/utils.js"
 [Initial Presentation](presentation/presentation-2018-05-16.md)
 
 [Next Meeting](meeting/meeting-2018-05-22.md)
+
+
+## Dev Notes
+
+This project separates model in a separate class and module from the web component. This is does not work well with our live development tools at the moment. But we can achieve a Smalltalk like experience by at least updating the class (and methods). The problem is that we get a new class after reloading a module. We could fix that and hook into module loading semantics or accept it for now and update specific (or all?) instances by changing the link to the prototype. 
+
+```javascript
+var mpm = document.querySelector("lively-mpm")
+mpm.animation.particles = mpm.animation.particles.slice(0,12)
+
+mpm.animation.initParticles()
+
+
+import ElasticBodies from "doc/PX2018/project_2/elasticbodies.js"
+
+// #UPDATE_INSTANCES
+// after updating elasticbodies.js, the class changes
+mpm.animation.constructor === ElasticBodies
+
+// we can fix this, so we can do live development again....
+mpm.animation.__proto__ = ElasticBodies.prototype
+
+
+// #TODO generalize this, to do a "become" 
+```

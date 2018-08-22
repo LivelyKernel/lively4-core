@@ -66,13 +66,13 @@ export default class GraphControl extends Morph {
   }
   
   buildknowledgeBaseWidget(urlString) {
-    return <span>
+    return <span class="knowledge-base">
       {this.buildNavigatableLink(urlString)}
       {this.buildRemoveKnowledgeIcon(urlString)}
     </span>;
   }
   buildNavigatableLink(urlString) {
-    let ref = <a>{urlString}</a>;
+    let ref = <a class="open-knowledge-base">{urlString}</a>;
     ref.addEventListener("click", async e => {
       e.preventDefault();
       e.stopPropagation();
@@ -83,7 +83,7 @@ export default class GraphControl extends Morph {
     return ref;
   }
   buildRemoveKnowledgeIcon(urlString) {
-    let removeIcon = <i class="fa fa-trash"></i>;
+    let removeIcon = <i class="fa fa-trash remove-knowledge-base"></i>;
     removeIcon.addEventListener("click", async e => {
       const graph = await Graph.getInstance();
       if(await graph.removeRootKnowledgeBase(urlString)) {
