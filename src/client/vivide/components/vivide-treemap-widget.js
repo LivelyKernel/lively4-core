@@ -18,9 +18,8 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
-    // Callback set in the view
-    this.expandChild = null;
-    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+
+    this.addEventListener('extent-changed', debounce.call(evt => { this.onExtentChanged(evt); }, 500));
   }
   onExtentChanged(evt) {
     this.d3treemap && this.d3treemap.updateViz && this.d3treemap.updateViz();
@@ -50,7 +49,7 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
       }
       
       let childData = childLayer.objects.map(c => c.data);
-      model.childLayer = await this.expandChild(childData, childLayer.script);
+      model.childLayer = await this.getView().computeModel(childData, childLayer.script);
       childLayer = model.childLayer;
       
       return childLayer;
@@ -98,11 +97,5 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view
-  }
-  
-  livelyMigrate(other) {
-    lively.warn('MIGRATE')
-    this.expandChild = other.expandChild;
-    super.display(other);
   }
 }

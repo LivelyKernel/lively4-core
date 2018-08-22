@@ -7,11 +7,6 @@ export default class VivideLayer {
   constructor(data) {
     this._objects = [];
     this._rawData = data;
-    this._modules = {
-      transform: [],
-      extract: [],
-      descent: []
-    };
     this._script = null;
     this._childScript = null;
     

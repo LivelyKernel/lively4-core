@@ -364,9 +364,9 @@ export default class VivideView extends Morph {
     const chosenWidgetType = WidgetChooser.findAppropriateWidget(this.modelToDisplay, viewConfig);
 
     const widget = await lively.create(chosenWidgetType);
+    widget.setView(this);
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
-    widget.expandChild = this.computeModel.bind(this);
     await widget.display(this.modelToDisplay, viewConfig);
   }
   

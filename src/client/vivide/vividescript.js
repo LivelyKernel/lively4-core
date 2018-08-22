@@ -100,6 +100,7 @@ export default class Script {
     const steps = this.stepsAsArray();
 
     for (let step of steps) {
+      // #TODO: just say 'await step.getConfig()' (make it lazy and memoize later)
       const [fn, config] = await step.getExecutable();
       viewConfig.add(config);
     }
@@ -107,7 +108,7 @@ export default class Script {
     return viewConfig;
   }
   
-    // #TODO: extract to a separate ScriptProcessor, or Script itself
+    // #TODO: extract to a separate ScriptProcessor
   async computeModel(data, step) {
     let vivideLayer = new VivideLayer(data);
     const _modules = {
@@ -239,7 +240,7 @@ export default class Script {
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
-  let script = vv.myCurrentScript;
+  const script = vv.myCurrentScript;
   
   if(script) {
     // evil live programming

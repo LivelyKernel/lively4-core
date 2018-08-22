@@ -14,12 +14,16 @@ export default class VivideWidget extends Morph {
     return findParent(this, view => view.tagName === 'VIVIDE-VIEW');
   }
   
+  setView(view) { this._view = view; }
+  getView() { return this._view; }
+  
   display(model, config) {
     this.model = model;
     this.config = config;
   }
   
   livelyMigrate(other) {
+    this.setView(other.getView());
     this.display(other.model, other.config);
   }
 }
