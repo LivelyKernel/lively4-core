@@ -643,7 +643,7 @@ export default class Lively {
 
   static openContextMenu(container, evt, target, worldContext) {
 
-    if (HaloService.areHalosActive() ||
+    if (window.HaloService && HaloService.areHalosActive() ||
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that;
     }
