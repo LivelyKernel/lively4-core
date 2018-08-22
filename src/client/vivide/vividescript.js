@@ -2,6 +2,8 @@ import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
+import VivideLayer from 'src/client/vivide/vividelayer.js';
+import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
 export default class Script {
   constructor(view) {
@@ -25,7 +27,7 @@ export default class Script {
   }
   
   numberOfSteps() {
-    let length = 0
+    let length = 0;
     this.getInitialStep().iterateLinear(() => length++);
     return length;
   }
@@ -35,7 +37,14 @@ export default class Script {
   }
   
   async forEachStepAsync(cb) {
-    this.getInitialStep().iterateLinearAsync(cb);
+    await this.getInitialStep().iterateLinearAsync(cb);
+  }
+  
+  stepsAsArray() {
+    const arr = [];
+    this.getInitialStep().iterateLinear(step => arr.push(step));
+
+    return arr;
   }
   
   /**
@@ -83,6 +92,106 @@ export default class Script {
     }
   }
   
+  /**
+   * Script execution
+   */
+  async getViewConfig() {
+    const viewConfig = new Annotations();
+    const steps = this.stepsAsArray();
+
+    for (let step of steps) {
+      const [fn, config] = await step.getExecutable();
+      viewConfig.add(config);
+    }
+    
+    return viewConfig;
+  }
+  
+    // #TODO: extract to a separate ScriptProcessor, or Script itself
+  async computeModel(data, step) {
+    let vivideLayer = new VivideLayer(data);
+    const _modules = {
+      transform: [],
+      extract: [],
+      descent: []
+    };
+    
+    // #TODO: problem if first step is a descent step
+    async function applyUntil(step, callback, shouldContinue) {
+      if(!step) { return; }
+
+      await callback(step);
+
+      if(shouldContinue(step)) {
+        await applyUntil(step.nextStep, callback, shouldContinue);
+      }
+    }
+
+    await applyUntil(step, async s => await this.applyStep(s, vivideLayer, _modules), s => {
+      if(s.type === 'descent') { return false; }
+      if(!s.nextStep) { return false; }
+
+      return true;
+    });
+
+    await this.processData(vivideLayer, _modules);
+    
+    return vivideLayer;
+  }
+  async applyStep(step, vivideLayer, _modules) {
+    const [fn, config] = await step.getExecutable();
+    
+    if (step.type === 'descent') {
+      vivideLayer.childScript = step.nextStep;
+    }
+    _modules[step.type].push(fn);
+    
+    // #TODO, #ERROR: this adds the config too late
+    // this.viewConfig.add(config);
+  }
+  async processData(vivideLayer, _modules) {
+    await this.transform(vivideLayer, _modules);
+    await this.extract(vivideLayer, _modules);
+    await this.descent(vivideLayer, _modules);
+  }
+  
+  async transform(vivideLayer, _modules) {
+    let input = vivideLayer._rawData.slice(0);
+    let output = [];
+    
+    for (let module of _modules.transform) {
+      await module(input, output);
+      input = output.slice(0);
+      output = [];
+    }
+
+    vivideLayer._rawData = input;
+    vivideLayer.makeObjectsFromRawData();
+  }
+  
+  async extract(vivideLayer, _modules) {
+    for (let module of _modules.extract) {
+      for (let object of vivideLayer._objects) {
+        object.properties.add(await module(object.data));
+      }
+    }
+  }
+  
+  async descent(vivideLayer, _modules) {
+    for (let module of _modules.descent) {
+      for (let object of vivideLayer._objects) {
+        const childData = await module(object.data);
+        
+        if (!childData) continue;
+        
+        const childLayer = new VivideLayer(childData);
+        childLayer.script = vivideLayer.childScript;
+        object.childLayer = childLayer;
+      }
+    }
+  }
+  
+
   /**
    * Serialization
    */
