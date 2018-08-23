@@ -42,43 +42,46 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   }
   
   async toggleTree(treeItem, expander) {
-    let object = this.dataByTreeItem.get(treeItem);
-    let childLayer = object.childLayer;
-    
-    if (!childLayer || !childLayer.objects.length) return;
-    
-    let sub = treeItem.querySelector("#child");
-    if (sub.innerHTML.length == 0) {
-      treeItem.className += " expanded"
-      if (childLayer.script) {
-        let childData = childLayer.objects.map(c => c.data);
-        object.childLayer = await this.getView().computeModel(childData, childLayer.script);
-        childLayer = object.childLayer;
-      }
-      
-      for (let child of childLayer.objects) {  
-        this.processObject(child, sub);
-      }
-      treeItem.appendChild(sub);
+    function showSubTree() {
+      treeItem.className += " expanded";
       expander.classList.remove("fa-caret-right");
       expander.classList += " fa-caret-down";
-    } else if (treeItem.classList.contains("expanded")) {
+    }
+    function hideSubTree() {
       treeItem.classList.remove("expanded");
       expander.classList.remove("fa-caret-down");
       expander.classList += " fa-caret-right";
+    }
+    
+    const vivideObject = this.dataByTreeItem.get(treeItem);
+    
+    if (!vivideObject.hasChildren()) { return; }
+    
+    const sub = treeItem.querySelector("#child");
+    if (sub.innerHTML.length == 0) {
+      const childLayer = await vivideObject.getChildren();
+      
+      for (let child of childLayer.objects) {
+        this.processObject(child, sub);
+      }
+      
+      treeItem.appendChild(sub);
+      showSubTree();
+    } else if (treeItem.classList.contains("expanded")) {
+      // child elements available and expanded -> hide them
+      hideSubTree();
     } else {
-      treeItem.classList += " expanded";
-      expander.classList.remove("fa-caret-right");
-      expander.classList += " fa-caret-down";
+      // child elements available but hidden -> show them
+      showSubTree();
     }
   }
   
   async processObject(object, parent) {
-    let label = object.properties.get('label') || textualRepresentation(object.data);
+    const label = object.properties.get('label') || textualRepresentation(object.data);
     let tooltipText = object.properties.get('tooltip') || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let symbolClasses = "expander fa";
-    symbolClasses += object.hasChildren > 0 ? " fa-caret-right" : " fa-circle small";
+    symbolClasses += object.hasChildren() ? " fa-caret-right" : " fa-circle small";
     let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltipText.length > 0) {
@@ -89,14 +92,16 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
       treeItem.addEventListener('mouseover', event => {
         shownTooltip = tooltip.cloneNode(true);
         document.body.appendChild(shownTooltip);
-        shownTooltip.style.display = 'inline-block';
-        shownTooltip.style.top = (event.clientY + 3) + "px";
-        shownTooltip.style.left = (event.clientX + 3) + "px";
-        shownTooltip.style.position = 'fixed';
-        shownTooltip.style.zIndex = 1001;
-        shownTooltip.style.backgroundColor = '#fff';
-        shownTooltip.style.border = '1px solid #d5d5d5';
-        shownTooltip.style.padding = '5px 10px';
+        object.assign(shownTooltip.style, {
+          display: 'inline-block',
+          top: (event.clientY + 3) + "px",
+          left: (event.clientX + 3) + "px",
+          position: 'fixed',
+          zIndex: 1001,
+          backgroundColor: '#fff',
+          border: '1px solid #d5d5d5',
+          padding: '5px 10px',
+        });
       });
       
       treeItem.addEventListener('mouseout', event => {

@@ -102,13 +102,14 @@ export default class ScriptStep {
     return step;
   }
   
+  setScript(script) { this._script = script; }
   update() {
-    lively.warn('Step was updated')
-    if (typeof this.updateCallback === 'function') {
-      this.updateCallback();
-    } else {
-      lively.error('but no updateCallback')
-    }
+    lively.notify('VivideStep::update')
+    this._script.gotUpdated();
+  }
+  async processData(childData) {
+    lively.success('Step::processData')
+    return await this._script.computeModel(childData, this);
   }
   
   toJSON() {
@@ -149,9 +150,9 @@ export default class ScriptStep {
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
-  let step = vv.getFirstStep && vv.getFirstStep();
+  if(!vv.myCurrentScript) { return; }
   
-  step && step.iterateLinear(s => {
+  vv.myCurrentScript.stepsAsArray().forEach(s => {
     // evil live programming
     s.constructor === ScriptStep;
 
