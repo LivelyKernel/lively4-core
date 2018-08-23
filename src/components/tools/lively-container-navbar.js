@@ -186,7 +186,24 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async update() {
-    await this.show(this.url, this.sourceContent)
+    
+    var urls = this.targetItem ? _.uniq(lively.allParents(this.targetItem)
+      .reverse()
+      .map(ea => ea.url)
+      .filter(ea => ea)) : []
+    var url = this.url
+    var content = this.sourceContent
+    
+    for(let ea of urls) {
+      console.log("show " + ea)
+      await this.show(ea, "", urls[0])  
+      
+      await lively.sleep(50)
+    }
+    // await lively.sleep(1000)
+
+    await this.show(url, content, urls[0])  
+
   }
   
   getSelection() {
@@ -227,17 +244,15 @@ export default class LivelyContainerNavbar extends Morph {
       if (lastDir !== this.currentDir) {
         this.showSublist()
       } else if (lastURL !== this.url) {
-        lively.notify("update " + this.url)
         this.showSublist()
       } else if (lastContent != this.sourceContent) {
-        lively.notify("update content")
         this.showSublisContent(true)
       }
 
       return         
     } else {
       await this.showDirectory(targetURL, this.get("#navbar"))
-      this.showSublist()    
+      await this.showSublist()    
     }
   }
   
@@ -305,12 +320,14 @@ export default class LivelyContainerNavbar extends Morph {
     var stats = await this.fetchStats(targetURL)
     this.clear(parentElement);
      
+    
     var names = {};
     stats.contents.forEach(ea => names[ea.name] = ea);
     
     var files = this.filesFromStats(stats).filter(ea =>
       !(ea.name == ".." && parentElement !== this.getRootElement()))
     
+    parentElement.url = targetURL
    
     files.forEach((ea) => {
 
@@ -357,7 +374,7 @@ export default class LivelyContainerNavbar extends Morph {
       }
       var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
       link.href = ea.url || otherUrl;
-      
+      element.url = link.href
       if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
         element.classList.add("selected")
       }
@@ -612,6 +629,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   livelyUpdate() {
+    
+
     this.clear()
     this.show(this.url,this.sourceContent, this.contextURL, true)
   }

@@ -525,27 +525,30 @@ export default class Container extends Morph {
     if (await lively.confirm("delete " + url)) {
       var result = await fetch(url, {method: 'DELETE'})
         .then(r => r.text());
+      this.get("#container-leftpane").update()
 
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
-
       lively.notify("deleted " + url, result);
     }
   }
 
   async renameFile(url) {
     url = "" + url
-    var newURL = await lively.prompt("rename", url)
-    if (!newURL) {
-      lively.notify("cancel rename " + url)
+    var base = url.replace(/[^/]*$/,"")
+    var name = url.replace(/.*\//,"")
+
+    var newName = await lively.prompt("rename", name)
+    if (!newName) {
+      lively.notify("cancel rename " + name)
       return
     }
+    var newURL = base + newName
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
-
-      this.setAttribute("mode", "show");
-      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      
+      this.setPath(newURL);
       this.hideCancelAndSave();
 
       lively.notify("moved to " + newURL);

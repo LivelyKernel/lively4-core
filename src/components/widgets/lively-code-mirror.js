@@ -507,8 +507,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       Array.from(obj.keys()).sort().forEach(key => mapObj[key] = obj.get(key))
       obj = mapObj
     }
-    if (Array.isArray(obj)) {
-      if (typeof obj[0] == 'object') {
+    if (Array.isArray(obj) && !obj.every(ea => ea instanceof Node)) {
+      if (obj.every(ea => (typeof ea == 'object') && !(ea instanceof String))) {
         promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
           table.style.maxHeight = "300px"
@@ -517,7 +517,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         })
       } else {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: ea}}))      
+          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))      
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"
           return table
@@ -922,6 +922,37 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
     } while (m);
   }
+  
+//    async wrapImageLinks() {
+//     var regEx = new RegExp("\!\[\]\(([A-Za-z0-9_ .]\.((jpg)|(png)))$\)", "g");
+//     do {
+//       var m = regEx.exec(this.value);
+//       if (m) {
+//         var from = m.index 
+//         var to = m.index + m[0].length 
+//         var url = m[1]
+//         await this.wrapWidget("span", this.editor.posFromIndex(from), 
+//                               this.editor.posFromIndex(to)).then( div => {
+//           div.style.backgroundColor = "rgb(240,240,240)"
+          
+//           if (m[1].match(/^data:image/)) {
+//             var img = document.createElement("img")
+//             img.src = m[1]
+//             img.title = m[1].slice(0,50) + "..."
+//             img.style.maxHeight = "100px"
+
+//             div.appendChild(document.createTextNode("\""))
+//             div.appendChild(img)
+//             div.appendChild(document.createTextNode("\""))            
+//           } else {
+//             div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+//           }
+//         })
+
+//       }
+//     } while (m);
+//   }
+  
   
   async wrapImports() {
     // dev mode alternative to #DevLayers, a #S3Pattern: add code the scopes your dev example inline while developing

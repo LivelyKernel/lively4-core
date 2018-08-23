@@ -634,8 +634,10 @@ export default class LivelyTable extends Morph {
    * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
    */
   setFromJSO(jso) {
+    if (!jso) return
     var headers = []
     var rows = jso.map(obj => {
+      obj = obj || {}
       // add headers that are introduced in that row
       Object.keys(obj).forEach(key => {
         if (headers.indexOf(key) < 0) {
