@@ -2,22 +2,19 @@ import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
-import VivideLayer from 'src/client/vivide/vividelayer.js';
+import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
 class ScriptProcessor {
-  constructor() {
-    
-  }
 
   async computeModel(data, step) {
-    lively.success('ScriptProcessor::computeModel2')
-    let vivideLayer = new VivideLayer(data);
+    lively.success('ScriptProcessor::computeModel4')
     const _modules = {
       transform: [],
       extract: [],
       descent: []
     };
+    const _scriptHolder = {};
     
     // #TODO: problem if first step is a descent step
     async function applyUntil(step, callback, shouldContinue) {
@@ -32,7 +29,7 @@ class ScriptProcessor {
 
     await applyUntil(
       step,
-      async s => await this.applyStep(s, vivideLayer, _modules),
+      async s => await this.applyStep(s, _modules, _scriptHolder),
       s => {
         if(s.type === 'descent') { return false; }
         if(!s.nextStep) { return false; }
@@ -40,29 +37,30 @@ class ScriptProcessor {
         return true;
       });
 
-    await this.processData(vivideLayer, _modules);
-    
-    return vivideLayer;
+    const transformedForest = await this.processData(data, _modules, _scriptHolder);
+    return transformedForest;
   }
-  async applyStep(step, vivideLayer, _modules) {
+
+  async applyStep(step, _modules, _scriptHolder) {
     const [fn, config] = await step.getExecutable();
     
     if (step.type === 'descent') {
-      vivideLayer.childScript = step.nextStep;
+      _scriptHolder.childStep = step.nextStep;
+      _scriptHolder.descentStep = step;
     }
     _modules[step.type].push(fn);
-    
-    // #TODO, #ERROR: this adds the config too late
-    // this.viewConfig.add(config);
   }
-  async processData(vivideLayer, _modules) {
-    await this.transform(vivideLayer, _modules);
-    await this.extract(vivideLayer, _modules);
-    await this.descent(vivideLayer, _modules);
+
+  async processData(data, _modules, _scriptHolder) {
+    const transformedForest = await this.transform(data, _modules);
+    await this.extract(transformedForest, _modules);
+    await this.descent(transformedForest, _modules, _scriptHolder);
+    
+    return transformedForest;
   }
   
-  async transform(vivideLayer, _modules) {
-    let input = vivideLayer._rawData.slice(0);
+  async transform(data, _modules) {
+    let input = data.slice(0);
     let output = [];
     
     for (let module of _modules.transform) {
@@ -71,32 +69,31 @@ class ScriptProcessor {
       output = [];
     }
 
-    vivideLayer._rawData = input;
-    vivideLayer.makeObjectsFromRawData();
+    return VivideObject.dataToForest(input);
   }
   
-  async extract(vivideLayer, _modules) {
+  async extract(forest, _modules) {
     for (let module of _modules.extract) {
-      for (let object of vivideLayer._objects) {
-        object.properties.add(await module(object.data));
+      for (let model of forest) {
+        model.properties.add(await module(model.object));
       }
     }
   }
   
-  async descent(vivideLayer, _modules) {
+  async descent(forest, _modules, _scriptHolder) {
+    lively.success('ScriptProcessor::descent');
     for (let module of _modules.descent) {
-      for (let object of vivideLayer._objects) {
-        const childData = await module(object.data);
+      for (let model of forest) {
+        const childData = await module(model.data);
         
         if (!childData) continue;
         
-        const childLayer = new VivideLayer(childData);
-        childLayer.script = vivideLayer.childScript;
-        object.childLayer = childLayer;
+        model.childStep = _scriptHolder.childStep;
+        model.descentStep = _scriptHolder.descentStep;
+        model.childData = childData;
       }
     }
   }
-  
 }
 
 export default class Script {

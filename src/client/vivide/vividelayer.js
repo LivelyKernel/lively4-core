@@ -7,8 +7,6 @@ export default class VivideLayer {
   constructor(data) {
     this._objects = [];
     this._rawData = data;
-    this._script = null;
-    this._childScript = null;
     
     this.makeObjectsFromRawData();
   }
@@ -17,16 +15,17 @@ export default class VivideLayer {
     return this._objects;
   }
   
-  get script() { return this._script; }
-  set script(script) { return this._script = script; }
-  
-  get childScript() { return this._childScript; }
-  set childScript(childScript) { return this._childScript = childScript; }
-  
   makeObjectsFromRawData() {
     this._objects.length = 0;
     for (let entry of this._rawData) {
       this._objects.push(new VivideObject(entry));
     }
+  }
+  static fromForest(forest) {
+    lively.notify('VivideLayer::fromForest')
+    const vivideLayer = new VivideLayer([]);
+    vivideLayer._objects = forest.slice(0);
+    
+    return vivideLayer;
   }
 }

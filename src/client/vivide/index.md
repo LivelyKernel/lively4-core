@@ -12,9 +12,9 @@ arg => {
 # transform steps
 
 ```
-[(input, vivideLayer) => {
+[(input, output) => {
   for (let item of input) {
-    vivideLayer.push(item);
+    output.push(item);
   }
 }, {
   

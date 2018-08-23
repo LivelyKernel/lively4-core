@@ -1,10 +1,19 @@
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
 export default class VivideObject {
+  static forestToData(forest) {
+    return forest.map(model => model.object);
+  }
+  
+  static dataToForest(data) {
+    return data.map(d => new VivideObject(d));
+  }
+
   constructor(data) {
     this._data = data;
-    this._childLayer = null;
     this._properties = new Annotations();
+    this._childLayer = null;
+    this._childStep = null;
   }
   
   get object() { return this._data; }
@@ -21,28 +30,33 @@ export default class VivideObject {
   get childLayer() { return this._childLayer; }
   set childLayer(childLayer) { return this._childLayer = childLayer; }
   
-  hasChildren() {
-    return this._childLayer !== null && this._childLayer.objects.length > 0;
+  get childStep() { return this._childStep; }
+  set childStep(childStep) { return this._childStep = childStep; }
+  
+  async hasChildren() {
+    lively.notify('VivideObject::hasChildren');
+    const children = await this.getChildren();
+    
+    return children && children.length > 0;
   }
   
   // #TODO: memoize them
   async getChildren() {
-    let childLayer = this.childLayer;
+    // lively.error("childData")
 
-    // #TODO: replace with hasChildren
-    if (!childLayer || !childLayer.objects.length) {
-      return;
+    // ? we are after a descent step, so no childData and no childStep
+    // #TODO: restructure descent step
+    if (!this.childData) {
+      return [];
     }
     
-    if (!childLayer.script) {
-      return childLayer;
+    // nothing after descent step
+    if (!this.childStep) {
+      return VivideObject.dataToForest(this.childData);
     }
     
-    const childData = childLayer.objects.map(c => c.data);
-    const step = childLayer.script;
-    this.childLayer = await step.processData(childData);
-    childLayer = this.childLayer;
-
-    return childLayer;
+    const step = this.childStep;
+    const forest = await step.processData(this.childData);
+    return forest;
   }
 }

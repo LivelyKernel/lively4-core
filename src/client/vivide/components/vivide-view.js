@@ -1,6 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
-import VivideLayer from 'src/client/vivide/vividelayer.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
@@ -10,7 +9,7 @@ import Script from 'src/client/vivide/vividescript.js';
  * Smart widget choosing
  */
 class WidgetChooser {
-  static getPreferredWidgetType(model, viewConfig) {
+  static getPreferredWidgetType(forest, viewConfig) {
     if (viewConfig.has('widget')) { 
       return viewConfig.get('widget');
     }
@@ -21,19 +20,19 @@ class WidgetChooser {
     //     model.dataType == "data-points" || "list" || "text"
     //   Additionally, this data type could be set manually or via an "intelligent"
     //   algorithm.
-    if (model.objects && model.objects.length > 0) {
+    if (forest && forest.length > 0) {
       // #Question: this model has an objects array, what is the data structure of this model?
-      let m = model.objects[0];
-      if(m.properties.has('dataPoints') &&
-         typeof m.properties.get('dataPoints')[0] === 'number'
+      const model = forest[0];
+      if(model.properties.has('dataPoints') &&
+         typeof model.properties.get('dataPoints')[0] === 'number'
       ) {
         return 'boxplot';
       }
     }
     return 'tree';
   }
-  static findAppropriateWidget(model, viewConfig) {
-    const type = this.getPreferredWidgetType(model, viewConfig);
+  static findAppropriateWidget(forest, viewConfig) {
+    const type = this.getPreferredWidgetType(forest, viewConfig);
     
     // full type specified
     if(type.includes('-')) {
@@ -76,7 +75,6 @@ export default class VivideView extends Morph {
   get widget() { return this.get(VivideView.widgetSelector); }
   
   get input() { return this._input || (this._input = []); }
-  
   set input(val) { return this._input = val; }
   
   get id() {
@@ -180,6 +178,8 @@ export default class VivideView extends Morph {
     // #TODO: An improved fix would be to change what is returned by the widget selection
     let selection = this.getSelectedData();
     if(selection) {
+      lively.warn('VivideView::addDragInfoTo', '')
+      // #TODO: this somehow reveals VivideObjects as data
       dt.setData("javascript/object", getTempKeyFor(selection.map(item => item.data)));
     } else {
       lively.error('could not add drag data');
@@ -197,8 +197,6 @@ export default class VivideView extends Morph {
     this.addEventListener('dragover', evt => this.dragover(evt), false);
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
-
-    this.input = this.input || [];
   }
   
   onExtentChanged() {
@@ -303,13 +301,8 @@ export default class VivideView extends Morph {
   
   async calculateOutputModel() {
     const firstStep = this.myCurrentScript.getInitialStep();
-    if (!firstStep) {
-      // #TODO: is this obsolete?
-      lively.error('No first step, something is broken');
-      this.forestToDisplay = VivideView.dataToForest(this.input);
-      return;
-    }
     const data = this.input.slice(0);
+    
     this.forestToDisplay = await firstStep.processData(data);
   }
   

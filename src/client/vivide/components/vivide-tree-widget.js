@@ -19,8 +19,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     return this.dataByTreeItem.get(treeItem);
   }
 
-  async display(vivideLayer, config) {
-    super.display(vivideLayer, config);
+  async display(forest, config) {
+    super.display(forest, config);
     
     // Clean up
     this.tree.innerHTML = '';
@@ -33,10 +33,8 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     }
     
     this.dataByTreeItem = new Map();
-    this.childLayerByTreeItem = new Map();
-    this.childScriptByTreeItem = new Map();
     
-    for (let object of vivideLayer.objects) {
+    for (let object of forest) {
       await this.processObject(object, this.tree);
     }
   }
@@ -55,13 +53,13 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     
     const vivideObject = this.dataByTreeItem.get(treeItem);
     
-    if (!vivideObject.hasChildren()) { return; }
+    if (!await vivideObject.hasChildren()) { return; }
     
     const sub = treeItem.querySelector("#child");
     if (sub.innerHTML.length == 0) {
-      const childLayer = await vivideObject.getChildren();
-      
-      for (let child of childLayer.objects) {
+      const childForest = await vivideObject.getChildren();
+
+      for (let child of childForest) {
         this.processObject(child, sub);
       }
       
@@ -81,7 +79,7 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     let tooltipText = object.properties.get('tooltip') || "";
     let treeItem = <li>{label}<ul id="child"></ul></li>;
     let symbolClasses = "expander fa";
-    symbolClasses += object.hasChildren() ? " fa-caret-right" : " fa-circle small";
+    symbolClasses += await object.hasChildren() ? " fa-caret-right" : " fa-circle small";
     let expander = <span id="expander" class={symbolClasses}></span>;
     
     if (tooltipText.length > 0) {
