@@ -405,7 +405,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   onItemClick(link, evt) {
     if (evt.shiftKey) {
-      link.classList.toggle("selected")
+      link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
@@ -425,7 +425,7 @@ export default class LivelyContainerNavbar extends Morph {
 
   onContextMenu(evt, otherUrl) {
     const menuElements = [
-      ["delete file", () => this.deleteFile(otherUrl)],
+      ["delete file", () => this.deleteFile(otherUrl, this.getSelection())],
       ["rename file", () => this.renameFile(otherUrl)],
       ["become bundle", () => this.convertFileToBundle(otherUrl)],
       ["new file", () => this.newfile(otherUrl)],
@@ -440,7 +440,7 @@ export default class LivelyContainerNavbar extends Morph {
     menu.openIn(document.body, evt, this)
   }
   
-  deleteFile(url) {
+  deleteFile(url, selectedURLs) {
     lively.notify("please implement deleteFile()")
   }
 

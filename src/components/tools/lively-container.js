@@ -521,16 +521,26 @@ export default class Container extends Morph {
     this.deleteFile(url)
   }
 
-  async deleteFile(url) {
-    if (await lively.confirm("delete " + url)) {
-      var result = await fetch(url, {method: 'DELETE'})
-        .then(r => r.text());
+  async deleteFile(url, urls) {
+    debugger
+    if (!urls) urls = [url]
+    var names = urls.map(ea => decodeURI(ea.replace(/.*\//,"")))
+    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+      for(let url of urls) {
+        var result = await fetch(url, {method: 'DELETE'})
+          .then(r => {
+            if (r.status !== 200) {
+              lively.error("Could not delete: " + url)
+            }
+            r.text()
+          });  
+      }
       this.get("#container-leftpane").update()
-
+      
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
-      lively.notify("deleted " + url, result);
+      lively.notify("deleted " + names);
     }
   }
 
@@ -1172,7 +1182,7 @@ export default class Container extends Morph {
 
     var navbar = this.get('#container-leftpane')
     // implement hooks
-    navbar.deleteFile = (url) => { this.deleteFile(url) }
+    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newfile = (url) => { this.newfile(url) }
     navbar.followPath = (path, lastPath) => { 
