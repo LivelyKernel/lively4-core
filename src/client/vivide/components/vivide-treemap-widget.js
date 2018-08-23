@@ -37,17 +37,17 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     return model.properties.get('label') || textualRepresentation(model.object);
   }
   async attachChildrenFromModel(model, treeNode) {
-    const childLayer = await model.getChildren();
+    const childForest = await model.getChildren();
 
-    if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
+    if(!childForest || childForest.length === 0) {
       treeNode.size = 1;
       return;
     }
 
-    return await this.attachAllChildren(childLayer, treeNode);
+    return await this.attachAllChildren(childForest, treeNode);
   }
-  async attachAllChildren(vivideLayer, parentNode) {
-    for (let child of vivideLayer.objects) {
+  async attachAllChildren(forest, parentNode) {
+    for (let child of forest) {
       await this.attachAChild(child, parentNode);
     }
   }
@@ -60,13 +60,13 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     
     return await this.attachChildrenFromModel(model, childNode);
   }
-  async display(vivideLayer, config) {
-    super.display(vivideLayer, config);
+  async display(forest, config) {
+    super.display(forest, config);
     this.innerHTML = '';
     
     const treeData = this.createTreeNodeForLabel('Top Level');
 
-    await this.attachAllChildren(vivideLayer, treeData);
+    await this.attachAllChildren(forest, treeData);
     
     // console.warn(treeData);
     // const outputWorkspace = document.body.querySelector('#output-dump');

@@ -19,13 +19,13 @@ export default class VivideListWidget extends VivideMultiSelectionWidget {
     return this.dataByListItem.get(listItem);
   }
 
-  display(model, config) {
-    super.display(model, config);
+  display(forest, config) {
+    super.display(forest, config);
 
     this.dataByListItem = new Map();
     
     this.list.innerHTML = '';
-    model.objects.forEach(m => {
+    forest.forEach(m => {
       let label = m.properties.get('label') || textualRepresentation(m.data);
       
       let listItem = <li>{label}</li>;

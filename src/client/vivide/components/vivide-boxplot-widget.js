@@ -23,10 +23,10 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
     return group.__vivideObjectAccessor__;
   }
 
-  display(model, config) {
-    super.display(model, config);
+  display(forest, config) {
+    super.display(forest, config);
     
-    let preparedData = model.objects.map(m => {
+    let preparedData = forest.map(m => {
       let label = m.properties.get('label') || textualRepresentation(m.object);
       let dataPoints = m.properties.get('dataPoints') || [];
       
