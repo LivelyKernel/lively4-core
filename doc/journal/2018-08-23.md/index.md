@@ -16,6 +16,21 @@
 - Garbage Collection / Visualization, explore object space (with #Patrick)
 - Semantic Structure in File ... AST etc support for editor
   - better browser sender / implementors 
-  
-![](was%20denn%20das.png)
 
+## A little Poster
+
+<lively-import src="poster.html"></lively-import>
+
+
+This should work too, we should use an HTML file as image. 
+
+```markdown
+![](poster.html)
+```
+
+
+![](poster.html)
+
+## Issues
+
+- there seems to be caching problems when saving an "html" file in the view. The cache is not invalidated...
