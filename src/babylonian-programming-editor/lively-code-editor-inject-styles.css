@@ -1,0 +1,5 @@
+:host {
+  flex: 1;
+  height: auto;
+  overflow: auto;
+}
