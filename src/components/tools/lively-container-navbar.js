@@ -405,11 +405,12 @@ export default class LivelyContainerNavbar extends Morph {
   
   onItemClick(link, evt) {
     if (evt.shiftKey) {
+      link.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
+      this.followPath(link.href);
     }
-    this.followPath(link.href);
   }
   
   onItemDblClick(link, evt) {

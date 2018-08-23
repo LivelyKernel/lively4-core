@@ -373,6 +373,8 @@ export default class Editor extends Morph {
     var blob = fileItem.getAsFile();
     var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
     var filename = name + "." + fileItem.type.replace(/.*\//,"")
+    filename = await lively.prompt("paste as... ", filename)
+    if (!filename) return
     var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
     await fetch(newurl, {
       method: "PUT",
@@ -380,12 +382,14 @@ export default class Editor extends Morph {
     })
     
     this.withEditorObjectDo(editor => {
-      var text = filename
+      var text = encodeURIComponent(filename)
       if (this.getURLString().match(/\.md/)) {
         text = "![](" + text + ")" // #ContextSpecificBehavior ?
       }
       editor.replaceSelection(text, "around")
     })
+    
+    
     
     lively.notify("uploaded " + newurl)
     
