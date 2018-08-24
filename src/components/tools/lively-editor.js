@@ -13,6 +13,7 @@ import components from "src/client/morphic/component-loader.js";
 
 import {pt} from "src/client/graphics.js"
 
+
 export default class Editor extends Morph {
 
   async initialize() {
@@ -47,6 +48,8 @@ export default class Editor extends Morph {
     editor.addEventListener('change', () => {
       this.onTextChanged();
     });
+    
+    this.addEventListener("paste", evt => this.onPaste(evt))
   }
   
   onTextChanged() {
@@ -342,16 +345,61 @@ export default class Editor extends Morph {
   find(pattern) {
     var editor = this.get('#editor')
     if (editor) {
-    	editor.find(pattern)
+      editor.find(pattern)
     }
   }
   
   isCodeMirror() {
-  	return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
+    return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
+  }
+  
+  onPaste(evt) {
+    // #CopyAndPaste mild code duplication with #Clipboard 
+    var items = (event.clipboardData || evt.clipboardData).items;
+    if (items.length> 0) {
+      for (var index in items) {
+        var item = items[index];
+        if (item.kind === 'file') {
+          this.pasteFile(item, this.lastTarget) 
+        }
+      }
+      evt.stopPropagation()
+      evt.preventDefault(); 
+      return 
+    }
+  }
+  
+  async pasteFile(fileItem) {
+    var blob = fileItem.getAsFile();
+    var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
+    var filename = name + "." + fileItem.type.replace(/.*\//,"")
+    filename = await lively.prompt("paste as... ", filename)
+    if (!filename) return
+    var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
+    await fetch(newurl, {
+      method: "PUT",
+      body: blob
+    })
+    
+    this.withEditorObjectDo(editor => {
+      var text = encodeURIComponent(filename)
+      if (this.getURLString().match(/\.md/)) {
+        text = "![](" + text + ")" // #ContextSpecificBehavior ?
+      }
+      editor.replaceSelection(text, "around")
+    })
+    
+    
+    
+    lively.notify("uploaded " + newurl)
+    
+    var navbar = lively.query(this, "lively-container-navbar")
+    if (navbar) navbar.update() 
+    
   }
   
   livelyExample() {
-  	this.setURL(lively4url + "/README.md");
+    this.setURL(lively4url + "/README.md");
     this.loadFile()
   }
   

@@ -521,31 +521,44 @@ export default class Container extends Morph {
     this.deleteFile(url)
   }
 
-  async deleteFile(url) {
-    if (await lively.confirm("delete " + url)) {
-      var result = await fetch(url, {method: 'DELETE'})
-        .then(r => r.text());
-
+  async deleteFile(url, urls) {
+    debugger
+    if (!urls) urls = [url]
+    var names = urls.map(ea => decodeURI(ea.replace(/.*\//,"")))
+    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+      for(let url of urls) {
+        var result = await fetch(url, {method: 'DELETE'})
+          .then(r => {
+            if (r.status !== 200) {
+              lively.error("Could not delete: " + url)
+            }
+            r.text()
+          });  
+      }
+      this.get("#container-leftpane").update()
+      
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
-
-      lively.notify("deleted " + url, result);
+      lively.notify("deleted " + names);
     }
   }
 
   async renameFile(url) {
     url = "" + url
-    var newURL = await lively.prompt("rename", url)
-    if (!newURL) {
-      lively.notify("cancel rename " + url)
+    var base = url.replace(/[^/]*$/,"")
+    var name = url.replace(/.*\//,"")
+
+    var newName = await lively.prompt("rename", name)
+    if (!newName) {
+      lively.notify("cancel rename " + name)
       return
     }
+    var newURL = base + newName
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
-
-      this.setAttribute("mode", "show");
-      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      
+      this.setPath(newURL);
       this.hideCancelAndSave();
 
       lively.notify("moved to " + newURL);
@@ -1169,7 +1182,7 @@ export default class Container extends Morph {
 
     var navbar = this.get('#container-leftpane')
     // implement hooks
-    navbar.deleteFile = (url) => { this.deleteFile(url) }
+    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newfile = (url) => { this.newfile(url) }
     navbar.followPath = (path, lastPath) => { 
