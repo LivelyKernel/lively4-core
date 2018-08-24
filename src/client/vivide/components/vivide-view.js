@@ -1,8 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
+import { uuid, without, getTempKeyFor, getObjectFor, flatMap } from 'utils';
 import VivideObject from 'src/client/vivide/vivideobject.js';
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
-import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 import Script from 'src/client/vivide/vividescript.js';
 
 /**

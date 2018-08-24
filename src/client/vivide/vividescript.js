@@ -25,7 +25,7 @@ export default class Script {
 
   getLoopStartStep() {
     const lastStep = this.getLastStep();
-    return lastStep && lastStep.nextExecutionStep;
+    return lastStep && lastStep.getNextExecutionStep();
   }
   
   numberOfSteps() {
@@ -35,7 +35,7 @@ export default class Script {
   }
   
   getPrevStep(step) {
-    return this.getInitialStep().find(s => s.nextExecutionStep === step);
+    return this.getInitialStep().find(s => s.getNextExecutionStep() === step);
   }
   
   async forEachStepAsync(cb) {
@@ -62,25 +62,26 @@ export default class Script {
   }
   
   removeStep(stepToBeRemoved) {
-    const prevStep = this.getPrevStep(stepToBeRemoved);
-    if (prevStep) {
-      prevStep.nextExecutionStep = stepToBeRemoved.nextExecutionStep;
-    } else {
-      // First script was removed
-      this.setInitialStep(stepToBeRemoved.nextExecutionStep);
+    if(stepToBeRemoved === this.getLoopStartStep()) {
+      this.removeLoop();
     }
+
+    if(stepToBeRemoved === this.getInitialStep()) {
+      // First script was removed
+      this.setInitialStep(stepToBeRemoved.getNextExecutionStep());
+    }
+    
+    stepToBeRemoved.remove();
   }
 
   removeLoop() {
     const lastStep = this.getLastStep();
-    lastStep.nextExecutionStep = null;
+    lastStep.removeLoopTargetStep();
   }
 
   setLoopStart(step) {
     const lastStep = step.getLastStep();
-    
-    // Reconfigure loop
-    lastStep.nextExecutionStep = step;
+    lastStep.setLoopTargetStep(step);
   }
   
   /**
@@ -117,7 +118,6 @@ export default class Script {
 
     transform.insertAfter(extract);
     extract.insertAfter(descent);
-    descent.lastScript = true;
 
     const script = new Script(view);
     script.setInitialStep(transform);
@@ -148,15 +148,10 @@ export default class Script {
 //         jsonScripts[scriptId].source,
 //         jsonScripts[scriptId].type,
 //         scriptId,
-//         jsonScripts[scriptId].lastScript
 //       );
 //     }
     
-//     for (let scriptId in jsonScripts) {
-//       if (!jsonScripts[scriptId].nextScriptId) continue;
-      
-//       scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
-//     }
+// TODO: link steps
   }
 }
 
