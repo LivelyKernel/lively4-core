@@ -27,7 +27,7 @@ class WidgetChooser {
         return 'boxplot';
       }
     }
-    return 'tree';
+    return 'list';
   }
   static findAppropriateWidget(forest, viewConfig) {
     const type = this.getPreferredWidgetType(forest, viewConfig);
@@ -142,20 +142,22 @@ export default class VivideView extends Morph {
     this.removeOutportTarget(target);
   }
   
+  transmitDataToOutportTargets(dataToTransmit) {
+    this.outportTargets.forEach(target => target.newDataFromUpstream(dataToTransmit));
+  }
   reallyNotifyOutportTargets(stuffToTransmit) {
-    this.outportTargets
-      .forEach(target => {
-        target.newDataFromUpstream(VivideView.forestToData(stuffToTransmit));
-      });
+    this.transmitDataToOutportTargets(VivideView.forestToData(stuffToTransmit));
   }
   notifyOutportTargets() {
+    lively.warn('VIEW::NOTIFY2', this.forestToDisplay[0])
     this.reallyNotifyOutportTargets(this.forestToDisplay);
   }
   
   updateOutportTargets() {
     let selection = this.getSelectedData();
     if(selection) {
-      this.reallyNotifyOutportTargets(selection);
+      lively.warn('VIEW::UPDATE', selection[0])
+      this.transmitDataToOutportTargets(selection);
     }
   }
   
@@ -176,9 +178,8 @@ export default class VivideView extends Morph {
     // #TODO: An improved fix would be to change what is returned by the widget selection
     let selection = this.getSelectedData();
     if(selection) {
-      lively.warn('VivideView::addDragInfoTo', '')
-      // #TODO: this somehow reveals VivideObjects as data
-      dt.setData("javascript/object", getTempKeyFor(selection.map(item => item.data)));
+      lively.warn('VivideView::addDragInfoTo', selection[0])
+      dt.setData("javascript/object", getTempKeyFor(selection));
     } else {
       lively.error('could not add drag data');
     }
@@ -290,7 +291,7 @@ export default class VivideView extends Morph {
     
     await this.calculateOutputModel();
     await this.updateWidget();
-    this.notifyOutportTargets();
+    this.updateOutportTargets();
   }
   
   getInputData() {

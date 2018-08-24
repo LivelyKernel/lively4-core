@@ -7,12 +7,7 @@ import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
 
 export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
-  get multiSelectionConfig() {
-    return [this, {
-      onSelectionChanged: selection => this.selectionChanged(selection)
-    }];
-  }
-  
+
   get tree() { return this.get('#tree'); }
   get d3treemap() { return this.get('#d3-treemap'); }
   
@@ -23,9 +18,6 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   }
   onExtentChanged(evt) {
     this.d3treemap && this.d3treemap.updateViz && this.d3treemap.updateViz();
-  }
-  dataForDOMNode(treeItem) {
-    return this.dataByTreeItem.get(treeItem);
   }
 
   createTreeNodeForLabel(label) {

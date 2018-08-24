@@ -21,7 +21,7 @@ export default class VivideMultiSelectionWidget extends VivideWidget {
   
   getSelectedData() {
     return this.multiSelection.getSelectedItems()
-      .map(selectedNode => this.dataForDOMNode(selectedNode));
+      .map(selectedNode => this.getObjectForSelectedNode(selectedNode));
   }
   
   addDragEventTo(item) {

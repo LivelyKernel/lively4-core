@@ -9,15 +9,17 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
     }];
   }
   
+  getObjectForSelectedNode(selectedNode) {
+    const vivideObject = this.dataByTreeItem.get(selectedNode)
+    return vivideObject.object;
+  }
+
   get tree() { return this.get('#tree'); }
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
   }
   
-  dataForDOMNode(treeItem) {
-    return this.dataByTreeItem.get(treeItem);
-  }
 
   async display(forest, config) {
     super.display(forest, config);

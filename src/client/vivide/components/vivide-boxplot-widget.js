@@ -13,15 +13,16 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
     }];
   }
 
+  getObjectForSelectedNode(group) {
+    return group.__vivideObjectAccessor__;
+  }
+
   get innerPlot() { return this.get('#d3-boxplot'); }
 
   async initialize() {
     this.windowTitle = "VivideBoxplotWidget";
   }
 
-  dataForDOMNode(group) {
-    return group.__vivideObjectAccessor__;
-  }
 
   display(forest, config) {
     super.display(forest, config);

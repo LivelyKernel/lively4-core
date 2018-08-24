@@ -9,14 +9,14 @@ export default class VivideListWidget extends VivideMultiSelectionWidget {
     }];
   }
   
+  getObjectForSelectedNode(listItem) {
+    return this.dataByListItem.get(listItem);
+  }
+
   get list() { return this.get('#list'); }
 
   async initialize() {
     this.windowTitle = "VivideListWidget";
-  }
-
-  dataForDOMNode(listItem) {
-    return this.dataByListItem.get(listItem);
   }
 
   display(forest, config) {
