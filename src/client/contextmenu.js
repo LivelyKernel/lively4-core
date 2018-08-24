@@ -337,12 +337,15 @@ export default class ContextMenu {
         ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
           "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Quicklinks", async evt => {
-          var morph  = await lively.openPart("quicklinks")
-          
+          var morph  = await lively.openPart("quicklinks")          
           lively.setPosition(morph, lively.pt(0,0), "fixed")
-  
           this.hide();
         }],
+        ["World Mirror", async evt => {
+          var morph  = await lively.openPart("WorldMirror") 
+          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          this.hide();
+        }], 
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
