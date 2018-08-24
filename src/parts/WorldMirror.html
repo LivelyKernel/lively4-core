@@ -1,0 +1,166 @@
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: 364.933px; top: 461.67px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-id="9c5259ef-7c3d-4bac-960b-eed30fda8398"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+  if(!this.isdragging) return
+  lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
+  this.ajustRootPosition()
+  
+}</script><script data-name="onDragStop" type="lively4script">function onDragStop(evt) {
+  this.isdragging = false
+  lively.removeEventListener('mirror-dragging', document.body.parentElement)
+}</script><script data-name="onDragHandleStop" type="lively4script">function onDragHandleStop(evt) {
+  this.isdragging = false
+  lively.removeEventListener('mirror-dragging', document.body.parentElement)
+  evt.stopPropagation()
+
+}</script><script data-name="onDragHandleStart" type="lively4script">function onDragHandleStart(evt) {
+  if(evt.altKey || evt.shiftKey) return 
+  this.isdragging = true
+  this.dragOffset = lively.getPosition(this.handle).subPt(lively.getPosition(evt))
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDragHandle(evt));
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragHandleStop(evt));
+  evt.stopPropagation()
+
+}</script><script data-name="onDragHandle" type="lively4script">function onDragHandle(evt) {
+  if(!this.isdragging) return
+  lively.setPosition(this.handle, this.dragOffset.addPt(lively.getPosition(evt)))
+  this.ajustRootPosition()
+  evt.stopPropagation()
+}</script><script data-name="ajustRootPosition" type="lively4script">function ajustRootPosition() {
+  lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+  lively.setExtent(this.frame, lively.getPosition(this.handle))
+  
+}</script><script data-name="selectElement" type="lively4script">function selectElement(element) {
+  
+  lively.showHalo(element)
+}</script><script data-name="onFilterChanged" type="lively4script">function onFilterChanged(filter) {
+  try {
+    this.filterFunc = eval(filter)
+    this.input.style.border = "1px solid gray"
+  } catch(err) {
+    this.input.style.border = "2px solid red"
+  }
+  this.updateWorld()
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  this.mirrorWorld()
+}</script><script data-name="filterElements" type="lively4script">function filterElements(all) {
+  // urn all
+  if (!this.filterFunc) {
+    this.filterFunc = ea => ea.tagName && ea.tagName.match(/-/)
+  }
+  
+  return Array.from(all).filter(this.filterFunc).slice(0,2000)
+ 
+}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  if(evt.altKey || evt.shiftKey || evt.ctrlKey) return 
+  this.isdragging = true
+  this.updateWorld()
+  this.dragOffset = lively.getPosition(this).subPt(lively.getPosition(evt))
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDrag(evt));
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragStop(evt));
+
+}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
+  
+  this.world.innerHTML = ""
+  var all = this.filterElements(lively.allElements(true))
+  
+  // this.label.innerHTML = " on " + all.size + " elements "
+  all.forEach(ea => {
+    if (ea === this || ea.isMetaNode) {
+      return
+    }
+    var mirrorElement = document.createElement("div")
+    mirrorElement.isMetaNode = true
+    mirrorElement.style.border = "1px solid gray"
+    mirrorElement.style.background = "rgba(0,100,0,0.3)"
+    mirrorElement.style.display = "flex";
+    mirrorElement.style.alignItems = "center";
+    mirrorElement.style.justifyContent ="center";
+    mirrorElement.target = ea
+    
+    if (all.length < 200) {
+      mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
+      mirrorElement.style.color = "white"
+      mirrorElement.style.textAlign = "center"
+    }
+    mirrorElement.addEventListener("click", () => this.selectElement(ea))
+    
+    // mirrorElement.style.pointerEvents = "none";
+    this.world.appendChild(mirrorElement)
+    
+    var bounds = lively.getGlobalBounds(ea)
+    lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+    lively.setExtent(mirrorElement, bounds.extent())
+  })
+}</script><script data-name="mirrorWorld" type="lively4script">function mirrorWorld() {
+  this.style.zIndex = 1000
+  this.style.overflow = ""
+  this.style.userSelect = "none"
+  
+  if (!this.shadowRoot) {
+    this.createShadowRoot()
+  }
+  this.style.border = ""
+  
+  this.shadowRoot.innerHTML = ""
+  this.frame = document.createElement("div")
+  this.frame.isMetaNode = true
+  this.shadowRoot.appendChild(this.frame)
+  //this.frame.style.pointerEvents = "none";
+  this.frame.style.overflow = "hidden"
+  lively.setExtent(this.frame, lively.pt(300,300))
+  lively.setPosition(this.frame, lively.pt(0,0))
+  this.style.background = ""
+  
+  // lively.removeEventListener('dragging', this)
+  lively.addEventListener('dragging', this.frame, 'pointerdown', evt => this.onDragStart(evt));
+
+  
+  this.world = document.createElement("div")
+  this.world.isMetaNode = true
+  this.frame.appendChild(this.world)
+  this.frame.style.background = "rgba(255,255,255,0.4)"
+  
+  // this.button = document.createElement("button")
+  // this.button.textContent = "World Mirror"
+  // this.button.isMetaNode = true
+  // this.shadowRoot.appendChild(this.button)
+  // lively.setPosition(this.button, pt(0,-30))
+  // this.button.style.zIndex=  110000
+  // this.button.addEventListener("click", () => {
+  //   this.frame.innerHTML = ""
+  //   this.mirrorWorld()
+  // })
+//   this.label = document.createElement("div")
+//   this.label.isMetaNode = true
+//   this.shadowRoot.appendChild(this.label)
+
+
+  this.input = document.createElement("input")
+  this.input.value = "ea => ea.localName.match(/-/)"
+  this.input.isMetaNode = true
+  this.input.style.width = "300px"
+  this.shadowRoot.appendChild(this.input)
+  lively.setPosition(this.input, lively.pt(0,-20))
+  this.input.addEventListener("keyup", evt => {
+      if (evt.keyCode == 13) { // ENTER
+        this.onFilterChanged(this.input.value);
+      }
+    });
+  // this.button.style.zIndex=  110000
+  // this.button.addEventListener("click", () => {
+  //   this.frame.innerHTML = ""
+  //   this.mirrorWorld()
+  // })
+  
+  
+  this.handle = document.createElement("div")
+  this.handle.isMetaNode = true
+  this.handle.style.backgroundColor = "gray"
+  lively.setExtent(this.handle, lively.pt(10,10))
+  this.shadowRoot.appendChild(this.handle)
+  lively.setPosition(this.handle, lively.pt(300,300))
+  lively.addEventListener('dragging', this.handle, 'pointerdown', evt => this.onDragHandleStart(evt));
+  
+  this.ajustRootPosition()
+  
+  this.updateWorld()
+}</script></div>
