@@ -19,7 +19,7 @@ export class ScriptProcessor {
       await callback(step);
 
       if(shouldContinue(step)) {
-        await applyUntil(step.nextExecutionStep, callback, shouldContinue);
+        await applyUntil(step.getNextExecutionStep(), callback, shouldContinue);
       }
     }
 
@@ -32,12 +32,8 @@ export class ScriptProcessor {
           await this.applyStep(s, _modules);
         }
       },
-      s => {
-        if(s.type === 'descent') { return false; }
-        if(!s.nextExecutionStep) { return false; }
-
-        return true;
-      });
+      s => s.type !== 'descent' && s.hasNextExecutionStep()
+    );
 
     const transformedForest = await this.processData(data, _modules, descentStep);
     return transformedForest;
@@ -56,16 +52,38 @@ export class ScriptProcessor {
     return transformedForest;
   }
   
+  // Vivide/S's asList
+  flatten(data) {
+    let result = [];
+
+    data.forEach(d => {
+      if(d === undefined) {
+        // pass
+      } else if(Array.isArray(d)) {
+        result.push(...d);
+      } else {
+        // normal singular object
+        result.push(d);
+      }
+    });
+    
+    return result;
+  }
+  
   async transform(data, _modules) {
     let input = data.slice(0);
     let output = [];
     
     for (let module of _modules.transform) {
       await module(input, output);
+      class a extends Array{}
+      Array.isArray(a)
       input = output.slice(0);
       output = [];
     }
-
+    
+    input = this.flatten(input);
+    
     return VivideObject.dataToForest(input);
   }
   
@@ -86,22 +104,22 @@ export class ScriptProcessor {
   async descentObject(object, descentStep) {
     const [fn, config] = await descentStep.getExecutable();
     const childData = await fn(object);
-    return this.computeModel(childData, descentStep.nextExecutionStep);
+    return this.computeModel(childData, descentStep.getNextExecutionStep());
   }
 }
 
 export default class ScriptStep {
-  constructor(source, type, id = null, lastScript = false, json) {
+  constructor(source, type, id = null, json) {
     this.id = id != null ? id : uuid();
     this.source = source;
     this.type = type;
     this.cursor = json ? json.cursor : undefined;
     this.route = json ? json.route : undefined;
-    this.nextExecutionStep = null;
-    this.updateCallback = null;
-    this.lastScript = lastScript;
-  
-    this.isScriptStep = true;
+    
+    this._hiddenLastLinearStep = true;
+    this._prevLinearStep = undefined;
+    this._nextLinearStep = undefined;
+    this._loopTargetStep = undefined;
   }
   
   getCursorPosition() {
@@ -122,6 +140,17 @@ export default class ScriptStep {
     this.route = route.slice();
   }
   
+  // rename to ComputationalStep
+  hasNextExecutionStep() { return !!this.getNextExecutionStep(); }
+  getNextExecutionStep() { return this._nextLinearStep || this._loopTargetStep; }
+  
+  removeLoopTargetStep() {
+    this._loopTargetStep = undefined;
+  }
+  setLoopTargetStep(step) {
+    this._loopTargetStep = step;
+  }
+  
   find(condition) {
     let found;
     
@@ -137,9 +166,8 @@ export default class ScriptStep {
   iterateLinear(cb) {
     cb(this);
     
-    if(this.lastScript) { return; }
-    if(this.nextExecutionStep) {
-      this.nextExecutionStep.iterateLinear(cb);
+    if(this._nextLinearStep) {
+      this._nextLinearStep.iterateLinear(cb);
     }
   }
   
@@ -147,33 +175,41 @@ export default class ScriptStep {
   async iterateLinearAsync(cb) {
     await cb(this);
     
-    if(this.lastScript) { return; }
-    if(this.nextExecutionStep) {
-      this.nextExecutionStep.iterateLinear(cb);
+    if(this._nextLinearStep) {
+      await this._nextLinearStep.iterateLinearAsync(cb);
     }
   }
   
-  get nextExecutionStep() { return this._nextExecutionStep; }
-  set nextExecutionStep(step) { return this._nextExecutionStep = step; }
+  insertAfter(stepToBeInserted) {
+    const nextStep = this._nextLinearStep;
+    this._nextLinearStep = stepToBeInserted;
+    stepToBeInserted._nextLinearStep = nextStep;
+    if(nextStep) {
+      nextStep._prevLinearStep = stepToBeInserted;
+    }
+    stepToBeInserted._prevLinearStep = this;
+
+    if(this._loopTargetStep) {
+      stepToBeInserted._loopTargetStep = this._loopTargetStep;
+      this._loopTargetStep = undefined;
+    }
+  }
   
-  set next(value) {
-    if (!value || !value.isScriptStep) {
-      throw "Value not of type ScriptStep";
+  remove() {
+    const prevStep = this._prevLinearStep;
+    const nextStep = this._nextLinearStep;
+
+    if(prevStep) {
+      prevStep._nextLinearStep = nextStep;
+    }
+    if(nextStep) {
+      nextStep._prevLinearStep = prevStep;
     }
     
-    this.nextExecutionStep = value;
-  }
-  
-  insertAfter(step) {
-    // If the predecessor was the last script before, the
-    // attribute needs to be passed to the appended script.
-    if (this.lastScript) {
-      this.lastScript = false;
-      step.lastScript = true;
+    if(this._loopTargetStep && prevStep) {
+      prevStep._loopTargetStep = this._loopTargetStep;
+      this._loopTargetStep = undefined;
     }
-
-    step.nextExecutionStep = this.nextExecutionStep;
-    this.nextExecutionStep = step;
   }
   
   insertAsLastStep(step) {
@@ -183,8 +219,8 @@ export default class ScriptStep {
   
   getLastStep() {
     let step = this;
-    while (step.nextExecutionStep != null && !step.lastScript) {
-      step = step.nextExecutionStep;
+    while (step._nextLinearStep) {
+      step = step._nextLinearStep;
     }
     
     return step;
@@ -202,18 +238,16 @@ export default class ScriptStep {
     return new ScriptProcessor().descentObject(object, this);
   }
   
+  // #TODO: implement properly
   toJSON() {
     const scriptJson = {
-      lastScript: this.lastScript, 
       type: this.type,
       source: this.source,
       cursor: this.cursor,
       route: this.route
     };
     
-    if (this.nextExecutionStep) {
-      scriptJson.nextScriptId = this.nextExecutionStep.id;
-    }
+    // #TODO: maybe need to save next step id or loop target
     
     return scriptJson
   }
@@ -232,7 +266,7 @@ export default class ScriptStep {
   }
   
   static newFromJSON(json) {
-    return new ScriptStep(json.script, json.type, undefined, undefined, json);
+    return new ScriptStep(json.script, json.type, undefined, json);
   }
 }
 
