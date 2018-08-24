@@ -103,17 +103,25 @@ export default class ViewNav {
       return // there was no previous scale with mouse wheel
     }
 
+    if (this.target !== document.body) {
+      return    
+    }
+  
     // this.lastPoint = pt(LastEvt.clientX, LastEvt.clientY)
     var scale = window.innerWidth / window.outerWidth
     // lively.notify("scale " + (scale / this.lastScale))
 
     var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
     var offset = this.lastPoint.subPt(newPos)
-    lively.setPosition(this.target, lively.getPosition(this.target).subPt(offset) )
+    
+    
+      lively.setPosition(this.target, lively.getPosition(this.target).subPt(offset) )
 
-    // lively.showPoint(newPos).style.backgroundColor = "green"
+      // lively.showPoint(newPos).style.backgroundColor = "green"
 
-    ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, true)
+      ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, true)
+      
+    
     
   }
   
