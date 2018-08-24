@@ -12,8 +12,7 @@ export default class VivideObject {
   constructor(data) {
     this._data = data;
     this._properties = new Annotations();
-    this._childLayer = null;
-    this._childStep = null;
+    this._descentStep = null;
   }
   
   get object() { return this._data; }
@@ -23,40 +22,26 @@ export default class VivideObject {
     return this._properties;
   }
   
-  addProperties(properties) {
-    this._properties.add(properties);
-  }
-  
-  get childLayer() { return this._childLayer; }
-  set childLayer(childLayer) { return this._childLayer = childLayer; }
-  
-  get childStep() { return this._childStep; }
-  set childStep(childStep) { return this._childStep = childStep; }
+  get descentStep() { return this._descentStep; }
+  set descentStep(descentStep) { return this._descentStep = descentStep; }
   
   async hasChildren() {
-    lively.notify('VivideObject::hasChildren');
     const children = await this.getChildren();
     
     return children && children.length > 0;
   }
   
-  // #TODO: memoize them
-  async getChildren() {
-    // lively.error("childData")
-
-    // ? we are after a descent step, so no childData and no childStep
-    // #TODO: restructure descent step
-    if (!this.childData) {
+  async computeChildren() {
+    if(!this.descentStep) {
+      // #TODO: better: undefined? (to signal the absense of a descent script)
       return [];
     }
     
-    // nothing after descent step
-    if (!this.childStep) {
-      return VivideObject.dataToForest(this.childData);
-    }
-    
-    const step = this.childStep;
-    const forest = await step.processData(this.childData);
+    const forest = await this.descentStep.descentObject(this.object);
     return forest;
+  }
+  
+  async getChildren() {
+    return this._children = this._children || await this.computeChildren();
   }
 }

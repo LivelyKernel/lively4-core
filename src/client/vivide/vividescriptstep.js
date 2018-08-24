@@ -2,6 +2,94 @@ import boundEval from "src/client/bound-eval.js";
 import { uuid } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 
+import VivideObject from 'src/client/vivide/vivideobject.js';
+
+export class ScriptProcessor {
+
+  async computeModel(data, startingStep) {
+    const _modules = {
+      transform: [],
+      extract: []
+    };
+    let descentStep;
+    
+    async function applyUntil(step, callback, shouldContinue) {
+      if(!step) { return; }
+
+      await callback(step);
+
+      if(shouldContinue(step)) {
+        await applyUntil(step.nextExecutionStep, callback, shouldContinue);
+      }
+    }
+
+    await applyUntil(
+      startingStep,
+      async s => {
+        if(s.type === 'descent') {
+          descentStep = s;
+        } else {
+          await this.applyStep(s, _modules);
+        }
+      },
+      s => {
+        if(s.type === 'descent') { return false; }
+        if(!s.nextExecutionStep) { return false; }
+
+        return true;
+      });
+
+    const transformedForest = await this.processData(data, _modules, descentStep);
+    return transformedForest;
+  }
+
+  async applyStep(step, _modules) {
+    const [fn, config] = await step.getExecutable();
+    _modules[step.type].push(fn);
+  }
+
+  async processData(data, _modules, descentStep) {
+    const transformedForest = await this.transform(data, _modules);
+    await this.extract(transformedForest, _modules);
+    await this.prepareDescent(transformedForest, descentStep);
+    
+    return transformedForest;
+  }
+  
+  async transform(data, _modules) {
+    let input = data.slice(0);
+    let output = [];
+    
+    for (let module of _modules.transform) {
+      await module(input, output);
+      input = output.slice(0);
+      output = [];
+    }
+
+    return VivideObject.dataToForest(input);
+  }
+  
+  async extract(forest, _modules) {
+    for (let module of _modules.extract) {
+      for (let model of forest) {
+        model.properties.add(await module(model.object));
+      }
+    }
+  }
+  
+  async prepareDescent(forest, descentStep) {
+    for (let model of forest) {
+      model.descentStep = descentStep;
+    }
+  }
+  
+  async descentObject(object, descentStep) {
+    const [fn, config] = await descentStep.getExecutable();
+    const childData = await fn(object);
+    return this.computeModel(childData, descentStep.nextExecutionStep);
+  }
+}
+
 export default class ScriptStep {
   constructor(source, type, id = null, lastScript = false, json) {
     this.id = id != null ? id : uuid();
@@ -9,7 +97,7 @@ export default class ScriptStep {
     this.type = type;
     this.cursor = json ? json.cursor : undefined;
     this.route = json ? json.route : undefined;
-    this.nextStep = null;
+    this.nextExecutionStep = null;
     this.updateCallback = null;
     this.lastScript = lastScript;
   
@@ -50,8 +138,8 @@ export default class ScriptStep {
     cb(this);
     
     if(this.lastScript) { return; }
-    if(this.nextStep) {
-      this.nextStep.iterateLinear(cb);
+    if(this.nextExecutionStep) {
+      this.nextExecutionStep.iterateLinear(cb);
     }
   }
   
@@ -60,20 +148,20 @@ export default class ScriptStep {
     await cb(this);
     
     if(this.lastScript) { return; }
-    if(this.nextStep) {
-      this.nextStep.iterateLinear(cb);
+    if(this.nextExecutionStep) {
+      this.nextExecutionStep.iterateLinear(cb);
     }
   }
   
-  get nextStep() { return this._nextStep; }
-  set nextStep(step) { return this._nextStep = step; }
+  get nextExecutionStep() { return this._nextExecutionStep; }
+  set nextExecutionStep(step) { return this._nextExecutionStep = step; }
   
   set next(value) {
     if (!value || !value.isScriptStep) {
       throw "Value not of type ScriptStep";
     }
     
-    this.nextStep = value;
+    this.nextExecutionStep = value;
   }
   
   insertAfter(step) {
@@ -84,8 +172,8 @@ export default class ScriptStep {
       step.lastScript = true;
     }
 
-    step.nextStep = this.nextStep;
-    this.nextStep = step;
+    step.nextExecutionStep = this.nextExecutionStep;
+    this.nextExecutionStep = step;
   }
   
   insertAsLastStep(step) {
@@ -95,8 +183,8 @@ export default class ScriptStep {
   
   getLastStep() {
     let step = this;
-    while (step.nextStep != null && !step.lastScript) {
-      step = step.nextStep;
+    while (step.nextExecutionStep != null && !step.lastScript) {
+      step = step.nextExecutionStep;
     }
     
     return step;
@@ -108,8 +196,10 @@ export default class ScriptStep {
     this._script.gotUpdated();
   }
   async processData(childData) {
-    lively.success('Step::processData')
-    return await this._script.computeModel(childData, this);
+    return new ScriptProcessor().computeModel(childData, this);
+  }
+  async descentObject(object) {
+    return new ScriptProcessor().descentObject(object, this);
   }
   
   toJSON() {
@@ -121,8 +211,8 @@ export default class ScriptStep {
       route: this.route
     };
     
-    if (this.nextStep) {
-      scriptJson.nextScriptId = this.nextStep.id;
+    if (this.nextExecutionStep) {
+      scriptJson.nextScriptId = this.nextExecutionStep.id;
     }
     
     return scriptJson
