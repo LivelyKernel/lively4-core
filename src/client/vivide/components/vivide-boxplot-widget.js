@@ -1,9 +1,9 @@
-import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
 
-export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
+export default class VivideBoxplotWidget extends VivideWidget {
   get multiSelectionConfig() {
     return [this.innerPlot, {
       selector: 'g.selectable-group',
@@ -15,6 +15,10 @@ export default class VivideBoxplotWidget extends VivideMultiSelectionWidget {
 
   getObjectForSelectedNode(group) {
     return group.__vivideObjectAccessor__;
+  }
+
+  focus() {
+    this.multiSelection.focus();
   }
 
   get innerPlot() { return this.get('#d3-boxplot'); }

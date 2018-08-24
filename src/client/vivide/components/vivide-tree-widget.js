@@ -1,8 +1,8 @@
-import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
-export default class VivideTreeWidget extends VivideMultiSelectionWidget {
+export default class VivideTreeWidget extends VivideWidget {
   get multiSelectionConfig() {
     return [this, {
       onSelectionChanged: selection => this.selectionChanged(selection)
@@ -12,6 +12,10 @@ export default class VivideTreeWidget extends VivideMultiSelectionWidget {
   getObjectForSelectedNode(selectedNode) {
     const vivideObject = this.dataByTreeItem.get(selectedNode)
     return vivideObject.object;
+  }
+
+  focus() {
+    this.multiSelection.focus();
   }
 
   get tree() { return this.get('#tree'); }

@@ -1,12 +1,8 @@
 "enable aexpr";
-import { debounce } from "utils";
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
+import { debounce, uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
 
-import Morph from 'src/components/widgets/lively-morph.js';
-import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
-import MultiSelection from 'src/client/vivide/multiselection.js';
-import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
-
-export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
+export default class VivideTreemapWidget extends VivideWidget {
 
   get tree() { return this.get('#tree'); }
   get d3treemap() { return this.get('#d3-treemap'); }
