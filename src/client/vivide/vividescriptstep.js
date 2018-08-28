@@ -53,37 +53,39 @@ export class ScriptProcessor {
   }
   
   // Vivide/S's asList
+  asList(d) {
+    if(d === undefined) {
+      // pass
+      return [];
+    } else if(Array.isArray(d)) {
+      return d;
+    } else {
+      // normal singular object
+      return [d];
+    }
+  }
+  
   flatten(data) {
     let result = [];
 
-    data.forEach(d => {
-      if(d === undefined) {
-        // pass
-      } else if(Array.isArray(d)) {
-        result.push(...d);
-      } else {
-        // normal singular object
-        result.push(d);
-      }
-    });
+    data.forEach(d => result.push(...this.asList(d)));
     
     return result;
   }
   
+  async singleTransform(data, module) {
+    const output = [];
+    await module(data, output);
+    return output;
+  }
   async transform(data, _modules) {
     let input = data.slice(0);
-    let output = [];
     
     for (let module of _modules.transform) {
-      await module(input, output);
-      class a extends Array{}
-      Array.isArray(a)
-      input = output.slice(0);
-      output = [];
+      input = await this.singleTransform(input, module);
+      input = this.flatten(input);
     }
-    
-    input = this.flatten(input);
-    
+
     return VivideObject.dataToForest(input);
   }
   
