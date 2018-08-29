@@ -34,7 +34,9 @@ class CompositeKey {
     static get(obj1, obj2) {
         const secondKeyMap = this.getByPrimaryKey(obj1);
         if(!secondKeyMap.has(obj2)) {
-            secondKeyMap.set(obj2, {});
+            secondKeyMap.set(obj2, {
+              obj1, obj2
+            });
         }
         return secondKeyMap.get(obj2);
     }
@@ -120,6 +122,36 @@ class RewritingActiveExpression extends BaseActiveExpression {
     super.dispose();
     aexprStorage.disconnectAll(this);
     aexprStorageForLocals.disconnectAll(this);
+  }
+  
+  supportsDependencies() {
+    return true;
+  }
+  
+  getDependencies() {
+    return new DependencyAPI(this);
+  }
+}
+
+class DependencyAPI {
+  constructor(aexpr) {
+    this._aexpr = aexpr;
+  }
+  
+  locals() {
+    let locals = [];
+    
+    // #TODO: refactor
+    aexprStorageForLocals.aexprsByObjProp.forEach((aexprSet, compKey) => {
+      if(aexprSet.has(this._aexpr)) {
+        locals.push({
+          scope: compKey.obj1,
+          name: compKey.obj2
+        });
+      }
+    });
+    
+    return locals;
   }
 }
 
