@@ -10,8 +10,8 @@ export default class VivideTreeWidget extends VivideWidget {
   }
   
   getObjectForSelectedNode(selectedNode) {
-    const vivideObject = this.dataByTreeItem.get(selectedNode)
-    return vivideObject.object;
+    const model = this.dataByTreeItem.get(selectedNode)
+    return model.object;
   }
 
   focus() {
@@ -27,7 +27,7 @@ export default class VivideTreeWidget extends VivideWidget {
 
   async display(forest, config) {
     super.display(forest, config);
-    
+
     // Clean up
     this.tree.innerHTML = '';
     // Remove stuck tooltips
@@ -35,26 +35,26 @@ export default class VivideTreeWidget extends VivideWidget {
     if (oldTooltips) {
       for (let oldTooltip of oldTooltips) {
         oldTooltip.remove();
-      }  
+      }
     }
     
     this.dataByTreeItem = new Map();
     
-    for (let object of forest) {
-      await this.processObject(object, this.tree);
+    for (let model of forest) {
+      await this.processObject(model, this.tree);
     }
   }
   
   async toggleTree(treeItem, expander) {
     function showSubTree() {
-      treeItem.className += " expanded";
+      treeItem.classList.add("expanded");
       expander.classList.remove("fa-caret-right");
-      expander.classList += " fa-caret-down";
+      expander.classList.add("fa-caret-down");
     }
     function hideSubTree() {
       treeItem.classList.remove("expanded");
       expander.classList.remove("fa-caret-down");
-      expander.classList += " fa-caret-right";
+      expander.classList.add("fa-caret-right");
     }
     
     const vivideObject = this.dataByTreeItem.get(treeItem);
@@ -65,8 +65,8 @@ export default class VivideTreeWidget extends VivideWidget {
     if (sub.innerHTML.length == 0) {
       const childForest = await vivideObject.getChildren();
 
-      for (let child of childForest) {
-        this.processObject(child, sub);
+      for (let childModel of childForest) {
+        this.processObject(childModel, sub);
       }
       
       treeItem.appendChild(sub);
@@ -80,15 +80,12 @@ export default class VivideTreeWidget extends VivideWidget {
     }
   }
   
-  async processObject(object, parent) {
-    const label = object.properties.get('label') || textualRepresentation(object.data);
-    let tooltipText = object.properties.get('tooltip') || "";
-    let treeItem = <li>{label}<ul id="child"></ul></li>;
-    let symbolClasses = "expander fa";
-    symbolClasses += await object.hasChildren() ? " fa-caret-right" : " fa-circle small";
-    let expander = <span id="expander" class={symbolClasses}></span>;
-    
-    if (tooltipText.length > 0) {
+  async processObject(model, parent) {
+    const label = model.properties.get('label') || textualRepresentation(model.object);
+    const treeItem = <li><span class='item-label'>{label}</span><ul id="child"></ul></li>;
+
+    const tooltipText = model.properties.get('tooltip');
+    if (tooltipText) {
       let tooltip = <span class="tooltip"></span>;
       let shownTooltip = null;
       tooltip.innerHTML = tooltipText;
@@ -96,7 +93,7 @@ export default class VivideTreeWidget extends VivideWidget {
       treeItem.addEventListener('mouseover', event => {
         shownTooltip = tooltip.cloneNode(true);
         document.body.appendChild(shownTooltip);
-        object.assign(shownTooltip.style, {
+        model.assign(shownTooltip.style, {
           display: 'inline-block',
           top: (event.clientY + 3) + "px",
           left: (event.clientX + 3) + "px",
@@ -113,11 +110,32 @@ export default class VivideTreeWidget extends VivideWidget {
       });
     }
     
+    const expander = <span id="expander"></span>;
+    expander.classList.add('expander', 'fa');
+    if(await model.hasChildren()) {
+      expander.classList.add('fa-caret-right');
+      expander.addEventListener("click", evt => this.toggleTree(treeItem, expander));
+      treeItem.addEventListener("keydown", evt => {
+        const { shiftKey, altKey, keyCode, charCode } = evt;
+      
+        // expand
+        if(keyCode === 37 || keyCode === 39) {
+          this.toggleTree(treeItem, expander)
+
+          evt.preventDefault();
+          evt.stopPropagation();
+          return;
+        }
+      });
+    } else {
+      expander.classList.add('fa-circle', 'small');
+    }
     treeItem.prepend(expander);
-    expander.addEventListener("click", this.toggleTree.bind(this, treeItem, expander));
+    
     this.multiSelection.addItem(treeItem);
     this.addDragEventTo(treeItem);
-    this.dataByTreeItem.set(treeItem, object);
+    this.dataByTreeItem.set(treeItem, model);
+    
     parent.appendChild(treeItem);
   }
   
