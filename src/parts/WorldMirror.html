@@ -1,4 +1,4 @@
-<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: 364.933px; top: 461.67px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-id="9c5259ef-7c3d-4bac-960b-eed30fda8398"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: 444.61px; top: -56.55px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-id="78d993f1-bddc-47f0-984e-fbed09a022e4" data-lively-part-name="WorldMirror"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
   if(!this.isdragging) return
   lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
   this.ajustRootPosition()
@@ -57,39 +57,6 @@
   lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDrag(evt));
   lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragStop(evt));
 
-}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
-  
-  this.world.innerHTML = ""
-  var all = this.filterElements(lively.allElements(true))
-  
-  // this.label.innerHTML = " on " + all.size + " elements "
-  all.forEach(ea => {
-    if (ea === this || ea.isMetaNode) {
-      return
-    }
-    var mirrorElement = document.createElement("div")
-    mirrorElement.isMetaNode = true
-    mirrorElement.style.border = "1px solid gray"
-    mirrorElement.style.background = "rgba(0,100,0,0.3)"
-    mirrorElement.style.display = "flex";
-    mirrorElement.style.alignItems = "center";
-    mirrorElement.style.justifyContent ="center";
-    mirrorElement.target = ea
-    
-    if (all.length < 200) {
-      mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
-      mirrorElement.style.color = "white"
-      mirrorElement.style.textAlign = "center"
-    }
-    mirrorElement.addEventListener("click", () => this.selectElement(ea))
-    
-    // mirrorElement.style.pointerEvents = "none";
-    this.world.appendChild(mirrorElement)
-    
-    var bounds = lively.getGlobalBounds(ea)
-    lively.setGlobalPosition(mirrorElement, bounds.topLeft())
-    lively.setExtent(mirrorElement, bounds.extent())
-  })
 }</script><script data-name="mirrorWorld" type="lively4script">function mirrorWorld() {
   this.style.zIndex = 1000
   this.style.overflow = ""
@@ -163,4 +130,47 @@
   this.ajustRootPosition()
   
   this.updateWorld()
+}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
+  
+  this.world.innerHTML = ""
+  var all = this.filterElements(lively.allElements(true))
+  
+  // this.label.innerHTML = " on " + all.size + " elements "
+  all.forEach(ea => {
+    if (ea === this || ea.isMetaNode) {
+      return
+    }
+    var mirrorElement = document.createElement("div")
+    mirrorElement.isMetaNode = true
+    mirrorElement.style.border = "1px solid gray"
+    mirrorElement.style.background = "rgba(0,100,0,0.3)"
+    mirrorElement.style.display = "flex";
+    mirrorElement.style.alignItems = "center";
+    mirrorElement.style.justifyContent ="center";
+    mirrorElement.target = ea
+    
+    if (all.length < 200) {
+      mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
+      mirrorElement.style.color = "white"
+      mirrorElement.style.textAlign = "center"
+    }
+
+    mirrorElement.updatePosition = function() {
+      var bounds = lively.getGlobalBounds(ea)
+      lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+      lively.setExtent(mirrorElement, bounds.extent())      
+    }
+
+    
+    lively.removeEventListener("x-ray", ea)    
+    lively.addEventListener("x-ray", ea, "context-style-changed", evt => {
+      mirrorElement.updatePosition()
+    })
+    
+    mirrorElement.addEventListener("click", () => this.selectElement(ea))
+    
+    // mirrorElement.style.pointerEvents = "none";
+    this.world.appendChild(mirrorElement)
+    mirrorElement.updatePosition()
+  })
 }</script></div>

@@ -326,7 +326,6 @@ export default class HTML {
     return saveAsURL
   }
 
-  
  static async registerAttributeObservers(obj) {
     obj._attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
@@ -346,6 +345,28 @@ export default class HTML {
     });
     obj._attrObserver.observe(obj, { attributes: true });  
   }
+
   
+  static async registerContextStyleObserver(obj) {
+    if (obj._contextStyleObserver) {
+      obj._contextStyleObserver.disconnect()
+    }
+    var attrObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes" && mutation.attributeName == "style") {
+          var changeEvent = new CustomEvent("context-style-changed", {target: mutation.target})
+         mutation.target.dispatchEvent(changeEvent)  
+          mutation.target.querySelectorAll("*").forEach(ea => ea.dispatchEvent(changeEvent))      
+        }
+      });
+    })
+    obj._contextStyleObserver = attrObserver 
+    attrObserver.observe(obj, { 
+      subtree: true,
+      attributes: true,
+    });
+    return attrObserver
+    
+  }
 }
 
