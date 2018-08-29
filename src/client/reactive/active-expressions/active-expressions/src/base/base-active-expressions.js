@@ -175,6 +175,7 @@ export class BaseActiveExpression {
     return this;
   }
 
+  // #TODO: test this
   meta(annotation) {
     if(annotation) {
       this._annotations.add(annotation);
@@ -182,6 +183,10 @@ export class BaseActiveExpression {
     } else {
       return this._annotations;
     }
+  }
+  
+  supportsDependencies() {
+    return false;
   }
 }
 

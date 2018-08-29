@@ -21,7 +21,8 @@ class ExpressionAnalysis {
   }
 }
 
-// TODO: CompositeKeyStore as separate Module
+// #TODO: CompositeKeyStore as separate Module
+// #TODO: allow a reversed lookup compKey->[key1, key2]
 const compositeKeyStore = new Map();
 class CompositeKey {
     static getByPrimaryKey(obj1) {
@@ -34,7 +35,9 @@ class CompositeKey {
     static get(obj1, obj2) {
         const secondKeyMap = this.getByPrimaryKey(obj1);
         if(!secondKeyMap.has(obj2)) {
-            secondKeyMap.set(obj2, {});
+            secondKeyMap.set(obj2, {
+              obj1, obj2
+            });
         }
         return secondKeyMap.get(obj2);
     }
@@ -96,6 +99,18 @@ class HookStorage {
         // });
     }
 
+    getCompKeysFor(aexpr) {
+      let compKeys = [];
+
+      this.aexprsByObjProp.forEach((aexprSet, compKey) => {
+        if(aexprSet.has(aexpr)) {
+          compKeys.push(compKey);
+        }
+      });
+
+      return compKeys;
+    }
+
     /*
      * Removes all associations.
      * As a result
@@ -120,6 +135,34 @@ class RewritingActiveExpression extends BaseActiveExpression {
     super.dispose();
     aexprStorage.disconnectAll(this);
     aexprStorageForLocals.disconnectAll(this);
+  }
+  
+  supportsDependencies() {
+    return true;
+  }
+  
+  getDependencies() {
+    return new DependencyAPI(this);
+  }
+}
+
+class DependencyAPI {
+  constructor(aexpr) {
+    this._aexpr = aexpr;
+  }
+  
+  // #TODO: refactor
+  static compositeKeyToLocals(compKey) {
+    return {
+      scope: compKey.obj1,
+      name: compKey.obj2
+    };
+  }
+  
+  locals() {
+    const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
+
+    return compKeys.map(DependencyAPI.compositeKeyToLocals);
   }
 }
 
@@ -180,7 +223,7 @@ const transactionContext = new TransactionContext();
  * As a result no currently enable active expression will be notified again,
  * effectively removing them from the system.
  *
- * TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
+ * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
     aexprStorage.clear();

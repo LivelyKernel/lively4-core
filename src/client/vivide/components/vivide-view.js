@@ -27,7 +27,7 @@ class WidgetChooser {
         return 'boxplot';
       }
     }
-    return 'list';
+    return 'tree';
   }
   static findAppropriateWidget(forest, viewConfig) {
     const type = this.getPreferredWidgetType(forest, viewConfig);
