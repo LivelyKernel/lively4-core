@@ -21,7 +21,8 @@ class ExpressionAnalysis {
   }
 }
 
-// TODO: CompositeKeyStore as separate Module
+// #TODO: CompositeKeyStore as separate Module
+// #TODO: allow a reversed lookup compKey->[key1, key2]
 const compositeKeyStore = new Map();
 class CompositeKey {
     static getByPrimaryKey(obj1) {
@@ -98,6 +99,18 @@ class HookStorage {
         // });
     }
 
+    getCompKeysFor(aexpr) {
+      let compKeys = [];
+
+      this.aexprsByObjProp.forEach((aexprSet, compKey) => {
+        if(aexprSet.has(aexpr)) {
+          compKeys.push(compKey);
+        }
+      });
+
+      return compKeys;
+    }
+
     /*
      * Removes all associations.
      * As a result
@@ -138,20 +151,18 @@ class DependencyAPI {
     this._aexpr = aexpr;
   }
   
+  // #TODO: refactor
+  static compositeKeyToLocals(compKey) {
+    return {
+      scope: compKey.obj1,
+      name: compKey.obj2
+    };
+  }
+  
   locals() {
-    let locals = [];
-    
-    // #TODO: refactor
-    aexprStorageForLocals.aexprsByObjProp.forEach((aexprSet, compKey) => {
-      if(aexprSet.has(this._aexpr)) {
-        locals.push({
-          scope: compKey.obj1,
-          name: compKey.obj2
-        });
-      }
-    });
-    
-    return locals;
+    const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
+
+    return compKeys.map(DependencyAPI.compositeKeyToLocals);
   }
 }
 
@@ -212,7 +223,7 @@ const transactionContext = new TransactionContext();
  * As a result no currently enable active expression will be notified again,
  * effectively removing them from the system.
  *
- * TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
+ * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
     aexprStorage.clear();

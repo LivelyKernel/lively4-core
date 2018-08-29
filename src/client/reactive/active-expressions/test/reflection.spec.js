@@ -11,6 +11,17 @@ describe('Reflection', () => {
 
   describe('dependencies', () => {
 
+    it('set and read a property', () => {
+      const expr = aexpr(() => {});
+      
+      expect(expr.meta().get('name')).to.be.undefined;
+      
+      const expectedName = 'my test AExpr';
+      expr.meta({ name: expectedName });
+      
+      expect(expr.meta().get('name')).to.equal(expectedName);
+    });
+
     describe('provide info about strategy', () => {
 
       it('sets strategy meta to "Rewriting"', () => {
@@ -83,6 +94,7 @@ describe('Reflection', () => {
         expect(deps.locals()).to.have.lengthOf(2);
         expect(deps.locals()[0]).to.have.property('name', 'x');
         expect(deps.locals()[1]).to.have.property('name', 'y');
+        expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
       });
 
       // #TODO: optimization: do not listen to locals that are not set (not on left-hand side or in an update expression)
