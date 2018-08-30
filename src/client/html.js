@@ -346,7 +346,15 @@ export default class HTML {
     obj._attrObserver.observe(obj, { attributes: true });  
   }
 
-  
+  // ## Example workspace
+  /*
+      import html from "https://lively-kernel.org/lively4/lively4-jens/src/client/html.js"
+      html.registerContextStyleObserver(document.body)
+
+      html.registerContextStyleObserver(document.body).then(o => {
+        o.disconnect()
+      })
+  */
   static async registerContextStyleObserver(obj) {
     if (obj._contextStyleObserver) {
       obj._contextStyleObserver.disconnect()
@@ -357,7 +365,9 @@ export default class HTML {
           && mutation.target !== document.body /* performance guard #Hack */) {
           var changeEvent = new CustomEvent("context-style-changed", {target: mutation.target})
          mutation.target.dispatchEvent(changeEvent)  
-          lively.allElements(true, mutation.target).forEach(ea => ea.dispatchEvent(changeEvent))      
+         lively.allElements(true, mutation.target).forEach(ea => {
+            ea.dispatchEvent(changeEvent) 
+         })      
         }
       });
     })

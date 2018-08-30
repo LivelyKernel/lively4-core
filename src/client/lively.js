@@ -855,7 +855,6 @@ export default class Lively {
 		}
     
     // support for context-style-changed events
-    // #ContinueHere
     // html.registerContextStyleObserver(document.body)
     
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
