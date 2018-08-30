@@ -22,7 +22,6 @@ const SET_MEMBER_BY_OPERATORS = {
   '^=': 'setMemberBitwiseXOR',
   '|=': 'setMemberBitwiseOR'
 };
-
 const SET_LOCAL = "setLocal";
 const GET_LOCAL = "getLocal";
 
@@ -139,6 +138,7 @@ export default function(param) {
 
   return {
     pre(file) {
+      console.warn('Wooooohooooo')
       //console.log("fff", file, traverse);
     },
     visitor: {
@@ -277,7 +277,8 @@ export default function(param) {
                         t.callExpression(
                           addCustomTemplate(state.file, GET_LOCAL), [
                             getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.name)
+                            t.stringLiteral(path.node.name),
+                            nonRewritableIdentifier(path.node.name)
                           ]
                         )
                       )
