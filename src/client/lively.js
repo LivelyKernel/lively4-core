@@ -19,7 +19,7 @@ import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
-import { toArray, uuid as generateUUID } from 'utils';
+import { toArray, uuid as generateUUID, wait } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
@@ -1686,9 +1686,7 @@ export default class Lively {
   }
 
   static sleep(time=1000) {
-    return new Promise(resolve => {
-      window.setTimeout(resolve, time)
-    })
+    return wait(time);
   }
 
   static async time(func) {
