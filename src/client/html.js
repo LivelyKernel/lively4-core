@@ -418,20 +418,17 @@ export default class HTML {
             bubbles: false,
             target: mutation.target
           })
-         // mutation.target.dispatchEvent(changeEvent)  
-         lively.allElements(true, mutation.target).forEach(ea => {
-           if (ea.isMetaNode) return;
-           var cbArray = map.get(ea) 
-           if (cbArray) {
-             cbArray.forEach(eaCB => {
-               eaCB(changeEvent)
-             })
-           }
-           // ea.dispatchEvent(changeEvent) 
-            // if (ea.onContextStyleChanged) {
-            //   ea.onContextStyleChanged(changeEvent)
-            // }
-           
+          if (mutation.target.isMetaNode) return;
+          mutation.target.dispatchEvent(changeEvent)  
+          lively.allElements(true, mutation.target).forEach(ea => {
+            if (ea.isMetaNode) return;
+            var cbArray = map.get(ea) 
+            if (cbArray) {
+              cbArray.forEach(eaCB => {
+                eaCB(changeEvent)
+              })
+            }
+          
          })      
         }
       });
