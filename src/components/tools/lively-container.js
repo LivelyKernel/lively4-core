@@ -939,8 +939,11 @@ export default class Container extends Morph {
       return "";
   }
 
-  listingForDirectory(url, render) {
+  listingForDirectory(url, render, renderTimeStamp) {
     return lively.files.statFile(url).then((content) => {
+      if (this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
@@ -962,6 +965,11 @@ export default class Container extends Morph {
        */
       if (render) {
         return lively.components.openIn(this.getContentRoot(), fileBrowser).then( () => {
+          if (this.renderTimeStamp !== renderTimeStamp) {
+            fileBrowser.remove()
+            return
+          }
+          
           // lively.notify("set url " + url)
           fileBrowser.hideToolbar();
           // override browsing file and direcotry
@@ -1061,7 +1069,8 @@ export default class Container extends Morph {
 
     // Handling files
     this.lastVersion = null; // just to be sure
-
+    this.renderTimeStamp = Date.now()
+    
     var format = path.replace(/.*\./,"");
     if (url.protocol == "search:") {
       format = "html"
@@ -1069,7 +1078,7 @@ export default class Container extends Morph {
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
       if (!options || !options["index-available"]) {
-        return this.listingForDirectory(url, render)
+        return this.listingForDirectory(url, render, this.renderTimeStamp)
       } else {
         format = "html"
       }
