@@ -1707,6 +1707,7 @@ export default class Lively {
         this.allElements(deep, ea.shadowRoot, all)
       }
     })
+    all.add(root)
     return all
   }
 

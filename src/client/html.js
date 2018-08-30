@@ -355,18 +355,65 @@ export default class HTML {
         o.disconnect()
       })
   */
-  static async registerContextStyleObserver(obj) {
-    if (obj._contextStyleObserver) {
-      obj._contextStyleObserver.disconnect()
+  
+  static removeContextStyleChangeListener(obj, cb) {
+    if (!obj || ! cb) {
+      throw new Error("parameter missing")
     }
+    var map = this.getContextStyleCallbackMap()
+    var array = map.get(obj)
+    if (array) {
+      array = []
+       map.set(obj, array.filter(ea => ea !== cb))
+    }
+  }
+  
+  static addContextStyleChangeListener(obj, cb) {
+    if (!obj || ! cb) {
+      throw new Error("parameter missing")
+    }
+    var map = this.getContextStyleCallbackMap()
+    var array = map.get(obj)
+    if (!array) {
+      array = []
+       map.set(obj, array)
+    }
+    array.push(cb)
+  }
+  
+  
+  static getContextStyleCallbackMap() {
+    if (!this.contextStyleCallbackMap) {
+      this.contextStyleCallbackMap = new WeakMap()
+    }
+    return  this.contextStyleCallbackMap
+  }
+  
+  
+  static async registerContextStyleObserver(obj) {
+    var map = this.getContextStyleCallbackMap()
+    
     var attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
         if(mutation.type == "attributes" && mutation.attributeName == "style"
           && mutation.target !== document.body /* performance guard #Hack */) {
-          var changeEvent = new CustomEvent("context-style-changed", {target: mutation.target})
-         mutation.target.dispatchEvent(changeEvent)  
+          var changeEvent = new CustomEvent("context-style-changed", {
+            bubbles: false,
+            target: mutation.target
+          })
+         // mutation.target.dispatchEvent(changeEvent)  
          lively.allElements(true, mutation.target).forEach(ea => {
-            ea.dispatchEvent(changeEvent) 
+           var cbArray = map.get(ea) 
+           if (cbArray) {
+             cbArray.forEach(eaCB => {
+               eaCB(changeEvent)
+             })
+           }
+           // ea.dispatchEvent(changeEvent) 
+            // if (ea.onContextStyleChanged) {
+            //   ea.onContextStyleChanged(changeEvent)
+            // }
+           
          })      
         }
       });
