@@ -1,4 +1,4 @@
-<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: 425.911px; top: -219.812px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-part-name="WorldMirror"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: -26.4px; top: 359.4px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-part-name="WorldMirror" data-lively-id="e2347928-ed1b-4f4d-9a9e-d8f047cbbdb0"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
   if(!this.isdragging) return
   lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
   this.ajustRootPosition()
@@ -201,10 +201,13 @@
       mirrorElement.addEventListener("click", () => this.selectElement(ea))
       this.elementMap.set(ea, mirrorElement)
     }    
-    lively.removeEventListener("x-ray", ea)    
-    lively.addEventListener("x-ray", ea, "context-style-changed", evt => {
-      mirrorElement.updatePosition()
-    })
+    // lively.removeEventListener("x-ray", ea)    
+    // lively.addEventListener("x-ray", ea, "context-style-changed", evt => {
+    //   mirrorElement.updatePosition()
+    // })
+    lively.html.addContextStyleChangeListener(ea, mirrorElement.updatePosition)
+    // #TODO call removeContextStyleChangeListener(obj, cb) 
+    
     
     // mirrorElement.style.pointerEvents = "none";
     this.world.appendChild(mirrorElement)

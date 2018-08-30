@@ -616,8 +616,12 @@ export default class Container extends Morph {
     this.get('#container-editor').innerHTML = '';
   }
 
-  async appendMarkdown(content) {
+  async appendMarkdown(content, renderTimeStamp) {
     var md = await lively.create("lively-markdown", this)
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      debugger
+      return md.remove()
+    }
     md.classList.add("presentation") // for the presentation button
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
@@ -639,7 +643,7 @@ export default class Container extends Morph {
     }
   }
 
-  appendLivelyMD(content) {
+  appendLivelyMD(content, renderTimeStamp) {
     content = content.replace(/@World.*/g,"");
     content = content.replace(/@+Text: name="Title".*\n/g,"# ");
     content = content.replace(/@+Text: name="Text.*\n/g,"\n");
@@ -648,7 +652,7 @@ export default class Container extends Morph {
     content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n");
     content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n");
 
-    this.appendMarkdown(content);
+    this.appendMarkdown(content, renderTimeStamp);
   }
 
   async appendScript(scriptElement) {
@@ -696,7 +700,10 @@ export default class Container extends Morph {
 
   }
 
-  async appendHtml(content) {
+  async appendHtml(content, renderTimeStamp) {
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
     // strip lively boot code...
 
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
@@ -770,19 +777,27 @@ export default class Container extends Morph {
     }, 0)
   }
 
-  async appendCSV(content) {
+  async appendCSV(content, renderTimeStamp) {
     var container=  this.get('#container-content');
     var table = await lively.create("lively-table")
     table.setFromCSV(content)
+    
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
     container.appendChild(table)
   }
 
 
-  async appendTemplate(name) {
+  async appendTemplate(name, renderTimeStamp) {
     try {
     	var node = lively.components.createComponent(name);
-    	this.getContentRoot().appendChild(node);
+    	if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
+      this.getContentRoot().appendChild(node);
       await lively.components.loadByName(name);
+      
     } catch(e) {
       console.log("Could not append html:" + content);
     }
@@ -1069,7 +1084,8 @@ export default class Container extends Morph {
 
     // Handling files
     this.lastVersion = null; // just to be sure
-    this.renderTimeStamp = Date.now()
+    var renderTimeStamp = Date.now() // #Idean, this is clearly a use-case for #COP, I have to refactor this propagate this dynamical context asyncronously #AsyncContextJS
+    this.renderTimeStamp = renderTimeStamp
     
     var format = path.replace(/.*\./,"");
     if (url.protocol == "search:") {
@@ -1078,21 +1094,21 @@ export default class Container extends Morph {
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
       if (!options || !options["index-available"]) {
-        return this.listingForDirectory(url, render, this.renderTimeStamp)
+        return this.listingForDirectory(url, render, renderTimeStamp)
       } else {
         format = "html"
       }
     }
 
     if (format.match(/(svg)|(png)|(jpe?g)/)) {
-      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>", renderTimeStamp);
       else return;
     } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
-      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>');
+      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
-        + url +'"></lively-pdf>');
+        + url +'"></lively-pdf>', renderTimeStamp);
       else return;
     } 
     var headers = {}
@@ -1125,16 +1141,16 @@ export default class Container extends Morph {
       
       if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
-        if (render) return this.appendHtml(content);
+        if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {
         this.sourceContent = content;
-        if (render) return this.appendMarkdown(content);
+        if (render) return this.appendMarkdown(content, renderTimeStamp);
       } else if (format == "livelymd") {
         this.sourceContent = content;
-        if (render) return this.appendLivelyMD(content);
+        if (render) return this.appendLivelyMD(content, renderTimeStamp);
       } else if (format == "csv") {
         this.sourceContent = content;
-        if (render) return this.appendCSV(content);
+        if (render) return this.appendCSV(content, renderTimeStamp);
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) {
@@ -1142,21 +1158,21 @@ export default class Container extends Morph {
             <h2>
               <span style="color: darkred">Error: </span>${content}
             </h2>
-          `);
+          `, renderTimeStamp);
         }
       } else if (format == "bib") {
         this.sourceContent = content;
         if (render) {
-          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
+          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
       } else if (format == "xhtml") {
         this.sourceContent = content;
         if (render) {
-          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>');
+          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
         }
       } else {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
+        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
