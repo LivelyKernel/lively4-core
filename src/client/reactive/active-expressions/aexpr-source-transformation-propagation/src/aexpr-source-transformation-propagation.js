@@ -22,7 +22,6 @@ class ExpressionAnalysis {
 }
 
 // #TODO: CompositeKeyStore as separate Module
-// #TODO: allow a reversed lookup compKey->[key1, key2]
 const compositeKeyStore = new Map();
 const compositeKeyStoreReverse = new Map();
 class CompositeKey {
@@ -46,12 +45,14 @@ class CompositeKey {
   static for(obj1, obj2) {
     return this._get(obj1, obj2);
   }
+  
   /**
    * Reverse operation of @link(for)
    */
   static keysFor(compKey) {
     return compositeKeyStoreReverse.get(compKey) || [];
   }
+  
   static clear() {
     compositeKeyStore.clear();
     compositeKeyStoreReverse.clear();
@@ -317,7 +318,6 @@ export function setMemberRemainder(obj, prop, val) {
     return result;
 }
 
-/*
 export function setMemberExponentiation(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] **= val;
@@ -325,7 +325,6 @@ export function setMemberExponentiation(obj, prop, val) {
     transactionContext.release(obj);
     return result;
 }
-*/
 
 export function setMemberLeftShift(obj, prop, val) {
     transactionContext.retain(obj);
@@ -375,9 +374,10 @@ export function setMemberBitwiseOR(obj, prop, val) {
 }
 
 export function getLocal(scope, varName, val) {
-    if(expressionAnalysisMode) {
-        aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
-    }
+  if(expressionAnalysisMode) {
+    scope[varName] = val;
+    aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
+  }
 }
 
 export function setLocal(scope, varName) {
