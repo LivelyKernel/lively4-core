@@ -327,6 +327,8 @@ export default class HTML {
   }
 
  static async registerAttributeObservers(obj) {
+    obj._attrObserver && obj._attrObserver.disconnect(); 
+
     obj._attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") { 
@@ -348,10 +350,10 @@ export default class HTML {
 
   // ## Example workspace
   /*
-      import html from "https://lively-kernel.org/lively4/lively4-jens/src/client/html.js"
-      html.registerContextStyleObserver(document.body)
+      import html from "src/client/html.js"
+      lively.html.registerContextStyleObserver(document.body)
 
-      html.registerContextStyleObserver(document.body).then(o => {
+      lively.html.registerContextStyleObserver(document.body).then(o => {
         o.disconnect()
       })
   */
@@ -390,19 +392,35 @@ export default class HTML {
   }
   
   
-  static async registerContextStyleObserver(obj) {
+  static async disconnectContextStyleObserver(obj, domain="") {
+    var observer = obj["_contextStyleObserver" + domain] 
+    if (observer) {
+      observer.disconnect(); 
+    }
+  }
+  
+  
+  static async registerContextStyleObserver(obj, domain="") {
+    this.disconnectContextStyleObserver(obj, domain);
+
+    
     var map = this.getContextStyleCallbackMap()
     
-    var attrObserver = new MutationObserver((mutations) => {
+    var observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
-        if(mutation.type == "attributes" && mutation.attributeName == "style"
-          && mutation.target !== document.body /* performance guard #Hack */) {
+        if(mutation.type == "attributes" 
+            && mutation.attributeName == "style"
+            && mutation.target !== document.body) {
+          
+        
+          
           var changeEvent = new CustomEvent("context-style-changed", {
             bubbles: false,
             target: mutation.target
           })
          // mutation.target.dispatchEvent(changeEvent)  
          lively.allElements(true, mutation.target).forEach(ea => {
+           if (ea.isMetaNode) return;
            var cbArray = map.get(ea) 
            if (cbArray) {
              cbArray.forEach(eaCB => {
@@ -418,13 +436,19 @@ export default class HTML {
         }
       });
     })
-    obj._contextStyleObserver = attrObserver 
-    attrObserver.observe(obj, { 
+    obj["_contextStyleObserver" + domain] = observer 
+    observer.observe(obj, { 
       subtree: true,
       attributes: true,
     });
-    return attrObserver
+    return observer
     
   }
 }
+
+// #LiveProgramming #Hack #CircularDependency #TODO
+if (window.lively) {
+  window.lively.html = HTML
+}
+
 
