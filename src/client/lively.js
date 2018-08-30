@@ -853,6 +853,10 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
+    
+    // support for context-style-changed events
+    html.registerContextStyleObserver(document.body)
+    
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)

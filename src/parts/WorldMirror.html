@@ -1,4 +1,4 @@
-<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: 364.933px; top: 461.67px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-id="9c5259ef-7c3d-4bac-960b-eed30fda8398"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; left: -112px; top: 31.68px; user-select: none; z-index: 1000;" draggable="false" id="WorldMirror" data-lively-id="95606af7-f4a1-47dc-80d2-86b032472ae1" data-lively-part-name="WorldMirror"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
   if(!this.isdragging) return
   lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
   this.ajustRootPosition()
@@ -39,57 +39,6 @@
     this.input.style.border = "2px solid red"
   }
   this.updateWorld()
-}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
-  this.mirrorWorld()
-}</script><script data-name="filterElements" type="lively4script">function filterElements(all) {
-  // urn all
-  if (!this.filterFunc) {
-    this.filterFunc = ea => ea.tagName && ea.tagName.match(/-/)
-  }
-  
-  return Array.from(all).filter(this.filterFunc).slice(0,2000)
- 
-}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
-  if(evt.altKey || evt.shiftKey || evt.ctrlKey) return 
-  this.isdragging = true
-  this.updateWorld()
-  this.dragOffset = lively.getPosition(this).subPt(lively.getPosition(evt))
-  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDrag(evt));
-  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragStop(evt));
-
-}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
-  
-  this.world.innerHTML = ""
-  var all = this.filterElements(lively.allElements(true))
-  
-  // this.label.innerHTML = " on " + all.size + " elements "
-  all.forEach(ea => {
-    if (ea === this || ea.isMetaNode) {
-      return
-    }
-    var mirrorElement = document.createElement("div")
-    mirrorElement.isMetaNode = true
-    mirrorElement.style.border = "1px solid gray"
-    mirrorElement.style.background = "rgba(0,100,0,0.3)"
-    mirrorElement.style.display = "flex";
-    mirrorElement.style.alignItems = "center";
-    mirrorElement.style.justifyContent ="center";
-    mirrorElement.target = ea
-    
-    if (all.length < 200) {
-      mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
-      mirrorElement.style.color = "white"
-      mirrorElement.style.textAlign = "center"
-    }
-    mirrorElement.addEventListener("click", () => this.selectElement(ea))
-    
-    // mirrorElement.style.pointerEvents = "none";
-    this.world.appendChild(mirrorElement)
-    
-    var bounds = lively.getGlobalBounds(ea)
-    lively.setGlobalPosition(mirrorElement, bounds.topLeft())
-    lively.setExtent(mirrorElement, bounds.extent())
-  })
 }</script><script data-name="mirrorWorld" type="lively4script">function mirrorWorld() {
   this.style.zIndex = 1000
   this.style.overflow = ""
@@ -163,4 +112,101 @@
   this.ajustRootPosition()
   
   this.updateWorld()
+}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  if(evt.altKey || evt.shiftKey || evt.ctrlKey) return 
+  this.isdragging = true
+  // this.updateWorld()
+  this.dragOffset = lively.getPosition(this).subPt(lively.getPosition(evt))
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDrag(evt));
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragStop(evt));
+
+}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
+
+  this.world.innerHTML = ""
+  this.addElements(lively.allElements(true))
+  this.startHierrachyObservation(document.body)
+}</script><script data-name="removeElements" type="lively4script">function removeElements(elements) {
+  if (!this.elementMap || !elements) return;
+  
+  elements.forEach(ea => {
+    var mirrorElement = this.elementMap.get(ea)
+    if (mirrorElement) mirrorElement.remove()
+  })
+}</script><script data-name="addElements" type="lively4script">function addElements(elements) {
+  if (!elements) return;
+  
+  var all = this.filterElements(elements)
+  
+  if (!this.elementMap) {
+    this.elementMap = new WeakMap()
+  }
+  
+  // this.label.innerHTML = " on " + all.size + " elements "
+  all.forEach(ea => {
+    if (ea === this || ea.isMetaNode) {
+      return
+    }
+    var mirrorElement = document.createElement("div")
+    mirrorElement.isMetaNode = true
+    mirrorElement.style.border = "1px solid gray"
+    mirrorElement.style.background = "rgba(0,100,0,0.3)"
+    mirrorElement.style.display = "flex";
+    mirrorElement.style.alignItems = "center";
+    mirrorElement.style.justifyContent ="center";
+    mirrorElement.target = ea
+    
+    if (all.length < 200) {
+      mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
+      mirrorElement.style.color = "white"
+      mirrorElement.style.textAlign = "center"
+    }
+
+    mirrorElement.updatePosition = function() {
+      var bounds = lively.getGlobalBounds(ea)
+      lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+      lively.setExtent(mirrorElement, bounds.extent())      
+    }
+
+    
+    lively.removeEventListener("x-ray", ea)    
+    lively.addEventListener("x-ray", ea, "context-style-changed", evt => {
+      mirrorElement.updatePosition()
+    })
+    
+    mirrorElement.addEventListener("click", () => this.selectElement(ea))
+    
+    // mirrorElement.style.pointerEvents = "none";
+    this.world.appendChild(mirrorElement)
+    mirrorElement.updatePosition()
+    this.elementMap.set(ea, mirrorElement)
+  })
+  
+}</script><script data-name="filterElements" type="lively4script">function filterElements(all) {
+  // urn all
+  if (!this.filterFunc) {
+    this.filterFunc = ea => ea.tagName && ea.tagName.match(/-/)
+  }
+  
+  return Array.from(all).filter(ea => ea && ea.tagName).filter(this.filterFunc).slice(0,2000)
+ 
+}</script><script data-name="startHierrachyObservation" type="lively4script">function startHierrachyObservation(obj) {
+  if (this.hierrachyObserver) {
+    this.hierrachyObserver.disconnect()
+  }
+  this.hierrachyObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {  
+      if(mutation.type == "childList") {
+        this.removeElements(mutation.removedNodes)
+        this.addElements(mutation.addedNodes)
+      }
+    });
+  })
+  this.hierrachyObserver.observe(obj, { 
+    subtree: true,
+    childList: true,
+  });
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.sleep(1000).then(() => {
+    this.mirrorWorld()
+  })
 }</script></div>
