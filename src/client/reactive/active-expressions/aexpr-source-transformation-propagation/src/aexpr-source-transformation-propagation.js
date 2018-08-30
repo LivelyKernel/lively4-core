@@ -169,7 +169,8 @@ class DependencyAPI {
     const [ scope, name ] = CompositeKey.keysFor(compKey);
     return {
       scope: scope,
-      name: name
+      name: name,
+      value: scope ? scope[name] : undefined
     };
   }
   

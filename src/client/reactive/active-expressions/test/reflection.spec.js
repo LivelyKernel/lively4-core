@@ -88,15 +88,25 @@ describe('Reflection', () => {
         
         const expr = aexpr(() => x + y);
         
-        x = 42;
-        y = 42;
-
         const deps = expr.getDependencies();
         expect(deps.locals()).to.have.lengthOf(2);
         expect(deps.locals()[0]).to.have.property('name', 'x');
+        expect(deps.locals()[0]).to.have.property('value', 17);
         expect(deps.locals()[1]).to.have.property('name', 'y');
+        expect(deps.locals()[1]).to.have.property('value', 31);
         expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
-        // expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
+
+        x = 42;
+        y = 42;
+
+        const deps2 = expr.getDependencies();
+        expect(deps2.locals()).to.have.lengthOf(2);
+        expect(deps2.locals()[0]).to.have.property('name', 'x');
+        expect(deps2.locals()[0]).to.have.property('value', 42);
+        expect(deps2.locals()[1]).to.have.property('name', 'y');
+        expect(deps2.locals()[1]).to.have.property('value', 42);
+        expect(deps2.locals()[0].scope).to.equal(deps2.locals()[1].scope);
+        expect(deps2.locals()[0].value).to.equal(deps2.locals()[1].value);
       });
 
       // #TODO: optimization: do not listen to locals that are not set (not on left-hand side or in an update expression)
