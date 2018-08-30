@@ -353,10 +353,11 @@ export default class HTML {
     }
     var attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
-        if(mutation.type == "attributes" && mutation.attributeName == "style") {
+        if(mutation.type == "attributes" && mutation.attributeName == "style"
+          && mutation.target !== document.body /* performance guard #Hack */) {
           var changeEvent = new CustomEvent("context-style-changed", {target: mutation.target})
          mutation.target.dispatchEvent(changeEvent)  
-          mutation.target.querySelectorAll("*").forEach(ea => ea.dispatchEvent(changeEvent))      
+          lively.allElements(true, mutation.target).forEach(ea => ea.dispatchEvent(changeEvent))      
         }
       });
     })

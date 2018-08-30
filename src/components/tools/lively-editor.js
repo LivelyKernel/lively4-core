@@ -354,6 +354,7 @@ export default class Editor extends Morph {
   }
   
   onPaste(evt) {
+     
     // #CopyAndPaste mild code duplication with #Clipboard 
     var items = (event.clipboardData || evt.clipboardData).items;
     if (items.length> 0) {
@@ -361,11 +362,10 @@ export default class Editor extends Morph {
         var item = items[index];
         if (item.kind === 'file') {
           this.pasteFile(item, this.lastTarget) 
+          evt.stopPropagation()
+          evt.preventDefault();
         }
       }
-      evt.stopPropagation()
-      evt.preventDefault(); 
-      return 
     }
   }
   

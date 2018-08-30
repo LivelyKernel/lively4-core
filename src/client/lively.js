@@ -855,7 +855,8 @@ export default class Lively {
 		}
     
     // support for context-style-changed events
-    html.registerContextStyleObserver(document.body)
+    // #ContinueHere
+    // html.registerContextStyleObserver(document.body)
     
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
@@ -1690,7 +1691,19 @@ export default class Lively {
     })
   }
 
+  static async time(func) {
+    var start = performance.now()
+    if (func) {
+      await func()
+    } 
+    return performance.now() - start
+  }
+  
+  
   static allElements(deep=false, root=document.body, all=new Set()) {
+    if (deep && root.shadowRoot) {
+      this.allElements(deep, root.shadowRoot, all)
+    }
     root.querySelectorAll("*").forEach(ea => {
       all.add(ea)
       if (deep && ea.shadowRoot) {
@@ -1726,6 +1739,8 @@ export default class Lively {
     return "https://lively4/scheme/" + m[1] +"/" + m[2]
   }
 
+  
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {
