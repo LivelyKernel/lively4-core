@@ -33,7 +33,7 @@ class CompositeKey {
 
     return compositeKeyStore.get(obj1);
   }
-  static get(obj1, obj2) {
+  static _get(obj1, obj2) {
     const secondKeyMap = this._getByPrimaryKey(obj1);
     if(!secondKeyMap.has(obj2)) {
       const compKey = { obj1, obj2 };
@@ -42,17 +42,19 @@ class CompositeKey {
     }
     return secondKeyMap.get(obj2);
   }
+  
   static for(obj1, obj2) {
-    return this.get(obj1, obj2);
+    return this._get(obj1, obj2);
   }
   /**
    * Reverse operation of @link(for)
    */
   static keysFor(compKey) {
-    
+    return compositeKeyStoreReverse.get(compKey) || [];
   }
   static clear() {
     compositeKeyStore.clear();
+    compositeKeyStoreReverse.clear();
   }
 }
 
@@ -161,18 +163,19 @@ class DependencyAPI {
     this._aexpr = aexpr;
   }
   
-  // #TODO: refactor
-  static compositeKeyToLocals(compKey) {
+  static compositeKeyToLocal(compKey) {
+    // #TODO: refactor
+    const [ scope, name ] = CompositeKey.keysFor(compKey);
     return {
-      scope: compKey.obj1,
-      name: compKey.obj2
+      scope: scope,
+      name: name
     };
   }
   
   locals() {
     const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
 
-    return compKeys.map(DependencyAPI.compositeKeyToLocals);
+    return compKeys.map(DependencyAPI.compositeKeyToLocal);
   }
 }
 
@@ -373,7 +376,6 @@ export function setMemberBitwiseOR(obj, prop, val) {
 
 export function getLocal(scope, varName, val) {
     if(expressionAnalysisMode) {
-      lively.notify('read var '+varName, val)
         aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
     }
 }

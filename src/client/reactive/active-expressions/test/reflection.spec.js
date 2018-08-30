@@ -79,6 +79,7 @@ describe('Reflection', () => {
         const deps = expr.getDependencies();
         expect(deps.locals()).to.have.lengthOf(1);
         expect(deps.locals()[0]).to.have.property('name', 'x');
+        expect(deps.locals()[0]).to.have.property('value', 42);
       });
 
       it('get two local dependencies', () => {
@@ -95,6 +96,7 @@ describe('Reflection', () => {
         expect(deps.locals()[0]).to.have.property('name', 'x');
         expect(deps.locals()[1]).to.have.property('name', 'y');
         expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
+        // expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
       });
 
       // #TODO: optimization: do not listen to locals that are not set (not on left-hand side or in an update expression)
@@ -112,6 +114,7 @@ describe('Reflection', () => {
       
       /* other things*/
       AExpr.EventHistory
+      All.AExpr
       
       Higher-level.Abstractions >> Higher-level.events & relation.to.aexprs
     });
