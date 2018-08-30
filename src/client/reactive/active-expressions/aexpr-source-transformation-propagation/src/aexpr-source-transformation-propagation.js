@@ -361,8 +361,9 @@ export function setMemberBitwiseOR(obj, prop, val) {
     return result;
 }
 
-export function getLocal(scope, varName) {
+export function getLocal(scope, varName, val) {
     if(expressionAnalysisMode) {
+      lively.notify('read var '+varName, val)
         aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
     }
 }
