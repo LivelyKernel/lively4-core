@@ -228,8 +228,9 @@ class TransactionContext {
             aexprs.forEach(aexpr => {
                 supressed.aexprs.add(aexpr);
             });
-        } else
-            checkAndNotifyAExprs(aexprs);
+        } else {
+          checkAndNotifyAExprs(aexprs);
+        }
     }
 }
 const transactionContext = new TransactionContext();
@@ -309,6 +310,7 @@ export function setMemberDivision(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] /= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 
@@ -332,6 +334,7 @@ export function setMemberLeftShift(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] <<= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 

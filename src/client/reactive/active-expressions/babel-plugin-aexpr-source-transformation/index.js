@@ -138,7 +138,6 @@ export default function(param) {
 
   return {
     pre(file) {
-      console.warn('Wooooohooooo')
       //console.log("fff", file, traverse);
     },
     visitor: {
