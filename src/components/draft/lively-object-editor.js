@@ -581,6 +581,15 @@ export default class ObjectEditor extends Morph {
     this.targetElement.style.backgroundColor = color;
   }
   
+  livelyLoad() {
+    // this.releaseTarget()
+    // this.targetElement = that
+    // var target = lively.elementByID(this.getAttribute("target"))
+    // if (target) {
+    //   this.targetElement = target
+    // }
+  }
+  
   livelyMigrate(oldInstance) {
     this.targetElement = oldInstance.targetElement
   }
