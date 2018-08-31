@@ -4,8 +4,10 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr as baseAExpr, aexprHolder } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
+import { aexpr as baseAExpr, allAExprs } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
+
+import { countBy } from 'utils';
 
 describe('Reflection API', () => {
 
@@ -237,11 +239,36 @@ describe('Reflection API', () => {
     // All.AExpr
     describe('track all undisposed AExprs', () => {
 
-      it('get all aexprs `asArray`', () => {
-        expect(aexprHolder).to.have.property('asArray');
+      describe('`asArray`', () => {
+        
+        function numberOfOccurences(aexpr) {
+          let count = 0;
+          allAExprs.asArray().forEach(item => {
+            if(item === aexpr) {
+              count++;
+            }
+          })
+          return count;
+        }
+        
+        it('get all aexprs `asArray`', () => {
+          expect(allAExprs).to.have.property('asArray');
+        });
+
+        it('should contain a base aexpr once', () => {
+          const expr = baseAExpr(() => {});
+          
+          expect(numberOfOccurences(expr)).to.equal(1);
+          
+          
+        });
+
       });
 
+      // #TODO: stream-based access
+      // #TODO: how to do a ROQ of allAexpr? (circular dependencies)
     });    
+
     // #TODO
     xit('further reflection stuff', () => {
       const expr = aexpr(() => {});

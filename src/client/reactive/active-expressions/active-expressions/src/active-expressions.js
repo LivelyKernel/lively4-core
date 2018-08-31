@@ -10,8 +10,11 @@ function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
 
-export const aexprHolder = {
-  _aexprs: [],
+export const allAExprs = {
+  _aexprs: [1,2,3],
+  addAExpr(aexpr) {
+    this._aexpr.push(aexpr);
+  },
   asArray() {
     return this._aexprs.slice();
   }
@@ -49,6 +52,9 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
+    
+    // #TODO: continue here
+    // allAExprs.addAExpr(this);
   }
 
   /**
