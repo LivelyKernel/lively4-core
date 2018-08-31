@@ -341,7 +341,7 @@ export default class ContextMenu {
           lively.setPosition(morph, lively.pt(0,0), "fixed")
           this.hide();
         }],
-        ["World Mirror", async evt => {
+        ["X Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
