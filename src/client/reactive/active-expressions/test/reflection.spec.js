@@ -4,12 +4,12 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr as baseAExpr } from 'https://lively-kernel.org/lively4/aexpr/src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
+import { aexpr as baseAExpr, aexprHolder } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
 
-describe('Reflection', () => {
+describe('Reflection API', () => {
 
-  describe('dependencies', () => {
+  describe('meta information', () => {
 
     it('set and read a property', () => {
       const expr = aexpr(() => {});
@@ -64,7 +64,7 @@ describe('Reflection', () => {
 
     describe('getDependencies', () => {
 
-      it('getDependencies is defined', () => {
+      it('getDependencies is defined for Rewriting AExprs', () => {
         const expr = aexpr(() => {});
         expect(expr).to.respondTo('getDependencies');
       });
@@ -134,9 +134,114 @@ describe('Reflection', () => {
       });
 
       // #TODO: optimization: do not listen to locals that are not set (not on left-hand side or in an update expression)
+
+      it('get a member dependency', () => {
+        const obj = { x: 17 };
+        
+        const expr = aexpr(() => obj.x);
+
+        const memberDeps = expr.getDependencies().members();
+        expect(memberDeps).to.have.lengthOf(1);
+        expect(memberDeps[0]).to.have.property('object', obj);
+        expect(memberDeps[0]).to.have.property('property', 'x');
+        expect(memberDeps[0]).to.have.property('value', 17);
+      });
+
+      it('get a nested member dependency', () => {
+        const obj = { x: { y: 17 } };
+        
+        const expr = aexpr(() => obj.x.y);
+
+        const memberDeps = expr.getDependencies().members();
+        expect(memberDeps).to.have.lengthOf(2);
+        expect(memberDeps[0]).to.have.property('object', obj);
+        expect(memberDeps[0]).to.have.property('property', 'x');
+        expect(memberDeps[0]).to.have.property('value', obj.x);
+        expect(memberDeps[1]).to.have.property('object', obj.x);
+        expect(memberDeps[1]).to.have.property('property', 'y');
+        expect(memberDeps[1]).to.have.property('value', 17);
+      });
+
+      it('get a member dependency from a method call', () => {
+        const obj = {
+          get() {
+            return this.val;
+          },
+          val: 17
+        };
+        
+        const expr = aexpr(() => obj.get());
+
+        const memberDeps = expr.getDependencies().members();
+        expect(memberDeps).to.have.lengthOf(2);
+        expect(memberDeps[0]).to.have.property('object', obj);
+        expect(memberDeps[0]).to.have.property('property', 'get');
+        expect(memberDeps[0]).to.have.property('value', obj.get);
+        expect(memberDeps[1]).to.have.property('object', obj);
+        expect(memberDeps[1]).to.have.property('property', 'val');
+        expect(memberDeps[1]).to.have.property('value', 17);
+      });
+
+      it('member dependencies change with re-evaluation', () => {
+        const rect = {
+          width: 100,
+          height: 200
+        };
+        let useWidth = true;
+        
+        const expr = aexpr(() => useWidth ? rect.width : rect.height);
+
+        const depsForWidth = expr.getDependencies().members();
+        expect(depsForWidth).to.have.lengthOf(1);
+        expect(depsForWidth[0]).to.have.property('object', rect);
+        expect(depsForWidth[0]).to.have.property('property', 'width');
+        expect(depsForWidth[0]).to.have.property('value', 100);
+        
+        useWidth = false;
+
+        const memberDeps = expr.getDependencies().members();
+        expect(memberDeps).to.have.lengthOf(1);
+        expect(memberDeps[0]).to.have.property('object', rect);
+        expect(memberDeps[0]).to.have.property('property', 'height');
+        expect(memberDeps[0]).to.have.property('value', 200);
+      });
+      
+      describe('global dependency modelled as member dependencies', () => {
+        let temp;
+        
+        beforeEach(() => {
+          temp = window.foo;
+        });
+        
+        afterEach(() => {
+          window.foo = temp;
+          temp = undefined;
+        });
+        
+        it('get global dependencies', () => {
+          window.foo = 200;
+
+          const expr = aexpr(() => foo);
+
+          const memberDeps = expr.getDependencies().members();
+          expect(memberDeps).to.have.lengthOf(1);
+          expect(memberDeps[0]).to.have.property('object', window);
+          expect(memberDeps[0]).to.have.property('property', 'foo');
+          expect(memberDeps[0]).to.have.property('value', 200);
+        });
+
+      });
       
     });
 
+    // All.AExpr
+    describe('track all undisposed AExprs', () => {
+
+      it('get all aexprs `asArray`', () => {
+        expect(aexprHolder).to.have.property('asArray');
+      });
+
+    });    
     // #TODO
     xit('further reflection stuff', () => {
       const expr = aexpr(() => {});
@@ -148,7 +253,6 @@ describe('Reflection', () => {
       
       /* other things*/
       AExpr.EventHistory
-      All.AExpr
       
       Higher-level.Abstractions >> Higher-level.events & relation.to.aexprs
     });

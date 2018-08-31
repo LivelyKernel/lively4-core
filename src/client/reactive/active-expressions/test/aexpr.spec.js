@@ -114,6 +114,47 @@ describe('loop constructs', function() {
   });
 });
 
+describe('new.target', () => {
+  
+  it('source transform allows for new.target', () => {
+    class A {
+      constructor() {
+        this.myClass = new.target;
+      }
+    }
+    
+    expect(new A()).to.have.property('myClass', A);
+  });
+
+  it('new.target works correctly for subclasses', () => {
+    class A {
+      constructor() {
+        this.myClass = new.target;
+      }
+    }
+    
+    class B extends A {
+      constructor() {
+        super();
+        expect(new.target).to.equal(B);
+      }
+    }
+    
+    expect(new B()).to.have.property('myClass', B);
+  });
+
+  it('new.target as part of a member expression', () => {
+    class A {
+      constructor() {
+        this.myClassName = new.target.name;
+      }
+    }
+    
+    expect(new A()).to.have.property('myClassName', 'A');
+  });
+
+});
+
 describe('UpdateOperator', () => {
   xit('x++', () => {});
   xit('++x', () => {});
