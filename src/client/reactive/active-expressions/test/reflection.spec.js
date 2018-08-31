@@ -17,12 +17,24 @@ describe('Reflection API', () => {
     it('set and read a property', () => {
       const expr = aexpr(() => {});
       
-      expect(expr.meta().get('name')).to.be.undefined;
+      expect(expr.meta().get('info')).to.be.undefined;
       
       const expectedName = 'my test AExpr';
-      expr.meta({ name: expectedName });
+      expr.meta({ info: expectedName });
       
-      expect(expr.meta().get('name')).to.equal(expectedName);
+      expect(expr.meta().get('info')).to.equal(expectedName);
+    });
+
+    it('set and read an aexpr`s name', () => {
+      const expr = baseAExpr(() => {});
+
+      expect(expr.name()).to.be.undefined;
+
+      const expectedName = 'my test AExpr';
+      const returnValue = expr.name(expectedName);
+
+      expect(expr.name()).to.equal(expectedName);
+      expect(returnValue).to.equal(expr); // chainability
     });
 
     describe('provide info about strategy', () => {
