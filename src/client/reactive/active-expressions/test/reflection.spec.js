@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr as baseAExpr, allAExprs } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
+import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
 
 import { countBy } from 'utils';
@@ -239,11 +239,11 @@ describe('Reflection API', () => {
     // All.AExpr
     describe('track all undisposed AExprs', () => {
 
-      describe('`asArray`', () => {
+      describe('`allAsArray`', () => {
         
         function numberOfOccurences(aexpr) {
           let count = 0;
-          allAExprs.asArray().forEach(item => {
+          AExprRegistry.allAsArray().forEach(item => {
             if(item === aexpr) {
               count++;
             }
@@ -251,16 +251,16 @@ describe('Reflection API', () => {
           return count;
         }
         
-        it('get all aexprs `asArray`', () => {
-          expect(allAExprs).to.have.property('asArray');
+        it('get all aexprs `allAsArray`', () => {
+          expect(AExprRegistry).to.have.property('allAsArray');
         });
 
         it('should contain a base aexpr once', () => {
           const expr = baseAExpr(() => {});
-          
           expect(numberOfOccurences(expr)).to.equal(1);
           
-          
+          expr.dispose();
+          expect(numberOfOccurences(expr)).to.equal(0);
         });
 
       });

@@ -10,13 +10,25 @@ function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
 
-export const allAExprs = {
-  _aexprs: [1,2,3],
+export const AExprRegistry = {
+
+  _aexprs: new Set(),
+  
+  /**
+   * Handling membership
+   */
   addAExpr(aexpr) {
-    this._aexpr.push(aexpr);
+    this._aexprs.add(aexpr);
   },
-  asArray() {
-    return this._aexprs.slice();
+  removeAExpr(aexpr) {
+    this._aexprs.delete(aexpr);
+  },
+  
+  /**
+   * Access
+   */
+  allAsArray() {
+    return Array.from(this._aexprs);
   }
 };
 
@@ -54,7 +66,7 @@ export class BaseActiveExpression {
     this._annotations = new Annotations();
     
     // #TODO: continue here
-    // allAExprs.addAExpr(this);
+    AExprRegistry.addAExpr(this);
   }
 
   /**
@@ -170,6 +182,7 @@ export class BaseActiveExpression {
 
   dispose() {
     this._isDisposed = true;
+    AExprRegistry.removeAExpr(this);
   }
 
   isDisposed() {
