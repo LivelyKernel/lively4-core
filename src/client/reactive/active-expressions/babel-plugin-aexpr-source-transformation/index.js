@@ -223,6 +223,7 @@ export default function(param) {
               if (
                 // TODO: is there a general way to exclude non-variables?
                 isVariable(path) &&
+                !(t.isMetaProperty(path.parent)) &&
                 !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
                 !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
                 !(t.isUpdateExpression(path.parent)) &&
