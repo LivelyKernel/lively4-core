@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr as baseAExpr } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
+import { aexpr as baseAExpr, aexprHolder } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
 
 describe('Reflection API', () => {
@@ -236,28 +236,9 @@ describe('Reflection API', () => {
 
     // All.AExpr
     describe('track all undisposed AExprs', () => {
-      
-      let temp;
 
-      beforeEach(() => {
-        temp = window.foo;
-      });
-
-      afterEach(() => {
-        window.foo = temp;
-        temp = undefined;
-      });
-
-      it('get global dependencies', () => {
-        window.foo = 200;
-
-        const expr = aexpr(() => foo);
-
-        const memberDeps = expr.getDependencies().members();
-        expect(memberDeps).to.have.lengthOf(1);
-        expect(memberDeps[0]).to.have.property('object', window);
-        expect(memberDeps[0]).to.have.property('property', 'foo');
-        expect(memberDeps[0]).to.have.property('value', 200);
+      it('get all aexprs `asArray`', () => {
+        expect(aexprHolder).to.have.property('asArray');
       });
 
     });    
