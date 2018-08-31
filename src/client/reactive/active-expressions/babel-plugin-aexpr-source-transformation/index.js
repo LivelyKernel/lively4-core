@@ -138,7 +138,6 @@ export default function(param) {
 
   return {
     pre(file) {
-      console.warn('Wooooohooooo')
       //console.log("fff", file, traverse);
     },
     visitor: {
@@ -390,6 +389,8 @@ export default function(param) {
                   if (parentWithScope) {
                     let valueToReturn = t.identifier(path.node.left.name);
                     valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                    let valueForAExpr = t.identifier(path.node.left.name);
+                    valueForAExpr[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                     // #TODO: turn into .insertAfter
                     // caution: doing so automatically inserts a temporary variable (_temp), which is in turn rewritten!
                     //path.insertAfter(
@@ -415,7 +416,8 @@ export default function(param) {
                           t.callExpression(
                             addCustomTemplate(state.file, SET_LOCAL), [
                               getIdentifierForExplicitScopeObject(parentWithScope),
-                              t.stringLiteral(path.node.left.name)
+                              t.stringLiteral(path.node.left.name),
+                              valueForAExpr
                             ]
                           ),
                           t.unaryExpression('void', t.numericLiteral(0))

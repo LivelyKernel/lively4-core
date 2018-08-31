@@ -188,6 +188,7 @@ export function aexpr(func, ...params) {
 function checkAndNotifyAExprs(aexprs) {
     aexprs.forEach(aexpr => {
         aexprStorage.disconnectAll(aexpr);
+        aexprStorageForLocals.disconnectAll(aexpr);
         ExpressionAnalysis.check(aexpr);
     });
     aexprs.forEach(aexpr => aexpr.checkAndNotify());
@@ -227,8 +228,9 @@ class TransactionContext {
             aexprs.forEach(aexpr => {
                 supressed.aexprs.add(aexpr);
             });
-        } else
-            checkAndNotifyAExprs(aexprs);
+        } else {
+          checkAndNotifyAExprs(aexprs);
+        }
     }
 }
 const transactionContext = new TransactionContext();
@@ -308,6 +310,7 @@ export function setMemberDivision(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] /= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 
@@ -331,6 +334,7 @@ export function setMemberLeftShift(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] <<= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 
@@ -374,14 +378,15 @@ export function setMemberBitwiseOR(obj, prop, val) {
     return result;
 }
 
-export function getLocal(scope, varName, val) {
+export function getLocal(scope, varName, value) {
   if(expressionAnalysisMode) {
-    scope[varName] = val;
+    scope[varName] = value;
     aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
   }
 }
 
-export function setLocal(scope, varName) {
+export function setLocal(scope, varName, value) {
+    scope[varName] = value;
     const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
     checkAndNotifyAExprs(affectedAExprs);
 }

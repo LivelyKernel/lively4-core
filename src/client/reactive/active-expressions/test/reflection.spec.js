@@ -109,6 +109,30 @@ describe('Reflection', () => {
         expect(deps2.locals()[0].value).to.equal(deps2.locals()[1].value);
       });
 
+      it('value of local updated on set', () => {
+        let x = false;
+        let y = 31;
+        
+        const expr = aexpr(() => x ? 42 : y);
+        
+        const deps = expr.getDependencies();
+        expect(deps.locals()).to.have.lengthOf(2);
+        expect(deps.locals()[0]).to.have.property('name', 'x');
+        expect(deps.locals()[0]).to.have.property('value', false);
+        expect(deps.locals()[1]).to.have.property('name', 'y');
+        expect(deps.locals()[1]).to.have.property('value', 31);
+        expect(deps.locals()[0].scope).to.equal(deps.locals()[1].scope);
+
+        x = true;
+
+        const deps2 = expr.getDependencies();
+        expect(deps2.locals()).to.have.lengthOf(1);
+        expect(deps2.locals()[0]).to.have.property('name', 'x');
+        expect(deps2.locals()[0]).to.have.property('value', true);
+
+        y = 42;
+      });
+
       // #TODO: optimization: do not listen to locals that are not set (not on left-hand side or in an update expression)
       
     });
