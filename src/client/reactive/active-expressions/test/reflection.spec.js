@@ -6,6 +6,7 @@ chai.use(sinonChai);
 
 import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
+import * as tickingAExpr from "src/client/reactive/active-expressions/aexpr-ticking/src/aexpr-ticking.js";
 
 import { countBy } from 'utils';
 
@@ -255,8 +256,33 @@ describe('Reflection API', () => {
           expect(AExprRegistry).to.have.property('allAsArray');
         });
 
-        it('should contain a base aexpr once', () => {
+        it('should contain a **base** aexpr once', () => {
           const expr = baseAExpr(() => {});
+          expect(numberOfOccurences(expr)).to.equal(1);
+          
+          expr.dispose();
+          expect(numberOfOccurences(expr)).to.equal(0);
+        });
+
+        
+        it('should add a **ticking** aexpr when ready (completely initialized)', () => {
+          const expr = tickingAExpr.aexpr(() => 1);
+          expect(numberOfOccurences(expr)).to.equal(1);
+          
+          expr.dispose();
+          expect(numberOfOccurences(expr)).to.equal(0);
+        });
+
+        it('should add a **frame-based** aexpr when ready (completely initialized)', () => {
+          const expr = frameBasedAExpr.aexpr(() => 1);
+          expect(numberOfOccurences(expr)).to.equal(1);
+          
+          expr.dispose();
+          expect(numberOfOccurences(expr)).to.equal(0);
+        });
+
+        it('should add a **rewriting** aexpr when ready (completely initialized)', () => {
+          const expr = aexpr(() => {});
           expect(numberOfOccurences(expr)).to.equal(1);
           
           expr.dispose();

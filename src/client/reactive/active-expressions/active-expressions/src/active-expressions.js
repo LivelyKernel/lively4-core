@@ -65,7 +65,12 @@ export class BaseActiveExpression {
 
     this._annotations = new Annotations();
     
-    // #TODO: continue here
+    if(new.target === BaseActiveExpression) {
+      this.addToRegistry();
+    }
+  }
+  
+  addToRegistry() {
     AExprRegistry.addAExpr(this);
   }
 

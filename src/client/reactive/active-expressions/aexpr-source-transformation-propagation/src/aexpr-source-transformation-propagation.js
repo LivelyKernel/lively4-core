@@ -142,6 +142,10 @@ class RewritingActiveExpression extends BaseActiveExpression {
     super(func, ...params);
     this.meta({ strategy: 'Rewriting' });
     ExpressionAnalysis.check(this);
+
+    if(new.target === RewritingActiveExpression) {
+      this.addToRegistry();
+    }
   }
 
   dispose() {
