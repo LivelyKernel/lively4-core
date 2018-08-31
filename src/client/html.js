@@ -437,6 +437,7 @@ export default class HTML {
     observer.observe(obj, { 
       subtree: true,
       attributes: true,
+      attributeFilter: ["style"]
     });
     return observer
     
