@@ -35,7 +35,7 @@ class CompositeKey {
   static _get(obj1, obj2) {
     const secondKeyMap = this._getByPrimaryKey(obj1);
     if(!secondKeyMap.has(obj2)) {
-      const compKey = { obj1, obj2 };
+      const compKey = {};
       secondKeyMap.set(obj2, compKey);
       compositeKeyStoreReverse.set(compKey, [obj1, obj2]);
     }
@@ -168,9 +168,9 @@ class DependencyAPI {
     // #TODO: refactor
     const [ scope, name ] = CompositeKey.keysFor(compKey);
     return {
-      scope: scope,
-      name: name,
-      value: scope ? scope[name] : undefined
+      scope,
+      name,
+      value: scope !== undefined ? scope[name] : undefined
     };
   }
   
@@ -178,6 +178,22 @@ class DependencyAPI {
     const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
 
     return compKeys.map(DependencyAPI.compositeKeyToLocal);
+  }
+  
+  static compositeKeyToMember(compKey) {
+    // #TODO: refactor
+    const [ object, property ] = CompositeKey.keysFor(compKey);
+    return {
+      object,
+      property,
+      value: object !== undefined ? object[property] : undefined
+    };
+  }
+  
+  members() {
+    const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
+
+    return compKeys.map(DependencyAPI.compositeKeyToMember);
   }
 }
 
