@@ -29,6 +29,7 @@ export default class LivelyCodecompletion extends Morph {
     this.ctrlDown=false;
     this.clipboardListener(this);
     extraKeys["Alt-1"]=function(cm){
+      lively.notify('hsdfjgkhfgskjehgfkjhg')
       that.getHint(that);}
 
     extraKeys["Alt-3"]=function(cm){
@@ -133,10 +134,7 @@ export default class LivelyCodecompletion extends Morph {
   }
   
   changeHandler(cm,changes){
-    console.log("cursorchanges")
-    console.log(cursor)
-    console.log(changes)
-    console.log(cm.getSelectedRange())
+    
     if(changes.origin!=="setValue"){
       this.handleSelectedRange(cm);
     }
@@ -182,11 +180,9 @@ export default class LivelyCodecompletion extends Morph {
       // this.applyHint(changes);
       changes.cancel();
     }
-    console.log(this.codeTree.root)
   }
   
   deleteLine(cursor,line,changes){
-    console.log(changes)
     if(cursor.ch===0 && cursor.line===this.codeEditor.editor.lineCount()-1){
       console.log("deleting lastline")
       let currLine=this.codeEditor.editor.getLine(cursor.line)

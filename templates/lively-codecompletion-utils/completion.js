@@ -9,8 +9,21 @@ export default class Completion {
       {regex:"^console.log\\(.*?\\)",displayText:"console.log()",explanation:"Empty console log",codeLines:["console.log();"],contextFunc:function(){return true;},applyFunc:this.applyHint,adaptCompletionFunc:this.exampleApply},
       {regex:"^console.log\\(.*?\\)",displayText:"console.log(<clipboard>)",explanation:"Console log that prints the clipboard",codeLines:["console.log();"],contextFunc:function(){return true;},applyFunc:this.applyHint,adaptCompletionFunc:this.clipboardLog},
       {regex:"^/\\*\\*",displayText:"\\**",explanation:"Generates Codestubs for a function in the next line",codeLines:["/**","*","*/"],contextFunc:function(){return true;},applyFunc:this.applyHint,adaptCompletionFunc:this.codeStubs},
-      {regex:"^it\\(*?, \\(\\)\\)",displayText:"\\**",explanation:"Generates Codestubs for a function in the next line",codeLines:["it('', function (){","})"],contextFunc:this.itContextFunction,applyFunc:this.applyHint,adaptCompletionFunc:this.exampleApply}
-      
+      {regex:"^it\\(*?, \\(\\)\\)",displayText:"\\**",explanation:"Generates Codestubs for a function in the next line",codeLines:["it('', function (){","})"],contextFunc:this.itContextFunction,applyFunc:this.applyHint,adaptCompletionFunc:this.exampleApply},
+      {
+        regex: "function\\(", //"^describe\\(\'.*?\', function(){",
+        explanation: "create a function",
+        codeLines: [
+          "function 'gap'('gap') {",
+          "  'gap'",
+          "}"
+        ],
+        contextFunc: function(){
+          return true;
+        },
+        applyFunc: this.applyHint,
+        adaptCompletionFunc: this.exampleApply
+      },      
     ]
       this.codeTree=codeTree;
       this.patternCompletion=patternCompletion;

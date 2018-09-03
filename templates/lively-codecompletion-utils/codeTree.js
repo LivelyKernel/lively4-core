@@ -172,7 +172,7 @@ export default class CodeTree {
                 result += " " + this.children2String(node.children[i]);
             } else {
               if(node.children[i].nameTag==="unfinished"){
-                result += " "+ node.children[i].matchedCode.trim();
+                result += " "+ node.children[i].matchedCode.trim().replace(/ /g,"_");
               }else{
                 result += " " + node.children[i].nameTag;
               }
@@ -201,8 +201,7 @@ export default class CodeTree {
         var endSet=false;
         var endIndex = 0;
         for (var i = 0; i < parent.children.length; i++) {
-            if (tokenCounter >= tokensBefore&&!startSet) {
-              console.log("tokencounter="+tokenCounter+" "+tokensBefore)
+          if (tokenCounter >= tokensBefore&&!startSet) {
               startSet=true;
                 startIndex = i;
             }
@@ -211,14 +210,15 @@ export default class CodeTree {
             } else {
                 tokenCounter++;
             }
-            if (tokenCounter === matchLength + tokensBefore) {
+          if (tokenCounter === matchLength + tokensBefore) {
                 endIndex = i;
                 break;
             }
-          console.log("tokenCounter "+tokenCounter)
         }
-      console.log("startindex "+startIndex)
-        return {nodes: parent.children.slice(startIndex, endIndex+1), startIndex: startIndex, endIndex: endIndex}
+        if(tokenCounter===tokensBefore&&!startSet){
+          startIndex=parent.children.length-1;
+        }
+        return {nodes: parent.children.slice(startIndex, startIndex+1), startIndex: startIndex, endIndex: startIndex+1}
     }
     /**
      * Sets the parent for either all beginning, children or ending..
@@ -237,36 +237,26 @@ export default class CodeTree {
     parse(startLine) {
         var start = startLine.parent;
         var tokenString = this.children2String(start);
-        console.log("tokenString :"+tokenString)
         for (var i = 0; i < parserList.length; i++) {
             var parser = parserList[i];
             var match = tokenString.match(new RegExp(parser.regex));
             if (match) {
-                console.log("match")
                 var newParser = new Node();
                 newParser.nameTag = parser.name
                 var startIndex=0;
                 var endIndex=0;
                 if (parser.attributes && parser.attributes.length > 0) {
                     for (var j = 0; j < parser.attributes.length; j++) {
-                      console.log("attribtueString: "+match[0])
                         var attribute = parser.attributes[j];
                         // calc position of attribute value
                         var beforeMatch = match[0].match(new RegExp(attribute.before));
-                        console.log("before Match")
-                      console.log(beforeMatch)
                         var afterMatch = match[0].match(new RegExp(attribute.after));
                         if (beforeMatch && afterMatch) {
                             var indexOfAfter = afterMatch.index;
                             var indexOfBefore = beforeMatch.index;
                             var beforeNodes = this.extractNodes(beforeMatch, tokenString, start, beforeMatch.index + match.index);
-                          console.log("beforeNodes")
-                          console.log(beforeNodes)
-                          console.log("after match");
-                          console.log(afterMatch)
                             var afterNodes = this.extractNodes(afterMatch, tokenString, start, afterMatch.index + match.index);
-                            var children = start.children.slice(beforeNodes.endIndex + 1, afterNodes.startIndex);
-                            console.log(afterNodes)
+                            var children = start.children.slice(beforeNodes.endIndex , afterNodes.startIndex);
                             if(attribute.name==="content"){
                               newParser.beginning = beforeNodes.nodes;
                               newParser.ending = afterNodes.nodes;
@@ -431,7 +421,6 @@ export default class CodeTree {
             }
             if (parent.children.indexOf(searchedLine) !== -1) {
                 if(this.updateChangedTokens(searchedLine,tokenizedLine)) {
-                   console.log("inside this thing")
                     this.registerGapsInLine(tokenizedLine,line);
                     parent.children[parent.children.indexOf(searchedLine)] = tokenizedLine;
                     this.parse(tokenizedLine)
@@ -459,11 +448,8 @@ export default class CodeTree {
      * @returns {boolean} Returns true if something has changed.
      */
     updateChangedTokens(searchedLine,tokenizedLine){
-      console.log("inside")
         if(searchedLine.protected){
           var tokLineString= this.reconstructTokenCode(tokenizedLine);
-          console.log(searchedLine);
-          console.log(tokLineString)
           for(var i=0;i<searchedLine.children.length;i++){
             var regex=this.getTokenRegex(searchedLine.children[i].nameTag);
             var partialMatch=this.Utils.partialMatch(regex,tokLineString);
@@ -473,21 +459,16 @@ export default class CodeTree {
                 partialMatch=this.Utils.partialMatch(regex,matchString);
               }
             }
-            console.log(tokLineString)
-            console.log(partialMatch)
             if(partialMatch[0]&&partialMatch[1].index===0){
-              console.log("partial match: "+partialMatch[1][0])
               tokLineString=tokLineString.substring(partialMatch[1][0].length);
               searchedLine.children[i].matchedCode=partialMatch[1]
               this.calcAttributesProtected(this.findTokenIndex(searchedLine.children[i].nameTag),tokLineString,searchedLine.children[i]);
             }
           }
-          console.log("after.... "+tokLineString)
           if(tokLineString.length===0){
             return true;
           }
           searchedLine.protected=false;
-          console.log("updatechange is false");
         }
         if(searchedLine.children.length!==tokenizedLine.children.length){
             return true;
@@ -501,7 +482,6 @@ export default class CodeTree {
         for(var i=0;i<searchedLine.children.length;i++){
           for (var key in searchedLine.children[i].attributes) {
             if(searchedLine.children[i].attributes[key].value==="'gap'"&&tokenizedLine.children[i].attributes[key]&&tokenizedLine.children[i].attributes[key].value===""){  
-              console.log("gap not replaced")
             }else{
               if(searchedLine.children[i].attributes[key].value==="'gap'"){
                 this.removeAttributeInGaps(searchedLine.children[i].attributes[key]);
@@ -511,7 +491,6 @@ export default class CodeTree {
           }
           searchedLine.children[i].matchedCode=tokenizedLine.children[i].matchedCode;
         }
-        console.log("nothing has changed")
         return false;
     }
   
@@ -543,9 +522,7 @@ export default class CodeTree {
     }
   
     getTokenRegex(tokenName){
-      console.log("looking for regex "+tokenName)
       var index= this.findTokenIndex(tokenName);
-      console.log("index "+index)
       if(index===-1){
         return null;
       }
