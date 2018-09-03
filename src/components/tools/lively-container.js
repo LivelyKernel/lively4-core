@@ -1216,7 +1216,7 @@ export default class Container extends Morph {
     }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-    await navbar.show(this.getURL(), this.content, navbar.contextURL)
+    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL)
   }
 
   isFullscreen() {

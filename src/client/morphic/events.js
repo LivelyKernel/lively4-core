@@ -1,9 +1,12 @@
 import * as cop  from 'src/client/ContextJS/src/contextjs.js'
 
+// var beforeEvent = new WeakMap()
+
 export default class Events {
   
   static logBeforeEvent(obj, type, evt, cb) {
     // do nothing
+    // beforeEvent.set(evt, performance.now())
     // console.log("before evt ", evt)
   }
 
@@ -11,13 +14,15 @@ export default class Events {
 //     return proceed()
 //   }
 
-//   static logAroundEvent(obj, type, event, cb) {
-//     // do nothing
-//   }
-  
+  static logAfterEvent(obj, type, evt, cb) {
+    // do nothing
+    // console.log("after evt ", type, performance.now() - beforeEvent.get(evt))
+
+  }
+
   static installHooks() {
-    this.installHooksContextJS()
-    // this.installHooksPlain()
+    // this.installHooksContextJS()
+    this.installHooksPlain()
   }
   
   static installHooksContextJS() {
@@ -41,10 +46,14 @@ export default class Events {
           cop.withoutLayers([layer], () => {
             EventHooks.logBeforeEvent(this, type, args[0], cb)
           })
-          return cb.apply(this, args)
+          var result = cb.apply(this, args)
+          cop.withoutLayers([layer], () => {
+            EventHooks.logAfterEvent(this, type, args[0], cb)
+          })
+          return result
         })
         cbMap.set(cb, func)
-        cop.proceed(type, func, ...rest) 
+        return cop.proceed(type, func, ...rest);
       }
     })
     
@@ -84,7 +93,16 @@ export default class Events {
               EventHooks.__isLogging = false
             }
           }
-          return cb.apply(this, args)
+          var result = cb.apply(this, args)
+          if (!EventHooks.__isLogging) {
+            try {
+              EventHooks.__isLogging = true
+              EventHooks.logAfterEvent(this, type, args[0], cb)
+            } finally {
+              EventHooks.__isLogging = false
+            }
+          }
+          return result
         })
         cbMap.set(cb, func)
         return window.__originalAddEventListener.apply(this, [type, func, ...rest])
