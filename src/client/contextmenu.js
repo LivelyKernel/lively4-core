@@ -346,6 +346,11 @@ export default class ContextMenu {
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }], 
+        ["X Ray Events", async evt => {
+          var morph  = await lively.openPart("XRayEvents") 
+          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          this.hide();
+        }], 
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],

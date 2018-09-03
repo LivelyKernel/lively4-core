@@ -1,0 +1,386 @@
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; user-select: none; z-index: 1000; left: -336.4px; top: -112.4px;" draggable="false" id="XRayEvents" data-lively-part-name="XRayEvents"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+  if(!this.isdragging) return
+  lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
+  this.ajustRootPosition()
+  
+}</script><script data-name="onDragStop" type="lively4script">function onDragStop(evt) {
+  this.isdragging = false
+  lively.removeEventListener('mirror-dragging', document.body.parentElement)
+}</script><script data-name="onDragHandleStop" type="lively4script">function onDragHandleStop(evt) {
+  this.isdragging = false
+  lively.removeEventListener('mirror-dragging', document.body.parentElement)
+  evt.stopPropagation()
+
+}</script><script data-name="onDragHandleStart" type="lively4script">function onDragHandleStart(evt) {
+  if(evt.altKey || evt.shiftKey) return 
+  this.isdragging = true
+  this.dragOffset = lively.getPosition(this.handle).subPt(lively.getPosition(evt))
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDragHandle(evt));
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragHandleStop(evt));
+  evt.stopPropagation()
+
+}</script><script data-name="onDragHandle" type="lively4script">function onDragHandle(evt) {
+  if(!this.isdragging) return
+  lively.setPosition(this.handle, this.dragOffset.addPt(lively.getPosition(evt)))
+  this.ajustRootPosition()
+  evt.stopPropagation()
+}</script><script data-name="onFilterChanged" type="lively4script">function onFilterChanged(filter) {
+  try {
+    this.filterFunc = eval(filter)
+    this.input.style.border = "1px solid gray"
+  } catch(err) {
+    this.input.style.border = "2px solid red"
+  }
+  this.updateWorld()
+}</script><script data-name="onDragStart" type="lively4script">function onDragStart(evt) {
+  if(evt.altKey || evt.shiftKey || evt.ctrlKey) return 
+  this.isdragging = true
+  // this.updateWorld()
+  this.dragOffset = lively.getPosition(this).subPt(lively.getPosition(evt))
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointermove', evt => this.onDrag(evt));
+  lively.addEventListener('mirror-dragging', document.body.parentElement,'pointerup', evt => this.onDragStop(evt));
+
+}</script><script data-name="filterElements" type="lively4script">function filterElements(all) {
+  // urn all
+  if (!this.filterFunc) {
+    this.filterFunc = ea => ea.tagName && ea.tagName.match(/-/)
+  }
+  
+  return Array.from(all).filter(ea => ea && ea.tagName).filter(this.filterFunc).slice(0,2000)
+ 
+}</script><script data-name="updateWorld" type="lively4script">function updateWorld() {
+
+  this.world.innerHTML = ""
+  this.addElements(lively.allElements(true))
+  // this.stopHierrachyObservation(document.body)
+  
+  this.startHierrachyObservation(document.body)
+}</script><script data-name="stopHierrachyObservation" type="lively4script">function stopHierrachyObservation(obj, visited=new Set()) {
+  if (obj.isMetaNode) return;
+  if (obj instanceof Text) return
+
+  if (!this.hierrachyObservers) {
+    return // nothing to do
+  }
+  if (visited.has(obj)) return // guard endless loops
+  visited.add(obj)
+  this.removeElements([obj])
+  // console.log("stopHierrachyObservation", obj)
+
+               
+  var observer = this.hierrachyObservers.get(obj)
+  if (observer) {
+    observer.disconnect()
+    this.hierrachyObservers.set(obj, null)
+  }
+  // recursively, stop it for all children and its children
+  if (obj.childNodes) {
+    obj.childNodes.forEach(ea => {
+      this.stopHierrachyObservation(ea)
+    })
+  }
+  if (obj.shadowRoot) {
+     this.stopHierrachyObservation(obj.shadowRoot)
+  }
+}</script><script data-name="registerOnClose" type="lively4script">function registerOnClose(obj) {
+  if (!obj || !obj.parentElement) return;
+  
+  if (obj.__onCloseObserver) obj.__onCloseObserver.disconnect();
+  
+  var observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "childList") {
+          mutation.removedNodes.forEach(ea => {
+            if (ea == obj) {
+              obj.dispatchEvent(new CustomEvent("on-close"))
+            }  
+          })
+        }
+      });
+    })
+  observer.observe(obj.parentElement, { 
+    childList: true,
+  });
+  
+  obj.__onCloseObserver = observer
+}</script><script data-name="startHierrachyObservation" type="lively4script">function startHierrachyObservation(obj, visited=new Set()) {
+  if (obj.isMetaNode) return;
+  if (!obj) return
+  if (obj instanceof Text) return
+  
+  if (!this.hierrachyObservers) {
+    this.hierrachyObservers = new WeakMap()
+  }
+  if (visited.has(obj)) return // guard endless loops
+  visited.add(obj)
+  this.addElements([obj])
+  
+  var observer = this.hierrachyObservers.get(obj)
+  if (!observer) {
+    // console.log("startHierrachyObservation", obj)
+    observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "childList") {
+          mutation.removedNodes.forEach(ea => {
+            this.stopHierrachyObservation(ea) 
+          })
+          mutation.addedNodes.forEach(ea => {
+            this.startHierrachyObservation(ea)
+          })
+        }
+      });
+    })
+    this.hierrachyObservers.set(obj, observer)
+    observer.observe(obj, { 
+      // subtree: true, /* does not go into shadow root, and does not allow to filter */
+      childList: true,
+    });
+    
+    // recursively, stop it for all children and its children
+    if (obj.childNodes) {
+      obj.childNodes.forEach(ea => {
+        this.startHierrachyObservation(ea)
+      })
+    }
+    if (obj.shadowRoot) {
+       this.startHierrachyObservation(obj.shadowRoot)
+    }
+  }
+  
+
+}</script><script data-name="disableEventXRay" type="lively4script">function disableEventXRay() {
+
+  if (this.xRayLayer) {
+    this.xRayLayer.beNotGlobal()
+  }
+  
+}</script><script data-name="ajustRootPosition" type="lively4script">function ajustRootPosition() {
+  var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
+  lively.setPosition(this.handle, extent)
+  
+  lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+  lively.setExtent(this.frame, extent)
+  
+  
+  var barHeight = extent.y + 20
+  lively.setExtent(this.frameHandlesLeft, lively.pt(20, barHeight))
+  lively.setPosition(this.frameHandlesLeftLabel, lively.pt(0, barHeight - 10))
+  
+  lively.setExtent(this.input, lively.pt(extent.x, 15))
+}</script><script data-name="removeElements" type="lively4script">function removeElements(elements) {
+  if (!this.elementMap || !elements) return;
+  
+  
+//   elements.forEach(ea => {
+//     if (!ea || !ea.tagName) return;
+//     lively.allElements(true, ea).forEach(element => {
+//       var mirrorElement = this.elementMap.get(element)
+       
+//       if (mirrorElement) {
+//         // console.log("remove", mirrorElement)
+//         lively.html.removeContextStyleChangeListener(ea, mirrorElement.updatePosition)
+//         mirrorElement.remove()
+//       }
+//     })
+//   })
+
+}</script><script data-name="enableEventXRay" type="lively4script">function enableEventXRay() {
+  this.eventXRay = true
+  this.eventElementCounter = new WeakMap()
+  this.eventTypeCounter= new Map()
+  
+  if (this.xRayLayer) {
+    this.xRayLayer.beNotGlobal()
+  }
+  
+  var cop = this.cop
+  var self = this
+  var map = this.elementMap || new Map() 
+  
+  if (!this.cbMap) {
+    this.cbMap = new WeakMap()
+  }
+  var cbMap = this.cbMap
+  
+  var layer = cop.layer("EventListener")
+  layer.refineClass(HTMLElement, {
+    removeEventListener(type, cb, ...rest) {
+      var wrappedCB = cbMap.get(cb) // we have to keep the illusion
+      return cop.proceed(type, wrappedCB || cb, ...rest)
+    },
+    
+    addEventListener(type, cb, ...rest) {
+      // console.log("addEventListener " + type)
+      // we cannot just wrapp a callback cb, because callbacks are also used in removeEventListener...
+      var counter = 0
+      var func = cbMap.get(cb) || (function(...args) {
+        // console.log('func ' + type)
+        
+        cop.withoutLayers([layer], () => {
+         
+          self.logEvent(this, type, args[0], cb)
+          
+        })
+        return cb.apply(this, args)
+      }) 
+      cbMap.set(cb, func)
+      cop.proceed(type, func, ...rest) 
+    }
+  })
+  this.xRayLayer = layer
+  window.xRayLayer =  this.xRayLayer
+  this.xRayLayer.beGlobal()
+}</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  (async () => {
+    
+    this.cop = await System.import("src/client/ContextJS/src/contextjs.js")
+    
+    await lively.sleep(1000)
+    
+    this.registerOnClose(this)
+    lively.removeEventListener("self", this)
+    lively.addEventListener("self", this, "on-close", () => this.onClose())
+
+    this.mirrorWorld()
+    lively.html.registerContextStyleObserver(document.body, "XRay")
+    
+    this.enableEventXRay()
+    
+    // lively.html.disconnectContextStyleObserver(document.body, "XRay")  
+    
+  })()
+}</script><script data-name="onClose" type="lively4script">function onClose() {
+  this.stopHierrachyObservation(document.body)
+  
+  this.disableEventXRay()
+    
+}</script><script data-name="selectElement" type="lively4script">function selectElement(element) {
+  
+  lively.showHalo(element)
+  
+}</script><script data-name="addElements" type="lively4script">function addElements(elements) {
+  if (!elements) return;
+  
+}</script><script data-name="logEvent" type="lively4script">function logEvent(obj, type, evt, cb) {
+ if (this.isMetaNode) return;
+  if (!this.filterFunc || !this.filterFunc(obj, type, evt, cb)) {
+    return  
+  }
+  
+  this.eventTypeCounter.set(type, (this.eventTypeCounter.get(type) || 0) + 1)
+  this.eventElementCounter.set(this, (this.eventElementCounter.get(this) || 0) + 1)
+ 
+  // // this.limit = 100
+  // if (!this.limit || this.limit <= 0) {
+  //   return
+  // } 
+  // this.limit -= 1
+  console.log("evt", evt)
+  
+  var div = lively.showEvent(evt)
+  div.style.fontSize = "8px"
+  div.style.color = "blue"
+  div.innerHTML = type 
+  div.isMetaNode = true
+  var pos = lively.getGlobalPosition(div)
+  
+  this.world.appendChild(div)
+  if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
+    lively.setGlobalPosition(div, lively.getGlobalPosition(obj))
+  } else {
+    lively.setGlobalPosition(div, pos)
+  }
+
+}</script><script data-name="mirrorWorld" type="lively4script">function mirrorWorld() {
+  this.style.zIndex = 1000
+  this.style.overflow = ""
+  this.style.userSelect = "none"
+  
+  if (!this.shadowRoot) {
+    this.createShadowRoot()
+  }
+  this.style.border = ""
+  
+  this.shadowRoot.innerHTML = ""
+  this.frame = document.createElement("div")
+  this.frame.isMetaNode = true
+  this.shadowRoot.appendChild(this.frame)
+  this.frame.style.overflow = "hidden"
+  lively.setExtent(this.frame, lively.pt(300,300))
+  lively.setPosition(this.frame, lively.pt(0,0))
+  this.style.background = ""
+  
+  this.frame.style.pointerEvents = "none";
+  // vs .
+  // lively.removeEventListener('dragging', this)
+  // lively.addEventListener('dragging', this.frame, 'pointerdown', evt => this.onDragStart(evt));
+
+  
+  this.world = document.createElement("div")
+  this.world.isMetaNode = true
+  this.frame.appendChild(this.world)
+  this.frame.style.background = "rgba(255,255,255,0.4)"
+  
+  
+  // this.button = document.createElement("button")
+  // this.button.textContent = "World Mirror"
+  // this.button.isMetaNode = true
+  // this.shadowRoot.appendChild(this.button)
+  // lively.setPosition(this.button, pt(0,-30))
+  // this.button.style.zIndex=  110000
+  // this.button.addEventListener("click", () => {
+  //   this.frame.innerHTML = ""
+  //   this.mirrorWorld()
+  // })
+//   this.label = document.createElement("div")
+//   this.label.isMetaNode = true
+//   this.shadowRoot.appendChild(this.label)
+
+
+  this.input = document.createElement("input")
+  this.input.value = "(obj, type, evt) => type == 'mousedown'"
+  this.input.isMetaNode = true
+  this.input.style.width = "300px"
+  this.shadowRoot.appendChild(this.input)
+  lively.setPosition(this.input, lively.pt(0,-20))
+  this.input.addEventListener("keyup", evt => {
+      if (evt.keyCode == 13) { // ENTER
+        this.onFilterChanged(this.input.value);
+      }
+    });
+  this.onFilterChanged(this.input.value)
+  // this.button.style.zIndex=  110000
+  // this.button.addEventListener("click", () => {
+  //   this.frame.innerHTML = ""
+  //   this.mirrorWorld()
+  // })
+  
+  
+  this.handle = document.createElement("div")
+  this.handle.isMetaNode = true
+  this.handle.style.backgroundColor = "gray"
+  lively.setExtent(this.handle, lively.pt(10,10))
+  this.shadowRoot.appendChild(this.handle)
+  lively.setPosition(this.handle, lively.pt(300,300))
+  lively.addEventListener('dragging', this.handle, 'pointerdown', evt => this.onDragHandleStart(evt));
+  
+  this.frameHandlesLeft = document.createElement("div")
+  this.frameHandlesLeft.isMetaNode = true
+  this.frameHandlesLeft.style.backgroundColor = "rgba(100,100,250,0.5)"
+  lively.setPosition(this.frameHandlesLeft, lively.pt(-20,-20))
+  this.shadowRoot.appendChild(this.frameHandlesLeft)
+  lively.addEventListener('dragging', this.frameHandlesLeft, 'pointerdown', evt => this.onDragStart(evt));
+  
+  this.frameHandlesLeftLabel = document.createElement("div")
+  this.frameHandlesLeftLabel.textContent = "XRay Events"
+  this.frameHandlesLeftLabel.style.transformOrigin = "0 0"
+  this.frameHandlesLeftLabel.style.transform = "rotate(270deg)"
+  this.frameHandlesLeftLabel.style.width = "100px"
+  this.frameHandlesLeftLabel.style.color = "white"
+  
+  this.frameHandlesLeft.appendChild(this.frameHandlesLeftLabel)
+  
+  this.updateWorld()
+  this.ajustRootPosition()
+  
+}</script></div>
