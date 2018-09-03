@@ -341,16 +341,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Shift-Alt-.": cm => {
         TernCodeMirrorWrapper.showReferences(cm, this);
       },
-      // #TODO
-      // #KeyboardShortcut Alt-Right inverse code folding (indent)
-      "Alt-Right": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },
-      // #TODO
-      // #KeyboardShortcut Alt-Left inverse code folding (dedent)
-      "Alt-Left": cm => {
-        lively.warn('Inverse Code Folding not yet implemented')
-      },      
       // #KeyboardShortcut Alt-C capitalize letter      
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
@@ -472,29 +462,30 @@ export default class LivelyCodeMirror extends HTMLElement {
     return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
   }
   
-  wrapWidget(name, from, to) {
-    var widget = document.createElement("span")
-    widget.style.whiteSpace = "normal"
-    var promise = lively.create(name, widget)
+  wrapWidget(name, from, to, options) {
+    var widget = document.createElement("span");
+    widget.style.whiteSpace = "normal";
+    var promise = lively.create(name, widget);
     promise.then(comp => {
-      comp.style.display = "inline"
-      comp.style.backgroundColor = "rgb(250,250,250)"
-      comp.style.display = "inline-block"
-      comp.style.minWidth = "20px"
-      comp.style.minHeight = "20px"
-    })
+      Object.assign(comp.style, {
+        display: "inline",
+        backgroundColor: "rgb(250,250,250)",
+        display: "inline-block",
+        minWidth: "20px",
+        minHeight: "20px"
+      });
+    });
     // #TODO, we assume that it will keep the first widget, and further replacements do not work.... and get therefore thrown away
-    var marker = this.editor.doc.markText(from, to, {
+    var marker = this.editor.doc.markText(from, to, Object.assign({
       replacedWith: widget
-    }); 
-    promise.then(comp => comp.marker = marker)
+    }, options));
+    promise.then(comp => comp.marker = marker);
     
-    return promise
+    return promise;
   }
   
   
   async printResult(result, obj, isPromise) {
-    debugger
     var editor = this.editor;
     var text = result
     var isAsync = false
@@ -516,8 +507,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       Array.from(obj.keys()).sort().forEach(key => mapObj[key] = obj.get(key))
       obj = mapObj
     }
-    if (Array.isArray(obj)) {
-      if (typeof obj[0] == 'object') {
+    if (Array.isArray(obj) && !obj.every(ea => ea instanceof Node)) {
+      if (obj.every(ea => (typeof ea == 'object') && !(ea instanceof String))) {
         promisedWidget = this.printWidget("lively-table").then( table => {
           table.setFromJSO(obj)      
           table.style.maxHeight = "300px"
@@ -526,7 +517,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         })
       } else {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: ea}}))      
+          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))      
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"
           return table
@@ -714,7 +705,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (mode == "gfm") {
       // #TODO make language customizable
-      spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      var m = this.value.match(/^.*lang\:(.._..)/)
+      if (m) {
+        var lang = m[1]
+        var dict = await spellCheck.loadDictLang(lang)
+        if (dict) {
+          lively.notify("start spell checking lang: " + lang)
+          spellCheck.startSpellCheck(this.editor, dict)
+        } else {
+          console.log("spellchecking language not found: " + lang)
+        }
+      } else {
+        spellCheck.startSpellCheck(this.editor, await spellCheck.current())
+      }
     }
     
   }
@@ -919,6 +922,37 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
     } while (m);
   }
+  
+//    async wrapImageLinks() {
+//     var regEx = new RegExp("\!\[\]\(([A-Za-z0-9_ .]\.((jpg)|(png)))$\)", "g");
+//     do {
+//       var m = regEx.exec(this.value);
+//       if (m) {
+//         var from = m.index 
+//         var to = m.index + m[0].length 
+//         var url = m[1]
+//         await this.wrapWidget("span", this.editor.posFromIndex(from), 
+//                               this.editor.posFromIndex(to)).then( div => {
+//           div.style.backgroundColor = "rgb(240,240,240)"
+          
+//           if (m[1].match(/^data:image/)) {
+//             var img = document.createElement("img")
+//             img.src = m[1]
+//             img.title = m[1].slice(0,50) + "..."
+//             img.style.maxHeight = "100px"
+
+//             div.appendChild(document.createTextNode("\""))
+//             div.appendChild(img)
+//             div.appendChild(document.createTextNode("\""))            
+//           } else {
+//             div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+//           }
+//         })
+
+//       }
+//     } while (m);
+//   }
+  
   
   async wrapImports() {
     // dev mode alternative to #DevLayers, a #S3Pattern: add code the scopes your dev example inline while developing

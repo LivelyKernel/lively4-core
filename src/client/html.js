@@ -14,13 +14,14 @@ class KeyboardHandler {
   // Generic Keyboad handler to get rid of the magic keycode numbers 
   static getDispatchHandler(key) {
     return ({
+      "9": "onTab",
+      "13": "onEnter",
+      "27": "onEsc",
       "32": "onSpace",
       "37": "onLeft",
       "38": "onUp",
       "39": "onRight",
       "40": "onDown",
-      "13": "onEnter",
-      "27": "onEsc",
     })[key]
   }
   
@@ -325,8 +326,9 @@ export default class HTML {
     return saveAsURL
   }
 
-  
  static async registerAttributeObservers(obj) {
+    obj._attrObserver && obj._attrObserver.disconnect(); 
+
     obj._attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") { 
@@ -345,6 +347,106 @@ export default class HTML {
     });
     obj._attrObserver.observe(obj, { attributes: true });  
   }
+
+  // ## Example workspace
+  /*
+      import html from "src/client/html.js"
+      lively.html.registerContextStyleObserver(document.body)
+
+      lively.html.registerContextStyleObserver(document.body).then(o => {
+        o.disconnect()
+      })
+  */
   
+  static removeContextStyleChangeListener(obj, cb) {
+    if (!obj || ! cb) {
+      throw new Error("parameter missing")
+    }
+    var map = this.getContextStyleCallbackMap()
+    var array = map.get(obj)
+    if (array) {
+      array = []
+       map.set(obj, array.filter(ea => ea !== cb))
+    }
+  }
+  
+  static addContextStyleChangeListener(obj, cb) {
+    if (!obj || ! cb) {
+      throw new Error("parameter missing")
+    }
+    var map = this.getContextStyleCallbackMap()
+    var array = map.get(obj)
+    if (!array) {
+      array = []
+       map.set(obj, array)
+    }
+    array.push(cb)
+  }
+  
+  
+  static getContextStyleCallbackMap() {
+    if (!this.contextStyleCallbackMap) {
+      this.contextStyleCallbackMap = new WeakMap()
+    }
+    return  this.contextStyleCallbackMap
+  }
+  
+  
+  static async disconnectContextStyleObserver(obj, domain="") {
+    var observer = obj["_contextStyleObserver" + domain] 
+    if (observer) {
+      observer.disconnect(); 
+    }
+  }
+  
+  
+  static async registerContextStyleObserver(obj, domain="") {
+    this.disconnectContextStyleObserver(obj, domain);
+
+    
+    var map = this.getContextStyleCallbackMap()
+    
+    var observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes" 
+            && mutation.attributeName == "style"
+            && mutation.target !== document.body) {
+          
+        
+          
+          var changeEvent = new CustomEvent("context-style-changed", {
+            bubbles: false,
+            target: mutation.target
+          })
+          if (mutation.target.isMetaNode) return;
+          mutation.target.dispatchEvent(changeEvent)  
+          lively.allElements(true, mutation.target).forEach(ea => {
+            if (ea.isMetaNode) return;
+            var cbArray = map.get(ea) 
+            if (cbArray) {
+              cbArray.forEach(eaCB => {
+                eaCB(changeEvent)
+              })
+            }
+          
+         })      
+        }
+      });
+    })
+    obj["_contextStyleObserver" + domain] = observer 
+    observer.observe(obj, { 
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style"]
+    });
+    return observer
+    
+  }
 }
+
+// #LiveProgramming #Hack #CircularDependency #TODO
+if (window.lively) {
+  window.lively.html = HTML
+}
+
 

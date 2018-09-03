@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { BaseActiveExpression } from './../../src/base/base-active-expressions.js';
+import { BaseActiveExpression } from './../../src/active-expressions.js';
 
 describe('Base Active Expressions', () => {
     it("basic callback", () => {

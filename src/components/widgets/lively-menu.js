@@ -5,7 +5,7 @@ import html from  'src/client/html.js'
 const FILTER_KEY_BLACKLIST = [
   'Control', 'Shift', 'Capslock', 'Alt',
   ' ', 'Enter', 'Escape',
-  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'
+  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'
 ];
 
 export default class LivelyMenu extends Morph {
@@ -134,6 +134,15 @@ export default class LivelyMenu extends Morph {
       this.enterSubmenu(evt);
     }
   }
+
+  onTabDown(evt) {
+    if(evt.shiftKey) {
+      this.onLeftDown(evt);
+    } else {
+      this.onRightDown(evt);
+    }
+  }
+  
   enterSubmenu(evt) {
     lively.focusWithoutScroll(this.submenu);
     this.submenu.sellectUpOrDown(evt);

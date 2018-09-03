@@ -19,7 +19,7 @@ import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive  from './auth-googledrive.js';
 import expose from './expose.js';
-import { toArray, uuid as generateUUID } from 'utils';
+import { toArray, uuid as generateUUID, wait } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
@@ -167,6 +167,11 @@ export default class Lively {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+      // #TODO: duplicated code #refactor
+    } else if(path.match('client/vivide')) {
+      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
+      dependedModules = lively.findDependedModules(path, true);
+      dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
     } else {
       // Find all modules that depend on me
       dependedModules = lively.findDependedModules(path);
@@ -638,7 +643,7 @@ export default class Lively {
 
   static openContextMenu(container, evt, target, worldContext) {
 
-    if (HaloService.areHalosActive() ||
+    if (window.HaloService && HaloService.areHalosActive() ||
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that;
     }
@@ -848,6 +853,8 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
+    
+    
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
     setTimeout(() => {persistence.current.start()}, 2000)
@@ -890,6 +897,11 @@ export default class Lively {
     lively.notify("unloading Lively is not supported yet! Please reload page....");
   }
 
+  /*
+   * After changing code... we have to update intances...
+   * a) don't touch the instance, just update the class
+   *
+   */
   static async updateTemplate(html) {
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
@@ -944,8 +956,19 @@ export default class Lively {
           inspector.inspect(newInstance)
         }
       })
-
     });
+  
+
+    // new (old) strategy... don't throw away the instance... just update them inplace?
+    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach( ea => {
+      if (ea.livelyUpdate) {
+        try {
+          ea.livelyUpdate()
+        } catch(e) {
+          console.error(e)
+        }
+      }
+    })
   }
 
   static showInfoBox(target) {
@@ -1656,25 +1679,40 @@ export default class Lively {
   static halt(time=1000) {
     window.setTimeout(() => {
       debugger
-    },time)
+    }, time);
   }
 
   static sleep(time=1000) {
-    return new Promise(resolve => {
-      window.setTimeout(resolve, time)
-    })
+    return wait(time);
   }
 
+  static async time(func) {
+    var start = performance.now()
+    if (func) {
+      await func()
+    } 
+    return performance.now() - start
+  }
+  
+  
   static allElements(deep=false, root=document.body, all=new Set()) {
+    if (deep && root.shadowRoot) {
+      this.allElements(deep, root.shadowRoot, all)
+    }
     root.querySelectorAll("*").forEach(ea => {
       all.add(ea)
       if (deep && ea.shadowRoot) {
         this.allElements(deep, ea.shadowRoot, all)
       }
     })
+    all.add(root)
     return all
   }
 
+  static findAllElements(filterFunc, deep) {
+    return Array.from(this.allElements(deep)).filter(filterFunc)
+  }
+  
   static allParents(element, parents=[]) {
     if (!element.parentElement) {
       return parents
@@ -1697,6 +1735,8 @@ export default class Lively {
     return "https://lively4/scheme/" + m[1] +"/" + m[2]
   }
 
+  
+  
 }
 
 if (!window.lively || window.lively.name != "Lively") {

@@ -14,7 +14,7 @@ const SET_MEMBER_BY_OPERATORS = {
   '*=': 'setMemberMultiplication',
   '/=': 'setMemberDivision',
   '%=': 'setMemberRemainder',
-  //'**=': 'setMemberExponentiation',
+  '**=': 'setMemberExponentiation',
   '<<=': 'setMemberLeftShift',
   '>>=': 'setMemberRightShift',
   '>>>=': 'setMemberUnsignedRightShift',
@@ -22,7 +22,6 @@ const SET_MEMBER_BY_OPERATORS = {
   '^=': 'setMemberBitwiseXOR',
   '|=': 'setMemberBitwiseOR'
 };
-
 const SET_LOCAL = "setLocal";
 const GET_LOCAL = "getLocal";
 
@@ -224,6 +223,7 @@ export default function(param) {
               if (
                 // TODO: is there a general way to exclude non-variables?
                 isVariable(path) &&
+                !(t.isMetaProperty(path.parent)) &&
                 !(t.isForInStatement(path.parent) && path.parentKey === 'left') &&
                 !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') &&
                 !(t.isUpdateExpression(path.parent)) &&
@@ -277,7 +277,8 @@ export default function(param) {
                         t.callExpression(
                           addCustomTemplate(state.file, GET_LOCAL), [
                             getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.name)
+                            t.stringLiteral(path.node.name),
+                            nonRewritableIdentifier(path.node.name)
                           ]
                         )
                       )
@@ -389,6 +390,8 @@ export default function(param) {
                   if (parentWithScope) {
                     let valueToReturn = t.identifier(path.node.left.name);
                     valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                    let valueForAExpr = t.identifier(path.node.left.name);
+                    valueForAExpr[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
                     // #TODO: turn into .insertAfter
                     // caution: doing so automatically inserts a temporary variable (_temp), which is in turn rewritten!
                     //path.insertAfter(
@@ -414,7 +417,8 @@ export default function(param) {
                           t.callExpression(
                             addCustomTemplate(state.file, SET_LOCAL), [
                               getIdentifierForExplicitScopeObject(parentWithScope),
-                              t.stringLiteral(path.node.left.name)
+                              t.stringLiteral(path.node.left.name),
+                              valueForAExpr
                             ]
                           ),
                           t.unaryExpression('void', t.numericLiteral(0))

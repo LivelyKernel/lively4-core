@@ -1,32 +1,19 @@
 "enable aexpr";
-import { debounce } from "utils";
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
+import { debounce, uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
 
-import Morph from 'src/components/widgets/lively-morph.js';
-import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
-import MultiSelection from 'src/client/vivide/multiselection.js';
-import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation, wait } from 'utils';
+export default class VivideTreemapWidget extends VivideWidget {
 
-export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
-  get multiSelectionConfig() {
-    return [this, {
-      onSelectionChanged: selection => this.selectionChanged(selection)
-    }];
-  }
-  
   get tree() { return this.get('#tree'); }
   get d3treemap() { return this.get('#d3-treemap'); }
   
   async initialize() {
     this.windowTitle = "VivideTreeWidget";
-    // Callback set in the view
-    this.expandChild = null;
-    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+
+    this.addEventListener('extent-changed', debounce.call(evt => { this.onExtentChanged(evt); }, 500));
   }
   onExtentChanged(evt) {
     this.d3treemap && this.d3treemap.updateViz && this.d3treemap.updateViz();
-  }
-  dataForDOMNode(treeItem) {
-    return this.dataByTreeItem.get(treeItem);
   }
 
   createTreeNodeForLabel(label) {
@@ -38,35 +25,17 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     return model.properties.get('label') || textualRepresentation(model.object);
   }
   async attachChildrenFromModel(model, treeNode) {
-    const getChildLayerOfVivideObject = async (model) => {
-      let childLayer = model.childLayer;
-      
-      if (!childLayer || !childLayer.objects.length) {
-        return;
-      }
+    const childForest = await model.getChildren();
 
-      if (!childLayer.script) {
-        return childLayer;
-      }
-      
-      let childData = childLayer.objects.map(c => c.data);
-      model.childLayer = await this.expandChild(childData, childLayer.script);
-      childLayer = model.childLayer;
-      
-      return childLayer;
-    }
-    
-    var childLayer = await getChildLayerOfVivideObject(model);
-
-    if(!childLayer || !childLayer.objects || childLayer.objects.length === 0) {
+    if(!childForest || childForest.length === 0) {
       treeNode.size = 1;
       return;
     }
 
-    return await this.attachAllChildren(childLayer, treeNode);
+    return await this.attachAllChildren(childForest, treeNode);
   }
-  async attachAllChildren(vivideLayer, parentNode) {
-    for (let child of vivideLayer.objects) {
+  async attachAllChildren(forest, parentNode) {
+    for (let child of forest) {
       await this.attachAChild(child, parentNode);
     }
   }
@@ -79,13 +48,13 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
     
     return await this.attachChildrenFromModel(model, childNode);
   }
-  async display(vivideLayer, config) {
-    super.display(vivideLayer, config);
+  async display(forest, config) {
+    super.display(forest, config);
     this.innerHTML = '';
     
     const treeData = this.createTreeNodeForLabel('Top Level');
 
-    await this.attachAllChildren(vivideLayer, treeData);
+    await this.attachAllChildren(forest, treeData);
     
     // console.warn(treeData);
     // const outputWorkspace = document.body.querySelector('#output-dump');
@@ -98,11 +67,5 @@ export default class VivideTreemapWidget extends VivideMultiSelectionWidget {
   
   livelyExample() {
     // Displaying a vivide tree widget is only meaningful in a vivide view
-  }
-  
-  livelyMigrate(other) {
-    lively.warn('MIGRATE')
-    this.expandChild = other.expandChild;
-    super.display(other);
   }
 }

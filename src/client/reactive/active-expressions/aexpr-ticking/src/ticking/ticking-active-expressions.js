@@ -10,6 +10,10 @@ export class TickingActiveExpression extends BaseActiveExpression {
     constructor(func, ...params) {
         super(func, ...params);
         this.enable();
+
+        if(new.target === TickingActiveExpression) {
+            this.addToRegistry();
+        }
     }
 
     // TODO: refactor/extractMethod with InterpreterActiveExpression

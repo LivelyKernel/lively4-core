@@ -1,40 +1,62 @@
 import { BaseActiveExpression } from 'active-expressions';
 import Stack from 'stack-es2015-modules';
+import { using } from 'utils';
 
 let expressionAnalysisMode = false;
 
+const analysisModeManager = {
+  __enter__() {
+    expressionAnalysisMode = true;
+  },
+  __exit__() {
+    expressionAnalysisMode = !!aexprStack.top();
+  }
+}
 class ExpressionAnalysis {
-    // Do the function execution in ExpressionAnalysisMode
-    static check(aexpr) {
-      try {
-        expressionAnalysisMode = true;
-        aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
-      } finally {
-        expressionAnalysisMode = !!aexprStack.top();
-      }
-    }
+  // Do the function execution in ExpressionAnalysisMode
+  static check(aexpr) {
+    using([analysisModeManager], () => {
+      aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
+    });
+  }
 }
 
-// TODO: CompositeKeyStore as separate Module
+// #TODO: CompositeKeyStore as separate Module
 const compositeKeyStore = new Map();
+const compositeKeyStoreReverse = new Map();
 class CompositeKey {
-    static getByPrimaryKey(obj1) {
-        if(!compositeKeyStore.has(obj1)) {
-          compositeKeyStore.set(obj1, new Map());
-        }
+  static _getByPrimaryKey(obj1) {
+    if(!compositeKeyStore.has(obj1)) {
+      compositeKeyStore.set(obj1, new Map());
+    }
 
-        return compositeKeyStore.get(obj1);
+    return compositeKeyStore.get(obj1);
+  }
+  static _get(obj1, obj2) {
+    const secondKeyMap = this._getByPrimaryKey(obj1);
+    if(!secondKeyMap.has(obj2)) {
+      const compKey = {};
+      secondKeyMap.set(obj2, compKey);
+      compositeKeyStoreReverse.set(compKey, [obj1, obj2]);
     }
-    static get(obj1, obj2) {
-        const secondKeyMap = this.getByPrimaryKey(obj1);
-        if(!secondKeyMap.has(obj2)) {
-            secondKeyMap.set(obj2, {});
-        }
-        return secondKeyMap.get(obj2);
-    }
-    static clear() {
-        compositeKeyStore.clear();
-    }
+    return secondKeyMap.get(obj2);
+  }
+  
+  static for(obj1, obj2) {
+    return this._get(obj1, obj2);
+  }
+  
+  /**
+   * Reverse operation of @link(for)
+   */
+  static keysFor(compKey) {
+    return compositeKeyStoreReverse.get(compKey) || [];
+  }
+  
+  static clear() {
+    compositeKeyStore.clear();
+    compositeKeyStoreReverse.clear();
+  }
 }
 
 class HookStorage {
@@ -58,7 +80,7 @@ class HookStorage {
         if(aexpr == undefined)
             throw new Error('aexpr is undefined');
 
-        const key = CompositeKey.get(obj, prop);
+        const key = CompositeKey.for(obj, prop);
         if(!this.aexprsByObjProp.has(key)) {
             this.aexprsByObjProp.set(key, new Set());
         }
@@ -77,7 +99,7 @@ class HookStorage {
     }
 
     getAExprsFor(obj, prop) {
-        const key = CompositeKey.get(obj, prop);
+        const key = CompositeKey.for(obj, prop);
         if(!this.aexprsByObjProp.has(key)) {
             return [];
         }
@@ -88,6 +110,18 @@ class HookStorage {
         // return Array.from(this.objPropsByAExpr.keys()).filter(aexpr => {
         //     return this.objPropsByAExpr.get(aexpr).has(comp);
         // });
+    }
+
+    getCompKeysFor(aexpr) {
+      let compKeys = [];
+
+      this.aexprsByObjProp.forEach((aexprSet, compKey) => {
+        if(aexprSet.has(aexpr)) {
+          compKeys.push(compKey);
+        }
+      });
+
+      return compKeys;
     }
 
     /*
@@ -108,12 +142,62 @@ class RewritingActiveExpression extends BaseActiveExpression {
     super(func, ...params);
     this.meta({ strategy: 'Rewriting' });
     ExpressionAnalysis.check(this);
+
+    if(new.target === RewritingActiveExpression) {
+      this.addToRegistry();
+    }
   }
 
   dispose() {
     super.dispose();
     aexprStorage.disconnectAll(this);
     aexprStorageForLocals.disconnectAll(this);
+  }
+  
+  supportsDependencies() {
+    return true;
+  }
+  
+  getDependencies() {
+    return new DependencyAPI(this);
+  }
+}
+
+class DependencyAPI {
+  constructor(aexpr) {
+    this._aexpr = aexpr;
+  }
+  
+  static compositeKeyToLocal(compKey) {
+    // #TODO: refactor
+    const [ scope, name ] = CompositeKey.keysFor(compKey);
+    return {
+      scope,
+      name,
+      value: scope !== undefined ? scope[name] : undefined
+    };
+  }
+  
+  locals() {
+    const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
+
+    return compKeys.map(DependencyAPI.compositeKeyToLocal);
+  }
+  
+  static compositeKeyToMember(compKey) {
+    // #TODO: refactor
+    const [ object, property ] = CompositeKey.keysFor(compKey);
+    return {
+      object,
+      property,
+      value: object !== undefined ? object[property] : undefined
+    };
+  }
+  
+  members() {
+    const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
+
+    return compKeys.map(DependencyAPI.compositeKeyToMember);
   }
 }
 
@@ -124,6 +208,7 @@ export function aexpr(func, ...params) {
 function checkAndNotifyAExprs(aexprs) {
     aexprs.forEach(aexpr => {
         aexprStorage.disconnectAll(aexpr);
+        aexprStorageForLocals.disconnectAll(aexpr);
         ExpressionAnalysis.check(aexpr);
     });
     aexprs.forEach(aexpr => aexpr.checkAndNotify());
@@ -163,8 +248,9 @@ class TransactionContext {
             aexprs.forEach(aexpr => {
                 supressed.aexprs.add(aexpr);
             });
-        } else
-            checkAndNotifyAExprs(aexprs);
+        } else {
+          checkAndNotifyAExprs(aexprs);
+        }
     }
 }
 const transactionContext = new TransactionContext();
@@ -174,7 +260,7 @@ const transactionContext = new TransactionContext();
  * As a result no currently enable active expression will be notified again,
  * effectively removing them from the system.
  *
- * TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
+ * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
     aexprStorage.clear();
@@ -244,6 +330,7 @@ export function setMemberDivision(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] /= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 
@@ -255,7 +342,6 @@ export function setMemberRemainder(obj, prop, val) {
     return result;
 }
 
-/*
 export function setMemberExponentiation(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] **= val;
@@ -263,12 +349,12 @@ export function setMemberExponentiation(obj, prop, val) {
     transactionContext.release(obj);
     return result;
 }
-*/
 
 export function setMemberLeftShift(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] <<= val;
     checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
     return result;
 }
 
@@ -312,13 +398,15 @@ export function setMemberBitwiseOR(obj, prop, val) {
     return result;
 }
 
-export function getLocal(scope, varName) {
-    if(expressionAnalysisMode) {
-        aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
-    }
+export function getLocal(scope, varName, value) {
+  if(expressionAnalysisMode) {
+    scope[varName] = value;
+    aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
+  }
 }
 
-export function setLocal(scope, varName) {
+export function setLocal(scope, varName, value) {
+    scope[varName] = value;
     const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
     checkAndNotifyAExprs(affectedAExprs);
 }

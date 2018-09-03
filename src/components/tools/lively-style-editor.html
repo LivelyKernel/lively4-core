@@ -9,8 +9,8 @@
     border: 2px solid gray;
     border-radius: 6px;
     min-width: 260px;
-    height: 55px;     
-    max-height: 55px; 
+    height: 100px;     
+    max-height: 100px; 
   }  
   #main {
     padding-left: 10px;
@@ -21,8 +21,10 @@
   }
 
   .section {
+
     display: inline-block;
     margin-right: 10px;
+    vertical-align: top;
   }
   .chooser {
     display: inline-block;
@@ -34,8 +36,29 @@
   }
  
   
+  #styles {
+    vertical-align: top;
+    height: 50px;
+    overflow: auto;
+    font-size: 8px;
+    width: 350px;
+  }
+  
+  .styleitem {
+     display: inline-block;
+    border: 0.5px solid gray;
+    border-radius: 6px;
+    margin: 2px;
+    padding: 2px;
+  }
+  
+   .styleitem.selected {
+    background-color: gray
+  }
+  
 </style>
 <div id="main">  
+  
   <lively-target-button id="target-button"></lively-target-button>
   <div class="section">
     <span class="label">Fill</span><br>
@@ -50,8 +73,13 @@
       <option value="solid">solid</option>
       <option value="dashed">dashed</option>
       <option value="none">none</option>
-    </select>  
+    </select>    
   </div>
+  <div  class="section" id="styles">
+    
+  </div>
+ 
+  
 </div>
 
 </template>

@@ -13,6 +13,10 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
     if(this.isAsync === true) {
       this.cachedCurrentValueUpdatedAt = 0;
     }
+    
+    if(new.target === FrameBasedActiveExpression) {
+      this.addToRegistry();
+    }
   }
 
   getCurrentValue() {

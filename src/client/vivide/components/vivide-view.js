@@ -1,34 +1,45 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { uuid, without, getTempKeyFor, getObjectFor, flatMap, fileEnding } from 'utils';
-import boundEval from "src/client/bound-eval.js";
-import VivideLayer from 'src/client/vivide/vividelayer.js';
+import { uuid, without, getTempKeyFor, getObjectFor, flatMap } from 'utils';
 import VivideObject from 'src/client/vivide/vivideobject.js';
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
-import ScriptStep from 'src/client/vivide/vividescriptstep.js';
-import { stepFolder, scriptFolder } from 'src/client/vivide/utils.js';
+import Script from 'src/client/vivide/vividescript.js';
 
-async function newScriptFromTemplate(type) {
-  const stepTemplateURL = new URL(type + '-step-template.js', stepFolder);
-  const stepTemplate = await fetch(stepTemplateURL).then(r => r.text());
-
-  return new ScriptStep(stepTemplate, type);
-}
-
-async function initialScriptsFromTemplate() {
-  const scripts = [];
-  const transform = await newScriptFromTemplate('transform');
-  const extract = await newScriptFromTemplate('extract');
-  const descent = await newScriptFromTemplate('descent');
-  
-  transform.nextStep = extract;
-  extract.nextStep = descent;
-  descent.lastScript = true;
-  
-  scripts.push(transform);
-  scripts.push(extract);
-  scripts.push(descent);
-  
-  return transform;
+/**
+ * Smart widget choosing
+ */
+class WidgetChooser {
+  static getPreferredWidgetType(forest, viewConfig) {
+    if (viewConfig.has('widget')) { 
+      return viewConfig.get('widget');
+    }
+    
+    // #TODO: this is too dependent on internal structure of the model/VivideObject
+    // PROPOSAL: Models should not know about views, therefore they cannot return
+    //   a suggested view, but they could return a data type suggestion like:
+    //     model.dataType == "data-points" || "list" || "text"
+    //   Additionally, this data type could be set manually or via an "intelligent"
+    //   algorithm.
+    if (forest && forest.length > 0) {
+      // #Question: this model has an objects array, what is the data structure of this model?
+      const model = forest[0];
+      if(model.properties.has('dataPoints') &&
+         typeof model.properties.get('dataPoints')[0] === 'number'
+      ) {
+        return 'boxplot';
+      }
+    }
+    return 'tree';
+  }
+  static findAppropriateWidget(forest, viewConfig) {
+    const type = this.getPreferredWidgetType(forest, viewConfig);
+    
+    // full type specified
+    if(type.includes('-')) {
+      return type;
+    }
+    
+    // shorthand notation used
+    return `vivide-${type}-widget`;
+  }
 }
 
 export default class VivideView extends Morph {
@@ -50,18 +61,18 @@ export default class VivideView extends Morph {
   
   static get widgetSelector() { return '#' + this.widgetId; }
   
-  static modelToData(model) {
+  static forestToData(model) {
     return model.map(m => m.object);
   }
   
-  static dataToModel(data) {
-    return data.map(d => ({ object: d, properties: new Annotations(), children: []}));
+  // unused?
+  static dataToForest(data) {
+    return data.map(d => new VivideObject(d));
   }
 
   get widget() { return this.get(VivideView.widgetSelector); }
   
   get input() { return this._input || (this._input = []); }
-  
   set input(val) { return this._input = val; }
   
   get id() {
@@ -131,15 +142,36 @@ export default class VivideView extends Morph {
     this.removeOutportTarget(target);
   }
   
+  transmitDataToOutportTargets(dataToTransmit) {
+    this.outportTargets.forEach(target => target.newDataFromUpstream(dataToTransmit));
+  }
+  reallyNotifyOutportTargets(stuffToTransmit) {
+    this.transmitDataToOutportTargets(VivideView.forestToData(stuffToTransmit));
+  }
   notifyOutportTargets() {
-    this.outportTargets
-      .forEach(target => {
-        target.newDataFromUpstream(VivideView.modelToData(this.modelToDisplay));
-      });
+    lively.warn('VIEW::NOTIFY2', this.forestToDisplay[0])
+    this.reallyNotifyOutportTargets(this.forestToDisplay);
+  }
+  
+  updateOutportTargets() {
+    const dataToTransmit = this.getDataToTransmit();
+    if(dataToTransmit) {
+      lively.warn('VIEW::UPDATE', dataToTransmit[0])
+      this.transmitDataToOutportTargets(dataToTransmit);
+    }
+  }
+  
+  getDataToTransmit() {
+    if(this.widget && this.widget.multiSelectionEnabled) {
+      return this.getSelectedData();
+    } else {
+      // use all data
+      return VivideObject.forestToData(this.forestToDisplay);
+    }
   }
   
   getSelectedData() {
-    let widget = this.widget;
+    const widget = this.widget;
     if(widget) {
       return widget.getSelectedData();
     }
@@ -150,19 +182,13 @@ export default class VivideView extends Morph {
     this.updateOutportTargets();
   }
   
-  updateOutportTargets() {
-    let selection = this.getSelectedData();
-    if(selection) {
-      this.outportTargets.forEach(target => target.newDataFromUpstream(selection.map(item => item.data)));
-    }
-  }
-  
   addDragInfoTo(evt) {
     const dt = evt.dataTransfer;
     // #TODO: An improved fix would be to change what is returned by the widget selection
-    let selection = this.getSelectedData();
+    let selection = this.getDataToTransmit();
     if(selection) {
-      dt.setData("javascript/object", getTempKeyFor(selection.map(item => item.data)));
+      lively.warn('VivideView::addDragInfoTo', selection[0])
+      dt.setData("javascript/object", getTempKeyFor(selection));
     } else {
       lively.error('could not add drag data');
     }
@@ -179,8 +205,6 @@ export default class VivideView extends Morph {
     this.addEventListener('dragover', evt => this.dragover(evt), false);
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
-
-    this.input = this.input || [];
   }
   
   onExtentChanged() {
@@ -263,201 +287,57 @@ export default class VivideView extends Morph {
     }
   }
   
-  async initDefaultScript() {
-    let firstScript = await initialScriptsFromTemplate();
-    this.setFirstScript(firstScript);
-  }
-  setFirstScript(firstScript) {
-    if (!(firstScript instanceof ScriptStep)) return;
-    
-    this.firstScript = firstScript;
-    this.firstScript.updateCallback = this.scriptGotUpdated.bind(this);
-    let script = this.firstScript;
-    let scripts = {  };
-    this.scriptToJson(script, scripts);
-    
-    while (script.nextStep != null) {
-      script = script.nextStep;
-      script.updateCallback = this.scriptGotUpdated.bind(this);
-      this.scriptToJson(script, scripts);
-      
-      if (script.lastScript) break;
-    }
-    this.setJSONAttribute(VivideView.scriptAttribute, scripts);
+  get myCurrentScript() { return this._myCurrentScript; }
+  set myCurrentScript(script) { return this._myCurrentScript = script; }
 
-    return this.firstScript;
-  }
-  
-  scriptToJson(script, jsonContainer) {
-    jsonContainer[script.id] = script.toJSON();
-  }
-  
-  getFirstScript() {
-    let jsonScripts = this.getJSONAttribute(VivideView.scriptAttribute);
-    let scripts = {};
-    
-    for (let scriptId in jsonScripts) {
-      scripts[scriptId] = new ScriptStep(
-        jsonScripts[scriptId].source,
-        jsonScripts[scriptId].type,
-        scriptId,
-        jsonScripts[scriptId].lastScript
-      );
-    }
-    
-    for (let scriptId in jsonScripts) {
-      if (!jsonScripts[scriptId].nextScriptId) continue;
-      
-      scripts[scriptId].next = scripts[jsonScripts[scriptId].nextScriptId];
-    }
-    
-    return this.firstScript;
+  async initDefaultScript() {
+    this.myCurrentScript = await Script.createDefaultScript(this);
+    // this.setJSONAttribute(VivideView.scriptAttribute, this.myCurrentScript.toJSON());
   }
   
   async newDataFromUpstream(data) {
     this.input = data;
     
-    if (this.getFirstScript()) {
-      await this.calculateOutputModel();
-    } else {
-      this.modelToDisplay = VivideView.dataToModel(this.input);
-    }
-
+    await this.calculateOutputModel();
     await this.updateWidget();
-    this.notifyOutportTargets();
+    this.updateOutportTargets();
   }
   
   getInputData() {
     return this.input;
   }
   
-  
-  get viewConfig() {
-    return this._viewConfig = this._viewConfig || new Annotations();
-  }
-  resetViewConfig() {
-    this._viewConfig = undefined;
-  }
   async calculateOutputModel() {
-    this.resetViewConfig();
-    let script = this.getFirstScript();
+    const firstStep = this.myCurrentScript.getInitialStep();
+    const data = this.input.slice(0);
     
-    this.modelToDisplay = await this.computeModel(this.input.slice(0), script);
+    this.forestToDisplay = await firstStep.processData(data);
   }
   
-  async evalScript(script) {
-    let module = await boundEval(script.source);
-    return module;
-  }
-  
+  // #TODO: nearly a duplicate with newDataFromUpstream; remove duplication
   async scriptGotUpdated() {
+    // #TODO: save script to web-component
+    // #TODO: later support multiple profiles
+    lively.notify('VivideView::scriptGotUpdated');
     await this.calculateOutputModel();
     await this.updateWidget();
     // Update outport views
+    // #TODO: nearly a duplicate with notifyOutportTargets, remove duplication
     this.updateOutportTargets();
   }
   
-  async computeModel(data, script) {
-    let vivideLayer = new VivideLayer(data);
-    
-    await this.applyScript(script, vivideLayer);
-    while (script.nextStep) {
-      script = script.nextStep;
-      await this.applyScript(script, vivideLayer);
-      
-      if (script.type == 'descent' || script.lastScript) break;
-    }
-    await vivideLayer.processData();
-    
-    return vivideLayer;
-  }
-  
-  async applyScript(script, vivideLayer) {
-    let module = await this.evalScript(script);
-    if (script.type == 'transform') {
-      vivideLayer.addModule(module, 'transform');
-    } else if (script.type == 'extract') {
-      vivideLayer.addModule(module, 'extract');
-    } else if (script.type == 'descent') {
-      vivideLayer.childScript = script.nextStep;
-      vivideLayer.addModule(module, 'descent');
-    }
-    
-    this.viewConfig.add(module.value.__vivideStepConfig__);
-  }
-
-  getPreferredWidgetType(model) {
-    if (this.viewConfig.has('widget')) {
-      return this.viewConfig.get('widget');
-    }
-    
-    // #TODO: this is too dependent on internal structure of the model/VivideObject
-    // PROPOSAL: Models should not know about views, therefore they cannot return
-    //   a suggested view, but they could return a data type suggestion like:
-    //     model.dataType == "data-points" || "list" || "text"
-    //   Additionally, this data type could be set manually or via an "intelligent"
-    //   algorithm.
-    if (model.objects && model.objects.length > 0) {
-      // #Question: this model has an objects array, what is the data structure of this model?
-      let m = model.objects[0];
-      if(m.properties.has('dataPoints') &&
-         typeof m.properties.get('dataPoints')[0] === 'number'
-      ) {
-        return 'boxplot';
-      }
-    }
-    return 'tree';
-  }
-  findAppropriateWidget(model) {
-    const type = this.getPreferredWidgetType(model);
-    
-    // full type specified
-    if(type.includes('-')) {
-      return type;
-    }
-    
-    // shorthand notation used
-    return `vivide-${type}-widget`;
-  }
-
   async updateWidget() {
     this.innerHTML = '';
-    let widget = await lively.create(this.findAppropriateWidget(this.modelToDisplay));
+
+    const viewConfig = await this.myCurrentScript.getViewConfig();
+    const chosenWidgetType = WidgetChooser.findAppropriateWidget(this.forestToDisplay, viewConfig);
+
+    const widget = await lively.create(chosenWidgetType);
+    widget.setView(this);
     widget.setAttribute('id', VivideView.widgetId);
     this.appendChild(widget);
-    widget.expandChild = this.computeModel.bind(this);
-    await widget.display(this.modelToDisplay, this.viewConfig);
+    await widget.display(this.forestToDisplay, viewConfig);
   }
-  
-  async insertScript(scriptType, prevScript = null) {
-    let newScript = await newScriptFromTemplate(scriptType);
-    let script = this.getFirstScript();
-    
-    if (prevScript) {
-      script = prevScript;
-      
-      // If the predecessor was the last script before, the
-      // attribute needs to be passed to the appended script.
-      if (prevScript.lastScript) {
-        prevScript.lastScript = false;
-        newScript.lastScript = true;
-      }
-    } else {
-      while (!script.lastScript) {
-        script = script.nextStep;
-      }
-      
-      script.lastScript = false;
-      newScript.lastScript = true;
-    }
-    
-    newScript.updateCallback = this.scriptGotUpdated.bind(this);
-    newScript.nextStep = script.nextStep;
-    script.nextStep = newScript;
-    
-    return newScript;
-  }
-  
   
   async createScriptEditor() {
     const viewWindow = lively.findWindow(this);
@@ -469,16 +349,37 @@ export default class VivideView extends Morph {
 
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScripts(this.getFirstScript());
+    scriptEditor.setScript(this.myCurrentScript);
 
     return scriptEditor;
   }
   
   async livelyExample() {
-    let exampleData = [
-      {name: "object", subclasses:[{name: "morph"},]},
-      {name: "list", subclasses:[{name: "linkedlist", subclasses:[{name: "stack"}]}, {name: "arraylist"}]},
-      {name: "usercontrol", subclasses:[{name: "textbox"}, {name: "button"}, {name: "label"}]},
+    const exampleData = [
+      {
+        name: "object",
+        subclasses:[
+          {name: "morph"}
+        ]},
+      {
+        name: "list",
+        subclasses:[
+          {
+            name: "linkedlist",
+            subclasses:[
+              {name: "stack"}
+            ]},
+          {
+            name: "arraylist"
+          }]
+      },
+      {
+        name: "usercontrol",
+        subclasses:[
+          {name: "textbox"},
+          {name: "button"},
+          {name: "label"}
+        ]},
     ];
     
     await this.initDefaultScript();
@@ -487,7 +388,10 @@ export default class VivideView extends Morph {
   }
   
   livelyMigrate(other) {
-    this.setFirstScript(other.getFirstScript());
+    lively.notify('VivideView::migrate')
+    this.myCurrentScript = other.myCurrentScript;
+    this.myCurrentScript.setView(this);
+
     this.newDataFromUpstream(other.input);
   }
   
@@ -498,17 +402,17 @@ export default class VivideView extends Morph {
         halo.get('#vivide-items').style.display = 'flex';
 
         // dynamically create outport connection visualizations
-        let outportContainer = halo.get('#vivide-outport-connection-items');
+        const outportContainer = halo.get('#vivide-outport-connection-items');
         this.outportTargets.forEach(target => {
-          let item = document.createElement('lively-halo-vivide-outport-connection-item')
+          const item = document.createElement('lively-halo-vivide-outport-connection-item')
           item.classList.add('halo');
           item.setTarget(target);
           outportContainer.appendChild(item);
         });
         
-        let inportContainer = halo.get('#vivide-inport-connection-items');
+        const inportContainer = halo.get('#vivide-inport-connection-items');
         this.inportSources.forEach(source => {
-          let item = document.createElement('lively-halo-vivide-inport-connection-item')
+          const item = document.createElement('lively-halo-vivide-inport-connection-item')
           item.classList.add('halo');
           item.setSource(source);
           inportContainer.appendChild(item);

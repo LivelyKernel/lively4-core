@@ -240,7 +240,6 @@ export default class Container extends Morph {
   }
 
   loadModule(url) {
-    lively.notify("load module")
     lively.reloadModule("" + url, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
@@ -300,6 +299,7 @@ export default class Container extends Morph {
   }
 
   onHome() {
+    this.clearNavbar()
     this.followPath(lively4url)
   }
 
@@ -454,10 +454,10 @@ export default class Container extends Morph {
     return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
-      lively.notify("!!!saved " + url)
+      // lively.notify("!!!saved " + url)
       window.LastURL = url
       if (await this.urlInTemplate(url)) {
-        lively.notify("update template")
+        // lively.notify("update template")
         if (url.toString().match(/\.html/)) {
           // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
           var templateSourceCode = sourceCode
@@ -480,7 +480,7 @@ export default class Container extends Morph {
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url);
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
-            lively.notify("load module " + moduleName)
+          // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
@@ -521,31 +521,44 @@ export default class Container extends Morph {
     this.deleteFile(url)
   }
 
-  async deleteFile(url) {
-    if (await lively.confirm("delete " + url)) {
-      var result = await fetch(url, {method: 'DELETE'})
-        .then(r => r.text());
-
+  async deleteFile(url, urls) {
+    debugger
+    if (!urls) urls = [url]
+    var names = urls.map(ea => decodeURI(ea.replace(/.*\//,"")))
+    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+      for(let url of urls) {
+        var result = await fetch(url, {method: 'DELETE'})
+          .then(r => {
+            if (r.status !== 200) {
+              lively.error("Could not delete: " + url)
+            }
+            r.text()
+          });  
+      }
+      this.get("#container-leftpane").update()
+      
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
-
-      lively.notify("deleted " + url, result);
+      lively.notify("deleted " + names);
     }
   }
 
   async renameFile(url) {
     url = "" + url
-    var newURL = await lively.prompt("rename", url)
-    if (!newURL) {
-      lively.notify("cancel rename " + url)
+    var base = url.replace(/[^/]*$/,"")
+    var name = url.replace(/.*\//,"")
+
+    var newName = await lively.prompt("rename", name)
+    if (!newName) {
+      lively.notify("cancel rename " + name)
       return
     }
+    var newURL = base + newName
     if (newURL != url) {
       await lively.files.moveFile(url, newURL)
-
-      this.setAttribute("mode", "show");
-      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      
+      this.setPath(newURL);
       this.hideCancelAndSave();
 
       lively.notify("moved to " + newURL);
@@ -603,8 +616,12 @@ export default class Container extends Morph {
     this.get('#container-editor').innerHTML = '';
   }
 
-  async appendMarkdown(content) {
+  async appendMarkdown(content, renderTimeStamp) {
     var md = await lively.create("lively-markdown", this)
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      debugger
+      return md.remove()
+    }
     md.classList.add("presentation") // for the presentation button
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
@@ -626,7 +643,7 @@ export default class Container extends Morph {
     }
   }
 
-  appendLivelyMD(content) {
+  appendLivelyMD(content, renderTimeStamp) {
     content = content.replace(/@World.*/g,"");
     content = content.replace(/@+Text: name="Title".*\n/g,"# ");
     content = content.replace(/@+Text: name="Text.*\n/g,"\n");
@@ -635,7 +652,7 @@ export default class Container extends Morph {
     content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n");
     content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n");
 
-    this.appendMarkdown(content);
+    this.appendMarkdown(content, renderTimeStamp);
   }
 
   async appendScript(scriptElement) {
@@ -683,7 +700,10 @@ export default class Container extends Morph {
 
   }
 
-  async appendHtml(content) {
+  async appendHtml(content, renderTimeStamp) {
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
     // strip lively boot code...
 
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
@@ -757,19 +777,27 @@ export default class Container extends Morph {
     }, 0)
   }
 
-  async appendCSV(content) {
+  async appendCSV(content, renderTimeStamp) {
     var container=  this.get('#container-content');
     var table = await lively.create("lively-table")
     table.setFromCSV(content)
+    
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
     container.appendChild(table)
   }
 
 
-  async appendTemplate(name) {
+  async appendTemplate(name, renderTimeStamp) {
     try {
     	var node = lively.components.createComponent(name);
-    	this.getContentRoot().appendChild(node);
+    	if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
+      this.getContentRoot().appendChild(node);
       await lively.components.loadByName(name);
+      
     } catch(e) {
       console.log("Could not append html:" + content);
     }
@@ -809,7 +837,7 @@ export default class Container extends Morph {
       opts="&fullscreen=true"
     }
 
-    if (this.isEditing() && !path.match(/\/$/)) {
+    if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
           'view ' + path, window.location.pathname + "?edit="+path  + opts);
@@ -926,14 +954,19 @@ export default class Container extends Morph {
       return "";
   }
 
-  listingForDirectory(url, render) {
+  listingForDirectory(url, render, renderTimeStamp) {
     return lively.files.statFile(url).then((content) => {
+      if (this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
       var files = JSON.parse(content).contents;
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
       if (index) {
-        lively.notify("found index" + index)
+        // lively.notify("found index" + index)
+        // this.contextURL
+        
         return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
       // return Promise.resolve(""); // DISABLE Listings
@@ -947,6 +980,11 @@ export default class Container extends Morph {
        */
       if (render) {
         return lively.components.openIn(this.getContentRoot(), fileBrowser).then( () => {
+          if (this.renderTimeStamp !== renderTimeStamp) {
+            fileBrowser.remove()
+            return
+          }
+          
           // lively.notify("set url " + url)
           fileBrowser.hideToolbar();
           // override browsing file and direcotry
@@ -1033,6 +1071,8 @@ export default class Container extends Morph {
     url = this.getURL();
     
     this.content = ""
+    
+    
     this.showNavbar();
     
     
@@ -1044,7 +1084,9 @@ export default class Container extends Morph {
 
     // Handling files
     this.lastVersion = null; // just to be sure
-
+    var renderTimeStamp = Date.now() // #Idean, this is clearly a use-case for #COP, I have to refactor this propagate this dynamical context asyncronously #AsyncContextJS
+    this.renderTimeStamp = renderTimeStamp
+    
     var format = path.replace(/.*\./,"");
     if (url.protocol == "search:") {
       format = "html"
@@ -1052,21 +1094,21 @@ export default class Container extends Morph {
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
       if (!options || !options["index-available"]) {
-        return this.listingForDirectory(url, render)
+        return this.listingForDirectory(url, render, renderTimeStamp)
       } else {
         format = "html"
       }
     }
 
     if (format.match(/(svg)|(png)|(jpe?g)/)) {
-      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>", renderTimeStamp);
       else return;
     } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
-      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>');
+      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
-        + url +'"></lively-pdf>');
+        + url +'"></lively-pdf>', renderTimeStamp);
       else return;
     } 
     var headers = {}
@@ -1099,16 +1141,16 @@ export default class Container extends Morph {
       
       if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
-        if (render) return this.appendHtml(content);
+        if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {
         this.sourceContent = content;
-        if (render) return this.appendMarkdown(content);
+        if (render) return this.appendMarkdown(content, renderTimeStamp);
       } else if (format == "livelymd") {
         this.sourceContent = content;
-        if (render) return this.appendLivelyMD(content);
+        if (render) return this.appendLivelyMD(content, renderTimeStamp);
       } else if (format == "csv") {
         this.sourceContent = content;
-        if (render) return this.appendCSV(content);
+        if (render) return this.appendCSV(content, renderTimeStamp);
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) {
@@ -1116,21 +1158,21 @@ export default class Container extends Morph {
             <h2>
               <span style="color: darkred">Error: </span>${content}
             </h2>
-          `);
+          `, renderTimeStamp);
         }
       } else if (format == "bib") {
         this.sourceContent = content;
         if (render) {
-          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>');
+          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
       } else if (format == "xhtml") {
         this.sourceContent = content;
         if (render) {
-          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>');
+          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
         }
       } else {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>");
+        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
@@ -1165,13 +1207,16 @@ export default class Container extends Morph {
 
     var navbar = this.get('#container-leftpane')
     // implement hooks
-    navbar.deleteFile = (url) => { this.deleteFile(url) }
+    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newfile = (url) => { this.newfile(url) }
-    navbar.followPath = (path) => { this.followPath(path) }
+    navbar.followPath = (path, lastPath) => { 
+      this.contextURL = lastPath
+      this.followPath(path) 
+    }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-    await navbar.show(this.getURL(), this.content)
+    await navbar.show(this.getURL(), this.content, navbar.contextURL)
   }
 
   isFullscreen() {
@@ -1542,6 +1587,16 @@ export default class Container extends Morph {
     return this.followPath(lively4url + "/README.md")
   }
 
+  // customize clipboard interaction... etc
+  // navigating in this multidimensional space can be hard
+  livelyTarget() {
+    var markdownElement = this.get("lively-markdown")
+    if (markdownElement) {
+      return markdownElement.get("#content")
+    }
+    return this
+  }
+  
   livelyMigrate(other) {
     // other = that
     this.isMigrating = true;

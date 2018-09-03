@@ -1,31 +1,36 @@
-import VivideMultiSelectionWidget from 'src/client/vivide/components/vivide-multi-selection-widget.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
-export default class VivideListWidget extends VivideMultiSelectionWidget {
+export default class VivideListWidget extends VivideWidget {
   get multiSelectionConfig() {
     return [this, {
       onSelectionChanged: selection => this.selectionChanged(selection)
     }];
   }
   
+  getObjectForSelectedNode(listItem) {
+    return this.dataByListItem.get(listItem);
+  }
+  
+  focus() {
+    this.multiSelection.focus();
+  }
+
+
   get list() { return this.get('#list'); }
 
   async initialize() {
     this.windowTitle = "VivideListWidget";
   }
 
-  dataForDOMNode(listItem) {
-    return this.dataByListItem.get(listItem);
-  }
-
-  display(model, config) {
-    super.display(model, config);
+  display(forest, config) {
+    super.display(forest, config);
 
     this.dataByListItem = new Map();
     
     this.list.innerHTML = '';
-    model.objects.forEach(m => {
+    forest.forEach(m => {
       let label = m.properties.get('label') || textualRepresentation(m.data);
       
       let listItem = <li>{label}</li>;
