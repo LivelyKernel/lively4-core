@@ -107,7 +107,8 @@ All the completions are contained in the completion.js file. It has an attribute
 To add a completion simply add an entry in the completions array and make sure, that every mentioned attribute is provided.
 
 ## TODO/ Future work
- - support multiline operations (copy paste, delete multiple lines, etc.)
+ - support multiline operations (copy paste, delete multiple lines, etc.)  (almost done)
+ - fix delete bug (also pretty much done I hope)
  - ranking of completion suggestions
  - Dynamic addition of completions
     - Automatically add completions during coding
