@@ -1,4 +1,4 @@
-<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; user-select: none; z-index: 1000; left: -336.4px; top: -112.4px;" draggable="false" id="XRayEvents" data-lively-part-name="XRayEvents"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
+<div class="lively-content" style="position: absolute; width: 216.8px; height: 23.6px; user-select: none; z-index: 1000; left: 135.273px; top: 71.8975px;" draggable="false" id="XRayEvents" data-lively-part-name="XRayEvents" data-lively-id="ef5535cd-7772-48aa-bee9-82fa242d4788"><script data-name="onDrag" type="lively4script">function onDrag(evt) {
   if(!this.isdragging) return
   lively.setPosition(this, this.dragOffset.addPt(lively.getPosition(evt)))
   this.ajustRootPosition()
@@ -148,12 +148,6 @@
   }
   
 
-}</script><script data-name="disableEventXRay" type="lively4script">function disableEventXRay() {
-
-  if (this.xRayLayer) {
-    this.xRayLayer.beNotGlobal()
-  }
-  
 }</script><script data-name="ajustRootPosition" type="lively4script">function ajustRootPosition() {
   var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
   lively.setPosition(this.handle, extent)
@@ -184,56 +178,41 @@
 //     })
 //   })
 
+}</script><script data-name="onClose" type="lively4script">function onClose() {
+  this.stopHierrachyObservation(document.body)
+  
+  this.disableEventXRay()
+    
+}</script><script data-name="selectElement" type="lively4script">function selectElement(element) {
+  
+  lively.showHalo(element)
+  
+}</script><script data-name="addElements" type="lively4script">function addElements(elements) {
+  if (!elements) return;
+  
 }</script><script data-name="enableEventXRay" type="lively4script">function enableEventXRay() {
-  this.eventXRay = true
+  if (!this.events) return;
+  
+  this.disableEventXRay()
+  
   this.eventElementCounter = new WeakMap()
   this.eventTypeCounter= new Map()
+   
+  this.logBeforeEvent = (obj, type, evt) => this.logEvent(obj, type, evt)
+  this.events.registerBeforeEvent(this.logBeforeEvent)
   
-  if (this.xRayLayer) {
-    this.xRayLayer.beNotGlobal()
+}</script><script data-name="disableEventXRay" type="lively4script">function disableEventXRay() {
+
+  if (this.events && this.logBeforeEvent) {
+    this.events.disconnectBeforeEvent(this.logBeforeEvent)
   }
   
-  var cop = this.cop
-  var self = this
-  var map = this.elementMap || new Map() 
-  
-  if (!this.cbMap) {
-    this.cbMap = new WeakMap()
-  }
-  var cbMap = this.cbMap
-  
-  var layer = cop.layer("EventListener")
-  layer.refineClass(HTMLElement, {
-    removeEventListener(type, cb, ...rest) {
-      var wrappedCB = cbMap.get(cb) // we have to keep the illusion
-      return cop.proceed(type, wrappedCB || cb, ...rest)
-    },
-    
-    addEventListener(type, cb, ...rest) {
-      // console.log("addEventListener " + type)
-      // we cannot just wrapp a callback cb, because callbacks are also used in removeEventListener...
-      var counter = 0
-      var func = cbMap.get(cb) || (function(...args) {
-        // console.log('func ' + type)
-        
-        cop.withoutLayers([layer], () => {
-         
-          self.logEvent(this, type, args[0], cb)
-          
-        })
-        return cb.apply(this, args)
-      }) 
-      cbMap.set(cb, func)
-      cop.proceed(type, func, ...rest) 
-    }
-  })
-  this.xRayLayer = layer
-  window.xRayLayer =  this.xRayLayer
-  this.xRayLayer.beGlobal()
 }</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
   (async () => {
     
     this.cop = await System.import("src/client/ContextJS/src/contextjs.js")
+    this.events = (await System.import("src/client/morphic/events.js")).default
+    
     
     await lively.sleep(1000)
     
@@ -249,26 +228,15 @@
     // lively.html.disconnectContextStyleObserver(document.body, "XRay")  
     
   })()
-}</script><script data-name="onClose" type="lively4script">function onClose() {
-  this.stopHierrachyObservation(document.body)
-  
-  this.disableEventXRay()
-    
-}</script><script data-name="selectElement" type="lively4script">function selectElement(element) {
-  
-  lively.showHalo(element)
-  
-}</script><script data-name="addElements" type="lively4script">function addElements(elements) {
-  if (!elements) return;
-  
 }</script><script data-name="logEvent" type="lively4script">function logEvent(obj, type, evt, cb) {
- if (this.isMetaNode) return;
+  if (obj.isMetaNode) return;
+  if (obj === this) return;
   if (!this.filterFunc || !this.filterFunc(obj, type, evt, cb)) {
     return  
   }
   
   this.eventTypeCounter.set(type, (this.eventTypeCounter.get(type) || 0) + 1)
-  this.eventElementCounter.set(this, (this.eventElementCounter.get(this) || 0) + 1)
+  this.eventElementCounter.set(this, (this.eventElementCounter.get(obj) || 0) + 1)
  
   // // this.limit = 100
   // if (!this.limit || this.limit <= 0) {
@@ -372,6 +340,7 @@
   lively.addEventListener('dragging', this.frameHandlesLeft, 'pointerdown', evt => this.onDragStart(evt));
   
   this.frameHandlesLeftLabel = document.createElement("div")
+  this.frameHandlesLeftLabel.isMetaNode = true
   this.frameHandlesLeftLabel.textContent = "XRay Events"
   this.frameHandlesLeftLabel.style.transformOrigin = "0 0"
   this.frameHandlesLeftLabel.style.transform = "rotate(270deg)"
