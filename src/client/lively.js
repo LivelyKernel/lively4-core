@@ -30,6 +30,7 @@ import focalStorage from '../external/focalStorage.js';
 import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
 
+import events from "src/client/morphic/events.js"
 
 let $ = window.$; // known global variables.
 
@@ -790,6 +791,8 @@ export default class Lively {
     }, false);
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
+    
+    events.installHooks()
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
