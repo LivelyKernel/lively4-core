@@ -201,29 +201,126 @@ describe("Streams", function() {
       expect(dataSpy).not.to.be.called;
       expect(endSpy).not.to.be.called;
     });
+
+    describe("zip", function() {
     
-    xit("zip", () => {
-      const src = new Stream();
-      const dest = new Stream();
-      src.pipe(dest);
+      it("zip two streams", () => {
+        const src1 = new Stream();
+        const src2 = new Stream();
 
-      const dataSpy = dataSpyFor(dest);
-      const endSpy = endSpyFor(dest);
+        const dest = src1.zip(src2);
 
-      expect(dataSpy).not.to.be.called;
-      expect(endSpy).not.to.be.called;
+        const dataSpy = dataSpyFor(dest);
+        const endSpy = endSpyFor(dest);
 
-      src.write(1);
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src1.write(1);
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src1.write(2);
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src2.write('a');
+        expect(dataSpy).to.be.calledOnce;
+        expect(dataSpy).to.be.calledWith([1,'a']);
+        dataSpy.reset();
+        expect(endSpy).not.to.be.called;
+
+        src1.write(3);
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src2.write('b');
+        expect(dataSpy).to.be.calledOnce;
+        expect(dataSpy).to.be.calledWith([2,'b']);
+        dataSpy.reset();
+      });
       
-      expect(dataSpy).to.be.calledOnce;
-      expect(dataSpy).to.be.calledWith(1);
-      dataSpy.reset();
-      expect(endSpy).not.to.be.called;
+      it("immediately pushes data already on input streams", () => {
+        const src1 = new Stream();
+        src1.write(1);
+        src1.write(2);
+        src1.write(3);
+        
+        const src2 = new Stream();
+        src2.write('a');
+        src2.write('b');
+
+        const dest = src1.zip(src2);
+        const dataSpy = dataSpyFor(dest);
+        const endSpy = endSpyFor(dest);
+
+        expect(dataSpy).to.be.calledTwice;
+        expect(dataSpy.withArgs([1,'a'])).to.be.calledBefore(dataSpy.withArgs([2,'b']));
+        expect(endSpy).not.to.be.called;
+      });
       
-      src.end();
+      it("end a zipped stream early", () => {
+        const src1 = new Stream();
+        const src2 = new Stream();
+
+        const dest = src1.zip(src2);
+        const dataSpy = dataSpyFor(dest);
+        const endSpy = endSpyFor(dest);
+
+        src1.write(1);
+        src1.end();
+
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src2.write('a');
+        
+        expect(dataSpy).to.be.calledOnce;
+        expect(dataSpy).to.be.calledWith([1, 'a']);
+        expect(endSpy).to.be.calledOnce;
+      });
       
-      expect(dataSpy).not.to.be.called;
-      expect(endSpy).to.be.calledOnce;
+      
+      it("handles more than two streams", () => {
+        const src1 = new Stream();
+        const src2 = new Stream();
+        const src3 = new Stream();
+
+        const dest = src1.zip(src2, src3);
+        const dataSpy = dataSpyFor(dest);
+        const endSpy = endSpyFor(dest);
+
+        src1.write(1);
+        src1.write(2);
+        src2.write('a');
+
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src3.write('hello');
+
+        expect(dataSpy).to.be.calledOnce;
+        expect(dataSpy).to.be.calledWith([1, 'a', 'hello']);
+        dataSpy.reset();
+        expect(endSpy).not.to.be.called;
+        
+        src3.write('world');
+        
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).not.to.be.called;
+
+        src2.write('b');
+
+        expect(dataSpy).to.be.calledOnce;
+        expect(dataSpy).to.be.calledWith([2, 'b', 'world']);
+        dataSpy.reset();
+        expect(endSpy).not.to.be.called;
+        
+        src2.end();
+
+        expect(dataSpy).not.to.be.called;
+        expect(endSpy).to.be.calledOnce;
+      });
     });
   });
 });

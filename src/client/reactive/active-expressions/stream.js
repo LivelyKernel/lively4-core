@@ -66,7 +66,40 @@ export default class Stream {
     
     return newStream;
   }
-  zip(stream) {
+  zip(...inputStreams) {
+    const newStream = new Stream();
     
+    const streams = [this, ...inputStreams];
+    let cursor = 0;
+    
+    function pushDownstream() {
+      while(streams.every(stream => stream._data.length > cursor)) {
+        newStream.write(streams.map(stream => stream._data[cursor]));
+        cursor++;
+      }
+    }
+    
+    // should end the newStream when the cursor reaches the minimum data length of any ended input stream
+    function checkEndCondition() {
+      let minLengthOfEndedStreams = Infinity;
+      streams.forEach(stream => {
+        if(stream._ended) {
+          minLengthOfEndedStreams = Math.min(minLengthOfEndedStreams, stream._data.length);
+        }
+      });
+      if(minLengthOfEndedStreams <= cursor) {
+        newStream.end();
+      }
+    }
+
+    function updateDownstream() {
+      pushDownstream();
+      checkEndCondition();
+    }
+    
+    streams.forEach(stream => stream.on('data', updateDownstream));
+    streams.forEach(stream => stream.on('end', updateDownstream));
+    
+    return newStream;
   }
 }

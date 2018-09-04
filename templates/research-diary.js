@@ -139,7 +139,11 @@ export default class ResearchDiary extends Morph {
     this.setPreviewText();
   }
   setPreviewText() {
-    this.get("#markdown").setContent(this.codeEditor.value);
+    const md = this.get("#markdown");
+    md.setContent(this.codeEditor.value);
+    
+    md.setDir(this.currentEntryURL.replace(/[^\/]*$/, ''))
+    md.followPath = url => lively.openBrowser(url);
   }
   async save(text) {
     let graph = await Graph.getInstance();
