@@ -4,9 +4,160 @@ import 'src/external/aexpr/tern/comment.js';
 import 'src/external/aexpr/tern/infer.js';
 import 'src/external/aexpr/tern/modules.js';
 import 'src/external/aexpr/tern/es_modules.js';
+
 t;
 
 import { fileName } from 'utils';
+
+// // #######################
+// // Maintain Argument Hints
+// // #######################
+
+// async function updateArgHints(cm, lcm, serverWrapper) { // ts, cm
+//   closeArgHints(cm);
+
+//   if (cm.somethingSelected()) return lively.error("early out");
+//   var state = cm.getTokenAt(cm.getCursor()).state;
+//   var inner = CodeMirror.innerMode(cm.getMode(), state);
+//   if (inner.mode.name != "javascript") return;
+//   var lex = inner.state.lexical;
+//   if (lex.info != "call") return;
+
+//   var ch, argPos = lex.pos || 0, tabSize = cm.getOption("tabSize");
+//   for (var line = cm.getCursor().line, e = Math.max(0, line - 9), found = false; line >= e; --line) {
+//     var str = cm.getLine(line), extra = 0;
+//     for (var pos = 0;;) {
+//       var tab = str.indexOf("\t", pos);
+//       if (tab == -1) break;
+//       extra += tabSize - (tab + extra) % tabSize - 1;
+//       pos = tab + 1;
+//     }
+//     ch = lex.column - extra;
+//     if (str.charAt(ch) == "(") {found = true; break;}
+//   }
+//   if (!found) return;
+
+//   var start = CodeMirror.Pos(line, ch);
+//   var cache = cm.state.cachedArgHints;
+//   if (cache && cache.doc == cm.getDoc() && CodeMirror.cmpPos(start, cache.start) == 0) {
+//     return lively.notify("cached", undefined, undefined, undefined, "green");
+//     return showArgHints(cm.state, cm, argPos);
+//   }
+//   // cm.state.cachedArgHints = {
+//   //   start: start,
+//   //   doc: cm.getDoc()
+//   // };
+//   lively.warn("calculate anew");
+
+//   // cm.state.request(cm, {type: "type", preferFunction: true, end: start}, function(error, data) {
+//   //   cm.state.cachedArgHints = {
+//   //     start: start,
+//   //     type: parseFnType(data.type),
+//   //     name: data.exprName || data.name || "fn",
+//   //     guess: data.guess,
+//   //     doc: cm.getDoc()
+//   //   };
+//   //   showArgHints(cm.state, cm, argPos);
+//   // });
+
+//   let cmEditor = cm;
+//   let livelyCodeMirror = lcm;
+//   let cursorPosition = cmEditor.getCursor();
+
+//   try {
+//     let data = await serverWrapper.request({
+//       query: {
+//         type: "type",
+//         preferFunction: true,
+//         file: livelyCodeMirror.getTargetModule(),
+//         end: start
+//       },
+//       files: [{
+//         type: 'full',
+//         name: livelyCodeMirror.getTargetModule(),
+//         text: livelyCodeMirror.value
+//       }],
+//       //timeout: 10 * 1000
+//     });
+//     //if (!data.type || !(/^fn\(/).test(data.type)) return;
+//     cm.state.cachedArgHints = {
+//       start: start,
+//       type: parseFnType(data.type),
+//       name: data.exprName || data.name || "fn",
+//       guess: data.guess,
+//       doc: cm.getDoc()
+//     };
+//     showArgHints({
+//       cachedArgHints: cm.state.cachedArgHints
+//     });
+//     //showContextInfo(cmEditor, response);
+//   } catch(error) {
+//     lively.error("ARG", error.message)
+//     showError(cmEditor, error);
+//   }
+// }
+
+// function showArgHints(ts, cm, pos) {
+//   return;
+//   return lively.notify(ts.cachedArgHints.type, undefined, undefined, undefined, "green");
+//   closeArgHints(cm);
+
+//   var cache = ts.cachedArgHints, tp = cache.type;
+//   var tip = elt("span", cache.guess ? cls + "fhint-guess" : null,
+//                 elt("span", cls + "fname", cache.name), "(");
+//   for (var i = 0; i < tp.args.length; ++i) {
+//     if (i) tip.appendChild(document.createTextNode(", "));
+//     var arg = tp.args[i];
+//     tip.appendChild(elt("span", cls + "farg" + (i == pos ? " " + cls + "farg-current" : ""), arg.name || "?"));
+//     if (arg.type != "?") {
+//       tip.appendChild(document.createTextNode(":\u00a0"));
+//       tip.appendChild(elt("span", cls + "type", arg.type));
+//     }
+//   }
+//   tip.appendChild(document.createTextNode(tp.rettype ? ") ->\u00a0" : ")"));
+//   if (tp.rettype) tip.appendChild(elt("span", cls + "type", tp.rettype));
+//   var place = cm.cursorCoords(null, "page");
+//   ts.activeArgHints = makeTooltip(place.right + 1, place.bottom, tip);
+// }
+
+// function parseFnType(text) {
+//   lively.notify("parse fn")
+//   var args = [], pos = 3;
+
+//   function skipMatching(upto) {
+//     var depth = 0, start = pos;
+//     for (;;) {
+//       var next = text.charAt(pos);
+//       if (upto.test(next) && !depth) return text.slice(start, pos);
+//       if (/[{\[\(]/.test(next)) ++depth;
+//       else if (/[}\]\)]/.test(next)) --depth;
+//       ++pos;
+//     }
+//   }
+
+//   // Parse arguments
+//   if (text.charAt(pos) != ")") for (;;) {
+//     var name = text.slice(pos).match(/^([^, \(\[\{]+): /);
+//     if (name) {
+//       pos += name[0].length;
+//       name = name[1];
+//     }
+//     args.push({name: name, type: skipMatching(/[\),]/)});
+//     if (text.charAt(pos) == ")") break;
+//     pos += 2;
+//   }
+
+//   var rettype = text.slice(pos).match(/^\) -> (.*)$/);
+
+//   return {args: args, rettype: rettype && rettype[1]};
+// }
+
+// function closeArgHints(ts) {
+//   if (ts.state.activeArgHints) {
+//     remove(ts.state.activeArgHints);
+//     ts.state.activeArgHints = null;
+//   }
+// }
 
 export class TernCodeMirrorWrapper {
   static loadDefinition(fileName) {
@@ -35,7 +186,7 @@ export class TernCodeMirrorWrapper {
   static async ternServer() {
     return this._ternServerPromise = this._ternServerPromise || this.initTernServer();
   }
-  
+
   static async request(req) {
     let ts = await this.ternServer();
     return new Promise((resolve, reject) => {
@@ -49,10 +200,10 @@ export class TernCodeMirrorWrapper {
       });
     });
   }
-  
+
   static async showType(cmEditor, livelyCodeMirror) {
     let cursorPosition = cmEditor.getCursor();
-    
+
     try {
       let response = await this.request({
         query: {
@@ -66,7 +217,7 @@ export class TernCodeMirrorWrapper {
           type: 'full',
           name: livelyCodeMirror.getTargetModule(),
           text: livelyCodeMirror.value
-          
+
         }],
         //timeout: 10 * 1000
       });
@@ -79,7 +230,7 @@ export class TernCodeMirrorWrapper {
     // #TODO: implement efficiently
     //updateArgHints(cmEditor, livelyCodeMirror, this)
   }
-  
+
   static get jumpStack() {
     return this._jumpStack || (this._jumpStack = []);
   }
@@ -116,9 +267,9 @@ export class TernCodeMirrorWrapper {
       showError(cmEditor, 'No interesting variable found');
       return;
     }
-    
+
     let cursorPosition = cmEditor.getCursor();
-    
+
     try {
       let data = await this.request({
         query: {
@@ -134,7 +285,7 @@ export class TernCodeMirrorWrapper {
           text: livelyCodeMirror.value
         }]
       });
-      
+
       // properties of response data
       // [start, end, file, context, contextOffset, doc, url, origin]
 
@@ -159,7 +310,7 @@ export class TernCodeMirrorWrapper {
   static async showReferences(cmEditor, livelyCodeMirror) {
     let cursorPosition = cmEditor.getCursor();
     let me = this;
-    
+
     try {
       let response = await this.request({
         query: {
@@ -214,11 +365,11 @@ export class TernCodeMirrorWrapper {
     }
 
   }
-  
-  
+
+
   static async __temp__(cm) {
     let ts = await this.ternServer();
-  
+
     //   server.addFile('https://lively-kernel.org/lively4/foo/foo.js', `
     // import { a } from './x';
     // var d = a();
