@@ -3,7 +3,6 @@ import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
-import { withAdvice } from './../lib/flight/advice.js';
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import { PausableLoop } from 'utils';
 
@@ -33,14 +32,17 @@ function ensureBaseViewForClass(Class) {
 // #TODO: unused, maybe use cop instead of a functional mixin
 // #TODO: use cop here
 export function trackInitializeAndDestroy(Class) {
-  withAdvice.call(Class.prototype);
-
-  Class.prototype.after('initialize', function() {
-    trackInstance.call(Class, this);
-  });
-  Class.prototype.before('destroy', function() {
-    untrackInstance.call(Class, this);
-  });
+  cop.layer().refineClass(Class, {
+    initialize(...args) {
+      const result = cop.proceed(...args);
+      trackInstance.call(Class, this);
+      return result;
+    },
+    destroy(...args) {
+      untrackInstance.call(Class, this);
+      return cop.proceed(...args);
+    }
+  }).beGlobal();
 }
 
 class Operator {}
