@@ -216,8 +216,6 @@ if (window.lively && window.lively4url) {
           'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
           'aexpr-ticking': lively4url + '/src/client/reactive/active-expressions/aexpr-ticking/src/aexpr-ticking.js',
           'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
-          // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
-          'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
           // #TODO: duplicated, remove roq in imports
           'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
