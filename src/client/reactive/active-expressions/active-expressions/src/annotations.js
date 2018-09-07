@@ -1,4 +1,3 @@
-
 /**
  *
  * @class Annotations
@@ -11,15 +10,15 @@
  * ann.add({ name: 'Annotations', color: 'green' });
  *
  * ann.keys(); // ['name', 'color']
- * ann.has('value'); // true
+ * ann.has('name'); // true
  * ann.get('name'); // 'Lively4'
- * ann.getAll('value'); // ['Lively4', 'Annotations']
+ * ann.getAll('name'); // ['Lively4', 'Annotations']
  */
 export default class Annotations {
   constructor() {
     this._annotations = [];
   }
-  
+
   /**
    * Stores a new annotation object.
    * @function Annotations#add
@@ -47,7 +46,7 @@ export default class Annotations {
   keys() {
     return Object.keys(Object.assign({}, ...this._annotations));
   }
-  
+
   /**
    * Get a value associated to the given property.
    * @function Annotations#get
@@ -57,11 +56,11 @@ export default class Annotations {
   get(prop) {
     return this.getAll(prop)[0];
   }
-  
+
   /**
    * Get all values associated to the given property.
    * @function Annotations#getAll
-   * @param {String} prop - The property name we search values for.
+   * @param {String} propName - The property name we search values for.
    * @return {Array<any>} An array containing all values associated to the property.
    */
   getAll(propName) {
@@ -69,7 +68,7 @@ export default class Annotations {
       .filter(obj => obj.hasOwnProperty(propName))
       .map(obj => obj[propName]);
   }
-  
+
   squash() {
     return Object.assign({}, ...this._annotations);
   }
