@@ -5,12 +5,12 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+import Annotations from 'src/client/reactive/utils/annotations.js';
 
 describe('Annotations (AExprs/Vivide)', () => {
   it("Annotations exists", () => {
     expect(Annotations).to.be.defined;
-    
+
   });
 
   it("supports add and has methods", () => {
@@ -27,7 +27,7 @@ describe('Annotations (AExprs/Vivide)', () => {
     expect(ann.has('value')).to.be.false;
 
     ann.add({ value: 42 });
-    
+
     expect(ann.has('value')).to.be.true;
     expect(ann.has('prop')).to.be.false;
 
@@ -83,7 +83,7 @@ describe('Annotations (AExprs/Vivide)', () => {
     expect(squashed).to.have.property('value', 42);
     expect(squashed).to.have.property('prop', 33);
     expect(squashed).not.to.have.key('attribute');
-    
+
     ann.add({ value: 50, attribute: 12 });
     const newSquashed = ann.squash();
     expect(newSquashed).to.have.property('value', 50);

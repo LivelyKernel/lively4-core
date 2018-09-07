@@ -1,4 +1,4 @@
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+import Annotations from 'src/client/reactive/utils/annotations.js';
 import CachingFetch from './base/caching-fetch.js';
 import CachingPromise from './base/caching-promise.js';
 
@@ -13,7 +13,7 @@ function isPromise(obj) {
 export const AExprRegistry = {
 
   _aexprs: new Set(),
-  
+
   /**
    * Handling membership
    */
@@ -23,7 +23,7 @@ export const AExprRegistry = {
   removeAExpr(aexpr) {
     this._aexprs.delete(aexpr);
   },
-  
+
   /**
    * Access
    */
@@ -64,12 +64,12 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    
+
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();
     }
   }
-  
+
   addToRegistry() {
     AExprRegistry.addAExpr(this);
   }
@@ -205,7 +205,7 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = true;
     return this;
   }
-  
+
   /**
    * Reflection information
    */
@@ -227,7 +227,7 @@ export class BaseActiveExpression {
       return this._annotations;
     }
   }
-  
+
   supportsDependencies() {
     return false;
   }
