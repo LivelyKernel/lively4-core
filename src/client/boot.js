@@ -316,7 +316,7 @@ if (window.lively && window.lively4url) {
           // blacklist all projects included for active expressions
           [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
           [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
-          [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
+          // [lively4url + "/src/client/reactive/tern-spike/*.js"]: aexprViaDirective,
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.spec.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.spec.js']: aexprViaDirective,
@@ -392,18 +392,18 @@ if (window.lively && window.lively4url) {
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
 
-          
+
           groupedMessage(1, 4, 'Invalidate Caches');
           await invalidateFileCaches()
           groupedMessageEnd();
 
-          
+
 //           groupedMessage(2, 4, 'Load foo.js');
 //           const { contextJS } = await System.import(lively4url + "/foo.js");
-          
-          
+
+
           groupedMessage(2, 4, 'Wait for Service Worker');
-          
+
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
           await new Promise(whenLoaded);
           groupedMessageEnd();
