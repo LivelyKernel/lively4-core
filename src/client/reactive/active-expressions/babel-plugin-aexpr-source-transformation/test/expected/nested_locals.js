@@ -1,5 +1,5 @@
-import { getLocal as _getLocal } from "aexpr-source-transformation-propagation";
-import { setLocal as _setLocal } from "aexpr-source-transformation-propagation";
+import { getLocal as _getLocal } from "active-expression-rewriting";
+import { setLocal as _setLocal } from "active-expression-rewriting";
 function funcA() {
     let _scope2 = {};
 

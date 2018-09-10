@@ -17,7 +17,7 @@ The following heuristic is used:
 - We use the first encounter of an instance as space restriction
 
 ### Implementation
-In [aexpr-source-transformation-propagation.js](https://lively-kernel.org/lively4/lively4-core/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js) the class `TransactionContext` handles most of the transaction logic.
+In [active-expression-rewriting.js](https://lively-kernel.org/lively4/lively4-core/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js) the class `TransactionContext` handles most of the transaction logic.
 It is a singleton (global variable `transactionContext`) and keeps track of observed instances and suppressed active expressions using a member variable called `suppressed`. It is a Map of one reference counter and a aexpr set per suppressed instance. The methods `retain` (entry) and `release` (exit) are placed at specific statements via source code rewriting.
 `retain` registers a suppression or increments its reference counter.
 `release` decrements its reference counter and upon reaching zero it removes its suppression while checking all delayed aexprs.

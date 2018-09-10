@@ -1,4 +1,4 @@
-import aexpr from 'aexpr-source-transformation-propagation';
+import aexpr from 'active-expression-rewriting';
 
 export default class Stream {
   constructor(source) {

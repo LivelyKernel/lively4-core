@@ -2,7 +2,7 @@ export { default as View} from './view.js';
 import View from './view.js';
 import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from './utils.js';
 import { BaseActiveExpression } from "active-expressions";
-import aexpr from 'aexpr-source-transformation-propagation';
+import aexpr from 'active-expression-rewriting';
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import { PausableLoop } from 'utils';
 

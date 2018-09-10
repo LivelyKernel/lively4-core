@@ -1,8 +1,8 @@
-import { getLocal as _getLocal } from 'aexpr-source-transformation-propagation';
-import { getGlobal as _getGlobal } from 'aexpr-source-transformation-propagation';
-import { setLocal as _setLocal } from 'aexpr-source-transformation-propagation';
-import { getAndCallMember as _getAndCallMember } from 'aexpr-source-transformation-propagation';
-import { setGlobal as _setGlobal } from 'aexpr-source-transformation-propagation';
+import { getLocal as _getLocal } from 'active-expression-rewriting';
+import { getGlobal as _getGlobal } from 'active-expression-rewriting';
+import { setLocal as _setLocal } from 'active-expression-rewriting';
+import { getAndCallMember as _getAndCallMember } from 'active-expression-rewriting';
+import { setGlobal as _setGlobal } from 'active-expression-rewriting';
 let _scope = {};
 var x = 5,
     z = 42;

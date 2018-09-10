@@ -1,2 +1,2 @@
-import { getMember as _getMember } from "aexpr-source-transformation-propagation";
+import { getMember as _getMember } from "active-expression-rewriting";
 let r = _getMember(Number, "POSITIVE_INFINITY");

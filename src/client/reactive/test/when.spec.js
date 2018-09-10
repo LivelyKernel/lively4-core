@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import aexpr from 'aexpr-source-transformation-propagation';
+import aexpr from 'active-expression-rewriting';
 import * as frameBasedAExpr from "frame-based-aexpr";
 import when from 'src/client/reactive/when.js';
 

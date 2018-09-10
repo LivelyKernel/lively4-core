@@ -1,4 +1,4 @@
-import aexpr from 'aexpr-source-transformation-propagation';
+import aexpr from 'active-expression-rewriting';
 
 export default function when(condition, ...params) {
   const aexprContructor = params[0] && params[0].strategy || aexpr;

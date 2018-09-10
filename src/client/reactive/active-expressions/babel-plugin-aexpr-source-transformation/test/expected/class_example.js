@@ -1,6 +1,6 @@
-import { getMember as _getMember } from "aexpr-source-transformation-propagation";
-import { getLocal as _getLocal } from "aexpr-source-transformation-propagation";
-import { setMember as _setMember } from "aexpr-source-transformation-propagation";
+import { getMember as _getMember } from "active-expression-rewriting";
+import { getLocal as _getLocal } from "active-expression-rewriting";
+import { setMember as _setMember } from "active-expression-rewriting";
 class Rectangle {
   constructor(x, y, width, height) {
     let _scope = {};

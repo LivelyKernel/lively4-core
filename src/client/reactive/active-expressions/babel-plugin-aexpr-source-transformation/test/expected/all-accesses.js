@@ -1,7 +1,7 @@
-import { getMember as _getMember } from "aexpr-source-transformation-propagation";
-import { getLocal as _getLocal } from "aexpr-source-transformation-propagation";
-import { getAndCallMember as _getAndCallMember } from "aexpr-source-transformation-propagation";
-import { setMember as _setMember } from "aexpr-source-transformation-propagation";
+import { getMember as _getMember } from "active-expression-rewriting";
+import { getLocal as _getLocal } from "active-expression-rewriting";
+import { getAndCallMember as _getAndCallMember } from "active-expression-rewriting";
+import { setMember as _setMember } from "active-expression-rewriting";
 let _scope = {};
 var a = { b: 1, fn() {
     return {};

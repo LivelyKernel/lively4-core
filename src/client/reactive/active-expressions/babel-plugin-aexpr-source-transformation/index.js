@@ -99,12 +99,12 @@ export default function(param) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("aexpr-source-transformation-propagation", name, name);
+    let identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     return identifier;
 
     // let ref = customTemplates[name];
-    // console.log(file.addImport("aexpr-source-transformation-propagation", "aexpr"));
+    // console.log(file.addImport("active-expression-rewriting", "aexpr"));
     // let uid = file.declarations[name] = file.scope.generateUidIdentifier(name);
     //
     // ref = ref().expression;
