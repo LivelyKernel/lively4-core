@@ -319,6 +319,7 @@ if (window.lively && window.lively4url) {
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.js']: aexprViaDirective,
+          // #TODO: does not match anything anymore
           [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
           // [lively4url + '/src/client/reactive/*.spec.js']: aexprViaDirective,
           // [lively4url + '/src/client/reactive/*.test.js']: aexprViaDirective,
