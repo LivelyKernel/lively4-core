@@ -296,12 +296,6 @@ if (window.lively && window.lively4url) {
           // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
           [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
           [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
-          // blacklist all projects included for active expressions
-          [lively4url + '/src/client/reactive/*.js']: moduleOptionsNon,
-          [lively4url + '/src/external/aexpr/*.js']: moduleOptionsNon,
-          // ... except for the tests
-          // [lively4url + '/src/external/aexpr/test/*.spec.js']: aexprViaDirective,
-          // [lively4url + '/src/external/roq/test/*.js']: aexprViaDirective,
 
           [lively4url + '/demos/*.js']: aexprViaDirective,
           [lively4url + '/templates/*.js']: aexprViaDirective,
@@ -317,10 +311,6 @@ if (window.lively && window.lively4url) {
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.js']: aexprViaDirective,
-          // #TODO: does not match anything anymore
-          [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
-          // [lively4url + '/src/client/reactive/*.spec.js']: aexprViaDirective,
-          // [lively4url + '/src/client/reactive/*.test.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
 
           // [lively4url + '/demos/*.js']: liveES7,
