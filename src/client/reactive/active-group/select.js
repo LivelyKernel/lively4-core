@@ -4,7 +4,7 @@ import { pushIfMissing, removeIfExisting, Stack, isPrimitive, identity } from '.
 import { BaseActiveExpression } from "active-expressions";
 import aexpr from 'aexpr-source-transformation-propagation';
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
-import { PausableLoop } from 'src/client/reactive/active-group/utils';
+import { PausableLoop } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (FilterOperation would not be defined in select)
