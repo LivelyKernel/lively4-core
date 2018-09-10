@@ -62,7 +62,7 @@ export default class Stream {
     });
     this.on('end', () => {
       newStream.end();
-    })
+    });
     
     return newStream;
   }
