@@ -1,6 +1,6 @@
 "enable aexpr";
 
-import { trackInstance, untrackInstance } from 'roq';
+import { trackInstance, untrackInstance } from 'active-group';
 
 export class NumExpr {
   constructor(val) {

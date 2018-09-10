@@ -1,6 +1,6 @@
 "enable aexpr";
 
-import { trackInstance } from 'active-groups';
+import { trackInstance } from 'active-group';
 
 export function getValueClass() {
   return class ValueClass {

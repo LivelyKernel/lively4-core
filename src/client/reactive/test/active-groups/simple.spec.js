@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import select, { trackInstance } from 'roq';
+import select, { trackInstance } from 'active-group';
 
 describe("simple select", () => {
   class Value {

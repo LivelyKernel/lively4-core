@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import select from 'active-groups';
+import select from 'active-group';
 import { AddExpr, NegExpr, NumExpr } from './expr.js';
 
 describe('complex example', function() {

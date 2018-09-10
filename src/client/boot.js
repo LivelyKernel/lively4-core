@@ -217,9 +217,7 @@ if (window.lively && window.lively4url) {
           'aexpr-ticking': lively4url + '/src/client/reactive/active-expressions/aexpr-ticking/src/aexpr-ticking.js',
           'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
-          // #TODO: duplicated, remove roq in imports
-          'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
-          'active-groups': lively4url + '/src/client/reactive/active-groups/src/select.js',
+          'active-group': lively4url + '/src/client/reactive/active-groups/src/select.js',
 
           // jsx support
           'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',

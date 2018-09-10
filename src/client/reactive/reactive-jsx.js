@@ -162,7 +162,7 @@ export function childExpression(expression) {
 }
 
 export function childSpread(array) {
-  // #TODO: <ul>{roq}</ul> also gets the reactive behavior, do we want this?
+  // #TODO: <ul>{active-group}</ul> also gets the reactive behavior, do we want this?
   if(isActiveGroup(array)) {
     return [array];
   } else {

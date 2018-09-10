@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import select, { trackInitializeAndDestroy } from 'roq';
+import select, { trackInitializeAndDestroy } from 'active-group';
 import { getValueClass } from './class-factory.js';
 const AValueClass = getValueClass();
 

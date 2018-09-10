@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import select from 'roq';
+import select from 'active-group';
 import { getValueClass } from './class-factory.js';
 var OtherClass = getValueClass();
 

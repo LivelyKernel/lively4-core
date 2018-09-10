@@ -1,6 +1,6 @@
 "enable aexpr";
 
-import { trackInstance } from 'roq';
+import { trackInstance } from 'active-group';
 
 export default class Person {
   constructor(name, title) {
