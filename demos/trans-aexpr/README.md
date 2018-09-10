@@ -40,7 +40,7 @@ aexprTransaction([instanceA, instanceB, ...], [aexprA, aexprB, ...], function() 
 However, this would be a library based solution as introducing our own syntax is not supported by the rewriting strategy.
 
 ### Limits / Future Work
-`traceMember` has to be disabled in favor of `getAndCallMember` in [babel-plugin-aexpr-source-transformation](https://lively-kernel.org/lively4/lively4-core/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js) because it can not be rewritten at the moment.
+`traceMember` has to be disabled in favor of `getAndCallMember` in [babel-plugin-active-expression-rewriting](https://lively-kernel.org/lively4/lively4-core/src/client/reactive/babel-plugin-active-expression-rewriting/index.js) because it can not be rewritten at the moment.
 Also, there is no guarantee that `release` is called in case of exceptions.
 But, that should be easy to fix. Far harder would probably be the unification of using async / coroutines / generator functions together with transactional active expressions.
 

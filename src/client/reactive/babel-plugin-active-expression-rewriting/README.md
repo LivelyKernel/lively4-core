@@ -1,4 +1,4 @@
-# babel-plugin-aexpr-source-transformation
+# babel-plugin-active-expression-rewriting
 3rd implementation strategy of active expressions, via a babel transformation
 
 Live editable at http://astexplorer.net/#/h1zFzvogmm/20

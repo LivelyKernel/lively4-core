@@ -43,7 +43,7 @@ SystemJS.config({
     // aexpr support
     'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
-    'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
     'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
     // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
     'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
@@ -113,7 +113,7 @@ const aexprViaDirective = {
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
-      ['babel-plugin-aexpr-source-transformation', {
+      ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true
       }]
     ]
@@ -174,7 +174,7 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          'babel-plugin-aexpr-source-transformation'
+          'babel-plugin-active-expression-rewriting'
         ]
       },
       loader: 'workspace-loader'
