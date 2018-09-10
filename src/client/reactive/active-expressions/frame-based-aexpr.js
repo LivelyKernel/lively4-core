@@ -1,5 +1,5 @@
 import { BaseActiveExpression } from "active-expressions";
-import { checkTicking as check } from "aexpr-ticking";
+import { check } from "aexpr-ticking";
 import { PausableLoop } from 'utils';
 
 export class FrameBasedActiveExpression extends BaseActiveExpression {
