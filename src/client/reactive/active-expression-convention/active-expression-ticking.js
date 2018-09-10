@@ -1,4 +1,4 @@
-import { BaseActiveExpression } from 'active-expressions';
+import { BaseActiveExpression } from 'active-expression';
 
 const TICKING_INSTANCES = new Set();
 

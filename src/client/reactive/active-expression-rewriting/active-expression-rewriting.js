@@ -1,4 +1,4 @@
-import { BaseActiveExpression } from 'active-expressions';
+import { BaseActiveExpression } from 'active-expression';
 import Stack from 'src/client/reactive/utils/stack.js';
 import { using } from 'utils';
 

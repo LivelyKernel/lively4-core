@@ -41,7 +41,7 @@ SystemJS.config({
     'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
     // aexpr support
-    'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
+    'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
     'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',

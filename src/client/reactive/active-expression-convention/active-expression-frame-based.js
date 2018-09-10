@@ -1,4 +1,4 @@
-import { BaseActiveExpression } from "active-expressions";
+import { BaseActiveExpression } from 'active-expression';
 import { check } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 import { PausableLoop } from 'utils';
 

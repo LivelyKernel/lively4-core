@@ -211,8 +211,7 @@ if (window.lively && window.lively4url) {
           'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
           // aexpr support
-          // #TODO: rename to active-expression
-          'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
+          'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
           'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
           'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',

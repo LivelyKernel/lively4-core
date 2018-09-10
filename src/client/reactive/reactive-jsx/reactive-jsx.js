@@ -1,5 +1,5 @@
 import { toDOMNode } from "./ui-aexpr.js";
-import { BaseActiveExpression as ActiveExpression } from "active-expressions";
+import { BaseActiveExpression as ActiveExpression } from 'active-expression';
 
 /**
  * Resources for JSX Semantics
