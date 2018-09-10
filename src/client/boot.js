@@ -213,7 +213,6 @@ if (window.lively && window.lively4url) {
           // aexpr support
           // #TODO: rename to active-expression
           'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
-          // #TODO: rename to active-expression-rewiting
           'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
           // #TODO: rename to babel-plugin-active-expression-rewiting
           'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
