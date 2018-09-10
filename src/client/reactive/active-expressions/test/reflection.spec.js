@@ -6,7 +6,7 @@ chai.use(sinonChai);
 
 import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js'
 import * as frameBasedAExpr from "frame-based-aexpr";
-import * as tickingAExpr from "src/client/reactive/active-expressions/aexpr-ticking/src/ticking/ticking-active-expressions.js";
+import * as tickingAExpr from "src/client/reactive/active-expressions/active-expression-convention/src/ticking/ticking-active-expressions.js";
 
 import { countBy } from 'utils';
 
