@@ -50,8 +50,8 @@ SystemJS.config({
     'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
     'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
     // #TODO: duplicated, remove roq in imports
-    'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
-    'active-groups': lively4url + '/src/client/reactive/active-groups/src/select.js',
+    'roq': lively4url + '/src/client/reactive/active-group/src/select.js',
+    'active-groups': lively4url + '/src/client/reactive/active-group/src/select.js',
 
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
@@ -152,7 +152,7 @@ SystemJS.config({
     // ... except for the tests
     [lively4url + '/src/client/reactive/active-expressions/test/*.spec.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.spec.js']: aexprViaDirective,
-    [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
+    [lively4url + '/src/client/reactive/active-group/test/*.js']: aexprViaDirective,
     // [lively4url + '/demos/*.js']: liveES7,
     // [lively4url + '/doc/*.js']: liveES7,
     // [lively4url + '/media/*.js']: liveES7,

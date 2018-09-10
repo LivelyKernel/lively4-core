@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import select from '../../active-groups/src/select.js';
+import select from '../../active-group/src/select.js';
 import { getValueClass } from './class-factory.js';
 
 describe('.filter operator', function() {
