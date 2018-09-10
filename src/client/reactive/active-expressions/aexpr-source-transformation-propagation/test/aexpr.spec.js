@@ -18,7 +18,7 @@ import {
     setLocal,
     getGlobal,
     setGlobal
-} from '../src/aexpr-source-transformation-propagation.js';
+} from '../src/active-expression-rewriting.js';
 
 describe('Propagation Logic', function() {
 

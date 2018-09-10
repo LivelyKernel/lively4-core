@@ -42,7 +42,7 @@ SystemJS.config({
 
     // aexpr support
     'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
-    'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
+    'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/active-expression-rewriting.js',
     'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
     'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
     // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
