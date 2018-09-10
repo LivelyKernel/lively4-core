@@ -307,6 +307,7 @@ if (window.lively && window.lively4url) {
           // blacklist all projects included for active expressions
           [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
           [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
+          [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
