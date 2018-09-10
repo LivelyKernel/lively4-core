@@ -6,7 +6,7 @@ chai.use(sinonChai);
 
 import aexpr from 'aexpr-source-transformation-propagation';
 import * as frameBasedAExpr from "frame-based-aexpr";
-import when from 'src/client/reactive/active-expressions/when.js';
+import when from 'src/client/reactive/when.js';
 
 import { wait } from 'utils';
 
