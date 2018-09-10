@@ -1,5 +1,5 @@
 import { BaseActiveExpression } from "active-expressions";
-import { check } from "src/client/reactive/active-expressions/active-expression-convention/active-expression-ticking.js";
+import { check } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 import { PausableLoop } from 'utils';
 
 export class FrameBasedActiveExpression extends BaseActiveExpression {
