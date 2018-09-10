@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { BaseActiveExpression } from 'src/client/reactive/active-expressions/active-expressions/src/active-expressions.js';
+import { BaseActiveExpression } from 'src/client/reactive/active-expression/active-expression.js';
 import * as frameBasedAExpr from "frame-based-aexpr";
 
 import { wait } from 'utils';

@@ -1,6 +1,6 @@
 import Annotations from 'src/client/reactive/utils/annotations.js';
-import CachingFetch from '../../../utils/caching-fetch.js';
-import CachingPromise from '../../../utils/caching-promise.js';
+import CachingFetch from '../utils/caching-fetch.js';
+import CachingPromise from '../utils/caching-promise.js';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
