@@ -214,16 +214,14 @@ if (window.lively && window.lively4url) {
           // #TODO: rename to active-expression
           'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
           'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
-          // #TODO: rename to babel-plugin-active-expression-rewiting
           'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
-          'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
           'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
           // jsx support
           'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
           'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
-          'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx.js',
+          'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
 
           // stage 0 support
           'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
@@ -308,7 +306,7 @@ if (window.lively && window.lively4url) {
 
           // blacklist all projects included for active expressions
           [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
-          [lively4url + "/src/client/reactive/reactive-jsx.js"]: liveES7,
+          [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
           // ... except for the tests
           [lively4url + '/src/client/reactive/active-expressions/test/*.js']: aexprViaDirective,
           [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,

@@ -1,4 +1,4 @@
-import { toDOMNode } from "src/client/reactive/active-expressions/ui-aexpr.js";
+import { toDOMNode } from "./ui-aexpr.js";
 import { BaseActiveExpression as ActiveExpression } from "active-expressions";
 
 /**
