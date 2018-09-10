@@ -4,7 +4,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import Stream from 'src/client/reactive/active-expressions/stream.js';
+import Stream from 'src/client/reactive/stream.js';
 
 describe("Streams", function() {
   
