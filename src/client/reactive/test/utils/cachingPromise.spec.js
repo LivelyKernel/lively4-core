@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import CachingPromise from './../../src/base/caching-promise.js';
+import CachingPromise from '../../utils/caching-promise.js';
 
 class Traceable {
   constructor(spy) {
