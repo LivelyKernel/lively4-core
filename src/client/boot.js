@@ -215,7 +215,7 @@ if (window.lively && window.lively4url) {
           'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
           'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
           'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
-          'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
+          'frame-based-aexpr': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
           'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
           // jsx support
