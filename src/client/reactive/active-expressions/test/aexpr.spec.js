@@ -5,7 +5,7 @@ import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
 import {reset} from 'active-expression-rewriting';
-import * as frameBasedAExpr from "frame-based-aexpr";
+import * as frameBasedAExpr from "active-expression-frame-based";
 
 aexpr(()=>{});
 

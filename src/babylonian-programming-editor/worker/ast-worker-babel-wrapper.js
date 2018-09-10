@@ -44,7 +44,7 @@ SystemJS.config({
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
-    'frame-based-aexpr': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
+    'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
     // jsx support
