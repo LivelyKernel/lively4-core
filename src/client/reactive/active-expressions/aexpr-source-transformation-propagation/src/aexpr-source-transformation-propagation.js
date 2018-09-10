@@ -1,5 +1,5 @@
 import { BaseActiveExpression } from 'active-expressions';
-import Stack from 'src/client/reactive/active-expressions/stack-es2015-module/src/stack.js';
+import Stack from 'src/client/reactive/utils/stack.js';
 import { using } from 'utils';
 
 let expressionAnalysisMode = false;
