@@ -211,8 +211,11 @@ if (window.lively && window.lively4url) {
           'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
           // aexpr support
+          // #TODO: rename to active-expression
           'active-expressions': lively4url + '/src/client/reactive/active-expression/active-expression.js',
-          'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/active-expression-rewriting.js',
+          // #TODO: rename to active-expression-rewiting
+          'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
+          // #TODO: rename to babel-plugin-active-expression-rewiting
           'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
           'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
           'frame-based-aexpr': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',

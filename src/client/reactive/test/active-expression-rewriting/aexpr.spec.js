@@ -18,7 +18,7 @@ import {
     setLocal,
     getGlobal,
     setGlobal
-} from '../src/active-expression-rewriting.js';
+} from '../../active-expression-rewriting/active-expression-rewriting.js';
 
 describe('Propagation Logic', function() {
 
