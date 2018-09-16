@@ -1,3 +1,9 @@
+~[42]
+~[() => {
+  var x = 42;
+  return x;
+}]
+
 window.glob = "";
 window.glob2 = "2";
 window.glob3 = "3";

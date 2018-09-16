@@ -188,6 +188,29 @@ export default function(param) {
           }
 
           path.traverse({
+            // transform ~[expr] notation to _aexpr(() => expr)
+            UnaryExpression(path) {
+              if(path.node.operator !== '~') return;
+              const array = path.get('argument');
+              if(!array.isArrayExpression()) return;
+              if(array.get('elements').length !== 1) return;
+              const expr = array.get('elements')[0];
+              
+              path.replaceWith(
+                t.callExpression(
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME), [
+                    t.arrowFunctionExpression(
+                      [], expr.node
+                    )
+                    // path.node.left.object,
+                    // getPropertyFromMemberExpression(path.node.left),
+                    // //t.stringLiteral(path.node.operator),
+                    // path.node.right
+                  ]
+                )
+              );
+              lively.notify(expr.node.type);
+            },
             Identifier(path) {
               //console.log(path.node.name);
 

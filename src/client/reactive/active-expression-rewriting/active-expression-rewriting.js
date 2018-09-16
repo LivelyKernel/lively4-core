@@ -137,7 +137,7 @@ const aexprStorage = new HookStorage();
 const aexprStorageForLocals = new HookStorage();
 const aexprStack = new Stack();
 
-class RewritingActiveExpression extends BaseActiveExpression {
+export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...params){
     super(func, ...params);
     this.meta({ strategy: 'Rewriting' });

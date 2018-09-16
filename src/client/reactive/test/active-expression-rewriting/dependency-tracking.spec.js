@@ -114,6 +114,44 @@ describe('loop constructs', function() {
   });
 });
 
+// #TODO: spread arguments
+
+describe('super', () => {
+  
+  it('source transform allows for super', () => {
+    class A {
+      constructor(arg) {
+        this.value = 42 + arg;
+      }
+    }
+    
+    class B extends A {
+      constructor(arg) {
+        super(arg);
+      }
+    }
+    
+    expect(new B('b')).to.have.property('value', '42b');
+  });
+
+  it('source transform allows for super.func(x)', () => {
+    class A {
+      double(arg) {
+        return arg * 2;
+      }
+    }
+    
+    class B extends A {
+      double(arg) {
+        return super.double(arg) * 3;
+      }
+    }
+    
+    expect(new B().double(1)).to.equal(6);
+  });
+
+});
+
 describe('new.target', () => {
   
   it('source transform allows for new.target', () => {
