@@ -30,7 +30,7 @@ chai.use(sinonChai);
 import * as cop from '../src/Layers.js';
 import { LayerableObject, proceed, Layer } from '../src/Layers.js';
 import { withLayers, withoutLayers, layer } from '../src/contextjs.js';
-import aexpr from 'aexpr-source-transformation-propagation';
+import aexpr from 'active-expression-rewriting';
 
 describe("Implicit Layer Activation", () => {
 

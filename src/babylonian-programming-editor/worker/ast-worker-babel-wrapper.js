@@ -41,17 +41,11 @@ SystemJS.config({
     'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
     // aexpr support
-    'active-expressions': lively4url + '/src/client/reactive/active-expressions/active-expressions/src/active-expressions.js',
-    'aexpr-source-transformation-propagation': lively4url + '/src/client/reactive/active-expressions/aexpr-source-transformation-propagation/src/aexpr-source-transformation-propagation.js',
-    'babel-plugin-aexpr-source-transformation': lively4url + '/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js',
-    'aexpr-ticking': lively4url + '/src/client/reactive/active-expressions/aexpr-ticking/src/aexpr-ticking.js',
-    'ui-aexpr': lively4url + '/src/client/reactive/active-expressions/ui-aexpr.js',
-    // 'babel-plugin-locals': lively4url + '/src/client/reactive/active-expressions/babel-plugin-locals/index.js',
-    'stack-es2015-modules': lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/src/stack.js',
-    'frame-based-aexpr': lively4url + '/src/client/reactive/active-expressions/frame-based-aexpr.js',
-    // #TODO: duplicated, remove roq in imports
-    'roq': lively4url + '/src/client/reactive/active-groups/src/select.js',
-    'active-groups': lively4url + '/src/client/reactive/active-groups/src/select.js',
+    'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
+    'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
+    'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
+    'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
@@ -114,7 +108,7 @@ const aexprViaDirective = {
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
-      ['babel-plugin-aexpr-source-transformation', {
+      ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true
       }]
     ]
@@ -152,7 +146,7 @@ SystemJS.config({
     // ... except for the tests
     [lively4url + '/src/client/reactive/active-expressions/test/*.spec.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/active-expressions/stack-es2015-module/test/*.spec.js']: aexprViaDirective,
-    [lively4url + '/src/client/reactive/active-groups/test/*.js']: aexprViaDirective,
+    [lively4url + '/src/client/reactive/active-group/test/*.js']: aexprViaDirective,
     // [lively4url + '/demos/*.js']: liveES7,
     // [lively4url + '/doc/*.js']: liveES7,
     // [lively4url + '/media/*.js']: liveES7,
@@ -175,7 +169,7 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          'babel-plugin-aexpr-source-transformation'
+          'babel-plugin-active-expression-rewriting'
         ]
       },
       loader: 'workspace-loader'

@@ -1,7 +1,7 @@
 import * as cop from "src/client/ContextJS/src/contextjs.js";
 import {pt,rect, Point, Rectangle} from "src/client/graphics.js"
 import Preferences from './preferences.js';
-import select, { trackInstance } from 'active-groups';
+import select, { trackInstance } from 'active-group';
 import { Knot } from 'src/client/triples/triples.js';
 
 /* Layer for interactive development, that will not be active by default
