@@ -268,6 +268,9 @@ export function reset() {
     CompositeKey.clear();
 }
 
+/**
+ * (C)RUD for member attributes
+ */
 export function traceMember(obj, prop) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);
@@ -393,6 +396,14 @@ export function setMemberBitwiseXOR(obj, prop, val) {
 export function setMemberBitwiseOR(obj, prop, val) {
     transactionContext.retain(obj);
     const result = obj[prop] |= val;
+    checkDependentAExprs(obj, prop);
+    transactionContext.release(obj);
+    return result;
+}
+
+export function deleteMember(obj, prop) {
+    transactionContext.retain(obj);
+    const result = delete obj[prop];
     checkDependentAExprs(obj, prop);
     transactionContext.release(obj);
     return result;
