@@ -22,11 +22,14 @@ const SET_MEMBER_BY_OPERATORS = {
   '^=': 'setMemberBitwiseXOR',
   '|=': 'setMemberBitwiseOR'
 };
-const SET_LOCAL = "setLocal";
-const GET_LOCAL = "getLocal";
 
-const SET_GLOBAL = "setGlobal";
-const GET_GLOBAL = "getGlobal";
+const DELETE_MEMBER = 'deleteMember';
+
+const SET_LOCAL = 'setLocal';
+const GET_LOCAL = 'getLocal';
+
+const SET_GLOBAL = 'setGlobal';
+const GET_GLOBAL = 'getGlobal';
 
 const IGNORE_STRING = 'aexpr ignore';
 const IGNORE_INDICATOR = Symbol('aexpr ignore');
@@ -188,8 +191,25 @@ export default function(param) {
           }
 
           path.traverse({
-            // transform ~[expr] notation to _aexpr(() => expr)
             UnaryExpression(path) {
+              
+              // handle delete operator
+              if(path.node.operator === 'delete') {
+                const argument = path.get('argument');
+                if(argument.isMemberExpression()) {
+                  path.replaceWith(
+                    t.callExpression(
+                      addCustomTemplate(state.file, DELETE_MEMBER), [
+                        argument.node.object,
+                        getPropertyFromMemberExpression(argument.node)
+                      ]
+                    )
+                  );
+                }
+                return;
+              }
+              
+              // transform ~[expr] notation to _aexpr(() => expr)
               if(path.node.operator !== '~') return;
               const array = path.get('argument');
               if(!array.isArrayExpression()) return;
@@ -209,8 +229,8 @@ export default function(param) {
                   ]
                 )
               );
-              lively.notify(expr.node.type);
             },
+
             Identifier(path) {
               //console.log(path.node.name);
 
@@ -554,6 +574,7 @@ export default function(param) {
                 if (t.isIdentifier(path.node.callee) && true) {}
               }
             }
+            
           });
         }
       }

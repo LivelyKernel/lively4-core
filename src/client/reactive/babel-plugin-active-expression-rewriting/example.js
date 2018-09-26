@@ -1,3 +1,11 @@
+() => {
+  "do stuff"
+  let xxxxx = 1;
+  delete xxxxx.roo;
+  delete window.foo
+}
+
+
 ~[42]
 ~[() => {
   var x = 42;
