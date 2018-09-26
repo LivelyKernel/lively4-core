@@ -17,7 +17,7 @@ import { maybeUnpackString } from "./utils.js";
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!
  */
-export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
+export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
   try {
     /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
   } catch(e) {
@@ -29,7 +29,7 @@ export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"f2b6_66ad_4
 /**
  * Generates a locationMap for the AST
  */
-export function /*example:*//*example:*/generateLocationMap/*{"id":"345b_37c4_c8b1","name":{"mode":"input","value":"Simple"},"color":"hsl(300, 30%, 70%)","values":{"ast":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"4ebc_b290_28de","name":{"mode":"input","value":"Fibonacci"},"color":"hsl(10, 30%, 70%)","values":{"ast":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(ast) {
+export function /*example:*//*example:*//*example:*/generateLocationMap/*{"id":"c328_5d11_5168","name":{"mode":"input","value":"Not an AST"},"color":"hsl(180, 30%, 70%)","values":{"ast":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"4ebc_b290_28de","name":{"mode":"input","value":"Fibonacci"},"color":"hsl(10, 30%, 70%)","values":{"ast":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"345b_37c4_c8b1","name":{"mode":"input","value":"Simple"},"color":"hsl(300, 30%, 70%)","values":{"ast":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(ast) {
   ast._locationMap = new DefaultDict(Object);
 
   const keywords = {
@@ -42,17 +42,17 @@ export function /*example:*//*example:*/generateLocationMap/*{"id":"345b_37c4_c8
   };
 
   traverse(ast, {
-    /*slider:*/enter/*{}*/(path) {
+    enter(path) {
       let location = path.node.loc;
       if(!location) {
         return;
       }
 
       // Some Nodes are only associated with their keywords
-      const keyword = keywords[/*probe:*/path.type/*{}*/];
+      const keyword = keywords[path.type];
       if(keyword) {
         location.end.line = location.start.line;
-        location.end.column = location.start.column + /*probe:*/keyword/*{}*/.length;
+        location.end.column = location.start.column + keyword.length;
       }
 
       ast._locationMap[LocationConverter.astToKey(location)] = path;
@@ -63,7 +63,7 @@ export function /*example:*//*example:*/generateLocationMap/*{"id":"345b_37c4_c8
 /**
  * Checks whether a path can be probed
  */
-export function /*example:*//*example:*/canBeProbe/*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+export function /*example:*//*example:*/canBeProbe/*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
   if(!path) {
     return false;
   }
@@ -229,10 +229,35 @@ const __tracker = this.tracker;
 ${code};
 __tracker.timer.reset();`;
 
-export const applyContext = (ast, context) => {
+export const applyContext = async (ast, context, replacementUrls) => {
   const prescriptNodes = astForCode(context.prescript).program.body;
   const postscriptNodes = astForCode(context.postscript).program.body;
+  
   ast.program.body = prescriptNodes.concat(ast.program.body).concat(postscriptNodes);
+  
+  // Fix imports
+  const importNodes = [];
+  const collectImports = arr => {
+    for(let i = 0; i < arr.length && arr[i].type === "ImportDeclaration"; i++) {
+      importNodes.push(arr[i]);
+    }
+  };
+  collectImports(prescriptNodes);
+  collectImports(postscriptNodes);
+
+  await Promise.all(importNodes.map(async (node) => {
+    // Turn imports into absolute URLs so they work in the temporary workspace
+    const importSource = node.source.value;
+    const importUrl = await System.resolve(importSource, ast._sourceUrl);
+
+    // Set either the real or the replacement URL
+    if(replacementUrls[importUrl]) {
+      node.source.value = replacementUrls[importUrl];
+    } else {
+      node.source.value = importUrl;
+    }
+  }));
+  
   return ast;
 }
 
