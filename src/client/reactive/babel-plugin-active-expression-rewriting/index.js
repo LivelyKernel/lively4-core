@@ -316,7 +316,6 @@ export default function(param) {
                 !t.isRestElement(path.parent) &&
                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
               ) {
-                debugger
                 if (path.scope.hasBinding(path.node.name)) {
                   //logIdentifier('get local var', path)
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
