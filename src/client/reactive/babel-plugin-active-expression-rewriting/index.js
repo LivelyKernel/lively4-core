@@ -237,9 +237,9 @@ export default function(param) {
                 wrapPropertyOfPath(path, property);
               }
             },
-            // SwitchCase(path) {
-            //   wrapPropertyOfPath(path, "consequent");
-            // }
+            SwitchCase(path) {
+              wrapPropertyOfPath(path, "consequent");
+            }
           });
           path.traverse({
             UnaryExpression(path) {
