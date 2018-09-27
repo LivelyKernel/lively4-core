@@ -190,28 +190,7 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
-          const assignId = (node) => {
-            node._id = nextId();
-            return node;
-          }
-          let ID_COUNTER = 1;
-          const nextId = () => ID_COUNTER++;
-
-          const assignLocationToBlockStatement = (node) => {
-            if(node.body.length) {
-              node.loc = {
-                start: node.body[0].loc.start,
-                end: node.body[node.body.length - 1].loc.end
-              }
-            } else {
-              node.loc = {
-                start: { line: 1, column: 0 },
-                end: { line: 1, column: 0 }
-              };
-            }
-            return node;
-          }
-
+          // ------------- ensureBlock -------------
           const maybeWrapInStatement = (node) => {
             if(t.isStatement(node)) {
               return node;
@@ -224,13 +203,6 @@ export default function(param) {
               return node;
             }
           }
-          const prepForInsert = (node) => {
-            assignId(node);
-            if(node.type === "BlockStatement") {
-              assignLocationToBlockStatement(node);
-            }
-            return node;
-          }
           const wrapPropertyOfPath = (path, property) => {
             const oldBody = path.get(property);
             const oldBodyNode = path.node[property];
@@ -241,10 +213,10 @@ export default function(param) {
               // This is already a block
               return;
             } else if(oldBody instanceof Array) {
-              const newBodyNode = prepForInsert(t.blockStatement(oldBodyNode));
+              const newBodyNode = t.blockStatement(oldBodyNode);
               path.node[property] = [newBodyNode];
             } else {
-              const newBodyNode = prepForInsert(t.blockStatement([maybeWrapInStatement(oldBodyNode)]));
+              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
               oldBody.replaceWith(newBodyNode);
             }
             return path;
