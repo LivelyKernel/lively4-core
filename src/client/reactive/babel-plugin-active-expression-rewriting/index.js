@@ -190,7 +190,85 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
-          path.traverse({});
+          const assignId = (node) => {
+            node._id = nextId();
+            return node;
+          }
+          let ID_COUNTER = 1;
+          const nextId = () => ID_COUNTER++;
+
+          const assignLocationToBlockStatement = (node) => {
+            if(node.body.length) {
+              node.loc = {
+                start: node.body[0].loc.start,
+                end: node.body[node.body.length - 1].loc.end
+              }
+            } else {
+              node.loc = {
+                start: { line: 1, column: 0 },
+                end: { line: 1, column: 0 }
+              };
+            }
+            return node;
+          }
+
+          const maybeWrapInStatement = (node) => {
+            if(t.isStatement(node)) {
+              return node;
+            } else if(t.isExpression(node)) {
+              const expressionNode = t.expressionStatement(node);
+              expressionNode.loc = node.loc;
+              return expressionNode;
+            } else {
+              console.error("Tried to wrap something unknown:", node);
+              return node;
+            }
+          }
+          const prepForInsert = (node) => {
+            assignId(node);
+            if(node.type === "BlockStatement") {
+              assignLocationToBlockStatement(node);
+            }
+            return node;
+          }
+          const wrapPropertyOfPath = (path, property) => {
+            const oldBody = path.get(property);
+            const oldBodyNode = path.node[property];
+            if(!oldBodyNode) {
+              return;
+            }
+            if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
+              // This is already a block
+              return;
+            } else if(oldBody instanceof Array) {
+              const newBodyNode = prepForInsert(t.blockStatement(oldBodyNode));
+              path.node[property] = [newBodyNode];
+            } else {
+              const newBodyNode = prepForInsert(t.blockStatement([maybeWrapInStatement(oldBodyNode)]));
+              oldBody.replaceWith(newBodyNode);
+            }
+            return path;
+          }
+          path.traverse({
+            BlockParent(path) {
+              if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+                return;
+              }
+              if(!path.node.body) {
+                console.warn("A BlockParent without body: ", path);
+              }
+
+              wrapPropertyOfPath(path, "body");
+            },
+            IfStatement(path) {
+              for(let property of ["consequent", "alternate"]) {
+                wrapPropertyOfPath(path, property);
+              }
+            },
+            SwitchCase(path) {
+              wrapPropertyOfPath(path, "consequent");
+            }
+          });
           path.traverse({
             UnaryExpression(path) {
 
