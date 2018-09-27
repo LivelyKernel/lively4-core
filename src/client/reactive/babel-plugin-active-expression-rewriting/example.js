@@ -1,3 +1,13 @@
+const [xx, yy] = [1];
+
+
+
+var xs = 1;
+xs++
+obj.prop++
+
+
+
 () => {
   "do stuff"
   let xxxxx = 1;

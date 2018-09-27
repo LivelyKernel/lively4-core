@@ -192,7 +192,7 @@ export default function(param) {
 
           path.traverse({
             UnaryExpression(path) {
-              
+
               // handle delete operator
               if(path.node.operator === 'delete') {
                 const argument = path.get('argument');
@@ -229,6 +229,35 @@ export default function(param) {
                   ]
                 )
               );
+            },
+
+            UpdateExpression(path) {
+              const operator = path.node.operator;
+              const prefix = path.node.prefix;
+              const argument = path.get('argument');
+              
+              if(argument.isMemberExpression() || argument.isIdentifier()) {
+                
+                // ++v -> v += 1
+                let assignment = t.assignmentExpression(
+                  operator[0] + '=',
+                  argument.node,
+                  t.numericLiteral(1),
+                )
+                
+                if(!prefix) {
+                  // need to modify result for postfix operators
+                  // v++ -> (v += 1) - 1
+                  const reverseOperator = operator[0] === '+' ? '-' : '+';
+                  assignment = t.binaryExpression(
+                    reverseOperator,
+                    assignment,
+                    t.numericLiteral(1)
+                  )
+                }
+                
+                path.replaceWith(assignment);
+              }
             },
 
             Identifier(path) {
