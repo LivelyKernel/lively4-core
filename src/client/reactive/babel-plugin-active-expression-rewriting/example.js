@@ -1,5 +1,6 @@
 const [xx, yy] = [1];
 
+() => 42
 
 
 var xs = 1;
