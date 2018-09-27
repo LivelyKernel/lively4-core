@@ -427,6 +427,8 @@ export default class Editor extends Morph {
       
     } else {
       filename = fileItem.getAsFile().name
+      if (filename.match(/\.((md)|(txt))/)) return // are handle by code mirror to inline text // #Content vs #Container alt: value vs reference? #Journal
+      
     }
     if (!filename) return
     
@@ -447,8 +449,11 @@ export default class Editor extends Morph {
       if (this.getURLString().match(/\.md/)) {
         if (filename.match(/\.mp4$/)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
+        } if (filename.match(/\.((png)|(jpg))$/)){
+          text = "\n![](" + text + ")" // #ContextSpecificBehavior ?  
         } else {
-          text = "![](" + text + ")" // #ContextSpecificBehavior ?  
+          text = `\n[${text.replace(/.*\//,"")}](${text})`
+          
         }
       }  
 
@@ -479,6 +484,7 @@ export default class Editor extends Morph {
   }
   
   async onDrop(evt) {
+    
     if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
       evt.stopPropagation()
       evt.preventDefault();
