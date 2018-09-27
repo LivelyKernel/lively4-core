@@ -212,12 +212,12 @@ export default function(param) {
             if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
               // This is already a block
               return;
-            } else if(oldBody instanceof Array) {
-              const newBodyNode = t.blockStatement(oldBodyNode);
-              path.node[property] = [newBodyNode];
-            } else {
-              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
-              oldBody.replaceWith(newBodyNode);
+            // } else if(oldBody instanceof Array) {
+            //   const newBodyNode = t.blockStatement(oldBodyNode);
+            //   path.node[property] = [newBodyNode];
+            // } else {
+            //   const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
+            //   oldBody.replaceWith(newBodyNode);
             }
             return path;
           }
