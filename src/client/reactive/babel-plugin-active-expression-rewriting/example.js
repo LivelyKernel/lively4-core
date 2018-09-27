@@ -1,6 +1,6 @@
 const [xx, yy] = [1];
 
-if(true) debugger
+if(true) 42
 () => 42
 
 
