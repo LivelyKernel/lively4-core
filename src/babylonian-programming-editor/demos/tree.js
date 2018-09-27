@@ -52,7 +52,7 @@ function drawMountain (offset, fillStyle) {
 	ctx.closePath();
 
 	ctx.fillStyle = fillStyle;
-	ctx.fill();
+  /*probe:*/ctx/*{}*/.fill();
 }
 
 // Tree
