@@ -50,6 +50,7 @@ export default class Editor extends Morph {
     });
     
     this.addEventListener("paste", evt => this.onPaste(evt))
+    this.addEventListener("drop",  evt => this.onDrop(evt));
   }
   
   onTextChanged() {
@@ -353,39 +354,46 @@ export default class Editor extends Morph {
     return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
   }
   
-  onPaste(evt) {
-     
+  insertDataTransfer(dataTransfer) {
     // #CopyAndPaste mild code duplication with #Clipboard 
-    var items = (event.clipboardData || evt.clipboardData).items;
+    
+    var items = dataTransfer.items;
     if (items.length> 0) {
       for (var index in items) {
         var item = items[index];
         if (item.kind === 'file') {
           this.pasteFile(item, this.lastTarget) 
-          evt.stopPropagation()
-          evt.preventDefault();
+          return true
         }
       }
     }
   }
   
+  
   async pasteFile(fileItem) {
-    var blob = fileItem.getAsFile();
+    var file = fileItem.getAsFile();
     var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
     var filename = name + "." + fileItem.type.replace(/.*\//,"")
     filename = await lively.prompt("paste as... ", filename)
     if (!filename) return
+    
+    
     var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
-    await fetch(newurl, {
-      method: "PUT",
-      body: blob
-    })
+    
+    var dataURL = await lively.files.readBlobAsDataURL(file)  
+    var blob = await fetch(dataURL).then(r => r.blob())
+    await lively.files.saveFile(newurl, blob)
+    
     
     this.withEditorObjectDo(editor => {
       var text = encodeURIComponent(filename)
       if (this.getURLString().match(/\.md/)) {
-        text = "![](" + text + ")" // #ContextSpecificBehavior ?
-      }
+        if (filename.match(/\.mp4$/)){
+          text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
+        } else {
+          text = "![](" + text + ")" // #ContextSpecificBehavior ?  
+        }
+      }  
       editor.replaceSelection(text, "around")
     })
     
@@ -397,6 +405,20 @@ export default class Editor extends Morph {
     if (navbar) navbar.update() 
     
   }
+  
+  onPaste(evt) {
+    if(this.insertDataTransfer(evt.clipboardData)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
+  }
+  async onDrop(evt) {
+    if(this.insertDataTransfer(evt.dataTransfer)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
+  }
+  
   
   livelyExample() {
     this.setURL(lively4url + "/README.md");

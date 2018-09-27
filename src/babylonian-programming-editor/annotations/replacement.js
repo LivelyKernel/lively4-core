@@ -4,7 +4,7 @@ import InputAnnotation from "./input-annotation.js";
 
 export default class Replacement extends InputAnnotation {
   constructor(editor, location, changeCallback, deleteCallback) {
-    super(editor, location, changeCallback, null, deleteCallback);
+    super(editor, location, changeCallback, deleteCallback);
     this._widget = new ReplacementWidget(editor, location, this.kind, this._changeCallback, this._deleteCallback);
   }
   

@@ -1104,7 +1104,8 @@ export default class Container extends Morph {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>", renderTimeStamp);
       else return;
     } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
-      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
+      //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
+      if (render) return this.appendHtml(`<video autoplay controls><source src="${url}" type="video/${format}"></video>`, renderTimeStamp);
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'

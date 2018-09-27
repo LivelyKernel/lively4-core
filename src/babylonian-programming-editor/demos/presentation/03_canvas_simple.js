@@ -1,7 +1,7 @@
 var ctx, canvasWidth, canvasHeight;
 
 // Scene
-function /*example:*/drawScene/*{"id":"cf28_aa4f_b8a1","name":{"mode":"input","value":""},"color":"hsl(70, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"cf28_aa4f_b8a1_canvas"}},"instanceId":{"mode":"input","value":""},"prescript":"canvas.getContext(\"2d\").clearRect(0, 0, canvas.width, canvas.height);","postscript":""}*/(canvas) {
+function drawScene(canvas) {
 	ctx = canvas.getContext('2d');
 	// extendCanvasContext(ctx);
 	
@@ -52,7 +52,7 @@ function drawMountain (offset, fillStyle) {
 	ctx.closePath();
 
 	ctx.fillStyle = fillStyle;
-  /*probe:*/ctx/*{}*/.fill();
+	ctx.fill();
 }
 
 // Tree
