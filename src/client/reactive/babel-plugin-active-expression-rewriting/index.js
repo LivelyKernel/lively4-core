@@ -222,24 +222,24 @@ export default function(param) {
             return path;
           }
           path.traverse({
-            BlockParent(path) {
-              if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
-                return;
-              }
-              if(!path.node.body) {
-                console.warn("A BlockParent without body: ", path);
-              }
+//             BlockParent(path) {
+//               if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+//                 return;
+//               }
+//               if(!path.node.body) {
+//                 console.warn("A BlockParent without body: ", path);
+//               }
 
-              wrapPropertyOfPath(path, "body");
-            },
+//               wrapPropertyOfPath(path, "body");
+//             },
             IfStatement(path) {
               for(let property of ["consequent", "alternate"]) {
                 wrapPropertyOfPath(path, property);
               }
             },
-            SwitchCase(path) {
-              wrapPropertyOfPath(path, "consequent");
-            }
+            // SwitchCase(path) {
+            //   wrapPropertyOfPath(path, "consequent");
+            // }
           });
           path.traverse({
             UnaryExpression(path) {
