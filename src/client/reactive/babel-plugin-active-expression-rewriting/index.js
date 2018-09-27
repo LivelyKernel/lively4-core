@@ -215,9 +215,9 @@ export default function(param) {
             // } else if(oldBody instanceof Array) {
             //   const newBodyNode = t.blockStatement(oldBodyNode);
             //   path.node[property] = [newBodyNode];
-            // } else {
-            //   const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
-            //   oldBody.replaceWith(newBodyNode);
+            } else {
+              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
+              oldBody.replaceWith(newBodyNode);
             }
             return path;
           }
