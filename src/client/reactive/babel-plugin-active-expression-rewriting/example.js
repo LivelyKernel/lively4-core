@@ -1,5 +1,6 @@
 const [xx, yy] = [1];
 
+if(true) debugger
 () => 42
 
 
