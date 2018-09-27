@@ -2,6 +2,7 @@
 
 Our XRay is pretty live...
 
+
 ```javascript
 that.style.transformOrigin ="0 0"
 
@@ -15,7 +16,6 @@ function anim() {
     requestAnimationFrame(anim)
   }
 }
-
 
 anim()
 
