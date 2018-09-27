@@ -193,13 +193,6 @@ describe('new.target', () => {
 
 });
 
-describe('UpdateOperator', () => {
-  xit('x++', () => {});
-  xit('++x', () => {});
-  xit('obj.member++', () => {});
-  xit('++obj.member', () => {});
-});
-
 describe('Propagation Logic', function() {
   it('is a transparent wrapper for property accesses', () => {
     let obj = {
