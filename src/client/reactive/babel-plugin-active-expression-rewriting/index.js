@@ -190,6 +190,7 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
+          path.traverse({});
           path.traverse({
             UnaryExpression(path) {
 
