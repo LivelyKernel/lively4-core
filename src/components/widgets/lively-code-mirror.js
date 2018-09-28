@@ -255,6 +255,13 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
       // #KeyboardShortcut Ctrl-H search and replace
+      "Insert": (cm) => {
+        // do nothing... ther INSERT mode is so often actived by accident 
+      },
+      "Ctrl-Insert": (cm) => {
+        // do nothing... ther INSERT mode is so often actived by accident 
+        cm.toggleOverwrite()
+      },
       "Ctrl-H": (cm) => {
         setTimeout(() => {
             editor.execCommand("replace");
