@@ -216,6 +216,7 @@ export default function(param) {
               const newBodyNode = t.blockStatement(oldBodyNode);
               path.node[property] = [newBodyNode];
             } else {
+              if(t.isNumericLiteral(oldBody)) { debugger; }
               const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
               oldBody.replaceWith(newBodyNode);
             }
