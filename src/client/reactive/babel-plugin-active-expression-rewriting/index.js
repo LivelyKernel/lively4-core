@@ -191,12 +191,12 @@ export default function(param) {
           }
 
           // ------------- ensureBlock -------------
-          const maybeWrapInStatement = (node, alsoWrapInReturnStatement) => {
-            if(alsoWrapInReturnStatement) lively.notify(42);
+          const maybeWrapInStatement = (node, wrapInReturnStatement) => {
             if(t.isStatement(node)) {
               return node;
             } else if(t.isExpression(node)) {
-              const expressionNode = t.expressionStatement(node);
+              // wrap in return statement if we have an arrow function: () => 42 -> () => { return 42; }
+              const expressionNode = wrapInReturnStatement ? t.returnStatement(node) : t.expressionStatement(node);
               expressionNode.loc = node.loc;
               return expressionNode;
             } else {
@@ -217,8 +217,7 @@ export default function(param) {
               const newBodyNode = t.blockStatement(oldBodyNode);
               path.node[property] = [newBodyNode];
             } else {
-              if(t.isNumericLiteral(oldBody)) { debugger; }
-              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode)]);
+              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode, path.isArrowFunctionExpression())]);
               oldBody.replaceWith(newBodyNode);
             }
             return path;
@@ -243,6 +242,7 @@ export default function(param) {
               wrapPropertyOfPath(path, "consequent");
             }
           });
+          
           path.traverse({
             UnaryExpression(path) {
 
