@@ -191,7 +191,8 @@ export default function(param) {
           }
 
           // ------------- ensureBlock -------------
-          const maybeWrapInStatement = (node) => {
+          const maybeWrapInStatement = (node, alsoWrapInReturnStatement) => {
+            if(alsoWrapInReturnStatement) lively.notify(42);
             if(t.isStatement(node)) {
               return node;
             } else if(t.isExpression(node)) {
