@@ -2,7 +2,7 @@ if(true) 42;
 () => 42
 
 
-const [xx, yy] = [1];
+//const [xx, yy] = [1];
 
 
 var xs = 1;
