@@ -172,7 +172,7 @@ export default class Clipboard {
     
     evt.stopPropagation()
     evt.preventDefault(); 
-    
+    lively.notify("paste")
     var data = evt.clipboardData.getData('text/html')
     if (data) {
       this.pasteHTMLDataInto(data, this.lastTarget) 
