@@ -1613,6 +1613,10 @@ export default class Lively {
    if (!result && element.host) result = this.query(element.host, query)
    return result
   }
+  
+  static elementToCSSName(element) {
+    element.localName + (element.id  ? "#" + element.id : "")
+  }
 
   static async openPart(partName, worldContext=document.body) {
     var data = await fetch(`${lively4url}/src/parts/${partName}.html`).then(t => t.text())
