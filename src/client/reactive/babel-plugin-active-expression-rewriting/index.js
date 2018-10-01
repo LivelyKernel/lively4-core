@@ -190,6 +190,59 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
+          // ------------- ensureBlock -------------
+          const maybeWrapInStatement = (node, wrapInReturnStatement) => {
+            if(t.isStatement(node)) {
+              return node;
+            } else if(t.isExpression(node)) {
+              // wrap in return statement if we have an arrow function: () => 42 -> () => { return 42; }
+              const expressionNode = wrapInReturnStatement ? t.returnStatement(node) : t.expressionStatement(node);
+              expressionNode.loc = node.loc;
+              return expressionNode;
+            } else {
+              console.error("Tried to wrap something unknown:", node);
+              return node;
+            }
+          }
+          const wrapPropertyOfPath = (path, property) => {
+            const oldBody = path.get(property);
+            const oldBodyNode = path.node[property];
+            if(!oldBodyNode) {
+              return;
+            }
+            if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
+              // This is already a block
+              return;
+            } else if(oldBody instanceof Array) {
+              const newBodyNode = t.blockStatement(oldBodyNode);
+              path.node[property] = [newBodyNode];
+            } else {
+              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode, path.isArrowFunctionExpression())]);
+              oldBody.replaceWith(newBodyNode);
+            }
+            return path;
+          }
+          path.traverse({
+            BlockParent(path) {
+              if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+                return;
+              }
+              if(!path.node.body) {
+                console.warn("A BlockParent without body: ", path);
+              }
+
+              wrapPropertyOfPath(path, "body");
+            },
+            IfStatement(path) {
+              for(let property of ["consequent", "alternate"]) {
+                wrapPropertyOfPath(path, property);
+              }
+            },
+            SwitchCase(path) {
+              wrapPropertyOfPath(path, "consequent");
+            }
+          });
+          
           path.traverse({
             UnaryExpression(path) {
 
