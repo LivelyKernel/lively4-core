@@ -1601,7 +1601,7 @@ export default class Container extends Morph {
   // navigating in this multidimensional space can be hard
   livelyTarget() {
     var markdownElement = this.get("lively-markdown")
-    if (markdownElement) {
+    if (markdownElement && markdownElement.get) { // maybe not initialized yet.. damn! 
       return markdownElement.get("#content")
     }
     return this

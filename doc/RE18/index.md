@@ -4,6 +4,7 @@
 - [topics](topics.md)
 
 
+
 ## Material
 
 - "Software reverse engineering can help to improve the understanding of the underlying source code for the maintenance and improvement of the software, relevant information can be extracted in order to make a decision for software development and graphical representations of the code can provide alternate views regarding the source code, which can help to detect and fix a software bug or vulnerability." [wikipedia](https://en.wikipedia.org/wiki/Reverse_engineering)

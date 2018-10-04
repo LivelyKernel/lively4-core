@@ -1550,8 +1550,8 @@ export default class Lively {
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
-      || (element && (element.id == "copy-hack-element")
-      || (element  && element.tagName == "LIVELY-CONTAINER") && !element.shadowRoot.activeElement)
+      || (element && element.id == "copy-hack-element")
+      || (element  && element.tagName == "LIVELY-CONTAINER" && element.shadowRoot && !element.shadowRoot.activeElement)
   }
 
   static hasGlobalFocus() {

@@ -10,7 +10,7 @@ import FileCache from "src/client/filecache.js"
 (async () => {
   
   var tags = {}
-  var files = await FileCache.current().db.files.filter(ea => ea.tags.length > 0).toArray();
+  var files = await FileCache.current().db.files.filter(ea =>  ea.tags && ea.tags.length > 0).toArray();
   files.forEach(ea => {
     ea.tags.forEach(tag => {
       if(!tags[tag]) tags[tag] = [];

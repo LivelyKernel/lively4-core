@@ -36,11 +36,9 @@ export default class FileCache {
 
   fileCacheDB() {
     var db = new Dexie(this.name);
+
     db.version("1").stores({
-        files: 'url,name,type,content,version,options,title,tags,classes,functions'
-    })
-    db.version("2").stores({
-        files: 'url,name,type,content,version,options,title,tags,classes,functions',
+        files: 'url,name,type,version,modified,options,title,tags,classes,functions',
         modules: '++id,url,name,dependencies',
         classes: '++id,url,name,methods',
         methods: '++id,url,name'
@@ -83,6 +81,7 @@ export default class FileCache {
   }
 
   extractTitleAndTags(file) {
+    if (!file.content) return;
     file.title = file.content.split("\n")[0].replace(/## /,"")
     file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
       .map(ea => ea[1])
@@ -140,78 +139,128 @@ export default class FileCache {
     }
   }
 
+  async addFile(url, name, type, size, modified) {
+    
+    console.log("FileCache update  " + url)
+    
+    
+    var file = file = {
+      url: url,
+      name: name,
+      size: size,
+      modified: modified
+    }
+    
+    if (name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
+      if (size < 100000) {
+        let response = await fetch(url)
+        file.version = response.headers.get("fileversion")
+        file.content = await response.text()    
+      }
+    };
 
-  async addDirectory(baseURL, depth) {
-    console.log("addDirectory " + baseURL + " "  + depth)
-    var contents = (await fetch(baseURL, {method: "OPTIONS"}).then( resp => resp.json())).contents
-    var progress = await lively.showProgress("add " + baseURL.replace(/.*\//,""))
-    var total = contents.length
-    var i=0
+
+    // await new Promise(resolve => setTimeout(resolve, 100))
+
+    // let options = await fetch(url,
+    //  {method: "OPTIONS", headers: {showversions: true}}).then(resp => resp.json())
+    //  versions: options.versions
+    
+
+    let fileType = url.replace(/.*\./,"")
+    if(type == "directory") {
+      type = "directory"
+    }
+    file.type = type
+    
+    if (file.content) {
+      this.extractTitleAndTags(file)
+      if (type == "js") {
+        this.extractFunctionsAndClasses(file)
+      }      
+    }
+    this.db.transaction("rw", this.db.files, () => {
+      this.db.files.put(file)
+    })
+  }
+  
+  async updateDirectory(baseURL, showProgress) {
+    var json = await fetch(baseURL, {
+      method: "OPTIONS",
+      headers: {
+        filelist  : true
+      }
+    }).then(r => r.status == 200 && r.json())
+    if (!json) {
+      console.log("FileCache could not update " + baseURL)
+    }
+    
+    if (showProgress) {
+      var progress = await lively.showProgress("add " + baseURL.replace(/\/$/,"").replace(/.*\//,""))
+      var total = json.contents.length
+      var i=0
+    }
+
+    var lastModified= new Map()
+    await this.db.files.each(file => {
+      lastModified.set(file.url, file.modified) // #Workaround #PerformanceBug in #IndexDB 
+    })
+    
     try {
-      for(let ea of contents) {
-        progress.value = i++ / total;
-        let eaURL = baseURL.replace(/\/$/,"")  + "/" + ea.name
-        let name = eaURL.replace(/.*\//,"")
-        let size = ea.size;
-        if (name.match(/^\./)) {
-          console.log("ignore hidden file " + eaURL)
-          continue
-        };
+      for(let ea of json.contents) {
+          if (showProgress) progress.value = i++ / total;
 
-        if (ea.type == "directory" && (depth > 0)) {
-          console.log("[file cache] decent recursively: " + eaURL )
-          this.addDirectory(eaURL, depth - 1)
-        }
-
-
-        if (await this.db.files.where("url").equals(eaURL).first()) {
-          console.log("already in cache: " + eaURL)
-        } else {
-          if (!name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
-            console.log("ignore " + eaURL)
-            continue
-          };
-
-          if (size > 100000) {
-            console.log("ignore " + eaURL + ", due to oversize " + Math.round (size/1000) + "kb")
-            continue
+          let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
+          let name = eaURL.replace(/.*\//,"")
+          if (lastModified.get(eaURL) !== ea.modified) {
+            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified)
           }
-
-          console.log("load " + eaURL)
-          // await new Promise(resolve => setTimeout(resolve, 100))
-
-          // let options = await fetch(eaURL,
-          //  {method: "OPTIONS", headers: {showversions: true}}).then(resp => resp.json())
-          //  versions: options.versions
-          let response = await fetch(eaURL)
-          let version = response.headers.get("fileversion")
-          let contents = await response.text()
-
-
-          let type = eaURL.replace(/.*\./,"")
-          if(ea.type == "directory") {
-            type = "directory"
-          }
-          var file = {
-            url: eaURL,
-            name: name,
-            size: size,
-            type: type,
-            content: contents,
-            version: version}
-          this.extractTitleAndTags(file)
-          if (file.type == "js") {
-            this.extractFunctionsAndClasses(file)
-          }
-          this.db.transaction("rw", this.db.files, () => {
-            this.db.files.put(file)
-          })
-        }
       }
     } finally {
-      progress.remove()
+      if (showProgress) progress.remove()
     }
+    
+    console.log("FileCache updateDirectory finished")
   }
+
+  async addDirectory(baseURL) {
+    
+
+    
+    this.updateDirectory(baseURL, true) // much faster and better
+  }
+    
+//   async addDirectory(baseURL, depth) {
+//     console.log("addDirectory " + baseURL + " "  + depth)
+//     var contents = (await fetch(baseURL, {method: "OPTIONS"}).then( resp => resp.json())).contents
+//     var progress = await lively.showProgress("add " + baseURL.replace(/.*\//,""))
+//     var total = contents.length
+//     var i=0
+//     try {
+//       for(let ea of contents) {
+//         progress.value = i++ / total;
+//         let eaURL = baseURL.replace(/\/$/,"")  + "/" + ea.name
+//         let name = eaURL.replace(/.*\//,"")
+//         let size = ea.size;
+//         if (name.match(/^\./)) {
+//           console.log("ignore hidden file " + eaURL)
+//           continue
+//         };
+
+//         if (ea.type == "directory" && (depth > 0)) {
+//           console.log("[file cache] decent recursively: " + eaURL )
+//           this.addDirectory(eaURL, depth - 1)
+//         }
+//         if (await this.db.files.where("url").equals(eaURL).first()) {
+//           console.log("already in cache: " + eaURL)
+//         } else {
+//           this.addFile(eaURL, name, ea.type,  size, ea.modified /* may be be set */)
+//         }
+//       }
+//     } finally {
+//       progress.remove()
+//     }
+//   }
 
 
   showAsTable() {
