@@ -90,7 +90,12 @@ export class Cache {
   }
   
   async fetchOfflineFirst(request, doNetworkRequest) {
-    // console.log("offline first " + request.url)
+    if (!request.url.toString().startsWith(lively4url)) {
+      // console.log("ignore offline first " +  request.method + " " + request.url)
+      return doNetworkRequest()    
+    }
+    
+    
     if (request.method == "GET" && this.offlineFirstCache) {
       var resp = await this.offlineFirstCache.match(request)
       if (resp) {
