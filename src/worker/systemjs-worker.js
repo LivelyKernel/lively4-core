@@ -1,8 +1,14 @@
 /* client side worker loading with SystemJS modules...*/
 
-export var workers = new Set()
+export var workers
 
 export default class SystemjsWorker {  
+  
+  static get workers() {
+    if (!workers) workers = new Set()
+    return workers
+  }
+  
   constructor(url) {
     this.metaworker = new Worker("src/worker/meta-worker.js");  
     // bootstrap onmessage
@@ -14,7 +20,7 @@ export default class SystemjsWorker {
           lively.error(msg.error)
         }
         if (msg.message == "loaded") {
-          lively.notify("worker loaded", url)
+          console.log("worker loaded", url)
           this.metaworker.onmessage = (msg) => {
             console.log("new onmessage")
             this.onmessage(msg)
@@ -24,7 +30,7 @@ export default class SystemjsWorker {
       }      
     })
     this.metaworker.postMessage({message: "load", url: url})
-    workers.add(this)
+    SystemjsWorker.workers.add(this)
   }
   
   onmessage(evt) {
@@ -33,7 +39,7 @@ export default class SystemjsWorker {
 
   terminate() {
     this.metaworker.terminate()
-    workers.delete(this)
+    SystemjsWorker.workers.delete(this)
   }
   
   async postMessage(msg) {

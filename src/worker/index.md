@@ -32,3 +32,13 @@ test.postMessage([3,8])
 
 ```
 
+
+## FileCache Worker
+
+Usage:
+
+```javascript
+var filecacheworker = new SystemjsWorker("src/worker/filecache-worker.js")
+filecacheworker.postMessage({message: "updateDirectory", url: "https://lively-kernel.org/lively4/lively4-jens/"})
+```
+

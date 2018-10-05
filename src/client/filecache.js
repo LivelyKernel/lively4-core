@@ -190,9 +190,16 @@ export default class FileCache {
       headers: {
         filelist  : true
       }
-    }).then(r => r.status == 200 && r.json())
+    }).then(r => {
+      if (r.status == 200) {
+        return r.json()
+      } else {
+        console.log("FileCache fetch failed ", baseURL, r)
+      }
+    })
     if (!json) {
       console.log("FileCache could not update " + baseURL)
+      return
     }
     
     if (showProgress) {
