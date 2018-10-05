@@ -1070,6 +1070,13 @@ export default class Container extends Morph {
 
     url = this.getURL();
     
+    if (!url.toString().match(/^https?:\/\//)) {
+      var resolvedURL = lively.swxURL(url)
+    } else {
+      resolvedURL = url
+    }
+      
+    
     this.content = ""
     
     
@@ -1101,14 +1108,17 @@ export default class Container extends Morph {
     }
 
     if (format.match(/(svg)|(png)|(jpe?g)/)) {
-      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>", renderTimeStamp);
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
       else return;
     } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
-      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
+      //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
+      
+
+      if (render) return this.appendHtml(`<video autoplay controls><source src="${resolvedURL}" type="video/${format}"></video>`, renderTimeStamp);
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
-        + url +'"></lively-pdf>', renderTimeStamp);
+        + resolvedURL +'"></lively-pdf>', renderTimeStamp);
       else return;
     } 
     var headers = {}
@@ -1216,7 +1226,7 @@ export default class Container extends Morph {
     }
     navbar.navigateToName = (name) => { this.navigateToName(name) }
 
-    await navbar.show(this.getURL(), this.content, navbar.contextURL)
+    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL)
   }
 
   isFullscreen() {
@@ -1591,7 +1601,7 @@ export default class Container extends Morph {
   // navigating in this multidimensional space can be hard
   livelyTarget() {
     var markdownElement = this.get("lively-markdown")
-    if (markdownElement) {
+    if (markdownElement && markdownElement.get) { // maybe not initialized yet.. damn! 
       return markdownElement.get("#content")
     }
     return this

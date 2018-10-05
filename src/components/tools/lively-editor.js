@@ -13,6 +13,8 @@ import components from "src/client/morphic/component-loader.js";
 
 import {pt} from "src/client/graphics.js"
 
+import {getObjectFor} from "utils";
+
 
 export default class Editor extends Morph {
 
@@ -27,6 +29,36 @@ export default class Editor extends Morph {
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
     
+    
+//     var loaded = false
+//     editor.addEventListener("editor-loaded", () => {
+//       if (loaded) return;//
+//       loaded = true;
+      
+//       console.log("with EDITOR")
+//       editor.editor.on("dragstart",function(editor,e) {
+//           console.log('dragstart')
+//       });
+//       editor.editor.on("dragenter",function(editor,e) {
+//           console.log('dragenter')
+//       });
+//       editor.editor.on("dragover",function(editor,e) {
+//           console.log('dragover')
+//       });
+//       editor.editor.on("drop",function(editor,e) { 
+//         debugger
+//           console.log('drop')
+//       });
+
+       
+    // })
+    
+    this.addEventListener("drop", evt => {
+      this.onDrop(evt)
+    })       
+    
+    // this.addEventListener("drop",  evt => this.onDrop(evt));
+
     this.get("lively-version-control").editor = editor
 
     // container.appendChild(editor)
@@ -50,6 +82,7 @@ export default class Editor extends Morph {
     });
     
     this.addEventListener("paste", evt => this.onPaste(evt))
+
   }
   
   onTextChanged() {
@@ -353,42 +386,87 @@ export default class Editor extends Morph {
     return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
   }
   
-  onPaste(evt) {
-     
+  insertDataTransfer(dataTransfer, evt, generateName) {
     // #CopyAndPaste mild code duplication with #Clipboard 
-    var items = (event.clipboardData || evt.clipboardData).items;
+    
+    var items = dataTransfer.items;
     if (items.length> 0) {
       for (var index in items) {
         var item = items[index];
         if (item.kind === 'file') {
-          this.pasteFile(item, this.lastTarget) 
-          evt.stopPropagation()
-          evt.preventDefault();
+          this.pasteFile(item, evt, generateName) 
+          return true
+        }
+        if (item.type == 'lively/element') {
+          
+          item.getAsString(data => {
+            var element = getObjectFor(data)
+            if (element.localName == "lively-file") {
+              this.pasteDataUrlAs(element.url, 
+                                  this.getURLString().replace(/[^/]*$/,"") + element.name, 
+                                  element.name, 
+                                  evt)
+            }
+            // lively.showElement(element)
+          })
+          
+          return true
         }
       }
     }
   }
   
-  async pasteFile(fileItem) {
-    var blob = fileItem.getAsFile();
-    var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
-    var filename = name + "." + fileItem.type.replace(/.*\//,"")
-    filename = await lively.prompt("paste as... ", filename)
+  
+  
+  async pasteFile(fileItem, evt, generateName) {
+    var file = fileItem.getAsFile();
+    if (generateName) {
+      var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
+      var filename = name + "." + fileItem.type.replace(/.*\//,"")
+      filename = await lively.prompt("paste as... ", filename)
+      
+    } else {
+      filename = fileItem.getAsFile().name
+      if (filename.match(/\.((md)|(txt))/)) return // are handle by code mirror to inline text // #Content vs #Container alt: value vs reference? #Journal
+      
+    }
     if (!filename) return
+    
+    
     var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
-    await fetch(newurl, {
-      method: "PUT",
-      body: blob
-    })
+    
+    var dataURL = await lively.files.readBlobAsDataURL(file)  
+    this.pasteDataUrlAs(dataURL, newurl, filename, evt)
+  }
+  
+  async pasteDataUrlAs(dataURL, newurl, filename, evt) {
+    
+    var blob = await fetch(dataURL).then(r => r.blob())
+    await lively.files.saveFile(newurl, blob)
     
     this.withEditorObjectDo(editor => {
       var text = encodeURIComponent(filename)
       if (this.getURLString().match(/\.md/)) {
-        text = "![](" + text + ")" // #ContextSpecificBehavior ?
+        if (filename.match(/\.mp4$/)){
+          text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
+        } if (filename.match(/\.((png)|(jpg))$/)){
+          text = "\n![](" + text + ")" // #ContextSpecificBehavior ?  
+        } else {
+          text = `\n[${text.replace(/.*\//,"")}](${text})`
+          
+        }
+      }  
+
+      // #Hack... this is ugly... but seems the official way to do it
+      if (evt) {
+        var coords = editor.coordsChar({
+          left:   evt.clientX + window.scrollX,
+          top: evt.clientY + window.scrollY
+        });
+        editor.setSelection(coords)        
       }
       editor.replaceSelection(text, "around")
     })
-    
     
     
     lively.notify("uploaded " + newurl)
@@ -396,6 +474,21 @@ export default class Editor extends Morph {
     var navbar = lively.query(this, "lively-container-navbar")
     if (navbar) navbar.update() 
     
+  }
+  
+  onPaste(evt) {
+    if(this.insertDataTransfer(evt.clipboardData, undefined, true)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
+  }
+  
+  async onDrop(evt) {
+    
+    if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
   }
   
   livelyExample() {

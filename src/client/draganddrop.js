@@ -256,7 +256,8 @@ const dropOnDocumentBehavior = {
     lively.notify(`Dropped ${files.length} file(s).`);
     Array.from(files).forEach(async (file) => {
         const extension = lively.files.extension(file.name)
-        if (extension == "png") {
+        // #Research how do we deal with content vs. container... drop a picture here or a file that contains the picture? #Journal #Interesting
+        if (extension == "png" && !evt.ctrlKey) {
             // #Refactor #TODO use lively.files.readBlobAsDataURL
             const reader = new FileReader();
             reader.onload = event => {

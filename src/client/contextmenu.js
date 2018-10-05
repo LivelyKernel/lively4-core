@@ -68,7 +68,7 @@ export default class ContextMenu {
         [
           ["self", () => {lively.showHalo(target)}],
           ["parents", lively.allParents(target).map(
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
             ea => [ea, () => {lively.showHalo(ea)}])
@@ -343,6 +343,11 @@ export default class ContextMenu {
         }],
         ["X Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
+          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          this.hide();
+        }], 
+        ["X Ray Events", async evt => {
+          var morph  = await lively.openPart("XRayEvents") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }], 

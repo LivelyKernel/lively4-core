@@ -1,5 +1,5 @@
-import { toDOMNode } from "src/client/reactive/active-expressions/ui-aexpr.js";
-import { BaseActiveExpression as ActiveExpression } from "active-expressions";
+import { toDOMNode } from "./ui-aexpr.js";
+import { BaseActiveExpression as ActiveExpression } from 'active-expression';
 
 /**
  * Resources for JSX Semantics
@@ -162,7 +162,7 @@ export function childExpression(expression) {
 }
 
 export function childSpread(array) {
-  // #TODO: <ul>{roq}</ul> also gets the reactive behavior, do we want this?
+  // #TODO: <ul>{active-group}</ul> also gets the reactive behavior, do we want this?
   if(isActiveGroup(array)) {
     return [array];
   } else {

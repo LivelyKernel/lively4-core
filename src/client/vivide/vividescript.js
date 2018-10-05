@@ -3,13 +3,13 @@ import { uuid } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 import ScriptStep from 'src/client/vivide/vividescriptstep.js';
 import VivideObject from 'src/client/vivide/vivideobject.js';
-import Annotations from 'src/client/reactive/active-expressions/active-expressions/src/annotations.js';
+import Annotations from 'src/client/reactive/utils/annotations.js';
 
 export default class Script {
   constructor(view) {
     this.setView(view);
   }
-  
+
   setView(view) { this._view = view; }
 
   /**
@@ -27,28 +27,28 @@ export default class Script {
     const lastStep = this.getLastStep();
     return lastStep && lastStep.getNextExecutionStep();
   }
-  
+
   numberOfSteps() {
     let length = 0;
     this.getInitialStep().iterateLinear(() => length++);
     return length;
   }
-  
+
   getPrevStep(step) {
     return this.getInitialStep().find(s => s.getNextExecutionStep() === step);
   }
-  
+
   async forEachStepAsync(cb) {
     await this.getInitialStep().iterateLinearAsync(cb);
   }
-  
+
   stepsAsArray() {
     const arr = [];
     this.getInitialStep().iterateLinear(step => arr.push(step));
 
     return arr;
   }
-  
+
   /**
    * Modify
    */
@@ -57,10 +57,10 @@ export default class Script {
     newStep.setScript(this);
 
     prevStep.insertAfter(newStep);
-    
+
     return newStep;
   }
-  
+
   removeStep(stepToBeRemoved) {
     if(stepToBeRemoved === this.getLoopStartStep()) {
       this.removeLoop();
@@ -70,7 +70,7 @@ export default class Script {
       // First script was removed
       this.setInitialStep(stepToBeRemoved.getNextExecutionStep());
     }
-    
+
     stepToBeRemoved.remove();
   }
 
@@ -83,7 +83,7 @@ export default class Script {
     const lastStep = step.getLastStep();
     lastStep.setLoopTargetStep(step);
   }
-  
+
   /**
    * Handling script execution
    */
@@ -91,7 +91,7 @@ export default class Script {
     lively.notify('VivideScript::gotIpdated')
     this._view.scriptGotUpdated();
   }
-  
+
   /**
    * Script execution
    */
@@ -104,10 +104,10 @@ export default class Script {
       const [fn, config] = await step.getExecutable();
       viewConfig.add(config);
     }
-    
+
     return viewConfig;
   }
-  
+
   /**
    * Serialization
    */
@@ -124,25 +124,25 @@ export default class Script {
     transform.setScript(script);
     extract.setScript(script);
     descent.setScript(script);
-    
+
     return script;
   }
-  
+
   toJSON() {
     const jsonContainer = {};
 
     this.stepsAsArray().forEach(step => {
       jsonContainer[step.id] = step.toJSON();
     });
-    
+
     return jsonContainer;
   }
-  
+
   static fromJSON() {
 //     // this is deserialization of a script
 //     let jsonScripts = this._view.getJSONAttribute(VivideView.scriptAttribute);
 //     let scripts = {};
-    
+
 //     for (let scriptId in jsonScripts) {
 //       scripts[scriptId] = new ScriptStep(
 //         jsonScripts[scriptId].source,
@@ -150,7 +150,7 @@ export default class Script {
 //         scriptId,
 //       );
 //     }
-    
+
 // TODO: link steps
   }
 }
@@ -160,7 +160,7 @@ export default class Script {
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
   const script = vv.myCurrentScript;
-  
+
   if(script) {
     // evil live programming
     script.constructor === Script;

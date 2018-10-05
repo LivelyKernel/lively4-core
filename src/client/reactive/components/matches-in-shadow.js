@@ -1,7 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import select, { View} from 'active-groups';
+import select, { View} from 'active-group';
 import { PausableLoop } from 'utils';
 
 class ReactiveSelector {

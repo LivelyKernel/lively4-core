@@ -220,12 +220,11 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async show(targetURL, sourceContent, contextURL, force=false) {
-    console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = "" + targetURL;
     var lastContent = this.sourceContent
     this.sourceContent = sourceContent;
-    console.log("contextURL " + contextURL)
     
     this.contextURL = contextURL;
     var lastDir = this.currentDir
@@ -532,7 +531,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   showSublistMD(subList) {
-    console.log("sublist md " + this.sourceContent.length)
+    // console.log("sublist md " + this.sourceContent.length)
     if (!this.sourceContent) return;
     let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
     let m;
@@ -575,7 +574,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   clearSublists() {
-    console.log("clear sublists")
+    // console.log("clear sublists")
     var parents = this.targetItem ? lively.allParents(this.targetItem) : [];
     // remove all sublists... but my own tree
     Array.from(this.get("#navbar").querySelectorAll("ul"))
@@ -588,7 +587,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async showSublist() {
-    console.log("show sublist " + this.url)
+    // console.log("show sublist " + this.url)
      
     if (!this.targetItem) return 
     if (this.targetItem.querySelector("ul")) return // has sublist
@@ -604,19 +603,18 @@ export default class LivelyContainerNavbar extends Morph {
   
   
   async showSublisContent(optionsWasHandles) {
-    console.log("show sublist content " + this.url)
+    // show console.log("show sublist content " + this.url)
      
     if (!this.targetItem) return 
     var subList = this.targetItem.querySelector("ul")
     if (!subList) return // we are a sublist item?
     this.clearSublists()
-     console.log("show sublist xxx " + this.url)
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
     } else if (this.url.match(/\.js$/)) {
       this.showSublistJS(subList)
     } else if (this.url.match(/\.md$/)) {
-      console.log("show sublist md" + this.url)
+      // console.log("show sublist md" + this.url)
 
       this.showSublistMD(subList)
     } else {

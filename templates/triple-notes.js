@@ -13,7 +13,7 @@ import {
 import * as drawTools from 'src/client/triples/drawTools.js';
 import * as math from 'src/client/triples/math.js';
 
-import { aexpr } from "frame-based-aexpr";
+import { aexpr } from "active-expression-frame-based";
 
 const MIN_MAGNIFICATION = 0.01;
 const MAX_MAGNIFICATION = 4;

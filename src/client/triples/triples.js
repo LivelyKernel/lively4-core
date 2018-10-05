@@ -3,7 +3,7 @@
 import focalStorage from 'src/external/focalStorage.js';
 import ContextMenu from './../contextmenu.js';
 import { through, uuid, fileName, hintForLabel, getTempKeyFor, asDragImageFor } from 'utils';
-import { trackInstance } from 'roq';
+import { trackInstance } from 'active-group';
 
 async function getJSYaml() {
   await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");

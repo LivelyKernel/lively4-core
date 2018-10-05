@@ -54,7 +54,7 @@ export default onmessage = async function(msg) {
     applyExamples(ast, annotations.examples);
     
     // Apply context
-    applyContext(ast, annotations.context);
+    await applyContext(ast, annotations.context, replacementUrls);
 
     // Generate executable code
     let executableCode = codeForAst(ast);

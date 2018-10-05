@@ -53,6 +53,9 @@ export class Scheme {
 
   async handle(options) {
     if (!this.resolve()) {
+      if (options.method == "OPTIONS") {
+      return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
+      }
       return new Response("Could not resolve " + this.url, {status: 404})
     }  
     if (this.GET && (!options || options.method == "GET")) { // GET is default
@@ -91,7 +94,7 @@ export class LivelyFile extends Scheme {
         }
       } else {
         try {
-          element = element.querySelector(":scope > #" + subSelector.replace(/\./,"\\."))
+          element = element.querySelector(`:scope > [name="${subSelector.replace(/\./,"\\.")}"]`)
         } catch(e) {
           console.warn("query error " + e)
           return undefined
@@ -131,11 +134,11 @@ export class LivelyFile extends Scheme {
   
   fileToStat(element, withChildren) {
     return {
-      name: element.id,
+      name: element.name,
       parent: LivelyFile.fileToURI(element.parentElement),
       type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
       contents: withChildren ? (Array.from(element.childNodes)
-        .filter(ea => ea.id && ea.classList && ea.classList.contains("lively-content"))
+        .filter(ea => ea.name && ea.classList && ea.classList.contains("lively-content"))
         .map(ea => this.fileToStat(ea, false))) : undefined
     }
   }
@@ -145,8 +148,8 @@ export class LivelyFile extends Scheme {
       return this.scheme + "://"
     }
     var url = this.fileToURI(file.parentElement) 
-    if (file.id) {
-      url += "/" + file.id 
+    if (file.name) {
+      url += "/" + file.name
     } else {
       // we should not allow this?
     }
@@ -538,9 +541,9 @@ window.fetch = async function(request, options, ...rest) {
 lively.removeEventListener("poid", navigator.serviceWorker)
 lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {
   try {
-    let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)\/(.*)$/)
+    let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)(?:\/(.*))?$/)
     if (!m) {
-      throw new Error("Requested path does mot fit a scheme! path='" + evt.data.path +"'")        
+      throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
     }
     let url= m[1] + "://" + m[2]    
     if(evt.data.name == 'swx:pi:GET') {

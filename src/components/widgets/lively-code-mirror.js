@@ -9,7 +9,7 @@ import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
-import { TernCodeMirrorWrapper } from 'src/client/reactive/tern-spike/tern-wrapper.js';
+import { TernCodeMirrorWrapper } from 'src/components/widgets/tern-wrapper.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
@@ -121,7 +121,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/selection/mark-selection.js")
       await this.loadModule("keymap/sublime.js")
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js')
-      
+
       this.loadCSS("addon/hint/show-hint.css")
       this.loadCSS("addon/lint/lint.css")
       lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css")
@@ -129,7 +129,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return loadPromise
   }
 
-  
+
   static async loadTernModules() {
     if (this.ternIsLoaded) return;
 
@@ -149,10 +149,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
     this.ternIsLoaded = true;
   }
-  
+
   initialize() {
   	this._attrObserver = new MutationObserver(mutations => {
-	    mutations.forEach(mutation => {  
+	    mutations.forEach(mutation => {
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
@@ -165,14 +165,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
     this._attrObserver.observe(this, { attributes: true });
   }
-  
+
   applyAttribute(attr) {
     var value = this.getAttribute(attr)
     if (value !== undefined) {
       this.setAttribute(attr, value)
     }
   }
-  
+
   async attachedCallback() {
     if (this.isLoading || this.editor ) return;
     this.isLoading = true
@@ -186,19 +186,19 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   	this.editView(value)
     this.isLoading = false
-    console.log("[editor] #dispatch editor-loaded")   
+    console.log("[editor] #dispatch editor-loaded")
     var event = new CustomEvent("editor-loaded")
     // event.stopPropagation();
     this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
   };
-  
+
   async editorLoaded() {
     if(!this["editor-loaded"]) {
       return promisedEvent(this, "editor-loaded");
     }
-  } 
-  
+  }
+
   editView(value) {
     if (!value) value = this.value || "";
     var container = this.shadowRoot.querySelector("#code-mirror-container")
@@ -208,14 +208,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       lineNumbers: true,
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
-    }));  
+    }));
   }
-  
+
   setEditor(editor) {
     this.editor = editor
 		this.setupEditor()
   }
-  
+
   setupEditor() {
   	var editor = this.editor;
     if (this.mode) {
@@ -228,15 +228,15 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
     editor.on("change", (() => this.checkSyntax())::debounce(500))
-    
-		// apply attributes 
+
+		// apply attributes
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));
-    
+
     // if(Preferences.get('UseTernInCodeMirror')) {
     //   this.enableTern();
     // }
   }
-  
+
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
@@ -255,6 +255,13 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Alt-F": "findPersistent",
       // "Ctrl-F": "search",
       // #KeyboardShortcut Ctrl-H search and replace
+      "Insert": (cm) => {
+        // do nothing... ther INSERT mode is so often actived by accident 
+      },
+      "Ctrl-Insert": (cm) => {
+        // do nothing... ther INSERT mode is so often actived by accident 
+        cm.toggleOverwrite()
+      },
       "Ctrl-H": (cm) => {
         setTimeout(() => {
             editor.execCommand("replace");
@@ -264,7 +271,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       // #KeyboardShortcut Ctrl-F search
       "Ctrl-F": (cm) => {
 		    // something immediately grabs the "focus" and we close the search dialog..
-        // #Hack... 
+        // #Hack...
         setTimeout(() => {
             editor.execCommand("findPersistent");
             this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
@@ -286,27 +293,27 @@ export default class LivelyCodeMirror extends HTMLElement {
           let text = this.getSelectionOrLine()
           this.tryBoundEval(text, true);
       },
-      // #KeyboardShortcut Ctrl-I eval and inspect selection or line 
+      // #KeyboardShortcut Ctrl-I eval and inspect selection or line
       "Ctrl-I": (cm) => {
         let text = this.getSelectionOrLine()
         this.inspectIt(text)
       },
-      // #KeyboardShortcut Ctrl-I eval selection or line (do it) 
+      // #KeyboardShortcut Ctrl-I eval selection or line (do it)
       "Ctrl-D": (cm, b, c) => {
         	let text = this.getSelectionOrLine();
           this.tryBoundEval(text, false);
         	return true
       },
-      // #KeyboardShortcut Ctrl-Alt-Right multiselect next 
-      "Ctrl-Alt-Right": "selectNextOccurrence", 
+      // #KeyboardShortcut Ctrl-Alt-Right multiselect next
+      "Ctrl-Alt-Right": "selectNextOccurrence",
       // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
-  		"Ctrl-Alt-Left": "undoSelection", 
-      
+  		"Ctrl-Alt-Left": "undoSelection",
+
       // #KeyboardShortcut Ctrl-/ indent slelection
       "Ctrl-/": "toggleCommentIndented",
       // #KeyboardShortcut Ctrl-# indent slelection
       "Ctrl-#": "toggleCommentIndented",
-      // #KeyboardShortcut Tab insert tab or soft indent 
+      // #KeyboardShortcut Tab insert tab or soft indent
       'Tab': (cm) => {
         if (cm.somethingSelected()) {
     			cm.indentSelection("add");
@@ -315,16 +322,16 @@ export default class LivelyCodeMirror extends HTMLElement {
         }
       },
       // #KeyboardShortcut Ctrl-S save content
-      "Ctrl-S": (cm) => {          
+      "Ctrl-S": (cm) => {
         this.doSave(cm.getValue());
       },
       // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
-      "Ctrl-Alt-V": async cm => {          
+      "Ctrl-Alt-V": async cm => {
         let text = this.getSelectionOrLine();
         let result = await this.tryBoundEval(text, false);
         letsScript(result);
       },
-      // #KeyboardShortcut Ctrl-Alt-C show type using tern      
+      // #KeyboardShortcut Ctrl-Alt-C show type using tern
       "Ctrl-Alt-I": cm => {
         TernCodeMirrorWrapper.showType(cm, this);
       },
@@ -341,7 +348,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       "Shift-Alt-.": cm => {
         TernCodeMirrorWrapper.showReferences(cm, this);
       },
-      // #KeyboardShortcut Alt-C capitalize letter      
+      // #KeyboardShortcut Alt-C capitalize letter
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
       operateOnWord(cm, function(w) {
@@ -373,7 +380,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
     });
   }
-  
+
   // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
     if(!this.editor){
@@ -396,7 +403,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //   if (newVal)
       // this.enableTern()
       //   break;
-      
+
       case "tabsize":
 				this.setOption("tabSize", newVal)
         break;
@@ -408,13 +415,13 @@ export default class LivelyCodeMirror extends HTMLElement {
       	break;
     }
   }
-  
-  
+
+
   setOption(name, value) {
     if (!this.editor) return; // we loose...
     this.editor.setOption(name, value)
-  } 
-  
+  }
+
   doSave(text) {
     this.tryBoundEval(text) // just a default implementation...
   }
@@ -426,7 +433,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     else
       return this.editor.getLine(this.editor.getCursor("end").line)
   }
-  
+
   getDoitContext() {
     return this.doitContext
   }
@@ -446,22 +453,22 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async boundEval(str) {
     // console.log("bound eval " + str)
-    
+
     // Ensure target module loaded (for .js files only)
     // TODO: duplicate with var recorder plugin
     const MODULE_MATCHER = /.js$/;
     if(MODULE_MATCHER.test(this.getTargetModule())) {
       await System.import(this.getTargetModule())
-    } 
+    }
     console.log("EVAL (CM)", this.getTargetModule());
     // src, topLevelVariables, thisReference, <- finalStatement
     return boundEval(str, this.getDoitContext(), this.getTargetModule());
   }
-  
+
   printWidget(name) {
     return this.wrapWidget(name, this.editor.getCursor(true), this.editor.getCursor(false))
   }
-  
+
   wrapWidget(name, from, to, options) {
     var widget = document.createElement("span");
     widget.style.whiteSpace = "normal";
@@ -480,11 +487,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       replacedWith: widget
     }, options));
     promise.then(comp => comp.marker = marker);
-    
+
     return promise;
   }
-  
-  
+
+
   async printResult(result, obj, isPromise) {
     var editor = this.editor;
     var text = result
@@ -510,21 +517,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (Array.isArray(obj) && !obj.every(ea => ea instanceof Node)) {
       if (obj.every(ea => (typeof ea == 'object') && !(ea instanceof String))) {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj)      
+          table.setFromJSO(obj)
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"
           return table
         })
       } else {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))      
+          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))
           table.style.maxHeight = "300px"
           table.style.overflow = "auto"
           return table
         })
       }
     } else if(objClass ==  "Matrix") {
-      // obj = obj.toString() 
+      // obj = obj.toString()
       debugger
     } else if ((typeof obj == 'object') && (obj !== null)) {
       promisedWidget = this.printWidget("lively-inspector").then( inspector => {
@@ -542,10 +549,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         if (isAsync && promisedWidget) {
           if (widget) widget.style.border = "2px dashed blue"
         }
-      
-    } 
+
+    }
   }
-    
+
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -570,10 +577,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
       return s
     }
-    
+
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then && result instanceof Promise) { 
+      if (result && result.then && result instanceof Promise) {
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
@@ -593,28 +600,28 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     return result
   }
-  
+
   async inspectIt(str) {
     var result =  await this.boundEval(str);
     if (!result.isError) {
-      result = result.value 
+      result = result.value
     }
     if (result.then) {
       result = await result; // wait on any promise
     }
-    lively.openInspector(result, undefined, str) 
+    lively.openInspector(result, undefined, str)
   }
-  
+
 
   doSave(text) {
     this.tryBoundEval(text) // just a default implementation...
   }
-  
+
 
   detachedCallback() {
     this._attached = false;
   };
-  
+
   get value() {
     if (this.editor) {
       return this.editor.getValue()
@@ -630,51 +637,51 @@ export default class LivelyCodeMirror extends HTMLElement {
       this._value = text
     }
   }
-  
+
   setCustomStyle(source) {
     this.shadowRoot.querySelector("#customStyle").textContent = source
   }
-  
+
   getCustomStyle(source) {
     return this.shadowRoot.querySelector("#customStyle").textContent
   }
-   
+
   encodeHTML(s) {
-    return s.replace("&", "&amp;").replace("<", "&lt;") 
+    return s.replace("&", "&amp;").replace("<", "&lt;")
   }
-  
+
   decodeHTML(s) {
-    return s.replace("&lt;", "<").replace("&amp;", "&") 
+    return s.replace("&lt;", "<").replace("&amp;", "&")
   }
-    
+
   resize() {
     // #ACE Component compatiblity
   }
-    
+
   enableAutocompletion() {
     // #ACE Component compatiblity
   }
-  
+
   get isJavaScript() {
     if (!this.editor) return false;
     let mode = this.editor.getOption("mode");
     return mode === "javascript" || mode === 'text/jsx';
   }
-  
+
   get isMarkdown() {
     if (!this.editor) return false;
     return this.editor.getOption("mode") == "gfm";
   }
-  
+
   get isHTML() {
     if (!this.editor) return false;
     return this.editor.getOption("mode") == "text/html";
   }
-  
-  
+
+
   async changeModeForFile(filename) {
     if (!this.editor) return;
-    
+
     var mode = "text"
     // #TODO there must be some kind of automatching?
     if (filename.match(/\.html$/)) {
@@ -702,7 +709,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
-    
+
     if (mode == "gfm") {
       // #TODO make language customizable
       var m = this.value.match(/^.*lang\:(.._..)/)
@@ -719,7 +726,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         spellCheck.startSpellCheck(this.editor, await spellCheck.current())
       }
     }
-    
+
   }
 
   livelyPrepareSave() {
@@ -732,45 +739,45 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.lastScrollInfo = this.editor.getScrollInfo(); // #Example #PreserveContext
     }
   }
-  
+
   focus() {
     if(this.editor) this.editor.focus()
   }
-  
+
   isFocused(doc) {
     doc = doc || document
     if (doc.activeElement === this) return true
-    // search recursively in shadowDoms  
+    // search recursively in shadowDoms
     if (doc.activeElement && doc.activeElement.shadowRoot) {
-			return this.isFocused(doc.activeElement.shadowRoot)      
+			return this.isFocused(doc.activeElement.shadowRoot)
     }
     return false
   }
-  
+
   async livelyMigrate(other) {
     lively.addEventListener("Migrate", this, "editor-loaded", evt => {
       if (evt.path[0] !== this) return; // bubbled from another place... that is not me!
       lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {
-      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)        
+      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
       }
     })
   }
-  
+
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
       pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
-  
-  
+
+
 //   async enableTern() {
 //     await LivelyCodeMirror.loadTernModules()
-    
+
 //     var ecmascriptdefs = await fetch(lively4url + "/src/external/tern/ecmascript.json").then(r => r.json())
 //     var browserdefs = await fetch(lively4url + "/src/external/tern/browser.json").then(r => r.json())
 //     // var chaidefs = await fetch(lively4url + "/src/external/tern/chai.json").then(r => r.json())
-    
+
 //     // Options supported (all optional):
 //     // * defs: An array of JSON definition data structures.
 //     // * plugins: An object mapping plugin names to configuration
@@ -804,9 +811,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 //     //   to the Acorn and Tern libraries and any Tern plugins you want to
 //     //   load. Or, if you minified those into a single script and included
 //     //   them in the workerScript, simply leave this undefined.
-    
+
 //     this.ternServer = new CodeMirror.TernServer({
-//       defs: [ecmascriptdefs, browserdefs], // chaidefs  
+//       defs: [ecmascriptdefs, browserdefs], // chaidefs
 //       plugins: {
 //         es_modules: {}
 //       },
@@ -817,35 +824,35 @@ export default class LivelyCodeMirror extends HTMLElement {
 //       // responseFilter: (doc, query, request, error, data) => {
 //       //  return data
 //       // }
-      
+
 //     });
-    
+
 //     this.editor.setOption("extraKeys", Object.assign({},
-//       this.editor.getOption("extraKeys"), 
+//       this.editor.getOption("extraKeys"),
 //       {
-//         "Ctrl-Space": (cm) => { 
+//         "Ctrl-Space": (cm) => {
 //           this.fixHintsPosition();
-//           this.ternServer.complete(cm); 
+//           this.ternServer.complete(cm);
 //         },
 //         "Ctrl-Alt-I": (cm) => { this.ternServer.showType(cm); },
 //         "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
 //         "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
 //         "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },
 //         "Ctrl-Q": (cm) => { this.ternServer.rename(cm); },
-//         "Ctrl-.": (cm) => { this.ternServer.selectName(cm); } 
+//         "Ctrl-.": (cm) => { this.ternServer.selectName(cm); }
 //       }))
-    
+
 //     this.editor.on("cursorActivity", (cm) => { this.ternServer.updateArgHints(cm); });
 //   }
-  
-  
+
+
   async addTernFile(name, url, text) {
-    if (!this.ternServer) return 
-    url = url || name; 
+    if (!this.ternServer) return
+    url = url || name;
     text = text || await fetch(url).then(r => r.text())
-    this.ternServer.server.addFile(name, text)  
+    this.ternServer.server.addFile(name, text)
   }
-  
+
   mergeView(originalText, originalLeftText) {
     var target = this.shadowRoot.querySelector("#code-mirror-container")
     target.innerHTML = "";
@@ -867,7 +874,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(this._mergeView.editor())
     // this.resizeMergeView(this._mergeView)
   }
-  
+
   resizeMergeView(mergeView) {
     function editorHeight(editor) {
       if (!editor) return 0;
@@ -878,7 +885,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       return Math.max(editorHeight(mergeView.leftOriginal()),
                       editorHeight(mergeView.editor()),
                       editorHeight(mergeView.rightOriginal()));
-    }  
+    }
     var height = mergeViewHeight(mergeView);
     for(;;) {
       if (mergeView.leftOriginal())
@@ -893,18 +900,18 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     mergeView.wrap.style.height = height + "px";
   }
-  
+
   async hideDataURLs() {
     var regEx = new RegExp("[\"\'](data:[^\"\']*)[\"\']", "g");
     do {
       var m = regEx.exec(this.value);
       if (m) {
-        var from = m.index 
-        var to = m.index + m[0].length 
-        await this.wrapWidget("span", this.editor.posFromIndex(from), 
+        var from = m.index
+        var to = m.index + m[0].length
+        await this.wrapWidget("span", this.editor.posFromIndex(from),
                               this.editor.posFromIndex(to)).then( div => {
           div.style.backgroundColor = "rgb(240,240,240)"
-          
+
           if (m[1].match(/^data:image/)) {
             var img = document.createElement("img")
             img.src = m[1]
@@ -913,28 +920,28 @@ export default class LivelyCodeMirror extends HTMLElement {
 
             div.appendChild(document.createTextNode("\""))
             div.appendChild(img)
-            div.appendChild(document.createTextNode("\""))            
+            div.appendChild(document.createTextNode("\""))
           } else {
-            div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+            div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""
           }
         })
 
       }
     } while (m);
   }
-  
+
 //    async wrapImageLinks() {
 //     var regEx = new RegExp("\!\[\]\(([A-Za-z0-9_ .]\.((jpg)|(png)))$\)", "g");
 //     do {
 //       var m = regEx.exec(this.value);
 //       if (m) {
-//         var from = m.index 
-//         var to = m.index + m[0].length 
+//         var from = m.index
+//         var to = m.index + m[0].length
 //         var url = m[1]
-//         await this.wrapWidget("span", this.editor.posFromIndex(from), 
+//         await this.wrapWidget("span", this.editor.posFromIndex(from),
 //                               this.editor.posFromIndex(to)).then( div => {
 //           div.style.backgroundColor = "rgb(240,240,240)"
-          
+
 //           if (m[1].match(/^data:image/)) {
 //             var img = document.createElement("img")
 //             img.src = m[1]
@@ -943,17 +950,17 @@ export default class LivelyCodeMirror extends HTMLElement {
 
 //             div.appendChild(document.createTextNode("\""))
 //             div.appendChild(img)
-//             div.appendChild(document.createTextNode("\""))            
+//             div.appendChild(document.createTextNode("\""))
 //           } else {
-//             div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""            
+//             div.innerHTML = "\""+ m[1].slice(0,50) + "..." + "\""
 //           }
 //         })
 
 //       }
 //     } while (m);
 //   }
-  
-  
+
+
   async wrapImports() {
     // dev mode alternative to #DevLayers, a #S3Pattern: add code the scopes your dev example inline while developing
     if(this.id !== 'spike') {
@@ -961,7 +968,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       return;
     }
     // lively.success('wrap imports in spike')
-    
+
     const getImportDeclarationRegex = () => {
       const LiteralString = `(["][^"\\n\\r]*["]|['][^'\\n\\r]*['])`;
       const JavaScriptIdentifier = '([a-zA-Z$_][a-zA-Z0-9$_]*)'
@@ -978,7 +985,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       const anySpecifier = `(${ImportSpecifier}|${ImportDefaultSpecifier}|${ImportNamespaceSpecifier})`;
       // ImportDeclaration: import [any] from Literal
       const ImportDeclaration = `import\\s*(${anySpecifier}\\s*\\,\\s*)*${anySpecifier}\\s*from\\s*${LiteralString}(\\s*\\;)?`;
-      
+
       return ImportDeclaration;
     };
 
@@ -991,7 +998,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
     } while (m);
   }
-  
+
    async wrapLinks() {
     // dev mode
     if(this !== window.that) {
@@ -1002,21 +1009,21 @@ export default class LivelyCodeMirror extends HTMLElement {
       var m = regEx.exec(this.value);
       if (m) {
         lively.warn("wrap link: " + m[0])
-        var from = m.index 
-        var to = m.index + m[0].length 
+        var from = m.index
+        var to = m.index + m[0].length
         var link = m[1]
         // #TODO check for an existing widget and reuse / update it...
-        await this.wrapWidget("span", this.editor.posFromIndex(from), 
+        await this.wrapWidget("span", this.editor.posFromIndex(from),
                               this.editor.posFromIndex(to)).then(widget => {
           window.lastWidget = widget
-          
+
           widget.style.backgroundColor = "rgb(120,120, 240)"
           var input = <input></input>
-          input.value = m[0]  
-          
+          input.value = m[0]
+
           lively.warn("new input " + input)
-          
-          
+
+
           input.addEventListener("keydown", evt => {
             var range = widget.marker.find()
             if (evt.keyCode == 13) { // ENTER
@@ -1030,7 +1037,7 @@ export default class LivelyCodeMirror extends HTMLElement {
                 this.focus()
               }
             }
-            
+
             if (evt.keyCode == 39) { // Right
               if (input.selectionStart == input.value.length) {
                 this.editor.setSelection(range.to, range.to)
@@ -1038,17 +1045,17 @@ export default class LivelyCodeMirror extends HTMLElement {
               }
             }
           })
-          
+
           widget.appendChild(input)
           // widget.appendChild(<button click={e => {
-          //   lively.openBrowser(link)  // #TODO fix browse and open browser...    
+          //   lively.openBrowser(link)  // #TODO fix browse and open browser...
           // }}>browse</button>)
         })
 
       }
     } while (m);
   }
-  
+
   checkSyntax() {
     if (this.isJavaScript) {
       SyntaxChecker.checkForSyntaxErrors(this.editor);
@@ -1056,10 +1063,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.wrapLinks();
     }
     if (this.isMarkdown || this.isHTML) {
-      this.hideDataURLs() 
+      this.hideDataURLs()
     }
   }
-  
+
 
   find(name) {
     // #TODO this is horrible... Why is there not a standard method for this?
@@ -1073,13 +1080,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   	  }
     })
   }
-  
+
   unsavedChanges() {
     if (this.editor.getValue() === "") return false
     return  true // workspaces should be treated carefully
   }
 
-  
+
 }
 
 // LivelyCodeMirror.loadModules()

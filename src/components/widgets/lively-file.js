@@ -13,21 +13,49 @@ export default class File extends Morph {
     this.addEventListener("dragstart", evt => this.onDragStart(evt))
     this.addEventListener("click", evt => this.onClick(evt))
     this.addEventListener("dblclick", evt => this.onDoubleClick(evt))    
+    this.get("#item-name").addEventListener("click", evt => this.onNameClick(evt))
     html.registerAttributeObservers(this);
   }
   
   
-  onClick() {
-    if (this.classList.contains("selected")) {
-      this.classList.remove("selected")        
+  onClick(evt) {
+    if (evt.shiftKey) {
+      // add and remove to a selection
+      if (this.classList.contains("selected")) {
+        this.classList.remove("selected")        
+      } else {
+        this.classList.add("selected")  
+      }
     } else {
-      this.classList.add("selected")  
+      // select one
+      this.parentElement.querySelectorAll("lively-file").forEach(ea => {
+        ea.classList.remove("selected")
+      })
+      this.classList.add("selected")        
     }
   }
   
   async onDoubleClick() {
     var comp = await lively.openBrowser(LivelyFile.fileToURI(this), false)
     comp.hideNavbar() 
+  }
+  
+  onNameClick(evt) {
+    if (this.classList.contains("selected")) {
+      var nameField = this.get("#item-name")
+      nameField.setAttribute("contenteditable", true)
+      nameField.focus()
+      evt.preventDefault()
+      evt.stopPropagation()
+
+      
+      lively.removeEventListener("name", nameField)
+      lively.addEventListener("name", nameField, "blur", () => {
+        this.renameFile(nameField.textContent)
+        nameField.setAttribute("contenteditable", false);
+      })
+      
+    }
   }
   
   async onDragStart(evt) {
@@ -69,18 +97,24 @@ export default class File extends Morph {
   updateView(value) {
     if (!value) return
     this.get('#item-name').innerHTML = value
-    if (value.match(/\.(md)|(txt)$/))
-      this._setIcon('fa-file-text-o')
-    if (value.match(/\.(html)|(js)|(json)$/))
+    if (value.match(/\.(md)|(txt)$/)) {
+      this._setIcon('fa-file-text-o') 
+    } else if (value.match(/\.(png)|(jpeg)$/)) {
+      this._setIcon('fa-file-picture-o')
+    } else if (value.match(/\.(html)|(js)|(json)$/)) {
       this._setIcon('fa-file-code-o')
-    if (value.match(/\.(mkv)|(mov)|(mp4)$/))
+    } else if (value.match(/\.(mkv)|(mov)|(mp4)$/)) {
       this._setIcon('fa-film')
-    if (value.match(/\.(mp3)$/))
+    } else if (value.match(/\.(mp3)$/)) {
       this._setIcon('fa-audio')
+    } else {
+      this._setIcon('fa-file-o') 
+    }
+    
   }
   
   set name(value) {
-    this.setAttribute("id", value)
+    this.setAttribute("name", value)
     this.updateView(value)
   }
  
@@ -90,9 +124,13 @@ export default class File extends Morph {
   }
   
   get name() {
-    return this.getAttribute('id')
+    return this.getAttribute('name')
   }
 
+  renameFile(name) {
+    this.name = name
+  }
+  
   set url(value) {
     this.setAttribute("url", value)
   }
@@ -120,7 +158,7 @@ export default class File extends Morph {
   }
   
   livelyExample() {
-    this.name = "foo.md"    
+    this.name = "hello-world-foo.md"    
   }
   
   

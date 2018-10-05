@@ -30,6 +30,7 @@ import focalStorage from '../external/focalStorage.js';
 import Selection from 'src/components/halo/lively-selection.js'
 import windows from "src/components/widgets/lively-window.js"
 
+import events from "src/client/morphic/events.js"
 
 let $ = window.$; // known global variables.
 
@@ -790,6 +791,8 @@ export default class Lively {
     }, false);
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
+    
+    events.installHooks()
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
@@ -1547,8 +1550,8 @@ export default class Lively {
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
-      || (element && (element.id == "copy-hack-element")
-      || (element  && element.tagName == "LIVELY-CONTAINER"))
+      || (element && element.id == "copy-hack-element")
+      || (element  && element.tagName == "LIVELY-CONTAINER" && element.shadowRoot && !element.shadowRoot.activeElement)
   }
 
   static hasGlobalFocus() {
@@ -1609,6 +1612,10 @@ export default class Lively {
    if (!result && element.parentNode) result = this.query(element.parentNode, query)
    if (!result && element.host) result = this.query(element.host, query)
    return result
+  }
+  
+  static elementToCSSName(element) {
+    element.localName + (element.id  ? "#" + element.id : "")
   }
 
   static async openPart(partName, worldContext=document.body) {

@@ -37,13 +37,13 @@ export default class AstExplorer extends Morph {
       this.sourceEditor,
       this.sourceInput,
       'source',
-      lively4url + "/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/example.js"
+      lively4url + "/src/client/reactive/babel-plugin-active-expression-rewriting/example.js"
     );
     initLivelyEditorFromAttribute(
       this.pluginEditor,
       this.pluginInput,
-      'plugin', 
-    	lively4url + "/src/client/reactive/active-expressions/babel-plugin-aexpr-source-transformation/index.js"
+      'plugin',
+    	lively4url + "/src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
     );
 
     this.pluginEditor.doSave = async () => {
