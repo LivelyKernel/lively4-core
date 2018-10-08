@@ -23,6 +23,7 @@ import { toArray, uuid as generateUUID, wait } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
+import SystemjsWorker from "src/worker/systemjs-worker.js"
 
 /* expose external modules */
 // import color from '../external/tinycolor.js';
@@ -1545,6 +1546,13 @@ export default class Lively {
 
   static async onBodyScrollPreference(pos) {
     this.deferredUpdateScroll = pos;
+  }
+  
+  static async onFileIndexPreference(bool) {
+    if (bool) {
+      var fileindexworker = new SystemjsWorker("src/worker/fileindex-worker.js")
+      fileindexworker.postMessage({message: "updateDirectory", url: lively4url + "/"})
+    }
   }
 
 

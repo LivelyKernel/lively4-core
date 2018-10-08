@@ -10,7 +10,7 @@ export function onmessage(evt) {
       postMessage({message: "updateDirectoryFinished"})
     })
   } else {
-    console.log("FileCache message not understood", msg)
+    console.log("FileIndex message not understood", msg)
   }
 
 }
