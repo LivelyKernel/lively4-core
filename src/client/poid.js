@@ -1,6 +1,6 @@
 /* Polymorphic Identifier */
 
-import FileCache from 'src/client/filecache.js'
+import FileCache from 'src/client/fileindex.js'
 
 export class ObjectResponse {
  

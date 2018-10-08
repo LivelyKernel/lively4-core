@@ -1,7 +1,7 @@
 
 
 
-import FileCache from "src/client/filecache.js"
+import FileCache from "src/client/fileindex.js"
 
 export function onmessage(evt) {
   var msg = evt.data
