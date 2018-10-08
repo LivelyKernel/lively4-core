@@ -30,7 +30,7 @@ import FileCache from "src/client/filecache.js"
     _.uniq(tags[tag]).forEach(ea => {
       ea.content.split("\n").filter(ea => ea.match(tag)).forEach(line => {
         var li2 = document.createElement("li")
-        li2.innerHTML = '<a href="' +ea.url + '">'+ea.name + '</a> ' + line 
+        li2.innerHTML = '<a href="' +ea.url + '">'+ea.name + '</a> ' + line.replace(/</g,"&lt;") 
         li2.querySelector("a").onclick = (evt) => {
           evt.preventDefault()
           lively.openBrowser(ea.url, true, line)
