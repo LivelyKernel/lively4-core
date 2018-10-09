@@ -4,11 +4,12 @@
 
 Auto-generated list of tags found in (browser-local) files data-base.
 
-<lively-script><script>
-import FileCache from "src/client/filecache.js"
-  
+<script>
+  import FileCache from "src/client/fileindex.js"
+</script>
+
+<script>
 (async () => {
-  
   var tags = {}
   var files = await FileCache.current().db.files.filter(ea =>  ea.tags && ea.tags.length > 0).toArray();
   files.forEach(ea => {
@@ -17,7 +18,7 @@ import FileCache from "src/client/filecache.js"
       tags[tag].push(ea)
     })
   })
-  
+
   var lastLi 
   function showFiles(li,tag) {
     if (lastLi) lastLi.querySelectorAll("ul").forEach(ea => ea.remove());
@@ -30,7 +31,7 @@ import FileCache from "src/client/filecache.js"
     _.uniq(tags[tag]).forEach(ea => {
       ea.content.split("\n").filter(ea => ea.match(tag)).forEach(line => {
         var li2 = document.createElement("li")
-        li2.innerHTML = '<a href="' +ea.url + '">'+ea.name + '</a> ' + line 
+        li2.innerHTML = '<a href="' +ea.url + '">'+ea.name + '</a> ' + line.replace(/</g,"&lt;") 
         li2.querySelector("a").onclick = (evt) => {
           evt.preventDefault()
           lively.openBrowser(ea.url, true, line)
@@ -47,8 +48,8 @@ import FileCache from "src/client/filecache.js"
       //     }
       //     ul2.appendChild(li2)
     })
-    
-    
+
+
     li.appendChild(ul2)
   }
 
@@ -63,13 +64,13 @@ import FileCache from "src/client/filecache.js"
           // lively.openBrowser(ea.url, true, line)
         }
         ul.appendChild(li)
-    
+
         if (tag == "#window") {
             showFiles(li, tag)
         }
   })    
 
-  
+
   return ul
 })()
-</script></lively-script>
+</script>

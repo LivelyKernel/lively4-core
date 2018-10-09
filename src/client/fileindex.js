@@ -1,5 +1,5 @@
 /*
- * File Cache for Static Analys and Searching
+ * File Index for Static Analys and Searching
  *
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
  *
@@ -10,18 +10,18 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 import * as cop from "src/client/ContextJS/src/contextjs.js";
 
-export default class FileCache {
+export default class FileIndex {
 
   static current() {
-    // FileCache._current = null
+    // FileIndex._current = null
     if (!this._current) {
-      this._current = new FileCache("file_cache")
+      this._current = new FileIndex("file_cache")
     }
     return this._current
   }
 
   toString() {
-    return "["+this.name+":FileCache]"
+    return "["+this.name+":FileIndex]"
   }
 
   clear() {
@@ -134,14 +134,19 @@ export default class FileCache {
           resolveModuleSource: undefined
       }).ast
     } catch(e) {
-      console.log('FileCache, could not parse: ' + filename)
+      console.log('FileIndex, could not parse: ' + filename)
       return undefined
     }
   }
 
   async addFile(url, name, type, size, modified) {
     
-    console.log("FileCache update  " + url)
+    if (url.match("/node_modules") || url.match(/\/\./) ) {
+      // console.log("FileIndex ignore  " + url)
+      return
+    }
+    
+    console.log("FileIndex update  " + url)
     
     
     var file = file = {
@@ -183,16 +188,32 @@ export default class FileCache {
       this.db.files.put(file)
     })
   }
+
+  async dropFile(url) {
+    console.log("FileIndex drop " + url + " from index")
+    this.db.transaction("rw", this.db.files, () => {
+      this.db.files.delete(url)
+    })
+  }
+
   
-  async updateDirectory(baseURL, showProgress) {
+  
+  async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
         filelist  : true
       }
-    }).then(r => r.status == 200 && r.json())
+    }).then(r => {
+      if (r.status == 200) {
+        return r.json()
+      } else {
+        console.log("FileIndex fetch failed ", baseURL, r)
+      }
+    })
     if (!json) {
-      console.log("FileCache could not update " + baseURL)
+      console.log("FileIndex could not update " + baseURL)
+      return
     }
     
     if (showProgress) {
@@ -202,7 +223,10 @@ export default class FileCache {
     }
 
     var lastModified= new Map()
+    var visited = new Set()
+    var all = new Set()
     await this.db.files.each(file => {
+      all.add(file.url)
       lastModified.set(file.url, file.modified) // #Workaround #PerformanceBug in #IndexDB 
     })
     
@@ -215,12 +239,20 @@ export default class FileCache {
           if (lastModified.get(eaURL) !== ea.modified) {
             await this.addFile(eaURL, name, ea.type, ea.size, ea.modified)
           }
+          visited.add(eaURL)
       }
+      all.forEach(eaURL => {
+        if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
+          this.dropFile(eaURL)
+        }
+      })
+      
+      
     } finally {
       if (showProgress) progress.remove()
     }
     
-    console.log("FileCache updateDirectory finished")
+    console.log("FileIndex updateDirectory finished")
   }
 
   async addDirectory(baseURL) {
@@ -287,7 +319,7 @@ export default class FileCache {
   }
 }
 
-cop.layer(window, "ShowDexieProgress").refineClass(FileCache.current().db.Collection, {
+cop.layer(window, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
   async modify(func) {
     var i = 0
     var total = await this.count()

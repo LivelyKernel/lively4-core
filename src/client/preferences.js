@@ -20,6 +20,7 @@ export default class Preferences {
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
       GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
+      FileIndex: {default: false, short: "local file index"},
     }
   }
   

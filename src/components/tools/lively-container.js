@@ -522,7 +522,6 @@ export default class Container extends Morph {
   }
 
   async deleteFile(url, urls) {
-    debugger
     if (!urls) urls = [url]
     var names = urls.map(ea => decodeURI(ea.replace(/.*\//,"")))
     if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
@@ -619,7 +618,6 @@ export default class Container extends Morph {
   async appendMarkdown(content, renderTimeStamp) {
     var md = await lively.create("lively-markdown", this)
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
-      debugger
       return md.remove()
     }
     md.classList.add("presentation") // for the presentation button
