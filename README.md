@@ -24,8 +24,8 @@ The Livel4 server and GitHub sync tools can check out arbitrary projects, such a
 - [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de), 2015-2018 [MIT LICENSE](LICENSE)
 - Jens Lincke, Stefan Ramson, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
 - Seminars
-  - Software Design [SWD 2015](doc/SWD2015/index.md) [SWD 2016](doc/SWD2015/index.md)
-  - Web-based Development [WebDev 2016](doc/WebDev2016/index.md), [WebDev 2017/18](doc/WebDev2017/index.md)
-  - Programming Experience [PX 2018](doc/PX2018/index.md)
-  - Reactive Programming [RP 2018](doc/RP2018/index.md)
+  - Software Design [SWD 2015](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md) [SWD 2016](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md)
+  - Web-based Development [WebDev 2016](https://lively-kernel.org/lively4/lively4-seminars/WebDev2016/index.md), [WebDev 2017/18](https://lively-kernel.org/lively4/lively4-seminars/WebDev2017/index.md)
+  - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
+  - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 - [Imprint](imprint.md)

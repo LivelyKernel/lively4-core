@@ -84,6 +84,13 @@ Modules:
     - #TODO -> provide tool support from inside lively4 to add, update, remove such dependencies
   - Do you have a favorite module/library/package/dependency management system that works clientside only?
 
+# HPI Seminars
+
+- all Lively4 material to HPI seminars resides now in it's own Github repository...
+  - https://github.com/LivelyKernel/lively4-seminars 
+  - https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md
+
+
 # Other Documentation
 - [Lively4 Wiki on Github](https://lively-kernel.org/lively4/Lively4.wiki/Home.md)
 - that also hosts our [developers journal](https://lively-kernel.org/lively4/Lively4.wiki/Journal.md)
