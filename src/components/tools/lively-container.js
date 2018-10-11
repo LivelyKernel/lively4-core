@@ -6,6 +6,8 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
+import files from "src/client/files.js"
+
 // import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScript; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
@@ -21,7 +23,7 @@ export default class Container extends Morph {
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
 
     // there seems to be no <link ..> tag allowed to reference css inside of templates
-    // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
+    // files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
     //   this.shadowRoot.querySelector("#livelySt\yle").innerHTML = css
     // })
     this.windowTitle = "Browser";
@@ -446,7 +448,7 @@ export default class Container extends Morph {
     }
 
     if (this.getPath().match(/\/$/)) {
-      lively.files.saveFile(this.getURL(),"");
+      files.saveFile(this.getURL(),"");
 
       return;
     }
@@ -522,8 +524,13 @@ export default class Container extends Morph {
   }
 
   async deleteFile(url, urls) {
+    lively.notify("delelteFile " + url)
+    if (!urls.includes(url)) {
+      urls = [url] // clicked somewhere else
+    }
+    
     if (!urls) urls = [url]
-    var names = urls.map(ea => decodeURI(ea.replace(/.*\//,"")))
+    var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
     if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
       for(let url of urls) {
         var result = await fetch(url, {method: 'DELETE'})
@@ -555,7 +562,7 @@ export default class Container extends Morph {
     }
     var newURL = base + newName
     if (newURL != url) {
-      await lively.files.moveFile(url, newURL)
+      await files.moveFile(url, newURL)
       
       this.setPath(newURL);
       this.hideCancelAndSave();
@@ -575,7 +582,7 @@ export default class Container extends Morph {
       lively.notify("no file created");
       return;
     }
-    await lively.files.saveFile(fileName,"");
+    await files.saveFile(fileName,"");
     lively.notify("created " + fileName);
     this.setAttribute("mode", "edit");
     this.showCancelAndSave();
@@ -868,7 +875,7 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (lively.files.isURL(path)) {
+    if (files.isURL(path)) {
       return new URL(path);
     } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
@@ -953,7 +960,7 @@ export default class Container extends Morph {
   }
 
   listingForDirectory(url, render, renderTimeStamp) {
-    return lively.files.statFile(url).then((content) => {
+    return files.statFile(url).then((content) => {
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
       }
@@ -1105,10 +1112,10 @@ export default class Container extends Morph {
       }
     }
 
-    if (format.match(/(svg)|(png)|(jpe?g)/)) {
+    if (files.isPicture(format)) {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
       else return;
-    } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
+    } else if (files.isVideo(format)) {
       //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
       
 
@@ -1179,8 +1186,12 @@ export default class Container extends Morph {
           return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
         }
       } else {
-        this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        if (content.length > (1024 * 1024)) {
+          if (render) return this.appendHtml("file size to large", renderTimeStamp); 
+        } else {
+          this.sourceContent = content;
+          if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        }
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));

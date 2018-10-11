@@ -14,6 +14,8 @@ import components from "src/client/morphic/component-loader.js";
 import {pt} from "src/client/graphics.js"
 
 import {getObjectFor} from "utils";
+import files from "src/client/files.js"
+
 
 
 export default class Editor extends Morph {
@@ -435,21 +437,21 @@ export default class Editor extends Morph {
     
     var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
     
-    var dataURL = await lively.files.readBlobAsDataURL(file)  
+    var dataURL = await files.readBlobAsDataURL(file)  
     this.pasteDataUrlAs(dataURL, newurl, filename, evt)
   }
   
   async pasteDataUrlAs(dataURL, newurl, filename, evt) {
     
     var blob = await fetch(dataURL).then(r => r.blob())
-    await lively.files.saveFile(newurl, blob)
+    await files.saveFile(newurl, blob)
     
     this.withEditorObjectDo(editor => {
       var text = encodeURIComponent(filename)
       if (this.getURLString().match(/\.md/)) {
-        if (filename.match(/\.mp4$/)){
+        if (files.isVideo(filename)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
-        } if (filename.match(/\.((png)|(jpg))$/)){
+        } else if (files.isPicture(filename)){
           text = "\n![](" + text + ")" // #ContextSpecificBehavior ?  
         } else {
           text = `\n[${text.replace(/.*\//,"")}](${text})`

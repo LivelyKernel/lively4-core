@@ -342,4 +342,12 @@ export default class Files {
     }
   }
   
+  static isVideo(url) {
+    return url.toString().match(/((ogm)|(m4v)|(mp4)|(mov)|(avi)|(flv)|(mpe?g)|(mkv)|(ogv))$/i)
+  }
+
+  static isPicture(url) {
+    return url.toString().match(/((svg)|(png)|(jpe?g)|(gif))$/i)
+  }
+  
 }
