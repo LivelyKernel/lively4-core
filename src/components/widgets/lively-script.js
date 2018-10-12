@@ -72,6 +72,7 @@ export default class LivelyScript extends Morph {
       await last
     }
     // console.log("" + this.id + ">>boundEval exec " + str )
+    
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()
@@ -83,4 +84,10 @@ export default class LivelyScript extends Morph {
     })
     return myPromisedResult
   }
+  
+  toString() {
+    return "[LivelyScript]"
+  }
+  
+  
 }
