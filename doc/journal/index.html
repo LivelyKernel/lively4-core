@@ -49,9 +49,15 @@ import FileCache from "src/client/filecache.js"
     .forEach(ea => {
       var li = document.createElement("li")
       var a = document.createElement("a")
-      a.innerHTML = ea.name.replace(/\.md/,"")
-      a.href = ea.name
-      var url = dir  + ea.name
+      var name = ea.name
+      a.innerHTML =  name.replace(/\.md/,"")
+      if (ea.type === "directory") {
+        name = name + "/index.md"
+      }
+    
+      a.href = name
+      var url = dir  + name
+      
       a.onclick = (evt) => {
         evt.preventDefault()
         container.followPath(url)
