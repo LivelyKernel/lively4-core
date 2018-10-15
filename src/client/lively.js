@@ -800,7 +800,7 @@ export default class Lively {
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
-    persistence.disable();
+    // persistence.disable();
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     lively.components.loadByName("lively-notification")
@@ -1563,8 +1563,10 @@ export default class Lively {
   
   static async onFileIndexPreference(bool) {
     if (bool) {
-      var fileindexworker = new SystemjsWorker("src/worker/fileindex-worker.js")
-      fileindexworker.postMessage({message: "updateDirectory", url: lively4url + "/"})
+      if(!this.fileIndexWorker) {
+        this.fileIndexWorker = new SystemjsWorker("src/worker/fileindex-worker.js")
+      }
+      this.fileIndexWorker.postMessage({message: "updateDirectory", url: lively4url + "/"})
     }
   }
 

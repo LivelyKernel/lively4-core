@@ -4,7 +4,9 @@ A Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
-## Getting Started
+## Getting Started Again
+
+thisisanewstring again3
 
 <lively-import src="doc/_navigation.html"></lively-import>
 

@@ -23,8 +23,11 @@ async function invalidateFileCaches()  {
       console.warn("window.caches not defined")
       return
     }
-    var offlineFirstCache = await caches.open("offlineFirstCache")
     var url = lively4url + "/"
+    if (self.lively && lively.fileIndexWorker) {
+      this.fileIndexWorker.postMessage({message: "updateDirectory", url})
+    }
+    var offlineFirstCache = await caches.open("offlineFirstCache")
     var json = await Promise.race([
       new Promise(r => {
         setTimeout(() => r(false), 5000) // give the server 5secs ... might be an old one or somthing, anyway keep going!
