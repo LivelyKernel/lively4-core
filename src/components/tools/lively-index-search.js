@@ -39,6 +39,13 @@ export default class IndexSearch extends Morph {
     this.get("#searchResults").innerHTML="";
   }
 
+  showSearchResult(url, pattern) {
+    var editor =  this.get("#editor")
+    editor.hideToolbar();
+    editor.setURL(url)
+    editor.loadFile()
+  }
+
   browseSearchResult(url, pattern) {
     return lively.openBrowser(url, true, pattern, undefined, /* lively.findWorldContext(this)*/);
   }
@@ -62,8 +69,12 @@ export default class IndexSearch extends Morph {
       link.url = url
       link.title = ea.file
       var self = this
-      link.onclick = () => {
-        this.browseSearchResult(url, lineAndColumn);
+      link.onclick = (evt) => {
+        if (evt.shiftKey) {
+          this.browseSearchResult(url, lineAndColumn);
+        } else {
+          this.showSearchResult(url, lineAndColumn);
+        }
         return false;
       };
       this.get("#searchResults").appendChild(item);
