@@ -43,6 +43,11 @@ import FileCache from "src/client/filecache.js"
   var dir = path.replace(/[^/]*$/,"")
   var opts = JSON.parse(await lively.files.statFile(dir))
   var list = document.createElement("ul")
+  var allFiles = []
+  await FileCache.current().db.files.each(file => {
+    allFiles.push(file) // materialize it... 
+  })
+  
   _.sortBy(opts.contents, ea => ea.name)
     .reverse()
     .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d\.((html)|(md))$/))
@@ -63,7 +68,11 @@ import FileCache from "src/client/filecache.js"
         container.followPath(url)
         return true
       }
-      FileCache.current().db.files.where("url").equals(url).each( file => {
+      
+      li.appendChild(a)
+      // #TODO #Refactor this is awfully slow... since random access into IndexDB seems to be broken until somebody tells me what I did wrong....
+      var file = allFiles.find(ea => ea.url === url)
+      if (file) {
         var span = document.createElement("span")
         span.style.width = "40px"
         span.style.marginLeft = "5px"
@@ -73,9 +82,9 @@ import FileCache from "src/client/filecache.js"
         var span = document.createElement("span")
         span.style.width = "40px"
         span.innerHTML = " " + file.title.replace(/\d\d\d\d-\d\d-\d\d,? ?/,"").replace(/</g,"&lt;")
-        li.appendChild(span)
-      })
-      li.appendChild(a)
+        li.appendChild(span)        
+      }
+      
       list.appendChild(li)
     })
   return list

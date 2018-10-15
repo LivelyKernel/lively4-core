@@ -1245,8 +1245,13 @@ export default class Lively {
   }
 
   static openSearchWidget(text, worldContext, searchContext=document.body) {
-    // index based search is not useful at the moment
-    if (true) {
+    if (lively.preferences.get("FileIndex")) {
+      this.openComponentInWindow("lively-index-search").then( comp => {
+        var pattern = text.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
+        comp.searchFile(pattern);
+        comp.focus()
+      });
+    } else {
       var container = lively.query(searchContext, "lively-container")
       this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
         if (container) {
@@ -1262,15 +1267,17 @@ export default class Lively {
         comp.focus()
 
       });
-    } else {
-      var comp = document.getElementsByTagName("lively-search-widget")[0];
-      if (comp.isVisible && text == comp.query) {
-        comp.isVisible = false;
-      } else {
-        comp.isVisible = true;
-        comp.search(text, true);
-      }
-    }
+    } 
+      
+      // #Depricated
+      // var comp = document.getElementsByTagName("lively-search-widget")[0];
+      // if (comp.isVisible && text == comp.query) {
+      //   comp.isVisible = false;
+      // } else {
+      //   comp.isVisible = true;
+      //   comp.search(text, true);
+      // }
+    
   }
 
   static hideSearchWidget() {
@@ -1348,20 +1355,20 @@ export default class Lively {
 
     if (!url || !url.match(/^[a-z]+:\/\//))
       url = lively4url
-    var editorComp;
+    var livelyContainer;
     var containerPromise;
     if (replaceExisting) {
-      editorComp = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
+      livelyContainer = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
     }
 
     var lastWindow = _.first(Array.from(worldContext.querySelectorAll("lively-window"))
       .filter(  ea => ea.childNodes[0] && ea.childNodes[0].isSearchBrowser));
 
-    containerPromise = editorComp ? Promise.resolve(editorComp) :
+    containerPromise = livelyContainer ? Promise.resolve(livelyContainer) :
       lively.openComponentInWindow("lively-container", undefined, undefined, worldContext);
 
     return containerPromise.then(comp => {
-      editorComp = comp;
+      livelyContainer = comp;
       comp.parentElement.style.width = "950px";
       comp.parentElement.style.height = "600px";
 
@@ -1378,20 +1385,26 @@ export default class Lively {
       return comp.followPath(url)
     }).then(async () => {
       if (edit) {
-        await editorComp.asyncGet("#editor").then(livelyEditor => {
+        await livelyContainer.asyncGet("#editor").then(async livelyEditor => {
+          var codeMirror = await livelyEditor.awaitEditor()
+    
           if(pattern) {
-            // #Hack ontop #Hack, sorry... The editor has still things to do
-            setTimeout(() => {
-              livelyEditor.find(pattern);
-            }, 500)
-
+            livelyEditor.find(pattern);
+            
           } else if (lineAndColumn) {
+            
+            codeMirror.setSelection(
+              {line: lineAndColumn.line, ch: lineAndColumn.column},
+              {line: lineAndColumn.line, ch: lineAndColumn.column + 
+                (lineAndColumn.selection ? + lineAndColumn.selection.length : 0)})
             // #TODO ...
             // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
+          codeMirror.focus()
+          codeMirror.scrollIntoView(codeMirror.getCursor(), 200)
         });
       }
-      return editorComp
+      return livelyContainer
     });
   }
 

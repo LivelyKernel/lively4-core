@@ -353,8 +353,18 @@ export default class Editor extends Morph {
   withEditorObjectDo(func) {
     var editor = this.currentEditor()
     if (editor) {
-    	return func(editor)
+     	return func(editor)
     }    
+  }
+  
+  async awaitEditor() {
+    while(!editor) {
+      var editor = this.currentEditor()
+      if (!editor) {
+        await lively.sleep(10) // busy wait
+      }
+    }
+    return editor
   }
   
   getScrollInfo() {
