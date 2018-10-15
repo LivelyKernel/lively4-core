@@ -1,0 +1,29 @@
+<template id="ast-node-program" data-class="AstNodeProgram">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  border: solid darkgrey 10px;
+  margin: 2px;
+  padding: 2px;
+  border-radius: 5px;
+}
+  .container {
+    
+  width: 200px;
+  height: 200px;
+  }
+#children {
+  border: solid blue 2px;
+  background-color: gray;
+}
+</style>
+<div class="container">
+  <span class="title">Program</span>
+  <!--<p><slot name="children">My default text</slot></p>-->
+  <div id="children">
+    <content></content>
+  </div>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>

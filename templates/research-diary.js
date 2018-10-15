@@ -23,9 +23,10 @@ export default class ResearchDiary extends Morph {
   
   async initialize() {
     this.windowTitle = "Research Diary";
-    
+    this.windowIcon = '<i class="fa fa-book" aria-hidden="true"></i>';
+
     await this.prepareEditor();
-    this.refreshList();
+    await this.refreshList();
 
     this.get('#new').addEventListener("click", ::this.createNewEntry);
     
@@ -42,7 +43,7 @@ export default class ResearchDiary extends Morph {
   async prepareEditor() {
     const editorComp = this.codeEditor;
 
-    await promisedEvent(editorComp, "editor-loaded");
+    await editorComp.editorLoaded();
     
     // editorComp.editor.setOptions({
     //   maxLines:Infinity,
@@ -75,7 +76,6 @@ export default class ResearchDiary extends Morph {
     const entries = await this.getEntries();
     const ul = this.get('#nav ul');
     ul.innerHTML = "";
-    
     entries
       ::sortBy(getDateString)
       .reverse()
@@ -94,15 +94,15 @@ export default class ResearchDiary extends Morph {
 
 - 
 
-## Todos for Today
+## MITs for Today
 
 - 
 
-## Done
+## Further Tasks
 
 - 
 
-## Todo
+## Big Rocks (for the week)
 
 - 
 `;
@@ -111,7 +111,7 @@ export default class ResearchDiary extends Morph {
     let content = this.entryTemplate();
     
     this.codeEditor.editor.setValue(content);
-    this.codeEditor.editor.setCursor({line: 4, ch: 0});
+    this.codeEditor.editor.setCursor({line: 8, ch: 0});
     this.codeEditor.editor.execCommand("goLineEnd")
     this.codeEditor.editor.focus();
     
@@ -139,7 +139,13 @@ export default class ResearchDiary extends Morph {
     this.setPreviewText();
   }
   setPreviewText() {
-    this.get("#markdown").setContent(this.codeEditor.value);
+    const md = this.get("#markdown");
+    md.setContent(this.codeEditor.value);
+    
+    if(this.currentEntryURL) {
+      md.setDir(this.currentEntryURL.replace(/[^\/]*$/, ''))
+      md.followPath = url => lively.openBrowser(url);
+    }
   }
   async save(text) {
     let graph = await Graph.getInstance();

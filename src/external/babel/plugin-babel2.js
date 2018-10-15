@@ -8,6 +8,29 @@ var stage3 = require('systemjs-babel-build').pluginsStage3;
 var stage2 = require('systemjs-babel-build').pluginsStage2;
 var stage1 = require('systemjs-babel-build').pluginsStage1;
 
+// Caching the transformation results seems to be problematic..
+// storage 1: localStorage ... fast, but has storage limitations
+// storage 2: indexdb 
+var Dexie = require('../dexie.js').Dexie;
+var pluginBabelCache = new Dexie("pluginBabelCache");
+pluginBabelCache.version("1").stores({
+    files: 'url, source, output, map'
+}).upgrade(function () {
+})
+// storage 3: cache API... here we go
+let transformCache
+
+var useCacheAPI = true // #TODO refactor when we found a fast solution... 
+
+// var diff = require('src/external/diff-match-patch.js').default;
+
+
+
+// import {getScopeIdForModule} from "./../babel-plugin-var-recorder.js" 
+function getScopeIdForModule(moduleName) {
+  return moduleName.replace(/[^a-zA-Z0-9]/g,"_") 
+}
+
 var externalHelpers = require('systemjs-babel-build').externalHelpers;
 var runtimeTransform = require('systemjs-babel-build').runtimeTransform;
 
@@ -63,7 +86,12 @@ var defaultBabelOptions = {
   comments: true
 };
 
-exports.translate = function(load, traceOpts) {
+exports.translate = async function(load, traceOpts) {
+  // console.log("plugin-babel transform ", load)
+  
+  
+  if (!transformCache && self.caches) transformCache = await caches.open("plugin-babel")
+  
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
     throw new TypeError('plugin-babel cannot transpile ' + load.metadata.format + ' modules. Ensure "' + load.name + '" is configured not to use this loader.');
@@ -110,7 +138,7 @@ exports.translate = function(load, traceOpts) {
     });
 
   return Promise.all(pluginAndPresetModuleLoads)
-  .then(function(pluginAndPresetModules) {
+  .then(async function(pluginAndPresetModules) {
     var curPluginOrPresetModule = 0;
 
     var presets = [];
@@ -168,6 +196,96 @@ exports.translate = function(load, traceOpts) {
       });
 
     // console.log(`load: ${load.address}`, plugins);
+    
+    // #Experiment with caching.... 
+    var startTransform = performance.now()
+    let cachedInputCode, cachedOutputCode, cachedOutputMap
+    if(self.lively4plugincache && transformCache) {
+      var key = "pluginBabelTransfrom_" + load.name.replace(/[^A-Za-z0-9 _\-./]/g,"_")
+      
+       // console.log(`lively4plugincache `);
+      
+      // storage 1
+      //       var cachedInputCode = self.localStorage && self.localStorage[key+"_source"]
+      //       var cachedOutputCode = self.localStorage && self.localStorage[key]
+      // cachedOutputMap = JSON.parse(self.localStorage[key+"_map"]
+      
+      if (!useCacheAPI) {
+        // console.log(`storage 2`);
+        // storage 2
+        var loadCacheStart = performance.now()
+        let cached = await pluginBabelCache.files.get(key)
+        // console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
+            if (cached) {
+          cachedInputCode = cached.source
+          cachedOutputCode = cached.output 
+          cachedOutputMap = JSON.parse(cached.map)           
+        }
+      } else {
+        // console.log(`storage 3`);
+
+        // storage 3
+        try {
+          var matchWorked 
+          await Promise.race([
+            new Promise(r => setTimeout(r, 1000)).then( () => {
+              if (!matchWorked) {
+                console.warn("TIMEOUT transform cache " + key, cachedOutputCode, cachedOutputMap, cachedOutputMap)  
+                cachedOutputCode = null;
+                cachedOutputMap = null;                
+              }
+            }),
+            // Promise.all([
+            //     transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t),
+            //     transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t),
+            //     transformCache.match(key + "_map").then(r => r && r.text())
+            //       .then( t => cachedOutputMap = t && JSON.parse(t))])          
+
+            // There seems to be a hickup in the code above... lets wait more
+            (async () => {
+                await transformCache.match(key + "_source").then(r => r && r.text()).then( t => cachedInputCode = t)
+                await transformCache.match(key + "_output").then(r => r && r.text()).then( t => cachedOutputCode = t)
+                await transformCache.match(key + "_map").then(r => r && r.text())
+                  .then( t => cachedOutputMap = t && JSON.parse(t))          
+            // but it does not help, the #Bug seems to be in #
+                matchWorked = true
+                // console.log("loaded cached transform " + key)
+            })()
+            
+          ])
+          
+        } catch(e) {
+          console.error(`could not load from transform cache`);  
+        }
+        
+        // console.log(`storage 3 finished`);
+      }
+      if (cachedOutputCode && (cachedInputCode == load.source)) {
+        // console.log("plugin babel use cache: " + load.name)
+        try {
+
+          output = {
+            code: cachedOutputCode,
+            map: cachedOutputMap
+          }      
+
+          // side effects of using the transformation
+          var moduleURL = SystemJS.normalizeSync(load.name)
+          // a) var recorder
+          _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
+
+        } catch(e) {
+          console.warn("something went wrong... while loading cache " + e)
+          output = undefined
+        }
+        cachedOutput = output
+      } 
+
+    } 
+    // console.log(`cached output = `, output);
+    
+    if (!output) {
+    
     var output = babel.transform(load.source, {
       babelrc: false,
       plugins: plugins,
@@ -203,7 +321,56 @@ exports.translate = function(load, traceOpts) {
         return m;
       }
     });
+    
+    // console.log("output ", output)
+      
+    if (self.lively4plugincache && transformCache) {
 
+      // storage 1      
+      // self.localStorage[key] = output.code
+      // self.localStorage[key +"_source"] = load.source
+      // self.localStorage[key +"_map"] = JSON.stringify(output.map)
+
+      if (!useCacheAPI && transformCache) {
+        pluginBabelCache.files.put({
+          url: key,
+          source: load.source,
+          output: output.code,
+          map: JSON.stringify(output.map)
+        })        
+      } else {
+          transformCache.put(key + "_source", new Response(load.source))
+          transformCache.put(key + "_output", new Response(output.code))
+          transformCache.put(key + "_map", new Response(JSON.stringify(output.map)))
+      }
+      
+    }
+      
+    if (!self.babelTransformTimer) self.babelTransformTimer = []
+    self.babelTransformTimer.push({
+      name: load.name,
+      size: load.source.length,
+      time: (performance.now() - startTransform)
+    })
+    
+    if (cachedOutputCode) {
+      // console.log("used cached output " + (performance.now() - startTransform) + "ms")
+    } else {
+      // console.log("transformed in " + (performance.now() - startTransform) + "ms")
+    }
+      
+//       if (cachedOutput) {
+//          if (output.code != cachedOutput.code) {
+//            console.log("ERROR cached source is not similar! " + load.name)
+//            console.log("CODE", output.code)
+//            console.log("CACHED", cachedOutput.code)
+
+//          }
+//       }
+      
+    }
+    
+    
     // add babelHelpers as a dependency for non-modular runtime
     if (!babelOptions.modularRuntime)
       load.metadata.deps.push(externalHelpersPath);

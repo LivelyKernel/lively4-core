@@ -68,7 +68,7 @@ export default class ContextMenu {
         [
           ["self", () => {lively.showHalo(target)}],
           ["parents", lively.allParents(target).map(
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
             ea => [ea, () => {lively.showHalo(ea)}])
@@ -232,10 +232,10 @@ export default class ContextMenu {
   }
   
   static worldMenuItems(worldContext) {
-    return  [
+    var items =  [
       ["Workspace", evt => {
         this.hide();
-        lively.openWorkspace("", lively.getPosition(evt), worldContext)
+        lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
@@ -318,6 +318,8 @@ export default class ContextMenu {
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
         // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
+        ["Inspector", evt => lively.openInspector(document.body)],
+        
         ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
@@ -335,19 +337,43 @@ export default class ContextMenu {
         ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
           "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Quicklinks", async evt => {
-          var morph  = await lively.openPart("quicklinks")
-          
+          var morph  = await lively.openPart("quicklinks")          
           lively.setPosition(morph, lively.pt(0,0), "fixed")
-  
           this.hide();
+        }],
+        ["X Ray", async evt => {
+          var morph  = await lively.openPart("WorldMirror") 
+          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          this.hide();
+        }], 
+        ["X Ray Events", async evt => {
+          var morph  = await lively.openPart("XRayEvents") 
+          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          this.hide();
+        }], 
+        ["Invalidate caches", async evt => {
+          lively4invalidateFileCaches()
         }],
       ]],
       [
         "Windows", 
         Windows.allWindows().map(ea => [
           "" + ea.getAttribute("title"),
-          () => lively.gotoWindow(ea)
-        ])
+          () => lively.gotoWindow(ea),
+          (<span click={function (event) {
+            ea.remove();
+            const li = lively.query(this, 'li')
+            if(li) {
+             li.remove();
+            }
+            event.stopPropagation();
+          }}><i class="fa fa-close" aria-hidden="true"></i></span>),
+          ea.getAttribute("icon")
+        ]).concat([["Close all", async () => {
+          if(await lively.confirm('Close all windows?')) {
+            document.body.querySelectorAll('lively-window').forEach(w => w.remove())
+          } 
+        }]])
       ],
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 
@@ -433,26 +459,31 @@ export default class ContextMenu {
         lively.preferences.listBooleans()
           .map(ea => this.preferenceEntry(ea))
       ],
-      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext), 
-        "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>'],
-      ["save as ..", () => {
-        if (worldContext.onSaveAs)
-          worldContext.onSaveAs() 
-        else html.saveCurrentPageAs();
-      }],
-
-      ["Save", () => {
-          if (worldContext.onSave)
-            worldContext.onSave()
-          else
-            html.saveCurrentPage();
-        },
-        "CMD+S", '<i class="fa fa-cloud-upload" aria-hidden="true"></i>']
+      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(800, 500)), 
+        "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>']
     ];
+    
+    
+    if (worldContext !== document.body) {
+      items.push(...[["save as ..", () => {
+          if (worldContext.onSaveAs)
+            worldContext.onSaveAs() 
+          else html.saveCurrentPageAs();
+        }],
+
+        ["Save", () => {
+            if (worldContext.onSave)
+              worldContext.onSave()
+            else
+              html.saveCurrentPage();
+          },
+          "CMD+S", '<i class="fa fa-cloud-upload" aria-hidden="true"></i>']])      
+    }
+    
+    return items
   }
   
-  static items (target, worldContext) {
-    if (!worldContext) worldContext = document.body;
+  static items (target, worldContext = document.body) {
     if (target) {
       return this.targetMenuItems(target);
     } else {

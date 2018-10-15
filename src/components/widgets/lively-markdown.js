@@ -2,6 +2,12 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
+import MarkdownItTasks from "src/external/markdown-it-tasks.js"
+import MarkdownItAttrs from "src/external/markdown-it-attrs.js"
+
+// import MarkdownItContainer from "src/external/markdown-it-container.js"
+// see https://www.npmjs.com/package/markdown-it-container
+
 import highlight from 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
@@ -11,7 +17,8 @@ export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
     this.registerButtons();
-    this.updateView();
+    await this.updateView();
+
     if (this.getAttribute("mode") == "presentation") {
       this.startPresentation()
     }
@@ -56,13 +63,10 @@ export default class LivelyMarkdown extends Morph {
       // or '' if the source string is not changed and should be escaped externaly.
       // If result starts with <pre... internal wrapper is skipped.
       highlight:  function (str, lang) {
-        //debugger
         if (lang && hljs.getLanguage(lang)) {
           try {
             hljs.configure({tabReplace: '  '})
-            return '<pre class="hljs" data-lang="'+lang+'"><code>' +
-                   hljs.highlight(lang, str, true).value +
-                   '</code></pre>';
+            return hljs.highlight(lang, str, true).value
           } catch (__) {}
         }
 
@@ -70,6 +74,11 @@ export default class LivelyMarkdown extends Morph {
       }
     });  
     md.use(MarkdownItHashtag)
+    md.use(MarkdownItTasks)
+    md.use(MarkdownItAttrs)
+    
+    // md.use(MarkdownItContainer)
+    
     md.renderer.rules.hashtag_open  = function(tokens, idx) {
       var tagName = tokens[idx].content 
       if(tagName.match(/^[A-Za-z][A-Za-z0-9]+/))
@@ -81,6 +90,10 @@ export default class LivelyMarkdown extends Morph {
     }
     var content = await this.getContent()
     if (!content) return;
+    if (content.match(/markdown-config .*presentation=true/)) {
+      var configPresentation = true 
+    }
+    
     content = content
       .replace(/<lively-script><script>/g,"<script>")
       .replace(/<\/script><\/lively-script>/g,"</script>")
@@ -101,6 +114,21 @@ export default class LivelyMarkdown extends Morph {
     if (dir) {
       lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
     }
+    
+    root.querySelectorAll("input[type=checkbox]").forEach(ea => {
+      ea.disabled = false;
+      ea.addEventListener("click", evt => {
+        if ( ea.checked) {
+          ea.setAttribute("checked", "true")
+        } else {
+          ea.removeAttribute("checked")
+        }
+      })
+    })
+    
+    
+    if (configPresentation)
+      this.startPresentation()
 
     // #TODO: fixme
     //root.querySelectorAll("pre code").forEach( block => {
@@ -148,10 +176,6 @@ export default class LivelyMarkdown extends Morph {
     var markdownConverter = new Upndown()
     markdownConverter.tabindent = "  "
     markdownConverter.bullet = "- "
-    markdownConverter.wrap_pre = function(node, markdown) { 
-      var lang = node.attribs["data-lang"] || ""
-      return '\n```'+lang+'\n' + this.allText(node) + '\n```\n'; 
-    }
     
     var source = await markdownConverter.convert(htmlSource, {
       keepHtml: true,
@@ -175,11 +199,11 @@ export default class LivelyMarkdown extends Morph {
   
   async startPresentation() {
     this.setAttribute("mode", "presentation")
-    if (this.parentElement.tagName == "LIVELY-CONTAINER") {
+    if (this.parentElement && this.parentElement.tagName == "LIVELY-CONTAINER") {
       this.parentElement.setAttribute("mode", "presentation")
     }
     if (this.get("lively-presentation")) {
-      return
+      return this.get("lively-presentation")
     }
     
     var comp = document.createElement("lively-presentation")
@@ -212,12 +236,14 @@ export default class LivelyMarkdown extends Morph {
 lively.notify("scripts still run")
 </script>
 
-\`\`\`javascript
+\`\`\`javascript {.foo}
 function foo() {
   var a = "hello"
   return a + a
 }
 \`\`\`
+
+## Foo {.blub style="background-color:yellow"}
 
 
 `)

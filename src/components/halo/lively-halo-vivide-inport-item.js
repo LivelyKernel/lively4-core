@@ -9,81 +9,16 @@ import {Grid} from 'src/client/morphic/snapping.js';
 
 export default class HaloVivideInportItem extends HaloItem {
 
-  initialize() {
-    this.startCustomDragging()
-  }
-
-  // Drag API
-  start(evt) {
-    this.dragTarget = window.that;
-    if (this.dragTarget) {
-      this.dragStartNodePosition = lively.getPosition(this.dragTarget);
-      this.dragStartEventPosition = events.globalPosition(evt);
-      evt.preventDefault();
-    
-      this.snapping = new Snapping(this.dragTarget) 
-      this.halo.info =  lively.showInfoBox(this.dragTarget)
-     
-      if (this.dragTarget.haloDragStart) {
-        this.dragTarget.haloDragStart(this.dragStartEventPosition)
-      }
+  updateTarget(view) {
+    if(view && view.tagName === 'VIVIDE-VIEW') {
+      this._view = view;
     }
   }
   
-  move(evt) {
-    if (this.dragTarget && !this.isDragging && 
-      events.noticableDistanceTo(evt, this.dragStartEventPosition)) {
-      // this.dragTarget.style.position = 'absolute';
-      this.isDragging = true;
-    }
-    if (this.isDragging) {
-      this.dragTo(evt);
-    }
-  }
-   
-  stop(evt) {
-    this.halo.info.stop()
-    //  STOP DRAGGING
-    if (this.isDragging) {    
-      this.isDragging = false;
-      evt.preventDefault();
-    }
-    this.dragTarget = null;
-    this.dragStartEventPosition = null;
-    this.dragStartNodePosition = null;
-    this.snapping.clearHelpers()
-    this.snapping = null
-  }
-
-  dragTo(evt) {
-    if (this.dragTarget.haloDragTo) {
-      this.dragTarget.haloDragTo(events.globalPosition(evt), this.dragStartEventPosition)
-    } else {
-      var eventPos = events.globalPosition(evt);
-      var newPosition = eventPos.subPt(this.dragStartEventPosition).
-        addPt(this.dragStartNodePosition)
-        
-      newPosition = newPosition.rounded()
-      if (this.dragTarget.style.position == "absolute") {
-        lively.setPosition(this.dragTarget, Grid.optSnapPosition(newPosition, evt));
-        if(!evt.altKey) {
-          this.snapping.snap()
-        }
-      } else {
-         lively.setPosition(this.dragTarget, newPosition, "relative");
-      }
-      this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget);
-    }
-    evt.preventDefault();
-  }
-  
-  updateTarget(target) {
-    return;
-    if(target && target.tagName === 'VIVIDE-VIEW') {
-      this.innerHTML = '';
-      target.outportTargets.forEach((t, i) => {
-        this.appendChild(<span>{t.id}</span>)
-      });
+  onClick(evt) {
+    if(this._view) {
+      HaloService.hideHalos();
+      lively.openInspector(this._view.getInputData(), pt(evt.clientX, evt.clientY));
     }
   }
 }

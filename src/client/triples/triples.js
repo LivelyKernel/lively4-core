@@ -1,6 +1,9 @@
+"enable aexpr";
+
 import focalStorage from 'src/external/focalStorage.js';
 import ContextMenu from './../contextmenu.js';
 import { through, uuid, fileName, hintForLabel, getTempKeyFor, asDragImageFor } from 'utils';
+import { trackInstance } from 'active-group';
 
 async function getJSYaml() {
   await lively.loadJavaScriptThroughDOM("esprima", "https://lively-kernel.org/lively4/foo/src/external/esprima.js");
@@ -32,10 +35,12 @@ async function parseMarkdown(markdown, filename) {
   };
 }
 
-class Knot {
+export class Knot {
   constructor(fileName, content) {
     this.fileName = fileName;
     this.content = content;
+    
+    trackInstance.call(Knot, this);
   }
   get url() { return this.fileName; }
   getMetadata() { return this.metadata; }
@@ -355,10 +360,11 @@ export class Graph {
   
   async getNonCollidableURL(directory, name, fileEnding) {
     const maxTries = 10;
-    const fileName = name.replace(/\s/g, '_');
+    const fileName = name.replace(/[^A-Za-z0-9-]/g, '_');
     let offset = 0;
+    let i = 0;
     
-    for(let i = 0; i < maxTries; i++) {
+    for(; i < maxTries; i++) {
       let bust = offset === 0 ? '' : offset;
       let url = new URL(`${fileName}${bust}.${fileEnding}`, directory);
       let fileExists = (await fetch(url)).status === 200;

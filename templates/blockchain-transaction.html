@@ -1,0 +1,66 @@
+<template id="blockchain-transaction" data-class="BlockchainTransaction">
+<style data-src="/node_modules/bootstrap-css-only/css/bootstrap.min.css"></style>
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  p span {
+    text-overflow: ellipsis;
+    max-width: 200px;
+    overflow: hidden;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .card i {
+    padding-right: 30px;
+    position: relative;
+    top: -3px;
+  }
+  .color-green {
+    color: #4F5D2F;
+    padding-left: 2em;
+  }
+  .color-red {
+    color: #9C7178;
+    padding-left: 2em;
+  }
+</style>
+<div id="content">
+	<content>
+    <div class="card bg-light mb-3">
+      <div class="card-header" id="hash"></div>
+      <div class="card-body">
+      <div class="card-text">
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              <h5>Transaction details</h5>
+              <p id="timestamp"><i class="fa fa-clock-o" aria-hidden="true"></i><span></span></p>
+              <p id="sender"><i class="fa fa-paper-plane" aria-hidden="true"></i><span></span></p>
+              <p id="publicKey"><i class="fa fa-key" aria-hidden="true"></i><span></span></p>
+            </div>
+            <div class="col">
+              <h5>Transaction volume</h5>
+              <p id="inputValue"><i class="fa fa-sign-in" aria-hidden="true"></i><span></span></p>
+              <p id="outputValue"><i class="fa fa-sign-out" aria-hidden="true"></i><span></span></p>
+              <p id="fees"><i class="fa fa-money" aria-hidden="true"></i></i><span></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-text">
+        <div class="container">
+            <div class="row">
+            <div class="col" id="input-list"><h5>Consumed inputs</h5></div> 
+            <div class="col" id="output-list"><h5>Produced outputs</h5></div> 
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

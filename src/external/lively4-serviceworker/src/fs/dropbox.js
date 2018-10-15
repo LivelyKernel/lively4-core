@@ -131,7 +131,7 @@ export default class Filesystem extends Base {
       }
     }
     
-    const conf = lastversion ?
+    const conf = (lastversion && lastversion != "null" && lastversion != "undefined") ?
       {
         path: dropboxPath,
         mode: {
@@ -141,7 +141,14 @@ export default class Filesystem extends Base {
         autorename: false,
         mute: false
       } :
-      { path: dropboxPath };
+      { 
+        path: dropboxPath,
+        mode: {
+          ".tag": "add"
+        },
+        autorename: false,
+        mute: false
+      };
 
     let response = await fetch(new Request('https://content.dropboxapi.com/2/files/upload', {
       method: "POST",

@@ -4,9 +4,14 @@ import {pt} from 'src/client/graphics.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import ScopedScripts from "src/client/scoped-scripts.js";
-import Clipboard from "src/client/clipboard.js"; 
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
+
+import files from "src/client/files.js"
+
+// import ScopedScripts from "src/client/scoped-scripts.js";
+let ScopedScript; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
+
+import Clipboard from "src/client/clipboard.js";
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
 import ViewNav from "src/client/viewnav.js"
 
@@ -16,20 +21,20 @@ export default class Container extends Morph {
 
   initialize() {
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
-    
+
     // there seems to be no <link ..> tag allowed to reference css inside of templates
-    // lively.files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
+    // files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
     //   this.shadowRoot.querySelector("#livelySt\yle").innerHTML = css
     // })
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
     }
-    
+
     this.contentChangedDelay = (() => {
         this.checkForContentChanges()
       })::debounce(1000);
-    
+
     // make sure the global css is there...
     lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
 
@@ -55,7 +60,7 @@ export default class Container extends Morph {
       var path = lively.preferences.getURLParameter("load");
       var edit = lively.preferences.getURLParameter("edit");
       var fullsreen = lively.preferences.getURLParameter("fullscreen");
-      
+
       // force read mode
       if(this.getAttribute("mode") == "read" && edit) {
         path = edit;
@@ -68,7 +73,7 @@ export default class Container extends Morph {
             this.editFile();
           });
       } else {
-        if (lively4url.match(/github\.io/)) { 
+        if (lively4url.match(/github\.io/)) {
           this.setPath("/"); // the lively4url is not listable
         } else {
           this.setPath(lively4url +"/");
@@ -84,7 +89,7 @@ export default class Container extends Morph {
         });
     	}
     }
-    
+
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
     $(input).keyup(event => {
@@ -93,7 +98,7 @@ export default class Container extends Morph {
       }
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
-    
+
     this.registerButtons();
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
@@ -101,53 +106,48 @@ export default class Container extends Morph {
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
     this.setAttribute("tabindex", 0);
     this.hideCancelAndSave();
-    
+
     if(this.getAttribute("controls") =="hidden" || fullsreen) {
       this.hideControls()
     }
-    
-    this.withAttributeDo("leftpane-flex", value => 
+    this.withAttributeDo("leftpane-flex", value =>
       this.get("#container-leftpane").style.flex = value)
-    this.withAttributeDo("rightpane-flex", value => 
+    this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
-
   }
- 
+
   onContextMenu(evt) {
     // fall back to system context menu if shift pressed
-    if (!evt.shiftKey) { 
+    if (!evt.shiftKey) {
       evt.preventDefault();
       var worldContext = document.body; // default to opening context menu content globally
       // opening in the content makes only save if that content could be persisted and is displayed
       if (this.contentIsEditable() && !this.isEditing()) {
         worldContext = this
       }
-      
 	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
-    } 
+    }
   }
-  
+
   onFullscreen(evt) {
     this.toggleControls();
     if (!this.parentElement.isMaximized) return;
     if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
        (!this.isFullscreen() && this.parentElement.isMaximized()))  {
-        this.parentElement.toggleMaximize();
-        if ( this.parentElement.isMaximized()) {
-          this.parentElement.get(".window-titlebar").style.display = "none"
-          this.parentElement.style.zIndex = 0
-        } else {
-          this.parentElement.get(".window-titlebar").style.display = ""
-        }
+      this.parentElement.toggleMaximize();
+      if ( this.parentElement.isMaximized()) {
+        this.parentElement.get(".window-titlebar").style.display = "none"
+        this.parentElement.style.zIndex = 0
+      } else {
+        this.parentElement.get(".window-titlebar").style.display = ""
+      }
     }
-    
-
   }
-    
+
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
-  }  
+  }
 
   hideCancelAndSave() {
     _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
@@ -171,7 +171,7 @@ export default class Container extends Morph {
     });
 
   }
-  
+
   history() {
     if (!this._history) this._history = [];
     return this._history;
@@ -186,9 +186,9 @@ export default class Container extends Morph {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
       if (evt.shiftKey) {
-        this.onAccept();          
+        this.onAccept();
       } else {
-        this.onSave();  
+        this.onSave();
       }
       evt.preventDefault();
       evt.stopPropagation();
@@ -198,7 +198,7 @@ export default class Container extends Morph {
       evt.preventDefault();
     }
   }
-  
+
   async switchBetweenJSAndHTML() {
     const ending = this.getPath()::fileEnding();
     if(ending === 'js' || ending === 'html') {
@@ -216,6 +216,7 @@ export default class Container extends Morph {
   }
 
   reloadModule(url) {
+    console.log("reloadModule " + url)
     var urlString = url.toString()
     lively.unloadModule(urlString)
     return System.import(urlString).then( m => {
@@ -239,22 +240,22 @@ export default class Container extends Morph {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
-  
+
   loadModule(url) {
-    lively.reloadModule("" + url).then(module => {
+    lively.reloadModule("" + url, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
-      
+
       this.resetLoadingFailed();
     }, err => {
       this.loadingFailed(url, err);
     });
   }
-  
+
   resetLoadingFailed() {
     // that.resetLoadingFailed()
     // System.import(urlString)
     var urlString = this.getURL().toString();
-    
+
     // #TODO #babel6refactoring
     if (lively.modules) {
       if (urlString.match(/\.js$/)) {
@@ -266,7 +267,7 @@ export default class Container extends Morph {
     var b = this.get("#apply"); if (b) b.style.border = "";
 
   }
-  
+
   loadingFailed(moduleName, err) {
     this.lastLoadingFailed = err;
     this.get("#live").disabled = true;
@@ -300,9 +301,10 @@ export default class Container extends Morph {
   }
 
   onHome() {
+    this.clearNavbar()
     this.followPath(lively4url)
   }
-  
+
   async onSync(evt) {
     var comp = lively.components.createComponent("lively-sync");
     var compWindow;
@@ -310,7 +312,7 @@ export default class Container extends Morph {
       compWindow = w;
       lively.setPosition(w, lively.pt(100, 100));
     });
-  
+
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
     comp.setServerURL(serverURL);
     console.log("server url: " + serverURL);
@@ -327,7 +329,7 @@ export default class Container extends Morph {
   onPathEntered(path) {
     this.followPath(path);
   }
-    
+
 
   onEdit() {
     this.setAttribute("mode", "edit");
@@ -336,7 +338,7 @@ export default class Container extends Morph {
   }
 
   onCancel() {
-    if (this.unsavedChanges()) { 
+    if (this.unsavedChanges()) {
       if (!confirm("There are unsaved changes. Discard them?")) {
         return;
       }
@@ -349,7 +351,7 @@ export default class Container extends Morph {
 
   onUp() {
     var path = this.getPath();
-    if (path.match(/index\.((html)|(md))/))
+    if (path.match(/(README|index)\.((html)|(md))/))
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
@@ -368,7 +370,7 @@ export default class Container extends Morph {
     this.forwardHistory().push(url);
     this.followPath(last);
   }
-  
+
   onMouseDown(evt) {
     if (lively.halo) {
       // close halo
@@ -378,7 +380,7 @@ export default class Container extends Morph {
     // evt.preventDefault();
     Clipboard.onBodyMouseDown(evt)
   }
-  
+
   onForward() {
     var url = this.forwardHistory().pop();
     if (url) {
@@ -394,10 +396,21 @@ export default class Container extends Morph {
     comp.editFile("" + url);
   }
 
+  async onDependencies() {
+    lively.openComponentInWindow("lively-d3-tree").then(tree => {
+      tree.dataName = function(d) {
+        return d.name.replace(/.*\//,"").replace(/\.js/,"")
+      }
+      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString()))
+      lively.setExtent(tree.parentElement, pt(1200,800))
+      tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
+    })
+  }
+
   async onSaveAs() {
     var newPath = await lively.prompt("Save as..", this.getPath())
     if (newPath === undefined) return;
-    
+
     if (!this.isEditing()) {
       lively.notify("save as " + newPath)
       var result = await fetch(newPath, {
@@ -406,16 +419,16 @@ export default class Container extends Morph {
       this.lastVersion = result.headers.get("fileversion")
       this.saveEditsInView(newPath);
       this.get("#container-path").value = newPath
-      return; 
+      return;
     }
     lively.notify("Save as... in EditMode not implemented yet");
   }
-  
+
   contentIsTemplate(sourceCode) {
-    return this.getPath().match(/.*html/) 
+    return this.getPath().match(/.*html/)
       && sourceCode.match(/<template/)
   }
-  
+
   async urlInTemplate(url) {
     var filename = url.toString().replace(/.*\//,"")
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
@@ -431,24 +444,24 @@ export default class Container extends Morph {
   async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
-      return; 
+      return;
     }
-    
+
     if (this.getPath().match(/\/$/)) {
-      lively.files.saveFile(this.getURL(),"");
-      
+      files.saveFile(this.getURL(),"");
+
       return;
     }
     this.get("#editor").setURL(this.getURL());
     return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
       var url = this.getURL();
-      lively.notify("!!!saved " + url)
+      // lively.notify("!!!saved " + url)
       window.LastURL = url
       if (await this.urlInTemplate(url)) {
-        lively.notify("update template")
+        // lively.notify("update template")
         if (url.toString().match(/\.html/)) {
-          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())        
+          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
           var templateSourceCode = sourceCode
           lively.updateTemplate(templateSourceCode);
         }
@@ -461,27 +474,28 @@ export default class Container extends Morph {
       var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
       if (moduleName) {
         moduleName = moduleName[1];
-        
+
         const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
         if (this.lastLoadingFailed) {
           console.log("last loading failed... reload")
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(testRegexp)) {
-          this.loadTestModule(url); 
+          this.loadTestModule(url);
         } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
+          // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
             if (ea.match(testRegexp)) {
-              this.loadTestModule(ea); 
-            } 
+              this.loadTestModule(ea);
+            }
           })
+        } else {
+          lively.notify("ignore module " + moduleName)
         }
-        
-        
       }
     }).then(() => this.showNavbar());
   }
-  
+
   updateCSS() {
     var url = "" + this.getURL()
     // lively.notify("update " + url)
@@ -496,11 +510,11 @@ export default class Container extends Morph {
   updateOtherContainers() {
     var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
-      if (ea !== this && !ea.isEditing() 
+      if (ea !== this && !ea.isEditing()
         && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
         console.log("update container content: " + ea);
         ea.setPath(ea.getURL() + "");
-      }  
+      }
     });
   }
 
@@ -508,57 +522,74 @@ export default class Container extends Morph {
     var url = this.getURL() +"";
     this.deleteFile(url)
   }
-  
-  async deleteFile(url) {
-    if (await lively.confirm("delete " + url)) {
-      var result = await fetch(url, {method: 'DELETE'})
-        .then(r => r.text());
-        
+
+  async deleteFile(url, urls) {
+    lively.notify("delelteFile " + url)
+    if (!urls.includes(url)) {
+      urls = [url] // clicked somewhere else
+    }
+    
+    if (!urls) urls = [url]
+    var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
+    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+      for(let url of urls) {
+        var result = await fetch(url, {method: 'DELETE'})
+          .then(r => {
+            if (r.status !== 200) {
+              lively.error("Could not delete: " + url)
+            }
+            r.text()
+          });  
+      }
+      this.get("#container-leftpane").update()
+      
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
-
-      lively.notify("deleted " + url, result);
-    } 
+      lively.notify("deleted " + names);
+    }
   }
 
   async renameFile(url) {
     url = "" + url
-    var newURL = await lively.prompt("rename", url)
-    if (!newURL) {
-      lively.notify("cancel rename " + url)
+    var base = url.replace(/[^/]*$/,"")
+    var name = url.replace(/.*\//,"")
+
+    var newName = await lively.prompt("rename", name)
+    if (!newName) {
+      lively.notify("cancel rename " + name)
       return
     }
+    var newURL = base + newName
     if (newURL != url) {
-      await lively.files.moveFile(url, newURL)
-  
-      this.setAttribute("mode", "show");
-      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      await files.moveFile(url, newURL)
+      
+      this.setPath(newURL);
       this.hideCancelAndSave();
 
       lively.notify("moved to " + newURL);
-    } 
+    }
   }
 
-  
+
   onNewfile() {
     this.newfile(this.getPath())
   }
-  
+
   async newfile(path) {
     var fileName = window.prompt('Please enter the name of the file', path);
     if (!fileName) {
       lively.notify("no file created");
       return;
     }
-    await lively.files.saveFile(fileName,"");
+    await files.saveFile(fileName,"");
     lively.notify("created " + fileName);
     this.setAttribute("mode", "edit");
     this.showCancelAndSave();
-    
+
     this.followPath(fileName);
   }
-  
+
   async onNewdirectory() {
     var fileName = window.prompt('Please enter the name of the directory', this.getPath());
     if (!fileName) {
@@ -590,10 +621,13 @@ export default class Container extends Morph {
       .forEach(ea => ea.remove());
     this.get('#container-editor').innerHTML = '';
   }
-  
-  async appendMarkdown(content) {
+
+  async appendMarkdown(content, renderTimeStamp) {
     var md = await lively.create("lively-markdown", this)
-    md.classList.add("presentation") // for the presentation button 
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return md.remove()
+    }
+    md.classList.add("presentation") // for the presentation button
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
@@ -604,17 +638,17 @@ export default class Container extends Morph {
       }
     }
     if (this.wasContentEditable) {
-      md.contentEditable = true  
+      md.contentEditable = true
     }
-    
+
     // get around some async fun
-    if (this.preserveContentScroll) {
+    if (this.preserveContentScroll !== undefined) {
       this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
   }
 
-  appendLivelyMD(content) {
+  appendLivelyMD(content, renderTimeStamp) {
     content = content.replace(/@World.*/g,"");
     content = content.replace(/@+Text: name="Title".*\n/g,"# ");
     content = content.replace(/@+Text: name="Text.*\n/g,"\n");
@@ -623,21 +657,24 @@ export default class Container extends Morph {
     content = content.replace(/@+Text: name="MetaNoteText".*\n(.*)\n\n/g,  "<i style='color:orange'>$1</i>\n\n");
     content = content.replace(/@+Text: name="WordsText".*\n.*/g,"\n");
 
-    this.appendMarkdown(content);
+    this.appendMarkdown(content, renderTimeStamp);
   }
-  
-  appendScript(scriptElement) {
+
+  async appendScript(scriptElement) {
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
-    // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict. 
-    // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it. 
+    // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict.
+    // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it.
+    if (!ScopedScripts) {
+      ScopedScripts = await System.import("src/client/scoped-scripts.js")
+    }
     var layers = ScopedScripts.layers(this.getURL(), this.getContentRoot());
-    ScopedScripts.openPromises = [];  
+    ScopedScripts.openPromises = [];
     return new Promise((resolve, reject)=> {
       var root = this.getContentRoot();
       var script   = document.createElement("script");
       script.type  = "text/javascript";
-      
+
       layers.forEach( ea => ea.beGlobal());
 
       if (scriptElement.src) {
@@ -650,12 +687,12 @@ export default class Container extends Morph {
             resolve();
           }, reject);
         };
-        script.onerror = reject; 
+        script.onerror = reject;
       }
       script.text  = scriptElement.textContent;
-      
+
       cop.withLayers(layers, () => {
-        root.appendChild(script);  
+        root.appendChild(script);
       });
       if (!script.src) {
         Promise.all(ScopedScripts.openPromises).then(() => {
@@ -665,28 +702,31 @@ export default class Container extends Morph {
         }, reject);
       }
     })
-    
+
   }
 
-  async appendHtml(content) {
-    // strip lively boot code... 
-    
+  async appendHtml(content, renderTimeStamp) {
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
+    // strip lively boot code...
+
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
-    
+
     if (content.match("<template") && this.getPath().match("html$")) {
-      
+
       content = "<pre><code> " + content.replace(/</g,"&lt;") +"</code></pre>"
     }
-    
-    
+
+
     if (content.match(/<script src=".*d3\.v3(.min)?\.js".*>/)) {
       if (!window.d3) {
         console.log("LOAD D3");
         // #TODO check if dealing with this D3 is covered now through our general approach...
         await lively.loadJavaScriptThroughDOM("d3", "src/external/d3.v3.js");
       }
-    
+
       if (!window.ScopedD3) {
         console.log("LOAD D3 Adaption Layer");
         await System.import("src/client/container-scoped-d3.js")
@@ -699,7 +739,7 @@ export default class Container extends Morph {
         console.log("LOAD Cola");
         await lively.loadJavaScriptThroughDOM("cola", "src/external/cola.js")
     }
-    
+
     //  var content = this.sourceContent
     try {
       var root = this.getContentRoot();
@@ -723,87 +763,93 @@ export default class Container extends Morph {
         }
       }
       components.loadUnresolved(root);
-      lively.clipboard.initializeElements(root.querySelectorAll("*"))        
+      lively.clipboard.initializeElements(root.querySelectorAll("*"))
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
-    
+
     // get around some async fun
-    if (this.preserveContentScroll) {
-       this.get("#container-content").scrollTop = this.preserveContentScroll
+    if (this.preserveContentScroll !== undefined) {
+      this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
-    
+
     ViewNav.enable(this)
-    
+
     setTimeout(() => {
       this.resetContentChanges()
       this.observeHTMLChanges()
     }, 0)
   }
-  
-  async appendCSV(content) {
+
+  async appendCSV(content, renderTimeStamp) {
     var container=  this.get('#container-content');
     var table = await lively.create("lively-table")
     table.setFromCSV(content)
+    
+    if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      return 
+    }
     container.appendChild(table)
   }
-  
-  
-  async appendTemplate(name) {
+
+
+  async appendTemplate(name, renderTimeStamp) {
     try {
     	var node = lively.components.createComponent(name);
-    	this.getContentRoot().appendChild(node);
+    	if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
+      this.getContentRoot().appendChild(node);
       await lively.components.loadByName(name);
+      
     } catch(e) {
       console.log("Could not append html:" + content);
     }
   }
-  
+
   async followPath(path) {
     if (this.unsavedChanges()) {
       if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
       }
-    } 
-    
+    }
+
     var m = path.match(/start\.html\?load=(.*)/);
     if (m) {
       return this.followPath(m[1]);
     }
-  
+
     var options = await fetch(path, {method: "OPTIONS"}).then(r => r.status == 200 ? r.json() : false).catch(e => false)
     // this check could happen later
-    if (!path.match("https://lively4") 
-        && !path.match(window.location.host) 
+    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
+        && !path.match(window.location.host)
         && path.match(/https?:\/\//)) {
       if (!options) {
         return window.open(path);
       }
     }
-    lively.notify("options " + options)
-      
     if (options && options.donotfollowpath) {
       fetch(path) // e.g. open://my-component
       return ;
     }
-    
+
     if (_.last(this.history()) !== path)
       this.history().push(path);
-      
+
     var opts = ""
     if (this.useBrowserHistory() && this.isFullscreen()) {
       opts="&fullscreen=true"
     }
-    
-    if (this.isEditing() && !path.match(/\/$/)) {
+
+    if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 
+        window.history.pushState({ followInline: true, path: path },
           'view ' + path, window.location.pathname + "?edit="+path  + opts);
       return this.setPath(path, true).then(() => this.editFile());
     } else {
       if (this.useBrowserHistory())
-        window.history.pushState({ followInline: true, path: path }, 
+        window.history.pushState({ followInline: true, path: path },
           'view ' + path, window.location.pathname + "?load="+path  + opts);
       // #TODO replace this with a dynamic fetch
       return this.setPath(path);
@@ -815,9 +861,9 @@ export default class Container extends Morph {
   }
 
   getContentRoot() {
-    // #Design #Lively4 The container should hide all its contents. The styles defined here should not affect others. 
+    // #Design #Lively4 The container should hide all its contents. The styles defined here should not affect others.
     // return this.get('#container-root');
-    
+
     // #BUT #TODO Blockly and connectors just work globally...
     return this;
   }
@@ -829,7 +875,7 @@ export default class Container extends Morph {
   getURL() {
     var path = this.getPath();
     if (!path) return;
-    if (lively.files.isURL(path)) {
+    if (files.isURL(path)) {
       return new URL(path);
     } if (path.match(/^[a-zA-Z]+:\/\//)) {
       return new URL(path);
@@ -850,13 +896,20 @@ export default class Container extends Morph {
     editor = lively.components.createComponent("lively-editor");
     editor.id = "editor";
     return lively.components.openIn(container, editor).then( async () => {
+      // console.log("[container] opened editor")
       editor.hideToolbar();
       var aceComp = editor.get('#editor');
       if (!aceComp) throw new Error("Could not initialalize lively-editor");
       if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
-         await new Promise(resolve => {
-          aceComp.addEventListener("editor-loaded", resolve)            
+        await new Promise(resolve => {
+          if (aceComp["editor-loaded"]) {
+            resolve() // the editor was very quick and the event was fired in the past
+          } else {
+            aceComp.addEventListener("editor-loaded", resolve)
+          }
         })
+        // console.log("[container] editor loaded")
+
       }
 
       aceComp.enableAutocompletion();
@@ -864,13 +917,13 @@ export default class Container extends Morph {
       // aceComp.getDoitContextModuleUrl = () => {
       //   return this.getURL()
       // }
-      if (aceComp.aceRequire) { 
+      if (aceComp.aceRequire) {
         aceComp.aceRequire('ace/ext/searchbox');
       }
       aceComp.doSave = text => {
         if (aceComp.tagName !== "LIVELY-CODE-MIRROR") {
-        	this.onSave(); // CTRL+S does not come through... 
-        } 
+        	this.onSave(); // CTRL+S does not come through...
+        }
       };
       return editor;
     });
@@ -881,7 +934,7 @@ export default class Container extends Morph {
     if (!livelyEditor) return;
     return livelyEditor.get('#editor');
   }
-  
+
   // #TODO replace this with asyncGet
   async realAceEditor() {
     return new Promise(resolve => {
@@ -898,27 +951,33 @@ export default class Container extends Morph {
       checkForEditor();
     });
   }
-  
+
   thumbnailFor(url, name) {
     if (name.match(/\.((png)|(jpe?g))$/))
       return "<img class='thumbnail' src='" + name +"'>";
     else
-      return "";    
+      return "";
   }
-  
-  listingForDirectory(url, render) {
-    return lively.files.statFile(url).then((content) => {
+
+  listingForDirectory(url, render, renderTimeStamp) {
+    return files.statFile(url).then((content) => {
+      if (this.renderTimeStamp !== renderTimeStamp) {
+        return 
+      }
       var files = JSON.parse(content).contents;
-      var index = _.find(files, (ea) => ea.name.match(/^index\.md$/i));
+      var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
-      if (index) { 
-        return this.setPath(url + "/" + index.name) ;
+      if (index) {
+        // lively.notify("found index" + index)
+        // this.contextURL
+        
+        return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
       // return Promise.resolve(""); // DISABLE Listings
-      
+
       this.sourceContent = content;
-      
+
       var fileBrowser = document.createElement("lively-file-browser");
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
@@ -926,6 +985,11 @@ export default class Container extends Morph {
        */
       if (render) {
         return lively.components.openIn(this.getContentRoot(), fileBrowser).then( () => {
+          if (this.renderTimeStamp !== renderTimeStamp) {
+            fileBrowser.remove()
+            return
+          }
+          
           // lively.notify("set url " + url)
           fileBrowser.hideToolbar();
           // override browsing file and direcotry
@@ -947,44 +1011,45 @@ export default class Container extends Morph {
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
     });
   }
-  
+
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
-    
-    
+
+
     if (this.viewNav) {
       lively.setPosition(this.get("#container-root"), pt(0,0))
       this.viewNav.disable()
     }
-    
+
     this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
         path = "";
     }
-	  var isdir= path.match(/.\/$/);
-    
+	  var isdir = path.match(/.\/$/);
+
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(path);
       url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
     } else if (path.match(/^[a-zA-Z]+:\/\//)) {
-      lively.notify("it other url : " + path)
       url = new URL(path)
       var other = true
     } else {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path
     }
+    
+    // check if our file is a directory
+    var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})  
     if (!isdir && !other) {
-      // check if our file is a directory
-      var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})
       if (options && options.type == "directory") {
         isdir = true
       }
+      // console.log("[container] isdir " + isdir)
     }
-    if (!path.match(/\/$/) && isdir) {
+    if (!path.match(/\/$/) && isdir ) {
       path =  path + "/"
     }
 
@@ -993,7 +1058,7 @@ export default class Container extends Morph {
     if (this.getPath() == path) {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
-    
+
     var markdown = this.get("lively-markdown")
     if (markdown && markdown.get) {  // #TODO how to dynamically test for being initialized?
       var presentation = markdown.get("lively-presentation")
@@ -1003,7 +1068,6 @@ export default class Container extends Morph {
       this.wasContentEditable =   markdown.contentEditable == "true"
     }
     
-    
 	  this.setAttribute("src", path);
     this.clear();
     this.get('#container-path').value = decodeURI(path);
@@ -1011,69 +1075,123 @@ export default class Container extends Morph {
 
     url = this.getURL();
     
+    if (!url.toString().match(/^https?:\/\//)) {
+      var resolvedURL = lively.swxURL(url)
+    } else {
+      resolvedURL = url
+    }
+      
+    
+    this.content = ""
+    
+    
     this.showNavbar();
+    
+    
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
     var render = !donotrender;
     // Handling directories
-    
-    if (isdir) {
-      // return new Promise((resolve) => { resolve("") });
-      return this.listingForDirectory(url, render)
-    }
+
+
     // Handling files
     this.lastVersion = null; // just to be sure
+    var renderTimeStamp = Date.now() // #Idean, this is clearly a use-case for #COP, I have to refactor this propagate this dynamical context asyncronously #AsyncContextJS
+    this.renderTimeStamp = renderTimeStamp
     
     var format = path.replace(/.*\./,"");
     if (url.protocol == "search:") {
       format = "html"
     }
-    
-    if (format.match(/(png)|(jpe?g)/)) {
-      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + url +"'>");
+    if (isdir) {
+      // return new Promise((resolve) => { resolve("") });
+      if (!options || !options["index-available"]) {
+        return this.listingForDirectory(url, render, renderTimeStamp)
+      } else {
+        format = "html"
+      }
+    }
+
+    if (files.isPicture(format)) {
+      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
       else return;
-    } else if (format.match(/(ogm)|(m4v)|(mp4)|(avi)|(mpe?g)|(mkv)/)) {
-      if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>');
+    } else if (files.isVideo(format)) {
+      //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
+      
+
+      if (render) return this.appendHtml(`<video autoplay controls><source src="${resolvedURL}" type="video/${format}"></video>`, renderTimeStamp);
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
-        + url +'"></lively-pdf>');
+        + resolvedURL +'"></lively-pdf>', renderTimeStamp);
       else return;
     } 
-    
+    var headers = {}
+    if (format == "html") {
+      headers["content-type"] = "text/html" // maybe we can convice the url to return html
+    }
   
-    return fetch(url).then( resp => {
+    return fetch(url, {
+      method: "GET",
+      headers: headers
+    }).then( resp => {
       this.lastVersion = resp.headers.get("fileversion");
+      this.contentType = resp.headers.get("content-type");
       
+
+      // console.log("[container] lastVersion " +  this.lastVersion)
+
+
+
       // Handle cache error when offline
       if(resp.status == 503) {
         format = 'error'
       }
-      
+
       return resp.text();
     }).then((content) => {
-      if (format == "html")  {
+      this.content = content
+      this.showNavbar();
+      
+      
+      if (format == "html" || this.contentType == "text/html")  {
         this.sourceContent = content;
-        if (render) return this.appendHtml(content);
+        if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {
         this.sourceContent = content;
-        if (render) return this.appendMarkdown(content);
+        if (render) return this.appendMarkdown(content, renderTimeStamp);
       } else if (format == "livelymd") {
         this.sourceContent = content;
-        if (render) return this.appendLivelyMD(content);
+        if (render) return this.appendLivelyMD(content, renderTimeStamp);
       } else if (format == "csv") {
         this.sourceContent = content;
-        if (render) return this.appendCSV(content);
+        if (render) return this.appendCSV(content, renderTimeStamp);
       } else if (format == "error") {
         this.sourceCountent = content;
-        if (render) return this.appendHtml(`
-          <h2>
-            <span style="color: darkred">Error: </span>${content}
-          <h2>
-        `);
-      } else {
+        if (render) {
+          return this.appendHtml(`
+            <h2>
+              <span style="color: darkred">Error: </span>${content}
+            </h2>
+          `, renderTimeStamp);
+        }
+      } else if (format == "bib") {
         this.sourceContent = content;
-        if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&st;") +"</code></pre>");
+        if (render) {
+          return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
+        }
+      } else if (format == "xhtml") {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
+        }
+      } else {
+        if (content.length > (1024 * 1024)) {
+          if (render) return this.appendHtml("file size to large", renderTimeStamp); 
+        } else {
+          this.sourceContent = content;
+          if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        }
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
@@ -1095,33 +1213,35 @@ export default class Container extends Morph {
     container.clear()
     return container;
   }
-  
+
   hideNavbar() {
-    this.get('lively-separator').onClick()
+    if (lively.getExtent(this).x > 1 ) {
+      this.get('lively-separator').onClick()
+    }
   }
 
   async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
-    
+
     var navbar = this.get('#container-leftpane')
     // implement hooks
-    navbar.deleteFile = (url) => { this.deleteFile(url) } 
-    navbar.renameFile = (url) => { this.renameFile(url) } 
-    navbar.newfile = (url) => { this.newfile(url) } 
-    navbar.followPath = (path) => { this.followPath(path) } 
-    navbar.navigateToName = (name) => { this.navigateToName(name) } 
-    
-    
-    
-    
-    await navbar.show(this.getURL(), this.sourceContent)
+    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
+    navbar.renameFile = (url) => { this.renameFile(url) }
+    navbar.newfile = (url) => { this.newfile(url) }
+    navbar.followPath = (path, lastPath) => { 
+      this.contextURL = lastPath
+      this.followPath(path) 
+    }
+    navbar.navigateToName = (name) => { this.navigateToName(name) }
+
+    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL)
   }
-  
+
   isFullscreen() {
     return this.get("#container-navigation").style.display  == "none"
   }
-  
+
   toggleControls() {
     var showsControls = this.get("#container-navigation").style.display  == "none"
     if (showsControls) {
@@ -1132,29 +1252,31 @@ export default class Container extends Morph {
     // remember the toggle fullscreen in the url parameters
     var path = this.getPath()
     if (this.useBrowserHistory()) {
-      window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit=" + path  + "&fullscreen=" + !showsControls);  
+      window.history.pushState({ followInline: true, path: path }, 'view ' + path, window.location.pathname + "?edit=" + path  + "&fullscreen=" + !showsControls);
     }
   }
-  
+
   hideControls() {
     this.setAttribute("controls","hidden")
     this.get("#fullscreenInline").style.display = "block"
     this.get("#container-navigation").style.display  = "none";
     this.get("#container-leftpane").style.display  = "none";
+    this.get("#container-rightpane").style.flex = 1
     this.get("lively-separator").style.display  = "none";
   }
-  
+
   showControls() {    this.getAttribute("controls")
     this.setAttribute("controls","shown")
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
+    this.get("#container-rightpane").style.flex = 0.8
     this.get("lively-separator").style.display  = "";
   }
-  
-  
+
+
   editFile(path) {
-    // console.log("[container ] editFile " + path)
+    // console.log("[container] editFile " + path)
     this.setAttribute("mode","edit"); // make it persistent
     return (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
       this.clear();
@@ -1167,15 +1289,18 @@ export default class Container extends Morph {
       this.resetLoadingFailed();
 
       this.showNavbar();
-      
+
+      // console.log("[container] editFile befor getEditor")
       return this.getEditor().then(livelyEditor => {
+        // console.log("[container] editFile got editor ")
+
         var aceComp = livelyEditor.get('#editor');
-        
+
         aceComp.addEventListener("change", evt => this.onTextChanged(evt))
-        
+
         var url = this.getURL();
         livelyEditor.setURL(url);
-      
+        // console.log("[container] editFile setURL " + url)
         if (aceComp.editor && aceComp.editor.session) {
           aceComp.editor.session.setOptions({
       			mode: "ace/mode/javascript",
@@ -1187,7 +1312,7 @@ export default class Container extends Morph {
 
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
         livelyEditor.setText(this.sourceContent); // directly setting the source we got
-        
+
         if (aceComp.editor) {
           if (!aceComp.tagName == "LIVELY-CODE-MIRROR") {
             aceComp.editor.selection.moveCursorTo(0,0);
@@ -1196,10 +1321,10 @@ export default class Container extends Morph {
             aceComp.editor.renderer.setPrintMarginColumn(lineWidth)
           }
         }
-        
+
         livelyEditor.lastVersion = this.lastVersion;
         this.showCancelAndSave();
-    
+
         if ((""+url).match(/\.js$/)) {
           aceComp.setTargetModule("" + url); // for editing
         }
@@ -1210,12 +1335,12 @@ export default class Container extends Morph {
 
   getHTMLSource() {
     this.querySelectorAll("*").forEach( ea => {
-      if (ea.livelyPrepareSave) 
+      if (ea.livelyPrepareSave)
         ea.livelyPrepareSave();
     });
     return this.getContentRoot().innerHTML
   }
-  
+
   saveSource(url, source) {
     return this.getEditor().then( editor => {
       editor.setURL(url);
@@ -1227,23 +1352,29 @@ export default class Container extends Morph {
         this.updateOtherContainers()
       }).then(() => {
         this.resetContentChanges()
-        lively.notify("saved content!")        
+        lively.notify("saved content!")
       })
     });
-    
+
   }
 
   async saveHTML(url) {
     return this.saveSource(url, this.getHTMLSource());
   }
-  
+
   async saveMarkdown(url) {
-    var source = await this.get("lively-markdown").htmlAsMarkdownSource()
-    return this.saveSource(url, source);
+    var markdown =  await this.get("lively-markdown")
+    if (markdown.getAttribute("mode") == "presentation") {
+      lively.notify("saving in presentation mode not supported yet")
+    } else {
+      var source = await markdown.htmlAsMarkdownSource()
+      return this.saveSource(url, source);
+    }   
   }
-  
-  saveEditsInView(url) {
+
+  async saveEditsInView(url) {
     url = (url || this.getURL()).toString();
+    var contentElement = this.childNodes[0]
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {
@@ -1258,26 +1389,30 @@ export default class Container extends Morph {
         //   title: "saved HTML",
         //   color: "green"});
        });
+    } else if (contentElement && contentElement.livelySource) {
+      var source = contentElement.livelySource()
+      if (source.then) source = await source; // maybe some elements take a while to generate their source
+      return this.saveSource(url, source);
     } else {
       lively.notify("Editing in view not supported for the content type!");
     }
-    
+
   }
-  
+
   unsavedChanges() {
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
     return  editor.textChanged;
   }
-  
-  
-  
+
+
+
   // make a gloval position relative, so it can be used in local content
   localizePosition(pos) {
     var offsetBounds = this.get('#container-content').getBoundingClientRect();
     return pos.subPt(pt(offsetBounds.left, offsetBounds.top));
   }
-  
+
   // let's do it the hard way
   asyncGet(selector, maxtime) {
     maxtime = maxtime || 10000;
@@ -1292,28 +1427,28 @@ export default class Container extends Morph {
       check();
     });
   }
-  
+
   async onTextChanged() {
     if (!this.getURL().pathname.match(/\.js$/)) {
       return
     }
   }
-  
- 
-  
+
+
+
   onMutation(mutations, observer) {
-    if (this.isPersisting) return // we mutate while persisting 
-    
+    if (this.isPersisting) return // we mutate while persisting
+
     mutations.forEach(record => {
-      
+
       var indicator = this.get("#changeIndicator")
       if (indicator ) {
         indicator.style.backgroundColor = "rgb(250,250,0)";
       }
-      
+
       // if (record.target.id == 'console'
       //     || record.target.id == 'editor') return;
-     
+
       this.contentChangedDelay()
 
       // let shouldSave = true;
@@ -1321,16 +1456,16 @@ export default class Container extends Morph {
       //     let addedNodes = [...record.addedNodes],
       //         removedNodes = [...record.removedNodes],
       //         nodes = addedNodes.concat(removedNodes);
-  
+
       //     //removed nodes never have a parent, so remeber orphans when they are created
       //     for (let node of addedNodes) {
       //         if (hasParentTag(node) == false) {
       //             orphans.add(node);
       //         }
       //     }
-  
+
       //     // shouldSave = hasNoDonotpersistFlagInherited(addedNodes) || checkRemovedNodes(removedNodes, orphans);
-  
+
       //     //remove removed orphan nodes from orphan set
       //     for (let node of removedNodes) {
       //         if (orphans.has(node)) {
@@ -1340,19 +1475,19 @@ export default class Container extends Morph {
       }
       else if (record.type == 'attributes'
           || record.type == 'characterData') {
-          
-      
+
+
           // shouldSave = hasNoDonotpersistFlagInherited([record.target]);
       }
-  
+
       // if (shouldSave) {
           // sessionStorage["lively.scriptMutationsDetected"] = 'true';
           // restartPersistenceTimerInterval();
       // }
-    })  
+    })
   }
-  
-  
+
+
   observeHTMLChanges() {
 
     if (this.mutationObserver) this.mutationObserver.disconnect()
@@ -1360,22 +1495,22 @@ export default class Container extends Morph {
         this.onMutation(mutations, observer)
     });
      this.mutationObserver.observe(this, {
-      childList: true, 
-      subtree: true, 
-      characterData: true, 
+      childList: true,
+      subtree: true,
+      characterData: true,
       attributes: true});
   }
-  
+
   contentIsEditable() {
     return this.getPath().match(/\.html$/)
   }
-  
+
   checkForContentChanges() {
     if (!this.contentIsEditable()) {
       this.contentChanged = false
-      return 
+      return
     }
-    
+
     if (this.isPersisting) return;
     this.isPersisting = true;
     // console.log("checkForContentChanges " + (Date.now() - this.lastChecked) + "ms " + document.activeElement)
@@ -1384,7 +1519,7 @@ export default class Container extends Morph {
     try {
       window.oldActiveElement = document.activeElement
       var currentSource = this.getHTMLSource()
-      
+
       if (!this.lastSource || this.lastSource != currentSource) {
         this.contentChanged = true
       } else {
@@ -1394,9 +1529,9 @@ export default class Container extends Morph {
     } finally {
       // setTimeout(() => {
         // console.log("refocus " + oldActiveElement)
-        
+
         if (oldActiveElement && oldActiveElement.editor) oldActiveElement.editor.focus()
-      
+
         // we don't want to catch our own mutations... that were cause
         // by detecting some mutations in the first place
         this.isPersisting = false
@@ -1418,46 +1553,46 @@ export default class Container extends Morph {
       indicator.style.backgroundColor = "rgb(200,200,200)";
     }
   }
-  
+
   focus() {
     const editor = this.getAceEditor();
     if (editor) { editor.focus(); }
   }
-  
+
   createLink(base, name, href) {
     var link = document.createElement("a")
     link.textContent = name
     var path = base + href
     link.href = path
     link.addEventListener("click", (evt) => {
-        this.followPath(path); 
-        evt.preventDefault(); 
+        this.followPath(path);
+        evt.preventDefault();
         evt.stopPropagation()
-    }); 
-    return link  
+    });
+    return link
   }
-  
+
   livelyAllowsSelection(evt) {
     if (!this.contentIsEditable() || this.isEditing()) return false
-    
+
     if (evt.path[0].id == "container-content") return true;
-    
+
     return false
   }
-  
-  
+
+
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()
   }
-  
-  
+
+
   livelyPrepareSave() {
     this.setAttribute("leftpane-flex", this.get("#container-leftpane").style.flex)
     this.setAttribute("rightpane-flex", this.get("#container-rightpane").style.flex)
   }
-  
+
   livelyPreMigrate() {
-    // do something before I got replaced  
+    // do something before I got replaced
     this.oldContentScroll = this.get("#container-content").scrollTop;
  	var fileEditor = this.get("#editor");
     if (fileEditor) {
@@ -1466,9 +1601,19 @@ export default class Container extends Morph {
       this.oldFocused = document.activeElement == this
     }
   }
-  
+
   async livelyExample() {
     return this.followPath(lively4url + "/README.md")
+  }
+
+  // customize clipboard interaction... etc
+  // navigating in this multidimensional space can be hard
+  livelyTarget() {
+    var markdownElement = this.get("lively-markdown")
+    if (markdownElement && markdownElement.get) { // maybe not initialized yet.. damn! 
+      return markdownElement.get("#content")
+    }
+    return this
   }
   
   livelyMigrate(other) {
@@ -1477,7 +1622,7 @@ export default class Container extends Morph {
     this.preserveContentScroll = other.oldContentScroll;
     var editor = other.get("#editor");
     if (editor) {
-      var otherAce = editor.currentEditor();  
+      var otherAce = editor.currentEditor();
       if (otherAce && otherAce.selection) {
         var range = otherAce.selection.getRange();
         var scrollTop = otherAce.session.getScrollTop();
@@ -1492,8 +1637,8 @@ export default class Container extends Morph {
           // jsut to be sure..
           this.isMigrating = false;
         });
-      } 
-      this.asyncGet("#editor").then( editor => { 
+      }
+      this.asyncGet("#editor").then( editor => {
         editor.setScrollInfo(other.oldScrollInfo)
       	editor.setCursor(other.oldCursor)
       	if (other.oldFocused) {

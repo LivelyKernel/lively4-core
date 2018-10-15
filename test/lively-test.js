@@ -1,5 +1,8 @@
 import {expect} from 'src/external/chai.js'
 import {pt}  from 'src/client/graphics.js'
+import './a.js';
+import './b.js';
+import './c.js';
 
 var lively = window.lively; var it = window.it
 
@@ -147,8 +150,30 @@ describe('Position API', function() {
   })
   
   
+  
 })
  
+describe('findDependentModules', function() {
+  it('findDependentModules', () => {
+    expect(lively).itself.to.respondTo('findDependedModules');
+    
+    let dependents = lively.findDependedModules('test/a.js');
+    expect(dependents).to.include(SystemJS.normalizeSync('test/b.js'));
+    expect(dependents).to.not.include(SystemJS.normalizeSync('test/c.js'));
+    
+    let dependents2 = lively.findDependedModules('test/b.js');
+    expect(dependents2).to.include(SystemJS.normalizeSync('test/c.js'));
+  });
+  it('findDependentModules recursive', () => {
+    expect(lively).itself.to.respondTo('findDependedModules');
+    
+    
+    
+    let recursiveDependents = lively.findDependedModules('test/a.js', true);
+    expect(recursiveDependents).to.include(SystemJS.normalizeSync('test/b.js'));
+    expect(recursiveDependents).to.include(SystemJS.normalizeSync('test/c.js'));
+  });
+});
 
 describe('getTotalGlobalBounds', function() {
   

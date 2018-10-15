@@ -123,38 +123,72 @@ export default class Files {
   
   static async statFile(urlString){
     urlString = this.resolve(urlString)
-  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
+    return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.text())
   }
 
-  static async existFile(urlString){
-    urlString = this.resolve(urlString)
+  /**
+   * Recursively walks a directory path given as string.
+   * @returns an array of files
+   */
+  static async walkDir(dir) {
+    if(dir.endsWith('/')) { dir = dir.slice(0, -1); }
+    const json = await lively.files.statFile(dir).then(JSON.parse);
+    if(json.type !== 'directory') {
+      throw new Error('Cannot walkDir. Given path is not a directory.')
+    }
 
-  	return fetch(urlString, {method: 'OPTIONS'}).then(resp => resp.status == 200)
+    let files = json.contents
+      .filter(entry => entry.type === 'file')
+      .map(entry => dir + '/' + entry.name);
+
+    let folders = json.contents
+      .filter(entry => entry.type === 'directory')
+      .map(entry => dir + '/' + entry.name);
+
+    let subfolderResults = await Promise.all(folders.map(folder => this.walkDir(folder)));
+    subfolderResults.forEach(filesInSubfolder => files.push(...filesInSubfolder));
+
+    return files;
+  }
+
+  // #Depricated
+  static async existFile(urlString){
+    return this.exists(urlString)
+  }
+
+  static async stats(url) {
+    return fetch(url, {method: "OPTIONS"}).then(r => r.json())
+  }
+
+  static async type(url) {
+    return (await this.stats(url)).type
+  }
+
+  static async exists(urlString){
+    return (await fetch(urlString, {method: "OPTIONS"})).status == 200
   }
 
   static isURL(urlString) {
     return ("" + urlString).match(/^([a-z]+:)?\/\//) ? true : false;
   }
-
-  static resolve(string) {
-    if (!this.isURL(string)) {
-      var result = lively.location.href.replace(/[^/]*$/, string)
-    } else {
-      result = string.toString()
-    }
-    // get rid of ..
-    result = result.replace(/[^/]+\/\.\.\//g,"")
-    // and .
-    result = result.replace(/\/\.\//g,"/")
-    
-    return result
+  
+  static async isFile(url) {
+    return (await this.type(url)) == "file"
   }
+
+  // #TODO: should be 'directiory'
+  static async isDirectory(url) {
+    return (await this.type(url)) == "file"
+  }
+
 
   static directory(string) {
     string = string.toString()
     return string.replace(/([^/]+|\/)$/,"")
   }
+
   
+  // #Depricated    
   static resolve(string) {
     if (!this.isURL(string)) {
       var result = lively.location.href.replace(/[^/]*$/, string)
@@ -233,5 +267,87 @@ export default class Files {
       reader.readAsDataURL(fileOrBlob); 
     })
   }  
- 
+  
+  static async loadVersions(url) {
+    var versionscache = await caches.open("file_versions")
+    var resp = await versionscache.match(url)
+    if (resp) return resp
+    resp = await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+         showversions: true   
+      }      
+    })
+    versionscache.put(url, resp)
+    return resp
+  }
+  
+  
+  static async _sortIntoFileTree(root, path, element) {
+    console.log("sort into " + path + " " + element.name )
+    var next = path.shift()
+    if (!next) {      
+      root.children.push(element)
+      return
+    }
+    var dir = root.children.find(ea => ea.name == next)
+    if (!dir) {
+      dir = {
+        name: next,
+        children: []
+      }
+      root.children.push(dir)
+    }
+    this._sortIntoFileTree(dir, path, element)
+  }
+  
+  static async fileTree(url) {
+    var tree = {
+      name: url,
+      children: []
+    }
+    var list = (await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+        filelist: true
+      }
+    }).then(r => r.json())).contents
+    if (!list) return;
+    
+    for(var ea of list) {
+      if (ea.name !== ".") {
+        var path = ea.name.replace(/^\.\//,"").replace(/[^/]*$/,"").split("/").filter(ea => ea)
+        var element = {
+            name: ea.name.replace(/.*\//,""),
+            modified: ea.modified,
+            size: ea.size,
+            type: ea.type
+          }
+        if (element.type == "directory") element.children = [];
+        this._sortIntoFileTree(tree, path, element)        
+      }
+    }
+    return tree
+  }
+  
+  // Files.visualizeFileTreeMap(lively4url )
+  static async visualizeFileTreeMap(url) {
+    var tree = await lively.files.fileTree(url)
+    if (tree) {
+      lively.openComponentInWindow("lively-d3-treemap").then( async tm => {
+        tm.setTreeData(tree)
+      })
+    } else {
+      lively.notify("Could not create tree for " + url)
+    }
+  }
+  
+  static isVideo(url) {
+    return url.toString().match(/((ogm)|(m4v)|(mp4)|(mov)|(avi)|(flv)|(mpe?g)|(mkv)|(ogv))$/i)
+  }
+
+  static isPicture(url) {
+    return url.toString().match(/((svg)|(png)|(jpe?g)|(gif))$/i)
+  }
+  
 }

@@ -47,6 +47,7 @@
     	  width: 100%;
         height: 100%;
         overflow: auto;
+        overscroll-behavior: contain; 
         flex: 1; 
         margin: 0px;
         padding: 0px;
@@ -55,7 +56,7 @@
     	
     	
     	#container-root {
-    	  max-width: 1200px;
+        max-width: 1200px;
     	  min-width: 400px;
     	  margin: 0px;
     	  padding: 1px;
@@ -73,6 +74,7 @@
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
+        overscroll-behavior: contain; 
       }
 
       #container-path {
@@ -173,6 +175,8 @@
         <i class="fa fa-gears" aria-hidden="true"></i></button>
       <button class="edit" id="browse" title="open new browser for url">
         <i class="fa fa-external-link" aria-hidden="true"></i></button>
+      <button class="edit" id="dependencies" title="browse dependencies">
+        <i class="fa fa-sitemap" aria-hidden="true"></i></button>
       <button class="edit" id="sync" title="sync changes">
         <i class="fa fa-refresh" aria-hidden="true"></i></button>
       <button class="edit" id="delete" title="delete file">

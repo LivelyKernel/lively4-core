@@ -62,8 +62,8 @@ export default class KnotSearchResult extends Morph {
       
     });
     listItem.addEventListener('drag', evt => {
-      if(!evt.ctrlKey) return;
-      lively.notify(evt.keyCode, evt.charCode);
+      // if(!evt.ctrlKey) return;
+      // lively.notify(evt.keyCode, evt.charCode);
     });
     listItem.addEventListener('dragend', evt => {
       listItem.style.color = null;
@@ -71,15 +71,17 @@ export default class KnotSearchResult extends Morph {
 
     // events fired on drop target
     listItem.addEventListener('dragenter', evt => {
-      lively.notify('dragenter');
-      const dragInfo = <div width="200px" height="200px" style="background-color: blue"></div>;
-      dragInfo::asDragImageFor(evt, -150, 50);
+      // lively.notify('dragenter');
     });
-    listItem.addEventListener('dragover', evt => lively.notify('dragover'));
-    listItem.addEventListener('dragleave', evt => lively.notify('dragleave'));
+    listItem.addEventListener('dragover', evt => {
+      // lively.notify('dragover');
+    });
+    listItem.addEventListener('dragleave', evt => {
+      // lively.notify('dragleave');
+    });
     listItem.addEventListener('drop', evt => {
-      lively.notify('drop');
-      lively.notify(":", evt.dataTransfer.getData("knot/url"));
+      // lively.notify('drop');
+      // lively.notify(":", evt.dataTransfer.getData("knot/url"));
     });
 
     this.multiSelection.addItem(listItem);

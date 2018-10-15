@@ -1,6 +1,3 @@
-
-console.log("hello again!")
-
 self.lively4url = self.location.toString().replace(/\/[^/]*$/,"")
 
 importScripts("./src/external/systemjs/system.src.js");
@@ -48,6 +45,8 @@ SystemJS.config({
 var originalFetch = fetch;
 
 function isOnline() {
+  if((location.origin + "").match(/localhost/)) return true;
+  
   const checkUrl = `${location.origin}/?checkOnline=${+ new Date()}`;
     
     // Try to reach the server
@@ -71,24 +70,39 @@ fetch = function(request, ...args) {
   // Ensure request is of type Request and not only a string URL
   request = new Request(request);
   
+  // Booting SWX neets to fetch some files ... but swx fetch is not there... 
+  // (A) we look into the cache... this supports offline loading of SWX
+  // (B) we do fetching and caching behavior here... #Duplicate
   if (initPending) {  
     return new Promise(async (resolve, reject) => {
-      let cache = await caches.open("lively4-swx-cache");
+      console.log("SWX BOOT fetch " + request.url)
       
+      let cache = self.caches && await caches.open("lively4-swx-cache");
+      if (!cache){
+        // without our own cache, we have to rely on th original browser behavior, e.g. under workaround the #MacCacheBug 
+        return resolve(originalFetch(request, ...args)) 
+      }  
+
       if (navigator.onLine && await isOnline()) {
         let response = await originalFetch(request, ...args);
         
-        cache.put(request, response.clone());
+        // var clone =  response.clone()
+        try {
+          cache.put(request, response.clone());
+        } catch(e) {
+          // #TODO #FUCK  the cache.put seems to evaluatute the javascript and hickups on "import *" etc.. Why?
+          console.error("fetch error " + e)
+        } 
         resolve(response);
         return;
       }
       
       let response = await cache.match(request);
-      
       if (response) {
         resolve(response);
       } else {
-        reject("Not in cache");
+        console.log("not in cache")
+        resolve(originalFetch(request, ...args))
       }
     });
   } else {

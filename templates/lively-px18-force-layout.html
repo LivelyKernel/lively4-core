@@ -1,0 +1,192 @@
+<template id="lively-px18-force-layout" data-class="LivelyPx18ForceLayout">
+<html>
+  <head>
+    <style>
+      /* HTML styles */
+      html{ width: 100%; }
+      body{ 
+        width: 100%; 
+        margin: 0; padding: 0; 
+        display: flex; 
+        font-family: sans-serif; font-size: 75%; }
+      .controls {
+        flex-basis: 300px;
+        padding: 0 5px;
+        font-size: 15px;
+        padding-right: 25px;
+
+      }
+      .controls .force {
+        background-color:#cacaca;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0;
+      }
+      
+      .controls-width {
+        width: 30%;
+      }
+      
+      .controls .force p label { margin-right: .5em; font-size: 120%; font-weight: bold;}
+      .controls .force p { margin-top: 0;}
+      .controls .force label { display: inline-block; }
+      .controls input[type="checkbox"] { transform: scale(1.2, 1.2); }
+      .controls input[type="range"] { margin: 0 5% 0.5em 5%; width: 90%; }
+      /* alpha viewer */
+      .controls .alpha p { margin-bottom: .25em; }
+      .controls .alpha .alpha_bar { height: .5em; border: 1px #777 solid; border-radius: 2px; padding: 1px; display: flex; }
+      .controls .alpha .alpha_bar #alpha_value { background-color: #555; border-radius: 1px; flex-basis: 100% }
+      .controls .alpha .alpha_bar:hover { border-width: 2px; margin:-1px; }
+      .controls .alpha .alpha_bar:active #alpha_value { background-color: #222 }
+
+      /* SVG styles */
+      svg {
+        flex-basis: 100%;
+        min-width: 200px;
+        height: 100%;
+
+      }
+      
+      .links line {
+        stroke: #aaa;
+      }
+      .nodes circle {
+        pointer-events: all;
+      }
+      
+      .svg-parent {
+        width: 50%;
+        float: right;
+
+      }
+      
+      .row {
+        display: flex;
+        flex-flow: row wrap;
+        height: 600px;
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <div class="row">
+    <div class="controls">
+      <div class="force alpha">
+        <button id="resetControls">Reset Controls</button>
+        <select id="graphSelect">
+            <option value="small">Small Graph</option>
+          <option value="medium" selected>Medium Graph</option>
+            <option value="large">Large Graph (Modules)</option>
+          </select>
+        <p><label>Alpha</label> Simulation Activity</p>
+        <div class="alpha_bar" id="alpha_bar"><div id="alpha_value"></div></div>
+      </div>
+      <div class="force">
+        <p><label> Center</label>Shifts the view, so the graph is centered at this location.</p>
+        <label class="controls-width">
+          X
+          <output id="center_XSliderOutput">0.5</output>
+          <input type="range" min="0" max="1" value="0.5" step="0.01" id="center_XSliderInput">
+        </label>
+        <label  class="controls-width">
+          Y
+          <output id="center_YSliderOutput">0.5</output>
+          <input type="range" min="0" max="1" value="0.5" step="0.01" id="center_YSliderInput">
+        </label>
+      </div>
+
+      <div class="force">
+        <p><label><input type="checkbox" checked id="force_chargeCheckbox"> Charge</label> Attracts (+) or repels (-) nodes to/from each other.</p>
+        <label title="Negative strength repels nodes. Positive strength attracts nodes."  class="controls-width">
+          Strength
+          <output id="charge_StrengthSliderOutput">-30</output>
+          <input type="range" min="-200" max="50" value="-30" step=".1" id="charge_StrengthSliderInput">
+        </label>
+        <label title="Minimum distance where force is applied"  class="controls-width">
+          Distance Minimum
+          <output id="charge_distanceMinSliderOutput">1</output>
+          <input type="range" min="0" max="50" value="1" step=".1" id="charge_distanceMinSliderInput">
+        </label>
+        <label title="Maximum distance where force is applied"  class="controls-width">
+          Distance Maximum
+          <output id="charge_distanceMaxSliderOutput">2000</output>
+          <input type="range" min="0" max="2000" value="2000" step=".1" id="charge_distanceMaxSliderInput">
+    </label>
+      </div>
+
+      <div class="force">
+        <p><label><input type="checkbox" checked id="force_collideCheckbox"> Collide</label>Prevents nodes from overlapping</p>
+        <label  class="controls-width">
+          Strength
+          <output id="collide_StrengthSliderOutput">0.7</output>
+          <input type="range" min="0" max="2" value="0.7" step="0.1" id="collide_StrengthSliderInput">
+        </label>
+        <label title="Size of nodes"  class="controls-width">
+          Radius
+          <output id="collide_radiusSliderOutput">5</output>
+          <input type="range" min="0" max="100" value="5" step="1" id="collide_radiusSliderInput">
+        </label>
+        <label title="Higher values increase rigidity of the nodes (WARNING: high values are computationally expensive)"  class="controls-width">
+          Iterations
+          <output id="collide_iterationsSliderOutput">1</output>
+          <input type="range" min="1" max="10" value="1" step="1" id="collide_iterationsSliderInput">
+        </label>
+      </div>
+
+      <div class="force">
+        <p><label><input type="checkbox" id="force_forceXCheckbox"> ForceX</label> Acts like gravity. Pulls all points towards an X location.</p>
+        <label  class="controls-width">
+          Strength
+          <output id="forceX_StrengthSliderOutput">0.1</output>
+          <input type="range" min="0" max="1" value="0.1" step="0.01" id="forceX_StrengthSliderInput" disabled>
+        </label>
+<!--         <label title="The X location that the force will push the nodes to (NOTE: This demo multiplies by the svg width)"  class="controls-width">
+          X
+          <output id="forceX_XSliderOutput">.5</output>
+          <input type="range" min="0" max="1" value=".5" step="0.01" id="forceX_XSliderInput" disabled>
+        </label> -->
+      </div>
+
+      <div class="force">
+        <p><label><input type="checkbox" id="force_forceYCheckbox"> Force Y</label> Acts like gravity. Pulls all points towards a Y location.</p>
+        <label  class="controls-width">
+          Strength
+          <output id="forceY_StrengthSliderOutput">0.1</output>
+          <input type="range" min="0" max="1" value="0.1" step="0.01" id="forceY_StrengthSliderInput" disabled>
+        </label>
+<!--         <label title="The Y location that the force will push the nodes to (NOTE: This demo multiplies by the svg height)"  class="controls-width">
+          Y
+          <output id="forceY_YSliderOutput">.5</output>
+          <input type="range" min="0" max="1" value=".5" step="0.01" id="forceY_YSliderInput" disabled>
+        </label> -->
+      </div>
+
+      <div class="force">
+        <p><label><input type="checkbox" checked id="force_linkCheckbox"> Link</label> Sets link length</p>
+        <label title="The force will push/pull nodes to make links this long"  class="controls-width">
+          Distance
+          <output id="link_DistanceSliderOutput">30</output>
+          <input type="range" min="0" max="100" value="30" step="1" id="link_DistanceSliderInput">
+        </label>
+        <label class="controls-width">
+          Strength
+          <output id="link_StrengthSliderOutput">1</output>
+          <input type="range" min="0" max="1" step="0.1" value="1" id="link_StrengthSliderInput"> 
+        </label>
+        <label title="Higher values increase rigidity of the links (WARNING: high values are computationally expensive)"  class="controls-width">
+          Iterations
+          <output id="link_IterationsSliderOutput">1</output>
+          <input type="range" min="1" max="10" value="1" step="1" id="link_IterationsSliderInput">
+        </label>
+      </div>
+    </div>
+    <div class="svg-parent">
+      <svg id="svg"></svg> 
+    </div>
+    </div>
+  </body>
+</html>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

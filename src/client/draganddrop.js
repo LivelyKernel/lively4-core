@@ -33,7 +33,13 @@ class DropOnBodyHandler {
     
     const element = this.handler(dt.getData(this.mimeType));
     if(element) {
-      appendToBodyAt(element, evt);
+      if(element.then) {
+        element.then( r => {
+          appendToBodyAt(r, evt);  
+        })
+      } else {
+        appendToBodyAt(element, evt);
+      }
       return true;
     } else {
       return false;
@@ -176,10 +182,21 @@ const dropOnDocumentBehavior = {
           return true;
         }
       },
+
+      new DropOnBodyHandler('text/uri-list', urlString => {
+        if (!urlString.match(/^plex:\//)) { return false; }
+        var existing = document.body.querySelector(`plex-link[src="${urlString}"]`)
+        if (existing) {
+          existing.remove()
+        }
+        lively.notify("dropped " + urlString)
+        return <plex-link src={urlString}></plex-link>
+      }),
+
       
       new DropOnBodyHandler('text/uri-list', urlString => {
         var link = <div class="lively-content"><a  href={urlString}>
-          {urlString.replace(/.*\//,"")}
+          {urlString.replace(/\/$/,"").replace(/.*\//,"")}
         </a></div>;
         // register the event... to be able to remove it again...
         lively.addEventListener("link", link, "click", evt => {
@@ -239,7 +256,8 @@ const dropOnDocumentBehavior = {
     lively.notify(`Dropped ${files.length} file(s).`);
     Array.from(files).forEach(async (file) => {
         const extension = lively.files.extension(file.name)
-        if (extension == "png") {
+        // #Research how do we deal with content vs. container... drop a picture here or a file that contains the picture? #Journal #Interesting
+        if (extension == "png" && !evt.ctrlKey) {
             // #Refactor #TODO use lively.files.readBlobAsDataURL
             const reader = new FileReader();
             reader.onload = event => {
@@ -266,6 +284,7 @@ const dropOnDocumentBehavior = {
   },
   
   async onDrop(evt) {
+    // var target = evt.path.find(ea => ea.classList.contains("lively-content") )
     const dt = evt.dataTransfer;
     
     /*
@@ -287,8 +306,25 @@ const dropOnDocumentBehavior = {
         return;
       }
     }
+    var cssText = evt.dataTransfer.getData("lively/cssText")
+    if (this.lastDropTarget && cssText) {
+      cssText.split(/; */).forEach(pair => {
+        var name, value;
+        [name,value] = pair.split(/: */)
+        lively.notify("set " + this.lastDropTarget + "'s " + name + " to " + value)
+        name = name.replace(/ /g,"")
+        this.lastDropTarget.style[name] = value
+        // window.LastDT = this.lastDropTarget
+        // window.LastName = name
+        // window.LastCSS = value
+        // target.style["background"] = "red"
+      })
+        
+      } else {
+      
+      lively.warn("Dragged content contained neither files nor handled items");
+    }
     
-    lively.warn("Dragged content contained neither files nor handled items");
   }
 }
 

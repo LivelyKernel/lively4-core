@@ -115,6 +115,22 @@ export function asDragImageFor(evt, offsetX=0, offsetY=0) {
   evt.dataTransfer.setDragImage(clone, offsetX, offsetY);
 }
 
+export function listAsDragImage(labels, evt, offsetX, offsetY) {
+  const hints = labels
+    .map(textualRepresentation)
+    .map(hintForLabel);
+  const hintLength = hints.length;
+  const maxLength = 5;
+  if(hints.length > maxLength) {
+    hints.length = maxLength;
+    hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`))
+  }
+  const dragInfo = <div style="width: 151px;">
+    {...hints}
+  </div>;
+  dragInfo::asDragImageFor(evt, offsetX, offsetY);
+}
+
 const TEMP_OBJECT_STORAGE = new Map();
 export function getTempKeyFor(obj) {
   const tempKey = uuid();
@@ -219,7 +235,165 @@ export function copyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
+export function functionMetaInfo(functionToCheck) {
+  if(functionToCheck === undefined) { return {
+    isFunction: false,
+    isAsync: false,
+    isGenerator: false
+  }; }
+  
+  const description = ({}).toString.call(functionToCheck)
+  return {
+    isFunction: !!description.match(/\[object (Async)?(Generator)?Function\]/),
+    isAsync: !!description.match(/\[object Async(Generator)?Function\]/),
+    isGenerator: !!description.match(/\[object (Async)?GeneratorFunction\]/)
+  };
+}
 // taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
 export function isFunction(functionToCheck) {
-  return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+  if(functionToCheck === undefined) { return false; }
+  let isFunc = ({}).toString.call(functionToCheck) === '[object Function]';
+  let isAsyncFunc = ({}).toString.call(functionToCheck) === '[object AsyncFunction]';
+  return isFunc || isAsyncFunc;
+}
+
+export function cancelEvent(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+}
+
+export function textualRepresentation(thing) {
+  // primitive falsy value?
+  if(!thing) { return '' + thing}
+  
+  // toString method different from Object?
+  if(thing.toString && thing.toString !== Object.prototype.toString) {
+    return thing.toString();
+  }
+  
+  // instance of a named class?
+  if(thing.constructor && thing.constructor.name) {
+    return 'a ' + thing.constructor.name;
+  }
+  
+  return 'unprintable object';
+}
+
+
+export function getDeepProperty(obj, pathString) {
+  var path = pathString.split(".")
+  var next
+  var result = obj
+  while(next = path.shift()) {
+    var nextResult = result[next] 
+    if (!nextResult) return // could not resolve path
+    result = nextResult
+  }
+  return result
+}
+
+// https://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
+export function parseQuery(queryString) {
+    var query = {};
+    var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+    for (var i = 0; i < pairs.length; i++) {
+        var pair = pairs[i].split('=');
+        query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+    }
+    return query;
+}
+
+export function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export class CallableObject {
+  // #TODO: implement this
+}
+
+/**
+ * Executes the given function considering the given context objects.
+ * @param {Array<ContextManager>} contexts
+ * @param {function} callback
+ * @return {Object} result - The callback's evaluation result.
+ *
+ * @class ContextManager
+ * @classdesc Used to specify the setup and teardown of the function call.
+ * @method {__enter__} enter callback - called before the function call. Put setup code here.
+ * @method {__exit__} exit callback - called after the funciton call. Put teardown code here.
+
+ * @example <caption>Poor mans COP.</caption>
+ * import { using }from "utils";
+ * 
+ * const silentFetch = {
+ *   __enter__() {
+ *     this.originalFetch = window.fetch;
+ *     window.fetch = () => {};
+ *   }
+ *   __exit__() {
+ *     window.fetch = this.originalFetch; // restore the original fetch 
+ *   }
+ * }
+ *
+ * using([silentFetch], () => {
+ *   lively.notify(fetch('https://lively-kernel.org/lively4/')) // logs nothing
+ * });
+ */
+export function using(contextManagerIterable, callback) {
+  let result;
+  let error;
+  const contextManagers = Array.from(contextManagerIterable);
+  
+  contextManagers.forEach(cm => cm.__enter__());
+  try {
+    result = callback();
+  } catch(e) {
+    error = e;
+  } finally {
+    contextManagers.reverse().forEach(cm => cm.__exit__(error));
+  }
+  if(error !== undefined) {
+    throw error;
+  }
+  return result;
+}
+
+/**
+ * Get notified, whenever the style attribute of given target changes
+ */
+export function onStyleChange(target, callback) {
+  const styleObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {  
+      if(mutation.type == "attributes" && mutation.attributeName == "style") {
+          callback();
+      }
+    });
+  });
+  styleObserver.observe(target, { attributes: true });
+
+  return styleObserver;
+}
+
+/**
+ * shakes given element using css transformations
+ */
+export function shake(target) {
+  target.animate([
+    { transform: 'translate(1px, 1px) rotate(0deg)' },
+    { transform: 'translate(-1px, -2px) rotate(-1deg)' },
+    { transform: 'translate(-3px, 0px) rotate(1deg)' },
+    { transform: 'translate(3px, 2px) rotate(0deg)' },
+    { transform: 'translate(1px, -1px) rotate(1deg)' },
+    { transform: 'translate(-1px, 2px) rotate(-1deg)' },
+    { transform: 'translate(-3px, 1px) rotate(0deg)' },
+    { transform: 'translate(3px, 1px) rotate(-1deg)' },
+    { transform: 'translate(-1px, -1px) rotate(1deg)' },
+    { transform: 'translate(1px, 2px) rotate(0deg)' },
+    { transform: 'translate(1px, -2px) rotate(-1deg)' },
+  ], { 
+    // timing options
+    duration: 100,
+    iterations: 1,
+    // easing: 'cubic-bezier(0.42, 0, 0.58, 1)'
+  });
 }

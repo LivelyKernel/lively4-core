@@ -10,22 +10,31 @@ function rewriteSourceWithAsyncAwaitSupport(source) {
 
 export default async function boundEval(source, thisReference, targetModule) {
   try {
+    let codeId = uuid();
+    var path = 'workspace:' + encodeURI(codeId)
+       
     // 'this' reference
-    window.__global_this__ = thisReference;
+    if (!self.__pluginDoitThisRefs__) {
+      self.__pluginDoitThisRefs__ = {};
+    } 
+    self.__pluginDoitThisRefs__[codeId] = thisReference;
     
-    // binding module
-    window.__topLevelVarRecorder_ModuleName__ = targetModule;
-
+        
+    if (!self.__topLevelVarRecorder_ModuleNames__) {
+      self.__topLevelVarRecorder_ModuleNames__ = {};
+    } 
+    // console.log("boundEval register " + codeId + " -> " +targetModule)
+    self.__topLevelVarRecorder_ModuleNames__[codeId] = targetModule;
+    
+    
     if (Preferences.get('UseAsyncWorkspace') && source.match(/await /) && !source.match(/import /)) {
       source = rewriteSourceWithAsyncAwaitSupport(source);
     }  
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    let codeId = uuid();
     setCode(codeId, source);
     
-    var path = 'workspace:' + encodeURI(codeId)
     if (Preferences.get('UseAsyncWorkspace')) {
       path = path.replace(/^workspace/, "workspaceasyncjs")
     } else if (Preferences.get('DisableAExpWorkspace')) {

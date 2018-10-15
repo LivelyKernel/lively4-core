@@ -13,7 +13,7 @@ import {
 import * as drawTools from 'src/client/triples/drawTools.js';
 import * as math from 'src/client/triples/math.js';
 
-import { aexpr } from "frame-based-aexpr";
+import { aexpr } from "active-expression-frame-based";
 
 const MIN_MAGNIFICATION = 0.01;
 const MAX_MAGNIFICATION = 4;
@@ -158,11 +158,11 @@ class Link extends Node {
   }
   
   draw(linkGroup, markerContainer) {
-  	linkGroup.append("path")
-  		.classed("link-path", true)
-  		//.classed(this.domain().cssClassOfNode(), true)
-  		//.classed(this.range().cssClassOfNode(), true)
-      //.classed(property.linkType(), true);
+    linkGroup.append("path")
+    .classed("link-path", true)
+    //.classed(this.domain().cssClassOfNode(), true)
+    //.classed(this.range().cssClassOfNode(), true)
+    //.classed(property.linkType(), true);
   }
   
   // TODO: if we are self-referencial: compute the number of self references from the graph
@@ -337,7 +337,12 @@ export default class TripleNotes extends Morph {
         let knotView = await lively.openComponentInWindow("knot-view");
         knotView.loadKnotForURL(node.getKnot().url);
       })
-      .on("mouseover", node => this.get('#knot-view').loadKnotForURL(node.getKnot().url))
+      .on("click", node => {
+        d3.event.stopPropagation();
+        d3.event.preventDefault();
+        
+        this.get('#knot-view').loadKnotForURL(node.getKnot().url);
+      })
       .on("mouseout", node => {})
       .on("contextmenu", async node => {
         d3.event.stopPropagation();

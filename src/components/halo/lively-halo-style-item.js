@@ -18,7 +18,7 @@ export default class HaloStyleItem extends HaloItem {
         editor.hideTargetButton()
         this.appendChild(editor)
 
-        lively.setPosition(editor, pt(0,-60))
+        lively.setPosition(editor, pt(0,-110))
         // this.hideHalo(); 
       }
     }

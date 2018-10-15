@@ -1,6 +1,5 @@
 <h1>Lively4 Development Journal</h1>
 
-
 <lively-script><script>
 import moment from "src/external/moment.js";
 // #TODO how to do instance-specific behabior here?
@@ -46,13 +45,19 @@ import FileCache from "src/client/filecache.js"
   var list = document.createElement("ul")
   _.sortBy(opts.contents, ea => ea.name)
     .reverse()
-    .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d.*((html)|(md))$/))
+    .filter(ea => ea.name.match(/\d\d\d\d-\d\d-\d\d\.((html)|(md))$/))
     .forEach(ea => {
       var li = document.createElement("li")
       var a = document.createElement("a")
-      a.innerHTML = ea.name.replace(/\.md/,"")
-      a.href = ea.name
-      var url = dir  + ea.name
+      var name = ea.name
+      a.innerHTML =  name.replace(/\.md/,"")
+      if (ea.type === "directory") {
+        name = name + "/index.md"
+      }
+    
+      a.href = name
+      var url = dir  + name
+      
       a.onclick = (evt) => {
         evt.preventDefault()
         container.followPath(url)

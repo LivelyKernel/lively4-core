@@ -1,0 +1,8 @@
+{
+    "script": "[(input, output) => {\n  input\n    .map(item => item)\n    .forEach(item => output.push(item))\n}, {\n  \n}]",
+    "cursor": {
+      "anchor": { "line": 2, "ch": 21},
+      "head": { "line": 2, "ch": 21}
+    },
+    "type": "transform"
+}

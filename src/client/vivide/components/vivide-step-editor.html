@@ -1,0 +1,86 @@
+<template id="vivide-step-editor" data-class="VivideStepEditor">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  border: solid 1px lightgrey;
+  background-color: lightgreen;
+  margin: 100%
+  padding: 100%
+  
+  display: flex;
+  flex-direction: column;
+}
+:host(:focus), :host(:focus-within) {
+  border: solid 1px blue;
+}
+
+lively-code-mirror {
+  flex: 1;
+  min-height: unset;
+  height: auto;
+}
+
+.remove-button {
+  position: absolute;
+  bottom: 0;
+  right: 4px;
+  z-index: 1001;
+}
+
+.insert-button {
+  position: absolute;
+  bottom: 30px;
+  right: 4px;
+  z-index: 1001;
+}
+  
+.container {
+  position: relative
+}
+
+  div#menu-holder {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1003;
+    width: 0px;
+    height: 0px;
+  }
+
+  span.hint {
+    position: absolute;
+    z-index: 1002;
+    background-color: lightgray;
+    font-size: small;
+    padding-left: 3px;
+    padding-right: 3px;
+    color: white;
+  }
+  #typeHint {
+    top: 0px;
+    right: 0px;
+    padding-bottom: 3px;
+    border-bottom-left-radius: 5px;
+  }
+  #loopMarker {
+    bottom: 0px;
+    left: 0px;
+    padding-top: 3px;
+    border-top-right-radius: 5px;
+    
+    visibility: hidden;
+  }
+  #loopMarker.loop-start {
+    visibility: visible;
+  }
+</style>
+<div class="container">
+  <lively-code-mirror id="editor"></lively-code-mirror>
+  <span id="typeHint" class="hint"><span id="stepType">stepType</span></span>
+  <span id="loopMarker" class="hint"><i class="fa fa-undo"></i></span>
+  <div id="menu-holder"></div>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

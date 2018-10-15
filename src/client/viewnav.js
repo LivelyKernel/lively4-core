@@ -103,17 +103,25 @@ export default class ViewNav {
       return // there was no previous scale with mouse wheel
     }
 
+    if (this.target !== document.body) {
+      return    
+    }
+  
     // this.lastPoint = pt(LastEvt.clientX, LastEvt.clientY)
     var scale = window.innerWidth / window.outerWidth
     // lively.notify("scale " + (scale / this.lastScale))
 
     var newPos = this.lastPoint.scaleBy(scale / this.lastScale)
     var offset = this.lastPoint.subPt(newPos)
-    lively.setPosition(this.target, lively.getPosition(this.target).subPt(offset) )
+    
+    
+      lively.setPosition(this.target, lively.getPosition(this.target).subPt(offset) )
 
-    // lively.showPoint(newPos).style.backgroundColor = "green"
+      // lively.showPoint(newPos).style.backgroundColor = "green"
 
-    ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, true)
+      ViewNav.updateDocumentGrid(this.target.documentGrid, this.target, true)
+      
+    
     
   }
   
@@ -165,47 +173,45 @@ export default class ViewNav {
     
     return // #Bug fixScrollAfterNavigation seems to make problems... 
     
-    var pos = lively.getGlobalPosition(this.target).scaleBy(-1)
-    var topLeft = pt(0,0).minPt(pos)
-    Windows.allWindows().forEach(ea => {
-      topLeft = topLeft.minPt(lively.getPosition(ea))
-    })
+//     var pos = lively.getGlobalPosition(this.target).scaleBy(-1)
+//     var topLeft = pt(0,0).minPt(pos)
+//     Windows.allWindows().forEach(ea => {
+//       topLeft = topLeft.minPt(lively.getPosition(ea))
+//     })
     
-    lively.setPosition(this.target, topLeft.scaleBy(-1))
+//     lively.setPosition(this.target, topLeft.scaleBy(-1))
     
-    var delta = topLeft.scaleBy(-1).subPt(pos.scaleBy(-1))
+//     var delta = topLeft.scaleBy(-1).subPt(pos.scaleBy(-1))
 
-    this.target.scrollLeft = delta.x 
-    this.target.scrollTop = delta.y
+//     this.target.scrollLeft = delta.x 
+//     this.target.scrollTop = delta.y
   }
 
 
   static showDocumentGridItem(pos, color, border, w, h, parent) {
       var div = document.createElement("div")
-      
-  		lively.setPosition(div, pos)
-  		div.style.backgroundColor = color
-  		div.style.border = border
-  		div.style.width = w  +"px"
-  		div.style.height = h +"px"
-  		div.livelyAcceptsDrop = function() {}
-  		div.setAttribute("data-lively4-donotpersist", "all")
-  		div.style.pointerEvents = "none"
-  		div.classList.add("document-grid")
-  		parent.appendChild(div)
-  		return div
+      div.isMetaNode = true
+      lively.setPosition(div, pos)
+      div.style.backgroundColor = color
+      div.style.border = border
+      div.style.width = w  +"px"
+      div.style.height = h +"px"
+      div.livelyAcceptsDrop = function() {}
+      div.setAttribute("data-lively4-donotpersist", "all")
+      div.style.pointerEvents = "none"
+      div.classList.add("document-grid")
+      parent.appendChild(div)
+      return div
   }
   
   static updateDocumentGrid(documentGrid, target, zoomed, force) {
     
     if (!Preferences.get("ShowDocumentGrid")) {
       this.hideDocumentGrid(target);
-
       return;
     }
 
-    
-     // console.log("updateDocumentGrid(" + zoomed + ", " + force +")")
+    // console.log("updateDocumentGrid(" + zoomed + ", " + force +")")
     if (!force && this.lastFixedScroll && ((Date.now() - this.lastFixedScroll) < 1000)) {
       // console.log("not update document grid " + (Date.now() -this.lastFixedScroll))
       return

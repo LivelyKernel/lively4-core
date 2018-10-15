@@ -6,11 +6,8 @@ import components from './morphic/component-loader.js';
 
 export default class Preferences {
   
-  static load() {
-    console.info('Load preferences')
-    
-    // Keys must be upper case
-    const defaults = {
+  static get defaults() {
+    return  {
       GridSize: {default: 100, short: "grid size"},
       SnapSize: {default: 20, short: "snap size"},
       SnapPaddingSize: {default: 20, short: "padding while snapping size"},
@@ -21,15 +18,15 @@ export default class Preferences {
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
-      UseTernInCodeMirror: {default: false, short: "enable tern autocomplete and navigation"},
-      CtrlAsHaloModifier: {default: false, short: "ctrl key as halo modifier"},
-      EnableSyvisEditor: {default: false, short: 'Enable syvis editor'},
+      OfflineFirst: {default: false, short: "use offline first swx cache"},
+      GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
+      FileIndex: {default: false, short: "local file index"},
     }
-    
-    // Make defaults immutable
-    Object.freeze(defaults)
-    this.defaults = defaults
-    
+  }
+  
+  
+  static load() {
+    console.info('Load preferences')
   }
   
   // List all avaiable preferences
@@ -81,17 +78,16 @@ export default class Preferences {
   }
   
   static get prefsNode() {
-    if (this.node) return this.node
     // #BUG: reloading Preferences causes dataset to be not defined anymore
-    this.node = document.body.querySelector('.lively-preferences');
-    if (!this.node) {
-      lively.notify("create preferneces")
-      this.node = document.createElement('div'); // we cannot use custom comps they are async
-      this.node.classList.add("lively-preferences")
-      this.node.classList.add("lively-content")
-      components.openInBody(this.node)
+    let node = document.body.querySelector('.lively-preferences');
+    if (!node) {
+      console.log("Create prefereces")
+      node = document.createElement('div'); // we cannot use custom comps they are async
+      node.classList.add("lively-preferences")
+      node.classList.add("lively-content")
+      components.openInBody(node)
     }
-    return this.node
+    return node
   }
   
   static read(preferenceKey) {
@@ -135,7 +131,7 @@ export default class Preferences {
   }
   
   static loadPreferences() {
-    Object.keys(this.prefsNode.dataset).forEach(preferenceKey => {
+    Object.keys(Preferences.defaults).forEach(preferenceKey => {
       this.applyPreference(preferenceKey)
     })
   }

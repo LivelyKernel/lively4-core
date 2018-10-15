@@ -7,7 +7,7 @@ function randomModuleId() {
 export function getScopeIdForModule(moduleName) {
   // console.log("XXX", moduleName);
   if(!moduleNameToVarRecorderName.has(moduleName)) {
-    moduleNameToVarRecorderName.set(moduleName, randomModuleId());
+    moduleNameToVarRecorderName.set(moduleName, (moduleName || "undefined").replace(/[^a-zA-Z0-9]/g,"_") /* randomModuleId() */);
   }
 
   return moduleNameToVarRecorderName.get(moduleName);
@@ -25,7 +25,7 @@ export default function({ types: t, template, traverse, }) {
   }
   
   // TODO: is there a general way to exclude non-variables?
-  function isVariable(path) {
+  function isVariable(path) {    
     // - filter out with negative conditions
     if(t.isLabeledStatement(path.parent) && path.parentKey === 'label') return false;
     if(t.isBreakStatement(path.parent) && path.parentKey === 'label') return false;
@@ -43,7 +43,7 @@ export default function({ types: t, template, traverse, }) {
     if((t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params')) return false;
     if((t.isFunctionExpression(path.parent) && path.parentKey === 'params')) return false;
     if(t.isRestElement(path.parent)) return false;
-
+    
     // TODO: 2nd stage:
     // - return true on known conditions
     return true;
@@ -91,9 +91,10 @@ export default function({ types: t, template, traverse, }) {
         
         const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
         let MODULE_NAME;
-        if(DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
-          // eval in workspace
-          MODULE_NAME = window.__topLevelVarRecorder_ModuleName__;
+        if(window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
+          var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
+          MODULE_NAME = window.__topLevelVarRecorder_ModuleNames__[codeId];
+          // console.log("boundEval MODULE_NAME: " + MODULE_NAME + " codeId: " + codeId)
         } else if (!DOIT_MATCHER.test(filename) && MODULE_MATCHER.test(filename)) {
           // eval a .js file
           MODULE_NAME = filename;
@@ -119,10 +120,42 @@ export default function({ types: t, template, traverse, }) {
 
         // iterate all module wide bindings
         Object.values(bindings).forEach(binding => {
+
+          
+          function partOfForStatement(binding) {
+            const parentPath = binding.path.parentPath; 
+            const shouldSortOut = binding.path.isVariableDeclarator() &&
+              parentPath.isVariableDeclaration() &&
+              parentPath.node.kind === "var" && ((
+                (
+                parentPath.parentPath.isForAwaitStatement() ||
+                parentPath.parentPath.isForInStatement() ||
+                parentPath.parentPath.isForOfStatement()
+                ) && parentPath.parentKey === "left"
+              ) || (
+                parentPath.parentPath.isForStatement()
+                && parentPath.parentKey ===  "init"
+              )
+              );
+            return shouldSortOut;
+          }
+          
+          if(partOfForStatement(binding)) {
+            // console.error("sort out", binding.identifier.name)
+            // console.warn(binding)
+            binding.__ignoreRecorder__ = true;
+            return;
+            
+          } else {
+            // console.error("not matching", binding.identifier.name)
+            // console.warn(binding)
+          }
+          
           binding.referencePaths
             .filter(ref => {
               // ExportNamedDeclarations should not be rewritten as reference
               // they are already rewritten as binding
+                        
               if(ref.isExportNamedDeclaration()) {
                 return false;
               }
@@ -172,7 +205,8 @@ export default function({ types: t, template, traverse, }) {
         });
     
         program.traverse({
-          Identifier(path) {
+          Identifier(path) {            
+            
             if(isMarked(path.node)) return;
             if(!isVariable(path)) return;
     
@@ -182,6 +216,10 @@ export default function({ types: t, template, traverse, }) {
               let par = path.find(parent => parent.scope.hasOwnBinding(path.node.name));
               // is our binding scope the module-wide scope?
               if(par && par.scope === program.scope) {
+                
+                // is it part of a for in declaration
+                const binding = par.scope.getOwnBinding(path.node.name)
+                if(binding && binding.__ignoreRecorder__) { return; }
                 replaceReference(path);
                 return path.skip();
               }

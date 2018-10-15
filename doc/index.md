@@ -13,12 +13,10 @@ Lively4 is currently build using two materials: JavaScript modules and HTML temp
 # Lively4 
 
 - Self-supporting Web-based Development Environment
-
 - Workflow of developing JavaScript on a Web-page
   - persisted into GitHub (indirectly through lively4-server or directly through service worker)
   - reload modules at runtime. 
   - Models that provide prototypes for templates such as "Windows" are also updated at runtime. 
-
 - Workflow of developing components as HTML templates on a Web-page
   - persisted into GitHub
   - templates can be exchanged at runtime, so that new HTML elements are build with the new template
@@ -50,6 +48,26 @@ All components are stored together with their prototype definitions (JavaScript 
 
 # Modules
 
+By using modern JavaScript modules (import/export), we can structure the project internally quite well. But integrating external projects and libraries into that world is still an #OpenProblem. Currently we use three approaches:
+
+1. copy a self contained module into "/src/external"
+  - pros: it is stable, and we can directly edit and debug them (e.g. insert "import" statements or customize them)
+  - cons: they don't update themselves
+2. clone whole other repositories as subtrees into our repository
+  - pros: same as copy, and we can update them and push changes back
+  - cons: 
+    - not every repository has usable packages without building them first
+    - can get pretty big 
+3. use npm:
+  - pros: 
+    - is fast and updates itself
+    - does not increase our source
+    - can use building to actually produce something in usable in the browser
+  - cons: 
+    - hard to customize
+    - requires npm on the "server" side
+
+Modules:
 - [lively](../src/client/lively.js) -> Our used to be kitchen-sink-god-class modules that has to be cleaned up after helping us in a time with needs
 - ...
 
@@ -65,6 +83,13 @@ All components are stored together with their prototype definitions (JavaScript 
     - FEATURE: allows for local adaptation, without giving up, updateabiltiy 
     - #TODO -> provide tool support from inside lively4 to add, update, remove such dependencies
   - Do you have a favorite module/library/package/dependency management system that works clientside only?
+
+# HPI Seminars
+
+- all Lively4 material to HPI seminars resides now in it's own Github repository...
+  - https://github.com/LivelyKernel/lively4-seminars 
+  - https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md
+
 
 # Other Documentation
 - [Lively4 Wiki on Github](https://lively-kernel.org/lively4/Lively4.wiki/Home.md)

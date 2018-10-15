@@ -38,13 +38,20 @@
     #logContainer {
       flex: 1;
       width: 100%;
-      overflow: scroll;
+      overflow: auto;
+      overscroll-behavior: contain;
     }
     
     #travisLink {
       float: right;
       margin-right: 5px;
     }
+    
+    #imprint {
+      float: right;
+      margin-right: 5px;
+    }
+    
     label {
       padding: 3px;
       padding-top: 6px;
@@ -88,6 +95,23 @@
     #mergeButton {
       background: rgb(250,50,50);
     }
+    
+    #log {
+      height: 100%;
+      white-space: pre;
+      font-size: 10p;
+      font-family:  monospace;
+      padding: 5px;
+      
+      color: white;
+/*       color: black */
+    }
+    
+     
+    #logContainer {
+      background-color: rgb(50,50,50);
+    }
+    
   </style>
     <div class="container">
         <p class="fill">
@@ -125,18 +149,24 @@
           <button class="repo" id="diffButton">diff</button>
           <button class="repo" id="squashButton">squash</button>
           <button class="repo" id="resolveButton">resolve</button>
-          <button class="repo" id="changelogButton">changelog</button>
+          <button class="repo" id="changelogButton">log</button>
           <button class="repo" id="npmInstallButton">npm install</button>
           <button class="repo" id="npmTestButton">npm test</button>
           <button class="repo" id="deleteButton">delete</button>
+
           <label><input class="checkbox" type="checkbox" id="dryrun">
           dry run</label>
-           <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
+          <a id="imprint" href="browse://imprint.md" 
+             onclick="event.preventDefault(); fetch(this.href)">imprint</a>  
+          <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
           </a>  
       </p>
       <div id="logContainer">
-        <lively-code-mirror id="log"></lively-code-mirror>          
+        <div id=log>
+        
+        </div>
+<!--         <lively-code-mirror id="log" mode="text"></lively-code-mirror>           -->
       </div>
     </div>
 </template>

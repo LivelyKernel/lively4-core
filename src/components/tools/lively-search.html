@@ -83,24 +83,44 @@
     }
     
     .filename {
-    white-space: nowrap;
+      white-space: nowrap;
     }
     
+    #replaceBar {
+      display: none;
+    }
+      
+    :host([replace=true]) #replaceBar {
+      display: inherit;
+    }
     
+    td.logentry {
+   
+    }
+  
+    #preview {
+
+    }
     </style>
     <div class="container">
         <p class="fill">
           <label class="small">Roots:</label> 
-          <input class="" id="rootsInput" value="lively4-core" />
+          <input class="" id="rootsInput" value="" />
           <label class="medium">Excludes:</label> 
           <input class="" id="excludesInput" value="node_modules,src/external,vendor/" />
-        </p>
+          <button id="enableReplaceButton">R</button> 
+      </p>
         <p class="fill">
           <input class="" id="searchInput" value="" />
-          <button id="searchButton"><i class="fa fa-search" aria-hidden="true"></i></button> 
+          <button id="searchButton">search</button> 
         </p>
+        <p class="fill" id="replaceBar">
+          <input class="" id="replaceInput" value="" />
+          <button id="replaceButton">replace all!</button> 
+        </p>
+
         <div id="searchContainer">
-          <table id="searchResults"></ul>  
+          <table id="searchResults"></table>  
         </div>
     </div>
 </template>

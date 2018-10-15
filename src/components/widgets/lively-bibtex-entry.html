@@ -1,0 +1,67 @@
+<template id="lively-bibtex-entry" data-class="LivelyBibtexEntry">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+    width: fill-available;
+
+  }
+  :host(.selected) #root  {
+    background-color: rgba(150,150,255,0.1);
+    outline: 1px solid rgba(150,150,255,0.3);
+  }
+
+  
+  #content {
+    display: none
+  }
+  #title {
+    font-style: italic
+  }
+  #entry {
+    text-indent: -20px;
+    margin-left: 20px;
+    padding: 3px;
+  }
+  #key {
+    font-weight: bold
+  }
+  
+  :host([mode="edit"]) #content {
+    display: block;
+    white-space: pre;
+    font-family: courier;
+    font-size: 9pt;
+    overflow: scroll;
+    width: 600px;
+  }
+
+  :host([mode="edit"]) #entry {
+    display: none;
+  }
+
+  #filename {
+    /* display: none; */
+  }
+
+  :host([mode="edit"]) #filename {
+    display: block;
+  }
+
+  
+</style>
+  <div id="root">
+    <div id="entry">
+      [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
+      <span id="title"></span>
+    </div>
+    <div id="content">
+      <div id="filename">
+        asdfa
+      </div>
+      <content></content>
+    </div>    
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

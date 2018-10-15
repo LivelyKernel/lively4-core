@@ -7,16 +7,20 @@
  border-top: 1px solid #d5d5d5;
  border-right: 1px solid #d5d5d5;
 }
-
+:host(.drag) {
+  background-color: lightgoldenrodyellow;
+}
 #dragHint {
   display: none;
   position: absolute;
-  width: 100%;
-  height: 100%;
+  transform: translateY(3px)translateX(3px);
   background-color: rgba(0, 0, 0, 0.6);
   align-items: center;
   justify-content: center;
   z-index: 99999;
+  border-radius: 30px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 :host(.drag) #dragHint {
   display: flex;
@@ -24,7 +28,7 @@
 #dragHintText {
   text-align: center;
   line-height: 2em;
-  font-size: 1.5em;
+/*   font-size: 1.5em; */
   color: white;
 }
 
@@ -45,7 +49,7 @@ ul li ul li {
   padding-left: 10px;
 }
 
-ul li ul li:hover{
+ul li ul li.subitem:hover{
   background-color: gray;
   color: white;
   cursor: pointer
@@ -97,17 +101,16 @@ ul li a {
 }
 
 .selected {
-  background-color: lightgray;
-  color: white;
+  background-color: rgba(215,215,215);
   cursor: pointer
 }
   
 
 </style>
 <div id="dragHint">
-  <h1 id="dragHintText">
-    Drop Files Here
-  </h1>
+  <span id="dragHintText">
+    Drop files to this folder?
+  </span>
 </div>
 <ul id="navbar">
 </ul>

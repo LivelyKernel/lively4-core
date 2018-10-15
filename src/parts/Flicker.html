@@ -1,0 +1,11 @@
+<div class="lively-content" style="width: 200px; height: 100px; border: 1px solid black; position: absolute; left: 1547px; top: 86px; background-color: rgba(40, 40, 80, 0.5);" data-lively-id="6c34f22b-c2ed-4b8c-8de8-c170174a09be" id="Flicker"><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  var b = true;
+  var toggleColor = () => {
+    this.style.backgroundColor = b ? 'red' : 'green';
+    b = !b;
+
+    requestAnimationFrame(toggleColor)
+  }
+
+  toggleColor()
+}</script></div>

@@ -11,7 +11,7 @@
 // delete localStorage["logSystemJS"] 
   
 function livelyLog(...rest) {
-  if (self.localStorage && self.localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"] == "true") {
     console.log(self.lively4stamp, ...rest)  
   }
 }
@@ -44,7 +44,7 @@ function livelyGroupStart(label, key, parentKey) {
 }
 
 function livelyGroupEnd(label, key, parent) {
-  if (self.localStorage && self.localStorage["logSystemJS"]) {
+  if (self.localStorage && self.localStorage["logSystemJS"] == "true") {
     console.log(label + " " + key +" time: "  + ((performance.now() - livelyGroupTimes[label + key]) / 1000).toFixed(3) + "s" + " parent: " + parent)
 
     var parentEntry = livelyGroupTree[parent];
@@ -1598,7 +1598,7 @@ function nsEvaluate (ns) {
 /*
  * Source loading
  */
-function fetchFetch (url, authorization, integrity, asBuffer) {
+async function fetchFetch (url, authorization, integrity, asBuffer) {
   livelyLog("SystemJS fetch " + url)
   // fetch doesn't support file:/// urls
   if (url.substr(0, 8) === 'file:///') {
@@ -1625,13 +1625,25 @@ function fetchFetch (url, authorization, integrity, asBuffer) {
     opts.credentials = 'include';
   }
 
-  return fetch(url, opts)
-  .then(function(res) {
-    if (res.ok)
-      return asBuffer ? res.arrayBuffer() : res.text();
-    else
-      throw new Error('Fetch error: ' + res.status + ' ' + res.statusText);
-  });
+  livelyLog("fetch " + url)
+  try {
+    var res = await fetch(url, opts)
+    .then(function(res) {
+
+      livelyLog("res " + res.statusText)
+
+      if (res.ok)
+        return asBuffer ? res.arrayBuffer() : res.text();
+      else
+        throw new Error('Fetch error: ' + res.status + ' ' + res.statusText);
+    }).catch(e => {
+      livelyLog("fetch error " + e)
+    })    
+  } catch(e) {
+    console.log("fetch try catch " + e)
+  }
+  
+  return res
 }
 
 function xhrFetch (url, authorization, integrity, asBuffer) {
@@ -3457,13 +3469,20 @@ function loadBundlesAndDepCache (config, loader, key) {
 }
 
 function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
+  livelyLog("runFetchPipeline " + key)
+  
   if (metadata.load.exports && !metadata.load.format)
     metadata.load.format = 'global';
 
+  var cachedOutputCode
+  var cachedSourceCode
+  
   return Promise.resolve()
 
   // locate
   .then(function () {
+    livelyLog("fetch locate")
+
     if (!metadata.pluginModule || !metadata.pluginModule.locate)
       return;
 
@@ -3473,22 +3492,51 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
         metadata.pluginLoad.address = address;
     });
   })
-
   // fetch
   .then(function () {
-    if (!metadata.pluginModule)
-      return fetch$1(key, metadata.load.authorization, metadata.load.integrity, wasm);
+    livelyLog("fetchy")
+    
+   // if (self.localStorage && self.lively4plugincache) {
+   //    var load = metadata.load
+   //    var cachekey = "pluginBabelTransfrom_" + load.name
+   //    cachedOutputCode = self.localStorage[cachekey]
+   //    cachedSourceCode = self.localStorage[cachekey +"_source"]
+   //   if (cachedSourceCode) {
+   //      console.log("return cached source code: " + key)
+   //      return cachedSourceCode
+   //   }
+   //  }
+    // console.log('default fetch ' + key)
 
-    if (!metadata.pluginModule.fetch)
+    if (!metadata.pluginModule) {
+      livelyLog("fetch$1.1")
+      return fetch$1(key, metadata.load.authorization, metadata.load.integrity, wasm);
+    } 
+
+    if (!metadata.pluginModule.fetch) {
+      livelyLog("fetch$1.2")
+
       return fetch$1(metadata.pluginArgument, metadata.load.authorization, metadata.load.integrity, wasm);
+    }
 
     wasm = false;
     return metadata.pluginModule.fetch.call(loader, metadata.pluginLoad, function (load) {
+      livelyLog("fetch$1.3")
       return fetch$1(load.address, metadata.load.authorization, metadata.load.integrity, false);
     });
   })
 
   .then(function (fetched) {
+    livelyLog("fetched")
+    if (!fetched) {
+      // debugger
+    }
+    
+    // if (cachedOutputCode ) {
+    //     console.log("no fetch " + key)
+    //     return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);
+    // }
+    
     // fetch is already a utf-8 string if not doing wasm detection
     if (!wasm)
       return translateAndInstantiate(loader, key, fetched, metadata, processAnonRegister);
@@ -3562,6 +3610,7 @@ function translateAndInstantiate (loader, key, source, metadata, processAnonRegi
       else
         return metadata.pluginLoad.source;
     });
+    
   })
   .then(function (source) {
     if (metadata.load.format === 'register' || !metadata.load.format && detectRegisterFormat(source)) {
@@ -3739,6 +3788,9 @@ function translateAndInstantiate (loader, key, source, metadata, processAnonRegi
 
     if (!metadata.registered)
       throw new Error('Module ' + key + ' detected as ' + metadata.load.format + ' but didn\'t execute correctly.');
+  }).then( r => {
+     livelyLog("FINISHED translateAndInstantiate " + key)
+    return r
   });
 }
 
@@ -4077,4 +4129,3 @@ if (typeof module !== 'undefined' && module.exports)
   module.exports = System;
 
 }());
-//# sourceMappingURL=system.src.js.map

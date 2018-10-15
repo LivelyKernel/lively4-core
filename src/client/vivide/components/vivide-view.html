@@ -3,14 +3,14 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
-  overflow: visible;
+  overflow-y: scroll;
   box-sizing: border-box;
   margin: 0px;
   padding: 0px;
   width: 100%;
   height: 100%;
   
-  background-color: lightgray;
+/*   background-color: lightgray; */
   border: 2px transparent solid;
 }
 :host(.over.accept-drop) {
@@ -23,6 +23,9 @@
 }
 </style>
 <content></content>
+  <div id="scripts">
+    
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

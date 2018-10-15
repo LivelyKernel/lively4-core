@@ -74,32 +74,28 @@ export default class ComponentBinTile extends Morph {
   }
 
   
-  createComponent(evt) {
+  async createComponent(evt) {
     var worldContext = document.body
-    var comp = componentLoader.createComponent(this.htmlTag);
+    var comp = await lively.create(this.htmlTag);
     this.component = comp;
     var pos = lively.getGlobalPosition(this)
-
-    if (!this.componentBin || this.componentBin.inWindow()) {
+  
+    if ((this.componentBin && this.componentBin.inWindow()) || comp.wantsOpenInWindow) {
+      this.dragOffset = pt(-300,-10)
       return componentLoader.openInWindow(comp).then(win => {
-        // var pos = lively.findPositionForWindow(worldContext)
         lively.setGlobalPosition(comp.parentElement, pos)
-        // lively.hand.startGrabbing(win, evt)
-
+        
         this.setupComponent(comp)
         comp.parentElement.remove()
 
         return comp.parentElement
       })
-      // return componentLoader.openInWindow(comp).then(() => {
-      //   return comp
-      // })
     } else {
-      return componentLoader.openInBody(comp).then( () => {
-        this.setupComponent(comp)
-        lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
-        // lively.hand.startGrabbing(comp, evt)
-      })
+      this.dragOffset = pt(0,0)
+      this.setupComponent(comp)
+      lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
+      return comp
+      
     }
   }
   
@@ -113,8 +109,9 @@ export default class ComponentBinTile extends Morph {
   }
   
   onDrag(evt) {
+    
     if (this.dragTarget && evt.clientX) {
-      lively.setGlobalPosition(this.dragTarget, pt(evt.clientX - 300, evt.clientY - 10))
+      lively.setGlobalPosition(this.dragTarget, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
     } 
   }
   
@@ -123,7 +120,7 @@ export default class ComponentBinTile extends Morph {
     if (this.dragTargetPromise) {
       var target = await this.dragTargetPromise
       document.body.appendChild(target) 
-      lively.setGlobalPosition(target, pt(evt.clientX - 300, evt.clientY - 10))
+      lively.setGlobalPosition(target, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
      
     }
     

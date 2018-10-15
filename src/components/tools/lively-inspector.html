@@ -1,6 +1,10 @@
 <template id="lively-inspector" data-class="LivelyInspector">
   <style data-src="/templates/livelystyle.css"></style>
   <style>
+  :host {
+    white-space: normal;  
+  }
+  
     #top {
       display: flex;
       flex-direction: column;
@@ -12,6 +16,7 @@
       flex: 0.66;
       margin: 0px;
       overflow: auto;
+      overscroll-behavior: contain;
     }
     #editor {
       flex: 0.33;

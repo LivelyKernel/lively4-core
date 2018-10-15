@@ -1,0 +1,25 @@
+<template id="lively-bibtex" data-class="LivelyBibtex">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  padding: 10px;
+}
+  
+#copyHack {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  left: -10px;
+}
+</style>
+  <input id="copyHack" value=""/>
+<div id="content">
+	<content></content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

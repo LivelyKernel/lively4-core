@@ -1,6 +1,5 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
+import Filter from "src/external/ansi-to-html.js"
 
 export default class Sync extends Morph {
   initialize() {
@@ -26,16 +25,18 @@ export default class Sync extends Morph {
 
   // #TODO into Morph or Tool
   clearLog(s) {
-    var editor= this.get("#log").editor;
-    if (editor) editor.setValue("");
+    this.get("#log").innerHTML = ""
+    // var editor= this.get("#log").editor;
+    // if (editor) editor.setValue("");
   }
 
   log(s) {
-    var editor = this.get("#log").editor;
-    if (editor) {
-      editor.setValue(editor.getValue() + "\n" + s);
-      // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
-    }
+    this.get("#log").innerHTML += s
+    // var editor = this.get("#log").editor;
+    // if (editor) {
+    //   editor.setValue(editor.getValue() + "\n" + s);
+    //   // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
+    // }
   }
 
   async updateLoginStatus() {
@@ -133,7 +134,7 @@ export default class Sync extends Morph {
           if (eachCB) 
             eachCB(eaChunk)
           else
-            this.log("" + eaChunk)
+            this.log(this.linkifyFiles(new Filter().toHtml(eaChunk.replace(/</g,"&lt;"))))
         }, resolve)
     })
   }
@@ -142,20 +143,22 @@ export default class Sync extends Morph {
     this.gitControl("status").then((status) => {
       if (!status.match("AUTO-COMMIT-")) {
         this.sync()
-        lively.notify("sync directly")
+        // lively.notify("sync directly")
       } else {
         if (window.confirm("Contains auto commits. Forgot to squash? Push them anyway? ")) {
           this.sync()
-          lively.notify("sync anyway")
+          // lively.notify("sync anyway")
         } else {
-          lively.notify("sync canceled")
+          // lively.notify("sync canceled")
         }
       }
     })
   }
 
-  sync() {
-    return this.gitControl("sync")  
+  async sync() {
+    await this.gitControl("sync");
+    this.log("invalidate local caches")
+    lively4invalidateFileCaches()
   }
 
   async onLoginButton() {
@@ -176,6 +179,9 @@ export default class Sync extends Morph {
   }
   
   onDiffButton() {
+    this.get("#log").setAttribute('mode', "text/x-diff")
+    // text/x-diff
+    
     this.gitControl("diff")  
   }
 
@@ -297,6 +303,17 @@ export default class Sync extends Morph {
 
   get repositoryBlacklist() {
     return ["lively4-core", "lively4-stable"]
+  }
+  
+  linkifyFiles(htmlString) {
+    return htmlString
+      // .replace(/(<span style="color:#A00">(?:deleted\: *)?)([^<]*)(<\/span>)/g, (m,a,b,c) => 
+      //     `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>${c}`)
+      .replace(/(modified: *)([a-zA-Z-_/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>`)
+      .replace(/((?:\+\+\+\s*b\/)|(?:\-\-\- a\/))([a-zA-Z-_0-9/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="browse://${b}">${b}</a>`)
+// 
   }
   
   async updateContextSensitiveButtons() {

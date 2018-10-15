@@ -1,4 +1,4 @@
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 var resolveCounter  = 0
 cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
@@ -18,7 +18,7 @@ cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
     var newError = function(...args) {
       return onerror(...args)
       // return cop.withLayers(layers, () => onerror.apply(window, args));
-    }; 
+    };
     return cop.proceed(
       onresolve ? newResolve : undefined,
       onerror ? newError : undefined);

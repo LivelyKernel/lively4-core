@@ -150,6 +150,19 @@ export default class Clipboard {
     container.appendChild(div)
     lively.setGlobalPosition(div, this.lastClickPos)
   }
+  
+   static pasteFileInto(fileItem, container) {
+    var blob = fileItem.getAsFile();
+    var reader = new FileReader();
+    reader.onload = (event) => {
+      var img = document.createElement("img")
+      img.src = event.target.result
+      img.classList.add("lively-content")
+      container.appendChild(img)
+      lively.setGlobalPosition(img, this.lastClickPos)
+    }; // data url!
+    reader.readAsDataURL(blob);
+  }
 
   static onPaste(evt) {
     if (!this.lastClickPos) return; // we don't know where to paste it...this.lastClickPos
@@ -159,7 +172,7 @@ export default class Clipboard {
     
     evt.stopPropagation()
     evt.preventDefault(); 
-    
+    lively.notify("paste")
     var data = evt.clipboardData.getData('text/html')
     if (data) {
       this.pasteHTMLDataInto(data, this.lastTarget) 
@@ -177,16 +190,7 @@ export default class Clipboard {
       for (var index in items) {
         var item = items[index];
         if (item.kind === 'file') {
-          var blob = item.getAsFile();
-          var reader = new FileReader();
-          reader.onload = (event) => {
-            var img = document.createElement("img")
-            img.src = event.target.result
-            img.classList.add("lively-content")
-            document.body.appendChild(img)
-            lively.setGlobalPosition(img, this.lastClickPos)
-          }; // data url!
-          reader.readAsDataURL(blob);
+          this.pasteFileInto(item, this.lastTarget) 
         }
       }
       evt.stopPropagation()
@@ -205,22 +209,41 @@ export default class Clipboard {
   static onBodyMouseDown(evt) {
     var target = evt.path[0]
     if (target == document.body.parentElement) target = document.body
-    // lively.notify('down ' + target)
-
+    
     if(target && target.classList) {
       if (target.classList.contains("lively-no-paste")) {
         target = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
       } else {
-        if (evt.path.find(ea => ea.constructor.name == "ShadowRoot")) { // #TODO is there a better test for the shadow root?
-          // lively.notify("shadow")
-          this.lastTarget = null
-          this.lastClickPos = null
-          return // we are in the shadows
+        var container = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+        if (container && !container.isEditing()) {
+          target = container
+          var activeElement = container.shadowRoot.activeElement
+          if (activeElement && 
+              (activeElement.tagName == "INPUT" || activeElement.contentEditable)) {         
+          // the element itself will handle the paste
+            this.lastTarget = null
+            this.lastClickPos = null
+            return 
+          }
+        } else {
+            // this.lastTarget = container
+          // } else {
+          if (evt.path.find(ea => ea.constructor.name == "ShadowRoot")) { // #TODO is there a better test for the shadow root?
+            // lively.notify("shadow")
+            this.lastTarget = null
+            this.lastClickPos = null
+            return // we are in the shadows
+          }                    
         }
+        
       }
       // this.highlight(target)
       lively.globalFocus()
       this.lastTarget = target
+      if (this.lastTarget.livelyTarget) {
+        this.lastTarget = this.lastTarget.livelyTarget()
+        // lively.showElement(this.lastTarget)
+      }
       this.lastClickPos = pt(evt.clientX,evt.clientY)
     }
   }

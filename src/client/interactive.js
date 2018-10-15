@@ -1,11 +1,13 @@
-import * as cop from "src/external/ContextJS/src/contextjs.js";
+import * as cop from "src/client/ContextJS/src/contextjs.js";
 import {pt,rect, Point, Rectangle} from "src/client/graphics.js"
 import Preferences from './preferences.js';
+import select, { trackInstance } from 'active-group';
+import { Knot } from 'src/client/triples/triples.js';
 
-/* Layer for interactive development, that will not be active by default 
+/* Layer for interactive development, that will not be active by default
  *
  * - This API should not be used in other methods...
- * - One could consider it as an internal API-based more EUD-friendly DSL 
+ * - One could consider it as an internal API-based more EUD-friendly DSL
  * - The domain is "interactive" development... using workspace and other such tools
  */
 
@@ -25,32 +27,32 @@ cop.layer(window, "InteractiveLayer")
 })
 .refineClass(Point, {
   $show() {
-    lively.showPoint(this) 
+    lively.showPoint(this)
   }
 })
 .refineClass(Rectangle, {
   $show() {
-    lively.showRect(this.topLeft(), this.extent()) 
+    lively.showRect(this.topLeft(), this.extent())
   }
 })
 .refineClass(HTMLElement, {
   get $pos() {
     return lively.getPosition(this)
   },
-  
+
   set $pos(value) {
     return lively.setPosition(this, value)
   },
-  
+
   get $g_pos() {
     return lively.getGlobalPosition(this)
   },
-  
+
   set $g_pos(value) {
     return lively.setGlobalPosition(this, value)
   },
   $show() {
-    lively.showElement(this) 
+    lively.showElement(this)
   }
 })
 .refineObject(window, {
@@ -67,7 +69,17 @@ cop.layer(window, "InteractiveLayer")
   get cop() {
     return cop
   },
-  
+
+  get select() {
+    return select;
+  },
+  get trackInstance() {
+    return trackInstance;
+  },
+  get Knot() {
+    return Knot;
+  },
+
   get $morph() {
     return name => document.body.querySelector("#" + name)
   },

@@ -1,0 +1,79 @@
+<template id="vivide-tree-widget" data-class="VivideTreeWidget">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/vivide/components/vivide.css"></style>
+<style>
+:host {
+  
+}
+  #content {
+    background-color: gray;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 5px;
+  }
+  
+  li > ul {
+    display: none;
+    margin: 0;
+  }
+  
+  .expander {
+    width: 25px;
+    cursor: pointer;
+    position: absolute;
+    left: 0;
+  }
+  
+  .expanded > ul {
+    display: block;
+    padding-left: 0;
+  }
+  
+  li {
+    padding-left: 25px;
+    position: relative;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -khtml-user-drag: element;
+    -webkit-user-drag: element;
+    user-drag: element;
+  }
+  li {
+    transition: color 0.2s ease-out;
+    transition: background-color 0.2s ease-out;
+    border: 0.5px solid transparent;
+  }
+  li.selected {
+    background-color: #789;
+  }
+  li.last-selected {
+    color: white;
+  }
+  li:hover {
+    background-color: lightblue;
+  }
+  li:focus {
+    box-shadow: inset 0 0 8px #000000;
+  }
+  
+  .small {
+    font-size: 8px;
+    line-height: 16px;
+  }
+  
+  .tooltip {
+    display: none;
+  }
+</style>
+  <ul id="tree">
+  <content></content>
+  </ul>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -1,0 +1,53 @@
+<template id="lively-halo-vivide-combine-item" data-class="LivelyHaloVivideCombineItem">
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  <style data-src="/src/components/halo/lively-halo-item.css"></style>
+  <style data-src="/src/client/vivide/components/vivide.css"></style>
+  <style>
+    :host {
+      background-color: lightblue;
+      box-sizing: border-box;
+      border: 1px blue solid;
+      border-radius: 5px;
+    }
+    span:not(#default-icon) {
+      background-color: lightyellow;
+      box-sizing: border-box;
+      border: 1px burlywood solid;
+      border-radius: 5px;
+    }
+    i {
+      color: darkblue;
+    }
+    
+    #rel-container {
+      display: none;
+    }
+    
+    :host(:hover) #rel-container {
+      display: block;
+    }
+    
+    #rel-container {
+      box-sizing: border-box;
+      position: relative;
+    }
+    #container {
+      position: absolute;
+      top: -1px;
+      left: calc(100% + 1px);
+    }
+  </style>
+  <div id="rel-container">
+    <div id="container" class="align-horizontally">
+      <span data-tooltip="Use Provided Data"><i class="fa fa-database" aria-hidden="true"></i></span>
+      <span data-tooltip="Cross Product On Inputs"><i class="fa fa-times" aria-hidden="true"></i></span>
+      <span data-tooltip="Union On Inputs"><i class="fa fa-list-ol" aria-hidden="true"></i></span>
+    </div>
+  </div>
+  <div>
+    <span id="default-icon" data-tooltip="Inspect Input Model"><i class="fa fa-database" aria-hidden="true"></i></span>
+  </div>
+</template>
+<script class="registrationScript">
+  lively.registerTemplate()
+</script>

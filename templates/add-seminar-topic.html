@@ -1,0 +1,40 @@
+<template id="add-seminar-topic" data-class="AddSeminarTopic">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  background-color: lightgrey;
+  overflow-y: auto
+}
+  #topic-name {
+    width: 100%;
+  }
+</style>
+
+  <input id="topic-name" type="text" placeholder="Topic Name"></input>
+  <lively-code-mirror id="content">Some Description</lively-code-mirror>
+
+<form>
+  <br />
+  <input type="checkbox" id="is-potential-topic"/>
+  <label for="is-potential-topic">Potential Topic</label>
+</form>
+
+<form>
+  Choose Topic Category
+  <br />
+  <input type="radio" id="design-and-implementation" name="category" value="https://lively4/notes/RP18_Category_Design_and_Implementation.md" checked/>
+  <label for="design-and-implementation">Design and Implementation
+</label>
+  <input type="radio" id="tool-support" name="category" value="https://lively4/notes/RP18_Category_Tool_Support.md"/>
+  <label for="tool-support">Tool Support</label>
+  <input type="radio" id="example-application" name="category" value="https://lively4/notes/RP18_Category_Example_Applications.md"/>
+  <label for="example-application">Example Applications</label>
+  <input type="radio" id="bonus" name="category" value="https://lively4/notes/RP18_Category_Bonus.md"/>
+  <label for="bonus">Bonus</label>
+</form>
+<button id="create">Create Topic</button>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -1,6 +1,6 @@
-import {proceed, layer} from "src/external/ContextJS/src/contextjs.js";
-import * as cop  from "src/external/ContextJS/src/contextjs.js";
-import * as Layers  from "src/external/ContextJS/src/Layers.js";
+import {proceed, layer} from "src/client/ContextJS/src/contextjs.js";
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import * as Layers  from "src/client/ContextJS/src/Layers.js";
 import lively from "src/client/lively.js";
 
 
@@ -8,40 +8,37 @@ export default class ScopedScripts {
 
   static load() {
     this.openPromises = []
-    this.documentRoot = lively4url; 
-    this.documentLocation = window.location;   
+    this.documentRoot = lively4url;
+    this.documentLocation = window.location;
   }
-  
+
   static layers(url, optBody) {
     this.documentRoot = url.toString().replace(/[^/]*$/,"");
-    this.documentLocation = new URL(url); 
+    this.documentLocation = new URL(url);
     this.documentBody = optBody || document.body;
     return [this.ImportLayer, this.DocumentLayer, this.LocalLayer, this.PropagateLayerActicationLayer];
-  } 
+  }
 }
 
 /*
  * Captures the layer activation on Promise definition and replays it when resolving the promise
  */
 // #TODO it seems, we cannot layer "then" because it will sometimes result in an maximum stack size exeception
-layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
+layer(window, "PropagateLayerActicationLayer").refineClass(Promise, {
 	then(onresolve, onerror) {
-	  // return cop.proceed(onresolve, onerror)
-
+    // return cop.proceed(onresolve, onerror)
     var layers = Layers.currentLayers();
-    console.log("Promise.then ... ");
-		var newResolve = function(){
-		
-		    var args = arguments;
-		    console.log("replay layers..." + layers);
-		    return cop.withLayers(layers, () => onresolve.apply(window, args));
-		  };
+    // console.log("Promise.then ... ");
+		var newResolve = function() {
+      var args = arguments;
+      // console.log("replay layers..." + layers);
+      return cop.withLayers(layers, () => onresolve.apply(window, args));
+		};
 		var newError = function() {
-		    var args = arguments;
-		    return cop.withLayers(layers, () => onerror.apply(window, args));
-		}; 
-		return cop.proceed(onresolve ? newResolve : undefined,
-		  onerror ? newError : undefined);
+      var args = arguments;
+      return cop.withLayers(layers, () => onerror.apply(window, args));
+		};
+		return cop.proceed(onresolve ? newResolve : undefined, onerror ? newError : undefined);
 	}
 }).refineObject(lively, {
   loadJavaScriptThroughDOM(name, url, force) {
@@ -60,13 +57,13 @@ layer(ScopedScripts, "PropagateLayerActicationLayer").refineClass(Promise, {
       globalLayers.forEach( ea => ea.beNotGlobal());
       return error;
     });
-  }  
+  }
 });
 
 
-layer(ScopedScripts, "ImportLayer").refineObject(System, {
+layer(window, "ImportLayer").refineObject(System, {
 	import(name, parentName, parentAddress) {
-	  // console.log("System.import " + name +', ' + parentName + ", " + parentAddress)
+    // console.log("System.import " + name +', ' + parentName + ", " + parentAddress)
 		name = name.replace(/^.\//, ScopedScripts.documentRoot);
 		// lively.notify("import "+ name + ", " + parentName +","+ parentAddress)
 		return cop.proceed(name, parentName, parentAddress);
@@ -75,21 +72,21 @@ layer(ScopedScripts, "ImportLayer").refineObject(System, {
 
 layer(ScopedScripts, "LocalLayer").refineObject(lively, {
 	get location() {
-	  // lively.notify("get location");
+    // lively.notify("get location");
 		return new URL(ScopedScripts.documentLocation);
 	},
 	set location(url) {
-	  // lively.notify("get location");
+    // lively.notify("get location");
 		return cop.proceed(url)
 	}
 });
 
 
-layer(ScopedScripts, "DocumentLayer").refineObject(document, {
+layer(window, "DocumentLayer").refineObject(document, {
   get body() {
     return ScopedScripts.documentBody
   },
-  
+
 	write(a) {
     console.log("document.write " + a);
     // console.log("BEGIN")
@@ -104,17 +101,17 @@ layer(ScopedScripts, "DocumentLayer").refineObject(document, {
           if (!src.match(/^(https?\:\/\/)|(\/\/)/) )
             src = src.replace(/^/, ScopedScripts.documentRoot);
           s.src = src
-          
-		      console.log("old src... ", ea)
+
+          console.log("old src... ", ea)
           // s.async = false;
-          ea = s;        
+          ea = s;
           ea.addEventListener("load", () => {
-            resolve();          
+            resolve();
           });
           ea.addEventListener("error", () => {
-            reject();          
+            reject();
           });
-        } 
+        }
       });
       ScopedScripts.openPromises.push(myPromise);
       ScopedScripts.documentBody.appendChild(ea); // #TODO instanctiate layers

@@ -1,0 +1,121 @@
+<template id="lively-ast-explorer" data-class="LivelyAstExplorer">
+<style data-src="/templates/livelystyle.css"></style>
+  <style>
+  :host {
+    width: 50px;
+    height: 25px;
+    
+    display: flex;
+    flex-direction: column;
+  }
+ 
+  .layout-column {
+    display: flex;
+    flex-direction: column;
+  }
+  .layout-row {
+    display: flex;
+    flex-direction: row;
+  }
+
+  #outputPane, #astPane, #resultPane {
+     border-left: 2px gray solid;
+  }
+  
+  #firstRow, #secondRow {
+    border: 1px gray solid;
+    flex: 0.5;
+  }
+  
+  #sourcePane {
+    flex: 0.33;
+    overflow: hidden;
+  }
+  
+  #outputPane {
+    flex: 0.33;
+		overflow: hidden
+  }
+  
+  #astPane {
+    flex: 0.33;
+  }
+  
+  #pluginPane {
+    flex: 0.66;
+    overflow: hidden;
+  }
+  
+  #resultPane {
+    flex: 0.33;
+  }
+
+  lively-code-mirror {
+    flex: 1;
+  }
+    
+  lively-editor {
+    flex: 1;
+  }
+  
+  lively-inspector {
+    flex: 1;
+    height: 100%;
+  }
+  
+  #resultPane pre {
+    flex: 1;
+    margin-left: 15px
+  }
+  #resultPane {
+    overflow: auto;
+  }
+    
+  #plugin, #source, #output {
+    width: 100%;
+    height: calc(100% - 30px);
+  }
+  #plugin-url, #source-url {
+    width: -webkit-fill-available;
+  }
+  </style>
+<div id="firstRow" class="layout-row">
+  <div id="sourcePane">
+    <div>
+      Source <input id="source-url" type="text" placeholder="source url" />
+    </div>
+    <lively-code-mirror id="source"></lively-code-mirror>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="astPane" class="layout-column">
+    <lively-inspector id="astInspector" type="ast"></lively-inspector>
+  </div>
+  
+  <lively-separator></lively-separator>
+  <div id="outputPane" class="layout-column">
+    <span  id="eval">
+      Output
+      <input type="checkbox" id="live" title="continous eval" checked/>
+      <label for="live">run</label>
+    </span>
+    <lively-code-mirror id="output"></lively-code-mirror>
+  </div>   
+</div>
+<lively-separator></lively-separator>
+<div id="secondRow" class="layout-row">
+  <div id="pluginPane">
+    <div>Plugin</div>
+    <div>
+      <input id="plugin-url" type="text" placeholder="plugin url" />
+    </div>
+    <lively-code-mirror id="plugin"></lively-code-mirror>
+  </div>
+  <lively-separator ></lively-separator>
+  <div id="resultPane" class="layout-column">
+    <div>Result</div>
+    <pre id="result"></pre>
+  </div>
+</div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
