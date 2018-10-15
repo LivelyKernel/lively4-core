@@ -139,6 +139,14 @@ export default class FileIndex {
     }
   }
 
+  async updateFile(url) {
+    console.log("FileCache updateFile " + url)
+    var stats = await fetch(url, {
+      method: "OPTIONS"
+    }).then(r => r.json())
+    this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+  }
+  
   async addFile(url, name, type, size, modified) {
     
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -319,7 +327,7 @@ export default class FileIndex {
   }
 }
 
-cop.layer(window, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
+cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
   async modify(func) {
     var i = 0
     var total = await this.count()
