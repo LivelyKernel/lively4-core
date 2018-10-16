@@ -30,40 +30,19 @@ export default class Editor extends Morph {
     editor.setAttribute("overscroll", "contain")
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
+        
     
+    editor.doSave = text => {
+      this.saveFile(); // CTRL+S does not come through...    
+    };
     
-//     var loaded = false
-//     editor.addEventListener("editor-loaded", () => {
-//       if (loaded) return;//
-//       loaded = true;
-      
-//       console.log("with EDITOR")
-//       editor.editor.on("dragstart",function(editor,e) {
-//           console.log('dragstart')
-//       });
-//       editor.editor.on("dragenter",function(editor,e) {
-//           console.log('dragenter')
-//       });
-//       editor.editor.on("dragover",function(editor,e) {
-//           console.log('dragover')
-//       });
-//       editor.editor.on("drop",function(editor,e) { 
-//         debugger
-//           console.log('drop')
-//       });
-
-       
-    // })
     
     this.addEventListener("drop", evt => {
       this.onDrop(evt)
     })       
     
-    // this.addEventListener("drop",  evt => this.onDrop(evt));
-
     this.get("lively-version-control").editor = editor
 
-    // container.appendChild(editor)
     this.registerButtons();
     var input = this.get("#filename");
     
@@ -105,7 +84,8 @@ export default class Editor extends Morph {
   
   updateOtherEditors() {
     var url = this.getURL().toString();
-    var editors = Array.from(document.querySelectorAll("lively-container::shadow lively-editor, lively-editor"));
+    var editors = Array.from(document.querySelectorAll(
+      "lively-index-search::shadow lively-editor, lively-container::shadow lively-editor, lively-editor"));
 
     var editorsToUpdate = editors.filter( ea => 
       ea.getURLString() == url && !ea.textChanged && ea !== this);
@@ -176,18 +156,18 @@ export default class Editor extends Morph {
   setText(text, preserveView) {
     text = text.replace(/\r\n/g, "\n") // code mirror changes it anyway
     this.lastText = text;
-    var editor = this.currentEditor();
+    var codeMirror = this.currentEditor();
     var cur = this.getCursor()
     var scroll = this.getScrollInfo()
     
-    if (editor) {
+    if (codeMirror) {
       if (!this.isCodeMirror()) {
           var oldRange = this.currentEditor().selection.getRange()
       }
 
       this.updateChangeIndicator();
-      editor.setValue(text);
-      if (editor.resize) editor.resize();
+      codeMirror.setValue(text);
+      if (codeMirror.resize) codeMirror.resize();
       this.updateAceMode();
     } else {
       // Code Mirror
@@ -211,12 +191,12 @@ export default class Editor extends Morph {
     }
   }
 
-  loadFile(version) {
+  async loadFile(version) {
     var url = this.getURL();
     console.log("load " + url);
     this.updateAceMode();
 
-    fetch(url, {
+    return fetch(url, {
       headers: {
         fileversion: version
       }
@@ -226,11 +206,10 @@ export default class Editor extends Morph {
       // lively.notify("loaded version " + this.lastVersion);
       return response.text();
     }).then((text) => {
-       this.setText(text, true); 
-      },
-      (err) => {
+       return this.setText(text, true); 
+    }, (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
-      });
+    });
   }
 
   
@@ -316,6 +295,10 @@ export default class Editor extends Morph {
     }
   }
 
+  showToolbar() {
+    this.getSubmorph("#toolbar").style.display = "";
+  }
+  
   hideToolbar() {
     this.getSubmorph("#toolbar").style.display = "none";
   }
@@ -342,7 +325,7 @@ export default class Editor extends Morph {
             
       this.versionControl.querySelector("#versions").showVersions(this.getURL());
       lively.setGlobalPosition(this.versionControl, 
-      	lively.getGlobalPosition(this).addPt(pt(lively.getExtent(this.parentElement).x,0)));
+        lively.getGlobalPosition(this).addPt(pt(lively.getExtent(this.parentElement).x,0)));
       // we use "parentElement" because the extent of lively-editor is broken #TODO
       lively.setExtent(this.versionControl, pt(400, 500))
       this.versionControl.style.zIndex = 10000;

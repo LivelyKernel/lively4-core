@@ -1,6 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-
 // import lively from 'src/client/lively.js';
 
 import FileIndex from "src/client/fileindex.js"
@@ -10,6 +9,9 @@ export default class IndexSearch extends Morph {
   initialize() {
     this.windowTitle = "File Search";
     this.registerButtons();
+    this.get("lively-separator").toggleCollapse()
+    // this.get("lively-editor").hideToolbar();
+    
     lively.html.registerInputs(this);
     
 
@@ -39,11 +41,26 @@ export default class IndexSearch extends Morph {
     this.get("#searchResults").innerHTML="";
   }
 
-  showSearchResult(url, pattern) {
+  async showSearchResult(url, lineAndColumn) {
     var editor =  this.get("#editor")
-    editor.hideToolbar();
+    
+    // unhide editor, when it is needed
+    if (editor.style.flexGrow < 0.01) { // #Hack
+      this.get("lively-separator").toggleCollapse()    
+    }
+    
     editor.setURL(url)
-    editor.loadFile()
+    await editor.loadFile()
+    
+    var codeMirror = await editor.awaitEditor()
+    codeMirror.setSelection(
+      {line: lineAndColumn.line, ch: lineAndColumn.column},
+      {line: lineAndColumn.line, ch: lineAndColumn.column + 
+        (lineAndColumn.selection ? + lineAndColumn.selection.length : 0)})
+    codeMirror.focus()
+    codeMirror.scrollIntoView(codeMirror.getCursor(), 200)
+    
+    
   }
 
   browseSearchResult(url, pattern) {
@@ -140,8 +157,9 @@ export default class IndexSearch extends Morph {
     var search = new RegExp(pattern)
     var result = []
     var searchTime = await lively.time(async () => {
+      var root = lively4url; // there are other files in our cache... too 
       return FileIndex.current().db.files.each(file => {
-        if (file.content) {
+        if (file.url.startsWith(root) && file.content) {
           var m = file.content.match(search)
           if (m) {
             result.push({file: file, match: m})
