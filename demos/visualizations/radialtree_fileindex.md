@@ -1,13 +1,11 @@
-# TreeMap FileIndex Modification Time
-
-
+# Radial Tree FileIndex Modification Time
 
 <script>
 // import FileIndex = await System.import("src/client/fileindex.js")
 import FileIndex from "src/client/fileindex.js"
 import files from "src/client/files.js"
 import moment from "src/external/moment.js";
-
+import d3 from "src/external/d3.v5.js"
 
 (async () => {
   var now = Date.now()
@@ -36,17 +34,16 @@ import moment from "src/external/moment.js";
   div.style.width = "800px"
   div.style.height = "800px"
   
-  var treemap = await lively.create("lively-d3-treemap")
+  var treemap = await lively.create("lively-d3-radialtree")
   treemap.setTreeData(tree)
-  var d3 = treemap.d3
-    
-  div.appendChild(treemap)
-
+  treemap.style.backgroundColor = "lightgray"
+  
   // positioning hack.... we make our coordinate system much easier by this
   lively.setPosition(treemap, lively.pt(0,0))
   treemap.style.width = "100%"
   treemap.style.height = "100%"
   
+  div.appendChild(treemap)
 
 
   var maxSize = 0
@@ -62,13 +59,20 @@ import moment from "src/external/moment.js";
 
   var color = d3.scaleLinear().domain([0,365 / 2 ])
         .interpolate(d3.interpolateHcl)
-        .range([d3.rgb("#FFFFFF"), d3.rgb('#9A9A9A')]);
+        .range([d3.rgb("#FF7777"), d3.rgb('#9A9A9A')]);
 
-
+  treemap.dataSize = function(d) {
+    
+    // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
+    if (d.data && d.data.index && d.data.index.size) {
+      return (Number(d.data.index.size) * 0.001) + 5
+    }
+    return 5
+  }
 
   treemap.dataColor = function(d) {
     // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
-    if (d.data.index) {
+    if (d.data && d.data.index) {
       var time = moment(d.data.index.modified)
       var days = (now - time._d.getTime()) / 1000 / 60 / 60 / 24
 
@@ -76,18 +80,16 @@ import moment from "src/external/moment.js";
     }
   }
   
-  treemap.dataClick = function(d) {
-    lively.openInspector(d)
+  treemap.dataClick = function(d, evt) {
+    if (evt.shiftKey) {
+      lively.openInspector(d)
     
-    // if (d.data && d.data.url) {
-    //   lively.openBrowser(d.data.url)
-    // }
+    } else {
+      lively.openBrowser(d.data.url)
+    }
   }
 
-  
-  
   treemap.updateViz()
-
 
   return div
 })()

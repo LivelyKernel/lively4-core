@@ -1,4 +1,4 @@
-# TreeMap FileIndex Modification Time
+# Tree FileIndex Modification Time
 
 
 
@@ -7,7 +7,7 @@
 import FileIndex from "src/client/fileindex.js"
 import files from "src/client/files.js"
 import moment from "src/external/moment.js";
-
+import d3 from "src/external/d3.v5.js"
 
 (async () => {
   var now = Date.now()
@@ -36,17 +36,16 @@ import moment from "src/external/moment.js";
   div.style.width = "800px"
   div.style.height = "800px"
   
-  var treemap = await lively.create("lively-d3-treemap")
+  var treemap = await lively.create("lively-d3-tree")
   treemap.setTreeData(tree)
-  var d3 = treemap.d3
-    
-  div.appendChild(treemap)
-
+  treemap.style.backgroundColor = "lightgray"
+  
   // positioning hack.... we make our coordinate system much easier by this
   lively.setPosition(treemap, lively.pt(0,0))
   treemap.style.width = "100%"
   treemap.style.height = "100%"
   
+  div.appendChild(treemap)
 
 
   var maxSize = 0
