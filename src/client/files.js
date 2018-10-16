@@ -317,9 +317,11 @@ export default class Files {
     for(var ea of list) {
       if (ea.name !== ".") {
         var path = ea.name.replace(/^\.\//,"").replace(/[^/]*$/,"").split("/").filter(ea => ea)
+        var absolute = ea.name.replace(/^\.\//, url)
         var element = {
             name: ea.name.replace(/.*\//,""),
             modified: ea.modified,
+            url: absolute,
             size: ea.size,
             type: ea.type
           }

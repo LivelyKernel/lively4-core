@@ -100,6 +100,7 @@ export default class LivelyD3Treemap extends Morph {
           // opacity: 0.3;
           // stroke: white;
         })
+        .on("click", (d) => {if(this.dataClick) this.dataClick(d)});
     
     cell.classed('small', d => (d.y1 - d.y0) < 20);
 
