@@ -155,10 +155,10 @@ class ServiceWorker {
         };
 
         if (pending) {
-          console.log("SWX resolve pending " + url)
+          // console.log("SWX resolve pending " + url)
           pending.resolve(doNetworkRequest());
         } else {
-          console.log("SWX respond normal " + url)
+          // console.log("SWX respond normal " + url)
           // Use the cache if possible
           event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
         }
