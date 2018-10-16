@@ -1,23 +1,30 @@
 # Lively4 Demo / Workflows
 
 
-- object composition
+## Object Composition
   - drag out rectangle
   - open object editor
   - add method
   - run method
   - clone object
-- content creation
+
+## Content Creation
   - context menu
   - direct (graffle-like) way shape, rectangle, freehand
+
+## Code Execution
 - run snippet from journal (treemap)
 - modify treemap (change color scheme)
   - explain lively-migrate -> updateViz
   - explain attribures and children of HTML Elements 
   - explain shadow root
   - show web-component in inspector and chrome tools
+
+## Web Components
 - create new web component 
   - explain template hooks
+
+## JavaScript Features
 - workspace
   - async fetch
   - do it, print it, inspect it
