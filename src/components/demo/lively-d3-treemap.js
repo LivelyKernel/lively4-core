@@ -34,7 +34,8 @@ export default class LivelyD3Treemap extends Morph {
     this.updateViz()
   }
   
-  async initialize() {   
+  async initialize() {  
+    this.d3 = d3 // for scripting...
     this.updateViz()
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
     // window.d3 = d3
@@ -87,10 +88,15 @@ export default class LivelyD3Treemap extends Morph {
         .attr("width", d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
         .attr("fill", d => {
-          if(this.dataColor) return this.dataColor(d.data);
+          if(this.dataColor) return this.dataColor(d);
           if(d.parent) return color(d.parent.data.id)
           return 'lightgrey';
           // fill: cadetblue;
+          // opacity: 0.3;
+          // stroke: white;
+        })
+        .attr("stroke", d => {
+          return 'gray';
           // opacity: 0.3;
           // stroke: white;
         })

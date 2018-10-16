@@ -2,7 +2,7 @@
 
 ### File TreeMap
 
-- [journal entry](./doc/journal/2018-04-17.md)
+- [journal entry](browse://doc/journal/2018-04-17.md)
 
 ```javascript
 lively.files.visualizeFileTreeMap(lively4url)
