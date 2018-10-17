@@ -174,6 +174,10 @@ export default class Separator extends Morph {
    
    
   onClick() {
+    this.toggleCollapse()  
+  }
+  
+  toggleCollapse() {
     var prev = this.getPreviousElement()
     var next = this.getNextElement()
     
@@ -187,13 +191,17 @@ export default class Separator extends Morph {
     } else {
       this.lastPrevLength = this.getLength(prev);
       this.lastNextLength = this.getLength(next);
-      this.setLength(prev, 0)
-      this.setLength(next, this.lastPrevLength + this.lastNextLength)
+      if (this.getAttribute('reverse')) {
+        this.setLength(prev, this.lastPrevLength + this.lastNextLength)
+        this.setLength(next, 0)                
+      } else {
+        this.setLength(prev, 0)
+        this.setLength(next, this.lastPrevLength + this.lastNextLength)        
+      }
     }
   }
   
-  
-  
+
   onDrag(evt) {
     if (!evt.clientX) return
     this.count++ 
@@ -230,12 +238,13 @@ export default class Separator extends Morph {
   
   onDragEnd(evt) {
     // Do nothing...
-	  evt.stopPropagation();
+    evt.stopPropagation();
   }
 
 
   // replace yourself with an example showing yourself working in context
   livelyExample() {
+    this.setAttribute('reverse', "true")
     var a = document.createElement("div")
     a.id = "red"
     a.style.backgroundColor = "red"

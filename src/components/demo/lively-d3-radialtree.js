@@ -87,12 +87,15 @@ export default class LivelyD3RadialRree extends Morph {
       .data(root.descendants())
       .enter().append("g")
         .attr("class", d  => "node" + (d.children ? " node--internal" : " node--leaf"))
-        .attr("fill", d => this.dataColor ? this.dataColor(d.data) : undefined)
+        .attr("fill", d => this.dataColor ? this.dataColor(d) : undefined)
         .attr("transform", d => "translate(" + radialPoint(d.x, d.y) + ")")
         
         
     node.append("circle")
-        .attr("r", d => this.dataSize ? this.dataSize(d.data) : 2.5)
+        .attr("r", d => this.dataSize ? this.dataSize(d) : 2.5)
+        .on("click", (d) => {
+          if(this.dataClick) this.dataClick(d, d3.event)
+        });
 
     node.append("text")
         .attr("dy", "0.31em")
@@ -109,13 +112,13 @@ export default class LivelyD3RadialRree extends Morph {
   
   async livelyExample() {
     
-    scriptManager.addScript(this, function(data) { return Math.sqrt(data.size) * 0.1 }, {name: "dataSize"});    
-    scriptManager.addScript(this, function(data) { 
+    scriptManager.addScript(this, function(d) { return Math.sqrt(d.data.size) * 0.1 }, {name: "dataSize"});    
+    scriptManager.addScript(this, function(d) { 
       if (this.colorScale) {
         
       }
       this.colorScale = this.d3.scaleSequential(d3.interpolatePiYG)
-      return this.colorScale(data.size * 0.0001) 
+      return this.colorScale(d.data.size * 0.0001) 
     }, {name: "dataColor"});
     
     scriptManager.addScript(this, (d) => {

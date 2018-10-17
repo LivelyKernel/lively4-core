@@ -58,10 +58,17 @@
     }
     
     #searchContainer {
-      flex: 1;
+      flex: 0.5;
       overflow: auto; 
     }
-    
+  
+
+    #editor {
+      flex: 0.5;
+      overflow: scroll;
+    }
+
+      
     #searchResults  {
       width: 800px;
       margin-left: 10px;
@@ -115,7 +122,12 @@
         <div id="searchContainer">
           <table id="searchResults"></table>  
         </div>
+        <lively-separator reverse="true"></lively-separator>
+        <lively-editor id="editor"></lively-editor>
+        
+        </div>
     </div>
+
 </template>
 
 <script class="registrationScript">lively.registerTemplate()</script>
