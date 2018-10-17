@@ -1,6 +1,9 @@
 # ![Lively 4](https://lively-kernel.org/lively4/lively4-jens/media/lively4_logo_smooth_100.png)
 
+
 A Self-supporting, Web-based Development Environment
+
+
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
