@@ -1,13 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
-
 import d3 from 'src/external/d3.v3.js';
-
-
-
-
-
-
 
 export function isLeaf(d) { return !d.children || d.children.length === 0; }
 
@@ -19,6 +11,8 @@ const COLOR_NODE_descendant = '#dfd89d';
 const COLOR_NODE_ancestor = '#efe8ad';
 const COLOR_NODE_target = '#d62728';
 const COLOR_NODE_source = '#2ca02c';
+
+const DEFAULT_IDENTIFIER = 'default';
 
 var bundleviewCount = 0;
 
@@ -42,6 +36,7 @@ export function randomLeaf(root) {
 export class Bundleview {
     static get zoomTransitionTime() { return 1000; }
     static get sizeMetricTransitionTime() { return 1500; }
+    
     preprocessData(root, links) {
         this.nodesByID = new Map();
         walkTree(root, node => {
@@ -54,190 +49,196 @@ export class Bundleview {
         return [root, links];
     }
   
-    constructor(input, rootContainer) {
-        var bundleviewID = bundleviewCount++;
-        // Declarations
-        var innerRadius = 0.65,
-            bundleTension = 0.85;
+    getSizeMetricsFor(root) {
+      var leaf = randomLeaf(root);
+      var metrics = { [DEFAULT_IDENTIFIER]: () => 1 };
+      Object.keys(leaf.attributes).forEach(attributeName => {
+          if(Number.isFinite(leaf.attributes[attributeName])) {
+              metrics[attributeName] = d => d.attributes[attributeName];
+              walkTree(root, node => {
+                  if(!isLeaf(node)) { return; }
+              });
+          }
+      });
+      return metrics;
+    }
+  
+    constructor(input, rootContainer, component) {
+      this.component = component
+      
+      
+      var bundleviewID = bundleviewCount++;
+      // Declarations
+      var innerRadius = 0.65,
+          bundleTension = 0.85;
 
-        // Stuff that does something
+      // Stuff that does something
 
-        var [root, links] = this.preprocessData(input.nodes, input.relations);
-        console.log('init bundleview with', root, links);
+      var [root, links] = this.preprocessData(input.nodes, input.relations);
+      console.log('init bundleview with', root, links);
 
-        var width = 700,
-            height = 600,
-            radius = Math.min(width, height) / 2;
-        //var color = d3.scale.category20c();
+      var width = 700,
+          height = 600,
+          radius = Math.min(width, height) / 2;
+      //var color = d3.scale.category20c();
 
       rootContainer = d3.select(rootContainer);
-        var realSVG = rootContainer.append("svg");
+      
+      var realSVG = rootContainer.append("svg");
 
-        // gradient as reference for hierarchical edge bundles
-        var defs = realSVG.append('defs');
-        var gradient = defs.append('linearGradient')
-            .attr("id", 'bundleview-gradient');
-        gradient.append('stop').attr('stop-color', '#2ca02c');
-        gradient.append('stop')
-            .attr('stop-color', '#d62728')
-            .attr('offset', '100%');
+      // gradient as reference for hierarchical edge bundles
+      var defs = realSVG.append('defs');
+      var gradient = defs.append('linearGradient')
+          .attr("id", 'bundleview-gradient');
+      gradient.append('stop').attr('stop-color', '#2ca02c');
+      gradient.append('stop')
+          .attr('stop-color', '#d62728')
+          .attr('offset', '100%');
 
-        var svg = realSVG
-            .attr("width", width)
-            .attr("height", height)
-            .append("g")
-            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+      var svg = realSVG
+          .attr("width", width)
+          .attr("height", height)
+          .append("g")
+          .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
-        const DEFAULT_IDENTIFIER = 'default';
 
-        function getSizeMetricsFor(node) {
-            var leaf = randomLeaf(node);
-            var metrics = { [DEFAULT_IDENTIFIER]: () => 1 };
-            Object.keys(leaf.attributes).forEach(attributeName => {
-                if(Number.isFinite(leaf.attributes[attributeName])) {
-                    metrics[attributeName] = d => d.attributes[attributeName];
-                    walkTree(root, node => {
-                        if(!isLeaf(node)) { return; }
-                    });
+      
+
+      var sizeMetrics = this.getSizeMetricsFor(root);
+      let currentSizeMetric = sizeMetrics[DEFAULT_IDENTIFIER];
+
+      function sizeMetricChanged(value) {
+          currentSizeMetric = value;
+          var newlyLayoutedData = partition.value(value).nodes;
+          path
+              .data(newlyLayoutedData)
+              .transition()
+              .duration(Bundleview.sizeMetricTransitionTime)
+              .attrTween("d", arcTween)
+              .call(colorStyleTween, "fill", n => styleNodeWith(n, lockedNode, currentColorMetric));
+
+          hiddenLineSegment
+              .data(newlyLayoutedData)
+              .transition()
+              .duration(Bundleview.sizeMetricTransitionTime)
+              .attrTween("d", hiddenArcTween);
+
+          link
+              .transition()
+              .duration(Bundleview.sizeMetricTransitionTime)
+              .attrTween("d", lineTween);
+      }
+      this.sizeMetricChanged = sizeMetricChanged;
+
+      let sizeMetricSelection = rootContainer.append("form");
+      sizeMetricSelection
+          .html('Size Metric: ');
+      sizeMetricSelection.selectAll('label')
+          .html('Metrics')
+          .data(Object.keys(sizeMetrics))
+          .enter()
+          .append('label')
+          .html(d => d)
+          .append('input')
+          .attr("type", 'radio')
+          .attr('name', 'mode')
+          .attr('value', d => d)
+          .property('checked', (d, i) => d === DEFAULT_IDENTIFIER)
+          .on('change', function() {
+              sizeMetricChanged(sizeMetrics[this.value]);
+          });
+
+      function getColorMetricsFor(node) {
+        var leaf = randomLeaf(node);
+        var metrics = { [DEFAULT_IDENTIFIER]: d => isLeaf(d) ?
+            DEFAULT_COLOR_LEAF_NODE :
+            DEFAULT_COLOR_DIRECTORY
+        };
+      
+        Object.keys(leaf.attributes).forEach(attributeName => {
+          var useLinearColorScale = Number.isFinite(leaf.attributes[attributeName]);
+          if(useLinearColorScale) {
+            let maxValue = Number.NEGATIVE_INFINITY,
+                minValue = Number.POSITIVE_INFINITY;
+            walkTree(root, node => {
+                if(isLeaf(node)) {
+                    maxValue = Math.max(maxValue, node.attributes[attributeName]);
+                    minValue = Math.min(minValue, node.attributes[attributeName]);
                 }
             });
-            return metrics;
-        }
 
-        var sizeMetrics = getSizeMetricsFor(root);
-        let currentSizeMetric = sizeMetrics[DEFAULT_IDENTIFIER];
+            let linearColorScale = d3.scale.linear()
+                .domain([minValue, (minValue + maxValue) / 2, maxValue])
+                .range(["red", "white", "green"])
+                .range(["#001e5e", "#f56f72", "#fffef5"]) // darkblue to yellow
+                .interpolate(d3.interpolateLab);
 
-        function sizeMetricChanged(value) {
-            currentSizeMetric = value;
-            var newlyLayoutedData = partition.value(value).nodes;
-            path
-                .data(newlyLayoutedData)
-                .transition()
-                .duration(Bundleview.sizeMetricTransitionTime)
-                .attrTween("d", arcTween)
-                .call(colorStyleTween, "fill", n => styleNodeWith(n, lockedNode, currentColorMetric));
+            let violetToYellowColors = [ // pale violet over blue and green to yellow
+                "#6F3E4F","#74455B","#764D67","#785573","#775E7F","#74678A",
+                "#707194","#6A7B9E","#6385A6","#5A8FAC","#5098B1","#47A2B4",
+                "#3EACB5","#3AB5B4","#3BBEB2","#42C7AD","#4FCFA8","#60D7A1",
+                "#72DE99","#87E591","#9CEB89","#B3F180","#CBF579","#E3FA73"
+            ];
+            let violetToYellowDomain = violetToYellowColors.map((color, index) =>
+                minValue + (maxValue - minValue) * index/(violetToYellowColors.length-1)
+            );
 
-            hiddenLineSegment
-                .data(newlyLayoutedData)
-                .transition()
-                .duration(Bundleview.sizeMetricTransitionTime)
-                .attrTween("d", hiddenArcTween);
+            linearColorScale = d3.scale.linear()
+                .domain(violetToYellowDomain)
+                .range(violetToYellowColors)
+                .interpolate(d3.interpolateHcl);
 
-            link
-                .transition()
-                .duration(Bundleview.sizeMetricTransitionTime)
-                .attrTween("d", lineTween);
-        }
-        this.sizeMetricChanged = sizeMetricChanged;
+            linearColorScale = d3.scale.linear()
+                .domain([minValue, maxValue])
+                .range(["#ff7637", "#00a238"])
+                .range(["#ffffe5", "#0073a5"])
+                .range(["#0042a1", "#fffef5"]) // darkblue to yellow
+                .range(["#3a2265", "#ffffd3"]) // darkblue to yellow v2
+                .range(["#005083", "#ffffe3"]) // greenish blue to yellow
+                //.range(["#800026", "#ffffcc"]) // red to yellow
+                //.range(["#ffe48e", "#b60026"]) // yellow to red (higher saturation)
+                //.range(["#533F57", "#E7FC74"]) // dark violet to yellow
+                .interpolate(d3.interpolateHcl);
 
-        let sizeMetricSelection = rootContainer.append("form");
-        sizeMetricSelection
-            .html('Size Metric: ');
-        sizeMetricSelection.selectAll('label')
-            .html('Metrics')
-            .data(Object.keys(sizeMetrics))
-            .enter()
-            .append('label')
-            .html(d => d)
-            .append('input')
-            .attr("type", 'radio')
-            .attr('name', 'mode')
-            .attr('value', d => d)
-            .property('checked', (d, i) => d === DEFAULT_IDENTIFIER)
-            .on('change', function() {
-                sizeMetricChanged(sizeMetrics[this.value]);
-            });
-
-        function getColorMetricsFor(node) {
-            var leaf = randomLeaf(node);
-            var metrics = { [DEFAULT_IDENTIFIER]: d => isLeaf(d) ?
-                DEFAULT_COLOR_LEAF_NODE :
-                DEFAULT_COLOR_DIRECTORY
+            metrics[attributeName] = d => {
+                if(isLeaf(d)) {
+                    return linearColorScale(d.attributes[attributeName])
+                }
+                function accumulateSize(n) {
+                    if(isLeaf(n)) {
+                        return currentSizeMetric(n);
+                    }
+                    return n.children.reduce((acc, child) => acc + accumulateSize(child), 0);
+                }
+                function accumulateColor(n) {
+                    if(isLeaf(n)) {
+                        return n.attributes[attributeName];
+                    }
+                    var sizeSum = accumulateSize(n);
+                    return n.children.reduce((acc, child) => {
+                        return acc + accumulateColor(child) * accumulateSize(child)
+                    }, 0) / sizeSum;
+                }
+                return linearColorScale(accumulateColor(d));
             };
-            Object.keys(leaf.attributes).forEach(attributeName => {
-                var useLinearColorScale = Number.isFinite(leaf.attributes[attributeName]);
-                if(useLinearColorScale) {
-                    let maxValue = Number.NEGATIVE_INFINITY,
-                        minValue = Number.POSITIVE_INFINITY;
-                    walkTree(root, node => {
-                        if(isLeaf(node)) {
-                            maxValue = Math.max(maxValue, node.attributes[attributeName]);
-                            minValue = Math.min(minValue, node.attributes[attributeName]);
-                        }
-                    });
-
-                    let linearColorScale = d3.scale.linear()
-                        .domain([minValue, (minValue + maxValue) / 2, maxValue])
-                        .range(["red", "white", "green"])
-                        .range(["#001e5e", "#f56f72", "#fffef5"]) // darkblue to yellow
-                        .interpolate(d3.interpolateLab);
-
-                    let violetToYellowColors = [ // pale violet over blue and green to yellow
-                        "#6F3E4F","#74455B","#764D67","#785573","#775E7F","#74678A",
-                        "#707194","#6A7B9E","#6385A6","#5A8FAC","#5098B1","#47A2B4",
-                        "#3EACB5","#3AB5B4","#3BBEB2","#42C7AD","#4FCFA8","#60D7A1",
-                        "#72DE99","#87E591","#9CEB89","#B3F180","#CBF579","#E3FA73"
-                    ];
-                    let violetToYellowDomain = violetToYellowColors.map((color, index) =>
-                        minValue + (maxValue - minValue) * index/(violetToYellowColors.length-1)
-                    );
-
-                    linearColorScale = d3.scale.linear()
-                        .domain(violetToYellowDomain)
-                        .range(violetToYellowColors)
-                        .interpolate(d3.interpolateHcl);
-
-                    linearColorScale = d3.scale.linear()
-                        .domain([minValue, maxValue])
-                        .range(["#ff7637", "#00a238"])
-                        .range(["#ffffe5", "#0073a5"])
-                        .range(["#0042a1", "#fffef5"]) // darkblue to yellow
-                        .range(["#3a2265", "#ffffd3"]) // darkblue to yellow v2
-                        .range(["#005083", "#ffffe3"]) // greenish blue to yellow
-                        //.range(["#800026", "#ffffcc"]) // red to yellow
-                        //.range(["#ffe48e", "#b60026"]) // yellow to red (higher saturation)
-                        //.range(["#533F57", "#E7FC74"]) // dark violet to yellow
-                        .interpolate(d3.interpolateHcl);
-
-                    metrics[attributeName] = d => {
-                        if(isLeaf(d)) {
-                            return linearColorScale(d.attributes[attributeName])
-                        }
-                        function accumulateSize(n) {
-                            if(isLeaf(n)) {
-                                return currentSizeMetric(n);
-                            }
-                            return n.children.reduce((acc, child) => acc + accumulateSize(child), 0);
-                        }
-                        function accumulateColor(n) {
-                            if(isLeaf(n)) {
-                                return n.attributes[attributeName];
-                            }
-                            var sizeSum = accumulateSize(n);
-                            return n.children.reduce((acc, child) => {
-                                return acc + accumulateColor(child) * accumulateSize(child)
-                            }, 0) / sizeSum;
-                        }
-                        return linearColorScale(accumulateColor(d));
-                    };
-                } else {
-                    // categorical scale
-                    let values = new Set();
-                    walkTree(root, node => {
-                        if(isLeaf(node)) {
-                            values.add(node.attributes[attributeName]);
-                        }
-                    });
-                    let ordinalColorScale = d3.scale.category20()
-                        .domain(...(Array.from(values)));
-                    metrics[attributeName] = d => isLeaf(d) ?
-                        ordinalColorScale(d.attributes[attributeName]) :
-                        DEFAULT_COLOR_DIRECTORY;
-
-                }
+          } else {
+            // categorical scale
+            let values = new Set();
+            walkTree(root, node => {
+              if(isLeaf(node)) {
+                  values.add(node.attributes[attributeName]);
+              }
             });
-            return metrics;
-        }
+            let ordinalColorScale = d3.scale.category20()
+              .domain(...(Array.from(values)));
+            metrics[attributeName] = d => isLeaf(d) ?
+              ordinalColorScale(d.attributes[attributeName]) :
+              DEFAULT_COLOR_DIRECTORY;
+          }
+        });
+        return metrics;
+      }
+      
 
         var colorMetrics = getColorMetricsFor(root);
         let currentColorMetric = colorMetrics[DEFAULT_IDENTIFIER];
@@ -407,7 +408,7 @@ export class Bundleview {
                     lockNode(d);
                 }
                 d3.event.preventDefault();
-            });
+            })
 
 
         var path = hierarchicalEdgeBundleEnterElementGroup.append("path")
@@ -451,11 +452,14 @@ export class Bundleview {
                 .attrTween("d", lineTweenZoom(nodeDisplayedAsRoot));
         }
         function clickedOnNode(d) {
-            if(isLeaf(d)) {
-                return console.log('clicked on leaf node', d);
-            } else {
-                return zoomToNode(d);
+          if(isLeaf(d)) {
+            if (component.dataClick) {
+              component.dataClick(d, d3.event)
             }
+            return console.log('clicked on leaf node', d);
+          } else {
+            return zoomToNode(d);
+          }
         }
 
         var hiddenLineSegment = defs.datum(root).selectAll("path")
@@ -469,10 +473,12 @@ export class Bundleview {
             .classed('bundle--text', true)
             .append("textPath")
             .attr("startOffset","50%")
+            .attr("title","hello")
             .style("text-anchor","middle")
             .style('alignment-baseline', 'central')
             .attr("xlink:href", (d,i) => '#bundleview_node_' + bundleviewID + '_' + i)
             .text(d => d.label);
+      
 
         var link = svg.append("g").selectAll(".link")
             .data(bundle(links))
@@ -495,8 +501,10 @@ export class Bundleview {
             })
             .each(function(d) {d.source = d[0]; d.target = d[d.length - 1]; })
             .attr("class", "link")
-            .attr("d", line);
-
+            .attr("d", line)
+        
+        
+        
         var lockedNode;
 
         function clearMarkers(nodes) {
@@ -768,16 +776,26 @@ export default class D3Bundleview extends Morph {
   display(json) {
     // the json becomes un-reusable later
     this.json = JSON.parse(JSON.stringify(json));
-    new Bundleview(json, this.get('#rootContainer'));
+    new Bundleview(json, this.get('#rootContainer'), this);
     this.onExtentChanged()
   }
 
+  setData(data) {
+    this.display(data)
+  }
+  
+  getData() {
+    return this.json
+  }
+  
   livelyPreMigrate() {
     // is called on the old object before the migration
   }
   
   livelyMigrate(other) {
-    this.display(other.json);
+    if (other.json) {
+      this.display(other.json);
+    }
   }
   
   livelyInspect(contentNode, inspector) {
