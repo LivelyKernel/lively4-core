@@ -40,7 +40,9 @@ export class Knot {
     this.fileName = fileName;
     this.content = content;
     
-    trackInstance.call(Knot, this);
+    if(new.target === Knot) {
+      trackInstance.call(Knot, this);
+    }
   }
   get url() { return this.fileName; }
   getMetadata() { return this.metadata; }
@@ -129,7 +131,7 @@ export class Knot {
   }
 }
 
-class Triple extends Knot {
+export class Triple extends Knot {
   constructor(fileName, content) {
     try {
       JSON.parse(content)
@@ -138,6 +140,9 @@ class Triple extends Knot {
       console.log(fileName);
     }
     super(fileName, JSON.parse(content));
+    if(new.target === Triple) {
+      trackInstance.call(Triple, this);
+    }
   }
   
   label() {
