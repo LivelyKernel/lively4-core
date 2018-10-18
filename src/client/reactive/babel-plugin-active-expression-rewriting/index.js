@@ -139,6 +139,20 @@ export default function(param) {
     );
   }
 
+  function print(msg) {
+    self.lively && self.lively.notify(msg);
+  }
+  function isInForLoopIterator(path) {
+    const isInForLoop = path.find(p => {
+      if(!p.parentPath) return false;
+      if(p.parentPath.isForStatement() && ['init', 'test', 'update'].includes(p.parentKey)) return true;
+      if(p.parentPath.isForInStatement() && p.parentKey === 'left') return true;
+      if(p.parentPath.isForOfStatement() && p.parentKey === 'left') return true;
+      return false;
+    })
+    return isInForLoop;
+  }
+  
   return {
     pre(file) {
       //console.log("fff", file, traverse);
@@ -244,7 +258,9 @@ export default function(param) {
           });
           
           path.traverse({
+
             UnaryExpression(path) {
+              if(isInForLoopIterator(path)) { return; }
 
               // handle delete operator
               if(path.node.operator === 'delete') {
@@ -288,7 +304,8 @@ export default function(param) {
               const operator = path.node.operator;
               const prefix = path.node.prefix;
               const argument = path.get('argument');
-              
+              if(isInForLoopIterator(path)) { return; }
+
               if(argument.isMemberExpression() || argument.isIdentifier()) {
                 
                 // ++v -> v += 1
@@ -369,6 +386,9 @@ export default function(param) {
                 !t.isRestElement(path.parent) &&
                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
               ) {
+                if(isInForLoopIterator(path)) {
+                  return;
+                }
                 if (path.scope.hasBinding(path.node.name)) {
                   //logIdentifier('get local var', path)
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
@@ -485,11 +505,13 @@ export default function(param) {
               }
             },
             AssignmentExpression(path) {
+              if(isInForLoopIterator(path)) { return; }
               // check, whether we assign to a member (no support for pattern right now)
               if (t.isMemberExpression(path.node.left) &&
                 !isGenerated(path) &&
                 SET_MEMBER_BY_OPERATORS[path.node.operator]
               ) {
+
                 //state.file.addImport
                 path.replaceWith(
                   t.callExpression(
@@ -582,6 +604,7 @@ export default function(param) {
               if (t.isUpdateExpression(path.parent) && path.key === 'argument') { return; }
               if (t.isSuper(path.node.object)) { return; }
               if (isGenerated(path)) { return; }
+              if(isInForLoopIterator(path)) { return; }
               //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
               path.replaceWith(
                 t.callExpression(
@@ -597,6 +620,7 @@ export default function(param) {
               if(isGenerated(path)) { return; }
               if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
               if(path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION]) { return; }
+              if(isInForLoopIterator(path)) { return; }
 
               // check whether we call a MemberExpression
               if(t.isMemberExpression(path.node.callee)) {

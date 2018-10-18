@@ -14,18 +14,25 @@ const HACK = {};
  * #TODO: this is from withlogging.js
  */
 // #TODO: can we make this easier, e.g. automatically identifying the class to adapt from the very instance? What about superclasses?
+export const baseViewByClass = new WeakMap();
+
+function ensureBaseViewForClass(Class) {
+  if(!baseViewByClass.has(Class)) {
+    baseViewByClass.set(Class, new View());
+  }
+  return baseViewByClass.get(Class);
+}
+
+export function baseViewForClass(Class) {
+  return ensureBaseViewForClass(Class);
+}
+
 export function trackInstance(instance) {
-  ensureBaseViewForClass(this);
-  this._instances_.safeAdd(instance);
+  baseViewForClass(this).safeAdd(instance);
 }
 
 export function untrackInstance(instance) {
-  ensureBaseViewForClass(this);
-  this._instances_.safeRemove(instance);
-}
-
-function ensureBaseViewForClass(Class) {
-  Class._instances_ = Class._instances_ || new View();
+  baseViewForClass(this).safeRemove(instance);
 }
 
 // #TODO: ideally, we would track the constructor, maybe with **decorators**?
@@ -516,6 +523,5 @@ export default function select(Class, options) {
   }
 
   // fall back to track all instances of a class
-  ensureBaseViewForClass(Class);
-  return Class._instances_;
+  return baseViewForClass(Class);
 }

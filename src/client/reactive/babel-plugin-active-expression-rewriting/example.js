@@ -1,3 +1,17 @@
+let aaa;
+for(let [i] = 0;aaa=obj.fn;obj.fn()) {
+  i;
+}
+for (let [a] in obj.fn()) {
+  
+}
+for (let [a] of obj.fn()) {
+  
+}
+
++[]
+~[a]
+
 if(true) 42;
 () => 42;
 () => { return 42; }
