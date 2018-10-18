@@ -1,6 +1,9 @@
 ## 2018-09-05
 
-```
+Our XRay is pretty live...
+
+
+```javascript
 that.style.transformOrigin ="0 0"
 
 var rotation = 0
@@ -14,11 +17,14 @@ function anim() {
   }
 }
 
-
 anim()
 
 // running = false
 
 ```
 
-<object width="500" height="500" data="doc/journal/2018-09-05.md/xray_rotation.mp4"></object> 
+<video width="600" autoplay controls>
+  <source src="xray_rotation.mp4" type="video/mp4">
+</video>
+
+[foo](foo.txt)

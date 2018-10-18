@@ -39,9 +39,9 @@ export function log(string) {
  */
 
 // #HACK #TODO
-window.proceedStack = []
-window.GlobalLayers = []
-window.AsyncLayerStack = []
+self.proceedStack = []
+self.GlobalLayers = []
+self.AsyncLayerStack = []
 
 // export const proceedStack = [];
 // export const GlobalLayers = [];

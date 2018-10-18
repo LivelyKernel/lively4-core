@@ -68,7 +68,7 @@ export default class ContextMenu {
         [
           ["self", () => {lively.showHalo(target)}],
           ["parents", lively.allParents(target).map(
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
             ea => [ea, () => {lively.showHalo(ea)}])

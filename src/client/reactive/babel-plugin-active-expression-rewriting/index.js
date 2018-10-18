@@ -22,11 +22,14 @@ const SET_MEMBER_BY_OPERATORS = {
   '^=': 'setMemberBitwiseXOR',
   '|=': 'setMemberBitwiseOR'
 };
-const SET_LOCAL = "setLocal";
-const GET_LOCAL = "getLocal";
 
-const SET_GLOBAL = "setGlobal";
-const GET_GLOBAL = "getGlobal";
+const DELETE_MEMBER = 'deleteMember';
+
+const SET_LOCAL = 'setLocal';
+const GET_LOCAL = 'getLocal';
+
+const SET_GLOBAL = 'setGlobal';
+const GET_GLOBAL = 'getGlobal';
 
 const IGNORE_STRING = 'aexpr ignore';
 const IGNORE_INDICATOR = Symbol('aexpr ignore');
@@ -187,9 +190,79 @@ export default function(param) {
             return uniqueIdentifier;
           }
 
+          // ------------- ensureBlock -------------
+          const maybeWrapInStatement = (node, wrapInReturnStatement) => {
+            if(t.isStatement(node)) {
+              return node;
+            } else if(t.isExpression(node)) {
+              // wrap in return statement if we have an arrow function: () => 42 -> () => { return 42; }
+              const expressionNode = wrapInReturnStatement ? t.returnStatement(node) : t.expressionStatement(node);
+              expressionNode.loc = node.loc;
+              return expressionNode;
+            } else {
+              console.error("Tried to wrap something unknown:", node);
+              return node;
+            }
+          }
+          const wrapPropertyOfPath = (path, property) => {
+            const oldBody = path.get(property);
+            const oldBodyNode = path.node[property];
+            if(!oldBodyNode) {
+              return;
+            }
+            if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
+              // This is already a block
+              return;
+            } else if(oldBody instanceof Array) {
+              const newBodyNode = t.blockStatement(oldBodyNode);
+              path.node[property] = [newBodyNode];
+            } else {
+              const newBodyNode = t.blockStatement([maybeWrapInStatement(oldBodyNode, path.isArrowFunctionExpression())]);
+              oldBody.replaceWith(newBodyNode);
+            }
+            return path;
+          }
           path.traverse({
-            // transform ~[expr] notation to _aexpr(() => expr)
+            BlockParent(path) {
+              if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+                return;
+              }
+              if(!path.node.body) {
+                console.warn("A BlockParent without body: ", path);
+              }
+
+              wrapPropertyOfPath(path, "body");
+            },
+            IfStatement(path) {
+              for(let property of ["consequent", "alternate"]) {
+                wrapPropertyOfPath(path, property);
+              }
+            },
+            SwitchCase(path) {
+              wrapPropertyOfPath(path, "consequent");
+            }
+          });
+          
+          path.traverse({
             UnaryExpression(path) {
+
+              // handle delete operator
+              if(path.node.operator === 'delete') {
+                const argument = path.get('argument');
+                if(argument.isMemberExpression()) {
+                  path.replaceWith(
+                    t.callExpression(
+                      addCustomTemplate(state.file, DELETE_MEMBER), [
+                        argument.node.object,
+                        getPropertyFromMemberExpression(argument.node)
+                      ]
+                    )
+                  );
+                }
+                return;
+              }
+              
+              // transform ~[expr] notation to _aexpr(() => expr)
               if(path.node.operator !== '~') return;
               const array = path.get('argument');
               if(!array.isArrayExpression()) return;
@@ -209,8 +282,37 @@ export default function(param) {
                   ]
                 )
               );
-              lively.notify(expr.node.type);
             },
+
+            UpdateExpression(path) {
+              const operator = path.node.operator;
+              const prefix = path.node.prefix;
+              const argument = path.get('argument');
+              
+              if(argument.isMemberExpression() || argument.isIdentifier()) {
+                
+                // ++v -> v += 1
+                let assignment = t.assignmentExpression(
+                  operator[0] + '=',
+                  argument.node,
+                  t.numericLiteral(1),
+                )
+                
+                if(!prefix) {
+                  // need to modify result for postfix operators
+                  // v++ -> (v += 1) - 1
+                  const reverseOperator = operator[0] === '+' ? '-' : '+';
+                  assignment = t.binaryExpression(
+                    reverseOperator,
+                    assignment,
+                    t.numericLiteral(1)
+                  )
+                }
+                
+                path.replaceWith(assignment);
+              }
+            },
+
             Identifier(path) {
               //console.log(path.node.name);
 
@@ -554,6 +656,7 @@ export default function(param) {
                 if (t.isIdentifier(path.node.callee) && true) {}
               }
             }
+            
           });
         }
       }

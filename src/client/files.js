@@ -317,9 +317,11 @@ export default class Files {
     for(var ea of list) {
       if (ea.name !== ".") {
         var path = ea.name.replace(/^\.\//,"").replace(/[^/]*$/,"").split("/").filter(ea => ea)
+        var absolute = ea.name.replace(/^\.\//, url)
         var element = {
             name: ea.name.replace(/.*\//,""),
             modified: ea.modified,
+            url: absolute,
             size: ea.size,
             type: ea.type
           }
@@ -340,6 +342,14 @@ export default class Files {
     } else {
       lively.notify("Could not create tree for " + url)
     }
+  }
+  
+  static isVideo(url) {
+    return url.toString().match(/((ogm)|(m4v)|(mp4)|(mov)|(avi)|(flv)|(mpe?g)|(mkv)|(ogv))$/i)
+  }
+
+  static isPicture(url) {
+    return url.toString().match(/((svg)|(png)|(jpe?g)|(gif))$/i)
   }
   
 }

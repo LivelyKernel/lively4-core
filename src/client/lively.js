@@ -23,6 +23,7 @@ import { toArray, uuid as generateUUID, wait } from 'utils';
 import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
+import SystemjsWorker from "src/worker/systemjs-worker.js"
 
 /* expose external modules */
 // import color from '../external/tinycolor.js';
@@ -799,7 +800,7 @@ export default class Lively {
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
-    persistence.disable();
+    // persistence.disable();
 
     lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
     lively.components.loadByName("lively-notification")
@@ -1244,8 +1245,13 @@ export default class Lively {
   }
 
   static openSearchWidget(text, worldContext, searchContext=document.body) {
-    // index based search is not useful at the moment
-    if (true) {
+    if (lively.preferences.get("FileIndex")) {
+      this.openComponentInWindow("lively-index-search").then( comp => {
+        var pattern = text.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
+        comp.searchFile(pattern);
+        comp.focus()
+      });
+    } else {
       var container = lively.query(searchContext, "lively-container")
       this.openComponentInWindow("lively-search", undefined, undefined, worldContext).then( comp => {
         if (container) {
@@ -1261,15 +1267,17 @@ export default class Lively {
         comp.focus()
 
       });
-    } else {
-      var comp = document.getElementsByTagName("lively-search-widget")[0];
-      if (comp.isVisible && text == comp.query) {
-        comp.isVisible = false;
-      } else {
-        comp.isVisible = true;
-        comp.search(text, true);
-      }
-    }
+    } 
+      
+      // #Depricated
+      // var comp = document.getElementsByTagName("lively-search-widget")[0];
+      // if (comp.isVisible && text == comp.query) {
+      //   comp.isVisible = false;
+      // } else {
+      //   comp.isVisible = true;
+      //   comp.search(text, true);
+      // }
+    
   }
 
   static hideSearchWidget() {
@@ -1347,20 +1355,20 @@ export default class Lively {
 
     if (!url || !url.match(/^[a-z]+:\/\//))
       url = lively4url
-    var editorComp;
+    var livelyContainer;
     var containerPromise;
     if (replaceExisting) {
-      editorComp = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
+      livelyContainer = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
     }
 
     var lastWindow = _.first(Array.from(worldContext.querySelectorAll("lively-window"))
       .filter(  ea => ea.childNodes[0] && ea.childNodes[0].isSearchBrowser));
 
-    containerPromise = editorComp ? Promise.resolve(editorComp) :
+    containerPromise = livelyContainer ? Promise.resolve(livelyContainer) :
       lively.openComponentInWindow("lively-container", undefined, undefined, worldContext);
 
     return containerPromise.then(comp => {
-      editorComp = comp;
+      livelyContainer = comp;
       comp.parentElement.style.width = "950px";
       comp.parentElement.style.height = "600px";
 
@@ -1377,20 +1385,26 @@ export default class Lively {
       return comp.followPath(url)
     }).then(async () => {
       if (edit) {
-        await editorComp.asyncGet("#editor").then(livelyEditor => {
+        await livelyContainer.asyncGet("#editor").then(async livelyEditor => {
+          var codeMirror = await livelyEditor.awaitEditor()
+    
           if(pattern) {
-            // #Hack ontop #Hack, sorry... The editor has still things to do
-            setTimeout(() => {
-              livelyEditor.find(pattern);
-            }, 500)
-
+            livelyEditor.find(pattern);
+            
           } else if (lineAndColumn) {
+            
+            codeMirror.setSelection(
+              {line: lineAndColumn.line, ch: lineAndColumn.column},
+              {line: lineAndColumn.line, ch: lineAndColumn.column + 
+                (lineAndColumn.selection ? + lineAndColumn.selection.length : 0)})
             // #TODO ...
             // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
           }
+          codeMirror.focus()
+          codeMirror.scrollIntoView(codeMirror.getCursor(), 200)
         });
       }
-      return editorComp
+      return livelyContainer
     });
   }
 
@@ -1398,13 +1412,13 @@ export default class Lively {
     if(!window.lively4ChromeDebugger) {
       return lively.notify("Please install Lively4Chrome Extension for debugger support.");
     }
-    lively4ChromeDebugger.getCurrentDebuggingTarget().then((res) => {
+    window.lively4ChromeDebugger.getCurrentDebuggingTarget().then((res) => {
       // Use chrome.window.create to create an independent window, window.open does not work
-      lively4ChromeDebugger.createWindow({
-      	url: lively4url + '/debugger.html?targetId=' + res.targetId,
-      	width: 1000, left: parseInt((screen.width - 1000)/2),
-      	height: 750, top: parseInt((screen.height - 750)/2),
-      	type: 'popup'
+      window.lively4ChromeDebugger.createWindow({
+        url: lively4url + '/debugger.html?targetId=' + res.targetId,
+        width: 1000, left: parseInt((screen.width - 1000)/2),
+        height: 750, top: parseInt((screen.height - 750)/2),
+        type: 'popup'
       }).catch((error) => {
         lively.notify("Unable to create new window for debugger.")
       });
@@ -1546,12 +1560,21 @@ export default class Lively {
   static async onBodyScrollPreference(pos) {
     this.deferredUpdateScroll = pos;
   }
+  
+  static async onFileIndexPreference(bool) {
+    if (bool) {
+      if(!this.fileIndexWorker) {
+        this.fileIndexWorker = new SystemjsWorker("src/worker/fileindex-worker.js")
+      }
+      this.fileIndexWorker.postMessage({message: "updateDirectory", url: lively4url + "/"})
+    }
+  }
 
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
-      || (element && (element.id == "copy-hack-element")
-      || (element  && element.tagName == "LIVELY-CONTAINER"))
+      || (element && element.id == "copy-hack-element")
+      || (element  && element.tagName == "LIVELY-CONTAINER" && element.shadowRoot && !element.shadowRoot.activeElement)
   }
 
   static hasGlobalFocus() {
@@ -1612,6 +1635,10 @@ export default class Lively {
    if (!result && element.parentNode) result = this.query(element.parentNode, query)
    if (!result && element.host) result = this.query(element.host, query)
    return result
+  }
+  
+  static elementToCSSName(element) {
+    element.localName + (element.id  ? "#" + element.id : "")
   }
 
   static async openPart(partName, worldContext=document.body) {

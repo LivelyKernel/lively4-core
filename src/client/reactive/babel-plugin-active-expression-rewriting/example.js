@@ -1,3 +1,25 @@
+if(true) 42;
+() => 42;
+() => { return 42; }
+
+
+//const [xx, yy] = [1];
+
+
+var xs = 1;
+xs++
+obj.prop++
+
+
+
+() => {
+  "do stuff"
+  let xxxxx = 1;
+  delete xxxxx.roo;
+  delete window.foo
+}
+
+
 ~[42]
 ~[() => {
   var x = 42;

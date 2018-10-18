@@ -17,6 +17,10 @@ import {
 } from './util.js';
 import focalStorage from '../../focalStorage.js';
 
+
+import FileIndex from "src/client/fileindex.js" // for meta information....
+
+
 let useCacheDictionary = false; // #Dev #Experimental
 
 // OfflineFirst Preference
@@ -83,14 +87,23 @@ export class Cache {
       if (!self.caches) return; // #MacCachesBug
       this.offlineFirstCache = await caches.open("offlineFirstCache")
       lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
+      
       if (this.offlineFirst) {
         console.log("offlineFirst Cache enabled")
+        
+        // to many OPTIONS... we should check here if IndexSearch is enabled... but we assume it is if caching is enabled... #TODO
+    
       }
     })()
   }
   
   async fetchOfflineFirst(request, doNetworkRequest) {
-    // console.log("offline first " + request.url)
+    if (!request.url.toString().startsWith(lively4url)) {
+      // console.log("ignore offline first " +  request.method + " " + request.url)
+      return doNetworkRequest()    
+    }
+    
+    
     if (request.method == "GET" && this.offlineFirstCache) {
       var resp = await this.offlineFirstCache.match(request)
       if (resp) {
@@ -113,7 +126,12 @@ export class Cache {
     if (request.method == "PUT") {
       // console.log("cache delete " + request.url)
       this.offlineFirstCache.delete(request.url)
-      return doNetworkRequest()    
+      var result =  doNetworkRequest()    
+      result.then(() => {
+        FileIndex.current().updateFile(request.url)
+      })        
+      
+      return result
     }
     
     // anything else

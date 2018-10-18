@@ -196,8 +196,9 @@ export default class Persistence {
   
   
 }
-Persistence.disable()
-Persistence.enable()
+// Persistence should not be enable, per se when loading this file 
+// Persistence.disable()
+// Persistence.enable()
 
 /*
 

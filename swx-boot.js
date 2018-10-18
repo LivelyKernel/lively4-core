@@ -1,6 +1,3 @@
-
-console.log("hello again!")
-
 self.lively4url = self.location.toString().replace(/\/[^/]*$/,"")
 
 importScripts("./src/external/systemjs/system.src.js");
@@ -73,16 +70,17 @@ fetch = function(request, ...args) {
   // Ensure request is of type Request and not only a string URL
   request = new Request(request);
   
+  // Booting SWX neets to fetch some files ... but swx fetch is not there... 
+  // (A) we look into the cache... this supports offline loading of SWX
+  // (B) we do fetching and caching behavior here... #Duplicate
   if (initPending) {  
     return new Promise(async (resolve, reject) => {
-      
-      // #TODO: window is not defined here so checking for window.caches throws an error
-      
+      console.log("SWX BOOT fetch " + request.url)
       
       let cache = self.caches && await caches.open("lively4-swx-cache");
-      
       if (!cache){
-        return resolve(originalFetch(request, ...args)) // #MacCacheBug #Hack
+        // without our own cache, we have to rely on th original browser behavior, e.g. under workaround the #MacCacheBug 
+        return resolve(originalFetch(request, ...args)) 
       }  
 
       if (navigator.onLine && await isOnline()) {
