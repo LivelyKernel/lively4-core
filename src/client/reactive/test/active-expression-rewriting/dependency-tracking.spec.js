@@ -35,7 +35,7 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(1);
     expect(spy).to.be.calledWithMatch(3);
   });
-  xit('for loop/local variable (let)', () => {
+  it('for loop/local variable (let)', () => {
     let x = 0;
     const spy = sinon.spy();
     aexpr(() => x).onChange(spy);
@@ -47,7 +47,8 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(1);
     expect(spy).to.be.calledWithMatch(3);
   });
-  it('track changes on iterator variable (var)', () => {
+  // TODO: we do not yet support tracking iterator variables
+  xit('track changes on iterator variable (var)', () => {
     const spy = sinon.spy();
     const holder = {};
 
@@ -97,20 +98,82 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(42);
     expect(spy).to.be.calledWithMatch(59);
   });
-  xit('for-of/local variable (var)', () => {
+  it('for-of/local variable (var)', () => {
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
     for (var a of [1,2,3]) {
-      lively.notify(a)
+      x += a;
     }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
   });
-  xit('for-of/local variable (var, defined outside)', () => {
-    // var a;
-    // for (a of [1,2,3]) {
-    //   lively.notify(a)
-    // }
+  it('for-of/local variable (var, defined outside)', () => {
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    var a;
+    for (a of [1,2,3]) {
+      x += a;
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
   });
-  xit('for-of/local variable (let)', () => {
+  it('for-of/local variable (let)', () => {
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for (let a of [1,2,3]) {
+      x += a;
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
   });
+  // TODO: we do not yet support tracking quasi-assignments in loops
   xit('for-of/object member', () => {
+    let obj = { prop: 0 };
+    const spy = sinon.spy();
+    aexpr(() => obj.prop).onChange(spy);
+
+    for (obj.prop of [1,2,3]) {
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
+  });
+  xit('for-of/destructuring to members', () => {
+    let obj = { prop: 0 };
+    const spy = sinon.spy();
+    aexpr(() => obj.prop).onChange(spy);
+
+    for ([obj.prop] of [[1],[2],[3]]) {
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
+  });
+  xit('for-of/destructuring to var and members', () => {
+    var a = 0;
+    const spy = sinon.spy();
+    aexpr(() => a).onChange(spy);
+
+    for ([a] of [[1],[2],[3]]) {
+    }
+    expect(spy).to.be.calledThrice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+    expect(spy).to.be.calledWithMatch(6);
   });
 });
 

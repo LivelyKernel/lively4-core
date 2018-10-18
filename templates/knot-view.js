@@ -44,6 +44,7 @@ export default class KnotView extends Morph {
     this.get('#container')
       .appendChild(<h1>{aexpr(() => this.knotLabel(this.knot))}</h1>);
     
+    lively.success('setup aexprs')
     this.get('#container')
       .appendChild(<table>    <thead>
       <tr>
