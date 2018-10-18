@@ -1,5 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import d3 from 'src/external/d3.v3.js';
+import d3 from 'src/external/d3.v5.js';
+
+import * as cop  from 'src/client/ContextJS/src/contextjs.js'
 
 export function isLeaf(d) { return !d.children || d.children.length === 0; }
 
@@ -15,6 +17,7 @@ const COLOR_NODE_source = '#2ca02c';
 const DEFAULT_IDENTIFIER = 'default';
 
 var bundleviewCount = 0;
+
 
 export function walkTree(root, beforeChildren = ()=>{}, afterChildren = ()=>{}) {
     beforeChildren(root);
@@ -40,7 +43,7 @@ export class Bundleview {
     preprocessData(root, links) {
         this.nodesByID = new Map();
         walkTree(root, node => {
-            this.nodesByID.set(node.id, node);
+            this.nodesByID.set(node.id, node); // #TODO this does not work any more, because the nodes here are not the nodes in the vis...
         });
         links.forEach(link => {
             link.source = this.nodesByID.get(link.source);
@@ -50,11 +53,19 @@ export class Bundleview {
     }
   
     getSizeMetricsFor(root) {
+    
       var leaf = randomLeaf(root);
       var metrics = { [DEFAULT_IDENTIFIER]: () => 1 };
-      Object.keys(leaf.attributes).forEach(attributeName => {
-          if(Number.isFinite(leaf.attributes[attributeName])) {
-              metrics[attributeName] = d => d.attributes[attributeName];
+      var leafData = leaf.data || leaf // #Hack, to work around initial cyclic dependeny....
+      Object.keys(leafData.attributes).forEach(attributeName => {
+          if(Number.isFinite(leafData.attributes[attributeName])) {
+              metrics[attributeName] = d => {
+                var data = d.data || d  // I honestly don't know any more... :-(
+                if (!data.attributes) return 1;
+                var result  = Number(data.attributes[attributeName]) 
+                // console.log("size metric for " + attributeName + " " + result)
+                return result
+              };
               walkTree(root, node => {
                   if(!isLeaf(node)) { return; }
               });
@@ -74,7 +85,9 @@ export class Bundleview {
 
       // Stuff that does something
 
-      var [root, links] = this.preprocessData(input.nodes, input.relations);
+      var [domainRoot, links] = this.preprocessData(input.nodes, input.relations);
+      
+  
       console.log('init bundleview with', root, links);
 
       var width = 700,
@@ -101,15 +114,46 @@ export class Bundleview {
           .append("g")
           .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
-
-      
-
-      var sizeMetrics = this.getSizeMetricsFor(root);
+      var sizeMetrics = this.getSizeMetricsFor(domainRoot);
       let currentSizeMetric = sizeMetrics[DEFAULT_IDENTIFIER];
 
+       // var partition = d3.layout.partition()
+      //     .sort(null)
+      //     .size([2 * Math.PI, 1])
+      //     .value(currentSizeMetric);
+      
+      var partition = d3.partition()
+          .size([2 * Math.PI, 1])
+          
+
+      // ?? partition(root).descendants()
+
+      var nodes = new Map()
+
+      
+      var hierrachy = d3.hierarchy(domainRoot)
+      
+      // hierrachy.sum((d) => {
+      //   return d.attributes && d.attributes.size}) //currentSizeMetric
+      hierrachy.sum((d) => currentSizeMetric(d)) //
+      var rootNode = partition(hierrachy);
+      var root = rootNode // just to be sure!
+      
+      walkTree(rootNode, node => {
+        nodes.set(node.data.id, node) // nodes are not the nodes of the data tree
+      })
+      
       function sizeMetricChanged(value) {
+          lively.notify("sizeMetrics ", value)
           currentSizeMetric = value;
-          var newlyLayoutedData = partition.value(value).nodes;
+        
+          // we have to relayout...
+          hierrachy.sum((d) => currentSizeMetric(d)) //
+          rootNode = partition(hierrachy);
+          root = rootNode
+        
+          var newlyLayoutedData = rootNode.descendants();
+          
           path
               .data(newlyLayoutedData)
               .transition()
@@ -155,19 +199,19 @@ export class Bundleview {
             DEFAULT_COLOR_DIRECTORY
         };
       
-        Object.keys(leaf.attributes).forEach(attributeName => {
-          var useLinearColorScale = Number.isFinite(leaf.attributes[attributeName]);
+        Object.keys(leaf.data.attributes).forEach(attributeName => {
+          var useLinearColorScale = Number.isFinite(leaf.data.attributes[attributeName]);
           if(useLinearColorScale) {
             let maxValue = Number.NEGATIVE_INFINITY,
                 minValue = Number.POSITIVE_INFINITY;
             walkTree(root, node => {
                 if(isLeaf(node)) {
-                    maxValue = Math.max(maxValue, node.attributes[attributeName]);
-                    minValue = Math.min(minValue, node.attributes[attributeName]);
+                    maxValue = Math.max(maxValue, node.data.attributes[attributeName]);
+                    minValue = Math.min(minValue, node.data.attributes[attributeName]);
                 }
             });
 
-            let linearColorScale = d3.scale.linear()
+            let linearColorScale = d3.scaleLinear()
                 .domain([minValue, (minValue + maxValue) / 2, maxValue])
                 .range(["red", "white", "green"])
                 .range(["#001e5e", "#f56f72", "#fffef5"]) // darkblue to yellow
@@ -183,12 +227,12 @@ export class Bundleview {
                 minValue + (maxValue - minValue) * index/(violetToYellowColors.length-1)
             );
 
-            linearColorScale = d3.scale.linear()
+            linearColorScale = d3.scaleLinear()
                 .domain(violetToYellowDomain)
                 .range(violetToYellowColors)
                 .interpolate(d3.interpolateHcl);
 
-            linearColorScale = d3.scale.linear()
+            linearColorScale = d3.scaleLinear()
                 .domain([minValue, maxValue])
                 .range(["#ff7637", "#00a238"])
                 .range(["#ffffe5", "#0073a5"])
@@ -202,7 +246,7 @@ export class Bundleview {
 
             metrics[attributeName] = d => {
                 if(isLeaf(d)) {
-                    return linearColorScale(d.attributes[attributeName])
+                    return linearColorScale(d.data.attributes[attributeName])
                 }
                 function accumulateSize(n) {
                     if(isLeaf(n)) {
@@ -212,7 +256,7 @@ export class Bundleview {
                 }
                 function accumulateColor(n) {
                     if(isLeaf(n)) {
-                        return n.attributes[attributeName];
+                        return n.data.attributes[attributeName];
                     }
                     var sizeSum = accumulateSize(n);
                     return n.children.reduce((acc, child) => {
@@ -226,13 +270,13 @@ export class Bundleview {
             let values = new Set();
             walkTree(root, node => {
               if(isLeaf(node)) {
-                  values.add(node.attributes[attributeName]);
+                  values.add(node.data.attributes[attributeName]);
               }
             });
             let ordinalColorScale = d3.scale.category20()
               .domain(...(Array.from(values)));
             metrics[attributeName] = d => isLeaf(d) ?
-              ordinalColorScale(d.attributes[attributeName]) :
+              ordinalColorScale(d.data.attributes[attributeName]) :
               DEFAULT_COLOR_DIRECTORY;
           }
         });
@@ -240,25 +284,24 @@ export class Bundleview {
       }
       
 
-        var colorMetrics = getColorMetricsFor(root);
-        let currentColorMetric = colorMetrics[DEFAULT_IDENTIFIER];
+      var colorMetrics = getColorMetricsFor(root);
+      let currentColorMetric = colorMetrics[DEFAULT_IDENTIFIER];
 
-        function colorStyleTween(transition, name, value) {
-            transition.styleTween(name, function(d, i) {
-                // TODO: aggregate values for directories
-                //if(!isLeaf(d)) { return null;}
-                return d3.interpolate(this.style[name], value(d));
-            });
-        }
+      function colorStyleTween(transition, name, value) {
+        transition.styleTween(name, function(d, i) {
+          // TODO: aggregate values for directories
+          //if(!isLeaf(d)) { return null;}
+          return d3.interpolate(this.style[name], value(d));
+        });
+      }
 
-        function colorMetricChanged(scale) {
-
-            currentColorMetric = scale;
-            path.transition()
-                .duration(750)
-                .call(colorStyleTween, "fill", n => styleNodeWith(n, lockedNode, scale));
-        }
-        this.colorMetricChanged = colorMetricChanged;
+      function colorMetricChanged(scale) {
+        currentColorMetric = scale;
+        path.transition()
+          .duration(750)
+          .call(colorStyleTween, "fill", n => styleNodeWith(n, lockedNode, scale));
+      }
+      this.colorMetricChanged = colorMetricChanged;
 
         let colorMetricSelection = rootContainer.append("form");
         colorMetricSelection
@@ -278,44 +321,62 @@ export class Bundleview {
                 colorMetricChanged(colorMetrics[this.value]);
             });
 
-        var partition = d3.layout.partition()
-            .sort(null)
-            .size([2 * Math.PI, 1])
-            .value(currentSizeMetric);
 
-        var pieInverter = d3.scale.linear()
+        
+        
+
+      
+        var pieInverter = d3.scaleLinear()
             .domain([0, 1])
             .range([1, innerRadius]);
-        var converterForInnerLayout = d3.scale.linear()
+        var converterForInnerLayout = d3.scaleLinear()
             .domain([0, 1])
             .range([0, innerRadius]);
 
-        var x = d3.scale.linear()
+        var x = d3.scaleLinear()
             .domain([0, 2 * Math.PI])
             .range([0, (2 - 0.00001) * Math.PI])
             .clamp(true);
+      
+        // ok... to many higher order functions.... so we hook into them for debugging
+        // var DevLayer = cop.layer("DevLayer").refineObject(x, {
+        //   domain(a) {
+        //     console.log("x domain", a)
+        //     if (a && isNaN(a[0])) {
+        //       debugger
+        //     }
+        //     return cop.proceed(a)
+        //   }
+        // }).beGlobal()
+      
 
+        var y = d3.scaleSqrt()
+          .range([0, radius]);
+
+      
         function getArcInnerRadius(d) {
             return radius * (isLeaf(d) ?
                         innerRadius :
-                        pieInverter(d.y + d.dy)
+                        pieInverter(d.y1)
                 );
         }
         function getArcOuterRadius(d) {
-            return pieInverter(d.y) * radius;
+            return pieInverter(d.y0) * radius;
         }
         function getArcMiddleRadius(d) {
             return (getArcInnerRadius(d) + getArcOuterRadius(d)) / 2;
         }
         var outerMargin = 10;
-        var arc = d3.svg.arc()
-            .startAngle(d => (x(d.x)))
-            .endAngle(d => (x(d.x + d.dx)))
-            .innerRadius(d => Math.min(radius+outerMargin, getArcInnerRadius(d)))
-            .outerRadius(d => Math.min(radius+outerMargin, getArcOuterRadius(d)));
+      
+      
+      var arc = d3.arc()
+          .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x0))); })
+          .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x1))); })
+          .innerRadius(d => Math.min(radius+outerMargin, getArcInnerRadius(d)))
+          .outerRadius(d => Math.min(radius+outerMargin, getArcOuterRadius(d)));
 
         function lowerHalf(d) {
-            var middleAngle = d.x + d.dx / 2;
+            var middleAngle = d.x0 + (d.x1 - d.x0) / 2;
             return Math.PI / 2 < middleAngle && middleAngle < Math.PI * 1.5;
         }
 
@@ -334,7 +395,8 @@ export class Bundleview {
             var end = polarToCartesian(x, y, radius, startAngle);
 
             var arcSweep = endAngle - startAngle <= 180 ? "0" : "1";
-
+          
+          
             var d = [
                 "M", start.x, start.y,
                 "A", radius, radius, 0, arcSweep, 0, end.x, end.y
@@ -344,32 +406,54 @@ export class Bundleview {
         }
 
         function radialLineGenerator(d) {
-            return describeArc(
+            if (d.x0 == undefined || d.x1 == undefined) throw new Error("x0 and x1 were undefined")
+            // if (d.data.label != "scale") return "" // for debugging
+            
+            var start = x(d.x0)
+            var stop = x(d.x1)
+            if (isNaN(start) || isNaN(stop)) { 
+                debugger
+            }
+            
+            var result =  describeArc(
                 0, 0,
-                getArcMiddleRadius(d),
-                radToDeg.invert(x(d.x)), radToDeg.invert(x(d.x + d.dx))
+                getArcMiddleRadius(d), // radius 
+                radToDeg.invert(start), // start angle
+                radToDeg.invert(stop)   // stop angle
             );
+            if (result && result.match("NaN")) {
+              debugger
+            }
+            return result
         }
 
-        var bundle = d3.layout.bundle();
 
-        var radToDeg = d3.scale.linear()
+        var radToDeg = d3.scaleLinear()
             .domain([0, 360])
             .range([0, 2 * Math.PI]);
 
-        var line = d3.svg.line.radial()
-            .interpolate("bundle")
-            .tension(bundleTension)
+        var originalLine = d3.radialLine()
+          .curve(d3.curveBundle.beta(bundleTension)) 
             .radius(function(d) {
                 return radius * (isLeaf(d) ?
                             innerRadius:
-                            Math.max(0, Math.min(innerRadius, converterForInnerLayout(d.y + d.dy)))
+                            Math.max(0, Math.min(innerRadius, converterForInnerLayout(d.y1)))
                     );
             })
             .angle(function(d) {
-                return x(d.x + d.dx / 2);
-            });
-
+                return x(d.x1);
+            });      
+        var line = function(d) {
+          var result = originalLine(d)
+//           if (result.match(/NaN/)) {
+//             debugger    
+            
+//             // again... debug into it
+//             // originalLine(d)
+//           }
+          return result
+        }
+      
         /* Initialize tooltip */
 // let tip = d3.tip()
 //     .attr('class', 'd3-tip')
@@ -380,11 +464,14 @@ export class Bundleview {
 //         .join("<br>"));
 
         // Keep track of the node that is currently being displayed as the root.
-        var nodeDisplayedAsRoot = root;
+        var nodeDisplayedAsRoot = rootNode;
 
+      
         var enterElem = svg.datum(root).append("g").selectAll("path")
-            .data(partition.nodes)
-            .enter();
+            .data(rootNode.descendants())
+            .enter(); 
+      
+      
         var hierarchicalEdgeBundleEnterElementGroup = enterElem.append("g")
             /* Invoke the tip in the context of your visualization */
 //            .call(tip)
@@ -400,14 +487,28 @@ export class Bundleview {
                     unhighlightNode();
                 }
             })
-            .on('click', clickedOnNode)
-            .on('contextmenu', function(d, ...args) {
+            .on('mousedown', function(d) {
+              if (d3.event.shiftKey) {
+                lively.openInspector({element: this, d: d})
+                return
+              }
+              
+              if (d3.event.button == 0) {
+                clickedOnNode(d)              
+              } else {
+                // rightclick
                 if(isLocked(d)) {
                     unlockNode(d);
                 } else {
                     lockNode(d);
                 }
+              }
+        
+            
+            })
+            .on('contextmenu', function(d, ...args) {
                 d3.event.preventDefault();
+                d3.event.stopPropagation();
             })
 
 
@@ -451,6 +552,7 @@ export class Bundleview {
                 .duration(Bundleview.zoomTransitionTime)
                 .attrTween("d", lineTweenZoom(nodeDisplayedAsRoot));
         }
+      
         function clickedOnNode(d) {
           if(isLeaf(d)) {
             if (component.dataClick) {
@@ -463,46 +565,72 @@ export class Bundleview {
         }
 
         var hiddenLineSegment = defs.datum(root).selectAll("path")
-            .data(partition.nodes)
+            .data(rootNode.descendants())
             .enter().append("path")
             .each(stash)
             .attr('id', (d, i) => 'bundleview_node_' + bundleviewID + '_' + i)
             .attr("d", radialLineGenerator);
 
+        var debugColor = d3.scaleOrdinal(d3.schemeCategory10);
+
+        // FOR DEBUGGING "hiddenLineSegment"
+        // var debugLineSegment = svg.datum(root).append("g").selectAll("path")
+        //     .data(rootNode.descendants())
+        //     .enter().append("path")
+        //     .each(stash)
+        //     .attr("fill", "none" )
+        //     //.attr("stroke", "rgba(250,0,0,0.5)" )
+        //     .style('stroke-width', 4)
+        //     .style('stroke-opacity', 0.8)
+        //     .style('stroke', d => {debugger ; return d.data && debugColor(d.data.id) })
+        //     .attr("d", radialLineGenerator);
+
+      
         var labels = hierarchicalEdgeBundleEnterElementGroup.append("text")
             .classed('bundle--text', true)
             .append("textPath")
             .attr("startOffset","50%")
-            .attr("title","hello")
-            .style("text-anchor","middle")
-            .style('alignment-baseline', 'central')
+            .style("text-anchor","middle") // 
+            .style('alignment-baseline', 'central') 
             .attr("xlink:href", (d,i) => '#bundleview_node_' + bundleviewID + '_' + i)
-            .text(d => d.label);
+            .text(d => d.data.label);
       
-
+        function bundleLinks(links) {
+          
+          return links.map(link => {
+            
+            return nodes.get(link.source.id).path(nodes.get(link.target.id)) // data tree !== node tree
+          })
+        }
+      
+        
         var link = svg.append("g").selectAll(".link")
-            .data(bundle(links))
+            .data(bundleLinks(links))  //bundle(links)
             .enter().append("path")
             // only for interactions?
-            .each(d => {
-                if(d.length > 3) {
-                    // remove the least common ancestor
-                    let lastNode = d[0],
-                        currentNode;
-                    for(var i = 1; i < d.length; i++) {
-                        currentNode = d[i];
-                        if(currentNode.parent === lastNode) {
-                            d.splice(i-1, 1);
-                            break;
-                        }
-                        lastNode = d[i];
-                    }
-                }
-            })
-            .each(function(d) {d.source = d[0]; d.target = d[d.length - 1]; })
+            // .each(d => {
+            //     if(d.length > 3) {
+            //         // remove the least common ancestor
+            //         let lastNode = d[0],
+            //             currentNode;
+            //         for(var i = 1; i < d.length; i++) {
+            //             currentNode = d[i];
+            //             if(currentNode.parent === lastNode) {
+            //                 d.splice(i-1, 1);
+            //                 break;
+            //             }
+            //             lastNode = d[i];
+            //         }
+            //     }
+            // })
+            .each(function(d) {
+              ;
+              d.source = d[0]; d.target = d[d.length - 1]; })
             .attr("class", "link")
-            .attr("d", line)
-        
+          // .each(function(d) { debugger })  
+            .attr("d", (d) => {var result =  line(d); return result})
+            //.attr("d", line)
+            
         
         
         var lockedNode;
@@ -513,6 +641,7 @@ export class Bundleview {
                 .each(function(n) { n.target = n.source = n.descendant = n.ancestor = false; });
         }
         function highlightNode(d) {
+          
             function markDescendants(n) {
                 if(n.children) {
                     n.children.forEach(child => {
@@ -629,25 +758,32 @@ export class Bundleview {
 
         // Stash the old values for transition.
         function stash(d) {
-            d.x0 = d.x;
-            d.dx0 = d.dx;
+            d.x0a = d.x0;
+            d.x1a = d.x1;
         }
 
         // Interpolate the arcs in data space.
         function getCommonArcTween(a, i, arcGenerator) {
-            var oi = d3.interpolate({x: a.x0, dx: a.dx0}, a);
+            var oi = d3.interpolate({x0: a.x0a, x1: a.x1a}, a);
             function tween(t) {
                 var b = oi(t);
-                a.x0 = b.x;
-                a.dx0 = b.dx;
+                a.x0a= b.x0;
+                a.x1a = b.x1;
                 return arcGenerator(b);
             }
             if (i === 0) {
                 // If we are on the first arc, adjust the x domain to match the root node
                 // at the current zoom level. (We only need to do this once.)
-                var xd = d3.interpolate(x.domain(), [nodeDisplayedAsRoot.x, nodeDisplayedAsRoot.x + nodeDisplayedAsRoot.dx]);
+                if (nodeDisplayedAsRoot.x0 === undefined || nodeDisplayedAsRoot.x1 === undefined) {
+                  debugger
+                }
+                var xd = d3.interpolate(x.domain(), [nodeDisplayedAsRoot.x0, nodeDisplayedAsRoot.x1]);
                 return function(t) {
-                    x.domain(xd(t));
+                    var newdomain = xd(t)
+                    if (isNaN(newdomain[0])) {
+                      debugger
+                    }
+                    x.domain(newdomain);
                     return tween(t);
                 };
             } else {
@@ -661,15 +797,15 @@ export class Bundleview {
         // depends on that the .stash method was called for each point
         function lineTween(a) {
             var length = a.length,
-                interpolations = a.map(point => d3.interpolate({x: point.x0, dx: point.dx0}, point));
-
+                interpolations = a.map(point => d3.interpolate({x0: point.x0a, x1: point.x1a}, point));
+                // d3.interpolate({x0: 1, x1: 2},{x0: 5, x1: 8})(0.5)
+          
             return function(t) {
                 var interpolatedPoints = interpolations.map(i => i(t));
                 interpolatedPoints.forEach((b, index) => {
-                    a[index].x0 = b.x;
-                    a[index].dx0 = b.dx;
+                    a[index].x0a = b.x0;
+                    a[index].x1a = b.x1;
                 });
-
                 return line(interpolatedPoints);
             };
         }
@@ -678,21 +814,23 @@ export class Bundleview {
         function lineTweenZoom(rootDisplay) {
             return function(a, i) {
                 var length = a.length,
-                    interpolations = a.map(point => d3.interpolate({x: point.x0, dx: point.dx0}, point));
+                    interpolations = a.map(point => d3.interpolate({x0: point.x0a, x1: point.x1a}, point));
 
                 function tween(t) {
+                    // return line(t) // #TODO
+                  
                     var interpolatedPoints = interpolations.map(i => i(t));
                     interpolatedPoints.forEach((b, index) => {
-                        a[index].x0 = b.x;
-                        a[index].dx0 = b.dx;
+                        a[index].x0a = b.x0;
+                        a[index].x1a = b.x1;
                     });
 
                     return line(interpolatedPoints);
                 }
 
                 if (i === 0) {
-                    var xd = d3.interpolate(x.domain(), [rootDisplay.x, rootDisplay.x + rootDisplay.dx]),
-                        yd = d3.interpolate(converterForInnerLayout.domain(), [rootDisplay.y, 1]);
+                    var xd = d3.interpolate(x.domain(), [rootDisplay.x0, rootDisplay.x1]),
+                        yd = d3.interpolate(converterForInnerLayout.domain(), [rootDisplay.y0, 1]);
                     return function(t) {
                         x.domain(xd(t));
                         converterForInnerLayout.domain(yd(t));
@@ -708,8 +846,8 @@ export class Bundleview {
 
         // When zooming: interpolate the scales.
         function commonArcTweenZoom(displayedRoot, arcGenerator) {
-            var xd = d3.interpolate(x.domain(), [displayedRoot.x, displayedRoot.x + displayedRoot.dx]),
-                yd = d3.interpolate(pieInverter.domain(), [displayedRoot.y, 1]);
+            var xd = d3.interpolate(x.domain(), [displayedRoot.x0, displayedRoot.x1]),
+                yd = d3.interpolate(pieInverter.domain(), [displayedRoot.y0, 1]);
 
             return function(d, i) {
                 return i
@@ -809,6 +947,7 @@ export default class D3Bundleview extends Morph {
   
   async livelyExample() {
     const json = await fetch('https://raw.githubusercontent.com/onsetsu/d3-bundleview/master/example/flare-compat.json').then(r => r.json());
+    
     this.display(json);
   }
 }
