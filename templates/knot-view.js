@@ -1,6 +1,10 @@
+'enable aexpr';
+
 import Morph from "src/components/widgets/lively-morph.js"
 
-import { Graph, _, TAG_URL } from 'src/client/triples/triples.js';
+import { Graph, Triple, _, TAG_URL } from 'src/client/triples/triples.js';
+import select, { trackInstance, baseViewForClass } from 'active-group';
+
 
 export default class KnotView extends Morph {
   get urlString() { return this.get("#path-to-load").value; }
@@ -23,18 +27,54 @@ export default class KnotView extends Morph {
     if (urlToLoad && urlToLoad !== "") {
       this.loadKnotForURL(urlToLoad);
     }
+    
+    this.initAExprs();
+  }
+  
+  knotLabel(knot, altText = "no knot label available") {
+    return knot &&
+      knot.label instanceof Function && 
+      knot.label() || altText;
+  }
+  
+  async initAExprs() {
+    let graph = await Graph.getInstance();
+    let tag = await graph.requestKnot(new URL(TAG_URL));
+
+    this.get('#container')
+      .appendChild(<h1>{aexpr(() => this.knotLabel(this.knot))}</h1>);
+    
+    lively.success('setup aexprs')
+    this.get('#container')
+      .appendChild(<table>    <thead>
+      <tr>
+        <th>Predicate</th>
+        <th>Object</th>
+        <th class="triple-header">Triple</th>
+      </tr>
+    </thead>
+    <tbody>{
+          ...select(Triple)
+            .filter(t => t.subject === this.knot)
+            .map(t => this.buildTableRowFor(t, t.predicate, t.object))
+        }</tbody></table>)
+    //<li>{this.knotLabel(t.object, 'no tag label')}</li>
   }
   
   buildMetadata(knot) {
     const metadataTable = this.get("#metadata-table");
     metadataTable.innerHTML = "";
     
-    for (const [key, value] of Object.entries(knot.getMetadata())) {
+    Object.entries(knot.getMetadata()).forEach(entry => {
+      const key = entry[0];
+      const value = entry[1];
+    // for (const [key, value] of Object.entries(knot.getMetadata())) {
       metadataTable.appendChild(<tr>
         <td>{key}</td>
         <td>{value}</td>
       </tr>);
-    }
+    // }
+    });
   }
   
   buildNavigatableLinkFor(knot) {
@@ -81,6 +121,7 @@ export default class KnotView extends Morph {
   async loadKnot(url) {
     let graph = await Graph.getInstance();
     let knot = await graph.requestKnot(new URL(url));
+    this.knot = knot;
     
     this.get("#path-to-load").value = knot.url;
     this.get("#label").innerHTML = knot.label();
