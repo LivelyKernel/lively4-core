@@ -139,9 +139,6 @@ export default function(param) {
     );
   }
 
-  function print(msg) {
-    self.lively && self.lively.notify(msg);
-  }
   function isInForLoopIterator(path) {
     const isInForLoop = path.find(p => {
       if(!p.parentPath) return false;
@@ -150,7 +147,20 @@ export default function(param) {
       if(p.parentPath.isForOfStatement() && p.parentKey === 'left') return true;
       return false;
     })
-    return isInForLoop;
+    return !!isInForLoop;
+  }
+  
+  function isInDesctructuringAssignment(path) {
+    const patternParent = path.find(p => {
+      if(!p.isPattern()) { return false; }
+      if(!p.parentPath) { return false; }
+      
+      const inVarDefinition = p.parentPath.isVariableDeclarator() && p.parentKey === 'id';
+      const inAssignment = p.parentPath.isAssignmentExpression() && p.parentKey === 'left';
+      const inParams = p.parentPath.isFunction() && p.parentKey === 'params';
+      return inVarDefinition || inAssignment || inParams;
+    });
+    return !!patternParent;
   }
   
   return {
@@ -261,6 +271,7 @@ export default function(param) {
 
             UnaryExpression(path) {
               if(isInForLoopIterator(path)) { return; }
+              if(isInDesctructuringAssignment(path)) { return; }
 
               // handle delete operator
               if(path.node.operator === 'delete') {
@@ -305,6 +316,7 @@ export default function(param) {
               const prefix = path.node.prefix;
               const argument = path.get('argument');
               if(isInForLoopIterator(path)) { return; }
+              if(isInDesctructuringAssignment(path)) { return; }
 
               if(argument.isMemberExpression() || argument.isIdentifier()) {
                 
@@ -386,9 +398,9 @@ export default function(param) {
                 !t.isRestElement(path.parent) &&
                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
               ) {
-                if(isInForLoopIterator(path)) {
-                  return;
-                }
+                if(isInForLoopIterator(path)) { return; }
+                if(isInDesctructuringAssignment(path)) { return; }
+  
                 if (path.scope.hasBinding(path.node.name)) {
                   //logIdentifier('get local var', path)
                   path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
@@ -506,6 +518,7 @@ export default function(param) {
             },
             AssignmentExpression(path) {
               if(isInForLoopIterator(path)) { return; }
+              if(isInDesctructuringAssignment(path)) { return; }
               // check, whether we assign to a member (no support for pattern right now)
               if (t.isMemberExpression(path.node.left) &&
                 !isGenerated(path) &&
@@ -605,6 +618,7 @@ export default function(param) {
               if (t.isSuper(path.node.object)) { return; }
               if (isGenerated(path)) { return; }
               if(isInForLoopIterator(path)) { return; }
+              if(isInDesctructuringAssignment(path)) { return; }
               //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
               path.replaceWith(
                 t.callExpression(
@@ -621,6 +635,7 @@ export default function(param) {
               if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
               if(path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION]) { return; }
               if(isInForLoopIterator(path)) { return; }
+              if(isInDesctructuringAssignment(path)) { return; }
 
               // check whether we call a MemberExpression
               if(t.isMemberExpression(path.node.callee)) {

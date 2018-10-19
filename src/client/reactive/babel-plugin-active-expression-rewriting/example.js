@@ -1,3 +1,9 @@
+var [aaaa, bbbb] = [1, 2];
+[aaaa, bbbb] = [obj.prop, ...foo];
+({a = 1+b}) => {}
+function fn23({a = 1+b}) {}
+
+
 let aaa;
 for(let [i] = 0;aaa=obj.fn;obj.fn()) {
   i;

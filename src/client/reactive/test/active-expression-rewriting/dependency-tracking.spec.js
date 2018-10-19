@@ -22,6 +22,71 @@ describe('simplify locals', function() {
     _ =  myIdentifier = 2;
   });
 });
+describe('destructuring', function() {
+  it('baseline: do not alter semantics', () => {
+    var [a, b] = [1,2];
+  });
+  xit('baseline: do not alter semantics (complex)', () => {
+    const readP0Spy = sinon.spy();
+    const readP0I0Spy = sinon.spy();
+    const readP0I1Spy = sinon.spy();
+    const readP0I2Spy = sinon.spy();
+    const readP1Spy = sinon.spy();
+    const readP2Spy = sinon.spy();
+
+    const writeP0Spy = sinon.spy();
+    const writeP0I0Spy = sinon.spy();
+    const writeP0I1Spy = sinon.spy();
+    const writeP0RestSpy = sinon.spy();
+    const writeP1Spy = sinon.spy();
+    const writeRestSpy = sinon.spy();
+
+    const obj = {
+      get p0() {
+        readP0Spy();
+        return 'p0'
+      },
+      get p1() {
+        readP0Spy();
+        return 'p1'
+      },
+      get p2() {
+        readP0Spy();
+        return 'p2'
+      }
+    };
+    
+    const a = {
+      set p0(v) {
+        return writeP0Spy(v);
+      }
+    }
+    
+    const b = {
+      set p1(v) {
+        return writeP1Spy(v);
+      }
+    }
+    
+    const c = {
+      set rest(v) {
+        return writeRestSpy(v);
+      }
+    }
+    
+    //({p: [a.p, b.p], p2:c.p, ...e} = o);
+    let x = 0;
+    const spy = sinon.spy();
+    aexpr(() => x).onChange(spy);
+
+    for(var i = 0; i < 3; i += 1) {
+      x += i;
+    }
+    expect(spy).to.be.calledTwice;
+    expect(spy).to.be.calledWithMatch(1);
+    expect(spy).to.be.calledWithMatch(3);
+  });
+});
 describe('loop constructs', function() {
   it('for loop/local variable (var)', () => {
     let x = 0;
