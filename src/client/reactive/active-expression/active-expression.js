@@ -47,7 +47,7 @@ export class BaseActiveExpression {
    * @param func (Function) the expression to be observed
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, ...params) {
+  constructor(func, { params = [] } = {}) {
     this.func = func;
     this.params = params;
     this.cachingFetch = new CachingFetch();
@@ -124,7 +124,9 @@ export class BaseActiveExpression {
       this.lastValue = value;
 
       this.notify(value, {
-        lastValue
+        lastValue,
+        expr: this.func ,
+        aexpr: this
       });
     });
   }
@@ -233,8 +235,8 @@ export class BaseActiveExpression {
   }
 }
 
-export function aexpr(func, ...params) {
-  return new BaseActiveExpression(func, ...params);
+export function aexpr(func, ...args) {
+  return new BaseActiveExpression(func, ...args);
 }
 
 export default BaseActiveExpression;

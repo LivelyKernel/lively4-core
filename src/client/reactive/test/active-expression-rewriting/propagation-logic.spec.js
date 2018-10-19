@@ -130,7 +130,7 @@ describe('Propagation Logic', function() {
             let obj = { val: 17 },
                 spy = sinon.spy();
 
-            aexpr(o => getMember(o, "val"), (getLocal(_scope, "obj"), obj)).onChange((getLocal(_scope, "spy"), spy));
+            aexpr(o => getMember(o, "val"), { params: [(getLocal(_scope, "obj"), obj)]}).onChange((getLocal(_scope, "spy"), spy));
 
             expect(spy).not.to.be.called;
 
@@ -145,7 +145,7 @@ describe('Propagation Logic', function() {
                 obj3 = { val: 3 },
                 spy = sinon.spy();
 
-            aexpr((o1, o2, o3) => getMember(o1, "val") + getMember(o2, "val") + getMember(o3, "val"), obj1, obj2, obj3).onChange(spy);
+            aexpr((o1, o2, o3) => getMember(o1, "val") + getMember(o2, "val") + getMember(o3, "val"), { params: [obj1, obj2, obj3] }).onChange(spy);
 
             expect(spy).not.to.be.called;
 
@@ -166,8 +166,8 @@ describe('Propagation Logic', function() {
                 spy23 = sinon.spy(),
                 expr = (o1, o2) => getMember(o1, "val") + getMember(o2, "val");
 
-            aexpr(expr, obj1, obj2).onChange(spy12);
-            aexpr(expr, obj2, obj3).onChange(spy23);
+            aexpr(expr, { params: [obj1, obj2] }).onChange(spy12);
+            aexpr(expr, { params: [obj2, obj3] }).onChange(spy23);
 
             expect(spy12).not.to.be.called;
             expect(spy23).not.to.be.called;

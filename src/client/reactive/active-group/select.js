@@ -86,7 +86,7 @@ class FilterOperator extends IdentityOperator {
     this.onNewInstance(item);
   }
   onNewInstance(item) {
-    aexpr(this.expression, item)
+    aexpr(this.expression, { params: [item] })
         .onBecomeTrue(() => this.add(item))
         .onBecomeFalse(() => this.remove(item));
   }

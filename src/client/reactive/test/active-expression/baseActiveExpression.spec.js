@@ -48,7 +48,7 @@ describe('Base Active Expressions', () => {
         it("single parameter", () => {
             let spy = sinon.spy(),
                 obj = {a:1},
-                aexpr = new BaseActiveExpression(o => o.a, obj)
+                aexpr = new BaseActiveExpression(o => o.a, { params: [obj] })
                     .onChange(spy);
 
             expect(spy).not.to.be.called;
@@ -64,7 +64,7 @@ describe('Base Active Expressions', () => {
                 obj1 = {val:1},
                 obj2 = {val:2},
                 obj3 = {val:3},
-                aexpr = new BaseActiveExpression((o1, o2, o3) => o1.val + o2.val + o3.val, obj1, obj2, obj3)
+                aexpr = new BaseActiveExpression((o1, o2, o3) => o1.val + o2.val + o3.val, { params: [obj1, obj2, obj3] })
                     .onChange(spy);
 
             expect(spy).not.to.be.called;
@@ -96,6 +96,36 @@ describe('Base Active Expressions', () => {
 
       aexpr.meta({ value: 'expected' });
       expect(aexpr.meta().get('value')).to.equal('expected');
+    });
+  });
+  describe('callback parameters', () => {
+    it('params include new value', () => {
+        let spy = sinon.spy(),
+            val = 17,
+            aexpr = new BaseActiveExpression(() => val)
+                .onChange(spy);
+      
+        val = 42;
+        aexpr.checkAndNotify();
+
+        expect(spy).to.be.calledOnce;
+        expect(spy).to.be.calledWith(42);
+    });
+    it('params include analysed function', () => {
+        let val = 17,
+            expr = () => val,
+            spy = sinon.spy(),
+            aexpr = new BaseActiveExpression(expr)
+              .onChange(spy);
+      
+        val = 42;
+        aexpr.checkAndNotify();
+        
+        expect(spy).to.have.been.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(42);
+        expect(spy.getCall(0).args[1]).to.have.property('expr', expr);
+        expect(spy.getCall(0).args[1]).to.have.property('lastValue', 17);
+        expect(spy.getCall(0).args[1]).to.have.property('aexpr', aexpr);
     });
   });
 });

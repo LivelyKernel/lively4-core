@@ -56,19 +56,9 @@ describe('Ticking Active Expressions', () => {
         val = 42;
 
         check();
-        expect(spy.withArgs(42, {lastValue: 17}).calledOnce).to.be.true;
-    });
-
-    it("provide additional information (e.g. the last value of the expression) to the callback", () => {
-        let val = 17,
-            spy = sinon.spy();
-
-        aexpr(() => val).onChange(spy);
-
-        val = 42;
-
-        check();
-        expect(spy.withArgs(42, {lastValue: 17}).calledOnce).to.be.true;
+        expect(spy).to.have.been.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(42);
+        expect(spy.getCall(0).args[1]).to.have.property('lastValue', 17);
     });
 
     describe('check', () => {
@@ -140,7 +130,7 @@ describe('Ticking Active Expressions', () => {
             let obj = { val: 17 },
                 spy = sinon.spy();
 
-            aexpr(o => o.val, obj).onChange(spy);
+            aexpr(o => o.val, { params: [obj] }).onChange(spy);
 
             expect(spy).not.to.be.called;
 
@@ -157,7 +147,7 @@ describe('Ticking Active Expressions', () => {
                 obj3 = { val: 3 },
                 spy = sinon.spy();
 
-            aexpr((o1, o2, o3) => o1.val + o2.val + o3.val, obj1, obj2, obj3).onChange(spy);
+            aexpr((o1, o2, o3) => o1.val + o2.val + o3.val, { params: [obj1, obj2, obj3] }).onChange(spy);
 
             expect(spy).not.to.be.called;
 
@@ -180,8 +170,8 @@ describe('Ticking Active Expressions', () => {
                 spy23 = sinon.spy(),
                 expr = (o1, o2) => o1.val + o2.val;
 
-            aexpr(expr, obj1, obj2).onChange(spy12);
-            aexpr(expr, obj2, obj3).onChange(spy23);
+            aexpr(expr, { params: [obj1, obj2] }).onChange(spy12);
+            aexpr(expr, { params: [obj2, obj3] }).onChange(spy23);
 
             expect(spy12).not.to.be.called;
             expect(spy23).not.to.be.called;

@@ -3,8 +3,8 @@ import { check } from "src/client/reactive/active-expression-convention/active-e
 import { PausableLoop } from 'utils';
 
 export class FrameBasedActiveExpression extends BaseActiveExpression {
-  constructor(func, ...params) {
-    super(func, ...params);
+  constructor(func, ...args) {
+    super(func, ...args);
     this.meta({ strategy: 'Frame-based' });
 
     // needed for check function for aexpr-ticking
@@ -66,8 +66,8 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
   }
 }
 
-export function aexpr(func, ...params) {
-  return new FrameBasedActiveExpression(func, ...params);
+export function aexpr(func, ...args) {
+  return new FrameBasedActiveExpression(func, ...args);
 }
 
 const FRAME_BASED_AEXPRS = new Set();
