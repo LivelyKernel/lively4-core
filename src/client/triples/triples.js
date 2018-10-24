@@ -139,7 +139,9 @@ export class Triple extends Knot {
       debugger
       console.log(fileName);
     }
+
     super(fileName, JSON.parse(content));
+
     if(new.target === Triple) {
       trackInstance.call(Triple, this);
     }
