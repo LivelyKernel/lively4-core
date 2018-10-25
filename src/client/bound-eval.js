@@ -1,5 +1,5 @@
 import { uuid } from 'utils';
-import { setCode } from './workspaces.js';
+import * as workspaces from './workspaces.js';
 import Preferences from "./preferences.js";
 
 function rewriteSourceWithAsyncAwaitSupport(source) {
@@ -10,7 +10,9 @@ function rewriteSourceWithAsyncAwaitSupport(source) {
 
 export default async function boundEval(source, thisReference, targetModule) {
   try {
-    let codeId = uuid();
+    if (!targetModule) targetModule = lively4url + "/"
+    
+    let codeId = uuid() + "/" ; // that way we can have a shared context for relative urls
     var path = 'workspace:' + encodeURI(codeId)
        
     // 'this' reference
@@ -33,7 +35,9 @@ export default async function boundEval(source, thisReference, targetModule) {
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    setCode(codeId, source);
+    workspaces.setURL(codeId, targetModule); // for relative urls...
+    // console.log("setURL " + codeId + " -> " + targetModule)
+    workspaces.setCode(codeId, source);
     
     if (Preferences.get('UseAsyncWorkspace')) {
       path = path.replace(/^workspace/, "workspaceasyncjs")

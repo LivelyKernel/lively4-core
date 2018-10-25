@@ -48,7 +48,13 @@ export default class LivelyScript extends Morph {
   moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      moduleName = "livelyscript_" + generateUuid()
+      var container = lively.query(this, "lively-container")
+      if (container) {
+        moduleName = container.getURL().toString()
+      } else {
+        // no container, so we assume lively4 as root
+        moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
+      }
       moduleMap.set(obj, moduleName)
     }
     return moduleName
@@ -71,8 +77,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval exec " + str )
-    
+    // console.log("" + this.id + ">>boundEval exec " + str, targetModule )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()

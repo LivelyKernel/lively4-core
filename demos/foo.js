@@ -1,6 +1,11 @@
 
+import foobar from "./foobar.js"
 
-var c = this.a + this.b
 
+var me = Math.random()
 
-console.log(c + 1)
+export default function foo(a) {
+  return  a + foobar()
+}
+
+console.log("LOADED foo.js " + me)

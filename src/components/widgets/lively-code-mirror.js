@@ -69,7 +69,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModules(force) {
-    console.log("loadModules", loadPromise);
+    // console.log("loadModules", loadPromise);
     if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
@@ -186,7 +186,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   	this.editView(value)
     this.isLoading = false
-    console.log("[editor] #dispatch editor-loaded")
+    // console.log("[editor] #dispatch editor-loaded")
     var event = new CustomEvent("editor-loaded")
     // event.stopPropagation();
     this.dispatchEvent(event)
@@ -444,7 +444,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   getTargetModule() {
     // lazily initialize a target module name as fallback
-    return this.targetModule || (this.targetModule = 'unnamed_module_' + generateUUID().replace(/-/g, '_'));
+    return this.targetModule || (this.targetModule = lively4url +'/unnamed_module_' + generateUUID().replace(/-/g, '_')); // make it relative to a real path so that relative modules work
   }
 
   setTargetModule(module) {
