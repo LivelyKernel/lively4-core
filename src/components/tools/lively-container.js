@@ -972,9 +972,9 @@ export default class Container extends Morph {
         // lively.notify("found index" + index)
         // this.contextURL
         
-        return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
+        return this.followPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
-      // return Promise.resolve(""); // DISABLE Listings
+      return Promise.resolve(""); // DISABLE Listings
 
       this.sourceContent = content;
 
@@ -1015,7 +1015,6 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
-
 
     if (this.viewNav) {
       lively.setPosition(this.get("#container-root"), pt(0,0))
