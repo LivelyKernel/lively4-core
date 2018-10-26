@@ -1,4 +1,4 @@
-import { isFunction, functionMetaInfo, CallableObject, using } from 'utils';
+import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -177,3 +177,23 @@ describe('using', () => {
   });
 });
 
+
+
+describe('waitForDeepProperty', () => {
+  it('it works', async (done) => {
+    
+    var o = new Object();
+    
+    lively.sleep(20).then(() => {
+      o.foo = {}
+    })
+
+    lively.sleep(30).then(() => {
+      o.foo.bar = 7
+    })
+
+    var result = await waitForDeepProperty(o, "foo.bar", 1000, 10) 
+    expect(result).to.equal(7)
+    done()
+  });
+});
