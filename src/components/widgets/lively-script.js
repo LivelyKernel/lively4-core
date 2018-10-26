@@ -52,7 +52,7 @@ export default class LivelyScript extends Morph {
       if (container) {
         
         await waitForDeepProperty(container, "getURL")
-        moduleName = container.getURL().toString()
+        moduleName = (container.getURL() || lively4url).toString()
       } else {
         // no container, so we assume lively4 as root
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
