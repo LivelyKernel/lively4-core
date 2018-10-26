@@ -623,7 +623,8 @@ export default class Container extends Morph {
   }
 
   async appendMarkdown(content, renderTimeStamp) {
-    var md = await lively.create("lively-markdown", this)
+    var md = await lively.create("lively-markdown", this.getContentRoot())
+    // md.setAttribute("data-lively4-donotpersist", true) // will be thrown away after loading anyway, #DoesNotWork
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
       return md.remove()
     }
@@ -862,10 +863,14 @@ export default class Container extends Morph {
 
   getContentRoot() {
     // #Design #Lively4 The container should hide all its contents. The styles defined here should not affect others.
-    // return this.get('#container-root');
+    
+    // return this // #TODO only reason.. interacting with Halo and drag and drop into container...
+    
+    return this.get('#container-root'); // #TODO fix halo interactrion with this hidden content!
 
     // #BUT #TODO Blockly and connectors just work globally...
-    return this;
+    // but we do not use blockly and connectors any more...
+    // return this;
   }
 
   getDir() {

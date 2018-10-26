@@ -6,8 +6,7 @@ A Self-supporting, Web-based Development Environment
 
 ## Getting Started
 
-
-<lively-import src="http://localhost:8080/lively4-core/doc/_navigation.html"></lively-import>
+<lively-import src="./doc/_navigation.html"></lively-import>
 
 Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](doc/lively4-server.md), we can directly edit and use the environment in a self-supporting way.
 

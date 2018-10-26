@@ -309,7 +309,7 @@ export async function waitForDeepProperty(obj, pathString, timeout=60000 /* one 
     }
     // if (!nextResult) return // could not resolve path
     result = nextResult
-    console.log("next result " + next + " = " + result )
+    // console.log("next result " + next + " = " + result )
     
   }
   return result
