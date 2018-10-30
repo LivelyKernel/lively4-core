@@ -42,7 +42,9 @@ export default class VivideTreemapWidget extends VivideWidget {
   async attachAChild(model, parentNode) {
     const label = this.labelForModel(model);
     const childNode = this.createTreeNodeForLabel(label);
-
+    // #TODO: size does not seem to affect actual size of rendered rectangles
+    childNode.size = model.properties.get('size');
+    
     parentNode.children = parentNode.children || [];
     parentNode.children.push(childNode);
     
