@@ -21,33 +21,28 @@ export async function locate(load) {
    if(isWorkspace(load)) {
       var id = parseId(load);
       var m = id.match(/^([^/]+\/)(.*)$/)
-      if (m && m[2])
       var baseId = m[1]
-      var relativeURL = m[2]
-      var baseURL = workspaces.getURL(baseId);
-//       console.log('WORKSPACE LOADER baseId', baseId);
-//       console.log('WORKSPACE LOADER baseURL', baseURL);
-//       console.log('WORKSPACE LOADER relativeURL', relativeURL);
-      
-     if (relativeURL && baseURL) {
-        var sourceURL = await SystemJS.resolve("./" + relativeURL, baseURL)  
-        // console.log("FOUND SOURCE URL", sourceURL)
-        return sourceURL
+      var targetModule = m[2]
+
+      if (targetModule.match(/\.js$/)) {
+        return "https://" + targetModule // we stripped the HTTPS earlier...
       }
     }
-  
   return 
 }
+
 
 export async function fetch(load, fetch) {
   // console.log('WORKSPACE LOADER fetch', load.address);
   if(isWorkspace(load)) {
     var id = parseId(load);
     // console.log(`fetch workspace code for id: ${id}`);
-    var code = workspaces.getCode(id);
+    var code = workspaces.getCode(load.name);
     
     if (!code) {
       // we have a relative url that resolved to a real url...
+      
+      
       if (!load.address.match(WORKSPACE_REGEX)) {
         return fetch.call(this, load);        
       }
