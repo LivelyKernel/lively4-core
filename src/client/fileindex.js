@@ -306,10 +306,10 @@ export default class FileIndex {
   showAsTable() {
     var result= []
     this.db.files.each(ea => {
-      result.push(
-        {url:ea.url,
-        size: ea.content.length,
-        title: ea.title.replace(/</g, "&lt;").slice(0,100),
+      result.push({
+        url:ea.url,
+        size: ea.size,
+        title: (ea.title) ? ea.title.replace(/</g, "&lt;").slice(0,100) : "",
         tags: ea.tags,
         classes: ea.classes,
         functions: ea.functions
