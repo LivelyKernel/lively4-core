@@ -252,9 +252,9 @@ export default class Sync extends Morph {
 
   logout() {
     this.clearLog()
-  	this.storeValue("githubToken", null)    
-  	this.storeValue("githubUsername", null)    
-  	this.storeValue("githubEmail", null)
+    this.storeValue("githubToken", null)
+    this.storeValue("githubUsername", null)
+    this.storeValue("githubEmail", null)
     this.updateLoginStatus()
     this.log("")
   }

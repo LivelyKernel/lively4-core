@@ -5,6 +5,9 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import js_beautify from "src/client/js-beautify/beautify.js";
+import css_beautify from "src/client/js-beautify/beautify-css.js"
+import html_beautify from "src/client/js-beautify/beautify-html.js"
 
 import files from "src/client/files.js"
 
@@ -518,6 +521,35 @@ export default class Container extends Morph {
     });
   }
 
+  onBeautify() {
+    const ending = this.getPath()::fileEnding();
+    if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
+      return;
+    }
+    
+    const editor = this.get("lively-editor");
+    const text = editor.lastText;
+    let beautifulText;
+    const options = {
+      'end_with_newline': true,
+      'max_preserve_newlines': 3,
+      'js': {
+        'brace_style': ['collapse', 'preserve-inline'],
+        'indent_size': 2,
+        'wrap_line_length': 120,
+      },
+      'indent_size': 4,
+    }
+    if (ending === 'js') {
+      beautifulText = global.js_beautify(text, options);
+    } else if (ending === 'css') {
+      beautifulText = global.css_beautify(text, options);
+    } else if (ending === 'html') {
+      beautifulText = global.html_beautify(text, options);
+    }
+    editor.setText(beautifulText, true);
+  }
+
   onDelete() {
     var url = this.getURL() +"";
     this.deleteFile(url)
@@ -570,7 +602,6 @@ export default class Container extends Morph {
       lively.notify("moved to " + newURL);
     }
   }
-
 
   onNewfile() {
     this.newfile(this.getPath())
