@@ -107,13 +107,19 @@ export default class LivelyMarkdown extends Morph {
       .replace(/<script>/g,"<lively-script><script>")
       .replace(/<\/script>/g,"</script></lively-script>")
     
-    var root = this.get("#content")
-    root.innerHTML = htmlSource;
-
+    var tmpDiv = document.createElement("div")
+    tmpDiv.innerHTML = htmlSource // so we still have some control over it
     var dir = this.getDir()
     if (dir) {
-      lively.html.fixLinks([root], this.getDir(), path => this.followPath(path));
+      lively.html.fixLinks([tmpDiv], this.getDir(), path => this.followPath(path));
     }
+    
+    var root = this.get("#content")
+    root.innerHTML = "";
+    tmpDiv.childNodes.forEach(ea => {
+      root.appendChild(ea)
+    })
+    
     
     root.querySelectorAll("input[type=checkbox]").forEach(ea => {
       ea.disabled = false;
