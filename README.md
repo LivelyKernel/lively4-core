@@ -4,7 +4,6 @@
 A Self-supporting, Web-based Development Environment
 
 
-
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
 ## Getting Started Again
@@ -32,3 +31,4 @@ The Livel4 server and GitHub sync tools can check out arbitrary projects, such a
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 - [Imprint](imprint.md)
+

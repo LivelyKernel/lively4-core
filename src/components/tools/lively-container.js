@@ -5,6 +5,9 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import js_beautify from "src/client/js-beautify/beautify.js";
+import css_beautify from "src/client/js-beautify/beautify-css.js"
+import html_beautify from "src/client/js-beautify/beautify-html.js"
 
 import files from "src/client/files.js"
 
@@ -518,6 +521,35 @@ export default class Container extends Morph {
     });
   }
 
+  onBeautify() {
+    const ending = this.getPath()::fileEnding();
+    if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
+      return;
+    }
+    
+    const editor = this.get("lively-editor");
+    const text = editor.lastText;
+    let beautifulText;
+    const options = {
+      'end_with_newline': true,
+      'max_preserve_newlines': 3,
+      'js': {
+        'brace_style': ['collapse', 'preserve-inline'],
+        'indent_size': 2,
+        'wrap_line_length': 120,
+      },
+      'indent_size': 4,
+    }
+    if (ending === 'js') {
+      beautifulText = global.js_beautify(text, options);
+    } else if (ending === 'css') {
+      beautifulText = global.css_beautify(text, options);
+    } else if (ending === 'html') {
+      beautifulText = global.html_beautify(text, options);
+    }
+    editor.setText(beautifulText, true);
+  }
+
   onDelete() {
     var url = this.getURL() +"";
     this.deleteFile(url)
@@ -571,7 +603,6 @@ export default class Container extends Morph {
     }
   }
 
-
   onNewfile() {
     this.newfile(this.getPath())
   }
@@ -623,7 +654,8 @@ export default class Container extends Morph {
   }
 
   async appendMarkdown(content, renderTimeStamp) {
-    var md = await lively.create("lively-markdown", this)
+    var md = await lively.create("lively-markdown", this.getContentRoot())
+    // md.setAttribute("data-lively4-donotpersist", true) // will be thrown away after loading anyway, #DoesNotWork
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
       return md.remove()
     }
@@ -862,10 +894,14 @@ export default class Container extends Morph {
 
   getContentRoot() {
     // #Design #Lively4 The container should hide all its contents. The styles defined here should not affect others.
-    // return this.get('#container-root');
+    
+    // return this // #TODO only reason.. interacting with Halo and drag and drop into container...
+    
+    return this.get('#container-root'); // #TODO fix halo interactrion with this hidden content!
 
     // #BUT #TODO Blockly and connectors just work globally...
-    return this;
+    // but we do not use blockly and connectors any more...
+    // return this;
   }
 
   getDir() {
@@ -972,9 +1008,9 @@ export default class Container extends Morph {
         // lively.notify("found index" + index)
         // this.contextURL
         
-        return this.setPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
+        return this.followPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
-      // return Promise.resolve(""); // DISABLE Listings
+      return Promise.resolve(""); // DISABLE Listings
 
       this.sourceContent = content;
 
@@ -1015,7 +1051,6 @@ export default class Container extends Morph {
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
-
 
     if (this.viewNav) {
       lively.setPosition(this.get("#container-root"), pt(0,0))

@@ -292,6 +292,30 @@ export function getDeepProperty(obj, pathString) {
   return result
 }
 
+/*
+ * waits for the deep construction of a data structure // object
+ * 
+ */
+export async function waitForDeepProperty(obj, pathString, timeout=60000 /* one minuete */, step=10) {
+  var path = pathString.split(".")
+  var next
+  var result = obj
+  var nextResult
+  while(next = path.shift()) {
+    nextResult  = result[next]
+    while(!nextResult) {
+      await wait(step) // busy waiting...
+      nextResult  = result[next]
+    }
+    // if (!nextResult) return // could not resolve path
+    result = nextResult
+    // console.log("next result " + next + " = " + result )
+    
+  }
+  return result
+}
+
+
 // https://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 export function parseQuery(queryString) {
     var query = {};
@@ -397,3 +421,7 @@ export function shake(target) {
     // easing: 'cubic-bezier(0.42, 0, 0.58, 1)'
   });
 }
+
+
+
+

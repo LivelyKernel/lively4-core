@@ -165,8 +165,12 @@ export default class Files {
   }
 
   static async exists(urlString){
-    return (await fetch(urlString, {method: "OPTIONS"})).status == 200
+    var resp = (await fetch(urlString, {method: "OPTIONS"}))
+    if (resp.status != 200) return false
+    var stats = await resp.json()
+    return stats.error ? false : true
   }
+  
 
   static isURL(urlString) {
     return ("" + urlString).match(/^([a-z]+:)?\/\//) ? true : false;

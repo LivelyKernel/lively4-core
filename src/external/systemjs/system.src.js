@@ -1854,6 +1854,7 @@ function decanonicalize (config, key) {
 }
 
 function normalizeSync (key, parentKey) {
+  livelyLog("normalizeSync " + key, parentKey)
   var config = this[CONFIG];
 
   // normalizeSync is metadataless, so create metadata

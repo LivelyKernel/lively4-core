@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import boundEval from 'src/client/bound-eval.js';
 import _ from 'src/external/lodash/lodash.js'
-import { uuid as generateUuid } from 'utils'
+import { uuid as generateUuid, waitForDeepProperty } from 'utils'
 
 /* Replacement for "script" tag, that supports
  *  - import module statements
@@ -45,10 +45,18 @@ export default class LivelyScript extends Morph {
     }
   }
 
-  moduleFor(obj) {
+  async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      moduleName = "livelyscript_" + generateUuid()
+      var container = lively.query(this, "lively-container")
+      if (container) {
+        
+        await waitForDeepProperty(container, "getURL")
+        moduleName = (container.getURL() || lively4url).toString()
+      } else {
+        // no container, so we assume lively4 as root
+        moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
+      }
       moduleMap.set(obj, moduleName)
     }
     return moduleName
@@ -56,7 +64,7 @@ export default class LivelyScript extends Morph {
   
   async boundEval(str) {
     // console.log("" + this.id + ">>boundEval " + str )
-    var targetModule =  this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
+    var targetModule =  await this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
@@ -71,8 +79,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval exec " + str )
-    
+    // console.log("" + this.id + ">>boundEval exec " + str, targetModule )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()

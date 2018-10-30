@@ -4,7 +4,8 @@
 import moment from "src/external/moment.js";
 // #TODO how to do instance-specific behabior here?
 var createEntry = async () => {
-  var container = this.parentElement;
+  var container = lively.query(this, "lively-container");
+  if (!container) return "no container found"
   var path = "" + container.getPath();
   var dir = path.replace(/[^/]*$/,"");
   
@@ -36,9 +37,10 @@ button
 
 
 <lively-script><script>
-import FileCache from "src/client/filecache.js"
+import FileCache from "src/client/fileindex.js"
 (async () => {
-  var container = this.parentElement
+  var container = lively.query(this, "lively-container");
+  if (!container) return "no container found"
   var path = "" + container.getPath();
   var dir = path.replace(/[^/]*$/,"")
   var opts = JSON.parse(await lively.files.statFile(dir))

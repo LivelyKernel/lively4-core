@@ -1,5 +1,5 @@
 import { uuid } from 'utils';
-import { setCode } from './workspaces.js';
+import * as workspaces from './workspaces.js';
 import Preferences from "./preferences.js";
 
 function rewriteSourceWithAsyncAwaitSupport(source) {
@@ -10,16 +10,21 @@ function rewriteSourceWithAsyncAwaitSupport(source) {
 
 export default async function boundEval(source, thisReference, targetModule) {
   try {
-    let codeId = uuid();
-    var path = 'workspace:' + encodeURI(codeId)
-       
+    if (!targetModule) targetModule = lively4url + "/"
+    
+    let codeId = uuid() + "/" ; // that way we can have a shared context for relative urls
+    
+    var targetPath = targetModule.replace(/https:\/\//,"")
+    var path = 'workspace:' + encodeURI(codeId  + targetPath)  // "... and the resolve relative path morks
+
+    
     // 'this' reference
     if (!self.__pluginDoitThisRefs__) {
       self.__pluginDoitThisRefs__ = {};
     } 
     self.__pluginDoitThisRefs__[codeId] = thisReference;
     
-        
+    
     if (!self.__topLevelVarRecorder_ModuleNames__) {
       self.__topLevelVarRecorder_ModuleNames__ = {};
     } 
@@ -30,16 +35,20 @@ export default async function boundEval(source, thisReference, targetModule) {
     if (Preferences.get('UseAsyncWorkspace') && source.match(/await /) && !source.match(/import /)) {
       source = rewriteSourceWithAsyncAwaitSupport(source);
     }  
-
-    // source
-    // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
-    setCode(codeId, source);
-    
     if (Preferences.get('UseAsyncWorkspace')) {
       path = path.replace(/^workspace/, "workspaceasyncjs")
     } else if (Preferences.get('DisableAExpWorkspace')) {
       path = path.replace(/^workspace/, "workspacejs")
     }
+
+    // source
+    // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
+    
+    // console.log("setURL " + codeId + " -> " + targetModule)
+    
+    workspaces.setCode(path, source);
+    
+    
     return await System.import(path)
       .then(m => {
         lively.unloadModule(path)
