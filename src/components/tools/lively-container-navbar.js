@@ -219,6 +219,8 @@ export default class LivelyContainerNavbar extends Morph {
     return this.get("#navbar")
   }
   
+
+  
   async show(targetURL, sourceContent, contextURL, force=false) {
     // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
@@ -231,13 +233,14 @@ export default class LivelyContainerNavbar extends Morph {
     this.currentDir = this.getRoot(targetURL);
 
 
-    let urlWithoutIndex = this.url.replace(/index\.((html)|(md))$/,"")
+    // #TODO #Refactor `isIndexFile` 
+    let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
     this.targetItem = _.find(this.getRootElement().querySelectorAll("li"), ea => {
       if (ea.textContent == "../") return false
       var link = ea.querySelector("a")
 
       return link && (link.href == this.url || link.href == urlWithoutIndex)
-    })
+    });
     if (this.targetItem) {
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
@@ -408,7 +411,16 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
-      this.followPath(link.href);
+      if (!link.parentElement.classList.contains("selected")) {
+        this.followPath(link.href);
+      } else {
+        // this.url = undefined
+        this.currentDir = null
+        
+        link.parentElement.classList.remove("selected")
+        var sublist = link.parentElement.querySelector("ul")
+        if (sublist) sublist.remove()
+      }
     }
   }
   

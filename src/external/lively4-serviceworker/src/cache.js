@@ -123,12 +123,16 @@ export class Cache {
       return newResp
     } 
     
-    if (request.method == "PUT") {
-      // console.log("cache delete " + request.url)
+    if (request.method == "PUT" || request.method == "DELETE") {
+      console.log("cache delete " + request.url)
       this.offlineFirstCache.delete(request.url)
       var result =  doNetworkRequest()    
       result.then(() => {
-        FileIndex.current().updateFile(request.url)
+        if (request.method == "DELETE") {
+          FileIndex.current().dropFile(request.url)
+        } else {
+          FileIndex.current().updateFile(request.url)
+        }
       })        
       
       return result
