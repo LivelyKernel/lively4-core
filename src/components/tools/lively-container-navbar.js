@@ -233,13 +233,14 @@ export default class LivelyContainerNavbar extends Morph {
     this.currentDir = this.getRoot(targetURL);
 
 
-    let urlWithoutIndex = this.url.replace(/index\.((html)|(md))$/,"")
+    // #TODO #Refactor `isIndexFile` 
+    let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
     this.targetItem = _.find(this.getRootElement().querySelectorAll("li"), ea => {
       if (ea.textContent == "../") return false
       var link = ea.querySelector("a")
 
       return link && (link.href == this.url || link.href == urlWithoutIndex)
-    })
+    });
     if (this.targetItem) {
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
