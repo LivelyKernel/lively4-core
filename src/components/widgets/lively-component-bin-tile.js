@@ -7,7 +7,7 @@ import {pt} from 'src/client/graphics.js';
 export default class ComponentBinTile extends Morph {
 
   initialize() {
-    // this.addEventListener('click', evt => this.onClick(evt))
+    this.addEventListener('dblclick', evt => this.onDblClick(evt))
     this.addEventListener('dragstart', evt => this.onDragStart(evt))
     this.addEventListener('drag', evt => this.onDrag(evt))
     this.addEventListener('dragend', evt => this.onDragEnd(evt))
@@ -65,8 +65,11 @@ export default class ComponentBinTile extends Morph {
     this.componentBin = componentBin;
   }
   
-  async onClick(evt) {
+  async onDblClick(evt) {
     var comp  = await this.createComponent(evt);
+    document.body.appendChild(comp)
+    var bounds = this.componentBin.getBoundingClientRect()
+    lively.setGlobalPosition(comp, lively.getPosition(evt))
   } 
   
   setupComponent(comp) {
@@ -76,7 +79,7 @@ export default class ComponentBinTile extends Morph {
   
   async createComponent(evt) {
     var worldContext = document.body
-    var comp = await lively.create(this.htmlTag);
+    var comp = await lively.create(this.htmlTag, worldContext);
     this.component = comp;
     var pos = lively.getGlobalPosition(this)
   
@@ -121,19 +124,17 @@ export default class ComponentBinTile extends Morph {
       var target = await this.dragTargetPromise
       document.body.appendChild(target) 
       lively.setGlobalPosition(target, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
-     
     }
-    
   }
 
   async onKeyUp(evt) {
     if (event.keyCode == 13) { // ENTER
       var comp  = await this.createComponent();
       var bounds = this.componentBin.getBoundingClientRect()
-      lively.setPosition(comp, pt(bounds.left, bounds.top))
+      document.body.appendChild(comp)
+      lively.setGlobalPosition(comp, pt(bounds.left, bounds.top))
       this.componentBin.close()
       comp.focus()
-  
     }
   } 
 
