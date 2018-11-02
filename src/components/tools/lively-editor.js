@@ -479,6 +479,10 @@ export default class Editor extends Morph {
     }
   }
   
+  async onBrowse() {
+    lively.openBrowser(this.getURLString())
+  }
+  
   async onDrop(evt) {
     
     if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
