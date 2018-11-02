@@ -24,14 +24,14 @@ export default class AstExplorer extends Morph {
       filePath = defaultPath;
     }
     editor.setURL(filePath);
-    editor.loadFile();
+    await editor.loadFile();
   }
 
   async initialize() {
     this.windowTitle = "AST Explorer";
 
-    this.initLivelyEditorFromAttribute(this.sourceEditor, 'source', AstExplorer.defaultSourceURL);
-    this.initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', AstExplorer.defaultPluginURL);
+    await this.initLivelyEditorFromAttribute(this.sourceEditor, 'source', AstExplorer.defaultSourceURL);
+    await this.initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', AstExplorer.defaultPluginURL);
 
     this.pluginEditor.awaitEditor().then(() => {
       this.pluginEditor.get('#editor').doSave = async () => {
@@ -57,9 +57,14 @@ export default class AstExplorer extends Morph {
       this.updateAST();
     });
 
-    await this.pluginEditor.awaitEditor();
-    await this.sourceEditor.awaitEditor();
-    await promisedEvent(this.outputEditor, "editor-loaded");
+    await Promise.all([
+      this.pluginEditor.awaitEditor(), // Busy waiting for promise
+      // promisedEvent(this.pluginEditor.get('#editor'), "editor-loaded"),
+      this.sourceEditor.awaitEditor(),
+      // promisedEvent(this.sourceEditor.get('#editor'), "editor-loaded"),
+      this.outputEditor.editorLoaded() // check property, fallback to event; #TODO: which is better? Both have a problem: the component class has to be loaded first
+      //promisedEvent(this.outputEditor, "editor-loaded"),
+    ]);
     
     function enableSyntaxCheckForEditor(editor) {
       editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.editor))::debounce(200));
@@ -247,7 +252,7 @@ export default class AstExplorer extends Morph {
     setTimeout(() => {
       if(this.sourceEditor.get("#editor").isFocused()) {
         this.mapEditorsFromToPosition(
-          this.sourceEditor.currentEditor(), this.outputEditor.editor, false)
+          this.sourceEditor.get("#editor").currentEditor(), this.outputEditor.editor, false)
       }
     }, 0);
   }
@@ -255,7 +260,7 @@ export default class AstExplorer extends Morph {
     setTimeout(() => {
       if(this.outputEditor.isFocused()) { 
         this.mapEditorsFromToPosition(
-          this.outputEditor.editor, this.sourceEditor.currentEditor(), true)
+          this.outputEditor.editor, this.sourceEditor.get("#editor").currentEditor(), true)
       }
     }, 0);
   }
