@@ -219,6 +219,8 @@ export default class LivelyContainerNavbar extends Morph {
     return this.get("#navbar")
   }
   
+
+  
   async show(targetURL, sourceContent, contextURL, force=false) {
     // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
@@ -408,7 +410,16 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
-      this.followPath(link.href);
+      if (!link.parentElement.classList.contains("selected")) {
+        this.followPath(link.href);
+      } else {
+        // this.url = undefined
+        this.currentDir = null
+        
+        link.parentElement.classList.remove("selected")
+        var sublist = link.parentElement.querySelector("ul")
+        if (sublist) sublist.remove()
+      }
     }
   }
   
