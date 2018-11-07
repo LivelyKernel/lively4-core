@@ -9,7 +9,7 @@ function foo(a,b) {
 var avg = foo(a,b)
 
 var sum = 0
-for(var i=0; i < 50; i++) {
+for(var i=0; i < 400; i++) {
   sum += i
 }
 
