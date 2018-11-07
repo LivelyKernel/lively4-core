@@ -4,6 +4,7 @@ A Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
+test2
 
 ## Getting Started 
 
