@@ -21,6 +21,7 @@ export default class Preferences {
       OfflineFirst: {default: false, short: "use offline first swx cache"},
       GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
       FileIndex: {default: false, short: "local file index"},
+      SWXKeepAlive: {default: false, short: "keep SWX alive"},
     }
   }
   

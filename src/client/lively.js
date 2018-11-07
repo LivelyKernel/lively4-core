@@ -1570,6 +1570,19 @@ export default class Lively {
     }
   }
 
+  /*
+   * Continousely send a message to swx to keep it alive, since it boots slowly...
+   */
+  static async onSWXKeepAlivePreference(bool) {
+    while(lively.preferences.get("SWXKeepAlive")) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'meta',
+        command: 'keepalive'
+      });
+      // console.log("swx keep alive")
+      await lively.sleep(1000)
+    }
+  }
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
