@@ -1,15 +1,23 @@
-var a = 3
-var b = 4
+const api = 'http://127.0.0.1:8081'
 
-function foo(a,b) {
-  var c = (a + b) / 2 
-  return c
+let foo = 0
+fetch(api)
+  .then((response) => {
+  let foo = response.json()
+  return foo
+  })
+  .then((json) =>
+       {
+    let foo = json
+  })
+
+
+
+
+let i = 0
+
+{
+  let i = 3
 }
 
-var avg = foo(a,b)
-
-var sum = 0
-for(var i=0; i < 5; i++) {
-  sum += i
-}
-
+let r = i
