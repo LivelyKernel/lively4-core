@@ -291,6 +291,7 @@ export default class KnotView extends Morph {
       }
       editorComp.doSave = async text => {
         await knot.save(text);
+        lively.notify('saved knot')
         this.refresh();
       }
     }

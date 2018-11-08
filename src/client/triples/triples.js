@@ -142,9 +142,7 @@ export class Triple extends Knot {
 
     super(fileName, JSON.parse(content));
 
-    if(new.target === Triple) {
-      trackInstance.call(Triple, this);
-    }
+    // track this Triple for ROQs after full initialization
   }
   
   label() {
@@ -330,6 +328,7 @@ export class Graph {
     if(isTriple) {
       knot = new Triple(fileName, text);
       await this.linkUpTriple(knot);
+      trackInstance.call(Triple, knot);
     } else {
       knot = new Knot(fileName, text);
     }
