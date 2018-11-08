@@ -146,7 +146,7 @@ export default class FileIndex {
     }).then(r => r.json())
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
   }
-  
+    
   async addFile(url, name, type, size, modified) {
     
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -156,8 +156,8 @@ export default class FileIndex {
     
     console.log("FileIndex update  " + url)
     
-    
-    var file = file = {
+
+    var file = {
       url: url,
       name: name,
       size: size,

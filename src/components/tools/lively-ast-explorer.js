@@ -9,101 +9,77 @@ import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promise
 
 export default class AstExplorer extends Morph {
 
+  static get defaultSourceURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-source.js"; }
+  static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
+
   get pluginEditor() { return this.get("#plugin"); }
   get sourceEditor() { return this.get("#source"); }
   get outputEditor() { return this.get("#output"); }
-  get pluginInput() { return this.get("#plugin-url"); }
-  get sourceInput() { return this.get("#source-url"); }
+  get sourceURL() { return this.sourceEditor.getURLString(); }
+  get pluginURL() { return this.pluginEditor.getURLString(); }
+  
+  async initLivelyEditorFromAttribute(editor, attributeToRead, defaultPath) {
+    var filePath =  this.getAttribute(attributeToRead);
+    if (!filePath) {
+      filePath = defaultPath;
+    }
+    editor.setURL(filePath);
+    await editor.loadFile();
+  }
 
   async initialize() {
     this.windowTitle = "AST Explorer";
-    // lets work with properties until we get access to the module state again
-    this.babel = babel;
 
-    let initLivelyEditorFromAttribute = async (editor, input, attributeToRead, defaultPath) => {
-      var filePath =  this.getAttribute(attributeToRead);
-      if (!filePath) {
-        filePath = defaultPath;
-      }
-    
-      // #TODO get rid of this runtime check by either:
-      //   a) guaranty loaded childnodes before running initialize
-      //   b) editor that only be initialized through attributes access
-      let text = await lively.files.loadFile(filePath);
-      editor.value = text;
-      input.value = filePath;
-    };
-    initLivelyEditorFromAttribute(
-      this.sourceEditor,
-      this.sourceInput,
-      'source',
-      lively4url + "/src/client/reactive/babel-plugin-active-expression-rewriting/example.js"
-    );
-    initLivelyEditorFromAttribute(
-      this.pluginEditor,
-      this.pluginInput,
-      'plugin',
-    	lively4url + "/src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
-    );
+    await this.initLivelyEditorFromAttribute(this.sourceEditor, 'source', AstExplorer.defaultSourceURL);
+    await this.initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', AstExplorer.defaultPluginURL);
 
-    this.pluginEditor.doSave = async () => {
-      await lively.files.saveFile(this.pluginInput.value, this.pluginEditor.value);
-      
-      await lively.reloadModule("" + this.pluginInput.value);
-      this.updateAST();
-    };
-    this.sourceEditor.doSave = async () => {
-      await this.saveSourceFile();
-      this.updateAST();
-    };
-    
-    this.pluginInput.addEventListener('keydown', async event => {
-      if (event.keyCode == 13) { // ENTER
-        this.onPluginUrlChanged(event.detail)      
-      }
+    this.pluginEditor.awaitEditor().then(() => {
+      this.pluginEditor.get('#editor').doSave = async () => {
+        await this.pluginEditor.saveFile();
+
+        await lively.reloadModule("" + this.pluginURL);
+        this.updateAST();
+      };
     });
-    this.sourceInput.addEventListener('keydown', async event => {
-      if (event.keyCode == 13) { // ENTER
-        this.onSourceUrlChanged(event.detail);
-        // load file text for new url
-        this.sourceEditor.value = await lively.files.loadFile(this.sourceInput.value);
-      } else if(event.keyCode == 83 && event.ctrlKey) {
-        this.onSourceUrlChanged(event.detail);
-        // #TODO: save file text to new url
-        this.saveSourceFile();
-        event.stopPropagation();
-        event.preventDefault();
-      }
+    this.sourceEditor.awaitEditor().then(() => {
+      this.sourceEditor.get('#editor').doSave = async () => {
+        await this.sourceEditor.saveFile();
+        this.updateAST();
+      };
+    });
+    
+    this.pluginEditor.addEventListener('url-changed', async event => {
+      this.setAttribute("plugin", event.detail.url);
+      this.updateAST();
+    });
+    this.sourceEditor.addEventListener('url-changed', async event => {
+      this.setAttribute("source", event.detail.url);
+      this.updateAST();
     });
 
-    await promisedEvent(this.sourceEditor, "editor-loaded");
-    await promisedEvent(this.outputEditor, "editor-loaded");
+    await Promise.all([
+      this.pluginEditor.awaitEditor(), // Busy waiting for promise
+      // promisedEvent(this.pluginEditor.get('#editor'), "editor-loaded"),
+      this.sourceEditor.awaitEditor(),
+      // promisedEvent(this.sourceEditor.get('#editor'), "editor-loaded"),
+      this.outputEditor.editorLoaded() // check property, fallback to event; #TODO: which is better? Both have a problem: the component class has to be loaded first
+      //promisedEvent(this.outputEditor, "editor-loaded"),
+    ]);
     
     function enableSyntaxCheckForEditor(editor) {
       editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.editor))::debounce(200));
     }
-    enableSyntaxCheckForEditor(this.pluginEditor);
-    enableSyntaxCheckForEditor(this.sourceEditor);
+    enableSyntaxCheckForEditor(this.sourceEditor.get('#editor'));
+    enableSyntaxCheckForEditor(this.pluginEditor.get('#editor'));
     
-  	this.sourceEditor.editor.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
+  	this.sourceEditor.get('#editor').editor.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
     this.outputEditor.editor.on("beforeSelectionChange", evt => this.onOutputSelectionChanged(evt));
    
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
-  async saveSourceFile() {
-    await lively.files.saveFile(this.sourceInput.value, this.sourceEditor.value);
-  }
-  
-  onPluginUrlChanged(details) {
-    this.setAttribute("plugin", details.url);
-  }
-  onSourceUrlChanged(details) {
-    this.setAttribute("source", details.url);
-  }
-  
   async updateAST() {
-    const src = this.sourceEditor.editor.getValue();
+    const src = this.sourceEditor.get('#editor').editor.getValue();
     
     const filename = "tempfile.js"
 
@@ -140,7 +116,7 @@ export default class AstExplorer extends Morph {
     // #TODO refactor
     // this.pluginEditor.editor.getSession().setAnnotations([]);
 
-    var url = "" + this.pluginInput.value;
+    var url = "" + this.pluginURL;
     // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
     // assumend problem: there is a bad version of the code in either the browser or system.js cache
     // idea: we have to find and flush it...
@@ -222,27 +198,21 @@ export default class AstExplorer extends Morph {
     executeAllTestRunners();
   }
 
-  livelyMigrate(other) {
-    this.addEventListener("initialize", () => {
-      this.sourceInput.value = other.sourceInput.value;
-      this.sourceEditor.editor.setValue(other.sourceEditor.editor.getValue());
-      this.pluginEditor.value = other.pluginEditor.value;
-      this.pluginEditor.editor.setValue(other.pluginEditor.editor.getValue());
-      
-      this.outputEditor.editor.setValue(other.outputEditor.editor.getValue()); 
-    
-      this.result = other.result;
-    
-      this.updateAST();
-    });
-  }
-  
   livelyPrepareSave() {
-    this.setAttribute('source', this.sourceInput.value);
-    this.setAttribute('plugin', this.pluginInput.value);
+    this.setAttribute('source', this.sourceURL);
+    this.setAttribute('plugin', this.pluginURL);
     console.log("PREPARE SAVE", this.getAttribute('source'), this.getAttribute('plugin'));
   }
   
+  livelyMigrate(other) {
+    // #TODO: do we still need this?
+    this.addEventListener("initialize", () => {
+      this.outputEditor.editor.setValue(other.outputEditor.editor.getValue()); 
+      this.result = other.result;
+      this.updateAST();
+    });
+  }
+
   originalPositionFor(line, column) {
     var smc =  new sourcemap.SourceMapConsumer(this.result.map)
     return smc.originalPositionFor({
@@ -282,7 +252,7 @@ export default class AstExplorer extends Morph {
     setTimeout(() => {
       if(this.sourceEditor.get("#editor").isFocused()) {
         this.mapEditorsFromToPosition(
-          this.sourceEditor.currentEditor(), this.outputEditor.editor, false)
+          this.sourceEditor.get("#editor").currentEditor(), this.outputEditor.editor, false)
       }
     }, 0);
   }
@@ -290,7 +260,7 @@ export default class AstExplorer extends Morph {
     setTimeout(() => {
       if(this.outputEditor.isFocused()) { 
         this.mapEditorsFromToPosition(
-          this.outputEditor.editor, this.sourceEditor.currentEditor(), true)
+          this.outputEditor.editor, this.sourceEditor.get("#editor").currentEditor(), true)
       }
     }, 0);
   }

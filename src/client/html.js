@@ -160,8 +160,10 @@ export default class HTML {
     
     Array.prototype.forEach.call(nodes, node => {
       if (node.getAttribute) {
+        
         var href = node.getAttribute("href")
         if (href) {
+          // console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
           var m
@@ -181,7 +183,6 @@ export default class HTML {
             path = href; // ABSOLTUE paths
           } else {
             path = dir + href // that leaves us RELATIVE paths
-            
             if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
               // no ending?
               // we could check, or assume md for the moment
@@ -191,6 +192,12 @@ export default class HTML {
           } 
           if (path) {
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
+            if (node.tagName == "LINK") {
+              console.log("update LINK", path)
+              node.setAttribute("data-href", href) // so we keep the original somewhere..
+              node.setAttribute("href", path)
+            }
+            
             $(node).click(() => { 
               // if (path.match(/https:\/\/lively4\/notes/)) {
               //     if (window.confirm("follow path? " + path)) {

@@ -261,6 +261,10 @@ export function presentationFullscreenButton(ctx) {
     return 
   }
   var slide = lively.query(ctx, ".lively-slide")
+  if (!slide) {
+    lively.notify("could not find slide")
+    return
+  }
   if (!presentation) {
     console.log("presentationFullscreenButton>>not in a slide")
     reutrn 

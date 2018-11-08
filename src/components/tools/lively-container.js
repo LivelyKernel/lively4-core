@@ -38,9 +38,6 @@ export default class Container extends Morph {
         this.checkForContentChanges()
       })::debounce(1000);
 
-    // make sure the global css is there...
-    lively.loadCSSThroughDOM("hightlight", lively4url + "/src/external/highlight.css");
-
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {

@@ -121,9 +121,10 @@ export default class Editor extends Morph {
     if (selection) return selection.version;
   }
   
-  onFilenameEntered() {
+  async onFilenameEntered() {
     this.setAttribute("url", this.getURLString())
-    this.loadFile();
+    await this.loadFile();
+    this.dispatchEvent(new CustomEvent("url-changed", {detail: { url: this.getURLString() }}));
   }
 
   getMountURL() {
@@ -476,6 +477,10 @@ export default class Editor extends Morph {
       evt.stopPropagation()
       evt.preventDefault();
     }
+  }
+  
+  async onBrowse() {
+    lively.openBrowser(this.getURLString())
   }
   
   async onDrop(evt) {
