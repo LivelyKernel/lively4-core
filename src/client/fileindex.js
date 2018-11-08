@@ -59,8 +59,10 @@ export default class FileIndex {
 
   async updateFunctionAndClasses() {
     return this.showProgress("extract functions and classes", () => {
-      return this.db.files.where("type").equals("js").modify((ea) => {
-        this.extractFunctionsAndClasses(ea)
+      this.db.files.where("name").notEqual("").modify((file) => {
+        if (file.name && file.name.match(/\.js$/)) {
+          this.extractFunctionsAndClasses(file)
+        }
       })
     })
   }
@@ -88,13 +90,13 @@ export default class FileIndex {
   }
 
   extractFunctionsAndClasses(file) {
-    // lively.notify("file " +file.url + " " + file.content.length)
     var ast = this.parseSource(file.url, file.content)
     var result = this.parseFunctionsAndClasses(ast)
-    // lively.notify("result " + result.functions)
+//     console.log(file.url + " functions: " + result.functions)
+//     console.log(file.url + " classes: " + file.classes)
+    
     file.classes = result.classes
-    file.functions  = result.functions
-    console.log("classes " + file.classes)
+    file.functions =  result.functions
   }
 
   parseFunctionsAndClasses(ast) {
