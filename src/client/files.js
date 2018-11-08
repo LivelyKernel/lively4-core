@@ -340,7 +340,7 @@ export default class Files {
   static async visualizeFileTreeMap(url) {
     var tree = await lively.files.fileTree(url)
     if (tree) {
-      lively.openComponentInWindow("lively-d3-treemap").then( async tm => {
+      lively.openComponentInWindow("d3-treemap").then( async tm => {
         tm.setTreeData(tree)
       })
     } else {

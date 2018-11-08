@@ -2,7 +2,7 @@ import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
 
-export default class LivelyD3Tree extends Morph {
+export default class D3Tree extends Morph {
 
   getTreeData() {
     if (!this.treeData) {

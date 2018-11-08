@@ -36,7 +36,7 @@ import moment from "src/external/moment.js";
   div.style.width = "800px"
   div.style.height = "800px"
   
-  var treemap = await lively.create("lively-d3-treemap")
+  var treemap = await lively.create("d3-treemap")
   treemap.setTreeData(tree)
   var d3 = treemap.d3
     

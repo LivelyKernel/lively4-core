@@ -8,7 +8,7 @@ function radialPoint(x, y) {
   return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
 }
 
-export default class LivelyD3RadialRree extends Morph {
+export default class D3RadialRree extends Morph {
 
   getTreeData() {
     if (!this.treeData) {

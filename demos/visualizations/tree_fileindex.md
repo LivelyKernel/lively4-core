@@ -36,7 +36,7 @@ import d3 from "src/external/d3.v5.js"
   div.style.width = "800px"
   div.style.height = "800px"
   
-  var treemap = await lively.create("lively-d3-tree")
+  var treemap = await lively.create("d3-tree")
   treemap.setTreeData(tree)
   treemap.style.backgroundColor = "lightgray"
   

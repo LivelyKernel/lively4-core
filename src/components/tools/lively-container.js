@@ -397,7 +397,7 @@ export default class Container extends Morph {
   }
 
   async onDependencies() {
-    lively.openComponentInWindow("lively-d3-tree").then(tree => {
+    lively.openComponentInWindow("d3-tree").then(tree => {
       tree.dataName = function(d) {
         return d.name.replace(/.*\//,"").replace(/\.js/,"")
       }
