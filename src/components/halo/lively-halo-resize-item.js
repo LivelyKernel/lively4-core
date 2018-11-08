@@ -34,6 +34,12 @@ export default class HaloResizeItem extends HaloItem {
     this.target = window.that
     this.snapping = new Snapping(this.target) 
     
+    if (!this.halo) {
+      console.error("this.halo dont defined....")
+      return
+    }
+    
+    
     if(this.halo.info)
       this.halo.info.stop();
     this.halo.info = lively.showInfoBox(this.target)

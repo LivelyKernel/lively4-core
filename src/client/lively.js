@@ -51,6 +51,7 @@ var exportmodules = [
   "authGithub",
   "authDropbox",
   "authGoogledrive",
+  "contextmenu",
   "windows"
 ];
 
@@ -649,7 +650,7 @@ export default class Lively {
       (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
       target = that;
     }
-    contextmenu.openIn(container, evt, target, worldContext);
+    lively.contextmenu.openIn(container, evt, target, worldContext);
   }
 
   static nativeNotify(title, text, timeout, cb) {
