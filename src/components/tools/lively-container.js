@@ -535,7 +535,7 @@ export default class Container extends Morph {
         'indent_size': 2,
         'wrap_line_length': 120,
       },
-      'indent_size': 4,
+      'indent_size': 2,
     }
     if (ending === 'js') {
       beautifulText = global.js_beautify(text, options);

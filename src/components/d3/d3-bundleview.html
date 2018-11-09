@@ -1,128 +1,119 @@
 <template id="d3-bundleview" data-class="D3Bundleview">
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-  
-body {
-    font: 10px sans-serif;
-}
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    body {
+      font: 10px sans-serif;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+    .x.axis path {
+      display: none;
+    }
 
-.axis path,
-.axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
 
-.x.axis path {
-    display: none;
-}
+    .node {
+      font: 300 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      fill: #999999;
+      stroke: white;
+    }
 
-.line {
-    fill: none;
-    stroke: steelblue;
-    stroke-width: 1.5px;
-}
-  
-  
-  
-  
-  
-  
-.node {
-  font: 300 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
-  fill: #999999;
-  stroke: white;
-}
+    .node--leaf {
+      fill: #6666af;
+    }
 
-.node--leaf {
-    fill: #6666af;
-}
+    .node--descendant {
+      fill: #dfd89d;
+    }
 
-.node--descendant {
-    fill: #dfd89d;
-}
+    .node--ancestor {
+      fill: #efe8ad;
+    }
 
-.node--ancestor {
-    fill: #efe8ad;
-}
+    .node:hover {
+      fill: steelblue;
+    }
 
-.node:hover {
-    fill: steelblue;
-}
+    .node:hover,
+    .node--source,
+    .node--target {
+      font-weight: 700;
+    }
 
-.node:hover,
-.node--source,
-.node--target {
-    font-weight: 700;
-}
+    .node--hovered {
+      fill: steelblue;
+      border: steelblue;
+    }
 
-.node--hovered {
-    fill: steelblue;
-    border: steelblue;
-}
+    .node--source {
+      fill: #2ca02c;
+    }
 
-.node--source {
-    fill: #2ca02c;
-}
+    .node--target {
+      fill: #d62728;
+    }
 
-.node--target {
-    fill: #d62728;
-}
+    .node--none {
+      fill-opacity: 0.4;
+    }
 
-.node--none {
-    fill-opacity: 0.4;
-}
+    .link {
+      fill: none;
+      stroke: url(#bundleview-gradient);
+      stroke-opacity: .4;
+      /* pointer-events: none; */
+    }
 
-.link {
-    fill: none;
-    stroke:url(#bundleview-gradient);
-    stroke-opacity: .4;
-    pointer-events: none;
-}
+    .link--source,
+    .link--target {
+      stroke-opacity: .7;
+      stroke-width: 2px;
+    }
 
-.link--source,
-.link--target {
-    stroke-opacity: .7;
-    stroke-width: 2px;
-}
+    .link--none {
+      stroke: #d4d4d4;
+      stroke-opacity: .3;
+    }
 
-.link--none {
-    stroke: #d4d4d4;
-    stroke-opacity: .3;
-}
+    .colors {
+      related-nodes: #66eaea;
+      related-nodes2: #46caca;
+      basic: #999999;
+      leaf: #6666af;
+      small: #ca4444;
+    }
 
-.colors {
-    related-nodes: #66eaea;
-    related-nodes2: #46caca;
-    basic: #999999;
-    leaf:  #6666af;
-    small: #ca4444;
-}
+    .bundle--text {
+      width: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-.bundle--text {
-    width: 20px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bundle--text--none {
-    fill-opacity: 0.4;
-}
+    .bundle--text--none {
+      fill-opacity: 0.4;
+    }
 
 
-:host {
-  
-}
-#rootContainer {
-  background-color: #eeeeee;
-}
-  
-  
-  
-</style>
-<div id="rootContainer"></div>
+    :host {}
+
+    #rootContainer {
+      background-color: #eeeeee;
+    }
+
+  </style>
+  <div id="rootContainer"></div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
+<script class="registrationScript">
+  lively.registerTemplate()
 
+</script>
