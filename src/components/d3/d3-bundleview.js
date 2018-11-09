@@ -109,7 +109,10 @@ export class Bundleview {
     // gradient as reference for hierarchical edge bundles
     var defs = realSVG.append('defs');
     var gradient = defs.append('linearGradient')
-      .attr("id", 'bundleview-gradient');
+      .attr("id", 'bundleview-gradient')
+      // .attr('gradientTransform', 'translate(0.5, 0.5),rotate(270),translate(-0.5, -0.5)')
+      .attr('gradientTransform', 'rotate(270, 0.5, 0.5)')
+    ;
     gradient.append('stop').attr('stop-color', '#2ca02c');
     gradient.append('stop')
       .attr('stop-color', '#d62728')
@@ -525,6 +528,8 @@ export class Bundleview {
       labels
         .classed('label--invisible', d => { return false; });
 
+      updateGradients();
+      
       updateLabelText(labels)
 
       link
@@ -594,10 +599,10 @@ export class Bundleview {
       })
     }
 
-
+    var bundeledLinks = bundleLinks(links)
     var link = svg.append("g").selectAll(".link")
 
-      .data(bundleLinks(links)) //bundle(links)
+      .data(bundeledLinks) //bundle(links)
 
       .enter().append("path")
       // only for interactions?
@@ -624,6 +629,8 @@ export class Bundleview {
       .attr("class", "link")
       // .each(function(d) { debugger })  
       .attr("d", (d) => { var result = line(d); return result })
+       
+      .attr('stroke', d => `url(#bundleview-gradient_${d.source.data.id}_${d.target.data.id})`)
 
       .on('click', function(d) {
         
@@ -636,6 +643,31 @@ export class Bundleview {
       })
       // .on("mouseout", d => {
       // })
+
+
+    function updateGradients() {
+      gradient
+      .attr('gradientTransform', function(d) {
+        function absoluteRadiantToDisplayedRelative(r) {
+          return r
+          return (r / rootArcWidth) * 2 * Math.PI;
+        }
+        var mA = absoluteRadiantToDisplayedRelative((d.source.x0 + d.source.x1) / 2);
+        var mB = absoluteRadiantToDisplayedRelative((d.target.x0 + d.target.x1) / 2);
+        var radiant = ((mA + mB) / 2);
+        var degrees = (radiant / Math.PI * 180) + (mB > mA ? 0 : 180)
+        return `rotate(${degrees}, 0.5, 0.5)`;
+      });
+    }
+    var gradient = defs.selectAll('linearGradient').data(bundeledLinks)
+    .enter().append('linearGradient')
+      .attr("id", d => `bundleview-gradient_${d.source.data.id}_${d.target.data.id}`)
+      // .attr('gradientTransform', 'translate(0.5, 0.5),rotate(270),translate(-0.5, -0.5)')
+    updateGradients()
+    gradient.append('stop').attr('stop-color', '#2ca02c');
+    gradient.append('stop')
+      .attr('stop-color', '#d62728')
+      .attr('offset', '100%');
 
 
     var lockedNode;
