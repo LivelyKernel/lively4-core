@@ -18,7 +18,6 @@ const DEFAULT_IDENTIFIER = 'default';
 
 var bundleviewCount = 0;
 
-
 export function walkTree(root, beforeChildren = ()=>{}, afterChildren = ()=>{}) {
     beforeChildren(root);
     if(root.children) {
@@ -97,6 +96,10 @@ export class Bundleview {
 
       rootContainer = d3.select(rootContainer);
       
+      rootContainer.attr("title", "") // override outter tooltips
+      
+
+      
       var realSVG = rootContainer.append("svg");
 
       // gradient as reference for hierarchical edge bundles
@@ -138,6 +141,9 @@ export class Bundleview {
       hierrachy.sum((d) => currentSizeMetric(d)) //
       var rootNode = partition(hierrachy);
       var root = rootNode // just to be sure!
+      
+      var rootArcWidth = 2 * Math.PI; // initally it is the full circle
+
       
       walkTree(rootNode, node => {
         nodes.set(node.data.id, node) // nodes are not the nodes of the data tree
@@ -455,13 +461,14 @@ export class Bundleview {
         }
       
         /* Initialize tooltip */
-// let tip = d3.tip()
-//     .attr('class', 'd3-tip')
-//     .html((d) => `<p>${d.label}</p><p>id: ${d.id}</p>` +
-//     Object.keys(colorMetrics)
-//         .filter(name => name !== DEFAULT_IDENTIFIER && d.attributes && d.attributes[name])
-//         .map(name => `${name}: ${d.attributes[name]}`)
-//         .join("<br>"));
+      
+      // let tip = d3.tip()
+      //       .attr('class', 'd3-tip')
+      //       .html((d) => `<p>${d.label}</p><p>id: ${d.id}</p>` +
+      //       Object.keys(colorMetrics)
+      //           .filter(name => name !== DEFAULT_IDENTIFIER && d.attributes && d.attributes[name])
+      //           .map(name => `${name}: ${d.attributes[name]}`)
+      //           .join("<br>"));
 
         // Keep track of the node that is currently being displayed as the root.
         var nodeDisplayedAsRoot = rootNode;
@@ -475,14 +482,17 @@ export class Bundleview {
         var hierarchicalEdgeBundleEnterElementGroup = enterElem.append("g")
             /* Invoke the tip in the context of your visualization */
 //            .call(tip)
-            .on('mouseover', d => {
-//                tip.show(d);
-                if(!lockedNode) {
+            .on('mouseover', function(d) {
+          
+              
+              if(!lockedNode) {
                     highlightNode(d);
                 }
             })
-            .on("mouseout", d => {
-//                tip.hide(d);
+           .on("mouseout", d => {
+    
+              // tooltip.classed("hidden", true);
+              //                tip.hide(d);
                 if(!lockedNode) {
                     unhighlightNode();
                 }
@@ -524,7 +534,10 @@ export class Bundleview {
             );
         var node = path;
 
+      
         function zoomToNode(d) {
+          
+          
             function isDescendentOf(desc, ance) {
                 return desc === ance || (desc.parent && isDescendentOf(desc.parent, ance));
             }
@@ -533,7 +546,8 @@ export class Bundleview {
             }
 
             nodeDisplayedAsRoot = d;
-
+            debugger
+            rootArcWidth = d.x1 - d.x0
             path
                 .transition()
                 .duration(Bundleview.zoomTransitionTime)
@@ -547,6 +561,8 @@ export class Bundleview {
             labels
                 .classed('label--invisible', d => { return false; });
 
+            updateLabelText(labels)
+          
             link
                 .transition()
                 .duration(Bundleview.zoomTransitionTime)
@@ -579,12 +595,14 @@ export class Bundleview {
         //     .enter().append("path")
         //     .each(stash)
         //     .attr("fill", "none" )
-        //     //.attr("stroke", "rgba(250,0,0,0.5)" )
+        //     .attr("stroke", "rgba(250,0,0,0.5)" )
         //     .style('stroke-width', 4)
         //     .style('stroke-opacity', 0.8)
         //     .style('stroke', d => {debugger ; return d.data && debugColor(d.data.id) })
         //     .attr("d", radialLineGenerator);
 
+        
+      
       
         var labels = hierarchicalEdgeBundleEnterElementGroup.append("text")
             .classed('bundle--text', true)
@@ -593,7 +611,12 @@ export class Bundleview {
             .style("text-anchor","middle") // 
             .style('alignment-baseline', 'central') 
             .attr("xlink:href", (d,i) => '#bundleview_node_' + bundleviewID + '_' + i)
-            .text(d => d.data.label);
+            
+        updateLabelText(labels)
+      
+      
+        var tooltips = hierarchicalEdgeBundleEnterElementGroup.append("title")
+            .text(d => d.data.label)
       
         function bundleLinks(links) {
           
@@ -842,42 +865,32 @@ export class Bundleview {
             }
         }
 
-        //d3.select(self.frameElement).style("height", height + "px");
-
-        // When zooming: interpolate the scales.
-        function commonArcTweenZoom(displayedRoot, arcGenerator) {
-            var xd = d3.interpolate(x.domain(), [displayedRoot.x0, displayedRoot.x1]),
-                yd = d3.interpolate(pieInverter.domain(), [displayedRoot.y0, 1]);
-
-            return function(d, i) {
-                return i
-                    ? function(t) { return arcGenerator(d); }
-                    : function foo(t) {
-                    x.domain(xd(t));
-                    pieInverter.domain(yd(t));
-                    return arcGenerator(d);
-                };
-            };
-        }
-
-        function arcTweenZoom(d) { return commonArcTweenZoom(d, arc); }
-        function hiddenArcTweenZoom(d) { return commonArcTweenZoom(d, radialLineGenerator); }
-
+    // When zooming: interpolate the scales.
+    function commonArcTweenZoom(displayedRoot, arcGenerator) {
+      var xd = d3.interpolate(x.domain(), [displayedRoot.x0, displayedRoot.x1]),
+          yd = d3.interpolate(pieInverter.domain(), [displayedRoot.y0, 1]);
+      return function(d, i) {
+          return i
+              ? function(t) { return arcGenerator(d); }
+              : function foo(t) {
+              x.domain(xd(t));
+              pieInverter.domain(yd(t));
+              return arcGenerator(d);
+          };
+      };
     }
+
+    function arcTweenZoom(d) { return commonArcTweenZoom(d, arc); }
+    function hiddenArcTweenZoom(d) { return commonArcTweenZoom(d, radialLineGenerator); }
+        
+    function updateLabelText(labels) {
+      labels.text(d => {
+        var arcShare = (d.x1 - d.x0) / rootArcWidth
+        if (arcShare < 0.02) return; // in ANGLE of pie piece, don't show to small rabel
+        return d.data.label});       
+    }    
+  }
 }
-
-//function walkTree(root, beforeChildren, afterChildren) {
-//    beforeChildren(root);
-//    if(root.children) {
-//        root.children.forEach((child, i) => {
-//            walkTree(child, beforeChildren, afterChildren);
-//        })
-//    }
-//    afterChildren(root);
-//}
-
-
-
 
 export default class D3Bundleview extends Morph {
   initialize() {
