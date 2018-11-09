@@ -441,7 +441,7 @@ export class Bundleview {
                     );
             })
             .angle(function(d) {
-                return x(d.x1);
+                return x(d.x0 + (d.x1 - d.x0) / 2) ; // Position curve in the center of pie piece
             });      
         var line = function(d) {
           var result = originalLine(d)
