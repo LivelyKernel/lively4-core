@@ -15,7 +15,7 @@ import ShowPerformance from "demos/contextjs/showperformancelayer.js";
 export default class Whyline extends Morph {
 
   initialize() {
-    this.windowTitle = "Continuous Feedback Editor2";  
+    this.windowTitle = "Whyline Debugger";  
     this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-core/src/components/demo/lively-whyline-example.js")
     this.get("#source").loadFile()
 

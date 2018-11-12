@@ -143,28 +143,35 @@
     width: max-content;
   }
   </style>
-<div id="firstRow">
-  <div id="sourcePane">
-    <lively-code-editor  id="source" ></lively-code-editor>
+  
+  <div id="firstRow">
+    <div id="sourcePane">
+      <lively-code-editor  id="source" ></lively-code-editor>
+    </div>
   </div>
-</div>
-<lively-separator></lively-separator>
-<div id="secondRow">
-  <div id="tracePane">
-    <lively-inspector id="traceInspector" type="ast"></lively-inspector>
-  </div>
+  
   <lively-separator></lively-separator>
-  <div id="runtimePane">
-    <canvas id="canvas" width="300px" height="300px"></canvas>
-    <pre id="log"></pre>
+  
+  <div id="secondRow">
+    <div id="tracePane">
+      <lively-inspector id="traceInspector" type="ast"></lively-inspector>
+    </div>
+    
+    <lively-separator></lively-separator>
+    
+    <div id="runtimePane">
+      <canvas id="canvas" width="300px" height="300px"></canvas>
+      <pre id="log"></pre>
+    </div>
   </div>
-</div>
-<lively-separator></lively-separator>
-<div id="thirdRow">
-  <div id="traceViewPane">
-    <div id="traceView"></div>
+  
+  <lively-separator></lively-separator>
+  
+  <div id="thirdRow">
+    <div id="traceViewPane">
+      <div id="traceView"></div>
+    </div>
   </div>
-</div>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
