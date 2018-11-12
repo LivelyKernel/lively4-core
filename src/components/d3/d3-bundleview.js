@@ -138,6 +138,7 @@ export class Bundleview {
     var root = rootNode // just to be sure!
 
     var rootArcWidth = 2 * Math.PI; // initally it is the full circle
+    var rootArcOffset = 0; // we could also look into root...
 
     walkTree(rootNode, node => {
       nodes.set(node.data.id, node) // nodes are not the nodes of the data tree
@@ -515,6 +516,8 @@ export class Bundleview {
       nodeDisplayedAsRoot = d;
       
       rootArcWidth = d.x1 - d.x0
+      rootArcOffset = d.x0
+      
       path
         .transition()
         .duration(Bundleview.zoomTransitionTime)
@@ -649,8 +652,7 @@ export class Bundleview {
       gradient
       .attr('gradientTransform', function(d) {
         function absoluteRadiantToDisplayedRelative(r) {
-          return r
-          return (r / rootArcWidth) * 2 * Math.PI;
+          return (r / rootArcWidth) * 2 * Math.PI + rootArcOffset;
         }
         var mA = absoluteRadiantToDisplayedRelative((d.source.x0 + d.source.x1) / 2);
         var mB = absoluteRadiantToDisplayedRelative((d.target.x0 + d.target.x1) / 2);
