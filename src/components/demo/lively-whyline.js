@@ -16,7 +16,7 @@ export default class Whyline extends Morph {
 
   initialize() {
     this.windowTitle = "Whyline Debugger";  
-    this.get("#source").setURL("https://lively-kernel.org/lively4/lively4-core/src/components/demo/lively-whyline-example.js")
+    this.get("#source").setURL("http://localhost:8080/lively4-core/src/components/demo/lively-whyline-example.js")
     this.get("#source").loadFile()
 
     this.sourceCodeChangedDelay = (() => {
@@ -26,15 +26,16 @@ export default class Whyline extends Morph {
 
     this.registerButtons();
 
-    this.get("#traceInspector").hideWorkspace()
-    // this.get("#objectInspector").hideWorkspace()
+//     this.get("#traceInspector").hideWorkspace()
+//     // this.get("#objectInspector").hideWorkspace()
 
-    this.get("#traceInspector").addEventListener("select-object", 
-      evt => this.selectCallTraceNode(evt.detail.object))
+//     this.get("#traceInspector").addEventListener("select-object", 
+//       evt => this.selectCallTraceNode(evt.detail.object))
 
     this.editorComp().doSave = () => {
       this.get("#source").saveFile();
       this.runCode();      
+      console.log("ran code")
     };
     
     this.editorComp().addEventListener("change", evt => 
@@ -92,7 +93,7 @@ export default class Whyline extends Morph {
   
   async runCode() {
     this.ast = null; // clear
-    this.get("#log").innerHTML = ""
+    // this.get("#log").innerHTML = ""
     var src = this.editor().getValue();
   
     // this.get("#astInspector").inspect(this.ast)
@@ -113,7 +114,8 @@ export default class Whyline extends Morph {
         resolveModuleSource: undefined
       })
     } catch(err) {
-      this.get("#log").innerHTML = "" + err
+      console.error(err)
+      // this.get("#log").innerHTML = "" + err
     }
     
     try {
@@ -123,6 +125,7 @@ export default class Whyline extends Morph {
       ctx.fillRect(0, 0, 300, 300);
       
       var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
+      console.log(result)
       // this.get("#log").textContent += "-> " + result;       
     } catch(err) {
         
@@ -137,7 +140,7 @@ export default class Whyline extends Morph {
       //       row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
       //     }
       //   }));
-      this.get("#log").textContent = "" + err
+      // this.get("#log").textContent = "" + err
     } finally {
     
     }
@@ -145,7 +148,7 @@ export default class Whyline extends Morph {
       this.ast = window.__tr_last_ast__
       this.clearMarkers()
       this.traceRoot = this.ast.calltrace
-      this.get("#traceInspector").inspect(this.ast)
+      // this.get("#traceInspector").inspect(this.ast)
 
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
