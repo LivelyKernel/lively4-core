@@ -1,7 +1,13 @@
 // Make a window object
 self.window = self;
-const lively4url = self.location.origin + self.location.pathname.split("/").slice(0,3).join("/");
+var path = self.location.pathname.split("/")
 
+// any idea of how to get rid of the last three elements?
+path.pop() // livelyworker.js
+path.pop() // /worker/
+path.pop() //  src
+
+const lively4url = self.location.origin + path.join("/");
 
 // Load SystemJS
 importScripts(lively4url + "/src/external/systemjs/system.src.js")
