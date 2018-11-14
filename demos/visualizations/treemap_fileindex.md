@@ -76,6 +76,17 @@ import moment from "src/external/moment.js";
     }
   }
   
+//   treemap.config({
+//     dataColor(d) {
+//     // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
+//     if (d.data.index) {
+//       var time = moment(d.data.index.modified)
+//       var days = (now - time._d.getTime()) / 1000 / 60 / 60 / 24
+
+//       return color(days)
+//     }
+//   })
+  
   treemap.dataClick = function(d) {
     lively.openInspector(d)
     
