@@ -197,7 +197,27 @@ class DependencyAPI {
   members() {
     const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
 
-    return compKeys.map(DependencyAPI.compositeKeyToMember);
+    return compKeys
+      .map(DependencyAPI.compositeKeyToMember)
+      .filter(member => member.object !== self);
+  }
+  
+  globals() {
+    const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
+
+    const globals = [];
+    lively.notify(compKeys.length)
+    compKeys.forEach(compKey => {
+      const [ object, name ] = CompositeKey.keysFor(compKey);
+      if(object === self) {
+        globals.push({
+          name,
+          value: object[name]
+        });
+      }
+    });
+    
+    return globals;
   }
 }
 

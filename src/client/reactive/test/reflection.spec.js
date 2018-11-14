@@ -221,7 +221,7 @@ describe('Reflection API', () => {
         expect(memberDeps[0]).to.have.property('value', 200);
       });
       
-      describe('global dependency modelled as member dependencies', () => {
+      describe('global dependencies not modelled member dependencies, but its own access', () => {
         let temp;
         
         beforeEach(() => {
@@ -233,16 +233,24 @@ describe('Reflection API', () => {
           temp = undefined;
         });
         
+        it('getDependencies is defined for Rewriting AExprs', () => {
+          const deps = aexpr(() => {}).getDependencies();
+          expect(deps).to.respondTo('globals');
+          expect(deps.globals()).to.be.an('array');
+        });
+
         it('get global dependencies', () => {
           window.foo = 200;
 
           const expr = aexpr(() => foo);
 
           const memberDeps = expr.getDependencies().members();
-          expect(memberDeps).to.have.lengthOf(1);
-          expect(memberDeps[0]).to.have.property('object', window);
-          expect(memberDeps[0]).to.have.property('property', 'foo');
-          expect(memberDeps[0]).to.have.property('value', 200);
+          expect(memberDeps).to.have.lengthOf(0);
+          
+          const globalDeps = expr.getDependencies().globals();
+          expect(globalDeps).to.have.lengthOf(1);
+          expect(globalDeps[0]).to.have.property('name', 'foo');
+          expect(globalDeps[0]).to.have.property('value', 200);
         });
 
       });
