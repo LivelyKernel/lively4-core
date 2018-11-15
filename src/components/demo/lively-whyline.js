@@ -293,9 +293,6 @@ export default class Whyline extends Morph {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
-      
-      // #TODO time dependency... on what should we wait here?
-      setTimeout(() => this.runCode(),200)
     })
   }
 }
