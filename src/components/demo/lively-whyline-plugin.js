@@ -66,7 +66,6 @@ export default function (babel) {
 
     		traverse({"type": "File", "program": programast}, {
       			enter(path) {
-      			  // console.log("enter " + path.node.type)
       				programast.node_map[path.node.traceid] = path.node
       				path.node.trace_counter = 0;
       			},
@@ -78,12 +77,9 @@ export default function (babel) {
           var _tr_time = performance.now();
           var _tr_time_max = 1000;
 	  		  function _tr_(id, exp) {
-            var astnode =  __tr_ast__ .node_map[id]
-  	  		  // console.log("enter " + astnode.type )
-
 	  			  var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
-	  			  __tr_current__=callnode
+	  			  __tr_current__ = callnode
 	  			  
   	  			var value = exp()
 
@@ -95,27 +91,17 @@ export default function (babel) {
   	  			return value
     	  	};
     	  	
-    	  	
-    	  	
     	  	function _tr_log_(id) {
-            var astnode =  __tr_ast__ .node_map[id]
-            // console.log("logst " + astnode.type )
-            
             var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
     	  		
     	  	};
     	  	
     	  	function _tr_begin_(id) {
-            var astnode =  __tr_ast__ .node_map[id]
-            // console.log("begin " + astnode.type )
-            
             var callnode = {parent: __tr_current__, id: id, children: []}
 				    callnode.parent.children.push(callnode)
 	  			  __tr_current__=callnode
     	  	};
-    	  	
-    	  	// var value = exp()
     	  	
     	  	function _tr_end_(id) {
   	  			__tr_current__ = __tr_current__.parent
@@ -124,7 +110,7 @@ export default function (babel) {
     	  	var __tr_root__  = { children: [] };
     	  	__tr_ast__.calltrace = __tr_root__;
     	  	window.__tr_last_ast__ = __tr_ast__;
-    	  	var __tr_current__=__tr_root__`)({ASTID: t.stringLiteral(programast.astid)}));
+    	  	var __tr_current__ = __tr_root__`)({ASTID: t.stringLiteral(programast.astid)}));
 	  	
         statements.forEach(ea => {
        		ea.insertBefore(begin({
@@ -134,15 +120,6 @@ export default function (babel) {
         		NODEID: t.numericLiteral(ea.node.traceid)
         	}));
         });
-
-        // declarations.forEach(ea => {
-       	// 	ea.insertBefore(begin({
-        // 		NODEID: t.numericLiteral(ea.node.traceid)
-        // 	}))
-        // 	ea.insertAfter(end({
-        // 		NODEID: t.numericLiteral(ea.node.traceid)
-        // 	}))
-        // })
      
         assignments.forEach(ea => {
         	ea.replaceWith(log({
@@ -159,15 +136,6 @@ export default function (babel) {
           	}).expression; // no statement here
         	}
         });
-
-        // declarators.forEach(ea => {
-        // 	if (ea.node.init) {
-        //   	ea.get("init").replaceWith(log({
-        //   	  NODEID: t.numericLiteral(ea.node.traceid),
-        //   		EXPSTATE: ea.node.init
-        //   	}));
-        // 	}
-        // });
         
         loops.forEach(ea => {
        		ea.insertBefore(begin({

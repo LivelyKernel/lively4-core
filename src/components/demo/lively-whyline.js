@@ -26,12 +26,6 @@ export default class Whyline extends Morph {
 
     this.registerButtons();
 
-//     this.get("#traceInspector").hideWorkspace()
-//     // this.get("#objectInspector").hideWorkspace()
-
-//     this.get("#traceInspector").addEventListener("select-object", 
-//       evt => this.selectCallTraceNode(evt.detail.object))
-
     this.editorComp().doSave = () => {
       this.get("#source").saveFile();
       this.runCode();      
@@ -93,10 +87,8 @@ export default class Whyline extends Morph {
   
   async runCode() {
     this.ast = null; // clear
-    // this.get("#log").innerHTML = ""
     var src = this.editor().getValue();
-  
-    // this.get("#astInspector").inspect(this.ast)
+    
     try {
       var src = this.editor().getValue();
       this.result = babel.transform(src, {
@@ -115,32 +107,16 @@ export default class Whyline extends Morph {
       })
     } catch(err) {
       console.error(err)
-      // this.get("#log").innerHTML = "" + err
     }
     
     try {
-      // lively.notify("output: " + this.result.code)
       var ctx = this.get("#canvas").getContext("2d")
       ctx.fillStyle = "white"
       ctx.fillRect(0, 0, 300, 300);
       
       var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
       console.log(result)
-      // this.get("#log").textContent += "-> " + result;       
     } catch(err) {
-        
-      // this.get("#source").currentEditor().getSession().setAnnotations(err.stack.split('\n')
-      //   .filter(line => line.match('runCode???'))
-      //   .map(line => {
-      //     let [row, column] = line
-      //       .replace(/.*<.*>:/, '')
-      //       .replace(/\)/, '')
-      //       .split(':')
-      //     return {
-      //       row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
-      //     }
-      //   }));
-      // this.get("#log").textContent = "" + err
     } finally {
     
     }
@@ -148,7 +124,6 @@ export default class Whyline extends Morph {
       this.ast = window.__tr_last_ast__
       this.clearCodeAnnotations()
       this.traceRoot = this.ast.calltrace
-      // this.get("#traceInspector").inspect(this.ast)
 
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
@@ -182,11 +157,9 @@ export default class Whyline extends Morph {
         label = ""
         break
       case "FunctionDeclaration":
-        // label = "" + ast_node.id.name + "()"
         label = ""
         break
       case "CallExpression":
-        // label = "" + ast_node.id.name + "()"
         if (ast_node.callee.object)
           label = ast_node.callee.object.name + ".";
         if (ast_node.callee.property)
@@ -277,10 +250,8 @@ export default class Whyline extends Morph {
     var markerLine = gutterMarkers && gutterMarkers.rightgutter
     if (!markerLine) {
         var markerLine = document.createElement("div")
-        // markerLine.style.backgroundColor = "rgb(240,240,240)"
         markerLine.style.fontSize = "8pt"
         markerLine.style.whiteSpace = "nowrap"
-        // markerLine.style.overflow = "hidden"
         markerLine.classList.add("markerLine")  // markerLine    
         editor.setGutterMarker(line, "rightgutter", markerLine)
     }
@@ -288,7 +259,6 @@ export default class Whyline extends Morph {
     resultNode.classList.add("markerResult")
     resultNode.classList.add(node.markId)
     
-    // node.code + " = " +
     resultNode.textContent =  text
     
     resultNode.id = node.markId
@@ -346,13 +316,9 @@ export default class Whyline extends Morph {
     this.addEventListener("initialize", () => {
       this.get("#source").setURL(other.get("#source").getURL())
       this.editor().setValue(other.editor().getValue())
-      // this.editor().selection.setRange(other.editor().selection.getRange())
-      // var viewState = other.get("#traceInspector").getViewState()
       
       // #TODO time dependency... on what should we wait here?
       setTimeout(() => this.runCode(),200)
-      
-      // this.get("#traceInspector").setViewState(viewState)
     })
   }
 }
