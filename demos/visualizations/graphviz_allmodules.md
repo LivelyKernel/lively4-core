@@ -1,14 +1,12 @@
-# D3 GraphiViz System Modules
+# D3 GraphiViz ALL System Modules
 
-
-All Modules.... [src/client/](browse://src/client/)
 
 <script>
   import {loadedModulesData} from "demos/visualizations/filedata.js" 
   // #TODO make relative path... work here?
   (async () => {
-    var url = lively4url + "/src/client/";
-    var vis = await (<d3-graphviz style="width:1200px, height: 800px"></d3-graphviz>)
+    var url = lively4url + "/";
+    var vis = await (<d3-graphviz style="width:3000px, height: 3000px"></d3-graphviz>)
     vis.config({
       onclick(data, evt, element) {
         lively.openInspector({

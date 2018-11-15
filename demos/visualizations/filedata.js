@@ -4,13 +4,12 @@ import files from "src/client/files.js"
 
 import { walkTreeData } from "src/components/d3/d3-component.js"
 
-export async function loadedModulesData() {
+export async function loadedModulesData(url) {
 
   var urlMap = new Map()
   var idCounter = 1
 
   // var now = Date.now()
-  var url = lively4url + "/src/client/"
   var tree = await files.fileTree(url)
 
   walkTreeData(tree, d => {
