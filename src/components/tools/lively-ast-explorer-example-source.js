@@ -1,5 +1,7 @@
-function sum(a, b) {
-  return a + b;
+function fib(n){
+  if(n < 2)
+    return 1
+  return fib(n-1) + fib(n-2)
 }
 
-let result = sum(3, 4);
+fib(5)
