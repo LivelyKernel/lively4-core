@@ -10,19 +10,24 @@ export default class D3GraphViz extends Morph {
 
   async initialize() {
     this.loaded = new Promise(async (resolve) => {
-      
+
       if (!self.d3) {
         self.d3 = d3v5 // because we go global here...? and it will be replaced...
       }
-      await lively.loadJavaScriptThroughDOM("GraphViz", lively4url + "/src/external/viz.js", false, "javascript/worker")
-      await lively.loadJavaScriptThroughDOM("D3GraphViz", lively4url + "/src/external/d3-graphviz.js", false)
-      
+      if (!window.Viz) {
+        await lively.loadJavaScriptThroughDOM("GraphViz", lively4url + "/src/external/viz.js", false)
+      }
+      //  "javascript/worker"
+
+      if (!d3.select().graphviz) {
+        await lively.loadJavaScriptThroughDOM("D3GraphViz", lively4url + "/src/external/d3-graphviz.js", false)
+      }
       this.updateViz()
       this.options = {}
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
       })::debounce(500));
-      
+
       resolve()
     })
   }
@@ -33,18 +38,26 @@ export default class D3GraphViz extends Morph {
 
   setDotData(data) {
     this.dotData = data;
-    this.updateViz()
+    // this.updateViz()
   }
 
   updateViz() {
     var bounds = this.getBoundingClientRect()
-    this.get("#graph").innerHTML = ""
+    var div = this.get("#graph")
+    div.innerHTML = ""
 
-    debugger
-    d3.select("#graph").graphviz(false)
+    var graph = d3.select(div)
+    var graphviz = graph.graphviz(false) // default is work, "false" -> no worker
       .fade(false)
-      .renderDot('digraph  {a -> b}');
+      .zoom(false)
+      .renderDot('digraph  {a -> b; b -> c; c -> a}');
 
+    graph.selectAll("g.node")
+      .attr("stroke", "red")
+      .on("click", function(d) {
+        lively.openInspector({data: d,
+                              node: this})
+      })
   }
 
   config(config) {
