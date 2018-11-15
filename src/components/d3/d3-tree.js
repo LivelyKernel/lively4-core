@@ -208,10 +208,10 @@ export default class D3Tree extends Morph {
     return path
   }
   
-  livelyExample() {
-    
+  async livelyExample() {
+    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
- 
+  
   livelyMigrate(other) {
     this.treeData = other.treeData
     this.dataName = other.dataName

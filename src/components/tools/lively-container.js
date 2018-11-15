@@ -1218,7 +1218,7 @@ export default class Container extends Morph {
           return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
         }
       } else {
-        if (content.length > (1024 * 1024)) {
+        if (content.length > (1 * 1024 * 1024)) {
           if (render) return this.appendHtml("file size to large", renderTimeStamp); 
         } else {
           this.sourceContent = content;

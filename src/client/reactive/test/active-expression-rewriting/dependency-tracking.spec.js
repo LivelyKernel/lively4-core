@@ -88,6 +88,54 @@ describe('destructuring', function() {
   });
 });
 describe('loop constructs', function() {
+  it('examples that should compile and run', () => {
+    
+    const spy = sinon.spy();
+    for(let x0 = 0;x0 < 5; x0++) {
+      x0;
+      x0 += 1
+      spy(x0)
+    }
+    expect(spy).to.have.been.calledThrice;
+    spy.reset();
+    
+    for(var x0 = 0;x0 < 5; x0++) {
+      x0;
+      x0 += 1
+      spy(x0)
+    }
+    expect(spy).to.have.been.calledThrice;
+    
+    // #TODO: test properly
+    var y =8;
+    for(var x in window) {
+      console.log("x: " + x)
+      y += x
+      x = 42;
+    }
+    
+    for(var x2 of Object.keys(window)) {
+      console.log("x2: " + x2)
+      y += x2
+      x2 = 42;
+    }
+    
+    (async () => {
+      for await (var x3 of Object.keys(window)) {
+        console.log("x3: " + x3)
+        y += x3
+        x3 = 42;
+      }
+    })();
+
+    for(let x4 in window) {
+      console.log("x4: " + x4)
+      y += x4
+      x4 = 42;
+    }
+
+  });
+  
   it('for loop/local variable (var)', () => {
     let x = 0;
     const spy = sinon.spy();
@@ -100,6 +148,7 @@ describe('loop constructs', function() {
     expect(spy).to.be.calledWithMatch(1);
     expect(spy).to.be.calledWithMatch(3);
   });
+  
   it('for loop/local variable (let)', () => {
     let x = 0;
     const spy = sinon.spy();

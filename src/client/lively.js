@@ -225,7 +225,7 @@ export default class Lively {
     return mod;
   }
 
-  static loadJavaScriptThroughDOM(name, src, force) {
+  static loadJavaScriptThroughDOM(name, src, force=false, type="text/javascript") {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector("#"+name);
       if (!force && scriptNode) {
@@ -239,7 +239,7 @@ export default class Lively {
       var script = document.createElement("script");
       script.id=name;
       script.charset="utf-8";
-      script.type="text/javascript";
+      script.type=type;
       if (force) {
         src = src + ("?" + Date.now());
       }
