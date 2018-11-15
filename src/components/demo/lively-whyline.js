@@ -15,7 +15,7 @@ import ShowPerformance from "demos/contextjs/showperformancelayer.js";
 export default class Whyline extends Morph {
 
   initialize() {
-    this.windowTitle = "Whyline Debugger";  
+    this.windowTitle = "Whyline";  
     this.get("#source").setURL("http://localhost:8080/lively4-core/src/components/demo/lively-whyline-example.js")
     this.get("#source").loadFile()
 
@@ -146,13 +146,13 @@ export default class Whyline extends Morph {
     }
     if (window.__tr_last_ast__)   {
       this.ast = window.__tr_last_ast__
-      this.clearMarkers()
+      this.clearCodeAnnotations()
       this.traceRoot = this.ast.calltrace
       // this.get("#traceInspector").inspect(this.ast)
 
       this.markCallTree(this.traceRoot)
       this.updateTraceView(this.traceRoot)
-      this.updateMarkerResults(this.traceRoot)
+      this.updateCodeAnnotations(this.traceRoot)
     }
   }
 
@@ -241,13 +241,6 @@ export default class Whyline extends Morph {
     })
   }
 
-  clearMarkers() {
-    this.lastMarkCounter = 0
-    this.editor().getAllMarks()
-      .filter(ea => ea.isTraceMark)
-      .forEach(ea => ea.clear())
-  }
-
   markCallTree(call) {
     var ast_node = this.astNode(call.id)
 
@@ -270,13 +263,14 @@ export default class Whyline extends Morph {
     })
   }
 
-  updateMarkerResults(node) {
-    this.editor().clearGutter("rightgutter")
-    var parentBounds = this.getBoundingClientRect()
-    this.updateMarkerResultsEach(this.get('#markerLayer'), node, parentBounds)
+  clearCodeAnnotations() {
+    this.lastMarkCounter = 0
+    this.editor().getAllMarks()
+      .filter(ea => ea.isTraceMark)
+      .forEach(ea => ea.clear())
   }
   
-  addMarkerResult(line, text, node) {
+  addCodeAnnotation(line, text, node) {
     var editor = this.editor()
     var info = editor.lineInfo(line)
     var gutterMarkers = info && info.gutterMarkers;
@@ -305,31 +299,30 @@ export default class Whyline extends Morph {
     markerLine.appendChild(resultNode)
   }
   
-  updateMarkerResultsEach(markerLayer, node, parentBounds) {
+  updateCodeAnnotations(node) {
+    this.editor().clearGutter("rightgutter")
+    var parentBounds = this.getBoundingClientRect()
+    this.updateCodeAnnotation(node, parentBounds)
+  }
+  
+  updateCodeAnnotation(node, parentBounds) {
     var ast_node = this.astNode(node.id)
     if (ast_node.type == "UpdateExpression") {
-      this.addMarkerResult(ast_node.loc.start.line - 1, 
+      this.addCodeAnnotation(ast_node.loc.start.line - 1, 
         ast_node.argument.name + "=" + node.value + ";", node)
     }
     if (ast_node.type == "VariableDeclarator") {
-      this.addMarkerResult(ast_node.loc.start.line - 1, 
+      this.addCodeAnnotation(ast_node.loc.start.line - 1, 
         ast_node.id.name + "=" + node.value + ";", node)
     }
     if (ast_node.type == "AssignmentExpression") {
       var name = ast_node.left.name
       if (!name && ast_node.left.property)  
         name = ast_node.left.property.name;
-      this.addMarkerResult(ast_node.loc.start.line - 1, 
+      this.addCodeAnnotation(ast_node.loc.start.line - 1, 
         name   + "=" + node.value + ";", node)
     }
-    // if (ast_node.type == "CallExpression") {
-    //   this.addMarkerResult(ast_node.loc.start.line - 1, 
-    //     ast_node.callee.name + "("+ ast_node.arguments.map( ea => {
-    //       var eaCall = this.findBroadCallNode(ea.traceid, node) 
-    //       return eaCall && eaCall.value 
-    //     }).join(",")+")=>" + node.value + ";", node)
-    // }
-    node.children.forEach(ea => this.updateMarkerResultsEach(markerLayer, ea, parentBounds))
+    node.children.forEach(ea => this.updateCodeAnnotation(ea, parentBounds))
   }
   
   findBroadCallNode(id, node) {
