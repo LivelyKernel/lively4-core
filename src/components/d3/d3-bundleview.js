@@ -3,6 +3,7 @@ import d3 from 'src/external/d3.v5.js';
 
 import * as cop from 'src/client/ContextJS/src/contextjs.js'
 
+
 export function isLeaf(d) { return !d.children || d.children.length === 0; }
 
 const DEFAULT_COLOR_LEAF_NODE = "#6666af";

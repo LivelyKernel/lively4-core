@@ -38,7 +38,7 @@ import d3 from "src/external/d3.v3.js"
   
   var treemap = await lively.create("d3-polymetricview")
 
-  treemap.setTreeData(tree)
+  treemap.setData(tree)
   
   treemap.style.backgroundColor = "lightgray"
   

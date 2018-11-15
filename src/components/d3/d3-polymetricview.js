@@ -7,53 +7,22 @@ import "src/external/d3-selection-multi.v1.js"
 
 import flextree from "src/external/d3-flextree.js"
 
-export default class D3Polymetricview extends Morph {
+
+import D3Component from "./d3-component.js"
+
+
+export default class D3Polymetricview extends D3Component {
 
   initialize() {
-    this.d3 = d3 // for scripting...
-    this.updateViz()
-    this.options = {}
-    this.addEventListener('extent-changed', ((evt) => {
-      this.onExtentChanged(evt);
-    })::debounce(500));
+    super.initialize()
   }
-
-  getTreeData() {
-    return this.treeData
-  }
-
-  setTreeData(data) {
-    this.treeData = data;
-    this.updateViz()
-  }  
-  
-  dataColor(node) {
-    if (this.options.color) return this.options.color(node)
-    return "gray"
-  }
-
-  dataWidth(node) {
-    if (this.options.width) return this.options.width(node)
-    return 20
-  }
-
-  dataHeight(node) {
-    if (this.options.height) return this.options.height(node)
-    return 40
-  }
-  
-  onNodeClick(node, evt) {
-    if (this.options.onclick) return this.options.onclick(node, evt)
-    lively.notify("clicked on " + node.data.name)
-  }
-  
   
   updateViz() {
     var bounds = this.getBoundingClientRect()
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
 
-    var treeData = this.getTreeData()
+    var treeData = this.getData()
     if (!treeData) return; // nothing to render
 
     var margin = { top: 20, right: 20, bottom: 20, left: 20 }
@@ -83,7 +52,7 @@ export default class D3Polymetricview extends Morph {
     
     var g = svg.append("g").attr("transform", "translate(0,0)");
     
-    var data = this.getTreeData()
+    var data = treeData
     
     const minWidth = (tree) => tree.nodes.reduce(
       (min, n) => {return Math.min(min, this.dataWidth(n))}, Infinity) ;
@@ -194,7 +163,7 @@ export default class D3Polymetricview extends Morph {
       //   .text(node.id);
 
       if (node.parent) {
-        debugger
+        
         drawing.append('path')
           .attr("class", "link")
           .attr('d', d3.linkVertical()({
@@ -207,25 +176,6 @@ export default class D3Polymetricview extends Morph {
       for (const kid of (node.children || [])) drawSubtree(kid, context, node);
     }
     drawTree();
-  }
-  
-  config(config) {
-    Object.keys(config).forEach(key => {
-      lively.notify("key " + key) 
-      this.options[key] = config[key] // we could check them here...      
-    })
-  }
-
-
-  livelyInspect(contentNode, inspector) {
-    if (this.treeData) {
-      contentNode.appendChild(inspector.display(this.treeData, false, "#tree-data", this));
-    }
-  }
-
-  onExtentChanged() {
-    lively.notify("extent changed")
-    this.updateViz()
   }
 
   async livelyExample() {
@@ -250,19 +200,11 @@ export default class D3Polymetricview extends Morph {
       },
       
       onclick(node) {
-        debugger
         lively.openInspector(node)
       },
-
-    
     })
-    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    this.setData(await d3.json(lively4url + "/src/components/demo/flare.json"))
 
-  }
-
-  livelyMigrate(other) {
-    this.treeData = other.treeData
-    this.options = other.options
   }
 
 }

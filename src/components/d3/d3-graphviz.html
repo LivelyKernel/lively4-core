@@ -1,11 +1,24 @@
 <template id="d3-graphviz" data-class="D3Graphviz">
   <style>
-    :host {
-      width: 200px;
-      height: 200px;
+  :host {
+      min-width: 50px;
+      min-height: 50px;
+      background: lightgray;
     }
+    
+    #container {
+      position: relative; /* positioning hack.... we make our coordinate system much easier by this */
+      border: 2px solid gray;
+/*       width: 50%;
+      height: 50%; */
+      overflow: hidden
+    }
+  
   </style>
-  <div id="graph"></div>
+  <div id="container">
+    <div id="graph">
+  </div>
+  </div>
 </template>
 <script class="registrationScript">
   lively.registerTemplate()
