@@ -227,7 +227,7 @@ export default class Whyline extends Morph {
         {
           isTraceMark: true,
           className: "marked " +  call.markId,
-          css: "background-color: rgba(0,0,255,0.05)",
+          css: "background-color: rgba(0,255,0,0.3)",
           title: ast_node.type
         })
     } 
@@ -293,23 +293,6 @@ export default class Whyline extends Morph {
         name   + "=" + node.value + ";", node)
     }
     node.children.forEach(ea => this.updateCodeAnnotation(ea, parentBounds))
-  }
-  
-  findBroadCallNode(id, node) {
-    return this.findBroadCallNodes(id, [node], new Map())
-  }
-
-  findBroadCallNodes(id, nodes, visited) {
-    while(nodes.length > 0) {
-      var ea = nodes.shift()  
-      if (ea.id == id) return ea
-      ea.children.forEach(child => {
-        if (!visited.get(child)) {
-          nodes.push(child)
-        }
-      })
-    }
-    return null
   }
 
   livelyMigrate(other) {
