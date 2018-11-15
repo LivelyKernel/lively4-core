@@ -21,24 +21,19 @@ export default class Whyline extends Morph {
 
     this.sourceCodeChangedDelay = (() => {
       SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor());
-      this.runCode();
     })::debounce(500);
 
     this.registerButtons();
-
-    this.editorComp().doSave = () => {
-      this.get("#source").saveFile();
-      this.runCode();      
-      console.log("ran code")
-    };
     
     this.editorComp().addEventListener("change", evt => 
       this.onSourceChange(evt));
 
-
     this.editorComp().addEventListener("editor-loaded", evt => 
       this.dispatchEvent(new CustomEvent("initialize")));
-
+  }
+  
+  onGenerateTrace(evt) {
+    this.runCode()
   }
   
   hideMarker(markId) {
@@ -187,7 +182,6 @@ export default class Whyline extends Morph {
   get maxCallId() {
     return 200
   }
-
 
   printTraceNode(parent, call) {
     if (call.id > this.maxCallId) return
