@@ -15,7 +15,7 @@ export default class FileIndex {
   static current() {
     // FileIndex._current = null
     if (!this._current) {
-      this._current = new FileIndex("file_cache")
+      this._current = new FileIndex("analysis_file_cache")
     }
     return this._current
   }
@@ -38,10 +38,12 @@ export default class FileIndex {
     var db = new Dexie(this.name);
 
     db.version("1").stores({
-        files: 'url,name,type,version,modified,options,title,tags,classes,functions',
-        modules: '++id,url,name,dependencies',
-        classes: '++id,url,name,methods',
-        methods: '++id,url,name'
+        files: 'url,name,type,version,modified,options,title,tags,*classes,*functions',
+        modules: 'url,*dependencies',
+        links: '[url+link], url, link, location, status',
+        classes: '++id, url, name', 
+        methods: '++id, classid, name',
+        versions: '[commitId+classId],commitId, classId, methodId, date' //user
     }).upgrade(function () {
     })
 
@@ -54,9 +56,76 @@ export default class FileIndex {
 
   async update() {
     await this.updateTitleAndTags()
-    await this.updateFunctionAndClasses()
+    await this.updateSemanticData()
+    // TODO: modules
+    // TODO: classes
+    // TODO: methods
+    // TODO: links
   }
-
+  
+  async updateSemanticData() {
+    return this.showProgress("updateSemanticData", () => {
+      this.db.files.where("name").notEqual("").each((file) => {
+        if (file.name && file.name.match(/\.js$/)) {
+          var result = this.extractSemanticData(file)
+          // update modules
+          result.dependencies.forEach(dependency => {
+              System.resolve(dependency, file.url).then(value => { 
+                console.log(value)   
+                // TODO: update db
+              })
+          })
+        }
+      })
+    })
+  }
+  
+  extractSemanticData(file) {
+    var ast = this.parseSource(file.url, file.content)
+    var result = this.parseSemanticData(ast)
+    return result;
+  }
+  
+  parseSemanticData(ast) {
+    var classes = []
+    var dependencies = []
+    babel.traverse(ast,{
+      ImportDeclaration(path) {
+        if(path.node.source && path.node.source.value) {
+          dependencies.push(path.node.source.value)
+        }
+      },
+      ClassDeclaration(path) {
+        if (path.node.id) {
+          var clazz = {'name': path.node.id.name}
+        
+          if (path.node.body.body) {
+            var methods = []
+            path.node.body.body.forEach(function(item){
+              if(item.type === "ClassMethod") {
+                methods.push(item.key.name)
+              }
+            })
+            clazz.methods = methods
+          }
+          classes.push(clazz)
+        } 
+      }
+    })
+    return {classes, dependencies}
+  }
+  
+ /* async updateModules(file, dependencies) {
+    console.log(dependencies)
+    for(const dependency in dependencies) {
+      System.resolve(dependency, file.url).then(function(value) {
+        console.log(value)          
+      })
+        
+        // TODO: update DB      
+    }
+  }*/
+    
   async updateFunctionAndClasses() {
     return this.showProgress("extract functions and classes", () => {
       this.db.files.where("name").notEqual("").modify((file) => {
@@ -75,28 +144,42 @@ export default class FileIndex {
     })
   }
 
-  showProgress(label, func) {
-    ShowDexieProgress.currentLabel = label
-    return cop.withLayers([ShowDexieProgress], () => {
-        return func()
-    })
-  }
-
   extractTitleAndTags(file) {
     if (!file.content) return;
     file.title = file.content.split("\n")[0].replace(/## /,"")
     file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
       .map(ea => ea[1])
   }
+  
+  extractLinks(file) {
+    var links = []
+    if (!file || !file.content) {
+      return links
+    }
+    var result = file.content.match(/(((http(s)?:\/\/)|(w{3}[.]))([a-z0-9\-]{1,63}[.]{1}){1,}([a-z]{2,})([\/\_\-A-Za-z0-9]*)?[#?=%;a-z0-9]*)/g)
+    if (result) {
+      links.push(result)
+    }
+    return links
+  }
+  
+  
+  
+  // ********************************************************
 
+  showProgress(label, func) {
+    ShowDexieProgress.currentLabel = label
+    return cop.withLayers([ShowDexieProgress], () => {
+        return func()
+    })
+  }
+  
   extractFunctionsAndClasses(file) {
     var ast = this.parseSource(file.url, file.content)
     var result = this.parseFunctionsAndClasses(ast)
-//     console.log(file.url + " functions: " + result.functions)
-//     console.log(file.url + " classes: " + file.classes)
     
     file.classes = result.classes
-    file.functions =  result.functions
+    file.functions  = result.functions
   }
 
   parseFunctionsAndClasses(ast) {
@@ -149,15 +232,12 @@ export default class FileIndex {
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
   }
     
-  async addFile(url, name, type, size, modified) {
-    
+  async addFile(url, name, type, size, modified) {    
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
       return
-    }
-    
+    }    
     console.log("FileIndex update  " + url)
-    
 
     var file = {
       url: url,
@@ -205,8 +285,6 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
-
-  
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
@@ -255,20 +333,14 @@ export default class FileIndex {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
           this.dropFile(eaURL)
         }
-      })
-      
-      
+      }) 
     } finally {
       if (showProgress) progress.remove()
-    }
-    
+    } 
     console.log("FileIndex updateDirectory finished")
   }
 
   async addDirectory(baseURL) {
-    
-
-    
     this.updateDirectory(baseURL, true) // much faster and better
   }
     

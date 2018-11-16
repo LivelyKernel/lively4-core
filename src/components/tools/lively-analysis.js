@@ -1,10 +1,15 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import d3 from "src/external/d3.v5.js"
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
+import files from "src/client/fileindex.js"
 
 export default class LivelyAnalysis extends Morph {
+  
   async initialize() {
-    this.windowTitle = "LivelyAnalysis";
+    this.windowTitle = "Lively Semantic Code Analysis";
     this.registerButtons()
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
@@ -19,6 +24,74 @@ export default class LivelyAnalysis extends Morph {
     // registering a closure instead of the function allows the class to make 
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
     // replaced during development
+  }
+  
+  getData() {
+    if(!this.data) {
+      var exampleData = {
+        classes: [
+          {name: "ClassA"},
+          {name: "ClassB"},
+        ]
+      }
+      return exampleData
+    }
+    return this.data
+  }
+  
+  setData(files) {
+    var data = {}
+    for(var file in files) {
+      data = this.extractFunctionsAndClasses(file)
+    }
+    this.data = data
+  }
+  
+  parseSource(filename, source) {
+    try {
+      return babel.transform(source, {
+          babelrc: false,
+          plugins: [],
+          presets: [],
+          filename: filename,
+          sourceFileName: filename,
+          moduleIds: false,
+          sourceMaps: true,
+          compact: false,
+          comments: true,
+          code: true,
+          ast: true,
+          resolveModuleSource: undefined
+      }).ast
+    } catch(e) {
+      console.log('Error - could not parse: ' + filename)
+      return undefined
+    }
+  }
+  
+  extractFunctionsAndClasses(file) {
+    var ast = this.parseSource(file.url, file.content)
+    return this.parseFunctionsAndClasses(ast)
+  }
+  
+  parseFunctionsAndClasses(ast) {
+    var functions = []
+    var classes = []
+    babel.traverse(ast,{
+      Function(path) {
+        if (path.node.key) {
+          functions.push(path.node.key.name)
+        } else if (path.node.id) {
+          functions.push(path.node.id.name)
+        }
+      },
+      ClassDeclaration(path) {
+        if (path.node.id) {
+          classes.push(path.node.id.name)
+        }
+      }
+    })
+    return {functions, classes}
   }
   
   // this method is autmatically registered through the ``registerKeys`` method
