@@ -11,6 +11,11 @@ if (document.location.search.match("noserviceworker")) {
   externalSite=true
 }
 
+// service worker, only works on localhost or HTTPS
+if (window.location.protocol == "http:" && window.location.hostname != "localhost") {
+  externalSite=true
+}
+
 function loadJavaScriptThroughDOM(name, src, force) {
   return new Promise(function (resolve) {
     var scriptNode = document.querySelector(name);
@@ -34,7 +39,7 @@ function loadJavaScriptThroughDOM(name, src, force) {
   });
 }
 
-if ('serviceWorker' in navigator || window.lively4chrome) {
+if ('serviceWorker' in navigator || window.lively4chrome || externalSite) {
   console.log("LOAD Lively4: boot lively4 service worker");
   var root = "" + lively4url + "/";
   var serviceworkerReady = false;
