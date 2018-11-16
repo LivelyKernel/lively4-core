@@ -48,48 +48,53 @@ if ('serviceWorker' in navigator || window.lively4chrome || externalSite) {
     serviceworkerReady = true;
     // Lively has all the dependencies
 
+
     // Workaround because only one function can listen to serviceworker messages
     window.serviceWorkerMessageHandlers = {};
-    window.navigator.serviceWorker.onmessage = function(event) {
-      for (let key in window.serviceWorkerMessageHandlers) {
-        window.serviceWorkerMessageHandlers[key](event);
+
+    if (window.navigator.serviceWorker) {
+      window.navigator.serviceWorker.onmessage = function(event) {
+        for (let key in window.serviceWorkerMessageHandlers) {
+          window.serviceWorkerMessageHandlers[key](event);
+        }
       }
+
+      // Add listener for serviceWorker messages
+      window.serviceWorkerMessageHandlers['networkNotifications'] = (event) => {
+        const message = event.data;
+
+        // Only handle notifications here
+        if (message.type != 'notification') return;
+
+        let messageColors = {
+          'info': '',
+          'warning': 'yellow',
+          'error': 'red'
+        };
+
+        if ('lively' in window) {
+          lively.notify('ServiceWorker', message.data, 5, null, messageColors[message.command]);
+        }
+      }
+
+      // Add listener for offline/online events
+      // This is currently only used in the ServiceWorker, but the ServiceWorker does not get these events
+      // So we register here and forward the events
+      window.addEventListener('online', () => {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'network',
+          command: 'online'
+        });
+      });
+
+      window.addEventListener('offline', () => {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'network',
+          command: 'offline'
+        });
+      });
     }
 
-    // Add listener for serviceWorker messages
-    window.serviceWorkerMessageHandlers['networkNotifications'] = (event) => {
-      const message = event.data;
-
-      // Only handle notifications here
-      if (message.type != 'notification') return;
-
-      let messageColors = {
-        'info': '',
-        'warning': 'yellow',
-        'error': 'red'
-      };
-
-      if ('lively' in window) {
-        lively.notify('ServiceWorker', message.data, 5, null, messageColors[message.command]);
-      }
-    }
-
-    // Add listener for offline/online events
-    // This is currently only used in the ServiceWorker, but the ServiceWorker does not get these events
-    // So we register here and forward the events
-    window.addEventListener('online', () => {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'network',
-        command: 'online'
-      });
-    });
-
-    window.addEventListener('offline', () => {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'network',
-        command: 'offline'
-      });
-    });
 
     Promise.resolve("")
       // .then( function() {
