@@ -3,6 +3,9 @@
  *
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
  *
+ * http://localhost:8080/lively4-core/start.html
+ * https://lively-kernel.org/lively4/lively4-analysis/start.html
+ * 
  */
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
@@ -38,11 +41,11 @@ export default class FileIndex {
     var db = new Dexie(this.name);
 
     db.version("1").stores({
-        files: 'url,name,type,version,modified,options,title,tags,*classes,*functions',
+        files: 'url,name,type,version,modified,options,title,tags,*classes,*functions,*links',
         modules: 'url,*dependencies',
-        links: '[url+link], url, link, location, status',
-        classes: '++id, url, name', 
-        methods: '++id, classid, name',
+       // links: '[url+link], url, link, location, status',
+        classes: '[url+name], url, name, *methods', 
+        functions: '[url+name], url, name',
         versions: '[commitId+classId],commitId, classId, methodId, date' //user
     }).upgrade(function () {
     })
@@ -68,6 +71,7 @@ export default class FileIndex {
       this.db.files.where("name").notEqual("").each((file) => {
         if (file.name && file.name.match(/\.js$/)) {
           var result = this.extractSemanticData(file)
+          console.log(result) 
           // update modules
           result.dependencies.forEach(dependency => {
               System.resolve(dependency, file.url).then(value => { 
@@ -82,8 +86,16 @@ export default class FileIndex {
   
   extractSemanticData(file) {
     var ast = this.parseSource(file.url, file.content)
-    var result = this.parseSemanticData(ast)
-    return result;
+    var results = this.parseSemanticData(ast)
+    var classes = results.classes
+    classes.forEach(clazz => {     
+      clazz.url = file.url
+      this.db.transaction("rw", this.db.classes, () => {
+        this.db.classes.put(clazz)  
+      })
+    })
+  
+    return results;
   }
   
   parseSemanticData(ast) {
@@ -151,16 +163,12 @@ export default class FileIndex {
       .map(ea => ea[1])
   }
   
+  // TODO: check expression (file extentions and ports)
   extractLinks(file) {
-    var links = []
     if (!file || !file.content) {
-      return links
+      return
     }
-    var result = file.content.match(/(((http(s)?:\/\/)|(w{3}[.]))([a-z0-9\-]{1,63}[.]{1}){1,}([a-z]{2,})([\/\_\-A-Za-z0-9]*)?[#?=%;a-z0-9]*)/g)
-    if (result) {
-      links.push(result)
-    }
-    return links
+    file.links = file.content.match(/(((http(s)?:\/\/)|(w{3}[.]))([a-z0-9\-]{1,63}[.]{1}){1,}([a-z]{2,})([\/\_\-A-Za-z0-9]*)?[#?=%;a-z0-9]*)/g)
   }
   
   
@@ -270,7 +278,9 @@ export default class FileIndex {
     
     if (file.content) {
       this.extractTitleAndTags(file)
-      if (type == "js") {
+      this.extractLinks(file)
+      if (file.name.match(/\.js$/)) {
+        this.extractSemanticData(file)
         this.extractFunctionsAndClasses(file)
       }      
     }
