@@ -3,8 +3,9 @@
  *
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
  *
- * http://localhost:8080/lively4-core/start.html
- * https://lively-kernel.org/lively4/lively4-analysis/start.html
+  * https://lively-kernel.org/lively4/lively4-analysis/start.html
+ * http://localhost:8080/lively4-core/README.md
+ * https://dexie.org/docs/Collection/Collection
  * 
  */
 import Dexie from "src/external/dexie.js"
@@ -43,9 +44,9 @@ export default class FileIndex {
     db.version("1").stores({
         files: 'url,name,type,version,modified,options,title,tags,*classes,*functions,*links',
         modules: 'url,*dependencies',
-       // links: '[url+link], url, link, location, status',
+        links: '[link+url], link, url, location, status',
         classes: '[url+name], url, name, *methods', 
-        functions: '[url+name], url, name',
+        functions: 'url, name',
         versions: '[commitId+classId],commitId, classId, methodId, date' //user
     }).upgrade(function () {
     })
@@ -59,12 +60,26 @@ export default class FileIndex {
 
   async update() {
     await this.updateTitleAndTags()
-    await this.updateSemanticData()
-    // TODO: modules
-    // TODO: classes
-    // TODO: methods
-    // TODO: links
+    //await this.updateSemanticData() //modules, classes, methods
+    await this.updateLinks()
+    await this.updateVersions()
   }
+  
+  async updateTitleAndTags() {
+    return this.showProgress("update title", () => {
+      return this.db.files.where("name").notEqual("").modify((ea) => {
+         this.extractTitleAndTags(ea)
+      });
+    })
+  }
+
+  extractTitleAndTags(file) {
+    if (!file.content) return;
+    file.title = file.content.split("\n")[0].replace(/## /,"")
+    file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
+      .map(ea => ea[1])
+  }
+  
   
   async updateSemanticData() {
     return this.showProgress("updateSemanticData", () => {
@@ -92,10 +107,65 @@ export default class FileIndex {
       clazz.url = file.url
       this.db.transaction("rw", this.db.classes, () => {
         this.db.classes.put(clazz)  
-      })
-    })
-  
+      }) 
+    }) 
     return results;
+  }
+  
+  async updateLinks() {
+    return this.showProgress("update links", () => {
+      return this.db.files.where("type").equals("file").each(file => { 
+        //var extractedLinks = this.extractLinks(file)
+        //this.db.links.where("url").notEqual("").modify((link) => { 
+         // console.log(link) 
+        //})
+      });
+    })
+  }
+  
+ async extractLinks(file) {   
+    if (!file || !file.content) {
+      return []
+    }
+   
+    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\/\_\-A-Za-z0-9]*)?[.#?=%;a-z0-9]*)/g)
+  
+    if (!extractedLinks) {
+      return []
+    }  
+    
+  extractedLinks.forEach(extractedLink => { 
+      var link = {
+        link: extractedLink,
+        location: extractedLink.startsWith(lively4url) ? "internal" : "external",
+        url: file.url,
+      }
+      this.validateLink(link.link).then((result) => {
+        if (result) {
+          link.status = "alive" 
+        } else {
+          link.status = "dead"
+        }
+      }).then(() => {
+        console.log("link:")
+        console.log(link)
+        this.addLink(link)
+      }) 
+    })
+ }
+  
+  async validateLink(link) { 
+    return await fetch(link, { 
+      method: "GET", 
+      mode: 'no-cors', 
+    })
+    .then(() => {return true})
+    .catch((error) => {console.log(error); return false})
+    
+  }
+    
+  async updateVersions() {
+    
   }
   
   parseSemanticData(ast) {
@@ -148,30 +218,8 @@ export default class FileIndex {
     })
   }
 
-  async updateTitleAndTags() {
-    return this.showProgress("update title", () => {
-      return this.db.files.where("name").notEqual("").modify((ea) => {
-         this.extractTitleAndTags(ea)
-      });
-    })
-  }
-
-  extractTitleAndTags(file) {
-    if (!file.content) return;
-    file.title = file.content.split("\n")[0].replace(/## /,"")
-    file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
-      .map(ea => ea[1])
-  }
   
-  // TODO: check expression (file extentions and ports)
-  extractLinks(file) {
-    if (!file || !file.content) {
-      return
-    }
-    file.links = file.content.match(/(((http(s)?:\/\/)|(w{3}[.]))([a-z0-9\-]{1,63}[.]{1}){1,}([a-z]{2,})([\/\_\-A-Za-z0-9]*)?[#?=%;a-z0-9]*)/g)
-  }
-  
-  
+ 
   
   // ********************************************************
 
@@ -262,14 +310,6 @@ export default class FileIndex {
       }
     };
 
-
-    // await new Promise(resolve => setTimeout(resolve, 100))
-
-    // let options = await fetch(url,
-    //  {method: "OPTIONS", headers: {showversions: true}}).then(resp => resp.json())
-    //  versions: options.versions
-    
-
     let fileType = url.replace(/.*\./,"")
     if(type == "directory") {
       type = "directory"
@@ -277,15 +317,28 @@ export default class FileIndex {
     file.type = type
     
     if (file.content) {
-      this.extractTitleAndTags(file)
+      this.extractTitleAndTags(file) 
       this.extractLinks(file)
+      
       if (file.name.match(/\.js$/)) {
         this.extractSemanticData(file)
         this.extractFunctionsAndClasses(file)
       }      
     }
-    this.db.transaction("rw", this.db.files, () => {
-      this.db.files.put(file)
+    this.db.transaction("rw", this.db.files, () => { 
+      this.db.files.put(file) 
+    })
+  }
+  
+  async addLinks(links) {
+    this.db.transaction("rw", this.db.links, () => {
+      this.db.links.bulkPut(links)
+    })
+  }
+  
+  addLink(link) {
+    this.db.transaction("rw", this.db.links, () => {
+      this.db.links.put(link)
     })
   }
 
@@ -295,6 +348,8 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
+  
+   
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
