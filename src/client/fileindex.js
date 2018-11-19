@@ -98,7 +98,8 @@ export default class FileIndex {
     file.classes = result.classes
     file.functions =  result.functions
   }
-
+  
+ 
   parseFunctionsAndClasses(ast) {
     var functions = []
     var classes = []
