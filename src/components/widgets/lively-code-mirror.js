@@ -129,7 +129,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return loadPromise
   }
 
-
+  // #TODO #Refactor not needed anymore
   static async loadTernModules() {
     if (this.ternIsLoaded) return;
 

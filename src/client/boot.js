@@ -25,7 +25,7 @@ async function invalidateFileCaches()  {
     }
     var url = lively4url + "/"
     if (self.lively && lively.fileIndexWorker) {
-      this.fileIndexWorker.postMessage({message: "updateDirectory", url})
+      lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
     }
     var offlineFirstCache = await caches.open("offlineFirstCache")
     var json = await Promise.race([
@@ -39,7 +39,7 @@ async function invalidateFileCaches()  {
         }
       }).then(async resp => {
         if (resp.status != 200) {
-          console.log("PROBLEM invalidateFileCaches " + resp.status)
+          console.log("PROBLEM invalidateFileCaches SERVER RESP " + resp.status)
           return false
         } else {
           try {
