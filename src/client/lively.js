@@ -1115,7 +1115,7 @@ export default class Lively {
     if (object instanceof HTMLElement) {
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
-        template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
+        template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
         baseName = this.templateClassNameToTemplateName(className),
         moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
