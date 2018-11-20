@@ -4,30 +4,30 @@ import authGoogledrive from 'src/client/auth-googledrive.js'
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-export default class LivleyFilesystems extends Morph { 
+export default class LivleyFilesystems extends Morph {
 
   initialize() {
-      var container = $(this.shadowRoot).find(".container")[0];
+    var container = $(this.shadowRoot).find(".container")[0];
 
-      this.windowTitle = "Lively Mounts";
-      // #TODO refactor to "connections"
+    this.windowTitle = "Lively Mounts";
+    // #TODO refactor to "connections"
 
-      this.get('#githubLoginButton').addEventListener('click', () => {});
-      this.get('#githubLogoutButton').addEventListener('click', () => this.logoutGitHub());
-      this.get('#dropboxLoginButton').addEventListener('click', () => this.loginDropbox());
-      this.get('#dropboxLogoutButton').addEventListener('click', () => this.logoutDropbox());
-      this.get('#googledriveLoginButton').addEventListener('click', () => this.loginGoogledrive());
-      this.get('#googledriveLogoutButton').addEventListener('click', () => this.logoutGoogledrive());
-      this.get('#httpMountButton').addEventListener('click', () => this.mountHttp());
-      this.get('#updateMountList').addEventListener('click', () => this.updateMountList());
+    this.get('#githubLoginButton').addEventListener('click', () => this.loginGitHub());
+    this.get('#githubLogoutButton').addEventListener('click', () => this.logoutGitHub());
+    this.get('#dropboxLoginButton').addEventListener('click', () => this.loginDropbox());
+    this.get('#dropboxLogoutButton').addEventListener('click', () => this.logoutDropbox());
+    this.get('#googledriveLoginButton').addEventListener('click', () => this.loginGoogledrive());
+    this.get('#googledriveLogoutButton').addEventListener('click', () => this.logoutGoogledrive());
+    this.get('#httpMountButton').addEventListener('click', () => this.mountHttp());
+    this.get('#updateMountList').addEventListener('click', () => this.updateMountList());
 
-      this.updateMountList();
+    this.updateMountList();
 
-      container.dispatchEvent(new Event("initialized"));
+    container.dispatchEvent(new Event("initialized"));
   }
-  
+
   getMountURL() { return "https://lively4/sys/fs/mount"; }
-    
+
   loginGitHub() {
     console.log("login")
     var mountPath = this.shadowRoot.querySelector('#githubMount').value
@@ -40,26 +40,27 @@ export default class LivleyFilesystems extends Morph {
         "path": mountPath,
         "name": "github",
         "options": {
-          "repo":  repo,
+          "repo": repo,
           "branch": branch,
           "token": token
         }
       }
       console.log("mount: " + this.getMountURL())
-      $.ajax({
-        url: this.getMountURL(),
-        type: 'PUT',
-        data: JSON.stringify(mountGithub),
-        success: function(text) {
+      fetch(this.getMountURL(), {
+        method: 'PUT',
+        body: JSON.stringify(mountGithub)
+      }).then(resp => {
+
+        if (resp.status == 200) {
           console.log("mounted github")
-        },
-        error: function(xhr, status, error) {
-          console.log("could not mount gitub " + error)
+
+        } else {
+          lively.error("could not mount gitub ", resp)
         }
-      });
+      })
     })
   }
-  
+
   logoutGitHub() {
     authGithub.logout();
     console.log('logged out of github')
@@ -69,21 +70,20 @@ export default class LivleyFilesystems extends Morph {
       "options": {
         "repo": "LivelyKernel/lively4-core",
         "branch": "gh-pages"
-         // No token, so we mount it read-only
+        // No token, so we mount it read-only
       }
     }
-    $.ajax({
-      url: this.getMountURL(),
-      type: 'PUT',
-      data: JSON.stringify(unmountGithub),
-      success: (text) => {
+    fetch(this.getMountURL(), {
+      method: 'PUT',
+      body: JSON.stringify(unmountGithub)
+    }).then(resp => {
+      if (resp.status == 200) {
         console.log("unmounted github")
         this.updateMountList()
-      },
-      error: function(xhr, status, error) {
-        console.log("could not unmount github " + error)
+      } else {
+        lively.notify("could not unmount github ", resp)
       }
-    });
+    })
   }
 
   loginDropbox() {
@@ -94,36 +94,35 @@ export default class LivleyFilesystems extends Morph {
     var subfolder = this.shadowRoot.querySelector('#dropboxSubfolder').value
 
     lively.authDropbox.challengeForAuth(Date.now(), (token) => {
-        console.log('We are authenticated with the Token: ' + token)
-        var mount = {
-          "path": mountPath,
-          "name": "dropbox",
-          "options": {
-            "token": token,
-            "subfolder": subfolder
-          }
+      console.log('We are authenticated with the Token: ' + token)
+      var mount = {
+        "path": mountPath,
+        "name": "dropbox",
+        "options": {
+          "token": token,
+          "subfolder": subfolder
         }
-        console.log("mount: " + this.getMountURL())
-        $.ajax({
-          url: this.getMountURL(),
-          type: 'PUT',
-          data: JSON.stringify(mount),
-          success: (text) => {
-            console.log("mounted dropbox")
-            this.updateMountList()
-          },
-          error: function(xhr, status, error) {
-            console.log("could not mount dropbox " + error)
-          }
-        });
+      }
+      console.log("mount: " + this.getMountURL())
+      fetch(this.getMountURL(), {
+        method: 'PUT',
+        body: JSON.stringify(mount)
+      }).then(resp => {
+        if (resp.status == 200) {
+          console.log("mounted dropbox")
+        } else {
+          console.log("could not mount dropbox " + resp)
+        }
+        this.updateMountList()
+      })
     })
-}   
+  }
 
   logoutDropbox() {
     authDropbox.logout();
     lively.notify('logged out of dropbox');
   }
-      
+
   loginGoogledrive() {
     console.log("login googledrive")
 
@@ -131,31 +130,32 @@ export default class LivleyFilesystems extends Morph {
     var subfolder = this.shadowRoot.querySelector('#googledriveSubfolder').value
 
     lively.authGoogledrive.challengeForAuth(Date.now(), (token) => {
-        console.log('We are authenticated with the Token: ' + token)
-        var mount = {
-          "path": mountPath,
-          "name": "googledrive",
-          "options": {
-            "token": token,
-            "subfolder": subfolder
-          }
+      console.log('We are authenticated with the Token: ' + token)
+      var mount = {
+        "path": mountPath,
+        "name": "googledrive",
+        "options": {
+          "token": token,
+          "subfolder": subfolder
         }
-        console.log("mount: " + this.getMountURL())
-        $.ajax({
-          url: this.getMountURL(),
-          type: 'PUT',
-          data: JSON.stringify(mount),
-          success: (text) => {
-            console.log("mounted googledrive")
-            this.updateMountList()
-          },
-          error: function(xhr, status, error) {
-            console.log("could not mount googledrive " + error)
-          }
-        });
+      }
+      console.log("mount: " + this.getMountURL())
+      fetch(this.getMountURL(), {
+        method: 'PUT',
+        body: JSON.stringify(mount)
+      }).then(resp => {
+        if (resp.status == 200) {
+          console.log("mounted googledrive")
+
+        } else {
+          console.log("could not mount googledrive " + resp)
+        }
+        this.updateMountList()
+      })
+
     })
-  } 
-  
+  }
+
   logoutGoogledrive() {
     lively.authGoogledrive.logout();
     lively.notify('logged out of googledrive')
@@ -174,42 +174,39 @@ export default class LivleyFilesystems extends Morph {
         "base": httpUrl
       }
     }
-    
-    $.ajax({
-      url: this.getMountURL(),
-      type: 'PUT',
-      data: JSON.stringify(mount),
-      success: text => {
+    fetch(this.getMountURL(), {
+      method: 'PUT',
+      body: JSON.stringify(mount)
+    }).then(resp => {
+      if (resp.status == 200) {
         console.log("mounted http")
-        this.updateMountList()
-      },
-      error: (xhr, status, error) => {
-        console.log("could not mount http " + error)
+      } else {
+        console.log("could not mount http " + resp)
       }
-    });
+      this.updateMountList()
+    })
   }
-     
+
   unmountPath(path) {
     console.log("unmountPath: " + path)
-    $.ajax({
-      url: "https://lively4/sys/fs/umount",
-      type: 'PUT',
-      data: JSON.stringify({path: path}),
-      success: (text) => {
+    fetch("https://lively4/sys/fs/umount", {
+      method: 'PUT',
+      body: JSON.stringify({ path: path })
+    }).then(resp => {
+      if (resp.status == 200) {
         console.log("unmounted path: " + path)
-        this.updateMountList()
-      },
-      error: function(xhr, status, error) {
-        alert("could not unmount path: "  + path +  error)
+      } else {
+        alert("could not unmount path: " + path + resp)
       }
-    });
+      this.updateMountList()
+    })
+
   }
-    
+
   updateMountList() {
-    $.ajax({
-      url: "https://lively4/sys/mounts",
-      type: 'GET',
-      success: (text) => {
+    fetch("https://lively4/sys/mounts").then(async (resp) => {
+      if (resp.status == 200) {
+        var text = await resp.text()
         console.log("show mounts...")
         var list = this.shadowRoot.querySelector('#listOfMountPoints')
         var mounts = JSON.parse(text)
@@ -217,22 +214,27 @@ export default class LivleyFilesystems extends Morph {
 
         list.innerHTML = "";
         mounts.forEach(ea => {
-          let remotePoint = ea.options ? '> ' + (ea.options.base || ea.options.branch || ea.options.subfolder || '') : '';
-          
-          list.appendChild(<li>
-            {ea.path} {remotePoint} ({ea.name})
-            <button class="unmount" click={() => {
-              this.unmountPath(ea.path);
-            }}>unmount</button>
-            <button class="browse" click={() => {
-              lively.openBrowser("https://lively4" + ea.path);
-            }}>browse</button>
-           </li>);
+          let remotePoint = ea.options ? '> ' + (ea.options.base || ea.options.branch || ea.options.subfolder ||
+            '') : '';
+
+          list.appendChild( < li > { ea.path } { remotePoint }({ ea.name }) <
+            button class = "unmount"
+            click = {
+              () => {
+                this.unmountPath(ea.path);
+              }
+            } > unmount < /button> <
+            button class = "browse"
+            click = {
+              () => {
+                lively.openBrowser("https://lively4" + ea.path);
+              }
+            } > browse < /button> < /
+            li > );
         });
-      },
-      error: (xhr, status, error) => {
-        console.log("could not get list of mounts: " + error)
+      } else {
+        console.log("could not get list of mounts: " + resp)
       }
-    });
+    })
   }
 }

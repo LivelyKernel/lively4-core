@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt} from 'src/client/graphics.js';
+import { pt } from 'src/client/graphics.js';
 
 const mountURL = 'https://lively4/sys/fs/mount';
 const mountEndpoint = '/services';
@@ -8,10 +8,9 @@ const localBaseURL = 'http://localhost:9007/';
 const remoteBaseURL = 'https://lively-kernel.org/lively4services';
 const servicesRootURL = remoteBaseURL + "/mount/"
 
-      // 'https://lively-kernel.org/lively4/lively4-services/services';
+// 'https://lively-kernel.org/lively4/lively4-services/services';
 
 var servicesURL = isLocalHost ? localBaseURL : (remoteBaseURL + "/");
-
 
 
 export default class Services extends Morph {
@@ -26,8 +25,12 @@ export default class Services extends Morph {
     this.entryPoint = this.getSubmorph('#entryPoint');
 
     this.serviceList = this.getSubmorph('.items');
-    $(this.serviceList).on('click', 'lively-services-item', this.itemClick.bind(this));
-
+    this.serviceList.addEventListener('click', evt => {
+      // 'lively-services-item',  
+      debugger
+      this.itemClick(evt)
+    });
+    
     this.addButton = this.getSubmorph('#addButton');
     this.addButton.addEventListener('click', this.addButtonClick.bind(this));
     this.removeButton = this.getSubmorph('#removeButton');
@@ -49,16 +52,15 @@ export default class Services extends Morph {
     this.stdoutButton.addEventListener('click', this.stdoutButtonClick.bind(this));
     this.stderrButton.addEventListener('click', this.stderrButtonClick.bind(this));
 
-    this.logEditor = this.getSubmorph('#log').editor;
+    this.logEditor = this.getSubmorph('#log');
     if (this.logEditor) { // editor is not initialized during testing
       // this.logEditor.setReadOnly(true);
     }
 
     this.refreshServiceList();
     this.refreshInterval = window.setInterval(() => {
-        this.refreshServiceList();
-      }, 5000
-    );
+      this.refreshServiceList();
+    }, 5000);
     this.logInterval = null;
 
     this.detachedCallback = this.unload;
@@ -71,11 +73,12 @@ export default class Services extends Morph {
   }
 
   /*
-  * Event handlers
-  */
+   * Event handlers
+   */
   itemClick(evt) {
     this.unselectAll();
-    evt.target.getSubmorph('.item').classList.add('selected');
+    var item = evt.path.find(ea => ea.localName == 'lively-services-item')
+    item.getSubmorph('.item').classList.add('selected');
     this.pid = evt.target.getAttribute('data-id');
     this.showService();
   }
@@ -83,10 +86,11 @@ export default class Services extends Morph {
   addButtonClick(evt) {
     lively.openComponentInWindow('lively-file-browser').then(browser => {
       browser.path = servicesURL + 'mount/';
-      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
+      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,
+        30)))
       browser.setMainAction((url) => {
         const relativePath = url.toString().replace(servicesURL + 'mount' + '/', '');
-        
+
         this.serviceTop.removeAttribute('data-id');
         this.entryPoint.value = relativePath;
         this.entryPoint.focus();
@@ -116,7 +120,7 @@ export default class Services extends Morph {
   }
 
   cloneButtonClick() {
-    lively.openComponentInWindow("lively-sync").then( comp => {
+    lively.openComponentInWindow("lively-sync").then(comp => {
       comp.serverURL = servicesURL + 'mount/'
     });
     // var gitURL = window.prompt('Please enter a GitHub link to clone:');
@@ -142,7 +146,7 @@ export default class Services extends Morph {
     this.post('start', data, (res) => {
       console.log(res);
       this.pid = res.pid;
-      this.refreshServiceList().then(this.showService.bind(this));
+      this.refreshServiceList().then(() => this.showService());
     });
   }
 
@@ -181,22 +185,26 @@ export default class Services extends Morph {
   }
 
   /*
-  * Helper functions
-  */
+   * Helper functions
+   */
   post(endpoint, data, success) {
-    $.ajax({
-      url: servicesURL + endpoint,
-      type: 'POST',
-      data: JSON.stringify(data),
-      contentType: 'application/json',
-      success: (data) => {
-        console.log(data);
+    fetch(servicesURL + endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        "content-type": "application/json"
+      }
+    }).then(async (resp) => {
+      if (resp.status == 200) {
+        var respData = await resp.json()
+        console.log("services data " + respData);
         if (success) {
-          success(data);
+          success(respData);
         }
-      },
-      error: this.handleAjaxError.bind(this)
-    });
+      } else {
+        this.handleAjaxError(resp)
+      }
+    })
   }
 
   handleAjaxError(jqXHR, textStatus, errorThrown) {
@@ -218,7 +226,7 @@ export default class Services extends Morph {
     while (this.serviceList.firstChild) {
       var item = this.serviceList.firstChild;
       if (selectedPID === null && !item.classList.contains('empty') &&
-          item.getSubmorph('.item').classList.contains('selected')) {
+        item.getSubmorph('.item').classList.contains('selected')) {
         selectedPID = item.getAttribute('data-id');
       }
       this.serviceList.removeChild(this.serviceList.firstChild);
@@ -297,9 +305,9 @@ export default class Services extends Morph {
     if (seconds) { return seconds + ' second' + ending(seconds); }
     return 'just now';
   }
-  
+
   ensureRemoteServicesMounted() {
-    $.getJSON("https://lively4/sys/mounts", (mounts) => {
+    fetch("https://lively4/sys/mounts").then(r => r.json()).then((mounts) => {
       var mounted = false;
       mounts.forEach(ea => {
         if (ea.path === mountEndpoint) {
@@ -311,7 +319,7 @@ export default class Services extends Morph {
       }
     });
   }
-  
+
   mountRemoteServices() {
     var mount = {
       'path': mountEndpoint,
@@ -320,28 +328,29 @@ export default class Services extends Morph {
         'base': servicesURL + 'mount/'
       }
     };
-    
-    $.ajax({
-      url: mountURL,
-      type: 'PUT',
-      data: JSON.stringify(mount),
-      success: (text) => {
+
+    fetch(mountURL, {
+      method: 'PUT',
+      body: JSON.stringify(mount)
+    }).then(resp => {
+      if (resp.status == 200) {
         console.log('Mounted ' + mountEndpoint);
-      },
-      error: (xhr, status, error) => {
-        console.log('Could not mount ' + mountEndpoint + ' ' + error);
+      } else {
+        console.log('Could not mount ' + mountEndpoint + ' ' + resp);
       }
-    });
+    })
   }
 
   /*
-  * Refresh functions
-  */
+   * Refresh functions
+   */
   refreshServiceList() {
-    return $.ajax({
-      url: servicesURL + 'list',
-      success: this.listServices.bind(this),
-      error: this.handleAjaxError.bind(this)
+    return fetch(servicesURL + 'list').then(async resp => {
+      if (resp.status == 200) {
+        this.listServices(await resp.json())
+      } else {
+        this.handleAjaxError(resp)
+      }
     });
   }
 

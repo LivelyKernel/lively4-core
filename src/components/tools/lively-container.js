@@ -772,7 +772,7 @@ export default class Container extends Morph {
     //  var content = this.sourceContent
     try {
       var root = this.getContentRoot();
-      var nodes = $.parseHTML(content, document, true);
+      var nodes = lively.html.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
       	// lively.notify("append template " + nodes[0].id);
 		    return this.appendTemplate(nodes[0].id);

@@ -646,8 +646,9 @@ export default class Lively {
 
   static openContextMenu(container, evt, target, worldContext) {
 
-    if (window.HaloService && HaloService.areHalosActive() ||
-      (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
+    if (window.HaloService && 
+        (HaloService.areHalosActive() ||
+        (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)))) {
       target = that;
     }
     lively.contextmenu.openIn(container, evt, target, worldContext);
@@ -798,6 +799,9 @@ export default class Lively {
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
+    
+    this.loadedAsExtension = loadedAsExtension
+    
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
@@ -830,7 +834,6 @@ export default class Lively {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
-      return Promise.resolve();
     } else {
       // don't want to change style of external web-sites...
       lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
@@ -858,13 +861,13 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    
+        
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
-    setTimeout(() => {persistence.current.start()}, 2000)
-
-
+    setTimeout(() => {
+      console.log("start persistence...")
+      persistence.current.start()
+    }, 2000)
   }
 
   static async showMainContainer() {
@@ -1112,7 +1115,7 @@ export default class Lively {
     if (object instanceof HTMLElement) {
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
-        template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
+        template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
         baseName = this.templateClassNameToTemplateName(className),
         moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
@@ -1519,7 +1522,7 @@ export default class Lively {
   }
 
   static async onShowFixedBrowserPreference(enabled) {
-    if (enabled) {
+    if (!this.loadedAsExtension && enabled) {
       this.showMainContainer()
     } else {
       var content = document.querySelector("#main-content")
@@ -1576,10 +1579,12 @@ export default class Lively {
    */
   static async onSWXKeepAlivePreference(bool) {
     while(lively.preferences.get("SWXKeepAlive")) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'meta',
-        command: 'keepalive'
-      });
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'meta',
+          command: 'keepalive'
+        });        
+      }
       // console.log("swx keep alive")
       await lively.sleep(1000)
     }

@@ -125,7 +125,8 @@ export function packShadowDOM(subtreeRoot) {
 
   // make a shallow copy of the children object,
   // since subtreeRoot.children changes in the following loop
-  var children = $.extend({}, subtreeRoot.children);
+  var children = Array.from(subtreeRoot.children);
+  
   // append all children to the shadow dom
   for (var i = 0; i < children.length; i++) {
     shadow.appendChild(children[i]);

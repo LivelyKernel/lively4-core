@@ -4,6 +4,7 @@ import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
 import Strings from 'src/client/strings.js'
 
+
 /*
  * Kitchensink for all HTML manipulation utilities
  */
@@ -77,8 +78,16 @@ export default class HTML {
     return _.filter(body.childNodes, this.getFilter).each( (ea) => body.removeChild(ea)).join("\n")
   }
   
+  static parseHTML(html) {
+    var tmpRoot = document.createElement("div")
+    tmpRoot.innerHTML = html
+    return Array.from(tmpRoot.childNodes)
+  }
+  
   static setHtmlContent(body, html) {
-    var nodes = $.parseHTML(html)
+    
+    
+    var nodes = this.parseHTML(html)
     _.each(nodes, (ea) => {
       body.appendChild(html)
     })
