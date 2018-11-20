@@ -1,12 +1,9 @@
 /*
- * File Index for Static Analys and Searching
+ * File Index for Static Analysis and Searching
  *
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
- *
-  * https://lively-kernel.gro/lively4/lively4-analysis/start.html
- * http://localhost:8080/lively4-core/README.md
- * https://dexie.org/docs/Collection/Collection
  * 
+ https://lively-kernel.gro/lively4/lively4-analysis/start.html
  */
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
@@ -64,8 +61,8 @@ export default class FileIndex {
 
   async update() {
     await this.updateTitleAndTags()
-    //await this.updateSemanticData() //modules, classes, methods
-    await this.updateLinks()
+    await this.updateAllModuleSemantics()
+    await this.updateAllLinks()
     await this.updateVersions()
   }
   
@@ -84,45 +81,73 @@ export default class FileIndex {
       .map(ea => ea[1])
   }
   
-  async updateSemanticData() {
-    return this.showProgress("updateSemanticData", () => {
-      this.db.files.where("name").notEqual("").each((file) => {
-        if (file.name && file.name.match(/\.js$/)) {
-          var result = this.extractSemanticData(file)
-          console.log(result) 
-          // update modules
-          result.dependencies.forEach(dependency => {
-              System.resolve(dependency, file.url).then(value => { 
-                console.log(value)   
-                // TODO: update db
-              })
-          })
-        }
+  async updateAllModuleSemantics() {
+     this.db.transaction('rw', this.db.files, this.db.modules, () => {
+      return this.db.files.where("type").equals("file").toArray()
+    }).then((files) => {
+      files.forEach(file => {
+        this.addModuleSemantics(file)
       })
     })
   }
   
-  extractSemanticData(file) {
+  async addModuleSemantics(file) {
+    if (file.name && file.name.match(/\.js$/)) { 
+      var result = this.extractModuleSemantics(file)
+      this.updateModule(file, result)
+      this.updateClasses(file, result)
+    }
+  }
+  
+  extractModuleSemantics(file) {
     var ast = this.parseSource(file.url, file.content)
     var results = this.parseSemanticData(ast)
-    var classes = results.classes
-    classes.forEach(clazz => {     
-      clazz.url = file.url
-      this.db.transaction("rw", this.db.classes, () => {
-        this.db.classes.put(clazz)  
-      }) 
-    }) 
     return results;
   }
   
-  async updateLinks() {
-      this.db.transaction('rw', this.db.files, this.db.links, () => {
+  async updateClasses(file, semantics) {
+    if (!semantics || !semantics.classes) {
+      return
+    }
+    for(const clazz of semantics.classes) {
+      clazz.url = file.url
+      this.addClass(clazz)
+    }
+  }
+
+  async updateModule(file, semantics) {
+    if (!semantics || !semantics.dependencies) {
+      return
+    }
+    var resolvedDependencies = new Array()
+    for(const dependency of semantics.dependencies) {
+      var resolvedDependency = await System.resolve(dependency, file.url)
+      resolvedDependencies.push(resolvedDependency)
+    }
+    var module = {
+      url: file.url,
+      dependencies: resolvedDependencies
+    }
+    this.addModule(module)
+  }
+  
+  async updateAllLinks() {
+      this.db.transaction('rw', this.db.files, () => {
         return this.db.files.where("type").equals("file").toArray()
       }).then((files) => {
         files.forEach(file => {
-         this.extractLinks(file).then(links => {
-           this.addLinks(links)
-        })
+         this.addLinks(file)
+      })
+    })
+  }
+  
+  async addLinks(file) {
+    this.extractLinks(file).then(links => {
+      this.db.transaction("rw", this.db.links, () => {
+        if (links) {
+          console.log(links)
+          this.db.links.bulkPut(links)
+        }
       })
     })
   }
@@ -133,6 +158,10 @@ export default class FileIndex {
     }
     var links = new Array()
     var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\/\_\-A-Za-z0-9]*)?[.#?=%;a-z0-9]*)/g)
+    if(!extractedLinks) {
+      return [];
+    }
+   
     for (const extractedLink of extractedLinks) {
       var link = {
         link: extractedLink,
@@ -186,18 +215,7 @@ export default class FileIndex {
     })
     return {classes, dependencies}
   }
-  
- /* async updateModules(file, dependencies) {
-    console.log(dependencies)
-    for(const dependency in dependencies) {
-      System.resolve(dependency, file.url).then(function(value) {
-        console.log(value)          
-      })
-        
-        // TODO: update DB      
-    }
-  }*/
-    
+
   async updateFunctionAndClasses() {
     return this.showProgress("extract functions and classes", () => {
       this.db.files.where("name").notEqual("").modify((file) => {
@@ -207,9 +225,6 @@ export default class FileIndex {
       })
     })
   }
-
-  
- 
   
   // ********************************************************
 
@@ -308,10 +323,10 @@ export default class FileIndex {
     
     if (file.content) {
       this.extractTitleAndTags(file) 
-      this.extractLinks(file).then((links)=>{this.addLinks(links)})
+      this.addLinks(file)
       
       if (file.name.match(/\.js$/)) {
-        this.extractSemanticData(file)
+        this.addModuleSemantics(file)
         this.extractFunctionsAndClasses(file)
       }      
     }
@@ -320,9 +335,15 @@ export default class FileIndex {
     })
   }
   
-  async addLinks(link) {
-    this.db.transaction("rw", this.db.links, () => {
-      this.db.links.bulkPut(link)
+  async addModule(module) {
+    this.db.transaction("rw", this.db.modules, () => {
+      this.db.modules.put(module)
+    })
+  }
+  
+  async addClass(clazz) {
+    this.db.transaction("rw", this.db.classes, () => {
+      this.db.classes.put(clazz)
     })
   }
 
@@ -332,8 +353,6 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
-  
-   
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
