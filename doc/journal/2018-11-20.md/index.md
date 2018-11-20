@@ -18,6 +18,14 @@ _.uniq(_.map(list, ea => {
 }).sort()).join("\n")
 ```
 
+and ... sorting the emails. Could I have used #Vivide here?
+```
+_.uniq(that.value.split("\n").sort()).join("\n")
+
+```
+
+
+
 - [] But it seems that Lively breaks the site, because it load jQuery into "$" ...  #TODO
 - and it opens a fixed browser.... which schould not happen #TODO
 
