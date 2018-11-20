@@ -9,4 +9,4 @@ function foo(a,b) {
   return c
 }
 
-var avg = foo(a,b)
+var avg = foo(a, b)

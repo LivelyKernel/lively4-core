@@ -533,6 +533,7 @@ if (!window.originalFetch) window.originalFetch = window.fetch
 window.fetch = async function(request, options, ...rest) {
   var handler = PolymorphicIdentifier.handle(request, options)
   if (handler) return handler.result;
+  // #TODO: lazy loading of schemes should go here
   return window.originalFetch.apply(window, [request, options, ...rest])
 }
 
