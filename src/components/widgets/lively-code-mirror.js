@@ -9,7 +9,6 @@ import {pt, rect} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
-import { TernCodeMirrorWrapper } from 'src/components/widgets/tern-wrapper.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
@@ -148,6 +147,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js')
     await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js')
     this.ternIsLoaded = true;
+  }
+  
+  get ternWrapper() {
+    return System.import('src/components/widgets/tern-wrapper.js')
+      .then(m => m.TernCodeMirrorWrapper);
   }
 
   initialize() {
@@ -333,20 +337,20 @@ export default class LivelyCodeMirror extends HTMLElement {
       },
       // #KeyboardShortcut Ctrl-Alt-C show type using tern
       "Ctrl-Alt-I": cm => {
-        TernCodeMirrorWrapper.showType(cm, this);
+        this.ternWrapper.then(tw => tw.showType(cm, this));
       },
       // #KeyboardShortcut Alt-. jump to definition using tern
       "Alt-.": cm => {
         lively.notify("try to JUMP TO DEFINITION")
-        TernCodeMirrorWrapper.jumpToDefinition(cm, this);
+        this.ternWrapper.then(tw => tw.jumpToDefinition(cm, this));
       },
       // #KeyboardShortcut Alt-, jump back from definition using tern
       "Alt-,": cm => {
-        TernCodeMirrorWrapper.jumpBack(cm, this);
+        this.ternWrapper.then(tw => tw.jumpBack(cm, this));
       },
       // #KeyboardShortcut Shift-Alt-. show references using tern
       "Shift-Alt-.": cm => {
-        TernCodeMirrorWrapper.showReferences(cm, this);
+        this.ternWrapper.then(tw => tw.showReferences(cm, this));
       },
       // #KeyboardShortcut Alt-C capitalize letter
       // #copied from keymap/emacs.js
@@ -358,10 +362,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     }),
     });
-    editor.on("cursorActivity", cm => TernCodeMirrorWrapper.updateArgHints(cm, this));
+    editor.on("cursorActivity", cm => {
+      this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+    });
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
-      // TernCodeMirrorWrapper.updateArgHints(cm, this);
+      // this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
       const widgetEnter = cm.widgetEnter;
       cm.widgetEnter = undefined;
       if (widgetEnter) {
@@ -381,6 +387,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
   }
 
+  
+  
   // Fires when an attribute was added, removed, or updated
   attributeChangedCallback(attr, oldVal, newVal) {
     if(!this.editor){
