@@ -14,7 +14,7 @@ export default class CodeEditor extends Morph {
     var container = this.get(".container");
     this.registerButtons();
     var input = this.get("#filename");
-    $(input).keyup(event => {
+    input.addEventListener("keyup", event => {
       if (event.keyCode == 13) { // ENTER
         this.onFilenameEntered(input.value);
       }
@@ -98,7 +98,7 @@ export default class CodeEditor extends Morph {
   }
 
   getURL() {
-    var filename = $(this.getSubmorph('#filename')).val();
+    var filename = this.getSubmorph('#filename').value;
     return new URL(filename);
   }
 

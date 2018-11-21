@@ -1,6 +1,6 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
+
+import * as $ from 'src/external/jquery.js';
 
 export default class Treeview extends Morph {
   attachedCallback() {

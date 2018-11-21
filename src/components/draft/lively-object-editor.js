@@ -110,7 +110,7 @@ export default class ObjectEditor extends Morph {
     if (!this.targetElement.dataset['livelyId']) {
       var uuid = generateUUID();
 
-      $(this.targetElement).attr('data-lively-id', uuid);
+      this.targetElement.setAttribute('data-lively-id', uuid);
       this.setAttribute('target', '$' + uuid);
     }
 
