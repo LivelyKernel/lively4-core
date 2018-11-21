@@ -47,8 +47,7 @@ export default class FileIndex {
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
         classes: '[name+url], name, url, size, *methods', 
-        methods: '[name+className+url], name, className, url, size ',
-        versions: '++id, url, class, method, date, commitId', //user,
+        versions: '[commitId+class+method+url], class, method, date, action, url, commitId', //user,
     }).upgrade(function () {
     })
 
@@ -187,13 +186,79 @@ export default class FileIndex {
   .catch((error) => {console.log(error); return "dead"})
   }
     
-  async updateAllVersions() {
-    
+  async updateAllLatestVersionHistories() {
+     this.db.transaction('rw', this.db.files, this.db.versions, () => {
+      return this.db.files.where("type").equals("file").toArray()
+    }).then((files) => {
+      files.forEach(file => {
+        this.addLatestVersionHistory(file.url)
+      })
+    })
   }
   
-  async addVersion(file) {
+  async addLatestVersionHistory(fileUrl) {
+    let response = await lively.files.loadVersions(fileUrl)
+    let json = await response.json()
+    let versions = json.versions
     
+    var modifications = await this.findModifiedClassesAndMethods(fileUrl, versions[0], versions[1])
+    this.db.transaction("rw", this.db.versions, () => {
+      this.db.versions.bulkPut(modifications)
+    })
   } 
+  
+  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
+    let latestContent = await lively.files.loadFile(fileUrl, latestVersion.version)
+    let previousContent = await lively.files.loadFile(fileUrl, previousVersion.version)
+    let astC1 = this.parseSource(fileUrl, latestContent)
+    let astC2 = this.parseSource(fileUrl, previousContent)
+    let latest = this.parseModuleSemantics(astC1)
+    let previous = this.parseModuleSemantics(astC2)
+    var modifications = new Array()
+  
+    for (let classLatest of latest.classes) {
+      let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name);
+      
+      if ((!previousClass) || (previousClass && classLatest.size !== previousClass.size)) { // added or modfied class
+        modifications.push({
+          url: fileUrl,
+          class: classLatest.name,
+          method: "+none+",
+          date: latestVersion.date,
+          commitId: latestVersion.version,
+          action: (!previousClass) ? "added" : "modified"
+        })
+      }
+      for (let methodLastest of classLatest.methods) {
+        let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name)
+        if ((!methodPreviousClass) || (methodPreviousClass && methodLastest.size !== methodPreviousClass.size) ) { // added or modfied method
+          modifications.push({
+            url: fileUrl,
+            class: classLatest.name,
+            method: methodLastest.name,
+            date: latestVersion.date,
+            commitId: latestVersion.version,
+            action: (!methodPreviousClass) ? "added" : "modified"
+          })
+        }
+      }
+      for (let methodPreviousClass of previousClass.methods) {
+        let methodLastestClass = classLatest.methods.find(method => method.name == methodPreviousClass.name)
+        if (!methodLastestClass) { // deleted method
+          modifications.push({
+            url: fileUrl,
+            class: classLatest.name,
+            method: methodPreviousClass.name,
+            date: latestVersion.date,
+            commitId: latestVersion.version,
+            action: "deleted"
+          })
+        }
+      }
+    }
+    return modifications
+  }
+  
   
   compareFileContents(currentFile, previousFile) {
     var currentFileAst = this.parseSource(currentFile.url, currentFile.content)
