@@ -118,15 +118,15 @@ export default class ScriptManager {
 
   static updateScript(object, funcOrString, options = {}) {
     var func = prepareFunction(funcOrString, options.name);
-    debugger
+    
     this.removeScript(object, func.name);
     this.addScript(object, func.executable, options);
   }
 
   static addScript(object, funcOrString, options = {}) {
-    debugger
+    
     var func = prepareFunction(funcOrString, options.name);
-    debugger
+    
     initializeScriptsMap(object);
 
     if (scriptExists(object, func.name)) {
