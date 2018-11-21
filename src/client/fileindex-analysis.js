@@ -31,7 +31,7 @@ export default class FileIndex {
     this.db.classes.clear()
     this.db.links.clear()
     this.db.versions.clear()
-    // this.db.delete()
+    // this.db.delete() 
   }
 
   constructor(name) {
@@ -46,13 +46,13 @@ export default class FileIndex {
         files: 'url,name,type,version,modified,options,title,tags,*classes,*functions,*links',
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
-        classes: '[url+name], url, name, *methods', 
-        functions: 'url, name',
-        versions: '[commitId+classId],commitId, classId, methodId, date' //user
+        classes: '[name+url], name, url, size, *methods', 
+        methods: '[name+className+url], name, className, url, size ',
+        versions: '++id, url, class, method, date, commitId', //user,
     }).upgrade(function () {
     })
 
-    return db
+    return db 
   }
 
   async toArray() {
@@ -63,7 +63,7 @@ export default class FileIndex {
     await this.updateTitleAndTags()
     await this.updateAllModuleSemantics()
     await this.updateAllLinks()
-    await this.updateVersions()
+    await this.updateAllVersions()
   }
   
   async updateTitleAndTags() {
@@ -101,7 +101,7 @@ export default class FileIndex {
   
   extractModuleSemantics(file) {
     var ast = this.parseSource(file.url, file.content)
-    var results = this.parseSemanticData(ast)
+    var results = this.parseModuleSemantics(ast)
     return results;
   }
   
@@ -109,11 +109,14 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
-    for(const clazz of semantics.classes) {
-      clazz.url = file.url
-      this.addClass(clazz)
-    }
-  }
+    
+    this.db.transaction("rw", this.db.classes, () => {
+      for(var clazz of semantics.classes) {
+        clazz.url = file.url
+        this.db.classes.put(clazz)        
+      }
+    })
+  } 
 
   async updateModule(file, semantics) {
     if (!semantics || !semantics.dependencies) {
@@ -128,7 +131,10 @@ export default class FileIndex {
       url: file.url,
       dependencies: resolvedDependencies
     }
-    this.addModule(module)
+    
+    this.db.transaction("rw", this.db.modules, () => {
+      this.db.modules.put(module)
+    })
   }
   
   async updateAllLinks() {
@@ -145,7 +151,6 @@ export default class FileIndex {
     this.extractLinks(file).then(links => {
       this.db.transaction("rw", this.db.links, () => {
         if (links) {
-          console.log(links)
           this.db.links.bulkPut(links)
         }
       })
@@ -161,7 +166,6 @@ export default class FileIndex {
     if(!extractedLinks) {
       return [];
     }
-   
     for (const extractedLink of extractedLinks) {
       var link = {
         link: extractedLink,
@@ -180,14 +184,40 @@ export default class FileIndex {
     mode: 'no-cors', 
   })
   .then(() => {return "alive"})
-  .catch((error) => {return "dead"})
+  .catch((error) => {console.log(error); return "dead"})
   }
     
-  async updateVersions() {
+  async updateAllVersions() {
     
   }
   
-  parseSemanticData(ast) {
+  async addVersion(file) {
+    
+  } 
+  
+  compareFileContents(currentFile, previousFile) {
+    var currentFileAst = this.parseSource(currentFile.url, currentFile.content)
+    var previousFileAst = this.parseSource(previousFile.url, previousFile.content)
+    var current = this.parseModuleSemantics(currentFileAst)
+    var previous = this.parseModuleSemantics(previousFileAst)
+
+    if (current === previous) {
+      return []
+    }
+    
+    var changedContents = new Array()
+    for (var clazz of previous) {
+      for (var [method, sizeMethod] of clazz.methods.entries()) {    
+        var sizeCurrentMethod = current.methods.get(method)
+        if (sizeCurrentMethod !== sizeMethod || (!current.methods.has(method) && sizeCurrentMethod === undefined)) { //changed or deleted
+          changedContents.push(method)
+        }
+      }
+    }
+    return changedContents
+  }
+  
+  parseModuleSemantics(ast) {
     var classes = []
     var dependencies = []
     babel.traverse(ast,{
@@ -198,13 +228,20 @@ export default class FileIndex {
       },
       ClassDeclaration(path) {
         if (path.node.id) {
-          var clazz = {'name': path.node.id.name}
+          var clazz = {
+            name: path.node.id.name,
+            size: path.node.end-path.node.start
+          }
         
           if (path.node.body.body) {
             var methods = []
             path.node.body.body.forEach(function(item){
               if(item.type === "ClassMethod") {
-                methods.push(item.key.name)
+                var method = {
+                  name: item.key.name,
+                  size: item.end-item.start
+                }
+                methods.push(method)
               }
             })
             clazz.methods = methods
@@ -291,7 +328,7 @@ export default class FileIndex {
       method: "OPTIONS"
     }).then(r => r.json())
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
-  }
+  } 
     
   async addFile(url, name, type, size, modified) {    
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -332,18 +369,6 @@ export default class FileIndex {
     }
     this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
-    })
-  }
-  
-  async addModule(module) {
-    this.db.transaction("rw", this.db.modules, () => {
-      this.db.modules.put(module)
-    })
-  }
-  
-  async addClass(clazz) {
-    this.db.transaction("rw", this.db.classes, () => {
-      this.db.classes.put(clazz)
     })
   }
 
