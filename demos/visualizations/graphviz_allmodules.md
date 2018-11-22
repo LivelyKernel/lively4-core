@@ -5,7 +5,7 @@
   import {loadedModulesData} from "demos/visualizations/filedata.js" 
   // #TODO make relative path... work here?
   (async () => {
-    var url = lively4url + "/src/client/";
+    var url = lively4url + "/"; // /src/client/
     var data = await loadedModulesData(url, 
       (d) => {
         // node filter
@@ -22,11 +22,25 @@
       )
     var vis = await (<d3-graphviz style="width:100px, height: 100px"></d3-graphviz>)
     vis.config({
+      width(d) {
+        return Math.sqrt(d.size / 0.5 )
+      },
+      
+      height(d) {
+        return Math.sqrt(d.size / 0.5)
+      },
+
+      fontsize(d) {
+        return Math.sqrt(d.size / 0.5) / 10
+      },
+
+
       onclick(data, evt, element) {
         lively.openInspector({
           data: data,
           event: evt,
-          element: element
+          element: element,
+          d: vis.nodes.get(parseInt(data.key))
         })
       }
     })
