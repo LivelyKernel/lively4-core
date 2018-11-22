@@ -1,16 +1,16 @@
 import Morph from "src/components/widgets/lively-morph.js"
-
 import D3Component from "./d3-component.js"
-
 import d3v5 from "src/external/d3.v5.js"
-
 import { debounce } from "utils";
-
 import "src/external/d3-selection-multi.v1.js"
 
+/*
+ *
+ */
 export default class D3GraphViz extends D3Component {
 
   async initialize() {
+    this.options = {}
     this.loaded = new Promise(async (resolve) => {
 
       if (!self.d3) {
@@ -25,7 +25,6 @@ export default class D3GraphViz extends D3Component {
         await lively.loadJavaScriptThroughDOM("D3GraphViz", lively4url + "/src/external/d3-graphviz.js", true)
       }
       this.updateViz()
-      this.options = {}
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
       })::debounce(500));
@@ -44,20 +43,58 @@ export default class D3GraphViz extends D3Component {
     await this.updateViz()
   }
   
+  dataEdgeColor(source, target) {
+    return "#aaaaaa"
+  }
+  
+  
+  objToAttributes(obj) {
+    return Object.keys(obj).map(key => {
+      return `${key}="${obj[key]}"`
+    }).join(" ")
+  }
+  
+  pxToInch(number) {
+    return number * 0.75 / 72 // px to pt to inch
+  }
+  
+  ifValueDo(value, func) {
+    if (value !== undefined) {
+      func(value)
+    }
+  }
+  
   async setData(data) {
     this.data = data
     if (!data) return // do data... no cockies! ;-)
     if (data.nodes && data.relations) {
+      var nodes = new Map()
+      this.nodes = nodes
+      
       var nodesSource = ""
       // Bundleview like data...
       this.walkTreeData(data.nodes, d =>  {
         if (!d.hidden) {
-          nodesSource += `${d.id} [shape="rectangle", fontname="Arial", label="${d.name}"];`
+          nodes.set(d.id, d)
+          var attributes = {
+            shape: "rectangle", 
+            fontname: "Arial",
+            label: d.name
+          }
+          this.ifValueDo(this.dataWidth(d), width => attributes.width = this.pxToInch(width))
+          this.ifValueDo(this.dataHeight(d), height => attributes.height = this.pxToInch(height))
+          this.ifValueDo(this.dataFontsize(d), fontsize => attributes.fontsize = fontsize)
+          
+          nodesSource += `${d.id} [${this.objToAttributes(attributes)}];`
         }
       })
 
-      var relationsSource = data.relations.map(ea => ea.source + " -> " + ea.target).join(";")
-      var source = `digraph {${nodesSource} ${relationsSource}}`
+      var relationsSource = data.relations.map(ea => {
+        let source = nodes.get(ea.source) // objects vs. explicit references through IDs that have first to be resolved...
+        let target = nodes.get(ea.target)
+        return `${ea.source} -> ${ea.target} [color="${this.dataEdgeColor(source, target)}"]`
+      }).join(";")
+      var source = `digraph {${relationsSource} ${nodesSource} }` // edges before nodes helps the layouter...
 
       try {
        await this.setDotData(source)
