@@ -4,8 +4,12 @@ import files from "src/client/files.js"
 
 import { walkTreeData } from "src/components/d3/d3-component.js"
 
-export async function loadedModulesData(url) {
+export async function loadedModulesData(url, filter, edgeFilter) {
 
+  if (!filter) filter = d => true;
+  if (!edgeFilter) edgeFilter = (source, target) => true;
+  
+  
   var urlMap = new Map()
   var idCounter = 1
 
@@ -13,6 +17,8 @@ export async function loadedModulesData(url) {
   var tree = await files.fileTree(url)
 
   walkTreeData(tree, d => {
+    if (!filter(d)) return;
+    
     d.id = idCounter++
     urlMap.set(d.url, d)
   })
@@ -44,6 +50,8 @@ export async function loadedModulesData(url) {
           console.log("could not find node" + depKey)
       } else {
         // console.log("add relation " + sourceNode.id + " -> " + targetNode.id)
+        if(!edgeFilter(sourceNode, targetNode)) return;
+        
         relations.push({
           source: sourceNode.id,
           target: targetNode.id,
