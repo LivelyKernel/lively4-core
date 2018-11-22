@@ -474,7 +474,6 @@ export default class ObjectEditor extends Morph {
     let source = this.editor.value;
     let m = source.match(/^function +([a-zA-Z][a-zA-Z0-9$_]+) *\(/)
     var scriptName = m && m[1]
-
     if (this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
       if (this.isScriptData(data)) {

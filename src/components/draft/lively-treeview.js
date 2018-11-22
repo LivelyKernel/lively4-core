@@ -5,6 +5,7 @@ export default class Treeview extends Morph {
   
   
   onItemClick(target) {
+    if (!target) return
     var active = target.classList.contains('active');
     this.querySelectorAll(".active").forEach(ea => ea.classList.remove("active"))
 
