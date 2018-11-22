@@ -213,7 +213,9 @@ export default class Window extends Morph {
 
   toggleMaximize() {
     if (this.positionBeforeMaximize) {
-      $('i', this.maxButton).removeClass('fa-compress').addClass('fa-expand');
+      var maxButtonI = this.maxButton.querySelector('i')
+        maxButtonI.classList.remove('fa-compress')
+        maxButtonI.classList.add('fa-expand');
 
       this.style.position = "absolute"
       lively.setGlobalPosition(this, 
@@ -228,7 +230,10 @@ export default class Window extends Morph {
         return this.toggleMinimize()
       }
 
-      $('i', this.maxButton).removeClass('fa-expand').addClass('fa-compress');
+      var maxButtonI = this.maxButton.querySelector('i')
+        maxButtonI.classList.add('fa-compress')
+        maxButtonI.classList.remove('fa-expand');
+
 
       var bounds = this.getBoundingClientRect()
       this.positionBeforeMaximize = {

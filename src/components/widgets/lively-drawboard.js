@@ -135,16 +135,6 @@ export default class LivelyDrawboard extends Morph {
     lively.addEventListener("dragboard", this.get('#controls'), "dragend", 
       e => this.onDragEnd(e));  
 
-    /*
-    var input = this.get("#file-path");
-    $(input).keyup(event => {
-      if (event.keyCode == 13) { // ENTER
-        this.onPathEntered(input.value);
-      }
-    });
-    */
-
-    
     this.color = "black";
     
     this.updateCanvasExtent();

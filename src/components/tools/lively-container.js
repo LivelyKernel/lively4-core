@@ -92,7 +92,7 @@ export default class Container extends Morph {
 
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
-    $(input).keyup(event => {
+    input.addEventListener("keyup", event => {
       if (event.keyCode == 13) { // ENTER
         this.onPathEntered(input.value);
       }
@@ -1157,7 +1157,8 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + resolvedURL +'"></lively-pdf>', renderTimeStamp);
       else return;
-    } 
+    }
+    
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
@@ -1212,6 +1213,12 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
+      } else if (format == "dot") {
+        this.sourceContent = content;
+        if (render) {
+          
+          return this.appendHtml(`<graphviz-dot><script type="graphviz">${content}</script></graphviz-dot>`, renderTimeStamp); 
+        } else return;
       } else if (format == "xhtml") {
         this.sourceContent = content;
         if (render) {

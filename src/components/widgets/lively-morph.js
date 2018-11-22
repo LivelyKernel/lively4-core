@@ -69,7 +69,7 @@ export default class Morph extends HTMLDivElement {
       var name = node.id;
       var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
       // console.log('register button ' + name)
-      $(node).click(evt => {
+      node.addEventListener("click", evt => {
         if (this[funcName] instanceof Function) {
           this[funcName](evt);
         } else {

@@ -112,7 +112,7 @@ export default class AceEditor extends Morph {
     var _this = this;
     window.setTimeout(() => {
       // we also use this timeout hack, but we should get rid of it!!
-      new ResizeSensor($(_this.container), () => {
+      new ResizeSensor(_this.container, () => {
         this.editor.resize();
       });
     }, 500);
@@ -295,8 +295,7 @@ export default class AceEditor extends Morph {
   changeTheme(theme) {
     this.editor.setTheme("ace/theme/" + theme);
   }
-
-  // var editor = editor = $("lively-editor")[0].shadowRoot.querySelector("#editor").editor;
+  
   customizeEditor() {
     var editor = this.editor;
 

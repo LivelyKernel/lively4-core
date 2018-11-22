@@ -3,7 +3,7 @@
  *
  */
 import './patches.js'; // monkey patch the meta sytem....
-import * as jquery from '../external/jquery.js';
+// import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import * as _ from '../external/underscore.js';
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
@@ -494,19 +494,22 @@ export default class Lively {
       }
     }
 
-    if (obj.clientX !== undefined)
+    if (obj.clientX !== undefined) {
       return pt(obj.clientX, obj.clientY);
+    }
+    
+    // try to use directly the style object... 
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
-    
+    // keyboard events don't have a position.
     if(obj instanceof KeyboardEvent) {
       return;
     }
-    // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
+    // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
-      pos = $(obj).position(); // fallback to jQuery...
-      pos = pt(pos.left, pos.top);
+      var style = getComputedStyle(obj)
+      pos = pt(parseFloat(style.left), parseFloat(style.top));
     }
     return pos;
   }
@@ -615,9 +618,10 @@ export default class Lively {
       document.scrollingElement.scrollTop || 0);
   }
 
+  // #Depricated
   static openFile(url) {
-    if (url.hostname == "lively4"){
-      var container  = $('lively-container')[0];
+    if (url.hostname == "lively4") {
+      var container  = document.querySelector('lively-container')
       if (container) {
         container.followPath(url.pathname);
       } else {
@@ -1151,7 +1155,7 @@ export default class Lively {
 
       + "</pre>";
 
-    setTimeout( () => $(comp).remove(), timeout || 3000);
+    setTimeout( () => comp.remove(), timeout || 3000);
     return comp;
   }
 

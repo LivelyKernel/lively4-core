@@ -11,6 +11,7 @@ import "src/external/d3-selection-multi.v1.js"
 export default class D3GraphViz extends D3Component {
 
   async initialize() {
+    this.options = {}
     this.loaded = new Promise(async (resolve) => {
 
       if (!self.d3) {
@@ -25,7 +26,6 @@ export default class D3GraphViz extends D3Component {
         await lively.loadJavaScriptThroughDOM("D3GraphViz", lively4url + "/src/external/d3-graphviz.js", true)
       }
       this.updateViz()
-      this.options = {}
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
       })::debounce(500));
