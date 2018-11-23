@@ -1,0 +1,56 @@
+<template id="d3-radialtree" data-class="D3Radialtree">
+  <style>
+    :host {
+      display: inline-block;
+    } 
+    
+    #svg {
+      position: relative;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+      user-select: none;
+    }  
+  </style > 
+  <style>
+    svg {
+      font: 10px sans-serif;
+    }
+    
+    #contents {
+      position: abosolute;
+      top: 0px;
+      left: 0px;
+      
+    }
+        
+
+
+    .node text {
+      font: 10px sans-serif;
+    }
+
+    .node--internal circle {
+      fill: #555;
+    }
+
+    .node--internal text {
+      text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+    }
+
+    .link {
+      fill: none;
+      stroke: #555;
+      stroke-opacity: 0.4;
+      stroke-width: 1.5px;
+    }
+
+  </style>
+  <svg id="svg"></svg>
+  <div id="contents">
+    <content></content>
+  </div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -75,7 +75,7 @@ fetch = function(request, ...args) {
   // (B) we do fetching and caching behavior here... #Duplicate
   if (initPending) {  
     return new Promise(async (resolve, reject) => {
-      console.log("SWX BOOT fetch " + request.url)
+      // console.log("SWX BOOT fetch " + request.url)
       
       let cache = self.caches && await caches.open("lively4-swx-cache");
       if (!cache){
@@ -106,6 +106,7 @@ fetch = function(request, ...args) {
       }
     });
   } else {
+    // console.log('ORIGINAL FETCH', request.url)
     return originalFetch(request, ...args);
   }  
 }
@@ -137,21 +138,35 @@ this.addEventListener('activate', (event) => {
   )
 })
 
-this.addEventListener('fetch', (event) => {
-  if (pendingRequests) return;
-  
-  // console.log("fetch swx-boot.js " + event.request.url)
 
-//   var pending = {}
-// 	event.respondWith(new Promise(resolve => {
-//     pending.resolve = resolve;
-//   }));
-  
+this.addEventListener('fetch', (event) => {
+  // console.log("fetch event " + event.request.url)
+
+  if (pendingRequests) {
+    // we are still in booting phase and capture requests in pendingRequests; pendingRequests will be set to null in swx once we are done booting
+    var url = event.request.url;
+
+    // console.log("fetch event ADD PENGING " + event.request.url)
+    var promise = new Promise((resolve, reject) => {
+      pendingRequests.push({
+      event: event,
+      url: url,
+      resolve: resolve,
+      reject: reject
+       });
+    });
+    event.respondWith(promise);
+    return;
+  }
+
+  // normal request handling
+  // #TODO: get rid of unnecessary waiting for modules
+  // #TODO: would `event.respondWith(Promise<Response>)` work? -> Needs swx refactoring so that swx-worker returns a Promise #Refactor
   event.waitUntil(
     init()
       .then(worker => worker.fetch(event))
       .catch(error => { console.error(error); throw error })
-  )
+  );
 })
 
 this.addEventListener('message', (event) => {

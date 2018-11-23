@@ -39,7 +39,7 @@ export default class ComponentBin extends Morph {
       })
     }
     return contents.filter(file => {
-        return file.type === "file" && file.name.match(/\.html$/);
+        return file && file.type === "file" && file.name.match(/\.html$/);
       }).map(file => {
                 return {
         "name": file.name.replace(/\.html$/,"")

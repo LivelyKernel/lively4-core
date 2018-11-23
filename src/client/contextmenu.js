@@ -254,9 +254,12 @@ export default class ContextMenu {
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", evt => {
-          var morph  = document.createElement("p");
+          var morph  = document.createElement("div");
+          morph.classList.add("lively-text")
+
           morph.innerHTML = "Hello";
           morph.contentEditable = true;
+          morph.style.width = "100px"
           worldContext.appendChild(morph);
           this.openCenteredAt(morph, worldContext, evt)          
           lively.hand.startGrabbing(morph, evt)
@@ -516,4 +519,8 @@ export default class ContextMenu {
       return menu;
     });
   }
+}
+
+if (self.lively && lively.contextmenu) {
+  lively.contextmenu = ContextMenu // make it live...
 }

@@ -20,6 +20,8 @@ export default function(param) {
         // <browse://src/client/bound-eval.js> knows about this, should we define the "magic name" here or there? #SWA
         if(window.__pluginDoitThisRefs__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
           var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
+          codeId = codeId.replace(/\/.*/,"/") // strip encoded path
+          
           // console.log("boundEval this: " + globalThis + " codeId: " + codeId)
           // var thisVarDeclaration = t.variableDeclaration("var",
           //                             [ t.variableDeclarator(t.identifier(GLOBAL_THIS_REPLACEMENT)) ])

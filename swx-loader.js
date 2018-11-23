@@ -1,3 +1,9 @@
+// let Ofetch = fetch;
+// fetch = function(...args) {
+//   console.warn('FETCH' + args[0].url)
+//   return Ofetch(...args);
+// }
+
 function getChromeVersion () {     
     var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
     return raw ? parseInt(raw[2], 10) : false;

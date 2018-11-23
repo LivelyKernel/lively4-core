@@ -59,8 +59,10 @@ export default class FileIndex {
 
   async updateFunctionAndClasses() {
     return this.showProgress("extract functions and classes", () => {
-      return this.db.files.where("type").equals("js").modify((ea) => {
-        this.extractFunctionsAndClasses(ea)
+      this.db.files.where("name").notEqual("").modify((file) => {
+        if (file.name && file.name.match(/\.js$/)) {
+          this.extractFunctionsAndClasses(file)
+        }
       })
     })
   }
@@ -88,15 +90,16 @@ export default class FileIndex {
   }
 
   extractFunctionsAndClasses(file) {
-    // lively.notify("file " +file.url + " " + file.content.length)
     var ast = this.parseSource(file.url, file.content)
     var result = this.parseFunctionsAndClasses(ast)
-    // lively.notify("result " + result.functions)
+//     console.log(file.url + " functions: " + result.functions)
+//     console.log(file.url + " classes: " + file.classes)
+    
     file.classes = result.classes
-    file.functions  = result.functions
-    console.log("classes " + file.classes)
+    file.functions =  result.functions
   }
-
+  
+ 
   parseFunctionsAndClasses(ast) {
     var functions = []
     var classes = []
@@ -146,7 +149,7 @@ export default class FileIndex {
     }).then(r => r.json())
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
   }
-  
+    
   async addFile(url, name, type, size, modified) {
     
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -156,8 +159,8 @@ export default class FileIndex {
     
     console.log("FileIndex update  " + url)
     
-    
-    var file = file = {
+
+    var file = {
       url: url,
       name: name,
       size: size,
@@ -306,10 +309,10 @@ export default class FileIndex {
   showAsTable() {
     var result= []
     this.db.files.each(ea => {
-      result.push(
-        {url:ea.url,
-        size: ea.content.length,
-        title: ea.title.replace(/</g, "&lt;").slice(0,100),
+      result.push({
+        url:ea.url,
+        size: ea.size,
+        title: (ea.title) ? ea.title.replace(/</g, "&lt;").slice(0,100) : "",
         tags: ea.tags,
         classes: ea.classes,
         functions: ea.functions

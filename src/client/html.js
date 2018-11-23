@@ -4,6 +4,7 @@ import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
 import Strings from 'src/client/strings.js'
 
+
 /*
  * Kitchensink for all HTML manipulation utilities
  */
@@ -77,8 +78,16 @@ export default class HTML {
     return _.filter(body.childNodes, this.getFilter).each( (ea) => body.removeChild(ea)).join("\n")
   }
   
+  static parseHTML(html) {
+    var tmpRoot = document.createElement("div")
+    tmpRoot.innerHTML = html
+    return Array.from(tmpRoot.childNodes)
+  }
+  
   static setHtmlContent(body, html) {
-    var nodes = $.parseHTML(html)
+    
+    
+    var nodes = this.parseHTML(html)
     _.each(nodes, (ea) => {
       body.appendChild(html)
     })
@@ -90,7 +99,7 @@ export default class HTML {
       var name = node.id
       var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
       // console.log("register button " + name)
-      $(node).click(() => {
+      node.addEventListener("click", () => {
         var func = parent[funcName]
         if (func) {
           func.call(parent)
@@ -160,8 +169,10 @@ export default class HTML {
     
     Array.prototype.forEach.call(nodes, node => {
       if (node.getAttribute) {
+        
         var href = node.getAttribute("href")
         if (href) {
+          // console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
           var m
@@ -169,11 +180,7 @@ export default class HTML {
             path = "/Thesis/" + m[1]
           } else if (m = href.match(/javascript:(.*)'\)/)) {
             var code = m[1]
-            // do nothing
-            
-            // $(node).click(() => { 
-            //   alert("eval " + code)
-            // })
+            // do nothing            
           } else if (href.match(/([A-Za-z]+):\/\/.*/)) {
             // console.log("ignore "  + href);
             path = href;
@@ -181,7 +188,6 @@ export default class HTML {
             path = href; // ABSOLTUE paths
           } else {
             path = dir + href // that leaves us RELATIVE paths
-            
             if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
               // no ending?
               // we could check, or assume md for the moment
@@ -191,18 +197,13 @@ export default class HTML {
           } 
           if (path) {
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
-            $(node).click(() => { 
-              // if (path.match(/https:\/\/lively4\/notes/)) {
-              //     if (window.confirm("follow path? " + path)) {
-              //       followPath(path); return false;
-              //     }
-              //     return false
-              // }
+            if (node.tagName == "LINK") {
+              // console.log("update LINK", path)
+              node.setAttribute("data-href", href) // so we keep the original somewhere..
+              node.setAttribute("href", path)
+            }            
+            node.addEventListener("click", () => { 
               followPath(path); return false; });
-
-            // ALTERNATIVE to navigate it inline, but the link will not be followed....
-            // var link = lively4url + "/draft/start.html?load=" + path
-            // node.setAttribute("href", link)
           } else {
             // console.log("ignore " + href)
           }

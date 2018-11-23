@@ -4,6 +4,8 @@ import Morph from "src/components/widgets/lively-morph.js";
 import {pt} from '../graphics.js';
 import { through } from "utils";
 
+// import html from "scr/client/html.js"
+
 // store promises of loaded and currently loading templates
 export var loadingPromises = {};
 
@@ -368,6 +370,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
+        lively4url + '/src/components/d3/',
         lively4url + '/src/client/vivide/components/',
         lively4url + '/src/client/reactive/components/',
         lively4url + '/src/client/triples/components/',
@@ -543,7 +546,7 @@ export default class ComponentLoader {
   }
 
   static reloadComponent(source) {
-    var template =  $($.parseHTML(source)).filter("template")[0];
+    var template = lively.html.parseHTML(source).find(ea => ea.localName == "template");
     if (!template) return;
     var name = template.id;
     if (!name) return;

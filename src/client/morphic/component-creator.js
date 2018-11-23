@@ -96,14 +96,15 @@ function saveTemplate(template, info) {
   return completeHTML;
 }
 
+// #Depricated #NotUsed
 export function packShadowDOM(subtreeRoot) {
   var shadow;
   // if there is a shadow root already,
   // we clean it up, since we cannot create a new one
   if (subtreeRoot.shadowRoot) {
     shadow = subtreeRoot.shadowRoot;
-    $(shadow.children).each(function(idx) {
-      shadow.removeChild(this);
+    Array.from(shadow.childNodes).forEach(function(ea) {
+      shadow.removeChild(ea);
     });
   } else {
     shadow = subtreeRoot.createShadowRoot();
@@ -125,13 +126,15 @@ export function packShadowDOM(subtreeRoot) {
 
   // make a shallow copy of the children object,
   // since subtreeRoot.children changes in the following loop
-  var children = $.extend({}, subtreeRoot.children);
+  var children = Array.from(subtreeRoot.children);
+  
   // append all children to the shadow dom
   for (var i = 0; i < children.length; i++) {
     shadow.appendChild(children[i]);
   }
 }
 
+// #Depricated #NotUsed
 export function unpackShadowDOM(subtreeRoot) {
   var shadow = subtreeRoot.shadowRoot;
   if (!shadow) {
@@ -139,8 +142,8 @@ export function unpackShadowDOM(subtreeRoot) {
   }
 
   // move all elements but style out of the shadow dom
-  $(shadow.children).filter(":not(style)").each(function(idx) {
-    subtreeRoot.appendChild(this);
+  Array.from(shadow.childNodes).filter(ea => ea.localName !== "style").forEach(function(ea) {
+    subtreeRoot.appendChild(ea);
   });
 
   // We cannot remove the shadow root, so to make the content visible,

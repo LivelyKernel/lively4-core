@@ -110,7 +110,7 @@ export default class ObjectEditor extends Morph {
     if (!this.targetElement.dataset['livelyId']) {
       var uuid = generateUUID();
 
-      $(this.targetElement).attr('data-lively-id', uuid);
+      this.targetElement.setAttribute('data-lively-id', uuid);
       this.setAttribute('target', '$' + uuid);
     }
 
@@ -474,7 +474,6 @@ export default class ObjectEditor extends Morph {
     let source = this.editor.value;
     let m = source.match(/^function +([a-zA-Z][a-zA-Z0-9$_]+) *\(/)
     var scriptName = m && m[1]
-
     if (this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
       if (this.isScriptData(data)) {

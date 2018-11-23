@@ -36,7 +36,7 @@ import moment from "src/external/moment.js";
   div.style.width = "800px"
   div.style.height = "800px"
   
-  var treemap = await lively.create("lively-d3-treemap")
+  var treemap = await lively.create("d3-treemap")
   treemap.setTreeData(tree)
   var d3 = treemap.d3
     
@@ -75,6 +75,17 @@ import moment from "src/external/moment.js";
       return color(days)
     }
   }
+  
+//   treemap.config({
+//     dataColor(d) {
+//     // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
+//     if (d.data.index) {
+//       var time = moment(d.data.index.modified)
+//       var days = (now - time._d.getTime()) / 1000 / 60 / 60 / 24
+
+//       return color(days)
+//     }
+//   })
   
   treemap.dataClick = function(d) {
     lively.openInspector(d)

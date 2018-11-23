@@ -25,7 +25,7 @@ async function invalidateFileCaches()  {
     }
     var url = lively4url + "/"
     if (self.lively && lively.fileIndexWorker) {
-      this.fileIndexWorker.postMessage({message: "updateDirectory", url})
+      lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
     }
     var offlineFirstCache = await caches.open("offlineFirstCache")
     var json = await Promise.race([
@@ -39,7 +39,7 @@ async function invalidateFileCaches()  {
         }
       }).then(async resp => {
         if (resp.status != 200) {
-          console.log("PROBLEM invalidateFileCaches " + resp.status)
+          console.log("PROBLEM invalidateFileCaches SERVER RESP " + resp.status)
           return false
         } else {
           try {
@@ -87,6 +87,12 @@ if (window.lively && window.lively4url) {
   console.log("CANCEL BOOT Lively4, because it is already loaded")
 } else {
   (function() {
+    
+    // for finding the baseURL...
+    var script = document.currentScript;
+    var scriptURL = script.src;
+    window.lively4url = scriptURL.replace("/src/client/boot.js","");
+    
     // early feedback due to long loading time
     let livelyBooting = document.createElement('div');
     Object.assign(livelyBooting.style, {
@@ -102,7 +108,7 @@ if (window.lively && window.lively4url) {
       padding: '5px',
       boxShadow: '0px 0px 3px 0px rgba(40, 40, 40,0.66)'
     });
-    livelyBooting.innerHTML = `<img alt="Lively 4" style="display:block; margin:auto;" src="media/lively4_logo_smooth_100.png" />
+    livelyBooting.innerHTML = `<img alt="Lively 4" style="display:block; margin:auto;" src="${lively4url}/media/lively4_logo_smooth_100.png" />
 <span style="font-size: large;font-family:arial">Booting:</span>
 <div style="font-family:arial" id="lively-booting-message"></div>`;
     document.body.appendChild(livelyBooting);
@@ -122,11 +128,7 @@ if (window.lively && window.lively4url) {
 
     console.group("BOOT");
 
-    // for finding the baseURL...
-    var script = document.currentScript;
-    var scriptURL = script.src;
 
-    window.lively4url = scriptURL.replace("/src/client/boot.js","");
 
     // some performance logging
     window.lively4performance = {start: performance.now()}

@@ -123,12 +123,16 @@ export class Cache {
       return newResp
     } 
     
-    if (request.method == "PUT") {
-      // console.log("cache delete " + request.url)
+    if (request.method == "PUT" || request.method == "DELETE") {
+      console.log("cache delete " + request.url)
       this.offlineFirstCache.delete(request.url)
       var result =  doNetworkRequest()    
       result.then(() => {
-        FileIndex.current().updateFile(request.url)
+        if (request.method == "DELETE") {
+          FileIndex.current().dropFile(request.url)
+        } else {
+          FileIndex.current().updateFile(request.url)
+        }
       })        
       
       return result
@@ -144,31 +148,42 @@ export class Cache {
    * @param request The request to respond to
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
-  async fetch(request, doNetworkRequest) {
+  async fetch(request, doNetworkRequest, pending) {
     // console.log("[cache] fetch " + request.url )
     await this.offlineFirstReady;
 
-    if (lively4offlineFirst || (request.url || request).match(/offlineFirst/)) {
-      return this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develop it....
-    }
-      
-    // console.log("request " + request.url)
     var start = performance.now()
-    return new Promise(resolve => {
-      if (this._cacheMode == 2) {
-        this._favoritesTracker.update(request.url);
-      }
-      
-      // #TODO force online! 
-      if (true || this._connectionManager.isOnline) {
-        resolve(this._onlineResponse(request, doNetworkRequest, this._cacheMode > 0));
-      } else if (this._cacheMode > 0) {
-        resolve(this._offlineResponse(request, doNetworkRequest));
-      }
-    }).then(r => {
+    if (lively4offlineFirst || (request.url || request).match(/offlineFirst/)) {
+      var result = this.fetchOfflineFirst(request, doNetworkRequest) // #Hack to be able to develop it....
+    } else {      
+      result =  new Promise(resolve => {
+        if (this._cacheMode == 2) {
+          this._favoritesTracker.update(request.url);
+        }
+
+        // #TODO force online! 
+        if (true || this._connectionManager.isOnline) {
+          resolve(this._onlineResponse(request, doNetworkRequest, this._cacheMode > 0));
+        } else if (this._cacheMode > 0) {
+          resolve(this._offlineResponse(request, doNetworkRequest));
+        }
+      })
+    }
+    
+    // Profiling
+    result = result.then(r => {
       // console.log("resolved " + request.url + " in " + (performance.now() - start) +"ms")
       return r
     })
+    
+    // #TODO #Refactor respondWith vs. pendingr.resolve vs. returning Promise
+    if (pending) {
+      // console.log('resolve pending ' + request.url)
+      pending.resolve(result)
+    } else {
+      // console.log('return pending ' + request.url)
+      return result
+    }
   }
   
   getCacheMode() {

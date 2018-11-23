@@ -138,6 +138,7 @@ class ServiceWorker {
   }
     
   
+  
   fetchLively4url(request, event, pending, url) {
     try {
         // Prepare a function that performs the network request if necessary
@@ -154,12 +155,11 @@ class ServiceWorker {
           }
         };
 
+        // Use the cache if possible, and answer pending request #TODO #Refactor
+        // #Duplicate with fetchLively4fs
         if (pending) {
-          // console.log("SWX resolve pending " + url)
-          pending.resolve(doNetworkRequest());
+          this._cache.fetch(event.request, doNetworkRequest, pending)
         } else {
-          // console.log("SWX respond normal " + url)
-          // Use the cache if possible
           event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
         }
       } catch(err) {
@@ -197,22 +197,7 @@ class ServiceWorker {
     } 
 
     if (pending) {
-      pending.resolve(doNetworkRequest());
-    } else {
-      event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
-    }
-  }
-
-  
-  // #TODO What is this? 
-  fetchPi(request, event, pending, url) {
-    let doNetworkRequest = async () => {
-      // request.clone
-      return new Response("this shortcut is not implemented yet #TODO ");
-    } 
-
-    if (pending) {
-      pending.resolve(doNetworkRequest());
+      this._cache.fetch(event.request, doNetworkRequest, pending)
     } else {
       event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
     }
@@ -239,8 +224,6 @@ class ServiceWorker {
       this.fetchLively4url(request, event, pending, url)
     } else if (url.hostname === 'lively4') {
       this.fetchLively4fs(request, event, pending, url)
-    } else if (url.hostname === 'pi') {
-      this.fetchPi(request, event, pending, url)
     }
   }
 

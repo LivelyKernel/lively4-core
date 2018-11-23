@@ -1,39 +1,61 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
 
+
 export default class Treeview extends Morph {
+  
+  
+  onItemClick(target) {
+    if (!target) return
+    var active = target.classList.contains('active');
+    this.querySelectorAll(".active").forEach(ea => ea.classList.remove("active"))
+
+    if (active) {
+      target.classList.remove("active")
+    } else {
+      target.classList.add("active")
+    }
+
+    this.activeLeaf = !active ? target : null;
+    this.dispatchEvent(new CustomEvent('change'));
+  }
+  
   attachedCallback() {
-    var that = this;
-
     this.activeLeaf = null;
-
-    // expand/collapse subtrees
-    $(this).on('click', '.node > .leaf', function() {
-      $(this).parent().toggleClass('collapsed');
-    });
-    
+  
     // activate/deactivate leaves
-    $(this).on('click', '.leaf', function() {
-      console.log("click...")
-      var active = !$(this).hasClass('active');
-      $('.active', that).removeClass('active');
-      $(this).toggleClass('active', active);
+    this.addEventListener("click", (evt) => {      
       
-      that.activeLeaf = active ? this : null;
-      
-      // fire change event
-      var event = new Event('change');
-      that.dispatchEvent(event);
+      var target = evt.path.find(ea => ea && ea.classList && ea.classList.contains("leaf"))
+      if (!target) return;
+      this.onItemClick(target)
     });
   }
   
   selectLeaf(target) {
-    $('.active', this).removeClass('active');
-    $(target).click();
+    
+    this.querySelectorAll(".active").forEach(ea => ea.classList.remove("active"))
+    this.onItemClick(target)
   }
   
   removeLeaf(target) {
-    $(target).parent().remove();
+    target.parentElement.remove();
+  }
+  
+  livelyExample() {
+    this.innerHTML = `
+<ul>
+  <li class="leaf">hello</li>
+  <li class="leaf">world</li>
+  <li>
+    <ul>
+      <li class="leaf">sub1</li>
+      <li class="leaf">sub2</li>
+    </ul>
+  </li>
+</ul>`
+  }
+  
+  livelyMigrate(other) {
+    // this.innerHTML = other.innerHTML
   }
 }

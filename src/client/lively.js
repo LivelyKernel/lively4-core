@@ -3,7 +3,7 @@
  *
  */
 import './patches.js'; // monkey patch the meta sytem....
-import * as jquery from '../external/jquery.js';
+// import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import * as _ from '../external/underscore.js';
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
@@ -51,6 +51,7 @@ var exportmodules = [
   "authGithub",
   "authDropbox",
   "authGoogledrive",
+  "contextmenu",
   "windows"
 ];
 
@@ -224,7 +225,7 @@ export default class Lively {
     return mod;
   }
 
-  static loadJavaScriptThroughDOM(name, src, force) {
+  static loadJavaScriptThroughDOM(name, src, force=false, type="text/javascript") {
     return new Promise((resolve) => {
       var scriptNode = document.querySelector("#"+name);
       if (!force && scriptNode) {
@@ -238,7 +239,7 @@ export default class Lively {
       var script = document.createElement("script");
       script.id=name;
       script.charset="utf-8";
-      script.type="text/javascript";
+      script.type=type;
       if (force) {
         src = src + ("?" + Date.now());
       }
@@ -493,19 +494,22 @@ export default class Lively {
       }
     }
 
-    if (obj.clientX !== undefined)
+    if (obj.clientX !== undefined) {
       return pt(obj.clientX, obj.clientY);
+    }
+    
+    // try to use directly the style object... 
     if (obj.style) {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
-    
+    // keyboard events don't have a position.
     if(obj instanceof KeyboardEvent) {
       return;
     }
-    // #TODO #Idea use getComputedStyle get rid of jQuery flallback in getPosition
+    // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
-      pos = $(obj).position(); // fallback to jQuery...
-      pos = pt(pos.left, pos.top);
+      var style = getComputedStyle(obj)
+      pos = pt(parseFloat(style.left), parseFloat(style.top));
     }
     return pos;
   }
@@ -614,9 +618,10 @@ export default class Lively {
       document.scrollingElement.scrollTop || 0);
   }
 
+  // #Depricated
   static openFile(url) {
-    if (url.hostname == "lively4"){
-      var container  = $('lively-container')[0];
+    if (url.hostname == "lively4") {
+      var container  = document.querySelector('lively-container')
       if (container) {
         container.followPath(url.pathname);
       } else {
@@ -645,11 +650,12 @@ export default class Lively {
 
   static openContextMenu(container, evt, target, worldContext) {
 
-    if (window.HaloService && HaloService.areHalosActive() ||
-      (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500))) {
+    if (window.HaloService && 
+        (HaloService.areHalosActive() ||
+        (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)))) {
       target = that;
     }
-    contextmenu.openIn(container, evt, target, worldContext);
+    lively.contextmenu.openIn(container, evt, target, worldContext);
   }
 
   static nativeNotify(title, text, timeout, cb) {
@@ -797,6 +803,9 @@ export default class Lively {
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
+    
+    this.loadedAsExtension = loadedAsExtension
+    
     await modulesExported
     
     console.log("Lively4 initializeDocument" );
@@ -829,7 +838,6 @@ export default class Lively {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
-      return Promise.resolve();
     } else {
       // don't want to change style of external web-sites...
       lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
@@ -857,13 +865,13 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    
+        
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
-    setTimeout(() => {persistence.current.start()}, 2000)
-
-
+    setTimeout(() => {
+      console.log("start persistence...")
+      persistence.current.start()
+    }, 2000)
   }
 
   static async showMainContainer() {
@@ -1111,7 +1119,7 @@ export default class Lively {
     if (object instanceof HTMLElement) {
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
-        template = $.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
+        template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
         className = template.getAttribute('data-class'),
         baseName = this.templateClassNameToTemplateName(className),
         moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
@@ -1147,7 +1155,7 @@ export default class Lively {
 
       + "</pre>";
 
-    setTimeout( () => $(comp).remove(), timeout || 3000);
+    setTimeout( () => comp.remove(), timeout || 3000);
     return comp;
   }
 
@@ -1518,7 +1526,7 @@ export default class Lively {
   }
 
   static async onShowFixedBrowserPreference(enabled) {
-    if (enabled) {
+    if (!this.loadedAsExtension && enabled) {
       this.showMainContainer()
     } else {
       var content = document.querySelector("#main-content")
@@ -1570,6 +1578,21 @@ export default class Lively {
     }
   }
 
+  /*
+   * Continousely send a message to swx to keep it alive, since it boots slowly...
+   */
+  static async onSWXKeepAlivePreference(bool) {
+    while(lively.preferences.get("SWXKeepAlive")) {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'meta',
+          command: 'keepalive'
+        });        
+      }
+      // console.log("swx keep alive")
+      await lively.sleep(1000)
+    }
+  }
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body

@@ -28,6 +28,8 @@ export default class LivelyScript extends Morph {
     var result = await this.boundEval(src)
     if (result.isError) {
       lively.showError(result.value)
+      this.get("#result").innerHTML = "<lively-error><pre>" + result.value + "</pre></lively-error>" 
+      return 
     }
     
     if (result.value && result.value.then) {

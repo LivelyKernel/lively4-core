@@ -68,7 +68,7 @@ export default class Halo extends Morph {
     })
     // #TODO Refeactor away jQuery in Halo
     Halo.instance = this;
-    $(this).hide();
+    this.hidden = true
     window.HaloService = Halo;
     var targetContext = document.body.parentElement;
     
@@ -147,7 +147,9 @@ export default class Halo extends Morph {
   showHalo(target, path) {
     document.body.appendChild(this);
     lively.html.registerKeys(document.body, 'HaloKeys', this);
-    $(this).show();
+    this.hidden = false
+    this.style.display = ""
+    
     if (!target || !target.getBoundingClientRect) { return; }
     lively.globalFocus();
   
@@ -189,13 +191,14 @@ export default class Halo extends Morph {
     var bounds = lively.getGlobalBounds(target);
     
     var offset = {
-      top: bounds.top() +  $(document).scrollTop(), 
-      left: bounds.left() +  $(document).scrollLeft()
+      top: bounds.top() +  window.scrollY,  
+      left: bounds.left() +  window.scrollX
     };
   
     // viewport coordinates
-    var scrollTop = Math.abs($(document).scrollTop());
-    var scrollLeft = Math.abs($(document).scrollLeft());
+    var scrollTop = Math.abs(window.scrollY);
+    var scrollLeft = Math.abs(window.scrollX);
+    
 
     // make sure halo respects left and top viewport boundary
     var offsetTop = Math.max(offset.top - margin, scrollTop);
@@ -208,14 +211,12 @@ export default class Halo extends Morph {
     // make sure halo respects right and bottom viewport boundary
     var width = bounds.width - offsetLeftDiff + margin;
     var height = bounds.height - offsetTopDiff + margin;
-    var offsetBottom = Math.min(offset.top + height, scrollTop + $(window).height());
-    var offsetRight = Math.min(offset.left + width, scrollLeft + $(window).width());
+    var offsetBottom = Math.min(offset.top + height, scrollTop + window.innerHeight);
+    var offsetRight = Math.min(offset.left + width, scrollLeft + window.innerWidth);
     width = offsetRight - offsetLeft;
     height = offsetBottom - offsetTop;
 
-    // set position and dimensions of halo
-    $(this).offset(offset);
-
+    lively.setGlobalPosition(this, pt(offset.left - scrollLeft, offset.top - scrollTop))
     lively.setExtent(this, pt(width, height))
     
     var boundsRect = lively.getGlobalBounds(that);
@@ -225,7 +226,7 @@ export default class Halo extends Morph {
   }
   
   static showHalos(target, path) {
-    this.target = $(target);
+    this.target = target;
     this.instance.showHalo(target, path);
   }
   
@@ -238,8 +239,8 @@ export default class Halo extends Morph {
       HaloService.lastIndicator.remove()
     if (this.areHalosActive())
       this.halosHidden = Date.now();
-    $(this.instance).offset({left:0, top: 0});
-    $(this.instance).hide();
+    lively.setPosition(this.instance, pt(0, 0))
+    this.instance.hidden = true
   }
   
   static hideHaloItems() {
@@ -325,7 +326,8 @@ export default class Halo extends Morph {
   }
 
   static areHalosActive() {
-    return Halo.instance && $(Halo.instance).is(':visible');
+    
+    return Halo.instance && (!Halo.instance.hidden && Halo.instance.style.display !== "none");
   }
   
   static migrate() {
