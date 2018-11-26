@@ -16,6 +16,18 @@
 // #BUG the performance, in our alternative to use IndexedDB can quickly degrate when DB gets to big...
 // window.localStorage["livel4systemjscache"] = false
 window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
+if (lively4plugincache) {
+  console.log("ENABLE " + lively4plugincache)
+}
+
+
+window.lively4bootlogData = []
+window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0) {
+  lively4bootlogData.push({
+    url, date, mode, time
+  })
+}
+
 
 async function invalidateFileCaches()  {
   try {
@@ -201,6 +213,13 @@ if (window.lively && window.lively4url) {
           groupedMessageEnd();
 
           console.log("Finally loaded!");
+
+          
+          if (window.lively4bootlogData) {
+            System.import("src/client/bootlog.js").then(m => {
+              m.default.current().addLogs(lively4bootlogData)
+            }).then(() => console.log("saved bootlog"))            
+          }
 
           document.dispatchEvent(new Event("livelyloaded"));
 
