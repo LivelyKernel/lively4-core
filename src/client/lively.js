@@ -865,6 +865,10 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
+    
+    // just for more accurate measurement, since we load them anyway...
+    await lively.components.loadByName("lively-container")
+    await lively.components.loadByName("lively-code-mirror")
         
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")

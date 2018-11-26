@@ -20,11 +20,11 @@ if (lively4plugincache) {
   console.log("ENABLE " + lively4plugincache)
 }
 
-
+window.lively4currentbootid = "" + new Date()
 window.lively4bootlogData = []
-window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0) {
+window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, bootid=lively4currentbootid) {
   lively4bootlogData.push({
-    url, date, mode, time
+    url, date, mode, time, bootid
   })
 }
 
