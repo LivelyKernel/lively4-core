@@ -2,7 +2,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyHandwriting extends Morph {  
   initialize() {
-    var context = this;
     this.windowTitle = "Lively Handwriting";
     this.registerButtons();
     
