@@ -1115,8 +1115,12 @@ function instantiate (loader, load, link, registry, registerRegistry) {
 function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry, registerRegistry, traceDepMap) {
 
   var resolveInstatiateStart = performance.now();
-  livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateStart" )
+  var resolveInstatiateLog; // lexical scope to cross promise boundaries
   livelyGroupStart("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+  
+  resolveInstatiateLog = true
+  livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateDepStart", 0, parentKey)
+  
   
   // normalization shortpaths for already-normalized key
   // DISABLED to prioritise consistent resolver calls
@@ -1155,6 +1159,10 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
     if (module && (!load || load.module && module !== load.module))
       return module;
 
+    // do not log modules that are already loaded...
+    
+    
+    
     // already has a module value but not already in the registry (load.module)
     // means it was removed by registry.delete, so we should
     // disgard the current load record creating a new one over it
@@ -1172,7 +1180,8 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
 
     return instantiate(loader, load, link, registry, registerRegistry);
   }).then(r => {
-    livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateEnd", performance.now() - resolveInstatiateStart )
+    // if (resolveInstatiateLog)
+      livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateDepEnd", performance.now() - resolveInstatiateStart , parentKey)
     livelyGroupEnd("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
     return r
   })
@@ -3481,6 +3490,8 @@ function loadBundlesAndDepCache (config, loader, key) {
 
 function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   livelyLog("runFetchPipeline " + key)
+  var fetchStarted = performance.now() // #Lively4
+  
   
   if (metadata.load.exports && !metadata.load.format)
     metadata.load.format = 'global';
@@ -3538,6 +3549,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   })
 
   .then(function (fetched) {
+    livelyBootLog(loader.normalizeSync(key), Date.now(),  "fetchEnd", performance.now() - fetchStarted)
     livelyLog("fetched")
     if (!fetched) {
       // debugger

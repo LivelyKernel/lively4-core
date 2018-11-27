@@ -862,6 +862,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   mergeView(originalText, originalLeftText) {
+    debugger
     var target = this.shadowRoot.querySelector("#code-mirror-container")
     target.innerHTML = "";
     this._mergeView =  CodeMirror.MergeView(target, {

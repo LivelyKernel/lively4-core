@@ -1,8 +1,11 @@
 # Bootlog
 
 
+xxx
+
 <script>
 import Bootlog from "src/client/bootlog.js"
+import d3 from "src/external/d3.v5.js"
 (async() => {
 
 
@@ -17,8 +20,12 @@ import Bootlog from "src/client/bootlog.js"
   chart.style.width = "1200px"
   chart.style.height = "800px"
   var offset = currentboot[0].date
-  
-  var data = currentboot.filter(ea => ea.mode == "resolveInstantiateEnd").map(ea => {
+              
+              
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+              
+              
+  var data = currentboot.filter(ea => ea.mode.match(/.*/)).map(ea => {
     return {
       log: ea,
       label: ea.url.replace(/.*\//,""),
@@ -33,6 +40,14 @@ import Bootlog from "src/client/bootlog.js"
       } else {
         lively.openBrowser(d.log.url, true)
       }
+    },
+    color(d) {
+      return color(d.log.mode)
+      // if (d.log.mode == "resolveInstantiateEnd") {
+      //   return "steelblue"
+      // } else {
+      //   return "lightblue"
+      // }
     }
   })
   

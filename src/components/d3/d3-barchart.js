@@ -92,16 +92,24 @@ export default class D3BarChart extends D3Component {
     var dataHeight = d => y.bandwidth() + "px"
     var dataWidth = d =>  x(d.x1 - d.x0) + "px"
     
-    node.append("rect")
+    var rect = node.append("rect")
         .attr("x", dataX)
         .attr("y", dataY)
         .attr("height", dataHeight)
         .attr("width", dataWidth)
-        .attr("fill", d =>  "steelblue")
+        .attr("fill", d =>  this.dataColor(d))
+    
+    rect.append("title")
+       .text(d => d.label);  
+    
+    rect.on("click", function(d) {
+        vis.onNodeClick(d, d3.event, this) 
+    })
+    
     
     var shouldPlaceLabelLeft = d => x(d.x0) < 100
     
-    node.append("text") 
+    var label = node.append("text") 
         .attr("x",  d => {
             // return  x(d.x0 + 0.5 * (d.x1 - d.x0)) + "px"
             if (shouldPlaceLabelLeft(d)) {
@@ -122,6 +130,9 @@ export default class D3BarChart extends D3Component {
         .attr('alignment-baseline', 'middle')
         .attr("fill" ,"black")
         .text(d => d.label);
+    
+      label.append("title")
+       .text(d => d.log.mode + " " + d.label + " " + d.log.time.toFixed(2) + "ms");  
 
       var xAxis = d3.axisBottom(x);
       var xAxisGroup = svg.append("g").call(xAxis);
