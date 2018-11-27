@@ -3,7 +3,6 @@
  *
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
  * 
- https://lively-kernel.gro/lively4/lively4-analysis/start.html
  */
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
@@ -47,11 +46,9 @@ export default class FileIndex {
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
         classes: '[name+url], name, url, size, *methods', 
-        methods: '[name+className+url], name, className, url, size ',
-        versions: '++id, url, class, method, date, commitId', //user,
+        versions: '[commitId+class+method+url], class, method, date, action, user,  url, commitId'
     }).upgrade(function () {
     })
-
     return db 
   }
 
@@ -63,7 +60,7 @@ export default class FileIndex {
     await this.updateTitleAndTags()
     await this.updateAllModuleSemantics()
     await this.updateAllLinks()
-    await this.updateAllVersions()
+    await this.updateAllLatestVersionHistories()
   }
   
   async updateTitleAndTags() {
@@ -162,18 +159,19 @@ export default class FileIndex {
       return [];
     }
     var links = new Array()
-    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\/\_\-A-Za-z0-9]*)?[.#?=%;a-z0-9]*)/g)
+    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\_\/\#\-[a-zA-Z0-9]*)?[#.?=%;a-z0-9]*)/g)
+    
     if(!extractedLinks) {
       return [];
     }
     for (const extractedLink of extractedLinks) {
       var link = {
         link: extractedLink,
-        location: extractedLink.startsWith(lively4url) ? "internal" : "external",
+        location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
         url: file.url,
         status: await this.validateLink(extractedLink)
       }
-      links.push(link)
+      links.push(link)   
     }
    return links;
  }
@@ -182,44 +180,130 @@ export default class FileIndex {
   return await fetch(link, { 
     method: "GET", 
     mode: 'no-cors', 
+    redirect: "follow",
   })
-  .then(() => {return "alive"})
-  .catch((error) => {console.log(error); return "dead"})
+  .then((response) => {
+    if (response.type === "basic") { // internal link
+      if (response.ok) {
+        return "alive"
+      } else {
+        return "dead"
+      } 
+    } else if (response.type === "opaque") { // external link
+      return "alive"
+    }
+  })
+  .catch((error) => {console.log(error, "Link: " + link); return "dead"})
   }
     
-  async updateAllVersions() {
-    
+  async updateAllLatestVersionHistories() {
+     this.db.transaction('rw', this.db.files, this.db.versions, () => {
+      return this.db.files.where("type").equals("file").toArray()
+    }).then((files) => {
+      files.forEach(file => {
+        if(file.name && file.name.match(/\.js$/))
+          this.addLatestVersionHistory(file.url)
+      })
+    })
   }
   
-  async addVersion(file) {
+  async addLatestVersionHistory(file) {
+    let response = await lively.files.loadVersions(file.url)
+    let json = await response.json()
+    let versions = json.versions
     
+    // consider latest two versions
+    if (!versions[0] || !versions[1]) return
+    var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
+    
+    this.db.transaction("rw", this.db.versions, () => {
+      this.db.versions.bulkPut(modifications)
+    })
   } 
   
-  compareFileContents(currentFile, previousFile) {
-    var currentFileAst = this.parseSource(currentFile.url, currentFile.content)
-    var previousFileAst = this.parseSource(previousFile.url, previousFile.content)
-    var current = this.parseModuleSemantics(currentFileAst)
-    var previous = this.parseModuleSemantics(previousFileAst)
+  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
+    let modifications = new Array()
+    let latestContent = await lively.files.loadFile(fileUrl, latestVersion.version)
+    let previousContent = await lively.files.loadFile(fileUrl, previousVersion.version)
+    let astLastest = this.parseSource(fileUrl, latestContent)
+    let astPrevious = this.parseSource(fileUrl, previousContent)
 
-    if (current === previous) {
-      return []
+    if (!astLastest || !astPrevious) {
+      return modifications
     }
-    
-    var changedContents = new Array()
-    for (var clazz of previous) {
-      for (var [method, sizeMethod] of clazz.methods.entries()) {    
-        var sizeCurrentMethod = current.methods.get(method)
-        if (sizeCurrentMethod !== sizeMethod || (!current.methods.has(method) && sizeCurrentMethod === undefined)) { //changed or deleted
-          changedContents.push(method)
+
+    let latest = this.parseModuleSemantics(astLastest)
+    let previous = this.parseModuleSemantics(astPrevious)
+
+    // classes
+    for (let classLatest of latest.classes) {
+      try {
+        let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name);    
+        if (!previousClass || (previousClass && classLatest.size !== previousClass.size)) { // added or modified class
+          modifications.push({
+            url: fileUrl,
+            class: classLatest.name,
+            method: "+null+",
+            date: latestVersion.date,
+            user: latestVersion.author,
+            commitId: latestVersion.version,
+            action: (!previousClass) ? "added" : "modified"
+          })
         }
+        
+        // methods
+        for (let methodLastest of classLatest.methods) {
+          if (!previousClass) { // added method
+             modifications.push({
+                url: fileUrl,
+                class: classLatest.name,
+                method: methodLastest.name,
+                date: latestVersion.date,
+                user: latestVersion.author,
+                commitId: latestVersion.version,
+                action: "added"
+              })
+          } else {
+            let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name)
+            if ((!methodPreviousClass) || (methodPreviousClass && methodLastest.size !== methodPreviousClass.size) ) { // added or modified method
+              modifications.push({
+                url: fileUrl,
+                class: classLatest.name,
+                method: methodLastest.name,
+                date: latestVersion.date,
+                user: latestVersion.author,
+                commitId: latestVersion.version,
+                action: (!methodPreviousClass) ? "added" : "modified"
+              })
+            }
+          }
+        }
+      
+        if (!previousClass) continue;
+        for (let methodPreviousClass of previousClass.methods) {
+          let latestClassMethod = classLatest.methods.find(method => method.name == methodPreviousClass.name)
+          if (!latestClassMethod) { // deleted method
+            modifications.push({
+              url: fileUrl,
+              class: classLatest.name,
+              method: methodPreviousClass.name,
+              user: latestVersion.author,
+              date: latestVersion.date,
+              commitId: latestVersion.version,
+              action: "deleted"
+            })
+          }
+        }
+      } catch(error) {
+        console.error("Version history couldn't created for class: ", classLatest, error)
       }
     }
-    return changedContents
+    return modifications 
   }
   
   parseModuleSemantics(ast) {
-    var classes = []
-    var dependencies = []
+    let classes = []
+    let dependencies = []
     babel.traverse(ast,{
       ImportDeclaration(path) {
         if(path.node.source && path.node.source.value) {
@@ -228,24 +312,23 @@ export default class FileIndex {
       },
       ClassDeclaration(path) {
         if (path.node.id) {
-          var clazz = {
+          let clazz = {
             name: path.node.id.name,
             size: path.node.end-path.node.start
           }
-        
+          let methods = []
           if (path.node.body.body) {
-            var methods = []
             path.node.body.body.forEach(function(item){
               if(item.type === "ClassMethod") {
-                var method = {
+                let method = {
                   name: item.key.name,
                   size: item.end-item.start
                 }
                 methods.push(method)
               }
             })
-            clazz.methods = methods
           }
+          clazz.methods = methods
           classes.push(clazz)
         } 
       }
@@ -364,6 +447,7 @@ export default class FileIndex {
       
       if (file.name.match(/\.js$/)) {
         this.addModuleSemantics(file)
+        this.addLatestVersionHistory(file)
         this.extractFunctionsAndClasses(file)
       }      
     }

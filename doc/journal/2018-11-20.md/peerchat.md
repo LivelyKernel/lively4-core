@@ -3,19 +3,19 @@
 fuck it... this need refactoring.... jQuery to lively.query....
 
 
-  <div id="actions">
-    Your PeerJS ID is <span id="pid"></span><br>
-    Connect to a peer: <input type="text" id="rid" placeholder="Someone else's id"><input class="button" type="button" value="Connect" id="connect"><br><br>
+<div id="actions">
+  Your PeerJS ID is <span id="pid"></span><br>
+  Connect to a peer: <input type="text" id="rid" placeholder="Someone else's id"><input class="button" type="button" value="Connect" id="connect"><br><br>
 
-    <form id="send">
-      <input type="text" id="text" placeholder="Enter message"><input class="button" type="submit" value="Send to selected peers">
-    </form>
-    <button id="close">Close selected connections</button>
-  </div>
+  <form id="send">
+    <input type="text" id="text" placeholder="Enter message"><input class="button" type="submit" value="Send to selected peers">
+  </form>
+  <button id="close">Close selected connections</button>
+</div>
 
-  <div id="wrap"><div id="connections"><span class="filler">You have not yet
-        made any connections.</span></div>
-    <div class="clear"></div></div>
+<div id="wrap"><div id="connections"><span class="filler">You have not yet
+      made any connections.</span></div>
+  <div class="clear"></div></div>
 
   
   
@@ -33,17 +33,31 @@ NATs.
 
 <script>
 
+lively.loadJavaScriptThroughDOM("peerjs123", "https://lively-kernel.org/lively4/aexpr/src/external/peer.js").then(p => lively.notify(p+2))
+
+
 // Connect to PeerJS, have server assign an ID instead of providing one
 // Showing off some of the configs available with PeerJS :).
 var log = (...args) => {
-    var copy = args.join(' ');
-    
-    lively.query(this, '.log').innerHTML += copy + '<br>';
-  }
+  var copy = args.join(' ');
+
+  lively.query(this, '.log').innerHTML += copy + '<br>';
+}
+
+// var peer = new Peer({
+//   host: "lively-kernel.org",
+//   port: 443,
+//   path: "lively4servicescripts/",
+//   // Set highest debug level (log everything!).
+//   debug: 3,
+
+//   // Set a logging function:
+//   logFunction: log
+// });
+
 var peer = new Peer({
-  host: "lively-kernel.org",
+  host: "localhost",
   port: 443,
-  path: "lively4servicescripts/",
   // Set highest debug level (log everything!).
   debug: 3,
 
@@ -56,9 +70,7 @@ log("heyho")
 var connectedPeers = {};
 
 // Show this peer's ID.
-peer.on('open', (id) => {
-  this.querySelector('#pid').innerHTML = id;
-});
+peer.on('open', id => lively.query(this, '#pid').innerHTML = id);
 
 // Await connections from others
 peer.on('connection', connect);

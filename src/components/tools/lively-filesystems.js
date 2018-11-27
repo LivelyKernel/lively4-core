@@ -7,7 +7,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class LivleyFilesystems extends Morph {
 
   initialize() {
-    var container = $(this.shadowRoot).find(".container")[0];
+    var container = this.get(".container");
 
     this.windowTitle = "Lively Mounts";
     // #TODO refactor to "connections"

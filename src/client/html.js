@@ -99,7 +99,7 @@ export default class HTML {
       var name = node.id
       var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
       // console.log("register button " + name)
-      $(node).click(() => {
+      node.addEventListener("click", () => {
         var func = parent[funcName]
         if (func) {
           func.call(parent)
@@ -180,11 +180,7 @@ export default class HTML {
             path = "/Thesis/" + m[1]
           } else if (m = href.match(/javascript:(.*)'\)/)) {
             var code = m[1]
-            // do nothing
-            
-            // $(node).click(() => { 
-            //   alert("eval " + code)
-            // })
+            // do nothing            
           } else if (href.match(/([A-Za-z]+):\/\/.*/)) {
             // console.log("ignore "  + href);
             path = href;
@@ -202,23 +198,12 @@ export default class HTML {
           if (path) {
             // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
             if (node.tagName == "LINK") {
-              console.log("update LINK", path)
+              // console.log("update LINK", path)
               node.setAttribute("data-href", href) // so we keep the original somewhere..
               node.setAttribute("href", path)
-            }
-            
-            $(node).click(() => { 
-              // if (path.match(/https:\/\/lively4\/notes/)) {
-              //     if (window.confirm("follow path? " + path)) {
-              //       followPath(path); return false;
-              //     }
-              //     return false
-              // }
+            }            
+            node.addEventListener("click", () => { 
               followPath(path); return false; });
-
-            // ALTERNATIVE to navigate it inline, but the link will not be followed....
-            // var link = lively4url + "/draft/start.html?load=" + path
-            // node.setAttribute("href", link)
           } else {
             // console.log("ignore " + href)
           }

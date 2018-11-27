@@ -5,9 +5,8 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
-import js_beautify from "src/client/js-beautify/beautify.js";
-import css_beautify from "src/client/js-beautify/beautify-css.js"
-import html_beautify from "src/client/js-beautify/beautify-html.js"
+
+
 
 import files from "src/client/files.js"
 
@@ -92,7 +91,7 @@ export default class Container extends Morph {
 
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
-    $(input).keyup(event => {
+    input.addEventListener("keyup", event => {
       if (event.keyCode == 13) { // ENTER
         this.onPathEntered(input.value);
       }
@@ -518,7 +517,7 @@ export default class Container extends Morph {
     });
   }
 
-  onBeautify() {
+  async onBeautify() {
     const ending = this.getPath()::fileEnding();
     if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
       return;
@@ -537,14 +536,20 @@ export default class Container extends Morph {
       },
       'indent_size': 2,
     }
+    
+    
+    // load the beatify code async... because they are big
     if (ending === 'js') {
+      await System.import( "src/client/js-beautify/beautify.js")        
       beautifulText = global.js_beautify(text, options);
     } else if (ending === 'css') {
+      await System.import( "src/client/js-beautify/beautify-css.js")
       beautifulText = global.css_beautify(text, options);
     } else if (ending === 'html') {
+      await System.import("src/client/js-beautify/beautify-html.js")
       beautifulText = global.html_beautify(text, options);
     }
-    editor.setText(beautifulText, true);
+    editor.setText(beautifulText, true);      
   }
 
   onDelete() {
@@ -1157,7 +1162,8 @@ export default class Container extends Morph {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
         + resolvedURL +'"></lively-pdf>', renderTimeStamp);
       else return;
-    } 
+    }
+    
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
@@ -1212,6 +1218,12 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
+      } else if (format == "dot") {
+        this.sourceContent = content;
+        if (render) {
+          
+          return this.appendHtml(`<graphviz-dot><script type="graphviz">${content}</script></graphviz-dot>`, renderTimeStamp); 
+        } else return;
       } else if (format == "xhtml") {
         this.sourceContent = content;
         if (render) {

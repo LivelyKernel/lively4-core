@@ -46,7 +46,9 @@
   "scripts": {
     "test": "karma start karma.conf.js --single-run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "monaco-editor": "0.14.3"
+  },
   "devDependencies": {
     "karma": "^0.13.22",
     "karma-chai": "^0.1.0",

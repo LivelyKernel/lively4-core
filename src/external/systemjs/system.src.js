@@ -16,6 +16,8 @@ function livelyLog(...rest) {
   }
 }
 
+var livelyBootLog = self.lively4bootlog || function() {} // Performance Benchmark
+
 var livelyGroupTimes = {} 
 var livelyGroupTree = {} 
 
@@ -955,6 +957,8 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
   var registry = loader.registry._registry;
   var registerRegistry = loader[REGISTER_REGISTRY];
   
+  var resolveInstatiateStart = performance.now(); // #Lively4
+  
   return resolveInstantiate(loader, key, parentKey, registry, registerRegistry)
   .then(function (instantiated) {
     if (instantiated instanceof ModuleNamespace)
@@ -970,6 +974,7 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     if (instantiated.linkRecord.linked)
       return ensureEvaluate(loader, instantiated, instantiated.linkRecord, registry, registerRegistry, undefined);
 
+    livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateStart" )
     livelyGroupStart("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
 
     
@@ -983,6 +988,7 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     })
     .then(result => {
       livelyGroupEnd("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+      livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateEnd", performance.now() - resolveInstatiateStart)
       return result
     })
   })
@@ -1108,7 +1114,10 @@ function instantiate (loader, load, link, registry, registerRegistry) {
 // like resolveInstantiate, but returning load records for linking
 function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry, registerRegistry, traceDepMap) {
 
+  var resolveInstatiateStart = performance.now();
+  livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateStart" )
   livelyGroupStart("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+  
   // normalization shortpaths for already-normalized key
   // DISABLED to prioritise consistent resolver calls
   // could add a plain name filter, but doesn't yet seem necessary for perf
@@ -1163,6 +1172,7 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
 
     return instantiate(loader, load, link, registry, registerRegistry);
   }).then(r => {
+    livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateEnd", performance.now() - resolveInstatiateStart )
     livelyGroupEnd("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
     return r
   })

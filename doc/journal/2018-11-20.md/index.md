@@ -24,10 +24,8 @@ _.uniq(that.value.split("\n").sort()).join("\n")
 
 ```
 
-
-
-- [] But it seems that Lively breaks the site, because it load jQuery into "$" ...  #TODO
-- and it opens a fixed browser.... which schould not happen #TODO
+- But it seems that Lively breaks the site, because it load jQuery into "$" ...  #TODO
+- and it opens a fixed browser.... which schould not happen #Done
 
 Error message:
 
