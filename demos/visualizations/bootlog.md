@@ -14,7 +14,8 @@ import Bootlog from "src/client/bootlog.js"
   })
 
   var chart = await lively.create("d3-barchart")
-  chart.style.width = "2000px"
+  chart.style.width = "1200px"
+  chart.style.height = "800px"
   var offset = currentboot[0].date
   
   var data = currentboot.filter(ea => ea.mode == "resolveInstantiateEnd").map(ea => {
