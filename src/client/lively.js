@@ -804,6 +804,8 @@ export default class Lively {
     
     await modulesExported
     
+    this.loadedAsExtension = loadedAsExtension
+    
     console.log("Lively4 initializeDocument" );
     // persistence.disable();
 
@@ -848,9 +850,12 @@ export default class Lively {
         document.head.appendChild(titleTag);
       }
 
+
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
+      
+      this.loadContainer = loadContainer // remember....
       // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
       //   this.showMainContainer()
       // }
