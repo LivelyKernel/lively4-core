@@ -101,7 +101,6 @@ class SelectionStyleProxy extends HTMLElementStyleProxy {
         return this.proxies[0] && this.proxies[0][name]; 
       },
       set(newValue) { 
-        debugger
         lively.notify("set " + newValue)
         this.proxies.forEach(ea => ea[name] = newValue);  
       },
