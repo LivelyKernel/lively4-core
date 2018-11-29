@@ -13,9 +13,17 @@ import d3 from "src/external/d3.v5.js"
     }
   })
 
+  if (currentboot.length == 0) {
+    return "no log for current boot, please enable <b>Preference > keep bootlog</b>"
+  }
+
+
   var chart = await lively.create("d3-barchart")
   chart.style.width = "1200px"
   chart.style.height = "4800px"
+  
+  
+  
   var offset = currentboot[0].date
               
   var color = d3.scaleOrdinal(d3.schemeCategory10);
