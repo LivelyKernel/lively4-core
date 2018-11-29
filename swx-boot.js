@@ -113,7 +113,9 @@ fetch = function(request, ...args) {
 
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 
-this.addEventListener('install', (event) => {
+console.log('REGISTER self', self, " this", this)
+
+self.addEventListener('install', (event) => {
   console.log("SWX installed after  " + (Date.now() - startSwxTime) + "ms (no importScript beyond this point)")
   
   event.waitUntil(
@@ -124,6 +126,7 @@ this.addEventListener('install', (event) => {
 })
 
 this.addEventListener('activate', (event) => {
+  console.log("SWX activated after  " + (Date.now() - startSwxTime) + "ms")
   event.waitUntil(
     init()
       .then(worker => worker.activate(event))
