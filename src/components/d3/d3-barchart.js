@@ -10,9 +10,8 @@ import "src/external/d3-selection-multi.v1.js"
 export default class D3BarChart extends D3Component {
 
   async initialize() {
-    this.options = {}
+    this.options = this.options || {}
     this.loaded = new Promise(async (resolve) => {
-
       this.updateViz()
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
@@ -20,10 +19,9 @@ export default class D3BarChart extends D3Component {
 
       resolve()
     })
+    
+    this.zoom = false
   }
-
-  
-  
   
   async updateViz() {
     var svgContainer = this.get("#container")
@@ -50,9 +48,7 @@ export default class D3BarChart extends D3Component {
         .domain([0, d3.max(data, d => d.x1)])
         .range([0, width]);
 
-    
     var lineHeight = 20
-    
     
     var y =  d3.scaleBand()
       .domain(data.map((ea, i) => i))
@@ -65,22 +61,25 @@ export default class D3BarChart extends D3Component {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`)
     
-    svgOuter.append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .style("fill", "none")
-      .style("pointer-events", "all")
-      .call(d3.zoom()
-          .scaleExtent([1 / 4, 20])
-          .on("zoom", () => {
-            zoomG.attr("transform", d3.event.transform);
-          }));
+    if (this.zoom) {
+      svgOuter.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .call(d3.zoom()
+            .scaleExtent([1 / 4, 20])
+            .on("zoom", () => {
+              zoomG.attr("transform", d3.event.transform);
+            }));      
+    }
+    
+    
     var zoomG = svgOuter.append("g")
     
     var svg = zoomG.append("g")
     
     var vis = this
-    
     
     var node = svg
       .selectAll("g")
@@ -99,15 +98,37 @@ export default class D3BarChart extends D3Component {
         .attr("width", dataWidth)
         .attr("fill", d =>  this.dataColor(d))
     
+    // first level of children
+    node.each(function(parentData, parentIndex) {
+      var eachNode = d3.select(this);
+      if (!parentData.children) return
+      eachNode
+        .selectAll("g")
+           .data(parentData.children)
+        .enter().append("rect")
+            .attr("x", dataX)
+            .attr("y", d => dataY(parentData, parentIndex))
+            .attr("height", d => vis.dataHeight(d, dataHeight(d)))
+            .attr("width", d => vis.dataWidth(d, dataWidth(d)))
+            .attr("fill", d =>  vis.dataColor(d))
+            .attr("opacity", d =>  0.5)
+            .on("click", function(d) {
+                vis.onNodeClick(d, d3.event, this)
+            })
+            .append("title")
+              .text(d => vis.dataTitle(d)); 
+    })
+ 
     rect.append("title")
-       .text(d => d.label);  
+       .text(d => this.dataTitle(d));  
     
     rect.on("click", function(d) {
         vis.onNodeClick(d, d3.event, this) 
     })
     
     
-    var shouldPlaceLabelLeft = d => x(d.x0) < 100
+    var maxLabelWidth = 200 // not enforced?
+    var shouldPlaceLabelLeft = d => x(d.x0) < maxLabelWidth 
     
     var label = node.append("text") 
         .attr("x",  d => {
@@ -129,10 +150,10 @@ export default class D3BarChart extends D3Component {
         })
         .attr('alignment-baseline', 'middle')
         .attr("fill" ,"black")
-        .text(d => d.label);
+        .text(d => this.dataLabel(d));
     
       label.append("title")
-       .text(d => d.log.mode + " " + d.label + " " + d.log.time.toFixed(2) + "ms");  
+       .text(d => this.dataTitle(d));  
 
       var xAxis = d3.axisBottom(x);
       var xAxisGroup = svg.append("g").call(xAxis);
@@ -164,7 +185,7 @@ export default class D3BarChart extends D3Component {
     this.updateViz()
   }
 
-  async livelyExample() {
+  async livelyExample1() {
     await this.loaded
     this.setData([
       {label: "a", x0: 0,  x1: 14}, 
@@ -177,6 +198,38 @@ export default class D3BarChart extends D3Component {
     this.updateViz() 
   }
 
+  async livelyExample() {
+    await this.loaded
+    this.config({
+      color(d) {
+        if (!this.colorGen) {
+          this.colorGen = d3.scaleOrdinal(d3.schemeCategory10);
+        }
+        
+        return this.colorGen(d.label)
+      }
+    });
+    this.setData([
+      {label: "a", x0: 0,  x1: 14, 
+       children: [
+         {label: "a1", x0: 4,  x1: 8},
+         {label: "a2", x0: 8,  x1: 12},
+        ]}, 
+      {label: "b", x0: 3, x1: 8}, 
+      {label: "c", x0: 5, x1: 15}, 
+      {label: "d", x0: 2, x1: 16}, 
+      {label: "e", x0: 0, x1: 23}, 
+      {label: "f", x0: 10, x1: 42, 
+        children: [
+         {label: "f1", x0: 11,  x1: 16},
+         {label: "f2", x0: 18,  x1: 40},
+        ]}
+    ])
+    this.updateViz() 
+  }
+
+  
+  
   livelyMigrate(other) {
     this.options = other.options
     this.setData(other.getData())

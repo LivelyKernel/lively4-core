@@ -22,11 +22,18 @@ if (lively4plugincache) {
 
 window.lively4currentbootid = "" + new Date()
 window.lively4bootlogData = []
-window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, bootid=lively4currentbootid) {
+window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, parentURL) {
   lively4bootlogData.push({
-    url, date, mode, time, bootid
+    url, date, mode, time, parentURL, bootid: lively4currentbootid
   })
 }
+// localStorage["logLivelyBoot"] = true
+if (!localStorage["logLivelyBoot"]) {
+  window.lively4bootlog = function() {
+    // do nothgin
+  }
+}
+
 
 
 async function invalidateFileCaches()  {
