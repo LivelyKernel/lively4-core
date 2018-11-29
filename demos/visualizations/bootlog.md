@@ -20,7 +20,7 @@ import d3 from "src/external/d3.v5.js"
 
   var chart = await lively.create("d3-barchart")
   chart.style.width = "1200px"
-  chart.style.height = "4800px"
+  // chart.style.height = "4800px"
   
   
   

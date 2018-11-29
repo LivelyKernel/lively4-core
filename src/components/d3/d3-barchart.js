@@ -26,6 +26,8 @@ export default class D3BarChart extends D3Component {
   async updateViz() {
     var svgContainer = this.get("#container")
     svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
+    
+    
     svgContainer.style.height = this.style.height
     
     
@@ -159,6 +161,13 @@ export default class D3BarChart extends D3Component {
       var xAxisGroup = svg.append("g").call(xAxis);
       xAxisGroup.attr("transform", `translate(0, ${y(data.length - 1) + lineHeight})`)
 
+      // we cannot zoom... so we grow ourself
+      if (!this.zoom) {
+        var yAxisHeight = lineHeight // guess
+        var chartHeight = (y(data.length - 1) +  lineHeight) + yAxisHeight
+        svgContainer.style.height =  margin.top +  chartHeight + margin.bottom + "px"
+      }
+    
       var yAxis = d3.axisLeft(y);
       var yAxisGroup = svg.append("g").call(yAxis);
       // yAxisGroup.attr("transform", `translate(0, ${y(data.length - 1) + lineHeight})`)
