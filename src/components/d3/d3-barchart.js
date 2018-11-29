@@ -89,7 +89,7 @@ export default class D3BarChart extends D3Component {
     var dataX = d =>  x(d.x0) + "px"
     var dataY = (d, i) =>  y(i)  /* ((lineHeight + margin) * i) + "px" */
     var dataHeight = d => y.bandwidth() + "px"
-    var dataWidth = d =>  x(d.x1 - d.x0) + "px"
+    var dataWidth = d =>  Math.max(2, x(d.x1 - d.x0)) + "px"
     
     var rect = node.append("rect")
         .attr("x", dataX)

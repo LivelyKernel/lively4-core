@@ -957,7 +957,9 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
   var registry = loader.registry._registry;
   var registerRegistry = loader[REGISTER_REGISTRY];
   
-  var resolveInstatiateStart = performance.now(); // #Lively4
+  // #Lively4
+  var normalizedLogKey = loader.normalizeSync(key, parentKey)   
+  var resolveInstatiateStart = performance.now(); 
   
   return resolveInstantiate(loader, key, parentKey, registry, registerRegistry)
   .then(function (instantiated) {
@@ -974,7 +976,7 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     if (instantiated.linkRecord.linked)
       return ensureEvaluate(loader, instantiated, instantiated.linkRecord, registry, registerRegistry, undefined);
 
-    livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateStart" )
+    livelyBootLog(normalizedLogKey, Date.now(),  "resolveInstantiateStart" )
     livelyGroupStart("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
 
     
@@ -988,7 +990,7 @@ RegisterLoader.prototype[Loader.resolveInstantiate] = function (key, parentKey) 
     })
     .then(result => {
       livelyGroupEnd("resolveInstantiate", loader.normalizeSync(key), loader.normalizeSync(parentKey))
-      livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateEnd", performance.now() - resolveInstatiateStart)
+      livelyBootLog(normalizedLogKey, Date.now(),  "resolveInstantiateEnd", performance.now() - resolveInstatiateStart)
       return result
     })
   })
@@ -1119,7 +1121,10 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
   livelyGroupStart("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
   
   resolveInstatiateLog = true
-  livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateDepStart", 0, parentKey)
+  
+  // #Lively4
+  var normalizedLogKey = loader.normalizeSync(key, parentKey)   
+  livelyBootLog(normalizedLogKey, Date.now(),  "resolveInstantiateDepStart", 0, parentKey)
   
   
   // normalization shortpaths for already-normalized key
@@ -1181,8 +1186,8 @@ function resolveInstantiateDep (loader, key, parentKey, parentMetadata, registry
     return instantiate(loader, load, link, registry, registerRegistry);
   }).then(r => {
     // if (resolveInstatiateLog)
-      livelyBootLog(loader.normalizeSync(key), Date.now(),  "resolveInstantiateDepEnd", performance.now() - resolveInstatiateStart , parentKey)
-    livelyGroupEnd("resolveInstantiateDep", loader.normalizeSync(key), loader.normalizeSync(parentKey))
+      livelyBootLog(normalizedLogKey, Date.now(),  "resolveInstantiateDepEnd", performance.now() - resolveInstatiateStart , parentKey)
+    livelyGroupEnd("resolveInstantiateDep", normalizedLogKey, loader.normalizeSync(parentKey))
     return r
   })
 }
@@ -3493,6 +3498,8 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   var fetchStarted = performance.now() // #Lively4
   
   
+  var normalizedLogKey = key // should already be normalized
+  
   if (metadata.load.exports && !metadata.load.format)
     metadata.load.format = 'global';
 
@@ -3549,7 +3556,7 @@ function runFetchPipeline (loader, key, metadata, processAnonRegister, wasm) {
   })
 
   .then(function (fetched) {
-    livelyBootLog(loader.normalizeSync(key), Date.now(),  "fetchEnd", performance.now() - fetchStarted)
+    livelyBootLog(normalizedLogKey, Date.now(),  "fetchEnd", performance.now() - fetchStarted)
     livelyLog("fetched")
     if (!fetched) {
       // debugger
