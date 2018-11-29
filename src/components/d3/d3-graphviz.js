@@ -94,7 +94,7 @@ export default class D3GraphViz extends D3Component {
         let target = nodes.get(ea.target)
         return `${ea.source} -> ${ea.target} [color="${this.dataEdgeColor(source, target)}"]`
       }).join(";")
-      var source = `digraph {${relationsSource} ${nodesSource} }` // edges before nodes helps the layouter...
+      var source = `digraph { ${relationsSource} ${nodesSource}}` // edges before nodes helps the layouter...
 
       try {
        await this.setDotData(source)

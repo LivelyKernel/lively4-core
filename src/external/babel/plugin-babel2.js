@@ -19,6 +19,8 @@ pluginBabelCache.version("1").stores({
 // storage 3: cache API... here we go
 let transformCache
 
+var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
+
 var useCacheAPI = true // #TODO refactor when we found a fast solution... 
 
 // var diff = require('src/external/diff-match-patch.js').default;
@@ -84,10 +86,40 @@ var defaultBabelOptions = {
   comments: true
 };
 
+var DebugKey = "LayersXXXX.js"
+var DebugId = "" + Math.random()
+function debugOnKey(key) {
+  if (key && (key + "").match(DebugKey)) {
+    debugger
+  }
+}
+
+function debugIsClient() {
+  return self && self.constructor && self.constructor.name == "Window"
+}
+
+function debugLog(...args) {
+  
+  return // log log
+  
+  if (debugIsClient()) {
+    console.log(...args)
+  } else {
+    // don't log worker....
+  }
+}
+
+
 exports.translate = async function(load, traceOpts) {
-  console.log("plugin-babel transform ", load.name)
+  var key = "pluginBabelTransfrom_" + load.name.replace(/[^A-Za-z0-9 _\-./]/g, "_")
 
-
+  debugLog("XXX2 plugin-babel transform " + DebugId, load.name)
+  debugOnKey(key) 
+  
+  if (!self.caches) {
+    console.warn("self.caches not READY for " + load.name)
+  }
+  
   if (!transformCache && self.caches) transformCache = await caches.open("plugin-babel")
 
   // we don't transpile anything other than CommonJS or ESM
@@ -195,15 +227,26 @@ exports.translate = async function(load, traceOpts) {
         plugins.push(plugin);
     });
 
-  // console.log(`load: ${load.address}`, plugins);
+  // debugLog(`load: ${load.address}`, plugins);
 
   // #Experiment with caching.... 
   var startTransform = performance.now()
   let cachedInputCode, cachedOutputCode, cachedOutputMap
-  if (self.lively4plugincache && transformCache) {
-    var key = "pluginBabelTransfrom_" + load.name.replace(/[^A-Za-z0-9 _\-./]/g, "_")
+  if (!self.lively4plugincache) {
+    debugLog("NO self.lively4plugincache"  + key)
+    debugOnKey(key)
+  }
+  if (!transformCache) {
+    debugLog("NO self.transformCache"  + key)
+    debugOnKey(key)
 
-    console.log(`lively4plugincache ` + key);
+  }
+  
+  
+  if (self.lively4plugincache && transformCache) {
+    
+    debugLog(`lively4plugincache ` + key);
+    debugOnKey(key)
 
     // storage 1
     //       var cachedInputCode = self.localStorage && self.localStorage[key+"_source"]
@@ -212,18 +255,18 @@ exports.translate = async function(load, traceOpts) {
 
     if (!useCacheAPI) {
       // Dexie / IndexDB is very slow... so this path is diabled 
-      // console.log(`storage 2`);
+      // debugLog(`storage 2`);
       // storage 2
       var loadCacheStart = performance.now()
       let cached = await pluginBabelCache.files.get(key)
-      // console.log("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
+      // debugLog("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
       if (cached) {
         cachedInputCode = cached.source
         cachedOutputCode = cached.output
         cachedOutputMap = JSON.parse(cached.map)
       }
     } else {
-      // console.log(`storage 3`);
+      // debugLog(`storage 3`);
 
       // storage 3
       try {
@@ -254,7 +297,7 @@ exports.translate = async function(load, traceOpts) {
             if (!cachedInputCode || !cachedOutputCode || !cachedOutputMap) {
               console.warn("cache missing  " + key)
             }
-            // console.log("loaded cached transform " + key)
+            // debugLog("loaded cached transform " + key)
           })()
 
         ])
@@ -263,35 +306,38 @@ exports.translate = async function(load, traceOpts) {
         console.error(`could not load from transform cache`);
       }
 
-      // console.log(`storage 3 finished`);
+      // debugLog(`storage 3 finished`);
     }
-    if (cachedOutputCode && (cachedInputCode == load.source)) {
-      console.log("plugin babel use cache: " + load.name)
-      try {
+    debugOnKey(key)
+    if (cachedOutputCode) {
+      debugLog("plugin babel use cache: " + load.name)
+      if(cachedInputCode == load.source) {
+        try {
 
-        output = {
-          code: cachedOutputCode,
-          map: cachedOutputMap
+          output = {
+            code: cachedOutputCode,
+            map: cachedOutputMap
+          }
+
+          // side effects of using the transformation
+          var moduleURL = SystemJS.normalizeSync(load.name)
+          // a) var recorder
+          _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
+
+        } catch (e) {
+          console.warn("something went wrong... while loading cache " + e)
+          output = undefined
         }
-
-        // side effects of using the transformation
-        var moduleURL = SystemJS.normalizeSync(load.name)
-        // a) var recorder
-        _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
-
-      } catch (e) {
-        console.warn("something went wrong... while loading cache " + e)
-        output = undefined
+        cachedOutput = output        
+      } else {
+        console.warn("cachedInputCode does not match load.source " + key)  
       }
-      if (!output) {
-        console.warn("Cache did not yield output for " + load.name)
-      }
-      cachedOutput = output
+    } else {
+      console.warn("no cachedOutputCode for " + key)
     }
-
   }
-  // console.log(`cached output = `, output);
-
+  // debugLog(`cached output = `, output);
+  debugOnKey(key)
   if (!output) {
 
     var output = babel.transform(load.source, {
@@ -330,7 +376,7 @@ exports.translate = async function(load, traceOpts) {
       }
     });
 
-    // console.log("output ", output)
+    // debugLog("output ", output)
 
     if (self.lively4plugincache && transformCache) {
 
@@ -363,20 +409,22 @@ exports.translate = async function(load, traceOpts) {
 
     //       if (cachedOutput) {
     //          if (output.code != cachedOutput.code) {
-    //            console.log("ERROR cached source is not similar! " + load.name)
-    //            console.log("CODE", output.code)
-    //            console.log("CACHED", cachedOutput.code)
+    //            debugLog("ERROR cached source is not similar! " + load.name)
+    //            debugLog("CODE", output.code)
+    //            debugLog("CACHED", cachedOutput.code)
 
     //          }
     //       }
 
   }
 
+  var performanceTime = performance.now() - startTransform;
   if (cachedOutputCode) {
-    console.log("used cached output " + (performance.now() - startTransform) + "ms")
-  } else {
-    console.log("transformed " + load.name + " in " + (performance.now() - startTransform) + "ms")
+    debugLog("used cached output " + performanceTime + "ms")
+  } else { 
+    debugLog("transformed " + load.name + " in " + performanceTime + "ms")
   }
+  bootLog(load.name, Date.now(), cachedOutputCode ? "cached" : "transpiled", performanceTime )
 
   // add babelHelpers as a dependency for non-modular runtime
   if (!babelOptions.modularRuntime)

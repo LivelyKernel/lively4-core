@@ -40,24 +40,34 @@ export default class Component extends Morph {
     this.updateViz()
   }  
   
-  dataColor(node) {
+  dataColor(node, defaultValue="gray") {
     if (this.options.color !== undefined) return this.options.color(node)
-    return "gray"
-  }
-
-  dataWidth(node) {
-    if (this.options.width !== undefined) return this.options.width(node)
-    return 20
-  }
-
-  dataHeight(node) {
-    if (this.options.height !== undefined) return this.options.height(node)
-    return 40
+    return defaultValue
   }
   
-  dataFontsize(node) {
-    if (this.options.fontsize !== undefined) return this.options.fontsize(node)
-    return 10
+  dataTitle(node) {
+    if (this.options.title !== undefined) return this.options.title(node)
+    return node.label
+  }
+
+  dataLabel(node) {
+    if (this.options.label !== undefined) return this.options.label(node)
+    return node.label
+  }
+
+  dataWidth(node, defaultValue=20) {
+    if (this.options.width !== undefined) return this.options.width(node, defaultValue)
+    return defaultValue
+  }
+
+  dataHeight(node, defaultValue=20) {
+    if (this.options.height !== undefined) return this.options.height(node, defaultValue)
+    return defaultValue
+  }
+  
+  dataFontsize(node, defaultValue=10) {
+    if (this.options.fontsize !== undefined) return this.options.fontsize(node, defaultValue)
+    return defaultValue
   }
   
   onNodeClick(node, evt, element) {
