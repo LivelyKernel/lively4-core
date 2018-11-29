@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt} from 'src/client/graphics.js';
-import {Grid} from 'src/client/morphic/snapping.js';
+import { pt } from 'src/client/graphics.js';
+import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
 export default class Window extends Morph {
@@ -16,23 +16,23 @@ export default class Window extends Morph {
   get minimizedWindowWidth() { return 300 }
   get minimizedWindowPadding() { return 10 }
 
-  get active() { return this.hasAttribute('active')}
-  get isFixed() { return this.hasAttribute('fixed')}
+  get active() { return this.hasAttribute('active') }
+  get isFixed() { return this.hasAttribute('fixed') }
   get titleSpan() { return this.get('.window-title span') }
-  get target() { return this.childNodes[0]}
+  get target() { return this.childNodes[0] }
   get window() { return this.get('.window') }
-  get maxButton() { return this.get('.window-max')}
-  get windowTitle() { return this.get('.window-title')}
+  get maxButton() { return this.get('.window-max') }
+  get windowTitle() { return this.get('.window-title') }
 
   setExtent(extent) {
     lively.setExtent(this, extent)
-    if (this.target) 
+    if (this.target)
       this.target.dispatchEvent(new CustomEvent("extent-changed"))
   }
 
   initialize() {
     this.setup();
-    
+
     this.created = true;
     this.render();
 
@@ -41,12 +41,12 @@ export default class Window extends Morph {
 
     this.setAttribute("tabindex", 0)
   }
-  
+
   attachedCallback() {
     if (this.parentElement === document.body) {
-       this.classList.add("global")
+      this.classList.add("global")
     } else {
-       this.classList.remove("global")
+      this.classList.remove("global")
     }
   }
 
@@ -79,11 +79,11 @@ export default class Window extends Morph {
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
       this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
-    } catch(err) {
+    } catch (err) {
       console.log("Error, binding events! Continue anyway!", err)
     }
   }
-  
+
   onKeyUp(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if ((evt.altKey || evt.ctrlKey) && char == "W") {
@@ -123,21 +123,21 @@ export default class Window extends Morph {
       this.classList.add('window-fixed');
     } else {
       lively.setPosition(this, pos.addPt(lively.getScroll()))
-      this.classList.remove('window-fixed') 
+      this.classList.remove('window-fixed')
     }
   }
 
-	get minZIndex() {
-		return 100
-	}
-	
+  get minZIndex() {
+    return 100
+  }
+
   allWindows() {
     return Window.allWindows()
-	}
+  }
 
   static allWindows() {
     return Array.from(document.querySelectorAll('*')).filter(ea => ea.isWindow);
-	}
+  }
 
   hideTitlebar() {
     this.get(".window-titlebar").style.display = "none"
@@ -147,11 +147,11 @@ export default class Window extends Morph {
     this.get(".window-titlebar").style.display = ""
   }
 
-  
+
   isFullscreen() {
     return this.get(".window-titlebar").style.display == "none"
   }
-  
+
   focus(evt) {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
@@ -167,30 +167,30 @@ export default class Window extends Morph {
         win.window.classList.remove('focused');
       win.removeAttribute('active');
     });
-    
+
     if (this.isFullscreen()) {
       // fullscreen and everything is in front of me...
       this.style['z-index'] = 0;
     } else {
       this.style['z-index'] = this.minZIndex + allWindowsButThis.length;
-    
+
     }
-    
+
     this.window.classList.add('focused');
     this.setAttribute('active', true);
-    
+
     // this.bringMinimizedWindowsToFront()
-    
+
     if (this.target && this.target.focus) this.target.focus()
   }
 
-	bringMinimizedWindowsToFront() {
-	  var allWindows = this.allWindows();
-		allWindows.filter(ea => ea.isMinimized()).forEach( ea => {
-      ea.style['z-index'] = this.minZIndex + allWindows.length +1
+  bringMinimizedWindowsToFront() {
+    var allWindows = this.allWindows();
+    allWindows.filter(ea => ea.isMinimized()).forEach(ea => {
+      ea.style['z-index'] = this.minZIndex + allWindows.length + 1
     });
-	}
-	
+  }
+
   onMinButtonClicked(evt) {
     if (evt.shiftKey) {
       document.scrollingElement.scrollTop = 0
@@ -205,7 +205,7 @@ export default class Window extends Morph {
 
   onMaxButtonClicked(evt) {
     if (evt.shiftKey) {
-      this.togglePined() 
+      this.togglePined()
     } else {
       this.toggleMaximize()
     }
@@ -214,11 +214,11 @@ export default class Window extends Morph {
   toggleMaximize() {
     if (this.positionBeforeMaximize) {
       var maxButtonI = this.maxButton.querySelector('i')
-        maxButtonI.classList.remove('fa-compress')
-        maxButtonI.classList.add('fa-expand');
+      maxButtonI.classList.remove('fa-compress')
+      maxButtonI.classList.add('fa-expand');
 
       this.style.position = "absolute"
-      lively.setGlobalPosition(this, 
+      lively.setGlobalPosition(this,
         pt(this.positionBeforeMaximize.x, this.positionBeforeMaximize.y)
       );
       this.setExtent(pt(this.positionBeforeMaximize.width, this.positionBeforeMaximize.height))
@@ -231,8 +231,8 @@ export default class Window extends Morph {
       }
 
       var maxButtonI = this.maxButton.querySelector('i')
-        maxButtonI.classList.add('fa-compress')
-        maxButtonI.classList.remove('fa-expand');
+      maxButtonI.classList.add('fa-compress')
+      maxButtonI.classList.remove('fa-expand');
 
 
       var bounds = this.getBoundingClientRect()
@@ -248,9 +248,9 @@ export default class Window extends Morph {
       this.style.top = 0;
       this.style.left = 0;
       this.style.width = "100%";
-      this.style.height= "100%";
+      this.style.height = "100%";
       document.body.style.overflow = "hidden"
-      if (this.target) 
+      if (this.target)
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
     }
     this.bringMinimizedWindowsToFront()
@@ -266,11 +266,11 @@ export default class Window extends Morph {
   toggleMinimize() {
     // this.style.display = this.isMinimized() ?
     //   'block' : 'none';
-      
+
     // if(this.isMinimized())
     //   this.removeAttribute('active');
-      
-      
+
+
     var content = this.get('#window-content');
     if (this.positionBeforeMinimize) {
       this.minimizedPosition = lively.getPosition(this)
@@ -281,10 +281,10 @@ export default class Window extends Morph {
       content.style.display = "block";
       this.displayResizeHandle(true)
       this.positionBeforeMinimize = null
-      
+
       // this.classList.removed("minimized")
-      this.style.transformOrigin = "" 
-      this.style.transform = "" 
+      this.style.transformOrigin = ""
+      this.style.transform = ""
 
       content.style.pointerEvents = ""
 
@@ -295,26 +295,25 @@ export default class Window extends Morph {
       // this.style['z-index'] = 100
       this.positionBeforeMinimize = lively.getPosition(this)
       // this.extentBeforeMinimize = lively.getExtent(this)
-      
-      
-      
+
+
       if (this.minimizedPosition) {
-        lively.setPosition(this, this.minimizedPosition) 
+        lively.setPosition(this, this.minimizedPosition)
       }
-    
+
       // this.style.position = "fixed";
       // this.style.left = "";
       // this.style.top = this.minimizedWindowPadding +"px";
       // this.style.right = this.minimizedWindowPadding + "px";
       // lively.setGlobalPosition()
-      
-      this.style.transformOrigin = "0 0" 
-      this.style.transform = "scale(0.4)" 
-      
+
+      this.style.transformOrigin = "0 0"
+      this.style.transform = "scale(0.4)"
+
       content.style.pointerEvents = "none"
-      
+
       this.displayResizeHandle(false)
-   
+
     }
     this.bringMinimizedWindowsToFront()
   }
@@ -340,15 +339,15 @@ export default class Window extends Morph {
 
   async onCloseButtonClicked(evt) {
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
-      if(!await lively.confirm("Window contains unsaved changes, close anyway?"))  {
-        return 
+      if (!await lively.confirm("Window contains unsaved changes, close anyway?")) {
+        return
       }
     }
     if (this.positionBeforeMaximize)
       this.toggleMaximize()
 
     this.parentNode.removeChild(this);
-    if(this.afterWindowClosed instanceof Function) {
+    if (this.afterWindowClosed instanceof Function) {
       this.afterWindowClosed();
     }
   }
@@ -361,26 +360,26 @@ export default class Window extends Morph {
     evt.preventDefault();
     evt.stopPropagation();
     lively.focusWithoutScroll(this)
-    
-    if(this.positionBeforeMaximize) return; // no dragging when maximized
+
+    if (this.positionBeforeMaximize) return; // no dragging when maximized
 
     if (this.isFixed) {
-      let offsetWindow =  this.getBoundingClientRect()
+      let offsetWindow = this.getBoundingClientRect()
       this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
       this.draggingStart = lively.getPosition(this)
-      if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)){
+      if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
         throw new Error("Drag failed, because window Position is not a number")
       }
       this.dragging = pt(evt.clientX, evt.clientY)
     }
     lively.removeEventListener('lively-window-drag', this.windowTitle)
-    
+
     this.windowTitle.setPointerCapture(evt.pointerId)
-    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointermove', 
+    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
-    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointerup', 
+    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointerup',
       evt => this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
   }
@@ -391,7 +390,7 @@ export default class Window extends Morph {
     if (this.dragging) {
       evt.preventDefault();
       evt.stopPropagation();
-      
+
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
@@ -433,18 +432,18 @@ export default class Window extends Morph {
     this.positionBeforeMaximize = oldInstance.positionBeforeMaximize;
     this.positionBeforeMinimize = oldInstance.positionBeforeMinimize;
   }
-  
+
   getAddOnRoot() {
     return this.shadowRoot.querySelector("#window-global")
   }
-  
+
   /* embed content in parent and remove yourself */
   embedContentInParent() {
-  	var content = this.querySelector("*")
-  	var pos = lively.getPosition(this);
-  	this.parentElement.appendChild(content);
-  	lively.setPosition(content, pos);
-  	this.remove()
+    var content = this.querySelector("*")
+    var pos = lively.getPosition(this);
+    this.parentElement.appendChild(content);
+    lively.setPosition(content, pos);
+    this.remove()
   }
 
 

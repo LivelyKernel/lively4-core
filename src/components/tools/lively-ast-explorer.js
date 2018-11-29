@@ -249,19 +249,19 @@ export default class AstExplorer extends Morph {
   }
   
   onSourceSelectionChanged(evt) {
-    setTimeout(() => {
-      if(this.sourceEditor.get("#editor").isFocused()) {
-        this.mapEditorsFromToPosition(
-          this.sourceEditor.get("#editor").currentEditor(), this.outputEditor.editor, false)
-      }
-    }, 0);
+    // setTimeout(() => {
+    //   if(this.sourceEditor.get("#editor").isFocused()) {
+    //     this.mapEditorsFromToPosition(
+    //       this.sourceEditor.get("#editor").currentEditor(), this.outputEditor.editor, false)
+    //   }
+    // }, 0);
   }
   onOutputSelectionChanged(evt) {
-    setTimeout(() => {
-      if(this.outputEditor.isFocused()) { 
-        this.mapEditorsFromToPosition(
-          this.outputEditor.editor, this.sourceEditor.get("#editor").currentEditor(), true)
-      }
-    }, 0);
+    // setTimeout(() => {
+    //   if(this.outputEditor.isFocused()) { 
+    //     this.mapEditorsFromToPosition(
+    //       this.outputEditor.editor, this.sourceEditor.get("#editor").currentEditor(), true)
+    //   }
+    // }, 0);
   }
 }

@@ -54,8 +54,7 @@ export default class PenEditor extends Morph {
   
   selectedLanguage() {
     var languageDropdown = this.get("#language");
-    var languageToUse = languageDropdown.options[languageDropdown.selectedIndex].value;
-    return languageToUse;
+    return languageDropdown.options[languageDropdown.selectedIndex].value;
   }
   
   handleServerResponse(response) {
@@ -80,6 +79,7 @@ export default class PenEditor extends Morph {
       },
       method: "POST",
       body: JSON.stringify({
+        // #Refactor: this flattens the (potentially nested) array
         points: [].concat.apply([], this.livelyPaper.canv_points),
         language: this.selectedLanguage()
       })
