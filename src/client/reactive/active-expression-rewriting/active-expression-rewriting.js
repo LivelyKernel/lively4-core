@@ -3,6 +3,7 @@ import Stack from 'src/client/reactive/utils/stack.js';
 import { using } from 'utils';
 
 let expressionAnalysisMode = false;
+window.__expressionAnalysisMode__ = true;
 
 const analysisModeManager = {
   __enter__() {

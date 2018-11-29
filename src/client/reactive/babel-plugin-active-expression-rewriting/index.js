@@ -41,6 +41,11 @@ const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewri
 const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
 const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
+function markMemberToNotBeRewritten(path) {
+  path[FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION] = true;
+  return path;
+}
+
 export default function(param) {
   let {
     types: t,
@@ -572,8 +577,13 @@ export default function(param) {
                       t.sequenceExpression([
                         path.node,
                         t.conditionalExpression(
-                          // #TODO: add global flag for expression analysis mode
-                          t.booleanLiteral(true),
+                          // #TODO: make this working
+                          // add global flag for expression analysis mode
+                          // this is a SET operation and should not just be active in expressionAnalysisMode
+                          markMemberToNotBeRewritten(t.memberExpression(
+                            nonRewritableIdentifier('window'),
+                            nonRewritableIdentifier('__expressionAnalysisMode__')
+                          )),
                           t.callExpression(
                             addCustomTemplate(state.file, SET_LOCAL), [
                               getIdentifierForExplicitScopeObject(parentWithScope),
@@ -619,7 +629,8 @@ export default function(param) {
               if (isGenerated(path)) { return; }
               if(isInForLoopIterator(path)) { return; }
               if(isInDesctructuringAssignment(path)) { return; }
-              //FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION
+              if(path.node[FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION]) { return; }
+              
               path.replaceWith(
                 t.callExpression(
                   addCustomTemplate(state.file, GET_MEMBER), [
