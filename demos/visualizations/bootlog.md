@@ -3,9 +3,11 @@
 <script>
 import Bootlog from "src/client/bootlog.js"
 import d3 from "src/external/d3.v5.js"
+
+
+
+
 (async() => {
-
-
   var currentboot = []
   await Bootlog.current().db.logs.each(ea => {
     if (ea.bootid == lively4currentbootid) {
@@ -92,6 +94,19 @@ import d3 from "src/external/d3.v5.js"
   chart.setData(data)
   chart.updateViz() 
 
-  return chart
+  var table = await lively.create("lively-table")
+  
+  
+  var transpiled = currentboot.filter(ea => ea.mode == "transpiled")
+  var analysis = _.sortBy(transpiled, ea => ea.time).reverse().slice(0, 10).map(ea => ({
+    name: ea.url.replace(lively4url, ""),  
+    time: (ea.time / 1000).toFixed(3)+ "s"}));
+  
+  analysis.push({name: "total", time: (transpiled
+      .reduce((sum, ea) => sum + ea.time, 0) / 1000).toFixed(3)+ "s"});
+  
+  table.setFromJSO(analysis)
+
+  return <div>{table}{chart}</div>
 })()
 </script>
