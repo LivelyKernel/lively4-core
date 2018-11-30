@@ -22,6 +22,7 @@ class ExpressionAnalysis {
   }
 }
 
+      // throw new Error ("WOW")
 import CompositeKey from './composite-key.js';
 
 class HookStorage {
@@ -41,9 +42,9 @@ class HookStorage {
         // objPropSet.add(CompositeKey.get(obj, prop));
 
         // ---
-      
-        if(aexpr == undefined)
-            throw new Error('aexpr is undefined');
+        if(!aexpr) {
+          throw new Error('aexpr is undefined');
+        }
 
         const key = CompositeKey.for(obj, prop);
         if(!this.aexprsByObjProp.has(key)) {

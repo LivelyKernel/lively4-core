@@ -219,7 +219,6 @@ export default class Container extends Morph {
     var urlString = url.toString()
     lively.unloadModule(urlString)
     return System.import(urlString).then( m => {
-        this.shadowRoot.querySelector("#live").disabled =false;
         lively.notify({
           title: "Loaded " + url, color: "green"});
         this.resetLoadingFailed();
@@ -259,7 +258,6 @@ export default class Container extends Morph {
     if (lively.modules) {
       if (urlString.match(/\.js$/)) {
         var m = lively.modules.module(urlString);
-        this.get("#live").disabled = !m.isLoaded();
       }
     }
     this.lastLoadingFailed = false;
@@ -269,7 +267,6 @@ export default class Container extends Morph {
 
   loadingFailed(moduleName, err) {
     this.lastLoadingFailed = err;
-    this.get("#live").disabled = true;
     this.get("#apply").style.border = "2px solid red";
 
     lively.notify({
@@ -480,7 +477,7 @@ export default class Container extends Morph {
           this.reloadModule(url); // use our own mechanism...
         } else if (this.getPath().match(testRegexp)) {
           this.loadTestModule(url);
-        } else if ((this.get("#live").checked && !this.get("#live").disabled)) {
+        } else if (this.get("#live").checked) {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           lively.findDependedModules("" + url).forEach(ea => {
