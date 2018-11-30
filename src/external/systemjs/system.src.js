@@ -3688,7 +3688,10 @@ function translateAndInstantiate (loader, key, source, metadata, processAnonRegi
       case 'esm':
       case 'register':
       case 'system':
+        var executionStart = performance.now() // #Lively4
         var err = evaluate(loader, source, metadata.load.sourceMap, key, metadata.load.integrity, metadata.load.nonce, false);
+        livelyBootLog(key, Date.now(),  "evaluate",  performance.now() - executionStart) // #Lively4
+        
         if (err)
           throw err;
         processAnonRegister();
