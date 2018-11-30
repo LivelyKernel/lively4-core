@@ -1603,6 +1603,13 @@ export default class Lively {
     }
   }
 
+  /*
+   * keep detailed bootlog in indexdb for later visualization and analysis
+   */
+  static async onLogBootPreference(bool) {
+    localStorage["logLivelyBoot"] = bool
+  }
+
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
       || (element && element.id == "copy-hack-element")

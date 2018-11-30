@@ -27,7 +27,6 @@ export default class Services extends Morph {
     this.serviceList = this.getSubmorph('.items');
     this.serviceList.addEventListener('click', evt => {
       // 'lively-services-item',  
-      debugger
       this.itemClick(evt)
     });
     

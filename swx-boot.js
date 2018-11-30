@@ -111,18 +111,13 @@ fetch = function(request, ...args) {
   }  
 }
 
-function init() {
-  let promise = System.import(lively4swx + "swx.js");
-  promise.then(() => initPending = false);
-  return promise;
-}
 console.log("Base system loaded after  " + (Date.now() - startSwxTime) + "ms")
 
-init().then(worker => {
-  console.log("SWX loaded after  " + (Date.now() - startSwxTime) + "ms")
-})
+console.log('REGISTER self', self, " this", this)
 
-this.addEventListener('install', (event) => {
+self.addEventListener('install', (event) => {
+  console.log("SWX installed after  " + (Date.now() - startSwxTime) + "ms (no importScript beyond this point)")
+  
   event.waitUntil(
     init()
       .then(worker => worker.install(event))
@@ -131,11 +126,22 @@ this.addEventListener('install', (event) => {
 })
 
 this.addEventListener('activate', (event) => {
+  console.log("SWX activated after  " + (Date.now() - startSwxTime) + "ms")
   event.waitUntil(
     init()
       .then(worker => worker.activate(event))
       .catch(error => { console.error(error); throw error })
   )
+})
+
+function init() {
+  let promise = System.import(lively4swx + "swx.js");
+  promise.then(() => initPending = false);
+  return promise;
+}
+
+init().then(worker => {
+  console.log("SWX loaded after  " + (Date.now() - startSwxTime) + "ms")
 })
 
 
