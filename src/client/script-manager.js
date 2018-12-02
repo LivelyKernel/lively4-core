@@ -82,10 +82,10 @@ export default class ScriptManager {
     if (!children) return;
     for (let child of children) {
       if (isLively4Script(child)) {
+        var scriptName = child.dataset.name;
+        
         try {
-          var scriptName = child.dataset.name;
-
-          this.addScript(parent, child.textContent, {
+          this.initializeScript(parent, child.textContent, false, {
             name: scriptName,
             persist: false
           });
@@ -123,18 +123,20 @@ export default class ScriptManager {
     this.addScript(object, func.executable, options);
   }
 
-  static addScript(object, funcOrString, options = {}) {
-    
+  static initializeScript(object, funcOrString, checkExists, options = {}) {
     var func = prepareFunction(funcOrString, options.name);
-    
-    initializeScriptsMap(object);
-
-    if (scriptExists(object, func.name)) {
+    if (checkExists && scriptExists(object, func.name)) {
       throw 'script name "' + func.name + '" is already reserved!';
     }
-
+    initializeScriptsMap(object);
     bindFunctionToObject(object, func, options);
-    addFunctionToScriptsMap(object, func.name, funcOrString);
+    addFunctionToScriptsMap(object, func.name, funcOrString);    
+    return func
+  }
+  
+  static addScript(object, funcOrString, options = {}) {
+    var func = this.initializeScript(object, funcOrString, true, options) 
+
     persistScript(object, func.name, funcOrString, options);
   }
 

@@ -808,6 +808,8 @@ export default class Lively {
     
     await modulesExported
     
+    this.loadedAsExtension = loadedAsExtension
+    
     console.log("Lively4 initializeDocument" );
     // persistence.disable();
 
@@ -852,9 +854,12 @@ export default class Lively {
         document.head.appendChild(titleTag);
       }
 
+
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
+      
+      this.loadContainer = loadContainer // remember....
       // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
       //   this.showMainContainer()
       // }
@@ -865,6 +870,10 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
+    
+    // just for more accurate measurement, since we load them anyway...
+    await lively.components.loadByName("lively-container")
+    await lively.components.loadByName("lively-code-mirror")
         
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
@@ -1592,6 +1601,13 @@ export default class Lively {
       // console.log("swx keep alive")
       await lively.sleep(1000)
     }
+  }
+
+  /*
+   * keep detailed bootlog in indexdb for later visualization and analysis
+   */
+  static async onLogBootPreference(bool) {
+    localStorage["logLivelyBoot"] = bool
   }
 
   static isGlobalKeyboardFocusElement(element) {

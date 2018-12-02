@@ -357,6 +357,14 @@ export default class ContextMenu {
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
+        ["Chrome Service-Workers", async evt => {
+          // does not work... security?
+          // window.open("chrome://inspect/#service-workers")
+          // fuck it... just display it... better that nothing
+          var workspace = await lively.openWorkspace("chrome://inspect/#service-workers")
+          workspace.parentElement.setAttribute("title","open this in a tab...")
+          workspace.mode = "text"
+        }],
       ]],
       [
         "Windows", 

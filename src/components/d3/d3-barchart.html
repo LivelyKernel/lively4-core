@@ -1,0 +1,70 @@
+<template id="d3-barchart" data-class="D3Barchart">
+  <style>
+/*   :host {
+      min-width: 50px;
+      min-height: 50px;
+      background: lightgray;
+    }
+  
+  .chart div {
+    font: 10px sans-serif;
+    background-color: steelblue;
+    text-align: right;
+    padding: 3px;
+    margin: 1px;
+    color: white;
+  }
+     */
+    :host {
+      width: 200px;
+      height: 200px;
+    }
+
+    :host {
+      min-width: 50px;
+      min-height: 50px;
+      background: white;
+    }
+    
+    #container {
+      position: relative; /* positioning hack.... we make our coordinate system much easier by this */
+      border: 0px solid gray;
+/*       width: 50%;
+      height: 50%; */
+      overflow: hidden
+    }
+  
+    #svg {
+      position: relative;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .link {
+      fill: none;
+      stroke: #555;
+      stroke-opacity: 0.4;
+      stroke-width: 1.5px;
+    }
+
+    * {
+      vector-effect: non-scaling-stroke;
+    }
+
+    path {
+      fill: none;
+      stroke: #BBB;
+    }
+  
+  </style>
+  <div id="container">
+    <svg id="svg"></svg>
+  </div>
+  </div>
+  
+</template>
+<script class="registrationScript">
+  lively.registerTemplate()
+</script>

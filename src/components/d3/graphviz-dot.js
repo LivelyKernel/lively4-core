@@ -7,8 +7,6 @@ import { debounce } from "utils";
 export default class GraphvizDot extends Morph {
 
   async initialize() {
-    debugger
-    this.options = {}
     this.loaded = new Promise(async (resolve) => {
       if (!window.Viz) {
         await lively.loadJavaScriptThroughDOM("GraphViz", lively4url + "/src/external/viz.js", true)

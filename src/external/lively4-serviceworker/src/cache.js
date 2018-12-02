@@ -102,7 +102,12 @@ export class Cache {
       // console.log("ignore offline first " +  request.method + " " + request.url)
       return doNetworkRequest()    
     }
-    
+    var fileversion = request.headers.get("fileversion")
+    if (fileversion) {
+      // we currently do not cache versioned requests
+      console.log("ingore REQUEST for version " + fileversion + " ", request.url)
+      return doNetworkRequest()    
+    }
     
     if (request.method == "GET" && this.offlineFirstCache) {
       var resp = await this.offlineFirstCache.match(request)
@@ -149,7 +154,7 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   async fetch(request, doNetworkRequest, pending) {
-    // console.log("[cache] fetch " + request.url )
+    console.log("[cache] fetch " + request.url )
     await this.offlineFirstReady;
 
     var start = performance.now()

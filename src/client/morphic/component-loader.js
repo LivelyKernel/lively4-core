@@ -374,6 +374,7 @@ export default class ComponentLoader {
         lively4url + '/src/client/vivide/components/',
         lively4url + '/src/client/reactive/components/',
         lively4url + '/src/client/triples/components/',
+        lively4url + '/src/client/pen-editor/components/',
         lively4url + '/src/babylonian-programming-editor/',
         lively4url + '/src/babylonian-programming-editor/demos/canvas/',
         lively4url + '/src/babylonian-programming-editor/demos/todo/',

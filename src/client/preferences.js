@@ -22,6 +22,7 @@ export default class Preferences {
       GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
       FileIndex: {default: false, short: "local file index"},
       SWXKeepAlive: {default: true, short: "keep SWX alive"},
+      LogBoot: {default: false, short: "keep bootlog"},
     }
   }
   

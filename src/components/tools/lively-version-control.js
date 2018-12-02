@@ -45,7 +45,6 @@ export default class VersionControl extends Morph {
   }
   
   selectItem(item) {
-   
     if (this.selectedItem) 
       this.selectedItem.classList.remove("selected");
     if (this.selectedItem !== item) { 

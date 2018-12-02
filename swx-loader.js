@@ -4,6 +4,17 @@
 //   return Ofetch(...args);
 // }
 
+
+console.log("HUHU lets go 3!!!")
+self.addEventListener('install', (event) => {
+  console.log("HUHU Install")
+})
+
+self.oninstall = function() {
+  console.log("HUHU on install ") // why are they not called? Sometimes they are?
+}
+
+
 function getChromeVersion () {     
     var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
     return raw ? parseInt(raw[2], 10) : false;

@@ -1,3 +1,5 @@
+'enable aexpr';
+
 var a = 3;
 console.log(a + 4)
 

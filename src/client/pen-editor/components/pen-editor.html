@@ -1,0 +1,30 @@
+<template id="pen-editor" data-class="PenEditor">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#canvasSimple {
+   width="490px";
+   height="220px";
+}
+</style>
+                                             
+<h1 id="caption">WritePad Handwriting Recognition2</h1>
+
+<label for="language">Recognition Language: </label><select id="language">
+  <option value="en">English</option>
+  <option value="de">Deutsch</option>
+</select>
+
+<lively-paper id="drawingCanvas"></lively-paper>
+
+<div id="dynbuttons"></div>
+<div id="control">
+  <button id="clearText">Clear Text</button>
+</div>
+<div id="result"></div>
+
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
