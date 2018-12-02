@@ -135,18 +135,24 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-      this.db.transaction('rw', this.db.files, () => {
-        return this.db.files.where("type").equals("file").toArray()
-      }).then((files) => {
-        files.forEach(file => {
-         this.addLinks(file)
+     /*this.db.transaction('rw', this.db.files, () => {
+      return this.db.files.where("type").equals("file").toArray().then((files) => {
+        files.forEach((file) => {
+          this.addLinks(file)   
+        })
+      })
+    })*/
+    
+    this.db.transaction('rw', this.db.files, () => {
+      return this.db.files.where("type").equals("file").each(async(file) => {
+        await this.addLinks(file) 
       })
     })
   }
   
   async addLinks(file) {
     this.extractLinks(file).then(links => {
-      this.db.transaction("rw", this.db.links, () => {
+      this.db.transaction("rw!", this.db.links, () => {
         if (links) {
           this.db.links.bulkPut(links)
         }
@@ -180,7 +186,7 @@ export default class FileIndex {
   return await fetch(link, { 
     method: "GET", 
     mode: 'no-cors', 
-    redirect: "follow",
+    redirect: "follow"
   })
   .then((response) => {
     if (response.type === "basic") { // internal link
