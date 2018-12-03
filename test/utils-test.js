@@ -1,4 +1,4 @@
-import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using } from 'utils';
+import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -195,5 +195,39 @@ describe('waitForDeepProperty', () => {
     var result = await waitForDeepProperty(o, "foo.bar", 1000, 10) 
     expect(result).to.equal(7)
     done()
+  });
+});
+
+describe('shallowEqualsArray', () => {
+  it('it works', () => {
+    const arr = [1,2,3];
+    expect(shallowEqualsArray(arr, arr)).to.be.true;
+    expect(shallowEqualsArray([], [])).to.be.true;
+    expect(shallowEqualsArray([1], [1])).to.be.true;
+    expect(shallowEqualsArray([1], [1,2])).to.be.false;
+    expect(shallowEqualsArray([1,2], [1])).to.be.false;
+    expect(shallowEqualsArray([1,2], [2,1])).to.be.false;
+    const obj1 = {};
+    expect(shallowEqualsArray([1, obj1, arr], [1, obj1, arr])).to.be.true;
+    
+    // not same identity
+    expect(shallowEqualsArray([{}], [{}])).to.be.false;
+  });
+});
+
+describe('shallowEqualsSet', () => {
+  it('it works', () => {
+    const set = new Set([1,2,3]);
+    expect(shallowEqualsSet(set, set)).to.be.true;
+    expect(shallowEqualsSet(new Set(), new Set())).to.be.true;
+    expect(shallowEqualsSet(new Set([1]), new Set([1]))).to.be.true;
+    expect(shallowEqualsSet(new Set([1]), new Set([1,2]))).to.be.false;
+    expect(shallowEqualsSet(new Set([1,2]), new Set([1]))).to.be.false;
+    expect(shallowEqualsSet(new Set([1,2]), new Set([2,1]))).to.be.true;
+    const obj1 = {};
+    expect(shallowEqualsSet(new Set([1, obj1, set]), new Set([obj1, 1, set]))).to.be.true;
+    
+    // not same identity
+    expect(shallowEqualsSet(new Set([{}]), new Set([{}]))).to.be.false;
   });
 });

@@ -335,6 +335,30 @@ export class CallableObject {
   // #TODO: implement this
 }
 
+// checks elements of arrays pairwise for identity equality
+export function shallowEqualsArray(arr1, arr2) {
+  if (arr1 === arr2) { return true; }
+  if (arr1.length !== arr2.length) { return false; }
+
+  for (let index = 0; index < arr1.length; index++) {
+    if (arr1[index] !== arr2[index]) { return false; }
+  }
+
+  return true;
+}
+
+// checks elements for identity equality
+export function shallowEqualsSet(set1, set2) {
+  if (set1 === set2) { return true; }
+  if (set1.size !== set2.size) return false;
+  
+  for (let val of set1) {
+    if (!set2.has(val)) { return false; }
+  }
+  
+  return true;
+}
+
 /**
  * Executes the given function considering the given context objects.
  * @param {Array<ContextManager>} contexts
