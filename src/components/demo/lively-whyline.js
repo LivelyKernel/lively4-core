@@ -2,7 +2,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 import SyntaxChecker from 'src/client/syntax.js'
-import traceBabelPlugin from "./lively-whyline-plugin.js"
 import boundEval from 'src/client/bound-eval.js';
 import { debounce } from "utils";
 
@@ -16,7 +15,7 @@ export default class Whyline extends Morph {
 
   initialize() {
     this.windowTitle = "Whyline";  
-    this.get("#source").setURL("http://localhost:8080/lively4-core/src/components/demo/lively-whyline-example.js")
+    this.get("#source").setURL(lively4url + "/src/components/demo/lively-whyline-example.js")
     this.get("#source").loadFile()
 
     this.sourceCodeChangedDelay = (() => {
@@ -84,6 +83,8 @@ export default class Whyline extends Morph {
     this.ast = null; // clear
     var src = this.editor().getValue();
     
+    var traceBabelPlugin = (await System.import(lively4url + "/src/components/demo/lively-whyline-plugin.js")).default;
+    
     try {
       var src = this.editor().getValue();
       this.result = babel.transform(src, {
@@ -94,11 +95,12 @@ export default class Whyline extends Morph {
         sourceFileName: undefined,
         moduleIds: false,
         sourceMaps: false,
+        sourceType: 'module',
         compact: false,
         comments: true,
         code: true,
         ast: true,
-        resolveModuleSource: undefined
+        resolveModuleSource: m=>m
       })
     } catch(err) {
       console.error(err)
@@ -130,23 +132,21 @@ export default class Whyline extends Morph {
     this.get("#traceView").innerHTML = ""
     this.printTraceNode(this.get("#traceView"), tree)
   }
-
-  astNode(id) {
-    return this.ast.node_map[id] 
-  }
   
-  nodeToString(call) {
-    var node = call
-    var astnode = this.astNode(call.id) 
-    var ast_node = astnode;
+  nodeToString(traceNode) {
+    var astNode = traceNode.astNode
     var label = ""
     
-    switch(ast_node.type) {
+    if (!astNode) {
+      debugger;
+    }
+    
+    switch(astNode.type) {
       case "UpdateExpression":
-        label = ast_node.argument.name + "=" + node.value 
+        label = astNode.argument.name + "=" + traceNode.value 
         break;
       case "VariableDeclarator":
-        label = ast_node.id.name + "=" + node.value
+        label = astNode.id.name + "=" + traceNode.value
         break
       case "ExpressionStatement":
         label = ""
@@ -155,10 +155,10 @@ export default class Whyline extends Morph {
         label = ""
         break
       case "CallExpression":
-        if (ast_node.callee.object)
-          label = ast_node.callee.object.name + ".";
-        if (ast_node.callee.property)
-          label += ast_node.callee.property.name + "()"
+        if (astNode.callee.object)
+          label = astNode.callee.object.name + ".";
+        if (astNode.callee.property)
+          label += astNode.callee.property.name + "()"
         break
        case "ForStatement":
           label = "for{}"
@@ -168,13 +168,13 @@ export default class Whyline extends Morph {
         break
 
       case "AssignmentExpression":
-        var name = ast_node.left.name
-        if (!name && ast_node.left.property)  
-          name = ast_node.left.property.name;
-        label = name + "=" + call.value
+        var name = astNode.left.name
+        if (!name && astNode.left.property)  
+          name = astNode.left.property.name;
+        label = name + "=" + traceNode.value
         break
       default:
-        label = ast_node.type
+        label = astNode.type
     }
     return label
   }
@@ -183,33 +183,31 @@ export default class Whyline extends Morph {
     return 200
   }
 
-  printTraceNode(parent, call) {
+  printTraceNode(parentElement, call) {
     if (call.id > this.maxCallId) return
     
-    var astnode = this.astNode(call.id) 
-    
-    var node = document.createElement("div");
-    node.setAttribute("class", "traceNode")
-    
+    var nodeElement = document.createElement("div");
+    nodeElement.setAttribute("class", "traceNode")
+
     var label = this.nodeToString(call);
-    
-    node.innerHTML = "<div class='traceLabel'> " + label +"</div>"
-    node.setAttribute("title", "" + astnode.type)
-    
-    node.id = call.markId
-    node.addEventListener("click", (evt) => {
+
+    nodeElement.innerHTML = "<div class='traceLabel'> " + label +"</div>"
+    nodeElement.setAttribute("title", "" + call.astNode.type)
+
+    nodeElement.id = call.markId
+    nodeElement.addEventListener("click", (evt) => {
       this.selectCallTraceNode(call)
       evt.stopPropagation()
     })
 
-    parent.appendChild(node)
+    parentElement.appendChild(nodeElement)
     call.children.forEach( ea => {
-      this.printTraceNode(node, ea)
+      this.printTraceNode(nodeElement, ea)
     })
   }
 
   markCallTree(call) {
-    var ast_node = this.astNode(call.id)
+    var ast_node = call.astNode
 
     if (ast_node && ast_node.start && ast_node.end) {
       if (!call.markId) call.markId = 'tracemark' + this.lastMarkCounter++
@@ -270,7 +268,7 @@ export default class Whyline extends Morph {
   }
   
   updateCodeAnnotation(node, parentBounds) {
-    var ast_node = this.astNode(node.id)
+    var ast_node = node.astNode
     if (ast_node.type == "UpdateExpression") {
       this.addCodeAnnotation(ast_node.loc.start.line - 1, 
         ast_node.argument.name + "=" + node.value + ";", node)
