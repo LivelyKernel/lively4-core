@@ -1,6 +1,7 @@
 import Annotations from 'src/client/reactive/utils/annotations.js';
 import CachingFetch from '../utils/caching-fetch.js';
 import CachingPromise from '../utils/caching-promise.js';
+import { shallowEqualsArray, shallowEqualsSet } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
@@ -57,7 +58,7 @@ export class BaseActiveExpression {
       this.isAsync = true;
     }
     resolveValue(currentValue, (value) => {
-      this.lastValue = value;
+      this.storeResult(value);
     })
     this.callbacks = [];
     this._isDisposed = false;
@@ -98,6 +99,11 @@ export class BaseActiveExpression {
 
     return this;
   }
+  /**
+   * @public
+   * @param callback
+   * @returns {BaseActiveExpression} this very active expression (for chaining)
+   */
   // #TODO: should this remove all occurences of the callback?
   offChange(callback) {
     var index = this.callbacks.indexOf(callback);
@@ -117,11 +123,11 @@ export class BaseActiveExpression {
    * @public
    */
   checkAndNotify() {
-    let currentValue = this.getCurrentValue();
+    const currentValue = this.getCurrentValue();
     resolveValue(currentValue, (value) => {
-      if(this.lastValue == value) { return; }
-      let lastValue = this.lastValue;
-      this.lastValue = value;
+      if(this.compareResults(this.lastValue, value)) { return; }
+      const lastValue = this.lastValue;
+      this.storeResult(value);
 
       this.notify(value, {
         lastValue,
@@ -129,6 +135,37 @@ export class BaseActiveExpression {
         aexpr: this
       });
     });
+  }
+  
+  // #TODO: extract into CompareAndStore classes
+  compareResults(lastResult, newResult) {
+    // array
+    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+      return shallowEqualsArray(lastResult, newResult);
+    }
+    
+    // set
+    if(lastResult instanceof Set && newResult instanceof Set) {
+      return shallowEqualsSet(lastResult, newResult);
+    }
+
+    return lastResult == newResult;
+  }
+  
+  storeResult(result) {
+    // array
+    if(Array.isArray(result)) {
+      this.lastValue = Array.prototype.slice.call(result)
+      return;
+    }
+    
+    // set
+    if(result instanceof Set) {
+      this.lastValue = new Set(result);
+      return;
+    }
+    
+    this.lastValue = result;
   }
 
   notify(...args) {

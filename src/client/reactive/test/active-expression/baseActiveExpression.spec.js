@@ -128,4 +128,65 @@ describe('Base Active Expressions', () => {
         expect(spy.getCall(0).args[1]).to.have.property('aexpr', aexpr);
     });
   });
+  describe('Configurable Comparison Function', () => {
+    describe('Identity as default for objects', () => {
+    });
+    // #TODO: other implementation strategies have to detect those changes
+    describe('Arrays as Data Structures', () => {
+      it('detects a newly pushed element', () => {
+        const spy = sinon.spy();
+        const arr = [1,2];
+        const aexpr = new BaseActiveExpression(() => arr).onChange(spy);
+
+        arr.push(42);
+        aexpr.checkAndNotify();
+
+        expect(spy).to.be.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(arr);
+      });
+      it('identity does not matter/arrays as value classes', () => {
+        const spy = sinon.spy();
+        let arr = [1,2];
+        const aexpr = new BaseActiveExpression(() => arr).onChange(spy);
+
+        arr = [1,2];
+        aexpr.checkAndNotify();
+
+        expect(spy).not.to.be.called;
+      });
+    });
+    describe('Sets as Data Structures', () => {
+      it('detects a newly added element', () => {
+        const spy = sinon.spy();
+        const set = new Set([1,2]);
+        const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+        set.add(42);
+        aexpr.checkAndNotify();
+
+        expect(spy).to.be.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(set);
+      });
+      it('identity does not matter/setays as value classes', () => {
+        const spy = sinon.spy();
+        let set = new Set([1,2]);
+        const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+        set = new Set([1,2]);
+        aexpr.checkAndNotify();
+
+        expect(spy).not.to.be.called;
+      });
+      it('order of insertion does not matter/set semantic', () => {
+        const spy = sinon.spy();
+        let set = new Set([1,2]);
+        const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+        set = new Set([2,1]);
+        aexpr.checkAndNotify();
+
+        expect(spy).not.to.be.called;
+      });
+    });
+  });
 });
