@@ -1,4 +1,4 @@
-import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet } from 'utils';
+import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -229,5 +229,22 @@ describe('shallowEqualsSet', () => {
     
     // not same identity
     expect(shallowEqualsSet(new Set([{}]), new Set([{}]))).to.be.false;
+  });
+});
+
+describe('shallowEqualsMap', () => {
+  it('it works', () => {
+    const map = new Map([[1,2],[3,4],[5,6]]);
+    expect(shallowEqualsMap(map, map)).to.be.true;
+    expect(shallowEqualsMap(new Map(), new Map())).to.be.true;
+    expect(shallowEqualsMap(new Map([[1,2]]), new Map([[1,2]]))).to.be.true;
+    expect(shallowEqualsMap(new Map([[1,2]]), new Map([[1,2],[3,4]]))).to.be.false;
+    expect(shallowEqualsMap(new Map([[1,2],[3,4]]), new Map([[1,2]]))).to.be.false;
+    expect(shallowEqualsMap(new Map([[1,2],[3,4]]), new Map([[3,4],[1,2]]))).to.be.true;
+    const obj1 = {};
+    expect(shallowEqualsMap(new Map([[1,obj1],[map,2]]), new Map([[map,2],[1,obj1]]))).to.be.true;
+    
+    // not same identity
+    expect(shallowEqualsMap(new Map([[1,{}]]), new Map([[1,{}]]))).to.be.false;
   });
 });
