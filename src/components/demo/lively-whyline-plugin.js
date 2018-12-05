@@ -50,6 +50,7 @@ export default function (babel) {
 
           ClassMethod(path) { functions.push(path) },
           ExpressionStatement(path) {statements.push(path) },
+          IfStatement(path) {statements.push(path)},
           AssignmentExpression(path) { assignments.push(path) },
 
           ForStatement(path) { loops.push(path) },

@@ -60,9 +60,10 @@ export default class Whyline extends Morph {
   }
   
   selectCallTraceNode(node) {
-    this.selectedNode = node
-    if (node.markId) {
-      this.showMarker(node.markId)
+    let controlFlow = node.whyWasThisStatementExecuted()
+    this.selectedNode = controlFlow
+    if (this.selectedNode.markId) {
+      this.showMarker(this.selectedNode.markId)
     }
   }
 
