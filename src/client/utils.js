@@ -371,6 +371,57 @@ export function shallowEqualsMap(map1, map2) {
   return true;
 }
 
+
+// checks all properties for identity equality
+export function shallowEquals(obj1, obj2) {
+  // strict equality
+  if (obj1 === obj2) { return true; }
+  
+  // only for object-like values
+  if (typeof obj1 !== "object" || !obj1 || typeof obj2 !== "object" || !obj2) {
+    return false;
+  }
+
+  var keys1 = Object.keys(obj1);
+  var keys2 = Object.keys(obj2);
+
+  // same number of keys
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+
+  var hasOwnProperty2 = Object.prototype.hasOwnProperty.bind(obj2);
+
+  // Test for A's keys different from B.
+  for (let index = 0; index < keys1.length; index++) {
+    const key = keys1[index];
+
+    if (!hasOwnProperty2(key)) {
+      return false;
+    }
+
+    const valueA = obj1[key];
+    const valueB = obj2[key];
+
+    if(valueA !== valueB) { return false; }
+  }
+
+  return true;
+}
+
+
+// deeply checks all properties for equality
+export function deepEquals(obj1, obj2) {
+  if (obj1 === obj2) { return true; }
+  if (obj1.size !== obj2.size) return false;
+  
+  for (let [key, value] of obj1.entries()) {
+    if (value !== obj2.get(key)) { return false; }
+  }
+  
+  return true;
+}
+
 /**
  * Executes the given function considering the given context objects.
  * @param {Array<ContextManager>} contexts

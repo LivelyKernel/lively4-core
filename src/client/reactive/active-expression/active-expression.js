@@ -1,7 +1,7 @@
 import Annotations from 'src/client/reactive/utils/annotations.js';
 import CachingFetch from '../utils/caching-fetch.js';
 import CachingPromise from '../utils/caching-promise.js';
-import { shallowEqualsArray, shallowEqualsSet } from 'utils';
+import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
@@ -149,6 +149,11 @@ export class BaseActiveExpression {
       return shallowEqualsSet(lastResult, newResult);
     }
 
+    // map
+    if(lastResult instanceof Map && newResult instanceof Map) {
+      return shallowEqualsMap(lastResult, newResult);
+    }
+
     return lastResult == newResult;
   }
   
@@ -162,6 +167,12 @@ export class BaseActiveExpression {
     // set
     if(result instanceof Set) {
       this.lastValue = new Set(result);
+      return;
+    }
+    
+    // map
+    if(result instanceof Map) {
+      this.lastValue = new Map(result);
       return;
     }
     

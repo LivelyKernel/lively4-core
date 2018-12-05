@@ -1,4 +1,4 @@
-import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap } from 'utils';
+import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -198,8 +198,8 @@ describe('waitForDeepProperty', () => {
   });
 });
 
-describe('shallowEqualsArray', () => {
-  it('it works', () => {
+describe('testing for equality', () => {
+  it('shallowEqualsArray', () => {
     const arr = [1,2,3];
     expect(shallowEqualsArray(arr, arr)).to.be.true;
     expect(shallowEqualsArray([], [])).to.be.true;
@@ -213,10 +213,8 @@ describe('shallowEqualsArray', () => {
     // not same identity
     expect(shallowEqualsArray([{}], [{}])).to.be.false;
   });
-});
 
-describe('shallowEqualsSet', () => {
-  it('it works', () => {
+  it('shallowEqualsSet', () => {
     const set = new Set([1,2,3]);
     expect(shallowEqualsSet(set, set)).to.be.true;
     expect(shallowEqualsSet(new Set(), new Set())).to.be.true;
@@ -230,10 +228,8 @@ describe('shallowEqualsSet', () => {
     // not same identity
     expect(shallowEqualsSet(new Set([{}]), new Set([{}]))).to.be.false;
   });
-});
 
-describe('shallowEqualsMap', () => {
-  it('it works', () => {
+  it('shallowEqualsMap', () => {
     const map = new Map([[1,2],[3,4],[5,6]]);
     expect(shallowEqualsMap(map, map)).to.be.true;
     expect(shallowEqualsMap(new Map(), new Map())).to.be.true;
@@ -246,5 +242,65 @@ describe('shallowEqualsMap', () => {
     
     // not same identity
     expect(shallowEqualsMap(new Map([[1,{}]]), new Map([[1,{}]]))).to.be.false;
+  });
+
+  describe('shallowEquals', () => {
+
+    it('identity equality is shallow equal', () => {
+      expect(shallowEquals(1, 1)).to.be.true;
+      expect(shallowEquals('hello', 'hello')).to.be.true;
+
+      const obj = {};
+      expect(shallowEquals(obj, obj)).to.be.true;
+
+      const map = new Map([[1,2],[3,4],[5,6]]);
+      expect(shallowEquals(map, map)).to.be.true;
+      
+      expect(shallowEquals(undefined, undefined)).to.be.true;
+
+      expect(shallowEquals(1, '1')).to.be.false;
+      expect(shallowEquals(true, false)).to.be.false;
+      expect(shallowEquals(undefined, true)).to.be.false;
+      expect(shallowEquals(undefined, false)).to.be.false;
+    });
+
+    it('property keys', () => {
+      const obj1 = {};
+      const obj2 = {};
+      const obj3 = { a: 42 };
+      const obj4 = { a: 42, b: 17 };
+      const obj5 = { b: 17, a: 42 };
+      const obj6 = { a: 43, b: 18 };
+      expect(shallowEquals(obj1, obj2)).to.be.true;
+      expect(shallowEquals(obj2, obj3)).to.be.false;
+      expect(shallowEquals(obj3, obj4)).to.be.false;
+      expect(shallowEquals(obj4, obj5)).to.be.true;
+      expect(shallowEquals(obj5, obj6)).to.be.false;
+    });
+
+  });
+
+  // #TODO
+  describe('deepEquals', () => {
+
+    xit('deepEquals', () => {
+      const map = new Map([[1,2],[3,4],[5,6]]);
+      expect(deepEquals(map, map)).to.be.true;
+      expect(deepEquals(new Map(), new Map())).to.be.true;
+      expect(deepEquals(new Map([[1,2]]), new Map([[1,2]]))).to.be.true;
+      expect(deepEquals(new Map([[1,2]]), new Map([[1,2],[3,4]]))).to.be.false;
+      expect(deepEquals(new Map([[1,2],[3,4]]), new Map([[1,2]]))).to.be.false;
+      expect(deepEquals(new Map([[1,2],[3,4]]), new Map([[3,4],[1,2]]))).to.be.true;
+      const obj1 = {};
+      expect(deepEquals(new Map([[1,obj1],[map,2]]), new Map([[map,2],[1,obj1]]))).to.be.true;
+
+      // not same identity
+      expect(deepEquals(new Map([[1,{}]]), new Map([[1,{}]]))).to.be.false;
+    });
+
+    xit('infinite loop detection', () => {
+      
+    });
+
   });
 });
