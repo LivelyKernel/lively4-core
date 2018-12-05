@@ -93,8 +93,8 @@ export default function (babel) {
 
 	  		  function _tr_(id, exp) {
 	  			  var traceNode = _addTraceNode_(id)
-	  			  var value = exp()
             __tr_current__ = traceNode
+	  			  var value = exp()
             traceNode.value = value;
   	  			__tr_current__ = traceNode.parent
   	  			return value
