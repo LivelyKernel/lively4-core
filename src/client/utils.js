@@ -411,14 +411,74 @@ export function shallowEquals(obj1, obj2) {
 
 
 // deeply checks all properties for equality
-export function deepEquals(obj1, obj2) {
-  if (obj1 === obj2) { return true; }
-  if (obj1.size !== obj2.size) return false;
+export function deepEquals(objA, objB) {
   
-  for (let [key, value] of obj1.entries()) {
-    if (value !== obj2.get(key)) { return false; }
+  // objects that are already marked as compared
+  const comparedObjects = new Map(); // Map<Object, Set<Object>>
+  function ensureComparedObjectsFor(obj) {
+    if(!comparedObjects.has(obj)) {
+      comparedObjects.set(obj, new Set());
+    }
   }
+  function comparedObjectsHAS(obj, obj2) {
+    ensureComparedObjectsFor(obj);
+    return comparedObjects.get(obj).has(obj2);
+  }
+  function comparedObjectsADD(obj, obj2) {
+    ensureComparedObjectsFor(obj);
+    comparedObjects.get(obj).add(obj2);
+  }
+
+  function isAlreadyCompared(obj1, obj2) {
+    return comparedObjectsHAS(obj1, obj2) || comparedObjectsHAS(obj2, obj1);
+  }
+  function markAsAlreadyCompared(obj1, obj2) {
+    comparedObjectsADD(obj1, obj2);
+    comparedObjectsADD(obj2, obj1);
+  }
+
+  const objectsStillToCompare = [[objA,objB]];
   
+  let currentPair;
+  while(currentPair = objectsStillToCompare.pop()) {
+    let [obj1, obj2] = currentPair;
+    
+    // strict equality
+    if (obj1 === obj2) { continue; }
+
+    // only for object-like values
+    if (typeof obj1 !== "object" || !obj1 || typeof obj2 !== "object" || !obj2) {
+      return false;
+    }
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    // same number of keys
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+
+    const hasOwnProperty2 = Object.prototype.hasOwnProperty.bind(obj2);
+
+    // Test for A's keys different from B.
+    for (let index = 0; index < keys1.length; index++) {
+      const key = keys1[index];
+
+      if (!hasOwnProperty2(key)) {
+        return false;
+      }
+
+      const valueA = obj1[key];
+      const valueB = obj2[key];
+
+      if(!isAlreadyCompared(valueA, valueB)) {
+        markAsAlreadyCompared(valueA, valueB);
+        objectsStillToCompare.push([valueA, valueB]);
+      }
+    }
+  }
+
   return true;
 }
 
