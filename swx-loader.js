@@ -24,7 +24,9 @@ function getChromeVersion () {
 var postfix = ""
 
 // #TODO only while developing
-postfix += Date.now()
+// postfix += Date.now()
+
+postfix = "" // because 
 
 if (getChromeVersion() < 60) {
   console.log("disable SWX for now")
