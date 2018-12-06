@@ -129,3 +129,98 @@ describe('Base Active Expressions', () => {
     });
   });
 });
+
+describe('Configurable Comparison Function', () => {
+  describe('Identity as default for objects', () => {
+  });
+  // #TODO: other implementation strategies have to detect those changes
+  describe('Arrays as Data Structures', () => {
+    it('detects a newly pushed element', () => {
+      const spy = sinon.spy();
+      const arr = [1,2];
+      const aexpr = new BaseActiveExpression(() => arr).onChange(spy);
+
+      arr.push(42);
+      aexpr.checkAndNotify();
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(arr);
+    });
+    it('identity does not matter/arrays as value classes', () => {
+      const spy = sinon.spy();
+      let arr = [1,2];
+      const aexpr = new BaseActiveExpression(() => arr).onChange(spy);
+
+      arr = [1,2];
+      aexpr.checkAndNotify();
+
+      expect(spy).not.to.be.called;
+    });
+  });
+  describe('Sets as Data Structures', () => {
+    it('detects a newly added element', () => {
+      const spy = sinon.spy();
+      const set = new Set([1,2]);
+      const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+      set.add(42);
+      aexpr.checkAndNotify();
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(set);
+    });
+    it('identity does not matter/sets as value classes', () => {
+      const spy = sinon.spy();
+      let set = new Set([1,2]);
+      const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+      set = new Set([1,2]);
+      aexpr.checkAndNotify();
+
+      expect(spy).not.to.be.called;
+    });
+    it('order of insertion does not matter/set semantic', () => {
+      const spy = sinon.spy();
+      let set = new Set([1,2]);
+      const aexpr = new BaseActiveExpression(() => set).onChange(spy);
+
+      set = new Set([2,1]);
+      aexpr.checkAndNotify();
+
+      expect(spy).not.to.be.called;
+    });
+  });
+  describe('Maps as Data Structures', () => {
+    it('detects a newly added element', () => {
+      const spy = sinon.spy();
+      const map = new Map([[1,2]]);
+      const aexpr = new BaseActiveExpression(() => map).onChange(spy);
+
+      map.set(42, {});
+      aexpr.checkAndNotify();
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(map);
+    });
+    it('identity does not matter/maps as value classes', () => {
+      const spy = sinon.spy();
+      let map = new Map([[1,2]]);
+      const aexpr = new BaseActiveExpression(() => map).onChange(spy);
+
+      map = new Map([[1,2]]);
+      aexpr.checkAndNotify();
+
+      expect(spy).not.to.be.called;
+    });
+    it('order of insertion does not matter/map semantic', () => {
+      const spy = sinon.spy();
+      let map = new Map([[1,2],[3,4]]);
+      const aexpr = new BaseActiveExpression(() => map).onChange(spy);
+
+      map = new Map([[3,4],[1,2]]);
+      aexpr.checkAndNotify();
+
+      expect(spy).not.to.be.called;
+    });
+  });
+});
