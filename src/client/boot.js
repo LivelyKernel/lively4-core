@@ -34,9 +34,26 @@ if (!(localStorage["logLivelyBoot"] == "true")) {
   }
 }
 
+// localStorage["useTranspilationCache"]  = true
+self.lively4useTranspilationCache = localStorage["useTranspilationCache"]
+self.lively4transpilationCache = {
+  cache: new Map(),
+  update: new Set()} 
 
+var Dexie;
+var transpilationCacheDB
 
 async function invalidateFileCaches()  {
+  if (self.lively4useTranspilationCache) {
+    Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
+    console.log("I got Dexie!", Dexie)
+    transpilationCacheDB = new Dexie("transpilationCache");
+    transpilationCacheDB.version("1").stores({
+      transpilations: 'url, modified, version',
+    }).upgrade(function () {
+    })
+  }
+  
   try {
     if (!window.caches) {
       console.warn("window.caches not defined")
@@ -202,7 +219,7 @@ if (window.lively && window.lively4url) {
       groupedMessageEnd();
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
-          groupedMessage(1, 4, 'Invalidate Caches');
+          groupedMessage(1, 4, 'Invalidate Caches')
           await invalidateFileCaches()
           groupedMessageEnd();
 
@@ -221,6 +238,30 @@ if (window.lively && window.lively4url) {
 
           console.log("Finally loaded!");
 
+          
+          if (self.lively4useTranspilationCache) {
+            console.log("UPDATE Transpilateion Cache")
+            transpilationCacheDB.transaction("rw", transpilationCacheDB.cache, () => {
+              debugger
+              console.log("UPDATE WRITE Transpilateion Cache ")
+              for(var ea of lively4transpilationCache.update) {
+                console.log("update transpilation cache " + ea)
+                var cache = lively4transpilationCache.cache.get(ea)
+                if (cache) {
+                  transpilationCacheDB.transpilations.put({
+                    url: ea,
+                    input: cache.input,
+                    output: cache.output,
+                    map: JSON.stringify(cache.map),
+                    modified: null,
+                    version: null,
+                  })                 
+                } else {
+                  console.warn("TRANSPILATION cache not found even though it was in the update list... ", ea)
+                }
+              }
+            })
+          }
           
           if (window.lively4bootlogData) {
             System.import("src/client/bootlog.js").then(m => {

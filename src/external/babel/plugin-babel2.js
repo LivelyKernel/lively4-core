@@ -23,6 +23,12 @@ var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
 var useCacheAPI = true // #TODO refactor when we found a fast solution... 
 
+// 3. approach at caching this... after two have failed!
+var useCacheHack = self.lively4useTranspilationCache 
+self.lively4transpilationCache = self.lively4transpilationCache || {
+  cache: new Map(),
+  update: new Set()} // just to be sure
+
 // var diff = require('src/external/diff-match-patch.js').default;
 
 
@@ -111,6 +117,7 @@ function debugLog(...args) {
 
 
 exports.translate = async function(load, traceOpts) {
+  var cacheKey = load.name
   var key = "pluginBabelTransfrom_" + load.name.replace(/[^A-Za-z0-9 _\-./]/g, "_")
 
   debugLog("XXX2 plugin-babel transform " + DebugId, load.name)
@@ -242,8 +249,16 @@ exports.translate = async function(load, traceOpts) {
 
   }
   
-  
-  if (self.lively4plugincache && transformCache) {
+  if (useCacheHack) {
+    // now we get dirty... both indexDB and caches API are pretty slow... so fuck it, we hack around their limiations! Do you hear me chrome god, we are going to fuck with you!
+    // #Idea: preload everything into memory.... and bulk store the transpilation results after boot
+    var cached = self.lively4transpilationCache.cache.get(key)
+    if (cached) {
+      cachedInputCode = cached.input
+      cachedOutputCode = cached.output
+      cachedOutputMap = cached.map      
+    }
+  } else if (self.lively4plugincache && transformCache) {
     
     debugLog(`lively4plugincache ` + key);
     debugOnKey(key)
@@ -258,7 +273,7 @@ exports.translate = async function(load, traceOpts) {
       // debugLog(`storage 2`);
       // storage 2
       var loadCacheStart = performance.now()
-      let cached = await pluginBabelCache.files.get(key)
+      let cached = await pluginBabelCache.files.get(cacheKey)
       // debugLog("cache loaded in " + (performance.now() -loadCacheStart ) + "ms")
       if (cached) {
         cachedInputCode = cached.source
@@ -336,6 +351,7 @@ exports.translate = async function(load, traceOpts) {
       console.warn("no cachedOutputCode for " + key)
     }
   }
+
   // debugLog(`cached output = `, output);
   debugOnKey(key)
   if (!output) {
@@ -376,9 +392,15 @@ exports.translate = async function(load, traceOpts) {
       }
     });
 
-    // debugLog("output ", output)
-
-    if (self.lively4plugincache && transformCache) {
+    // debugLog("output ", output)  
+    if (useCacheHack) {
+        self.lively4transpilationCache.cache.set(cacheKey, {
+          input:load.source, 
+          output: output.code, 
+          map: output.map})
+        self.lively4transpilationCache.update.add(cacheKey)
+        
+    } else if (self.lively4plugincache && transformCache) {
 
       // storage 1      
       // self.localStorage[key] = output.code
