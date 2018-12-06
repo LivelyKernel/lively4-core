@@ -261,6 +261,45 @@ describe('Configurable Comparison Function', () => {
       });
     });
     
+    describe('custom comparator (explicit option)', () => {
+      const matchSecondProperty = {
+        compare(lastResult, newResult) {
+          return lastResult[1] === newResult[1];
+        },
+        store(newResult) { return [...newResult]; }
+      }
+      
+      it('array modification triggers callbacks', () => {
+        const spy = sinon.spy();
+        const arr = [1, 2];
+        const aexpr = new BaseActiveExpression(() => arr, { match: matchSecondProperty }).onChange(spy);
+
+        arr.push(42);
+        aexpr.checkAndNotify();
+
+        expect(spy).not.to.be.called;
+      });
+      
+      it('changing second property triggers callbacks', () => {
+        const spy = sinon.spy();
+        const arr = [1, 2];
+        const aexpr = new BaseActiveExpression(() => arr, { match: matchSecondProperty }).onChange(spy);
+
+        arr[1] = 3;
+        aexpr.checkAndNotify();
+
+        expect(spy).to.be.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(arr);
+        spy.reset()
+
+        arr.length = 1;
+        aexpr.checkAndNotify();
+
+        expect(spy).to.be.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal(arr);
+      });
+    });
+    
   });
   
   describe('Sets as Data Structures', () => {

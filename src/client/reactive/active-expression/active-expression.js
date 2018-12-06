@@ -216,16 +216,28 @@ export class BaseActiveExpression {
   }
   
   setupMatcher(matchConfig) {
+    // configure using existing matcher
     if(matchConfig && isString.call(matchConfig)) {
       if(!MATCHER_MAP.has(matchConfig)) {
-        
+        throw new Error(`No matcher of type '${matchConfig}' registered.`)
       }
       this.matcher = MATCHER_MAP.get(matchConfig);
-    } else {
-      this.matcher = DefaultMatcher;
+      return;
     }
+    
+    // configure using a custom matcher
+    if(typeof matchConfig === 'object') {
+      if(matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
+        this.matcher = matchConfig;
+        return;
+      }
+      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`)
+    }
+    
+    // use smart default matcher
+    this.matcher = DefaultMatcher;
   }
-  
+
   // #TODO: extract into CompareAndStore classes
   compareResults(lastResult, newResult) {
     return this.matcher.compare(lastResult, newResult);
