@@ -461,16 +461,42 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async boundEval(str) {
     // console.log("bound eval " + str)
-
-    // Ensure target module loaded (for .js files only)
-    // TODO: duplicate with var recorder plugin
-    const MODULE_MATCHER = /.js$/;
-    if(MODULE_MATCHER.test(this.getTargetModule())) {
-      await System.import(this.getTargetModule())
+    var targetModule = this.getTargetModule()
+    
+    if(targetModule.match(/.py$/)) {
+      return this.boundEvalPython(str)
     }
-    console.log("EVAL (CM)", this.getTargetModule());
+    // Ensure target module loaded (for .js files only)
+    if(targetModule.match(/.js$/)) {
+      await System.import(targetModule)
+    }
+    console.log("EVAL (CM)", targetModule);
     // src, topLevelVariables, thisReference, <- finalStatement
-    return boundEval(str, this.getDoitContext(), this.getTargetModule());
+    return boundEval(str, this.getDoitContext(), targetModule);
+  }
+  
+  async boundEvalPython(str) {
+    var result = ""
+    var xterm = document.querySelector("lively-xterm.python")
+    if (xterm) {
+      var term = xterm.term
+      term.__socket.addEventListener('message', function (event) {
+        result += event.data;
+      });
+      // how long do we want to wait?
+
+      term.__sendData(str + "\n")
+
+      while(!result.match(">>>")) {
+        // busy wait for the prompt
+        await lively.sleep(50) 
+      }
+      // strip input and prompt.... oh what a hack
+      return {value: result.replace(str,"").replace(/^[\r\n]+/,"").replace(/>>> $/,"")}     
+    } else {
+      lively.notify("no open python terminal session found")
+    }
+    return {value: ""}
   }
 
   printWidget(name) {
