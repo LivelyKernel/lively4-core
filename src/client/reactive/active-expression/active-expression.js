@@ -1,7 +1,7 @@
 import Annotations from 'src/client/reactive/utils/annotations.js';
 import CachingFetch from '../utils/caching-fetch.js';
 import CachingPromise from '../utils/caching-promise.js';
-import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap } from 'utils';
+import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals, isString, clone, cloneDeep } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
@@ -41,6 +41,83 @@ function resolveValue(value, func) {
   }
 }
 
+class DefaultMatcher {
+  static compare(lastResult, newResult) {
+    // array
+    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+      return shallowEqualsArray(lastResult, newResult);
+    }
+    
+    // set
+    if(lastResult instanceof Set && newResult instanceof Set) {
+      return shallowEqualsSet(lastResult, newResult);
+    }
+
+    // map
+    if(lastResult instanceof Map && newResult instanceof Map) {
+      return shallowEqualsMap(lastResult, newResult);
+    }
+
+    return lastResult === newResult;
+  }
+  
+  static store(result) {
+    // array
+    if(Array.isArray(result)) {
+      return Array.prototype.slice.call(result);
+    }
+    
+    // set
+    if(result instanceof Set) {
+      return new Set(result);
+    }
+    
+    // map
+    if(result instanceof Map) {
+      return new Map(result);
+    }
+    
+    return result;
+  }
+}
+
+class IdentityMatcher {
+  static compare(lastResult, newResult) {
+    return lastResult === newResult;
+  }
+  
+  static store(result) {
+    return result;
+  }
+}
+
+class ShallowMatcher {
+  static compare(lastResult, newResult) {
+    return shallowEquals(lastResult, newResult) ;
+  }
+  
+  static store(result) {
+    return clone.call(result);
+  }
+}
+
+class DeepMatcher {
+  static compare(lastResult, newResult) {
+    return deepEquals(lastResult, newResult);
+  }
+  
+  static store(result) {
+    return cloneDeep.call(result);
+  }
+}
+
+const MATCHER_MAP = new Map([
+  ['default', DefaultMatcher],
+  ['identity', IdentityMatcher],
+  ['shallow', ShallowMatcher],
+  ['deep', DeepMatcher]
+])
+
 export class BaseActiveExpression {
 
   /**
@@ -48,7 +125,7 @@ export class BaseActiveExpression {
    * @param func (Function) the expression to be observed
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [] } = {}) {
+  constructor(func, { params = [], match } = {}) {
     this.func = func;
     this.params = params;
     this.cachingFetch = new CachingFetch();
@@ -57,6 +134,7 @@ export class BaseActiveExpression {
     if(isPromise(currentValue)) {
       this.isAsync = true;
     }
+    this.setupMatcher(match);
     resolveValue(currentValue, (value) => {
       this.storeResult(value);
     })
@@ -77,7 +155,7 @@ export class BaseActiveExpression {
 
   /**
    * Executes the encapsulated expression with the given parameters.
-   * aliases with 'now'
+   * aliases with 'now' (#TODO: caution, consider ambigous terminology: 'now' as in 'give me the value' or as in 'nowAndOnChange'?)
    * @public
    * @returns {*} the current value of the expression
    */
@@ -137,8 +215,33 @@ export class BaseActiveExpression {
     });
   }
   
+  setupMatcher(matchConfig) {
+    // configure using existing matcher
+    if(matchConfig && isString.call(matchConfig)) {
+      if(!MATCHER_MAP.has(matchConfig)) {
+        throw new Error(`No matcher of type '${matchConfig}' registered.`)
+      }
+      this.matcher = MATCHER_MAP.get(matchConfig);
+      return;
+    }
+    
+    // configure using a custom matcher
+    if(typeof matchConfig === 'object') {
+      if(matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
+        this.matcher = matchConfig;
+        return;
+      }
+      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`)
+    }
+    
+    // use smart default matcher
+    this.matcher = DefaultMatcher;
+  }
+
   // #TODO: extract into CompareAndStore classes
   compareResults(lastResult, newResult) {
+    return this.matcher.compare(lastResult, newResult);
+    
     // array
     if(Array.isArray(lastResult) && Array.isArray(newResult)) {
       return shallowEqualsArray(lastResult, newResult);
@@ -158,6 +261,9 @@ export class BaseActiveExpression {
   }
   
   storeResult(result) {
+    this.lastValue = this.matcher.store(result);
+    return;
+    
     // array
     if(Array.isArray(result)) {
       this.lastValue = Array.prototype.slice.call(result)
