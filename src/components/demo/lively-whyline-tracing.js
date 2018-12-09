@@ -28,10 +28,6 @@ export default class ExecutionTrace {
   traceEndNode(id){
     this.parentNode = this.parentNode.parent
   }
-  
-  traceLogNode(id){
-    this.newTraceNode(id)
-  }
 }
 
 class TraceNode {

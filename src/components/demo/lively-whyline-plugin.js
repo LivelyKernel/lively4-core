@@ -3,7 +3,6 @@ import TraceNode from 'src/components/demo/lively-whyline-tracing.js'
 
 var expressions
 var statements
-var declarations
 var declarators
 var assignments
 var functions
@@ -28,7 +27,6 @@ export default function (babel) {
 
         expressions = []
         statements = []
-        declarations = []
         declarators = []
         assignments = []
         functions = []
@@ -83,22 +81,6 @@ export default function (babel) {
           var _tr_time = performance.now();
           var _tr_time_max = 1000;
 
-	  		  function _tr_(id, exp) {
-	  			  return __trace__.traceNode(id, exp)
-    	  	};
-    	  	
-    	  	function _tr_log_(id) {
-            __trace__.traceLogNode(id)
-    	  	};
-    	  	
-    	  	function _tr_begin_(id) {
-            __trace__.traceBeginNode(id)
-    	  	};
-    	  	
-    	  	function _tr_end_(id) {
-  	  			__trace__.traceEndNode(id)
-    	  	};
-
     	  	__tr_ast__.calltrace = __trace__.traceRoot
           __tr_ast__.executionTrace = __trace__
 
@@ -144,7 +126,7 @@ export default function (babel) {
 
         functions.forEach(ea => {
           var body = ea.get('body');
-          body.replaceWith(template("{ return _tr_( NODEIDX , () => BLOCK)}")({
+          body.replaceWith(template("{ return __trace__.traceNode( NODEIDX , () => BLOCK)}")({
             NODEIDX: t.numericLiteral(ea.node.traceid), BLOCK: body}))
         });
 
