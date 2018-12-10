@@ -9,7 +9,6 @@ import Strings from 'src/client/strings.js'
  * Kitchensink for all HTML manipulation utilities
  */
 
-
 class KeyboardHandler {
   
   // Generic Keyboad handler to get rid of the magic keycode numbers 
