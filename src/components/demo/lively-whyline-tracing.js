@@ -1,6 +1,36 @@
 
 
-export default class TraceNode {
+export default class ExecutionTrace {
+  constructor(astRootNode){
+    this.astRoot = astRootNode
+    this.nodeMap = astRootNode.node_map
+    this.traceRoot = this.newTraceNode(astRootNode.traceid)
+    this.parentNode = this.traceRoot
+  }
+  
+  newTraceNode(astNodeId){
+    return new TraceNode(this.nodeMap[astNodeId], this.parentNode)
+  }
+  
+  traceNode(id, exp){
+    var traceNode = this.newTraceNode(id)
+    this.parentNode = traceNode
+    var value = exp()
+    traceNode.value = value;
+    this.parentNode = traceNode.parent
+    return value
+  }
+  
+  traceBeginNode(id){
+    this.parentNode = this.newTraceNode(id)
+  }
+  
+  traceEndNode(id){
+    this.parentNode = this.parentNode.parent
+  }
+}
+
+class TraceNode {
   constructor(astNode, parent){
     this.children = []
     this.astNode = astNode
@@ -27,4 +57,4 @@ export default class TraceNode {
   }
 }
 
-window.lively4TraceNode = TraceNode
+window.lively4ExecutionTrace = ExecutionTrace
