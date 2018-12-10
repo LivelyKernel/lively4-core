@@ -355,12 +355,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       // #KeyboardShortcut Alt-C capitalize letter
       // #copied from keymap/emacs.js
       "Alt-C": repeated(function(cm) {
-      operateOnWord(cm, function(w) {
-        var letter = w.search(/\w/);
-        if (letter == -1) return w;
-        return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
-      });
-    }),
+        operateOnWord(cm, function(w) {
+          var letter = w.search(/\w/);
+          if (letter == -1) return w;
+          return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
+        });
+      }),
     });
     editor.on("cursorActivity", cm => {
       this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
