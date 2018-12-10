@@ -1,5 +1,5 @@
 "enable aexpr";
-import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'src/client/reactive/misc/equality.js';
+import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'src/client/reactive/utils/equality.js';
 
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';

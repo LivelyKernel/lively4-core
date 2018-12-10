@@ -1,7 +1,7 @@
 import Annotations from '../utils/annotations.js';
 import CachingFetch from '../utils/caching-fetch.js';
 import CachingPromise from '../utils/caching-promise.js';
-import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../misc/equality.js';
+import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
 // TODO: this is use to keep SystemJS from messing up scoping
