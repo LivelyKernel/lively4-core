@@ -171,7 +171,6 @@ class DependencyAPI {
     const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
 
     const globals = [];
-    lively.notify(compKeys.length)
     compKeys.forEach(compKey => {
       const [ object, name ] = CompositeKey.keysFor(compKey);
       if(object === self) {
@@ -201,44 +200,8 @@ function checkAndNotifyAExprs(aexprs) {
 
 function checkDependentAExprs(obj, prop) {
     const aexprs = aexprStorage.getAExprsFor(obj, prop);
-    transactionContext.tryToTrigger(obj, aexprs);
+    checkAndNotifyAExprs(aexprs);
 }
-
-class TransactionContext {
-    constructor() {
-        this.suppressed = new Map();
-    }
-  
-    retain(obj) {
-        if(!this.suppressed.has(obj))
-            this.suppressed.set(obj, {count:1, aexprs: new Set()});
-        else
-            ++this.suppressed.get(obj).count;
-    }
-  
-    release(obj) {
-        const supressed = this.suppressed.get(obj);
-        if(!supressed)
-            console.error('Tried to release object which is not supressed');
-        if(supressed.count == 1) {
-            checkAndNotifyAExprs(supressed.aexprs);
-            this.suppressed.delete(obj);
-        }
-        --supressed.count;
-    }
-  
-    tryToTrigger(obj, aexprs) {
-        const supressed = this.suppressed.get(obj);
-        if(supressed) {
-            aexprs.forEach(aexpr => {
-                supressed.aexprs.add(aexpr);
-            });
-        } else {
-          checkAndNotifyAExprs(aexprs);
-        }
-    }
-}
-const transactionContext = new TransactionContext();
 
 /*
  * Disconnects all associations between active expressions and object properties
@@ -266,9 +229,7 @@ export function getMember(obj, prop) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);
     }
-    transactionContext.retain(obj);
     const result = obj[prop];
-    transactionContext.release(obj);
     return result;
 }
 
@@ -276,121 +237,91 @@ export function getAndCallMember(obj, prop, args = []) {
     if(expressionAnalysisMode) {
         aexprStorage.associate(aexprStack.top(), obj, prop);
     }
-    transactionContext.retain(obj);
     const result = obj[prop](...args);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMember(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] = val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberAddition(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] += val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberSubtraction(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] -= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberMultiplication(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] *= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberDivision(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] /= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberRemainder(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] %= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberExponentiation(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] **= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberLeftShift(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] <<= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberRightShift(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] >>= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberUnsignedRightShift(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] >>>= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseAND(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] &= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseXOR(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] ^= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function setMemberBitwiseOR(obj, prop, val) {
-    transactionContext.retain(obj);
     const result = obj[prop] |= val;
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
 export function deleteMember(obj, prop) {
-    transactionContext.retain(obj);
     const result = delete obj[prop];
     checkDependentAExprs(obj, prop);
-    transactionContext.release(obj);
     return result;
 }
 
