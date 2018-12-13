@@ -115,8 +115,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
 
   dispose() {
     super.dispose();
-    aexprStorage.disconnectAll(this);
-    aexprStorageForLocals.disconnectAll(this);
+    DependencyManager.disconnectAllFor(this);
   }
   
   supportsDependencies() {
@@ -189,18 +188,55 @@ export function aexpr(func, ...args) {
     return new RewritingActiveExpression(func, ...args);
 }
 
-function checkAndNotifyAExprs(aexprs) {
-    aexprs.forEach(aexpr => {
-        aexprStorage.disconnectAll(aexpr);
-        aexprStorageForLocals.disconnectAll(aexpr);
-        ExpressionAnalysis.check(aexpr);
-    });
-    aexprs.forEach(aexpr => aexpr.checkAndNotify());
-}
+const globalRef = typeof window !== "undefined" ? window : // browser tab
+    (typeof self !== "undefined" ? self : // web worker
+        global); // node.js
 
-function checkDependentAExprs(obj, prop) {
+class DependencyManager {
+  static get currentAExpr() {
+    return aexprStack.top();
+  }
+  
+  static disconnectAllFor(aexpr) {
+    aexprStorage.disconnectAll(aexpr);
+    aexprStorageForLocals.disconnectAll(aexpr);
+  }
+  
+  static associateMember(obj, prop) {
+    aexprStorage.associate(this.currentAExpr, obj, prop);
+  }
+  
+  static associateGlobal(globalName) {
+    this.associateMember(globalRef, globalName);
+  }
+  
+  static associateLocal(scope, varName) {
+    aexprStorageForLocals.associate(this.currentAExpr, scope, varName);
+  }
+
+  static memberUpdated(obj, prop) {
     const aexprs = aexprStorage.getAExprsFor(obj, prop);
-    checkAndNotifyAExprs(aexprs);
+    this.checkAndNotifyAExprs(aexprs);
+  }
+
+  static globalUpdated(globalName) {
+    this.memberUpdated(globalRef, globalName);
+  }
+
+  static localUpdated(scope, varName) {
+    const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
+    this.checkAndNotifyAExprs(affectedAExprs);
+  }
+
+  // #TODO, #REFACTOR: extract into configurable dispatcher class
+  static checkAndNotifyAExprs(aexprs) {
+      aexprs.forEach(aexpr => {
+          this.disconnectAllFor(aexpr);
+          ExpressionAnalysis.check(aexpr);
+      });
+      aexprs.forEach(aexpr => aexpr.checkAndNotify());
+  }
+
 }
 
 /*
@@ -221,13 +257,13 @@ export function reset() {
  */
 export function traceMember(obj, prop) {
     if(expressionAnalysisMode) {
-        aexprStorage.associate(aexprStack.top(), obj, prop);
+      DependencyManager.associateMember(obj, prop);
     }
 }
 
 export function getMember(obj, prop) {
     if(expressionAnalysisMode) {
-        aexprStorage.associate(aexprStack.top(), obj, prop);
+      DependencyManager.associateMember(obj, prop);
     }
     const result = obj[prop];
     return result;
@@ -235,7 +271,7 @@ export function getMember(obj, prop) {
 
 export function getAndCallMember(obj, prop, args = []) {
     if(expressionAnalysisMode) {
-        aexprStorage.associate(aexprStack.top(), obj, prop);
+      DependencyManager.associateMember(obj, prop);
     }
     const result = obj[prop](...args);
     return result;
@@ -243,112 +279,107 @@ export function getAndCallMember(obj, prop, args = []) {
 
 export function setMember(obj, prop, val) {
     const result = obj[prop] = val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberAddition(obj, prop, val) {
     const result = obj[prop] += val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberSubtraction(obj, prop, val) {
     const result = obj[prop] -= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberMultiplication(obj, prop, val) {
     const result = obj[prop] *= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberDivision(obj, prop, val) {
     const result = obj[prop] /= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberRemainder(obj, prop, val) {
     const result = obj[prop] %= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberExponentiation(obj, prop, val) {
     const result = obj[prop] **= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberLeftShift(obj, prop, val) {
     const result = obj[prop] <<= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberRightShift(obj, prop, val) {
     const result = obj[prop] >>= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberUnsignedRightShift(obj, prop, val) {
     const result = obj[prop] >>>= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberBitwiseAND(obj, prop, val) {
     const result = obj[prop] &= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberBitwiseXOR(obj, prop, val) {
     const result = obj[prop] ^= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function setMemberBitwiseOR(obj, prop, val) {
     const result = obj[prop] |= val;
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function deleteMember(obj, prop) {
     const result = delete obj[prop];
-    checkDependentAExprs(obj, prop);
+    DependencyManager.memberUpdated(obj, prop);
     return result;
 }
 
 export function getLocal(scope, varName, value) {
   if(expressionAnalysisMode) {
     scope[varName] = value;
-    aexprStorageForLocals.associate(aexprStack.top(), scope, varName);
+    DependencyManager.associateLocal(scope, varName);
   }
 }
 
 export function setLocal(scope, varName, value) {
     scope[varName] = value;
-    const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
-    checkAndNotifyAExprs(affectedAExprs);
+    DependencyManager.localUpdated(scope, varName);
 }
-
-const globalRef = typeof window !== "undefined" ? window : // browser tab
-    (typeof self !== "undefined" ? self : // web worker
-        global); // node.js
 
 export function getGlobal(globalName) {
     if(expressionAnalysisMode) {
-        aexprStorage.associate(aexprStack.top(), globalRef, globalName);
+        DependencyManager.associateGlobal(globalName);
     }
 }
 export function setGlobal(globalName) {
-    checkDependentAExprs(globalRef, globalName);
+    DependencyManager.globalUpdated(globalName);
 }
 
 export default aexpr;
