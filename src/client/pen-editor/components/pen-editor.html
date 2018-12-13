@@ -2,15 +2,20 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  
+:host(*) {
+  overflow-y: auto;
 }
 #canvasSimple {
    width="490px";
    height="220px";
 }
+  #ast {
+    border: 1px black dashed;
+  }
 </style>
-                                             
+<div id="ast">
+  
+  </div>
 <h1 id="caption">WritePad Handwriting Recognition2</h1>
 
 <label for="language">Recognition Language: </label><select id="language">

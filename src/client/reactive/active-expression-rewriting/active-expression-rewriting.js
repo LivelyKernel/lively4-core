@@ -22,7 +22,6 @@ class ExpressionAnalysis {
   }
 }
 
-      // throw new Error ("WOW")
 import CompositeKey from './composite-key.js';
 
 class HookStorage {

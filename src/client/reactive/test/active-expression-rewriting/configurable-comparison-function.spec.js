@@ -30,7 +30,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => arr).onChange(spy);
 
       arr = [1,2];
-      expr.checkAndNotify();
 
       expect(spy).not.to.be.called;
     });
@@ -42,8 +41,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'identity' }).onChange(spy);
 
         arr.push(42);
-        expr.checkAndNotify();
-
+  
         expect(spy).not.to.be.called;
       });
       it('identity changes matter', () => {
@@ -52,8 +50,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'identity' }).onChange(spy);
 
         arr = [1,2];
-        expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -67,7 +64,7 @@ describe('Configurable Comparison Function', () => {
 
         arr.push(42);
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -77,8 +74,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'shallow' }).onChange(spy);
 
         arr = [1,2];
-        expr.checkAndNotify();
-
+  
         expect(spy).not.to.be.called;
       });
     });
@@ -91,7 +87,7 @@ describe('Configurable Comparison Function', () => {
 
         arr.push(42);
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -101,8 +97,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'deep' }).onChange(spy);
 
         arr = [1, { x: 4 }];
-        expr.checkAndNotify();
-
+  
         expect(spy).not.to.be.called;
       });
       it('nested property identity changes do not trigger1', () => {
@@ -111,8 +106,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'deep' }).onChange(spy);
 
         arr[1] = { x: 4 };
-        expr.checkAndNotify();
-
+  
         expect(spy).not.to.be.called;
       });
       it('nested property changes trigger', () => {
@@ -122,7 +116,7 @@ describe('Configurable Comparison Function', () => {
 
         arr[1] = { x: 5};
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -133,7 +127,7 @@ describe('Configurable Comparison Function', () => {
 
         arr[1].x = 5;
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -153,8 +147,7 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: matchSecondProperty }).onChange(spy);
 
         arr.push(42);
-        expr.checkAndNotify();
-
+  
         expect(spy).not.to.be.called;
       });
       
@@ -165,14 +158,14 @@ describe('Configurable Comparison Function', () => {
 
         arr[1] = 3;
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
         spy.reset()
 
         arr.length = 1;
         expr.checkAndNotify();
-
+  
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
       });
@@ -198,7 +191,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => set).onChange(spy);
 
       set = new Set([1,2]);
-      expr.checkAndNotify();
 
       expect(spy).not.to.be.called;
     });
@@ -208,13 +200,12 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => set).onChange(spy);
 
       set = new Set([2,1]);
-      expr.checkAndNotify();
 
       expect(spy).not.to.be.called;
     });
   });
   describe('Maps as Data Structures', () => {
-    it('detects a newly added element', () => {
+    it('detects a newly added element (maps)', () => {
       const spy = sinon.spy();
       const map = new Map([[1,2]]);
       const expr = aexpr(() => map).onChange(spy);
@@ -231,7 +222,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => map).onChange(spy);
 
       map = new Map([[1,2]]);
-      expr.checkAndNotify();
 
       expect(spy).not.to.be.called;
     });
@@ -241,7 +231,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => map).onChange(spy);
 
       map = new Map([[3,4],[1,2]]);
-      expr.checkAndNotify();
 
       expect(spy).not.to.be.called;
     });
