@@ -37,6 +37,11 @@ export default class LivelyXterm extends Morph {
     if (!this.url) {
       this.url = lively.preferences.get("PiTerminalURL")
     }
+    
+    if (!this.cwd) {
+      this.cwd = lively.preferences.get("PiTerminalCWD")
+    }
+
     await this.open()
     if (force || !this.session) {
       await this.newSession()
@@ -61,6 +66,8 @@ export default class LivelyXterm extends Morph {
             ["reconnect", () => this.reconnect()],
             ["python shell", () => this.startPython()],
             ["change terminal url", () => this.changeTerminalURL()],
+            ["change terminal key", () => this.changeTerminalSecret()],
+            ["change terminal working directory", () => this.changeTerminalCWD()],
           ]);
       menu.openIn(document.body, evt, this);
       return true;
@@ -68,8 +75,7 @@ export default class LivelyXterm extends Morph {
   }
   
   async reconnect() {
-    await this.newSession()
-    await this.connectSession()
+    this.setup(true)
   }
 
   async changeTerminalURL() {
@@ -84,14 +90,45 @@ export default class LivelyXterm extends Morph {
       this.term.focus()
     }
   }
-
   
+  async changeTerminalSecret() {
+    var defaultValue = lively.preferences.get("PiTerminalSecret") || ""
+    var newValue = await lively.prompt("set new PiTerminal Secret", defaultValue)
+    if (newValue) {
+      lively.preferences.set("PiTerminalSecret", newValue)
+      await this.setup(true)
+      this.term.focus()
+    }
+  }
+  
+  
+  async changeTerminalCWD() {
+    var defaultValue = lively.preferences.get("PiTerminalCWD") || ""
+    var newValue = await lively.prompt("set new PiTerminal working directory", defaultValue)
+    if (newValue) {
+      lively.preferences.set("PiTerminalCWD", newValue)
+      this.cwd = newValue
+      lively.notify("new termianl cwd: " + newValue)
+      
+      await this.setup(true)
+      this.term.focus()
+    }
+  }
+
   get url() {
     return this.getAttribute("url")
   }
   
   set url(s) {
     return this.setAttribute("url", s)
+  }
+
+  get cwd() {
+    return this.getAttribute("cwd")
+  }
+  
+  set cwd(s) {
+    return this.setAttribute("cwd", s)
   }
 
   get session() {
@@ -114,9 +151,13 @@ export default class LivelyXterm extends Morph {
   }
 
   async newSession() {
+    var secret  = lively.preferences.get("PiTerminalSecret")
+    
     var session  = await fetch(`${this.url.replace(/\/$/,"")}/create?cols=88&rows=24`, {
       method: "POST", 
       headers: {
+        secret: secret,
+        cwd: this.cwd,
       }
     }).then(r => r.text()) 
     
