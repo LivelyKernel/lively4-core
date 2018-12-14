@@ -4,7 +4,8 @@ export default class PenEditor extends Morph {
   get livelyPaper() { return this.get('#drawingCanvas'); }
   get resultText() { return this.get("#result"); }
   get dynButtons() { return this.get("#dynbuttons"); }
-
+  get ast() { return this.get('#ast'); }
+  
   initialize() {
     this.windowTitle = "Pen-based Editor";
     this.registerButtons();
@@ -13,6 +14,14 @@ export default class PenEditor extends Morph {
     
     // #TODO: was this specifically created for the writepad demo?
     this.addEventListener("execHandwritingRecognition", () => this.save());
+    
+    this.buildMockAST();
+  }
+  
+  async buildMockAST() {
+    var astNode = await (<generic-ast-node></generic-ast-node>)
+    await astNode.livelyExample()
+    this.ast.appendChild(astNode);
   }
   
   onClearText() { this.resultText.innerHTML = ""; }
