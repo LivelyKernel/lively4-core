@@ -93,7 +93,10 @@ export default class LivelyXterm extends Morph {
   }
 
   async newSession() {
-    this.session  = await fetch(`http://${this.host}:${this.port}/terminals?cols=88&rows=24`, {
+    // this.session  = await fetch(`http://${this.host}:${this.port}/terminals?cols=88&rows=24`, {
+    
+    // this.session  = await fetch(`https://lively-kernel.org/boardpi_term/create?cols=88&rows=24`, {
+    this.session  = await fetch(`https://lively-kernel.org/sensorpi_term/create?cols=88&rows=24`, {
       method: "POST", 
       headers: {
       }
@@ -101,7 +104,10 @@ export default class LivelyXterm extends Morph {
   }
   
   async connectSession() {
-    var socketURL = `ws://${this.host}:${this.port}/terminals/${this.session}`
+    //var socketURL = `ws://${this.host}:${this.port}/terminals/${this.session}`
+    
+    var socketURL = `wss://lively-kernel.org/sensorpi_termWS/terminal/${this.session}`
+    // var socketURL = `wss://lively-kernel.org/boardpi_termWS/terminal/${this.session}`
     this.socket = new WebSocket(socketURL)
     attach(this.term, this.socket, true)
   }
