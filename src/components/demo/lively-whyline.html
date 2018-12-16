@@ -1,7 +1,7 @@
 <template id="lively-whyline" data-class="LivelyWhyline">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
-  <style>
+<style>
   :host {
     width: 50px;
     height: 25px;
@@ -16,6 +16,21 @@
     border: 1px gray solid;
   }
 
+  #firstRow, #secondRow, #thirdRow {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+  }
+  
+  #firstColumn, #secondColumn {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #firstColumn {
+    flex: 0.666;
+  }
+
   #runtimePane, #objectsPane {
      border-left: 2px gray solid;
   }
@@ -23,13 +38,7 @@
   #runtimePane {
     overflow: auto;
   }
-
-  #firstRow, #secondRow, #thirdRow {
-    display: flex;
-    flex-direction: rows;
-    flex: 0.5;
-  }
-  
+    
   #sourcePane {
     flex: 1;
   }
@@ -59,7 +68,6 @@
   lively-code-editor {
     flex: 1;
   }
-
   
   lively-inspector {
     flex: 1;
@@ -88,8 +96,6 @@
     patting-bottom: 10px;
     padding-right: 10px;
     padding-left: 10px;
-
-
 
     /*
       background-color: rgba(0,0,255,0.1);
@@ -131,46 +137,51 @@
   #traceView {
     width: max-content;
   }
-  </style>
+
+</style>
   <div id="buttonRow" class="fill">
     <button id="generateTrace" title="generate trace from code">
         <i class="fa fa-refresh" aria-hidden="true"></i>
     </button>
   </div>
-    
-  <div id="firstRow">
-    <div id="sourcePane">
-      <lively-code-editor  id="source" ></lively-code-editor>
-    </div>
-          <canvas id="canvas" width="0px" height="0px"></canvas>
-  </div>
-  
-<!--   <lively-separator></lively-separator>
-  
-  <div id="secondRow">
-    <div id="tracePane">
-      <lively-inspector id="traceInspector" type="ast"></lively-inspector>
-    </div>
-    
-    <lively-separator></lively-separator>
-    
-    <div id="runtimePane">
-      <canvas id="canvas" width="300px" height="300px"></canvas>
-      <pre id="log"></pre>
-    </div>
-  </div>
-   -->
-  <lively-separator></lively-separator>
-  
-  <div id="secondRow">
-    <div id="traceViewPane">
-      <div id="traceView"></div>
-    </div>
-    <lively-separator></lively-separator>
-    <div id="objectInspectorPane">
-      <div id="objectInspector"></div>
-    </div>
-  </div>
 
+  <div id="firstRow">
+    <div id="firstColumn">
+      <div id="sourcePane">
+        <lively-code-editor id="source"></lively-code-editor>
+        <canvas id="canvas" width="0px" height="0px"></canvas>
+      </div>    
+      <lively-separator></lively-separator>
+      <div id="traceViewPane">
+        <div id="traceView"></div>
+      </div>
+    </div>
+
+  <!--   <lively-separator></lively-separator>
+
+    <div id="secondRow">
+      <div id="tracePane">
+        <lively-inspector id="traceInspector" type="ast"></lively-inspector>
+      </div>
+
+      <lively-separator></lively-separator>
+
+      <div id="runtimePane">
+        <canvas id="canvas" width="300px" height="300px"></canvas>
+        <pre id="log"></pre>
+      </div>
+    </div>
+     -->
+    <lively-separator></lively-separator>
+
+    <div id="secondColumn">
+      <div id="objectInspectorPane">
+        <!--
+          <lively-inspectory id="objectInspector"></lively-inspectory>
+        -->
+      </div>
+    </div>
+  </div>
 </template>
+
 <script class="registrationScript">lively.registerTemplate()</script>

@@ -59,8 +59,8 @@ export default class Whyline extends Morph {
     }
   }
   
-  selectCallTraceNode(node) {
-    let controlFlow = node.whyWasThisStatementExecuted()
+  selectCallTraceNode(traceNode) {
+    let controlFlow = traceNode.predecessor()
     this.selectedNode = controlFlow
     if (this.selectedNode.markId) {
       this.showMarker(this.selectedNode.markId)
@@ -120,7 +120,7 @@ export default class Whyline extends Morph {
     }
     if (window.__tr_last_ast__)   {
       this.ast = window.__tr_last_ast__
-      this.clearCodeAnnotations()
+      this.clearCodeMarkings()
       this.traceRoot = this.ast.calltrace
 
       this.markCallTree(this.traceRoot)
@@ -184,52 +184,58 @@ export default class Whyline extends Morph {
     return 200
   }
 
-  printTraceNode(parentElement, call) {
-    if (call.id > this.maxCallId) return
-    
+  printTraceNode(parentElement, traceNode) {
+    if (traceNode.id > this.maxCallId) return
+
     var nodeElement = document.createElement("div");
     nodeElement.setAttribute("class", "traceNode")
 
-    var label = this.nodeToString(call);
+    var label = this.nodeToString(traceNode);
 
     nodeElement.innerHTML = "<div class='traceLabel'> " + label +"</div>"
-    nodeElement.setAttribute("title", "" + call.astNode.type)
+    nodeElement.setAttribute("title", "" + traceNode.astNode.type)
 
-    nodeElement.id = call.markId
+    nodeElement.id = traceNode.markId
     nodeElement.addEventListener("click", (evt) => {
-      this.selectCallTraceNode(call)
+      this.selectCallTraceNode(traceNode)
       evt.stopPropagation()
     })
 
     parentElement.appendChild(nodeElement)
-    call.children.forEach( ea => {
+    traceNode.children.forEach( ea => {
       this.printTraceNode(nodeElement, ea)
     })
   }
 
-  markCallTree(call) {
-    var ast_node = call.astNode
-
-    if (ast_node && ast_node.start && ast_node.end) {
-      if (!call.markId) call.markId = 'tracemark' + this.lastMarkCounter++
-
-      var editor = this.editor()
-      editor.markText( 
-        {line: ast_node.loc.start.line - 1, ch: ast_node.loc.start.column}, 
-        {line: ast_node.loc.end.line - 1, ch: ast_node.loc.end.column}, 
-        {
-          isTraceMark: true,
-          className: "marked " +  call.markId,
-          css: "background-color: rgba(0,255,0,0.3)",
-          title: ast_node.type
-        })
-    } 
-    call.children.forEach(ea => {
+  markCallTree(traceNode) {
+    var astNode = traceNode.astNode
+    
+    if (!traceNode.markId) traceNode.markId = 'tracemark' + this.lastMarkCounter++
+    if (astNode) {
+      this.markSource(astNode, traceNode.markId)
+    }
+    
+    traceNode.children.forEach(ea => {
       this.markCallTree(ea)
     })
   }
+  
+  markSource(astNode, markId) {
+    let loc = astNode.loc
+    if (loc) {
+      this.editor().markText( 
+        {line: loc.start.line - 1, ch: loc.start.column},
+        {line: loc.end.line - 1, ch: loc.end.column},
+        {
+          isTraceMark: true,
+          className: "marked " + markId,
+          css: "background-color: rgba(0,255,0,0.3)",
+          title: astNode.type
+        })
+    }
+  }
 
-  clearCodeAnnotations() {
+  clearCodeMarkings() {
     this.lastMarkCounter = 0
     this.editor().getAllMarks()
       .filter(ea => ea.isTraceMark)
