@@ -62,7 +62,7 @@ export default class FileIndex {
     await this.updateTitleAndTags()
     await this.updateAllModuleSemantics()
     await this.updateAllLinks()
-    await this.updateAllLatestVersionHistories()
+    await this.updateAllVersions()
   }
   
   async updateTitleAndTags() {
@@ -166,18 +166,18 @@ export default class FileIndex {
     })
   }
       
-  async updateAllLatestVersionHistories() {
+  async updateAllVersions() {
      this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
         if (file.name && file.name.match(/\.js$/))
-          this.addLatestVersionHistory(file)
+          this.addVersion(file)
       })
     })
   }
   
-  async addLatestVersionHistory(file) {
+  async addVersion(file) {
     try {
       let response = await lively.files.loadVersions(file.url)
       let json = await response.json()
@@ -443,7 +443,7 @@ export default class FileIndex {
       
       if (file.name.match(/\.js$/)) {
         this.addModuleSemantics(file)
-        this.addLatestVersionHistory(file)
+        this.addVersion(file)
       }      
     }
     this.db.transaction("rw", this.db.files, () => { 

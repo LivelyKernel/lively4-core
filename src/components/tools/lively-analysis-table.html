@@ -2,16 +2,43 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  
-}
-#content {
-  background-color: gray;
-}
+  :host {}
+  #content {
+    background-color: none;
+  }
+  #lively-analysis-table {
+    border-collapse: collapse;
+    font-size: 80%;
+  }
+  #lively-analysis-table tr,
+  #lively-analysis-table td,
+  #lively-analysis-table th {
+    border: 1px solid gray;
+  }
+  #lively-analysis-table td,
+  #lively-analysis-table th {
+    padding: 4px 2px;
+    text-align: left;
+    max-width: 500px;
+    word-wrap:break-word;
+  }
+  #lively-analysis-table td:first-child,
+  #lively-analysis-table th:first-child {
+    display: none;
+  }
+  #lively-analysis-table th {
+    text-transform: capitalize;
+  }
+  .deadLink {
+    background-color:rgba(255, 0, 0, 0.25);
+  }
+  .aliveLink {
+    background-color:rgba(0, 255, 0, 0.15);
+  }
 </style>
 <div id="content">
 	<content>
-    <table id="table"></table>
+    <table id="lively-analysis-table"></table>
   </content>
 </div>
 </template>
