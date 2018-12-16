@@ -357,6 +357,8 @@ export default class ContextMenu {
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
+        ["Pi Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
+          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Chrome Service-Workers", async evt => {
           // does not work... security?
           // window.open("chrome://inspect/#service-workers")

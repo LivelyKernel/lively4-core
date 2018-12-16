@@ -1,4 +1,4 @@
-import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using } from 'utils';
+import { waitForDeepProperty, isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -67,11 +67,13 @@ describe('Dynamic type checks', function() {
   });
 });
 
+
 describe('Callable Object', () => {
   it('defines CallableObject', () => {
     expect(CallableObject).to.be.ok;
   });
 });
+
 
 // === Python's with statement
 describe('using', () => {
@@ -176,7 +178,6 @@ describe('using', () => {
     expect(contextManager2.__exit__).to.be.calledBefore(contextManager1.__exit__)
   });
 });
-
 
 
 describe('waitForDeepProperty', () => {

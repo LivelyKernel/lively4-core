@@ -1335,39 +1335,39 @@ export default class Container extends Morph {
       return this.getEditor().then(livelyEditor => {
         // console.log("[container] editFile got editor ")
 
-        var aceComp = livelyEditor.get('#editor');
+        var codeMirror = livelyEditor.get('#editor');
 
-        aceComp.addEventListener("change", evt => this.onTextChanged(evt))
+        codeMirror.addEventListener("change", evt => this.onTextChanged(evt))
 
         var url = this.getURL();
         livelyEditor.setURL(url);
         // console.log("[container] editFile setURL " + url)
-        if (aceComp.editor && aceComp.editor.session) {
-          aceComp.editor.session.setOptions({
+        if (codeMirror.editor && codeMirror.editor.session) {
+          codeMirror.editor.session.setOptions({
       			mode: "ace/mode/javascript",
           	tabSize: 2,
           	useSoftTabs: true
       		});
         }
-      	aceComp.changeModeForFile(url.pathname);
+      	codeMirror.changeModeForFile(url.pathname);
 
         // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
         livelyEditor.setText(this.sourceContent); // directly setting the source we got
 
-        if (aceComp.editor) {
-          if (!aceComp.tagName == "LIVELY-CODE-MIRROR") {
-            aceComp.editor.selection.moveCursorTo(0,0);
+        if (codeMirror.editor) {
+          if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {
+            codeMirror.editor.selection.moveCursorTo(0,0);
             var lineWidth = 100
-            aceComp.editor.session.setWrapLimit(lineWidth);
-            aceComp.editor.renderer.setPrintMarginColumn(lineWidth)
+            codeMirror.editor.session.setWrapLimit(lineWidth);
+            codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
           }
         }
 
         livelyEditor.lastVersion = this.lastVersion;
         this.showCancelAndSave();
 
-        if ((""+url).match(/\.js$/)) {
-          aceComp.setTargetModule("" + url); // for editing
+        if ((""+url).match(/\.((js)|(py))$/)) {
+          codeMirror.setTargetModule("" + url); // for editing
         }
         // livelyEditor.loadFile() // ALT: Load the file again?
       });
