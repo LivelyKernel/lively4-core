@@ -2,9 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from "src/external/d3.v5.js"
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
-import files from "src/client/fileindex.js"
+import FileIndex from "https://lively-kernel.org/lively4/lively4-analysis/src/client/fileindex-analysis.js"
 
 export default class LivelyAnalysis extends Morph {
   
@@ -16,82 +14,8 @@ export default class LivelyAnalysis extends Morph {
     
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt))
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-  }
-  
-  getData() {
-    if(!this.data) {
-      var exampleData = {
-        classes: [
-          {name: "ClassA"},
-          {name: "ClassB"},
-        ]
-      }
-      return exampleData
-    }
-    return this.data
-  }
-  
-  setData(files) {
-    var data = {}
-    for(var file in files) {
-      data = this.extractFunctionsAndClasses(file)
-    }
-    this.data = data
-  }
-  
-  parseSource(filename, source) {
-    try {
-      return babel.transform(source, {
-          babelrc: false,
-          plugins: [],
-          presets: [],
-          filename: filename,
-          sourceFileName: filename,
-          moduleIds: false,
-          sourceMaps: true,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-      }).ast
-    } catch(e) {
-      console.log('Error - could not parse: ' + filename)
-      return undefined
-    }
-  }
-  
-  extractFunctionsAndClasses(file) {
-    var ast = this.parseSource(file.url, file.content)
-    return this.parseFunctionsAndClasses(ast)
-  }
-  
-  parseFunctionsAndClasses(ast) {
-    var functions = []
-    var classes = []
-    babel.traverse(ast,{
-      Function(path) {
-        if (path.node.key) {
-          functions.push(path.node.key.name)
-        } else if (path.node.id) {
-          functions.push(path.node.id.name)
-        }
-      },
-      ClassDeclaration(path) {
-        if (path.node.id) {
-          classes.push(path.node.id.name)
-        }
-      }
-    })
-    return {functions, classes}
+    
+   this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
   }
   
   // this method is autmatically registered through the ``registerKeys`` method
@@ -100,8 +24,8 @@ export default class LivelyAnalysis extends Morph {
   }
   
   // this method is automatically registered as handler through ``registerButtons``
-  onFirstButton() {
-    lively.notify("hello")
+  onUpdateDirectory(evt) {
+    FileIndex.current().updateDirectory(lively4url + "/", true)
   }
 
   /* Lively-specific API */

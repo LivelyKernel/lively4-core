@@ -1,7 +1,7 @@
 /*
  * File Index for Static Analysis and Searching
  *
- * #TODO How do we get this a) into a web worker and b) trigger this for changed files
+ * #TODO How do we get this a) into a web worker and b) trigger this for changed files 
  * 
  */
 import Dexie from "src/external/dexie.js"
@@ -9,6 +9,8 @@ import Strings from "src/client/strings.js"
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 import * as cop from "src/client/ContextJS/src/contextjs.js";
+
+const FETCH_TIMEOUT = 5000
 
 export default class FileIndex {
 
@@ -42,10 +44,10 @@ export default class FileIndex {
     var db = new Dexie(this.name);
 
     db.version("1").stores({
-        files: 'url,name,type,version,modified,options,title,tags,*classes,*functions,*links',
+        files: 'url,name,type,version,modified,options,title,tags',
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
-        classes: '[name+url], name, url, size, *methods', 
+        classes: '[name+url], name, url, loc, start, end, superClass, *methods', 
         versions: '[commitId+class+method+url], class, method, date, action, user,  url, commitId'
     }).upgrade(function () {
     })
@@ -91,7 +93,7 @@ export default class FileIndex {
   async addModuleSemantics(file) {
     if (file.name && file.name.match(/\.js$/)) { 
       var result = this.extractModuleSemantics(file)
-      this.updateModule(file, result)
+      this.updateModule(file.url, result)
       this.updateClasses(file, result)
     }
   }
@@ -115,17 +117,20 @@ export default class FileIndex {
     })
   } 
 
-  async updateModule(file, semantics) {
+  async updateModule(fileUrl, semantics) {
     if (!semantics || !semantics.dependencies) {
       return
     }
-    var resolvedDependencies = new Array()
+    let resolvedDependencies = new Array()
     for(const dependency of semantics.dependencies) {
-      var resolvedDependency = await System.resolve(dependency, file.url)
-      resolvedDependencies.push(resolvedDependency)
+      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
+      resolvedDependencies.push({
+        url: resolvedDependency,
+        names: dependency.names
+      })
     }
-    var module = {
-      url: file.url,
+    let module = {
+      url: fileUrl,
       dependencies: resolvedDependencies
     }
     
@@ -143,15 +148,16 @@ export default class FileIndex {
       })
     })*/
     
-    this.db.transaction('rw', this.db.files, () => {
-      return this.db.files.where("type").equals("file").each(async(file) => {
-        await this.addLinks(file) 
+    this.db.transaction('rw', this.db.files, this.db.links, () => {
+      return this.db.files.where("type").equals("file").each((file) => {
+        this.addLinks(file) 
       })
     })
   }
   
   async addLinks(file) {
-    this.extractLinks(file).then(links => {
+    await this.db.links.where("url").equals(file.url).delete()
+    BrokenLinkAnalysis.extractLinks(file).then(links => {
       this.db.transaction("rw!", this.db.links, () => {
         if (links) {
           this.db.links.bulkPut(links)
@@ -159,72 +165,33 @@ export default class FileIndex {
       })
     })
   }
-  
- async extractLinks(file) {   
-    if (!file || !file.content) {
-      return [];
-    }
-    var links = new Array()
-    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\_\/\#\-[a-zA-Z0-9]*)?[#.?=%;a-z0-9]*)/g)
-    
-    if(!extractedLinks) {
-      return [];
-    }
-    for (const extractedLink of extractedLinks) {
-      var link = {
-        link: extractedLink,
-        location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
-        url: file.url,
-        status: await this.validateLink(extractedLink)
-      }
-      links.push(link)   
-    }
-   return links;
- }
-  
- async validateLink(link) { 
-  return await fetch(link, { 
-    method: "GET", 
-    mode: 'no-cors', 
-    redirect: "follow"
-  })
-  .then((response) => {
-    if (response.type === "basic") { // internal link
-      if (response.ok) {
-        return "alive"
-      } else {
-        return "dead"
-      } 
-    } else if (response.type === "opaque") { // external link
-      return "alive"
-    }
-  })
-  .catch((error) => {console.log(error, "Link: " + link); return "dead"})
-  }
-    
+      
   async updateAllLatestVersionHistories() {
      this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
-        if(file.name && file.name.match(/\.js$/))
-          this.addLatestVersionHistory(file.url)
+        if (file.name && file.name.match(/\.js$/))
+          this.addLatestVersionHistory(file)
       })
     })
   }
   
   async addLatestVersionHistory(file) {
-    let response = await lively.files.loadVersions(file.url)
-    let json = await response.json()
-    let versions = json.versions
-    
-    // consider latest two versions
-    if (!versions[0] || !versions[1]) return
-    var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
-    
-    this.db.transaction("rw", this.db.versions, () => {
-      this.db.versions.bulkPut(modifications)
-    })
+    try {
+      let response = await lively.files.loadVersions(file.url)
+      let json = await response.json()
+      let versions = json.versions
+
+      // consider latest two versions
+      if (!versions[0] || !versions[1]) return
+      var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
+      this.db.transaction("rw", this.db.versions, () => {
+        this.db.versions.bulkPut(modifications)
+      })
+    } catch(error) {
+      console.log(error, file.url)
+    }
   } 
   
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
@@ -244,8 +211,9 @@ export default class FileIndex {
     // classes
     for (let classLatest of latest.classes) {
       try {
-        let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name);    
-        if (!previousClass || (previousClass && classLatest.size !== previousClass.size)) { // added or modified class
+        let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
+        if (!previousClass ||
+            (previousClass && latestContent.substring(classLatest.start, classLatest.end) !=                                                previousContent.substring(previousClass.start, previousClass.end))) { // added or modified class
           modifications.push({
             url: fileUrl,
             class: classLatest.name,
@@ -271,7 +239,7 @@ export default class FileIndex {
               })
           } else {
             let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name)
-            if ((!methodPreviousClass) || (methodPreviousClass && methodLastest.size !== methodPreviousClass.size) ) { // added or modified method
+            if ((!methodPreviousClass) || (methodPreviousClass && latestContent.substring(methodLastest.start, methodLastest.end) != previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)) ) { // added or modified method
               modifications.push({
                 url: fileUrl,
                 class: classLatest.name,
@@ -310,25 +278,47 @@ export default class FileIndex {
   parseModuleSemantics(ast) {
     let classes = []
     let dependencies = []
+    let superClass = {}
+    
     babel.traverse(ast,{
       ImportDeclaration(path) {
-        if(path.node.source && path.node.source.value) {
-          dependencies.push(path.node.source.value)
+        if (path.node.source && path.node.source.value) {
+          let specifierNames = []
+          if (path.node.specifiers) {
+            path.node.specifiers.forEach(function(item) {
+              if (item.type === "ImportDefaultSpecifier") {
+                specifierNames.push(item.local.name)
+              } else if(item.type === "ImportNamespaceSpecifier") {
+                specifierNames.push('*')
+              }
+            })
+          }
+           let dependency = {
+            url: path.node.source.value,
+            names: specifierNames
+          }
+           dependencies.push(dependency)
         }
       },
       ClassDeclaration(path) {
         if (path.node.id) {
           let clazz = {
             name: path.node.id.name,
-            size: path.node.end-path.node.start
+            start: path.node.start,
+            end: path.node.end,
+            loc: path.node.loc.end.line - path.node.loc.start.line + 1
           }
+          superClass.name = (path.node.superClass) ? path.node.superClass.name : null
+          superClass.url = ""
           let methods = []
           if (path.node.body.body) {
-            path.node.body.body.forEach(function(item){
+            path.node.body.body.forEach(function(item) {
               if(item.type === "ClassMethod") {
                 let method = {
                   name: item.key.name,
-                  size: item.end-item.start
+                  loc: item.loc.end.line - item.loc.start.line + 1,
+                  start: item.start,
+                  end: item.end,
                 }
                 methods.push(method)
               }
@@ -412,7 +402,7 @@ export default class FileIndex {
   }
 
   async updateFile(url) {
-    console.log("FileCache updateFile " + url)
+    console.log("FileCache Analysis updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS"
     }).then(r => r.json())
@@ -424,7 +414,7 @@ export default class FileIndex {
       // console.log("FileIndex ignore  " + url)
       return
     }    
-    console.log("FileIndex update  " + url)
+    console.log("FileIndex Analysis update " + url)
 
     var file = {
       url: url,
@@ -454,7 +444,6 @@ export default class FileIndex {
       if (file.name.match(/\.js$/)) {
         this.addModuleSemantics(file)
         this.addLatestVersionHistory(file)
-        this.extractFunctionsAndClasses(file)
       }      
     }
     this.db.transaction("rw", this.db.files, () => { 
@@ -479,11 +468,11 @@ export default class FileIndex {
       if (r.status == 200) {
         return r.json()
       } else {
-        console.log("FileIndex fetch failed ", baseURL, r)
+        console.log("FileIndex Analysis fetch failed ", baseURL, r)
       }
     })
     if (!json) {
-      console.log("FileIndex could not update " + baseURL)
+      console.log("FileIndex Analysis could not update " + baseURL)
       return
     }
     
@@ -520,7 +509,7 @@ export default class FileIndex {
     } finally {
       if (showProgress) progress.remove()
     } 
-    console.log("FileIndex updateDirectory finished")
+    console.log("FileIndex Analysis updateDirectory finished")
   }
 
   async addDirectory(baseURL) {
@@ -604,4 +593,65 @@ cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collecti
     return result
   }
 })
+
+
+class BrokenLinkAnalysis {
+   static async extractLinks(file) {   
+    if (!file || !file.content) {
+      return [];
+    }
+    var links = new Array()
+    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\_\/\#\-[a-zA-Z0-9]*)?[#.?=%;a-z0-9]*)/gm)
+  //  var extractedRelativeLinks = file.content.match(/(?<!^.*(import|from|http|www|\+)\s*.*)(((\.*)?(\/))+[\w\-\_]+([/]|\.\w+))/gm)
+    if(!extractedLinks) {
+      return [];
+    }
+   /*if (extractedRelativeLinks) {
+     for (const relavtiveLink of extractedRelativeLinks) {
+        let directory = file.url.match(/^.*(\/[a-z]+)+([/])/g)
+       // let resolved = await System.resolve(relavtiveLink, directory)
+        extractedLinks.push(directory[0] + relavtiveLink)
+      }
+   }*/
+    for (const extractedLink of extractedLinks) {
+      var link = {
+        link: extractedLink,
+        location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
+        url: file.url,
+        status: await this.validateLink(extractedLink)
+      }
+      links.push(link)   
+    }
+   return links;
+ }
+  
+ static async validateLink(link) { 
+  return BrokenLinkAnalysis.fetch(link, { 
+    method: "GET", 
+    mode: 'no-cors', 
+    redirect: "follow"
+  }, FETCH_TIMEOUT) 
+  .then((response) => {
+    if (response.type === "basic") { // internal link
+      if (response.ok) {
+        return "alive"
+      } else {
+        return "dead"
+      } 
+    } else if (response.type === "opaque") { // external link
+      return "alive"
+    }
+  })
+  .catch((error) => {console.log(error, "Link: " + link); return "dead"})
+  }
+
+  static async fetch(url, options, timeout) {
+    return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Fetch timeout: ' + url)), timeout)
+        )
+    ]);
+  }
+}
 
