@@ -13,6 +13,9 @@ export default function (babel) {
           t.StringLiteral('HELLO'),
           path.node
         ]))
+      },
+      NewExpression(path) {
+        path.replaceWith(t.StringLiteral('foo'))
       }
     }
   }

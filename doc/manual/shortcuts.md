@@ -1,6 +1,6 @@
 # Keyboard Shortcuts
 
-<lively-script><script>
+<script>
 async function extractShortCuts(url){
   const content = await fetch(url).then(r => r.text());
   return <table>{...
@@ -34,4 +34,4 @@ const result = <div>
 </div>;
 
 result
-</script><lively-script>
+</script>
