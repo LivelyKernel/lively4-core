@@ -44,7 +44,7 @@ export default class GenericAstNode extends Morph {
             await node.setNode(child)
             return node
           }));
-          childNode = <ul>{...nodes}</ul>
+          childNode = <div>{...nodes}</div>
         } else {
           childNode = document.createTextNode(this.astNode[key]);
         }
@@ -52,7 +52,7 @@ export default class GenericAstNode extends Morph {
         childNode = await (<generic-ast-node></generic-ast-node>)
         await childNode.setNode(this.astNode[key])
       }
-      this.childList.appendChild(<li><span>{key} </span><span>{childNode}</span></li>)
+      this.childList.appendChild(<span>{key} {childNode}</span>)
     }
   }
   
@@ -93,7 +93,6 @@ export default class GenericAstNode extends Morph {
       resolveModuleSource: undefined
     }).ast;
     this.setNode(ast.program)
-    lively.openInspector(ast)
   }
 
 }
