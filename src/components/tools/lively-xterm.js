@@ -6,11 +6,18 @@ import * as fit from "src/external/xterm.js/addons/fit.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 
 /*
-  #TODO write UI for this:
-  
-  lively.preferences.set("PiTerminalHost", "172.21.13.255")
-  lively.preferences.set("PiTerminalPort", "3000")
+  lively.preferences.set("PiTerminalURL", "https://lively-kernel.org/boardpi_term/")
+*/
 
+/* Apache Config for Terminal Proxy (https + wss)
+
+  ProxyPass               /boardpi_term/terminal ws://localhost:8008/terminal
+  ProxyPassReverse        /boardpi_term/terminal ws://localhost:8008/terminal
+  ProxyPass               /boardpi_term http://localhost:8008
+  ProxyPassReverse        /boardpi_term http://localhost:8008
+  <Proxy http://localhost:8008/*>
+          Allow from all
+  </Proxy>
 */
 
 
@@ -20,18 +27,29 @@ export default class LivelyXterm extends Morph {
   async initialize() {
     this.windowTitle = "Lively XTerm.js";
     
-    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
-    this.addEventListener('extent-changed', debounce.call(evt => { this.onExtentChanged(evt); }, 500));
+    this.setup()
+  }
+  
+  async setup(force) {
+    lively.removeEventListener("xterm", this)
+    lively.addEventListener("xterm", this, 'contextmenu',  evt => this.onContextMenu(evt), false);
+    lively.addEventListener("xterm", this, 'extent-changed', debounce.call(evt => { this.onExtentChanged(evt); }, 500));
+    if (!this.url) {
+      this.url = lively.preferences.get("PiTerminalURL")
+    }
     
-    this.host = lively.preferences.get("PiTerminalHost")
-    this.port = lively.preferences.get("PiTerminalPort")
+    if (!this.cwd) {
+      this.cwd = lively.preferences.get("PiTerminalCWD")
+    }
+
     await this.open()
-    if (!this.session) {
+    if (force || !this.session) {
       await this.newSession()
     }
     await this.connectSession()
-    
+  
   }
+  
   
   onContextMenu(evt) {
     if (this.lastPointerUp && (Date.now() - this.lastPointerUp < 1000)) {
@@ -47,6 +65,9 @@ export default class LivelyXterm extends Morph {
       var menu = new ContextMenu(this, [
             ["reconnect", () => this.reconnect()],
             ["python shell", () => this.startPython()],
+            ["change terminal url", () => this.changeTerminalURL()],
+            ["change terminal key", () => this.changeTerminalSecret()],
+            ["change terminal working directory", () => this.changeTerminalCWD()],
           ]);
       menu.openIn(document.body, evt, this);
       return true;
@@ -54,24 +75,60 @@ export default class LivelyXterm extends Morph {
   }
   
   async reconnect() {
-    await this.newSession()
-    await this.connectSession()
+    this.setup(true)
+  }
+
+  async changeTerminalURL() {
+    var defaultValue = lively.preferences.get("PiTerminalURL") || "http://localhost:3000/"
+    var newValue = await lively.prompt("set new PiTerminal URL", defaultValue)
+    if (newValue) {
+      lively.preferences.set("PiTerminalURL", newValue)
+      this.url = newValue
+      lively.notify("new termianl url: " + newValue)
+      
+      await this.setup(true)
+      this.term.focus()
+    }
   }
   
-  get host() {
-    return this.getAttribute("host")
+  async changeTerminalSecret() {
+    var defaultValue = lively.preferences.get("PiTerminalSecret") || ""
+    var newValue = await lively.prompt("set new PiTerminal Secret", defaultValue)
+    if (newValue) {
+      lively.preferences.set("PiTerminalSecret", newValue)
+      await this.setup(true)
+      this.term.focus()
+    }
   }
   
-  set host(s) {
-    return this.setAttribute("host", s)
+  
+  async changeTerminalCWD() {
+    var defaultValue = lively.preferences.get("PiTerminalCWD") || ""
+    var newValue = await lively.prompt("set new PiTerminal working directory", defaultValue)
+    if (newValue) {
+      lively.preferences.set("PiTerminalCWD", newValue)
+      this.cwd = newValue
+      lively.notify("new termianl cwd: " + newValue)
+      
+      await this.setup(true)
+      this.term.focus()
+    }
+  }
+
+  get url() {
+    return this.getAttribute("url")
   }
   
-  get port() {
-    return this.getAttribute("port")
+  set url(s) {
+    return this.setAttribute("url", s)
+  }
+
+  get cwd() {
+    return this.getAttribute("cwd")
   }
   
-  set port(s) {
-    return this.setAttribute("port", s)
+  set cwd(s) {
+    return this.setAttribute("cwd", s)
   }
 
   get session() {
@@ -84,6 +141,7 @@ export default class LivelyXterm extends Morph {
   
   async open() {
     var container = this.get("#container")
+    container.innerHTML = ""
     this.term = new Terminal();
     this.term.open(container)
     
@@ -93,19 +151,30 @@ export default class LivelyXterm extends Morph {
   }
 
   async newSession() {
-    this.session  = await fetch(`http://${this.host}:${this.port}/terminals?cols=88&rows=24`, {
+    var secret  = lively.preferences.get("PiTerminalSecret")
+    
+    var session  = await fetch(`${this.url.replace(/\/$/,"")}/create?cols=88&rows=24`, {
       method: "POST", 
       headers: {
+        secret: secret,
+        cwd: this.cwd,
       }
     }).then(r => r.text()) 
+    
+    if (parseInt(session) > 0) {
+      this.session = session
+    } else {
+      lively.warn("could not get session, because " + session)
+    }
+    
   }
   
   async connectSession() {
-    var socketURL = `ws://${this.host}:${this.port}/terminals/${this.session}`
+    var baseWebSocketURL = this.url.replace(/http/,"ws")
+    var socketURL = `${baseWebSocketURL.replace(/\/$/,"")}/terminal/${this.session}`
     this.socket = new WebSocket(socketURL)
     attach(this.term, this.socket, true)
   }
-    
   
   startPython() {
     this.parentElement.setAttribute("title", "Python")

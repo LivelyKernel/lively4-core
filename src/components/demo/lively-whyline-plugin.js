@@ -52,6 +52,17 @@ export default function (babel) {
 
           ForStatement(path) { loops.push(path) },
           WhileStatement(path) { loops.push(path) },
+          
+          Identifier(path){
+            let currentScope = path.scope
+            while(!currentScope.hasOwnBinding(path.node.name)){
+              if(!currentScope.parent)
+                return;
+              currentScope = currentScope.parent
+            }
+              path.node.scopeId = currentScope.uid
+          },
+
 
           /* ... */
         });
