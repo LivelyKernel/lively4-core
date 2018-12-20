@@ -23,6 +23,8 @@ export default class Preferences {
       FileIndex: {default: false, short: "local file index"},
       SWXKeepAlive: {default: true, short: "keep SWX alive"},
       LogBoot: {default: false, short: "keep bootlog"},
+      PiTerminalHost: {default: "localhost", short: "hostname of pi terminal"},
+      PiTerminalPort: {default: "3000", short: "port of pi terminal"},
     }
   }
   

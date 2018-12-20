@@ -3,7 +3,6 @@ import TraceNode from 'src/components/demo/lively-whyline-tracing.js'
 
 var expressions
 var statements
-var declarations
 var declarators
 var assignments
 var functions
@@ -11,10 +10,9 @@ var loops
 
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
-  let log = template("_tr_(NODEID,() => EXPSTATE)")
-  let begin = template("_tr_begin_(NODEID)")
-  let end = template("_tr_end_(NODEID)")
-  let logstatement = template("_tr_log_(NODEID)")
+  let log = template("__trace__.traceNode(NODEID,() => EXPSTATE)")
+  let begin = template("__trace__.traceBeginNode(NODEID)")
+  let end = template("__trace__.traceEndNode(NODEID)")
 
   let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
@@ -29,7 +27,6 @@ export default function (babel) {
 
         expressions = []
         statements = []
-        declarations = []
         declarators = []
         assignments = []
         functions = []
@@ -55,6 +52,17 @@ export default function (babel) {
 
           ForStatement(path) { loops.push(path) },
           WhileStatement(path) { loops.push(path) },
+          
+          Identifier(path){
+            let currentScope = path.scope
+            while(!currentScope.hasOwnBinding(path.node.name)){
+              if(!currentScope.parent)
+                return;
+              currentScope = currentScope.parent
+            }
+              path.node.scopeId = currentScope.uid
+          },
+
 
           /* ... */
         });
@@ -77,46 +85,17 @@ export default function (babel) {
         })	
 
         path.unshiftContainer('body', template(`
-          var __TraceNode__ = window.lively4TraceNode
           var __tr_ast__ = window.__tr_ast_registry__[ASTID]
+
+          var __trace__ = new window.lively4ExecutionTrace(__tr_ast__);
 
           var _tr_time = performance.now();
           var _tr_time_max = 1000;
 
-          function _newTraceNode_(id, parent) {
-            return new __TraceNode__(__tr_ast__.node_map[id], parent)
-          }
+    	  	__tr_ast__.calltrace = __trace__.traceRoot
+          __tr_ast__.executionTrace = __trace__
 
-          function _addTraceNode_(id) {
-            var traceNode = _newTraceNode_(id, __tr_current__)
-	  			  return traceNode
-          }
-
-	  		  function _tr_(id, exp) {
-	  			  var traceNode = _addTraceNode_(id)
-            __tr_current__ = traceNode
-	  			  var value = exp()
-            traceNode.value = value;
-  	  			__tr_current__ = traceNode.parent
-  	  			return value
-    	  	};
-    	  	
-    	  	function _tr_log_(id) {
-            _addTraceNode_(id)
-    	  	};
-    	  	
-    	  	function _tr_begin_(id) {
-            __tr_current__ = _addTraceNode_(id)
-    	  	};
-    	  	
-    	  	function _tr_end_(id) {
-  	  			__tr_current__ = __tr_current__.parent
-    	  	};
-
-    	  	var __tr_root__  = _addTraceNode_(undefined);
-    	  	__tr_ast__.calltrace = __tr_root__;
-    	  	window.__tr_last_ast__ = __tr_ast__;
-    	  	var __tr_current__ = __tr_root__`)({ASTID: t.stringLiteral(programast.astid)}));
+    	  	window.__tr_last_ast__ = __tr_ast__`)({ASTID: t.stringLiteral(programast.astid)}));
 
         statements.forEach(ea => {
           ea.insertBefore(begin({
@@ -158,7 +137,7 @@ export default function (babel) {
 
         functions.forEach(ea => {
           var body = ea.get('body');
-          body.replaceWith(template("{ return _tr_( NODEIDX , () => BLOCK)}")({
+          body.replaceWith(template("{ return __trace__.traceNode( NODEIDX , () => BLOCK)}")({
             NODEIDX: t.numericLiteral(ea.node.traceid), BLOCK: body}))
         });
 
