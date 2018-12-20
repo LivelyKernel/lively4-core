@@ -111,35 +111,32 @@ export default class Inspector extends Morph {
     </span>)
   
     this.attachHandlers(node, obj, name, "renderObject");
-    
+    this.renderExpandedProperties(node, obj);
   }
   
-  renderExpandedProperties() {
-    var contentNode = node.querySelector("#content");
-    if (node.isExpanded) {
-      contentNode.innerHTML = "";
-      if (obj instanceof Function) {
-        // var childNode = this.displayFunction(obj, false, name)
-        // if (childNode) contentNode.appendChild(childNode); 
-      }
-      
-      this.allKeys(obj).sort(sortAlphaNum).forEach( ea => { 
-        try {
-          var value = obj[ea]
-        } catch(e) {
-          console.log("[inspector] could not display " + ea + " of " + obj)
-          return
-        }
-        if (value == null) return;  
-        var childNode = this.display(value, false, ea, obj)
-        if (childNode) contentNode.appendChild(childNode); // force object display        
-      });
-    }
+  renderExpandedProperties(node, obj) {
+    if(!node.isExpanded) { return; }
         
-    var handlerMethod = "render" +obj.constructor.name + "Object"
-    if (this[handlerMethod] && node.isExpanded) {
+    var contentNode = node.querySelector("#content");
+
+    // handle dedicated data structures
+    var handlerMethod = `render${obj.constructor.name}Object`;
+    if (this[handlerMethod]) {
       return this[handlerMethod](contentNode, obj)
     }
+    
+    contentNode.innerHTML = "";
+    this.allKeys(obj).sort(sortAlphaNum).forEach( ea => {
+      try {
+        var value = obj[ea]
+      } catch(e) {
+        console.log("[inspector] could not display " + ea + " of " + obj)
+        return
+      }
+      if (value == null) return;  
+      var childNode = this.display(value, false, ea, obj)
+      if (childNode) contentNode.appendChild(childNode); // force object display        
+    });
   }
   
   displayObject(obj, expand, name) {
@@ -572,7 +569,7 @@ export default class Inspector extends Morph {
       entries = obj.entries() // illegal invocation?
     } catch(e) {}
     for(let [key, value] of entries) {
-      var node = this.displayObject(obj.get && obj.get(value) || value, true, key)
+      const node = this.displayObject(value, true, key)
       if (node) contentNode.appendChild(node);   
     }
   }
