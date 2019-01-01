@@ -40,6 +40,32 @@ class TraceNode {
     }
   }
   
+  lastNode() {
+    let numChildren = this.children.length
+    if (numChildren > 0) {
+      return this.children[numChildren - 1].lastNode()
+    } else {
+      return this
+    }
+  }
+  
+  nodeBeforeChild(traceNode) {
+    let pos = this.children.indexOf(traceNode);
+    if (pos < 1) {
+      return this
+    } else {
+      return this.children[pos - 1].lastNode()
+    }
+  }
+  
+  predecessor() {
+    if (this.parent) {
+      return this.parent.nodeBeforeChild(this)
+    } else {
+      return undefined
+    }
+  }
+  
   whyWasThisStatementExecuted(){
     if (this.parent){
       if (this.astNode.type == "FunctionDeclaration")

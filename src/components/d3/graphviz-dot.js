@@ -19,16 +19,22 @@ export default class GraphvizDot extends Morph {
       resolve()
     })
   }
+  
 
+  
   async updateViz() {
     var svgContainer = this.get("#container")
     svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
     svgContainer.style.height = this.style.height
     
+    var options = {
+      engine: this.getAttribute("engine") || "dot",
+    }
+    
     var bounds = this.getBoundingClientRect()
     var div = this.get("#graph")
     try {
-      div.innerHTML = Viz(this.querySelector("script").innerHTML)
+      div.innerHTML = Viz(this.querySelector("script").innerHTML, options)
     } catch(e) {
       div.innerHTML =`<lively-error>${e}</lively-error>`
     }
@@ -38,6 +44,7 @@ export default class GraphvizDot extends Morph {
   }
 
   async livelyExample() {
+    this.setAttribute("engine", "neato")
     this.innerHTML = `<script type="graphviz">digraph {
       a -> b
       b -> c

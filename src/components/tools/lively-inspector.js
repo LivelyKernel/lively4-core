@@ -7,19 +7,16 @@ import ContextMenu from 'src/client/contextmenu.js';
 import {sortAlphaNum} from "src/client/sort.js"
 import { getTempKeyFor } from 'utils';
 
-function truncateString(s, length, truncation) {
-  if(!s) {
-    return "";
-  }
-  
-  length = length || 30;
-  truncation = truncation ? '...' : truncation;
-  return s.length > length ? s.slice(0, length - truncation.length) + truncation : String(s);
+/**
+ * @usage: truncateString("Hello World", 8, "...")
+ */
+function truncateString(s = '', length = 30, truncation = '...') {
+  return s.length > length ?
+    s.slice(0, length - truncation.length) + truncation :
+    String(s);
 }
-// truncateString("Hello World", 8, "...")
 
-
-export default class Inspector   extends Morph {
+export default class Inspector extends Morph {
 
   initialize() {
     if (this.getAttribute("target")) {
@@ -39,15 +36,12 @@ export default class Inspector   extends Morph {
       } else {
         attrValue = JSON.stringify(value).replace(/</g,"&lt;");
       }
-      let node = <div class="element">
+      return <div class="element">
         <span class='attrName'>{name}:</span>
         <span class='attrValue'>{attrValue}</span>
       </div>;
-      return node;
     } else {
-      let node = document.createElement("pre");
-      node.innerHTML = JSON.stringify(value);
-      return node;
+      return <pre>{JSON.stringify(value)}</pre>;
     }
   }
 
@@ -68,21 +62,15 @@ export default class Inspector   extends Morph {
 	    return false;
     } 
   }
-
-  displayFunction(value, expand, name) {
-    var node = <div></div>;;
-    node.classList.add("element");
-    node.innerHTML =  "<span class='attrName'>"+ name +":</span> <span class='attrValue'>" + ("" +value).replace(/</g,"&lt;") + "</span>";
-    return node;
-  }
   
   /*
    * called, when selecting a subobject 
    */
   onSelect(node, obj) {
-    if (this.selectedNode)
+    if (this.selectedNode) {
       this.selectedNode.classList.remove("selected");
-    this.selectedNode  = node;
+    }
+    this.selectedNode = node;
     this.selectedNode.classList.add("selected");
   
     this.selection = obj;
@@ -91,62 +79,73 @@ export default class Inspector   extends Morph {
     this.get("#editor").doitContext = obj;
     this.dispatchEvent(new CustomEvent("select-object", {detail: {node: node, object: obj}}));
   }
-  
-  renderObject(node, obj, expanded, name) {
+
+  renderObject(node, obj, expand, name = '') {
     // handle system objects... 
-    var handlerMethod = "render" +obj.constructor.name + "Object"
     node.type = "Object"
-    node.isExpanded = expanded;
-    if (!name) {
-      name = "";
-    }
+    node.isExpanded = expand;
+
     var className = obj.constructor.name;
     if (this.isAstMode() && obj.type) {
       className = obj.type
     }
     
-    node.innerHTML = this.expandTemplate(node) +
-      `<span class='attrName expand'> ${name}</span><span class="syntax">:</span>
-      <a id='tagname' class='tagname'>${className}</a> ` +
-      '<span class="syntax">{</span>' +
-       this.contentTemplate() +
-      '<span class="syntax">}</span>';
+    node.innerHTML = '';
+    node.appendChild(this.expandTemplate(node));
+    node.appendChild(<span>
+      <span class='attrName expand'> {name}</span><span class="syntax">:</span> 
+    </span>)
+    
+    if(typeof obj === 'function') {
+      //(/</g,"&lt;")
+      node.appendChild(<span class='attrValue'>&#x0192;</span>);
+      node.appendChild(<span class=''> {obj.name} </span>);
+      node.appendChild(<span class=''>{truncateString(obj.toString(), 20, '...')}</span>);
+    } else {
+      node.appendChild(<a id='tagname' class='tagname'>{className}</a>)
+    }
+    node.appendChild(<span>
+      <span class="syntax">&#123;</span>{
+          this.contentTemplate()
+        }<span class="syntax">&#125;</span>
+    </span>)
   
     this.attachHandlers(node, obj, name, "renderObject");
-    
-    var contentNode = node.querySelector("#content");
-    if (node.isExpanded) {
-      contentNode.innerHTML = "";
-      if (obj instanceof Function) {
-        var childNode = this.displayFunction(obj, expand, name)
-        if (childNode) contentNode.appendChild(childNode); 
-      }
-      
-      this.allKeys(obj).sort(sortAlphaNum).forEach( ea => { 
-        try {
-          var value = obj[ea]
-        } catch(e) {
-          console.log("[inspector] could not display " + ea + " of " + obj)
-          return
-        }
-        if (value == null) return;  
-        var childNode = this.display(value, false, ea, obj)
-        if (childNode) contentNode.appendChild(childNode); // force object display        
-      });
-    }
+    this.renderExpandedProperties(node, obj);
+  }
+  
+  renderExpandedProperties(node, obj) {
+    if(!node.isExpanded) { return; }
         
-    if (this[handlerMethod] &&  node.isExpanded ) {
+    var contentNode = node.querySelector("#content");
+
+    // handle dedicated data structures
+    var handlerMethod = `render${obj.constructor.name}Object`;
+    if (this[handlerMethod]) {
       return this[handlerMethod](contentNode, obj)
     }
+    
+    contentNode.innerHTML = "";
+    this.allKeys(obj).sort(sortAlphaNum).forEach( ea => {
+      try {
+        var value = obj[ea]
+      } catch(e) {
+        console.log("[inspector] could not display " + ea + " of " + obj)
+        return
+      }
+      if (value == null) return;  
+      var childNode = this.display(value, false, ea, obj)
+      if (childNode) contentNode.appendChild(childNode); // force object display        
+    });
   }
   
   displayObject(obj, expand, name) {
     if (!(obj instanceof Object)) {
       return this.displayValue(obj, expand, name); // even when displaying objects.
     }
-    if ((obj instanceof Function)) {
-      return this.displayFunction(obj, expand, name); // even when displaying objects.
-    }
+    // if ((obj instanceof Function)) {
+    //   return this.displayFunction(obj, expand, name); // even when displaying objects.
+    // }
     
     var node = <div class="element"></div>;
     node.pattern = "NAME " + name
@@ -161,20 +160,16 @@ export default class Inspector   extends Morph {
   }
   
   expandTemplate(node) {
-    return "<span class='syntax'><a class='expand'>" +
-      (node.isExpanded ? 
-        "<span style='font-size:9pt'>&#9660;</span>" : 
-        "<span style='font-size:7pt'>&#9654</span>") + "</span></a></span>";
+    return <span class='syntax'><a class='expand'>{node.isExpanded ? 
+      <span style='font-size:9pt'>&#9660;</span> : 
+      <span style='font-size:7pt'>&#9654;</span>
+    }</a></span>;
   }
   
   contentTemplate(content) {
-    return "<span id='content'><a id='more' class='more'>"+ (content ? content : "...")+ "</a></span>";
+    return <span id='content'><a id='more' class='more'>{content ? content : "..."}</a></span>;
   }
 
-  get quoteTemplate() {
-    return `<span class='syntax'>"</span>`;
-  }
-  
   attachHandlers(node, obj, name, renderCall = "render") {
     node.target = obj;
     // jqyery would make this cleaner here...
@@ -201,17 +196,20 @@ export default class Inspector   extends Morph {
   }
   
   renderAttributes(node, obj) {
+    function quoteTemplate() {
+      return <span class='syntax'>"</span>;
+    }
+
     if (obj.attributes) {
       var attrNode = node.querySelector("#attributes");
       Array.from(obj.attributes).forEach(ea => {
-        var eaNode = document.createElement("span");
         var value = "" + ea.value;
         var maxvaluelength = 60;
         if (value.length > maxvaluelength) {
           var shortenValue = true
           value = value.slice(0, maxvaluelength) + "..."
         }
-        eaNode.innerHTML = ` <span class='attrName'>${ea.name}=</span>${this.quoteTemplate}<span class="attrValue">${value}</span>${this.quoteTemplate}`;
+        var eaNode = <span> <span class='attrName'>{ea.name}=</span>{quoteTemplate()}<span class="attrValue">{value}</span>{quoteTemplate()}</span>;
         var valueNode = eaNode.querySelector(".attrValue") ;
         // Editing of attribute values in inspector
         if (!shortenValue) {
@@ -234,34 +232,42 @@ export default class Inspector   extends Morph {
   }
 
   renderHeader(node, obj) {
+    node.innerHTML = '';
     
-    var tagName = obj.tagName || obj.nodeName;
     if (obj instanceof ShadowRoot) {
-      tagName = "shadowroot";
+      node.appendChild(this.expandTemplate(node)) 
+      node.appendChild(<a id='tagname' class='tagname'> #shadow-root</a>)
+      node.appendChild(this.contentTemplate()) 
+      return;
     }
+
     if (obj instanceof Comment) {
-      tagName = "comment";
+      node.appendChild(<a id='tagname' class='tagname'>&lt!-- </a>)
+      node.appendChild(this.contentTemplate());
+      node.appendChild(document.createTextNode(" --&gt"))
+      return;
     }
-    var lt = "<span class='syntax'>&lt;</span>";
-    var gt = "<span class='syntax'>&gt;</span>";
-    node.innerHTML = this.expandTemplate(node)  + 
-      (obj.tagName && !obj.livelyIsParentPlaceholder ? lt : "")+
-      `<a id='tagname' class='expand tagname'>${tagName.toLowerCase()}</a>`+
-      `<span id='attributes'></span>` +
-      (obj.tagName && !obj.livelyIsParentPlaceholder ? gt : "")+
-      this.contentTemplate(truncateString(obj.textContent, 40, "..")) +
-      (obj.tagName && !obj.livelyIsParentPlaceholder ? 
-        `${lt}/<span class='tagname'>${tagName.toLowerCase()}</span>${gt}` : "");
-    if (tagName == "shadowroot") {
-      node.innerHTML = this.expandTemplate(node) + "<a id='tagname' class='tagname'> #shadow-root</a>" +
-        this.contentTemplate(); 
-    }
+
+    var tagName = obj.tagName || obj.nodeName;
+    var lt = () => <span class='syntax'>&lt;</span>;
+    var gt = () => <span class='syntax'>&gt;</span>;
+    const showTags = obj.tagName && !obj.livelyIsParentPlaceholder;
+    node.appendChild(this.expandTemplate(node))
+    if (showTags) { node.appendChild(lt()); }
+    node.appendChild(<a id='tagname' class='expand tagname'>{tagName.toLowerCase()}</a>)
+    node.appendChild(<span id='attributes'></span>)
+    if (showTags) { node.appendChild(gt()); }
     
-    if (tagName == "comment") {
-      node.innerHTML = "<a id='tagname' class='tagname'>&lt!-- </a>" + 
-        this.contentTemplate() +" --&gt" ;
+    node.appendChild(this.contentTemplate(truncateString(obj.textContent, 40, "..")))
+    
+    if(showTags) {
+      node.appendChild(lt());
+      node.appendChild(document.createTextNode("/"));
+      node.appendChild(<span class='tagname'>{tagName.toLowerCase()}</span>);
+      node.appendChild(gt());
     }
-    // if (!node.isAutoExpanded) html = this.expandTemplate + html
+
+    // if (!node.isAutoExpanded) html = this.expandTemplate({}).outerHTML + html
   }
 
   
@@ -345,9 +351,8 @@ export default class Inspector   extends Morph {
     }
   }
   
-  displayText(obj, expanded, parent) {
-    var node = document.createElement("span");
-    node.setAttribute("class","element");
+  displayText(obj, expanded) {
+    var node = <span class="element"></span>
     this.render(node, obj, expanded); 
     return node;
   }
@@ -360,29 +365,29 @@ export default class Inspector   extends Morph {
     var node;
     var parentNode = this.findParentNode(obj);
     if (!parent && parentNode) {
-      var tmpParent = {tagName: "...", textContent: "", childNodes: [obj], livelyIsParentPlaceholder: true };
+      var tmpParent = {
+        tagName: "...",
+        textContent: "",
+        childNodes: [obj],
+        livelyIsParentPlaceholder: true
+      };
       node = this.displayNode(tmpParent, true, tmpParent);
       var tagNode = node.querySelector("#tagname");
-      if (tagNode) tagNode.onclick = (evt) => {
+      if (tagNode) tagNode.onclick = evt => {
         this.inspect(parentNode);
       };
       return node;
     } else if (obj.tagName) {
-      node = <div></div>;
-      node.setAttribute("class", "element tag");
+      node = <div class="element tag"></div>;
     } else if (obj instanceof ShadowRoot) {
-      node = <div></div>;
-      node.setAttribute("class", "element shadowroot");
+      node = <div class="element shadowroot"></div>;
     } else if (obj instanceof Comment) {
-      node = <div></div>;
-      node.setAttribute("class", "element comment");
+      node = <div class="element comment"></div>;
     } else if (obj instanceof Node) {
-      node = <div></div>;
-      node.setAttribute("class", "element");
+      node = <div class="element"></div>;
     } else {
       // Fallback... 
-      node = document.createElement("span");
-      node.setAttribute("class","element");
+      node = <span class="element"></span>;
     }
     this.render(node, obj, expanded); 
     return node;
@@ -393,19 +398,16 @@ export default class Inspector   extends Morph {
   }
   
   render(node, obj, expanded) {
-    
-    
     if (obj instanceof Text) {
       return this.renderText(node, obj, expanded);
     } else if (this.isNode(obj) && node.type != "Object") {
       return this.renderNode(node, obj, expanded);
-    } else if (typeof(obj) == "object") {
+    } else if (typeof obj == "object") {
       return this.renderObject(node, obj, expanded, node.name);
-    } else if (typeof(obj) == "function"){
+    } else if (typeof obj == "function"){
       // return this.renderFunction(node, obj, expanded, name);
-    } else {
-      // return this.renderValue(node, obj, expanded, name);
     }
+    // return this.renderValue(node, obj, expanded, name);
   }
   
   display(obj, expanded, name, parent) {
@@ -414,19 +416,17 @@ export default class Inspector   extends Morph {
       return this.displayText(obj, expanded, parent);
     } else if (this.isNode(obj)) {
       return this.displayNode(obj, expanded, parent);
-    } else if (typeof(obj) == "object"){
-      return this.displayObject(obj, expanded, name, parent);
-    } else if (typeof(obj) == "function"){
-      return this.displayFunction(obj, expanded, name, parent);
+    } else if (typeof obj == "object" || typeof obj == "function") {
+      return this.displayObject(obj, expanded, name);
     } else {
-      return this.displayValue(obj, expanded, name, parent);
+      return this.displayValue(obj, expanded, name);
     }
   }
 
+  get container() { return this.get("#container"); }
+  
   inspect(obj) {
-    if (!obj) {
-      return 
-    }
+    if (!obj) { return; }
     
     if (obj.id) {
       this.setAttribute("target", "#" + obj.id);
@@ -437,11 +437,11 @@ export default class Inspector   extends Morph {
     
     this.targetObject = obj;
     this.get("#editor").doitContext = obj;
-    this.get("#container").innerHTML = "";
+    this.container.innerHTML = "";
     // special case for inspecting single dom nodes
-    var content= this.display(obj, true, null, null);
-    this.get("#container").appendChild(content);
-    this.updatePatterns(this.get("#container").childNodes[0])
+    const content = this.display(obj, true, null, null);
+    this.container.appendChild(content);
+    this.updatePatterns(this.container.childNodes[0])
     
     if (oldViewState) {
       this.setViewState(oldViewState)
@@ -451,11 +451,15 @@ export default class Inspector   extends Morph {
   
   allKeys(obj) {
     var keys = []
-    for(var i in obj) {
-      if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
-        keys.push(i);
-      }
-    }
+    
+    if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
+    var allOwn = /*Object.getOwnPropertySymbols(obj).concat*/(Object.getOwnPropertyNames(obj))
+    // for(var i in obj) {
+    //   if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
+    //     keys.push(i);
+    //   }
+    // }
+    keys = allOwn;
     if (!this.isAstMode()) {
       if (obj && this.allKeys(obj.__proto__).length > 0)
         keys.push("__proto__")
@@ -468,17 +472,16 @@ export default class Inspector   extends Morph {
   }
   
   hideWorkspace() {
-    this.get("#container").style.flex = 1;
+    this.container.style.flex = 1;
     this.get("#editor").style.display = "none";
     this.get("lively-separator").style.display = "none";
   }
 
   showWorkspace() {
-    this.get("#container").style.flex = 0.66;
+    this.container.style.flex = 0.66;
     this.get("#editor").style.display = "block";
     this.get("lively-separator").style.display = "block";
   }
-  
   
   updatePatterns(node) {
     var obj = node.target
@@ -510,14 +513,14 @@ export default class Inspector   extends Morph {
   
   // JSON.stringify(this.getViewState())
   getViewState() {
-    return this.captureViewState(this.get("#container").childNodes[0])
+    return this.captureViewState(this.container.childNodes[0])
   }
   
   /*
     this.setViewState( {"children":[{"pattern":"","children":[{"pattern":"shadowRoot","children":[{"pattern":"","children":[]}]},{"pattern":"#Properties","children":[{"pattern":"attributes","children":[]}]}]}]})
   */
   setViewState(state) {
-    return this.applyViewState(this.get("#container").childNodes[0], state)
+    return this.applyViewState(this.container.childNodes[0], state)
   }
   
   applyViewState(node, state) {
@@ -558,27 +561,32 @@ export default class Inspector   extends Morph {
     return result
   }
 
-  renderInterable(contentNode, obj) {
+  renderIterable(contentNode, obj) {
     if (!contentNode) return
     contentNode.innerHTML = ""
-    var keys = []
+    var entries = []
     try {
-      keys = obj.keys() // illegal invocation?
+      entries = obj.entries() // illegal invocation?
     } catch(e) {}
-    for(var ea of keys) {
-      var node = this.displayObject(obj.get(ea), true, ea)
+    for(let [key, value] of entries) {
+      const node = this.displayObject(value, true, key)
       if (node) contentNode.appendChild(node);   
     }
   }
   
   // callbacks for system objects...
   renderHeadersObject(contentNode, obj) {
-    this.renderInterable(contentNode, obj)
+    this.renderIterable(contentNode, obj)
   }
   
   // callbacks for system objects...
   renderMapObject(contentNode, obj) {
-    this.renderInterable(contentNode, obj)
+    this.renderIterable(contentNode, obj)
+  }
+  
+  // callbacks for system objects...
+  renderSetObject(contentNode, obj) {
+    this.renderIterable(contentNode, obj)
   }
   
   static inspectArrayAsTable(array) {
