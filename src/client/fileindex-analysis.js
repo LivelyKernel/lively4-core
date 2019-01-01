@@ -48,7 +48,7 @@ export default class FileIndex {
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
         classes: '[name+url], name, url, loc, start, end, superClass, *methods', 
-        versions: '[commitId+class+method+url], class, method, date, action, user,  url, commitId'
+        versions: '[class+url+method+commitId+date], [method+class], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
     return db 
@@ -108,7 +108,7 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
-    
+    await this.db.classes.where("url").equals(file.url).delete()
     this.db.transaction("rw", this.db.classes, () => {
       for(var clazz of semantics.classes) {
         clazz.url = file.url
@@ -182,13 +182,13 @@ export default class FileIndex {
       let response = await lively.files.loadVersions(file.url)
       let json = await response.json()
       let versions = json.versions
-
       // consider latest two versions
-      if (!versions[0] || !versions[1]) return
-      var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
-      this.db.transaction("rw", this.db.versions, () => {
-        this.db.versions.bulkPut(modifications)
-      })
+      if (versions && versions[0] && versions[1]) {
+        var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
+        this.db.transaction("rw", this.db.versions, () => {
+          this.db.versions.bulkPut(modifications)
+        })
+      }
     } catch(error) {
       console.log(error, file.url)
     }
@@ -515,40 +515,6 @@ export default class FileIndex {
   async addDirectory(baseURL) {
     this.updateDirectory(baseURL, true) // much faster and better
   }
-    
-//   async addDirectory(baseURL, depth) {
-//     console.log("addDirectory " + baseURL + " "  + depth)
-//     var contents = (await fetch(baseURL, {method: "OPTIONS"}).then( resp => resp.json())).contents
-//     var progress = await lively.showProgress("add " + baseURL.replace(/.*\//,""))
-//     var total = contents.length
-//     var i=0
-//     try {
-//       for(let ea of contents) {
-//         progress.value = i++ / total;
-//         let eaURL = baseURL.replace(/\/$/,"")  + "/" + ea.name
-//         let name = eaURL.replace(/.*\//,"")
-//         let size = ea.size;
-//         if (name.match(/^\./)) {
-//           console.log("ignore hidden file " + eaURL)
-//           continue
-//         };
-
-//         if (ea.type == "directory" && (depth > 0)) {
-//           console.log("[file cache] decent recursively: " + eaURL )
-//           this.addDirectory(eaURL, depth - 1)
-//         }
-//         if (await this.db.files.where("url").equals(eaURL).first()) {
-//           console.log("already in cache: " + eaURL)
-//         } else {
-//           this.addFile(eaURL, name, ea.type,  size, ea.modified /* may be be set */)
-//         }
-//       }
-//     } finally {
-//       progress.remove()
-//     }
-//   }
-
-
   showAsTable() {
     var result= []
     this.db.files.each(ea => {
@@ -573,57 +539,51 @@ export default class FileIndex {
   }
 }
 
-cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
-  async modify(func) {
-    var i = 0
-    var total = await this.count()
-    var progress = await lively.showProgress("update");
-    if (ShowDexieProgress.currentLabel) {
-      progress.textContent = ShowDexieProgress.currentLabel
-    }
-    var innerFunc = function(ea)  {
-      progress.value = i++ / total
-      func(ea)
-    }
-    // #TODO 'cop.proceed' does not work in the async setting...
-    var result = await cop.withoutLayers([ShowDexieProgress], async () => {
-      return this.modify(innerFunc)
-    })
-    progress.remove()
-    return result
-  }
-})
-
-
 class BrokenLinkAnalysis {
-   static async extractLinks(file) {   
-    if (!file || !file.content) {
+  static async extractLinks(file) {
+    
+    if (!file || !file.content || file.url.includes("/src/external/")) {
       return [];
     }
+  
     var links = new Array()
-    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\_\/\#\-[a-zA-Z0-9]*)?[#.?=%;a-z0-9]*)/gm)
-  //  var extractedRelativeLinks = file.content.match(/(?<!^.*(import|from|http|www|\+)\s*.*)(((\.*)?(\/))+[\w\-\_]+([/]|\.\w+))/gm)
+    var extractedLinks =  new Array()
+    
+    if (file.url.match(/\.md$/)) {
+       let patternMdFiles = /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+      extractedLinks = file.content.match(patternMdFiles)
+    } else if (file.url.match(/\.(css|(x)?html)$/)) {
+      let patternHtmlCssFiles = /(?<=(src\s*=\s*|href\s*=\s*|[a-zA-Z0-9\-_]+\s*\{\s*.*\s*:\s*)('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+      extractedLinks = file.content.match(patternHtmlCssFiles)
+    }
+  
     if(!extractedLinks) {
       return [];
     }
-   /*if (extractedRelativeLinks) {
-     for (const relavtiveLink of extractedRelativeLinks) {
-        let directory = file.url.match(/^.*(\/[a-z]+)+([/])/g)
-       // let resolved = await System.resolve(relavtiveLink, directory)
-        extractedLinks.push(directory[0] + relavtiveLink)
-      }
-   }*/
+  
     for (const extractedLink of extractedLinks) {
-      var link = {
-        link: extractedLink,
-        location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
-        url: file.url,
-        status: await this.validateLink(extractedLink)
+      if (/^http|https|www/g.test(extractedLink)) {
+        let link = {
+          link: extractedLink,
+          location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
+          url: file.url,
+          status: await this.validateLink(extractedLink)
+        }
+        links.push(link)  
+      } else {
+        var absoluteLink = /^\//g.test(extractedLink) ? lively4url + extractedLink : file.url.replace(file.name, extractedLink)
+        let link = {
+          link: extractedLink,
+          location: "internal",
+          url: file.url,
+          status: await this.validateLink(absoluteLink)
+        }
+        links.push(link)
       }
-      links.push(link)   
     }
-   return links;
- }
+     return links
+  }
+      
   
  static async validateLink(link) { 
   return BrokenLinkAnalysis.fetch(link, { 
@@ -654,4 +614,26 @@ class BrokenLinkAnalysis {
     ]);
   }
 }
+
+
+cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
+  async modify(func) {
+    var i = 0
+    var total = await this.count()
+    var progress = await lively.showProgress("update");
+    if (ShowDexieProgress.currentLabel) {
+      progress.textContent = ShowDexieProgress.currentLabel
+    }
+    var innerFunc = function(ea)  {
+      progress.value = i++ / total
+      func(ea)
+    }
+    // #TODO 'cop.proceed' does not work in the async setting...
+    var result = await cop.withoutLayers([ShowDexieProgress], async () => {
+      return this.modify(innerFunc)
+    })
+    progress.remove()
+    return result
+  }
+})
 
