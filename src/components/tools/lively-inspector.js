@@ -148,7 +148,7 @@ export default class Inspector extends Morph {
     // }
     
     var node = <div class="element"></div>;
-    node.pattern = "NAME " + name
+    node.pattern = "NAME " + (name || '').toString()
     node.name = name
     this.renderObject(node, obj, expand, name);
     return node;
@@ -453,7 +453,7 @@ export default class Inspector extends Morph {
     var keys = []
     
     if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
-    var allOwn = /*Object.getOwnPropertySymbols(obj).concat*/(Object.getOwnPropertyNames(obj))
+    var allOwn = Object.getOwnPropertySymbols(obj).concat(Object.getOwnPropertyNames(obj))
     // for(var i in obj) {
     //   if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {
     //     keys.push(i);
@@ -569,7 +569,7 @@ export default class Inspector extends Morph {
       entries = obj.entries() // illegal invocation?
     } catch(e) {}
     for(let [key, value] of entries) {
-      const node = this.displayObject(value, true, key)
+      const node = this.display(value, true, key)
       if (node) contentNode.appendChild(node);   
     }
   }
