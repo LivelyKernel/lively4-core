@@ -389,6 +389,7 @@ export default function(param) {
                 !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') &&
                 !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') &&
                 !(t.isCatchClause(path.parent) && path.parentKey === 'param') &&
+                !(t.isContinueStatement(path.parent) && path.parentKey === 'label') &&
                 !t.isObjectProperty(path.parent) &&
                 !t.isClassDeclaration(path.parent) &&
                 !t.isClassExpression(path.parent) &&

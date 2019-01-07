@@ -17,7 +17,7 @@
       status: link.status,
       link: link.link,
       location: link.location,
-      module: link.url
+      file: link.url 
     })
   })
   d3table.setData(links)
