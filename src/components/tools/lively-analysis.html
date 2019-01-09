@@ -9,7 +9,7 @@
      margin-left: 0; 
      clear: both;
 	}
-		
+  	
   .tab-container > input,
 	.tab-container section > .tab-content {
     display: none;
@@ -17,7 +17,6 @@
 		
 	.tab-container section > .tab-content {
     padding: 20px;
-    width: 100%;
     border: 1px solid silver;
     background: white;
     line-height: 1.5em;
@@ -99,11 +98,15 @@
   .aliveLink {
     background-color:rgba(0, 255, 0, 0.15);
   }
+  
+  #tab-versions div {
+  }
+  
+
 </style>
   
   <h3>Semantic Code Analysis</h3>
   <button id="updateDirectory">update directory</button>
-  <lively-separator></lively-separator>
   <content>
     <div id="content" class="tab-container">
        <input checked="checked" id="tab1" type="radio" name="tabs" />
@@ -119,15 +122,15 @@
        <section>
           <article id="tab-polymetric" class="tab1 tab-content">
             <button id="updatePolymetric">update</button>
-            <svg id="lively-analysis-polymetric"></svg>
+            <div id="lively-analysis-polymetric-container"></div>
           </article>
           <article id="tab-versions" class="tab2 tab-content">
             <button id="updateVersions">update</button>
-            <svg id="lively-analysis-heatmap"></svg>
+            <div id="lively-analysis-heatmap-container"></div>
           </article>
           <article id="tab-broken-links" class="tab3 tab-content">
             <button id="updateBrokenLinks">update</button>
-            <table id="lively-analysis-table"></table>
+            <div id="lively-analysis-table-container"></div>
           </article>
        </section>
     </div>
