@@ -44,9 +44,16 @@ function getExpressionNode(expression) {
 }
 
 function ensureDOMNode(nodeOrObject) {
-  return nodeOrObject instanceof Node ?
-      nodeOrObject :
-      document.createTextNode(nodeOrObject);
+  if (nodeOrObject instanceof Node) {
+    return nodeOrObject;
+  }
+  
+  // Symbols needexplicitly need to be converted to strings
+  if (typeof nodeOrObject === 'symbol') {
+    return document.createTextNode(nodeOrObject.toString());
+  }
+  
+  return document.createTextNode(nodeOrObject);
 }
 
 function isActiveGroup(obj) {

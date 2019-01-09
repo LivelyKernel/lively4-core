@@ -13,6 +13,15 @@ describe('simple', function() {
   });
 });
 
+describe('computed content', function() {
+  it('supports symbols', () => {
+    let div = <div>{Symbol('Hello')}</div>;
+    
+    expect(div).to.have.property('tagName', 'DIV');
+    expect(div).to.have.property('innerHTML', 'Symbol(Hello)');
+  });
+});
+
 describe('async support for WebComponents', function() {
   //this.timeout = 30000;
   it('simple WebComponent', async done => {

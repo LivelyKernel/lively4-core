@@ -134,6 +134,7 @@ SystemJS.config({
     [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
+    [lively4url + '/src/client/reactive/components/*.js']: aexprViaDirective,
     // ... except for the tests
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
 
