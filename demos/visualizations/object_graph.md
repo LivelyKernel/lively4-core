@@ -1,10 +1,36 @@
 # Object Graph
 
 <script>
-  (async () => {
+import ContextMenu from 'src/client/contextmenu.js';
+
+(async () => {
    var vis = await (<d3-graphviz style="background:gray; width:1200px; height: 800px"></d3-graphviz>)
     
-    vis.engine = "neato" // "neato"
+    vis.engine = "dot" 
+    
+    var menuItems = [
+      ["graphviz engine", 
+        ["dot", "neato", "fdp", "twopi", "circo"].map(ea => {
+          return [ea,
+            () => {
+              vis.engine = ea  
+              vis.setDotData(dataToDot(graph))
+            }
+          ]
+        })
+      ]
+    ]
+    
+    vis.addEventListener("contextmenu",  evt => {
+      ContextMenu.openIn(document.body, evt, this, undefined, menuItems);
+      evt.stopPropagation();
+      evt.preventDefault();
+    });
+
+    
+    
+    
+    // vis.engine = "circo"
     
     var nodeMap = new Map()
     var objectToId = new Map()
@@ -33,6 +59,11 @@
         nodeMap.set(id, node)
       }
       return node
+    }
+    
+    function collapseNode(graphNode) {
+      graphNode.out = []
+      graphNode.expanded = false
     }
     
     function expandNode(graphNode) {
@@ -81,18 +112,36 @@
           keys.push(key);
         }
       }
-      if (obj instanceof HTMLElement) {
+      
+      if (obj.childNodes) {
         for(var i=0; i< obj.childNodes.length; i++) {
           keys.push("childNodes[" + i + "]");
         }
       }
       
+      if (obj.attributes) {
+        for(var ea of obj.attributes) {
+          keys.push(`getAttribute("${ea.name}")`);
+        }
+      }
       
+      if (obj.parentElement) {
+        keys.push(`parentElement`);
+      }
+      
+      if (obj.shadowRoot) {
+        keys.push(`shadowRoot`);
+      }
+      
+      if (obj instanceof Text) {
+        keys.push(`textContent`);
+      }
+
       return keys;
     }
 
     function stripLabel(str) {
-      return str.replace(/[^A-Za-z0-9 _.,;:\/\[\]]/g,"_").slice(0,50)
+      return str.replace(/([^A-Za-z0-9 _.,;:<>\/\[\]])/g," ").slice(0,50)
     }
 
     function dataToDot(graphNode) {
@@ -119,18 +168,25 @@
           node.out.forEach(eaOut => {
             var targetObj = eaOut.target.obj
             if (_.isObject(targetObj)) {
-              edges.push(ensureId(node.obj) + " -> " + ensureId(targetObj) + `[ label="${eaOut.label}" ` 
-                  +`fontcolor="${ eaOut.target.expanded ? "black" : "gray"}" `
-                 +`color="${ eaOut.target.expanded ? "black" : "gray"}" `
-                + `]`)
-              visit(eaOut.target)
+              if (targetObj instanceof Text) {
+                // ignore TextNodes
+              } else {
+                edges.push(ensureId(node.obj) + " -> " + ensureId(targetObj) + `[ label="${eaOut.label}" ` 
+                    +`fontcolor="${ eaOut.target.expanded ? "black" : "gray"}" `
+                   +`color="${ eaOut.target.expanded ? "black" : "gray"}" `
+                  + `]`)
+                visit(eaOut.target)
+              }
+            
             } else {
               if (targetObj !== null) {
                 if (["class","id", "name"].includes(eaOut.label)) {
                   inner.push(eaOut.label + ": " + stripLabel("" + targetObj))                 
+                } else if (eaOut.label.match("getAttribute")) {
+                  inner.push(eaOut.label.replace(/getAttribute/,"@").replace(/[()"]+/g,"") + ": " + stripLabel("" + targetObj))                 
                 } else {
                   // #TODO show details on demand?
-                  // inner.push(eaOut.label + ": " + stripLabel("" + targetObj)) 
+                  inner.push(stripLabel(eaOut.label) + ": " + stripLabel("" + targetObj)) 
                 }
                 
                 
@@ -146,6 +202,7 @@
       return `digraph {
         graph [  splines="true"  overlap="false"  ];
         node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
+        edge [  fontname="Arial"  fontsize="8" ];
 
         ${edges.join(";")}
         ${nodes.join(";")}
@@ -157,7 +214,7 @@
     vis.config({
       onclick(data, evt, element) {
         // lively.showElement(element)
-        if(evt.shiftKey) {
+        if(evt.ctrlKey) {
           lively.openInspector({
             data: data,
             node: nodeMap.get(data.key),
@@ -169,10 +226,11 @@
             if (node.out.length == 0) {
               expandNode(node)
             } else {
-              node.out = []
+              collapseNode(node)
             }
           
           }
+          lively.showElement(element, 300).innerHTML = ""
           vis.update(dataToDot(graph))    
         }
       }
