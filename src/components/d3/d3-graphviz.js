@@ -13,7 +13,7 @@ export default class D3GraphViz extends D3Component {
     this.options = {}
     this.loaded = new Promise(async (resolve) => {
 
-      if (!self.d3) {
+      if (!self.d3 || !self.d3.select().graphviz) {
         self.d3 = d3v5 // because we go global here...? and it will be replaced...
       }
       if (!window.Viz) {
@@ -28,6 +28,8 @@ export default class D3GraphViz extends D3Component {
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
       })::debounce(500));
+
+      this.d3 = d3
 
       resolve()
     })
@@ -122,23 +124,53 @@ export default class D3GraphViz extends D3Component {
     }
     
     var graph = d3.select(div)
+    this.graph = graph
     var graphviz = graph.graphviz(false) // default is work, "false" -> no worker
       .fade(false)
       .zoom(true)
-      .renderDot(data);
+      .engine(this.engine || "dot")
+  
+    // if (this.transition) {
+      graphviz = graphviz.transition(() => {
+        // #Important, the transition must select the root in the shadow...
+        return d3.select(div).transition("main") 
+            .ease(d3.easeLinear)
+            .delay(0)
+            .duration(1000);
+        })
+        .on("end",  () => {
+          this.setupEvents()        
+        });
+    //}
     
     
+    this.graphviz = graphviz
+    
+    graphviz.renderDot(data);
+    
+    // this.setupEvents()
+  }
+  
+  setupEvents() {
     var vis = this;
-    graph.selectAll("g.node")
+    this.graph.selectAll("g.node")
       // .attr("stroke", "red")
       .on("click", function(d) {
         vis.onNodeClick(d, d3.event, this)
       })
   }
+  
 
+  async update(data) {
+    if (!this.graphviz) {
+      await this.updateViz()
+    }
+    this.graphviz.renderDot(data);
+    // this.setupEvents()
+  }
+  
   config(config) {
     Object.keys(config).forEach(key => {
-      lively.notify("key " + key)
       this.options[key] = config[key] // we could check them here...      
     })
   }

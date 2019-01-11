@@ -10,7 +10,6 @@ export default class LivelyPDF extends Morph {
     pdf.onLoad().then(()=> {
       this.isLoaded = true
       if (this.getAttribute("src")) {
-        lively.notify("onload");
         this.setURL(this.getAttribute("src"));
       }
     })
@@ -237,7 +236,7 @@ export default class LivelyPDF extends Morph {
   
   
   setChangeIndicator(contentChanged) {
-    let livelyContainer = this.parentElement;
+    let livelyContainer = lively.query(this, "lively-container")
     livelyContainer.contentChanged = contentChanged;
     livelyContainer.updateChangeIndicator();
   }
