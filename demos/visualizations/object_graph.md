@@ -1,5 +1,23 @@
 # Object Graph
 
+This is a prototype of an object graph using graphviz d3. 
+
+### Features:
+  - interactive exploration of graph (with transition)
+  - variable graph layout engine
+  - custom graph through "keys" function
+    - allows to filter and add custom edges (e.g. ignore childNodes array and add direct edges to childNodes[0] etc)
+  - custom presentation through "dataToDot" function
+    - gray out not expanded nodes and edges
+    - edges vs. inline structs
+
+###  #TODO
+  - extract as component (e.g. lively-object-graph)
+  - provide customizable default implementation of "keys" and "dataToDot" that can be adapted to domain specific object graphs
+    - pure HTML element hierrachy, AST, Callgraph, etc ...
+  - context menu for nodes 
+  - not initial transition animation
+    
 <script>
 import ContextMenu from 'src/client/contextmenu.js';
 
