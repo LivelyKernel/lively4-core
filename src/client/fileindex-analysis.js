@@ -100,6 +100,10 @@ export default class FileIndex {
   
   extractModuleSemantics(file) {
     var ast = this.parseSource(file.url, file.content)
+    if(!ast) {
+      console.info('Could not parse file:', file.url)
+      return []
+    }
     var results = this.parseModuleSemantics(ast)
     return results;
   }
@@ -278,22 +282,24 @@ export default class FileIndex {
   parseModuleSemantics(ast) {
     let classes = []
     let dependencies = []
-    let superClass = {}
-    
+    let importDeclarations = new Map()
     babel.traverse(ast,{
       ImportDeclaration(path) {
         if (path.node.source && path.node.source.value) {
           let specifierNames = []
-          if (path.node.specifiers) {
+          let moduleUrl = path.node.source.value
+          if (path.node.specifiers) { 
             path.node.specifiers.forEach(function(item) {
-              if (item.type === "ImportDefaultSpecifier") {
-                specifierNames.push(item.local.name)
-              } else if(item.type === "ImportNamespaceSpecifier") {
+              if (item.type === "ImportNamespaceSpecifier") {
                 specifierNames.push('*')
+                importDeclarations.set('*', moduleUrl)
+              } else {
+                specifierNames.push(item.local.name)
+                importDeclarations.set(item.local.name, moduleUrl)
               }
             })
           }
-           let dependency = {
+          let dependency = {
             url: path.node.source.value,
             names: specifierNames
           }
@@ -301,6 +307,7 @@ export default class FileIndex {
         }
       },
       ClassDeclaration(path) {
+        let superClass = {}
         if (path.node.id) {
           let clazz = {
             name: path.node.id.name,
@@ -309,7 +316,10 @@ export default class FileIndex {
             loc: path.node.loc.end.line - path.node.loc.start.line + 1
           }
           superClass.name = (path.node.superClass) ? path.node.superClass.name : null
-          superClass.url = ""
+          superClass.url = importDeclarations.get(superClass.name)
+          if(superClass.name) {
+            console.log(superClass)
+          }
           let methods = []
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
@@ -325,6 +335,7 @@ export default class FileIndex {
             })
           }
           clazz.methods = methods
+          clazz.superClass = superClass
           classes.push(clazz)
         } 
       }

@@ -1,0 +1,54 @@
+<template id="lively-analysis-heatmap" data-class="LivelyAnalysisHeatmap">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {}
+  #content {
+    color: #444444;
+    font-size: inherit;
+    font-family: inherit;
+  }
+  
+  svg#lively-analysis-heatmap-svg {
+    width: 300px;
+    height: 200px;
+  }
+  
+  svg#lively-analysis-heatmap-svg .cell text {
+    fill: #444444;
+    font-size: inherit;
+    font-family: inherit;
+  }
+  
+  svg#lively-analysis-heatmap-svg .cell.parent:HOVER {
+    cursor: pointer;
+  }
+  
+  svg#lively-analysis-heatmap-svg text.modifications {
+    font-size: 80%
+  }
+  
+  svg#lively-analysis-heatmap-svg .cell rect:HOVER ~ #lively-analysis-heatmap-tooltip {
+    display: block;
+  } 
+  
+  div#lively-analysis-heatmap-tooltip {
+    background: green;
+    position: fixed;
+    display: none;
+  }
+  div#lively-analysis-heatmap-infobox {
+    font-size: 90%;
+  }
+</style>
+
+<div id="content">
+	<content>
+    <div id="lively-analysis-heatmap-tooltip"></div>
+    <div id="lively-analysis-heatmap-infobox"></div>
+    <svg id="lively-analysis-heatmap-svg"></svg>
+  </content>
+</div>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+

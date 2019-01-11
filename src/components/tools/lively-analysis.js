@@ -1,10 +1,7 @@
 "enable aexpr";
 
-import Morph from 'src/components/widgets/lively-morph.js';
-import d3 from "src/external/d3.v5.js"
-import ContextMenu from 'src/client/contextmenu.js';
-import FileIndex from "src/client/fileindex-analysis.js"
-
+import Morph from 'src/components/widgets/lively-morph.js'
+import FileIndex from 'src/client/fileindex-analysis.js'
 
 export default class LivelyAnalysis extends Morph {
 
@@ -12,21 +9,38 @@ export default class LivelyAnalysis extends Morph {
     this.windowTitle = "Lively Semantic Code Analysis";
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods   
-    this.setClassData()
-    this.setVersionData()
-    this.setLinkData()
-    // table
-    this.brokenLinksTable = this.shadowRoot.querySelector("#lively-analysis-table")
-    this.get("#tab-broken-links").appendChild(this.brokenLinksTable)
-    this.treeMapSvg = this.shadowRoot.querySelector("#lively-analysis-heatmap") 
-    //
+    
+    // div container
+    this.polymetricContainter = this.shadowRoot.querySelector("#lively-analysis-polymetric-container")
+    this.brokenLinksContainer = this.shadowRoot.querySelector('#lively-analysis-table-container')
+    this.heatMapContainer = this.shadowRoot.querySelector('#lively-analysis-heatmap-container')
+    
+    // update listener
     this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
     this.get("#updatePolymetric").addEventListener("update-polymetric", () => this.updatePolymetric)
     this.get("#updateVersions").addEventListener("update-versions", () => this.updateVersions)
     this.get("#updateBrokenLinks").addEventListener("update-broken-links", () => this.updateTableBrokenLinks)
+    
+    this.viewWidth = 400
+    this.viewHeight = 150
   }
+  
+  setViewWidth(width, unit) {
+    this.viewWidth = width
+  }
+  
+  setViewHeight(height, unit) {
+    this.viewHeight = height
+  }
+  
   async setClassData() {
-    this.classes = await FileIndex.current().db.classes
+    this.classes = {
+      name: "classes",
+      children: []
+    }
+    await FileIndex.current().db.classes.each(clazz => {
+      this.classes.children.push(clazz)
+    })
   }
   
   async setVersionData() {
@@ -35,28 +49,32 @@ export default class LivelyAnalysis extends Morph {
       modifications: await FileIndex.current().db.versions.count(),
       children: []
     }
-    var classNames =  await FileIndex.current().db.versions.orderBy('class').uniqueKeys()
-    await classNames.forEach((className) => {
-      let parent = {
-        name: className,
-        children: []
-      }
-      var versionEntries = FileIndex.current().db.versions.where({class: className})
-      versionEntries.count().then((count) => {
-        parent.modifications = count
-      })
-      versionEntries.each((entry) => {
-        if (entry.method != '+null+') {
-          let child = {
-            name: entry.method
+    await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
+      FileIndex.current().db.classes.each((clazz) => {
+        var methodVersions = new Array()
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
+        versionsEntries.each(entry => {
+          let method = methodVersions.find(method => method.method == entry.method)
+          if (method) {
+            method.modifications++;
+          } else {
+            methodVersions.push({
+              name: entry.method,
+              modifications: 1,
+            })
           }
-          FileIndex.current().db.versions.where({method: entry.method, class:entry.class}).count().then((count) => {
-            child.modifications = count
-          })
-          parent.children.push(child)
-        }
-      })
-      this.versions.children.push(parent)
+        })
+        versionsEntries.count().then(count => {
+          if (count > 0) {
+            this.versions.children.push({
+              name: clazz.name,
+              url: clazz.url,
+              modifications: count,
+              children: methodVersions
+           })
+          }
+        })
+     })
     })
   }
   
@@ -92,7 +110,6 @@ export default class LivelyAnalysis extends Morph {
 
   async onUpdateVersions() {
     await this.setVersionData()
-    console.log(this.versions)
     this.updateVersionHeatMap()
   }
   
@@ -101,51 +118,65 @@ export default class LivelyAnalysis extends Morph {
     this.updateTableBrokenLinks()
   }
   
-  updatePolymetricView() {
-  }
-  
-  updateVersionHeatMap() {
-    this.shadowRoot.querySelector("#lively-analysis-table").innerHTML = ""
-    var treeMap = d3.select(this.treeMapSvg)
+  async updatePolymetricView() {
+    this.polymetricContainter.innerHTML = ''
+    var polymetric = await lively.create("d3-polymetricview")
+    polymetric.style.width = "300px"
+    polymetric.style.height = "200px"
+    polymetric.setData(this.classes)
+    polymetric.config({
+      color(node) {
+        if (!node) return ""
+        return `hsl(10, 0%,  ${node.data.size / 100}%)`
+      },
+      width(node) {
+        if (node.data.width === undefined) {
+          if (node.data.size) {
+            node.data.width = Math.sqrt(node.data.size) / 2
+          } else {
+            node.data.width = 30
+          }
+        } 
+        return  node.data.width
+      },
+      height(node) {
+        if (node.data.height === undefined) {
+          if (node.data.size) {
+            node.data.height = node.data.size / (Math.sqrt(node.data.size) / 2)
+          } else {
+            node.data.height = 30
+          }
+        } 
+        return  node.data.height
+      },
+      onclick(node) {
+        lively.openInspector(node.data)
+      },
+    }) 
+    this.polymetricContainter.appendChild(polymetric)
+    polymetric.updateViz()
   }
 
-  updateTableBrokenLinks() {
-    this.shadowRoot.querySelector("#lively-analysis-table").innerHTML = ""
-    var table = d3.select(this.brokenLinksTable)
-    if (!this.links) return
-    // header
-    var tableHeadColumns = (this.links && this.links.length > 0) ? Object.keys(this.links[0]) : []
-    table.append('thead')
-      .selectAll('th')
-      .data(tableHeadColumns)
-      .enter()
-      .append('th')
-      .text(function(item) { return item })
-    // body
-    var tableRows = table.append('tbody')
-      .selectAll("tr") // rows
-      .data(this.links)
-      .enter()
-      .append("tr")
-      .attr("id", function(row) { if (!row.id) { return "" } return row.id })
-      .attr("class", function(row) { if (row.status == "dead") { return "deadLink" } return "aliveLink" })
-      .on('contextmenu', function(row) {
-        if (!d3.event.shiftKey) {
-          d3.event.stopPropagation();
-          d3.event.preventDefault();
-          var menu = new ContextMenu(this, [
-            ["Open file", () => lively.openBrowser(row.id, true)],
-          ]);
-          menu.openIn(document.body, d3.event, this);
-          return true;
-        }
-      });
+  async updateVersionHeatMap() {
+    var heatmap = await lively.create("lively-analysis-heatmap")
+    heatmap.setWidth(this.viewWidth,'px')
+    heatmap.setHeight(this.viewHeight,'px')
+    heatmap.setData(this.versions)
+    heatmap.updateViz()
+    
+    this.heatMapContainer.innerHTML = ''
+    this.heatMapContainer.appendChild(heatmap)
+  }
 
-    tableRows.selectAll('td') // cells
-      .data(function(row) { return Object.values(row) })
-      .enter()
-      .append("td")
-      .text(function(cellValue) { return cellValue });
+ async updateTableBrokenLinks() {
+    var table = await lively.create("lively-analysis-table")
+    table.setWidth(this.viewWidth,'px')
+    table.setHeight(this.viewHeight,'px') 
+    table.setData(this.links)
+    table.updateViz()
+   
+    this.brokenLinksContainer.innerHTML = ''
+    this.brokenLinksContainer.appendChild(table)
   }
 
 
@@ -170,14 +201,32 @@ export default class LivelyAnalysis extends Morph {
   }
 
   async livelyExample() {
-    this.updateVersionHeatMap()
+    this.versions = {
+      name: "root",
+      modifications: 150,
+      children: [
+        {name: "classA", modifications: 50, children: [{name: "methodA1", modifications: 36}, {name: "methodA2", modifications: 14}]},
+        {name: "classB", modifications: 25, children: [{name: "methodB1", modifications: 24}]},
+        {name: "classC", modifications: 15, children: [{name: "methodC1", modifications: 14}]}
+      ]}
+    await this.updateVersionHeatMap()
+    
     this.links = [
       { id: "", no: "1", status: "dead", column: "1.2 value" },
       { id: "", no: "2", status: "dead", column: "2.2 value" },
       { id: "", no: "3", staus: "alive", column: "3.2 value" },
     ]
-    this.updateTableBrokenLinks()
+    await this.updateTableBrokenLinks()
+    
+    this.classes = {
+      name: "classes",
+      children: [
+        {name: "classA", loc: 10, size: 10, children: [{name: "methodA1", loc: 3, size: 3}, {name: "methodA2", loc: 7, size: 7}]},
+        {name: "classB", loc: 30, size: 30, children: [{name: "methodB1", loc: 30, size: 30}]},
+        {name: "classC", loc: 50, size: 50, children: [{name: "methodC1", loc: 50, size: 50}]}
+      ]
+    }
+   await this.updatePolymetricView()
   }
-
 
 }
