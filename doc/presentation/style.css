@@ -1,6 +1,4 @@
 
-
-
 img {
   max-width: 900px;
 }
@@ -14,7 +12,15 @@ img {
   /* border: solid 0px rgb(240,240,240); */
   padding: 20px;
   background-color: white;
+  border: 1px solid rgb(220,220,220)
+  page-break-before: always;
+
 }
+
+p {
+  font-size: 18pt
+}
+  
 
 .title, .authors, .credentials, .conference {
   margin-top: 30px;
@@ -84,11 +90,8 @@ ul li ul li {
   }  
   .lively-slide {
     page-break-before: always;
-/*     border: 0px solid white; */
-    border: 2px solid red;
-
   }  
-
+ 
   .lively-presentation {
     transform-origin: top left;
     transform: scale(1)

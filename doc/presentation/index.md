@@ -8,23 +8,7 @@
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
 <style>
-  .lively-slide {
-    border: 1px solid rgb(220,220,220)
-    page-break-before: always;
-/*     border: 2px solid red
- */
-  }
-  p {
-    font-size: 18pt
-  }
-  @media print {
-    .lively-slide {
-      page-break-before: always;
-      border: 0px solid white;
-/*       border: 2px solid blue; */
-    }      
-  }
-  
+
 </style>
 
 <!--
@@ -79,11 +63,38 @@
 
 #  Standard Tools
 
-- Workspace
+- Workspace <br> ![](workspace.png){style="width:300px"}
 - Inspector
 - Browser
 - Search
 - Test Runner
+- Context Menu 
+
+---
+
+# Object Tools
+
+- Halos
+  - Drag and Drop
+  - Copy
+- Style Editor
+- Component Bin
+- Object Script Editor
+  - Instance-specific Behaviors (similar to Parts in Webwerkstatt)
+- Drawboard (#Pen)
+
+---
+
+# Lively Server
+
+- (Terminal)
+
+---
+
+# Service Worker
+
+- Caching
+- Mounting Web-services
 
 ---
 
@@ -94,13 +105,21 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Debugger
 - Console
 
-
 ---
 
 # Experimental Tools
 
 - X Ray 
-- Terminal
+- Generic Object Graph (#WIP)
+- Module Dependencies 
+- Boot / Loading Visualization (more domain specific that Chrome's standard tool)
+
+--- 
+
+## Experimental Language Features
+
+- Technology: Babel Source Code Transformation
+- Active Expressions
 
 --- 
 
@@ -110,9 +129,44 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 ## Browser / Container
 
+---
+
+# Components
+
+## D3 Visualizations
+  
+- Tree
+- TreeMap
+- Bundle View
+
+## Graphviz (with D3)
 
 
+-- 
+# Applications
 
+## Live Remote Programming Environment for Pi
+
+- Source Code editing of Python files
+- Python Terminal 
+- Live DoIts and PrintIts from Editor
+
+## Media Browser
+
+- Plex Media API
+
+## Chrome Extension
+
+- Load Lively4 on any Web-page
+- Some features are not supported 
+  - e.g. booting without service worker is slow
+
+---
+
+# Workflows
+
+- Editing source code vs. working with objects
+- File Searching (server vs. client)
 
 --- 
 
@@ -124,4 +178,12 @@ Even though we experimented with using our own Console and Debugger, we struggle
   - Lively Next
 
 --- 
+
+# Future Work
+
+- Loading is not optimized
+  - lots of source code transformation while loading
+  
+  
+
 
