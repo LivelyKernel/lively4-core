@@ -201,8 +201,12 @@ export default class HTML {
               node.setAttribute("data-href", href) // so we keep the original somewhere..
               node.setAttribute("href", path)
             }            
-            node.addEventListener("click", () => { 
-              followPath(path); return false; });
+            node.addEventListener("click", (evt) => { 
+              evt.preventDefault()
+              evt.stopPropagation()
+              followPath(path); 
+              return false; 
+            });
           } else {
             // console.log("ignore " + href)
           }
