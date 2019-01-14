@@ -63,7 +63,7 @@
 
 #  Standard Tools
 
-- Workspace <br> ![](workspace.png){style="width:300px"}
+- [Workspace](browse://doc/presentation/workspace.html) <br> ![](workspace.png){style="width:300px"}
 - Inspector
 - Browser
 - Search
@@ -120,6 +120,9 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 - Technology: Babel Source Code Transformation
 - Active Expressions
+- Polymorphic Identifier
+  - [poid.js](browse://src/client/poid.js)
+  
 
 --- 
 
@@ -142,7 +145,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ## Graphviz (with D3)
 
 
--- 
+---
 # Applications
 
 ## Live Remote Programming Environment for Pi
@@ -168,6 +171,16 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Editing source code vs. working with objects
 - File Searching (server vs. client)
 
+---
+
+# Open Questions
+
+## Transient Objects / #ObjectIdentity?
+
+How to bridge persistent text and transient objects? E.g. an open inspector in a self-contained squeak image is easy to persist, but the object the inspector inspected is gone when it is loaded again. Should it point to the next best similar object, or even the object the user takes to be the same object after loading? How to treat object identity? Is the `document.body` object  always the same? 
+
+We experimented with making object identity explicit when opening tools on them. But this would change an object the moment we look at them! We would kill the cat in Heisenberg terms on a very macro level. 
+
 --- 
 
 # Related Work
@@ -184,6 +197,33 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Loading is not optimized
   - lots of source code transformation while loading
   
-  
+---
 
+## #Meta
+
+- How to navigate inside a presentation?
+
+
+
+---
+
+<!-- #TODO pull this up into presentation? -->
+<script>
+// poor men's slide master
+var presentation = lively.query(this, "lively-presentation")
+if (presentation && presentation.slides) {
+  presentation.slides().forEach(ea => {
+    var img = document.createElement("img")
+    img.classList.add("logo")
+    img.src="https://lively-kernel.org/lively4/lively4-seminars/PX2018/media/hpi_logo.png" 
+    img.setAttribute("width", "50px")
+    ea.appendChild(img)
+
+    var div = document.createElement("div")
+    div.classList.add("page-number")
+    ea.appendChild(div)
+  });
+}
+""
+</script>
 
