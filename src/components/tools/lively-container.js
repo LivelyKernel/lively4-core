@@ -653,6 +653,7 @@ export default class Container extends Morph {
   }
 
   async appendMarkdown(content, renderTimeStamp) {
+    debugger
     var md = await lively.create("lively-markdown", this.getContentRoot())
     // md.setAttribute("data-lively4-donotpersist", true) // will be thrown away after loading anyway, #DoesNotWork
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
@@ -662,7 +663,8 @@ export default class Container extends Morph {
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
-    if (this.getAttribute("mode") == "presentation") {
+    if (md.getAttribute("mode") == "presentation") {
+      debugger
       var presentation = await md.startPresentation()
       if (this.lastPage) {
         presentation.gotoSlideAt(this.lastPage)

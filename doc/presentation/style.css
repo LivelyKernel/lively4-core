@@ -1,0 +1,101 @@
+
+
+
+img {
+  max-width: 900px;
+}
+
+.lively-slide {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width:   923px; /* 20/13 * 600 */
+  height: 600px;
+  /* border: solid 0px rgb(240,240,240); */
+  padding: 20px;
+  background-color: white;
+}
+
+.title, .authors, .credentials, .conference {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.title {
+  margin-top: 150px;
+  margin-bottom: 30px;
+  font-size: 26pt;
+  color: #1C6BA0;
+  font-weight: bold;
+}
+
+.authors, .credentials {
+  font-size: 18pt;
+  margin-top: 60px;
+}
+
+.credentials, .conference {
+ font-size: 14pt;
+}
+
+.logo {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.page-number {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+
+h1 {
+ font-size: 30pt;
+}
+
+h2 {
+ font-size: 24pt;
+}
+
+ul li {
+  font-size: 18pt;
+  padding: 3px;
+  margin-top: 6px;
+  line-height: 115%;
+}
+
+ul li ul li {
+  font-size: 16pt;
+  padding: 2px;
+  margin-top: 5px;
+
+}
+
+
+@media print {
+  body {
+    font-family: Helvetica, Arial, Sans-Serif;
+  }
+  hr {
+    page-break-before: always;
+    border: 0px solid white;
+    background: white;
+  }  
+  .lively-slide {
+    page-break-before: always;
+/*     border: 0px solid white; */
+    border: 2px solid red;
+
+  }  
+
+  .lively-presentation {
+    transform-origin: top left;
+    transform: scale(1)
+  }
+}
+
+/* ul, li {
+  border: solid red 1px;
+}
+ */
