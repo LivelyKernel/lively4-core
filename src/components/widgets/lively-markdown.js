@@ -134,7 +134,7 @@ export default class LivelyMarkdown extends Morph {
           if (file.url.startsWith(root) && file.content) {
             var m = file.content.match(searchString)
             if (m) {
-               result += `<li><a href="${file.url}">${file.name}</a></li>`
+               result += `<li><a href="${file.url}">${file.url.replace(lively4url,"")}</a></li>`
             }
           }
         }), lively.sleep(100)])

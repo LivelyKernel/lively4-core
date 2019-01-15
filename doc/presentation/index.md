@@ -46,6 +46,26 @@
   presentationFullscreenButton(this)
 </script>
 
+---
+
+# Contents
+
+<script>
+var list = document.createElement("ul")
+_.filter(lively.findWorldContext(this).querySelectorAll("h1"),
+  ea => ea.textContent != "Contents"
+).forEach(ea => {
+  list.appendChild(<li><a click={
+      (evt) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        lively.query(this, "lively-container").followPath("#" + ea.textContent)
+      }
+    }
+    href={"#" + ea.textContent}>{ea.textContent}</a></li>)
+})
+list
+</script>
 
 ---
 # Motivation
