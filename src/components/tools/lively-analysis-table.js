@@ -10,30 +10,19 @@ export default class LivelyAnalysisTable extends Morph {
     this.windowTitle = "Lively Semantic Code Analysis - Table"; 
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods
-  }
-    // this method is autmatically registered through the ``registerKeys`` method 
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
-
-  /* Lively-specific API */
-
-  livelyPreMigrate() {
-    // is called on the old object before the migration
+    this.tableElement = this.shadowRoot.querySelector("#lively-analysis-table")
+    this.setWidth(400, 'px')
+    this.setHeight(150, 'px')
   }
   
-  livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
+  setWidth(width, unit) {
+    this.tableWidth = width
+    this.tableElement.style.width = width + unit
   }
   
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-  
-  livelyPrepareSave() {
-    
+  setHeight(height, unit) {
+    this.tableHeight = height
+    this.tableElement.style.height = height + unit
   }
   
   setData(data) {
@@ -47,11 +36,8 @@ export default class LivelyAnalysisTable extends Morph {
   }
   
   updateViz() {
-    this.shadowRoot.querySelector("#lively-analysis-table").innerHTML = ""
-    var tableElement = this.shadowRoot.querySelector("#lively-analysis-table")
-    var table = d3.select(tableElement) 
-    var tableData = this.data
-    if (!tableData) return
+    this.tableElement.innerHTML = ''
+    var table = d3.select(this.tableElement) 
                  
     // header
     var tableHeadColumns = (this.getData() && this.getData().length > 0) ? Object.keys(this.getData()[0]) : []
@@ -86,6 +72,31 @@ export default class LivelyAnalysisTable extends Morph {
             .enter()
             .append("td")
             .text(function(cellValue) {return cellValue});
+  }
+   
+  // this method is autmatically registered through the ``registerKeys`` method 
+  onKeyDown(evt) {
+    lively.notify("Key Down!" + evt.charCode)
+  }
+
+  /* Lively-specific API */
+
+  livelyPreMigrate() {
+    // is called on the old object before the migration
+  }
+  
+  livelyMigrate(other) {
+    // whenever a component is replaced with a newer version during development
+    // this method is called on the new object during migration, but before initialization
+    this.someJavaScriptProperty = other.someJavaScriptProperty
+  }
+  
+  livelyInspect(contentNode, inspector) {
+    // do nothing
+  }
+  
+  livelyPrepareSave() {
+    
   }
   
   async livelyExample() {

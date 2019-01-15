@@ -662,7 +662,7 @@ export default class Container extends Morph {
     md.getDir = this.getDir.bind(this);
     md.followPath = this.followPath.bind(this);
     await md.setContent(content)
-    if (this.getAttribute("mode") == "presentation") {
+    if (md.getAttribute("mode") == "presentation") {
       var presentation = await md.startPresentation()
       if (this.lastPage) {
         presentation.gotoSlideAt(this.lastPage)
@@ -795,6 +795,12 @@ export default class Container extends Morph {
       }
       components.loadUnresolved(root);
       lively.clipboard.initializeElements(root.querySelectorAll("*"))
+      
+      if (nodes.length == 1 
+          && (nodes[0].localName == "lively-window" || nodes[0].classList.contains("lively-content"))) {
+        lively.setPosition(nodes[0], pt(0,0))
+      }
+      
     } catch(e) {
       console.log("Could not append html:" + content.slice(0,200) +"..." +" ERROR:", e);
     }
