@@ -1,4 +1,4 @@
-<!-- markdown-config presentation=true -->
+<!-- markdown-config presentation=false -->
 
 <!-- #TODO make style links in container content relative to url -->
 <!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
@@ -65,6 +65,13 @@ _.filter(lively.findWorldContext(this).querySelectorAll("h1"),
     href={"#" + ea.textContent}>{ea.textContent}</a></li>)
 })
 list
+
+// var l=<ul>{... 
+// [<li>1</li>,<li>2</li>]
+// }
+// <li>{3 + 4}</li>
+// </ul>
+// l
 </script>
 
 ---

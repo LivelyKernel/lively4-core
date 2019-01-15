@@ -134,7 +134,7 @@ export default class LivelyMarkdown extends Morph {
           if (file.url.startsWith(root) && file.content) {
             var m = file.content.match(searchString)
             if (m) {
-               result += `<li><a href="${file.url}">${file.url.replace(lively4url,"")}</a></li>`
+               result += `<li><a href="${file.url}#${searchString.replace(/#/g,"")}">${file.url.replace(lively4url,"")}</a></li>`
             }
           }
         }), lively.sleep(100)])
@@ -156,7 +156,6 @@ export default class LivelyMarkdown extends Morph {
         
         shadow.innerHTML = `<ol style="font-size:12pt">${result}<ol>`
         lively.html.fixLinks(shadow.childNodes, this.getDir(), path => this.followPath(path))
-        // searchContainer.appendChild(search)
       })
       
       eaLink.addEventListener("mouseleave", async () => {
