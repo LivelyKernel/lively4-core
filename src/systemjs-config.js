@@ -46,7 +46,7 @@ SystemJS.config({
 
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
-    'babel-plugin-jsx-lively': lively4url + '/src/external/babel-plugin-jsx-lively.js',
+    'babel-plugin-jsx-lively': lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js',
     'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
 
     // stage 0 support
@@ -133,6 +133,7 @@ SystemJS.config({
     // blacklist all projects included for active expressions
     [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
+    [lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/components/*.js']: aexprViaDirective,
     // ... except for the tests
