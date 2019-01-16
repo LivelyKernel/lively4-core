@@ -699,7 +699,15 @@ export default class Container extends Morph {
       } else {
         root = this.getContentRoot()
       }
+          
+      var presentation = md && md.get("lively-presentation")
+      var pageNumberMatch = name.match(/^\@([0-9]+)$/)
+      if (presentation && pageNumberMatch) {
+        presentation.gotoSlideAt(parseInt(pageNumberMatch[1]))
+        return
+      }      
       
+      // Special Case:
       
       // 1. search for exactly matching anchors
       var element = root.querySelector(`a[name="${name}"]`)
@@ -707,20 +715,18 @@ export default class Container extends Morph {
       if (!element) {
         element = _.find(root.querySelectorAll("h1,h2,h3,h4"), ea => ea.textContent == name)
       }
+            
       // 3. ok, try fulltext search
       if (!element) { 
-        debugger
+        
         // search for the text nodes because they are the smallest entities and go to a nearby entity..
         var node = lively.allTextNodes(root).find(ea => ea.textContent.match(name))
         // going one level up will go to far... in most cases
         // so we cannot do: element = node.parentElement 
         if (node) element = node.previousElementSibling // instead we go sideways
-      
-        
       }
       if (element) {
         // var element = that
-        var presentation = lively.query(element, "lively-presentation")
         var slide = lively.allParents(element).find(ea => ea.classList.contains("lively-slide"))
         
         if (presentation && slide) {
@@ -1138,6 +1144,12 @@ export default class Container extends Morph {
     url.pathname = lively.paths.normalize(url.pathname);
     return  "" + url;
   }
+  
+  setPathAttributeAndInput(path) {
+    this.setAttribute("src", path);
+    this.get('#container-path').value = decodeURI(path);
+  }
+  
 
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
@@ -1194,8 +1206,7 @@ export default class Container extends Morph {
       this.wasContentEditable =   markdown.contentEditable == "true"
     }
     
-	  this.setAttribute("src", path);
-    this.get('#container-path').value = decodeURI(path);
+    this.setPathAttributeAndInput(path)
     
     var anchorMatch = path.match(/^(https?\:\/\/[^#]*)(#.+)/)
     if (anchorMatch) {
@@ -1280,8 +1291,6 @@ export default class Container extends Morph {
       
 
       // console.log("[container] lastVersion " +  this.lastVersion)
-
-
 
       // Handle cache error when offline
       if(resp.status == 503) {
