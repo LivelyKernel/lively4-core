@@ -1,4 +1,4 @@
-<!-- markdown-config presentation=false -->
+<!-- markdown-config presentation=true -->
 
 <!-- #TODO make style links in container content relative to url -->
 <!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
@@ -151,7 +151,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - #GithubExplorer
 - Simulated Annealing
 - Semantic Soruce Code Navigator
-- #Serivces
+- #Services
 - #Whyline
 
 ---
@@ -243,15 +243,42 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ---
 # Workflows
 
-- Editing source code vs. working with objects
+- Editing source code in #CodeMirror
+  - Modules are updated 
+  - Templates are updated
+    - Elements in DOM are migrated to get live feedback #LiveProgramming
+      - feedback even on changes in templates and `initialize` methods
+      - problem: object identities changes #FutureWork
+- Inspecting DOM Elements
+  - changing attributes of a DOM element in #Inspector, (similar to #Chrome tools)
 - File Searching (server vs. client)
+- Creating Presentations
+- Creating Active Essays
+- Editing Python source code 
+  - Running Python programs #Terminal
+  - Using #PrintIt and #DoIt in #CodeMirror
+- Drawing Sketch with a #Pen
+
 
 ---
 # Features
 
 - Windows
+  - vs. pure pane and tab layout of typical websites 
 - Markdown
+  - bundles (directory with index.md and linked content) #LivelyContainer
 
+
+---
+# Documentation
+
+- [User stories](../stories.md)
+- [Developer Journal](../journal/index.html)
+
+
+## Misc
+
+- [Journal Entry: Loose Ends](../journal/2018-08-23.md)
 
 ---
 # Open Questions
@@ -269,6 +296,21 @@ We experimented with making object identity explicit when opening tools on them.
   - Webwerkstatt 
   - Lively Web
   - Lively Next
+
+---
+##  Lively Kernel
+
+### Missing in Lively4
+- full featured #PartsBin and corresponding workflow
+- Lively Bindings: connections over changes in properties
+- Structured System Browser (Editing Modules/Class/Methods vs. Directories/Files)
+
+### Alternative 
+
+- Richtext editing vs. Markdown editing (with editing in HTML View)
+- Object serialization vs. Document serialization
+  - Objects vs. DOM Elements are dominant and persistent structure 
+- Parts based core UI vs. Component based UI
 
 --- 
 # Future Work

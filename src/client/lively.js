@@ -1677,7 +1677,7 @@ export default class Lively {
   }
   
   static elementToCSSName(element) {
-    element.localName + (element.id  ? "#" + element.id : "")
+    return element.localName + (element.id  ? "#" + element.id : "")
   }
 
   static async openPart(partName, worldContext=document.body) {
@@ -1776,6 +1776,16 @@ export default class Lively {
     })
     all.add(root)
     return all
+  }
+  
+  static allTextNodes(root){
+    var n, 
+        result=[], 
+        walk=document.createTreeWalker(root, NodeFilter.SHOW_TEXT,null,false);
+    while(n=walk.nextNode()) {
+      result.push(n);
+    }
+    return result;
   }
 
   static findAllElements(filterFunc, deep) {

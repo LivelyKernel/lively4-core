@@ -1,4 +1,4 @@
-## 2018-08-24
+## 2018-08-24 #ContextJS
 
 The container moved, when doing a mouse wheel zoom, but I could not find why
 
@@ -10,7 +10,6 @@ cop.layer(window, "DevLayer").refineObject(lively, {
     return cop.proceed(o, p)
   }
 })
-
 
 DevLayer.beGlobal()
 ```
