@@ -64,6 +64,7 @@ export default function ({ types: t, template, traverse }) {
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     return identifier;
   }
+
   
   return {
     inherits: jsx,
@@ -71,6 +72,27 @@ export default function ({ types: t, template, traverse }) {
       Program(path, state) {
         detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
         
+        const fileName = (state && state.file && state.file.log && state.file.log.filename) || 'no_file_given';
+        const sourceLocation = template(`({
+        file: '${fileName}',
+        end: {
+          column: END_COLUMN,
+          line: END_LINE
+        },
+        start: {
+          column: START_COLUMN,
+          line: START_LINE
+        }
+      })`);
+        function buildSourceLocation(node) {
+          return sourceLocation({
+            END_COLUMN: t.numberLiteral(node.loc.end.column),
+            END_LINE: t.numberLiteral(node.loc.end.line),
+            START_COLUMN: t.numberLiteral(node.loc.start.column),
+            START_LINE: t.numberLiteral(node.loc.start.line)
+          }).expression;
+        }
+
         function transformPath(path, programState) {
           function jSXAttributeToBuilder(path) {
 
@@ -148,6 +170,7 @@ export default function ({ types: t, template, traverse }) {
                     addCustomTemplate(programState.file, "children"),
                     jSXChildren.map(jSXChildrenToBuilder)
                   ),
+                  buildSourceLocation(path.node)
                 ]
               );
 

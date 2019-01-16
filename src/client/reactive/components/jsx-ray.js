@@ -79,8 +79,31 @@ export default class JsxRay extends Morph {
     evt.stopPropagation()
   }
 
-  selectElement(element) {
+  async selectElement(element) {
     lively.showHalo(element)
+    
+    if (element.isJSXElement) {
+      const location = element.jsxMetaData.sourceLocation;
+      
+      if (location.file !== this.sourceEditor.getURLString()) {
+        this.sourceEditor.setURL(location.file);
+        await this.sourceEditor.loadFile();
+      }
+      
+      lively.notify(location.start.line + ' ' + location.end.line, 
+                    location.start.column + ' ' + location.end.column)
+      
+      this.sourceEditor.currentEditor().scrollIntoView({
+        line: location.start.line - 1,
+        ch: location.start.column
+      }, 50);
+      
+      this.sourceEditor.currentEditor().setSelection({
+        line: location.start.line - 1, ch: location.start.column
+      }, {
+        line: location.end.line - 1, ch: location.end.column
+      }, { scroll: false });
+    }
   }
 
   async onNodeFilterChanged() {
@@ -169,54 +192,60 @@ export default class JsxRay extends Morph {
     }
   }
 
-  addElements(elements) {
-    if (!elements) return;
+  buildMirrorElement(subject, all) {
+    const mirrorElement = <div></div>;
 
-    var all = this.filterElements(elements)
+    mirrorElement.style.border = "1px solid gray"
+    mirrorElement.style.background = "rgba(0,100,0,0.3)"
+    mirrorElement.style.display = "flex";
+    mirrorElement.style.alignItems = "center";
+    mirrorElement.style.justifyContent ="center";
+    mirrorElement.isMetaNode = true
+    mirrorElement.target = subject;
+    
+    if (all.length < 200) {
+      mirrorElement.appendChild(<div>{subject.localName}</div>)
+      mirrorElement.style.color = "white"
+      mirrorElement.style.textAlign = "center"
+    }
+
+    mirrorElement.updatePosition = () => {
+      const bounds = lively.getGlobalBounds(subject)
+      lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+      lively.setExtent(mirrorElement, bounds.extent())      
+    }
+
+    mirrorElement.addEventListener("click", () => {
+      this.selectElement(subject)
+    })
+        
+    return mirrorElement;
+  }
+  
+  addElements(elements) {
+    if (!elements) { return; }
+
+    const all = this.filterElements(elements)
 
     if (!this.elementMap) {
       this.elementMap = new WeakMap()
     }
 
     // this.label.innerHTML = " on " + all.size + " elements "
-    all.forEach(ea => {
-      if (ea === this || ea.isMetaNode || ea instanceof Text) { return; }
-      // console.log("added " + ea)
+    all.forEach(subject => {
+      if (subject === this || subject.isMetaNode || subject instanceof Text) { return; }
+      // console.log("added " + subject)
 
-
-      var mirrorElement = this.elementMap.get(ea)
+      let mirrorElement = this.elementMap.get(subject)
 
       if (!mirrorElement) {
-        mirrorElement = document.createElement("div")
-        mirrorElement.isMetaNode = true
-        mirrorElement.style.border = "1px solid gray"
-        mirrorElement.style.background = "rgba(0,100,0,0.3)"
-        mirrorElement.style.display = "flex";
-        mirrorElement.style.alignItems = "center";
-        mirrorElement.style.justifyContent ="center";
-        mirrorElement.target = ea
+        mirrorElement = this.buildMirrorElement(subject, all);
 
-        if (all.length < 200) {
-          mirrorElement.innerHTML = "<div>" + ea.localName + "</div>"
-          mirrorElement.style.color = "white"
-          mirrorElement.style.textAlign = "center"
-        }
-
-        mirrorElement.updatePosition = function() {
-          var bounds = lively.getGlobalBounds(ea)
-          lively.setGlobalPosition(mirrorElement, bounds.topLeft())
-          lively.setExtent(mirrorElement, bounds.extent())      
-        }
-        mirrorElement.addEventListener("click", () => this.selectElement(ea))
-        this.elementMap.set(ea, mirrorElement)
+        this.elementMap.set(subject, mirrorElement)
         // console.log("add",mirrorElement)
 
-        lively.html.addContextStyleChangeListener(ea, mirrorElement.updatePosition)
-
-
+        lively.html.addContextStyleChangeListener(subject, mirrorElement.updatePosition)
       } 
-
-      // mirrorElement.style.pointerEvents = "none";
 
       if (!mirrorElement.parentElement) {
         this.world.appendChild(mirrorElement)
@@ -311,6 +340,7 @@ export default class JsxRay extends Morph {
   get handle() { return this.get('#handle'); }
   get frameHandlesLeft() { return this.get('#frameHandlesLeft'); }
   get frameHandlesLeftLabel() { return this.get('#frameHandlesLeftLabel'); }
+  get sourceEditor() { return this.get('#sourceEditor'); }
 
   mirrorWorld() {
     this.style.zIndex = 1000
@@ -346,6 +376,10 @@ export default class JsxRay extends Morph {
     lively.setExtent(this.frameHandlesLeft, lively.pt(10,300))
     lively.setPosition(this.frameHandlesLeft, lively.pt(-10,-20))
     lively.addEventListener('dragging', this.frameHandlesLeft, 'pointerdown', evt => this.onDragStart(evt));
+
+    this.sourceEditor.isMetaNode = true
+    lively.setExtent(this.sourceEditor, lively.pt(600,150))
+    lively.setPosition(this.sourceEditor, lively.pt(0,200))
 
     this.frameHandlesLeftLabel.isMetaNode = true
 

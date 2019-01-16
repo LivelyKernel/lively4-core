@@ -88,6 +88,9 @@
   #filterContainer input[type=text].error {
     box-shadow: 0 0 0 0.5pt red;
   }
+  #sourceEditor {
+    z-index: -10;
+  }
 
 </style>
   <div id="frame" class="pickThrough">
@@ -101,6 +104,7 @@
   <div id="frameHandlesLeft">
     <div id="frameHandlesLeftLabel">JSX-Ray</div>
   </div>
+  <lively-editor id="sourceEditor"></lively-editor>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
