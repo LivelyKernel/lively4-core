@@ -7,8 +7,12 @@
 }
   #frame {
     overflow: hidden;
-    pointer-events: none;
+    background: rgba(255,255,255,0.75);
+    pointer-events: auto;
+  }
+  #frame.pickThrough {
     background: rgba(255,255,255,0.4);
+    pointer-events: none;
   }
 
   #frameHandlesLeft {
@@ -53,28 +57,40 @@
   #filterContainer input {
     transition: background-color 0.5s ease, box-shadow 0.5s ease, color 0.5s ease;
 
-    width: 300px;
-
     outline: none; /* outline: black dashed 1px; */
     background-color: rgba(250,250,250,0);
     color: grey;
   }
-  #filterContainer input:hover {
+  #filterContainer input[type=text] {
+    width: 300px;
+  }
+  #filterContainer input[type=checkbox] {
+    transition: opacity 0.5s ease;
+    
+    opacity: 0.5;
+  }
+  #filterContainer input[type=checkbox]:hover {
+    opacity: 1;
+  }
+  #filterContainer input[type=checkbox]:focus {
+    opacity: 1;
+  }
+  #filterContainer input[type=text]:hover {
     box-shadow: 0 0 0 0.5pt lightgrey;
     background-color: rgba(250,250,250,1);
     color: black;
   }
-  #filterContainer input:focus {
+  #filterContainer input[type=text]:focus {
     box-shadow: 0 0 0 0.5pt black;
     background-color: rgba(250,250,250,1);
     color: black;
   }
-  #filterContainer input.error {
+  #filterContainer input[type=text].error {
     box-shadow: 0 0 0 0.5pt red;
   }
 
 </style>
-  <div id="frame">
+  <div id="frame" class="pickThrough">
     <div id="world"></div>
   </div>
   <div id="filterContainer">

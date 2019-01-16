@@ -9,7 +9,11 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  */
 
 function basicCreateElement(tagName) {
-  return document.createElement(tagName);
+  const element = document.createElement(tagName);
+  
+  element.isJSXElement = true;
+
+  return element;
 }
 
 // cannot use JSX elements in implementation of JSX elements :(
@@ -65,9 +69,6 @@ function isActiveGroup(obj) {
 }
 
 function composeElement(tagElement, attributes, children) {
-  
-  tagElement.isJSXElement = true;
-  
   for (let [key, value] of Object.entries(attributes)) {
     if(value instanceof Function) {
       // functions provided as attributes are used to create event listeners

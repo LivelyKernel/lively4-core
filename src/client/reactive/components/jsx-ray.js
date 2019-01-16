@@ -9,8 +9,34 @@ export default class JsxRay extends Morph {
     this.windowTitle = "JSX-Ray";
 
     this.livelyLoad()
+    
+    lively.removeEventListener('jsx-ray', document);
+    lively.addEventListener('jsx-ray', document, 'keydown', evt => JsxRay.onKeyDown(evt), { capture: true, passive: true})
+    lively.addEventListener('jsx-ray', document, 'keyup', evt => JsxRay.onKeyUp(evt), { capture: true, passive: true})
+  }
+
+  static onKeyDown(evt) {
+    if (evt.keyCode !== 17 ) { return; } // Control key
+
+    document.body.querySelectorAll('jsx-ray')
+      .forEach(jsxRay => jsxRay.setPickThrough(false));
   }
   
+  static onKeyUp(evt) {
+    if (evt.keyCode !== 17 ) { return; } // Control key
+
+    document.body.querySelectorAll('jsx-ray')
+      .forEach(jsxRay => jsxRay.setPickThrough(true));
+  }
+  
+  setPickThrough(pickThrough) {
+    if (pickThrough) {
+      this.frame.classList.add('pickThrough');
+    } else {
+      this.frame.classList.remove('pickThrough');
+    }
+  }
+
   onDragStart(evt) {
     if(evt.altKey || evt.shiftKey || evt.ctrlKey) return 
     this.isdragging = true
@@ -57,8 +83,8 @@ export default class JsxRay extends Morph {
     lively.showHalo(element)
   }
 
-  async onNodeFilterChanged(filter) {
-    const result = await boundEval(filter);
+  async onNodeFilterChanged() {
+    const result = await boundEval(this.nodeFilter.value);
     if (!result.isError) {
       this.nodeFilterFunc = result.value;
       this.nodeFilter.classList.remove('error')
@@ -69,8 +95,8 @@ export default class JsxRay extends Morph {
   }
   
   // #TODO, #refactor: duplicated code
-  async onEventFilterChanged(filter) {
-    const result = await boundEval(filter);
+  async onEventFilterChanged() {
+    const result = await boundEval(this.eventFilter.value);
     if (!result.isError) {
       this.eventFilterFunc = result.value;
       this.eventFilter.classList.remove('error')
@@ -302,14 +328,14 @@ export default class JsxRay extends Morph {
     this.nodeFilter.isMetaNode = true
     this.nodeFilter.addEventListener("keyup", evt => {
       if (evt.keyCode == 13) { // ENTER
-        this.onNodeFilterChanged(this.nodeFilter.value);
+        this.onNodeFilterChanged();
       }
     });
 
     this.eventFilter.isMetaNode = true
     this.eventFilter.addEventListener("keyup", evt => {
       if (evt.keyCode == 13) { // ENTER
-        this.onEventFilterChanged(this.eventFilter.value);
+        this.onEventFilterChanged();
       }
     });
 
