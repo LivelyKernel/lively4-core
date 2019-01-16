@@ -154,7 +154,7 @@ export class Cache {
    * @param doNetworkRequest A function to call if we need to send out a network request
    */
   async fetch(request, doNetworkRequest, pending) {
-    console.log("[cache] fetch " + request.url )
+    // console.log("[cache] fetch " + request.url )
     await this.offlineFirstReady;
 
     var start = performance.now()

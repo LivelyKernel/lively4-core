@@ -449,7 +449,8 @@ export default class Container extends Morph {
     this.get("#editor").setURL(this.getURL());
     return this.get("#editor").saveFile().then( async () => {
       var sourceCode = this.getSourceCode();
-      var url = this.getURL();
+      var url = this.getURL()
+      url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
       // lively.notify("!!!saved " + url)
       window.LastURL = url
       if (await this.urlInTemplate(url)) {
@@ -685,6 +686,12 @@ export default class Container extends Morph {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,""))
       
+      if (this.isEditing()) {
+        var codeMirror = await (await this.asyncGet("#editor")).get('#editor');
+        codeMirror.find(name)
+        return
+      }
+      
       // markdown specific ?
       var md = this.getContentRoot().querySelector("lively-markdown")
       if (md) {
@@ -693,11 +700,23 @@ export default class Container extends Morph {
         root = this.getContentRoot()
       }
       
+      
+      // 1. search for exactly matching anchors
       var element = root.querySelector(`a[name="${name}"]`)
+      // 2. brute force search for headings with the text
       if (!element) {
-        // brute force search for headings with the text
         element = _.find(root.querySelectorAll("h1,h2,h3,h4"), ea => ea.textContent == name)
-
+      }
+      // 3. ok, try fulltext search
+      if (!element) { 
+        debugger
+        // search for the text nodes because they are the smallest entities and go to a nearby entity..
+        var node = lively.allTextNodes(root).find(ea => ea.textContent.match(name))
+        // going one level up will go to far... in most cases
+        // so we cannot do: element = node.parentElement 
+        if (node) element = node.previousElementSibling // instead we go sideways
+      
+        
       }
       if (element) {
         // var element = that
@@ -854,6 +873,10 @@ export default class Container extends Morph {
 
     ViewNav.enable(this)
 
+    
+    // await lively.sleep(500) // wait for renderer to get some positions to scroll to....
+    this.scrollToAnchor(this.anchor)
+    
     setTimeout(() => {
       this.resetContentChanges()
       this.observeHTMLChanges()
@@ -887,6 +910,10 @@ export default class Container extends Morph {
   }
 
   async followPath(path) {
+    if (path.toString().match(/^https?:\/\//)) {
+      path = this.normalizeURL(path);
+    }
+    
     if (this.unsavedChanges()) {
       if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
@@ -918,8 +945,14 @@ export default class Container extends Morph {
       return ;
     }
 
-    if (_.last(this.history()) !== path)
-      this.history().push(path);
+    var lastPath = _.last(this.history())
+    if (lastPath !== path) {
+      if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
+        // we have a #Bundle here... and the navigation is already in the history
+      } else {
+        this.history().push(path);
+      }
+    }
 
     var opts = ""
     if (this.useBrowserHistory() && this.isFullscreen()) {
@@ -1099,6 +1132,12 @@ export default class Container extends Morph {
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
     });
   }
+  
+  normalizeURL(urlString) {
+    var url = new URL(urlString);
+    url.pathname = lively.paths.normalize(url.pathname);
+    return  "" + url;
+  }
 
   async setPath(path, donotrender) {
     this.get('#container-content').style.display = "block";
@@ -1117,8 +1156,8 @@ export default class Container extends Morph {
 
     var url;
     if (path.match(/^https?:\/\//)) {
-      url = new URL(path);
-      url.pathname = lively.paths.normalize(url.pathname);
+      url = new URL(this.normalizeURL(path));
+      // url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
     } else if (path.match(/^[a-zA-Z]+:\/\//)) {
       url = new URL(path)
@@ -1145,10 +1184,6 @@ export default class Container extends Morph {
     if (this.getPath() == path) {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
-    
-    
-    
-    
 
     var markdown = this.get("lively-markdown")
     if (markdown && markdown.get) {  // #TODO how to dynamically test for being initialized?
@@ -1169,6 +1204,8 @@ export default class Container extends Morph {
       console.log("path " + path)
       console.log("anchor " + anchor)
       this.anchor = anchor
+    } else {
+      this.anchor = null
     }
     
     
@@ -1210,7 +1247,7 @@ export default class Container extends Morph {
       if (!options || !options["index-available"]) {
         return this.listingForDirectory(url, render, renderTimeStamp)
       } else {
-        format = "html"
+        format = "html" // e.g. #Bundle 
       }
     }
 
@@ -1437,6 +1474,11 @@ export default class Container extends Morph {
         if ((""+url).match(/\.((js)|(py))$/)) {
           codeMirror.setTargetModule("" + url); // for editing
         }
+        
+        if (this.anchor) {
+          this.scrollToAnchor(this.anchor)
+        }
+        
         // livelyEditor.loadFile() // ALT: Load the file again?
       });
     });
