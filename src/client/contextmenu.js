@@ -462,7 +462,14 @@ export default class ContextMenu {
           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
             comp.followPath(lively4url + "/doc/journal/index.html");
           });
-        }],
+        },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
+        ["Tools and Workflows", (evt) => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/doc/presentation/index.md");
+          });
+        },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Issues", (evt) => {
            this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
             comp.followPath(lively4url + "/doc/stories.md");

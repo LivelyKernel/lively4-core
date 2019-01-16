@@ -6,8 +6,6 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
-
-
 import files from "src/client/files.js"
 
 // import ScopedScripts from "src/client/scoped-scripts.js";
@@ -677,8 +675,51 @@ export default class Container extends Morph {
       this.get("#container-content").scrollTop = this.preserveContentScroll
       delete this.preserveContentScroll
     }
+    
+    await lively.sleep(500) // wait for renderer to get some positions to scroll to....
+    
+    this.scrollToAnchor(this.anchor)
   }
 
+  async scrollToAnchor(anchor) {
+    if (anchor) {
+      var name = decodeURI(anchor.replace(/#/,""))
+      
+      // markdown specific ?
+      var md = this.getContentRoot().querySelector("lively-markdown")
+      if (md) {
+        var root = md.shadowRoot
+      } else {
+        root = this.getContentRoot()
+      }
+      
+      var element = root.querySelector(`a[name="${name}"]`)
+      if (!element) {
+        // brute force search for headings with the text
+        element = _.find(root.querySelectorAll("h1,h2,h3,h4"), ea => ea.textContent == name)
+
+      }
+      if (element) {
+        // var element = that
+        var presentation = lively.query(element, "lively-presentation")
+        var slide = lively.allParents(element).find(ea => ea.classList.contains("lively-slide"))
+        
+        if (presentation && slide) {
+          console.log('goto slide ', slide)
+          presentation.setSlide(slide)
+        }
+        
+        // await lively.sleep(500)
+        // a very hacky way to somehow find the position where to scroll
+        this.get("#container-content").scrollTop = 0 
+        var offset = lively.getGlobalPosition(element).subPt(
+          lively.getGlobalPosition(this.get("#container-content")))
+        this.get("#container-content").scrollTop = offset.y
+      }
+    }    
+  }
+  
+  
   appendLivelyMD(content, renderTimeStamp) {
     content = content.replace(/@World.*/g,"");
     content = content.replace(/@+Text: name="Title".*\n/g,"# ");
@@ -851,6 +892,12 @@ export default class Container extends Morph {
         return;
       }
     }
+    
+    if (path.match(/^#/)) {
+      // just anchor navigation
+      return this.scrollToAnchor(path)
+    }
+    
 
     var m = path.match(/start\.html\?load=(.*)/);
     if (m) {
@@ -1098,6 +1145,10 @@ export default class Container extends Morph {
     if (this.getPath() == path) {
       this.preserveContentScroll = this.get("#container-content").scrollTop;
     }
+    
+    
+    
+    
 
     var markdown = this.get("lively-markdown")
     if (markdown && markdown.get) {  // #TODO how to dynamically test for being initialized?
@@ -1109,8 +1160,19 @@ export default class Container extends Morph {
     }
     
 	  this.setAttribute("src", path);
-    this.clear();
     this.get('#container-path').value = decodeURI(path);
+    
+    var anchorMatch = path.match(/^(https?\:\/\/[^#]*)(#.+)/)
+    if (anchorMatch) {
+      path = anchorMatch[1]
+      var anchor = anchorMatch[2]    
+      console.log("path " + path)
+      console.log("anchor " + anchor)
+      this.anchor = anchor
+    }
+    
+    
+    this.clear();
     container.style.overflow = "auto";
 
     url = this.getURL();

@@ -174,6 +174,7 @@ export default class HTML {
           // console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
+          var anchor;
           var m
           if (m = href.match(/javascript:visitPath\('webwerkstatt\/(.*)'\)/)) {
             path = "/Thesis/" + m[1]
@@ -185,6 +186,10 @@ export default class HTML {
             path = href;
           } else if (href.match(/^\//)) {
             path = href; // ABSOLTUE paths
+          } else if (href.match(/^#/)) {
+            // Anchor links
+            path = null
+            anchor = href
           } else {
             path = dir + href // that leaves us RELATIVE paths
             if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
@@ -205,6 +210,14 @@ export default class HTML {
               evt.preventDefault()
               evt.stopPropagation()
               followPath(path); 
+              return false; 
+            });
+          } else if (anchor) {
+            node.addEventListener("click", (evt) => { 
+              debugger
+              evt.preventDefault()
+              evt.stopPropagation()
+              followPath(anchor); 
               return false; 
             });
           } else {

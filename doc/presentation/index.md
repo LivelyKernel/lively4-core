@@ -1,4 +1,4 @@
-<!-- markdown-config presentation=true -->
+<!-- markdown-config presentation=false -->
 
 <!-- #TODO make style links in container content relative to url -->
 <!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
@@ -46,6 +46,33 @@
   presentationFullscreenButton(this)
 </script>
 
+---
+
+# Contents
+
+<script>
+var list = document.createElement("ul")
+_.filter(lively.findWorldContext(this).querySelectorAll("h1"),
+  ea => ea.textContent != "Contents"
+).forEach(ea => {
+  list.appendChild(<li><a click={
+      (evt) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        lively.query(this, "lively-container").followPath("#" + ea.textContent)
+      }
+    }
+    href={"#" + ea.textContent}>{ea.textContent}</a></li>)
+})
+list
+
+// var l=<ul>{... 
+// [<li>1</li>,<li>2</li>]
+// }
+// <li>{3 + 4}</li>
+// </ul>
+// l
+</script>
 
 ---
 # Motivation
