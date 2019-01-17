@@ -112,25 +112,48 @@ export default class Clipboard {
     div.innerHTML = data
     container.appendChild(div)
     lively.setPosition(div, pt(0,0))
-
+    
     // paste oriented at a shared topLeft
     var topLevel = Array.from(div.querySelectorAll(":scope > *"))
     var all = Array.from(div.querySelectorAll("*"))
+    
     this.initializeElements(all)
+    
+    
+    // somehow zIndex gets lost...
+    var zIndexMap = new Map()
+    topLevel.forEach(ea => {
+       zIndexMap.set(ea, ea.style.zIndex)
+    })
+    
+    
+    // topLevel = _.sortBy(topLevel, ea => ea.style && ea.style.zIndex).reverse()
+    // topLevel.forEach(ea => ea.remove())
+    // topLevel.forEach(ea => ea.style.zIndex = "")
     topLevel.forEach(ea => div.appendChild(ea))
     var offset = (pos || pt(0,0)).subPt(this.getTopLeft(topLevel))
     var result = div
     
     // #TODO #CleanUp
+    
     topLevel.forEach(child => {
       if (child.classList.contains("lively-content") || child.tagName == "LIVELY-WINDOW") {
         container.appendChild(child)
         lively.moveBy(child, offset)
         result = child; // return last result?
       }
-    })   
+    })
+    
+    // restore zIndex in an Async way... it seems focus is responsible for it #Hack
+    lively.sleep(0).then(() => {
+      topLevel.forEach(ea => {
+        ea.style.zIndex = zIndexMap.get(ea)
+      })
+    })
+    
     // clean up if neccesary
-    if (div.childNodes.length == 0) {
+    
+    if (div.childElementCount == 0) {
       div.remove() // and get rid of the tmp container
     } else {
       // ajust position and content size
