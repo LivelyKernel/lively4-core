@@ -90,9 +90,6 @@ export default class JsxRay extends Morph {
         await this.sourceEditor.loadFile();
       }
       
-      lively.notify(location.start.line + ' ' + location.end.line, 
-                    location.start.column + ' ' + location.end.column)
-      
       this.sourceEditor.currentEditor().scrollIntoView({
         line: location.start.line - 1,
         ch: location.start.column
@@ -377,11 +374,12 @@ export default class JsxRay extends Morph {
     lively.setPosition(this.frameHandlesLeft, lively.pt(-10,-20))
     lively.addEventListener('dragging', this.frameHandlesLeft, 'pointerdown', evt => this.onDragStart(evt));
 
+    this.frameHandlesLeftLabel.isMetaNode = true
+
     this.sourceEditor.isMetaNode = true
     lively.setExtent(this.sourceEditor, lively.pt(600,150))
     lively.setPosition(this.sourceEditor, lively.pt(0,200))
-
-    this.frameHandlesLeftLabel.isMetaNode = true
+    this.sourceEditor.hideToolbar();
 
     this.ajustRootPosition()
     this.updateWorld()
