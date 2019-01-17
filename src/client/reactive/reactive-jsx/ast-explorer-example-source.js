@@ -1,4 +1,4 @@
-<div>{'hello'}</div>
+<div>hello {'world'}<input /></div>
 
 var a = 3
 var b = 4

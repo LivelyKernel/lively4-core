@@ -111,7 +111,13 @@ function composeElement(tagElement, attributes, children) {
 
 export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
 
-export function element(tagName, attributes, children) {
+function addSourceLocation(tag, sourceLocation) {
+  if (sourceLocation) {
+    tag.jsxMetaData = { sourceLocation };
+  }
+}
+
+export function element(tagName, attributes, children, sourceLocation) {
   const isWebComponent = tagName.includes('-');
   const handleAsync = isWebComponent || children.some(child => child &&
                                                       child instanceof Promise &&
@@ -123,6 +129,7 @@ export function element(tagName, attributes, children) {
                                basicCreateElement(tagName))
       .then(element => {
         resolvedTag = element;
+        addSourceLocation(resolvedTag, sourceLocation);
         return Promise.all(children.map(c => Promise.resolve(c)));
       })
       .then(resolvedChildren => composeElement(resolvedTag, attributes, resolvedChildren));
@@ -130,6 +137,7 @@ export function element(tagName, attributes, children) {
     return returnPromise;
   } else {
     const tag = basicCreateElement(tagName);
+    addSourceLocation(tag, sourceLocation);
     return composeElement(tag, attributes, children);
   }
 }

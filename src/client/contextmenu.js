@@ -344,21 +344,23 @@ export default class ContextMenu {
           lively.setPosition(morph, lively.pt(0,0), "fixed")
           this.hide();
         }],
-        ["X Ray", async evt => {
+        ["X-Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'], 
-        ["X Ray Events", async evt => {
+        ["X-Ray Events", async evt => {
           var morph  = await lively.openPart("XRayEvents") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
-        ["X Ray JSX", async evt => {
+        ["JSX-Ray ", async evt => {
           var morph  = await lively.create("jsx-ray") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
+        ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
+          undefined, '<i class="fa fa-tree" aria-hidden="true"></i>'],
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
