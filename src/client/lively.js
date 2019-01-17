@@ -503,8 +503,9 @@ export default class Lively {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
     // keyboard events don't have a position.
+    // take the position of the target element.
     if(obj instanceof KeyboardEvent) {
-      return;
+      return lively.getGlobalPosition(obj.target);
     }
     // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
@@ -551,7 +552,7 @@ export default class Lively {
   }
 
   static  setGlobalPosition(node, pos) {
-    if (!node.parentElement) return
+    // if (!node.parentElement) return
     // var parentPos = this.getGlobalPosition(node.parentElement)
     // this.setPosition(node, pos.subPt(parentPos))
 
