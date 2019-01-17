@@ -36,6 +36,8 @@ export default class Container extends Morph {
       })::debounce(1000);
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
+    lively.addEventListener("Container", this.get("#back"), "mousedown", evt => this.onBackDown(evt));
+    lively.addEventListener("Container", this.get("#back"), "mouseup", evt => this.onBackUp(evt));
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {
         this.target.dispatchEvent(new CustomEvent("extent-changed"));
@@ -351,8 +353,61 @@ export default class Container extends Morph {
     else
       this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
+  
+  async onBackDown(evt) {
+    var oldList = this.get("#back").querySelector("#back-history-list")
+    if (oldList) oldList.remove()
+    this.lastBackButtonMouseUp = null
+    this.cancelOnBack = null
+    await lively.sleep(1000)
+    if (!this.lastBackButtonMouseUp) {
+      this.cancelOnBack = true
+      // Ad hoc pull down list
+      var list = <div id="back-history-list" style="font-size:12pt">history:<br /><ul >{... 
+        this.history().map(ea => {
+          var item = <li>{ea}</li>
+          item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
+          item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
+          item.addEventListener("mouseup", (evt) => {
+            evt.stopPropagation()
+            evt.preventDefault()
+            lively.notify("go to history: " + ea)
+            
+            var url = "nourl"
+            while(url && url !== ea ) {
+              url= this.history().pop();
+              this.forwardHistory().push(url);
+            }
+            list.remove()
+            this.followPath(url)
+          })
+          return item
+        })
+      }</ul></div>
+      lively.setPosition(list, pt(0,0))
+      this.get("#back").appendChild(list)
+      lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
+      list.style.textAlign = "left"
+      list.style.zIndex = 1000
+      list.style.backgroundColor = "white"
+      list.style.opacity = 0.8
+      list.style.minWidth = "200px"
+      // lively.showElement(list)
+    }
+  }
+  
+  onBackUp(evt) {
+    this.lastBackButtonMouseUp = Date.now()
+    
+    // I don't know were to ged rid of it when not here_
+    var oldList = this.get("#back").querySelector("#back-history-list")
+    if (oldList) oldList.remove()
+    
+  }
 
   onBack() {
+    if ( this.cancelOnBack ) return
+    
     if (this.history().length < 2) {
       lively.notify("No history to go back!");
       return;
@@ -1363,12 +1418,14 @@ export default class Container extends Morph {
     var editor = this.getAceEditor()
     if (editor) {
       editor.find(name);
-    } else {
-      this.scrollToAnchor(name.replace(/# ?/g,""))
+    } else {      
+      var baseURL = this.getURL().toString().replace(/\#.*/,"")
+      var anchor = "#" + name.replace(/# ?/g,"")
+      var nextURL = baseURL + anchor
+      this.setPathAttributeAndInput(nextURL)
+      this.history().push(nextURL);
+      this.scrollToAnchor(anchor)
     }
-  
-    
-    
   }
 
   clearNavbar() {
