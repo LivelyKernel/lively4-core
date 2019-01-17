@@ -212,6 +212,15 @@ export default class JsxRay extends Morph {
       lively.setExtent(mirrorElement, bounds.extent())      
     }
 
+    mirrorElement.addEventListener("mousemove", evt => {
+      this.sourceEditor.style.display = 'block';
+      lively.setGlobalPosition(this.sourceEditor, lively.getPosition(evt))
+    })
+
+    mirrorElement.addEventListener("mouseout", () => {
+      this.sourceEditor.style.display = 'none';
+    })
+        
     mirrorElement.addEventListener("click", () => {
       this.selectElement(subject)
     })
@@ -378,6 +387,7 @@ export default class JsxRay extends Morph {
 
     this.sourceEditor.isMetaNode = true
     lively.setExtent(this.sourceEditor, lively.pt(600,150))
+    lively.warn('reset')
     lively.setPosition(this.sourceEditor, lively.pt(0,200))
     this.sourceEditor.hideToolbar();
 

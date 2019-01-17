@@ -355,8 +355,8 @@ export default class ContextMenu {
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["JSX-Ray ", async evt => {
-          var morph  = await lively.create("jsx-ray") 
-          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          const jsxRay  = await lively.create("jsx-ray") 
+          lively.setGlobalPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
