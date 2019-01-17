@@ -86,6 +86,10 @@ export default class Selecting {
         isContainer = true
         containerIndex = index
       }
+      if (ea.tagName == "LIVELY-FIGURE") {
+        isContainer = true
+        containerIndex = index
+      }
       if (ea.id == "container-content") {
         isContent = true
       }
