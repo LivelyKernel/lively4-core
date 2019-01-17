@@ -684,8 +684,9 @@ export default class Container extends Morph {
 
   async scrollToAnchor(anchor) {
     if (anchor) {
-      var name = decodeURI(anchor.replace(/#/,""))
       
+      var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
+      debugger
       if (this.isEditing()) {
         var codeMirror = await (await this.asyncGet("#editor")).get('#editor');
         codeMirror.find(name)
@@ -1360,7 +1361,14 @@ export default class Container extends Morph {
   navigateToName(name) {
     // lively.notify("navigate to " + name);
     var editor = this.getAceEditor()
-    if (editor) editor.find(name);
+    if (editor) {
+      editor.find(name);
+    } else {
+      this.scrollToAnchor(name.replace(/# ?/g,""))
+    }
+  
+    
+    
   }
 
   clearNavbar() {
