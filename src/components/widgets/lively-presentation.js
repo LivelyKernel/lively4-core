@@ -61,10 +61,7 @@ export default class LivelyPresentation extends Morph {
     return this.slides().indexOf(this.slide)
   }
   
-  withContainerDo(func) {
-    var container = lively.query(this, "lively-container")
-    if (container) func(container)
-  }
+  
   
   updateContainerURLForSlideNumber(nextSlideNumber) {
     var container = lively.query(this, "lively-container")
