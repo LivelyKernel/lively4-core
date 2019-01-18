@@ -52,7 +52,7 @@ export default class GenericAstNode extends Morph {
         childNode = await (<generic-ast-node></generic-ast-node>)
         await childNode.setNode(this.astNode[key])
       }
-      this.childList.appendChild(<span>{key} {childNode}</span>)
+      this.childList.appendChild(<span class="kv-pair">{key} {childNode}</span>)
     }
   }
   
