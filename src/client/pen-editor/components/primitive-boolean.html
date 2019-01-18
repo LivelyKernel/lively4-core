@@ -1,22 +1,15 @@
-<template id="primitive-ast-node" data-class="PrimitiveAstNode">
+<template id="primitive-boolean" data-class="PrimitiveBoolean">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
 :host {
   
 }
-
-#input {
-  font-family: "Courier New";
+#content {
+  background-color: gray;
 }
-#input:focus {
-  outline:none;
-  outline: black dashed 1px;
-}
-
 </style>
-<!-- size="1"   -->
-<input id="input" type="text" placeholder="value" />
+  <input id="check" type="checkbox" />
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
