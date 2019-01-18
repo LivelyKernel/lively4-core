@@ -2,14 +2,22 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-export default class PrimitiveAstNode extends Morph {
+export default class PrimitiveString extends Morph {
   get input() { return this.get('#input'); }
   
   async initialize() {
-    this.windowTitle = "PrimitiveAstNode";
+    this.windowTitle = "PrimitiveString";
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.enableAutoResize();
+  }
+  
+  get value() {
+    return this.input;
+  }
+  set value(str) {
+    this.input.value = str;
+    return str;
   }
   
   updateSize() {

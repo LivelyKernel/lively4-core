@@ -21,8 +21,15 @@ var tool =  lively.query(this,"#dragimport").get("#elements-under")
 Persistence.initLivelyObject(tool) // bring it to livey #TODO should be done in lively-import
 
 // ok, very hacky... can we do it otherwise?
-var style = document.createElement("style")
-style.textContent = await fetch(lively4url + "/src/external/highlight.css").then(r => r.text())
+// var style = document.createElement("style")
+// style.textContent = await fetch(lively4url + "/src/external/highlight.css").then(r => r.text())
+// this.shadowRoot.appendChild(style)
+// alternative using link tag
+var style = document.createElement("link")
+style.setAttribute('rel',"stylesheet")
+style.setAttribute('type',"text/css")
+style.setAttribute('href',lively4url + "/src/external/highlight.css")
+
 this.shadowRoot.appendChild(style)
 
 var pre = document.createElement("pre")
@@ -31,3 +38,18 @@ highlight.highlightBlock(pre);
 return pre
 })()
 </script>
+
+### #Style, #Link
+
+```JavaScript
+// ok, very hacky... can we do it otherwise?
+var style = document.createElement("style")
+style.textContent = await fetch(lively4url + "/src/external/highlight.css").then(r => r.text())
+this.shadowRoot.appendChild(style)
+
+// alternative using link tag
+var style = document.createElement("link")
+style.setAttribute('rel',"stylesheet")
+style.setAttribute('type',"text/css")
+style.setAttribute('href',lively4url + "/src/external/highlight.css")
+```
