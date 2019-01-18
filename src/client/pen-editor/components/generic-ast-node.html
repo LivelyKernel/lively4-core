@@ -6,18 +6,28 @@
   background-color: rgba(111,0,0,0.1);
   overflow-y: auto
 }
-  #node-type {
-  border: 5px solid yellow
-    background-color: rgba(1,1,1,0.1)
-  }
   #container {
-  border: 5px solid red
+  border: 5px solid red;
+    display: flex;
+    flex-direction: row;
+  }
+  #node-type {
+    border: 5px solid yellow;
+    color: yellow;
+    background-color: rgba(1,1,1,0.1);
   }
   #child-list {
-  border: 5px solid blue
+    border: 5px solid green;
+    display:flex;
+    flex-direction: column;
   }
   #child-list span {
-  background-color: rgba(1,1,1,0.1)
+    background-color: rgba(1,1,1,0.1)
+  }
+  .kv-pair {
+    display:flex;
+    flex-direction: row;
+    border: 2px solid blue;
   }
 </style>
   <div id="container">
