@@ -1,0 +1,68 @@
+<div class="lively-content" style="width: 360px; height: 85.2px; border: 4px dashed black; position: absolute; left: 451px; top: -810.4px; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-id="b051593c-855e-4b25-850f-193a42ffa789"><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
+  this.style.zIndex = 1000
+  setInterval(() => {
+    this.onStep()
+  }, 1000)
+  
+  lively.removeEventListener("Drag", this)
+  lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
+  
+}</script><script type="lively4script" data-name="onStep">function onStep() {
+  lively.showPoint(lively.getGlobalPosition(this))
+
+  var list = this.querySelector("ul")
+  if (!list) {
+    list = document.createElement("ul")
+  } 
+  
+  list.innerHTML = ""
+  var pos = lively.getGlobalPosition(this)
+  var elements = document.elementsFromPoint(pos.x, pos.y)
+  
+  elements.forEach(ea => {
+    if (ea === this) return; // ignore yourself
+    var item = document.createElement("li")
+    item.innerHTML = "" + ea.localName + " " + ea.classList   + (ea.id ? "#" + ea.id : "") + ": " + ea.textContent.slice(0,50) 
+    list.appendChild(item)
+  })
+  this.appendChild(list)
+  this.style.minWidth = "400px"
+  lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
+}</script><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+  
+    
+  lively.setPosition(this, lively.getPosition(evt).addPt(this.offset))
+    
+}</script><script type="lively4script" data-name="onMouseDown">function onMouseDown(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+  
+  this.offset = lively.getPosition(this).subPt(lively.getPosition(evt))
+  
+  lively.addEventListener("ElementsUnder",document.documentElement, "mousemove", evt => this.onGlobalMouseMove(evt))
+  lively.addEventListener("ElementsUnder", document.documentElement, "mouseup", evt => this.onGlobalMouseUp(evt))
+
+  
+}</script><script type="lively4script" data-name="onGlobalMouseUp">function onGlobalMouseUp(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+
+  lively.removeEventListener("ElementsUnder", document.documentElement)
+}</script><ul><li>lively-halo : </li><li>lively-halo : </li><li>html : 
+    
+  Lively 4
+  
+    
+    
+  
+
+
+
+
+Hello
+
+
+
+sort</li></ul></div>
