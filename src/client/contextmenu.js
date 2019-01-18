@@ -316,7 +316,8 @@ export default class ContextMenu {
           lively.hand.startGrabbing(morph, evt)
           morph.classList.add("lively-content")
           this.hide();
-        }]
+        }],
+        
       ]],
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
@@ -375,6 +376,22 @@ export default class ContextMenu {
           workspace.mode = "text"
         }],
       ]],
+      [
+        "Parts",
+          fetch(lively4url + "/src/parts", {
+            method: "OPTIONS"
+          }).then(r => r.json()).then( json => json.contents.filter(ea => ea.name.match(/\.html/)).map(ea => {
+            var partName = "" + ea.name.replace(/\.html/,"");
+            return [
+              partName, 
+              async (evt) =>  {
+                var morph  = await lively.openPart(partName)          
+                lively.setGlobalPosition(morph, lively.getPosition(evt))
+                lively.hand.startGrabbing(morph, evt)
+                morph.classList.add("lively-content")
+                this.hide();
+              }]}))
+      ],
       [
         "Windows", 
         Windows.allWindows().map(ea => [
