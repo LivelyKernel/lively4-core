@@ -328,7 +328,11 @@ export default class Graffle {
   }
   
   static ensureTargetContainer(evt) {
-    var targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+    debugger
+    var targetContainer = evt.path.find(ea => ea.localName == "lively-figure")
+    if (!targetContainer) {
+      targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+    }
     if (targetContainer) {
       lively.showElement(targetContainer)
       this.targetContainer = targetContainer

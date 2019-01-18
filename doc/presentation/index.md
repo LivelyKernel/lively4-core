@@ -221,6 +221,13 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Babylonian Programming
 - Live Programming Web-components
 
+## Drafts
+
+- https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md
+  - #Aysnc #COP with #Promises and syntax support
+  - #LiterateProgramming / #ActiveEssay Library / Environment
+
+
 ---
 # Applications
 
@@ -260,14 +267,23 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Drawing Sketch with a #Pen
 
 
+## Paper Writing
+
+- writing markdown (directly include in LaTeX)
+- 
+
 ---
 # Features
 
-- Windows
+- #Windows
   - vs. pure pane and tab layout of typical websites 
-- Markdown
+- #Markdown
   - bundles (directory with index.md and linked content) #LivelyContainer
 
+
+## UI
+
+- Expose <br> ![](expose.png){style="width:300px"}
 
 ---
 # Documentation
@@ -293,9 +309,9 @@ We experimented with making object identity explicit when opening tools on them.
 # Related Work
 
 - Lively Kernel 
-  - Webwerkstatt 
-  - Lively Web
-  - Lively Next
+  - #Webwerkstatt 
+  - #LivelyWeb
+  - #LivelyNext
 
 ---
 ##  Lively Kernel

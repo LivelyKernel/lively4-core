@@ -36,8 +36,17 @@ export default class Container extends Morph {
       })::debounce(1000);
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
-    lively.addEventListener("Container", this.get("#back"), "mousedown", evt => this.onBackDown(evt));
-    lively.addEventListener("Container", this.get("#back"), "mouseup", evt => this.onBackUp(evt));
+    
+    // lively.addEventListener("Container", this.get("#back"), "mousedown", evt => this.onBackDown(evt));
+    // lively.addEventListener("Container", this.get("#back"), "mouseup", evt => this.onBackUp(evt));
+   
+    lively.html.addDeepMousePressed(this.get("#back"), () => this.history(), (evt, url) => {
+      this.unwindAndFollowHistoryUntil(url)
+    })
+    lively.html.addDeepMousePressed(this.get("#forward"), () => this.forwardHistory(), (evt, url) => {
+      this.unwindAndFollowForwardHistoryUntil(url)
+    })
+    
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {
         this.target.dispatchEvent(new CustomEvent("extent-changed"));
@@ -354,61 +363,26 @@ export default class Container extends Morph {
       this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
   
-  
-  // #TODO how to generalize this? component? util code? #Refactor
-  async onBackDown(evt) {
-    var oldList = this.get("#back").querySelector("#back-history-list")
-    if (oldList) oldList.remove()
-    this.lastBackButtonMouseUp = null
-    this.cancelOnBack = null
-    await lively.sleep(1000)
-    if (!this.lastBackButtonMouseUp) {
-      this.cancelOnBack = true
-      // Ad hoc pull down list
-      var list = <div id="back-history-list" style="font-size:12pt">history:<br /><ul >{... 
-        this.history().map(ea => {
-          var item = <li>{ea}</li>
-          item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
-          item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
-          item.addEventListener("mouseup", (evt) => {
-            evt.stopPropagation()
-            evt.preventDefault()
-            lively.notify("go to history: " + ea)
-            
-            var url = "nourl"
-            while(url && url !== ea ) {
-              url= this.history().pop();
-              this.forwardHistory().push(url);
-            }
-            list.remove()
-            this.followPath(url)
-          })
-          return item
-        })
-      }</ul></div>
-      lively.setPosition(list, pt(0,0))
-      this.get("#back").appendChild(list)
-      lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
-      list.style.textAlign = "left"
-      list.style.zIndex = 1000
-      list.style.backgroundColor = "white"
-      list.style.opacity = 0.8
-      list.style.minWidth = "200px"
-      // lively.showElement(list)
+  unwindAndFollowHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.history().pop();
+      this.forwardHistory().push(url);
     }
+    this.followPath(url)
   }
   
-  onBackUp(evt) {
-    this.lastBackButtonMouseUp = Date.now()
-    
-    // I don't know were to ged rid of it when not here_
-    var oldList = this.get("#back").querySelector("#back-history-list")
-    if (oldList) oldList.remove()
-    
+  unwindAndFollowForwardHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.forwardHistory().pop();
+      this.history().push(url);
+    }
+    this.followPath(url)
   }
-
+  
+  
   onBack() {
-    if ( this.cancelOnBack ) return
     
     if (this.history().length < 2) {
       lively.notify("No history to go back!");
@@ -1845,6 +1819,10 @@ export default class Container extends Morph {
   
   livelyMigrate(other) {
     // other = that
+
+    this._history = other._history;
+    this._forwardHistory = other._forwardHistory;
+    
     this.isMigrating = true;
     this.preserveContentScroll = other.oldContentScroll;
     var editor = other.get("#editor");
