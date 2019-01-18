@@ -1,4 +1,4 @@
-<div class="lively-content" style="width: 360px; height: 66.8px; border: 4px dashed black; position: absolute; left: 290px; top: -875.4px; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-id="b051593c-855e-4b25-850f-193a42ffa789"><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
+<div class="lively-content" style="width: 360px; height: 177.2px; border: 4px dashed black; position: absolute; left: 1657px; top: -826px; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-part-name="elements-under"><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
   this.style.zIndex = 1000
   setInterval(() => {
     this.onStep()
@@ -7,27 +7,6 @@
   lively.removeEventListener("Drag", this)
   lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
   
-}</script><script type="lively4script" data-name="onStep">function onStep() {
-  lively.showPoint(lively.getGlobalPosition(this))
-
-  var list = this.querySelector("ul")
-  if (!list) {
-    list = document.createElement("ul")
-  } 
-  
-  list.innerHTML = ""
-  var pos = lively.getGlobalPosition(this)
-  var elements = document.elementsFromPoint(pos.x, pos.y)
-  
-  elements.forEach(ea => {
-    if (ea === this) return; // ignore yourself
-    var item = document.createElement("li")
-    item.innerHTML = "" + ea.localName + " " + ea.classList   + (ea.id ? "#" + ea.id : "") + ": " + ea.textContent.slice(0,50) 
-    list.appendChild(item)
-  })
-  this.appendChild(list)
-  this.style.minWidth = "400px"
-  lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
 }</script><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
   evt.stopPropagation()
   evt.preventDefault()
@@ -50,19 +29,48 @@
   evt.preventDefault()
 
   lively.removeEventListener("ElementsUnder", document.documentElement)
-}</script><ul><li>div lively-content#hello: hallo</li><li>html : 
+}</script><script type="lively4script" data-name="onStep">function onStep() {
+  var list = this.querySelector("ul")
+  if (!list) {
+    list = document.createElement("ul")
+  } 
+  
+  list.innerHTML = ""
+  var pos = lively.getGlobalPosition(this)
+  var elements = lively.allElementsFromPoint(pos)
+  
+  elements.forEach(ea => {
+    if (ea === this) return; // ignore yourself
+    var item = document.createElement("li")
+    item.innerHTML = "" + ea.localName + " " + ea.classList   + (ea.id ? "#" + ea.id : "") + ": " + ea.textContent.slice(0,50) 
+    list.appendChild(item)
+  })
+  this.appendChild(list)
+  this.style.minWidth = "400px"
+  lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
+}</script><ul><li>lively-container : </li><li>i fa fa-check-circle: </li><li>button edit#accept: 
+        </li><li>div fill#container-navigation: 
+      
+      
+      
+      
+      
+      
+
+      </li><li>lively-window global: </li><li>div window-content#window-content: 
+      
+    </li><li>div window: 
+    
+      
+
+      lively.js
+      
+      	
+     </li><li>html : 
     
   Lively 4
   
     
     
   
-
-
-
-
-Hello
-
-
-
-sort</li></ul></div>
+that.shadowRoot.e</li></ul></div>
