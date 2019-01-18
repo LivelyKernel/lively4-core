@@ -1456,9 +1456,10 @@ export default class Lively {
   }
 
   static findWorldContext(element) {
+    
     if (!element) return document.body
     if (!element.parentElement) return element.parentNode; // shadow root
-    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER")
+    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER" ||  element.tagName == "LIVELY-FIGURE")
       return element
     else
       return this.findWorldContext(element.parentElement)
