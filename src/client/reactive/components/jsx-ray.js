@@ -215,6 +215,7 @@ export default class JsxRay extends Morph {
     mirrorElement.addEventListener("mousemove", evt => {
       this.sourceEditor.style.display = 'block';
       lively.setGlobalPosition(this.sourceEditor, lively.getPosition(evt))
+      this.selectElement(subject)
     })
 
     mirrorElement.addEventListener("mouseout", () => {
