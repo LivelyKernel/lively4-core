@@ -209,7 +209,7 @@ class ServiceWorker {
     
     let  url = new URL(request.url);
 
-    console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
+    // console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
     // console.log(`fetch(${url})`);
 
     if (url.pathname.match(/\/_git\//)) return;

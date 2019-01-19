@@ -1103,14 +1103,16 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
 
-  find(name) {
+  find(str) {
     // #TODO this is horrible... Why is there not a standard method for this?
 	if (!this.editor) return;
     var found = false;
   	this.value.split("\n").forEach((ea, index) => {
-      if (!found && (ea.indexOf(name) != -1)) {
-	    this.editor.setCursor(index, 10000);// line end ;-)
+      var startPos = ea.indexOf(str)
+      if (!found && (startPos != -1)) {
+	    this.editor.setCursor(index + 20, 10000);// line end ;-)
         this.editor.focus()
+        this.editor.setSelection({line: index, ch: startPos }, {line: index, ch: startPos + str.length})
         found = ea;
   	  }
     })

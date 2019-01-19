@@ -174,6 +174,7 @@ export default class HTML {
           // console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
+          var anchor;
           var m
           if (m = href.match(/javascript:visitPath\('webwerkstatt\/(.*)'\)/)) {
             path = "/Thesis/" + m[1]
@@ -185,6 +186,10 @@ export default class HTML {
             path = href;
           } else if (href.match(/^\//)) {
             path = href; // ABSOLTUE paths
+          } else if (href.match(/^#/)) {
+            // Anchor links
+            path = null
+            anchor = href
           } else {
             path = dir + href // that leaves us RELATIVE paths
             if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
@@ -201,8 +206,20 @@ export default class HTML {
               node.setAttribute("data-href", href) // so we keep the original somewhere..
               node.setAttribute("href", path)
             }            
-            node.addEventListener("click", () => { 
-              followPath(path); return false; });
+            node.addEventListener("click", (evt) => { 
+              evt.preventDefault()
+              evt.stopPropagation()
+              followPath(path); 
+              return false; 
+            });
+          } else if (anchor) {
+            node.addEventListener("click", (evt) => { 
+              debugger
+              evt.preventDefault()
+              evt.stopPropagation()
+              followPath(anchor); 
+              return false; 
+            });
           } else {
             // console.log("ignore " + href)
           }
@@ -439,9 +456,62 @@ export default class HTML {
       attributes: true,
       attributeFilter: ["style"]
     });
-    return observer
-    
+    return observer 
   }
+  
+  
+  
+  // #TODO refactor magic numbers to style? maybe lively.css?
+  static addDeepMousePressed(element, listFunc, cb) {
+    if (!listFunc) {
+      throw new Error("listFunc argument is missing")
+    }
+    var deepListId = "deep-list"
+    function clearList() {
+      var oldList = element.querySelector("#" + deepListId)
+      if (oldList) oldList.remove()
+    }
+    lively.addEventListener("HTMLDeepPress", element, "mousedown", async (evt) => {
+      clearList()
+      element._deepPressedLastMouseUp = null
+      element.cancelOnBack = null
+      await lively.sleep(1000)
+      if (!element._deepPressedLastMouseUp) {
+        element.cancelOnBack = true
+        var list = <div id={deepListId} style="font-size:12pt"><ul>{... 
+          listFunc().map(ea => {
+            var item = <li>{ea}</li>
+            item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
+            item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
+            item.addEventListener("mouseup", (evt) => {
+              evt.stopPropagation()
+              evt.preventDefault()
+              list.remove()
+              cb && cb(evt, ea)
+            })
+            return item
+          })
+        }</ul></div>
+        list.style.position = 'absolute';
+        element.appendChild(list)
+        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
+        list.style.textAlign = "left"
+        list.style.zIndex = 1000
+        list.style.backgroundColor = "white"
+        list.style.opacity = 0.8
+        list.style.minWidth = "200px"
+      }
+    })
+      
+    lively.addEventListener("HTMLDeepPress", element, "mouseup", evt => {
+      element._deepPressedLastMouseUp = Date.now()
+      // I don't know were to ged rid of it when not here_
+      clearList()
+    });
+  }
+  
+  
+  
 }
 
 // #LiveProgramming #Hack #CircularDependency #TODO

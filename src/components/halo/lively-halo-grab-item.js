@@ -239,7 +239,8 @@ export default class HaloGrabItem extends HaloItem {
     var worldContext = lively.findWorldContext(targetNode);
     if (!(worldContext === document.body 
       || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN")
-      || worldContext.tagName == "LIVELY-CONTAINER")) return false;
+      || (worldContext.tagName == "LIVELY-FIGURE")
+      || (worldContext.tagName == "LIVELY-CONTAINER"))) return false;
     
     return node !== targetNode &&
       !targetNode.isMetaNode &&

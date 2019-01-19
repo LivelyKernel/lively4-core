@@ -1,6 +1,7 @@
 "enable aexpr";
 
-import Morph from 'src/components/widgets/lively-morph.js';
+import AbstractAstNode from './abstract-ast-node.js'
+
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -21,7 +22,7 @@ const babel = babelDefault.babel;
 // Object.keys(y)
 //((babel.types.NODE_FIELDS.BlockStatement.directives.validate).chainOf[1].each).oneOfNodeTypes[0] === 'Directive'
 
-export default class GenericAstNode extends Morph {
+export default class GenericAstNode extends AbstractAstNode {
   async initialize() {
     this.windowTitle = "GenericAstNode";
   }
@@ -40,19 +41,24 @@ export default class GenericAstNode extends Morph {
         if (Array.isArray(this.astNode[key])) {
           const children = this.astNode[key];
           const nodes = await Promise.all(children.map(async child => {
-            const node = await (<generic-ast-node></generic-ast-node>)
+            const node = await this.getAppropriateNode(child)
             await node.setNode(child)
             return node
           }));
           childNode = <div>{...nodes}</div>
         } else {
-          childNode = document.createTextNode(this.astNode[key]);
+          if (this.astNode[key] === true || this.astNode[key] === false) {
+            childNode = await (<primitive-boolean></primitive-boolean>);
+            childNode.checked = this.astNode[key];
+          } else {
+            childNode = document.createTextNode(this.astNode[key]);
+          }
         }
       } else {
-        childNode = await (<generic-ast-node></generic-ast-node>)
+        childNode = await this.getAppropriateNode(this.astNode[key])
         await childNode.setNode(this.astNode[key])
       }
-      this.childList.appendChild(<span>{key} {childNode}</span>)
+      this.childList.appendChild(<span class="kv-pair"><span class="property-key">{key}</span> {childNode}</span>)
     }
   }
   

@@ -159,7 +159,7 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  openOn(items, openEvt, optPos) {
+  async openOn(items, openEvt, optPos) {
     var menu = this.get(".container");
     menu.innerHTML = "" // clear
     // create a radio button for each tool
@@ -167,21 +167,21 @@ export default class LivelyMenu extends Morph {
       console.log("WARNING: no items to open")
       return Promise.resolve()
     }
-    items.forEach((ea) => {
-      var item = document.createElement("li");
+    for(let ea of items) {
+      let item = document.createElement("li");
       item.entry = ea
-      var icon = "<div class='icon'>"+ (ea[3] ? ea[3] : "")+"</div>"
-      var right = <label>{ea[2] ?
+      let icon = "<div class='icon'>"+ (ea[3] ? ea[3] : "")+"</div>"
+      let right = <label>{ea[2] ?
               (ea[2].replace ? ea[2].replace("CMD","Ctrl")  : ea[2]) :
               ""}
-        <span class='submenuindicator'>{(ea[1] instanceof Array ? <span>&#9658;</span> : " ")}</span>
+        <span class='submenuindicator'>{((ea[1] instanceof Array || ea[1] instanceof Promise)  ? <span>&#9658;</span> : " ")}</span>
 </label>
       
       item.innerHTML = icon + ea[0];
       item.appendChild(right);
       
       if (ea[1] instanceof Function) {
-        var func = ea[1];
+        let func = ea[1];
         item.addEventListener("click", evt => func(evt, item));
       }
 
@@ -191,7 +191,7 @@ export default class LivelyMenu extends Morph {
         }
       })
       menu.appendChild(item);
-    });
+    };
     if (optPos) lively.setPosition(this, optPos);
     this.moveInsideWindow();
     
@@ -209,8 +209,10 @@ export default class LivelyMenu extends Morph {
     var ea = item.entry
     var menu = this.get(".container");
     if (this.submenu) this.submenu.remove()
-    if (ea[1] instanceof Array) {
-      var subitems = ea[1];
+    var sub = ea[1]
+    if (sub.then) sub = await sub; // resolve Promise
+    if (sub instanceof Array) {
+      var subitems = sub;
       this.submenu = document.createElement("lively-menu")
       this.submenu.parentMenu = this
       await lively.components.openIn(menu, this.submenu)

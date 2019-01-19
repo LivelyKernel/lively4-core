@@ -8,7 +8,6 @@ export function isCurrentlyCloning() {
 }
 
 
-
 export default class Persistence {
   
   constructor() {
@@ -78,7 +77,15 @@ export default class Persistence {
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source
+    var topLevel = Array.from(div.querySelectorAll(":scope > *"))
     var objs = Array.from(div.childNodes)
+    
+    // somehow zIndex gets lost...
+    var zIndexMap = new Map()
+    topLevel.forEach(ea => {
+       zIndexMap.set(ea, ea.style.zIndex)
+    })
+    
     objs.map(ea => {
       if(ea.classList && ea.classList.contains('lively-preferences')) {
         target.querySelectorAll('div.lively-preferences').forEach(ele => ele.remove());
@@ -86,6 +93,14 @@ export default class Persistence {
       target.appendChild(ea);
     });
     await lively.components.loadUnresolved(target)
+    
+    // restore zIndex in an Async way... it seems focus is responsible for it #Hack
+    lively.sleep(0).then(() => {
+      topLevel.forEach(ea => {
+        ea.style.zIndex = zIndexMap.get(ea)
+      })
+    })
+    
     objs.map(ea => { Persistence.initLivelyObject(ea)})
     return 
   }

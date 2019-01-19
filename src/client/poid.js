@@ -1,6 +1,7 @@
 /* Polymorphic Identifier */
 
-import FileCache from 'src/client/fileindex.js'
+import FileIndex from 'src/client/fileindex.js'
+var FileCache = FileIndex 
 
 export class ObjectResponse {
  
@@ -196,13 +197,24 @@ export class LivelySearch extends Scheme {
       var filename = searchString.replace(/name=/g,"")
       result += await this.generateResult(
         FileCache.current().db.files.where("name").equals(filename))
-    } else if (searchString.match(/^#/)) {
-      var tag = searchString
-      result += await this.generateResult(
-        FileCache.current().db.files.where("tags").notEqual([]).filter(ea => ea.tags.indexOf(tag) != -1))
+    // } else if (searchString.match(/^#/)) {
+    //   var tag = searchString
+    //   result += await this.generateResult(
+    //     FileCache.current().db.files.where("tags").notEqual([]).filter(ea => ea.tags.indexOf(tag) != -1))
     } else {
-      result = "<b>nothing found</b>"  
+      var root = lively4url
+      var count = 0
+      await FileIndex.current().db.files.each(file => {
+        if (file.url.startsWith(root) && file.content) {
+          var m = file.content.match(searchString)
+          if (m) {
+             result += `<li>${++count}. <a href="${file.url}">${file.name}: ${
+                file.title.replace(/</g,"&lt;")}</a></li>`
+          }
+        }
+      })
     }
+    // result = "<b>nothing found</b>"  
     
     // #Hack, if we are in a "browser" just... go forward
     result += `

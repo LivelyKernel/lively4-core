@@ -22,7 +22,7 @@
 - Unified repository vs. cloud of tiny github projects
   - [code repository](../src/client/)
   - [documentation](index.md) 
-  - (demos)[../demos/]
+  - [demos](../demos/)
 
 --- 
 

@@ -8,9 +8,17 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
  */
 
+function basicCreateElement(tagName) {
+  const element = document.createElement(tagName);
+  
+  element.isJSXElement = true;
+
+  return element;
+}
+
 // cannot use JSX elements in implementation of JSX elements :(
 function getPendingNode() {
-  const icon = document.createElement("i");
+  const icon = basicCreateElement("i");
   icon.classList.add("fa", "fa-spinner", "fa-pulse", "fa-fw")
   const span = document.createElement("span");
   span.style.color = "yellow";
@@ -20,7 +28,7 @@ function getPendingNode() {
 }
 
 function getErrorNode(e) {
-  const icon = document.createElement("i");
+  const icon = basicCreateElement("i");
   icon.classList.add("fa", "fa-exclamation-triangle")
   const span = document.createElement("span");
   span.style.color = "red";
@@ -61,7 +69,6 @@ function isActiveGroup(obj) {
 }
 
 function composeElement(tagElement, attributes, children) {
-  
   for (let [key, value] of Object.entries(attributes)) {
     if(value instanceof Function) {
       // functions provided as attributes are used to create event listeners
@@ -104,7 +111,13 @@ function composeElement(tagElement, attributes, children) {
 
 export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
 
-export function element(tagName, attributes, children) {
+function addSourceLocation(tag, sourceLocation) {
+  if (sourceLocation) {
+    tag.jsxMetaData = { sourceLocation };
+  }
+}
+
+export function element(tagName, attributes, children, sourceLocation) {
   const isWebComponent = tagName.includes('-');
   const handleAsync = isWebComponent || children.some(child => child &&
                                                       child instanceof Promise &&
@@ -113,16 +126,18 @@ export function element(tagName, attributes, children) {
     let resolvedTag;
     const returnPromise = Promise.resolve(isWebComponent ?
                                lively.components.loadAndOpenComponent(tagName) :
-                               document.createElement(tagName))
+                               basicCreateElement(tagName))
       .then(element => {
         resolvedTag = element;
+        addSourceLocation(resolvedTag, sourceLocation);
         return Promise.all(children.map(c => Promise.resolve(c)));
       })
       .then(resolvedChildren => composeElement(resolvedTag, attributes, resolvedChildren));
     returnPromise[isPromiseForJSXElement] = true;
     return returnPromise;
   } else {
-    const tag = document.createElement(tagName);
+    const tag = basicCreateElement(tagName);
+    addSourceLocation(tag, sourceLocation);
     return composeElement(tag, attributes, children);
   }
 }

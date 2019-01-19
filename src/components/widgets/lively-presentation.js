@@ -61,12 +61,28 @@ export default class LivelyPresentation extends Morph {
     return this.slides().indexOf(this.slide)
   }
   
+  
+  
+  updateContainerURLForSlideNumber(nextSlideNumber) {
+    var container = lively.query(this, "lively-container")
+    if (container) {
+      var baseURL =  container.getURL().toString().replace(/\#.*/,"")
+      var nextURL = baseURL + "#@" +nextSlideNumber
+      container.setPathAttributeAndInput(nextURL)
+      container.history().push(nextURL);
+    }
+  }
+  
   nextSlide() {
-    this.gotoSlideAt(this.currentSlideNumber() + 1)
+    var nextSlideNumber = this.currentSlideNumber() + 1
+    this.updateContainerURLForSlideNumber(nextSlideNumber)
+    this.gotoSlideAt(nextSlideNumber)
   }
 
   prevSlide() {
-    this.gotoSlideAt(this.currentSlideNumber() - 1)
+    var nextSlideNumber = this.currentSlideNumber() - 1
+    this.updateContainerURLForSlideNumber(nextSlideNumber)
+    this.gotoSlideAt(nextSlideNumber)
   }
   
   slides() {

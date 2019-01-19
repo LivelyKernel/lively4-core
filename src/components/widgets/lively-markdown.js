@@ -13,6 +13,9 @@ import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
 import Upndown from 'src/external/upndown.js';
 
+
+import FileIndex from 'src/client/fileindex.js'
+
 export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
@@ -113,6 +116,60 @@ export default class LivelyMarkdown extends Morph {
     if (dir) {
       lively.html.fixLinks([tmpDiv], this.getDir(), path => this.followPath(path));
     }
+    
+    /* Beatify Inplace Hashtag Navigation #TODO #Refactor #MoveToBetterPlace */
+    tmpDiv.querySelectorAll("a.tag").forEach(eaLink => {
+      var searchContainer = <div style="width:500px; height:200px; overflow: auto; background-color:lightgray; z-index:1000"></div>
+      lively.setPosition(searchContainer,pt(0,0)) // make absolute...
+      var shadow = searchContainer.attachShadow({mode: 'open'});     
+      var lastEntered
+      var lastLeft
+      eaLink.addEventListener("mouseenter", async () => {
+        lastEntered = Date.now()
+
+        var root = lively4url
+        var result = ""
+        var searchString = eaLink.href.replace("search://","")
+        await Promise.all([FileIndex.current().db.files.each(file => {
+          if (file.url.startsWith(root) && file.content) {
+            var m = file.content.match(searchString)
+            if (m) {
+               result += `<li><a href="${file.url}#${searchString.replace(/#/g,"")}">${file.url.replace(lively4url,"")}</a></li>`
+            }
+          }
+        }), lively.sleep(100)])
+
+        if (lastLeft > lastEntered) return
+
+        // document.body.appendChild(searchContainer)
+        eaLink.appendChild(searchContainer)        
+        lively.setGlobalPosition(searchContainer, lively.getGlobalPosition(eaLink).addPt(pt(0,15)))
+        searchContainer.innerHTML = "search"
+        // searchContainer.isMetaNode = true
+        searchContainer.id = "lively-search-container"
+        shadow.innerHTML = ""
+        
+        // ok, lets try some eye candy
+        searchContainer.style.opacity = 0
+        searchContainer.style.transition = "opacity 0.5s ease-in-out";
+        searchContainer.style.opacity = 0.8
+        
+        shadow.innerHTML = `<ol style="font-size:12pt">${result}<ol>`
+        lively.html.fixLinks(shadow.childNodes, this.getDir(), path => this.followPath(path))
+      })
+      
+      eaLink.addEventListener("mouseleave", async () => {
+        lastLeft = Date.now()
+        await lively.sleep(500)
+        if (lastEntered > lastLeft) return // we came back
+
+        searchContainer.style.transition = "opacity 0.5s ease-in-out";
+        searchContainer.style.opacity = 0
+        
+        await lively.sleep(1000)
+        searchContainer.remove()
+      })
+    })
     
     var root = this.get("#content")
     root.innerHTML = "";
@@ -251,6 +308,9 @@ function foo() {
 
 ## Foo {.blub style="background-color:yellow"}
 
+This is a #Hashtag and
+
+It goes on an on!
 
 `)
   }

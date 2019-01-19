@@ -13,7 +13,6 @@ export default class LivelyConnector extends Morph {
       this.resetBounds()
     })::debounce(500)
 
-    
     this.loadVertices() // if not connected
 
     this.fromElement = lively.elementByID(this.getAttribute("fromElement"), lively.findWorldContext(this))
@@ -91,12 +90,12 @@ export default class LivelyConnector extends Morph {
     var offset = lively.getGlobalPosition(c)
     var v = SVG.getPathVertices(p)
     if (a) {
-      var p1 = lively.getGlobalBounds(a).expandBy(1)[selectorA]()
+      var p1 = lively.getGlobalBounds(a).expandBy(0)[selectorA]() // no, extent because no arrow head
       v[0].x1 = p1.x - offset.x
       v[0].y1 = p1.y - offset.y
     }
     if (b) {
-      var p2 = lively.getGlobalBounds(b).expandBy(1)[selectorB]()
+      var p2 = lively.getGlobalBounds(b).expandBy(1)[selectorB]() // The arrow head goes into the object
       v[1].x1 = p2.x - offset.x
       v[1].y1 = p2.y - offset.y
     }

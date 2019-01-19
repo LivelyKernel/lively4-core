@@ -503,8 +503,9 @@ export default class Lively {
       pos = pt(parseFloat(obj.style.left), parseFloat(obj.style.top));
     }
     // keyboard events don't have a position.
+    // take the position of the target element.
     if(obj instanceof KeyboardEvent) {
-      return;
+      return lively.getGlobalPosition(obj.target);
     }
     // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
@@ -551,7 +552,7 @@ export default class Lively {
   }
 
   static  setGlobalPosition(node, pos) {
-    if (!node.parentElement) return
+    // if (!node.parentElement) return
     // var parentPos = this.getGlobalPosition(node.parentElement)
     // this.setPosition(node, pos.subPt(parentPos))
 
@@ -944,7 +945,7 @@ export default class Lively {
         oldInstance.livelyPreMigrate(oldInstance);
       }
       owner.replaceChild(newInstance, oldInstance);
-      oldInstance.childNodes.forEach(ea => {
+      Array.from(oldInstance.childNodes).forEach(ea => {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
           // console.log("append old child: " + ea);
@@ -1455,9 +1456,10 @@ export default class Lively {
   }
 
   static findWorldContext(element) {
+    
     if (!element) return document.body
     if (!element.parentElement) return element.parentNode; // shadow root
-    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER")
+    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER" ||  element.tagName == "LIVELY-FIGURE")
       return element
     else
       return this.findWorldContext(element.parentElement)
@@ -1677,7 +1679,7 @@ export default class Lively {
   }
   
   static elementToCSSName(element) {
-    element.localName + (element.id  ? "#" + element.id : "")
+    return element.localName + (element.id  ? "#" + element.id : "")
   }
 
   static async openPart(partName, worldContext=document.body) {
@@ -1777,6 +1779,16 @@ export default class Lively {
     all.add(root)
     return all
   }
+  
+  static allTextNodes(root){
+    var n, 
+        result=[], 
+        walk=document.createTreeWalker(root, NodeFilter.SHOW_TEXT,null,false);
+    while(n=walk.nextNode()) {
+      result.push(n);
+    }
+    return result;
+  }
 
   static findAllElements(filterFunc, deep) {
     return Array.from(this.allElements(deep)).filter(filterFunc)
@@ -1804,8 +1816,21 @@ export default class Lively {
     return "https://lively4/scheme/" + m[1] +"/" + m[2]
   }
 
-  
-  
+  static allElementsFromPoint(pos, root=document, visited=new Set()) {
+    var result = []
+    var elements = root.elementsFromPoint(pos.x, pos.y)
+    for (let ea of elements) {
+      if (!visited.has(ea)) {
+        result.push(ea)
+        visited.add(ea)
+        if (ea.shadowRoot && ea.shadowRoot.elementsFromPoint) {
+          result.push(...this.allElementsFromPoint(pos, ea.shadowRoot, visited))        
+        }
+      }
+    }
+    return result
+  }
+
 }
 
 if (!window.lively || window.lively.name != "Lively") {

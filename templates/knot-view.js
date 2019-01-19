@@ -5,6 +5,7 @@ import Morph from "src/components/widgets/lively-morph.js"
 import { Graph, Triple, _, TAG_URL } from 'src/client/triples/triples.js';
 import select, { trackInstance, baseViewForClass } from 'active-group';
 
+import { debounce } from "utils";
 
 export default class KnotView extends Morph {
   get urlString() { return this.get("#path-to-load").value; }
@@ -268,6 +269,7 @@ export default class KnotView extends Morph {
   }
   async buildContentFor(knot) {
     let editorComp = this.get('#content-editor');
+    lively.removeEventListener('knot-view-editor', editorComp, 'change');
     let spoList = this.get('#spo-list');
     if(knot.isTriple()) {
       this.hide(editorComp);
@@ -279,7 +281,9 @@ export default class KnotView extends Morph {
     } else {
       this.show(editorComp);
       this.hide(spoList);
-      editorComp.value = knot.content;
+      if (editorComp.value !== knot.content) {
+        editorComp.value = knot.content;
+      }
       editorComp.enableAutocompletion();
 
       let graph = await Graph.getInstance();
@@ -289,11 +293,17 @@ export default class KnotView extends Morph {
       } else {
         lively.error('no url found for ' + knot.label());
       }
-      editorComp.doSave = async text => {
+      const saveKnot = async text => {
         await knot.save(text);
         lively.notify('saved knot')
-        this.refresh();
+        // this.refresh();
       }
+      editorComp.doSave = saveKnot;
+      const debouncedSave = debounce.call(() => {
+        lively.notify('debounced');
+        saveKnot(editorComp.value)
+      }, 2000);
+      lively.addEventListener('knot-view-editor', editorComp, 'change', debouncedSave);
     }
   }
   

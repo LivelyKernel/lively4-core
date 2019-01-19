@@ -316,7 +316,8 @@ export default class ContextMenu {
           lively.hand.startGrabbing(morph, evt)
           morph.classList.add("lively-content")
           this.hide();
-        }]
+        }],
+        
       ]],
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
@@ -344,21 +345,23 @@ export default class ContextMenu {
           lively.setPosition(morph, lively.pt(0,0), "fixed")
           this.hide();
         }],
-        ["X Ray", async evt => {
+        ["X-Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'], 
-        ["X Ray Events", async evt => {
+        ["X-Ray Events", async evt => {
           var morph  = await lively.openPart("XRayEvents") 
           lively.setGlobalPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
-        ["X Ray JSX", async evt => {
-          var morph  = await lively.create("jsx-ray") 
-          lively.setGlobalPosition(morph, lively.getPosition(evt))
+        ["JSX-Ray ", async evt => {
+          const jsxRay  = await lively.create("jsx-ray") 
+          lively.setGlobalPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
+        ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
+          undefined, '<i class="fa fa-tree" aria-hidden="true"></i>'],
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
@@ -373,6 +376,22 @@ export default class ContextMenu {
           workspace.mode = "text"
         }],
       ]],
+      [
+        "Parts",
+          fetch(lively4url + "/src/parts", {
+            method: "OPTIONS"
+          }).then(r => r.json()).then( json => json.contents.filter(ea => ea.name.match(/\.html/)).map(ea => {
+            var partName = "" + ea.name.replace(/\.html/,"");
+            return [
+              partName, 
+              async (evt) =>  {
+                var morph  = await lively.openPart(partName)          
+                lively.setGlobalPosition(morph, lively.getPosition(evt))
+                lively.hand.startGrabbing(morph, evt)
+                morph.classList.add("lively-content")
+                this.hide();
+              }]}))
+      ],
       [
         "Windows", 
         Windows.allWindows().map(ea => [
@@ -459,10 +478,17 @@ export default class ContextMenu {
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         ],
         ["Journal", (evt) => {
-          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
             comp.followPath(lively4url + "/doc/journal/index.html");
           });
-        }],
+        },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
+        ["Tools and Workflows", (evt) => {
+          this.openComponentInWindow("lively-container", evt, worldContext, pt(1250,700)).then(comp => {
+            comp.followPath(lively4url + "/doc/presentation/index.md");
+          });
+        },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Issues", (evt) => {
            this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
             comp.followPath(lively4url + "/doc/stories.md");

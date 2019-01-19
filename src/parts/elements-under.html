@@ -1,0 +1,76 @@
+<div class="lively-content" style="width: 360px; height: 177.2px; border: 4px dashed black; position: absolute; left: 1657px; top: -826px; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-part-name="elements-under"><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
+  this.style.zIndex = 1000
+  setInterval(() => {
+    this.onStep()
+  }, 1000)
+  
+  lively.removeEventListener("Drag", this)
+  lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
+  
+}</script><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+  
+    
+  lively.setPosition(this, lively.getPosition(evt).addPt(this.offset))
+    
+}</script><script type="lively4script" data-name="onMouseDown">function onMouseDown(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+  
+  this.offset = lively.getPosition(this).subPt(lively.getPosition(evt))
+  
+  lively.addEventListener("ElementsUnder",document.documentElement, "mousemove", evt => this.onGlobalMouseMove(evt))
+  lively.addEventListener("ElementsUnder", document.documentElement, "mouseup", evt => this.onGlobalMouseUp(evt))
+
+  
+}</script><script type="lively4script" data-name="onGlobalMouseUp">function onGlobalMouseUp(evt) {
+  evt.stopPropagation()
+  evt.preventDefault()
+
+  lively.removeEventListener("ElementsUnder", document.documentElement)
+}</script><script type="lively4script" data-name="onStep">function onStep() {
+  var list = this.querySelector("ul")
+  if (!list) {
+    list = document.createElement("ul")
+  } 
+  
+  list.innerHTML = ""
+  var pos = lively.getGlobalPosition(this)
+  var elements = lively.allElementsFromPoint(pos)
+  
+  elements.forEach(ea => {
+    if (ea === this) return; // ignore yourself
+    var item = document.createElement("li")
+    item.innerHTML = "" + ea.localName + " " + ea.classList   + (ea.id ? "#" + ea.id : "") + ": " + ea.textContent.slice(0,50) 
+    list.appendChild(item)
+  })
+  this.appendChild(list)
+  this.style.minWidth = "400px"
+  lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
+}</script><ul><li>lively-container : </li><li>i fa fa-check-circle: </li><li>button edit#accept: 
+        </li><li>div fill#container-navigation: 
+      
+      
+      
+      
+      
+      
+
+      </li><li>lively-window global: </li><li>div window-content#window-content: 
+      
+    </li><li>div window: 
+    
+      
+
+      lively.js
+      
+      	
+     </li><li>html : 
+    
+  Lively 4
+  
+    
+    
+  
+that.shadowRoot.e</li></ul></div>
