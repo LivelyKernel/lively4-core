@@ -69,7 +69,7 @@ export default class LivelyAnalysis extends Morph {
     await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
       FileIndex.current().db.classes.each((clazz) => {
         var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url})
         versionsEntries.each((entry) => {
           //if (entry.method != '+null+') {
             let method = methodVersions.find(method => method.method == entry.method)
@@ -95,6 +95,35 @@ export default class LivelyAnalysis extends Morph {
         })
      })
     })
+ /*   await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
+      FileIndex.current().db.classes.each((clazz) => {
+        var methodVersions = new Array()
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
+        versionsEntries.each((entry) => {
+          //if (entry.method != '+null+') {
+            let method = methodVersions.find(method => method.method == entry.method)
+            if (method) {
+              method.modifications++
+            } else {
+              methodVersions.push({
+                name: entry.method,
+                modifications: 1,
+              })
+            }
+          //}
+        })
+        versionsEntries.count().then(count => {
+          if (count > 0) {
+            this.versions.children.push({
+              name: clazz.name,
+              url: clazz.url,
+              modifications: count,
+              children: methodVersions
+           })
+          }
+        })
+     })
+    })*/
     console.log(this.versions.children)
   }
   
@@ -240,8 +269,8 @@ export default class LivelyAnalysis extends Morph {
     await this.updateVersionHeatMap()
     
     this.links = [
-      { id: "", no: "1", status: "dead", column: "1.2 value" },
-      { id: "", no: "2", status: "dead", column: "2.2 value" },
+      { id: "", no: "1", status: "broken", column: "1.2 value" },
+      { id: "", no: "2", status: "broken", column: "2.2 value" },
       { id: "", no: "3", staus: "alive", column: "3.2 value" },
     ]
     await this.updateTableBrokenLinks()

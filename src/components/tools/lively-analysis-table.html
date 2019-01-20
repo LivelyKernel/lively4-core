@@ -15,6 +15,11 @@
   #lively-analysis-table th {
     border: 1px solid gray;
   }
+  
+  #lively-analysis-table tr {
+    height: auto;
+  }
+  
   #lively-analysis-table td,
   #lively-analysis-table th {
     padding: 4px 2px;
@@ -39,6 +44,10 @@
 </style>
 <div id="content">
 	<content>
+    <select id="lively-analysis-table-selection">
+      <option value="view-all-links" selected>All links</option>
+      <option value="view-broken-links">Broken links</option>
+    </select>
     <table id="lively-analysis-table"></table>
   </content>
 </div>
