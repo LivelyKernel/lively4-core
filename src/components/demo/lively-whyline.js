@@ -64,18 +64,19 @@ export default class Whyline extends Morph {
     this.selectedNode = traceNode
 
     
-    let div = this.get("#questionPane")
-    div.innerHTML = '' //Clear previous buttons
+    let questionPane = this.get("#questionPane")
+    questionPane.innerHTML = '' //Clear previous buttons
 
     let questions = traceNode.questions()
-    for(let k in questions){
-      let btn = document.createElement("BUTTON");        // Create a <button> element
-      let t = document.createTextNode(k);                // Create a text node
+    for (let question of questions) {
+      let btn = document.createElement("BUTTON");
+      btn.className += " questionButton"
+      let t = document.createTextNode(question[0]);
       btn.onclick = () => {
-        this.selectCallTraceNode(questions[k]())
+        this.selectCallTraceNode(question[1]())
       }
       btn.appendChild(t);// Append the text to <button>
-      div.appendChild(btn)
+      questionPane.appendChild(btn)
     }
     
     

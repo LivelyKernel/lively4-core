@@ -81,25 +81,7 @@ class TraceNode {
     }
     return this.parent.findLastControlFlow()
   }
-  
-  findLastDataFlow(){
-    let AssignmentASTNodeTypes = ['AssignmentExpression', 'UpdateExpression', 'VariableDeclarator']
-    let identifier = this.getIdentifier()
-    let pred = this
-    console.log(this)
-    console.log(identifier)
-    while((pred = pred.predecessor())){
-      let predId = pred.getIdentifier()
-      
-      if(predId && predId.name == identifier.name && predId.scopeId == identifier.scopeId)
-      {
-        console.log(pred)
-        return pred
-      }
-    }    
-  }
-  
-  
+    
   findLastDataFlowOf(identifier){
     let pred = this
     while((pred = pred.predecessor())){
@@ -155,20 +137,28 @@ class TraceNode {
         return []
     }
     
-    let subReferences = this.children.map((c) => {
-      return c.referencedIdentifiers()
+    this.children.forEach((c) => {
+      identifiers.push(...c.referencedIdentifiers())
     })
-    return identifiers.concat(...subReferences)
+    return identifiers
   }
   
   questions(){
-    let questions = {
-      'Back' : () => this.predecessor(),
-      'Up': () => this.whyWasThisStatementExecuted()}
-    this.referencedIdentifiers().forEach((id) => {
-      questions[`Last assignment of '${id.name}'`] = () => {
-        return this.findLastDataFlowOf(id)
-      }
+    let questions = [
+      ['Back', () => this.predecessor()],
+      ['Up', () => this.whyWasThisStatementExecuted()]]
+    let referencedVars = this.referencedIdentifiers()
+                          .sort((a, b) => {
+                            return a.name.localeCompare(b.name)
+                          })
+                          .filter((id, i, arr) => {
+                            let pred = arr[i-1]
+                            return !pred 
+                                    || id.name != pred.name
+                                    || id.scopeId != pred.scopeId //shouldn't actually differ
+                          })
+    referencedVars.forEach((id) => {
+      questions.push([`Last assignment of '${id.name}'`, () => this.findLastDataFlowOf(id)])
     })
     return questions
   }
