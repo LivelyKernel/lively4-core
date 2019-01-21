@@ -1,3 +1,5 @@
+import 'lang';
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import KnotView from "templates/knot-view.js";
 
@@ -16,6 +18,10 @@ export default class GraphControl extends Morph {
     let launchTripleList = this.get('#launchTripleList');
     launchTripleList.addEventListener('click', event => this.launchTripleList());
     
+    this.get('#kickoff').addEventListener('click', evt => this.onKickoffClicked(evt));
+    this.get('#open-diary').addEventListener('click', evt => this.onOpenDiaryClicked(evt));
+    this.get('#retrospective').addEventListener('click', evt => this.onRetrospectiveClicked(evt));
+
     let launchGraph = this.get('#launchGraph');
     launchGraph.addEventListener('click', event => this.launchGraph());
     
@@ -32,6 +38,17 @@ export default class GraphControl extends Morph {
     });
     
     this.initKnowledgeBases();
+  }
+  
+  onKickoffClicked(evt) {
+    lively.notify('onKickoffClicked')
+  }
+  async onOpenDiaryClicked(evt) {
+    const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));
+    diary.selectFirstEntry();
+  }
+  onRetrospectiveClicked(evt) {
+    lively.notify('onRetrospectiveClicked')
   }
   
   initKnowledgeBases() {

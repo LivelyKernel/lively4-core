@@ -34,35 +34,54 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async setClassData() {
+    this.classes = {}
     this.classes = {
       name: "classes",
       children: []
     }
     await FileIndex.current().db.classes.each(clazz => {
-      this.classes.children.push(clazz)
+      let methods = []
+      clazz.methods.forEach((method) => {
+        methods.push({
+          name: method.name,
+          size: method.loc,  
+          url: clazz.url,
+        })
+      })
+      
+      this.classes.children.push({
+        name: clazz.name,
+        size: clazz.loc,
+        superClass: clazz.superClass,
+        url: clazz.url,
+        children: methods,
+      })
     })
   }
   
   async setVersionData() {
+    this.versions = {}
     this.versions = {
-      name : 'root',
+      name : 'versions',
       modifications: await FileIndex.current().db.versions.count(),
       children: []
     }
     await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
       FileIndex.current().db.classes.each((clazz) => {
         var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
-        versionsEntries.each(entry => {
-          let method = methodVersions.find(method => method.method == entry.method)
-          if (method) {
-            method.modifications++;
-          } else {
-            methodVersions.push({
-              name: entry.method,
-              modifications: 1,
-            })
-          }
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url})
+        versionsEntries.each((entry) => {
+          //if (entry.method != '+null+') {
+            let method = methodVersions.find(method => method.method == entry.method)
+            if (method) {
+              method.modifications++
+            } else {
+              methodVersions.push({
+                name: entry.method,
+                modifications: 1,
+              })
+            }
+          //}
         })
         versionsEntries.count().then(count => {
           if (count > 0) {
@@ -76,6 +95,36 @@ export default class LivelyAnalysis extends Morph {
         })
      })
     })
+ /*   await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
+      FileIndex.current().db.classes.each((clazz) => {
+        var methodVersions = new Array()
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
+        versionsEntries.each((entry) => {
+          //if (entry.method != '+null+') {
+            let method = methodVersions.find(method => method.method == entry.method)
+            if (method) {
+              method.modifications++
+            } else {
+              methodVersions.push({
+                name: entry.method,
+                modifications: 1,
+              })
+            }
+          //}
+        })
+        versionsEntries.count().then(count => {
+          if (count > 0) {
+            this.versions.children.push({
+              name: clazz.name,
+              url: clazz.url,
+              modifications: count,
+              children: methodVersions
+           })
+          }
+        })
+     })
+    })*/
+    console.log(this.versions.children)
   }
   
   async setLinkData() {
@@ -105,17 +154,22 @@ export default class LivelyAnalysis extends Morph {
 
   async onUpdatePolymetric() {
     await this.setClassData()
-    this.updatePolymetricView()
+    await this.updatePolymetricView()
   }
 
   async onUpdateVersions() {
-    await this.setVersionData()
-    this.updateVersionHeatMap()
+    //await FileIndex.current().updateAllVersions()
+    /*await this.setVersionData()
+    await this.updateVersionHeatMap()*/
+    this.setVersionData().then(() => {
+      this.updateVersionHeatMap()
+    });
   }
   
   async onUpdateBrokenLinks() {
+  //  await FileIndex.current().updateAllLinks()
     await this.setLinkData()
-    this.updateTableBrokenLinks()
+    await this.updateTableBrokenLinks()
   }
   
   async updatePolymetricView() {
@@ -124,6 +178,7 @@ export default class LivelyAnalysis extends Morph {
     polymetric.style.width = "300px"
     polymetric.style.height = "200px"
     polymetric.setData(this.classes)
+    console.log('polymetric:' , this.classes)
     polymetric.config({
       color(node) {
         if (!node) return ""
@@ -155,6 +210,8 @@ export default class LivelyAnalysis extends Morph {
     }) 
     this.polymetricContainter.appendChild(polymetric)
     polymetric.updateViz()
+    console.log('polymetric->', this.classes)
+    
   }
 
   async updateVersionHeatMap() {
@@ -212,8 +269,8 @@ export default class LivelyAnalysis extends Morph {
     await this.updateVersionHeatMap()
     
     this.links = [
-      { id: "", no: "1", status: "dead", column: "1.2 value" },
-      { id: "", no: "2", status: "dead", column: "2.2 value" },
+      { id: "", no: "1", status: "broken", column: "1.2 value" },
+      { id: "", no: "2", status: "broken", column: "2.2 value" },
       { id: "", no: "3", staus: "alive", column: "3.2 value" },
     ]
     await this.updateTableBrokenLinks()

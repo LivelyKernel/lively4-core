@@ -338,7 +338,10 @@ export default class ContextMenu {
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
         ["Graph Control", evt => this.openComponentInWindow("graph-control", evt, worldContext),
           "Ctrl+Alt+G", '<i class="fa fa-globe" aria-hidden="true"></i>'],
-        ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
+        ["Diary", async evt => {
+          const diary = await this.openComponentInWindow("research-diary", evt, worldContext);
+          diary.selectFirstEntry();
+        },
           "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Quicklinks", async evt => {
           var morph  = await lively.openPart("quicklinks")          

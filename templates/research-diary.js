@@ -69,22 +69,36 @@ export default class ResearchDiary extends Morph {
 
     return graph.query(_, entryOfKnot, researchDiaryKnot).map(triple => triple.subject);
   }
-  async refreshList() {
+  getDateStringofEntry(entry) {
+    return entry.label().split(' ')::last();
+  }
+  async getEntriesSorted() {
     function getDateString(entry) {
       return entry.label().split(' ')::last();
     }
+
     const entries = await this.getEntries();
+
+    return entries
+      ::sortBy(entry => this.getDateStringofEntry(entry))
+      .reverse();
+  }
+  async selectFirstEntry() {
+    const entries = await this.getEntriesSorted();
+    this.loadEntry(entries[0]);
+    setTimeout(() => this.focusEditor(), 100);
+  }
+  async refreshList() {
     const ul = this.get('#nav ul');
     ul.innerHTML = "";
-    entries
-      ::sortBy(getDateString)
-      .reverse()
-      .forEach(entry => {
-        let a = <a>{getDateString(entry)}</a>;
-        a.addEventListener('click', e => this.loadEntry(entry));
 
-        ul.appendChild(<li>{a}</li>);
-      });
+    const entries = await this.getEntriesSorted();
+    entries.forEach(entry => {
+      const a = <a>{this.getDateStringofEntry(entry)}</a>;
+      a.addEventListener('click', e => this.loadEntry(entry));
+
+      ul.appendChild(<li>{a}</li>);
+    });
   }
   
   entryTemplate() {
@@ -107,13 +121,16 @@ export default class ResearchDiary extends Morph {
 - 
 `;
   }
+  focusEditor() {
+    this.codeEditor.editor.setCursor({line: 8, ch: 0});
+    this.codeEditor.editor.execCommand("goLineEnd")
+    this.codeEditor.editor.focus();
+  }
   async createNewEntry() {
     let content = this.entryTemplate();
     
     this.codeEditor.editor.setValue(content);
-    this.codeEditor.editor.setCursor({line: 8, ch: 0});
-    this.codeEditor.editor.execCommand("goLineEnd")
-    this.codeEditor.editor.focus();
+    this.focusEditor();
     
     this.immediatePreviewNoSave();
     
