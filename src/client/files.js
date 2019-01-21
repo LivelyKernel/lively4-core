@@ -356,4 +356,45 @@ export default class Files {
     return url.toString().match(/((svg)|(png)|(jpe?g)|(gif))$/i)
   }
   
+  static async generateMarkdownFileListing(root) { 
+    var anchors = Array.from(root.querySelectorAll("a"))
+    var links = anchors.map(ea => ea.getAttribute("href")).filter(ea => !ea.match(/search:/))
+
+    var result = document.createElement("div")
+
+    var source = "" // the generated markdown source that should be added
+    var fileNames = [];
+
+    var list = document.createElement("ul")
+    var url = ("" + lively.query(root, "lively-container").getURL()).replace(/[^/]+$/,"");
+    
+    var files = (await fetch(url, {
+      method: "OPTIONS"
+    }).then(r => r.json())).contents
+    files.forEach(ea => {
+      var item = document.createElement("li")
+      var name =  ea.type == "directory" ? 
+        ea.name + "/" :
+        ea.name
+      fileNames.push(name)
+      item.textContent = name
+      if (!links.includes(name)) {
+        list.appendChild(item)  
+        source += `  - [${name}](${name})\n`
+      }
+    })
+
+    links.filter(ea => !fileNames.includes(ea)).forEach(ea => {
+      var item = document.createElement("li")
+      item.textContent = "Missing " + ea
+      list.appendChild(item)
+    })
+    result.appendChild(list)
+
+    var code = document.createElement("pre")
+    code.textContent = source.length > 0 ? "## Please Insert Me\n" + source : ""
+    result.appendChild(code)
+
+    return result
+  }
 }

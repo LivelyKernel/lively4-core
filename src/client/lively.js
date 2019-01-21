@@ -1771,10 +1771,10 @@ export default class Lively {
       this.allElements(deep, root.shadowRoot, all)
     }
     root.querySelectorAll("*").forEach(ea => {
-      all.add(ea)
       if (deep && ea.shadowRoot) {
         this.allElements(deep, ea.shadowRoot, all)
       }
+      all.add(ea)
     })
     all.add(root)
     return all
@@ -1821,11 +1821,11 @@ export default class Lively {
     var elements = root.elementsFromPoint(pos.x, pos.y)
     for (let ea of elements) {
       if (!visited.has(ea)) {
-        result.push(ea)
         visited.add(ea)
         if (ea.shadowRoot && ea.shadowRoot.elementsFromPoint) {
           result.push(...this.allElementsFromPoint(pos, ea.shadowRoot, visited))        
         }
+        result.push(ea)
       }
     }
     return result
