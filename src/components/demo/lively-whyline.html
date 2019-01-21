@@ -81,7 +81,7 @@
     */
     overflow: scroll;
   }
-
+  
   .traceLabel {
     font-size: 10px;
     /*
@@ -138,6 +138,10 @@
     width: max-content;
   }
 
+  .questionButton {
+    width: 100%
+  }
+
 </style>
   <div id="buttonRow" class="fill">
     <button id="generateTrace" title="generate trace from code">
@@ -175,11 +179,13 @@
     <lively-separator></lively-separator>
 
     <div id="secondColumn">
-      <div id="objectInspectorPane">
-        <!--
-          <lively-inspectory id="objectInspector"></lively-inspectory>
-        -->
+      <div id="questionPane">
       </div>
+<!--       <div id="objectInspectorPane">
+        
+          <lively-inspectory id="objectInspector"></lively-inspectory>
+        
+      </div> -->
     </div>
   </div>
 </template>
