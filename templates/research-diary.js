@@ -86,6 +86,7 @@ export default class ResearchDiary extends Morph {
   async selectFirstEntry() {
     const entries = await this.getEntriesSorted();
     this.loadEntry(entries[0]);
+    setTimeout(() => this.focusEditor(), 100);
   }
   async refreshList() {
     const ul = this.get('#nav ul');
@@ -120,13 +121,16 @@ export default class ResearchDiary extends Morph {
 - 
 `;
   }
+  focusEditor() {
+    this.codeEditor.editor.setCursor({line: 8, ch: 0});
+    this.codeEditor.editor.execCommand("goLineEnd")
+    this.codeEditor.editor.focus();
+  }
   async createNewEntry() {
     let content = this.entryTemplate();
     
     this.codeEditor.editor.setValue(content);
-    this.codeEditor.editor.setCursor({line: 8, ch: 0});
-    this.codeEditor.editor.execCommand("goLineEnd")
-    this.codeEditor.editor.focus();
+    this.focusEditor();
     
     this.immediatePreviewNoSave();
     
