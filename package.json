@@ -47,7 +47,7 @@
     "test": "karma start karma.conf.js --single-run"
   },
   "dependencies": {
-    "monaco-editor": "0.14.3"
+    "@timkendrick/monaco-editor": "^0.0.9"
   },
   "devDependencies": {
     "karma": "^0.13.22",
