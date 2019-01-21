@@ -3,7 +3,7 @@ import 'lang';
 import Morph from 'src/components/widgets/lively-morph.js';
 import KnotView from "templates/knot-view.js";
 
-import { Graph } from 'src/client/triples/triples.js';
+import { Graph, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
 
 export default class GraphControl extends Morph {
   async initialize() {
@@ -40,8 +40,14 @@ export default class GraphControl extends Morph {
     this.initKnowledgeBases();
   }
   
-  onKickoffClicked(evt) {
-    lively.notify('onKickoffClicked')
+  async graph() {
+    return Graph.getInstance();
+  }
+  async onKickoffClicked(evt) {
+    const graph = await this.graph();
+    DEFAULT_FOLDER_URL
+    const existsAlready = graph.hasKnotWithURL('https://lively4/notes/Kickoff_2019_01_14-2019_01_18.md')
+    lively.notify('onKickoffClicked', existsAlready)
   }
   async onOpenDiaryClicked(evt) {
     const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));

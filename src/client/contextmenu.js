@@ -378,7 +378,7 @@ export default class ContextMenu {
           workspace.parentElement.setAttribute("title","open this in a tab...")
           workspace.mode = "text"
         }],
-      ]],
+      ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       [
         "Parts",
           fetch(lively4url + "/src/parts", {
@@ -393,7 +393,7 @@ export default class ContextMenu {
                 lively.hand.startGrabbing(morph, evt)
                 morph.classList.add("lively-content")
                 this.hide();
-              }]}))
+              }]})), undefined, '<i class="fa fa-th-large" aria-hidden="true"></i>'
       ],
       [
         "Windows", 
@@ -413,7 +413,7 @@ export default class ContextMenu {
           if(await lively.confirm('Close all windows?')) {
             document.body.querySelectorAll('lively-window').forEach(w => w.remove())
           } 
-        }]])
+        }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 

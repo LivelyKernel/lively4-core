@@ -55,7 +55,6 @@ export class Knot {
   }
   isTriple() { return false; }
   async save(newContent) {
-    //invalidateFetchCache(this.url);
     this.content = newContent;
     await lively.files.saveFile(this.url, newContent);
   }
@@ -222,6 +221,9 @@ export class Graph {
   getKnots() {
     return this.knots;
   }
+  hasKnotWithURL(url) {
+    return !!this.getKnots().find(knot => knot.url === url);
+  }
   get triples() {
     return this.knots.filter(knot => knot.isTriple());
   }
@@ -364,6 +366,9 @@ export class Graph {
     return this.loadedDirectoryPromises.get(directory);
   }
   
+  escapeSpecialCharacters(str) {
+    return str.replace(/[^A-Za-z0-9-]/g, '_');
+  }
   async getNonCollidableURL(directory, name, fileEnding) {
     const maxTries = 10;
     const fileName = name.replace(/[^A-Za-z0-9-]/g, '_');
@@ -390,8 +395,6 @@ export class Graph {
 
 `;
     await lively.files.saveFile(url, content);
-    
-    //await invalidateFetchCache(directory);
     
     return this.requestKnot(url);
   }
