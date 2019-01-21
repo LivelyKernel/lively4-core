@@ -10,7 +10,13 @@ export default class LivelyAnalysisTable extends Morph {
     this.windowTitle = "Lively Semantic Code Analysis - Table"; 
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods
+   
     this.tableElement = this.shadowRoot.querySelector("#lively-analysis-table")
+    this.selectElement = this.shadowRoot.querySelector('#lively-analysis-table-selection')
+    this.selectedOption = this.selectElement
+    
+    this.selectElement.addEventListener("change", () => this.onSelectionChanged())
+    
     this.setWidth(400, 'px')
     this.setHeight(150, 'px')
   }
@@ -38,7 +44,7 @@ export default class LivelyAnalysisTable extends Morph {
   updateViz() {
     this.tableElement.innerHTML = ''
     var table = d3.select(this.tableElement) 
-                 
+             
     // header
     var tableHeadColumns = (this.getData() && this.getData().length > 0) ? Object.keys(this.getData()[0]) : []
     table.append('thead')
@@ -53,8 +59,8 @@ export default class LivelyAnalysisTable extends Morph {
             .data(this.getData())
             .enter()
             .append("tr")
-            .attr("id", function(row) {if (!row.id) {return ""} return row.id})
-            .attr("class", function(row) {if(row.status == "dead") {return "deadLink"} return "aliveLink"})
+            .attr("id", function(row) { return !row.id ?  "" : row.id} )
+            .attr("class", function(row) { return (row.status == "alive") ? "aliveLink" : "deadLink"})
             .on('contextmenu', function(row) {
                if (!d3.event.shiftKey) {
                 d3.event.stopPropagation();
@@ -72,6 +78,23 @@ export default class LivelyAnalysisTable extends Morph {
             .enter()
             .append("td")
             .text(function(cellValue) {return cellValue});
+    
+  }
+  
+  onSelectionChanged() {
+    let selection = d3.select(this.selectElement)
+    let table = d3.select(this.tableElement)
+    this.selectedOption = selection.node().value
+    
+    if (this.selectedOption == 'view-broken-links') {
+      table.selectAll('.aliveLink')
+        .style('display', 'none')
+      table.selectAll('.deadLink')
+        .style('display', 'table-row')
+    } else if (this.selectedOption == 'view-all-links') {
+      table.selectAll('tbody tr')
+        .style('display', 'table-row')
+    }
   }
    
   // this method is autmatically registered through the ``registerKeys`` method 
@@ -103,7 +126,7 @@ export default class LivelyAnalysisTable extends Morph {
     var exampleData = [
       {id: "", no: "1", status: "dead", column: "1.2 value"},
       {id: "", no: "2", status: "dead", column: "2.2 value"},
-      {id: "", no: "3", staus: "alive", column: "3.2 value"},
+      {id: "", no: "3", status: "alive", column: "3.2 value"},
     ]
     this.setData(exampleData)
     this.updateViz()

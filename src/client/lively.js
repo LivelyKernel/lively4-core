@@ -1816,8 +1816,21 @@ export default class Lively {
     return "https://lively4/scheme/" + m[1] +"/" + m[2]
   }
 
-  
-  
+  static allElementsFromPoint(pos, root=document, visited=new Set()) {
+    var result = []
+    var elements = root.elementsFromPoint(pos.x, pos.y)
+    for (let ea of elements) {
+      if (!visited.has(ea)) {
+        result.push(ea)
+        visited.add(ea)
+        if (ea.shadowRoot && ea.shadowRoot.elementsFromPoint) {
+          result.push(...this.allElementsFromPoint(pos, ea.shadowRoot, visited))        
+        }
+      }
+    }
+    return result
+  }
+
 }
 
 if (!window.lively || window.lively.name != "Lively") {

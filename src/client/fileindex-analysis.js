@@ -48,7 +48,7 @@ export default class FileIndex {
         modules: 'url,*dependencies',
         links: '[link+url], link, url, location, status',
         classes: '[name+url], name, url, loc, start, end, superClass, *methods', 
-        versions: '[class+url+method+commitId+date], [method+class], class, url, method, commitId, date, action, user'
+        versions: '[class+url+method+commitId+date], [class+method], [class+url], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
     return db 
@@ -202,15 +202,15 @@ export default class FileIndex {
     let modifications = new Array()
     let latestContent = await lively.files.loadFile(fileUrl, latestVersion.version)
     let previousContent = await lively.files.loadFile(fileUrl, previousVersion.version)
-    let astLastest = this.parseSource(fileUrl, latestContent)
-    let astPrevious = this.parseSource(fileUrl, previousContent)
+    let astLastest = await this.parseSource(fileUrl, latestContent)
+    let astPrevious = await this.parseSource(fileUrl, previousContent)
 
     if (!astLastest || !astPrevious) {
       return modifications
     }
 
-    let latest = this.parseModuleSemantics(astLastest)
-    let previous = this.parseModuleSemantics(astPrevious)
+    let latest = await this.parseModuleSemantics(astLastest)
+    let previous = await this.parseModuleSemantics(astPrevious)
 
     // classes
     for (let classLatest of latest.classes) {
