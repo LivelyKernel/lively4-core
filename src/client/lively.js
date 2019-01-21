@@ -1794,12 +1794,23 @@ export default class Lively {
     return Array.from(this.allElements(deep)).filter(filterFunc)
   }
   
-  static allParents(element, parents=[]) {
+  static allParents(element, parents=[], deep = false) {
+    if (!element) return parents
     if (!element.parentElement) {
-      return parents
+      if(deep && element.parentNode) {
+        if (element.parentNode === document) {
+          return parents
+        }
+        parents.push(element.parentNode)
+        parents.push(element.parentNode.host)
+        
+        return this.allParents(element.parentNode.host, parents, deep)
+      } else {
+        return parents
+      }
     }
     parents.push(element.parentElement)
-    this.allParents(element.parentElement, parents)
+    this.allParents(element.parentElement, parents, deep)
     return parents
   }
 
@@ -1819,15 +1830,22 @@ export default class Lively {
   static allElementsFromPoint(pos, root=document, visited=new Set()) {
     var result = []
     var elements = root.elementsFromPoint(pos.x, pos.y)
-    for (let ea of elements) {
-      if (!visited.has(ea)) {
-        visited.add(ea)
+    // this is a workaround of the issue that elementsFromPoint contains parent elements...
+    
+    elements
+      .filter(e => {
+        const notYetVisited = !visited.has(e);
+        visited.add(e)
+        return notYetVisited;
+      })
+      .forEach(ea => {
         if (ea.shadowRoot && ea.shadowRoot.elementsFromPoint) {
-          result.push(...this.allElementsFromPoint(pos, ea.shadowRoot, visited))        
+          var shadowRootElements = this.allElementsFromPoint(pos, ea.shadowRoot, visited)
+          result.push(...shadowRootElements)        
         }
         result.push(ea)
-      }
-    }
+      })
+
     return result
   }
 

@@ -1,4 +1,4 @@
-<div class="lively-content" style="width: 360px; height: 30px; border: 2px dashed rgb(120, 120, 120); position: absolute; left: 1924px; top: -851px; background-color: rgba(200, 200, 0, 0.5); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-part-name="elements-under" data-lively-id="e9b5a3eb-17cf-495b-aaf3-3946b8faedcb"><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
+<div class="lively-content" style="width: 360px; height: 122px; border: 2px dashed rgb(120, 120, 120); position: absolute; left: 249.4px; top: 159px; background-color: rgba(200, 200, 0, 0.5); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-part-name="elements-under" data-lively-id="6db5dbc9-5667-4b8e-b378-4503e8959e2a"><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
   evt.stopPropagation()
   evt.preventDefault()
   
@@ -24,20 +24,6 @@
   if (this.selected == ea) {
     item.style.backgroundColor = "lightgray"
   }
-}</script><script type="lively4script" data-name="indentList">function indentList(list) {
-
-  // list  = list || that.querySelector("ul")
-    
-  list.childNodes.forEach(ea => {
-    
-    
-    ea.querySelector(".indent").textContent = lively.allParents(ea.target).map(ea => " ").join("")
-    
-    
-  })
-  
-  
-  
 }</script><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
   this.style.zIndex = 1000
   setInterval(() => {
@@ -49,6 +35,13 @@
   lively.removeEventListener("Drag", this)
   lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
   
+}</script><script type="lively4script" data-name="updateSelected">function updateSelected() {
+  this.shadowRoot.querySelectorAll("li").forEach(item => {
+  item.style.backgroundColor = ""
+   if (item.target == this.selected) {
+     item.style.backgroundColor = "rgba(0,0,0,0.3)"
+   } 
+  })
 }</script><script type="lively4script" data-name="onStep">function onStep() {
   if (!this.shadowRoot) {
     this.attachShadow({mode: 'open'})
@@ -90,6 +83,10 @@
     item.addEventListener("click", evt => {
       this.selected = ea
       this.updateSelected()
+      if (this.highlight) this.highlight.remove()
+      this.highlight = lively.showElement(ea)
+      this.highlight.style.border = "3px dashed gray"
+      this.highlight.innerHTML = ""
     })
     item.addEventListener("dblclick", evt => {
       window.that = ea
@@ -102,11 +99,18 @@
   this.style.minWidth = "400px"
   this.indentList(list)
   lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
-}</script><script type="lively4script" data-name="updateSelected">function updateSelected() {
-  this.shadowRoot.querySelectorAll("li").forEach(item => {
-  item.style.backgroundColor = ""
-   if (item.target == this.selected) {
-     item.style.backgroundColor = "rgba(0,0,0,0.3)"
-   } 
+}</script><script type="lively4script" data-name="indentList">function indentList(list) {
+
+  // list  = list || that.querySelector("ul")
+    
+  list.childNodes.forEach(ea => {
+    
+    
+    ea.querySelector(".indent").textContent = lively.allParents(ea.target, [], true).map(ea => " ").join("")
+    
+    
   })
+  
+  
+  
 }</script></div>

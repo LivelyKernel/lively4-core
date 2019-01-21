@@ -233,6 +233,11 @@ export default class Inspector extends Morph {
 
   renderHeader(node, obj) {
     node.innerHTML = '';
+
+    if (obj === document) {
+      return;
+    }
+
     
     if (obj instanceof ShadowRoot) {
       node.appendChild(this.expandTemplate(node)) 
