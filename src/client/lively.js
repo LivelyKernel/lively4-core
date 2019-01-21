@@ -1458,8 +1458,18 @@ export default class Lively {
   static findWorldContext(element) {
     
     if (!element) return document.body
-    if (!element.parentElement) return element.parentNode; // shadow root
-    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER" ||  element.tagName == "LIVELY-FIGURE")
+    if (element.id == "container-root") return element
+    
+    if (!element.parentElement) {
+      
+      // if (element.parentNode.host && element.parentNode.host.localName == "lively-container") {
+      //   return element.parentNode.host.getContentRoot()
+      // }
+     // ||  element.tagName == "LIVELY-FIGURE"
+      return element.parentNode; // shadow root
+    }
+    
+    if (element.tagName == "BODY")
       return element
     else
       return this.findWorldContext(element.parentElement)

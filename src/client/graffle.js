@@ -328,7 +328,7 @@ export default class Graffle {
   }
   
   static ensureTargetContainer(evt) {
-    debugger
+    
     var targetContainer = evt.path.find(ea => ea.localName == "lively-figure")
     if (!targetContainer) {
       targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
