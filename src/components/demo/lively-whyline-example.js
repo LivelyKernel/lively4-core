@@ -1,5 +1,5 @@
 var a = 3
-var b = 4
+var b = a + 4
 
 function foo(a,b) {
   let c = a + b;
@@ -14,4 +14,4 @@ function foo(a,b) {
   return c
 }
 
-var avg = foo(a, b)
+foo(a, b)

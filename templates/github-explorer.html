@@ -1,69 +1,186 @@
 <template id="github-explorer" data-class="GithubExplorer">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  
 <style>
   :host {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
 
   }
   
-  #content {
-    background-color: gray;
-  }
-  
-  nav {
-    width: 200px;
-  }
-  
-  nav>ul {
-    overflow:hidden;
-    overflow-y:scroll;
-    padding:0px;
-    margin:0px;
-  }
-
-  nav>ul>li {
-    margin: 4px 0px 4px 8px;
-    list-style:none;
-    cursor: pointer;
-  }
-  
-  nav>ul>li:hover {
-    font-weight: bold;
-  }
-  
-  nav>ul>li:nth-child(odd) {
-    background-color: #ececec;
-  }
-  
-  #datapreview {
-    display: block;
-    max-width: 100%;
-    overflow: scroll;
-    height: 400px;
+  #dataPreview {
     border-collapse: collapse;
     font-family: 'Courier New', 'Monaco';
+    //max-height: 200px;
+    width: auto%;
+    margin-left: auto;
+    margin-right: auto;
+    
   }
   
-  #datapreview td {
-    max-width: 30%;
+  #dataPreview th {
+    text-align: left;
+    padding: 8px;
+    min-width: 100px;
+    background-color: gray;
+    color: white;
+  }
+  
+  
+  #dataPreview td {
+    text-align: left;
+    padding: 10px;
+    min-width: 100px;
+  }
+  
+  #dataPreview tr {
     text-overflow: ellipsis;
     overflow: hidden;
+    max-height: 10px;
   }
-  #dataprview, th, td {
-    border: 1px solid black;
+  
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
   }
-nav
-</style>
+  
+  tr:nth-child(odd) {
+    background-color: #ffffff;
+  }
+  
+  #dataPreview>tr>td>div {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    height: 18px;
+  }
+  
+  table {
+    border:none;
+    border-collapse: collapse;
+  }
 
-<nav>
-  <h2>
-    Select a Model:
-  </h2>
-  <ul id="models" />
-</nav>
-  <h1>
-    Datapreview:
-  </h1>
-<table border="1" id="datapreview">
-</table>
+  table td {
+      border-left: 1px solid #000;
+      border-right: 1px solid #000;
+  }
+
+  table td:first-child {
+      border-left: none;
+  }
+
+  table td:last-child {
+      border-right: none;
+  }
+  
+  
+  table th {
+      border-left: 1px solid #000;
+      border-right: 1px solid #000;
+  }
+
+  table th:first-child {
+      border-left: none;
+  }
+
+  table th:last-child {
+      border-right: none;
+  }
+  
+  
+  #content {
+    text-align: center;
+    padding: 14px 0;
+    overflow-y: scroll;
+  }
+  
+  .clickable {
+    cursor: pointer;
+    font-style: italic;
+  }
+  
+  .inlineTable {
+    font-size: 12px;
+    border: 1px solid #adadad;
+  }
+  
+  .inlineTable>tr>th {
+    padding: 2px !important;
+    text-align: left;
+  }
+  
+  .inlineTable>tr>td {
+    padding: 2px !important;
+    text-align: left;
+  }
+  
+  .inlineTable>tr>td>div {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    height: 13px;
+  }
+  
+  i {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+    margin-right: 4px;
+  }
+
+  .right {
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+  }
+
+  .down {
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+  }
+  
+  .section {
+    clear: both;
+    padding: 0px;
+	  margin: 0px;
+  }
+
+  /*  COLUMN SETUP  */
+  .col {
+    display: block;
+    float:left;
+    margin: 1% 0 1% 1.6%;
+  }
+  .col:first-child { margin-left: 0; }
+
+  /*  GROUPING  */
+  .group:before,
+  .group:after { content:""; display:table; }
+  .group:after { clear:both;}
+  .group { zoom:1; /* For IE 6/7 */ }
+  .span_4_of_4 {
+	  width: 100%;
+  }
+  .span_3_of_4 {
+    width: 74.6%;
+  }
+  .span_2_of_4 {
+    width: 49.2%;
+  }
+  .span_1_of_4 {
+    width: 23.8%;
+  }
+
+  /*  GO FULL WIDTH BELOW 480 PIXELS */
+  @media only screen and (max-width: 480px) {
+    .col {  margin: 1% 0 1% 0%; }
+    .span_1_of_4, .span_2_of_4, .span_3_of_4, .span_4_of_4 { width: 100%; }
+  }
+  
+  </style>
+  <div id="content">
+    <button id="setup">
+    Start Github Explorer
+    </button>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
