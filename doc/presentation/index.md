@@ -36,16 +36,6 @@
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
 </div>
 
-<script>
-  import {presentationPrintButton} from "src/client/essay.js"
-  presentationPrintButton(this)
-</script>
-
-<script>
-  import {presentationFullscreenButton} from "src/client/essay.js"
-  presentationFullscreenButton(this)
-</script>
-
 ---
 
 # Contents

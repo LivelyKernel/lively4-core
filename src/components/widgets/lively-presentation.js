@@ -6,7 +6,7 @@ export default class LivelyPresentation extends Morph {
     this.registerButtons();
     lively.html.registerKeys(this);
     
-    lively.html.addChooList(this.get("#gotoButton"), () => {
+    lively.html.addChooseList(this.get("#gotoButton"), () => {
       return this.slides().map((ea, index) => {
         var h = ea.querySelector("h1,h2,h3,h4") 
         var item = {
@@ -31,6 +31,10 @@ export default class LivelyPresentation extends Morph {
     this.nextSlide()
     evt.preventDefault() 
     evt.stopPropagation() 
+  }
+  
+  onPrintButton() {
+    this.print()
   }
   
   onPrevButton() {

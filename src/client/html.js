@@ -511,7 +511,7 @@ export default class HTML {
   }
   
   // #TODO refactor magic numbers to style? maybe lively.css?
-  static addChooList(element, listFunc, cb) {
+  static addChooseList(element, listFunc, cb) {
     if (!listFunc) {
       throw new Error("listFunc argument is missing")
     }
@@ -528,9 +528,16 @@ export default class HTML {
       if (clearList()) return; // click closed old...
       var list = <div id={deepListId} style="font-size:12pt"><ul>{... 
           listFunc().map(ea => {
-            var item = <li>{ea}</li>
-            if (ea.style) item.style = ea.style
-            item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
+            // we accept a list of objects or HTMLElements
+            var item;
+            if (ea instanceof HTMLElement) {
+              item = ea;
+            } else {
+              item = <li>{ea.toString()}</li>;
+              if (ea.style) { item.style = ea.style; }
+            }
+
+              item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
             item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
             item.addEventListener("mouseup", (evt) => {
               evt.stopPropagation()
@@ -538,12 +545,13 @@ export default class HTML {
               list.remove()
               cb && cb(evt, ea)
             })
+
             return item
           })
         }</ul></div>
         list.style.position = 'absolute';
         element.appendChild(list)
-        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
+        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,lively.getExtent(element).y)))
         list.style.textAlign = "left"
         list.style.zIndex = 1000
         list.style.backgroundColor = "white"
