@@ -43,25 +43,28 @@ export default class GraphControl extends Morph {
   async graph() {
     return Graph.getInstance();
   }
-  async onKickoffClicked(evt) {
+  async onOpenDiaryClicked(evt) {
+    const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));
+    diary.selectFirstEntry();
+  }
+  async openWeeklyDocument(title) {
     const graph = await this.graph();
     
     const today = new Date();
     const monday = today.mondayInWeek().toFormattedString('yyyy.mm.dd');
     const friday = today.fridayInWeek().toFormattedString('yyyy.mm.dd');
     
-    const kickoffTitle = `Kickoff ${monday}-${friday}`;
+    const knotTitle = `${title} ${monday}-${friday}`;
     
-    const knot = await graph.getOrCreateKnotForTitle(kickoffTitle);
+    const knot = await graph.getOrCreateKnotForTitle(knotTitle);
     const knotView = await lively.openComponentInWindow("knot-view");
     knotView.loadKnotForURL(knot.url);
   }
-  async onOpenDiaryClicked(evt) {
-    const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));
-    diary.selectFirstEntry();
+  onKickoffClicked(evt) {
+    this.openWeeklyDocument('Kickoff')
   }
   onRetrospectiveClicked(evt) {
-    lively.notify('onRetrospectiveClicked')
+    this.openWeeklyDocument('Retrospective')
   }
   
   initKnowledgeBases() {
