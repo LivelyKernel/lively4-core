@@ -45,9 +45,16 @@ export default class GraphControl extends Morph {
   }
   async onKickoffClicked(evt) {
     const graph = await this.graph();
-    DEFAULT_FOLDER_URL
-    const existsAlready = graph.hasKnotWithURL('https://lively4/notes/Kickoff_2019_01_14-2019_01_18.md')
-    lively.notify('onKickoffClicked', existsAlready)
+    
+    const today = new Date();
+    const monday = today.mondayInWeek().toFormattedString('yyyy.mm.dd');
+    const friday = today.fridayInWeek().toFormattedString('yyyy.mm.dd');
+    
+    const kickoffTitle = `Kickoff ${monday}-${friday}`;
+    
+    const knot = await graph.getOrCreateKnotForTitle(kickoffTitle);
+    const knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(knot.url);
   }
   async onOpenDiaryClicked(evt) {
     const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));

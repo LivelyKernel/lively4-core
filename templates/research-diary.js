@@ -1,19 +1,12 @@
+import 'lang';
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 import { Graph, _, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
 import { promisedEvent, debounce, sortBy, last } from "utils";
 
 function getTodaysTitle() {
-  function toStringWithTrailingZero(number) {
-    return (number < 10 ? "0" : "") + number;
-  }
-  
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = toStringWithTrailingZero(today.getMonth() + 1);
-  const day = toStringWithTrailingZero(today.getDate());
-  
-  return `Research-Diary Entry ${year}.${month}.${day}`;
+  return new Date().toFormattedString('yyyy.mm.dd');
 }
 
 export default class ResearchDiary extends Morph {
