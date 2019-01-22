@@ -247,7 +247,7 @@ export function presentationPrintButton(ctx) {
 
 export function presentationFullscreenButton(ctx) {
   var button = document.createElement("button")
-  button.textContent = "fullscreen"
+  button.textContent = " fullscreen "
   var fullscreen
   var container = lively.query(ctx, "lively-container")
   if (!container) {
@@ -273,13 +273,22 @@ export function presentationFullscreenButton(ctx) {
   button.onclick = async () => {
     fullscreen = !fullscreen
     if (fullscreen) {
-  
+      button.leaveFullscreen = document.createElement("button")
+      button.leaveFullscreen.textContent = "exit"
+      lively.setPosition(button.leaveFullscreen, pt(0,0))
+      document.body.appendChild(button.leaveFullscreen)
+      button.leaveFullscreen.style.zIndex = 1000
+      button.leaveFullscreen.style.background = "none"
+      button.leaveFullscreen.style.border = "none"
+      button.leaveFullscreen.style.color = "gray"
+      button.leaveFullscreen.onclick = button.onclick
+      
+      lively.setPosition(button.leaveFullscreen, pt(50, 0), "fixed")
+      
       // all back 
       document.body.querySelectorAll("lively-window").forEach(ea => {
         ea.style.zIndex = 0
       })
-      
-
       document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
       await lively.sleep(100) // wait for fullscreen
 
@@ -304,6 +313,7 @@ export function presentationFullscreenButton(ctx) {
 
       container.style.backgroundColor = "black"
     } else {
+      button.classList.remove("fullscreen")
       document.webkitCancelFullScreen()
       if (container && container.isFullscreen()) {
         container.onFullscreen()
@@ -312,6 +322,10 @@ export function presentationFullscreenButton(ctx) {
       presentation.style.transform = ""
       lively.setPosition(presentation, pt(0,0))
       container.style.backgroundColor = ""
+      
+      if (button.leaveFullscreen) {
+        button.leaveFullscreen.remove()
+      }
     }
   }
   button.style = "position: absolute; bottom: 10px; left: 80px"
