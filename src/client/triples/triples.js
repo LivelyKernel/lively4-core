@@ -1,4 +1,5 @@
 "enable aexpr";
+import 'lang';
 
 import focalStorage from 'src/external/focalStorage.js';
 import ContextMenu from './../contextmenu.js';
@@ -369,9 +370,37 @@ export class Graph {
   escapeSpecialCharacters(str) {
     return str.replace(/[^A-Za-z0-9-]/g, '_');
   }
+  
+  async fileForNameExists(name) {
+    const url = new URL(`${this.escapeSpecialCharacters(str)}.md`, DEFAULT_FOLDER_URL);
+    return (await fetch(url)).status === 200;
+  }
+  
+  async getOrCreateKnotForTitle(name, defaultText = '# Default Text') {
+    const escapedName = this.escapeSpecialCharacters(name);
+    const proposedURL = `${DEFAULT_FOLDER_URL}${escapedName}.md`;
+
+    const existingKnot = this.getKnots().find(knot => {
+      return knot.url === proposedURL
+    });
+    if (existingKnot) {
+      lively.success('EXISTS IN MEMORY')
+      return existingKnot;
+    }
+    
+    const fileExists = (await fetch(proposedURL)).status === 200;
+    if(fileExists) {
+      lively.success('EXISTS REMOTELY')
+      return this.requestKnot(proposedURL);
+    }
+    
+    lively.warn('NON EXISTENT')
+    return this.createKnot(DEFAULT_FOLDER_URL, name, 'md');
+  }
+
   async getNonCollidableURL(directory, name, fileEnding) {
     const maxTries = 10;
-    const fileName = name.replace(/[^A-Za-z0-9-]/g, '_');
+    const fileName = this.escapeSpecialCharacters(name);
     let offset = 0;
     let i = 0;
     

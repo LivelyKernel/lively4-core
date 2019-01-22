@@ -81,6 +81,92 @@ class TraceNode {
     }
     return this.parent.findLastControlFlow()
   }
+    
+  findLastDataFlowOf(identifier){
+    let pred = this
+    while((pred = pred.predecessor())){
+      let predId = pred.getIdentifier()
+      
+      if(predId && predId.name == identifier.name && predId.scopeId == identifier.scopeId) {
+        return pred
+      }
+    }    
+  }
+  
+  getIdentifier(){
+    switch(this.astNode.type)
+    {
+      case 'AssignmentExpression':
+        return this.children[0].astNode.left
+      
+      case 'UpdateExpression':
+        return this.astNode.argument
+      
+      case 'VariableDeclarator':
+        return this.astNode.id
+      
+      default:
+        return null
+    }
+  }
+  
+  referencedIdentifiers(){
+    let identifiers = []
+    switch(this.astNode.type) {
+      case 'Identifier':
+        return [this]
+      
+      case 'AssignmentExpression':
+        identifiers.push(this.astNode.left)
+        break
+        
+      case 'UpdateExpression':
+        identifiers.push(this.astNode.argument)
+        break
+        
+      case 'BinaryExpression':
+        if (this.astNode.left.type == 'Identifier') {
+          identifiers.push(this.astNode.left)
+        }
+        if (this.astNode.right.type == 'Identifier') {
+          identifiers.push(this.astNode.right)
+        }
+        break
+      
+      default:
+        return []
+    }
+    
+    this.children.forEach((c) => {
+      identifiers.push(...c.referencedIdentifiers())
+    })
+    return identifiers
+  }
+  
+  questions(){
+    let questions = [
+      ['Back', () => this.predecessor()],
+      ['Up', () => this.whyWasThisStatementExecuted()]]
+    let referencedVars = this.referencedIdentifiers()
+                          .sort((a, b) => {
+                            return a.name.localeCompare(b.name)
+                          })
+                          .filter((id, i, arr) => {
+                            let pred = arr[i-1]
+                            return !pred 
+                                    || id.name != pred.name
+                                    || id.scopeId != pred.scopeId //shouldn't actually differ
+                          })
+    referencedVars.forEach((id) => {
+      questions.push([`Last assignment of '${id.name}'`, () => this.findLastDataFlowOf(id)])
+    })
+    return questions
+  }
+  
+  isAssignment() {
+    let assignmentTypes = ['AssignmentExpression', 'UpdateExpression', 'VariableDeclarator']
+    return assignmentTypes.includes(this.astNode.type)
+  }
 }
 
 window.lively4ExecutionTrace = ExecutionTrace
