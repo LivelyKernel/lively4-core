@@ -5,6 +5,20 @@ export default class LivelyPresentation extends Morph {
   async initialize() {
     this.registerButtons();
     lively.html.registerKeys(this);
+    
+    lively.html.addChooList(this.get("#gotoButton"), () => {
+      return this.slides().map((ea, index) => {
+        var h = ea.querySelector("h1,h2,h3,h4") 
+        var item = {
+          toString: () => "Slide " + index + ": " + (h ? h.textContent : ""),
+          style: "color: black",
+          target: ea,
+        }
+        return item
+      })
+    }, (evt, item) => {
+      this.setSlide(item.target)
+    })
   }
 
   onLeftDown(evt) {
@@ -22,10 +36,82 @@ export default class LivelyPresentation extends Morph {
   onPrevButton() {
     this.prevSlide() 
   }
-
+  
   onNextButton() {
     this.nextSlide() 
   }
+
+  
+  onGotoButton() {
+//    lively.notify("goto")
+  }
+
+  
+  onFullscreenButton() {
+    this.toggleFullscreen()
+  }
+
+  async toggleFullscreen() {
+    debugger
+    var container = lively.query(this, "lively-container")
+    var presentation = this;
+    var slide = this.slide
+    presentation.fullscreen = !presentation.fullscreen
+    if (presentation.fullscreen) {    
+      
+      
+      var parents = lively.allParents(this, [], true)
+      // hide all windows
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        if (!parents.includes(ea))  {
+          ea.style.display = "none"
+        }
+      })
+      
+      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT)
+      await lively.sleep(100) // wait for fullscreen
+
+      if (container && !container.isFullscreen()) {
+        // container.hideNavbar()
+        container.onFullscreen()
+      }
+      var slideBounds = slide.getBoundingClientRect()
+      
+      var scaleX = (window.innerWidth - 10)/ slideBounds.width
+      var scaleY = (window.innerHeight - 10)/ slideBounds.height
+      var minScale = Math.min(scaleY, scaleX)
+      lively.setPosition( presentation, pt(0,0))
+      presentation.style.transformOrigin = "0px 0px"
+      presentation.style.transform = `scale(${minScale * 1})`
+
+      await lively.sleep(10) // wait for rendering
+      var scaledBounds = slide.getBoundingClientRect();
+      lively.setPosition(presentation, 
+        pt((window.innerWidth - scaledBounds.width) / 2,
+        ((window.innerHeight - scaledBounds.height) / 2)) )
+
+      container.style.backgroundColor = "black"
+    } else {
+      
+      // unhide windows again
+      document.body.querySelectorAll("lively-window").forEach(ea => {
+        ea.style.display = ""
+      })
+      document.webkitCancelFullScreen()
+      if (container && container.isFullscreen()) {
+        container.onFullscreen()
+        // container.showNavbar()
+      }
+      presentation.style.transform = ""
+      lively.setPosition(presentation, pt(0,0))
+      container.style.backgroundColor = ""
+      
+      if (container) {
+        container.parentElement.focus() 
+      }
+    }
+  }
+  
   
   newSlide() {
     this.slide = document.createElement("div")

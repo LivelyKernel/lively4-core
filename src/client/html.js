@@ -510,6 +510,49 @@ export default class HTML {
     });
   }
   
+  // #TODO refactor magic numbers to style? maybe lively.css?
+  static addChooList(element, listFunc, cb) {
+    if (!listFunc) {
+      throw new Error("listFunc argument is missing")
+    }
+    var deepListId = "choose-list"
+    function clearList() {
+      var oldList = element.querySelector("#" + deepListId)
+      if (oldList) {
+        oldList.remove()
+        return true
+      }
+      return false
+    }
+    lively.addEventListener("ChooseList", element, "click", async (evt) => {
+      if (clearList()) return; // click closed old...
+      var list = <div id={deepListId} style="font-size:12pt"><ul>{... 
+          listFunc().map(ea => {
+            var item = <li>{ea}</li>
+            if (ea.style) item.style = ea.style
+            item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
+            item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
+            item.addEventListener("mouseup", (evt) => {
+              evt.stopPropagation()
+              evt.preventDefault()
+              list.remove()
+              cb && cb(evt, ea)
+            })
+            return item
+          })
+        }</ul></div>
+        list.style.position = 'absolute';
+        element.appendChild(list)
+        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
+        list.style.textAlign = "left"
+        list.style.zIndex = 1000
+        list.style.backgroundColor = "white"
+        list.style.opacity = 0.8
+        list.style.minWidth = "300px"
+      
+    })
+  }
+  
   
   
 }

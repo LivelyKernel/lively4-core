@@ -67,11 +67,11 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target).map(
+          ["parents", lively.allParents(target, [], true).map(
             ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
