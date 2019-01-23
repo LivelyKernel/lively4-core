@@ -21,10 +21,11 @@ export default class Stroboscope {
   
   _create_event_for_property(property) {
     var trigger = "Stroboscope";
-    var value = this.target[property];
-    var property_type = Object.prototype.toString.call(value);
+    var property_name = Object.keys(this.target)[property]
+    var value = this.target[property_name]
+    var property_type = typeof value;
     var event_type = EventType.create;
     
-    return new StroboscopeEvent(this.target, trigger, property, property_type, event_type, value);
+    return new StroboscopeEvent(this.target, trigger, property_name, property_type, event_type, value);
   }
 }
