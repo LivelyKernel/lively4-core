@@ -2,7 +2,7 @@ import { expect } from 'src/external/chai.js';
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
 
-describe('stroboscope slice', () => {
+describe('stroboscope create events', () => {
 
   it('events for undefined', () => {
     var target = undefined
@@ -31,10 +31,11 @@ describe('stroboscope slice', () => {
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events = stroboscope.slice();
+    stroboscope.slice();
     
     delete target.solution;
        
+    var events = stroboscope.slice()
     expect(events.length).to.equal(1);
     var delete_event = events[0]
     expect(delete_event.event_type).to.equal(EventType.delete);
@@ -74,7 +75,87 @@ describe('stroboscope slice', () => {
     events = stroboscope.slice();
     expect(events.length).to.equal(0);
   });
- 
+
+  it('event for property type number', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = 42;
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("number");
+  });
+  
+  it('event for property type string', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = "What's the question?";
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("string");
+  });  
+
+  it('event for property type boolean', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = true;
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("boolean");
+  }); 
+
+  it('event for property type null', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = null; 
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("object");
+  });
+  
+  it('event for property type undefined', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = undefined; 
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("undefined");
+  });
+
+  it('event for property type symbol', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = Symbol("id"); 
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("symbol");
+  });
+
+  it('event for property type function', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = function(){}; 
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("function");
+  });
+  
+  it('event for property type object', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = {}; 
+    var events = stroboscope.slice();
+    var event = events[0]
+    expect(event.property_type).to.equal("object");
+  }); 
+
   it('events for multiple property changes', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);

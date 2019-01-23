@@ -8,27 +8,42 @@ export default class Stroboscope {
   }
 
   slice() {
-    var events = new Array();
+    var events = [];
 
     if (this.target == undefined)
       return events;
 
+    this._add_create_and_change_events(events);
+    this._add_delete_events(events);
+    return events;
+  }
+
+  _add_create_and_change_events(events) {
     for (var index in Object.keys(this.target)) {
       var property = Object.keys(this.target)[index]
-      
+
       if (this._is_property_new(property)) {
         this._cache_property(property);
         var event = this._create_event_for_property(property);
         events.push(event);
-      } else if (this._has_property_value_changed(property))
-      {
+      } else if (this._has_property_value_changed(property)) {
         this._cache_property(property);
         var event = this._change_event_for_property(property);
         events.push(event);
       }
     }
+  }
 
-    return events;
+  _add_delete_events(events) {
+    for (var index in Object.keys(this._property_cache)) {
+      var property = Object.keys(this._property_cache)[index]
+
+      if (this._is_property_deleted(property)) {
+        this._remove_property_cache(property);
+        var event = this._delete_event_for_property(property);
+        events.push(event);
+      }
+    }
   }
 
   _create_event_for_property(property) {
@@ -37,6 +52,11 @@ export default class Stroboscope {
 
   _change_event_for_property(property) {
     return this._value_event_for_property(property, EventType.change);
+  }
+
+  _delete_event_for_property(property) {
+    var trigger = "Stroboscope";
+    return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined);
   }
 
   _value_event_for_property(property, event_type) {
@@ -55,6 +75,14 @@ export default class Stroboscope {
     return this._property_cache.hasOwnProperty(property);
   }
 
+  _is_property_deleted(property) {
+    return !this._target_has_property(property)
+  }
+
+  _target_has_property(property) {
+    return this.target.hasOwnProperty(property);
+  }
+  
   _has_property_value_changed(property) {
     return this._property_cache[property] !== this.target[property]
   }
@@ -62,5 +90,9 @@ export default class Stroboscope {
   _cache_property(property) {
     var value = this.target[property]
     this._property_cache[property] = value;
+  }
+
+  _remove_property_cache(property) {
+    delete this._property_cache[property];
   }
 }
