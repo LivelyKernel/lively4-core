@@ -7,7 +7,18 @@
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
 <style>
-
+ li.box {
+  width: 200px;
+  height: 150px;
+  list-style-type: none;
+  float: left;
+  border: 1px solid lightgray;
+  margin: 10px;
+  overflow: hidden;
+}
+h1,h2,h3,h4  {
+  clear: left;
+}
 </style>
 
 <!--
@@ -164,7 +175,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ---
 # Components
 
-### Widgets:
+## Widgets:
 - #Connector
 - #CrayonColors
 - #Dialog
@@ -172,37 +183,42 @@ Even though we experimented with using our own Console and Debugger, we struggle
 - Separator
 - Script
 
-
-### Text Editing:
+---
+## Text Editing:
 - LivelyEditor
 - LivelyCodeMirror
 
-### Content:
-- #LivelyMarkdown
-- #LivelyPresentation
-- #LivelyEssay
-- #PDF
-- #Paper
-- #Table
+---
+## Lively Content:
+- #LivelyMarkdown ![](lively-motivation.png){style="width:200px"} {.box}
+- #LivelyPresentation ![](lively-presentation.png){style="width:200px"} {.box}
+- #LivelyEssay {.box}
+- #PDF [seminar](https://lively-kernel.org/lively4/lively4-seminars/WebDev2017/project_3/index.md)<br>![](lively-pdf.png){style="width:200px"} {.box}
+- #Table ![](lively-table.png){style="width:200px"} {.box} 
+- #LivelyDrawboard ![](../../src/components/widgets/lively-drawboard.png){style="width:200px"} {.box} 
+---
+## UI Components
 
-### UI
+- #LivelyError <br> ![](lively-error.png)  {.box}
+- #LivelyNotification <br> ![](lively-notifications.png)  {.box}
+- #LivelyProgress <br> ![](lively-progress.png)  {.box}
+- #LivelyPrompt <br> ![](lively-prompt.png) {.box}
+- #LivelyConfirm <br> ![](lively-confirm.png) {.box}
 
-- Error
-- Notification
-- Progress
-
-
+---
 ## #D3 Visualizations
   
-- #D3Tree
-- #D3TreeMap
-- #D3RadialTree
-- #D3Barchart
-- #D3Boxplot
-- #D3BundleView
+- #D3TreeMap <br> [![](treemap_filesize.png){style="width:300px"}](../../demos/visualizations/treemap_size.md) {.box}
+- #D3RadialTree <br> ![](../../src/components/d3/d3-radialtree.png){style="width:300px"} {.box} 
+- #D3Barchart <br> ![](../../src/components/d3/d3-barchart.png){style="width:300px"} {.box} 
+- #D3Boxplot <br> ![](../../src/components/d3/d3-boxplot.png){style="width:300px"} {.box}
+- #D3BundleView <br> [![](bundleview_modules_contextjs.png){style="width:300px"}](../../demos/visualizations/bundleview.md) {.box}
+- #D3PolymetricView <br> [![](d3_polymetricview.png){style="width:300px"}](../../demos/visualizations/polymetricview.md) {.box}
 
-
+---
 ## #Graphviz (with D3)
+
+- Interactive Object Graph <br> [![](graphviz_objectgraph.png){style="width:300px"}](../../demos/visualizations/object_graph.md)
 
 
 ---
@@ -256,11 +272,15 @@ Even though we experimented with using our own Console and Debugger, we struggle
   - Using #PrintIt and #DoIt in #CodeMirror
 - Drawing Sketch with a #Pen
 
+---
+## Essay
 
+- [ContextJS Paper Draft / Implementation](https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md) <br> ![](lively-essay.png){style="width:500px"}
+
+---
 ## Paper Writing
 
-- writing markdown (directly include in LaTeX)
-- 
+- writing markdown (directly include in LaTeX)<br> ![](paperwriting.png){style="width:500px"}
 
 ---
 # Features
