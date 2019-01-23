@@ -6,6 +6,15 @@ import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 
 import { debounce } from "utils";
 
+export default class Test{
+  
+  construtor ()
+  {
+    
+  }
+  
+}
+
 export default class D3StroboscopicViewer extends Morph {
 
   initialize() {
@@ -13,15 +22,15 @@ export default class D3StroboscopicViewer extends Morph {
     this.updateViz()
     this.options = {}
     
+    
     this.addEventListener('extent-changed', ((evt) => {
       this.onExtentChanged(evt);
     })::debounce(500));
 
     // Map of objects displayed by viewer
-    this.objectsToView = new Map();    
+    this.objectsToView = new Map();
+  
   }
-  
-  
   /*
     async initialize() {
     this.options = {}
