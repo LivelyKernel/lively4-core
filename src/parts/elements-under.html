@@ -1,13 +1,4 @@
-<div class="lively-content" style="width: 360px; height: 177.2px; border: 4px dashed black; position: absolute; left: 1657px; top: -826px; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-part-name="elements-under"><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
-  this.style.zIndex = 1000
-  setInterval(() => {
-    this.onStep()
-  }, 1000)
-  
-  lively.removeEventListener("Drag", this)
-  lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
-  
-}</script><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
+<div class="lively-content" style="width: 760px; height: 30px; border: 2px dashed rgb(120, 120, 120); position: absolute; left: 2077.4px; top: -669.6px; background-color: rgba(200, 200, 0, 0.5); z-index: 1000; min-width: 800px;" id="elements-under" data-lively-part-name="elements-under" data-lively-id="f445824b-73b5-456b-9562-cd195984c3a5"><script type="lively4script" data-name="onGlobalMouseMove">function onGlobalMouseMove(evt) {
   evt.stopPropagation()
   evt.preventDefault()
   
@@ -29,10 +20,52 @@
   evt.preventDefault()
 
   lively.removeEventListener("ElementsUnder", document.documentElement)
+}</script><script type="lively4script" data-name="renderSelected">function renderSelected(item, ea) {
+  if (this.selected == ea) {
+    item.style.backgroundColor = "lightgray"
+  }
+}</script><script type="lively4script" data-name="updateSelected">function updateSelected() {
+  this.shadowRoot.querySelectorAll("li").forEach(item => {
+  item.style.backgroundColor = ""
+   if (item.target == this.selected) {
+     item.style.backgroundColor = "rgba(0,0,0,0.3)"
+   } 
+  })
+}</script><script type="lively4script" data-name="indentList">function indentList(list) {
+
+  // list  = list || that.querySelector("ul")
+    
+  list.childNodes.forEach(ea => {
+    
+    
+    ea.querySelector(".indent").textContent = lively.allParents(ea.target, [], true).map(ea => " ").join("")
+    
+    
+  })
+  
+  
+  
 }</script><script type="lively4script" data-name="onStep">function onStep() {
-  var list = this.querySelector("ul")
+  if (!this.shadowRoot) {
+    this.attachShadow({mode: 'open'})
+  }
+  
+  
+  var circle = this.shadowRoot.querySelector(".elements-under")
+  if (!circle) {
+    circle = document.createElement("div") 
+    circle.classList.add("elements-under")
+    circle.style="width: 25px; height: 23px; border-radius: 30px;"
+    this.shadowRoot.appendChild(circle)
+  }
+  lively.setPosition(circle, pt(-15,-15))
+  circle.style.border = this.style.border
+  circle.style.backgroundColor = this.style.backgroundColor
+  
+  var list = this.shadowRoot.querySelector("ul")
   if (!list) {
     list = document.createElement("ul")
+    this.shadowRoot.appendChild(list)
   } 
   
   list.innerHTML = ""
@@ -41,36 +74,44 @@
   
   elements.forEach(ea => {
     if (ea === this) return; // ignore yourself
+    if (ea.classList.contains("elements-under")) return; 
+    if (ea === document.documentElement) return; 
+    
     var item = document.createElement("li")
-    item.innerHTML = "" + ea.localName + " " + ea.classList   + (ea.id ? "#" + ea.id : "") + ": " + ea.textContent.slice(0,50) 
+    item.innerHTML = "<span style='white-space:pre;' class='indent'></span>" +"<b>" + ea.localName + "</b> <em>" 
+      + (ea.classList.length > 0 ? "." +Array.from(ea.classList).join(".") : "") + "</em>"   
+      + (ea.id ? "#" + ea.id : "") + " " 
+      + "<span style='font-size:7pt'>" + ea.textContent.slice(0,50).replace(/</g,"&lt;") + "</span>"
+    item.target = ea
+    item.addEventListener("click", evt => {
+      this.selected = ea
+      this.updateSelected()
+      if (this.highlight) this.highlight.remove()
+      this.highlight = lively.showElement(ea)
+      this.highlight.style.border = "3px dashed gray"
+      this.highlight.innerHTML = ""
+    })
+    item.addEventListener("dblclick", evt => {
+      window.that = ea
+      HaloService.showHalos(that)
+    })
+
     list.appendChild(item)
   })
-  this.appendChild(list)
-  this.style.minWidth = "400px"
+  this.updateSelected()
+  this.indentList(list)
   lively.setExtent(this, lively.getExtent(list).addPt(lively.pt(0,30)))
-}</script><ul><li>lively-container : </li><li>i fa fa-check-circle: </li><li>button edit#accept: 
-        </li><li>div fill#container-navigation: 
-      
-      
-      
-      
-      
-      
-
-      </li><li>lively-window global: </li><li>div window-content#window-content: 
-      
-    </li><li>div window: 
-    
-      
-
-      lively.js
-      
-      	
-     </li><li>html : 
-    
-  Lively 4
+}</script><script type="lively4script" data-name="livelyLoad">function livelyLoad() {
+  this.style.zIndex = 1000
+  setInterval(() => {
+    this.onStep()
+  }, 1000)
   
-    
-    
+  this.style.backgroundColor = "rgba(200,200,0,0.5)"
+  this.style.minWidth = "800px"
+
   
-that.shadowRoot.e</li></ul></div>
+  lively.removeEventListener("Drag", this)
+  lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
+  
+}</script></div>

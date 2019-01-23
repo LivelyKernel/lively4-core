@@ -233,6 +233,11 @@ export default class Inspector extends Morph {
 
   renderHeader(node, obj) {
     node.innerHTML = '';
+
+    if (obj === document) {
+      return;
+    }
+
     
     if (obj instanceof ShadowRoot) {
       node.appendChild(this.expandTemplate(node)) 
@@ -428,9 +433,11 @@ export default class Inspector extends Morph {
   inspect(obj) {
     if (!obj) { return; }
     
-    if (obj.id) {
-      this.setAttribute("target", "#" + obj.id);
+    if (obj instanceof HTMLElement) {
+      var cssSelector = lively.elementToCSSName(obj)
+      this.setAttribute("target", cssSelector);      
     }
+    
     if (this.targetObject) {
       var oldViewState = this.getViewState()
     }

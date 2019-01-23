@@ -3,12 +3,15 @@
  */
  
 export default class Morph extends HTMLDivElement {
-  
   /* 
    * Access subelments by name
    * shortcut for querySelector and shadowRoot.querySelector t
    * #FeatureIdea -- In Livel3, it could it also be used to look for owners and siblings  
    */ 
+  connectedCallback() {
+    console.log('connected');
+  }
+  
   get(selector) {
     return this.getSubmorph(selector);
   }

@@ -1,7 +1,9 @@
+import 'lang';
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import KnotView from "templates/knot-view.js";
 
-import { Graph } from 'src/client/triples/triples.js';
+import { Graph, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
 
 export default class GraphControl extends Morph {
   async initialize() {
@@ -16,6 +18,10 @@ export default class GraphControl extends Morph {
     let launchTripleList = this.get('#launchTripleList');
     launchTripleList.addEventListener('click', event => this.launchTripleList());
     
+    this.get('#kickoff').addEventListener('click', evt => this.onKickoffClicked(evt));
+    this.get('#open-diary').addEventListener('click', evt => this.onOpenDiaryClicked(evt));
+    this.get('#retrospective').addEventListener('click', evt => this.onRetrospectiveClicked(evt));
+
     let launchGraph = this.get('#launchGraph');
     launchGraph.addEventListener('click', event => this.launchGraph());
     
@@ -32,6 +38,33 @@ export default class GraphControl extends Morph {
     });
     
     this.initKnowledgeBases();
+  }
+  
+  async graph() {
+    return Graph.getInstance();
+  }
+  async onOpenDiaryClicked(evt) {
+    const diary = await lively.openComponentInWindow("research-diary", lively.getPosition(evt));
+    diary.selectFirstEntry();
+  }
+  async openWeeklyDocument(title) {
+    const graph = await this.graph();
+    
+    const today = new Date();
+    const monday = today.mondayInWeek().toFormattedString('yyyy.mm.dd');
+    const friday = today.fridayInWeek().toFormattedString('yyyy.mm.dd');
+    
+    const knotTitle = `${title} ${monday}-${friday}`;
+    
+    const knot = await graph.getOrCreateKnotForTitle(knotTitle);
+    const knotView = await lively.openComponentInWindow("knot-view");
+    knotView.loadKnotForURL(knot.url);
+  }
+  onKickoffClicked(evt) {
+    this.openWeeklyDocument('Kickoff')
+  }
+  onRetrospectiveClicked(evt) {
+    this.openWeeklyDocument('Retrospective')
   }
   
   initKnowledgeBases() {

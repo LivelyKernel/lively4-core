@@ -1,18 +1,15 @@
-<style>
+<!-- markdown-config presentation=true -->
 
-@media print {
-  body {
-    font-family: Helvetica, Arial, Sans-Serif;
-  }
-  hr {
-    page-break-before: always;
-    color: white;
-  }  
-}
+<link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
+<link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
+<link rel="stylesheet" type="text/css" href="./style.css"  />
+
+<style>
 
 img {
   max-width: 900px;
 }
+
 
 .lively-slide {
   position: absolute;
@@ -128,6 +125,18 @@ button.onclick = () => {
 }
 button
 </script>
+
+
+<script>
+  import {presentationPrintButton} from "src/client/essay.js"
+  presentationPrintButton(this)
+</script>
+
+<script>
+  import {presentationFullscreenButton} from "src/client/essay.js"
+  presentationFullscreenButton(this)
+</script>
+
 ---
 <img class="logo" src="./hpi_logo.png" width="50px">
 <div class="page-number">X</div>

@@ -1575,7 +1575,7 @@ export default class Container extends Morph {
 
   async saveEditsInView(url) {
     url = (url || this.getURL()).toString();
-    var contentElement = this.childNodes[0]
+    var contentElement = this.getContentRoot()
     if (url.match(/template.*\.html$/)) {
         return lively.notify("Editing templates in View not supported yet!");
     } else if (url.match(/\.html$/)) {

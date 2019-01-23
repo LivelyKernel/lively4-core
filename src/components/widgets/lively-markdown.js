@@ -119,8 +119,14 @@ export default class LivelyMarkdown extends Morph {
     
     /* Beatify Inplace Hashtag Navigation #TODO #Refactor #MoveToBetterPlace */
     tmpDiv.querySelectorAll("a.tag").forEach(eaLink => {
+      // #Example for absolute CSS positioning #Hack: 
+      // (1) the relative "span" itself is positioned through the dynamic layout without taking space itself
+      // (2) the absolute "div" element than has total freedom to posiiton itself relative to (1)
+      var searchContainerAnchor  = <span style="position:relative; width: 0; height: 0"></span>
       var searchContainer = <div style="width:500px; height:200px; overflow: auto; background-color:lightgray; z-index:1000"></div>
       lively.setPosition(searchContainer,pt(0,0)) // make absolute...
+      searchContainerAnchor.appendChild(searchContainer)
+      
       var shadow = searchContainer.attachShadow({mode: 'open'});     
       var lastEntered
       var lastLeft
@@ -142,8 +148,15 @@ export default class LivelyMarkdown extends Morph {
         if (lastLeft > lastEntered) return
 
         // document.body.appendChild(searchContainer)
-        eaLink.appendChild(searchContainer)        
-        lively.setGlobalPosition(searchContainer, lively.getGlobalPosition(eaLink).addPt(pt(0,15)))
+        eaLink.appendChild(searchContainerAnchor)        
+        
+        // lively.setGlobalPosition(searchContainer, lively.getGlobalPosition(eaLink).addPt(pt(0,15)))
+        
+        // lively.setPosition(searchContainer, pt(0,0), "relative")
+        searchContainer.style.overflow = "visible"
+        
+        // #Continue here!!! getPosition does not work on non absolute objects...
+        // lively.setPosition(searchContainer, lively.getBounds(eaLink).topLeft().addPt(pt(0,15)))
         searchContainer.innerHTML = "search"
         // searchContainer.isMetaNode = true
         searchContainer.id = "lively-search-container"
@@ -167,7 +180,7 @@ export default class LivelyMarkdown extends Morph {
         searchContainer.style.opacity = 0
         
         await lively.sleep(1000)
-        searchContainer.remove()
+        searchContainerAnchor.remove()
       })
     })
     

@@ -60,8 +60,36 @@ export default class Whyline extends Morph {
   }
   
   selectCallTraceNode(traceNode) {
-    let controlFlow = traceNode.predecessor()
-    this.selectedNode = controlFlow
+    console.log(traceNode)
+    this.selectedNode = traceNode
+
+    
+    let questionPane = this.get("#questionPane")
+    questionPane.innerHTML = '' //Clear previous buttons
+
+    let questions = traceNode.questions()
+    for (let question of questions) {
+      let btn = document.createElement("BUTTON");
+      btn.className += " questionButton"
+      let t = document.createTextNode(question[0]);
+      btn.onclick = () => {
+        this.selectCallTraceNode(question[1]())
+      }
+      btn.appendChild(t);// Append the text to <button>
+      questionPane.appendChild(btn)
+    }
+    
+    
+    
+    //     if(['AssignmentExpression', 'UpdateExpression'].includes(traceNode.astNode.type)){
+//       dataFlowButton.style.display = "inline"
+//       dataFlowButton.innerHTML = "Why has " + traceNode.getIdentifier().name + " the value " + traceNode.value + "?";
+//     }
+//     else{
+//       dataFlowButton.style.display = "none"
+//     }
+      
+    
     if (this.selectedNode.markId) {
       this.showMarker(this.selectedNode.markId)
     }
@@ -77,6 +105,18 @@ export default class Whyline extends Morph {
   
   onSourceChange(evt) {
     this.sourceCodeChangedDelay();
+  }
+  
+  onControlFlowQuestion(evt){
+    let node = this.selectedNode
+    let newNode = node.whyWasThisStatementExecuted()
+    this.selectCallTraceNode(newNode)
+  }
+  
+  onDataFlowQuestion(evt){
+    let node = this.selectedNode
+    let newNode = node.findLastDataFlow()
+    this.selectCallTraceNode(newNode)
   }
 
   
@@ -293,6 +333,8 @@ export default class Whyline extends Morph {
     }
     node.children.forEach(ea => this.updateCodeAnnotation(ea, parentBounds))
   }
+  
+  
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {

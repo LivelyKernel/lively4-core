@@ -67,11 +67,11 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target).map(
+          ["parents", lively.allParents(target, [], true).map(
             ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
@@ -338,7 +338,10 @@ export default class ContextMenu {
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
         ["Graph Control", evt => this.openComponentInWindow("graph-control", evt, worldContext),
           "Ctrl+Alt+G", '<i class="fa fa-globe" aria-hidden="true"></i>'],
-        ["Diary", evt => this.openComponentInWindow("research-diary", evt, worldContext),
+        ["Diary", async evt => {
+          const diary = await this.openComponentInWindow("research-diary", evt, worldContext);
+          diary.selectFirstEntry();
+        },
           "Ctrl+Alt+D", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Quicklinks", async evt => {
           var morph  = await lively.openPart("quicklinks")          
@@ -375,7 +378,7 @@ export default class ContextMenu {
           workspace.parentElement.setAttribute("title","open this in a tab...")
           workspace.mode = "text"
         }],
-      ]],
+      ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       [
         "Parts",
           fetch(lively4url + "/src/parts", {
@@ -390,7 +393,7 @@ export default class ContextMenu {
                 lively.hand.startGrabbing(morph, evt)
                 morph.classList.add("lively-content")
                 this.hide();
-              }]}))
+              }]})), undefined, '<i class="fa fa-th-large" aria-hidden="true"></i>'
       ],
       [
         "Windows", 
@@ -410,7 +413,7 @@ export default class ContextMenu {
           if(await lively.confirm('Close all windows?')) {
             document.body.querySelectorAll('lively-window').forEach(w => w.remove())
           } 
-        }]])
+        }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 
