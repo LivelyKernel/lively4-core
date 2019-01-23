@@ -28,9 +28,8 @@ export default class FileIndex {
 
   clear() {
     this.db.files.clear()   
-    this.db.modules.clear()
+    this.db.dependencies.clear()
     this.db.classes.clear()
-    this.db.links.clear()
     this.db.versions.clear()
     // this.db.delete() 
   }
@@ -45,8 +44,7 @@ export default class FileIndex {
 
     db.version("1").stores({
         files: 'url,name,type,version,modified,options,title,tags',
-        modules: 'url,*dependencies',
-        links: '[link+url], link, url, location, status',
+        dependencies: '[link+url+type], link, url, location, status, type',
         classes: '[name+url], name, url, loc, start, end, superClass, *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
@@ -81,7 +79,7 @@ export default class FileIndex {
   }
   
   async updateAllModuleSemantics() {
-     this.db.transaction('rw', this.db.files, this.db.modules, () => {
+     this.db.transaction('rw', this.db.files, this.db.dependencies, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
@@ -125,34 +123,15 @@ export default class FileIndex {
     if (!semantics || !semantics.dependencies) {
       return
     }
-    let resolvedDependencies = new Array()
-    for(const dependency of semantics.dependencies) {
-      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
-      resolvedDependencies.push({
-        url: resolvedDependency,
-        names: dependency.names
-      })
-    }
-    let module = {
-      url: fileUrl,
-      dependencies: resolvedDependencies
-    }
-    
-    this.db.transaction("rw", this.db.modules, () => {
-      this.db.modules.put(module)
+   
+    let resolvedDependencies2 = await DependencyAnalysis.resolveModuleDependencies(fileUrl, semantics.dependencies)
+    this.db.transaction("rw", this.db.dependencies, () => {
+      this.db.dependencies.bulkPut(resolvedDependencies2)
     })
   }
   
   async updateAllLinks() {
-     /*this.db.transaction('rw', this.db.files, () => {
-      return this.db.files.where("type").equals("file").toArray().then((files) => {
-        files.forEach((file) => {
-          this.addLinks(file)   
-        })
-      })
-    })*/
-    
-    this.db.transaction('rw', this.db.files, this.db.links, () => {
+    this.db.transaction('rw', this.db.files, this.db.dependencies, () => {
       return this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -160,18 +139,18 @@ export default class FileIndex {
   }
   
   async addLinks(file) {
-    await this.db.links.where("url").equals(file.url).delete()
-    BrokenLinkAnalysis.extractLinks(file).then(links => {
-      this.db.transaction("rw!", this.db.links, () => {
+    await this.db.dependencies.where("url").equals(file.url).delete()
+    DependencyAnalysis.extractLinks(file).then(links => {
+      this.db.transaction("rw!", this.db.dependencies, () => {
         if (links) {
-          this.db.links.bulkPut(links)
+          this.db.dependencies.bulkPut(links)
         }
       })
     })
   }
       
   async updateAllVersions() {
-     this.db.transaction('rw', this.db.files, this.db.versions, () => {
+     await this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
@@ -192,7 +171,7 @@ export default class FileIndex {
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
         })
-      }
+      } 
     } catch(error) {
       console.log(error, file.url)
     }
@@ -317,8 +296,8 @@ export default class FileIndex {
           }
           superClass.name = (path.node.superClass) ? path.node.superClass.name : null
           superClass.url = importDeclarations.get(superClass.name)
-          if(superClass.name) {
-            console.log(superClass)
+          if (superClass.name) {
+            console.log('superClass:', superClass)
           }
           let methods = []
           if (path.node.body.body) {
@@ -416,7 +395,7 @@ export default class FileIndex {
     console.log("FileCache Analysis updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS"
-    }).then(r => r.json())
+    }).then(r => r.clone().json())
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
   } 
     
@@ -437,8 +416,8 @@ export default class FileIndex {
     if (name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
       if (size < 100000) {
         let response = await fetch(url)
-        file.version = response.headers.get("fileversion")
-        file.content = await response.text()    
+        file.version = response.clone().headers.get("fileversion")
+        file.content = await response.clone().text()    
       }
     }
 
@@ -448,18 +427,19 @@ export default class FileIndex {
     }
     file.type = type
     
+    await this.db.transaction("rw", this.db.files, () => { 
+      this.db.files.put(file) 
+    })
+    
     if (file.content) {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
-      
+
       if (file.name.match(/\.js$/)) {
         this.addModuleSemantics(file)
         this.addVersion(file)
       }      
     }
-    this.db.transaction("rw", this.db.files, () => { 
-      this.db.files.put(file) 
-    })
   }
 
   async dropFile(url) {
@@ -550,9 +530,24 @@ export default class FileIndex {
   }
 }
 
-class BrokenLinkAnalysis {
+class DependencyAnalysis {
+  
+   static async resolveModuleDependencies(fileUrl, dependencies) {
+    let resolvedDependencies = new Array()
+    for (const dependency of dependencies) {
+      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
+      resolvedDependencies.push({
+        link: !resolvedDependency ? dependency.url : resolvedDependency,
+        location: "internal",
+        url: fileUrl,
+        status: !resolvedDependency ? 'dead' : 'alive',
+        type: 'dependency'
+      })
+    }
+    return resolvedDependencies
+  }
+  
   static async extractLinks(file) {
-    
     if (!file || !file.content || file.url.includes("/src/external/")) {
       return [];
     }
@@ -578,7 +573,8 @@ class BrokenLinkAnalysis {
           link: extractedLink,
           location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
           url: file.url,
-          status: await this.validateLink(extractedLink)
+          status: await this.validateLink(extractedLink),
+          type: 'hyperlink'
         }
         links.push(link)  
       } else {
@@ -587,7 +583,8 @@ class BrokenLinkAnalysis {
           link: extractedLink,
           location: "internal",
           url: file.url,
-          status: await this.validateLink(absoluteLink)
+          status: await this.validateLink(absoluteLink),
+          type: 'hyperlink'
         }
         links.push(link)
       }
@@ -597,7 +594,7 @@ class BrokenLinkAnalysis {
       
   
  static async validateLink(link) { 
-  return BrokenLinkAnalysis.fetch(link, { 
+  return DependencyAnalysis.fetch(link, { 
     method: "GET", 
     mode: 'no-cors', 
     redirect: "follow"

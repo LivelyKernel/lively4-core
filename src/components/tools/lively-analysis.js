@@ -79,6 +79,7 @@ export default class LivelyAnalysis extends Morph {
               methodVersions.push({
                 name: entry.method,
                 modifications: 1,
+                url: entry.url,
               })
             }
           //}
@@ -130,16 +131,17 @@ export default class LivelyAnalysis extends Morph {
   async setLinkData() {
     this.links = []
     let rowNumber = 1;
-    await FileIndex.current().db.links.orderBy('location').reverse().each((link) => {
+    await FileIndex.current().db.dependencies.orderBy('location').reverse().each((dependency) => {
       this.links.push({
-        id: link.url,
+        id: dependency.url,
         no: rowNumber++,
-        status: link.status,
-        link: link.link,
-        location: link.location,
-        file: link.url
+        type: dependency.type,
+        status: dependency.status,
+        link: dependency.link,
+        location: dependency.location,
+        file: dependency.url
       })
-    })
+    })    
   }
 
   // this method is autmatically registered through the ``registerKeys`` method
@@ -262,25 +264,25 @@ export default class LivelyAnalysis extends Morph {
       name: "root",
       modifications: 150,
       children: [
-        {name: "classA", modifications: 50, children: [{name: "methodA1", modifications: 36}, {name: "methodA2", modifications: 14}]},
-        {name: "classB", modifications: 25, children: [{name: "methodB1", modifications: 24}]},
-        {name: "classC", modifications: 15, children: [{name: "methodC1", modifications: 14}]}
+        {name: "class A", modifications: 50, children: [{name: "method A1", modifications: 36}, {name: "method A2", modifications: 14}]},
+        {name: "class B", modifications: 25, children: [{name: "method B1", modifications: 24}]},
+        {name: "class C", modifications: 15, children: [{name: "method C1", modifications: 14}]}
       ]}
     await this.updateVersionHeatMap()
     
     this.links = [
-      { id: "", no: "1", status: "broken", column: "1.2 value" },
-      { id: "", no: "2", status: "broken", column: "2.2 value" },
-      { id: "", no: "3", staus: "alive", column: "3.2 value" },
+      { id: "", no: "1", status: "dead", type: 'dependency', column: "1.2 value" },
+      { id: "", no: "2", status: "dead", type: 'hyperlink', column: "2.2 value" },
+      { id: "", no: "3", status: "alive", type: 'dependency', column: "3.2 value" },
     ]
     await this.updateTableBrokenLinks()
     
     this.classes = {
       name: "classes",
       children: [
-        {name: "classA", loc: 10, size: 10, children: [{name: "methodA1", loc: 3, size: 3}, {name: "methodA2", loc: 7, size: 7}]},
-        {name: "classB", loc: 30, size: 30, children: [{name: "methodB1", loc: 30, size: 30}]},
-        {name: "classC", loc: 50, size: 50, children: [{name: "methodC1", loc: 50, size: 50}]}
+        {name: "class A", loc: 10, size: 10, children: [{name: "method A1", loc: 3, size: 3}, {name: "method A2", loc: 7, size: 7}]},
+        {name: "class B", loc: 30, size: 30, children: [{name: "method B1", loc: 30, size: 30}]},
+        {name: "class C", loc: 50, size: 50, children: [{name: "method C1", loc: 50, size: 50}]}
       ]
     }
    await this.updatePolymetricView()
