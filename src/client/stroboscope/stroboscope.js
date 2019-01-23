@@ -4,6 +4,7 @@ import { EventType } from 'src/client/stroboscope/eventtype.js';
 export default class Stroboscope {
   constructor(target) {
     this.target = target;
+    this.target_last = undefined;
   }
       
   slice() {
