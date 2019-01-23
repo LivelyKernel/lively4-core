@@ -23,6 +23,8 @@ export default class LivelyAnalysis extends Morph {
     
     this.viewWidth = 400
     this.viewHeight = 150
+    
+    this.updatePolymetricView()
   }
   
   setViewWidth(width, unit) {
@@ -34,7 +36,7 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async setClassData() {
-    this.classes = {}
+    // this.classes = {}
     this.classes = {
       name: "classes",
       children: []
@@ -54,7 +56,8 @@ export default class LivelyAnalysis extends Morph {
         size: clazz.loc,
         superClass: clazz.superClass,
         url: clazz.url,
-        children: methods,
+        methods: methods,
+        children: [],
       })
     })
   }
@@ -155,8 +158,14 @@ export default class LivelyAnalysis extends Morph {
   }
 
   async onUpdatePolymetric() {
-    await this.setClassData()
+    // if (this.classes) {
+      var start = Date.now()
+      await this.setClassData()
+      console.log("setClassData in " + (Date.now() - start) + "ms")
+    // }
+    start = Date.now()
     await this.updatePolymetricView()
+    console.log("updatePolymetricView in " + (Date.now() - start) + "ms")
   }
 
   async onUpdateVersions() {
@@ -176,41 +185,52 @@ export default class LivelyAnalysis extends Morph {
   
   async updatePolymetricView() {
     this.polymetricContainter.innerHTML = ''
+    this.polymetricContainter.style.position = "relative"
+    this.polymetricContainter.style.width = "100%"
+    this.polymetricContainter.style.height = "800px"
+  
     var polymetric = await lively.create("d3-polymetricview")
-    polymetric.style.width = "300px"
-    polymetric.style.height = "200px"
-    polymetric.setData(this.classes)
+    polymetric.style.width = "100%"
+    polymetric.style.height = "100%"
+    this.polymetricContainter.appendChild(polymetric)
+    lively.setPosition(polymetric, lively.pt(0,0))
+  
+    polymetric.style.backgroundColor = "lightgray"
+    
+    if (!this.classes) {
+      console.warn("analysis without classes")
+      return
+    }
+    
+    polymetric.setData({
+      name: "classes",
+      children: this.classes.children.slice(0,5),
+    })
+    // polymetric.setData(this.classes)
+  
+
     console.log('polymetric:' , this.classes)
     polymetric.config({
       color(node) {
         if (!node) return ""
-        return `hsl(10, 0%,  ${node.data.size / 100}%)`
+        return `hsl(10, 0%,  ${node.data.children ? (node.data.children.length * 50) : 10 }%)`
       },
       width(node) {
-        if (node.data.width === undefined) {
-          if (node.data.size) {
-            node.data.width = Math.sqrt(node.data.size) / 2
-          } else {
-            node.data.width = 30
-          }
-        } 
-        return  node.data.width
+        if (node.data.size) {
+          return parseInt(node.data.size) // #TODO -> loc
+        }
+        return 10
       },
       height(node) {
-        if (node.data.height === undefined) {
-          if (node.data.size) {
-            node.data.height = node.data.size / (Math.sqrt(node.data.size) / 2)
-          } else {
-            node.data.height = 30
-          }
-        } 
-        return  node.data.height
+        if (node.data.size) {
+          return parseInt(node.data.size) // #TODO -> loc
+        }
+        return 10
       },
       onclick(node) {
         lively.openInspector(node.data)
       },
     }) 
-    this.polymetricContainter.appendChild(polymetric)
     polymetric.updateViz()
     console.log('polymetric->', this.classes)
     
@@ -249,6 +269,8 @@ export default class LivelyAnalysis extends Morph {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty
+
+    // this.classes = other.classes
   }
 
   livelyInspect(contentNode, inspector) {
