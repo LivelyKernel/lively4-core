@@ -51,13 +51,16 @@ describe('stroboscope slice', () => {
     var events = stroboscope.slice();
     expect(events.length).to.equal(1);
         
-    target.solution = 42;
+    target.solution = 21;
+    
+    events = stroboscope.slice();
+    expect(events.length).to.equal(1);
     
     var create_event = events[0]
     expect(create_event.event_type).to.equal(EventType.create);
     expect(create_event.property).to.equal("solution");
-    expect(create_event.value).to.equal(undefined);
-    expect(create_event.property_type).to.equal(undefined);
+    expect(create_event.value).to.equal(21);
+    expect(create_event.property_type).to.equal("number");
   });
    
   it('no event for already seen property', () => {
