@@ -8,21 +8,24 @@ export default class Stroboscope {
   }
 
   slice() {
-    var events = [];
+    var events = new Array();
 
     if (this.target == undefined)
       return events;
 
-    for (var property in Object.keys(this.target)) {
-
+    for (var index in Object.keys(this.target)) {
+      var property = Object.keys(this.target)[index]
+      
       if (this._is_property_new(property)) {
-        var value = this.target[property]
-        this._cache_property(property, value);
-
+        this._cache_property(property);
         var event = this._create_event_for_property(property);
         events.push(event);
-      } else if (this._has_property_value_changed(property));
-      continue;
+      } else if (this._has_property_value_changed(property))
+      {
+        this._cache_property(property);
+        var event = this._change_event_for_property(property);
+        events.push(event);
+      }
     }
 
     return events;
@@ -38,11 +41,10 @@ export default class Stroboscope {
 
   _value_event_for_property(property, event_type) {
     var trigger = "Stroboscope";
-    var property_name = Object.keys(this.target)[property]
-    var value = this.target[property_name]
-    var property_type = typeof value;
+    var value = this.target[property]
+    var type = typeof value;
 
-    return new StroboscopeEvent(this.target, trigger, property_name, property_type, event_type, value);
+    return new StroboscopeEvent(this.target, trigger, property, type, event_type, value);
   }
 
   _is_property_new(property) {
@@ -57,7 +59,8 @@ export default class Stroboscope {
     return this._property_cache[property] !== this.target[property]
   }
 
-  _cache_property(property, value) {
-    this._property_cache[this.target[property]] = value
+  _cache_property(property) {
+    var value = this.target[property]
+    this._property_cache[property] = value;
   }
 }
