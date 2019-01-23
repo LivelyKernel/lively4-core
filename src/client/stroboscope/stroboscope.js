@@ -35,15 +35,17 @@ export default class Stroboscope {
   }
 
   _add_delete_events(events) {
+    var deprecated_properties = []
     for (var index in Object.keys(this._property_cache)) {
       var property = Object.keys(this._property_cache)[index]
 
       if (this._is_property_deleted(property)) {
-        this._remove_property_cache(property);
+        deprecated_properties.push(property)
         var event = this._delete_event_for_property(property);
         events.push(event);
       }
     }
+    this._remove_properties_cache(deprecated_properties);
   }
 
   _create_event_for_property(property) {
@@ -55,6 +57,7 @@ export default class Stroboscope {
   }
 
   _delete_event_for_property(property) {
+    console.log(property)
     var trigger = "Stroboscope";
     return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined);
   }
@@ -82,7 +85,7 @@ export default class Stroboscope {
   _target_has_property(property) {
     return this.target.hasOwnProperty(property);
   }
-  
+
   _has_property_value_changed(property) {
     return this._property_cache[property] !== this.target[property]
   }
@@ -92,7 +95,10 @@ export default class Stroboscope {
     this._property_cache[property] = value;
   }
 
-  _remove_property_cache(property) {
-    delete this._property_cache[property];
+  _remove_properties_cache(deprecated_properties) {
+    for (var index in Object.keys(deprecated_properties)) {
+      var property = Object.keys(this._property_cache)[index]
+      delete this._property_cache[property];
+    }
   }
 }

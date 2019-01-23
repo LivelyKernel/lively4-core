@@ -43,7 +43,7 @@ describe('stroboscope create events', () => {
     expect(delete_event.value).to.equal(undefined);
     expect(delete_event.property_type).to.equal(undefined);
   });
-  
+     
   it('event for change property', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
@@ -165,6 +165,25 @@ describe('stroboscope create events', () => {
     var events = stroboscope.slice();
           
     expect(events.length).to.equal(2); 
+  });
+  
+  it('events for complex property changes', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    target.solution = 41;
+    target.review = 2
+    target.member = {}
+    target.name = "Mario"
+    
+    stroboscope.slice();
+  
+    delete target.solution;
+    target.review = 3
+    target.use = function(){}  
+
+    var events = stroboscope.slice()
+    expect(events.length).to.equal(3);
   });
   
   it('event trigger is stroboscope', () => {
