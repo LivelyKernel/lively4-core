@@ -79,8 +79,10 @@ export default class JsxRay extends Morph {
     evt.stopPropagation()
   }
 
-  async selectElement(element) {
+  async selectElement(element, evt) {
     lively.showHalo(element)
+    // const highlight = lively.showElement(element);
+    // highlight.style.backgroundColor = 'blue'
     
     if (element.isJSXElement) {
       const location = element.jsxMetaData.sourceLocation;
@@ -90,6 +92,10 @@ export default class JsxRay extends Morph {
         await this.sourceEditor.loadFile();
       }
       
+      this.sourceEditor.style.display = 'block';
+      lively.setGlobalPosition(this.sourceEditor, lively.getPosition(evt))
+      lively.setGlobalPosition(this.parentElements, lively.getPosition(evt).subPt(lively.pt(0, lively.getExtent(this.parentElements).y)))
+
       this.sourceEditor.currentEditor().scrollIntoView({
         line: location.start.line - 1,
         ch: location.start.column
@@ -100,6 +106,25 @@ export default class JsxRay extends Morph {
       }, {
         line: location.end.line - 1, ch: location.end.column
       }, { scroll: false });
+
+      this.parentElements.innerHTML = '';
+      lively.allParents(element, [], true).reverse().forEach(ele => {
+        if (ele instanceof ShadowRoot) {
+          const li = <li><span style="color: darkblue">#shadow-root</span></li>;
+          li.isMetaNode = true;
+          this.parentElements.appendChild(li)
+        } else {
+          function buildAttribute(name, value) {
+            return <span><span style="color: blue"> {name}</span>=<span style="color: brown">'{value}'</span></span>;
+          }
+          const id = ele.id ? buildAttribute('id', ele.id) : '';
+          const classes = ele.classList.length >= 1 ? buildAttribute('class', ele.classList.toString()) : '';
+
+          const listEntry = <div><span style="color: green">&lt;{ele.localName}</span>{id}{classes}<span style="color: green">&gt;</span></div>;
+          listEntry.isMetaNode = true;
+          this.parentElements.appendChild(listEntry)
+        }
+      })
     }
   }
 
@@ -213,17 +238,15 @@ export default class JsxRay extends Morph {
     }
 
     mirrorElement.addEventListener("mousemove", evt => {
-      this.sourceEditor.style.display = 'block';
-      lively.setGlobalPosition(this.sourceEditor, lively.getPosition(evt))
-      this.selectElement(subject)
+      this.selectElement(subject, evt)
     })
 
     mirrorElement.addEventListener("mouseout", () => {
-      this.sourceEditor.style.display = 'none';
+      // this.sourceEditor.style.display = 'none';
     })
         
     mirrorElement.addEventListener("click", () => {
-      this.selectElement(subject)
+      this.selectElement(subject, evt)
     })
         
     return mirrorElement;
@@ -348,6 +371,7 @@ export default class JsxRay extends Morph {
   get frameHandlesLeft() { return this.get('#frameHandlesLeft'); }
   get frameHandlesLeftLabel() { return this.get('#frameHandlesLeftLabel'); }
   get sourceEditor() { return this.get('#sourceEditor'); }
+  get parentElements() { return this.get('#parentElements'); }
 
   mirrorWorld() {
     this.style.zIndex = 1000

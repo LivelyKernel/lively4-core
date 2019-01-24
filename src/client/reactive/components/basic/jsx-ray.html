@@ -94,6 +94,13 @@
   #sourceEditor {
     z-index: -10;
   }
+  #parentElements {
+    width: max-content;
+    
+    border-radius: 3px;
+    border: 0.5px dashed black;
+    background-color: white;
+  }
 
 </style>
   <div id="frame" class="pickThrough">
@@ -108,6 +115,7 @@
     <div id="frameHandlesLeftLabel">JSX-Ray</div>
   </div>
   <lively-editor id="sourceEditor"></lively-editor>
+  <div id="parentElements"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 
