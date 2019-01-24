@@ -544,6 +544,7 @@ export default class Lively {
 
 
   static  getGlobalPosition(node) {
+    // WARNING: this method works pretty well but does not consider any CSS transformation
     if (!node.getBoundingClientRect) {
       return pt(0, 0)
     }

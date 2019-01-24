@@ -4,11 +4,15 @@
 <style>
   :host {}
   #content {
-    background-color: none;
+    color: #444444;
+    font-family: inherit;
   }
+  
   #lively-analysis-table {
     border-collapse: collapse;
-    font-size: 80%;
+    font-size: 85%;
+    width: 100%;
+    height: auto;
   }
   #lively-analysis-table tr,
   #lively-analysis-table td,
@@ -16,11 +20,6 @@
     border: 1px solid gray;
   }
   
-  #lively-analysis-table tr {
-    height: auto;
-  }
-  
-  #lively-analysis-table td,
   #lively-analysis-table th {
     padding: 4px 2px;
     text-align: left;
@@ -28,6 +27,15 @@
     max-width: 20%;
     word-wrap:break-word;
   }
+  
+  #lively-analysis-table td {
+    line-height: 1.8;
+    text-align: left;
+    width: auto;
+    max-width: 20%;
+    word-wrap:break-word;
+  }
+  
   #lively-analysis-table td:first-child,
   #lively-analysis-table th:first-child {
     display: none;
@@ -36,17 +44,19 @@
     text-transform: capitalize;
   }
   .deadLink {
-    background-color:rgba(255, 0, 0, 0.25);
+    background-color:rgba(245, 198, 203, 0.8);
   }
   .aliveLink {
-    background-color:rgba(0, 255, 0, 0.15);
+    background-color:rgba(195, 230, 203, 0.8);
   }
 </style>
 <div id="content">
 	<content>
+    <label><input type="checkbox" name="checkbox-hyperlinks" value="hyperlinks">Hyperlinks</label>
+    <label><input type="checkbox" name="checkbox-dependencies" value="dependencies">Dependencies</label>
     <select id="lively-analysis-table-selection">
-      <option value="view-all-links" selected>All links</option>
-      <option value="view-broken-links">Broken links</option>
+      <option value="view-all-dependencies" selected>All dependencies</option>
+      <option value="view-broken-dependencies">Broken dependencies</option>
     </select>
     <table id="lively-analysis-table"></table>
   </content>

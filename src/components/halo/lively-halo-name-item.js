@@ -55,7 +55,10 @@ export default class HalloNameItem extends HaloItem {
       this.get("#name").textContent = ""
     }
 
-      this.get("#classname").textContent = this.target.tagName.toLowerCase()
+    this.get("#classname").textContent = this.target.tagName.toLowerCase() +
+      ((this.target.classList.length > 0) ? ("." + Array.from(this.target.classList).join(".")) : "")
+      
+  
 
   }
 }
