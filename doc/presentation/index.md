@@ -7,18 +7,28 @@
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
 <style>
- li.box {
-  width: 200px;
-  height: 150px;
-  list-style-type: none;
-  float: left;
-  border: 1px solid lightgray;
-  margin: 10px;
-  overflow: hidden;
-}
-h1,h2,h3,h4  {
-  clear: left;
-}
+  li.box {
+    width: 200px;
+    height: 150px;
+    list-style-type: none;
+    float: left;
+    border: 1px solid lightgray;
+    margin: 10px;
+    overflow: hidden;
+  }
+  h1,h2,h3,h4  {
+    clear: left;
+  }
+
+  li.leftright {
+    list-style-type: none;
+    float:left; 
+    width:400px;
+  }
+</style>
+<style>
+
+
 </style>
 
 <!--
@@ -52,11 +62,25 @@ h1,h2,h3,h4  {
 # Contents
 
 <script>
+var style = document.createElement("style") 
+style.innerHTML = `
+li {
+  list-style-type: disk;
+}
+
+li.h2 {
+ margin-left: 40px;
+ list-style-type: circle;
+ font-size: 10pt;
+}
+`
+this.shadowRoot.appendChild(style)
+
 var list = document.createElement("ul")
-_.filter(lively.findWorldContext(this).querySelectorAll("h1"),
+_.filter(lively.findWorldContext(this).querySelectorAll("h1,h2"),
   ea => ea.textContent != "Contents"
 ).forEach(ea => {
-  list.appendChild(<li><a click={
+  list.appendChild(<li class={ea.localName}><a click={
       (evt) => {
         evt.stopPropagation();
         evt.preventDefault();
@@ -66,13 +90,6 @@ _.filter(lively.findWorldContext(this).querySelectorAll("h1"),
     href={"#" + ea.textContent}>{ea.textContent}</a></li>)
 })
 list
-
-// var l=<ul>{... 
-// [<li>1</li>,<li>2</li>]
-// }
-// <li>{3 + 4}</li>
-// </ul>
-// l
 </script>
 
 ---
@@ -86,7 +103,8 @@ list
   - Workflow
 
 ---
-#  Standard Tools
+# Tools
+##  Standard Tools
 
 - [Workspace](browse://doc/presentation/workspace.html) <br> ![](workspace.png){style="width:300px"}
 - Inspector
@@ -99,7 +117,7 @@ list
 - Github Sync
 
 ---
-# Object Tools
+## Object Tools
 
 - Halos
   - Drag and Drop
@@ -109,6 +127,22 @@ list
 - Object Script Editor
   - Instance-specific Behaviors (similar to Parts in Webwerkstatt)
 - #Drawboard (#Pen)
+
+---
+## Experimental Tools
+
+- #XRay 
+- Generic Object Graph (#WIP)
+- Module Dependencies 
+- Boot / Loading Visualization (more domain specific that Chrome's standard tool)
+- Knot, Triple, ...
+- #ASTExplorer
+- Babylonian Programming Editor
+- #Bibtex
+- #ContinousEditor
+- #LivelyFilesystems (mounting external Web-resources)
+- #Vivide
+
 
 ---
 # Lively Server
@@ -128,21 +162,6 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 - #Debugger
 - #Console
-
----
-# Experimental Tools
-
-- #XRay 
-- Generic Object Graph (#WIP)
-- Module Dependencies 
-- Boot / Loading Visualization (more domain specific that Chrome's standard tool)
-- Knot, Triple, ...
-- #ASTExplorer
-- Babylonian Programming Editor
-- #Bibtex
-- #ContinousEditor
-- #LivelyFilesystems (mounting external Web-resources)
-- #Vivide
 
 --- 
 # Seminar Demos
@@ -185,9 +204,19 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 ---
 ## Text Editing:
-- LivelyEditor
-- LivelyCodeMirror
 
+- ### [LivelyCodeMirror](open://lively-code-mirror) ![](lively-codemirror.png){style="width:300px; float: right; margin-left: 50px"} {style="list-style-type: none;"} 
+  - powerfull editor of a text buffer
+  - syntax highlighting and code completion
+  - custom widgets and editor UI enhancements
+  
+
+- ### [LivelyEditor](open://lively-editor) ![](lively-editor.png){style="width:200px; float: right; margin-left: 100px"} {style="list-style-type: none;"} 
+  - can edit files (urls)
+  - can resolve conflicts with server and other editors
+  - threewaymerge 
+  
+  
 ---
 ## Lively Content:
 - #LivelyMarkdown ![](lively-motivation.png){style="width:200px"} {.box}
@@ -352,21 +381,23 @@ We experimented with making object identity explicit when opening tools on them.
 ---
 <!-- #TODO pull this up into presentation? -->
 <script>
-// poor men's slide master
-var presentation = lively.query(this, "lively-presentation")
-if (presentation && presentation.slides) {
-  presentation.slides().forEach(ea => {
-    var img = document.createElement("img")
-    img.classList.add("logo")
-    img.src="https://lively-kernel.org/lively4/lively4-seminars/PX2018/media/hpi_logo.png" 
-    img.setAttribute("width", "50px")
-    ea.appendChild(img)
-
-    var div = document.createElement("div")
-    div.classList.add("page-number")
-    ea.appendChild(div)
-  });
-}
-""
+// poor men's slide master #Hack #TODO How to pull this better into lively-presentation?
+(async () => {
+  await lively.sleep(500)
+  var presentation = lively.query(this, "lively-presentation")
+  if (presentation && presentation.slides) {
+    presentation.slides().forEach(ea => {
+      var img = document.createElement("img")
+      img.classList.add("logo")
+      img.src="https://lively-kernel.org/lively4/lively4-seminars/PX2018/media/hpi_logo.png" 
+      img.setAttribute("width", "50px")
+      ea.appendChild(img)
+      var div = document.createElement("div")
+      div.classList.add("page-number")
+      ea.appendChild(div)
+    });
+  } 
+  return ""
+})()
 </script>
 
