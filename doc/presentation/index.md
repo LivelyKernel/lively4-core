@@ -274,7 +274,8 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 ## Media Browser
 
-- Plex Media API
+- #Plex Media API [plex-media](open://plex-media)
+  - 
 
 ## Chrome Extension
 
