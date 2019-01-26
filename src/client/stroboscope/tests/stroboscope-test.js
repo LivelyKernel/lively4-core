@@ -2,6 +2,29 @@ import { expect } from 'src/external/chai.js';
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
 
+class EventReciever {
+  constructor() {
+    this.events = []
+  }
+
+  on_events_callback(events) {
+    console.log(events)
+    if (events.length > 0) {
+      console.log(events)
+      this.events.push.apply(this.events, events)
+    }
+  }
+}
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+
 describe('stroboscope create events', () => {
   it('events for undefined', () => {
     var target = undefined
@@ -195,47 +218,76 @@ describe('stroboscope create events', () => {
   });
 })
 
-class EventReciever {
-  constructor() {
-    this.last_events = []
-  }
-
-  on_events_callback(events) {
-    this.last_events = events
-  }
-}
-
-describe('stroboscope on events callback', () => {
+describe('scanning logic', () => {
   it('reciever is not defined', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     var events = stroboscope.scan();
-    
+
     expect(events).to.deep.equal([]);
   });
-  
+
   it('reciever is defined', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
     var reciever = new EventReciever()
     stroboscope.reciever = reciever
-    
+
     target.solution = 42;
 
-    var events = stroboscope.scan(); 
+    var events = stroboscope.scan();
+
+    expect(reciever.events).to.deep.equal(events);
+  });
+
+  it('is running status', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    expect(stroboscope.is_running()).to.equal(false)
+    stroboscope.start()
+
+    expect(stroboscope.is_running()).to.equal(true)
+
+    stroboscope.stop()
+    expect(stroboscope.is_running()).to.equal(false)
+  });
+
+  it('events on target changes', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+    var reciever = new EventReciever()
+    stroboscope.reciever = reciever
+
+    stroboscope.start()  
+    target.solution = 42;
+
+    sleep(100)
+
     
-    expect(reciever.last_events).to.deep.equal(events);
+    expect(reciever.events.length).to.equal(1);
+    expect(reciever.events[0].event_type).to.equal(EventType.create);
   });
 })
 
 describe('array assignment', () => {
   it('override existing array', () => {
     var target = {}
-    
+
     target.data = []
     target.data = [1, 2, 3]
-    
+
+    expect(target.data).to.deep.equal([1, 2, 3]);
+  });
+
+  it('append array to array', () => {
+    var target = {}
+
+    target.data = []
+    target.data.concat([1, 2, 3])
+
+    target.data.push.apply(target.data, [1, 2, 3])
     expect(target.data).to.deep.equal([1, 2, 3]);
   });
 })

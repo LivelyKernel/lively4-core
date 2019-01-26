@@ -2,10 +2,40 @@ import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
 
 export default class Stroboscope {
-  constructor(target) {
+  constructor(target, idle_time=10) {
     this.target = target;
     this._property_cache = {};
     this.reciever = undefined
+    this._is_running = false
+    this._idle_time = idle_time
+  }
+
+  start() {
+    this._is_running = true
+    this._start_background_task()
+  }
+
+  _idle() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve('resolved');
+      }, this._idle_time);
+    });
+  }
+
+  async _start_background_task() {
+    while (this._is_running) {
+      this.scan()
+      var result = await this._idle();
+    }
+  }
+
+  stop() {
+    this._is_running = false
+  }
+
+  is_running() {
+    return this._is_running
   }
 
   scan() {
@@ -18,7 +48,7 @@ export default class Stroboscope {
     this._add_delete_events(events);
 
     if (this.reciever !== undefined)
-        this.reciever.on_events_callback(events)
+      this.reciever.on_events_callback(events)
 
     return events;
   }
