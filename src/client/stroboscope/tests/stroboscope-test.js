@@ -261,11 +261,12 @@ describe('scanning logic', () => {
     stroboscope.reciever = reciever
 
     stroboscope.start()  
+    sleep(100)
+
     target.solution = 42;
 
     sleep(100)
-
-    
+    stroboscope.stop()
     expect(reciever.events.length).to.equal(1);
     expect(reciever.events[0].event_type).to.equal(EventType.create);
   });
