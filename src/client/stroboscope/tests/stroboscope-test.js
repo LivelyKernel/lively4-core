@@ -3,12 +3,11 @@ import Stroboscope from 'src/client/stroboscope/stroboscope.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
 
 describe('stroboscope create events', () => {
-
   it('events for undefined', () => {
     var target = undefined
     var stroboscope = new Stroboscope(target)
-    
-    expect(stroboscope.slice()).to.deep.equal([]);
+
+    expect(stroboscope.scan()).to.deep.equal([]);
   });
 
   it('event for create property', () => {
@@ -16,9 +15,9 @@ describe('stroboscope create events', () => {
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     expect(events.length).to.equal(1);
-    
+
     var create_event = events[0]
     expect(create_event.event_type).to.equal(EventType.create);
     expect(create_event.property).to.equal("solution");
@@ -31,11 +30,11 @@ describe('stroboscope create events', () => {
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    stroboscope.slice();
-    
+    stroboscope.scan();
+
     delete target.solution;
-       
-    var events = stroboscope.slice()
+
+    var events = stroboscope.scan()
     expect(events.length).to.equal(1);
     var delete_event = events[0]
     expect(delete_event.event_type).to.equal(EventType.delete);
@@ -43,36 +42,36 @@ describe('stroboscope create events', () => {
     expect(delete_event.value).to.equal(undefined);
     expect(delete_event.property_type).to.equal(undefined);
   });
-     
+
   it('event for change property', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events1 = stroboscope.slice();
+    var events1 = stroboscope.scan();
     expect(events1.length).to.equal(1);
-        
+
     target.solution = 21;
-    
-    var events2 = stroboscope.slice();
+
+    var events2 = stroboscope.scan();
     expect(events2.length).to.equal(1);
-    
+
     var create_event = events2[0]
     expect(create_event.event_type).to.equal(EventType.change);
     expect(create_event.property).to.equal("solution");
     expect(create_event.value).to.equal(21);
     expect(create_event.property_type).to.equal("number");
   });
-   
+
   it('no event for already seen property', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     expect(events.length).to.equal(1);
-    
-    events = stroboscope.slice();
+
+    events = stroboscope.scan();
     expect(events.length).to.equal(0);
   });
 
@@ -81,47 +80,47 @@ describe('stroboscope create events', () => {
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("number");
   });
-  
+
   it('event for property type string', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     target.solution = "What's the question?";
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("string");
-  });  
+  });
 
   it('event for property type boolean', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     target.solution = true;
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("boolean");
-  }); 
+  });
 
   it('event for property type null', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
-    target.solution = null; 
-    var events = stroboscope.slice();
+    target.solution = null;
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("object");
   });
-  
+
   it('event for property type undefined', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
-    target.solution = undefined; 
-    var events = stroboscope.slice();
+    target.solution = undefined;
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("undefined");
   });
@@ -130,8 +129,8 @@ describe('stroboscope create events', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
-    target.solution = Symbol("id"); 
-    var events = stroboscope.slice();
+    target.solution = Symbol("id");
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("symbol");
   });
@@ -140,21 +139,21 @@ describe('stroboscope create events', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
-    target.solution = function(){}; 
-    var events = stroboscope.slice();
+    target.solution = function() {};
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("function");
   });
-  
+
   it('event for property type object', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
-    target.solution = {}; 
-    var events = stroboscope.slice();
+    target.solution = {};
+    var events = stroboscope.scan();
     var event = events[0]
     expect(event.property_type).to.equal("object");
-  }); 
+  });
 
   it('events for multiple property changes', () => {
     var target = {}
@@ -162,11 +161,11 @@ describe('stroboscope create events', () => {
 
     target.question = "What's the answer?"
     target.solution = 42;
-    var events = stroboscope.slice();
-          
-    expect(events.length).to.equal(2); 
+    var events = stroboscope.scan();
+
+    expect(events.length).to.equal(2);
   });
-  
+
   it('events for complex property changes', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
@@ -175,23 +174,68 @@ describe('stroboscope create events', () => {
     target.review = 2
     target.member = {}
     target.name = "Mario"
-    
-    stroboscope.slice();
-  
+
+    stroboscope.scan();
+
     delete target.solution;
     target.review = 3
-    target.use = function(){}  
+    target.use = function() {}
 
-    var events = stroboscope.slice()
+    var events = stroboscope.scan()
     expect(events.length).to.equal(3);
   });
-  
+
   it('event trigger is stroboscope', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
 
     target.solution = 42;
-    var events = stroboscope.slice();
+    var events = stroboscope.scan();
     expect(events[0].trigger).to.equal("Stroboscope");
+  });
+})
+
+class EventReciever {
+  constructor() {
+    this.last_events = []
+  }
+
+  on_events_callback(events) {
+    this.last_events = events
+  }
+}
+
+describe('stroboscope on events callback', () => {
+  it('reciever is not defined', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+
+    var events = stroboscope.scan();
+    
+    expect(events).to.deep.equal([]);
+  });
+  
+  it('reciever is defined', () => {
+    var target = {}
+    var stroboscope = new Stroboscope(target);
+    var reciever = new EventReciever()
+    stroboscope.reciever = reciever
+    
+    target.solution = 42;
+
+    var events = stroboscope.scan(); 
+    
+    expect(reciever.last_events).to.deep.equal(events);
+  });
+})
+
+describe('array assignment', () => {
+  it('override existing array', () => {
+    var target = {}
+    
+    target.data = []
+    target.data = [1, 2, 3]
+    
+    expect(target.data).to.deep.equal([1, 2, 3]);
   });
 })

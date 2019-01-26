@@ -5,9 +5,10 @@ export default class Stroboscope {
   constructor(target) {
     this.target = target;
     this._property_cache = {};
+    this.reciever = undefined
   }
 
-  slice() {
+  scan() {
     var events = [];
 
     if (this.target == undefined)
@@ -15,20 +16,24 @@ export default class Stroboscope {
 
     this._add_create_and_change_events(events);
     this._add_delete_events(events);
+
+    if (this.reciever !== undefined)
+        this.reciever.on_events_callback(events)
+
     return events;
   }
 
   _add_create_and_change_events(events) {
     for (var index in Object.keys(this.target)) {
       var property = Object.keys(this.target)[index]
-
+      var event;
       if (this._is_property_new(property)) {
         this._cache_property(property);
-        var event = this._create_event_for_property(property);
+        event = this._create_event_for_property(property);
         events.push(event);
       } else if (this._has_property_value_changed(property)) {
         this._cache_property(property);
-        var event = this._change_event_for_property(property);
+        event = this._change_event_for_property(property);
         events.push(event);
       }
     }
@@ -57,7 +62,6 @@ export default class Stroboscope {
   }
 
   _delete_event_for_property(property) {
-    console.log(property)
     var trigger = "Stroboscope";
     return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined);
   }
