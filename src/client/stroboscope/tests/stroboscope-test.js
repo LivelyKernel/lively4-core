@@ -7,7 +7,7 @@ class EventReciever {
     this.events = []
   }
 
-  on_events_callback(events) {
+  onEvents(events) {
     console.log(events)
     if (events.length > 0) {
       console.log(events)
@@ -218,7 +218,7 @@ describe('stroboscope create events', () => {
   });
 })
 
-describe('scanning logic', () => {
+describe('Stroboscope scanning logic', () => {
   it('reciever is not defined', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
@@ -255,6 +255,8 @@ describe('scanning logic', () => {
   });
 
   it('events on target changes', () => {
+    //The Testrunner seems to have problems with the async await feature of js
+    
     var target = {}
     var stroboscope = new Stroboscope(target);
     var reciever = new EventReciever()

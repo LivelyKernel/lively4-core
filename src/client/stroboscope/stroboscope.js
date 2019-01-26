@@ -47,9 +47,9 @@ export default class Stroboscope {
     this._add_create_and_change_events(events);
     this._add_delete_events(events);
 
-    if (this.reciever !== undefined)
-      this.reciever.on_events_callback(events)
-
+    if (this.reciever !== undefined && events.length > 0)
+      this.reciever.onEvents(events)
+    
     return events;
   }
 
