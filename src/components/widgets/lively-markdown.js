@@ -13,6 +13,8 @@ import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
 import Upndown from 'src/external/upndown.js';
 
+import {pt} from 'src/client/graphics.js';
+
 
 import FileIndex from 'src/client/fileindex.js'
 
