@@ -4,6 +4,9 @@ import Rasterize from "src/client/rasterize.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
+import Files from "http://localhost:9005/lively4-core/src/client/files.js"
+
+
 export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
@@ -80,21 +83,40 @@ export default class LivelyDrawio extends Morph {
     this.update()
   }
 
-  editAtDrawIO() {
+  async editAtDrawIO(useIFrame=true) {
     if (!this.src) throw new Error("src attribute not set");
 
-    var githubPrefix = "https://raw.githubusercontent.com/"
+    var drawioURL;
+    var githubInfo = await Files.githubFileInfo(this.src)
+    if (githubInfo) {
+      if (!githubInfo.remoteURL || !githubInfo.branch || !githubInfo.path) {
+        throw new Error("Github fileInfo not complete: " + JSON.stringify(githubInfo))
+      }
+      var githubPath = githubInfo.remoteURL.replace("https://github.com/","") + "/" +  githubInfo.branch + githubInfo.path
+      drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
+    }
     
+    var githubPrefix = "https://raw.githubusercontent.com/"    
     if (this.src.match(githubPrefix)) {
       
       
       // JensLincke%2Fdrawio-figures%2Fmaster%2Fcontextjs_promises_01.xml
-      var drawioURL = "https://www.draw.io/#H" +
+      drawioURL = "https://www.draw.io/#H" +
           encodeURIComponent(this.src.replace(githubPrefix, ""))
-      window.open(drawioURL)
+    } 
+    if (drawioURL) {
+      if (useIFrame) {
+        var iFrame = await lively.openComponentInWindow("lively-iframe")
+        iFrame.setURL(drawioURL)
+      } else {
+        window.open(drawioURL)
+      }
     } else {
-      lively.notify("editing not supported for this url")
+      lively.notify("editing not supported for", this.src)
     }
+    
+    
+    
   }
   
   async livelyExample() {

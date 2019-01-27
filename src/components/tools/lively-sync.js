@@ -145,6 +145,11 @@ export default class Sync extends Morph {
   getRepository() {
      return this.get("#gitrepository").value
   }
+  
+  getBranch() {
+     return this.get("#gitrepositorybranch").value.replace(/^ */,"")
+  }
+
 
   async gitControl(cmd, eachCB) {
     this.clearLog()
