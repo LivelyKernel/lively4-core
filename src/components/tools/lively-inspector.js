@@ -460,6 +460,10 @@ export default class Inspector extends Morph {
     var keys = []
     
     if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
+    
+    if (obj instanceof Response) return lively.allKeys(obj); // #TODO what does it make different?
+    
+    
     var allOwn = Object.getOwnPropertySymbols(obj).concat(Object.getOwnPropertyNames(obj))
     // for(var i in obj) {
     //   if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {

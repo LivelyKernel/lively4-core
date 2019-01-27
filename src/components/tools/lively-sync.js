@@ -13,8 +13,10 @@ export default class Sync extends Morph {
       console.log("exit early... due to karma");
       return;
     }
+    var repo = this.getAttribute("gitrepository") || lively4url.replace(/.*\//,"")
+    this.get('#gitrepository').value = repo;
+    this.get('#gitrepository').addEventListener("change", evt => this.onGitrepositoryInputChange(evt))
     
-    this.getSubmorph('#gitrepository').value = lively4url.replace(/.*\//,"");
     
     var travis = this.shadowRoot.querySelector("#travisLink");
     travis.onclick = () => {
@@ -22,6 +24,14 @@ export default class Sync extends Morph {
       return false;
     };
   }
+  
+  onGitrepositoryInputChange(evt) {
+    
+    var value = this.getRepository()
+    lively.notify("input changed:" + value)
+    this.setAttribute("gitrepository", value)
+  }
+  
 
   // #TODO into Morph or Tool
   clearLog(s) {
@@ -84,11 +94,11 @@ export default class Sync extends Morph {
 
           
           this.storeValue("githubUsername", username);
-      	  this.storeValue("githubEmail", email);
-      	  this.storeValue("githubToken", token);
-      	  this.updateLoginStatus();
-      	  resolve(token);
-        });
+          this.storeValue("githubEmail", email);
+          this.storeValue("githubToken", token);
+          this.updateLoginStatus();
+          resolve(token);
+    });
       });
     }).then((token) => {
       this.log("Logged in");
@@ -97,15 +107,14 @@ export default class Sync extends Morph {
 
   async getHeaders() {
     return new Headers({
-      "gitrepository":        this.get("#gitrepository").value, 
       "gitusername":          this.get("#gitusername").value,
       "gitpassword":          await this.loadValue("githubToken"), 
       "gitemail":             this.get("#gitemail").value,
       "gitrepositoryurl":     this.get("#gitrepositoryurl").value,
-	    "gitrepository":        this.get("#gitrepository").value,
-	    "gitrepositorybranch":  this.get("#gitrepositorybranch").value,
-	    "gitcommitmessage":     this.get("#gitcommitmessage").value,
-	    "dryrun":               this.get("#dryrun").checked
+      "gitrepository":        this.getRepository(),
+      "gitrepositorybranch":  this.get("#gitrepositorybranch").value,
+      "gitcommitmessage":     this.get("#gitcommitmessage").value,
+      "dryrun":               this.get("#dryrun").checked
     })
   }
 
@@ -121,7 +130,7 @@ export default class Sync extends Morph {
      this.get("#gitrepository").value = name
   }
   
-  getRepository(name) {
+  getRepository() {
      return this.get("#gitrepository").value
   }
 
