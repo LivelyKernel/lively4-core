@@ -108,7 +108,7 @@ export default class Stroboscope {
 
   _delete_event_for_property(property) {
     var trigger = "Stroboscope";
-    return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined, this._object_uuid);
+    return new StroboscopeEvent(this._object_uuid, trigger, property, undefined, EventType.delete, undefined);
   }
 
   _value_event_for_property(property, event_type) {
@@ -116,7 +116,7 @@ export default class Stroboscope {
     var value = this.target[property]
     var type = typeof value;
 
-    return new StroboscopeEvent(this.target, trigger, property, type, event_type, value, this._object_uuid);
+    return new StroboscopeEvent(this._object_uuid, trigger, property, type, event_type, value);
   }
 
   _is_property_new(property) {

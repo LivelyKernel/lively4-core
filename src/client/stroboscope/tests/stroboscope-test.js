@@ -218,7 +218,7 @@ describe('stroboscope create events', () => {
   });
 })
 
-describe('Stroboscope scanning logic', () => {
+describe('stroboscope scanning logic', () => {
   it('reciever is not defined', () => {
     var target = {}
     var stroboscope = new Stroboscope(target);
@@ -254,7 +254,7 @@ describe('Stroboscope scanning logic', () => {
     expect(stroboscope.is_running()).to.equal(false)
   });
 
-  it('events on target changes', () => {
+  it('events on targets property changes', () => {
     //The Testrunner seems to have problems with the async await feature of js
     
     var target = {}

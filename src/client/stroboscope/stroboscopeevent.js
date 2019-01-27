@@ -1,6 +1,6 @@
 export default class StroboscopeEvent {
 
-  constructor(object, trigger, property, property_type, event_type, value, object_id) {
+  constructor(object_id, trigger, property, property_type, event_type, value) {
     this.object_id = object_id;
     this.__id(this);
     this.trigger = trigger;

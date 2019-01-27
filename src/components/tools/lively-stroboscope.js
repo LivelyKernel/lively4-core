@@ -1,19 +1,7 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
-class ObjectView
-{
-  constructor(event){
-    this.id = event.object_id
-    this.events = []
-    this.events.push(event)
-  }
-  
-  append(event){
-    this.events.push(event)
-  }
-}
-
+import ObjectView from "src/client/stroboscope/objectview.js"
 
 export default class LivelyStroboscope extends Morph {
 
