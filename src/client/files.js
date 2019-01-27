@@ -397,4 +397,39 @@ export default class Files {
 
     return result
   }
+  
+  static async githubFileInfo(url) {
+    var serverURL = lively4url.match(/(.*)\/([^/]+$)/)[1]
+    // #Idea, could't we ask the server for this set directly, since we ask it indirectly anyway? as special OPTIONS request #TODO
+    if (url.match(serverURL)) { // we are in a checked out repo....
+      try {
+        var container = <div style="display:none"></div> // hide the uglyness, at least in the UI
+        document.body.appendChild(container)
+        var syncTool = await lively.create("lively-sync", container); // #Hack #Ugly
+        var m = url.replace(serverURL,"").replace(/^\//,"").match(/([^/]*)(\/*.*)/)
+        var respository = m[1]
+        var path = m[2]
+        syncTool.setRepository(respository)
+        await syncTool.updateLoginStatus()
+        var remoteURL = await syncTool.gitControl("remoteurl")
+        remoteURL = remoteURL.replace(/\n/,"")
+        var branch =  syncTool.getBranch()
+        var rawURL = remoteURL + "/raw/" + branch + path
+      } finally {
+        container.remove() // we really opened a graphical object for this
+      }
+      
+      return {
+        url,
+        serverURL,
+        respository,
+        path,
+        remoteURL,
+        branch,
+        rawURL
+      }  
+    } else {
+      return undefined // not information for files we do not manage...
+    }
+  }
 }
