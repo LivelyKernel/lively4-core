@@ -1,7 +1,7 @@
 export default class StroboscopeEvent {
 
-  constructor(object, trigger, property, property_type, event_type, value) {
-    this.object_id = undefined;
+  constructor(object, trigger, property, property_type, event_type, value, object_id) {
+    this.object_id = object_id;
     this.__id(this);
     this.trigger = trigger;
     this.timestamp = Date.now();

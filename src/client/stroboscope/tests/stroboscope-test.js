@@ -274,6 +274,33 @@ describe('Stroboscope scanning logic', () => {
   });
 })
 
+describe('stroboscope object id generation', () => {
+
+  it('object id for undefined', () => {
+    var stroboscope = new Stroboscope(undefined)
+    expect(stroboscope._object_uuid).to.equal(undefined);
+  });
+
+  it('obejct id for an object', () => {
+    var a = {}
+
+    var stroboscope = new Stroboscope(a)
+    expect(stroboscope._object_uuid).to.not.equal(undefined);
+  });
+
+  it('object id after target change', () => {
+    var a = {}
+    var b = {}
+    
+    var stroboscope = new Stroboscope(a)
+    var uuid1 = stroboscope._object_uuid
+    
+    stroboscope.change_target(b)
+
+    expect(stroboscope._object_uuid).to.not.equal(uuid1);
+  });
+})
+
 describe('array assignment', () => {
   it('override existing array', () => {
     var target = {}

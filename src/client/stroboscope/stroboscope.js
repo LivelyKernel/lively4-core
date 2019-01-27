@@ -1,13 +1,28 @@
 import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
+import { uuid as generateUUID } from 'utils';
 
 export default class Stroboscope {
-  constructor(target, idle_time=10) {
-    this.target = target;
-    this._property_cache = {};
+  constructor(target, idle_time = 10) {
+    this.target = undefined;
+    this._object_uuid = undefined;
+    this._property_cache = undefined;
     this.reciever = undefined
     this._is_running = false
     this._idle_time = idle_time
+
+    this.change_target(target)
+  }
+
+  change_target(target) {
+    this.target = target
+    if (target !== undefined) {
+      this._object_uuid = generateUUID()
+      this._property_cache = {}
+    } else {
+      this._object_uuid = undefined
+      this._property_cache = undefined
+    }
   }
 
   start() {
@@ -49,7 +64,7 @@ export default class Stroboscope {
 
     if (this.reciever !== undefined && events.length > 0)
       this.reciever.onEvents(events)
-    
+
     return events;
   }
 
@@ -93,7 +108,7 @@ export default class Stroboscope {
 
   _delete_event_for_property(property) {
     var trigger = "Stroboscope";
-    return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined);
+    return new StroboscopeEvent(this.target, trigger, property, undefined, EventType.delete, undefined, this._object_uuid);
   }
 
   _value_event_for_property(property, event_type) {
@@ -101,7 +116,7 @@ export default class Stroboscope {
     var value = this.target[property]
     var type = typeof value;
 
-    return new StroboscopeEvent(this.target, trigger, property, type, event_type, value);
+    return new StroboscopeEvent(this.target, trigger, property, type, event_type, value, this._object_uuid);
   }
 
   _is_property_new(property) {
