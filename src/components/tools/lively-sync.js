@@ -2,8 +2,13 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js"
 
 export default class Sync extends Morph {
+  
+  updateWindowTitle() {
+    var serverURL = this.getServerURL()
+    this.windowTitle = "GitHub Sync " + ((serverURL == this.defaultServerURL()) ? "" : serverURL );    
+  }
+  
   initialize() {
-    this.windowTitle = "GitHub Sync";
     var container = this.get(".container");
     this.registerButtons();
     lively.html.registerInputs(this);
@@ -18,11 +23,12 @@ export default class Sync extends Morph {
     this.get('#gitrepository').addEventListener("change", evt => this.onGitrepositoryInputChange(evt))
     
     
-    var travis = this.shadowRoot.querySelector("#travisLink");
+    var travis = this.get("#travisLink");
     travis.onclick = () => {
       window.open(travis.getAttribute("href"));
       return false;
     };
+    this.updateWindowTitle()
   }
   
   onGitrepositoryInputChange(evt) {
@@ -117,13 +123,19 @@ export default class Sync extends Morph {
       "dryrun":               this.get("#dryrun").checked
     })
   }
+  
+  defaultServerURL() {
+    return lively4url.match(/(.*)\/([^\/]+$)/)[1]
+  }
 
   getServerURL() {
-      return this.serverURL || lively4url.match(/(.*)\/([^\/]+$)/)[1]
+    return this.getAttribute("serverurl") || this.defaultServerURL()
   }
 
   setServerURL(url) {
-      this.serverURL = url
+    this.setAttribute("serverurl", url)
+    this.updateWindowTitle()
+    this.updateRepositoryList()
   }
   
   setRepository(name) {
@@ -167,7 +179,7 @@ export default class Sync extends Morph {
   async sync() {
     await this.gitControl("sync");
     this.log("invalidate local caches")
-    lively4invalidateFileCaches()
+    window.lively4invalidateFileCaches && window.lively4invalidateFileCaches() // global variable set in boot
   }
 
   async onLoginButton() {
@@ -276,7 +288,7 @@ export default class Sync extends Morph {
   async updateUpstreamURL() {
     var url = await this.gitControl("remoteurl")
     url = url.replace(/\n/,"")
-    this.shadowRoot.querySelector("#gitrepositoryurl").value = url
+    this.get("#gitrepositoryurl").value = url
   }
   
   async onGitrepositoryChanged(value) {
@@ -285,7 +297,7 @@ export default class Sync extends Morph {
   
   async updateRepositoryList() {
     var list = await this.getGitRepositoryNames()
-    this.shadowRoot.querySelector("#gitrepositories").innerHTML = 
+    this.get("#gitrepositories").innerHTML = 
       list.map(ea => "<option>" + ea).join("\n")
   }
 
