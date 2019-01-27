@@ -28,7 +28,8 @@ export default class FileIndex {
 
   clear() {
     this.db.files.clear()   
-    this.db.dependencies.clear()
+    this.db.modules.clear()
+    this.db.links.clear()
     this.db.classes.clear()
     this.db.versions.clear()
     // this.db.delete() 
@@ -44,8 +45,10 @@ export default class FileIndex {
 
     db.version("1").stores({
         files: 'url,name,type,version,modified,options,title,tags',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
         dependencies: '[link+url+type], link, url, location, status, type',
-        classes: '[name+url], name, url, loc, start, end, superClass, *methods', 
+        classes: '[name+url], name, url, loc, start, end, [superClass], superClass, [superClassName+superClassUrl], superClassName, superClassUrl, *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
@@ -79,7 +82,7 @@ export default class FileIndex {
   }
   
   async updateAllModuleSemantics() {
-     this.db.transaction('rw', this.db.files, this.db.dependencies, () => {
+     this.db.transaction('rw', this.db.files, this.db.modules, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
@@ -110,28 +113,39 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
-    await this.db.classes.where("url").equals(file.url).delete()
-    this.db.transaction("rw", this.db.classes, () => {
-      for(var clazz of semantics.classes) {
-        clazz.url = file.url
-        this.db.classes.put(clazz)        
-      }
-    })
+    for (var clazz of semantics.classes) {
+      await this.addClass(file.url, clazz)
+    }
   } 
+  
+  async addClass(fileUrl, clazz) {
+    await this.db.classes.where("url").equals(fileUrl).delete()
+    let superClassUrl = ''
+    if (clazz.superClass.name && clazz.superClass.url) {
+      superClassUrl = await System.resolve(clazz.superClass.url, fileUrl)
+    }
+    clazz.url = fileUrl
+    clazz.superClass.url = superClassUrl
+    clazz.superClassUrl = superClassUrl
+    clazz.superClassName = clazz.superClass.name
+    clazz.nom = clazz.methods ? clazz.methods.length : 0
+    clazz.noa = 0
+    this.db.classes.put(clazz)
+  }
 
   async updateModule(fileUrl, semantics) {
     if (!semantics || !semantics.dependencies) {
       return
     }
    
-    let resolvedDependencies2 = await DependencyAnalysis.resolveModuleDependencies(fileUrl, semantics.dependencies)
-    this.db.transaction("rw", this.db.dependencies, () => {
-      this.db.dependencies.bulkPut(resolvedDependencies2)
+    let resolvedDependencies = await ModuleDependencyAnalysis.resolveModuleDependencies(fileUrl, semantics.dependencies)
+    this.db.transaction("rw", this.db.modules, () => {
+      this.db.modules.put(resolvedDependencies)
     })
   }
   
   async updateAllLinks() {
-    this.db.transaction('rw', this.db.files, this.db.dependencies, () => {
+    this.db.transaction('rw', this.db.files, this.db.links, () => {
       return this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -139,11 +153,11 @@ export default class FileIndex {
   }
   
   async addLinks(file) {
-    await this.db.dependencies.where("url").equals(file.url).delete()
-    DependencyAnalysis.extractLinks(file).then(links => {
-      this.db.transaction("rw!", this.db.dependencies, () => {
+    await this.db.links.where("url").equals(file.url).delete()
+    BrokenLinkAnalysis.extractLinks(file).then(links => {
+      this.db.transaction("rw!", this.db.links, () => {
         if (links) {
-          this.db.dependencies.bulkPut(links)
+          this.db.links.bulkPut(links)
         }
       })
     })
@@ -294,11 +308,9 @@ export default class FileIndex {
             end: path.node.end,
             loc: path.node.loc.end.line - path.node.loc.start.line + 1
           }
-          superClass.name = (path.node.superClass) ? path.node.superClass.name : null
+          superClass.name = (path.node.superClass) ? path.node.superClass.name : ''
           superClass.url = importDeclarations.get(superClass.name)
-          if (superClass.name) {
-            console.log('superClass:', superClass)
-          }
+          console.log('superClass:', superClass, '->', importDeclarations)
           let methods = []
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
@@ -525,30 +537,14 @@ export default class FileIndex {
         table.style.overflow = "auto"
         table.column("size").forEach(cell => cell.classList.add("number"))
       })
-      console.log("result: " + result.length)
     })
   }
 }
 
-class DependencyAnalysis {
-  
-   static async resolveModuleDependencies(fileUrl, dependencies) {
-    let resolvedDependencies = new Array()
-    for (const dependency of dependencies) {
-      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
-      resolvedDependencies.push({
-        link: !resolvedDependency ? dependency.url : resolvedDependency,
-        location: "internal",
-        url: fileUrl,
-        status: !resolvedDependency ? 'dead' : 'alive',
-        type: 'dependency'
-      })
-    }
-    return resolvedDependencies
-  }
+class BrokenLinkAnalysis {
   
   static async extractLinks(file) {
-    if (!file || !file.content || file.url.includes("/src/external/")) {
+    if (!file || !file.content || file.url.includes("/src/external/") || file.url.match(/\.js$/)) {
       return [];
     }
   
@@ -556,13 +552,13 @@ class DependencyAnalysis {
     var extractedLinks =  new Array()
     
     if (file.url.match(/\.md$/)) {
-       let patternMdFiles = /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+       let patternMdFiles = /(?<=(\]:\s*|\]\s*\())((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+           // /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
       extractedLinks = file.content.match(patternMdFiles)
     } else if (file.url.match(/\.(css|(x)?html)$/)) {
       let patternHtmlCssFiles = /(?<=(src\s*=\s*|href\s*=\s*|[a-zA-Z0-9\-_]+\s*\{\s*.*\s*:\s*)('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
       extractedLinks = file.content.match(patternHtmlCssFiles)
     }
-  
     if(!extractedLinks) {
       return [];
     }
@@ -574,27 +570,25 @@ class DependencyAnalysis {
           location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
           url: file.url,
           status: await this.validateLink(extractedLink),
-          type: 'hyperlink'
         }
         links.push(link)  
       } else {
-        var absoluteLink = /^\//g.test(extractedLink) ? lively4url + extractedLink : file.url.replace(file.name, extractedLink)
+        var fullLink = /^\//g.test(extractedLink) ? lively4url + extractedLink : file.url.replace(file.name, extractedLink)
         let link = {
           link: extractedLink,
           location: "internal",
           url: file.url,
-          status: await this.validateLink(absoluteLink),
-          type: 'hyperlink'
+          status: await this.validateLink(fullLink),
         }
         links.push(link)
       }
     }
-     return links
+    return links
   }
       
   
  static async validateLink(link) { 
-  return DependencyAnalysis.fetch(link, { 
+  return BrokenLinkAnalysis.fetch(link, { 
     method: "GET", 
     mode: 'no-cors', 
     redirect: "follow"
@@ -604,13 +598,13 @@ class DependencyAnalysis {
       if (response.ok) {
         return "alive"
       } else {
-        return "dead"
+        return "broken"
       } 
     } else if (response.type === "opaque") { // external link
       return "alive"
     }
   })
-  .catch((error) => {console.log(error, "Link: " + link); return "dead"})
+  .catch(() => {return "broken"})
   }
 
   static async fetch(url, options, timeout) {
@@ -620,6 +614,26 @@ class DependencyAnalysis {
             setTimeout(() => reject(new Error('Fetch timeout: ' + url)), timeout)
         )
     ]);
+  }
+}
+
+class ModuleDependencyAnalysis {
+  
+   static async resolveModuleDependencies(fileUrl, dependencies) {
+    let resolvedDependencies = new Array()
+    for (const dependency of dependencies) {
+      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
+      if (!resolvedDependency) {
+        resolvedDependencies.push(dependency.url)  
+      } else {
+        resolvedDependencies.push(resolvedDependency)
+      }
+    }
+     
+    return {
+      url: fileUrl,
+      dependencies: resolvedDependencies
+    }
   }
 }
 
