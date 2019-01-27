@@ -1,5 +1,5 @@
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
-import D3StroboscopicViewer from 'src/components/tools/d3-stroboscopic-viewer.js'
+import D3StroboscopicViewer from 'src/components/tools/lively-stroboscope.js'
     
 class Viewer {
   open() {
@@ -11,7 +11,7 @@ class Viewer {
   }
 
   async callAssignViewer() {
-    var viewer = await lively.openComponentInWindow('d3-stroboscopic-viewer');
+    var viewer = await lively.openComponentInWindow('LivelyStroboscope');
     return viewer;
   }
 }

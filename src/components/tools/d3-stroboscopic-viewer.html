@@ -1,98 +1,47 @@
 <template id="d3-stroboscopic-viewer" data-class="D3StroboscopicViewer">
-  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-  <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
-
-    }
-
-    #container {
-    }
-
-
+      width: 200px;
+      height: 200px;
+    } 
     #svg {
-
-    }
-    
-    #propValDiv {
+      position: relative;
+      top: 0px;
+      left: 0px;
       width: 100%;
-      height: 80%;
-    }
-
-    #objectCntr {
-      float: left;
-      width: 15%;
       height: 100%;
-      background-color: lightblue;
     }
-
-    #valueCntr {
-      float:left;
-      width: 85%;
-      height: 100%;
-      background-color: orange;
+    </style > 
+  <style>
+    .object {
+      cursor: pointer;
     }
-
-    .valueLine {
-
+    .object circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 3px;
+    }
+    .object text {
+      font: 12px sans-serif;
     }
     
-    .property {
-      
+    .node {
+      cursor: pointer;
     }
-
-    #timeLine{
-      height: 20%;
-      background-color: lightgreen;
+    .node circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 3px;
     }
-
-    .headline {
-      background-color: white;
-      text-align: center;
-      border-style: solid;
-      border-width: 1px;
+    .node text {
+      font: 12px sans-serif;
     }
-
-    .vertical {
-      
-      float: left;
-      height: 100%;
-      width: 5%;
-      text-align: center;
-      background-color: white;
-      border-style: solid;
-      border-width: 1px;  
-      writing-mode: vertical-lr;
-      text-orientation: mixed;
-    }    
-    
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 2px;
+    }
   </style>
-  <!--div id="container">
-  </div-->
-
-  <div class="body"></div>
-  
-  <div id="propValDiv">
-    <div id="objectCntr" class="cntr">
-      <div class="headline">
-        Object
-      </div>
-    
-    </div>
-    <div id="valueCntr" class="cntr">
-      <div class="headline">
-        Properties
-      </div>    
-    </div>
-  </div>
-  
-  <div id="timeLine">
-    <div class="vertical">
-      Time
-    </div>      
-  </div>
-
+  <svg id="svg"></svg>
 </template>
-
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/DA56994E-E07E-6744-ACB4-B5CEB7E6C0B3/main.js" charset="UTF-8"></script><script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/DA56994E-E07E-6744-ACB4-B5CEB7E6C0B3/main.js" charset="UTF-8"></script><script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/DA56994E-E07E-6744-ACB4-B5CEB7E6C0B3/main.js" charset="UTF-8"></script><script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/DA56994E-E07E-6744-ACB4-B5CEB7E6C0B3/main.js" charset="UTF-8"></script><script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/DA56994E-E07E-6744-ACB4-B5CEB7E6C0B3/main.js" charset="UTF-8"></script><script class="registrationScript">lively.registerTemplate()</script>
-
+<script class="registrationScript">lively.registerTemplate()</script>
