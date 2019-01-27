@@ -607,6 +607,7 @@ export default class Container extends Morph {
       this.setAttribute("mode", "show");
       this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
       this.hideCancelAndSave();
+      
       lively.notify("deleted " + names);
     }
   }
@@ -1422,12 +1423,17 @@ export default class Container extends Morph {
       this.get('lively-separator').onClick()
     }
   }
-
+  
+  navbar() {
+    return this.get('#container-leftpane')
+    
+  }
+  
   async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
 
-    var navbar = this.get('#container-leftpane')
+    var navbar = this.navbar()
     // implement hooks
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
