@@ -1,7 +1,6 @@
 import { expect } from 'src/external/chai.js';
 import PropertyView from 'src/client/stroboscope/propertyview.js';
 import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
-import { EventType } from 'src/client/stroboscope/eventtype.js';
 
 describe('property view logic', () => {
   it('construct and initialize property view from event', () => {
