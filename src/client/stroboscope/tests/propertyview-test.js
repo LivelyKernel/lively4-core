@@ -7,53 +7,56 @@ describe('property view logic', () => {
   it('construct and initialize property view from event', () => {
     var event = new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)
 
-    var p_view = new PropertyView(event);
+    var propertyView = new PropertyView(event);
     
-    expect(p_view.id).to.equal(event.object_id);
-    expect(p_view.valueViews.length).to.equal(1);
-    expect(p_view.valueViews[0].property_type).to.equal(event.property_type);
-    expect(p_view.valueViews[0].endTime).to.equal(undefined);
-    
+    expect(propertyView.valueViews.length).to.equal(1);
+    expect(propertyView.valueViews[0].type).to.equal(event.property_type);
+    expect(propertyView.valueViews[0].endTime).to.equal(undefined);
   });
 
   
-  it('create entry on new property', () => {
+  it('recieve change value event', () => {
     var event1 = new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)
-    var event2 = new StroboscopeEvent(1, "Test", "question", "string", "create", "Does it work?")
+    var event2 = new StroboscopeEvent(1, "Test", "solution", "number", "change", 2)
     
-    var p_view = new PropertyView(event1)
-    p_view.handleEvent(event2)
+    var propertyView = new PropertyView(event1)
+    propertyView.handleEvent(event2)
     
-    expect(p_view.valueViews.length).to.equal(2)
-    expect(p_view.valueViews[0].property_type).to.equal(event1.property_type);
-    expect(p_view.valueViews[0].endTime).to.equal(undefined);
-    expect(p_view.valueViews[1].property_type).to.equal(event2.property_type);
-    expect(p_view.valueViews[1].endTime).to.equal(undefined);
-    //expect(p_view.valueViews[event2.property][0]).to.equal(event2)
+    expect(propertyView.valueViews.length).to.equal(1)
+    var view = propertyView.valueViews[0]
+    expect(view.type).to.equal(event1.property_type);
+    expect(view.endTime).to.equal(undefined);
   });
   
-  /*
-  it('append event to entry on existing property', () => {
+  it('recieve delete event', () => {
     var event1 = new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)
-    var event2 = new StroboscopeEvent(1, "Test", "solution", "number", "delete", undefined)
-
-    var view = new ObjectView(event1)
-    view.append(event2)
+    var event2 = new StroboscopeEvent(1, "Test", "solution", "number", "change", 2)
+    var event3 = new StroboscopeEvent(1, "Test", "solution", "number", "delete", undefined)
     
-    expect(view.propertyiesMap[event1.property].length).to.equal(2)
-    expect(view.propertyiesMap[event1.property][0]).to.equal(event1)
-    expect(view.propertyiesMap[event1.property][1]).to.equal(event2)
+    var propertyView = new PropertyView(event1)
+    propertyView.handleEvent(event2)
+    propertyView.handleEvent(event3)
+    
+    expect(propertyView.valueViews.length).to.equal(1)
+    var view = propertyView.valueViews[0]
+    expect(view.type).to.equal(event1.property_type);
+    expect(view.endTime).to.equal(undefined);
   });
   
-    it('return correct property count', () => {
+  it('recieve change type event', () => {
     var event1 = new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)
-    var event2 = new StroboscopeEvent(1, "Test", "solution", "number", "delete", undefined)
-
-    var view = new ObjectView(event1)
-    expect(view.propertyCount()).to.equal(1)
+    var event2 = new StroboscopeEvent(1, "Test", "solution", "string", "change", 2)
     
-    view.append(event2)
-    expect(view.propertyCount()).to.equal(2)
-    });
-    */
+    var propertyView = new PropertyView(event1)
+    propertyView.handleEvent(event2)
+    
+    expect(propertyView.valueViews.length).to.equal(2)
+    var view1 = propertyView.valueViews[0]
+    expect(view1.type).to.equal(event1.property_type);
+    
+    var view2 = propertyView.valueViews[0]
+    expect(view2.type).to.equal(event1.property_type);
+    expect(view2.endTime).to.not.equal(undefined);
+  });
+    
 });

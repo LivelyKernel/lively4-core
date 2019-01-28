@@ -29,8 +29,10 @@ describe('object view logic', () => {
 
     var view = new ObjectView(event1)
     expect(view.propertyCount()).to.equal(1)
+    expect(view.propertyViews().length).to.equal(1)
 
     view.append(event2)
     expect(view.propertyCount()).to.equal(2)
+    expect(view.propertyViews().length).to.equal(2)
   });
 });

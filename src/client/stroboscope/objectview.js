@@ -10,20 +10,20 @@ export default class ObjectView
   
   append(event){
     if(event.property in this.propertyMap){
-      this.propertyMap[event.property].handleEvent(event);
+      this.propertyMap.get(event.property).handleEvent(event);
     }
     else
     {
-      this.propertyMap[event.property] = new PropertyView(event);
+      this.propertyMap.set(event.property, new PropertyView(event));
     }
   }
   
   propertyCount()
   {
-    var size = 0;
-    for (var i in this.propertyMap) {
-        size++;
-    }
-    return size;
+    return this.propertyMap.size
+  }
+  
+  propertyViews() {
+    return Array.from(this.propertyMap.values());
   }
 }

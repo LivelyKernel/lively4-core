@@ -321,3 +321,28 @@ describe('array assignment', () => {
     expect(target.data).to.deep.equal([1, 2, 3]);
   });
 })
+
+describe('map to array', () => {
+  it('use indexer to set values', () => {
+    var map = new Map()
+
+    map[1] = 10
+    map[2] = 20
+    
+    var array = Array.from(map.values());
+
+    expect(array).to.deep.equal([10, 20]);
+    expect(map.size).to.deep.equal(2);
+  });
+  it('use set to set values', () => {
+    var map = new Map()
+
+    map.set(1, 10)
+    map.set(2, 20)
+    
+    var array = Array.from(map.values());
+
+    expect(array).to.deep.equal([10, 20]);
+    expect(map.size).to.deep.equal(2);
+  });
+})

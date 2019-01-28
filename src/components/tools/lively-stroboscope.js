@@ -35,7 +35,7 @@ export default class LivelyStroboscope extends Morph {
 
   _handleEvent(event) {
     if (event.object_id in this._objectViewsMap) {
-      this._objectViewsMap[event.object_id].append(event);
+      this._objectViewsMap.get(event.object_id).append(event);
     } else {
       this._addObjectView(new ObjectView(event));
     }
@@ -86,15 +86,24 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _updatePropertiesDiv(objects) {
-    var propertiesEnter = objects.enter().append("g")
+    objects.enter().append("g")
       .attr("class", "property")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
-    propertiesEnter.selectAll("g.property")
-      .data([0, 2]).enter().append("g")
-      .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
+      .each(function(d, i){
+        d3.select(this).selectAll("g.property")
+        .data([d.propertyViews()]).enter().append("g")
+      .attr("transform", i => "translate(" + 100 + "," + i * this._rowHeight + ")")
       .append("rect")
       .attr("width", 100)
       .attr("height", 30);
+      })
+    
+    //propertiesEnter.selectAll("g.property")
+    //  .data([1, 2]).enter().append("g")
+    //  .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
+    //  .append("rect")
+    //  .attr("width", 100)
+    //  .attr("height", 30);
   }
 
   _objectViews() {
