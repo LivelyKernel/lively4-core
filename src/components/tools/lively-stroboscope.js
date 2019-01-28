@@ -59,22 +59,22 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _updateObjectsViz() {
-    this._reset_offset()
+    this._reset_offsets()
 
-    var objects = this.svg.selectAll("g.object")
+    var objects = this.svg.selectAll("g")
       .data(this._objectViews());
 
     // Enter any new nodes at the parent's previous position.
     var objectsEnter = objects.enter().append("g")
       .attr("class", "object")
-      .attr("transform", d => "translate(" + 0 + "," + this._next_offset() + ")")
+      .attr("transform", d => "translate(" + 0 + "," + this._next_object_offset() + ")")
 
     var propertiesEnter = objects.enter().append("g")
       .attr("class", "property")
-      .attr("transform", d => "translate(" + 120 + "," + this._next_offset() + ")")
+      .attr("transform", d => "translate(" + 120 + "," + this._next_property_offset() + ")")
 
     this._updateObjectsDiv(objectsEnter);
-    //this._updatePropertiesDiv(propertiesEnter);
+    this._updatePropertiesDiv(propertiesEnter);
   }
 
   _updateObjectsDiv(objectsEnter) {
@@ -86,21 +86,14 @@ export default class LivelyStroboscope extends Morph {
     objectsEnter.append("text")
       .attr("x", 10)
       .attr("dy", 20)
-      .text(d => this.id !== undefined ? "ID: " + d.id : "undefined id")
-
-    objectsEnter.each(function(d) {
-      d3.select(this).append("g")
-        .attr("transform", d => "translate(" + 120 + "," + 0 + ")").attr('class', 'property')
-        .append("rect")
-        .attr('class', 'property')
-        .attr("width", 100)
-        .attr("height", 30);
-    })
+      .text(d => d.id !== undefined ? "ID: " + d.id : "undefined id")
   }
 
   _updatePropertiesDiv(propertiesEnter) {
-    propertiesEnter.append("rect")
-      .attr('class', 'property')
+    propertiesEnter.selectAll("g.property")
+      .data([1, 2, 3, 4]).enter().append("g")
+      .attr("transform", d => "translate(" + 0 + "," + d * 32 + ")")
+      .append("rect")
       .attr("width", 100)
       .attr("height", 30);
   }
@@ -109,14 +102,21 @@ export default class LivelyStroboscope extends Morph {
     return Array.from(this._objectViewsMap.values());
   }
 
-  _next_offset() {
-    var o = this._offset
-    this._offset += 50
+  _next_property_offset() {
+    var o = this._property_offset
+    this._property_offset += 50
     return o
   }
-
-  _reset_offset() {
-    this._offset = 0
+  
+  _next_object_offset() {
+    var o = this._object_offset
+    this._object_offset += 50
+    return o
+  }
+  
+  _reset_offsets() {
+    this._property_offset = 0
+    this._object_offset = 0
   }
 
   livelyExample() {

@@ -2,6 +2,7 @@ import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
 import ObjectView from "src/client/stroboscope/objectview.js"
+import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 
 
 export default class D3StroboscopicViewer extends Morph {
@@ -10,9 +11,9 @@ export default class D3StroboscopicViewer extends Morph {
 
     this._objectViewsMap = new Map();
 
-    this._addObjectView(new ObjectView({ object_id: 0 }))
-    this._addObjectView(new ObjectView({ object_id: 1 }))
-    this._addObjectView(new ObjectView({ object_id: 2 }))
+    this._addObjectView(new ObjectView( new StroboscopeEvent(1, "Test", "solution", "number", "create", 1) ))
+    this._addObjectView(new ObjectView( new StroboscopeEvent(2, "Test", "question", "string", "create", "Does it work?") ))
+    this._addObjectView(new ObjectView( new StroboscopeEvent(3, "Test", "question", "string", "create", "bla") ))
 
     this.updateViz()
   }
@@ -87,19 +88,24 @@ export default class D3StroboscopicViewer extends Morph {
     objectsEnter.append("text")
       .attr("x", 10)
       .attr("dy", 20)
-      .text(d => this.id !== undefined ? "ID: " + d.id : "undefined id")
+      .text(d => d.id !== undefined ? "ID: " + d.id : "undefined id")
   }
 
+  
+  
   _updatePropertiesDiv(propertiesEnter) {
     propertiesEnter.append("rect")
       .attr('class', 'property')
       .attr("width", 100)
       .attr("height", 30);
     
+    
     propertiesEnter.append("text")
       .attr("x", 10)
       .attr("dy", 20)
-      .text(d => this.id !== undefined ? "ID: " + d.id : "undefined id")
+      .text(d => d.id !== undefined ? "ID: " + d.id : "not working")
+    
+    
   }
 
   _objectViews() {
