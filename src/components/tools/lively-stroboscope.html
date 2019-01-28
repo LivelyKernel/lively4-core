@@ -1,30 +1,48 @@
 <template id="lively-stroboscope" data-class="LivelyStroboscope">
-  <style>
-    :host {
-      width: 200px;
-      height: 200px;
-    } 
-    #svg {
-      position: relative;
-      top: 0px;
-      left: 0px;
-      width: 100%;
-      height: 100%;
-    }
-    </style > 
-  <style>
-    .object {
-    }
-    .object rect {
-      fill: lightsteelblue;
-      stroke: steelblue;
-      stroke-width: 3px;
-    }
-    .object text {
-      font: 12px sans-serif;
-    }
-    
-  </style>
-  <svg id="svg"></svg>
+    <style>
+        :host {
+            width: 200px;
+            height: 200px;
+        }
+
+        #svg {
+            position: relative;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+    </style>
+    <style>
+        .object {}
+
+        .object rect {
+            fill: lightsteelblue;
+            stroke: steelblue;
+            stroke-width: 2px;
+        }
+
+        .object text {
+            font: 12px sans-serif;
+        }
+
+        .property {}
+
+        .property rect {
+            fill: lightgray;
+            stroke: gray;
+            stroke-width: 1px;
+        }
+
+        .property text {
+            font: 12px sans-serif;
+        }
+
+    </style>
+    <svg id="svg"></svg>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
+<script class="registrationScript">
+    lively.registerTemplate()
+
+</script>

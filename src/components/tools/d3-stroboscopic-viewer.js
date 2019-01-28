@@ -1,275 +1,128 @@
-import Morph from 'src/components/widgets/lively-morph.js';
+import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
-import Stroboscope from 'src/client/stroboscope/stroboscope.js';
-import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 
+import ObjectView from "src/client/stroboscope/objectview.js"
 
-import { debounce } from "utils";
 
 export default class D3StroboscopicViewer extends Morph {
 
-  initialize() {
-    this.d3 = d3 // for scripting...
+  async initialize() {
+
+    this._objectViewsMap = new Map();
+
+    this._addObjectView(new ObjectView({ object_id: 0 }))
+    this._addObjectView(new ObjectView({ object_id: 1 }))
+    this._addObjectView(new ObjectView({ object_id: 2 }))
+
     this.updateViz()
-    this.options = {}
-    
-    this.addEventListener('extent-changed', ((evt) => {
-      this.onExtentChanged(evt);
-    })::debounce(500));
-
-    // Map of objects displayed by viewer
-    this.objectsToView = new Map();    
-  }
-  
-  
-  /*
-    async initialize() {
-    this.options = {}
-    this.loaded = new Promise(async (resolve) => {
-      this.updateViz()
-      this.addEventListener('extent-changed', ((evt) => {
-        this.onExtentChanged(evt);
-      })::debounce(500));
-      resolve()
-    })
-  }
-  */
-    
-  getData() {
-    return this.objectsToView
   }
 
-  setData(data) {
-    this.data = data;
+  onEvents(events) {
+    for (var i = 0; i < events.length; ++i) {
+      this._handleEvent(events[i])
+    }
+
     this.updateViz()
-  }  
-  
-  dataColor(node) {
-    if (this.options.color !== undefined) return this.options.color(node)
-    return "gray"
   }
 
-  dataWidth(node) {
-    if (this.options.width !== undefined) return this.options.width(node)
-    return 20
+  updateViz() {
+    this._updateSVGViz()
+    this._updateObjectsViz()
   }
 
-  dataHeight(node) {
-    if (this.options.height !== undefined) return this.options.height(node)
-    return 40
-  }
-  
-  dataFontsize(node) {
-    if (this.options.fontsize !== undefined) return this.options.fontsize(node)
-    return 10
-  }
-  
-  onNodeClick(node, evt, element) {
-    if (this.options.onclick) return this.options.onclick(node, evt, element)
-    lively.notify("clicked on " + node.id)
-  }
-  
-  config(config) {
-    Object.keys(config).forEach(key => {
-      // lively.notify("key " + key) 
-      this.options[key] = config[key] // we could check them here...      
-    })
-  }
-
-  livelyInspect(contentNode, inspector) {
-    if (this.data) {
-      contentNode.appendChild(inspector.display(this.data, false, "#data", this));
+  _handleEvent(event) {
+    if (event.object_id in this._objectViewsMap) {
+      this._objectViewsMap[event.object_id].append(event);
+    } else {
+      this._addObjectView(new ObjectView(event));
     }
   }
 
-  onExtentChanged() {
-    //lively.notify("extent changed")
-    this.updateViz()
+  _addObjectView(objectView) {
+    this._objectViewsMap.set(objectView.id, objectView)
+  }
+
+  _updateSVGViz() {
+    var bounds = this.getBoundingClientRect()
+    this.shadowRoot.querySelector("svg").innerHTML = ""
+
+    var margin = { top: 10, right: 20, bottom: 10, left: 20 },
+      width = bounds.width - margin.right - margin.left,
+      height = bounds.height - margin.top - margin.bottom;
+
+    var svg = d3.select(this.shadowRoot.querySelector("svg"))
+      .attr("width", width + margin.right + margin.left)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    this.svg = svg
+    this.duration = 750
+  }
+
+  _updateObjectsViz() {
+    this._reset_offset()
+
+    var objects = this.svg.selectAll("g.object")
+      .data(this._objectViews());
+    
+    // Enter any new nodes at the parent's previous position.
+    var objectsEnter = objects.enter().append("g")
+      .attr("class", "object")
+      .attr("transform", d => "translate(" + 0 + "," + this._next_offset() + ")")
+
+    var propertiesEnter = objects.enter().append("g")
+      .attr("class", "property")
+      .attr("transform", d => "translate(" + 120 + "," + this._next_offset() + ")")
+    
+    this._updateObjectsDiv(objectsEnter);
+    this._updatePropertiesDiv(propertiesEnter);
+  }
+
+  _updateObjectsDiv(objectsEnter) {
+    objectsEnter.append("rect")
+      .attr('class', 'object')
+      .attr("width", 100)
+      .attr("height", 30);
+
+    objectsEnter.append("text")
+      .attr("x", 10)
+      .attr("dy", 20)
+      .text(d => this.id !== undefined ? "ID: " + d.id : "undefined id")
+  }
+
+  _updatePropertiesDiv(propertiesEnter) {
+    propertiesEnter.append("rect")
+      .attr('class', 'property')
+      .attr("width", 100)
+      .attr("height", 30);
+    
+    propertiesEnter.append("text")
+      .attr("x", 10)
+      .attr("dy", 20)
+      .text(d => this.id !== undefined ? "ID: " + d.id : "undefined id")
+  }
+
+  _objectViews() {
+    return Array.from(this._objectViewsMap.values());
+  }
+
+  _next_offset() {
+    var o = this._offset
+    this._offset += 50
+    return o
+  }
+
+  _reset_offset() {
+    this._offset = 0
+  }
+
+  livelyExample() {
+
   }
 
   livelyMigrate(other) {
-    this.options = other.options
-    this.setData(other.getData())
-  }
-    
-  // check if object is known
-  knowAboutObject(id) {
-    return this.objectsToView.has(id);
+    this.treeData = other.treeData
+    this.dataName = other.dataName
   }
 
-  // check if known object has property
-  knownObjHasProperty(object_id, property) {
-    return this.objectsToView[object_id][property] != undefined;
-  }
-  
-  
-  /*
-   *
-   *
-   */
-  evaluateEvent(event) {
-    
-    // before all check if object is known
-    if( this.knowAboutObject(event.object_id)) {
-      // create new property
-      if(event.event_type === "create") {
-        this.objectsToView[event.object_id][event.property] = {
-          value: event.value,
-          type: event.property_type
-        }
-      }
-      // change property
-      if(event.event_type === "change") {
-        // check if property exists
-        if(knownObjHasProperty(event.object_id, event.property) ) {
-          this.objectsToView[event.object_id][event.property] = {
-            value: event.value,
-            type: event.property_type
-          }
-        }
-        else {
-          lively.notify("no changes on non existing properties");
-        }
-      }
-      // delete property
-      if(event.event_type === "delete") {
-        // check if property exists
-        if(knownObjHasProperty(event.object_id, event.property) ) {
-          delete this.objectsToView[event.object_id][event.property];
-        }
-        else {
-          lively.notify("no delete on non existing properties");
-        }
-      }
-    } else {
- 
-      if(event.event_type === "create") {
-        var obj = {
-          id: event.object_id
-        }
-        //create property object
-        obj[event.property] = {
-          value: event.value,
-          type: event.property_type
-        }
-        // add property to object
-        this.objectsToView.set(obj);
-      }
-
-      if(event.event_type === "change") {
-        lively.notify("no changes on non existing objects");
-      }
-
-      if(event.event_type === "delete") {
-        lively.notify("no deletes on non existing objects");
-      }
-    }
-    
-    this.updateViz();
-  }
-  
-  
-  
-  
-  
-  
-  
-  updateViz() {
-    
-    //var object_container = this.get("#objectCntr");
-    //object_container.style.backgroundColor = "red";
-    //object_container.innerHTML=""
-    
-    //var e = document.createElement('div');
-    //e.innerHTML = "Object and Properties";
-    //object_container.appendChild(e.firstChild);
-   
-    
-    /*
-    var objCntr = d3.select(this.get("svg"))
-      .attr("width", width + margin.right + margin.left)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-    */
-    
-    /*
-    var svgContainer = this.get("#container")
-    svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
-    svgContainer.style.height = this.style.height
-    
-    
-    //var bounds = this.getBoundingClientRect()
-    //this.get("svg").innerHTML = ""
-    var knownObjects = this.getData()
-    if (!knownObjects) return; // nothing to render
-    
-    
-    var object_container = this.get("#objectCntr")
-    //object_container.style.backgroundColor = "red";
-    */
-    
-    
-    /*
-    var margin = { top: 20, right: 20, bottom: 20, left: 20 }
-    var width = bounds.width,
-      height = bounds.height;
-    
-    var data = this.getData();
-    if (!data) return;// nothing to to
-    var width = lively.getExtent(this).x - 30
-    
-    var x = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.x1)])
-        .range([0, width]);
-    
-    var lineHeight = 20
-    
-    
-    var svgOuter = d3.select(this.get("svg"))
-      .attr("width", width + margin.right + margin.left)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`)
-    */
-  }
-    
-  
-  
-  
-  
-  /*
-  
-  
-  
-  
-import Stroboscope from 'src/client/stroboscope/stroboscope.js';    
-var tt = {name:"name", length:8, width:4, height:2};
-var stroboscope = new Stroboscope(tt)
-stroboscope.init().then(() => {
-  stroboscope.slice();
-})
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  async livelyExample() {
-    var tt = {name:"name", length:8, width:4, height:2};
-    var stroboscope = new Stroboscope(tt)
-    stroboscope.init().then(() => {
-      stroboscope.slice();
-    })
-  }
-  */
-  
 }
