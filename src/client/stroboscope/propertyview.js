@@ -1,5 +1,5 @@
-import ValueView from 'src/client/stroboscope/valueView.js';
-import EventType from 'src/client/stroboscope/eventtype.js';
+import ValueView from 'src/client/stroboscope/valueview.js';
+import {EventType} from 'src/client/stroboscope/eventtype.js';
 
 export default class PropertyView
 {
@@ -11,8 +11,8 @@ export default class PropertyView
   
   handleEvent(event) {
     // if property gets created -> new ValueView
-    if(event.event_type === EventType.create) {
-      this.valueViewMap.push(new ValueView(event));
+    if(event.event_type === "create") {
+      this.valueViews.push(new ValueView(event));
     }
     
     // a change event occurs
