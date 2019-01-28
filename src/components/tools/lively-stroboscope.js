@@ -7,6 +7,9 @@ export default class LivelyStroboscope extends Morph {
 
   async initialize() {
 
+    this._rowHeight = 32
+    this._objectWidth = 105
+
     this._objectViewsMap = new Map();
 
     this._addObjectView(new ObjectView({ object_id: 0 }))
@@ -25,6 +28,7 @@ export default class LivelyStroboscope extends Morph {
   }
 
   updateViz() {
+    this._update_offsets()
     this._updateSVGViz()
     this._updateObjectsViz()
   }
@@ -59,26 +63,18 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _updateObjectsViz() {
-    this._reset_offsets()
-
     var objects = this.svg.selectAll("g")
       .data(this._objectViews());
-
-    // Enter any new nodes at the parent's previous position.
-    var objectsEnter = objects.enter().append("g")
-      .attr("class", "object")
-      .attr("transform", d => "translate(" + 0 + "," + this._next_object_offset() + ")")
-
-    var propertiesEnter = objects.enter().append("g")
-      .attr("class", "property")
-      .attr("transform", d => "translate(" + 120 + "," + this._next_property_offset() + ")")
-
-    this._updateObjectsDiv(objectsEnter);
-    this._updatePropertiesDiv(propertiesEnter);
+    this._updatePropertiesDiv(objects);
+    this._updateObjectsDiv(objects);
   }
 
-  _updateObjectsDiv(objectsEnter) {
-    objectsEnter.append("rect")
+  _updateObjectsDiv(objects) {
+    var objectsEnter = objects.enter().append("g")
+      .attr("class", "object")
+      .attr("transform", d => "translate(" + 0 + "," + d.offset + ")")
+
+    objectsEnter.append('rect')
       .attr('class', 'object')
       .attr("width", 100)
       .attr("height", 30);
@@ -89,10 +85,13 @@ export default class LivelyStroboscope extends Morph {
       .text(d => d.id !== undefined ? "ID: " + d.id : "undefined id")
   }
 
-  _updatePropertiesDiv(propertiesEnter) {
+  _updatePropertiesDiv(objects) {
+    var propertiesEnter = objects.enter().append("g")
+      .attr("class", "property")
+      .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
     propertiesEnter.selectAll("g.property")
-      .data([1, 2, 3, 4]).enter().append("g")
-      .attr("transform", d => "translate(" + 0 + "," + d * 32 + ")")
+      .data([0, 1, 2, 3, 4]).enter().append("g")
+      .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
       .append("rect")
       .attr("width", 100)
       .attr("height", 30);
@@ -102,30 +101,30 @@ export default class LivelyStroboscope extends Morph {
     return Array.from(this._objectViewsMap.values());
   }
 
-  _next_property_offset() {
-    var o = this._property_offset
-    this._property_offset += 50
-    return o
-  }
-  
-  _next_object_offset() {
-    var o = this._object_offset
-    this._object_offset += 50
-    return o
-  }
-  
-  _reset_offsets() {
+  _update_offsets() {
     this._property_offset = 0
     this._object_offset = 0
+    this._allocated_rows = 0
+
+    var objectViews = this._objectViews()
+    var totalProperties = 0
+
+    for (var i = 0; i < objectViews.length; i++) {
+      lively.notify(i)
+      objectViews[i].offset = totalProperties * this._rowHeight
+      totalProperties += objectViews[i].propertyCount()
+      lively.notify(objectViews[i].offset)
+    }
   }
 
-  livelyExample() {
-
+  _next_row_offset() {
+    var offset = this._allocated_rows * this._rowHeight
+    this._allocated_rows += 1
+    return offset
   }
 
-  livelyMigrate(other) {
-    this.treeData = other.treeData
-    this.dataName = other.dataName
-  }
+  livelyExample() {}
+
+  livelyMigrate(other) {}
 
 }

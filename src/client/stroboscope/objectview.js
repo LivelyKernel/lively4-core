@@ -1,22 +1,25 @@
-import PropertyMap from 'src/client/stroboscope/propertymap.js';
+import PropertyView from 'src/client/stroboscope/propertyview.js';
 
 export default class ObjectView
 {
   constructor(event){
-    this.id = event.object_id
-    this.propertiesEventsMap = new Map();
-    this.propertiesMap = new PropertyMap();
-    this.propertiesMap.handleEvent(event);
-    this.append(event)
+    this.id = event.object_id;
+    this.propertyMap = new Map();
+    this.append(event);
   }
   
   append(event){
-    if(event.property in this.propertiesEventsMap){
-      this.propertiesEventsMap[event.property].push(event);
+    if(event.property in this.propertyMap){
+      this.propertyMap[event.property].handleEvent(event);
     }
     else
     {
-      this.propertiesEventsMap[event.property] = [event];
+      this.propertyMap[event.property] = new PropertyView(event);
     }
+  }
+  
+  propertyCount()
+  {
+    return 5
   }
 }

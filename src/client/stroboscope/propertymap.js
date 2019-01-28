@@ -11,18 +11,13 @@ export default class PropertyMap
   
   handleEvent(event) {
     if(event.property in this.propertyViewMap){
-      
-      
-      
-      //this.propertyViewMap[event.property].push(event);
+      // wenn property bekannt -> dann existiert eine propertyview dazu -> soll die sich darum kümmern
+      this.propertyViewMap.get(event.property).handleEvent(event);
     }
     else
     {
-      
       // füge neue property view zur map hinzu
       this.propertyViewMap[event.property] = new PropertyView(event);
-      
-      //this.propertyViewMap[event.property] = [event];
     }
   }
 }
