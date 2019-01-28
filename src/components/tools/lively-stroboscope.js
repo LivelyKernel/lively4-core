@@ -2,6 +2,7 @@ import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 
 import ObjectView from "src/client/stroboscope/objectview.js"
+import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
 
 export default class LivelyStroboscope extends Morph {
 
@@ -12,10 +13,9 @@ export default class LivelyStroboscope extends Morph {
 
     this._objectViewsMap = new Map();
 
-    this._addObjectView(new ObjectView({ object_id: 0 }))
-    this._addObjectView(new ObjectView({ object_id: 1 }))
-    this._addObjectView(new ObjectView({ object_id: 2 }))
-
+    this._addObjectView(new ObjectView(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "solution", "number", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(3, "Test", "solution", "number", "create", 1)))
     this.updateViz()
   }
 
@@ -90,7 +90,7 @@ export default class LivelyStroboscope extends Morph {
       .attr("class", "property")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
     propertiesEnter.selectAll("g.property")
-      .data([0, 1, 2, 3, 4]).enter().append("g")
+      .data([0, 2]).enter().append("g")
       .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
       .append("rect")
       .attr("width", 100)
@@ -110,7 +110,6 @@ export default class LivelyStroboscope extends Morph {
     var totalProperties = 0
 
     for (var i = 0; i < objectViews.length; i++) {
-      lively.notify(i)
       objectViews[i].offset = totalProperties * this._rowHeight
       totalProperties += objectViews[i].propertyCount()
       lively.notify(objectViews[i].offset)

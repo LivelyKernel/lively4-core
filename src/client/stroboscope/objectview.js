@@ -20,6 +20,10 @@ export default class ObjectView
   
   propertyCount()
   {
-    return 5
+    var size = 0;
+    for (var i in this.propertyMap) {
+        size++;
+    }
+    return size;
   }
 }

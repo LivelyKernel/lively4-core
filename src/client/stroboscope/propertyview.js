@@ -5,6 +5,7 @@ export default class PropertyView
 {
   constructor(event){
     this.id = event.object_id;
+    this.property = event.property
     this.valueViews = [];
     this.handleEvent(event);
   }
