@@ -29,19 +29,19 @@ export default class PropertyView {
   }
 
   _handleChangeEvent(event) {
-    if (this._lastView().property_type === event.property_type) {
-      this._lastView().changeValue(event);
+    if (this._openView().type === event.property_type) {
+      this._openView().changeValue(event);
     } else {
-      this._lastView().close(event);
+      this._openView().close(event);
       this.valueViews.push(new ValueView(event));
     }
   }
 
   _handleDeleteEvent(event) {
-    this._lastView().close(event);
+    this._openView().close(event);
   }
 
-  _lastView() {
+  _openView() {
     return this.valueViews[this.valueViews.length - 1]
   }
 }

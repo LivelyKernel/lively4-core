@@ -9,7 +9,7 @@ export default class ObjectView
   }
   
   append(event){
-    if(event.property in this.propertyMap){
+    if(this.propertyMap.has(event.property)){
       this.propertyMap.get(event.property).handleEvent(event);
     }
     else

@@ -39,7 +39,7 @@ describe('property view logic', () => {
     expect(propertyView.valueViews.length).to.equal(1)
     var view = propertyView.valueViews[0]
     expect(view.type).to.equal(event1.property_type);
-    expect(view.endTime).to.equal(undefined);
+    expect(view.endTime).to.not.equal(undefined);
   });
   
   it('recieve change type event', () => {
