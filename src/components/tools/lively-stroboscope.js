@@ -13,10 +13,17 @@ export default class LivelyStroboscope extends Morph {
 
     this._objectViewsMap = new Map();
 
-    this._addObjectView(new ObjectView(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1)))
+    var view = new ObjectView(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
+    view.append(new StroboscopeEvent(1, "Test", "other", "number", "create", 1))
+    view.append(new StroboscopeEvent(1, "Test", "next", "number", "create", 1))
+    this._addObjectView(view)
+    
     this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "solution", "number", "create", 1)))
     this._addObjectView(new ObjectView(new StroboscopeEvent(3, "Test", "solution", "number", "create", 1)))
-        this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "solution", "number", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "solution", "number", "create", 1)))
+
+
+
     this.updateViz()
   }
 
@@ -90,15 +97,15 @@ export default class LivelyStroboscope extends Morph {
     objects.enter().append("g")
       .attr("class", "property")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
-      .each(function(d, i){
+      .each(function(d, i) {
         d3.select(this).selectAll("g.property")
-        .data(d.propertyViews()).enter().append("g")
-      .attr("transform", i => "translate(" + 0 + "," + i * this._rowHeight + ")")
-      .append("rect")
-      .attr("width", 100)
-      .attr("height", 30);
+          .data(d.propertyViews()).enter().append("g")
+          .attr("transform", i => "translate(" + 0 + "," + i * this._rowHeight + ")")
+          .append("rect")
+          .attr("width", 100)
+          .attr("height", 30);
       })
-    
+
     //propertiesEnter.selectAll("g.property")
     //  .data([1, 2]).enter().append("g")
     //  .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")

@@ -1,5 +1,4 @@
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
-import D3StroboscopicViewer from 'src/components/tools/lively-stroboscope.js'
     
 class Viewer {
   open() {
@@ -11,7 +10,7 @@ class Viewer {
   }
 
   async callAssignViewer() {
-    var viewer = await lively.openComponentInWindow('LivelyStroboscope');
+    var viewer = await lively.openComponentInWindow('lively-stroboscope');
     return viewer;
   }
 }
@@ -28,6 +27,6 @@ stroboscope.reciever = viewer.viewer
 stroboscope.start()
 
 
-tt.solution = 40
+tt.solution = 43
 
 stroboscope.stop()
