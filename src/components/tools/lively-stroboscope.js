@@ -170,13 +170,13 @@ export default class LivelyStroboscope extends Morph {
       .style("fill", d => this._colorForType(d));
 
     valuesEnter.selectAll("g.valuechange")
-      .data((d) => d.changes)
+      .data((d) => d.changes.filter(t => (this._interpolationInTimeframe(t[0]) > 0)))
       .enter()
       .append("circle")
       .attr("class", "valuechange")
       .attr("r", 5)
       .attr("cx", (d) => this._timestampToX(d[0]))
-      .attr("cy", () => this._rowHeight / 2 )
+      .attr("cy", () => this._rowHeight / 2)
       .style("fill", "white")
       .style("stroke", "gray");
 
