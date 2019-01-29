@@ -10,6 +10,8 @@ export default class LivelyStroboscope extends Morph {
 
     this._rowHeight = 32
     this._objectWidth = 105
+    this._propertySectionWidth = 150
+    this._objectSectionsMargin = 10
 
     this.indexMap = new Map();
     this.objectViews = []
@@ -23,8 +25,6 @@ export default class LivelyStroboscope extends Morph {
     this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "solution", "number", "create", 1)))
     this._addObjectView(new ObjectView(new StroboscopeEvent(3, "Test", "solution", "number", "create", 1)))
     this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "solution", "number", "create", 1)))
-
-
 
     this.updateViz()
   }
@@ -99,9 +99,7 @@ export default class LivelyStroboscope extends Morph {
 
   _updatePropertiesDiv(objects) {
     var objectsEnter = objects.enter().append("g")
-      .attr("class", "propertybundle")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")");
-    
     
     objectsEnter.selectAll("g.property")
       .data(function(d) {return d.propertyViews;})
@@ -111,7 +109,7 @@ export default class LivelyStroboscope extends Morph {
     
     objectsEnter.selectAll("g.property")     
       .append("rect")
-          .attr("width", 300)
+          .attr("width", this._propertySectionWidth)
           .attr("height", this._rowHeight);
     
     objectsEnter.selectAll("g.property")
@@ -134,7 +132,7 @@ export default class LivelyStroboscope extends Morph {
     
     var totalProperties = 0
     for (var i = 0; i < this.objectViews.length; i++) {
-      this.objectViews[i].offset = totalProperties * this._rowHeight
+      this.objectViews[i].offset = totalProperties * this._rowHeight + i * this._objectSectionsMargin
       totalProperties += this.objectViews[i].propertyCount()
     }
   }
