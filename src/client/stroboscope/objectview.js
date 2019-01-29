@@ -24,6 +24,7 @@ export default class ObjectView
   }
   
   propertyViews() {
+    lively.notify("Request Property Views")
     return Array.from(this.propertyMap.values());
   }
 }

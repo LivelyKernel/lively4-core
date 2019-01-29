@@ -81,11 +81,11 @@ export default class LivelyStroboscope extends Morph {
     var objectsEnter = objects.enter().append("g")
       .attr("class", "object")
       .attr("transform", d => "translate(" + 0 + "," + d.offset + ")")
-
+    
     objectsEnter.append('rect')
       .attr('class', 'object')
-      .attr("width", 100)
-      .attr("height", 30);
+      .attr("width", this._objectWidth)
+      .attr("height", d => d.propertyCount() * this._rowHeight);
 
     objectsEnter.append("text")
       .attr("x", 10)
@@ -95,16 +95,19 @@ export default class LivelyStroboscope extends Morph {
 
   _updatePropertiesDiv(objects) {
     objects.enter().append("g")
-      .attr("class", "property")
+      .attr("class", "propertybundle")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
-      .each(function(d, i) {
-        d3.select(this).selectAll("g.property")
-          .data(d.propertyViews()).enter().append("g")
-          .attr("transform", i => "translate(" + 0 + "," + i * this._rowHeight + ")")
+      .text(function (d,i) {return "i = " + i + " d = "+d; })
+      .selectAll("g.property")
+      .data(function(d) {return [d.propertyViews()];})
+      .enter().append("g")
+          .attr("class", "property")
+          //.attr("transform", function(d, i) { return "translate(" + 0 + "," + i * this._rowHeight + ")"})
+          .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
           .append("rect")
           .attr("width", 100)
-          .attr("height", 30);
-      })
+          .attr("height", this._rowHeight);
+      
 
     //propertiesEnter.selectAll("g.property")
     //  .data([1, 2]).enter().append("g")
