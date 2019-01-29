@@ -8,14 +8,19 @@ import { ValueType } from 'src/client/stroboscope/valuetype.js';
 export default class LivelyStroboscope extends Morph {
 
   async initialize() {
+    this.d3 = d3
 
     this._rowHeight = 32
     this._valueRowHeight = 30
-    this._objectWidth = 105
-    this._propertySectionWidth = 150
+    this._objectWidth = 60
+    this._propertySectionWidth = 80
     this._propertySectionMargin = 5
     this._objectSectionsMargin = 10
-
+    this._timeframewidth = 300 // size in px
+    this._timeframelength = 30000 // time in ms
+    this._timeframelatest = undefined
+    this._timeframeoldest = undefined
+    this._updateRate = 100
     this.indexMap = new Map();
     this.objectViews = []
     this._objectViewsMap = new Map();
@@ -33,6 +38,8 @@ export default class LivelyStroboscope extends Morph {
     this._handleEvent(new StroboscopeEvent(4, "Test", "object", "object", "create", 1))
 
     this.updateViz()
+
+    d3.interval(this.updateViz.bind(this), this._updateRate)
   }
 
   onEvents(events) {
@@ -44,9 +51,15 @@ export default class LivelyStroboscope extends Morph {
   }
 
   updateViz() {
+    this._updateTimeframe()
     this._update_offsets()
     this._updateSVGViz()
     this._updateObjectsViz()
+  }
+
+  _updateTimeframe() {
+    this._timeframelatest = Date.now()
+    this._timeframeoldest = this._timeframelatest - this._timeframelength
   }
 
   _handleEvent(event) {
@@ -145,14 +158,15 @@ export default class LivelyStroboscope extends Morph {
       .data(function(d, i) { return d.valueViews; })
       .enter()
       .append("g")
-      .attr("class", "value")
-      .attr("transform", (d, i) => "translate(" + i * this._propertySectionWidth + ",0)");
+      .attr("class", "value");
+    //.attr("transform", (d, i) => "translate(" + i * this._propertySectionWidth + ",0)");
 
     objectsEnter.selectAll("g.value")
       .append("rect")
       .attr("class", "value")
       .attr("y", () => (this._rowHeight - this._valueRowHeight) / 2)
-      .attr("width", 50)
+      .attr("x", (d) => this._yInTimeframe(d.startTime))
+      .attr("width", (d) => this._widthInTimeframe(d.startTime, d.endTime))
       .attr("height", this._valueRowHeight)
       .style("fill", d => this._colorForType(d));
   }
@@ -184,7 +198,7 @@ export default class LivelyStroboscope extends Morph {
       case ValueType.boolean:
         return "#ccccff"
       case ValueType.object:
-        return "khaki"
+        return "lightsteelblue"
       case ValueType.undefined:
         return "thistle"
       case ValueType.symbol:
@@ -194,6 +208,29 @@ export default class LivelyStroboscope extends Morph {
       default:
         return "red"
     }
+  }
+
+  // 0 is most right and 1 is most left
+  // Returns 0 on timestamp is smaller or equal oldest timeframe timestamp
+  // Returns 1 on timestamp is greater or equal latest timeframe timestamp
+  // Returns 1 on undefined
+  // Interpolates inbetween
+  _interpolationInTimeframe(timestamp) {
+    if (timestamp === undefined || timestamp >= this._timeframelatest)
+      return 1
+    else if (timestamp <= this._timeframeoldest)
+      return 0
+    else
+      return 1 - ((this._timeframelatest - timestamp) / this._timeframelength)
+
+  }
+
+  _yInTimeframe(timestamp) {
+    return this._timeframewidth * this._interpolationInTimeframe(timestamp)
+  }
+
+  _widthInTimeframe(start, end) {
+    return this._yInTimeframe(end) - this._yInTimeframe(start)
   }
 
   livelyExample() {}

@@ -6,7 +6,7 @@ A Self-supporting, Web-based Development Environment
 
 test2
 
-## Getting Started 
+## Getting Started
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-core/doc/_navigation.html"></lively-import>
 

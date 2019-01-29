@@ -2,6 +2,7 @@ export default class ValueView
 {
   constructor(event){
     this.type = event.property_type;
+    this.startTime = event.timestamp;
     this.endTime = undefined;
     this.changes = [];  
     this.changeValue(event);
