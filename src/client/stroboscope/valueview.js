@@ -2,6 +2,7 @@ export default class ValueView
 {
   constructor(event){
     this.type = event.property_type;
+    this.lastValue = undefined
     this.startTime = event.timestamp;
     this.endTime = undefined;
     this.changes = [];  
@@ -9,6 +10,7 @@ export default class ValueView
   }
   
   changeValue(event) {
+    this.lastValue = event.value
     this.changes.push( [event.timestamp, event.value] );
   }
   

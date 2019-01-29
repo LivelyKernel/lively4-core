@@ -238,7 +238,6 @@ export default class LivelyStroboscope extends Morph {
       return 0
     else
       return 1 - ((this._timeframelatest - timestamp) / this._timeframelength)
-
   }
 
   _timestampToX(timestamp) {
@@ -255,11 +254,11 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _valueViewInfo(d) {
-    lively.notify("Type was " + d.type)
+    lively.notify("Type: " + d.type + " Last Value: " + d.lastValue)
   }
   
   _objectInfo(d) {
-    lively.notify("Object with id: " + d.id)
+    lively.notify("Object id: " + d.id)
   }
   
   livelyExample() {}
