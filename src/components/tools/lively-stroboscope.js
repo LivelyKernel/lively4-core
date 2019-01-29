@@ -9,8 +9,10 @@ export default class LivelyStroboscope extends Morph {
   async initialize() {
 
     this._rowHeight = 32
+    this._valueRowHeight = 30
     this._objectWidth = 105
     this._propertySectionWidth = 150
+    this._propertySectionMargin = 5
     this._objectSectionsMargin = 10
 
     this.indexMap = new Map();
@@ -20,6 +22,7 @@ export default class LivelyStroboscope extends Morph {
     var view = new ObjectView(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
     view.append(new StroboscopeEvent(1, "Test", "other", "number", "create", 1))
     view.append(new StroboscopeEvent(1, "Test", "next", "number", "create", 1))
+    view.append(new StroboscopeEvent(1, "Test", "next", "string", "change", "hello"))
     this._addObjectView(view)
     
     this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "solution", "number", "create", 1)))
@@ -122,7 +125,23 @@ export default class LivelyStroboscope extends Morph {
       .append("text")
       .attr("x", 10)
       .attr("dy", 28)
-      .text((d,i) => "index: " + i );
+      .text((d,i) => "values: " + d.valueViews.length );
+    
+    objectsEnter.selectAll("g.property")
+      .append("g")
+      .attr("transform", (d,i) => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
+      .selectAll("g.value")
+      .data(function(d, i) {return d.valueViews;})
+          .enter()
+          .append("g")
+          .attr("class", "value")
+          .attr("transform", (d,i) => "translate(" + i * this._propertySectionWidth + ",0)")
+    
+    objectsEnter.selectAll("g.value")     
+      .append("rect")
+          .attr("y", () => (this._rowHeight - this._valueRowHeight)/2) 
+          .attr("width", 50)
+          .attr("height", this._valueRowHeight);
   }
 
   _update_offsets() {
