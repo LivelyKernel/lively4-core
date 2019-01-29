@@ -100,27 +100,21 @@ export default class LivelyStroboscope extends Morph {
     
     
     objectsEnter.selectAll("g.property")
-      .data(function(d) {return d.viewsAsArray;})
+      .data(function(d) {return d.propertyViews;})
       .enter().append("g")
           .attr("class", "property")
-          //.attr("transform", "translate(0,200)")
-          .attr("transform", d => "translate(" + 0 + "," + 2 * this._rowHeight + ")")
-          .append("rect")
+          .attr("transform", (d,i) => "translate(" + 0 + "," + i * this._rowHeight + ")")
+    
+    objectsEnter.selectAll("g.property")     
+      .append("rect")
           .attr("width", 300)
           .attr("height", this._rowHeight);
     
     objectsEnter.selectAll("g.property")
       .append("text")
       .attr("x", 10)
-      .attr("dy", 20)
-      .text(function (d,i) {return "index: " + i + " name: " + d.property; });
-
-    //propertiesEnter.selectAll("g.property")
-    //  .data([1, 2]).enter().append("g")
-    //  .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
-    //  .append("rect")
-    //  .attr("width", 100)
-    //  .attr("height", 30);
+      .attr("dy", 12)
+      .text((d) => "property: " + d.property );
   }
 
   _objectViews() {
