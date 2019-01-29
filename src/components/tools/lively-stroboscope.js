@@ -16,6 +16,7 @@ export default class LivelyStroboscope extends Morph {
     this._propertySectionWidth = 80
     this._propertySectionMargin = 5
     this._objectSectionsMargin = 10
+    this._changeMarkerRadius = 5
     this._timeframewidth = 600 // size in px
     this._timeframelength = 30000 // time in ms
     this._timeframelatest = undefined
@@ -24,6 +25,7 @@ export default class LivelyStroboscope extends Morph {
     this.indexMap = new Map();
     this.objectViews = []
     this._objectViewsMap = new Map();
+
 
     this._handleEvent(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
     this._handleEvent(new StroboscopeEvent(1, "Test", "other", "number", "create", 1))
@@ -103,17 +105,21 @@ export default class LivelyStroboscope extends Morph {
   _updateObjectsDiv(objects) {
     var objectsEnter = objects.enter().append("g")
       .attr("class", "object")
-      .attr("transform", d => "translate(" + 0 + "," + d.offset + ")")
+      .attr("transform", d => "translate(" + 0 + "," + d.offset + ")");
 
+    
     objectsEnter.append('rect')
       .attr('class', 'object')
       .attr("width", this._objectWidth)
-      .attr("height", d => d.propertyCount() * this._rowHeight);
+      .attr("height", d => d.propertyCount() * this._rowHeight)
+      .on("mouseover", this._objectInfo.bind(this));
+
 
     objectsEnter.append("text")
       .attr("x", 10)
       .attr("dy", 20)
-      .text(d => d.id !== undefined ? "ID: " + d.id : "undefined id")
+      .style("font-style", "italic")
+      .text((d) => "<object>");
   }
 
   _updatePropertiesDiv(objects) {
@@ -167,17 +173,18 @@ export default class LivelyStroboscope extends Morph {
       .attr("x", (d) => this._timestampToX(d.startTime))
       .attr("width", (d) => this._widthInTimeframe(d.startTime, d.endTime))
       .attr("height", this._valueRowHeight)
-      .style("fill", d => this._colorForType(d));
+      .style("fill", d => this._colorForType(d))
+      .on("mouseover", this._valueViewInfo.bind(this));
 
-    valuesEnter.selectAll("g.valuechange")
+    valuesEnter.selectAll("g.value")
       .data((d) => d.changes.filter(t => (this._interpolationInTimeframe(t[0]) > 0)))
       .enter()
       .append("circle")
-      .attr("class", "valuechange")
-      .attr("r", 5)
+      .attr("class", "value")
+      .attr("r", this._changeMarkerRadius)
       .attr("cx", (d) => this._timestampToX(d[0]))
-      .attr("cy", () => this._rowHeight / 2);
-
+      .attr("cy", () => this._rowHeight / 2)
+      .on("mouseover", this._markerInfo.bind(this));
   }
 
   _update_offsets() {
@@ -242,8 +249,22 @@ export default class LivelyStroboscope extends Morph {
     return this._timestampToX(end) - this._timestampToX(start)
   }
 
+
+  _markerInfo(d) {
+    lively.notify("At: " + d[0] + " Value changed : " + d[1])
+  }
+
+  _valueViewInfo(d) {
+    lively.notify("Type was " + d.type)
+  }
+  
+  _objectInfo(d) {
+    lively.notify("Object with id: " + d.id)
+  }
+  
   livelyExample() {}
 
   livelyMigrate(other) {}
 
 }
+
