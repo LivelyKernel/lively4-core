@@ -1,102 +1,88 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
+
+// https://github.com/babel/babel/blob/8ee24fdfc04870dade1f7318b29bb27b59fdec79/packages/babel-types/src/definitions/core.js
+// validator https://github.com/babel/babel/blob/eac4c5bc17133c2857f2c94c1a6a8643e3b547a7/scripts/generators/utils.js
+// let nodeTypes = Object.keys(babel.types.ALIAS_KEYS).map(name => babel.types[name])
+// nodeTypes.map(n => n.name)
+// babel.buildExternalHelpers()
+// babel.types.BUILDER_KEYS.IfStatement
+// babel.types.NODE_FIELDS.ArrowFunctionExpression.body.validate.oneOfNodeTypes
+// babel.types.NODE_FIELDS.BlockStatement.body.validate
+// var y = 
+//     Object.keys(babel.types.NODE_FIELDS.AssignmentExpression.operator.validate)
+// babel.types.identifier('hello')
+// babel.types.TYPES[0]
+// var x = babel.types.NODE_FIELDS.BlockStatement.body.validate.chainOf[1]
+// Object.keys(x.each.oneOfNodeTypes)
+// Object.keys(y)
+//((babel.types.NODE_FIELDS.BlockStatement.directives.validate).chainOf[1].each).oneOfNodeTypes[0] === 'Directive'
+
 export default class PenEditor extends Morph {
-  get livelyPaper() { return this.get('#drawingCanvas'); }
-  get resultText() { return this.get("#result"); }
-  get dynButtons() { return this.get("#dynbuttons"); }
   get ast() { return this.get('#ast'); }
+  get fileName() { return this.get('input#fileName'); }
   
   initialize() {
-    this.windowTitle = "Pen-based Editor";
-    this.registerButtons();
+    this.windowTitle = "AST Editor";
     
-    this.createButtonsFor(this.getDefaultButtons());
-    
-    // #TODO: was this specifically created for the writepad demo?
-    this.addEventListener("execHandwritingRecognition", () => this.save());
-    
-    this.buildMockAST();
+    this.fileName.value = lively4url + '/src/client/pen-editor/components/example.js';
   }
   
-  async buildMockAST() {
+  async setAST(ast) {
+    this.__ast__ = ast;
+    return this.buildAST(ast);
+  }
+  
+  getAST() {
+    return this.__ast__
+  }
+  
+  async buildAST(ast) {
     var astNode = await (<generic-ast-node></generic-ast-node>)
-    await astNode.livelyExample()
+    this.ast.innerHTML = '';
     this.ast.appendChild(astNode);
+    astNode.setNode(ast.program)
   }
-  
-  onClearText() { this.resultText.innerHTML = ""; }
-  
-  acceptSuggestion(value) {
-    this.resultText.innerHTML += " " + value;
-    this.livelyPaper.clear();
-    this.hideSuggestions();
-    this.createButtonsFor(this.getDefaultButtons());
-  }
-  
-  hideSuggestions() {
-    this.dynButtons.innerHTML = "";
-  }
-  
-  getDefaultButtons() {
-    return [".", ",", "!", "?", "-"];
-  }
-  
-  getSuggestions(data) {
-    if (data && data.hasOwnProperty("suggestions")) {
-      return data["suggestions"];
-    } else {
-      return this.getDefaultButtons();
-    }
-  }
-  
-  createButtonsFor(suggestions) {
-    suggestions.forEach((suggestion, k) => {
-      const dynButton = <button
-        id={"#suggestion" + k}
-        style="display: unset"
-        click={() => this.acceptSuggestion(suggestion)}>
-              {suggestion}
-      </button>;
-      this.dynButtons.appendChild(dynButton);
-    })
-  }
-  
-  selectedLanguage() {
-    var languageDropdown = this.get("#language");
-    return languageDropdown.options[languageDropdown.selectedIndex].value;
-  }
-  
-  handleServerResponse(response) {
-    response.json().then(data => {
-      console.log("Got data: " + JSON.stringify(data));
-      console.log('Time: ' + (new Date() - this.start));
-              
-      this.hideSuggestions();
 
-      var suggestions = this.getSuggestions(data);
-      this.createButtonsFor(suggestions);
-    });
+  livelyMigrate(other) {
+    this.setAST(other.getAST())
   }
   
-  async save() {
-    this.start = +new Date();
+  async livelyExample() {
+    await this.loadFile(lively4url + '/src/client/pen-editor/components/example.js');
+  }
+  
+  async loadFile(filePath) {
+    const syntaxPlugins = (await Promise.all([
+      'babel-plugin-syntax-jsx',
+      'babel-plugin-syntax-do-expressions',
+      'babel-plugin-syntax-function-bind',
+      'babel-plugin-syntax-async-generators'
+    ]
+      .map(syntaxPlugin => System.import(syntaxPlugin))))
+      .map(m => m.default);
+
+    const source = await fetch(filePath).then(r => r.text());
     
-    fetch("https://lively-kernel.org/lively4handwriting", {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: "POST",
-      body: JSON.stringify({
-        // #Refactor: this flattens the (potentially nested) array
-        points: [].concat.apply([], this.livelyPaper.canv_points),
-        language: this.selectedLanguage()
-      })
-    })
-    .then(response => this.handleServerResponse(response))
-    .catch(res => console.log(res));
+    var ast = babel.transform(source, {
+      babelrc: false,
+      plugins: syntaxPlugins,
+      presets: [],
+      moduleIds: false,
+      sourceMaps: true,
+      compact: false,
+      comments: true,
+      code: true,
+      ast: true,
+      resolveModuleSource: undefined
+    }).ast;
+    this.setAST(ast)
   }
   
-  livelyPrepareSave() {}
-
+  async saveFile(filePath) {
+    
+  }
+  
 }

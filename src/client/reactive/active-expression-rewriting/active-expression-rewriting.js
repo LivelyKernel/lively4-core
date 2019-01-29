@@ -1,3 +1,5 @@
+import 'lang';
+
 import { BaseActiveExpression } from 'active-expression';
 import Stack from 'src/client/reactive/utils/stack.js';
 import { using } from 'utils';
@@ -46,6 +48,8 @@ class HookStorage {
     }
 
     const key = CompositeKey.for(obj, prop);
+    this.aexprsByObjProp.getOrCreate(key, () => new Set()).add(aexpr);
+    
     if (!this.aexprsByObjProp.has(key)) {
       this.aexprsByObjProp.set(key, new Set());
     }

@@ -65,7 +65,8 @@ SystemJS.config({
     'workspace-loader': lively4url + '/src/client/workspace-loader.js',
 
     // utils
-    'lang': lively4url + '/src/client/lang/extensions.js',
+    'lang': lively4url + '/src/client/lang/lang.js',
+    'lang-ext': lively4url + '/src/client/lang/lang-ext.js',
 
     // utils
     'utils': lively4url + '/src/client/utils.js'
@@ -134,7 +135,8 @@ SystemJS.config({
     [lively4url + "/src/components/*.js"]: aexprViaDirective,
 
     // base extensions
-    [lively4url + "/src/client/lang/*.js"]: moduleOptionsNon,
+    [lively4url + "/src/client/lang/lang.js"]: moduleOptionsNon,
+    [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
     
     // blacklist all projects included for active expressions
     [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,

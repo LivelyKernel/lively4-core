@@ -8,11 +8,20 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
  */
 
+function ensureMetaData(element) {
+  return element.jsxMetaData = element.jsxMetaData || {};
+}
+
+function addMetaData(element, data = {}) {
+  ensureMetaData(element);
+  return Object.assign(element.jsxMetaData, data);
+}
+
 function basicCreateElement(tagName) {
   const element = document.createElement(tagName);
   
-  element.isJSXElement = true;
-
+  ensureMetaData(element);
+  
   return element;
 }
 
@@ -46,7 +55,12 @@ function getExpressionNode(expression) {
     return promNode;
   }
   if(expression instanceof ActiveExpression) {
-    return toDOMNode.call(expression, getExpressionNode);
+    return toDOMNode.call(expression, value => {
+      const node = getExpressionNode(value);
+      // TODO: jsx-ray does not work on TextNodes, yet
+      addMetaData(element, { aexpr: expression });
+      return node;
+    });
   }
   return ensureDOMNode(expression);
 }
@@ -92,9 +106,16 @@ function composeElement(tagElement, attributes, children) {
     if(roqsByReferenceNode.has(referenceNode)) {
       const activeGroup = roqsByReferenceNode.get(referenceNode);
       
-      activeGroup.map(getExpressionNode)
-        .enter(item => referenceNode.parentNode.insertBefore(item, referenceNode))
-        .exit(item => item.remove());
+      activeGroup
+        .map(item => {
+          const node = getExpressionNode(item)
+          addMetaData(node, { item, activeGroup });
+          return node;
+        })
+        .enter(node => {
+          referenceNode.parentNode.insertBefore(node, referenceNode)
+        })
+        .exit(node => node.remove());
     }
   }
 
@@ -111,9 +132,9 @@ function composeElement(tagElement, attributes, children) {
 
 export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
 
-function addSourceLocation(tag, sourceLocation) {
+function addSourceLocation(element, sourceLocation) {
   if (sourceLocation) {
-    tag.jsxMetaData = { sourceLocation };
+    addMetaData(element, { sourceLocation });
   }
 }
 
@@ -121,7 +142,7 @@ export function element(tagName, attributes, children, sourceLocation) {
   const isWebComponent = tagName.includes('-');
   const handleAsync = isWebComponent || children.some(child => child &&
                                                       child instanceof Promise &&
-                                                     child[isPromiseForJSXElement]);
+                                                      child[isPromiseForJSXElement]);
   if(handleAsync) {
     let resolvedTag;
     const returnPromise = Promise.resolve(isWebComponent ?

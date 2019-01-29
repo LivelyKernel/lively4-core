@@ -84,7 +84,7 @@ export default class JsxRay extends Morph {
     // const highlight = lively.showElement(element);
     // highlight.style.backgroundColor = 'blue'
     
-    if (element.isJSXElement) {
+    if (element.jsxMetaData) {
       const location = element.jsxMetaData.sourceLocation;
       
       if (location.file !== this.sourceEditor.getURLString()) {
@@ -108,7 +108,7 @@ export default class JsxRay extends Morph {
 
       this.parentElements.style.display = 'block';
       this.parentElements.innerHTML = '';
-      lively.allParents(element, [], true).reverse().forEach(ele => {
+      [element, ...lively.allParents(element, [], true)].reverse().forEach(ele => {
         let entry;
         
         if (ele instanceof ShadowRoot) {
@@ -123,7 +123,19 @@ export default class JsxRay extends Morph {
           entry = <span><span class="element-tag">&lt;{ele.localName}</span>{id}{classes}<span class="element-tag">&gt;</span></span>;
         }
         
-        const container = <div>{entry}</div>;
+        let jsxCSSClass = '';
+        if (ele.jsxMetaData) {
+          jsxCSSClass = 'jsx-element';
+          
+          if (ele.jsxMetaData.aexpr) {
+            jsxCSSClass += ' active-expression';
+          }
+
+          if (ele.jsxMetaData.activeGroup) {
+            jsxCSSClass += ' active-group-item';
+          }
+        }
+        const container = <div class={jsxCSSClass}>{entry}</div>;
         container.isMetaNode = true;
         this.parentElements.appendChild(container);
       })
@@ -230,6 +242,18 @@ export default class JsxRay extends Morph {
       mirrorElement.appendChild(<div class="element-label">{subject.localName}</div>);
     }
 
+    if (subject.jsxMetaData) {
+      mirrorElement.classList.add('jsx-element');
+
+      if (subject.jsxMetaData.aexpr) {
+        mirrorElement.classList.add('renders-active-expression');
+      }
+
+      if (subject.jsxMetaData.activeGroup) {
+        mirrorElement.classList.add('renders-active-group-item');
+      }
+    }
+
     mirrorElement.updatePosition = () => {
       const bounds = lively.getGlobalBounds(subject)
       lively.setGlobalPosition(mirrorElement, bounds.topLeft())
@@ -241,8 +265,10 @@ export default class JsxRay extends Morph {
     })
 
     mirrorElement.addEventListener("mouseout", evt => {
-      this.sourceEditor.style.display = 'none';
-      this.parentElements.style.display = 'none';
+      if (evt.ctrlKey) {
+        this.sourceEditor.style.display = 'none';
+        this.parentElements.style.display = 'none';
+      }
     })
         
     mirrorElement.addEventListener("click", evt => {
@@ -432,7 +458,7 @@ export default class JsxRay extends Morph {
     this.cop = cop;
     this.events = events;
     
-    this.nodeFilterFunc = node => node.isJSXElement; // ea.tagName && ea.tagName.match(/-/)
+    this.nodeFilterFunc = node => node.jsxMetaData; // ea.tagName && ea.tagName.match(/-/)
     this.eventFilterFunc = (obj, type, evt) => type === 'mousedown';
 
     this.registerOnClose(this)
