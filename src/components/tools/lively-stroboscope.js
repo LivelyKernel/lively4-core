@@ -21,24 +21,11 @@ export default class LivelyStroboscope extends Morph {
     this._timeframelength = 30000 // time in ms
     this._timeframelatest = undefined
     this._timeframeoldest = undefined
-    this._updateRate = 100
+    this._updateRate = 75
     this.indexMap = new Map();
     this.objectViews = []
     this._objectViewsMap = new Map();
     this._startTime = Date.now()
-
-
-    this._handleEvent(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
-    this._handleEvent(new StroboscopeEvent(1, "Test", "other", "number", "create", 1))
-    this._handleEvent(new StroboscopeEvent(1, "Test", "next", "number", "create", 1))
-    this._handleEvent(new StroboscopeEvent(1, "Test", "next", "string", "change", "hello"))
-    this._handleEvent(new StroboscopeEvent(1, "Test", "next2", "string", "create", "hello"))
-    this._handleEvent(new StroboscopeEvent(2, "Test", "symbol", "symbol", "create", 1))
-    this._handleEvent(new StroboscopeEvent(3, "Test", "function", "function", "create", 1))
-    this._handleEvent(new StroboscopeEvent(4, "Test", "undefined", "undefined", "create", 1))
-    this._handleEvent(new StroboscopeEvent(4, "Test", "boolean", "boolean", "create", 1))
-    this._handleEvent(new StroboscopeEvent(4, "Test", "string", "string", "create", 1))
-    this._handleEvent(new StroboscopeEvent(4, "Test", "object", "object", "create", 1))
 
     this.updateViz()
 

@@ -1,8 +1,11 @@
+// open component
+
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
-    
-class Viewer {
+
+class Opener {
   open() {
-    this.init() 
+    this.init()
+    this.func = function(){}
   }
   
   async init() {
@@ -15,18 +18,15 @@ class Viewer {
   }
 }
 
-var tt = {name:"name", length:8, width:4, height:2};
-var stroboscope = new Stroboscope(tt)
-const viewer = new Viewer()
-viewer.open()
+const opener = new Opener()
+opener.open()
 
-//2. execution block due to await
-
-stroboscope.reciever = viewer.viewer
-
+// start stroboscope
+var stroboscope = new Stroboscope(opener.viewer, 500)
+stroboscope.reciever = opener.viewer
 stroboscope.start()
 
-
-tt.solution = 43
+opener.viewer._rowHeight = 60
 
 stroboscope.stop()
+

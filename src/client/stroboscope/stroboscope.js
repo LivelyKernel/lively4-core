@@ -3,7 +3,7 @@ import { EventType } from 'src/client/stroboscope/eventtype.js';
 import { uuid as generateUUID } from 'utils';
 
 export default class Stroboscope {
-  constructor(target, idle_time = 10) {
+  constructor(target, idle_time = 50) {
     this.target = undefined;
     this._object_uuid = undefined;
     this._property_cache = undefined;
