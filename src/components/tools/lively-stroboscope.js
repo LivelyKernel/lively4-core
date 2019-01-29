@@ -164,7 +164,7 @@ export default class LivelyStroboscope extends Morph {
     valuesEnter.append("rect")
       .attr("class", "value")
       .attr("y", () => (this._rowHeight - this._valueRowHeight) / 2)
-      .attr("x", (d) => this._yInTimeframe(d.startTime))
+      .attr("x", (d) => this._timestampToX(d.startTime))
       .attr("width", (d) => this._widthInTimeframe(d.startTime, d.endTime))
       .attr("height", this._valueRowHeight)
       .style("fill", d => this._colorForType(d));
@@ -175,7 +175,7 @@ export default class LivelyStroboscope extends Morph {
       .append("circle")
       .attr("class", "valuechange")
       .attr("r", 5)
-      .attr("cx", () => this._rowHeight / 2 )
+      .attr("cx", (d) => this._timestampToX(d[0]))
       .attr("cy", () => this._rowHeight / 2 )
       .style("fill", "white")
       .style("stroke", "gray");
@@ -236,12 +236,12 @@ export default class LivelyStroboscope extends Morph {
 
   }
 
-  _yInTimeframe(timestamp) {
+  _timestampToX(timestamp) {
     return this._timeframewidth * this._interpolationInTimeframe(timestamp)
   }
 
   _widthInTimeframe(start, end) {
-    return this._yInTimeframe(end) - this._yInTimeframe(start)
+    return this._timestampToX(end) - this._timestampToX(start)
   }
 
   livelyExample() {}
