@@ -4,27 +4,26 @@ export default class ObjectView
 {
   constructor(event){
     this.id = event.object_id;
-    this.propertyMap = new Map();
+    this.propertyViews = [0, 1, 2];
+    this.indexMap = new Map();
+    this.viewsAsArray = [0, 1, 2]
     this.append(event);
   }
   
   append(event){
-    if(this.propertyMap.has(event.property)){
-      this.propertyMap.get(event.property).handleEvent(event);
+    if(this.indexMap.has(event.property)){
+      var index = this.indexMap.get(event.property);
+      this.propertyViews[index].handleEvent(event);
     }
     else
     {
-      this.propertyMap.set(event.property, new PropertyView(event));
+      this.indexMap.set(event.property, this.propertyViews.length);
+      this.propertyViews.push(new PropertyView(event))
     }
   }
   
   propertyCount()
   {
-    return this.propertyMap.size
-  }
-  
-  propertyViews() {
-    lively.notify("Request Property Views")
-    return Array.from(this.propertyMap.values());
+    return this.propertyViews.length
   }
 }

@@ -94,20 +94,26 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _updatePropertiesDiv(objects) {
-    objects.enter().append("g")
+    var objectsEnter = objects.enter().append("g")
       .attr("class", "propertybundle")
-      .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")")
-      .text(function (d,i) {return "i = " + i + " d = "+d; })
-      .selectAll("g.property")
-      .data(function(d) {return [d.propertyViews()];})
+      .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")");
+    
+    
+    objectsEnter.selectAll("g.property")
+      .data(function(d) {return d.viewsAsArray;})
       .enter().append("g")
           .attr("class", "property")
-          //.attr("transform", function(d, i) { return "translate(" + 0 + "," + i * this._rowHeight + ")"})
-          .attr("transform", d => "translate(" + 0 + "," + d * this._rowHeight + ")")
+          //.attr("transform", "translate(0,200)")
+          .attr("transform", d => "translate(" + 0 + "," + 2 * this._rowHeight + ")")
           .append("rect")
-          .attr("width", 100)
+          .attr("width", 300)
           .attr("height", this._rowHeight);
-      
+    
+    objectsEnter.selectAll("g.property")
+      .append("text")
+      .attr("x", 10)
+      .attr("dy", 20)
+      .text(function (d,i) {return "index: " + i + " name: " + d.property; });
 
     //propertiesEnter.selectAll("g.property")
     //  .data([1, 2]).enter().append("g")
