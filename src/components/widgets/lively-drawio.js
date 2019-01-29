@@ -95,8 +95,7 @@ export default class LivelyDrawio extends Morph {
         throw new Error("Github fileInfo not complete: " + JSON.stringify(githubInfo))
       }
 
-      // var githubPath = githubInfo.remoteURL.replace("https://github.com/","").replace("git@github.com/","").replace(".git","") + "/" +  githubInfo.branch + githubInfo.path
-      var githubPath = githubInfo.remoteURL.replace(/https:\/\/github.com/,"").replace(/git@github.com:/,"").replace(/\.git/,"") + "/" +  githubInfo.branch + githubInfo.path
+      var githubPath = githubInfo.remoteURL.replace(/https:\/\/github.com\//,"").replace(/git@github.com:/,"").replace(/\.git/,"") + "/" +  githubInfo.branch + githubInfo.path
       drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
     }
     
