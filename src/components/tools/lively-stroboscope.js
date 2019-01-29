@@ -176,9 +176,7 @@ export default class LivelyStroboscope extends Morph {
       .attr("class", "valuechange")
       .attr("r", 5)
       .attr("cx", (d) => this._timestampToX(d[0]))
-      .attr("cy", () => this._rowHeight / 2)
-      .style("fill", "white")
-      .style("stroke", "gray");
+      .attr("cy", () => this._rowHeight / 2);
 
   }
 
