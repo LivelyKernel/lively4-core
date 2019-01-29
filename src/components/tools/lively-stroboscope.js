@@ -16,7 +16,7 @@ export default class LivelyStroboscope extends Morph {
     this._propertySectionWidth = 80
     this._propertySectionMargin = 5
     this._objectSectionsMargin = 10
-    this._timeframewidth = 300 // size in px
+    this._timeframewidth = 600 // size in px
     this._timeframelength = 30000 // time in ms
     this._timeframelatest = undefined
     this._timeframeoldest = undefined
@@ -147,28 +147,39 @@ export default class LivelyStroboscope extends Morph {
       .attr("x", 12)
       .attr("dy", 28)
       .style("font-style", "italic")
-      .text((d, i) => "<" + d._openView().type + ">");
+      .text((d) => "<" + d._openView().type + ">");
   }
 
   _updateValueDivs(objectsEnter) {
-    objectsEnter.selectAll("g.property")
+    var propertiesEnter = objectsEnter.selectAll("g.property")
       .append("g")
-      .attr("transform", (d, i) => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
-      .selectAll("g.value")
-      .data(function(d, i) { return d.valueViews; })
+      .attr("transform", () => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
+
+    var valuesEnter = propertiesEnter.selectAll("g.value")
+      .data(d => d.valueViews)
       .enter()
       .append("g")
       .attr("class", "value");
-    //.attr("transform", (d, i) => "translate(" + i * this._propertySectionWidth + ",0)");
 
-    objectsEnter.selectAll("g.value")
-      .append("rect")
+    valuesEnter.append("rect")
       .attr("class", "value")
       .attr("y", () => (this._rowHeight - this._valueRowHeight) / 2)
       .attr("x", (d) => this._yInTimeframe(d.startTime))
       .attr("width", (d) => this._widthInTimeframe(d.startTime, d.endTime))
       .attr("height", this._valueRowHeight)
       .style("fill", d => this._colorForType(d));
+
+    valuesEnter.selectAll("g.valuechange")
+      .data((d) => d.changes)
+      .enter()
+      .append("circle")
+      .attr("class", "valuechange")
+      .attr("r", 5)
+      .attr("cx", () => this._rowHeight / 2 )
+      .attr("cy", () => this._rowHeight / 2 )
+      .style("fill", "white")
+      .style("stroke", "gray");
+
   }
 
   _update_offsets() {
