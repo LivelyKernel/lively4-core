@@ -15,7 +15,7 @@ export default class LivelyStroboscope extends Morph {
     this._objectWidth = 60
     this._propertySectionWidth = 80
     this._propertySectionMargin = 5
-    this._objectSectionsMargin = 10
+    this._objectSectionsMargin = 40
     this._changeMarkerRadius = 5
     this._timeframewidth = 600 // size in px
     this._timeframelength = 30000 // time in ms
@@ -25,6 +25,7 @@ export default class LivelyStroboscope extends Morph {
     this.indexMap = new Map();
     this.objectViews = []
     this._objectViewsMap = new Map();
+    this._startTime = Date.now()
 
 
     this._handleEvent(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
@@ -82,9 +83,12 @@ export default class LivelyStroboscope extends Morph {
     var bounds = this.getBoundingClientRect()
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
-    var margin = { top: 10, right: 20, bottom: 10, left: 20 },
+    var margin = { top: 30, right: 20, bottom: 10, left: 20 },
       width = bounds.width - margin.right - margin.left,
       height = bounds.height - margin.top - margin.bottom;
+
+    this._width = width
+    this._height = height
 
     var svg = d3.select(this.shadowRoot.querySelector("svg"))
       .attr("width", width + margin.right + margin.left)
@@ -92,7 +96,7 @@ export default class LivelyStroboscope extends Morph {
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     this.svg = svg
-    this.duration = 750
+
   }
 
   _updateObjectsViz() {
@@ -107,7 +111,7 @@ export default class LivelyStroboscope extends Morph {
       .attr("class", "object")
       .attr("transform", d => "translate(" + 0 + "," + d.offset + ")");
 
-    
+
     objectsEnter.append('rect')
       .attr('class', 'object')
       .attr("width", this._objectWidth)
@@ -125,6 +129,21 @@ export default class LivelyStroboscope extends Morph {
   _updatePropertiesDiv(objects) {
     var objectsEnter = objects.enter().append("g")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")");
+
+    // Create scale
+    var scale = d3.scaleLinear()
+      .domain([(this._timeframeoldest - this._startTime) / 1000, (this._timeframelatest - this._startTime)/1000])
+      .range([this._propertySectionWidth + this._propertySectionMargin, this._timeframewidth + this._propertySectionWidth + this._propertySectionMargin]);
+
+    // Add scales to axis
+    var x_axis = d3.axisTop()
+      .scale(scale)
+
+    //Append group and insert axis
+    objectsEnter.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + -5 + ")")
+      .call(x_axis)
 
     this._updatePropertiesDivsHeaders(objectsEnter)
     this._updateValueDivs(objectsEnter);
@@ -161,9 +180,12 @@ export default class LivelyStroboscope extends Morph {
       .append("g")
       .attr("transform", () => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
 
-    var valuesEnter = propertiesEnter.selectAll("g.value")
+    var values = propertiesEnter.selectAll("g.value")
       .data((d) => d.valueViews.filter(v => (this._interpolationInTimeframe(v.endTime) > 0)))
-      .enter()
+
+    //values.transition().attr("duration", this._updateRate)
+    
+    var valuesEnter = values.enter()
       .append("g")
       .attr("class", "value");
 
@@ -256,14 +278,13 @@ export default class LivelyStroboscope extends Morph {
   _valueViewInfo(d) {
     lively.notify("Type: " + d.type + " Last Value: " + d.lastValue)
   }
-  
+
   _objectInfo(d) {
     lively.notify("Object id: " + d.id)
   }
-  
+
   livelyExample() {}
 
   livelyMigrate(other) {}
 
 }
-
