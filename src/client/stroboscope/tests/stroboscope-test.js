@@ -1,6 +1,8 @@
 import { expect } from 'src/external/chai.js';
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
 import { EventType } from 'src/client/stroboscope/eventtype.js';
+import { ValueType } from 'src/client/stroboscope/valuetype.js';
+
 
 class EventReciever {
   constructor() {
@@ -45,7 +47,7 @@ describe('stroboscope create events', () => {
     expect(create_event.event_type).to.equal(EventType.create);
     expect(create_event.property).to.equal("solution");
     expect(create_event.value).to.equal(42);
-    expect(create_event.property_type).to.equal("number");
+    expect(create_event.property_type).to.equal(ValueType.number);
   });
 
   it('event for delete property', () => {
@@ -83,7 +85,7 @@ describe('stroboscope create events', () => {
     expect(create_event.event_type).to.equal(EventType.change);
     expect(create_event.property).to.equal("solution");
     expect(create_event.value).to.equal(21);
-    expect(create_event.property_type).to.equal("number");
+    expect(create_event.property_type).to.equal(ValueType.number);
   });
 
   it('no event for already seen property', () => {
@@ -105,7 +107,7 @@ describe('stroboscope create events', () => {
     target.solution = 42;
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("number");
+    expect(event.property_type).to.equal(ValueType.number);
   });
 
   it('event for property type string', () => {
@@ -115,7 +117,7 @@ describe('stroboscope create events', () => {
     target.solution = "What's the question?";
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("string");
+    expect(event.property_type).to.equal(ValueType.string);
   });
 
   it('event for property type boolean', () => {
@@ -125,7 +127,7 @@ describe('stroboscope create events', () => {
     target.solution = true;
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("boolean");
+    expect(event.property_type).to.equal(ValueType.boolean);
   });
 
   it('event for property type null', () => {
@@ -135,7 +137,7 @@ describe('stroboscope create events', () => {
     target.solution = null;
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("object");
+    expect(event.property_type).to.equal(ValueType.object);
   });
 
   it('event for property type undefined', () => {
@@ -145,7 +147,7 @@ describe('stroboscope create events', () => {
     target.solution = undefined;
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("undefined");
+    expect(event.property_type).to.equal(ValueType.undefined);
   });
 
   it('event for property type symbol', () => {
@@ -155,7 +157,7 @@ describe('stroboscope create events', () => {
     target.solution = Symbol("id");
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("symbol");
+    expect(event.property_type).to.equal(ValueType.symbol);
   });
 
   it('event for property type function', () => {
@@ -165,7 +167,7 @@ describe('stroboscope create events', () => {
     target.solution = function() {};
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("function");
+    expect(event.property_type).to.equal(ValueType.function);
   });
 
   it('event for property type object', () => {
@@ -175,7 +177,7 @@ describe('stroboscope create events', () => {
     target.solution = {};
     var events = stroboscope.scan();
     var event = events[0]
-    expect(event.property_type).to.equal("object");
+    expect(event.property_type).to.equal(ValueType.object);
   });
 
   it('events for multiple property changes', () => {

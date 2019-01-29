@@ -3,6 +3,7 @@ import d3 from "src/external/d3.v5.js"
 
 import ObjectView from "src/client/stroboscope/objectview.js"
 import StroboscopeEvent from 'src/client/stroboscope/stroboscopeevent.js';
+import { ValueType } from 'src/client/stroboscope/valuetype.js';
 
 export default class LivelyStroboscope extends Morph {
 
@@ -23,12 +24,15 @@ export default class LivelyStroboscope extends Morph {
     view.append(new StroboscopeEvent(1, "Test", "other", "number", "create", 1))
     view.append(new StroboscopeEvent(1, "Test", "next", "number", "create", 1))
     view.append(new StroboscopeEvent(1, "Test", "next", "string", "change", "hello"))
+    view.append(new StroboscopeEvent(1, "Test", "next2", "string", "create", "hello"))
     this._addObjectView(view)
-    
-    this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "solution", "number", "create", 1)))
-    this._addObjectView(new ObjectView(new StroboscopeEvent(3, "Test", "solution", "number", "create", 1)))
-    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "solution", "number", "create", 1)))
 
+    this._addObjectView(new ObjectView(new StroboscopeEvent(2, "Test", "symbol", "symbol", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(3, "Test", "function", "function", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "undefined", "undefined", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "boolean", "boolean", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "string", "string", "create", 1)))
+    this._addObjectView(new ObjectView(new StroboscopeEvent(4, "Test", "object", "object", "create", 1)))
     this.updateViz()
   }
 
@@ -88,7 +92,7 @@ export default class LivelyStroboscope extends Morph {
     var objectsEnter = objects.enter().append("g")
       .attr("class", "object")
       .attr("transform", d => "translate(" + 0 + "," + d.offset + ")")
-    
+
     objectsEnter.append('rect')
       .attr('class', 'object')
       .attr("width", this._objectWidth)
@@ -103,52 +107,62 @@ export default class LivelyStroboscope extends Morph {
   _updatePropertiesDiv(objects) {
     var objectsEnter = objects.enter().append("g")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")");
-    
+
+    this._updatePropertiesDivsHeaders(objectsEnter)
+    this._updateValueDivs(objectsEnter);
+  }
+
+  _updatePropertiesDivsHeaders(objectsEnter) {
     objectsEnter.selectAll("g.property")
-      .data(function(d) {return d.propertyViews;})
+      .data(function(d) { return d.propertyViews; })
       .enter().append("g")
-          .attr("class", "property")
-          .attr("transform", (d,i) => "translate(" + 0 + "," + i * this._rowHeight + ")")
-    
-    objectsEnter.selectAll("g.property")     
+      .attr("class", "property")
+      .attr("transform", (d, i) => "translate(" + 0 + "," + i * this._rowHeight + ")")
+
+    objectsEnter.selectAll("g.property")
       .append("rect")
-          .attr("width", this._propertySectionWidth)
-          .attr("height", this._rowHeight);
-    
+      .attr("width", this._propertySectionWidth)
+      .attr("height", this._rowHeight);
+
     objectsEnter.selectAll("g.property")
       .append("text")
       .attr("x", 10)
-      .attr("dy", 12)
-      .text((d) => "property: " + d.property );
-    
+      .attr("dy", 13)
+      .text((d) => d.property);
+
     objectsEnter.selectAll("g.property")
       .append("text")
       .attr("x", 10)
       .attr("dy", 28)
-      .text((d,i) => "values: " + d.valueViews.length );
-    
+      .style("font-style", "italic")
+      .text((d, i) => "<" + d._openView().type + ">");
+  }
+
+  _updateValueDivs(objectsEnter) {
     objectsEnter.selectAll("g.property")
       .append("g")
-      .attr("transform", (d,i) => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
+      .attr("transform", (d, i) => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
       .selectAll("g.value")
-      .data(function(d, i) {return d.valueViews;})
-          .enter()
-          .append("g")
-          .attr("class", "value")
-          .attr("transform", (d,i) => "translate(" + i * this._propertySectionWidth + ",0)")
-    
-    objectsEnter.selectAll("g.value")     
+      .data(function(d, i) { return d.valueViews; })
+      .enter()
+      .append("g")
+      .attr("class", "value")
+      .attr("transform", (d, i) => "translate(" + i * this._propertySectionWidth + ",0)");
+
+    objectsEnter.selectAll("g.value")
       .append("rect")
-          .attr("y", () => (this._rowHeight - this._valueRowHeight)/2) 
-          .attr("width", 50)
-          .attr("height", this._valueRowHeight);
+      .attr("class", "value")
+      .attr("y", () => (this._rowHeight - this._valueRowHeight) / 2)
+      .attr("width", 50)
+      .attr("height", this._valueRowHeight)
+      .style("fill", d => this._colorForType(d));
   }
 
   _update_offsets() {
     this._property_offset = 0
     this._object_offset = 0
     this._allocated_rows = 0
-    
+
     var totalProperties = 0
     for (var i = 0; i < this.objectViews.length; i++) {
       this.objectViews[i].offset = totalProperties * this._rowHeight + i * this._objectSectionsMargin
@@ -160,6 +174,27 @@ export default class LivelyStroboscope extends Morph {
     var offset = this._allocated_rows * this._rowHeight
     this._allocated_rows += 1
     return offset
+  }
+
+  _colorForType(valueView) {
+    switch (valueView.type) {
+      case ValueType.number:
+        return "whitesmoke"
+      case ValueType.string:
+        return "powderblue"
+      case ValueType.boolean:
+        return "#ccccff"
+      case ValueType.object:
+        return "khaki"
+      case ValueType.undefined:
+        return "thistle"
+      case ValueType.symbol:
+        return "pink"
+      case ValueType.function:
+        return "peachpuff"
+      default:
+        return "red"
+    }
   }
 
   livelyExample() {}
