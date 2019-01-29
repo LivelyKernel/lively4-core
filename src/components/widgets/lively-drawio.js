@@ -4,8 +4,7 @@ import Rasterize from "src/client/rasterize.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
-import Files from "http://localhost:9005/lively4-core/src/client/files.js"
-
+import Files from "src/client/files.js"
 
 export default class LivelyDrawio extends Morph {
   async initialize() {
@@ -95,6 +94,8 @@ export default class LivelyDrawio extends Morph {
       if (!githubInfo.remoteURL || !githubInfo.branch || !githubInfo.path) {
         throw new Error("Github fileInfo not complete: " + JSON.stringify(githubInfo))
       }
+
+      // var githubPath = githubInfo.remoteURL.replace("https://github.com/","").replace("git@github.com/","").replace(".git","") + "/" +  githubInfo.branch + githubInfo.path
       var githubPath = githubInfo.remoteURL.replace(/https:\/\/github.com/,"").replace(/git@github.com:/,"").replace(/\.git/,"") + "/" +  githubInfo.branch + githubInfo.path
       drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
     }
