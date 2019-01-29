@@ -11,6 +11,8 @@ export default class LivelyStroboscope extends Morph {
     this._rowHeight = 32
     this._objectWidth = 105
 
+    this.indexMap = new Map();
+    this.objectViews = []
     this._objectViewsMap = new Map();
 
     var view = new ObjectView(new StroboscopeEvent(1, "Test", "solution", "number", "create", 1))
@@ -42,15 +44,17 @@ export default class LivelyStroboscope extends Morph {
   }
 
   _handleEvent(event) {
-    if (event.object_id in this._objectViewsMap) {
-      this._objectViewsMap.get(event.object_id).append(event);
+    if (this.indexMap.has(event.object_id)) {
+      var index = this.indexMap.get(event.object_id);
+      this.objectViews[index].append(event);
     } else {
       this._addObjectView(new ObjectView(event));
     }
   }
 
   _addObjectView(objectView) {
-    this._objectViewsMap.set(objectView.id, objectView)
+    this.indexMap.set(objectView.id, this.objectViews.length)
+    this.objectViews.push(objectView)
   }
 
   _updateSVGViz() {
@@ -72,7 +76,7 @@ export default class LivelyStroboscope extends Morph {
 
   _updateObjectsViz() {
     var objects = this.svg.selectAll("g")
-      .data(this._objectViews());
+      .data(this.objectViews);
     this._updatePropertiesDiv(objects);
     this._updateObjectsDiv(objects);
   }
@@ -115,23 +119,23 @@ export default class LivelyStroboscope extends Morph {
       .attr("x", 10)
       .attr("dy", 12)
       .text((d) => "property: " + d.property );
-  }
-
-  _objectViews() {
-    return Array.from(this._objectViewsMap.values());
+    
+    objectsEnter.selectAll("g.property")
+      .append("text")
+      .attr("x", 10)
+      .attr("dy", 28)
+      .text((d,i) => "index: " + i );
   }
 
   _update_offsets() {
     this._property_offset = 0
     this._object_offset = 0
     this._allocated_rows = 0
-
-    var objectViews = this._objectViews()
+    
     var totalProperties = 0
-
-    for (var i = 0; i < objectViews.length; i++) {
-      objectViews[i].offset = totalProperties * this._rowHeight
-      totalProperties += objectViews[i].propertyCount()
+    for (var i = 0; i < this.objectViews.length; i++) {
+      this.objectViews[i].offset = totalProperties * this._rowHeight
+      totalProperties += this.objectViews[i].propertyCount()
     }
   }
 

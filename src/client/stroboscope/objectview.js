@@ -4,9 +4,8 @@ export default class ObjectView
 {
   constructor(event){
     this.id = event.object_id;
-    this.propertyViews = [0, 1, 2];
+    this.propertyViews = [];
     this.indexMap = new Map();
-    this.viewsAsArray = [0, 1, 2]
     this.append(event);
   }
   
