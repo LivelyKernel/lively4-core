@@ -4,6 +4,9 @@ import Rasterize from "src/client/rasterize.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
+import Files from "http://localhost:9005/lively4-core/src/client/files.js"
+
+
 export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
@@ -16,13 +19,16 @@ export default class LivelyDrawio extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
       var menu = new ContextMenu(this, [
-            ["save es png", () => {
-                this.saveAsPng()   
-            }],
+            // Is ugly, because we do it ourselfs... and we don't need it any more
+            // ["save es png", () => {
+            //     this.saveAsPng()   
+            // },"", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'],
             ["edit @ drawio", () => {
                 this.editAtDrawIO()   
-            }]
-
+            },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+            ["export as pdf", () => {
+                this.exportAsPDF()   
+            }, "", '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'],
         ]);
       menu.openIn(document.body, evt, this);
       return 
@@ -80,23 +86,91 @@ export default class LivelyDrawio extends Morph {
     this.update()
   }
 
-  editAtDrawIO() {
+  async editAtDrawIO(useIFrame=true) {
     if (!this.src) throw new Error("src attribute not set");
 
-    var githubPrefix = "https://raw.githubusercontent.com/"
+    var drawioURL;
+    var githubInfo = await Files.githubFileInfo(this.src)
+    if (githubInfo) {
+      if (!githubInfo.remoteURL || !githubInfo.branch || !githubInfo.path) {
+        throw new Error("Github fileInfo not complete: " + JSON.stringify(githubInfo))
+      }
+      var githubPath = githubInfo.remoteURL.replace(/https:\/\/github.com/,"").replace(/git@github.com:/,"").replace(/\.git/,"") + "/" +  githubInfo.branch + githubInfo.path
+      drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
+    }
     
+    var githubPrefix = "https://raw.githubusercontent.com/"    
     if (this.src.match(githubPrefix)) {
       
       
       // JensLincke%2Fdrawio-figures%2Fmaster%2Fcontextjs_promises_01.xml
-      var drawioURL = "https://www.draw.io/#H" +
+      drawioURL = "https://www.draw.io/#H" +
           encodeURIComponent(this.src.replace(githubPrefix, ""))
-      window.open(drawioURL)
+    } 
+    if (drawioURL) {
+      if (useIFrame) {
+        var iFrame = await lively.openComponentInWindow("lively-iframe")
+        iFrame.setURL(drawioURL)
+      } else {
+        window.open(drawioURL)
+      }
     } else {
-      lively.notify("editing not supported for this url")
+      lively.notify("editing not supported for", this.src)
     }
   }
   
+  async exportAsPDF() {
+    var targetURL = this.src.replace(/xml$/,"pdf") // #Warning override without asking... yeah we need sharp tools!
+    if (await lively.confirm("save as " + targetURL)) {
+      var dataURL = await this.getPDFDataURL()
+      // or maybe we should ask ...
+      await lively.files.copyURLtoURL(dataURL, targetURL)
+      lively.notify("finisihed exporting pdf")
+      
+      var container = lively.query(this, "lively-container")
+      if (container) container.navbar().update()
+    }
+  }
+  
+  async getPDFDataURL() {
+    // var form =  new FormData();
+    var source = await fetch(this.src).then(r => r.text())
+    var filename = this.src.replace(/.*\//,"")
+    
+    var xform = ""
+    var config = {
+      format: "pdf",
+      bg: "#ffffff",
+      base64: 1,
+      embedXml: 0,
+      xml: encodeURIComponent(source),
+      filename: filename
+    }
+    xform = Object.keys(config).map(key => {
+      return key + "=" + config[key] 
+    }).join("&")
+        
+    var convertToPDFRequest = fetch("https://exp.draw.io/ImageExport4/export", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: xform,
+    })
+    var resp = await convertToPDFRequest
+    var text = await resp.text()
+    var dataURL = "data:application/pdf;base64,"+text
+    return dataURL
+  
+  // fetch("data:application/pdf;base64,"+text).then(r => r.blob()).then(blob => {
+  //   fetch("https://lively-kernel.org/lively4/lively4-jens/doc/figures/test.pdf", 
+  //     {
+  //       method: "PUT",
+  //       body: blob
+  //   })  
+  // })
+  }
+   
   async livelyExample() {
     // this.src = "https://lively-kernel.org/lively4/lively4-jens/doc/figures/testdrawio.xml"
     this.src = "https://raw.githubusercontent.com/JensLincke/drawio-figures/master/contextjs_promises_01.xml"

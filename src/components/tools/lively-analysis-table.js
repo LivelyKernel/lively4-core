@@ -60,7 +60,7 @@ export default class LivelyAnalysisTable extends Morph {
             .enter()
             .append("tr")
             .attr("id", function(row) { return !row.id ?  "" : row.id} )
-            .attr("class", function(row) { return (row.status == "alive") ? row.type + " aliveLink" : row.type + " deadLink"})
+            .attr("class", function(row) { return (row.status == "alive") ? row.type + " aliveLink" : row.type + " brokenLink"})
             .on('contextmenu', function(row) {
                if (!d3.event.shiftKey) {
                 d3.event.stopPropagation();
@@ -89,7 +89,7 @@ export default class LivelyAnalysisTable extends Morph {
     if (this.selectedOption == 'view-broken-links') {
       table.selectAll('.aliveLink')
         .style('display', 'none')
-      table.selectAll('.deadLink')
+      table.selectAll('.brokenLink')
         .style('display', 'table-row')
     } else if (this.selectedOption == 'view-all-links') {
       table.selectAll('tbody tr')
@@ -124,9 +124,9 @@ export default class LivelyAnalysisTable extends Morph {
   
   async livelyExample() {
     var exampleData = [
-      {id: "", no: "1", status: "dead", type: "dependency", column: "1.2 value"},
-      {id: "", no: "2", status: "dead", type: "hyperlink", column: "2.2 value"},
-      {id: "", no: "3", status: "alive", type: "dependency", column: "3.2 value"},
+      {id: "", no: "1", status: "broken", column: "1.2 value"},
+      {id: "", no: "2", status: "broken", column: "2.2 value"},
+      {id: "", no: "3", status: "alive",column: "3.2 value"},
     ]
     this.setData(exampleData)
     this.updateViz()

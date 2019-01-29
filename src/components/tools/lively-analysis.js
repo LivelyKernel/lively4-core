@@ -36,28 +36,28 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async setClassData() {
-    // this.classes = {}
     this.classes = {
       name: "classes",
       children: []
     }
     await FileIndex.current().db.classes.each(clazz => {
-      let methods = []
+      /*let methods = []
       clazz.methods.forEach((method) => {
         methods.push({
           name: method.name,
           size: method.loc,  
           url: clazz.url,
         })
-      })
+      })*/
+      let superClass = clazz.superClass
       
       this.classes.children.push({
         name: clazz.name,
-        size: clazz.loc,
+        loc: clazz.loc,
         superClass: clazz.superClass,
         url: clazz.url,
-        methods: methods,
         children: [],
+        nom:  clazz.nom
       })
     })
   }
@@ -134,15 +134,14 @@ export default class LivelyAnalysis extends Morph {
   async setLinkData() {
     this.links = []
     let rowNumber = 1;
-    await FileIndex.current().db.dependencies.orderBy('location').reverse().each((dependency) => {
+    await FileIndex.current().db.links.orderBy('location').reverse().each((link) => {
       this.links.push({
-        id: dependency.url,
+        id: link.url,
         no: rowNumber++,
-        type: dependency.type,
-        status: dependency.status,
-        link: dependency.link,
-        location: dependency.location,
-        file: dependency.url
+        status: link.status,
+        link: link.link,
+        location: link.location,
+        file: link.url
       })
     })    
   }
@@ -186,8 +185,8 @@ export default class LivelyAnalysis extends Morph {
   async updatePolymetricView() {
     this.polymetricContainter.innerHTML = ''
     this.polymetricContainter.style.position = "relative"
-    this.polymetricContainter.style.width = "100%"
-    this.polymetricContainter.style.height = "800px"
+    this.polymetricContainter.style.width = this.viewWidth + 'px'
+    this.polymetricContainter.style.height = this.viewHeight + 'px'
   
     var polymetric = await lively.create("d3-polymetricview")
     polymetric.style.width = "100%"
@@ -202,28 +201,27 @@ export default class LivelyAnalysis extends Morph {
       return
     }
     
-    polymetric.setData({
-      name: "classes",
-      children: this.classes.children.slice(0,5),
-    })
-    // polymetric.setData(this.classes)
+    polymetric.setData(this.classes)
   
-
     console.log('polymetric:' , this.classes)
+    
+    /*
+    e.g Width metric = number of attributes (noa)???, height metric = number of methods (nom), color metric = number of lines of code.
+    */
     polymetric.config({
       color(node) {
         if (!node) return ""
-        return `hsl(10, 0%,  ${node.data.children ? (node.data.children.length * 50) : 10 }%)`
+        return `hsl(10, 0%,  ${node.data.loc ? (node.data.loc * 50) : 10 }%)`
       },
       width(node) {
-        if (node.data.size) {
-          return parseInt(node.data.size) // #TODO -> loc
+       if (node.data.nom) {
+          return Math.sqrt(parseInt(node.data.nom))
         }
         return 10
       },
       height(node) {
-        if (node.data.size) {
-          return parseInt(node.data.size) // #TODO -> loc
+        if (node.data.nom) {
+          return parseInt(node.data.nom)
         }
         return 10
       },
@@ -282,6 +280,8 @@ export default class LivelyAnalysis extends Morph {
   }
 
   async livelyExample() {
+    this.viewWidth = 600
+    this.viewHeight = 150
     this.versions = {
       name: "root",
       modifications: 150,
@@ -293,18 +293,25 @@ export default class LivelyAnalysis extends Morph {
     await this.updateVersionHeatMap()
     
     this.links = [
-      { id: "", no: "1", status: "dead", type: 'dependency', column: "1.2 value" },
-      { id: "", no: "2", status: "dead", type: 'hyperlink', column: "2.2 value" },
-      { id: "", no: "3", status: "alive", type: 'dependency', column: "3.2 value" },
+      { id: "", no: "1", status: "dead", column: "1.2 value" },
+      { id: "", no: "2", status: "dead",  column: "2.2 value" },
+      { id: "", no: "3", status: "alive", column: "3.2 value" },
     ]
     await this.updateTableBrokenLinks()
     
     this.classes = {
       name: "classes",
       children: [
-        {name: "class A", loc: 10, size: 10, children: [{name: "method A1", loc: 3, size: 3}, {name: "method A2", loc: 7, size: 7}]},
-        {name: "class B", loc: 30, size: 30, children: [{name: "method B1", loc: 30, size: 30}]},
-        {name: "class C", loc: 50, size: 50, children: [{name: "method C1", loc: 50, size: 50}]}
+        {name: 'superClass A', loc: 40, nom:  17, noa: 5, children: [
+          {name: "class A", loc: 5, nom: 1, noa: 7, children: []},
+          {name: "class B", loc: 20, nom: 9, noa: 13, children: []},
+          {name: "class C", loc: 35, nom: 13, noa: 4, children: []}
+        ]},
+       {name: 'superClass B', loc: 20, noa: 7, children: [
+          {name: "class D", loc: 10,  nom: 3, noa: 6, children: []},
+          {name: "class E", loc: 30,  nom: 7, noa: 8, children: []},
+          {name: "class F", loc: 50, nom: 17, noa: 2, children: []},
+        ]}
       ]
     }
    await this.updatePolymetricView()
