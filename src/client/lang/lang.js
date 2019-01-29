@@ -1,8 +1,4 @@
 
-
-
-
-
 Date.prototype.dayInWeek = function dayInWeek(offset){
   const day = this.getDay()
   const d = this.getDate();
@@ -37,3 +33,24 @@ Date.prototype.toFormattedString = function toFormattedString(format){
   
   return `${year}.${month}.${day}`;
 }
+
+
+
+
+
+/**
+ * @params: 
+ *   key: <any>,
+ *   createCallback: key: <any> => <any>
+ */
+Map.prototype.getOrCreate = function getOrCreate(key, createCallback) {
+  if (!this.has(key)) {
+    this.set(key, createCallback(key));
+  }
+  
+  return this.get(key);
+}
+
+
+
+

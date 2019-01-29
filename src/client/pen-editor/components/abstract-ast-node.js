@@ -8,10 +8,14 @@ export default class AbstractAstNode extends Morph {
   }
   
   getAppropriateNode(babelASTNode) {
+      return <generic-ast-node></generic-ast-node>;
     if (babelASTNode && babelASTNode.type === 'Identifier') {
       return <ast-node-identifier></ast-node-identifier>;
     } else {
-      return <generic-ast-node></generic-ast-node>;
     }
+  }
+  
+  get editor() {
+    return lively.allParents(this, [], true).find(ele => ele.localName === 'pen-editor');
   }
 }

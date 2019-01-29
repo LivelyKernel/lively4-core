@@ -111,7 +111,19 @@
     border: 0.5px dashed black;
     background-color: white;
   }
-  #parentElements > div:hover {
+  #parentElements > div.jsx-element {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  #parentElements > div.jsx-element.active-expression {
+    background-color: rgba(255, 165, 0, 0.2); /* orange */
+  }
+  #parentElements > div.jsx-element.active-group-item {
+    background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
+  }
+  #parentElements > div:hover,
+  #parentElements > div.jsx-element:hover,
+  #parentElements > div.jsx-element.active-expression:hover,
+  #parentElements > div.jsx-element.active-group-item:hover {
     background-color: rgba(100, 100, 100, 0.5);
   }
   span.element-tag {
@@ -133,10 +145,20 @@
   /* mirror elements: default values */
   .mirror-element {
     border: 1px solid gray;
-    background: rgba(0,100,0,0.2);
     display: flex;
     align-items: center;
     justify-content: center;
+    
+    background-color: rgba(100, 100, 100, 0.2); /* grey-ish */
+  }
+  .mirror-element.jsx-element {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  .mirror-element.jsx-element.renders-active-expression {
+    background-color: rgba(255, 165, 0, 0.2); /* orange */
+  }
+  .mirror-element.jsx-element.renders-active-group-item {
+    background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
   }
   .mirror-element .element-label {
     color: white;
@@ -147,7 +169,7 @@
     <div id="world"></div>
   </div>
   <div id="filterContainer">
-    <div class="filterForm"><label for="nodeFilter">nodes<input id="nodeFilter" type="text" value="node => node.isJSXElement" /></label></div>
+    <div class="filterForm"><label for="nodeFilter">nodes<input id="nodeFilter" type="text" value="node => node.jsxMetaData" /></label></div>
     <div class="filterForm"><label for="eventFilter">events<input id="eventFilter" type="text" value="(obj, type, evt) => type === 'mousedown'" /></label></div>
   </div>
   <div id="handle"></div>

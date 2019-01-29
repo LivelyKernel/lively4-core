@@ -12,24 +12,11 @@
   #ast {
     border: 1px black dashed;
   }
+  #fileName {
+    width: 90%;
+  }
 </style>
-<div id="ast">
-  
-  </div>
-<h1 id="caption">WritePad Handwriting Recognition2</h1>
-
-<label for="language">Recognition Language: </label><select id="language">
-  <option value="en">English</option>
-  <option value="de">Deutsch</option>
-</select>
-
-<lively-paper id="drawingCanvas"></lively-paper>
-
-<div id="dynbuttons"></div>
-<div id="control">
-  <button id="clearText">Clear Text</button>
-</div>
-<div id="result"></div>
-
+  <input id="fileName" />
+<div id="ast"></div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
