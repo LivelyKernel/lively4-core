@@ -24,7 +24,7 @@
     padding: 4px 2px;
     text-align: left;
     width: auto;
-    max-width: 20%;
+    max-width: 400px;
     word-wrap:break-word;
   }
   
@@ -32,7 +32,7 @@
     line-height: 1.8;
     text-align: left;
     width: auto;
-    max-width: 20%;
+    max-width: 400px;
     word-wrap:break-word;
   }
   
@@ -49,13 +49,28 @@
   .aliveLink {
     background-color:rgba(195, 230, 203, 0.8);
   }
+  
+  #lively-analysis-table-selection {
+    color: #444444;
+    font-size: inherit;
+    font-family: inherit;
+    width: 175px;
+  }
+  
+  .menu {
+    margin: 5px 0;
+  }
+  
 </style>
 <div id="content">
 	<content>
-    <select id="lively-analysis-table-selection">
-      <option value="view-all-links" selected>All links</option>
-      <option value="view-broken-links">Broken links</option>
-    </select>
+    <div class='menu'>
+      <select id="lively-analysis-table-selection">
+        <option value="view-all-links" selected>All links</option>
+        <option value="view-broken-links">Broken links</option>
+      </select>
+    </div>
+  
     <table id="lively-analysis-table"></table>
   </content>
 </div>

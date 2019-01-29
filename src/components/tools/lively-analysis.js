@@ -2,6 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js'
 import FileIndex from 'src/client/fileindex-analysis.js'
+import d3 from "src/external/d3.v5.js"
+import ContextMenu from 'src/client/contextmenu.js'
 
 export default class LivelyAnalysis extends Morph {
 
@@ -16,7 +18,7 @@ export default class LivelyAnalysis extends Morph {
     this.heatMapContainer = this.shadowRoot.querySelector('#lively-analysis-heatmap-container')
     
     // update listener
-    this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
+   // this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
     this.get("#updatePolymetric").addEventListener("update-polymetric", () => this.updatePolymetric)
     this.get("#updateVersions").addEventListener("update-versions", () => this.updateVersions)
     this.get("#updateBrokenLinks").addEventListener("update-broken-links", () => this.updateTableBrokenLinks)
@@ -38,17 +40,28 @@ export default class LivelyAnalysis extends Morph {
   async setClassData() {
     this.classes = {
       name: "classes",
-      children: []
+      children: [],
+      loc: 100,
+      nom: 25,
     }
-    await FileIndex.current().db.classes.each(clazz => {
-      /*let methods = []
-      clazz.methods.forEach((method) => {
-        methods.push({
-          name: method.name,
-          size: method.loc,  
-          url: clazz.url,
+    var superClasses = []
+  
+    await FileIndex.current().db.classes.where('superClassName').notEqual('').each(clazz => {
+      FileIndex.current().db.classes.where({'name': clazz.name, 'url':clazz.url}).each((superClass) => {
+        superClass.children = []
+        FileIndex.current().db.classes.where({'superClassName': superClass.name, 'superClassUrl':superClass.url}).each((subClass) => {
+          superClass.children.push(subClass)
         })
-      })*/
+        superClasses.push(superClass)
+      })
+    })
+
+    await FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
+        superClasses.push(clazz)
+    })
+   this.classes.children = superClasses
+    /*await FileIndex.current().db.classes.each(clazz => {
+   
       let superClass = clazz.superClass
       
       this.classes.children.push({
@@ -59,7 +72,7 @@ export default class LivelyAnalysis extends Morph {
         children: [],
         nom:  clazz.nom
       })
-    })
+    })*/
   }
   
   async setVersionData() {
@@ -72,10 +85,10 @@ export default class LivelyAnalysis extends Morph {
     await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
       FileIndex.current().db.classes.each((clazz) => {
         var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url})
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url, 'action': 'modified'})
         versionsEntries.each((entry) => {
-          //if (entry.method != '+null+') {
-            let method = methodVersions.find(method => method.method == entry.method)
+          if (entry.method != '+null+') {
+            let method = methodVersions.find(method => method.name == entry.method)
             if (method) {
               method.modifications++
             } else {
@@ -85,7 +98,7 @@ export default class LivelyAnalysis extends Morph {
                 url: entry.url,
               })
             }
-          //}
+          }
         })
         versionsEntries.count().then(count => {
           if (count > 0) {
@@ -128,7 +141,6 @@ export default class LivelyAnalysis extends Morph {
         })
      })
     })*/
-    console.log(this.versions.children)
   }
   
   async setLinkData() {
@@ -152,9 +164,9 @@ export default class LivelyAnalysis extends Morph {
   }
 
   // this method is automatically registered as handler through ``registerButtons``
-  onUpdateDirectory() {
+ /* onUpdateDirectory() {
     FileIndex.current().updateDirectory(lively4url + "/", true)
-  }
+  }*/
 
   async onUpdatePolymetric() {
     // if (this.classes) {
@@ -169,11 +181,8 @@ export default class LivelyAnalysis extends Morph {
 
   async onUpdateVersions() {
     //await FileIndex.current().updateAllVersions()
-    /*await this.setVersionData()
-    await this.updateVersionHeatMap()*/
-    this.setVersionData().then(() => {
-      this.updateVersionHeatMap()
-    });
+    await this.setVersionData()
+    await this.updateVersionHeatMap()
   }
   
   async onUpdateBrokenLinks() {
@@ -194,44 +203,60 @@ export default class LivelyAnalysis extends Morph {
     this.polymetricContainter.appendChild(polymetric)
     lively.setPosition(polymetric, lively.pt(0,0))
   
-    polymetric.style.backgroundColor = "lightgray"
-    
-    if (!this.classes) {
-      console.warn("analysis without classes")
-      return
-    }
-    
-    polymetric.setData(this.classes)
-  
-    console.log('polymetric:' , this.classes)
-    
+    polymetric.style.background = "#eee"
+    polymetric.setData(this.classes)  
+    var  classes = d3.hierarchy(this.classes)
     /*
     e.g Width metric = number of attributes (noa)???, height metric = number of methods (nom), color metric = number of lines of code.
     */
+    var maxValue = Math.max.apply(Math, classes.descendants().map(function(node){
+      
+      if (!node.parent) {
+        return 1
+      } 
+      return (node.data.loc > 0 && node.data.nom > 0) ? (node.data.loc/node.data.nom) : 1
+    }));
+    var colorScale = d3.scaleLinear()
+      .range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
+      .domain([10, 20, 30, 40, 50, 60, maxValue])
+    //.domain([10, 20, 30, 40, 50, 60, maxValue])
+      /*.range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
+      .domain([1, maxValue*0.2, maxValue*0.4, maxValue*0.6, maxValue*0.8, maxValue])*/
+      .interpolate(d3.interpolateHcl);
+    
     polymetric.config({
+      // LOC/NOM:
       color(node) {
-        if (!node) return ""
-        return `hsl(10, 0%,  ${node.data.loc ? (node.data.loc * 50) : 10 }%)`
+        if (!node) return colorScale(1)
+        return colorScale(node.data.loc/node.data.nom)//`hsl(10, 0%,  ${node.data.loc ? (node.data.loc * 50) : 10 }%)`
       },
+      // NOM:
       width(node) {
-       if (node.data.nom) {
-          return Math.sqrt(parseInt(node.data.nom))
-        }
-        return 10
-      },
-      height(node) {
         if (node.data.nom) {
-          return parseInt(node.data.nom)
+          return node.data.nom*2
         }
-        return 10
+        return 1
+      },
+      // LOC
+      height(node) {
+        if (node.data.loc)
+          return node.data.loc/2
+        return 1
       },
       onclick(node) {
         lively.openInspector(node.data)
+        /*if (!d3.event.shiftKey) {
+          d3.event.stopPropagation()
+          d3.event.preventDefault()
+          var menu = new ContextMenu(this, [
+            ["Open file", () => lively.openBrowser(node.data.url, true)],
+          ]);
+          menu.openIn(document.body, d3.event, this);
+          return true;
+        }*/
       },
     }) 
     polymetric.updateViz()
-    console.log('polymetric->', this.classes)
-    
   }
 
   async updateVersionHeatMap() {
@@ -302,15 +327,15 @@ export default class LivelyAnalysis extends Morph {
     this.classes = {
       name: "classes",
       children: [
-        {name: 'superClass A', loc: 40, nom:  17, noa: 5, children: [
-          {name: "class A", loc: 5, nom: 1, noa: 7, children: []},
-          {name: "class B", loc: 20, nom: 9, noa: 13, children: []},
-          {name: "class C", loc: 35, nom: 13, noa: 4, children: []}
+        {name: 'superClass A', loc: 40, nom:  4, children: [
+          {name: "class A", loc: 5, nom: 1, children: []},
+          {name: "class B", loc: 20, nom: 2, children: []},
+          {name: "class C", loc: 35, nom: 3, children: []}
         ]},
-       {name: 'superClass B', loc: 20, noa: 7, children: [
-          {name: "class D", loc: 10,  nom: 3, noa: 6, children: []},
-          {name: "class E", loc: 30,  nom: 7, noa: 8, children: []},
-          {name: "class F", loc: 50, nom: 17, noa: 2, children: []},
+       {name: 'superClass B', loc: 20, nom: 3, children: [
+          {name: "class D", loc: 10,  nom: 2, children: []},
+          {name: "class E", loc: 30,  nom: 3, children: []},
+          {name: "class F", loc: 1791, nom: 123, children: []},
         ]}
       ]
     }
