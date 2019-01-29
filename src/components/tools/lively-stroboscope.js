@@ -156,7 +156,7 @@ export default class LivelyStroboscope extends Morph {
       .attr("transform", () => "translate(" + (this._propertySectionWidth + this._propertySectionMargin) + ",0)")
 
     var valuesEnter = propertiesEnter.selectAll("g.value")
-      .data(d => d.valueViews)
+      .data((d) => d.valueViews.filter(v => (this._interpolationInTimeframe(v.endTime) > 0)))
       .enter()
       .append("g")
       .attr("class", "value");
