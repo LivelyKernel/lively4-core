@@ -151,9 +151,8 @@ export default class Whyline extends Morph {
       var ctx = this.get("#canvas").getContext("2d")
       ctx.fillStyle = "white"
       ctx.fillRect(0, 0, 300, 300);
-      
-      var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
-      console.log(result)
+      console.log(this.result)
+      var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value
     } catch(err) {
     } finally {
     

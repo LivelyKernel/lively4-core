@@ -13,6 +13,7 @@ export default function (babel) {
   let log = template("__trace__.traceNode(NODEID,() => EXPSTATE)")
   let begin = template("__trace__.traceBeginNode(NODEID)")
   let end = template("__trace__.traceEndNode(NODEID)")
+  let bogus = template("__trace__.MESSAGE(NODEID,() => EXPSTATE)")
 
   let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
@@ -37,30 +38,27 @@ export default function (babel) {
             path.node.traceid = idcounter++;
           },
           
-          BinaryExpression(path) {expressions.push(path) },
-          CallExpression(path) {expressions.push(path)}, 
-          UnaryExpression(path) {expressions.push(path)},
-          UpdateExpression(path) {expressions.push(path)},
+          BinaryExpression(path) { expressions.push(path) },
+          CallExpression(path) { expressions.push(path) }, 
+          UnaryExpression(path) { expressions.push(path) },
+          UpdateExpression(path) { expressions.push(path) },
+          AssignmentExpression(path) { assignments.push(path) },
+          
           VariableDeclarator(path) { declarators.push(path) },
+          
+          ExpressionStatement(path) { statements.push(path) },
+          IfStatement(path) { statements.push(path) },
+          
           FunctionDeclaration(path) { functions.push(path) },
           FunctionExpression(path) { functions.push(path) },
-
           ClassMethod(path) { functions.push(path) },
-          ExpressionStatement(path) {statements.push(path) },
-          IfStatement(path) {statements.push(path)},
-          AssignmentExpression(path) { assignments.push(path) },
-
+          
           ForStatement(path) { loops.push(path) },
           WhileStatement(path) { loops.push(path) },
           
-          Identifier(path){
-            let currentScope = path.scope
-            while(!currentScope.hasOwnBinding(path.node.name)){
-              if(!currentScope.parent)
-                return;
-              currentScope = currentScope.parent
-            }
-              path.node.scopeId = currentScope.uid
+          Identifier(path) {
+            path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node)
+            path.node.scopeId = path.scope.getBinding(path.node.name).scope.uid
           },
 
 
@@ -107,10 +105,13 @@ export default function (babel) {
         });
 
         assignments.forEach(ea => {
-          ea.replaceWith(log({
+          let newNode = bogus({
             NODEID: t.numericLiteral(ea.node.traceid),
-            EXPSTATE: ea
-          }));
+            EXPSTATE: ea,
+            MESSAGE: t.identifier('traceNode')
+          })
+          console.log(newNode)
+          ea.replaceWith(newNode.expression);
         });
 
         declarators.forEach(ea => {
