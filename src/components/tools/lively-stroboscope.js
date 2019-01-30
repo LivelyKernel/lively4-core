@@ -8,6 +8,8 @@ import { ValueType } from 'src/client/stroboscope/valuetype.js';
 export default class LivelyStroboscope extends Morph {
 
   async initialize() {
+    
+    this.windowTitle = "Stroboscopic Viewer"
     this.d3 = d3
 
     this._rowHeight = 32
@@ -17,7 +19,7 @@ export default class LivelyStroboscope extends Morph {
     this._propertySectionMargin = 5
     this._objectSectionsMargin = 40
     this._changeMarkerRadius = 5
-    this._timeframewidth = 600 // size in px
+    this._timeframewidth = 400 // size in px
     this._timeframelength = 30000 // time in ms
     this._timeframelatest = undefined
     this._timeframeoldest = undefined

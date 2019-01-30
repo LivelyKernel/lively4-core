@@ -1,3 +1,37 @@
+// mysterios visitors
+
+function visitor0_accept(a) {
+  if (a.pagename !== "New Page Name")
+    a.pagename = "New Page Name"
+  else 
+    a.pagename = "Even Better New Page Name"
+}
+
+function visitor1_accept(a) {
+  if (a.visitor1 === undefined) a.visitor1 = 0
+for(var i = 0; i < 10; i++)
+  {
+    a.visitor1 = a.visitor1 + i
+  }
+}
+
+function visitor2_accept(a) {
+  if (a.counter2 !== undefined) a.counter2 = 0
+for(var i = 0; i < 10; i++)
+  {
+    a.counter2 = a.counter2 + i
+  }
+}
+
+function visitor3_accept(a) {
+  a.pagename = function(){return "bad";}
+}
+
+
+
+
+
+
 // open component
 
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
@@ -40,32 +74,3 @@ visitor3_accept(obj)
 
 stroboscope.stop()
 
-
-// mysterios visitors
-
-function visitor0_accept(a) {
-  if (a.pagename !== "New Page Name")
-    a.pagename = "New Page Name"
-  else 
-    a.pagename = "Even Better New Page Name"
-}
-
-function visitor1_accept(a) {
-  if (a.visitor1 === undefined) a.visitor1 = 0
-for(var i = 0; i < 10; i++)
-  {
-    a.visitor1 = a.visitor1 + i
-  }
-}
-
-function visitor2_accept(a) {
-  if (a.counter2 !== undefined) a.counter2 = 0
-for(var i = 0; i < 10; i++)
-  {
-    a.counter2 = a.counter2 + i
-  }
-}
-
-function visitor3_accept(a) {
-  a.pagename = function(){return "bad";}
-}

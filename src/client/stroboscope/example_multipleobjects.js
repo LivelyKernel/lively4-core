@@ -1,3 +1,26 @@
+// mysterios visitors
+
+function visitor1_accept(a) {
+  if (a.pagename === "main")
+    a.redirect = function(){return "Hello"}
+  else
+    a.main = function(){return 0}
+}
+
+function visitor2_accept(a) {
+  if (a.pagename === "main")
+    delete a.pagename
+}
+
+function visitor3_accept(a) {
+  if (typeof a.pagename !== "string")
+    a.error = "faulty page name"
+}
+
+
+
+
+
 // open component
 
 import Stroboscope from 'src/client/stroboscope/stroboscope.js';
@@ -53,23 +76,3 @@ for(var k = 0; k < stroboscopes.length; k++)
   {
     stroboscopes[k].stop()
   }
-
-
-// mysterios visitors
-
-function visitor1_accept(a) {
-  if (a.pagename === "main")
-    a.redirect = function(){return "Hello"}
-  else
-    a.main = function(){return 0}
-}
-
-function visitor2_accept(a) {
-  if (a.pagename === "main")
-    delete a.pagename
-}
-
-function visitor3_accept(a) {
-  if (typeof a.pagename !== "string")
-    a.error = "faulty page name"
-}
