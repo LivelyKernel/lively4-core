@@ -1,0 +1,69 @@
+<template id="node-ancestry-list" data-class="NodeAncestryList">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+
+  :host {
+    
+  }
+  
+  #sourceEditor {
+    display: none;
+
+    border: grey 1px solid;
+    border-radius: 1.5px;
+  }
+
+  /* TAG LIST */
+  #parentElements {
+    z-index: 10;
+    display: none;
+    width: max-content;
+    
+    border: grey 1px solid;
+    border-radius: 1.5px;
+    background-color: white;
+  }
+  #parentElements > div {
+    border: 0.5px solid rgba(0, 0, 0, 0.0);
+  }
+  #parentElements > div.jsx-element {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  #parentElements > div.jsx-element.active-expression {
+    background-color: rgba(255, 165, 0, 0.2); /* orange */
+  }
+  #parentElements > div.jsx-element.active-group-item {
+    background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
+  }
+  #parentElements > div:hover,
+  #parentElements > div.jsx-element:hover,
+  #parentElements > div.jsx-element.active-expression:hover,
+  #parentElements > div.jsx-element.active-group-item:hover {
+    background-color: rgba(100, 100, 100, 0.5);
+  }
+  #parentElements > div.selected-node {
+    border: 0.5px solid blue;
+  }
+  span.element-tag {
+    color: green;
+  }
+  span.attribute-name {
+    color: blue;
+  }
+  span.attribute-value {
+    color: brown;
+  }
+  span.attribute-syntax {
+    color: black;
+  }
+  span.element-shadow-root {
+    color: darkblue;
+  }
+  
+</style>
+  <div id="parentElements"></div>
+  <lively-editor id="sourceEditor"></lively-editor>
+</template>
+<script class="registrationScript">lively.registerTemplate()</script>
+
