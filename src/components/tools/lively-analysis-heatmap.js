@@ -76,7 +76,7 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .append('g')
       .attr('class' , 'cell child')
       .attr('transform', function(cell) { return 'translate(' + cell.x0 + ',' + cell.y0 + ')'})
-      .attr('width', function(cell) { return cell.x1 - cell.x0; })
+      .attr('width', function(cell) { return cell.x1 - cell.x0 ; })
       .attr('height', function(cell) { return cell.y1 - cell.y0; });
 
     childCells.append('rect')
@@ -84,26 +84,25 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .attr('height', function(cell) { return cell.y1 - cell.y0; })
       .attr('class' , 'child')
       .style('fill', function(cell) { return color(cell.data.modifications) })
+      .style('stroke-width', 1.5)
+      .style('stroke', 'white')
       .style('display', 'none')
-      .on("mouseover", (function(cell) {
-        this.tooltip(cell)
-      }).bind(this));
   
-    childCells.append('text') 
+    /*childCells.append('text') 
       .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
       .attr('y', function(cell) { return (cell.y1 - cell.y0) / 2.5 })
       .attr('class', 'child title')
       .attr('text-anchor', 'middle')
       .attr('display', 'none')
-      .text(function(cell) { return cell.data.name });
+      .text(function(cell) { return cell.data.name });*/
      
-    childCells.append('text')
+   /* childCells.append('text')
       .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
       .attr('y', function(cell) { return (cell.y1 - cell.y0) / 1.5 })
       .attr('class', 'child modifications')
       .attr('text-anchor', 'middle')
       .style('display', 'none')
-      .text(function(cell) { return cell.data.modifications });
+      .text(function(cell) { return cell.data.modifications });*/
 	
     // classes
     var parentCells = svg.selectAll('g.cell.parent')
@@ -122,23 +121,25 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .attr('height', function(cell) { return cell.y1 - cell.y0; })
       .attr('class' , 'parent')
       .style('fill', function(cell) { return color(cell.data.modifications) })
+      .style('stroke-width', 1)
+      .style('stroke', 'white')
       .on("mouseover", (function(cell) {
         this.infobox(cell)
       }).bind(this));
     
-    parentCells.append('text')
+    /*parentCells.append('text')
       .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
       .attr('y', function(cell) { return (cell.y1 - cell.y0) / 2.5 })
       .attr('class', 'parent title')
       .attr('text-anchor', 'middle')
-      .text(function(cell) { return cell.data.name });
+      .text(function(cell) { return cell.data.name });*/
     
-    parentCells.append('text')
+    /*parentCells.append('text')
       .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
       .attr('y', function(cell) { return (cell.y1 - cell.y0) / 1.5 })
       .attr('class', 'parent modifications')
       .attr('text-anchor', 'middle')
-      .text(function(cell) { return cell.data.modifications });
+      .text(function(cell) { return cell.data.modifications });*/
     
     svg.selectAll('g.cell').on('click', (function(cell) {
       if (this.selectedNode.depth == 1) {
@@ -158,6 +159,9 @@ export default class LivelyAnalysisHeatmap extends Morph {
         return true;
       }
     });
+    svg.selectAll('g.cell').on('mousemove', (function(cell) {
+      this.tooltip(cell)
+    }).bind(this))
     this.infobox(this.root)
   }
   
@@ -204,7 +208,7 @@ export default class LivelyAnalysisHeatmap extends Morph {
   
   zoom(cell, svg) {
     var zoomX = this.svgWidth / (cell.x1 - cell.x0)
-    var zoomY = this.svgHeight / (cell.y1 - cell.y0);   
+    var zoomY = this.svgHeight / (cell.y1 - cell.y0)
     var xPosition = d3v5.scaleLinear().range([0, this.svgWidth]).domain([cell.x0, cell.x1])
     var yPosition = d3v5.scaleLinear().range([0, this.svgHeight]).domain([cell.y0, cell.y1])
 
@@ -214,42 +218,51 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .attr('transform', function(cell) { return 'translate(' + xPosition(cell.x0) + ',' + yPosition(cell.y0) + ')';  });
 
     transition.select('rect')
-      .attr('width', function(cell) { return zoomX * (cell.x1 - cell.x0) - 1; })
-      .attr('height', function(cell) { return zoomY * (cell.y1 - cell.y0) - 1; })
+      .attr('width', function(cell) { return zoomX * (cell.x1 - cell.x0); })
+      .attr('height', function(cell) { return zoomY * (cell.y1 - cell.y0); })
     
     if (cell != this.root) { 						// child
       svg.selectAll('g.cell.child').select('rect').style('display', 'block')
       svg.selectAll('g.cell.parent').select('rect').style('display', 'none')
-      svg.selectAll('text.child.title')
+     /* svg.selectAll('text.child.title')
         .style('display', 'block')
         .attr('x', function(cell) { return (zoomX * (cell.x1 - cell.x0)) / 2 })
-        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 2.5 });
-      svg.selectAll('text.child.modifications')
+        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 2.5 });*/
+     /* svg.selectAll('text.child.modifications')
         .style('display', 'block')
         .attr('x', function(cell) { return (zoomX * (cell.x1 - cell.x0)) / 2 })
-        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 1.5 });
+        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 1.5 });*/
       svg.selectAll('text.parent').style('display', 'none')
     } else {								        // parent
       svg.selectAll('g.cell.parent').select('rect').style('display', 'block')
       svg.selectAll('g.cell.child').select('rect').style('display', 'none')
       svg.selectAll('text.child').style('display', 'none')
-      svg.selectAll('text.parent.title')
+     /* svg.selectAll('text.parent.title')
         .style('display', 'block')
         .attr('x', function(cell) { return (cell.x1-cell.x0) / 2 })
-        .attr('y', function(cell) { return (cell.y1-cell.y0) / 2.5 });
-      svg.selectAll('text.parent.modifications')
+        .attr('y', function(cell) { return (cell.y1-cell.y0) / 2.5 });*/
+     /* svg.selectAll('text.parent.modifications')
         .style('display', 'block')
         .attr('x', function(cell) { return (cell.x1-cell.x0) / 2 })
-        .attr('y', function(cell) { return (cell.y1-cell.y0) / 1.5 });
+        .attr('y', function(cell) { return (cell.y1-cell.y0) / 1.5 });*/
     }
     this.selectedNode = cell
     d3v5.event.stopPropagation() 
   }
   
   tooltip(cell) {
-    this.tooltipElement.style.top = d3v5.event.pageX + 10 + 'px'
-    this.tooltipElement.style.left = d3v5.event.pageY + 10 + 'px'
-    this.tooltipElement.innerHTML = 'Class: ' + cell.name + '<br/>'  + 'Modifications: ' + cell.data.modifications + '<br/>' + 'Url: ' + cell.data.url
+    this.tooltipElement.style.top = d3v5.event.pageY + 10 + 'px'
+    this.tooltipElement.style.left = d3v5.event.pageX + 10 + 'px'
+    if (cell.children) {
+      this.tooltipElement.innerHTML = '<h4 class="title"> Class: ' + cell.data.name + '</h4>'
+        + '<strong>Modifications: ' + cell.data.modifications + '</strong>'
+        + '<div>Module: ' + cell.data.url + '</div>'
+    } else {
+      this.tooltipElement.innerHTML = '<h4 class="title"> Method: ' + cell.data.name + '</h4>'
+        + '<h4 class="subtitle">Class: ' + cell.parent.data.name + '</h4>'
+        + '<strong>Modifications: ' + cell.data.modifications + '</strong>'
+        + '<div>Module: ' + cell.data.url + '</div>'
+    }
   }
   
   infobox(cell) {

@@ -27,30 +27,66 @@
   svg#lively-analysis-heatmap-svg text.modifications {
     font-size: 80%
   }
-  
-  svg#lively-analysis-heatmap-svg .cell rect:HOVER ~ #lively-analysis-heatmap-tooltip {
-    display: block;
-  } 
-  
-  div#lively-analysis-heatmap-tooltip {
-    background: green;
+
+  #lively-analysis-heatmap-tooltip {
     position: fixed;
+    background: #eee;
+    padding: 5px 10px;
+    border-radius: 3px;
+    box-shadow: 3px 3px 10px -3px black;
     display: none;
+    width: 350px;
   }
+  
+  #lively-analysis-heatmap-tooltip .title {
+    margin: 10px 0px;
+    font-size: 110%;
+  }
+  
+  #lively-analysis-heatmap-tooltip .subtitle {
+    font-size: 95%;
+    margin: 0px 0px 5px 5px;
+  }
+  
+  #lively-analysis-heatmap-tooltip > div,
+  #lively-analysis-heatmap-tooltip > strong {
+    word-wrap: break-word;
+    margin: 3px 5px;
+    font-size: 95%;
+  }
+  
+  #lively-analysis-heatmap-svg:HOVER ~ div#lively-analysis-heatmap-tooltip {
+    display: block;
+  }
+
   div#lively-analysis-heatmap-infobox {
     font-size: 90%;
+    display: none;
+  }
+  
+  .menu {
+    margin: 5px 0;
+  }
+  
+  #lively-analysis-heatmap-selection {
+    color: #444444;
+    font-size: inherit;
+    font-family: inherit;
+    width: 175px;
   }
 </style>
 
 <div id="content">
 	<content>
-    <select id="lively-analysis-heatmap-selection">
-      <option value="view-all-classes" selected>Classes</option>
-      <option value="view-all-methods">Methods</option>
-    </select>
-    <div id="lively-analysis-heatmap-tooltip"></div>
+    <div class='menu'>
+      <select id="lively-analysis-heatmap-selection">
+        <option value="view-all-classes" selected>Classes</option>
+        <option value="view-all-methods">Methods</option>
+      </select>
+    </div>
     <div id="lively-analysis-heatmap-infobox"></div>
     <svg id="lively-analysis-heatmap-svg"></svg>
+    <div id="lively-analysis-heatmap-tooltip"></div>
   </content>
 </div>
 </template>

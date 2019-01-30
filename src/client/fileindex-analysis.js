@@ -47,8 +47,7 @@ export default class FileIndex {
         files: 'url,name,type,version,modified,options,title,tags',
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
-        dependencies: '[link+url+type], link, url, location, status, type',
-        classes: '[name+url], name, url, loc, start, end, [superClass], superClass, [superClassName+superClassUrl], superClassName, superClassUrl, *methods', 
+        classes: '[name+url], name, url, loc, start, end, superClass, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
@@ -82,10 +81,8 @@ export default class FileIndex {
   }
   
   async updateAllModuleSemantics() {
-     this.db.transaction('rw', this.db.files, this.db.modules, () => {
-      return this.db.files.where("type").equals("file").toArray()
-    }).then((files) => {
-      files.forEach(file => {
+    this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
+      this.db.files.where("type").equals("file").each((file) => {
         this.addModuleSemantics(file)
       })
     })
@@ -119,7 +116,7 @@ export default class FileIndex {
   } 
   
   async addClass(fileUrl, clazz) {
-    await this.db.classes.where("url").equals(fileUrl).delete()
+    await this.db.classes.where({name: clazz.name, url: fileUrl}).delete()
     let superClassUrl = ''
     if (clazz.superClass.name && clazz.superClass.url) {
       superClassUrl = await System.resolve(clazz.superClass.url, fileUrl)
@@ -129,7 +126,6 @@ export default class FileIndex {
     clazz.superClassUrl = superClassUrl
     clazz.superClassName = clazz.superClass.name
     clazz.nom = clazz.methods ? clazz.methods.length : 0
-    clazz.noa = 0
     this.db.classes.put(clazz)
   }
 
@@ -145,11 +141,12 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-    this.db.transaction('rw', this.db.files, this.db.links, () => {
-      return this.db.files.where("type").equals("file").each((file) => {
+    await this.db.transaction('rw', this.db.files, this.db.links, () => {
+      this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
     })
+    console.log('updateAllLinks() finished.')
   }
   
   async addLinks(file) {
@@ -175,20 +172,24 @@ export default class FileIndex {
   }
   
   async addVersion(file) {
-    try {
       let response = await lively.files.loadVersions(file.url)
       let json = await response.json()
       let versions = json.versions
-      // consider latest two versions
-      if (versions && versions[0] && versions[1]) {
+      for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
+        let version = versions[i]
+        let versionPrevious = versions[i+1]
+        var modifications = await this.findModifiedClassesAndMethods(file.url, version, versionPrevious)
+        this.db.transaction("rw", this.db.versions, () => {
+          this.db.versions.bulkPut(modifications)
+        })
+        if (i >= 9) break; // consider latest ten versions
+      }
+      /*if (versions && versions[0] && versions[1]) {
         var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
         })
-      } 
-    } catch(error) {
-      console.log(error, file.url)
-    }
+      }*/ 
   } 
   
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
@@ -204,7 +205,6 @@ export default class FileIndex {
 
     let latest = await this.parseModuleSemantics(astLastest)
     let previous = await this.parseModuleSemantics(astPrevious)
-
     // classes
     for (let classLatest of latest.classes) {
       try {
@@ -310,7 +310,6 @@ export default class FileIndex {
           }
           superClass.name = (path.node.superClass) ? path.node.superClass.name : ''
           superClass.url = importDeclarations.get(superClass.name)
-          console.log('superClass:', superClass, '->', importDeclarations)
           let methods = []
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
@@ -572,8 +571,8 @@ class BrokenLinkAnalysis {
           status: await this.validateLink(extractedLink),
         }
         links.push(link)  
-      } else {
-        var fullLink = /^\//g.test(extractedLink) ? lively4url + extractedLink : file.url.replace(file.name, extractedLink)
+      } else if (/^\//g.test(extractedLink) || /^src/g.test(extractedLink)) {
+        let fullLink = lively4url + '/' + extractedLink
         let link = {
           link: extractedLink,
           location: "internal",
@@ -581,6 +580,17 @@ class BrokenLinkAnalysis {
           status: await this.validateLink(fullLink),
         }
         links.push(link)
+      } else if (/^\./g.test(extractedLink) || /^[A-Za-z]/g.test(extractedLink)) {
+        let fullLink = file.url.replace(file.name, extractedLink)
+        let link = {
+          link: extractedLink,
+          location: "internal",
+          url: file.url,
+          status: await this.validateLink(fullLink),
+        }
+        links.push(link)
+      } else {
+        console.error('extracted link: ',extractedLink )
       }
     }
     return links
