@@ -197,11 +197,12 @@ export default class LivelyStroboscope extends Morph {
       .attr("r", this._changeMarkerRadius)
       .attr("cx", (d) => this._timestampToX(d[0]))
       .attr("cy", () => this._rowHeight / 2)
-      .append("text")
-      .attr("x", 0)
-      .attr("dy", 0)
+      
+    valueChangesEnter.append("text")
+      .attr("x", (d) => this._timestampToX(d[0]))
+      .attr("y", () => this._rowHeight / 2)
       .style("font-style", "italic")
-      .text("<changed>");
+      .text((d) => d[1]);
   }
 
   _updateOffsets() {
