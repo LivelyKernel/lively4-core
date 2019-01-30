@@ -18,6 +18,8 @@ export default class LivelyStroboscope extends Morph {
     this._propertySectionWidth = 80
     this._propertySectionMargin = 5
     this._objectSectionsMargin = 40
+    this._headerWidth = this._propertySectionWidth + this._propertySectionMargin + this._objectSectionsMargin
+    
     this._changeMarkerRadius = 5
     this._timeframewidth = 400 // size in px
     this._timeframelength = 30000 // time in ms
@@ -44,7 +46,7 @@ export default class LivelyStroboscope extends Morph {
 
   updateViz() {
     this._updateTimeframe()
-    this._update_offsets()
+    this._updateOffsets()
     this._updateSVGViz()
     this._updateObjectsViz()
   }
@@ -72,12 +74,13 @@ export default class LivelyStroboscope extends Morph {
     var bounds = this.getBoundingClientRect()
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
-    var margin = { top: 30, right: 20, bottom: 10, left: 20 },
+    var margin = { top: 30, right: 40, bottom: 10, left: 20 },
       width = bounds.width - margin.right - margin.left,
       height = bounds.height - margin.top - margin.bottom;
 
     this._width = width
     this._height = height
+    this._timeframewidth = this._width - this._headerWidth
 
     var svg = d3.select(this.shadowRoot.querySelector("svg"))
       .attr("width", width + margin.right + margin.left)
@@ -107,7 +110,6 @@ export default class LivelyStroboscope extends Morph {
       .attr("height", d => d.propertyCount() * this._rowHeight)
       .on("mouseover", this._objectInfo.bind(this));
 
-
     objectsEnter.append("text")
       .attr("x", 10)
       .attr("dy", 20)
@@ -118,26 +120,27 @@ export default class LivelyStroboscope extends Morph {
   _updatePropertiesDiv(objects) {
     var objectsEnter = objects.enter().append("g")
       .attr("transform", d => "translate(" + this._objectWidth + "," + d.offset + ")");
+    
+    this._updateAxis(objectsEnter);
+    this._updatePropertiesDivsHeaders(objectsEnter);
+    this._updateValueDivs(objectsEnter);
+  }
 
-    // Create scale
+  _updateAxis(objectsEnter) {
+    
     var scale = d3.scaleLinear()
       .domain([(this._timeframeoldest - this._startTime) / 1000, (this._timeframelatest - this._startTime)/1000])
-      .range([this._propertySectionWidth + this._propertySectionMargin, this._timeframewidth + this._propertySectionWidth + this._propertySectionMargin]);
+      .range([this._propertySectionWidth + this._propertySectionMargin, this._propertySectionWidth + this._propertySectionMargin + this._timeframewidth]);
 
-    // Add scales to axis
     var x_axis = d3.axisTop()
       .scale(scale)
 
-    //Append group and insert axis
     objectsEnter.append("g")
       .attr("class", "axis")
       .attr("transform", "translate(0," + -5 + ")")
       .call(x_axis)
-
-    this._updatePropertiesDivsHeaders(objectsEnter)
-    this._updateValueDivs(objectsEnter);
   }
-
+  
   _updatePropertiesDivsHeaders(objectsEnter) {
     objectsEnter.selectAll("g.property")
       .data(function(d) { return d.propertyViews; })
@@ -172,8 +175,6 @@ export default class LivelyStroboscope extends Morph {
     var values = propertiesEnter.selectAll("g.value")
       .data((d) => d.valueViews.filter(v => (this._interpolationInTimeframe(v.endTime) > 0)))
 
-    //values.transition().attr("duration", this._updateRate)
-    
     var valuesEnter = values.enter()
       .append("g")
       .attr("class", "value");
@@ -187,18 +188,23 @@ export default class LivelyStroboscope extends Morph {
       .style("fill", d => this._colorForType(d))
       .on("mouseover", this._valueViewInfo.bind(this));
 
-    valuesEnter.selectAll("g.value")
+    var valueChangesEnter = valuesEnter.selectAll("g.value")
       .data((d) => d.changes.filter(t => (this._interpolationInTimeframe(t[0]) > 0)))
       .enter()
-      .append("circle")
+    
+    valueChangesEnter.append("circle")
       .attr("class", "value")
       .attr("r", this._changeMarkerRadius)
       .attr("cx", (d) => this._timestampToX(d[0]))
       .attr("cy", () => this._rowHeight / 2)
-      .on("mouseover", this._markerInfo.bind(this));
+      .append("text")
+      .attr("x", 0)
+      .attr("dy", 0)
+      .style("font-style", "italic")
+      .text("<changed>");
   }
 
-  _update_offsets() {
+  _updateOffsets() {
     this._property_offset = 0
     this._object_offset = 0
     this._allocated_rows = 0
