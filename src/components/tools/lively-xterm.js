@@ -79,7 +79,7 @@ export default class LivelyXterm extends Morph {
   }
 
   async changeTerminalURL() {
-    var defaultValue = lively.preferences.get("PiTerminalURL") || "http://localhost:3000/"
+    var defaultValue = lively.preferences.get("PiTerminalURL")
     var newValue = await lively.prompt("set new PiTerminal URL", defaultValue)
     if (newValue) {
       lively.preferences.set("PiTerminalURL", newValue)
@@ -92,7 +92,7 @@ export default class LivelyXterm extends Morph {
   }
   
   async changeTerminalSecret() {
-    var defaultValue = lively.preferences.get("PiTerminalSecret") || ""
+    var defaultValue = lively.preferences.get("PiTerminalSecret")
     var newValue = await lively.prompt("set new PiTerminal Secret", defaultValue)
     if (newValue) {
       lively.preferences.set("PiTerminalSecret", newValue)
@@ -103,7 +103,7 @@ export default class LivelyXterm extends Morph {
   
   
   async changeTerminalCWD() {
-    var defaultValue = lively.preferences.get("PiTerminalCWD") || ""
+    var defaultValue = lively.preferences.get("PiTerminalCWD")
     var newValue = await lively.prompt("set new PiTerminal working directory", defaultValue)
     if (newValue) {
       lively.preferences.set("PiTerminalCWD", newValue)

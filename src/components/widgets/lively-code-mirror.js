@@ -743,8 +743,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.mode = mode
     this.editor.setOption("mode", mode)
-
-    if (mode == "gfm") {
+    if (mode == "gfm" || mode == "text/x-stex") {
       // #TODO make language customizable
       var m = this.value.match(/^.*lang\:(.._..)/)
       if (m) {

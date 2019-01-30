@@ -433,9 +433,11 @@ export default class Inspector extends Morph {
   inspect(obj) {
     if (!obj) { return; }
     
-    if (obj.id) {
-      this.setAttribute("target", "#" + obj.id);
+    if (obj instanceof HTMLElement) {
+      var cssSelector = lively.elementToCSSName(obj)
+      this.setAttribute("target", cssSelector);      
     }
+    
     if (this.targetObject) {
       var oldViewState = this.getViewState()
     }
@@ -458,6 +460,10 @@ export default class Inspector extends Morph {
     var keys = []
     
     if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
+    
+    if (obj instanceof Response) return lively.allKeys(obj); // #TODO what does it make different?
+    
+    
     var allOwn = Object.getOwnPropertySymbols(obj).concat(Object.getOwnPropertyNames(obj))
     // for(var i in obj) {
     //   if (obj.hasOwnProperty(i) || obj.__lookupGetter__(i)) {

@@ -21,7 +21,7 @@ export default class Component extends Morph {
   initialize() {
     this.d3 = d3 // for scripting...
     this.updateViz()
-    this.options = {}
+    this.options = this.options || {}
     this.addEventListener('extent-changed', ((evt) => {
       this.onExtentChanged(evt);
     })::debounce(500));
@@ -98,7 +98,7 @@ export default class Component extends Morph {
   }
 
   livelyMigrate(other) {
-    this.treeData = other.treeData
+    this.data = other.data
     this.options = other.options
   }
 

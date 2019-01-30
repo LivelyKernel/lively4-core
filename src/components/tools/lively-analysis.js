@@ -2,6 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js'
 import FileIndex from 'src/client/fileindex-analysis.js'
+import d3 from "src/external/d3.v5.js"
+import ContextMenu from 'src/client/contextmenu.js'
 
 export default class LivelyAnalysis extends Morph {
 
@@ -16,13 +18,15 @@ export default class LivelyAnalysis extends Morph {
     this.heatMapContainer = this.shadowRoot.querySelector('#lively-analysis-heatmap-container')
     
     // update listener
-    this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
+   // this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
     this.get("#updatePolymetric").addEventListener("update-polymetric", () => this.updatePolymetric)
     this.get("#updateVersions").addEventListener("update-versions", () => this.updateVersions)
     this.get("#updateBrokenLinks").addEventListener("update-broken-links", () => this.updateTableBrokenLinks)
     
     this.viewWidth = 400
     this.viewHeight = 150
+    
+    this.updatePolymetricView()
   }
   
   setViewWidth(width, unit) {
@@ -34,29 +38,41 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async setClassData() {
-    this.classes = {}
     this.classes = {
       name: "classes",
-      children: []
+      children: [],
+      loc: 100,
+      nom: 25,
     }
-    await FileIndex.current().db.classes.each(clazz => {
-      let methods = []
-      clazz.methods.forEach((method) => {
-        methods.push({
-          name: method.name,
-          size: method.loc,  
-          url: clazz.url,
+    var superClasses = []
+  
+    await FileIndex.current().db.classes.where('superClassName').notEqual('').each(clazz => {
+      FileIndex.current().db.classes.where({'name': clazz.name, 'url':clazz.url}).each((superClass) => {
+        superClass.children = []
+        FileIndex.current().db.classes.where({'superClassName': superClass.name, 'superClassUrl':superClass.url}).each((subClass) => {
+          superClass.children.push(subClass)
         })
+        superClasses.push(superClass)
       })
+    })
+
+    await FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
+        superClasses.push(clazz)
+    })
+   this.classes.children = superClasses
+    /*await FileIndex.current().db.classes.each(clazz => {
+   
+      let superClass = clazz.superClass
       
       this.classes.children.push({
         name: clazz.name,
-        size: clazz.loc,
+        loc: clazz.loc,
         superClass: clazz.superClass,
         url: clazz.url,
-        children: methods,
+        children: [],
+        nom:  clazz.nom
       })
-    })
+    })*/
   }
   
   async setVersionData() {
@@ -69,19 +85,20 @@ export default class LivelyAnalysis extends Morph {
     await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
       FileIndex.current().db.classes.each((clazz) => {
         var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url})
+        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url, 'action': 'modified'})
         versionsEntries.each((entry) => {
-          //if (entry.method != '+null+') {
-            let method = methodVersions.find(method => method.method == entry.method)
+          if (entry.method != '+null+') {
+            let method = methodVersions.find(method => method.name == entry.method)
             if (method) {
               method.modifications++
             } else {
               methodVersions.push({
                 name: entry.method,
                 modifications: 1,
+                url: entry.url,
               })
             }
-          //}
+          }
         })
         versionsEntries.count().then(count => {
           if (count > 0) {
@@ -124,7 +141,6 @@ export default class LivelyAnalysis extends Morph {
         })
      })
     })*/
-    console.log(this.versions.children)
   }
   
   async setLinkData() {
@@ -139,7 +155,7 @@ export default class LivelyAnalysis extends Morph {
         location: link.location,
         file: link.url
       })
-    })
+    })    
   }
 
   // this method is autmatically registered through the ``registerKeys`` method
@@ -148,22 +164,25 @@ export default class LivelyAnalysis extends Morph {
   }
 
   // this method is automatically registered as handler through ``registerButtons``
-  onUpdateDirectory() {
+ /* onUpdateDirectory() {
     FileIndex.current().updateDirectory(lively4url + "/", true)
-  }
+  }*/
 
   async onUpdatePolymetric() {
-    await this.setClassData()
+    // if (this.classes) {
+      var start = Date.now()
+      await this.setClassData()
+      console.log("setClassData in " + (Date.now() - start) + "ms")
+    // }
+    start = Date.now()
     await this.updatePolymetricView()
+    console.log("updatePolymetricView in " + (Date.now() - start) + "ms")
   }
 
   async onUpdateVersions() {
     //await FileIndex.current().updateAllVersions()
-    /*await this.setVersionData()
-    await this.updateVersionHeatMap()*/
-    this.setVersionData().then(() => {
-      this.updateVersionHeatMap()
-    });
+    await this.setVersionData()
+    await this.updateVersionHeatMap()
   }
   
   async onUpdateBrokenLinks() {
@@ -174,44 +193,70 @@ export default class LivelyAnalysis extends Morph {
   
   async updatePolymetricView() {
     this.polymetricContainter.innerHTML = ''
+    this.polymetricContainter.style.position = "relative"
+    this.polymetricContainter.style.width = this.viewWidth + 'px'
+    this.polymetricContainter.style.height = this.viewHeight + 'px'
+  
     var polymetric = await lively.create("d3-polymetricview")
-    polymetric.style.width = "300px"
-    polymetric.style.height = "200px"
-    polymetric.setData(this.classes)
-    console.log('polymetric:' , this.classes)
+    polymetric.style.width = "100%"
+    polymetric.style.height = "100%"
+    this.polymetricContainter.appendChild(polymetric)
+    lively.setPosition(polymetric, lively.pt(0,0))
+  
+    polymetric.style.background = "#eee"
+    polymetric.setData(this.classes)  
+    var  classes = d3.hierarchy(this.classes)
+    /*
+    e.g Width metric = number of attributes (noa)???, height metric = number of methods (nom), color metric = number of lines of code.
+    */
+    var maxValue = Math.max.apply(Math, classes.descendants().map(function(node){
+      
+      if (!node.parent) {
+        return 1
+      } 
+      return (node.data.loc > 0 && node.data.nom > 0) ? (node.data.loc/node.data.nom) : 1
+    }));
+    var colorScale = d3.scaleLinear()
+      .range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
+      .domain([10, 20, 30, 40, 50, 60, maxValue])
+    //.domain([10, 20, 30, 40, 50, 60, maxValue])
+      /*.range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
+      .domain([1, maxValue*0.2, maxValue*0.4, maxValue*0.6, maxValue*0.8, maxValue])*/
+      .interpolate(d3.interpolateHcl);
+    
     polymetric.config({
+      // LOC/NOM:
       color(node) {
-        if (!node) return ""
-        return `hsl(10, 0%,  ${node.data.size / 100}%)`
+        if (!node) return colorScale(1)
+        return colorScale(node.data.loc/node.data.nom)//`hsl(10, 0%,  ${node.data.loc ? (node.data.loc * 50) : 10 }%)`
       },
+      // NOM:
       width(node) {
-        if (node.data.width === undefined) {
-          if (node.data.size) {
-            node.data.width = Math.sqrt(node.data.size) / 2
-          } else {
-            node.data.width = 30
-          }
-        } 
-        return  node.data.width
+        if (node.data.nom) {
+          return node.data.nom*2
+        }
+        return 1
       },
+      // LOC
       height(node) {
-        if (node.data.height === undefined) {
-          if (node.data.size) {
-            node.data.height = node.data.size / (Math.sqrt(node.data.size) / 2)
-          } else {
-            node.data.height = 30
-          }
-        } 
-        return  node.data.height
+        if (node.data.loc)
+          return node.data.loc/2
+        return 1
       },
       onclick(node) {
         lively.openInspector(node.data)
+        /*if (!d3.event.shiftKey) {
+          d3.event.stopPropagation()
+          d3.event.preventDefault()
+          var menu = new ContextMenu(this, [
+            ["Open file", () => lively.openBrowser(node.data.url, true)],
+          ]);
+          menu.openIn(document.body, d3.event, this);
+          return true;
+        }*/
       },
     }) 
-    this.polymetricContainter.appendChild(polymetric)
     polymetric.updateViz()
-    console.log('polymetric->', this.classes)
-    
   }
 
   async updateVersionHeatMap() {
@@ -247,6 +292,8 @@ export default class LivelyAnalysis extends Morph {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty
+
+    // this.classes = other.classes
   }
 
   livelyInspect(contentNode, inspector) {
@@ -258,29 +305,38 @@ export default class LivelyAnalysis extends Morph {
   }
 
   async livelyExample() {
+    this.viewWidth = 600
+    this.viewHeight = 150
     this.versions = {
       name: "root",
       modifications: 150,
       children: [
-        {name: "classA", modifications: 50, children: [{name: "methodA1", modifications: 36}, {name: "methodA2", modifications: 14}]},
-        {name: "classB", modifications: 25, children: [{name: "methodB1", modifications: 24}]},
-        {name: "classC", modifications: 15, children: [{name: "methodC1", modifications: 14}]}
+        {name: "class A", modifications: 50, children: [{name: "method A1", modifications: 36}, {name: "method A2", modifications: 14}]},
+        {name: "class B", modifications: 25, children: [{name: "method B1", modifications: 24}]},
+        {name: "class C", modifications: 15, children: [{name: "method C1", modifications: 14}]}
       ]}
     await this.updateVersionHeatMap()
     
     this.links = [
-      { id: "", no: "1", status: "broken", column: "1.2 value" },
-      { id: "", no: "2", status: "broken", column: "2.2 value" },
-      { id: "", no: "3", staus: "alive", column: "3.2 value" },
+      { id: "", no: "1", status: "dead", column: "1.2 value" },
+      { id: "", no: "2", status: "dead",  column: "2.2 value" },
+      { id: "", no: "3", status: "alive", column: "3.2 value" },
     ]
     await this.updateTableBrokenLinks()
     
     this.classes = {
       name: "classes",
       children: [
-        {name: "classA", loc: 10, size: 10, children: [{name: "methodA1", loc: 3, size: 3}, {name: "methodA2", loc: 7, size: 7}]},
-        {name: "classB", loc: 30, size: 30, children: [{name: "methodB1", loc: 30, size: 30}]},
-        {name: "classC", loc: 50, size: 50, children: [{name: "methodC1", loc: 50, size: 50}]}
+        {name: 'superClass A', loc: 40, nom:  4, children: [
+          {name: "class A", loc: 5, nom: 1, children: []},
+          {name: "class B", loc: 20, nom: 2, children: []},
+          {name: "class C", loc: 35, nom: 3, children: []}
+        ]},
+       {name: 'superClass B', loc: 20, nom: 3, children: [
+          {name: "class D", loc: 10,  nom: 2, children: []},
+          {name: "class E", loc: 30,  nom: 3, children: []},
+          {name: "class F", loc: 1791, nom: 123, children: []},
+        ]}
       ]
     }
    await this.updatePolymetricView()

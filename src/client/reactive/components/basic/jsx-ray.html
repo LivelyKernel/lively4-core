@@ -2,9 +2,14 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  
-}
+  :host {
+    z-index: 1000;
+    overflow: "";
+    user-select: none;
+    border: red solid 5px;
+    border-radius: 50%;
+    background: none;
+  }
   #frame {
     overflow: hidden;
     background: rgba(255,255,255,0.75);
@@ -30,6 +35,7 @@
   }
 
   #handle {
+    z-index: 100;
     background-color: gray;
     width: 10px;
     height: 10px;
@@ -92,21 +98,85 @@
     box-shadow: 0 0 0 0.5pt red;
   }
   #sourceEditor {
-    z-index: -10;
+    display: none;
   }
-
+  
+  /* TAG LIST */
+  #parentElements {
+    z-index: 10;
+    display: none;
+    width: max-content;
+    
+    border-radius: 3px;
+    border: 0.5px dashed black;
+    background-color: white;
+  }
+  #parentElements > div.jsx-element {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  #parentElements > div.jsx-element.active-expression {
+    background-color: rgba(255, 165, 0, 0.2); /* orange */
+  }
+  #parentElements > div.jsx-element.active-group-item {
+    background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
+  }
+  #parentElements > div:hover,
+  #parentElements > div.jsx-element:hover,
+  #parentElements > div.jsx-element.active-expression:hover,
+  #parentElements > div.jsx-element.active-group-item:hover {
+    background-color: rgba(100, 100, 100, 0.5);
+  }
+  span.element-tag {
+    color: green;
+  }
+  span.attribute-name {
+    color: blue;
+  }
+  span.attribute-value {
+    color: brown;
+  }
+  span.attribute-syntax {
+    color: black;
+  }
+  span.element-shadow-root {
+    color: darkblue;
+  }
+  
+  /* mirror elements: default values */
+  .mirror-element {
+    border: 1px solid gray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    background-color: rgba(100, 100, 100, 0.2); /* grey-ish */
+  }
+  .mirror-element.jsx-element {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  .mirror-element.jsx-element.renders-active-expression {
+    background-color: rgba(255, 165, 0, 0.2); /* orange */
+  }
+  .mirror-element.jsx-element.renders-active-group-item {
+    background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
+  }
+  .mirror-element .element-label {
+    color: white;
+    text-align: center;
+  }
 </style>
   <div id="frame" class="pickThrough">
     <div id="world"></div>
   </div>
   <div id="filterContainer">
-    <div class="filterForm"><label for="nodeFilter">nodes<input id="nodeFilter" type="text" value="node => node.isJSXElement" /></label></div>
+    <div class="filterForm"><label for="nodeFilter">nodes<input id="nodeFilter" type="text" value="node => node.jsxMetaData" /></label></div>
     <div class="filterForm"><label for="eventFilter">events<input id="eventFilter" type="text" value="(obj, type, evt) => type === 'mousedown'" /></label></div>
   </div>
   <div id="handle"></div>
   <div id="frameHandlesLeft">
     <div id="frameHandlesLeftLabel">JSX-Ray</div>
   </div>
+  <div id="parentElements"></div>
   <lively-editor id="sourceEditor"></lively-editor>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
