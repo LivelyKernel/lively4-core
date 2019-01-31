@@ -5,6 +5,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
 import Files from "src/client/files.js"
+import {pt} from 'src/client/graphics.js'
 
 export default class LivelyDrawio extends Morph {
   async initialize() {
@@ -33,6 +34,7 @@ export default class LivelyDrawio extends Morph {
       return 
     }
   }
+  
   
   update() {
     if (!this.src) return
@@ -110,6 +112,7 @@ export default class LivelyDrawio extends Morph {
     if (drawioURL) {
       if (useIFrame) {
         var iFrame = await lively.openComponentInWindow("lively-iframe")
+        lively.setExtent(iFrame.parentElement, pt(1200,800))
         iFrame.setURL(drawioURL)
       } else {
         window.open(drawioURL)
@@ -118,6 +121,13 @@ export default class LivelyDrawio extends Morph {
       lively.notify("editing not supported for", this.src)
     }
   }
+  
+  async updateSourceFromGithub() {
+    if (!this.src) throw new Error("src attribute not set");
+    var githubInfo = await Files.checkoutGithubFile(this.src)  
+  }
+  
+  
   
   async exportAsPDF() {
     var targetURL = this.src.replace(/xml$/,"pdf") // #Warning override without asking... yeah we need sharp tools!
@@ -170,6 +180,9 @@ export default class LivelyDrawio extends Morph {
   //   })  
   // })
   }
+  
+  
+  
    
   async livelyExample() {
     // this.src = "https://lively-kernel.org/lively4/lively4-jens/doc/figures/testdrawio.xml"
