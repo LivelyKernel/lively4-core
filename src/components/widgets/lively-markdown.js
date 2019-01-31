@@ -156,7 +156,7 @@ export default class LivelyMarkdown extends Morph {
   async replaceImageTagsWithSpecificTags(tmpDiv) {
     
     tmpDiv.querySelectorAll("img").forEach(async (imgTag) => {
-      if (imgTag.src.match(/\.([^.]+)$/)) {
+      if (!imgTag.src.match(/\.[A-Za-z0-9]+$/)) {
         // we have to guess or look what img could have been meant
         // (a) lets see if is a drawio figuure
         // #TODO check if there is actually an pdf
