@@ -151,11 +151,15 @@ export default class Sync extends Morph {
   }
 
 
-  async gitControl(cmd, eachCB) {
+  async gitControl(cmd, eachCB, optHeaders={}) {
     this.clearLog()
     return new Promise(async (resolve) => {
+      var headers =  await this.getHeaders()
+      for(var key in optHeaders) {
+        headers.set(key, optHeaders[key])
+      }
       lively.files.fetchChunks(fetch(this.getServerURL() +"/_git/" + cmd, {
-              headers: await this.getHeaders()
+              headers: headers
             }), (eaChunk) => {
           if (eachCB) 
             eachCB(eaChunk)
