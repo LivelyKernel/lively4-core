@@ -89,7 +89,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/jsx/jsx.js")
       await this.loadModule("mode/python/python.js")
       await this.loadModule("mode/clike/clike.js")
-
+      await this.loadModule("mode/shell/shell.js")
+      
       await this.loadModule("addon/edit/matchbrackets.js")
       await this.loadModule("addon/edit/closetag.js")
       await this.loadModule("addon/edit/closebrackets.js")
@@ -740,7 +741,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/x-c++src"
     } else if (filename.match(/\.h$/)) {
       mode = "text/x-c++src"
+    } else if (filename.match(/\.sh$/)) {
+      mode = "text/x-sh"
     }
+    
+    
     this.mode = mode
     this.editor.setOption("mode", mode)
     if (mode == "gfm" || mode == "text/x-stex") {

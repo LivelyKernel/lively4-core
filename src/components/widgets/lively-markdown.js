@@ -119,6 +119,63 @@ export default class LivelyMarkdown extends Morph {
       lively.html.fixLinks([tmpDiv], this.getDir(), path => this.followPath(path));
     }
     
+    this.beatifyInplaceHashtagNavigation(tmpDiv)
+    this.replaceImageTagsWithSpecificTags(tmpDiv)
+    
+    var root = this.get("#content")
+    root.innerHTML = "";
+    tmpDiv.childNodes.forEach(ea => {
+      root.appendChild(ea)
+    })
+    
+    
+    root.querySelectorAll("input[type=checkbox]").forEach(ea => {
+      ea.disabled = false;
+      ea.addEventListener("click", evt => {
+        if ( ea.checked) {
+          ea.setAttribute("checked", "true")
+        } else {
+          ea.removeAttribute("checked")
+        }
+      })
+    })
+    
+    
+    if (configPresentation)
+      this.startPresentation()
+
+    // #TODO: fixme
+    //root.querySelectorAll("pre code").forEach( block => {
+    //  highlight.highlightBlock(block);
+    //});
+    
+    await components.loadUnresolved(root);    
+    await persistence.initLivelyObject(root)
+  }
+
+  async replaceImageTagsWithSpecificTags(tmpDiv) {
+    
+    tmpDiv.querySelectorAll("img").forEach(async (imgTag) => {
+      if (!imgTag.src.match(/\.[A-Za-z0-9]+$/)) {
+        // we have to guess or look what img could have been meant
+        // (a) lets see if is a drawio figuure
+        // #TODO check if there is actually an pdf
+        var figure = await lively.create("lively-drawio", tmpDiv)
+        
+        for(var attr of imgTag.attributes) {
+          if (attr.name == "src") {
+            figure.src = imgTag.src  + ".xml"
+          } else {
+            figure.setAttribute(attr.name, attr.value)
+          }
+        }
+        imgTag.parentElement.insertBefore(figure, imgTag)
+        imgTag.remove()
+      }
+    })
+  }
+  
+  beatifyInplaceHashtagNavigation(tmpDiv) {
     /* Beatify Inplace Hashtag Navigation #TODO #Refactor #MoveToBetterPlace */
     tmpDiv.querySelectorAll("a.tag").forEach(eaLink => {
       // #Example for absolute CSS positioning #Hack: 
@@ -185,39 +242,8 @@ export default class LivelyMarkdown extends Morph {
         searchContainerAnchor.remove()
       })
     })
-    
-    var root = this.get("#content")
-    root.innerHTML = "";
-    tmpDiv.childNodes.forEach(ea => {
-      root.appendChild(ea)
-    })
-    
-    
-    root.querySelectorAll("input[type=checkbox]").forEach(ea => {
-      ea.disabled = false;
-      ea.addEventListener("click", evt => {
-        if ( ea.checked) {
-          ea.setAttribute("checked", "true")
-        } else {
-          ea.removeAttribute("checked")
-        }
-      })
-    })
-    
-    
-    if (configPresentation)
-      this.startPresentation()
-
-    // #TODO: fixme
-    //root.querySelectorAll("pre code").forEach( block => {
-    //  highlight.highlightBlock(block);
-    //});
-    
-    await components.loadUnresolved(root);
-    
-    await persistence.initLivelyObject(root)
   }
-
+  
   followPath(path) {
     lively.notify("follow " + path)
     window.open(path)
