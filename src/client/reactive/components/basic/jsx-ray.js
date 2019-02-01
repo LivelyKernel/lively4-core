@@ -79,7 +79,7 @@ export default class JsxRay extends Morph {
     evt.stopPropagation()
   }
   
-  showElement(element) {
+  showHighlight(element) {
     this.hideHighlight();
     
     this.highlight = lively.showElement(element, 10000);
@@ -88,127 +88,26 @@ export default class JsxRay extends Morph {
     
     return this.highlight;
   }
+  
   hideHighlight() {
     if (this.highlight) {
       this.highlight.remove();
     }
   }
 
-  async selectElement(element, evt) {
-    this.buildElementListFor(element);
+  hoverElement(element, evt) {
+    this.nodeAncestryList.buildElementListFor(element);
   }
   
-  innerSelect(element) {
-    this.showElement(element);
-    this.buildEditorFor(element);
-  }
-  
-  buildElementListFor(element) {
-
-    this.parentElements.style.display = 'block';
-    this.parentElements.innerHTML = '';
-    
-    this.parentListElementByElement = new Map();
-    this.elementByParentListElement = new Map();
-    
-    [element, ...lively.allParents(element, [], true)].reverse().forEach(ele => {
-      let entry;
-
-      if (ele instanceof ShadowRoot) {
-        entry = <span class="element-shadow-root">#shadow-root</span>;
-      } else {
-        function buildAttribute(name, value) {
-          return <span><span class="attribute-name"> {name}</span><span class="attribute-syntax">=</span><span class="attribute-value">'{value}'</span></span>;
-        }
-        const id = ele.id ? buildAttribute('id', ele.id) : '';
-        const classes = ele.classList.length >= 1 ? buildAttribute('class', ele.classList.toString()) : '';
-
-        entry = <span><span class="element-tag">&lt;{ele.localName}</span>{id}{classes}<span class="element-tag">&gt;</span></span>;
-      }
-
-      let jsxCSSClass = '';
-      if (ele.jsxMetaData) {
-        jsxCSSClass = 'jsx-element';
-
-        if (ele.jsxMetaData.aexpr) {
-          jsxCSSClass += ' active-expression';
-        }
-
-        if (ele.jsxMetaData.activeGroup) {
-          jsxCSSClass += ' active-group-item';
-        }
-      }
-
-      const container = <div mouseenter={evt => {
-        this.innerSelect(ele)
-        this.selectElementForParentElementsList(ele)
-      }} click={evt => this.hardSelect(ele)} class={jsxCSSClass}>{entry}</div>;
-      container.isMetaNode = true;
-      this.parentElements.appendChild(container);
-
-      this.parentListElementByElement.set(ele, container);
-      this.elementByParentListElement.set(container, ele);
-    })
-
-    this.positionRightOf(element, this.parentElements, lively.pt(30, 0));
-    
-    this.selectElementForParentElementsList(element);
-  }
-  
-  // #TODO: from hover
-  selectElementForParentElementsList(subject) {
-    Array.from(this.parentElements.children).forEach(div => {
-      div.classList.remove('selected-node');
-    })
-    const container = this.parentListElementByElement.get(subject);
-    if (container) {
-      container.classList.add('selected-node');
-    }
-    this.innerSelect(subject);
-  }
-  
-  positionRightOf(anchor, element, offset = lively.pt(0, 0)) {
-    const toolsOrigin = lively.getTotalGlobalBounds(anchor)
-    let rightCenter = toolsOrigin.rightCenter()
-    rightCenter = rightCenter.addPt(offset)
-    rightCenter = rightCenter.subPt(lively.pt(0, lively.getExtent(element).y / 2))
-    lively.setGlobalPosition(element, rightCenter)
-  }
-  
-  hardSelect(element) {
+  selectElement(element) {
     lively.showHalo(element);
   }
   
-  async buildEditorFor(element) {
-    if (element.jsxMetaData) {
-      const location = element.jsxMetaData.sourceLocation;
-      
-      if (location.file !== this.sourceEditor.getURLString()) {
-        this.sourceEditor.setURL(location.file);
-        await this.sourceEditor.loadFile();
-      }
-      
-      this.sourceEditor.style.display = 'block';
-
-      this.sourceEditor.currentEditor().scrollIntoView({
-        line: location.start.line - 1,
-        ch: location.start.column
-      }, 50);
-      
-      this.sourceEditor.currentEditor().setSelection({
-        line: location.start.line - 1,
-        ch: location.start.column
-      }, {
-        line: location.end.line - 1,
-        ch: location.end.column
-      }, { scroll: false });
-
-      this.positionRightOf(this.parentElements, this.sourceEditor, lively.pt(5, 0));
-    } else {
-      this.sourceEditor.style.display = 'none';
-    }
+  unhoverElement() {
+    this.nodeAncestryList.hide();
+    this.hideHighlight();
   }
-
+  
   async onNodeFilterChanged() {
     const result = await boundEval(this.nodeFilter.value);
     if (!result.isError) {
@@ -322,20 +221,18 @@ export default class JsxRay extends Morph {
     }
 
     mirrorElement.addEventListener("mousemove", evt => {
-      this.selectElement(subject, evt)
+      this.hoverElement(subject, evt)
     })
 
     mirrorElement.addEventListener("mouseout", evt => {
       if (evt.ctrlKey) {
-        this.sourceEditor.style.display = 'none';
-        this.parentElements.style.display = 'none';
-        this.hideHighlight();
+        this.unhoverElement();
       }
     })
         
     mirrorElement.addEventListener("click", evt => {
-      this.selectElement(subject, evt);
-      this.hardSelect(subject);
+      this.hoverElement(subject, evt);
+      this.selectElement(subject);
     })
         
     return mirrorElement;
@@ -459,8 +356,6 @@ export default class JsxRay extends Morph {
   get handle() { return this.get('#handle'); }
   get frameHandlesLeft() { return this.get('#frameHandlesLeft'); }
   get frameHandlesLeftLabel() { return this.get('#frameHandlesLeftLabel'); }
-  get sourceEditor() { return this.get('#sourceEditor'); }
-  get parentElements() { return this.get('#parentElements'); }
   get nodeAncestryList() { return this.get('#nodeAncestryList'); }
 
   mirrorWorld() {
@@ -494,12 +389,10 @@ export default class JsxRay extends Morph {
 
     this.frameHandlesLeftLabel.isMetaNode = true
 
-    this.sourceEditor.isMetaNode = true
-    lively.setExtent(this.sourceEditor, lively.pt(600,150))
     lively.warn('reset')
-    lively.setPosition(this.sourceEditor, lively.pt(0,200))
-    this.sourceEditor.hideToolbar();
-
+    this.nodeAncestryList.isMetaNode = true
+    this.nodeAncestryList.init(this)
+    
     this.ajustRootPosition()
     this.updateWorld()
   }
