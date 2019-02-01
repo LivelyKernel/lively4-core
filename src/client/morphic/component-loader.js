@@ -474,7 +474,7 @@ export default class ComponentLoader {
     const compPromise = this.openIn(<div />, component);
     immediate(component);
     
-    return compPromise::through(comp => comp.remove());
+    return compPromise.through(comp => comp.remove());
   }
   
   static openIn(parent, component, beginning) {

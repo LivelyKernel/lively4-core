@@ -1,7 +1,8 @@
+import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
 
-Object.assign(Date.prototype, {
+extend(Date.prototype, {
   
   dayInWeek(offset) {
     const day = this.getDay()
@@ -63,13 +64,13 @@ const mapExtensions = {
   
 }
 
-Object.assign(Map.prototype, mapExtensions);
-Object.assign(WeakMap.prototype, mapExtensions);
+extend(Map.prototype, mapExtensions);
+extend(WeakMap.prototype, mapExtensions);
 
 
 
 
-Object.assign(Number.prototype, {
+extend(Number.prototype, {
   
   times(iteratee) {
     return _.times(this, iteratee);
@@ -82,7 +83,7 @@ Object.assign(Number.prototype, {
 });
 
 
-Object.assign(String.prototype, {
+extend(String.prototype, {
 
   /**
    * 
@@ -108,6 +109,24 @@ Object.assign(String.prototype, {
    */
   fetchJSON(options) {
     return fetch(this, options).then(r => r.json());
+  }
+
+});
+
+
+
+extend(Promise.prototype, {
+
+  /**
+   * Awaits the promise, and return a promise after calling func.
+   * @example <caption>Example usage on Promises.</caption>
+   * fetch("https://lively-kernel.org/lively4/lively4-core/start.html")
+   *   .through(lively.notify) // prints the response object
+   *   .then(t=>t.text())
+   *   .through(lively.notify); // prints the content
+   */
+  through(func, ...args) {
+    return this.then(val => (func(val, ...args), val));
   }
 
 });

@@ -142,8 +142,8 @@ export default class LivelyCodeMirrorWidgetImport extends Morph {
     });
 
     await lively.create('lively-inspector', this)
-      ::through(inspector => inspector.inspect(ast))
-      ::through(inspector => inspector.hideWorkspace())
+      .through(inspector => inspector.inspect(ast))
+      .through(inspector => inspector.hideWorkspace())
     this.cm.editor.refresh()
   }
   
