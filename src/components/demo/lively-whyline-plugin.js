@@ -1,19 +1,12 @@
 import { uuid as generateUUID } from 'utils'; 
-import TraceNode from 'src/components/demo/lively-whyline-tracing.js'
-
-var expressions
-var statements
-var declarators
-var assignments
-var functions
-var loops
-
+import * as tr from 'src/components/demo/lively-whyline-tracing.js';
+console.log(tr);
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
   let log = template("__trace__.traceNode(NODEID,() => EXPSTATE)")
   let begin = template("__trace__.traceBeginNode(NODEID)")
   let end = template("__trace__.traceEndNode(NODEID)")
-  let bogus = template("__trace__.MESSAGE(NODEID,() => EXPSTATE)")
+  let wrapBlockTemplate = template(`${'__trace__'}.MESSAGE(ID,() => BLOCK)`)
 
   let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
@@ -24,63 +17,118 @@ export default function (babel) {
     },
     visitor: { 
       Program(path) {
-        var idcounter = 0;
-
-        expressions = []
-        statements = []
-        declarators = []
-        assignments = []
-        functions = []
-        loops = []
+        /*
+         * Traverse AST to add shared properties / transformations
+         */
+        function isVariableAccess(identifier) {
+          let badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'property', 'meta'];
+          return t.isBinaryExpression(path.parent) || !badKeys.includes(path.key);
+        }
+        
+        let idcounter = 0;
         
         path.traverse({
-          enter(path) { 
+          enter(path) {
             path.node.traceid = idcounter++;
           },
-          
-          BinaryExpression(path) { expressions.push(path) },
-          CallExpression(path) { expressions.push(path) }, 
-          UnaryExpression(path) { expressions.push(path) },
-          UpdateExpression(path) { expressions.push(path) },
-          AssignmentExpression(path) { assignments.push(path) },
-          
-          VariableDeclarator(path) { declarators.push(path) },
-          
-          ExpressionStatement(path) { statements.push(path) },
-          IfStatement(path) { statements.push(path) },
-          
-          FunctionDeclaration(path) { functions.push(path) },
-          FunctionExpression(path) { functions.push(path) },
-          ClassMethod(path) { functions.push(path) },
-          
-          ForStatement(path) { loops.push(path) },
-          WhileStatement(path) { loops.push(path) },
-          
           Identifier(path) {
-            path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node)
-            path.node.scopeId = path.scope.getBinding(path.node.name).scope.uid
-          },
-
-
-          /* ... */
+            path.node.isVariableAccess = isVariableAccess(path);
+            path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
+            path.node.scopeId = path.scope.getBinding(path.node.name).scope.uid;
+          }
         });
+        
+        /*
+         * Create copy of original AST.
+         * This copy will remain unaffected by the later transformation.
+         */
 
-
-        var astsrc= JSON.stringify(path.node)
-        window.lastastsrc = astsrc
-        var programast = JSON.parse(astsrc)
-        programast.astid = generateUUID()
+        var programast = JSON.parse(JSON.stringify(path.node)); //create copy
+        programast.astid = generateUUID();
         if (!window.__tr_ast_registry__) window.__tr_ast_registry__ = {};
-        window.__tr_ast_registry__[programast.astid]=programast
+        window.__tr_ast_registry__[programast.astid] = programast;
 
-        programast.node_map = []
+        /*
+         * Create mapping between ids and unchanging AST
+         */
+        
+        programast.node_map = [];
 
         traverse({"type": "File", "program": programast}, {
             enter(path) {
-              programast.node_map[path.node.traceid] = path.node
-              path.node.trace_counter = 0;
+              let node = path.node;
+              programast.node_map[node.traceid] = node;
+              node.traceNodeType = tr.TraceNode.mapToNodeType(node);
             }
-        })	
+        })
+        
+        /*
+         * Transform AST to include tracing
+         */
+        
+        function shouldTrace(path) {
+          let node = path.node
+          if (!node.traceid || node.isTraced) {
+            return false;
+          } else {
+            node.isTraced = true
+            return true
+          }
+        }
+        
+        function wrapBlock(message, id, blockOrExp) {
+          return wrapBlockTemplate({
+            MESSAGE: t.identifier(message),
+            ID: t.numericLiteral(id),
+            BLOCK: blockOrExp
+          }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
+        }
+        
+        path.traverse({
+          'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression|AssignmentExpression': {
+            exit: (path) => {
+              if (shouldTrace(path)) {
+                let newNode = wrapBlock('traceNode', path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'VariableDeclarator': {
+            exit: (path) => {
+              if (shouldTrace(path)) {
+                let init = path.get('init');
+                if (init.node) {
+                  let newNode = wrapBlock('traceNode', path.node.traceid, init);
+                  init.replaceWith(newNode);
+                }
+              }
+            }
+          },
+          'IfStatement|ForStatement|WhileStatement': {
+            exit: (path) => {
+              if (shouldTrace(path)) {
+                path.insertBefore(begin({
+                  NODEID: t.numericLiteral(path.node.traceid)
+                }));
+                path.insertAfter(end({
+                  NODEID: t.numericLiteral(path.node.traceid)
+                }));
+              }
+            }
+          },
+          'FunctionDeclaration|FunctionExpression|ClassMethod': {
+            exit: (path) => {
+              if (shouldTrace(path)) {
+                let body = path.get('body');
+                let wrappedBody = wrapBlock('traceNode', path.node.traceid, body);
+                let newBody = t.blockStatement([
+                  checkRuntime(),
+                  t.returnStatement(wrappedBody)]);
+                body.replaceWith(newBody);
+              }
+            }
+          }
+        })
 
         path.unshiftContainer('body', template(`
           var __tr_ast__ = window.__tr_ast_registry__[ASTID]
@@ -94,64 +142,6 @@ export default function (babel) {
           __tr_ast__.executionTrace = __trace__
 
     	  	window.__tr_last_ast__ = __tr_ast__`)({ASTID: t.stringLiteral(programast.astid)}));
-
-        statements.forEach(ea => {
-          ea.insertBefore(begin({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }));
-          ea.insertAfter(end({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }));
-        });
-
-        assignments.forEach(ea => {
-          let newNode = bogus({
-            NODEID: t.numericLiteral(ea.node.traceid),
-            EXPSTATE: ea,
-            MESSAGE: t.identifier('traceNode')
-          })
-          console.log(newNode)
-          ea.replaceWith(newNode.expression);
-        });
-
-        declarators.forEach(ea => {
-          if (ea.node.init) {
-            ea.node.init  = log({
-              NODEID: t.numericLiteral(ea.node.traceid),
-              EXPSTATE: ea.node.init
-            }).expression; // no statement here
-          }
-        });
-
-        loops.forEach(ea => {
-          ea.insertBefore(begin({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }))
-          ea.insertAfter(end({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }))
-        })
-
-        loops.forEach(ea => {
-            ea.get('body').unshiftContainer('body', checkRuntime())
-        })
-
-        functions.forEach(ea => {
-          var body = ea.get('body');
-          body.replaceWith(template("{ return __trace__.traceNode( NODEIDX , () => BLOCK)}")({
-            NODEIDX: t.numericLiteral(ea.node.traceid), BLOCK: body}))
-        });
-
-        functions.forEach(ea => {
-            ea.get('body').unshiftContainer('body', checkRuntime())
-        })
-
-        expressions.forEach(ea => {
-          ea.replaceWith(log({
-            NODEID: t.numericLiteral(ea.node.traceid),
-            EXPSTATE: ea
-          }))
-        })
       } 
     }
   };

@@ -79,17 +79,6 @@ export default class Whyline extends Morph {
       questionPane.appendChild(btn)
     }
     
-    
-    
-    //     if(['AssignmentExpression', 'UpdateExpression'].includes(traceNode.astNode.type)){
-//       dataFlowButton.style.display = "inline"
-//       dataFlowButton.innerHTML = "Why has " + traceNode.getIdentifier().name + " the value " + traceNode.value + "?";
-//     }
-//     else{
-//       dataFlowButton.style.display = "none"
-//     }
-      
-    
     if (this.selectedNode.markId) {
       this.showMarker(this.selectedNode.markId)
     }

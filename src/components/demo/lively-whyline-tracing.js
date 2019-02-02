@@ -1,51 +1,38 @@
 import systemBabel from 'systemjs-babel-build';
 const { types: t, template, traverse } = systemBabel.babel;
 
-export default class ExecutionTrace {
+export class ExecutionTrace {
   constructor(astRootNode){
-    this.astRoot = astRootNode
-    this.nodeMap = astRootNode.node_map
-    this.traceRoot = this.newTraceNode(astRootNode.traceid)
-    this.parentNode = this.traceRoot
-    this.reference = '__trace__'
-    this.wrapBlockTemplate = template(`${this.reference}.MESSAGE(ID,() => BLOCK)`)
+    this.astRoot = astRootNode;
+    this.nodeMap = astRootNode.node_map;
+    this.traceRoot = this.newTraceNode(astRootNode.traceid);
+    this.parentNode = this.traceRoot;
   }
   
-  newTraceNode(astNodeId, nodeType = TraceNode) {
-    return new nodeType(this.nodeMap[astNodeId], this.parentNode)
+  newTraceNode(astNodeId) {
+    let astNode = this.nodeMap[astNodeId];
+    return new astNode.traceNodeType(astNode, this.parentNode);
   }
   
-  traceNode(id, exp, nodeType = TraceNode) {
-    var traceNode = this.newTraceNode(id, nodeType)
-    this.parentNode = traceNode
-    var value = exp()
+  traceNode(id, exp) {
+    var traceNode = this.newTraceNode(id);
+    this.parentNode = traceNode;
+    var value = exp();
     traceNode.value = value;
-    this.parentNode = traceNode.parent
-    return value
+    this.parentNode = traceNode.parent;
+    return value;
   }
   
   traceBeginNode(id) {
-    this.parentNode = this.newTraceNode(id)
+    this.parentNode = this.newTraceNode(id);
   }
   
   traceEndNode(id) {
-    this.parentNode = this.parentNode.parent
-  }
-  
-  wrapBlock(message, id, blockOrExp) {
-    return this.wrapBlockTemplate({
-      MESSAGE: t.identifier(message),
-      ID: t.numericLiteral(id),
-      BLOCK: blockOrExp
-    }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
-  }
-  
-  binaryExpression(id, exp) {
-    return this.traceNode(id, exp, BinaryExpressionNode)
+    this.parentNode = this.parentNode.parent;
   }
 }
 
-class TraceNode {
+export class TraceNode {
   constructor(astNode, parent){
     this.children = []
     this.astNode = astNode
@@ -181,74 +168,70 @@ class TraceNode {
     return questions
   }
   
-  isAssignment() {
-    let assignmentTypes = ['AssignmentExpression', 'UpdateExpression', 'VariableDeclarator']
-    return assignmentTypes.includes(this.astNode.type)
+  static mapToNodeType(astNode) {
+    let nodeTypes = [
+      BinaryExpressionNode,
+      UnaryExpressionNode,
+      UpdateExpressionNode,
+      AssignmentExpressionNode,
+      VariableAccessNode,
+      LiteralAccessNode,
+      DeclaratorStatementNode
+    ];
+    let nodeType = nodeTypes.find((nodeType) => {
+      return nodeType.mapsTo(astNode)
+    });
+    if (!nodeType) nodeType = this;
+    return nodeType
+  }
+  
+  static get astTypes() { return [] }
+  
+  static mapsTo(astNode) {
+    return this.astTypes.some((astType) => {
+      return t.isType(astType, astNode.type);
+    })
+  }
+  
+  labelString() {
+    return 'Not Awesome'
   }
 }
 
 class ExpressionNode extends TraceNode {
-  static expressionCallback(expressionType, trace) {
-    const nodeClass = this
-    return {
-      [expressionType](path) {
-        let node = path.node
-        let id = node.traceId
-        if (!id || node.isTraced) return;
-        node.isTraced = true
-        
-        path.replaceWith(trace.wrapBlock(nodeClass.traceMessage, id, path))
-      }
-    }[expressionType]
-  }
   
-  static callbacks(trace) {
-    return this.expressionTypes.map((type) => {
-      return this.expressionCallback(type, trace)
-    })
-  }
 }
 
 class BinaryExpressionNode extends ExpressionNode {
-  static get traceMessage() { return 'binaryExp' }
-  static get expressionTypes() {
-    return ['BinaryExpression', 'LogicalExpression']
-  }
+  static get astTypes() { return ['BinaryExpression', 'LogicalExpression'] }
 }
 
 class UnaryExpressionNode extends ExpressionNode {
-  static get traceMessage() { return 'unaryExp' }
-  static get expressionTypes() { return ['UnaryExpression'] }
+  static get astTypes() { return ['UnaryExpression'] }
 }
 
 class UpdateExpressionNode extends ExpressionNode {
-  static get traceMessage() { return 'updateExp' }
-  static get expressionTypes() { return ['UpdateExpression'] }
+  static get astTypes() { return ['UpdateExpression'] }
 }
 
 class AssignmentExpressionNode extends ExpressionNode {
-  static get traceMessage() { return 'assignmentExp' }
-  static get expressionTypes() { return ['AssignmentExpression'] }
+  static get astTypes() { return ['AssignmentExpression'] }
+  
+  labelString() {
+    return 'Awesome'
+  }
+}
+
+class VariableAccessNode extends TraceNode {
+  static get astTypes() { return ['Identifier'] }
+}
+
+class LiteralAccessNode extends TraceNode {
+  static get astTypes() { return ['Literal'] }
 }
 
 class DeclaratorStatementNode extends TraceNode {
-  static get traceMessage() { return 'declareVar' }
-  
-  static callbacks(trace) {
-    const nodeClass = this
-    return [
-      function VariableDeclarator(path) {
-        let node = path.node
-        let id = node.traceId
-        if (!id || node.isTraced) return;
-        node.isTraced = true
-        
-        if (node.init) {
-          node.init = trace.wrapBlock(nodeClass.traceMessage, id, node.init)
-        }
-      }
-    ]
-  }
+  static get astTypes() { return ['VariableDeclarator'] }
 }
 
 window.lively4ExecutionTrace = ExecutionTrace
