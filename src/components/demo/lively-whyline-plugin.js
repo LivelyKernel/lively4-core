@@ -62,7 +62,8 @@ export default function (babel) {
         window.__tr_ast_registry__[programast.astid] = programast;
 
         /*
-         * Create mapping between ids and unchanging AST
+         * Do stuff with unchanging AST.
+         * This doesn't affect the actual transformation.
          */
         
         programast.node_map = [];
@@ -72,6 +73,7 @@ export default function (babel) {
               let node = path.node;
               programast.node_map[node.traceid] = node;
               node.traceNodeType = tr.TraceNode.mapToNodeType(node);
+              node.parent = path.parent;
             }
         })
         
