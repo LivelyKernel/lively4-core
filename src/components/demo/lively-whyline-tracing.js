@@ -185,6 +185,7 @@ export class TraceNode {
       CallExpressionNode,
       ExpressionNode, //catch all      
       
+      IfStatementNode,
       DeclaratorStatementNode,
       ForStatementNode,
       
@@ -281,6 +282,10 @@ class VariableAccessNode extends TraceNode {
 
 class LiteralAccessNode extends TraceNode {
   static get astTypes() { return ['Literal'] }
+  
+  labelString() {
+    return this.value.toString();
+  }
 }
 
 class DeclaratorStatementNode extends TraceNode {
@@ -288,6 +293,14 @@ class DeclaratorStatementNode extends TraceNode {
   
   labelString() {
     return this.astNode.id.name + "=" + this.value;
+  }
+}
+
+class IfStatementNode extends TraceNode {
+  static get astTypes() { return ['IfStatement'] }
+  
+  labelString() {
+    return 'if';
   }
 }
 

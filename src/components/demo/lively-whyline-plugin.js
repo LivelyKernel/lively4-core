@@ -30,6 +30,11 @@ export default function (babel) {
               || !badKeys.includes(identifier.key)));
         }
         
+        function isLiteralAccess(literal) {
+          let badKeys = ['key', 'source'];
+          return !badKeys.includes(literal.key);
+        }
+        
         let idcounter = 0;
         
         path.traverse({
@@ -40,6 +45,9 @@ export default function (babel) {
             path.node.isVariableAccess = isVariableAccess(path);
             path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
             path.node.scopeId = path.scope.getBinding(path.node.name).scope.uid;
+          },
+          Literal(path) {
+            path.node.isLiteralAccess = isLiteralAccess(path);
           }
         });
         
@@ -142,6 +150,13 @@ export default function (babel) {
           'Identifier': (path) => {
             let node = path.node;
             if (node.isVariableAccess && shouldTrace(path)) {
+              let newNode = wrapValue(node.traceid, path);
+              path.replaceWith(newNode);
+            }
+          },
+          'Literal': (path) => {
+            let node = path.node;
+            if (node.isLiteralAccess && shouldTrace(path)) {
               let newNode = wrapValue(node.traceid, path);
               path.replaceWith(newNode);
             }
