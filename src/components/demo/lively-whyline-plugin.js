@@ -3,10 +3,10 @@ import * as tr from 'src/components/demo/lively-whyline-tracing.js';
 console.log(tr);
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
-  let log = template("__trace__.traceNode(NODEID,() => EXPSTATE)")
   let begin = template("__trace__.traceBeginNode(NODEID)")
   let end = template("__trace__.traceEndNode(NODEID)")
-  let wrapBlockTemplate = template(`${'__trace__'}.MESSAGE(ID,() => BLOCK)`)
+  let wrapBlockTemplate = template(`${'__trace__'}.${'exp'}(ID,() => BLOCK)`);
+  let wrapValueTemplate = template(`${'__trace__'}.${'val'}(ID,EXP)`);
 
   let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
@@ -22,7 +22,12 @@ export default function (babel) {
          */
         function isVariableAccess(identifier) {
           let badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'property', 'meta'];
-          return t.isBinaryExpression(path.parent) || !badKeys.includes(path.key);
+          return (
+            !t.isFunction(identifier.parent)
+            && !t.isUpdateExpression(identifier.parent)
+            && (
+              t.isBinaryExpression(identifier.parent)
+              || !badKeys.includes(identifier.key)));
         }
         
         let idcounter = 0;
@@ -76,19 +81,25 @@ export default function (babel) {
           }
         }
         
-        function wrapBlock(message, id, blockOrExp) {
+        function wrapBlock(id, blockOrExp) {
           return wrapBlockTemplate({
-            MESSAGE: t.identifier(message),
             ID: t.numericLiteral(id),
             BLOCK: blockOrExp
           }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
+        }
+        
+        function wrapValue(id, exp) {
+          return wrapValueTemplate({
+            ID: t.numericLiteral(id),
+            EXP: exp
+          }).expression
         }
         
         path.traverse({
           'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression|AssignmentExpression': {
             exit: (path) => {
               if (shouldTrace(path)) {
-                let newNode = wrapBlock('traceNode', path.node.traceid, path);
+                let newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
@@ -98,7 +109,7 @@ export default function (babel) {
               if (shouldTrace(path)) {
                 let init = path.get('init');
                 if (init.node) {
-                  let newNode = wrapBlock('traceNode', path.node.traceid, init);
+                  let newNode = wrapBlock(path.node.traceid, init);
                   init.replaceWith(newNode);
                 }
               }
@@ -120,12 +131,19 @@ export default function (babel) {
             exit: (path) => {
               if (shouldTrace(path)) {
                 let body = path.get('body');
-                let wrappedBody = wrapBlock('traceNode', path.node.traceid, body);
+                let wrappedBody = wrapBlock(path.node.traceid, body);
                 let newBody = t.blockStatement([
                   checkRuntime(),
                   t.returnStatement(wrappedBody)]);
                 body.replaceWith(newBody);
               }
+            }
+          },
+          'Identifier': (path) => {
+            let node = path.node;
+            if (node.isVariableAccess && shouldTrace(path)) {
+              let newNode = wrapValue(node.traceid, path);
+              path.replaceWith(newNode);
             }
           }
         })

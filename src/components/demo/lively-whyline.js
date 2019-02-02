@@ -162,52 +162,6 @@ export default class Whyline extends Morph {
     this.printTraceNode(this.get("#traceView"), tree)
   }
   
-  nodeToString(traceNode) {
-    var astNode = traceNode.astNode
-    var label = ""
-    
-    if (!astNode) {
-      debugger;
-    }
-    
-    switch(astNode.type) {
-      case "UpdateExpression":
-        label = astNode.argument.name + "=" + traceNode.value 
-        break;
-      case "VariableDeclarator":
-        label = astNode.id.name + "=" + traceNode.value
-        break
-      case "ExpressionStatement":
-        label = ""
-        break
-      case "FunctionDeclaration":
-        label = ""
-        break
-      case "CallExpression":
-        if (astNode.callee.object)
-          label = astNode.callee.object.name + ".";
-        if (astNode.callee.property)
-          label += astNode.callee.property.name + "()"
-        break
-       case "ForStatement":
-          label = "for{}"
-        break
-       case "BinaryExpression":
-          label = ""
-        break
-
-      case "AssignmentExpression":
-        var name = astNode.left.name
-        if (!name && astNode.left.property)  
-          name = astNode.left.property.name;
-        label = name + "=" + traceNode.value
-        break
-      default:
-        label = astNode.type
-    }
-    return label
-  }
-
   get maxCallId() {
     return 200
   }
@@ -218,7 +172,7 @@ export default class Whyline extends Morph {
     var nodeElement = document.createElement("div");
     nodeElement.setAttribute("class", "traceNode")
 
-    var label = this.nodeToString(traceNode);
+    let label = traceNode.labelString();
 
     nodeElement.innerHTML = "<div class='traceLabel'> " + label +"</div>"
     nodeElement.setAttribute("title", "" + traceNode.astNode.type)

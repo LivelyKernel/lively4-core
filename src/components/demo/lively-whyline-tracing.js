@@ -14,13 +14,18 @@ export class ExecutionTrace {
     return new astNode.traceNodeType(astNode, this.parentNode);
   }
   
-  traceNode(id, exp) {
-    var traceNode = this.newTraceNode(id);
+  exp(id, exp) {
+    let traceNode = this.newTraceNode(id);
     this.parentNode = traceNode;
-    var value = exp();
+    let value = exp();
     traceNode.value = value;
     this.parentNode = traceNode.parent;
     return value;
+  }
+  
+  val(id, value) {
+    let traceNode = this.newTraceNode(id);
+    return traceNode.value = value;
   }
   
   traceBeginNode(id) {
@@ -116,7 +121,7 @@ export class TraceNode {
     let identifiers = []
     switch(this.astNode.type) {
       case 'Identifier':
-        return [this]
+        return [this.astNode]
       
       case 'AssignmentExpression':
         identifiers.push(this.astNode.left)
@@ -170,13 +175,20 @@ export class TraceNode {
   
   static mapToNodeType(astNode) {
     let nodeTypes = [
+      VariableAccessNode,
+      LiteralAccessNode,
+      
       BinaryExpressionNode,
       UnaryExpressionNode,
       UpdateExpressionNode,
       AssignmentExpressionNode,
-      VariableAccessNode,
-      LiteralAccessNode,
-      DeclaratorStatementNode
+      CallExpressionNode,
+      ExpressionNode, //catch all      
+      
+      DeclaratorStatementNode,
+      ForStatementNode,
+      
+      FunctionNode
     ];
     let nodeType = nodeTypes.find((nodeType) => {
       return nodeType.mapsTo(astNode)
@@ -189,21 +201,30 @@ export class TraceNode {
   
   static mapsTo(astNode) {
     return this.astTypes.some((astType) => {
-      return t.isType(astType, astNode.type);
+      return t.isType(astNode.type, astType);
     })
   }
   
   labelString() {
-    return 'Not Awesome'
+    return this.astNode.type;
   }
 }
 
 class ExpressionNode extends TraceNode {
+  static get astTypes() { return ['Expression'] }
   
+  labelString() {
+    return '';
+  }
 }
 
 class BinaryExpressionNode extends ExpressionNode {
   static get astTypes() { return ['BinaryExpression', 'LogicalExpression'] }
+  
+  labelString() {
+    let op = this.astNode.operator;
+    return op;
+  }
 }
 
 class UnaryExpressionNode extends ExpressionNode {
@@ -212,18 +233,50 @@ class UnaryExpressionNode extends ExpressionNode {
 
 class UpdateExpressionNode extends ExpressionNode {
   static get astTypes() { return ['UpdateExpression'] }
+  
+  labelString() {
+    return this.astNode.argument.name + "=" + this.value;
+  }
 }
 
 class AssignmentExpressionNode extends ExpressionNode {
   static get astTypes() { return ['AssignmentExpression'] }
   
   labelString() {
-    return 'Awesome'
+    let left = this.astNode.left;
+    let name = left.name;
+    if (!name && left.property)  
+      name = left.property.name;
+    return name + "=" + this.value
+  }
+}
+
+class CallExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['CallExpression'] }
+  
+  labelString() {
+    let callee = this.astNode.callee;
+    let name = 'fn';
+    if (callee.object) {
+      name = callee.object.name;
+    } else if (callee.property) {
+      name = callee.property.name;
+    } else if (callee.name) {
+      name = callee.name;
+    }
+    return name + '()';
   }
 }
 
 class VariableAccessNode extends TraceNode {
   static get astTypes() { return ['Identifier'] }
+  
+  labelString() {
+    let type = typeof(this.value);
+    if (type == 'number')
+      return this.value.toString();
+    return this.astNode.name;
+  }
 }
 
 class LiteralAccessNode extends TraceNode {
@@ -232,6 +285,26 @@ class LiteralAccessNode extends TraceNode {
 
 class DeclaratorStatementNode extends TraceNode {
   static get astTypes() { return ['VariableDeclarator'] }
+  
+  labelString() {
+    return this.astNode.id.name + "=" + this.value;
+  }
+}
+
+class ForStatementNode extends TraceNode {
+  static get astTypes() { return ['ForStatement'] }
+  
+  labelString() {
+    return 'for{}'
+  }
+}
+
+class FunctionNode extends TraceNode {
+  static get astTypes() { return ['FunctionDeclaration', 'FunctionExpression'] }
+  
+  labelString() {
+    return '';
+  }
 }
 
 window.lively4ExecutionTrace = ExecutionTrace
