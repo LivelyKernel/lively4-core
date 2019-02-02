@@ -69,7 +69,7 @@ export class TraceNode {
     if (this.parent) {
       return this.parent.nodeBeforeChild(this)
     } else {
-      return undefined
+      return null
     }
   }
   
@@ -119,6 +119,8 @@ export class TraceNode {
   
   static mapToNodeType(astNode) {
     let nodeTypes = [
+      ProgramNode,
+      
       VariableAccessNode,
       LiteralAccessNode,
       
@@ -167,6 +169,11 @@ export class TraceNode {
       identifier1.name == identifier2.name
       && identifier1.scopeId == identifier2.scopeId)
   }
+}
+
+class ProgramNode extends TraceNode {
+  static get astTypes() { return ['Program'] }
+  
 }
 
 class ExpressionNode extends TraceNode {
