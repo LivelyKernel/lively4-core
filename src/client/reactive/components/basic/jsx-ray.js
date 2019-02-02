@@ -78,76 +78,36 @@ export default class JsxRay extends Morph {
     lively.removeEventListener('mirror-dragging', document.body.parentElement)
     evt.stopPropagation()
   }
-
-  async selectElement(element, evt) {
-    lively.showHalo(element)
-    // const highlight = lively.showElement(element);
-    // highlight.style.backgroundColor = 'blue'
+  
+  showHighlight(element) {
+    this.hideHighlight();
     
-    if (element.jsxMetaData) {
-      const location = element.jsxMetaData.sourceLocation;
-      
-      if (location.file !== this.sourceEditor.getURLString()) {
-        this.sourceEditor.setURL(location.file);
-        await this.sourceEditor.loadFile();
-      }
-      
-      this.sourceEditor.style.display = 'block';
-      this.sourceEditor.currentEditor().scrollIntoView({
-        line: location.start.line - 1,
-        ch: location.start.column
-      }, 50);
-      
-      this.sourceEditor.currentEditor().setSelection({
-        line: location.start.line - 1,
-        ch: location.start.column
-      }, {
-        line: location.end.line - 1,
-        ch: location.end.column
-      }, { scroll: false });
-
-      this.parentElements.style.display = 'block';
-      this.parentElements.innerHTML = '';
-      [element, ...lively.allParents(element, [], true)].reverse().forEach(ele => {
-        let entry;
-        
-        if (ele instanceof ShadowRoot) {
-          entry = <span class="element-shadow-root">#shadow-root</span>;
-        } else {
-          function buildAttribute(name, value) {
-            return <span><span class="attribute-name"> {name}</span><span class="attribute-syntax">=</span><span class="attribute-value">'{value}'</span></span>;
-          }
-          const id = ele.id ? buildAttribute('id', ele.id) : '';
-          const classes = ele.classList.length >= 1 ? buildAttribute('class', ele.classList.toString()) : '';
-
-          entry = <span><span class="element-tag">&lt;{ele.localName}</span>{id}{classes}<span class="element-tag">&gt;</span></span>;
-        }
-        
-        let jsxCSSClass = '';
-        if (ele.jsxMetaData) {
-          jsxCSSClass = 'jsx-element';
-          
-          if (ele.jsxMetaData.aexpr) {
-            jsxCSSClass += ' active-expression';
-          }
-
-          if (ele.jsxMetaData.activeGroup) {
-            jsxCSSClass += ' active-group-item';
-          }
-        }
-        const container = <div class={jsxCSSClass}>{entry}</div>;
-        container.isMetaNode = true;
-        this.parentElements.appendChild(container);
-      })
-
-      const toolsOrigin = lively.getTotalGlobalBounds(element)
-      let rightCenter = toolsOrigin.rightCenter()
-      rightCenter = rightCenter.addPt(lively.pt(30, 0))
-      lively.setGlobalPosition(this.sourceEditor, rightCenter)
-      lively.setGlobalPosition(this.parentElements, rightCenter.subPt(lively.pt(0, lively.getExtent(this.parentElements).y)))
+    this.highlight = lively.showElement(element, 10000);
+    this.highlight.innerHTML = '';
+    this.highlight.style.border = '1px blue solid';
+    
+    return this.highlight;
+  }
+  
+  hideHighlight() {
+    if (this.highlight) {
+      this.highlight.remove();
     }
   }
 
+  hoverElement(element, evt) {
+    this.nodeAncestryList.buildElementListFor(element);
+  }
+  
+  selectElement(element) {
+    lively.showHalo(element);
+  }
+  
+  unhoverElement() {
+    this.nodeAncestryList.hide();
+    this.hideHighlight();
+  }
+  
   async onNodeFilterChanged() {
     const result = await boundEval(this.nodeFilter.value);
     if (!result.isError) {
@@ -261,18 +221,18 @@ export default class JsxRay extends Morph {
     }
 
     mirrorElement.addEventListener("mousemove", evt => {
-      this.selectElement(subject, evt)
+      this.hoverElement(subject, evt)
     })
 
     mirrorElement.addEventListener("mouseout", evt => {
       if (evt.ctrlKey) {
-        this.sourceEditor.style.display = 'none';
-        this.parentElements.style.display = 'none';
+        this.unhoverElement();
       }
     })
         
     mirrorElement.addEventListener("click", evt => {
-      this.selectElement(subject, evt)
+      this.hoverElement(subject, evt);
+      this.selectElement(subject);
     })
         
     return mirrorElement;
@@ -396,8 +356,7 @@ export default class JsxRay extends Morph {
   get handle() { return this.get('#handle'); }
   get frameHandlesLeft() { return this.get('#frameHandlesLeft'); }
   get frameHandlesLeftLabel() { return this.get('#frameHandlesLeftLabel'); }
-  get sourceEditor() { return this.get('#sourceEditor'); }
-  get parentElements() { return this.get('#parentElements'); }
+  get nodeAncestryList() { return this.get('#nodeAncestryList'); }
 
   mirrorWorld() {
     this.frame.isMetaNode = true
@@ -430,12 +389,10 @@ export default class JsxRay extends Morph {
 
     this.frameHandlesLeftLabel.isMetaNode = true
 
-    this.sourceEditor.isMetaNode = true
-    lively.setExtent(this.sourceEditor, lively.pt(600,150))
     lively.warn('reset')
-    lively.setPosition(this.sourceEditor, lively.pt(0,200))
-    this.sourceEditor.hideToolbar();
-
+    this.nodeAncestryList.isMetaNode = true
+    this.nodeAncestryList.init(this)
+    
     this.ajustRootPosition()
     this.updateWorld()
   }

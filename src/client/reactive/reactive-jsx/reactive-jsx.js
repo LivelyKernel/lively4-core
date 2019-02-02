@@ -8,19 +8,14 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
  */
 
-function ensureMetaData(element) {
-  return element.jsxMetaData = element.jsxMetaData || {};
-}
-
 function addMetaData(element, data = {}) {
-  ensureMetaData(element);
-  return Object.assign(element.jsxMetaData, data);
+  return element.jsxMetaData = Object.assign(element.jsxMetaData || {}, data);
 }
 
 function basicCreateElement(tagName) {
   const element = document.createElement(tagName);
   
-  ensureMetaData(element);
+  addMetaData(element, { timeOffset: performance.now() });
   
   return element;
 }

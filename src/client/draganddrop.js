@@ -154,7 +154,7 @@ const dropOnDocumentBehavior = {
           const knotURL = dt.getData("knot/url");
 
           lively.create('knot-desktop-icon')
-            ::through(icon => lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY)))
+            .through(icon => lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY)))
             .then(icon => icon.knotURL = knotURL);
 
           return true;

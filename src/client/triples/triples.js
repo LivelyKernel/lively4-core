@@ -358,7 +358,7 @@ export class Graph {
         Promise.all(fileNames.map(fileName => {
           const knotURL = new URL(fileName, directoryURL);
           return this.requestKnot(knotURL)
-            ::through(() => progress.value = i++ / total);
+            .through(() => progress.value = i++ / total);
         }))
           .then(resolve)
           .then(() => progress.remove());

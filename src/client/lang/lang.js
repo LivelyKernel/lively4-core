@@ -1,5 +1,8 @@
+import { extend } from './utils.js';
+import * as _ from 'src/external/lodash/lodash.js';
 
-Object.assign(Date.prototype, {
+
+extend(Date.prototype, {
   
   dayInWeek(offset) {
     const day = this.getDay()
@@ -34,13 +37,13 @@ Object.assign(Date.prototype, {
 
     return `${year}.${month}.${day}`;
   }
+  
 });
 
 
 
 
-
-Object.assign(Map.prototype, {
+const mapExtensions = {
   
   /**
    * Tries to get the value stored for the @link(key).
@@ -58,8 +61,75 @@ Object.assign(Map.prototype, {
 
     return this.get(key);
   }
+  
+}
+
+extend(Map.prototype, mapExtensions);
+extend(WeakMap.prototype, mapExtensions);
+
+
+
+
+extend(Number.prototype, {
+  
+  times(iteratee) {
+    return _.times(this, iteratee);
+  },
+  
+  to(end, step) {
+    return _.range(this, end, step);
+  }
+
 });
 
+
+extend(String.prototype, {
+
+  /**
+   * 
+   * @public
+   * @param options (*) the optional options object containing any custom settings that you want to apply to the request
+   * @returns {Promise<String>} the remote resource as String
+   * 
+   * @example <caption>Get lively start.html.</caption>
+   * (lively4url + "/start.html").fetchText();
+   */
+  fetchText(options) {
+    return fetch(this, options).then(r => r.text());
+  },
+
+  /**
+   * 
+   * @public
+   * @param options (*) the optional options object containing any custom settings that you want to apply to the request
+   * @returns {Promise<JSON>} the remote resource as JSON
+   * 
+   * @example <caption>Get d3 flare.json.</caption>
+   * (lively4url + "/src/components/demo/flare.json").fetchJSON();
+   */
+  fetchJSON(options) {
+    return fetch(this, options).then(r => r.json());
+  }
+
+});
+
+
+
+extend(Promise.prototype, {
+
+  /**
+   * Awaits the promise, and return a promise after calling func.
+   * @example <caption>Example usage on Promises.</caption>
+   * fetch("https://lively-kernel.org/lively4/lively4-core/start.html")
+   *   .through(lively.notify) // prints the response object
+   *   .then(t=>t.text())
+   *   .through(lively.notify); // prints the content
+   */
+  through(func, ...args) {
+    return this.then(val => (func(val, ...args), val));
+  }
+
+});
 
 
 

@@ -892,6 +892,8 @@ export default class Container extends Morph {
           }
         }
       }
+     
+      
       components.loadUnresolved(root);
       lively.clipboard.initializeElements(root.querySelectorAll("*"))
       

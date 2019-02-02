@@ -54,10 +54,8 @@ export default class Sync extends Morph {
     //   // editor.session.setScrollTop(1000000); // #TODO find scroll to bottom method in ace
     // }
   }
-
-  async updateLoginStatus() {
-    if (window.__karma__) return; // no lively4-server active
-    
+  
+  async loadCredentials() {
     // this.updateLoginStatus()
     var token = await this.loadValue("githubToken")
     this.get("#loginButton").innerHTML = 
@@ -71,11 +69,17 @@ export default class Sync extends Morph {
       await this.loadValue("githubEmail");
     
     var value = await this.loadValue("githubRepository") 
-    if (value)this.get("#gitrepository").value = value;
+    if (value) this.get("#gitrepository").value = value;
+  }
+  
+
+  async updateLoginStatus() {
+    if (window.__karma__) return; // no lively4-server active
     
-    this.updateContextSensitiveButtons();
-    this.updateRepositoryList();
-    this.updateBranchesList();
+    await this.loadCredentials()
+    
+    await this.updateContextSensitiveButtons();
+    await this.updateRepositoryList();
   }
 
   githubApi(path, token) {
@@ -151,11 +155,15 @@ export default class Sync extends Morph {
   }
 
 
-  async gitControl(cmd, eachCB) {
+  async gitControl(cmd, eachCB, optHeaders={}) {
     this.clearLog()
     return new Promise(async (resolve) => {
+      var headers =  await this.getHeaders()
+      for(var key in optHeaders) {
+        headers.set(key, optHeaders[key])
+      }
       lively.files.fetchChunks(fetch(this.getServerURL() +"/_git/" + cmd, {
-              headers: await this.getHeaders()
+              headers: headers
             }), (eaChunk) => {
           if (eachCB) 
             eachCB(eaChunk)
@@ -287,6 +295,7 @@ export default class Sync extends Morph {
 
   async getGitRepositoryNames() {
     var json = await lively.files.statFile(this.getServerURL()).then( JSON.parse)
+    if (!json || !json.contents) return []
     return json.contents.filter(ea => ea.type == "directory").map(ea => ea.name)
   }
 
@@ -352,8 +361,8 @@ export default class Sync extends Morph {
 
     if (exists) {
       
-      this.updateUpstreamURL()
-      this.updateBranchesList() 
+      await this.updateUpstreamURL()
+      await this.updateBranchesList() 
     }
 
     this.shadowRoot.querySelectorAll(".repo").forEach(ea => 
