@@ -47,29 +47,102 @@ export class TraceNode {
     }
   }
   
-  lastNode() {
-    let numChildren = this.children.length
-    if (numChildren > 0) {
-      return this.children[numChildren - 1].lastNode()
+  /*
+   * Tree Navigation
+   */
+  get preceedsChildren() {
+    return true;
+  }
+  
+  precedingChildren() {
+    return this.preceedsChildren ? [] : this.children;
+  }
+  
+  succeedingChildren() {
+    return this.preceedsChildren ? this.children : [];
+  }
+  
+  firstDescendant() {
+    let children = this.precedingChildren();
+    if (children.length == 0) {
+      return this;
     } else {
-      return this
+      return children[0].firstDescendant();
     }
   }
   
-  nodeBeforeChild(traceNode) {
-    let pos = this.children.indexOf(traceNode);
-    if (pos < 1) {
-      return this
+  lastDescendant() {
+    let children = this.succeedingChildren();
+    if (children.length == 0) {
+      return this;
     } else {
-      return this.children[pos - 1].lastNode()
+      return children[children.length-1].lastDescendant();
     }
+  }
+  
+  precedingChildAround(traceNode, offset) {
+    let children = this.precedingChildren();
+    let index = children.indexOf(traceNode);
+    if (index >= 0) {
+      if (index+offset == children.length) {
+        return this;
+      } else {
+        return children[index+offset];
+      }
+    }
+    return null;
+  }
+  
+  succeedingChildAround(traceNode, offset) {
+    let children = this.succeedingChildren();
+    let index = children.indexOf(traceNode);
+    if (index >= 0) {
+      if (index+offset == -1) {
+        return this;
+      } else {
+        return children[index+offset];
+      }
+    }
+    return null;
+  }
+  
+  descendantBefore(traceNode) {
+    let child = this.precedingChildAround(traceNode, -1)
+                || this.succeedingChildAround(traceNode, -1);
+    if (child === this) return this;
+    if (!child) return this.parent.descendantBefore(this);
+    return child.lastDescendant();
+  }
+  
+  descendantAfter(traceNode) {
+    let child = this.precedingChildAround(traceNode, 1)
+                || this.succeedingChildAround(traceNode, 1);
+    if (child === this) return this;
+    if (!child) return this.parent.descendantAfter(this);
+    return child.firstDescendant();
   }
   
   predecessor() {
-    if (this.parent) {
-      return this.parent.nodeBeforeChild(this)
+    let children = this.precedingChildren();
+    let child = children[children.length-1];
+    if (child) {
+      return child.lastDescendant();
+    } else if (this.parent) {
+      return this.parent.descendantBefore(this);
     } else {
-      return null
+      return null;
+    }
+  }
+  
+  successor() {
+    let children = this.succeedingChildren();
+    let child = children[0];
+    if (child) {
+      return child.firstDescendant();
+    } else if (this.parent) {
+      return this.parent.descendantAfter(this);
+    } else {
+      return null;
     }
   }
   
@@ -80,13 +153,17 @@ export class TraceNode {
       return this.parent.findLastControlFlow()
     }
   }
+  
+  /*
+   * Data Flow
+   */
 
   findLastControlFlow(){
     let branchingASTNodeTypes = ['FunctionDeclaration', 'IfStatement', 'WhileStatement', 'DoWhileStatement', 'ForStatement']
     if (branchingASTNodeTypes.includes(this.astNode.type) || !this.parent) {
       return this
     }
-    return this.parent.findLastControlFlow()
+    return this.parent.findLastControlFlow();
   }
     
   findLastDataFlowOf(identifier) {
@@ -97,32 +174,24 @@ export class TraceNode {
     return pred;
   }
   
-  questions() {
-    let questions = [
-      ['Back', () => this.predecessor()],
-      ['Up', () => this.whyWasThisStatementExecuted()]]
-    let referencedVars = this.variablesOfInterest()
-                          .sort((a, b) => {
-                            return a.name.localeCompare(b.name)
-                          })
-                          .filter((id, i, arr) => {
-                            let pred = arr[i-1]
-                            return !pred 
-                                    || id.name != pred.name
-                                    || id.scopeId != pred.scopeId //shouldn't actually differ
-                          })
-    referencedVars.forEach((id) => {
-      questions.push([`Previous assignment of '${id.name}'`, () => this.findLastDataFlowOf(id)])
-    })
-    return questions
+  variablesOfInterest() {
+    return [];
   }
+  
+  assigns(identifier) {
+    return false;
+  }
+  
+  /*
+   * Sub-Types
+   */
   
   static mapToNodeType(astNode) {
     let nodeTypes = [
       ProgramNode,
       
       VariableAccessNode,
-      LiteralAccessNode,
+      LiteralAccessNode, //catch all
       
       BinaryExpressionNode,
       UnaryExpressionNode,
@@ -152,22 +221,12 @@ export class TraceNode {
     })
   }
   
+  /*
+   * Display
+   */
+  
   labelString() {
     return this.astNode.type;
-  }
-  
-  variablesOfInterest() {
-    return [];
-  }
-  
-  assigns(identifier) {
-    return false;
-  }
-  
-  equalIdentifiers(identifier1, identifier2) {
-    return (
-      identifier1.name == identifier2.name
-      && identifier1.scopeId == identifier2.scopeId)
   }
 }
 
@@ -178,6 +237,10 @@ class ProgramNode extends TraceNode {
 
 class ExpressionNode extends TraceNode {
   static get astTypes() { return ['Expression'] }
+  
+  get preceedsChildren() {
+    return false;
+  }
   
   valueString() {
     return this.value.toString();
@@ -255,7 +318,7 @@ class UpdateExpressionNode extends ExpressionNode {
   }
   
   assigns(identifier) {
-    return this.equalIdentifiers(this.identifier, identifier);
+    return equalIdentifiers(this.identifier, identifier);
   }
 }
 
@@ -282,12 +345,16 @@ class AssignmentExpressionNode extends ExpressionNode {
   }
   
   assigns(identifier) {
-    return this.equalIdentifiers(this.left, identifier);
+    return equalIdentifiers(this.left, identifier);
   }
 }
 
 class CallExpressionNode extends ExpressionNode {
   static get astTypes() { return ['CallExpression'] }
+  
+  get preceedsChildren() {
+    return true;
+  }
   
   get function() {
     return this.children[0];
@@ -345,6 +412,10 @@ class LiteralAccessNode extends ExpressionNode {
 class DeclaratorStatementNode extends TraceNode {
   static get astTypes() { return ['VariableDeclarator'] }
   
+  get preceedsChildren() {
+    return false;
+  }
+  
   get init() {
     return this.children[0];
   }
@@ -355,7 +426,7 @@ class DeclaratorStatementNode extends TraceNode {
   }
   
   assigns(identifier) {
-    return this.equalIdentifiers(this.astNode.id, identifier);
+    return equalIdentifiers(this.astNode.id, identifier);
   }
 }
 
@@ -364,6 +435,18 @@ class IfStatementNode extends TraceNode {
   
   get test() {
     return this.children[0];
+  }
+  
+  get consequences() {
+    return this.children.slice(1, this.children.length);
+  }
+  
+  precedingChildren() {
+    return [this.test];
+  }
+  
+  succeedingChildren() {
+    return this.consequences;
   }
   
   labelString() {
@@ -389,6 +472,14 @@ class FunctionNode extends TraceNode {
   labelString() {
     return 'Function';
   }
+}
+
+export function equalIdentifiers(identifier1, identifier2) {
+  t.assertIdentifier(identifier1);
+  t.assertIdentifier(identifier2);
+  return (
+    identifier1.name == identifier2.name
+    && identifier1.scopeId == identifier2.scopeId)
 }
 
 window.lively4ExecutionTrace = ExecutionTrace

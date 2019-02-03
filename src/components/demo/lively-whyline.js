@@ -6,6 +6,7 @@ import boundEval from 'src/client/bound-eval.js';
 import { debounce } from "utils";
 
 import ShowPerformance from "demos/contextjs/showperformancelayer.js";
+import { equalIdentifiers } from 'src/components/demo/lively-whyline-tracing.js'
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 
@@ -170,8 +171,7 @@ export default class Whyline extends Morph {
     let questionPane = this.get("#questionPane")
     questionPane.innerHTML = '' //Clear previous buttons
 
-    let questions = traceNode.parent ? traceNode.questions() : []; //fix me
-    for (let question of questions) {
+    for (let question of this.questions(traceNode)) {
       let btn = document.createElement("BUTTON");
       btn.className += " questionButton"
       let t = document.createTextNode(question[0]);
@@ -181,6 +181,32 @@ export default class Whyline extends Morph {
       btn.appendChild(t);// Append the text to <button>
       questionPane.appendChild(btn)
     }
+  }
+  
+  questions(traceNode) {
+    return [...this.controlFlowQuestions(traceNode), ...this.dataFlowQuestions(traceNode)];
+  }
+  
+  controlFlowQuestions(traceNode) {
+    if (!traceNode.parent) return [];
+    return [
+      ['↤', () => traceNode.predecessor()],
+      ['↥', () => traceNode.whyWasThisStatementExecuted()],
+      ['↦', () => traceNode.successor()]];
+  }
+  
+  dataFlowQuestions(traceNode) {
+    let referencedVars = traceNode.variablesOfInterest()
+                          .sort((a, b) => {
+                            return a.name.localeCompare(b.name)
+                          })
+                          .filter((id, i, arr) => {
+                            let pred = arr[i-1]
+                            return !(pred && equalIdentifiers(id, pred))
+                          })
+    return referencedVars.map((id) => {
+      return [`Previous assignment of '${id.name}'`, () => traceNode.findLastDataFlowOf(id)];
+    });
   }
   
   /*
