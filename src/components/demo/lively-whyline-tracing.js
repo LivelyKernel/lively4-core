@@ -305,7 +305,7 @@ class UpdateExpressionNode extends ExpressionNode {
     if (t.isIdentifier(this.argument)) {
       return this.argument;
     } else {
-      return this.argument.identifier; //fix me
+      return this.argument.identifier; //fix me, I might not to be an identifier
     }
   }
   

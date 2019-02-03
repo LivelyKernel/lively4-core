@@ -139,7 +139,7 @@ export default class Whyline extends Morph {
     }
     this.lastMarkId = markId
     var marker = this.editorComp().shadowRoot.querySelector("." + markId)
-    if (marker) marker.style.backgroundColor = 'rgba(0,0,255,0.5)'
+    if (marker) marker.style.backgroundColor = this.highlightColor;
 
     var traceNode = this.get("#traceView").querySelector("#" + markId)
     if (traceNode ) {
