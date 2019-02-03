@@ -146,31 +146,31 @@ export class TraceNode {
     }
   }
   
-  whyWasThisStatementExecuted(){
-    if (this.parent){
-      if (this.astNode.type == "FunctionDeclaration")
-        return this.parent
-      return this.parent.findLastControlFlow()
-    }
+  /*
+   * Control Flow
+   */
+  
+  branchesControlFlow() {
+    return false;
+  }
+  
+  previousControlFlow(){
+    let previous = this;
+    do {
+      previous = previous.parent;
+    } while (previous && !previous.branchesControlFlow());
+    return previous;
   }
   
   /*
    * Data Flow
    */
-
-  findLastControlFlow(){
-    let branchingASTNodeTypes = ['FunctionDeclaration', 'IfStatement', 'WhileStatement', 'DoWhileStatement', 'ForStatement']
-    if (branchingASTNodeTypes.includes(this.astNode.type) || !this.parent) {
-      return this
-    }
-    return this.parent.findLastControlFlow();
-  }
     
-  findLastDataFlowOf(identifier) {
+  previousAssignmentTo(identifier) {
     let pred = this;
     do {
       pred = pred.predecessor();
-    } while (pred && !pred.assigns(identifier))
+    } while (pred && !pred.assigns(identifier));
     return pred;
   }
   
@@ -203,6 +203,7 @@ export class TraceNode {
       IfStatementNode,
       DeclaratorStatementNode,
       ForStatementNode,
+      WhileStatementNode,
       
       FunctionNode //catch all
     ];
@@ -233,6 +234,9 @@ export class TraceNode {
 class ProgramNode extends TraceNode {
   static get astTypes() { return ['Program'] }
   
+  branchesControlFlow() {
+    return true;
+  }
 }
 
 class ExpressionNode extends TraceNode {
@@ -372,6 +376,10 @@ class CallExpressionNode extends ExpressionNode {
     this.children[this.children.length - 1];
   }
   
+  branchesControlFlow() {
+    return true;
+  }
+  
   labelString() {
     let callee = this.astNode.callee;
     let name = 'fn';
@@ -449,6 +457,10 @@ class IfStatementNode extends TraceNode {
     return this.consequences;
   }
   
+  branchesControlFlow() {
+    return true;
+  }
+  
   labelString() {
     return `if (${this.test.labelString()}) -> ${this.test.valueString()}`;
   }
@@ -461,13 +473,33 @@ class IfStatementNode extends TraceNode {
 class ForStatementNode extends TraceNode {
   static get astTypes() { return ['ForStatement'] }
   
+  branchesControlFlow() {
+    return true;
+  }
+  
   labelString() {
     return 'for{}'
   }
 }
 
+class WhileStatementNode extends TraceNode {
+  static get astTypes() { return ['WhileStatement'] }
+  
+  branchesControlFlow() {
+    return true;
+  }
+  
+  labelString() {
+    return 'while{}'
+  }
+}
+
 class FunctionNode extends TraceNode {
   static get astTypes() { return ['Function'] }
+  
+  branchesControlFlow() {
+    return true;
+  }
   
   labelString() {
     return 'Function';

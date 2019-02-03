@@ -191,7 +191,7 @@ export default class Whyline extends Morph {
     if (!traceNode.parent) return [];
     return [
       ['↤', () => traceNode.predecessor()],
-      ['↥', () => traceNode.whyWasThisStatementExecuted()],
+      ['↥', () => traceNode.previousControlFlow()],
       ['↦', () => traceNode.successor()]];
   }
   
@@ -205,7 +205,7 @@ export default class Whyline extends Morph {
                             return !(pred && equalIdentifiers(id, pred))
                           })
     return referencedVars.map((id) => {
-      return [`Previous assignment of '${id.name}'`, () => traceNode.findLastDataFlowOf(id)];
+      return [`Previous assignment of '${id.name}'`, () => traceNode.previousAssignmentTo(id)];
     });
   }
   
