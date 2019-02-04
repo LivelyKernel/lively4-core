@@ -125,6 +125,13 @@ export default class D3GraphViz extends D3Component {
     
     var graph = d3.select(div)
     this.graph = graph
+    if (!graph.graphviz) {
+      debugger
+      console.warn("d3-graphviz: graph.graphviz undefined")
+      return
+    }
+    
+    
     var graphviz = graph.graphviz(false) // default is work, "false" -> no worker
       .fade(false)
       .zoom(true)
