@@ -1,6 +1,8 @@
 import 'lang';
 import { extend } from './utils.js';
 
+
+
 extend(Object.prototype, {
   dependentAExprs() {
     // #TODO: implement2
@@ -23,27 +25,37 @@ const SYNTAX_PLUGINS = [
   asyncGenerators
 ];
 
+import boundEval from "src/client/bound-eval.js";
+
 extend(String.prototype, {
 
   toAST() {
     const filename = "tempfile.js";
 
     return babel.transform(this, {
-        babelrc: false,
-        plugins: SYNTAX_PLUGINS,
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
+      babelrc: false,
+      plugins: SYNTAX_PLUGINS,
+      presets: [],
+      filename: filename,
+      sourceFileName: filename,
+      moduleIds: false,
+      sourceMaps: true,
+      // inputSourceMap: load.metadata.sourceMap,
+      compact: false,
+      comments: true,
+      code: true,
+      ast: true,
+      resolveModuleSource: undefined
     }).ast;
-  }
+  },
 
+  async boundEval(thisReference, targetModule) {
+    const result = await boundEval(this, thisReference, targetModule);
+    if (result.isError) {
+      throw result.value;
+    } else {
+      return result.value;
+    }
+  }
 });
 

@@ -6,7 +6,9 @@ import * as _ from 'src/external/lodash/lodash.js';
 extend(Date.prototype, {
   
   dayInWeek(offset) {
-    const day = this.getDay()
+    let day = this.getDay()
+    if (day === 0) { day = 7; }
+    
     const d = this.getDate();
 
     const resultDay = new Date(this);
