@@ -1,12 +1,9 @@
 
 export function extend(obj, definitions) {
-  for (let [propName, value] of Object.entries(definitions)) {
-    Object.defineProperty(obj, propName, {
-      configurable: true,
-      enumerable: false,
-      value,
-      writable: true
-    });
+  const descriptors = Object.getOwnPropertyDescriptors(definitions);
+  for (let [propName, descriptor] of Object.entries(descriptors)) {
+    descriptor.enumerable = false;
+    Object.defineProperty(obj, propName, descriptor);
   }
 }
 
