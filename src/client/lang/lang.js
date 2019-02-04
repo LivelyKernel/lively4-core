@@ -7,7 +7,7 @@ extend(Date.prototype, {
   
   dayInWeek(offset) {
     let day = this.getDay()
-    if (day === 0) { day = 7; }
+    if (day === 0) { day = 7; } // sunday is the end of the week
     
     const d = this.getDate();
 
