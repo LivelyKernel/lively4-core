@@ -1,4 +1,4 @@
-// mysterios visitors
+// visitors applied to the stroboscoped objects
 
 function visitor1_accept(a) {
   if (a.pagename === "main")
