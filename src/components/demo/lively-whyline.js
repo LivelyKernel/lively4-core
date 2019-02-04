@@ -6,6 +6,7 @@ import boundEval from 'src/client/bound-eval.js';
 import { debounce } from "utils";
 
 import ShowPerformance from "demos/contextjs/showperformancelayer.js";
+import { equalIdentifiers } from 'src/components/demo/lively-whyline-tracing.js'
 
 // import localsBabelPlugin from 'babel-plugin-locals'
 
@@ -31,8 +32,95 @@ export default class Whyline extends Morph {
       this.dispatchEvent(new CustomEvent("initialize")));
   }
   
+  /*
+   * Private
+   */
+
+  editorComp() {
+    return this.get("#source").get("lively-code-mirror");
+  }
+  
+  editor() {
+    return this.editorComp().editor
+  }
+  
+  get highlightColor() {
+    return '#f9cb9c' //light orange
+  }
+  
+  /*
+   * Callbacks
+   */
+  
+  onSourceChange(evt) {
+    this.sourceCodeChangedDelay();
+  }
+  
+  onControlFlowQuestion(evt){
+    let node = this.selectedNode
+    let newNode = node.whyWasThisStatementExecuted()
+    this.selectCallTraceNode(newNode)
+  }
+  
+  onDataFlowQuestion(evt){
+    let node = this.selectedNode
+    let newNode = node.findLastDataFlow()
+    this.selectCallTraceNode(newNode)
+  }
+  
   onGenerateTrace(evt) {
     this.runCode()
+  }
+  
+  /*
+   * Highlighting Source Code
+   */
+  
+  markCallTree(traceNode) {
+    var astNode = traceNode.astNode
+    
+    if (!traceNode.markId) traceNode.markId = 'tracemark' + this.lastMarkCounter++;
+    //if (astNode) this.markSource(astNode, traceNode.markId);
+    
+    traceNode.children.forEach(ea => {
+      this.markCallTree(ea)
+    })
+  }
+  
+  markSource(astNode, markId) {
+    let loc = astNode.loc;
+    if (loc) {
+      this.editor().markText( 
+        {line: loc.start.line - 1, ch: loc.start.column},
+        {line: loc.end.line - 1, ch: loc.end.column},
+        {
+          isTraceMark: true,
+          className: "marked " + markId,
+          css: "background-color: rgba(0,255,0,0.3)",
+          title: astNode.type
+        })
+    }
+  }
+  
+  highlightNodeSource(astNode) {
+    this.clearCodeMarkings();
+    let loc = astNode.loc;
+    if (loc) {
+      this.editor().markText( 
+        {line: loc.start.line - 1, ch: loc.start.column},
+        {line: loc.end.line - 1, ch: loc.end.column},
+        {
+          isTraceMark: true,
+          css: `background-color: ${this.highlightColor}`
+        });
+    }
+  }
+
+  clearCodeMarkings() {
+    this.lastMarkCounter = 0
+    this.editor().getAllMarks()
+      .filter(ea => ea.isTraceMark)
+      .forEach(ea => ea.clear())
   }
   
   hideMarker(markId) {
@@ -51,7 +139,7 @@ export default class Whyline extends Morph {
     }
     this.lastMarkId = markId
     var marker = this.editorComp().shadowRoot.querySelector("." + markId)
-    if (marker) marker.style.backgroundColor = 'rgba(0,0,255,0.5)'
+    if (marker) marker.style.backgroundColor = this.highlightColor;
 
     var traceNode = this.get("#traceView").querySelector("#" + markId)
     if (traceNode ) {
@@ -59,16 +147,31 @@ export default class Whyline extends Morph {
     }
   }
   
+  /*
+   * Public
+   */
+  
   selectCallTraceNode(traceNode) {
     console.log(traceNode)
     this.selectedNode = traceNode
-
     
+    this.updateQuestions(traceNode);
+    
+    this.highlightNodeSource(traceNode.astNode);
+    if (this.selectedNode.markId) {
+      this.showMarker(this.selectedNode.markId)
+    }
+  }
+  
+  /*
+   * Asking Questions
+   */
+  
+  updateQuestions(traceNode) {
     let questionPane = this.get("#questionPane")
     questionPane.innerHTML = '' //Clear previous buttons
 
-    let questions = traceNode.questions()
-    for (let question of questions) {
+    for (let question of this.questions(traceNode)) {
       let btn = document.createElement("BUTTON");
       btn.className += " questionButton"
       let t = document.createTextNode(question[0]);
@@ -78,47 +181,37 @@ export default class Whyline extends Morph {
       btn.appendChild(t);// Append the text to <button>
       questionPane.appendChild(btn)
     }
-    
-    
-    
-    //     if(['AssignmentExpression', 'UpdateExpression'].includes(traceNode.astNode.type)){
-//       dataFlowButton.style.display = "inline"
-//       dataFlowButton.innerHTML = "Why has " + traceNode.getIdentifier().name + " the value " + traceNode.value + "?";
-//     }
-//     else{
-//       dataFlowButton.style.display = "none"
-//     }
-      
-    
-    if (this.selectedNode.markId) {
-      this.showMarker(this.selectedNode.markId)
-    }
-  }
-
-  editorComp() {
-    return this.get("#source").get("lively-code-mirror");
   }
   
-  editor() {
-    return this.editorComp().editor
+  questions(traceNode) {
+    return [...this.controlFlowQuestions(traceNode), ...this.dataFlowQuestions(traceNode)];
   }
   
-  onSourceChange(evt) {
-    this.sourceCodeChangedDelay();
+  controlFlowQuestions(traceNode) {
+    if (!traceNode.parent) return [];
+    return [
+      ['↤', () => traceNode.predecessor()],
+      ['↥', () => traceNode.previousControlFlow()],
+      ['↦', () => traceNode.successor()]];
   }
   
-  onControlFlowQuestion(evt){
-    let node = this.selectedNode
-    let newNode = node.whyWasThisStatementExecuted()
-    this.selectCallTraceNode(newNode)
+  dataFlowQuestions(traceNode) {
+    let referencedVars = traceNode.variablesOfInterest()
+                          .sort((a, b) => {
+                            return a.name.localeCompare(b.name)
+                          })
+                          .filter((id, i, arr) => {
+                            let pred = arr[i-1]
+                            return !(pred && equalIdentifiers(id, pred))
+                          })
+    return referencedVars.map((id) => {
+      return [`Previous assignment of '${id.name}'`, () => traceNode.previousAssignmentTo(id)];
+    });
   }
   
-  onDataFlowQuestion(evt){
-    let node = this.selectedNode
-    let newNode = node.findLastDataFlow()
-    this.selectCallTraceNode(newNode)
-  }
-
+  /*
+   * Trace Execution
+   */
   
   async runCode() {
     this.ast = null; // clear
@@ -167,58 +260,16 @@ export default class Whyline extends Morph {
       this.updateCodeAnnotations(this.traceRoot)
     }
   }
+  
+  /*
+   * Trace View
+   */
 
   updateTraceView(tree) {
     this.get("#traceView").innerHTML = ""
     this.printTraceNode(this.get("#traceView"), tree)
   }
   
-  nodeToString(traceNode) {
-    var astNode = traceNode.astNode
-    var label = ""
-    
-    if (!astNode) {
-      debugger;
-    }
-    
-    switch(astNode.type) {
-      case "UpdateExpression":
-        label = astNode.argument.name + "=" + traceNode.value 
-        break;
-      case "VariableDeclarator":
-        label = astNode.id.name + "=" + traceNode.value
-        break
-      case "ExpressionStatement":
-        label = ""
-        break
-      case "FunctionDeclaration":
-        label = ""
-        break
-      case "CallExpression":
-        if (astNode.callee.object)
-          label = astNode.callee.object.name + ".";
-        if (astNode.callee.property)
-          label += astNode.callee.property.name + "()"
-        break
-       case "ForStatement":
-          label = "for{}"
-        break
-       case "BinaryExpression":
-          label = ""
-        break
-
-      case "AssignmentExpression":
-        var name = astNode.left.name
-        if (!name && astNode.left.property)  
-          name = astNode.left.property.name;
-        label = name + "=" + traceNode.value
-        break
-      default:
-        label = astNode.type
-    }
-    return label
-  }
-
   get maxCallId() {
     return 200
   }
@@ -229,7 +280,7 @@ export default class Whyline extends Morph {
     var nodeElement = document.createElement("div");
     nodeElement.setAttribute("class", "traceNode")
 
-    var label = this.nodeToString(traceNode);
+    let label = traceNode.labelString();
 
     nodeElement.innerHTML = "<div class='traceLabel'> " + label +"</div>"
     nodeElement.setAttribute("title", "" + traceNode.astNode.type)
@@ -245,42 +296,12 @@ export default class Whyline extends Morph {
       this.printTraceNode(nodeElement, ea)
     })
   }
-
-  markCallTree(traceNode) {
-    var astNode = traceNode.astNode
-    
-    if (!traceNode.markId) traceNode.markId = 'tracemark' + this.lastMarkCounter++
-    if (astNode) {
-      this.markSource(astNode, traceNode.markId)
-    }
-    
-    traceNode.children.forEach(ea => {
-      this.markCallTree(ea)
-    })
-  }
   
-  markSource(astNode, markId) {
-    let loc = astNode.loc
-    if (loc) {
-      this.editor().markText( 
-        {line: loc.start.line - 1, ch: loc.start.column},
-        {line: loc.end.line - 1, ch: loc.end.column},
-        {
-          isTraceMark: true,
-          className: "marked " + markId,
-          css: "background-color: rgba(0,255,0,0.3)",
-          title: astNode.type
-        })
-    }
-  }
+  /*
+   * Gutters
+   * (these things in the code pane on the right showing assignments)
+   */
 
-  clearCodeMarkings() {
-    this.lastMarkCounter = 0
-    this.editor().getAllMarks()
-      .filter(ea => ea.isTraceMark)
-      .forEach(ea => ea.clear())
-  }
-  
   addCodeAnnotation(line, text, node) {
     var editor = this.editor()
     var info = editor.lineInfo(line)
@@ -333,7 +354,9 @@ export default class Whyline extends Morph {
     node.children.forEach(ea => this.updateCodeAnnotation(ea, parentBounds))
   }
   
-  
+  /*
+   * Lively
+   */
 
   livelyMigrate(other) {
     this.addEventListener("initialize", () => {
