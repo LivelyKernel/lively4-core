@@ -66,7 +66,9 @@ extend(Date.prototype, {
 });
 
 
-
+/**
+ * MAP/WEAKMAP
+ */
 const mapExtensions = {
   
   /**
@@ -86,13 +88,15 @@ const mapExtensions = {
     return this.get(key);
   }
   
-}
+};
 
 extend(Map.prototype, mapExtensions);
 extend(WeakMap.prototype, mapExtensions);
 
 
-
+/**
+ * ARRAY
+ */
 extendFromLodash(Array.prototype, ['sortBy']);
 
 extend(Array.prototype, {
@@ -106,7 +110,9 @@ extend(Array.prototype, {
 });
 
 
-
+/**
+ * NUMBER
+ */
 extendFromLodash(Number.prototype, ['clamp', 'times']);
 
 extend(Number.prototype, {
@@ -118,6 +124,9 @@ extend(Number.prototype, {
 });
 
 
+/**
+ * STRING
+ */
 extend(String.prototype, {
 
   /**
@@ -149,7 +158,9 @@ extend(String.prototype, {
 });
 
 
-
+/**
+ * PROMISE
+ */
 extend(Promise.prototype, {
 
   /**
@@ -165,6 +176,3 @@ extend(Promise.prototype, {
   }
 
 });
-
-
-
