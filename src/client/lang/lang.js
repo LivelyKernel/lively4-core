@@ -83,6 +83,35 @@ extend(Array.prototype, {
 
 
 
+
+// alternative that not provides the function name
+// const definition = {
+//   [propName](...args) {
+//     return _[propName](this, ...args);
+//   }
+// }
+function extendFromLodash(obj, ...propNames) {
+  function genFunc(name) {
+    return new Function('_', `return function ${name}(...args) {
+  return _.${name}(this, ...args);
+};`)(_);
+  }
+  
+  const definitionParts = propNames
+    .map(propName => {
+      return [propName, genFunc(propName)];
+    })
+    .map(([propName, fn]) => {
+      return { [propName]: fn };
+    });
+
+  const definition = Object.assign({}, ...definitionParts);
+
+  return extend(obj, definition);
+}
+
+
+extendFromLodash(Number.prototype, 'clamp');
 extend(Number.prototype, {
   
   times(iteratee) {
