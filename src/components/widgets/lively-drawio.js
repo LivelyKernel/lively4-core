@@ -42,9 +42,10 @@ export default class LivelyDrawio extends Morph {
     this.get("#drawio").innerHTML = `<div class="mxgraph" style="border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;target&quot;:&quot;blank&quot;,&quot;lightbox&quot;:false,&quot;nav&quot;:true,&quot;zoom&quot;:1,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;false&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;url&quot;:&quot;${url}&quot;}"></div>`
   
     if (!self.GraphViewer) {
-      throw new Error("draw.io view not loaded")
+      console.warn("draw.io view not loaded")
+    } else {
+      GraphViewer.createViewerForElement(this.get(".mxgraph"));
     }
-    GraphViewer.createViewerForElement(this.get(".mxgraph"));
   }
   
   async saveAsPng() {

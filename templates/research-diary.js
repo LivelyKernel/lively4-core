@@ -6,7 +6,7 @@ import { Graph, _, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
 import { promisedEvent, debounce, sortBy, last } from "utils";
 
 function getTodaysTitle() {
-  return new Date().toFormattedString('yyyy.mm.dd');
+  return 'Research-Diary Entry ' + new Date().toFormattedString('yyyy.mm.dd');
 }
 
 export default class ResearchDiary extends Morph {

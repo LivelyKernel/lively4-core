@@ -2,10 +2,13 @@ import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
 
+
 extend(Date.prototype, {
   
   dayInWeek(offset) {
-    const day = this.getDay()
+    let day = this.getDay()
+    if (day === 0) { day = 7; } // sunday is the end of the week
+    
     const d = this.getDate();
 
     const resultDay = new Date(this);
@@ -42,7 +45,6 @@ extend(Date.prototype, {
 
 
 
-
 const mapExtensions = {
   
   /**
@@ -69,6 +71,17 @@ extend(WeakMap.prototype, mapExtensions);
 
 
 
+extend(Array.prototype, {
+
+  get first() { return this[0]; },
+  set first(value) { return this[0] = value; },
+
+  get last() { return this[this.length - 1]; },
+  set last(value) { return this[this.length - 1] = value; }
+
+});
+
+
 
 extend(Number.prototype, {
   
@@ -81,6 +94,7 @@ extend(Number.prototype, {
   }
 
 });
+
 
 
 extend(String.prototype, {
