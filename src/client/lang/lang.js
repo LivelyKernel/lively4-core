@@ -2,7 +2,29 @@ import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
 
+function extendFromLodash(obj, propNames) {
+  function genFunc(name) {
+    const args = _[name].toString().split(/\r?\n/)[0].replace(/.*\((.*)\).*/,"$1").split(/, /)
+    args.shift();
+    const argsString = args.join(', ');
+    
+    return new Function('_', `return {
+  ${name}(${argsString}) {
+    return _.${name}(this, ${argsString});
+  }
+};`)(_);
+  }
 
+  const definitionParts = propNames.map(propName => genFunc(propName));
+  const definition = Object.assign({}, ...definitionParts);
+
+  return extend(obj, definition);
+}
+
+
+/**
+ * DATE
+ */
 extend(Date.prototype, {
   
   dayInWeek(offset) {
@@ -71,6 +93,8 @@ extend(WeakMap.prototype, mapExtensions);
 
 
 
+extendFromLodash(Array.prototype, ['sortBy']);
+
 extend(Array.prototype, {
 
   get first() { return this[0]; },
@@ -83,47 +107,15 @@ extend(Array.prototype, {
 
 
 
+extendFromLodash(Number.prototype, ['clamp', 'times']);
 
-// alternative that not provides the function name
-// const definition = {
-//   [propName](...args) {
-//     return _[propName](this, ...args);
-//   }
-// }
-function extendFromLodash(obj, ...propNames) {
-  function genFunc(name) {
-    return new Function('_', `return function ${name}(...args) {
-  return _.${name}(this, ...args);
-};`)(_);
-  }
-  
-  const definitionParts = propNames
-    .map(propName => {
-      return [propName, genFunc(propName)];
-    })
-    .map(([propName, fn]) => {
-      return { [propName]: fn };
-    });
-
-  const definition = Object.assign({}, ...definitionParts);
-
-  return extend(obj, definition);
-}
-
-
-extendFromLodash(Number.prototype, 'clamp');
 extend(Number.prototype, {
-  
-  times(iteratee) {
-    return _.times(this, iteratee);
-  },
   
   to(end, step) {
     return _.range(this, end, step);
   }
 
 });
-
 
 
 extend(String.prototype, {
