@@ -44,7 +44,8 @@ export default function (babel) {
           Identifier(path) {
             path.node.isVariableAccess = isVariableAccess(path);
             path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
-            path.node.scopeId = path.scope.getBinding(path.node.name).scope.uid;
+            let binding = path.scope.getBinding(path.node.name);
+            path.node.scopeId = binding ? binding.scope.uid : null;
           },
           Literal(path) {
             path.node.isLiteralAccess = isLiteralAccess(path);
@@ -83,11 +84,11 @@ export default function (babel) {
         
         function shouldTrace(path) {
           let node = path.node
-          if (!node.traceid || node.isTraced) {
+          if (t.isFunctionDeclaration(node)) console.log(node.traceid);
+          if ((node.traceid === undefined) || node.isTraced) {
             return false;
           } else {
-            node.isTraced = true
-            return true
+            return node.isTraced = true
           }
         }
         
@@ -125,8 +126,8 @@ export default function (babel) {
               }
             }
           },
-          'IfStatement|ForStatement|WhileStatement': {
-            exit: (path) => {
+          'IfStatement|ForStatement|While': {
+            enter: (path) => {
               if (shouldTrace(path)) {
                 path.insertBefore(begin({
                   NODEID: t.numericLiteral(path.node.traceid)
@@ -137,30 +138,35 @@ export default function (babel) {
               }
             }
           },
-          'FunctionDeclaration|FunctionExpression|ClassMethod': {
-            exit: (path) => {
+          'Function': {
+            enter: (path) => {
               if (shouldTrace(path)) {
                 let body = path.get('body');
                 let wrappedBody = wrapBlock(path.node.traceid, body);
                 let newBody = t.blockStatement([
                   checkRuntime(),
                   t.returnStatement(wrappedBody)]);
+                console.log(newBody);
                 body.replaceWith(newBody);
               }
             }
           },
-          'Identifier': (path) => {
-            let node = path.node;
-            if (node.isVariableAccess && shouldTrace(path)) {
-              let newNode = wrapValue(node.traceid, path);
-              path.replaceWith(newNode);
+          'Identifier': {
+            exit: (path) => {
+              let node = path.node;
+              if (node.isVariableAccess && shouldTrace(path)) {
+                let newNode = wrapValue(node.traceid, path);
+                path.replaceWith(newNode);
+              }
             }
           },
-          'Literal': (path) => {
-            let node = path.node;
-            if (node.isLiteralAccess && shouldTrace(path)) {
-              let newNode = wrapValue(node.traceid, path);
-              path.replaceWith(newNode);
+          'Literal': {
+            exit: (path) => {
+              let node = path.node;
+              if (node.isLiteralAccess && shouldTrace(path)) {
+                let newNode = wrapValue(node.traceid, path);
+                path.replaceWith(newNode);
+              }
             }
           }
         })
