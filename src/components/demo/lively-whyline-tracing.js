@@ -174,6 +174,14 @@ export class TraceNode {
     return pred;
   }
   
+  variablesOfInterestFor(nodes) {
+    let identifiers = [];
+    nodes.forEach((child) => {
+      identifiers.push(...child.variablesOfInterest());
+    })
+    return identifiers;
+  }
+  
   variablesOfInterest() {
     return [];
   }
@@ -204,6 +212,7 @@ export class TraceNode {
       DeclaratorStatementNode,
       ForStatementNode,
       WhileStatementNode,
+      DoWhileStatementNode,
       
       FunctionNode //catch all
     ];
@@ -226,6 +235,37 @@ export class TraceNode {
    * Display
    */
   
+  toDisplayString(value, maxLength = 10) {
+    if (value === null) return 'null';
+    let str = '';
+    let type = typeof(value);
+    switch(type) {
+      case 'undefined':
+        return 'undefined';
+      
+      case 'object':
+        return '{...}';
+        
+      case 'boolean':
+        return value.toString();
+        
+      case 'function':
+        return value.name || 'fn';
+        
+      case 'number':
+        return value.toString();
+        
+      case 'string':
+        str = value.substr(0, maxLength);
+        if (value.length > maxLength) str += '...';
+        str = `"${str}"`;
+        return str;
+        
+      default:
+        return value.toString();
+     }
+  }
+  
   labelString() {
     return this.astNode.type;
   }
@@ -247,19 +287,11 @@ class ExpressionNode extends TraceNode {
   }
   
   valueString() {
-    return this.value.toString();
+    return this.toDisplayString(this.value);
   }
   
   labelString() {
     return '';
-  }
-  
-  variablesOfInterestFor(nodes) {
-    let identifiers = [];
-    nodes.forEach((child) => {
-      identifiers.push(...child.variablesOfInterest());
-    })
-    return identifiers;
   }
   
   variablesOfInterest() {
@@ -318,7 +350,7 @@ class UpdateExpressionNode extends ExpressionNode {
   }
   
   variablesOfInterest() {
-    return [this.identifier];
+    return [this.identifier, ...this.variablesOfInterestFor(this.children)];
   }
   
   assigns(identifier) {
@@ -395,6 +427,12 @@ class CallExpressionNode extends ExpressionNode {
     }).join(',');
     return `${name}(${argString}) -> ${this.valueString()}`;
   }
+  
+  /*
+  variablesOfInterest() {
+    return this.variablesOfInterestFor(this.arguments);
+  }
+  */
 }
 
 class VariableAccessNode extends ExpressionNode {
@@ -435,6 +473,11 @@ class DeclaratorStatementNode extends TraceNode {
   
   assigns(identifier) {
     return equalIdentifiers(this.astNode.id, identifier);
+  }
+  
+  variablesOfInterest() {
+    console.log(this.astNode.left);
+    return [this.astNode.id, ...this.variablesOfInterestFor(this.children)];
   }
 }
 
@@ -491,6 +534,18 @@ class WhileStatementNode extends TraceNode {
   
   labelString() {
     return 'while{}'
+  }
+}
+
+class DoWhileStatementNode extends TraceNode {
+  static get astTypes() { return ['DoWhileStatement'] }
+  
+  branchesControlFlow() {
+    return true;
+  }
+  
+  labelString() {
+    return 'do{}while'
   }
 }
 
