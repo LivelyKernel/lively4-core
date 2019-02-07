@@ -79,12 +79,11 @@ export default function (babel) {
         })
         
         /*
-         * Transform AST to include tracing
+         * Utility functions
          */
         
         function shouldTrace(path) {
           let node = path.node
-          if (t.isFunctionDeclaration(node)) console.log(node.traceid);
           if ((node.traceid === undefined) || node.isTraced) {
             return false;
           } else {
@@ -106,9 +105,50 @@ export default function (babel) {
           }).expression
         }
         
+        function ensureBlock(body) {
+          if (!body.node) return null;
+          
+          if (body.isBlockStatement()) {
+            return body.node;
+          }
+
+          const statements = [];
+          if (body.isStatement()) {
+            statements.push(body.node);
+          } else {
+            throw new Error("I never thought this was even possible.");
+          }
+          
+          const blockNode = t.blockStatement(statements);
+          body.replaceWith(blockNode);
+          return blockNode;
+        }
+        
+        /*
+         * Preprocess AST
+         */
+        
+        path.traverse({
+          'IfStatement': {
+            enter(path) {
+              ensureBlock(path.get("consequent"));
+              ensureBlock(path.get("alternate"));
+            }
+          },
+          'For|While|Function': {
+            enter(path) {
+              ensureBlock(path.get("body"));
+            }
+          }
+        })
+        
+        /*
+         * Transform AST to include tracing
+         */
+        
         path.traverse({
           'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression|AssignmentExpression': {
-            exit: (path) => {
+            exit(path) {
               if (shouldTrace(path)) {
                 let newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
@@ -116,7 +156,7 @@ export default function (babel) {
             }
           },
           'VariableDeclarator': {
-            exit: (path) => {
+            exit(path) {
               if (shouldTrace(path)) {
                 let init = path.get('init');
                 if (init.node) {
@@ -127,7 +167,7 @@ export default function (babel) {
             }
           },
           'IfStatement|ForStatement|While': {
-            enter: (path) => {
+            enter(path) {
               if (shouldTrace(path)) {
                 path.insertBefore(begin({
                   NODEID: t.numericLiteral(path.node.traceid)
@@ -139,20 +179,19 @@ export default function (babel) {
             }
           },
           'Function': {
-            enter: (path) => {
+            enter(path) {
               if (shouldTrace(path)) {
                 let body = path.get('body');
                 let wrappedBody = wrapBlock(path.node.traceid, body);
                 let newBody = t.blockStatement([
                   checkRuntime(),
                   t.returnStatement(wrappedBody)]);
-                console.log(newBody);
                 body.replaceWith(newBody);
               }
             }
           },
           'Identifier': {
-            exit: (path) => {
+            exit(path) {
               let node = path.node;
               if (node.isVariableAccess && shouldTrace(path)) {
                 let newNode = wrapValue(node.traceid, path);
@@ -161,7 +200,7 @@ export default function (babel) {
             }
           },
           'Literal': {
-            exit: (path) => {
+            exit(path) {
               let node = path.node;
               if (node.isLiteralAccess && shouldTrace(path)) {
                 let newNode = wrapValue(node.traceid, path);
