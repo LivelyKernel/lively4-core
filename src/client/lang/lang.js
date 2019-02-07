@@ -23,6 +23,65 @@ function extendFromLodash(obj, propNames) {
 
 
 /**
+ * OBJECT
+ */
+extendFromLodash(Object.prototype, [
+  'clone',
+  'cloneDeep',
+  'omit',
+  'pick',
+  'toPairs'
+]);
+
+extend(Object.prototype, {
+  deepProperty(paths) {
+    if (Array.isArray(paths)) {
+      return _.at(this, paths);
+    } else {
+      return _.get(this, paths);
+    }
+  }
+});
+
+/**
+ * FUNCTION
+ */
+extendFromLodash(Function.prototype, [
+  'debounce',
+  'defer',
+  /**
+   * @example <caption>Simple Memoization.</caption>
+   * // only consider second argument as key for memoization
+   * var sum = ((x, y) => x + y).memoize((x, y) => y);
+   * sum(1, 2);
+   * // => 3
+   * sum(2, 2);
+   * // => 3, same second argument
+   * sum(1, 3);
+   * // => 4, different second argument
+   */
+  'memoize',
+  'once',
+  'throttle'
+]);
+
+extend(Function.prototype, {
+
+  delay(wait, ...args) {
+    return _.delay(this, wait, args);
+  }
+
+});
+
+extend(Function, {
+
+  noop() { return void 0; },
+  identity(value) { return value; }
+
+});
+
+
+/**
  * DATE
  */
 extend(Date.prototype, {
@@ -97,23 +156,65 @@ extend(WeakMap.prototype, mapExtensions);
 /**
  * ARRAY
  */
-extendFromLodash(Array.prototype, ['sortBy']);
+extendFromLodash(Array.prototype, [
+  'sortBy',
+  'difference',
+  'groupBy',
+  'max',
+  'min',
+  'sample',
+  'sampleSize',
+  'shuffle',
+  'sum'
+]);
 
 extend(Array.prototype, {
+
+  average() {
+    if (this.length === 0) {
+      return NaN;
+    } else {
+      return this.sum() / this.length;
+    }
+  },
 
   get first() { return this[0]; },
   set first(value) { return this[0] = value; },
 
   get last() { return this[this.length - 1]; },
-  set last(value) { return this[this.length - 1] = value; }
+  set last(value) { return this[this.length - 1] = value; },
 
+  intersect(...arrays) {
+    return _.intersection(this, ...arrays);
+  },
+
+  /**
+   * Removes all elements from array (mutates!) that predicate returns truthy for and returns an array of the removed elements.
+   * @param predicate (Function<value, index, array -> Boolean>) return true to remove given element.
+   * @returns {Array} The removed elements.
+   */
+  removeAll(predicate) {
+    return _.remove(this, predicate);
+  },
+
+  zip(...arrays) {
+    return _.zip(this, ...arrays);
+  },
+  
 });
 
 
 /**
  * NUMBER
  */
-extendFromLodash(Number.prototype, ['clamp', 'times']);
+extendFromLodash(Number.prototype, [
+  'ceil',
+  'clamp',
+  'floor',
+  'inRange',
+  'round',
+  'times'
+]);
 
 extend(Number.prototype, {
   
@@ -127,6 +228,24 @@ extend(Number.prototype, {
 /**
  * STRING
  */
+extendFromLodash(String.prototype, [
+  'camelCase',
+  'capitalize',
+  'kebabCase',
+  'lowerCase',
+  'lowerFirst',
+  'snakeCase',
+  'startCase',
+  'toLower',
+  'toUpper',
+  'trim',
+  'trimEnd',
+  'trimStart',
+  'upperCase',
+  'upperFirst',
+  'words',
+]);
+
 extend(String.prototype, {
 
   /**
@@ -153,6 +272,16 @@ extend(String.prototype, {
    */
   fetchJSON(options) {
     return fetch(this, options).then(r => r.json());
+  },
+  
+  /**
+   * Get file info for a remote file or directory.
+   * @example <caption>Get file info of start.html.</caption>
+   * const startHTML = lively4url + '/start.html';
+   * startHTML.fetchStats();
+   */
+  fetchStats(options) {
+    return this.fetchJSON(Object.assign({ method: 'OPTIONS' }, options));
   }
 
 });
