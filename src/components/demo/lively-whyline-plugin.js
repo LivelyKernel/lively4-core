@@ -124,6 +124,19 @@ export default function (babel) {
           return blockNode;
         }
         
+        function convertToComputed(memberExp) {
+          const node = memberExp.node
+          if (!node) return;
+          if (node.computed) return;
+          if (t.isIdentifier(node.property)) {
+            node.property = t.stringLiteral(node.property.name);
+            node.computed = true;
+          } else {
+            //but why though?
+            throw new Error("Failed to convert MemberExpression");
+          }
+        }
+        
         /*
          * Preprocess AST
          */
@@ -138,6 +151,11 @@ export default function (babel) {
           'For|While|Function': {
             enter(path) {
               ensureBlock(path.get("body"));
+            }
+          },
+          'MemberExpression': {
+            enter(path) {
+              convertToComputed(path);
             }
           }
         })

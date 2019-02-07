@@ -1,4 +1,6 @@
-var a = 3
+let u = {v: {w: {x: "hurray"}}};
+u.v.w.x;
+var a = 3;
 var b = a + 4
 
 function foo(a,b) {
