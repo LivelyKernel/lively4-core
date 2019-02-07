@@ -56,10 +56,10 @@ import ContextMenu from 'src/client/contextmenu.js';
     // not serializable graph structure...
     // var root = HTMLElement.__proto__
     
-    var root = HTMLElement
-    //.__proto__.__proto__.__proto__
+    // var root = HTMLElement.__proto__
+    // .__proto__.__proto__
     
-    // var root = SVGElement
+    var root = SVGElement
     
     // var root = SVGGeometryElement
     

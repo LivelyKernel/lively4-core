@@ -261,9 +261,14 @@ export default class LivelyContainerNavbar extends Morph {
   async fetchStats(targetURL) {
     
     var root = this.getRoot(targetURL)
-    var stats = await fetch(root, {
-      method: "OPTIONS",
-    }).then(r => r.status == 200 ? r.json() : {})
+    
+    try {
+      var stats = await fetch(root, {
+        method: "OPTIONS",
+      }).then(r => r.status == 200 ? r.json() : {})
+    } catch(e) {
+      // no options....
+    }
     
     
     if (!stats || !stats.type) {
@@ -571,8 +576,13 @@ export default class LivelyContainerNavbar extends Morph {
 
   async showSublistOptions(subList, url) {
     url = url || this.url
-    var options = await fetch(url, {method: "OPTIONS"})
-      .then(r => r.status == 200 ? r.json() : {})
+    try {
+      var options = await fetch(url, {method: "OPTIONS"})
+        .then(r => r.status == 200 ? r.json() : {})
+    } catch(e) {
+      // no options...
+      return 
+    }
     if (!options.contents) return;
     for(let ea of options.contents) { // #Bug for(var ea) vs for(let)
       let element = <li 
