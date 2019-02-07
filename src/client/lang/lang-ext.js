@@ -2,15 +2,21 @@ import 'lang';
 import { extend } from './utils.js';
 
 
-
+/**
+ * OBJECT
+ */
 extend(Object.prototype, {
+
   dependentAExprs() {
     // #TODO: implement2
   }
+
 });
 
 
-
+/**
+ * STRING
+ */
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -57,5 +63,5 @@ extend(String.prototype, {
       return result.value;
     }
   }
-});
 
+});

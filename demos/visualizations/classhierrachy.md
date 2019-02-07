@@ -5,7 +5,7 @@
 import ContextMenu from 'src/client/contextmenu.js';
 
 (async () => {
-   var vis = await (<d3-graphviz style="background:gray; width:1200px; height: 800px"></d3-graphviz>)
+   var vis = await (<d3-graphviz style="background:gray; width:2200px; height: 2800px"></d3-graphviz>)
     
     vis.engine = "dot" 
     
@@ -56,7 +56,14 @@ import ContextMenu from 'src/client/contextmenu.js';
     // not serializable graph structure...
     // var root = HTMLElement.__proto__
     
-    var root = HTMLElement.__proto__.__proto__.__proto__.__proto__
+    // var root = HTMLElement.__proto__
+    // .__proto__.__proto__
+    
+    var root = SVGElement
+    
+    // var root = SVGGeometryElement
+    
+    
     
     
     var subClasses = classes.filter(ea => root.isPrototypeOf(ea))
@@ -195,7 +202,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 
         name = stripLabel(name)
         
-        var inner = [name] 
+        var inner = ["<b>" + name + "</b>"] 
         
         if (node.out) {
           node.out.forEach(eaOut => {
@@ -226,16 +233,28 @@ import ContextMenu from 'src/client/contextmenu.js';
               }
             }
           })
+          
+          if(node.obj.prototype) {
+          
+            Object.keys(node.obj.prototype).forEach(key => {
+              inner.push("" + key)
+            })
+            // inner.push("HOHOH")
+          }
+          
         }
-        nodes.push(id + `[shape="record" label="{ ${inner.join("|")}}" ` 
+        // <U><TABLE><TR><TD>hello${inner.join("<br>")}</TD></TR></U>
+        nodes.push(id + `[shape="plaintext" label=< <TABLE  border="0" cellborder="1" cellspacing="0">
+          ${inner.map(ea => "<TR><TD>" + ea + "</TD></TR>").join("\n")} 
+          </TABLE>> ` 
           +`fontcolor="${ node.expanded ? "black" : "gray"}" `
           +`color="${ node.expanded ? "black" : "gray"}"]`)
       }
       visit(graphNode)
       return `digraph {
-        rankdir = LR;
-        graph [  splines="true"  overlap="false"  ];
-        node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
+        rankdir = TD;
+        graph [  splines="ortho"  overlap="false"  ];
+        node [    fontname="Arial"  fontsize="14"  fontcolor="black" ];
         edge [ dir="back" arrowhead=none fontname="Arial"  fontsize="8" ];
 
         ${edges.join(";")}
