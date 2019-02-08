@@ -21,13 +21,14 @@ export default function (babel) {
          * Traverse AST to add shared properties / transformations
          */
         function isVariableAccess(identifier) {
-          let badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'property', 'meta'];
-          return (
-            !t.isFunction(identifier.parent)
-            && !t.isUpdateExpression(identifier.parent)
-            && (
-              t.isBinaryExpression(identifier.parent)
-              || !badKeys.includes(identifier.key)));
+          const badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'meta', 'property'];
+          const parent = identifier.parent;
+          if (t.isBinaryExpression(parent)
+              || (t.isMemberExpression(parent) && parent.computed)) return true;
+          if (t.isUpdateExpression(parent)
+              || t.isFunction(parent)
+              || badKeys.includes(identifier.key)) return false;
+          return true;
         }
         
         function isLiteralAccess(literal) {
@@ -132,9 +133,13 @@ export default function (babel) {
             node.property = t.stringLiteral(node.property.name);
             node.computed = true;
           } else {
-            //but why though?
+            //is this even possible?
             throw new Error("Failed to convert MemberExpression");
           }
+        }
+        
+        function willBeAssigned(memberExp) {
+          return t.isAssignmentExpression(memberExp.parent);
         }
         
         /*
@@ -151,11 +156,6 @@ export default function (babel) {
           'For|While|Function': {
             enter(path) {
               ensureBlock(path.get("body"));
-            }
-          },
-          'MemberExpression': {
-            enter(path) {
-              convertToComputed(path);
             }
           }
         })
@@ -211,7 +211,7 @@ export default function (babel) {
           'Identifier': {
             exit(path) {
               let node = path.node;
-              if (node.isVariableAccess && shouldTrace(path)) {
+              if (shouldTrace(path) && node.isVariableAccess) {
                 let newNode = wrapValue(node.traceid, path);
                 path.replaceWith(newNode);
               }
@@ -220,8 +220,16 @@ export default function (babel) {
           'Literal': {
             exit(path) {
               let node = path.node;
-              if (node.isLiteralAccess && shouldTrace(path)) {
+              if (shouldTrace(path) && node.isLiteralAccess) {
                 let newNode = wrapValue(node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'MemberExpression': {
+            exit(path) {
+              if (shouldTrace(path) && !willBeAssigned(path)) {
+                let newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
               }
             }

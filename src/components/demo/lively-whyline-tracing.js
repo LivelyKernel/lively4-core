@@ -206,6 +206,7 @@ export class TraceNode {
       UpdateExpressionNode,
       AssignmentExpressionNode,
       CallExpressionNode,
+      MemberExpressionNode,
       ExpressionNode, //catch all      
       
       IfStatementNode,
@@ -229,6 +230,10 @@ export class TraceNode {
     return this.astTypes.some((astType) => {
       return t.isType(astNode.type, astType);
     })
+  }
+  
+  isFunction() {
+    return false;
   }
   
   /*
@@ -371,7 +376,7 @@ class AssignmentExpressionNode extends ExpressionNode {
   
   labelString() {
     let name = this.left.name;
-    if (!name && this.left.property)  
+    if (!name && this.left.property)
       name = this.left.property.name;
     return `${name} = ${this.valueString()}`
   }
@@ -385,27 +390,57 @@ class AssignmentExpressionNode extends ExpressionNode {
   }
 }
 
-class CallExpressionNode extends ExpressionNode {
-  static get astTypes() { return ['CallExpression'] }
+class MemberExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['MemberExpression'] }
   
-  get preceedsChildren() {
-    return true;
+  get computed() {
+    return this.astNode.computed;
   }
   
-  get function() {
+  get object() {
     return this.children[0];
   }
   
+  get property() {
+    return this.computed ? this.children[1].value : this.astNode.property.name;
+  }
+  
+  labelString() {
+    let object = this.object.valueString();
+    let property = this.property;
+    if (this.computed) {
+      return `${object}[${this.toDisplayString(property)}]`
+    } else {
+      return `${object}.${property}`
+    }
+  }
+}
+
+class CallExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['CallExpression'] }
+    
+  get function() {
+    return this.children[0].value;
+  }
+  
   get numArgs() {
-    return this.children.length - 2;
+    return this.children.length - (this.functionIsTraced() ? 2 : 1);
   }
   
   get arguments() {
     return this.children.slice(1, this.numArgs + 1);
   }
   
+  lastChild() {
+    return this.children[this.children.length - 1];
+  }
+  
   get call() {
-    this.children[this.children.length - 1];
+    return this.functionIsTraced() ? this.lastChild() : null;
+  }
+  
+  functionIsTraced() {
+    return this.lastChild().isFunction();
   }
   
   branchesControlFlow() {
@@ -413,15 +448,8 @@ class CallExpressionNode extends ExpressionNode {
   }
   
   labelString() {
-    let callee = this.astNode.callee;
-    let name = 'fn';
-    if (callee.object) {
-      name = callee.object.name;
-    } else if (callee.property) {
-      name = callee.property.name;
-    } else if (callee.name) {
-      name = callee.name;
-    }
+    let name = this.function.name || this.function.property;
+    if (typeof(name) != 'string') name = 'f';
     let argString = this.arguments.map((expNode) => {
       return expNode.valueString();
     }).join(',');
@@ -558,6 +586,10 @@ class FunctionNode extends TraceNode {
   
   labelString() {
     return 'Function';
+  }
+  
+  isFunction() {
+    return true;
   }
 }
 

@@ -1,7 +1,15 @@
 let u = {v: {w: {x: "hurray"}}};
-u.v.w.x;
+u.v.w.x// = "oh no";
 var a = 3;
 var b = a + 4
+
+if (a < 0) {
+  a--
+} else if (a == 0) {
+  a *= a;
+} else {
+  a++
+}
 
 function foo(a,b) {
   let c = a + b;
