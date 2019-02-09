@@ -11,7 +11,7 @@ export class ExecutionTrace {
   
   newTraceNode(astNodeId) {
     let astNode = this.nodeMap[astNodeId];
-    return new astNode.traceNodeType(astNode, this.parentNode);
+    return this.previousNode = new astNode.traceNodeType(astNode, this.parentNode);
   }
   
   /*
@@ -42,6 +42,11 @@ export class ExecutionTrace {
     return value;
   }
   
+  decl(id, args) {
+    const declarator = this.parentNode.successorWithId(id);
+    declarator.setVariableValues(args);
+  }
+  
   stmt(id) {
     this.parentNode = this.newTraceNode(id);
   }
@@ -54,7 +59,7 @@ export class ExecutionTrace {
     return functionParent.value = value;
   }
   
-  end(id) {
+  end() {
     this.parentNode = this.parentNode.parent;
   }
 }
@@ -97,35 +102,49 @@ export class TraceNode {
    */
   
   functionParent() {
-    return this.findParent((parent) => parent.isFunction());
+    return this.findParent((node) => node.isFunction());
+  }
+  
+  successorWithId(traceId) {
+    return this.findSuccessor((node) => node.traceId == traceId);
   }
   
   predecessorWithId(traceId) {
-    return this.findPredecessor((pred) => pred.traceId == traceId);
+    return this.findPredecessor((node) => node.traceId == traceId);
   }
   
   parentWithId(traceId) {
-    return this.findParent((parent) => parent.traceId == traceId);
+    return this.findParent((node) => node.traceId == traceId);
+  }
+  
+  findSuccessor(tester) {
+    //find first successor for which `tester` evaluates to true
+    //returns `null` if no such node was found
+    let node = this;
+    do {
+      node = node.successor();
+    } while (node && !tester(node));
+    return node || null;
   }
   
   findPredecessor(tester) {
     //find first predecessor for which `tester` evaluates to true
-    //returns `null` if no such predecessor was found
-    let pred = this;
+    //returns `null` if no such node was found
+    let node = this;
     do {
-      pred = pred.predecessor();
-    } while (pred && !tester(pred));
-    return pred || null;
+      node = node.predecessor();
+    } while (node && !tester(node));
+    return node || null;
   }
   
   findParent(tester) {
     //find first parent for which `tester` evaluates to true
-    //returns `null` if no such parent was found
-    let parent = this;
+    //returns `null` if no such node was found
+    let node = this;
     do {
-      parent = parent.parent;
-    } while (parent && !tester(parent));
-    return parent || null;
+      node = node.parent;
+    } while (node && !tester(node));
+    return node || null;
   }
   
   get preceedsChildren() {
@@ -281,6 +300,8 @@ export class TraceNode {
       AssignmentExpressionNode,
       CallExpressionNode,
       MemberExpressionNode,
+      DeclaratorNode,
+      ReturnNode,
       ExpressionNode, //catch all      
       
       ForStatementNode,
@@ -289,8 +310,7 @@ export class TraceNode {
       LoopNode, //catch all
       
       IfStatementNode,
-      DeclaratorStatementNode,
-      ReturnStatementNode,
+      VariableDeclarationNode,
       
       FunctionNode //catch all
     ];
@@ -560,12 +580,8 @@ class LiteralAccessNode extends ExpressionNode {
   }
 }
 
-class DeclaratorStatementNode extends TraceNode {
+class DeclaratorNode extends ExpressionNode {
   static get astTypes() { return ['VariableDeclarator'] }
-  
-  get preceedsChildren() {
-    return false;
-  }
   
   get init() {
     return this.children[0];
@@ -573,7 +589,7 @@ class DeclaratorStatementNode extends TraceNode {
   
   labelString() {
     let varName = this.astNode.id.name;
-    return `${varName} = ${this.init.valueString()}`;
+    return `${varName} = ${this.valueString()}`;
   }
   
   assigns(identifier) {
@@ -583,6 +599,18 @@ class DeclaratorStatementNode extends TraceNode {
   variablesOfInterest() {
     console.log(this.astNode.left);
     return [this.astNode.id, ...this.variablesOfInterestFor(this.children)];
+  }
+}
+
+class ReturnNode extends ExpressionNode {
+  static get astTypes() { return ['ReturnStatement'] }
+  
+  get argument() {
+    return this.children[0];
+  }
+  
+  labelString() {
+    return `return ${this.valueString()}`
   }
 }
 
@@ -666,19 +694,11 @@ class FunctionNode extends TraceNode {
   }
 }
 
-class ReturnStatementNode extends TraceNode {
-  static get astTypes() { return ['ReturnStatement'] }
-  
-  get preceedsChildren() {
-    return false;
-  }
-  
-  get argument() {
-    return this.children[0];
-  }
+class VariableDeclarationNode extends TraceNode {
+  static get astTypes() { return ['VariableDeclaration'] }
   
   labelString() {
-    return `return ${this.toDisplayString(this.value)}`
+    return this.astNode.kind;
   }
 }
 

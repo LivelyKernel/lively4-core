@@ -7,6 +7,7 @@ export default function (babel) {
   const statementEnd = template(`${traceReference}.end()`);
   const assignmentTemplate = template(`${traceReference}.MSG(ID,() => BLOCK,() => VARS)`);
   const functionTemplate = template(`${traceReference}.MSG(ID, VARS)`);
+  const declarationTemplate = template(`${traceReference}.MSG(ID, VARS)`);
   const wrapBlockTemplate = template(`${traceReference}.MSG(ID,() => BLOCK)`);
   const wrapValueTemplate = template(`${traceReference}.MSG(ID,EXP)`);
 
@@ -178,6 +179,20 @@ export default function (babel) {
           });
         }
         
+        function declaratorFollowup(id, vars, message='decl') {
+          return declarationTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
+        }
+        
+        function statementBegin(id) {
+          return begin({
+            NODEID: t.numericLiteral(id)
+          });
+        }
+        
         function ensureBlock(body) {
           if (!body.node) return null;
           
@@ -229,7 +244,7 @@ export default function (babel) {
           'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression': {
             exit(path) {
               if (shouldTrace(path)) {
-                let newNode = wrapBlock(path.node.traceid, path);
+                const newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
@@ -246,20 +261,28 @@ export default function (babel) {
           'VariableDeclarator': {
             exit(path) {
               if (shouldTrace(path)) {
-                let init = path.get('init');
-                if (init.node) {
-                  let newNode = wrapBlock(path.node.traceid, init);
-                  init.replaceWith(newNode);
-                }
+                const node = path.node;
+                const init = path.get('init');
+                const newNode = wrapBlock(node.traceid, init.node || t.identifier("undefined"));
+                init.replaceWith(newNode);
+                const declaration = path.parentPath;
+                declaration.insertAfter(declaratorFollowup(node.traceid, node.assignmentTargets));
               }
             }
           },
-          'IfStatement|ForStatement|While': {
+          'IfStatement|While|VariableDeclaration': {
             enter(path) {
               if (shouldTrace(path)) {
-                path.insertBefore(begin({
-                  NODEID: t.numericLiteral(path.node.traceid)
-                }));
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'ForStatement': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                path.skipKey("init");
+                path.insertBefore(statementBegin(path.node.traceid));
                 path.insertAfter(statementEnd());
               }
             }
@@ -277,18 +300,18 @@ export default function (babel) {
           },
           'Identifier': {
             exit(path) {
-              let node = path.node;
+              const node = path.node;
               if (shouldTrace(path) && node.isVariableAccess) {
-                let newNode = wrapValue(node.traceid, path);
+                const newNode = wrapValue(node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
           },
           'Literal': {
             exit(path) {
-              let node = path.node;
+              const node = path.node;
               if (shouldTrace(path) && node.isLiteralAccess) {
-                let newNode = wrapValue(node.traceid, path);
+                const newNode = wrapValue(node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
@@ -296,7 +319,7 @@ export default function (babel) {
           'MemberExpression': {
             exit(path) {
               if (shouldTrace(path) && !path.node.isAssignmentTarget) {
-                let newNode = wrapBlock(path.node.traceid, path);
+                const newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
@@ -304,8 +327,8 @@ export default function (babel) {
           'ReturnStatement': {
             exit(path) {
               if (shouldTrace(path)) {
-                let arg = path.get('argument');
-                let newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"), 'rtrn');
+                const arg = path.get('argument');
+                const newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"), 'rtrn');
                 arg.replaceWith(newNode);
               }
             }

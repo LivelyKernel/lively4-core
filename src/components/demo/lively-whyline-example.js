@@ -2,6 +2,7 @@ let u = {v: {w: {x: "hurray"}}};
 u.v.w.x// = "oh no";
 //var a = 3;
 //var b = a + 2;
+var boo;
 var {a, mojo: b} = {a: 1, mojo: 3};
 let [j, k, ...l] = "abcdef";
 //let obj = {};
