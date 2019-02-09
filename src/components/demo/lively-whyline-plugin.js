@@ -4,8 +4,9 @@ export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
   const traceReference = '__tr__';
   const begin = template(`${traceReference}.stmt(NODEID)`);
-  const end = template(`${traceReference}.end(NODEID)`);
+  const statementEnd = template(`${traceReference}.end()`);
   const assignmentTemplate = template(`${traceReference}.MSG(ID,() => BLOCK,() => VARS)`);
+  const functionTemplate = template(`${traceReference}.MSG(ID, VARS)`);
   const wrapBlockTemplate = template(`${traceReference}.MSG(ID,() => BLOCK)`);
   const wrapValueTemplate = template(`${traceReference}.MSG(ID,EXP)`);
 
@@ -166,7 +167,15 @@ export default function (babel) {
             BLOCK: exp,
             VARS: arrayOfArgs(vars),
             MSG: t.identifier(message)
-          }).expression
+          }).expression;
+        }
+        
+        function functionStart(id, vars, message='func') {
+          return functionTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
         }
         
         function ensureBlock(body) {
@@ -251,21 +260,18 @@ export default function (babel) {
                 path.insertBefore(begin({
                   NODEID: t.numericLiteral(path.node.traceid)
                 }));
-                path.insertAfter(end({
-                  NODEID: t.numericLiteral(path.node.traceid)
-                }));
+                path.insertAfter(statementEnd());
               }
             }
           },
           'Function': {
             enter(path) {
               if (shouldTrace(path)) {
-                const body = path.get('body');
-                let wrappedBody = wrapBlock(path.node.traceid, body);
-                let newBody = t.blockStatement([
-                  checkRuntime(),
-                  t.returnStatement(wrappedBody)]);
-                body.replaceWith(newBody);
+                const node = path.node;
+                const body = path.get("body");
+                body.unshiftContainer("body", checkRuntime());
+                body.unshiftContainer("body", functionStart(node.traceid, node.assignmentTargets));
+                body.pushContainer("body", statementEnd());
               }
             }
           },
@@ -299,7 +305,7 @@ export default function (babel) {
             exit(path) {
               if (shouldTrace(path)) {
                 let arg = path.get('argument');
-                let newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"));
+                let newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"), 'rtrn');
                 arg.replaceWith(newNode);
               }
             }

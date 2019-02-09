@@ -4,8 +4,8 @@ u.v.w.x// = "oh no";
 //var b = a + 2;
 var {a, mojo: b} = {a: 1, mojo: 3};
 let [j, k, ...l] = "abcdef";
-let obj = {};
-({["val"]: obj.prop} = {val: 1});
+//let obj = {};
+//({["val"]: obj.prop} = {val: 1});
 
 if (a < 0) {
   a--
@@ -17,7 +17,7 @@ if (a < 0) {
 
 function foo(a,b) {
   let c = a + b;
-  for (var i = 0; i < 1; i++) {
+  for (var i = 0; i < 2; i++) {
     if (c < 1000) {
       c += c + i * c
     } else {

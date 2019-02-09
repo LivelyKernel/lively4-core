@@ -46,6 +46,14 @@ export class ExecutionTrace {
     this.parentNode = this.newTraceNode(id);
   }
   
+  rtrn(id, exp) {
+    const traceNode = this.parentNode = this.newTraceNode(id);
+    const value = traceNode.value = exp();
+    const functionParent = traceNode.functionParent();
+    this.parentNode = functionParent.parent;
+    return functionParent.value = value;
+  }
+  
   end(id) {
     this.parentNode = this.parentNode.parent;
   }
@@ -53,11 +61,11 @@ export class ExecutionTrace {
 
 export class TraceNode {
   constructor(astNode, parent){
-    this.children = []
-    this.astNode = astNode
-    this.parent = parent
-    if (this.parent) {
-      this.parent.children.push(this)
+    this.children = [];
+    this.astNode = astNode;
+    this.parent = parent;
+    if (parent) {
+      parent.children.push(this);
     }
   }
   
@@ -69,8 +77,8 @@ export class TraceNode {
       if (t.isIdentifier(node)) {
         return values[i];
       } else { //node is MemberExpression
-        const object = this.previousWithId(node.object.traceid).value;
-        const property = node.computed ? this.previousWithId(node.property.traceid).value : node.property.name;
+        const object = this.predecessorWithId(node.object.traceid).value;
+        const property = node.computed ? this.predecessorWithId(node.property.traceid).value : node.property.name;
         return object[property];
       }
     });
@@ -88,8 +96,16 @@ export class TraceNode {
    * Tree Navigation
    */
   
-  previousWithId(traceId) {
+  functionParent() {
+    return this.findParent((parent) => parent.isFunction());
+  }
+  
+  predecessorWithId(traceId) {
     return this.findPredecessor((pred) => pred.traceId == traceId);
+  }
+  
+  parentWithId(traceId) {
+    return this.findParent((parent) => parent.traceId == traceId);
   }
   
   findPredecessor(tester) {
