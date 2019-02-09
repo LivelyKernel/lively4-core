@@ -14,25 +14,39 @@ export class ExecutionTrace {
     return new astNode.traceNodeType(astNode, this.parentNode);
   }
   
+  /*
+   * Externally visible tracing functions
+   */
+  
   exp(id, exp) {
-    let traceNode = this.newTraceNode(id);
-    this.parentNode = traceNode;
-    let value = exp();
-    traceNode.value = value;
+    const traceNode = this.parentNode = this.newTraceNode(id);
+    const value = traceNode.value = exp();
     this.parentNode = traceNode.parent;
     return value;
   }
   
   val(id, value) {
-    let traceNode = this.newTraceNode(id);
-    return traceNode.value = value;
+    return this.newTraceNode(id).value = value;
   }
   
-  traceBeginNode(id) {
+  func(id, args) {
+    const traceNode = this.parentNode = this.newTraceNode(id);
+    traceNode.setVariableValues(args);
+  }
+  
+  asgn(id, exp, argFunc) {
+    const traceNode = this.parentNode = this.newTraceNode(id);
+    const value = traceNode.value = exp();
+    traceNode.setVariableValues(argFunc());
+    this.parentNode = traceNode.parent;
+    return value;
+  }
+  
+  stmt(id) {
     this.parentNode = this.newTraceNode(id);
   }
   
-  traceEndNode(id) {
+  end(id) {
     this.parentNode = this.parentNode.parent;
   }
 }
@@ -48,8 +62,56 @@ export class TraceNode {
   }
   
   /*
+   * Tracing
+   */
+  setVariableValues(values) {
+    this.variableValues = this.assignmentTargets.map((node, i) => {
+      if (t.isIdentifier(node)) {
+        return values[i];
+      } else { //node is MemberExpression
+        const object = this.previousWithId(node.object.traceid).value;
+        const property = node.computed ? this.previousWithId(node.property.traceid).value : node.property.name;
+        return object[property];
+      }
+    });
+  }
+  
+  get traceId() {
+    return this.astNode.traceid;
+  }
+  
+  get assignmentTargets() {
+    return this.astNode.assignmentTargets;
+  }
+  
+  /*
    * Tree Navigation
    */
+  
+  previousWithId(traceId) {
+    return this.findPredecessor((pred) => pred.traceId == traceId);
+  }
+  
+  findPredecessor(tester) {
+    //find first predecessor for which `tester` evaluates to true
+    //returns `null` if no such predecessor was found
+    let pred = this;
+    do {
+      pred = pred.predecessor();
+    } while (pred && !tester(pred));
+    return pred || null;
+  }
+  
+  findParent(tester) {
+    //find first parent for which `tester` evaluates to true
+    //returns `null` if no such parent was found
+    let parent = this;
+    do {
+      parent = parent.parent;
+    } while (parent && !tester(parent));
+    return parent || null;
+  }
+  
   get preceedsChildren() {
     return true;
   }
@@ -155,11 +217,9 @@ export class TraceNode {
   }
   
   previousControlFlow(){
-    let previous = this;
-    do {
-      previous = previous.parent;
-    } while (previous && !previous.branchesControlFlow());
-    return previous;
+    return this.findParent((parent) => {
+      return parent.branchesControlFlow();
+    });
   }
   
   /*
@@ -167,11 +227,9 @@ export class TraceNode {
    */
     
   previousAssignmentTo(identifier) {
-    let pred = this;
-    do {
-      pred = pred.predecessor();
-    } while (pred && !pred.assigns(identifier));
-    return pred;
+    return this.findPredecessor((pred) => {
+      return pred.assigns(identifier);
+    });
   }
   
   variablesOfInterestFor(nodes) {
@@ -209,11 +267,14 @@ export class TraceNode {
       MemberExpressionNode,
       ExpressionNode, //catch all      
       
-      IfStatementNode,
-      DeclaratorStatementNode,
       ForStatementNode,
       WhileStatementNode,
       DoWhileStatementNode,
+      LoopNode, //catch all
+      
+      IfStatementNode,
+      DeclaratorStatementNode,
+      ReturnStatementNode,
       
       FunctionNode //catch all
     ];
@@ -541,36 +602,32 @@ class IfStatementNode extends TraceNode {
   }
 }
 
-class ForStatementNode extends TraceNode {
-  static get astTypes() { return ['ForStatement'] }
+class LoopNode extends TraceNode {
+  static get astTypes() { return ['Loop'] }
   
   branchesControlFlow() {
     return true;
   }
+}
+
+class ForStatementNode extends LoopNode {
+  static get astTypes() { return ['ForStatement'] }
   
   labelString() {
     return 'for{}'
   }
 }
 
-class WhileStatementNode extends TraceNode {
+class WhileStatementNode extends LoopNode {
   static get astTypes() { return ['WhileStatement'] }
-  
-  branchesControlFlow() {
-    return true;
-  }
   
   labelString() {
     return 'while{}'
   }
 }
 
-class DoWhileStatementNode extends TraceNode {
+class DoWhileStatementNode extends LoopNode {
   static get astTypes() { return ['DoWhileStatement'] }
-  
-  branchesControlFlow() {
-    return true;
-  }
   
   labelString() {
     return 'do{}while'
@@ -590,6 +647,22 @@ class FunctionNode extends TraceNode {
   
   isFunction() {
     return true;
+  }
+}
+
+class ReturnStatementNode extends TraceNode {
+  static get astTypes() { return ['ReturnStatement'] }
+  
+  get preceedsChildren() {
+    return false;
+  }
+  
+  get argument() {
+    return this.children[0];
+  }
+  
+  labelString() {
+    return `return ${this.toDisplayString(this.value)}`
   }
 }
 

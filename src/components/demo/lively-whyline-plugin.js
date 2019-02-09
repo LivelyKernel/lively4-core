@@ -1,14 +1,15 @@
 import { uuid as generateUUID } from 'utils'; 
 import * as tr from 'src/components/demo/lively-whyline-tracing.js';
-console.log(tr);
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
-  let begin = template("__trace__.traceBeginNode(NODEID)")
-  let end = template("__trace__.traceEndNode(NODEID)")
-  let wrapBlockTemplate = template(`${'__trace__'}.${'exp'}(ID,() => BLOCK)`);
-  let wrapValueTemplate = template(`${'__trace__'}.${'val'}(ID,EXP)`);
+  const traceReference = '__tr__';
+  const begin = template(`${traceReference}.stmt(NODEID)`);
+  const end = template(`${traceReference}.end(NODEID)`);
+  const assignmentTemplate = template(`${traceReference}.MSG(ID,() => BLOCK,() => VARS)`);
+  const wrapBlockTemplate = template(`${traceReference}.MSG(ID,() => BLOCK)`);
+  const wrapValueTemplate = template(`${traceReference}.MSG(ID,EXP)`);
 
-  let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
+  const checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
   return {
     name: "ast-transform", // not required
@@ -26,7 +27,9 @@ export default function (babel) {
           if (t.isBinaryExpression(parent)
               || (t.isMemberExpression(parent) && parent.computed)) return true;
           if (t.isUpdateExpression(parent)
-              || t.isFunction(parent)
+              //|| t.isFunction(parent)
+              //|| (t.isObjectProperty(parent) && t.isObjectPattern(parent.parent))
+              //|| t.isType(parent, "PatternLike")
               || badKeys.includes(identifier.key)) return false;
           return true;
         }
@@ -36,6 +39,37 @@ export default function (babel) {
           return !badKeys.includes(literal.key);
         }
         
+        const patternVisitor = {
+          enter(path) {
+            path.skipKey("decorators");
+          },
+          'Identifier|MemberExpression': {
+            enter(path) {
+              this.push(path.node);
+              path.skip();
+            }
+          },
+          'AssignmentPattern': {
+            enter(path) {
+              path.skipKey("right");
+            }
+          },
+          'ObjectProperty': {
+            enter(path) {
+              path.skipKey("key");
+            }
+          }
+        }
+        
+        function gatherAssignmentTargets(pattern, array) {
+          if (t.isIdentifier(pattern.node)) {
+            array.push(pattern.node);
+          } else {
+            pattern.traverse(patternVisitor, array);
+          }
+          array.forEach((node) => node.isAssignmentTarget = true);
+        }
+        
         let idcounter = 0;
         
         path.traverse({
@@ -43,26 +77,40 @@ export default function (babel) {
             path.node.traceid = idcounter++;
           },
           Identifier(path) {
-            path.node.isVariableAccess = isVariableAccess(path);
-            path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
+            const id = path.node;
+            id.isVariableAccess = !id.isAssignmentTarget && isVariableAccess(path);
+            id.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
             let binding = path.scope.getBinding(path.node.name);
             path.node.scopeId = binding ? binding.scope.uid : null;
           },
           Literal(path) {
             path.node.isLiteralAccess = isLiteralAccess(path);
+          },
+          VariableDeclarator(path) {
+            gatherAssignmentTargets(path.get("id"), path.node.assignmentTargets = []);
+          },
+          AssignmentExpression(path) {
+            gatherAssignmentTargets(path.get("left"), path.node.assignmentTargets = []);
+          },
+          Function(path) {
+            const assignmentTargets = path.node.assignmentTargets = [];
+            path.get("params").forEach((pattern) => {
+              gatherAssignmentTargets(pattern, assignmentTargets);
+            });
           }
         });
         
         /*
          * Create copy of original AST.
          * This copy will remain unaffected by the later transformation.
+         * WARNING: Object identity is lost for objects referenced multiple times (e.g. assignmentTargets)
          */
 
         var programast = JSON.parse(JSON.stringify(path.node)); //create copy
         programast.astid = generateUUID();
         if (!window.__tr_ast_registry__) window.__tr_ast_registry__ = {};
         window.__tr_ast_registry__[programast.astid] = programast;
-
+        
         /*
          * Do stuff with unchanging AST.
          * This doesn't affect the actual transformation.
@@ -75,7 +123,7 @@ export default function (babel) {
               let node = path.node;
               programast.node_map[node.traceid] = node;
               node.traceNodeType = tr.TraceNode.mapToNodeType(node);
-              node.parent = path.parent;
+              node.parent = path.parent; //convencience for inspecting the resulting ast
             }
         })
         
@@ -92,17 +140,32 @@ export default function (babel) {
           }
         }
         
-        function wrapBlock(id, blockOrExp) {
+        function wrapBlock(id, blockOrExp, message = 'exp') {
           return wrapBlockTemplate({
             ID: t.numericLiteral(id),
-            BLOCK: blockOrExp
+            BLOCK: blockOrExp,
+            MSG: t.identifier(message)
           }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
         }
         
-        function wrapValue(id, exp) {
+        function wrapValue(id, exp, message = 'val') {
           return wrapValueTemplate({
             ID: t.numericLiteral(id),
-            EXP: exp
+            EXP: exp,
+            MSG: t.identifier(message)
+          }).expression
+        }
+        
+        function arrayOfArgs(vars) {
+          return t.arrayExpression(vars.map((arg) => t.isIdentifier(arg) ? arg : t.nullLiteral()));
+        }
+        
+        function wrapAssignment(id, exp, vars, message='asgn') {
+          return assignmentTemplate({
+            ID: t.numericLiteral(id),
+            BLOCK: exp,
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
           }).expression
         }
         
@@ -123,23 +186,6 @@ export default function (babel) {
           const blockNode = t.blockStatement(statements);
           body.replaceWith(blockNode);
           return blockNode;
-        }
-        
-        function convertToComputed(memberExp) {
-          const node = memberExp.node
-          if (!node) return;
-          if (node.computed) return;
-          if (t.isIdentifier(node.property)) {
-            node.property = t.stringLiteral(node.property.name);
-            node.computed = true;
-          } else {
-            //is this even possible?
-            throw new Error("Failed to convert MemberExpression");
-          }
-        }
-        
-        function willBeAssigned(memberExp) {
-          return t.isAssignmentExpression(memberExp.parent);
         }
         
         /*
@@ -163,12 +209,27 @@ export default function (babel) {
         /*
          * Transform AST to include tracing
          */
-        
+        console.log(programast);
         path.traverse({
-          'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression|AssignmentExpression': {
+          /*enter(path) {
+            console.log(`enter ${path.node.traceid}`);
+          },
+          exit(path) {
+            console.log(`exit ${path.node.traceid}`);
+          },*/
+          'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression': {
             exit(path) {
               if (shouldTrace(path)) {
                 let newNode = wrapBlock(path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'AssignmentExpression': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const node = path.node;
+                const newNode = wrapAssignment(node.traceid, path, node.assignmentTargets);
                 path.replaceWith(newNode);
               }
             }
@@ -199,7 +260,7 @@ export default function (babel) {
           'Function': {
             enter(path) {
               if (shouldTrace(path)) {
-                let body = path.get('body');
+                const body = path.get('body');
                 let wrappedBody = wrapBlock(path.node.traceid, body);
                 let newBody = t.blockStatement([
                   checkRuntime(),
@@ -228,24 +289,33 @@ export default function (babel) {
           },
           'MemberExpression': {
             exit(path) {
-              if (shouldTrace(path) && !willBeAssigned(path)) {
+              if (shouldTrace(path) && !path.node.isAssignmentTarget) {
                 let newNode = wrapBlock(path.node.traceid, path);
                 path.replaceWith(newNode);
+              }
+            }
+          },
+          'ReturnStatement': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                let arg = path.get('argument');
+                let newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"));
+                arg.replaceWith(newNode);
               }
             }
           }
         })
 
         path.unshiftContainer('body', template(`
-          var __tr_ast__ = window.__tr_ast_registry__[ASTID]
+          const __tr_ast__ = window.__tr_ast_registry__[ASTID]
 
-          var __trace__ = new window.lively4ExecutionTrace(__tr_ast__);
+          const ${traceReference} = new window.lively4ExecutionTrace(__tr_ast__);
 
-          var _tr_time = performance.now();
-          var _tr_time_max = 1000;
+          const _tr_time = performance.now();
+          const _tr_time_max = 1000;
 
-    	  	__tr_ast__.calltrace = __trace__.traceRoot
-          __tr_ast__.executionTrace = __trace__
+    	  	__tr_ast__.calltrace = ${traceReference}.traceRoot
+          __tr_ast__.executionTrace = ${traceReference}
 
     	  	window.__tr_last_ast__ = __tr_ast__`)({ASTID: t.stringLiteral(programast.astid)}));
       } 
