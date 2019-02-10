@@ -64,7 +64,7 @@ export default function (babel) {
         }
         
         function gatherAssignmentTargets(pattern, array) {
-          if (t.isIdentifier(pattern.node)) {
+          if (t.isIdentifier(pattern.node) || t.isMemberExpression(pattern.node)) {
             array.push(pattern.node);
           } else {
             pattern.traverse(patternVisitor, array);
@@ -241,7 +241,7 @@ export default function (babel) {
           exit(path) {
             console.log(`exit ${path.node.traceid}`);
           },*/
-          'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression': {
+          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression': {
             exit(path) {
               if (shouldTrace(path)) {
                 const newNode = wrapBlock(path.node.traceid, path);

@@ -43,7 +43,7 @@ export class ExecutionTrace {
   }
   
   decl(id, args) {
-    const declarator = this.parentNode.successorWithId(id);
+    const declarator = this.parentNode.descendantWithId(id);
     declarator.setVariableValues(args);
   }
   
@@ -105,6 +105,10 @@ export class TraceNode {
     return this.findParent((node) => node.isFunction());
   }
   
+  descendantWithId(traceId) {
+    return this.findDescendant((node) => node.traceId == traceId);
+  }
+  
   successorWithId(traceId) {
     return this.findSuccessor((node) => node.traceId == traceId);
   }
@@ -115,6 +119,19 @@ export class TraceNode {
   
   parentWithId(traceId) {
     return this.findParent((node) => node.traceId == traceId);
+  }
+  
+  findDescendant(tester) {
+    //find (BFS) a descendant for which `tester` evaluates to true
+    //returns `null` if no such node was found
+    const parents = [this];
+    while (parents.length > 0) {
+      const children = parents.shift().children;
+      const child = children.find(tester);
+      if (child) return child;
+      parents.push(...children);
+    }
+    return null;
   }
   
   findSuccessor(tester) {
@@ -263,16 +280,15 @@ export class TraceNode {
     
   previousAssignmentTo(identifier) {
     return this.findPredecessor((pred) => {
+      console.log(pred);
       return pred.assigns(identifier);
     });
   }
   
   variablesOfInterestFor(nodes) {
-    let identifiers = [];
-    nodes.forEach((child) => {
-      identifiers.push(...child.variablesOfInterest());
-    })
-    return identifiers;
+    return nodes.reduce((vars, node) => {
+      return vars.concat(node.variablesOfInterest());
+    }, []);
   }
   
   variablesOfInterest() {
@@ -291,12 +307,14 @@ export class TraceNode {
     let nodeTypes = [
       ProgramNode,
       
-      VariableAccessNode,
-      LiteralAccessNode, //catch all
+      VariableExpressionNode,
+      LiteralExpressionNode, //catch all
       
       BinaryExpressionNode,
       UnaryExpressionNode,
       UpdateExpressionNode,
+      ObjectExpressionNode,
+      ArrayExpressionNode,
       AssignmentExpressionNode,
       CallExpressionNode,
       MemberExpressionNode,
@@ -339,6 +357,13 @@ export class TraceNode {
   
   toDisplayString(value, maxLength = 10) {
     if (value === null) return 'null';
+    if (Array.isArray(value)) {
+      let str = value.toString();
+      if (str.length > maxLength) {
+        str = str.substr(0, maxLength+2) + "...";
+      }
+      return `[${str}]`;
+    }
     let str = '';
     let type = typeof(value);
     switch(type) {
@@ -362,14 +387,34 @@ export class TraceNode {
         if (value.length > maxLength) str += '...';
         str = `"${str}"`;
         return str;
-        
-      default:
-        return value.toString();
-     }
+    }    
+    return value.toString();
   }
   
   labelString() {
     return this.astNode.type;
+  }
+  
+  reconstructMemberExpression(astNode) {
+    const object = this.descendantWithId(astNode.object.traceid).valueString();
+    if (astNode.computed) {
+      const property = this.descendantWithId(astNode.property.traceid).valueString();
+      return `${object}[${property}]`;
+    } else {
+      const property = astNode.property.name;
+      return `${object}.${property}`
+    }
+  }
+  
+  assignmentsString() {
+    const assignments = this.assignmentTargets.map((left, index) => {
+      const name = t.isIdentifier(left)
+                    ? left.name
+                    : this.reconstructMemberExpression(left);
+      const value = this.toDisplayString(this.variableValues[index]);
+      return `${name} = ${value}`;
+    });
+    return assignments.join(", ");
   }
 }
 
@@ -472,18 +517,19 @@ class AssignmentExpressionNode extends ExpressionNode {
   }
   
   labelString() {
-    let name = this.left.name;
-    if (!name && this.left.property)
-      name = this.left.property.name;
-    return `${name} = ${this.valueString()}`
+    return this.assignmentsString();
   }
   
   variablesOfInterest() {
-    return [this.left, ...this.right.variablesOfInterest()];
+    return (this.assignmentTargets
+            .filter((node) => t.isIdentifier(node))
+            .concat(this.right.variablesOfInterest()));
   }
   
   assigns(identifier) {
-    return equalIdentifiers(this.left, identifier);
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
   }
 }
 
@@ -544,6 +590,11 @@ class CallExpressionNode extends ExpressionNode {
     return true;
   }
   
+  variablesOfInterest() {
+    const allButFunction = this.children.slice(0, this.numArgs + 1);
+    return this.variablesOfInterestFor(allButFunction);
+  }
+  
   labelString() {
     let name = this.function.name || this.function.property;
     if (typeof(name) != 'string') name = 'f';
@@ -560,7 +611,7 @@ class CallExpressionNode extends ExpressionNode {
   */
 }
 
-class VariableAccessNode extends ExpressionNode {
+class VariableExpressionNode extends ExpressionNode {
   static get astTypes() { return ['Identifier'] }
   
   labelString() {
@@ -572,8 +623,24 @@ class VariableAccessNode extends ExpressionNode {
   }
 }
 
-class LiteralAccessNode extends ExpressionNode {
+class LiteralExpressionNode extends ExpressionNode {
   static get astTypes() { return ['Literal'] }
+  
+  labelString() {
+    return this.valueString();
+  }
+}
+
+class ObjectExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['ObjectExpression'] }
+  
+  labelString() {
+    return this.valueString();
+  }
+}
+
+class ArrayExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['ArrayExpression'] }
   
   labelString() {
     return this.valueString();
@@ -587,18 +654,18 @@ class DeclaratorNode extends ExpressionNode {
     return this.children[0];
   }
   
-  labelString() {
-    let varName = this.astNode.id.name;
-    return `${varName} = ${this.valueString()}`;
-  }
-  
   assigns(identifier) {
-    return equalIdentifiers(this.astNode.id, identifier);
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
   }
   
   variablesOfInterest() {
-    console.log(this.astNode.left);
-    return [this.astNode.id, ...this.variablesOfInterestFor(this.children)];
+    return this.assignmentTargets.concat(this.variablesOfInterestFor(this.children));
+  }
+  
+  labelString() {
+    return this.assignmentsString();
   }
 }
 
@@ -609,8 +676,12 @@ class ReturnNode extends ExpressionNode {
     return this.children[0];
   }
   
+  hasArgument() {
+    return this.astNode.argument !== null;
+  }
+  
   labelString() {
-    return `return ${this.valueString()}`
+    return this.hasArgument() ? `return ${this.valueString()}` : 'return';
   }
 }
 
@@ -685,20 +756,37 @@ class FunctionNode extends TraceNode {
     return true;
   }
   
-  labelString() {
-    return 'Function';
-  }
-  
   isFunction() {
     return true;
+  }
+  
+  variablesOfInterest() {
+    return this.assignmentTargets;
+  }
+  
+  assigns(identifier) {
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
+  }
+  
+  labelString() {
+    return `Function(${this.assignmentsString()})`;
   }
 }
 
 class VariableDeclarationNode extends TraceNode {
   static get astTypes() { return ['VariableDeclaration'] }
   
+  get assignmentTargets() {
+    return this.children.reduce((vars, declarator) => {
+      return vars.concat(declarator.assignmentTargets);
+    }, []);
+  }
+  
   labelString() {
-    return this.astNode.kind;
+    const vars = this.assignmentTargets.map((id) => id.name).join(", ");
+    return `${this.astNode.kind} ${vars}`;
   }
 }
 

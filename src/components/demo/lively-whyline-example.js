@@ -1,12 +1,10 @@
 let u = {v: {w: {x: "hurray"}}};
-u.v.w.x// = "oh no";
-//var a = 3;
-//var b = a + 2;
+u.v.w.x = "oh no";
 var boo;
 var {a, mojo: b} = {a: 1, mojo: 3};
 let [j, k, ...l] = "abcdef";
-//let obj = {};
-//({["val"]: obj.prop} = {val: 1});
+let obj = {};
+({["val"]: obj.prop} = {val: 1});
 
 if (a < 0) {
   a--
