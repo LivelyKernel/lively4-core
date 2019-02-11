@@ -1,14 +1,17 @@
 import { uuid as generateUUID } from 'utils'; 
 import * as tr from 'src/components/demo/lively-whyline-tracing.js';
-console.log(tr);
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
-  let begin = template("__trace__.traceBeginNode(NODEID)")
-  let end = template("__trace__.traceEndNode(NODEID)")
-  let wrapBlockTemplate = template(`${'__trace__'}.${'exp'}(ID,() => BLOCK)`);
-  let wrapValueTemplate = template(`${'__trace__'}.${'val'}(ID,EXP)`);
+  const traceReference = '__tr__';
+  const begin = template(`${traceReference}.stmt(NODEID)`);
+  const statementEnd = template(`${traceReference}.end()`);
+  const assignmentTemplate = template(`${traceReference}.MSG(ID,() => BLOCK,() => VARS)`);
+  const functionTemplate = template(`${traceReference}.MSG(ID, VARS)`);
+  const declarationTemplate = template(`${traceReference}.MSG(ID, VARS)`);
+  const wrapBlockTemplate = template(`${traceReference}.MSG(ID,() => BLOCK)`);
+  const wrapValueTemplate = template(`${traceReference}.MSG(ID,EXP)`);
 
-  let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
+  const checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
   return {
     name: "ast-transform", // not required
@@ -21,18 +24,54 @@ export default function (babel) {
          * Traverse AST to add shared properties / transformations
          */
         function isVariableAccess(identifier) {
-          let badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'property', 'meta'];
-          return (
-            !t.isFunction(identifier.parent)
-            && !t.isUpdateExpression(identifier.parent)
-            && (
-              t.isBinaryExpression(identifier.parent)
-              || !badKeys.includes(identifier.key)));
+          const badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'meta', 'property'];
+          const parent = identifier.parent;
+          if (t.isBinaryExpression(parent)
+              || (t.isMemberExpression(parent) && parent.computed)) return true;
+          if (t.isUpdateExpression(parent)
+              //|| t.isFunction(parent)
+              //|| (t.isObjectProperty(parent) && t.isObjectPattern(parent.parent))
+              //|| t.isType(parent, "PatternLike")
+              || badKeys.includes(identifier.key)) return false;
+          return true;
         }
         
         function isLiteralAccess(literal) {
-          let badKeys = ['key', 'source'];
+          const badKeys = ['key', 'source'];
+          const parent = literal.parent
+          if (t.isObjectProperty(parent) && parent.computed) return true;
           return !badKeys.includes(literal.key);
+        }
+        
+        const patternVisitor = {
+          enter(path) {
+            path.skipKey("decorators");
+          },
+          'Identifier|MemberExpression': {
+            enter(path) {
+              this.push(path.node);
+              path.skip();
+            }
+          },
+          'AssignmentPattern': {
+            enter(path) {
+              path.skipKey("right");
+            }
+          },
+          'ObjectProperty': {
+            enter(path) {
+              path.skipKey("key");
+            }
+          }
+        }
+        
+        function gatherAssignmentTargets(pattern, array) {
+          if (t.isIdentifier(pattern.node) || t.isMemberExpression(pattern.node)) {
+            array.push(pattern.node);
+          } else {
+            pattern.traverse(patternVisitor, array);
+          }
+          array.forEach((node) => node.isAssignmentTarget = true);
         }
         
         let idcounter = 0;
@@ -42,26 +81,40 @@ export default function (babel) {
             path.node.traceid = idcounter++;
           },
           Identifier(path) {
-            path.node.isVariableAccess = isVariableAccess(path);
-            path.node.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
+            const id = path.node;
+            id.isVariableAccess = !id.isAssignmentTarget && isVariableAccess(path);
+            id.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
             let binding = path.scope.getBinding(path.node.name);
             path.node.scopeId = binding ? binding.scope.uid : null;
           },
           Literal(path) {
             path.node.isLiteralAccess = isLiteralAccess(path);
+          },
+          VariableDeclarator(path) {
+            gatherAssignmentTargets(path.get("id"), path.node.assignmentTargets = []);
+          },
+          AssignmentExpression(path) {
+            gatherAssignmentTargets(path.get("left"), path.node.assignmentTargets = []);
+          },
+          Function(path) {
+            const assignmentTargets = path.node.assignmentTargets = [];
+            path.get("params").forEach((pattern) => {
+              gatherAssignmentTargets(pattern, assignmentTargets);
+            });
           }
         });
         
         /*
          * Create copy of original AST.
          * This copy will remain unaffected by the later transformation.
+         * WARNING: Object identity is lost for objects referenced multiple times (e.g. assignmentTargets)
          */
 
         var programast = JSON.parse(JSON.stringify(path.node)); //create copy
         programast.astid = generateUUID();
         if (!window.__tr_ast_registry__) window.__tr_ast_registry__ = {};
         window.__tr_ast_registry__[programast.astid] = programast;
-
+        
         /*
          * Do stuff with unchanging AST.
          * This doesn't affect the actual transformation.
@@ -74,17 +127,16 @@ export default function (babel) {
               let node = path.node;
               programast.node_map[node.traceid] = node;
               node.traceNodeType = tr.TraceNode.mapToNodeType(node);
-              node.parent = path.parent;
+              node.parent = path.parent; //convencience for inspecting the resulting ast
             }
         })
         
         /*
-         * Transform AST to include tracing
+         * Utility functions
          */
         
         function shouldTrace(path) {
           let node = path.node
-          if (t.isFunctionDeclaration(node)) console.log(node.traceid);
           if ((node.traceid === undefined) || node.isTraced) {
             return false;
           } else {
@@ -92,95 +144,209 @@ export default function (babel) {
           }
         }
         
-        function wrapBlock(id, blockOrExp) {
+        function wrapBlock(id, blockOrExp, message = 'exp') {
           return wrapBlockTemplate({
             ID: t.numericLiteral(id),
-            BLOCK: blockOrExp
+            BLOCK: blockOrExp,
+            MSG: t.identifier(message)
           }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
         }
         
-        function wrapValue(id, exp) {
+        function wrapValue(id, exp, message = 'val') {
           return wrapValueTemplate({
             ID: t.numericLiteral(id),
-            EXP: exp
+            EXP: exp,
+            MSG: t.identifier(message)
           }).expression
         }
         
+        function arrayOfArgs(vars) {
+          return t.arrayExpression(vars.map((arg) => t.isIdentifier(arg) ? arg : t.nullLiteral()));
+        }
+        
+        function wrapAssignment(id, exp, vars, message='asgn') {
+          return assignmentTemplate({
+            ID: t.numericLiteral(id),
+            BLOCK: exp,
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          }).expression;
+        }
+        
+        function functionStart(id, vars, message='func') {
+          return functionTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
+        }
+        
+        function declaratorFollowup(id, vars, message='decl') {
+          return declarationTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
+        }
+        
+        function statementBegin(id) {
+          return begin({
+            NODEID: t.numericLiteral(id)
+          });
+        }
+        
+        function ensureBlock(body) {
+          if (!body.node) return null;
+          
+          if (body.isBlockStatement()) {
+            return body.node;
+          }
+
+          const statements = [];
+          if (body.isStatement()) {
+            statements.push(body.node);
+          } else {
+            throw new Error("I never thought this was even possible.");
+          }
+          
+          const blockNode = t.blockStatement(statements);
+          body.replaceWith(blockNode);
+          return blockNode;
+        }
+        
+        /*
+         * Preprocess AST
+         */
+        
         path.traverse({
-          'BinaryExpression|CallExpression|UnaryExpression|UpdateExpression|AssignmentExpression': {
-            exit: (path) => {
+          'IfStatement': {
+            enter(path) {
+              ensureBlock(path.get("consequent"));
+              ensureBlock(path.get("alternate"));
+            }
+          },
+          'For|While|Function': {
+            enter(path) {
+              ensureBlock(path.get("body"));
+            }
+          }
+        })
+        
+        /*
+         * Transform AST to include tracing
+         */
+        console.log(programast);
+        path.traverse({
+          /*enter(path) {
+            console.log(`enter ${path.node.traceid}`);
+          },
+          exit(path) {
+            console.log(`exit ${path.node.traceid}`);
+          },*/
+          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression': {
+            exit(path) {
               if (shouldTrace(path)) {
-                let newNode = wrapBlock(path.node.traceid, path);
+                const newNode = wrapBlock(path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'AssignmentExpression': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const node = path.node;
+                const newNode = wrapAssignment(node.traceid, path, node.assignmentTargets);
                 path.replaceWith(newNode);
               }
             }
           },
           'VariableDeclarator': {
-            exit: (path) => {
+            exit(path) {
               if (shouldTrace(path)) {
-                let init = path.get('init');
-                if (init.node) {
-                  let newNode = wrapBlock(path.node.traceid, init);
-                  init.replaceWith(newNode);
-                }
+                const node = path.node;
+                const init = path.get('init');
+                const newNode = wrapBlock(node.traceid, init.node || t.identifier("undefined"));
+                init.replaceWith(newNode);
+                const declaration = path.parentPath;
+                declaration.insertAfter(declaratorFollowup(node.traceid, node.assignmentTargets));
               }
             }
           },
-          'IfStatement|ForStatement|While': {
-            enter: (path) => {
+          'IfStatement|While|VariableDeclaration': {
+            enter(path) {
               if (shouldTrace(path)) {
-                path.insertBefore(begin({
-                  NODEID: t.numericLiteral(path.node.traceid)
-                }));
-                path.insertAfter(end({
-                  NODEID: t.numericLiteral(path.node.traceid)
-                }));
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'ForStatement': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                path.skipKey("init");
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
               }
             }
           },
           'Function': {
-            enter: (path) => {
+            enter(path) {
               if (shouldTrace(path)) {
-                let body = path.get('body');
-                let wrappedBody = wrapBlock(path.node.traceid, body);
-                let newBody = t.blockStatement([
-                  checkRuntime(),
-                  t.returnStatement(wrappedBody)]);
-                console.log(newBody);
-                body.replaceWith(newBody);
+                const node = path.node;
+                const body = path.get("body");
+                body.unshiftContainer("body", checkRuntime());
+                body.unshiftContainer("body", functionStart(node.traceid, node.assignmentTargets));
+                body.pushContainer("body", statementEnd());
               }
             }
           },
           'Identifier': {
-            exit: (path) => {
-              let node = path.node;
-              if (node.isVariableAccess && shouldTrace(path)) {
-                let newNode = wrapValue(node.traceid, path);
+            exit(path) {
+              const node = path.node;
+              if (shouldTrace(path) && node.isVariableAccess) {
+                const newNode = wrapValue(node.traceid, path);
                 path.replaceWith(newNode);
               }
             }
           },
           'Literal': {
-            exit: (path) => {
-              let node = path.node;
-              if (node.isLiteralAccess && shouldTrace(path)) {
-                let newNode = wrapValue(node.traceid, path);
+            exit(path) {
+              const node = path.node;
+              if (shouldTrace(path) && node.isLiteralAccess) {
+                const newNode = wrapValue(node.traceid, path);
                 path.replaceWith(newNode);
+              }
+            }
+          },
+          'MemberExpression': {
+            exit(path) {
+              if (shouldTrace(path) && !path.node.isAssignmentTarget) {
+                const newNode = wrapBlock(path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'ReturnStatement': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const arg = path.get('argument');
+                const newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"), 'rtrn');
+                arg.replaceWith(newNode);
               }
             }
           }
         })
 
         path.unshiftContainer('body', template(`
-          var __tr_ast__ = window.__tr_ast_registry__[ASTID]
+          const __tr_ast__ = window.__tr_ast_registry__[ASTID]
 
-          var __trace__ = new window.lively4ExecutionTrace(__tr_ast__);
+          const ${traceReference} = new window.lively4ExecutionTrace(__tr_ast__);
 
-          var _tr_time = performance.now();
-          var _tr_time_max = 1000;
+          const _tr_time = performance.now();
+          const _tr_time_max = 1000;
 
-    	  	__tr_ast__.calltrace = __trace__.traceRoot
-          __tr_ast__.executionTrace = __trace__
+    	  	__tr_ast__.calltrace = ${traceReference}.traceRoot
+          __tr_ast__.executionTrace = ${traceReference}
 
     	  	window.__tr_last_ast__ = __tr_ast__`)({ASTID: t.stringLiteral(programast.astid)}));
       } 

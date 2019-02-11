@@ -1,9 +1,22 @@
-var a = 3
-var b = a + 4
+let u = {v: {w: {x: "hurray"}}};
+u.v.w.x = "oh no";
+var boo;
+var {a, mojo: b} = {a: 1, mojo: 3};
+let [j, k, ...l] = "abcdef";
+let obj = {};
+({["val"]: obj.prop} = {val: 1});
+
+if (a < 0) {
+  a--
+} else if (a == 0) {
+  a *= a;
+} else {
+  a++
+}
 
 function foo(a,b) {
   let c = a + b;
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 2; i++) {
     if (c < 1000) {
       c += c + i * c
     } else {
@@ -11,7 +24,7 @@ function foo(a,b) {
       return c
     }
   }
-  return c
+  return;
 }
 
 foo(a, b)
