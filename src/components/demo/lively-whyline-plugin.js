@@ -37,7 +37,9 @@ export default function (babel) {
         }
         
         function isLiteralAccess(literal) {
-          let badKeys = ['key', 'source'];
+          const badKeys = ['key', 'source'];
+          const parent = literal.parent
+          if (t.isObjectProperty(parent) && parent.computed) return true;
           return !badKeys.includes(literal.key);
         }
         

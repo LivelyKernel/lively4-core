@@ -190,9 +190,9 @@ export default class Whyline extends Morph {
   controlFlowQuestions(traceNode) {
     if (!traceNode.parent) return [];
     return [
-      ['↤', () => traceNode.predecessor()],
+      ['↤', () => traceNode.predecessor],
       ['↥', () => traceNode.previousControlFlow()],
-      ['↦', () => traceNode.successor()]];
+      ['↦', () => traceNode.successor]];
   }
   
   dataFlowQuestions(traceNode) {

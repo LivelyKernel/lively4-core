@@ -7,11 +7,27 @@ export class ExecutionTrace {
     this.nodeMap = astRootNode.node_map;
     this.traceRoot = this.newTraceNode(astRootNode.traceid);
     this.parentNode = this.traceRoot;
+    this.previousNode = this.traceRoot;
   }
   
   newTraceNode(astNodeId) {
     let astNode = this.nodeMap[astNodeId];
-    return this.previousNode = new astNode.traceNodeType(astNode, this.parentNode);
+    return new astNode.traceNodeType(astNode, this.parentNode);
+  }
+  
+  begin(id) {
+    const traceNode = this.parentNode = this.newTraceNode(id);
+    this.previousNode = traceNode.begin(this.previousNode);
+    console.log("begin");
+    console.log(traceNode);
+    return traceNode;
+  }
+  
+  end(traceNode = this.parentNode) {
+    this.previousNode = traceNode.end(this.previousNode);
+    this.parentNode = traceNode.parent;
+    console.log("end");
+    console.log(traceNode);
   }
   
   /*
@@ -19,26 +35,28 @@ export class ExecutionTrace {
    */
   
   exp(id, exp) {
-    const traceNode = this.parentNode = this.newTraceNode(id);
+    const traceNode = this.begin(id);
     const value = traceNode.value = exp();
-    this.parentNode = traceNode.parent;
+    this.end(traceNode);
     return value;
   }
   
   val(id, value) {
-    return this.newTraceNode(id).value = value;
+    const traceNode = this.begin(id);
+    this.end(traceNode);
+    return traceNode.value = value;
   }
   
   func(id, args) {
-    const traceNode = this.parentNode = this.newTraceNode(id);
+    const traceNode = this.begin(id);
     traceNode.setVariableValues(args);
   }
   
   asgn(id, exp, argFunc) {
-    const traceNode = this.parentNode = this.newTraceNode(id);
+    const traceNode = this.begin(id);
     const value = traceNode.value = exp();
     traceNode.setVariableValues(argFunc());
-    this.parentNode = traceNode.parent;
+    this.end(traceNode);
     return value;
   }
   
@@ -48,19 +66,19 @@ export class ExecutionTrace {
   }
   
   stmt(id) {
-    this.parentNode = this.newTraceNode(id);
+    this.begin(id);
   }
   
   rtrn(id, exp) {
     const traceNode = this.parentNode = this.newTraceNode(id);
     const value = traceNode.value = exp();
-    const functionParent = traceNode.functionParent();
-    this.parentNode = functionParent.parent;
-    return functionParent.value = value;
-  }
-  
-  end() {
-    this.parentNode = this.parentNode.parent;
+    let parent = traceNode;
+    while (!parent.isFunction()) {
+      this.end(parent);
+      parent = traceNode.parent;
+    }
+    this.end(parent);
+    return parent.value = value;
   }
 }
 
@@ -69,21 +87,49 @@ export class TraceNode {
     this.children = [];
     this.astNode = astNode;
     this.parent = parent;
-    if (parent) {
-      parent.children.push(this);
-    }
+    //this.predecessor = null;
+    //this.successor = null;
+    if (parent) parent.addChild(this);
   }
   
   /*
    * Tracing
    */
+  
+  setPredecessor(previous) {
+    this.predecessor = previous;
+    previous.successor = this;
+  }
+  
+  begin(previous) {
+    if (this.preceedsChildren){
+      this.setPredecessor(previous);
+      return this;
+    } else {
+      return previous;
+    }
+  }
+  
+  end(previous) {
+    if (this.preceedsChildren){
+      return previous;
+    } else {
+      this.setPredecessor(previous);
+      return this;
+    }
+  }
+  
+  addChild(child) {
+    this.children.push(child);
+  }
+  
   setVariableValues(values) {
     this.variableValues = this.assignmentTargets.map((node, i) => {
       if (t.isIdentifier(node)) {
         return values[i];
       } else { //node is MemberExpression
-        const object = this.predecessorWithId(node.object.traceid).value;
-        const property = node.computed ? this.predecessorWithId(node.property.traceid).value : node.property.name;
+        const object = this.descendantWithId(node.object.traceid).value;
+        const property = node.computed ? this.descendantWithId(node.property.traceid).value : node.property.name;
         return object[property];
       }
     });
@@ -139,7 +185,7 @@ export class TraceNode {
     //returns `null` if no such node was found
     let node = this;
     do {
-      node = node.successor();
+      node = node.successor;
     } while (node && !tester(node));
     return node || null;
   }
@@ -149,7 +195,7 @@ export class TraceNode {
     //returns `null` if no such node was found
     let node = this;
     do {
-      node = node.predecessor();
+      node = node.predecessor;
     } while (node && !tester(node));
     return node || null;
   }
@@ -166,98 +212,6 @@ export class TraceNode {
   
   get preceedsChildren() {
     return true;
-  }
-  
-  precedingChildren() {
-    return this.preceedsChildren ? [] : this.children;
-  }
-  
-  succeedingChildren() {
-    return this.preceedsChildren ? this.children : [];
-  }
-  
-  firstDescendant() {
-    let children = this.precedingChildren();
-    if (children.length == 0) {
-      return this;
-    } else {
-      return children[0].firstDescendant();
-    }
-  }
-  
-  lastDescendant() {
-    let children = this.succeedingChildren();
-    if (children.length == 0) {
-      return this;
-    } else {
-      return children[children.length-1].lastDescendant();
-    }
-  }
-  
-  precedingChildAround(traceNode, offset) {
-    let children = this.precedingChildren();
-    let index = children.indexOf(traceNode);
-    if (index >= 0) {
-      if (index+offset == children.length) {
-        return this;
-      } else {
-        return children[index+offset];
-      }
-    }
-    return null;
-  }
-  
-  succeedingChildAround(traceNode, offset) {
-    let children = this.succeedingChildren();
-    let index = children.indexOf(traceNode);
-    if (index >= 0) {
-      if (index+offset == -1) {
-        return this;
-      } else {
-        return children[index+offset];
-      }
-    }
-    return null;
-  }
-  
-  descendantBefore(traceNode) {
-    let child = this.precedingChildAround(traceNode, -1)
-                || this.succeedingChildAround(traceNode, -1);
-    if (child === this) return this;
-    if (!child) return this.parent.descendantBefore(this);
-    return child.lastDescendant();
-  }
-  
-  descendantAfter(traceNode) {
-    let child = this.precedingChildAround(traceNode, 1)
-                || this.succeedingChildAround(traceNode, 1);
-    if (child === this) return this;
-    if (!child) return this.parent.descendantAfter(this);
-    return child.firstDescendant();
-  }
-  
-  predecessor() {
-    let children = this.precedingChildren();
-    let child = children[children.length-1];
-    if (child) {
-      return child.lastDescendant();
-    } else if (this.parent) {
-      return this.parent.descendantBefore(this);
-    } else {
-      return null;
-    }
-  }
-  
-  successor() {
-    let children = this.succeedingChildren();
-    let child = children[0];
-    if (child) {
-      return child.firstDescendant();
-    } else if (this.parent) {
-      return this.parent.descendantAfter(this);
-    } else {
-      return null;
-    }
   }
   
   /*
@@ -280,7 +234,6 @@ export class TraceNode {
     
   previousAssignmentTo(identifier) {
     return this.findPredecessor((pred) => {
-      console.log(pred);
       return pred.assigns(identifier);
     });
   }
@@ -694,14 +647,6 @@ class IfStatementNode extends TraceNode {
   
   get consequences() {
     return this.children.slice(1, this.children.length);
-  }
-  
-  precedingChildren() {
-    return [this.test];
-  }
-  
-  succeedingChildren() {
-    return this.consequences;
   }
   
   branchesControlFlow() {
