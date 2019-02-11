@@ -2,7 +2,9 @@
  * Morph is a HtmlElement replacement with some API enhanncements
  */
  
-export default class Morph extends HTMLDivElement {
+
+// #TODO all custom elements have to inherit from HTMLElement
+export default class Morph extends HTMLElement {
   /* 
    * Access subelments by name
    * shortcut for querySelector and shadowRoot.querySelector t
