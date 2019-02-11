@@ -8,26 +8,34 @@ export class ExecutionTrace {
     this.traceRoot = this.newTraceNode(astRootNode.traceid);
     this.parentNode = this.traceRoot;
     this.previousNode = this.traceRoot;
+    this.lastOccurrenceMap = [];
   }
   
   newTraceNode(astNodeId) {
     let astNode = this.nodeMap[astNodeId];
-    return new astNode.traceNodeType(astNode, this.parentNode);
+    return new astNode.traceNodeType(astNode);
+  }
+  
+  addOccurrence(id, traceNode) {
+    const last = this.lastOccurrenceMap[id];
+    if (last) {
+      traceNode.previousOccurrence = last;
+      last.nextOccurrence = traceNode;
+    }
+    this.lastOccurrenceMap[id] = traceNode;
   }
   
   begin(id) {
-    const traceNode = this.parentNode = this.newTraceNode(id);
+    const traceNode = this.newTraceNode(id);
+    this.parentNode.addChild(traceNode);
     this.previousNode = traceNode.begin(this.previousNode);
-    console.log("begin");
-    console.log(traceNode);
-    return traceNode;
+    this.addOccurrence(id, traceNode);
+    return this.parentNode = traceNode;
   }
   
   end(traceNode = this.parentNode) {
     this.previousNode = traceNode.end(this.previousNode);
     this.parentNode = traceNode.parent;
-    console.log("end");
-    console.log(traceNode);
   }
   
   /*
@@ -70,7 +78,7 @@ export class ExecutionTrace {
   }
   
   rtrn(id, exp) {
-    const traceNode = this.parentNode = this.newTraceNode(id);
+    const traceNode = this.begin(id);
     const value = traceNode.value = exp();
     let parent = traceNode;
     while (!parent.isFunction()) {
@@ -83,13 +91,9 @@ export class ExecutionTrace {
 }
 
 export class TraceNode {
-  constructor(astNode, parent){
+  constructor(astNode){
     this.children = [];
     this.astNode = astNode;
-    this.parent = parent;
-    //this.predecessor = null;
-    //this.successor = null;
-    if (parent) parent.addChild(this);
   }
   
   /*
@@ -120,6 +124,7 @@ export class TraceNode {
   }
   
   addChild(child) {
+    child.parent = this;
     this.children.push(child);
   }
   
