@@ -9,6 +9,8 @@ import Strings from "src/client/strings.js"
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 import * as cop from "src/client/ContextJS/src/contextjs.js";
+import Files from "src/client/files.js"
+
 
 const FETCH_TIMEOUT = 5000
 
@@ -141,7 +143,7 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-    await this.db.transaction('rw', this.db.files, this.db.links, () => {
+    await this.db.transaction('rw', this.db.files, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -150,9 +152,9 @@ export default class FileIndex {
   }
   
   async addLinks(file) {
-    await this.db.links.where("url").equals(file.url).delete()
     BrokenLinkAnalysis.extractLinks(file).then(links => {
-      this.db.transaction("rw!", this.db.links, () => {
+      this.db.transaction("rw!", this.db.links, async () => {
+        this.db.links.where("url").equals(file.url).delete()
         if (links) {
           this.db.links.bulkPut(links)
         }
@@ -172,8 +174,13 @@ export default class FileIndex {
   }
   
   async addVersion(file) {
-      let response = await lively.files.loadVersions(file.url)
-      let json = await response.json()
+      let response = await Files.loadVersions(file.url)
+      let json
+      try {
+        json = await response.json()
+      } catch(e) {
+        return console.warn("fileindex: could not addVersion " + file, e)
+      }
       let versions = json.versions
       for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
         let version = versions[i]
@@ -194,8 +201,8 @@ export default class FileIndex {
   
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
     let modifications = new Array()
-    let latestContent = await lively.files.loadFile(fileUrl, latestVersion.version)
-    let previousContent = await lively.files.loadFile(fileUrl, previousVersion.version)
+    let latestContent = await Files.loadFile(fileUrl, latestVersion.version)
+    let previousContent = await Files.loadFile(fileUrl, previousVersion.version)
     let astLastest = await this.parseSource(fileUrl, latestContent)
     let astPrevious = await this.parseSource(fileUrl, previousContent)
 
