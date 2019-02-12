@@ -170,24 +170,6 @@ export default class D3BarChart extends D3Component {
     
       var yAxis = d3.axisLeft(y);
       var yAxisGroup = svg.append("g").call(yAxis);
-      // yAxisGroup.attr("transform", `translate(0, ${y(data.length - 1) + lineHeight})`)
-    
-      //     'text-anchor': 'middle',
-      //     'alignment-baseline': 'hanging',
-      //   })
-      //   .styles({
-      //     'font-family': 'sans-serif',
-      //     'font-size': (12 / scale) + 'pt',
-      //   })
-    
-//     rect.append("title") 
-//         .text(d => d.label);
-    
-        // .attr("title", d => d.label)
-        // .on("click", function(d) {
-        //   vis.onNodeClick(d, d3.event, this) 
-        // })
-        // .text(d => d.label);
   }
 
   onExtentChanged() {

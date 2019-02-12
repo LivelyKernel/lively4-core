@@ -76,6 +76,8 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async setVersionData() {
+    var startDate = this.shadowRoot.querySelector('#lively-analysis-heatmap-startdate').value
+    var endDate = this.shadowRoot.querySelector('#lively-analysis-heatmap-enddate').value
     this.versions = {}
     this.versions = {
       name : 'versions',
@@ -85,7 +87,13 @@ export default class LivelyAnalysis extends Morph {
     await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
       FileIndex.current().db.classes.each((clazz) => {
         var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url, 'action': 'modified'})
+        var versionsEntries = new Array()
+        if (startDate && endDate) {
+          versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url, 'action': 'modified'}).and(value =>
+          Date.parse(startDate) <= Date.parse(value.date) && Date.parse(endDate) >= Date.parse(value.date))  
+        } else {
+          versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name, 'url': clazz.url, 'action': 'modified'})
+        }        
         versionsEntries.each((entry) => {
           if (entry.method != '+null+') {
             let method = methodVersions.find(method => method.name == entry.method)
@@ -112,35 +120,6 @@ export default class LivelyAnalysis extends Morph {
         })
      })
     })
- /*   await FileIndex.current().db.transaction('!r', FileIndex.current().db.classes, FileIndex.current().db.versions, () => {
-      FileIndex.current().db.classes.each((clazz) => {
-        var methodVersions = new Array()
-        var versionsEntries = FileIndex.current().db.versions.where({'class': clazz.name})
-        versionsEntries.each((entry) => {
-          //if (entry.method != '+null+') {
-            let method = methodVersions.find(method => method.method == entry.method)
-            if (method) {
-              method.modifications++
-            } else {
-              methodVersions.push({
-                name: entry.method,
-                modifications: 1,
-              })
-            }
-          //}
-        })
-        versionsEntries.count().then(count => {
-          if (count > 0) {
-            this.versions.children.push({
-              name: clazz.name,
-              url: clazz.url,
-              modifications: count,
-              children: methodVersions
-           })
-          }
-        })
-     })
-    })*/
   }
   
   async setLinkData() {
@@ -257,6 +236,7 @@ export default class LivelyAnalysis extends Morph {
       },
     }) 
     polymetric.updateViz()
+    lively.notify("Update polymetric view finished.")
   }
 
   async updateVersionHeatMap() {
@@ -268,6 +248,7 @@ export default class LivelyAnalysis extends Morph {
     
     this.heatMapContainer.innerHTML = ''
     this.heatMapContainer.appendChild(heatmap)
+    lively.notify("Update heat map finished.")
   }
 
  async updateTableBrokenLinks() {
@@ -279,6 +260,7 @@ export default class LivelyAnalysis extends Morph {
    
     this.brokenLinksContainer.innerHTML = ''
     this.brokenLinksContainer.appendChild(table)
+    lively.notify("Update finished.")
   }
 
 
