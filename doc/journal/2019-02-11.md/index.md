@@ -66,7 +66,21 @@ data.map(ea => ea.year).forEach(ea => {
 Array.from(years.keys()).sort().map(ea => ea + ":" + years.get(ea)).join("\n")
 ```
 
-
+```
+1983:1
+2009:9
+2010:22
+2011:16
+2012:24
+2013:24
+2014:18
+2015:7
+2016:13
+2017:8
+2018:6
+2019:1
+NaN:13
+```
 
 
 

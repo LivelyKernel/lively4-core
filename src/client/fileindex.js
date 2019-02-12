@@ -210,7 +210,6 @@ export default class FileIndex {
   
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
-    debugger
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
