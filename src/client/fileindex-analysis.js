@@ -64,7 +64,7 @@ export default class FileIndex {
     await this.updateTitleAndTags()
     await this.updateAllModuleSemantics()
     await this.updateAllLinks()
-    await this.updateAllVersions()
+    await this.updateAllLatestVersionHistories() 
   }
   
   async updateTitleAndTags() {
@@ -161,9 +161,52 @@ export default class FileIndex {
       })
     })
   }
-      
-  async updateAllVersions() {
-     await this.db.transaction('rw', this.db.files, this.db.versions, () => {
+  
+ async extractLinks(file) {   
+    if (!file || !file.content) {
+      return [];
+    }
+    var links = new Array()
+    var extractedLinks =  file.content.match(/(((http(s)?:\/\/)(w{3}[.])?)([a-z0-9\-]{1,63}(([\:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([\_\/\#\-[a-zA-Z0-9]*)?[#.?=%;a-z0-9]*)/g)
+    
+    if(!extractedLinks) {
+      return [];
+    }
+    for (const extractedLink of extractedLinks) {
+      var link = {
+        link: extractedLink,
+        location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
+        url: file.url,
+        status: await this.validateLink(extractedLink)
+      }
+      links.push(link)   
+    }
+   return links;
+ }
+  
+ async validateLink(link) { 
+  return await fetch(link, { 
+    method: "GET", 
+    mode: 'no-cors', 
+    redirect: "follow", // manual, *follow, error
+    referrer: "no-referrer", // no-referrer, *client
+  })
+  .then((response) => {
+    if (response.type === "basic") { // internal link
+      if (response.ok) {
+        return "alive"
+      } else {
+        return "dead"
+      } 
+    } else if (response.type === "opaque") { // external link
+      return "alive"
+    }
+  })
+  .catch((error) => {console.log(error, "Link: " + link); return "dead"})
+  }
+    
+  async updateAllLatestVersionHistories() {
+     this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
