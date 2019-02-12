@@ -86,10 +86,10 @@ export default function ({ types: t, template, traverse }) {
       })`);
         function buildSourceLocation(node) {
           return sourceLocation({
-            END_COLUMN: t.numberLiteral(node.loc.end.column),
-            END_LINE: t.numberLiteral(node.loc.end.line),
-            START_COLUMN: t.numberLiteral(node.loc.start.column),
-            START_LINE: t.numberLiteral(node.loc.start.line)
+            END_COLUMN: t.numericLiteral(node.loc.end.column),
+            END_LINE: t.numericLiteral(node.loc.end.line),
+            START_COLUMN: t.numericLiteral(node.loc.start.column),
+            START_LINE: t.numericLiteral(node.loc.start.line)
           }).expression;
         }
 
