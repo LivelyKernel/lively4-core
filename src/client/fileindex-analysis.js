@@ -50,7 +50,7 @@ export default class FileIndex {
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
         classes: '[name+url], name, url, loc, start, end, superClass, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
-        versions: '[class+url+method+commitId+date], [class+method], [class+url], [class+url+method], class, url, method, commitId, date, action, user'
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
     return db 
@@ -143,7 +143,7 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-    await this.db.transaction('rw', this.db.files, () => {
+    this.db.transaction('rw', this.db.files, this.db.links, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -170,17 +170,12 @@ export default class FileIndex {
         if (file.name && file.name.match(/\.js$/))
           this.addVersion(file)
       })
-    })
+    }) 
   }
   
   async addVersion(file) {
-      let response = await Files.loadVersions(file.url)
-      let json
-      try {
-        json = await response.json()
-      } catch(e) {
-        return console.warn("fileindex: could not addVersion " + file, e)
-      }
+      let response = await lively.files.loadVersions(file.url) 
+      let json = await response.json()
       let versions = json.versions
       for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
         let version = versions[i]
@@ -216,8 +211,7 @@ export default class FileIndex {
     for (let classLatest of latest.classes) {
       try {
         let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
-        if (!previousClass ||
-            (previousClass && latestContent.substring(classLatest.start, classLatest.end) !=                                                previousContent.substring(previousClass.start, previousClass.end))) { // added or modified class
+        if (!previousClass) { // added
           modifications.push({
             url: fileUrl,
             class: classLatest.name,
@@ -558,7 +552,7 @@ class BrokenLinkAnalysis {
     var extractedLinks =  new Array()
     
     if (file.url.match(/\.md$/)) {
-       let patternMdFiles = /(?<=(\]:\s*|\]\s*\())((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+       let patternMdFiles = /(?<=(\]:\s*)|(\]\s*\())((http(s)?:\/\/(w{3}[.])?([a-z0-9.-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|((([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+([a-zA-Z0-9\-_#.?=%;]+)?))/gm
            // /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
       extractedLinks = file.content.match(patternMdFiles)
     } else if (file.url.match(/\.(css|(x)?html)$/)) {
@@ -573,7 +567,7 @@ class BrokenLinkAnalysis {
       if (/^http|https|www/g.test(extractedLink)) {
         let link = {
           link: extractedLink,
-          location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
+          location: extractedLink.includes('lively-kernel.org') ? "internal" : "external",
           url: file.url,
           status: await this.validateLink(extractedLink),
         }
@@ -587,7 +581,7 @@ class BrokenLinkAnalysis {
           status: await this.validateLink(fullLink),
         }
         links.push(link)
-      } else if (/^\./g.test(extractedLink) || /^[A-Za-z]/g.test(extractedLink)) {
+      } else if (/^\./g.test(extractedLink) || /^[A-Za-z\_\-]/g.test(extractedLink)) {
         let fullLink = file.url.replace(file.name, extractedLink)
         let link = {
           link: extractedLink,

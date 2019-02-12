@@ -6,7 +6,7 @@ import d3v5 from "src/external/d3.v5.js"
 
 export default class LivelyAnalysisHeatmap extends Morph {
   async initialize() {
-    this.windowTitle = "LivelyAnalysisHeatmap";
+    this.windowTitle = "Lively Analysis Heatmap";
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
@@ -87,22 +87,6 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .style('stroke-width', 1.5)
       .style('stroke', 'white')
       .style('display', 'none')
-  
-    /*childCells.append('text') 
-      .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
-      .attr('y', function(cell) { return (cell.y1 - cell.y0) / 2.5 })
-      .attr('class', 'child title')
-      .attr('text-anchor', 'middle')
-      .attr('display', 'none')
-      .text(function(cell) { return cell.data.name });*/
-     
-   /* childCells.append('text')
-      .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
-      .attr('y', function(cell) { return (cell.y1 - cell.y0) / 1.5 })
-      .attr('class', 'child modifications')
-      .attr('text-anchor', 'middle')
-      .style('display', 'none')
-      .text(function(cell) { return cell.data.modifications });*/
 	
     // classes
     var parentCells = svg.selectAll('g.cell.parent')
@@ -126,20 +110,6 @@ export default class LivelyAnalysisHeatmap extends Morph {
       .on("mouseover", (function(cell) {
         this.infobox(cell)
       }).bind(this));
-    
-    /*parentCells.append('text')
-      .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
-      .attr('y', function(cell) { return (cell.y1 - cell.y0) / 2.5 })
-      .attr('class', 'parent title')
-      .attr('text-anchor', 'middle')
-      .text(function(cell) { return cell.data.name });*/
-    
-    /*parentCells.append('text')
-      .attr('x', function(cell) { return (cell.x1 - cell.x0) / 2 })
-      .attr('y', function(cell) { return (cell.y1 - cell.y0) / 1.5 })
-      .attr('class', 'parent modifications')
-      .attr('text-anchor', 'middle')
-      .text(function(cell) { return cell.data.modifications });*/
     
     svg.selectAll('g.cell').on('click', (function(cell) {
       if (this.selectedNode.depth == 1) {
@@ -224,27 +194,11 @@ export default class LivelyAnalysisHeatmap extends Morph {
     if (cell != this.root) { 						// child
       svg.selectAll('g.cell.child').select('rect').style('display', 'block')
       svg.selectAll('g.cell.parent').select('rect').style('display', 'none')
-     /* svg.selectAll('text.child.title')
-        .style('display', 'block')
-        .attr('x', function(cell) { return (zoomX * (cell.x1 - cell.x0)) / 2 })
-        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 2.5 });*/
-     /* svg.selectAll('text.child.modifications')
-        .style('display', 'block')
-        .attr('x', function(cell) { return (zoomX * (cell.x1 - cell.x0)) / 2 })
-        .attr('y', function(cell) { return (zoomY * (cell.y1 - cell.y0)) / 1.5 });*/
       svg.selectAll('text.parent').style('display', 'none')
     } else {								        // parent
       svg.selectAll('g.cell.parent').select('rect').style('display', 'block')
       svg.selectAll('g.cell.child').select('rect').style('display', 'none')
       svg.selectAll('text.child').style('display', 'none')
-     /* svg.selectAll('text.parent.title')
-        .style('display', 'block')
-        .attr('x', function(cell) { return (cell.x1-cell.x0) / 2 })
-        .attr('y', function(cell) { return (cell.y1-cell.y0) / 2.5 });*/
-     /* svg.selectAll('text.parent.modifications')
-        .style('display', 'block')
-        .attr('x', function(cell) { return (cell.x1-cell.x0) / 2 })
-        .attr('y', function(cell) { return (cell.y1-cell.y0) / 1.5 });*/
     }
     this.selectedNode = cell
     d3v5.event.stopPropagation() 

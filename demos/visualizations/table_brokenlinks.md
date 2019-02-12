@@ -1,7 +1,9 @@
 ## Find Broken Links
 
+[a broken link](https://lively-kernel.org/jskdhfjkdhf/)
+
 <script>
-  import FileIndex from "src/client/fileindex-analysis.js"
+  import FileIndex from "src/client/fileindex-analysis.js" 
   import d3 from "src/external/d3.v3.js" 
 
   (async () => { 
