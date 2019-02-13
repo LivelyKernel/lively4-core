@@ -16,7 +16,7 @@ We use Web-components to create tools and applications directly in the Web-brows
 
 So lets start:
 
-- Create a new component using a ["wizard"](../../templates/index.html) 
+- Create a new component using a ["wizard"](../../templates/index.md) 
   - this will create two files:
     1. a html file containing a template
     2. a js file containing a module exporting a subclass of ``HTMLElement``
