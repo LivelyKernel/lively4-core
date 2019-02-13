@@ -734,6 +734,10 @@ class VariableDeclarationNode extends TraceNode {
     }, []);
   }
   
+  variablesOfInterest() {
+    return this.assignmentTargets;
+  }
+  
   labelString() {
     const vars = this.assignmentTargets.map((id) => id.name).join(", ");
     return `${this.astNode.kind} ${vars}`;
