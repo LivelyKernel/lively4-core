@@ -280,7 +280,7 @@ export default class LivelyContainerNavbar extends Morph {
       div.innerHTML = html;
       var i=0;
       Array.from(div.querySelectorAll("a"))
-        .filter( ea => !ea.getAttribute("href").match(/^javascript:/))
+        .filter( ea => ea.getAttribute("href") && !ea.getAttribute("href").match(/^javascript:/))
         .forEach( ea => {
         stats.contents.push({
           type: 'link', 
