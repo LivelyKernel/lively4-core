@@ -1,10 +1,9 @@
-let u = {v: {w: {x: "hurray"}}};
-u.v.w.x = "oh no";
-var boo;
-var {a, mojo: b} = {a: 1, mojo: 3};
-let [j, k, ...l] = "abcdef";
-let obj = {};
+let obj = {v: {w: {x: "hurray"}}};
+obj.v.w.x = obj ? "cool" : "oh no";
 ({["val"]: obj.prop} = {val: 1});
+var boo, a, b;
+([a, b, ...boo] = "abcdef");
+({a, mojo: b} = {a: 1, mojo: 3});
 
 if (a < 0) {
   a--

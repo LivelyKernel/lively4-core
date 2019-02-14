@@ -75,9 +75,15 @@ export default function (babel) {
         }
         
         let idcounter = 0;
+        const scopes = [];
         
         path.traverse({
           enter(path) {
+            /******/
+            const uid = path.scope.uid;
+            if (!scopes[uid]) scopes[uid] = [];
+            scopes[uid].push(path.node);
+            /******/
             path.node.traceid = idcounter++;
           },
           Identifier(path) {
@@ -103,6 +109,10 @@ export default function (babel) {
             });
           }
         });
+        
+        /*****/
+        console.log(scopes)
+        /*****/
         
         /*
          * Create copy of original AST.
@@ -243,7 +253,7 @@ export default function (babel) {
           exit(path) {
             console.log(`exit ${path.node.traceid}`);
           },*/
-          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression': {
+          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression|NewExpression|ConditionalExpression': {
             exit(path) {
               if (shouldTrace(path)) {
                 const newNode = wrapBlock(path.node.traceid, path);
