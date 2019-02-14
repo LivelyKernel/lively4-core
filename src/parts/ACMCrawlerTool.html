@@ -1,0 +1,87 @@
+<lively-window class="global" tabindex="0" style="z-index: 102; position: absolute; left: 191.333px; top: 30.1111px; width: 889px; height: 387px;" title="ACMCrawler" id="ACMCrawlerTool" active="true"><div class="lively-content" style="width: 100%; height: 100%; border: 1px solid black; background-color: rgba(40, 40, 80, 0.5); left: 0px; top: 0px;" id="ACMCrawler" data-lively-id="54465381-e741-4ef0-8954-70053e1b40e9"><script type="lively4script" data-name="livelyInstall">function livelyInstall() {
+  
+  System.import("https://lively-kernel.org/lively4/bibliography-data/acm.js").then(acm => {
+    this.ACMCrawler = acm.default
+  })
+  
+}</script><button style="position: absolute; left: 10px; top: 5px;" class="lively-content" data-lively-part-name="button" contenteditable="null">go<script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+}</script><script type="lively4script" data-name="onClick">function onClick() {
+  lively.query(this, "#ACMCrawler").goCrawl()  
+}</script></button><lively-code-mirror mode="text" overscroll="contain" id="ACMLog" class="" style="position: absolute; left: 10px; top: 175px; width: 868px; height: 179px;">visit https://dl.acm.org/citation.cfm?id=1353505&amp;amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353504&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353503&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353501&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353500&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353499&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353497&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353496&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353494&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353493&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353492&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353491&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353489&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353488&amp;preflayout=flat
+skip https://dl.acm.org/citation.cfm?id=1353486&amp;preflayout=flat
+visit https://dl.acm.org/citation.cfm?id=1353485&amp;preflayout=flat
+</lively-code-mirror><lively-code-mirror mode="text/jsx" overscroll="contain" class="" style="position: absolute; left: 10px; top: 33px; width: 861px; height: 127px;" id="WorkingList">// fetch("https://lively-kernel.org/lively4/bibliography-data/acm/contents/1509239.json")
+//   .then(r =&gt; r.json())
+
+// fetch("https://lively-kernel.org/lively4/bibliography-data/acm/references/1509247.json")
+//   .then(r =&gt; r.json())
+
+[{"citation":"1218563"},{"citation":"1509239"},{"citation":"1353484"},{"citation":"1353485"},{"citation":"1353486"},{"citation":"1353488"},{"citation":"1353489"},{"citation":"1353491"},{"citation":"1353492"},{"citation":"1353493"},{"citation":"1353494"},{"citation":"1353496"},{"citation":"1353497"},{"citation":"1353499"},{"citation":"1353500"},{"citation":"1353501"},{"citation":"1353503"},{"citation":"1353504"},{"citation":"1353505"}]</lively-code-mirror><button style="position: absolute; left: 51px; top: 4.8889px;" class="lively-content" data-lively-part-name="button" contenteditable="null">stop<script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+}</script><script type="lively4script" data-name="onClick">function onClick() {
+  var acm = this.parentElement
+  if (acm.crawler) {
+    acm.crawler.stopCrawling()
+  }  
+}</script></button><button style="position: absolute; left: 112px; top: 5px;" class="lively-content" data-lively-part-name="button" contenteditable="null">citations_from_ToC<script data-name="livelyLoad" type="lively4script">function livelyLoad() {
+  lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+}</script><script type="lively4script" data-name="onClick">function onClick() {
+  this.parentElement.citationsFromToc()
+}</script></button><script type="lively4script" data-name="ensureContainer">function ensureContainer() {
+  // #TODO suport async syntax in object editor
+  return (async () => {
+    var containerId = "CrawlerContainer"
+    var container = lively.query(document.body, "#" + containerId)
+    if (!container) {
+      container = await lively.openComponentInWindow("lively-container")
+      container.id = containerId
+    }     
+    return container
+  })()
+}</script><script type="lively4script" data-name="goCrawl">function goCrawl() {
+  (async () => {
+    var acm = this
+    var container = await this.ensureContainer()
+    acm.crawler = new acm.ACMCrawler(container)
+    var logCodeMirror = lively.query(this, "#ACMLog")
+    acm.crawler.log = str => {
+      logCodeMirror.value += str + "\n"
+    }
+    
+    logCodeMirror.value = ""
+    var workingListCodeMirror = lively.query(this, "#WorkingList")
+      
+    var result = await workingListCodeMirror.boundEval(workingListCodeMirror.value)
+    if (!result.isError) {
+        var list = result.value
+        if (list.then) {
+          list = await list // wait on promises
+        }
+        acm.list = list
+    }
+    acm.crawler.visitAndDump(acm.list, 2000)
+  })()  
+}</script><script type="lively4script" data-name="citationsFromToc">function citationsFromToc() {
+  (async () => {
+    var acm = this
+    // var container = await this.ensureContainer()
+    
+    
+    lively.openWorkspace(JSON.stringify(await acm.crawler.extractContents()))
+    
+  })()  
+}</script></div></lively-window>
