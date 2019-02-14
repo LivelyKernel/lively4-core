@@ -7,7 +7,7 @@ function binary_search(key, array){
     var mid = Math.floor((low + high) /2)
     var value = array[mid]
     
-    if(value < key){
+    if(value <= key){
       low = mid + 1
     }
     else{
@@ -22,4 +22,4 @@ function binary_search(key, array){
   return -1
 }
 
-binary_search('k', ['a', 'b', 'c', 'd', 'e', 'f'])
+binary_search('e', ['a', 'b', 'c', 'd', 'e', 'f'])
