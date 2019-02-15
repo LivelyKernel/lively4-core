@@ -15,6 +15,7 @@ export default class GithubExplorer extends Morph {
   async initialize() {
     this.windowTitle = 'Github Explorer';
     this.registerButtons();
+    setupMonaco();
   }
 
   onSetup(e) {
@@ -35,7 +36,7 @@ export default class GithubExplorer extends Morph {
     this.div.appendChild(<h2 style="color: #2B547E; font-size: 1.5em; text-align: center;">Query and Explore</h2>)
     this.div.id = 'monaco-editor-custom-lively';
 
-    setupMonaco();
+    
 
     this.parentNode.appendChild(this.div);
 
