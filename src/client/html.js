@@ -192,7 +192,7 @@ export default class HTML {
             anchor = href
           } else {
             path = dir + href // that leaves us RELATIVE paths
-            if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
+            if(!path.match(/((\.[A-Za-z]+)|(\/))$/) && !path.match(/\?/)) {
               // no ending?
               // we could check, or assume md for the moment
               path += ".md"
@@ -508,6 +508,57 @@ export default class HTML {
       // I don't know were to ged rid of it when not here_
       clearList()
     });
+  }
+  
+  // #TODO refactor magic numbers to style? maybe lively.css?
+  static addChooseList(element, listFunc, cb) {
+    if (!listFunc) {
+      throw new Error("listFunc argument is missing")
+    }
+    var deepListId = "choose-list"
+    function clearList() {
+      var oldList = element.querySelector("#" + deepListId)
+      if (oldList) {
+        oldList.remove()
+        return true
+      }
+      return false
+    }
+    lively.addEventListener("ChooseList", element, "click", async (evt) => {
+      if (clearList()) return; // click closed old...
+      var list = <div id={deepListId} style="font-size:12pt"><ul>{... 
+          listFunc().map(ea => {
+            // we accept a list of objects or HTMLElements
+            var item;
+            if (ea instanceof HTMLElement) {
+              item = ea;
+            } else {
+              item = <li>{ea.toString()}</li>;
+              if (ea.style) { item.style = ea.style; }
+            }
+
+              item.addEventListener("mouseenter", () => item.style.backgroundColor = "lightgray")
+            item.addEventListener("mouseleave", () => item.style.backgroundColor = "")
+            item.addEventListener("mouseup", (evt) => {
+              evt.stopPropagation()
+              evt.preventDefault()
+              list.remove()
+              cb && cb(evt, ea)
+            })
+
+            return item
+          })
+        }</ul></div>
+        list.style.position = 'absolute';
+        element.appendChild(list)
+        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,lively.getExtent(element).y)))
+        list.style.textAlign = "left"
+        list.style.zIndex = 1000
+        list.style.backgroundColor = "white"
+        list.style.opacity = 0.8
+        list.style.minWidth = "300px"
+      
+    })
   }
   
   

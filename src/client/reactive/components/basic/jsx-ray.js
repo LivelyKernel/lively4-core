@@ -78,31 +78,36 @@ export default class JsxRay extends Morph {
     lively.removeEventListener('mirror-dragging', document.body.parentElement)
     evt.stopPropagation()
   }
-
-  async selectElement(element) {
-    lively.showHalo(element)
+  
+  showHighlight(element) {
+    this.hideHighlight();
     
-    if (element.isJSXElement) {
-      const location = element.jsxMetaData.sourceLocation;
-      
-      if (location.file !== this.sourceEditor.getURLString()) {
-        this.sourceEditor.setURL(location.file);
-        await this.sourceEditor.loadFile();
-      }
-      
-      this.sourceEditor.currentEditor().scrollIntoView({
-        line: location.start.line - 1,
-        ch: location.start.column
-      }, 50);
-      
-      this.sourceEditor.currentEditor().setSelection({
-        line: location.start.line - 1, ch: location.start.column
-      }, {
-        line: location.end.line - 1, ch: location.end.column
-      }, { scroll: false });
+    this.highlight = lively.showElement(element, 10000);
+    this.highlight.innerHTML = '';
+    this.highlight.style.border = '1px blue solid';
+    
+    return this.highlight;
+  }
+  
+  hideHighlight() {
+    if (this.highlight) {
+      this.highlight.remove();
     }
   }
 
+  hoverElement(element, evt) {
+    this.nodeAncestryList.buildElementListFor(element);
+  }
+  
+  selectElement(element) {
+    lively.showHalo(element);
+  }
+  
+  unhoverElement() {
+    this.nodeAncestryList.hide();
+    this.hideHighlight();
+  }
+  
   async onNodeFilterChanged() {
     const result = await boundEval(this.nodeFilter.value);
     if (!result.isError) {
@@ -144,7 +149,6 @@ export default class JsxRay extends Morph {
 
   removeElements(elements) {
     if (!this.elementMap || !elements) return;
-
 
     elements.forEach(ea => {
       if (!ea || !ea.tagName) return;
@@ -190,20 +194,24 @@ export default class JsxRay extends Morph {
   }
 
   buildMirrorElement(subject, all) {
-    const mirrorElement = <div></div>;
-
-    mirrorElement.style.border = "1px solid gray"
-    mirrorElement.style.background = "rgba(0,100,0,0.3)"
-    mirrorElement.style.display = "flex";
-    mirrorElement.style.alignItems = "center";
-    mirrorElement.style.justifyContent ="center";
-    mirrorElement.isMetaNode = true
+    const mirrorElement = <div class="mirror-element"></div>;
+    mirrorElement.isMetaNode = true;
     mirrorElement.target = subject;
     
     if (all.length < 200) {
-      mirrorElement.appendChild(<div>{subject.localName}</div>)
-      mirrorElement.style.color = "white"
-      mirrorElement.style.textAlign = "center"
+      mirrorElement.appendChild(<div class="element-label">{subject.localName}</div>);
+    }
+
+    if (subject.jsxMetaData) {
+      mirrorElement.classList.add('jsx-element');
+
+      if (subject.jsxMetaData.aexpr) {
+        mirrorElement.classList.add('renders-active-expression');
+      }
+
+      if (subject.jsxMetaData.activeGroup) {
+        mirrorElement.classList.add('renders-active-group-item');
+      }
     }
 
     mirrorElement.updatePosition = () => {
@@ -213,17 +221,18 @@ export default class JsxRay extends Morph {
     }
 
     mirrorElement.addEventListener("mousemove", evt => {
-      this.sourceEditor.style.display = 'block';
-      lively.setGlobalPosition(this.sourceEditor, lively.getPosition(evt))
-      this.selectElement(subject)
+      this.hoverElement(subject, evt)
     })
 
-    mirrorElement.addEventListener("mouseout", () => {
-      this.sourceEditor.style.display = 'none';
+    mirrorElement.addEventListener("mouseout", evt => {
+      if (evt.ctrlKey) {
+        this.unhoverElement();
+      }
     })
         
-    mirrorElement.addEventListener("click", () => {
-      this.selectElement(subject)
+    mirrorElement.addEventListener("click", evt => {
+      this.hoverElement(subject, evt);
+      this.selectElement(subject);
     })
         
     return mirrorElement;
@@ -347,15 +356,9 @@ export default class JsxRay extends Morph {
   get handle() { return this.get('#handle'); }
   get frameHandlesLeft() { return this.get('#frameHandlesLeft'); }
   get frameHandlesLeftLabel() { return this.get('#frameHandlesLeftLabel'); }
-  get sourceEditor() { return this.get('#sourceEditor'); }
+  get nodeAncestryList() { return this.get('#nodeAncestryList'); }
 
   mirrorWorld() {
-    this.style.zIndex = 1000
-    this.style.overflow = ""
-    this.style.userSelect = "none"
-    this.style.border = "red solid 5px"
-    this.style.background = ""
-
     this.frame.isMetaNode = true
     lively.setExtent(this.frame, lively.pt(300,300))
     lively.setPosition(this.frame, lively.pt(0,0))
@@ -386,18 +389,16 @@ export default class JsxRay extends Morph {
 
     this.frameHandlesLeftLabel.isMetaNode = true
 
-    this.sourceEditor.isMetaNode = true
-    lively.setExtent(this.sourceEditor, lively.pt(600,150))
     lively.warn('reset')
-    lively.setPosition(this.sourceEditor, lively.pt(0,200))
-    this.sourceEditor.hideToolbar();
-
+    this.nodeAncestryList.isMetaNode = true
+    this.nodeAncestryList.init(this)
+    
     this.ajustRootPosition()
     this.updateWorld()
   }
 
   ajustRootPosition() {
-    var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
+    const extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
     lively.setPosition(this.handle, extent)
 
     lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
@@ -414,7 +415,7 @@ export default class JsxRay extends Morph {
     this.cop = cop;
     this.events = events;
     
-    this.nodeFilterFunc = node => node.isJSXElement; // ea.tagName && ea.tagName.match(/-/)
+    this.nodeFilterFunc = node => node.jsxMetaData; // ea.tagName && ea.tagName.match(/-/)
     this.eventFilterFunc = (obj, type, evt) => type === 'mousedown';
 
     this.registerOnClose(this)
@@ -445,12 +446,13 @@ export default class JsxRay extends Morph {
     var div = lively.showEvent(evt)
     div.style.fontSize = "8px"
     div.style.color = "blue"
+    // div.style.width = "max-content";
     div.innerHTML = type + ' ' + evt.target
     div.isMetaNode = true
     var pos = lively.getGlobalPosition(div)
 
     this.world.appendChild(div)
-    if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
+    if (pos.x == 0 && pos.y == 0) { // keyboard events... etc.
       lively.setGlobalPosition(div, lively.getGlobalPosition(obj))
     } else {
       lively.setGlobalPosition(div, pos)

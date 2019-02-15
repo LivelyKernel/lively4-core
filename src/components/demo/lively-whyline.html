@@ -22,13 +22,19 @@
     flex: 1;
   }
   
-  #firstColumn, #secondColumn {
+  #firstColumn {
     display: flex;
     flex-direction: column;
+    width: 100%;
+  }
+  
+  #secondColumn{
+    flex: 0.2
+    
   }
   
   #firstColumn {
-    flex: 0.666;
+    flex: 0.8;
   }
 
   #runtimePane, #objectsPane {
@@ -81,7 +87,7 @@
     */
     overflow: scroll;
   }
-
+  
   .traceLabel {
     font-size: 10px;
     /*
@@ -118,7 +124,7 @@
   }
   
   .selected > .traceLabel {
-    background-color: rgba(0,0,255,0.5);
+    background-color: #f9cb9c;
   }
 
   .markerLine {
@@ -138,11 +144,32 @@
     width: max-content;
   }
 
+  .questionButton {
+    width: 100%;
+  }
+
 </style>
   <div id="buttonRow" class="fill">
     <button id="generateTrace" title="generate trace from code">
         <i class="fa fa-refresh" aria-hidden="true"></i>
     </button>
+    <button id="previousOccurrence" title="previousOccurrence">
+        <i class="fa fa-angle-double-left" aria-hidden="true"></i>
+    </button>
+        <button id="predecessor" title="predecessor">
+        <i class="fa fa-angle-left" aria-hidden="true"></i>
+    </button>
+        <button id="previousControlFlow" title="previousControlFlow">
+        <i class="fa fa-angle-up" aria-hidden="true"></i>
+    </button>
+        <button id="successor" title="successor">
+        <i class="fa fa-angle-right" aria-hidden="true"></i>
+    </button>
+    
+        <button id="nextOccurrence" title="nextOccurrence">
+        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+    </button>
+    
   </div>
 
   <div id="firstRow">
@@ -151,10 +178,6 @@
         <lively-code-editor id="source"></lively-code-editor>
         <canvas id="canvas" width="0px" height="0px"></canvas>
       </div>    
-      <lively-separator></lively-separator>
-      <div id="traceViewPane">
-        <div id="traceView"></div>
-      </div>
     </div>
 
   <!--   <lively-separator></lively-separator>
@@ -175,11 +198,17 @@
     <lively-separator></lively-separator>
 
     <div id="secondColumn">
-      <div id="objectInspectorPane">
-        <!--
+      <div id="questionPane">
+        <!--<div id="objectInspectorPane">
           <lively-inspectory id="objectInspector"></lively-inspectory>
-        -->
+        </div>-->
       </div>
+    </div>
+  </div>
+  <lively-separator></lively-separator>
+  <div id="secondRow">
+    <div id="traceViewPane">
+      <div id="traceView"></div>
     </div>
   </div>
 </template>

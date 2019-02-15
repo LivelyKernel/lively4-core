@@ -180,7 +180,9 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   droptargetAtEvent(node, evt) {
-    var elementsUnderCursor = Array.from(events.elementsUnder(evt)).filter( (elementUnder) => {
+    
+    // var elementsUnderCursor = Array.from(events.elementsUnder(evt)).filter( (elementUnder) => {
+    var elementsUnderCursor = lively.allElementsFromPoint(lively.getPosition(evt)).filter( (elementUnder) => {
       return elementUnder !== this.grabTarget && elementUnder !== this.grabShadow;
     });
     for (var i = 0; i < elementsUnderCursor.length; i++) {
@@ -233,15 +235,16 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   static canDropInto(node, targetNode) {
+    
     if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
     
     var worldContext = lively.findWorldContext(targetNode);
     if (!(worldContext === document.body 
-      || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN")
-      || (worldContext.tagName == "LIVELY-FIGURE")
-      || (worldContext.tagName == "LIVELY-CONTAINER"))) return false;
+      || (worldContext.id == "container-root")
+      || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN"))) return false;
     
+    console.log("canDropInto "  + targetNode.id)
     return node !== targetNode &&
       !targetNode.isMetaNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&

@@ -11,20 +11,37 @@
   }
 
   #prevButton {
-    left: 20px;    
+    
+  }
+
+  #gotoButton {
+    
   }
 
   #nextButton {
-    left: 40px;
+    
   }
 
-  #prevButton, #nextButton {
-    position: absolute;
-    top: 10px;
-    padding: 1px;
-    font-size: 8pt;
+  #fullscreenButton {
+    
+  }
+
+  button {
     background: none;
     border: none;
+    color: lightgray;
+    font-size: 8pt;
+    padding: 1px;
+    
+  }
+    
+  
+  
+  #buttons {
+    width: 300px;
+    top: 10px;
+    
+    position: absolute;
     z-index: 10000;
   }
   
@@ -33,8 +50,13 @@
   <div id="content">
   <content></content>  
   </div>
-  <button id="prevButton">&lt;</button>
-  <button id="nextButton">&gt;</button>
+  <div id="buttons">
+    <button id="fullscreenButton" title="toggle fullscreen"><i class="fa fa-arrows-alt"></i></button>
+    <button id="prevButton" title="prev slide"><i class="fa fa-caret-left"></i></button>
+    <button id="gotoButton" title="goto slide"><i class="fa fa-circle"></i></button>
+    <button id="nextButton" title="next slide"><i class="fa fa-caret-right"></i></button>
+    <button id="printButton" title="print presentation"><i class="fa fa-print"></i></button>
+  </div>
 
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>

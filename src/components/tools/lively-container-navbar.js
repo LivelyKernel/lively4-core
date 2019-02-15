@@ -224,7 +224,7 @@ export default class LivelyContainerNavbar extends Morph {
   async show(targetURL, sourceContent, contextURL, force=false) {
     // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
-    this.url = "" + targetURL;
+    this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
     this.sourceContent = sourceContent;
     
@@ -261,9 +261,14 @@ export default class LivelyContainerNavbar extends Morph {
   async fetchStats(targetURL) {
     
     var root = this.getRoot(targetURL)
-    var stats = await fetch(root, {
-      method: "OPTIONS",
-    }).then(r => r.status == 200 ? r.json() : {})
+    
+    try {
+      var stats = await fetch(root, {
+        method: "OPTIONS",
+      }).then(r => r.status == 200 ? r.json() : {})
+    } catch(e) {
+      // no options....
+    }
     
     
     if (!stats || !stats.type) {
@@ -275,7 +280,7 @@ export default class LivelyContainerNavbar extends Morph {
       div.innerHTML = html;
       var i=0;
       Array.from(div.querySelectorAll("a"))
-        .filter( ea => !ea.getAttribute("href").match(/^javascript:/))
+        .filter( ea => ea.getAttribute("href") && !ea.getAttribute("href").match(/^javascript:/))
         .forEach( ea => {
         stats.contents.push({
           type: 'link', 
@@ -571,8 +576,13 @@ export default class LivelyContainerNavbar extends Morph {
 
   async showSublistOptions(subList, url) {
     url = url || this.url
-    var options = await fetch(url, {method: "OPTIONS"})
-      .then(r => r.status == 200 ? r.json() : {})
+    try {
+      var options = await fetch(url, {method: "OPTIONS"})
+        .then(r => r.status == 200 ? r.json() : {})
+    } catch(e) {
+      // no options...
+      return 
+    }
     if (!options.contents) return;
     for(let ea of options.contents) { // #Bug for(var ea) vs for(let)
       let element = <li 

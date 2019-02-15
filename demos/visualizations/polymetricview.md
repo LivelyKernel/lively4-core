@@ -1,5 +1,4 @@
 # PolymetricView
-# PolymetricView 
 
 <script>
 import FileIndex from "src/client/fileindex.js"

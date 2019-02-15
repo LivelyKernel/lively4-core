@@ -178,6 +178,40 @@ export default class D3Polymetricview extends D3Component {
     drawTree();
   }
 
+  
+  async livelyExample2() {
+    this.config({
+      color(node) {
+        if (!node) return ""
+        return `hsl(10, 0%,  ${node.data.children ? (node.data.children.length * 50) : 10 }%)`
+      },
+      width(node) {
+        return 10
+        if (node.data.size) {
+          return parseInt(node.data.size) // #TODO -> loc
+        }
+      },
+      height(node) {
+        return 1
+        if (node.data.size) {
+          return parseInt(node.data.size) // #TODO -> loc
+        }
+      },
+      onclick(node) {
+        lively.openInspector(node.data)
+      },
+    }) 
+    this.setData({
+      name: "classes",
+      children: [
+        {name: "class A", loc: 10, size: 10, children: [{name: "method A1", loc: 3, size: 3}, {name: "method A2", loc: 7, size: 7}]},
+        {name: "class B", loc: 30, size: 30, children: [{name: "method B1", loc: 30, size: 30}]},
+        {name: "class C", loc: 50, size: 50, children: [{name: "method C1", loc: 50, size: 50}]}
+      ]
+    })
+
+  }
+  
   async livelyExample() {
     this.config({
       color(node) {
@@ -187,14 +221,14 @@ export default class D3Polymetricview extends D3Component {
       
       width(node) {
         if (node.data.width === undefined) {
-          node.data.width = Math.random() * 100
+          node.data.width = Math.random() * 200
         } 
         return  node.data.width
       },
 
       height(node) {
         if (node.data.height === undefined) {
-          node.data.height = Math.random() * 400
+          node.data.height = Math.random() * 200
         } 
         return  node.data.height
       },

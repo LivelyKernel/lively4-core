@@ -48,13 +48,41 @@ export default class ContextMenu {
     });
   }
   
-  static openInWindow(comp) {
+  
+  static get windowExtentOffeset() {
+    return pt(2,21)
+  }
+  
+  static async openInWindow(comp) {
+    // wrap an existing component in a window
     var pos = lively.getPosition(comp);
-    lively.components.openInWindow(comp, pos).then( comp => {
-      lively.setPosition(comp, pt(0,0));
-    });
+    var w = await lively.create("lively-window")
+    lively.setGlobalPosition(w, lively.getGlobalPosition(comp))
+    w.appendChild(comp)
+    lively.setPosition(comp, pt(0,0))
+    lively.setExtent(w, lively.getExtent(comp).addPt(this.windowExtentOffeset))
+    comp.style.position = ""
+    comp.style.width = "100%"
+    comp.style.height = "100%"
+    if (comp.id) w.setAttribute("title", comp.id)
+    return w
+  }
+  
+  static async stripWindow(comp, evt) {
+    var w = comp.parentElement
+    if (w.localName !== "lively-window") {
+      throw new Error("Could not strip window, because there is none")
+    }
+    var extent = lively.getExtent(w).subPt(this.windowExtentOffeset)
+    w.parentElement.appendChild(comp) 
+    lively.setGlobalPosition(comp, lively.getGlobalPosition(w))
+    lively.setExtent(comp, extent.addPt(this.windowExtentOffeset))
+    w.remove()
+    return comp
   }
 
+  
+  
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
@@ -67,11 +95,11 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target).map(
+          ["parents", lively.allParents(target, [], true).map(
             ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
           ["children",  Array.from(target.childNodes).map( 
-            ea => [ea, () => {lively.showHalo(ea)}])
+            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
@@ -134,7 +162,7 @@ export default class ContextMenu {
       [targetInWindow ? "strip window" : "open in window", (evt) => {
           this.hide();
           targetInWindow ?
-            target.parentElement.embedContentInParent() :
+            ContextMenu.stripWindow(target, evt) :
             ContextMenu.openInWindow(target, evt);
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'

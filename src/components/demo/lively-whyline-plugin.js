@@ -1,20 +1,17 @@
 import { uuid as generateUUID } from 'utils'; 
-import TraceNode from 'src/components/demo/lively-whyline-tracing.js'
-
-var expressions
-var statements
-var declarators
-var assignments
-var functions
-var loops
-
+import * as tr from 'src/components/demo/lively-whyline-tracing.js';
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
-  let log = template("__trace__.traceNode(NODEID,() => EXPSTATE)")
-  let begin = template("__trace__.traceBeginNode(NODEID)")
-  let end = template("__trace__.traceEndNode(NODEID)")
+  const traceReference = '__tr__';
+  const begin = template(`${traceReference}.stmt(NODEID)`);
+  const statementEnd = template(`${traceReference}.end()`);
+  const assignmentTemplate = template(`${traceReference}.MSG(ID,() => BLOCK,() => VARS)`);
+  const functionTemplate = template(`${traceReference}.MSG(ID, VARS)`);
+  const declarationTemplate = template(`${traceReference}.MSG(ID, VARS)`);
+  const wrapBlockTemplate = template(`${traceReference}.MSG(ID,() => BLOCK)`);
+  const wrapValueTemplate = template(`${traceReference}.MSG(ID,EXP)`);
 
-  let checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
+  const checkRuntime = template('if (performance.now() - _tr_time > _tr_time_max) throw new Error("Running too long! Endless loop?");')
 
   return {
     name: "ast-transform", // not required
@@ -23,134 +20,345 @@ export default function (babel) {
     },
     visitor: { 
       Program(path) {
-        var idcounter = 0;
-
-        expressions = []
-        statements = []
-        declarators = []
-        assignments = []
-        functions = []
-        loops = []
+        /*
+         * Traverse AST to add shared properties / transformations
+         */
+        function isVariableAccess(identifier) {
+          const badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'meta', 'property'];
+          const parent = identifier.parent;
+          if (t.isBinaryExpression(parent)
+              || (t.isMemberExpression(parent) && parent.computed)) return true;
+          if (t.isUpdateExpression(parent)
+              //|| t.isFunction(parent)
+              //|| (t.isObjectProperty(parent) && t.isObjectPattern(parent.parent))
+              //|| t.isType(parent, "PatternLike")
+              || badKeys.includes(identifier.key)) return false;
+          return true;
+        }
+        
+        function isLiteralAccess(literal) {
+          const badKeys = ['key', 'source'];
+          const parent = literal.parent
+          if (t.isObjectProperty(parent) && parent.computed) return true;
+          return !badKeys.includes(literal.key);
+        }
+        
+        const patternVisitor = {
+          enter(path) {
+            path.skipKey("decorators");
+          },
+          'Identifier|MemberExpression': {
+            enter(path) {
+              this.push(path.node);
+              path.skip();
+            }
+          },
+          'AssignmentPattern': {
+            enter(path) {
+              path.skipKey("right");
+            }
+          },
+          'ObjectProperty': {
+            enter(path) {
+              path.skipKey("key");
+            }
+          }
+        }
+        
+        function gatherAssignmentTargets(pattern, array) {
+          if (t.isIdentifier(pattern.node) || t.isMemberExpression(pattern.node)) {
+            array.push(pattern.node);
+          } else {
+            pattern.traverse(patternVisitor, array);
+          }
+          array.forEach((node) => node.isAssignmentTarget = true);
+        }
+        
+        let idcounter = 0;
+        const scopes = [];
         
         path.traverse({
-          enter(path) { 
+          enter(path) {
+            /******/
+            const uid = path.scope.uid;
+            if (!scopes[uid]) scopes[uid] = [];
+            scopes[uid].push(path.node);
+            /******/
             path.node.traceid = idcounter++;
           },
-          
-          BinaryExpression(path) {expressions.push(path) },
-          CallExpression(path) {expressions.push(path)}, 
-          UnaryExpression(path) {expressions.push(path)},
-          UpdateExpression(path) {expressions.push(path)},
-          VariableDeclarator(path) { declarators.push(path) },
-          FunctionDeclaration(path) { functions.push(path) },
-          FunctionExpression(path) { functions.push(path) },
-
-          ClassMethod(path) { functions.push(path) },
-          ExpressionStatement(path) {statements.push(path) },
-          IfStatement(path) {statements.push(path)},
-          AssignmentExpression(path) { assignments.push(path) },
-
-          ForStatement(path) { loops.push(path) },
-          WhileStatement(path) { loops.push(path) },
-          
-          Identifier(path){
-            let currentScope = path.scope
-            while(!currentScope.hasOwnBinding(path.node.name)){
-              if(!currentScope.parent)
-                return;
-              currentScope = currentScope.parent
-            }
-              path.node.scopeId = currentScope.uid
+          Identifier(path) {
+            const id = path.node;
+            id.isVariableAccess = !id.isAssignmentTarget && isVariableAccess(path);
+            id.isDeclaration = path.scope.bindingIdentifierEquals(path.node.name, path.node);
+            let binding = path.scope.getBinding(path.node.name);
+            path.node.scopeId = binding ? binding.scope.uid : null;
           },
-
-
-          /* ... */
+          Literal(path) {
+            path.node.isLiteralAccess = isLiteralAccess(path);
+          },
+          VariableDeclarator(path) {
+            gatherAssignmentTargets(path.get("id"), path.node.assignmentTargets = []);
+          },
+          AssignmentExpression(path) {
+            gatherAssignmentTargets(path.get("left"), path.node.assignmentTargets = []);
+          },
+          Function(path) {
+            const assignmentTargets = path.node.assignmentTargets = [];
+            path.get("params").forEach((pattern) => {
+              gatherAssignmentTargets(pattern, assignmentTargets);
+            });
+          }
         });
+        
+        /*****/
+        console.log(scopes)
+        /*****/
+        
+        /*
+         * Create copy of original AST.
+         * This copy will remain unaffected by the later transformation.
+         * WARNING: Object identity is lost for objects referenced multiple times (e.g. assignmentTargets)
+         */
 
-
-        var astsrc= JSON.stringify(path.node)
-        window.lastastsrc = astsrc
-        var programast = JSON.parse(astsrc)
-        programast.astid = generateUUID()
+        var programast = JSON.parse(JSON.stringify(path.node)); //create copy
+        programast.astid = generateUUID();
         if (!window.__tr_ast_registry__) window.__tr_ast_registry__ = {};
-        window.__tr_ast_registry__[programast.astid]=programast
-
-        programast.node_map = []
+        window.__tr_ast_registry__[programast.astid] = programast;
+        
+        /*
+         * Do stuff with unchanging AST.
+         * This doesn't affect the actual transformation.
+         */
+        
+        programast.node_map = [];
 
         traverse({"type": "File", "program": programast}, {
             enter(path) {
-              programast.node_map[path.node.traceid] = path.node
-              path.node.trace_counter = 0;
+              let node = path.node;
+              programast.node_map[node.traceid] = node;
+              node.traceNodeType = tr.TraceNode.mapToNodeType(node);
+              node.parent = path.parent; //convencience for inspecting the resulting ast
             }
-        })	
+        })
+        
+        /*
+         * Utility functions
+         */
+        
+        function shouldTrace(path) {
+          let node = path.node
+          if ((node.traceid === undefined) || node.isTraced) {
+            return false;
+          } else {
+            return node.isTraced = true
+          }
+        }
+        
+        function wrapBlock(id, blockOrExp, message = 'exp') {
+          return wrapBlockTemplate({
+            ID: t.numericLiteral(id),
+            BLOCK: blockOrExp,
+            MSG: t.identifier(message)
+          }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
+        }
+        
+        function wrapValue(id, exp, message = 'val') {
+          return wrapValueTemplate({
+            ID: t.numericLiteral(id),
+            EXP: exp,
+            MSG: t.identifier(message)
+          }).expression
+        }
+        
+        function arrayOfArgs(vars) {
+          return t.arrayExpression(vars.map((arg) => t.isIdentifier(arg) ? arg : t.nullLiteral()));
+        }
+        
+        function wrapAssignment(id, exp, vars, message='asgn') {
+          return assignmentTemplate({
+            ID: t.numericLiteral(id),
+            BLOCK: exp,
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          }).expression;
+        }
+        
+        function functionStart(id, vars, message='func') {
+          return functionTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
+        }
+        
+        function declaratorFollowup(id, vars, message='decl') {
+          return declarationTemplate({
+            ID: t.numericLiteral(id),
+            VARS: arrayOfArgs(vars),
+            MSG: t.identifier(message)
+          });
+        }
+        
+        function statementBegin(id) {
+          return begin({
+            NODEID: t.numericLiteral(id)
+          });
+        }
+        
+        function ensureBlock(body) {
+          if (!body.node) return null;
+          
+          if (body.isBlockStatement()) {
+            return body.node;
+          }
+
+          const statements = [];
+          if (body.isStatement()) {
+            statements.push(body.node);
+          } else {
+            throw new Error("I never thought this was even possible.");
+          }
+          
+          const blockNode = t.blockStatement(statements);
+          body.replaceWith(blockNode);
+          return blockNode;
+        }
+        
+        /*
+         * Preprocess AST
+         */
+        
+        path.traverse({
+          'IfStatement': {
+            enter(path) {
+              ensureBlock(path.get("consequent"));
+              ensureBlock(path.get("alternate"));
+            }
+          },
+          'For|While|Function': {
+            enter(path) {
+              ensureBlock(path.get("body"));
+            }
+          }
+        })
+        
+        /*
+         * Transform AST to include tracing
+         */
+        console.log(programast);
+        path.traverse({
+          /*enter(path) {
+            console.log(`enter ${path.node.traceid}`);
+          },
+          exit(path) {
+            console.log(`exit ${path.node.traceid}`);
+          },*/
+          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression|NewExpression|ConditionalExpression': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const newNode = wrapBlock(path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'AssignmentExpression': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const node = path.node;
+                const newNode = wrapAssignment(node.traceid, path, node.assignmentTargets);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'VariableDeclarator': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const node = path.node;
+                const init = path.get('init');
+                const newNode = wrapBlock(node.traceid, init.node || t.identifier("undefined"));
+                init.replaceWith(newNode);
+                const declaration = path.parentPath;
+                declaration.insertAfter(declaratorFollowup(node.traceid, node.assignmentTargets));
+              }
+            }
+          },
+          'IfStatement|While|VariableDeclaration': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'ForStatement': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                path.skipKey("init");
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'Function': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                const node = path.node;
+                const body = path.get("body");
+                body.unshiftContainer("body", checkRuntime());
+                body.unshiftContainer("body", functionStart(node.traceid, node.assignmentTargets));
+                body.pushContainer("body", statementEnd());
+              }
+            }
+          },
+          'Identifier': {
+            exit(path) {
+              const node = path.node;
+              if (shouldTrace(path) && node.isVariableAccess) {
+                const newNode = wrapValue(node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'Literal': {
+            exit(path) {
+              const node = path.node;
+              if (shouldTrace(path) && node.isLiteralAccess) {
+                const newNode = wrapValue(node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'MemberExpression': {
+            exit(path) {
+              if (shouldTrace(path) && !path.node.isAssignmentTarget) {
+                const newNode = wrapBlock(path.node.traceid, path);
+                path.replaceWith(newNode);
+              }
+            }
+          },
+          'ReturnStatement': {
+            exit(path) {
+              if (shouldTrace(path)) {
+                const arg = path.get('argument');
+                const newNode = wrapBlock(path.node.traceid, arg.node || t.identifier("undefined"), 'rtrn');
+                arg.replaceWith(newNode);
+              }
+            }
+          }
+        })
 
         path.unshiftContainer('body', template(`
-          var __tr_ast__ = window.__tr_ast_registry__[ASTID]
+          const __tr_ast__ = window.__tr_ast_registry__[ASTID]
 
-          var __trace__ = new window.lively4ExecutionTrace(__tr_ast__);
+          const ${traceReference} = new window.lively4ExecutionTrace(__tr_ast__);
 
-          var _tr_time = performance.now();
-          var _tr_time_max = 1000;
+          const _tr_time = performance.now();
+          const _tr_time_max = 1000;
 
-    	  	__tr_ast__.calltrace = __trace__.traceRoot
-          __tr_ast__.executionTrace = __trace__
+    	  	__tr_ast__.calltrace = ${traceReference}.traceRoot
+          __tr_ast__.executionTrace = ${traceReference}
 
     	  	window.__tr_last_ast__ = __tr_ast__`)({ASTID: t.stringLiteral(programast.astid)}));
-
-        statements.forEach(ea => {
-          ea.insertBefore(begin({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }));
-          ea.insertAfter(end({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }));
-        });
-
-        assignments.forEach(ea => {
-          ea.replaceWith(log({
-            NODEID: t.numericLiteral(ea.node.traceid),
-            EXPSTATE: ea
-          }));
-        });
-
-        declarators.forEach(ea => {
-          if (ea.node.init) {
-            ea.node.init  = log({
-              NODEID: t.numericLiteral(ea.node.traceid),
-              EXPSTATE: ea.node.init
-            }).expression; // no statement here
-          }
-        });
-
-        loops.forEach(ea => {
-          ea.insertBefore(begin({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }))
-          ea.insertAfter(end({
-            NODEID: t.numericLiteral(ea.node.traceid)
-          }))
-        })
-
-        loops.forEach(ea => {
-            ea.get('body').unshiftContainer('body', checkRuntime())
-        })
-
-        functions.forEach(ea => {
-          var body = ea.get('body');
-          body.replaceWith(template("{ return __trace__.traceNode( NODEIDX , () => BLOCK)}")({
-            NODEIDX: t.numericLiteral(ea.node.traceid), BLOCK: body}))
-        });
-
-        functions.forEach(ea => {
-            ea.get('body').unshiftContainer('body', checkRuntime())
-        })
-
-        expressions.forEach(ea => {
-          ea.replaceWith(log({
-            NODEID: t.numericLiteral(ea.node.traceid),
-            EXPSTATE: ea
-          }))
-        })
       } 
     }
   };

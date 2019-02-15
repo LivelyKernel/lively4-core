@@ -77,8 +77,9 @@ export default class ComponentLoader {
     //   return;
     // }
 
-    // #Depricated
-    var shadow = object.createShadowRoot();
+    // #Deprecation
+    // Element.createShadowRoot is deprecated and will be removed in M73, around March 2019. Please use Element.attachShadow instead. See https://www.chromestatus.com/features/4507242028072960 
+     var shadow = object.createShadowRoot();
     // #NotWorkingYet as expected...
     // var shadow = object.attachShadow({mode: 'open'});
     
@@ -196,11 +197,14 @@ export default class ComponentLoader {
          ComponentLoader.onDetachedCallback(this, componentName)
       };
   
+      // #Deprecation document.registerElement is deprecated and will be removed in M73, around March 2019. Please use window.customElements.define instead. See https://www.chromestatus.com/features/4642138092470272
       // don't store it just in a lexical scope, but make it available for runtime development
-  
       document.registerElement(componentName, {
         prototype: this.proxies[componentName]
       });
+      // var proxyClass = class ProxyElement extends HTMLElement {}
+      // proxyClass.__proto__ =this.proxies[componentName].prototype
+      // window.customElements.define(componentName, proxyClass);
     })
   }
 
@@ -218,7 +222,7 @@ export default class ComponentLoader {
   static loadUnresolved(lookupRoot, deep, debuggingHint) {
     lookupRoot = lookupRoot || document.body;
 
-    var selector = ":unresolved";
+    var selector = ":not(:defined)";
     var unresolved = []
     
     // check if lookupRoot is unresolved
@@ -372,7 +376,8 @@ export default class ComponentLoader {
         lively4url + '/src/components/draft/',
         lively4url + '/src/components/d3/',
         lively4url + '/src/client/vivide/components/',
-        lively4url + '/src/client/reactive/components/',
+        lively4url + '/src/client/reactive/components/rewritten/',
+        lively4url + '/src/client/reactive/components/basic/',
         lively4url + '/src/client/triples/components/',
         lively4url + '/src/client/pen-editor/components/',
         lively4url + '/src/babylonian-programming-editor/',
@@ -448,6 +453,9 @@ export default class ComponentLoader {
     try {
       let response = await fetch(url, { method: 'OPTIONS'});
       if(response.ok) {
+        
+        
+        // #Deprecation HTML Imports is deprecated and will be removed in M73, around March 2019. Please use ES modules instead. See https://www.chromestatus.com/features/5144752345317376 for more details. 
         var link = document.createElement("link");
         link.rel = "import";
         link.href = url;
@@ -473,7 +481,7 @@ export default class ComponentLoader {
     const compPromise = this.openIn(<div />, component);
     immediate(component);
     
-    return compPromise::through(comp => comp.remove());
+    return compPromise.through(comp => comp.remove());
   }
   
   static openIn(parent, component, beginning) {
@@ -511,7 +519,7 @@ export default class ComponentLoader {
     return this.openIn(document.body, component, true);
   }
 
-  static openInWindow(component, pos, title) {
+  static async openInWindow(component, pos, title) {
     // this will call the window's createdCallback before
     // we append the child, if the window template is already
     // loaded
@@ -525,6 +533,10 @@ export default class ComponentLoader {
 
     this.openInBody(w);
 
+    if (!component.localName.match(/-/)) {
+      return w // standard elments... which are no components
+    }
+    
     // therefore, we need to call loadUnresolved again after
     // adding the child, so that it finds it and resolves it,
     // if it is currently unresolved

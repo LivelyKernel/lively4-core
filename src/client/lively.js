@@ -544,6 +544,7 @@ export default class Lively {
 
 
   static  getGlobalPosition(node) {
+    // WARNING: this method works pretty well but does not consider any CSS transformation
     if (!node.getBoundingClientRect) {
       return pt(0, 0)
     }
@@ -837,13 +838,20 @@ export default class Lively {
     await lively.ensureHand();
     // lively.selection;
 
+    // yes, we want also to change style of external websites...
+    lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
+    
+    // #Hack... just to be on the save side #ACM
+    // where to put side specific adapations... cannot be overriden by CSS? #TODO
+    document.body.style.textAlign = "left"
+    
+    
     if (loadedAsExtension) {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
+      
     } else {
-      // don't want to change style of external web-sites...
-      lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
 
       // only scroll thrugh CTRL+drag #TODO what does UX say?
       // document.body.style.overflow = "hidden"
@@ -1458,8 +1466,18 @@ export default class Lively {
   static findWorldContext(element) {
     
     if (!element) return document.body
-    if (!element.parentElement) return element.parentNode; // shadow root
-    if (element.tagName == "BODY" || element.tagName == "LIVELY-CONTAINER" ||  element.tagName == "LIVELY-FIGURE")
+    if (element.id == "container-root") return element
+    
+    if (!element.parentElement) {
+      
+      // if (element.parentNode.host && element.parentNode.host.localName == "lively-container") {
+      //   return element.parentNode.host.getContentRoot()
+      // }
+     // ||  element.tagName == "LIVELY-FIGURE"
+      return element.parentNode; // shadow root
+    }
+    
+    if (element.tagName == "BODY")
       return element
     else
       return this.findWorldContext(element.parentElement)
@@ -1679,7 +1697,7 @@ export default class Lively {
   }
   
   static elementToCSSName(element) {
-    return element.localName + (element.id  ? "#" + element.id : "")
+    return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")
   }
 
   static async openPart(partName, worldContext=document.body) {

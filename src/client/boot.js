@@ -30,7 +30,7 @@ window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, 
 // localStorage["logLivelyBoot"] = true
 if (!(localStorage["logLivelyBoot"] == "true")) {
   window.lively4bootlog = function() {
-    // do nothgin
+    // do nothing
   }
 }
 
@@ -210,29 +210,34 @@ if (window.lively && window.lively4url) {
     }
     // END COPIED
 
-    groupedMessage(1, 4, 'Setup SystemJS');
-    Promise.resolve().then(() => {
-      return loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
-    }).then(() => {
-      return loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
-    }).then(async () => {
+    Promise.resolve().then(async () => {
+
+      groupedMessage(1, 6, 'Setup SystemJS');
+      await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+      await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
       groupedMessageEnd();
+
       try {
         var livelyloaded = new Promise(async livelyloadedResolve => {
-          groupedMessage(1, 4, 'Invalidate Caches')
+          groupedMessage(2, 6, 'Invalidate Caches')
           await invalidateFileCaches()
           groupedMessageEnd();
 
-          groupedMessage(2, 4, 'Wait for Service Worker');
+          groupedMessage(3, 6, 'Wait for Service Worker');
           const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
           await new Promise(whenLoaded);
           groupedMessageEnd();
 
-          groupedMessage(3, 4, 'Look for uninitialized instances of Web Compoments');
+          groupedMessage(4, 6, 'Load Standard Library');
+          await System.import("lang");
+          await System.import("lang-ext");
+          groupedMessageEnd();
+
+          groupedMessage(5, 6, 'Look for uninitialized instances of Web Compoments');
           await lively.components.loadUnresolved();
           groupedMessageEnd();
 
-          groupedMessage(4, 4, 'Initialize Document');
+          groupedMessage(6, 6, 'Initialize Document');
           await lively.initializeDocument(document, window.lively4chrome, loadContainer);
           groupedMessageEnd();
 

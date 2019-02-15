@@ -397,4 +397,62 @@ export default class Files {
 
     return result
   }
+  
+  static async checkoutGithubFile(url) {
+    return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
+      var serverURL = syncTool.getServerURL()    
+      if (!url.match(serverURL)) { // we are in a checked out repo....
+        return undefined // not information for files we do not manage...
+      }
+      return await syncTool.gitControl("checkout", undefined, {
+        gitfilepath: path.replace(/^\//,"") // no leading / expected....
+      })
+    }, url) 
+  }
+
+  static async withSynctoolDo(func, url) {     
+    // #Idea, could't we ask the server for this set directly, since we ask it indirectly anyway? as special OPTIONS request #TODO
+    try {
+      var container = <div style="display:none"></div> // hide the uglyness, at least in the UI
+      document.body.appendChild(container)
+      var syncTool = await lively.create("lively-sync", container); // #Hack #Ugly
+
+      var serverURL = syncTool.getServerURL()
+      if (!url.match(serverURL)) {
+        console.warn("url is not on server: " + serverURL)
+        return
+      }
+      var m = url.replace(serverURL,"").replace(/^\//,"").match(/([^/]*)(\/*.*)/)
+      var repository = m[1]
+      var path = m[2]
+      console.log("set repository: "  + repository)
+      syncTool.setRepository(repository)
+      await syncTool.updateLoginStatus()
+      var branch = syncTool.getBranch()
+      return await func(syncTool, repository, branch, path)
+    } finally {
+      container.remove() // we really opened a graphical object for this
+    }
+  }
+  
+  static async githubFileInfo(url) {
+    return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
+      var serverURL = syncTool.getServerURL()    
+      if (!url.match(serverURL)) { // we are in a checked out repo....
+        return undefined // not information for files we do not manage...
+      }
+      var remoteURL = await syncTool.gitControl("remoteurl")
+      remoteURL = remoteURL.replace(/\n/,"")
+      
+      return {
+        url,
+        serverURL,
+        respository,
+        path,
+        remoteURL,
+        branch,
+        rawURL: remoteURL + "/raw/" + branch + path
+      }  
+    }, url) 
+  }
 }
