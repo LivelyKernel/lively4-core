@@ -36,14 +36,21 @@ export default class D3Tree extends Morph {
   }
   
   updateViz() {
-    var bounds = this.getBoundingClientRect()
+    if(!this.bounds) {
+      this.bounds = this.getBoundingClientRect() 
+    }
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
     var treeData = this.getTreeData()
         
     var margin = {top: 20, right: 120, bottom: 20, left: 120},
-      width = bounds.width - margin.right - margin.left,
-      height = bounds.height - margin.top - margin.bottom;
+      width = this.bounds.width - margin.right - margin.left,
+      height = this.bounds.height - margin.top - margin.bottom;
+    
+    console.log(height);
+    if(height < 100) {
+      height = 400;
+    }
 
     var svg = d3.select(this.shadowRoot.querySelector("svg"))
       .attr("width", width + margin.right + margin.left)
@@ -215,6 +222,7 @@ export default class D3Tree extends Morph {
   livelyMigrate(other) {
     this.treeData = other.treeData
     this.dataName = other.dataName
+    this.bounds = other.bounds
   }
   
 }

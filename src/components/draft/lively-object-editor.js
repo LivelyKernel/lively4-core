@@ -469,29 +469,55 @@ export default class ObjectEditor extends Morph {
     return typeof data['attributeName'] !== 'undefined'
   }
 
+  
+
+  hideErrorBorder() {
+    this.get('lively-code-mirror').style.border = ""
+  }
+
+  showErrorBorder() {
+    this.get('lively-code-mirror').style.border = "2px solid red"
+  }
+  
+
   onSave(e) {
     if (!this.targetElement) return;
     let source = this.editor.value;
-    let m = source.match(/^function +([a-zA-Z][a-zA-Z0-9$_]+) *\(/)
+    let m = source.match(/^(?:async +)?function +([a-zA-Z][a-zA-Z0-9$_]+) *\(/)
     var scriptName = m && m[1]
+    this.hideErrorBorder()
+    if (!scriptName) {
+      lively.notify("[ObjectEditor] Could not save", source)  
+      this.showErrorBorder()
+      return 
+    }
     if (this.propertyList.activeLeaf !== null) {
       let data = this.propertyList.activeLeaf.dataset;
+      
       if (this.isScriptData(data)) {
         if (scriptName === data['scriptName']) {
           this.saveScript(data, source);
         } else {
-          this.addScript(scriptName, source)  
+          try {
+            this.addScript(scriptName, source)  
+          } catch(e) {
+            lively.notify("Could not save " + scriptName, e) 
+            this.showErrorBorder()
+
+          }
         }
       } else if (this.isAttributeData(data)) {
         this.saveAttribute(data, source);
       }
     } else {
       if(scriptName) {
+        debugger
         this.addScript(scriptName, source)
         lively.notify("[ObjectEditor] added new script " + scriptName)
       } else {
       // #here go the new attributes?
       lively.notify("[ObjectEditor] Could not save.")
+      this.showErrorBorder()
       }
     }
   }

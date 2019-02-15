@@ -3,7 +3,22 @@
     :host {
       width: 200px;
       height: 200px;
-    } 
+    }
+
+    :host {
+      min-width: 50px;
+      min-height: 50px;
+      background: white;
+    }
+    
+    #container {
+      position: relative; /* positioning hack.... we make our coordinate system much easier by this */
+      border: 0px solid gray;
+/*       width: 50%;
+      height: 50%; */
+      overflow: hidden
+    }
+  
     #svg {
       position: relative;
       top: 0px;
@@ -12,7 +27,9 @@
       height: 100%;
     }
   </style>
-  <svg id="svg"></svg>
+  <div id="container">
+    <svg id="svg"></svg>
+  </div>
 </template>
 <script class="registrationScript">lively.registerTemplate()</script>
 

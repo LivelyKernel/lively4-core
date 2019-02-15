@@ -6,27 +6,27 @@ export default class D3Bubblechart extends Morph {
     if (!this.data) {
       this.data = {
         children: [
-          { Name: 'Olives', Count: 4319 },
-          { Name: 'Tea', Count: 4159 },
-          { Name: 'Mashed Potatoes', Count: 2583 },
-          { Name: 'Boiled Potatoes', Count: 2074 },
-          { Name: 'Milk', Count: 1894 },
-          { Name: 'Chicken Salad', Count: 1809 },
-          { Name: 'Vanilla Ice Cream', Count: 1713 },
-          { Name: 'Cocoa', Count: 1636 },
-          { Name: 'Lettuce Salad', Count: 1566 },
-          { Name: 'Lobster Salad', Count: 1511 },
-          { Name: 'Chocolate', Count: 1489 },
-          { Name: 'Apple Pie', Count: 1487 },
-          { Name: 'Orange Juice', Count: 1423 },
-          { Name: 'American Cheese', Count: 1372 },
-          { Name: 'Green Peas', Count: 1341 },
-          { Name: 'Assorted Cakes', Count: 1331 },
-          { Name: 'French Fried Potatoes', Count: 1328 },
-          { Name: 'Potato Salad', Count: 1306 },
-          { Name: 'Baked Potatoes', Count: 1293 },
-          { Name: 'Roquefort', Count: 1273 },
-          { Name: 'Stewed Prunes', Count: 1268 },
+          { Name: 'Olives', Value: 4319 },
+          { Name: 'Tea', Value: 4159 },
+          { Name: 'Mashed Potatoes', Value: 2583 },
+          { Name: 'Boiled Potatoes', Value: 2074 },
+          { Name: 'Milk', Value: 1894 },
+          { Name: 'Chicken Salad', Value: 1809 },
+          { Name: 'Vanilla Ice Cream', Value: 1713 },
+          { Name: 'Cocoa', Value: 1636 },
+          { Name: 'Lettuce Salad', Value: 1566 },
+          { Name: 'Lobster Salad', Value: 1511 },
+          { Name: 'Chocolate', Value: 1489 },
+          { Name: 'Apple Pie', Value: 1487 },
+          { Name: 'Orange Juice', Value: 1423 },
+          { Name: 'American Cheese', Value: 1372 },
+          { Name: 'Green Peas', Value: 1341 },
+          { Name: 'Assorted Cakes', Value: 1331 },
+          { Name: 'French Fried Potatoes', Value: 1328 },
+          { Name: 'Potato Salad', Value: 1306 },
+          { Name: 'Baked Potatoes', Value: 1293 },
+          { Name: 'Roquefort', Value: 1273 },
+          { Name: 'Stewed Prunes', Value: 1268 },
         ],
       };
     }
@@ -41,19 +41,22 @@ export default class D3Bubblechart extends Morph {
   async initialize() {
     this.updateViz();
   }
+  
+  setSize(width, height) {
+    this.width = width;
+    this.height = height;
+  }
 
   updateViz() {
     this.getData();
     this.get('#svg').innerHTML = '';
-
     const diameter = 600;
-    const color = d3.scaleOrdinal(d3.schemeCategory20);
+    const color = d3.scaleOrdinal("schemeCategory20");
 
     const margin = { top: 20, right: 20, bottom: 30, left: 40 };
     const svgElement = this.get('#svg');
-    const width = svgElement.clientWidth - margin.left - margin.right;
-    const height = svgElement.clientHeight - margin.top - margin.bottom;
-
+    const width = this.width;
+    const height = this.height;
     const bubble = d3
       .pack(this.data)
       .size([width, height])
@@ -64,11 +67,10 @@ export default class D3Bubblechart extends Morph {
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom)
       .append('g')
-
       .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
       .attr('class', 'bubble');
 
-    const nodes = d3.hierarchy(this.data).sum(d => d.Count);
+    const nodes = d3.hierarchy(this.data).sum(d => d.Value);
 
     const node = svg
       .selectAll('.node')
@@ -78,19 +80,19 @@ export default class D3Bubblechart extends Morph {
       .append('g')
       .attr('class', 'node')
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
-
-    node.append('title').text(d => d.Name + ': ' + d.Count);
+    
+    node.append('title').text(d => d.data.Name + ': ' + d.data.Value);
 
     node
       .append('circle')
       .attr('r', d => d.r)
-      .style('fill', (d, i) => color(i));
+      .style('fill', (d,i) => color(i));
 
     node
       .append('text')
       .attr('dy', '.2em')
       .style('text-anchor', 'middle')
-      .text(d => d.data.Name.substring(0, d.r / 3))
+      .text(d => String(d.data.Name).substring(0, 18))
       .attr('font-family', 'sans-serif')
       .attr('font-size', d => d.r / 5)
       .attr('fill', 'white');
@@ -99,7 +101,7 @@ export default class D3Bubblechart extends Morph {
       .append('text')
       .attr('dy', '1.3em')
       .style('text-anchor', 'middle')
-      .text(d => d.data.Count)
+      .text(d => d.data.Value)
       .attr('font-family', 'Gill Sans', 'Gill Sans MT')
       .attr('font-size', d => d.r / 5)
       .attr('fill', 'white');
@@ -108,27 +110,27 @@ export default class D3Bubblechart extends Morph {
   async livelyExample() {
     this.setData({
       children: [
-        { Name: 'Olives', Count: 4319 },
-        { Name: 'Tea', Count: 4159 },
-        { Name: 'Mashed Potatoes', Count: 2583 },
-        { Name: 'Boiled Potatoes', Count: 2074 },
-        { Name: 'Milk', Count: 1894 },
-        { Name: 'Chicken Salad', Count: 1809 },
-        { Name: 'Vanilla Ice Cream', Count: 1713 },
-        { Name: 'Cocoa', Count: 1636 },
-        { Name: 'Lettuce Salad', Count: 1566 },
-        { Name: 'Lobster Salad', Count: 1511 },
-        { Name: 'Chocolate', Count: 1489 },
-        { Name: 'Apple Pie', Count: 1487 },
-        { Name: 'Orange Juice', Count: 1423 },
-        { Name: 'American Cheese', Count: 1372 },
-        { Name: 'Green Peas', Count: 1341 },
-        { Name: 'Assorted Cakes', Count: 1331 },
-        { Name: 'French Fried Potatoes', Count: 1328 },
-        { Name: 'Potato Salad', Count: 1306 },
-        { Name: 'Baked Potatoes', Count: 1293 },
-        { Name: 'Roquefort', Count: 1273 },
-        { Name: 'Stewed Prunes', Count: 1268 },
+        { Name: 'Olives', Value: 4319 },
+        { Name: 'Tea', Value: 4159 },
+        { Name: 'Mashed Potatoes', Value: 2583 },
+        { Name: 'Boiled Potatoes', Value: 2074 },
+        { Name: 'Milk', Value: 1894 },
+        { Name: 'Chicken Salad', Value: 1809 },
+        { Name: 'Vanilla Ice Cream', Value: 1713 },
+        { Name: 'Cocoa', Value: 1636 },
+        { Name: 'Lettuce Salad', Value: 1566 },
+        { Name: 'Lobster Salad', Value: 1511 },
+        { Name: 'Chocolate', Value: 1489 },
+        { Name: 'Apple Pie', Value: 1487 },
+        { Name: 'Orange Juice', Value: 1423 },
+        { Name: 'American Cheese', Value: 1372 },
+        { Name: 'Green Peas', Value: 1341 },
+        { Name: 'Assorted Cakes', Value: 1331 },
+        { Name: 'French Fried Potatoes', Value: 1328 },
+        { Name: 'Potato Salad', Value: 1306 },
+        { Name: 'Baked Potatoes', Value: 1293 },
+        { Name: 'Roquefort', Value: 1273 },
+        { Name: 'Stewed Prunes', Value: 1268 },
       ],
     });
   }

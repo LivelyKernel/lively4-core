@@ -44,7 +44,7 @@ export function fetchGithubData(endpoint) {
 
 export function setupMonaco() {
   if (monaco.languages.getLanguages().find(language => language.id === 'ghExplorer') === undefined) {
-    fetchGithubData('/meta')
+    fetchGithubData('/example_meta')
       .then(data => {
         setupMonacoLanguage(data);
       })
@@ -100,8 +100,8 @@ function setupMonacoLanguage(completions) {
   });
 
   function isNewModel(editorText) {
-    const regex = new RegExp('(.*?)\\((\\s|\\s*\\w*\\.*\\w*,\\s*)*$');
-    if (editorText.match(regex)) {
+    const regex2 = new RegExp('(.*?)MODEL:\\s*$');
+    if (editorText.match(regex2)) {
       return true;
     }
     return false;
@@ -114,7 +114,7 @@ function setupMonacoLanguage(completions) {
       model_fields_completions = model_fields.fields.map(value => ({
         label: value.name,
         kind: monaco.languages.CompletionItemKind.Field,
-        documentation: value.type,
+        documentation: 'Type: ' + value.type + '\nExample:\n' + JSON.stringify(value.example, null, 4),
         insertText: value.name,
       }));
 
@@ -122,7 +122,7 @@ function setupMonacoLanguage(completions) {
         model_fields.relations.map(value => ({
           label: value.name,
           kind: monaco.languages.CompletionItemKind.Module,
-          documentation: value.type,
+          documentation: 'Type: ' + value.type + '\nExample:\n' + JSON.stringify(value.example, null, 4),      
           insertText: value.name,
         })),
       );
@@ -141,6 +141,9 @@ function setupMonacoLanguage(completions) {
   function getRealModelFromRelationObjects(objects, position, lastModelRelation) {
     const currentObjName = objects[position];
     let model = undefined;
+    if (objects.length === 1) {
+      return findModel(objects[0]);
+    }
     if (position === 0) {
       const relationInfo = findRelation(findModel(currentObjName), objects[1]);
       model = findModel(relationInfo.rel_model);
@@ -167,27 +170,42 @@ function setupMonacoLanguage(completions) {
     }
   }
 
-  function getRelationCompletion(text) {
+  function getRelationCompletion(text, model) {
     const objects = text.split('.').slice(0, -1);
+    objects.unshift(model);
     return getModelCompletion(
       getRealModelFromRelationObjects(objects, 0, undefined).model,
     );
   }
 
-  function isNewField(editorText) {
-    const regex = new RegExp('(\\w*).$');
+  function isNewFieldOfField(editorText) {
+    const regex = new RegExp('[\\w*.]*$');
     const match = editorText.match(regex);
-    if (match) {
-      const regexRelationField = new RegExp('(\\w*)[.](\\w*)[.]$');
 
-      if (regexRelationField.test(editorText)) {
-        return getRelationCompletion(editorText.match(new RegExp('[\\w.]*$'))[0]);
-      } else {
-        const model = match[1];
-        return getModelCompletion(model);
-      }
+    if (match) {
+      const currentModel = editorText.match(new RegExp('MODEL:\\s*(\\w*)'))[1];
+      return getRelationCompletion(match[0], currentModel);
     }
+
     return false;
+  }
+
+  function isNewFieldInModel(editorText) {
+    const isInCorrectScope = new RegExp(
+      '(SELECT:\\s|WHERE:\\s|GROUPBY:\\s|ORDERBY:\\s)\\(.*\\n*\\s*$',
+    );
+    const match = editorText.match(isInCorrectScope);
+    if (match) {
+      const isNewField = new RegExp('(\\s*\\w*|\\,\\s*\\.*)$');
+      if (editorText.match(isNewField)) {
+        const currentModel = editorText.match(new RegExp('MODEL:\\s*(\\w*)'))[1];
+        return getModelCompletion(findModel(currentModel).model);
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   monaco.languages.registerCompletionItemProvider('ghExplorer', {
@@ -198,29 +216,33 @@ function setupMonacoLanguage(completions) {
         endLineNumber: position.lineNumber,
         endColumn: position.column,
       });
-
-      if (isNewModel(textUntilPosition)) {
-        return completions.map(value => ({
-          label: value.model,
-          kind: monaco.languages.CompletionItemKind.Field,
-          documentation: 'Model',
-          insertText: value.rel_model,
-        }));
-      }
       try {
-        const fieldProps = isNewField(textUntilPosition);
-        if (fieldProps) {
-          return fieldProps;
+        if (textUntilPosition.match(new RegExp('((.*?)\n$|^$)'))) {
+          return props;
         }
-      } catch(err) {
-        
-      }
-     
-
-      if (textUntilPosition.match(new RegExp('((.*?)\n$|^$)'))) {
-        console.log(props);
-        return props;
-      }
+        // if it is in MODEL: scope
+        if (isNewModel(textUntilPosition)) {
+          return completions.map(value => ({
+            label: value.model,
+            kind: monaco.languages.CompletionItemKind.Field,
+            documentation: 'Model',
+            insertText: value.rel_model,
+          }));
+        } else {
+          const newField = isNewFieldInModel(textUntilPosition);
+          if (newField) {
+            return newField;
+          }
+          const newFieldOfField = isNewFieldOfField(textUntilPosition);
+          if (newFieldOfField) {
+            return newFieldOfField;
+          }
+        }
+      } catch(e) {
+        lively.notify('You may want to define a Model first or your Query contains Typos.')
+        return [];
+      };
+      
     },
   });
 }
