@@ -239,6 +239,7 @@ function setupMonacoLanguage(completions) {
           }
         }
       } catch(e) {
+        lively.notify('You may want to define a Model first or your Query contains Typos.')
         return [];
       };
       
