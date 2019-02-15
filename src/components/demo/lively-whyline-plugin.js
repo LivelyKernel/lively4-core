@@ -270,32 +270,57 @@ export default function (babel) {
               }
             }
           },
+          'VariableDeclaration': {
+            enter(path) {
+              if (shouldTrace(path) && !t.isFor(path.parent)) {
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
           'VariableDeclarator': {
-            exit(path) {
+            enter(path) {
               if (shouldTrace(path)) {
                 const node = path.node;
+                const declaration = path.parentPath;
                 const init = path.get('init');
                 const newNode = wrapBlock(node.traceid, init.node || t.identifier("undefined"));
                 init.replaceWith(newNode);
-                const declaration = path.parentPath;
-                declaration.insertAfter(declaratorFollowup(node.traceid, node.assignmentTargets));
+                const followUp = declaratorFollowup(node.traceid, node.assignmentTargets);
+                if (!t.isFor(declaration.parent)) {
+                  declaration.insertAfter(followUp);
+                } else {
+                  const uid = t.identifier(declaration.scope.generateUid("decl"));
+                  path.insertAfter(t.variableDeclarator(uid, followUp.expression));
+                }
               }
             }
           },
-          'IfStatement|While|VariableDeclaration': {
-            enter(path) {
+          'IfStatement': {
+            exit(path) {
               if (shouldTrace(path)) {
                 path.insertBefore(statementBegin(path.node.traceid));
                 path.insertAfter(statementEnd());
               }
             }
           },
-          'ForStatement': {
-            enter(path) {
+          'For|While': {
+            exit(path) {
               if (shouldTrace(path)) {
-                path.skipKey("init");
+                path.get("body").unshiftContainer("body", checkRuntime());
                 path.insertBefore(statementBegin(path.node.traceid));
                 path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'BlockStatement': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                const parent = path.parent;
+                if (t.isFunction(parent) || t.isCatchClause(parent) || t.isTryStatement(parent)) return;
+                console.log(path.node);
+                path.unshiftContainer("body", statementBegin(path.node.traceid));
+                path.pushContainer("body", statementEnd());
               }
             }
           },

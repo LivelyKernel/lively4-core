@@ -81,6 +81,10 @@ export class ExecutionTrace {
     return parent.value = value;
   }
   
+  iter() {
+    
+  }
+  
   stmt(id) {
     this.begin(id);
   }
@@ -256,10 +260,8 @@ export class TraceNode {
   
   static mapToNodeType(astNode) {
     let nodeTypes = [
-      ProgramNode,
-      
       VariableExpressionNode,
-      LiteralExpressionNode, //catch all
+      LiteralExpressionNode, //group
       
       BinaryExpressionNode,
       UnaryExpressionNode,
@@ -273,17 +275,18 @@ export class TraceNode {
       ReturnNode,
       NewExpressionNode,
       ConditionalExpressionNode,
-      ExpressionNode, //catch all      
+      ExpressionNode, //group
       
-      ForStatementNode,
       WhileStatementNode,
       DoWhileStatementNode,
-      LoopNode, //catch all
       
       IfStatementNode,
       VariableDeclarationNode,
       
-      FunctionNode //catch all
+      ProgramNode,
+      ForStatementNode,
+      BlockNode,
+      FunctionNode //group
     ];
     let nodeType = nodeTypes.find((nodeType) => {
       return nodeType.mapsTo(astNode)
@@ -366,14 +369,6 @@ export class TraceNode {
       return `${name} = ${value}`;
     });
     return assignments.join(", ");
-  }
-}
-
-class ProgramNode extends TraceNode {
-  static get astTypes() { return ['Program'] }
-  
-  get branchesControlFlow() {
-    return true;
   }
 }
 
@@ -591,7 +586,7 @@ class DeclaratorNode extends ExpressionNode {
   }
   
   labelString() {
-    return this.assignmentsString();
+    return this.astNode.init ? this.assignmentsString() : this.astNode.id.name;
   }
 }
 
@@ -625,54 +620,21 @@ class IfStatementNode extends TraceNode {
   }
 }
 
-class LoopNode extends TraceNode {
-  static get astTypes() { return ['Loop'] }
-  
-  get branchesControlFlow() { return true }
-}
-
-class ForStatementNode extends LoopNode {
-  static get astTypes() { return ['ForStatement'] }
-  
-  labelString() {
-    return 'for{}'
-  }
-}
-
-class WhileStatementNode extends LoopNode {
+class WhileStatementNode extends TraceNode {
   static get astTypes() { return ['WhileStatement'] }
+  get branchesControlFlow() { return true }
   
   labelString() {
     return 'while{}'
   }
 }
 
-class DoWhileStatementNode extends LoopNode {
+class DoWhileStatementNode extends TraceNode {
   static get astTypes() { return ['DoWhileStatement'] }
+  get branchesControlFlow() { return true }
   
   labelString() {
     return 'do{}while'
-  }
-}
-
-class FunctionNode extends TraceNode {
-  static get astTypes() { return ['Function'] }
-  
-  get branchesControlFlow() { return true }
-  get isFunction() { return true }
-  
-  variablesOfInterest() {
-    return this.assignmentTargets;
-  }
-  
-  assigns(identifier) {
-    return this.assignmentTargets.some((id) => {
-      return equalIdentifiers(id, identifier);
-    });
-  }
-  
-  labelString() {
-    return `Function(${this.assignmentsString()})`;
   }
 }
 
@@ -692,6 +654,59 @@ class VariableDeclarationNode extends TraceNode {
   labelString() {
     const vars = this.assignmentTargets.map((id) => id.name).join(", ");
     return `${this.astNode.kind} ${vars}`;
+  }
+}
+
+/*
+ * Scopes
+ */
+
+class ScopeNode extends TraceNode {
+  
+}
+
+class ProgramNode extends ScopeNode {
+  static get astTypes() { return ['Program'] }
+  
+  get branchesControlFlow() { return true } //might be seen as either
+}
+
+class BlockNode extends ScopeNode {
+  static get astTypes() { return ['BlockStatement'] }
+  
+  labelString() {
+    return ''
+  }
+}
+
+class ForStatementNode extends ScopeNode {
+  static get astTypes() { return ['ForStatement'] }
+  
+  get branchesControlFlow() { return true }
+  
+  labelString() {
+    return 'for{}'
+  }
+}
+
+class FunctionNode extends ScopeNode {
+  static get astTypes() { return ['Function'] }
+  
+  get branchesControlFlow() { return true }
+  get isFunction() { return true }
+  
+  variablesOfInterest() {
+    return this.assignmentTargets;
+  }
+  
+  assigns(identifier) {
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
+  }
+  
+  labelString() {
+    return `Function(${this.assignmentsString()})`;
   }
 }
 
