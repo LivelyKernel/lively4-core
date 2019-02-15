@@ -36,8 +36,6 @@ export default class GithubExplorer extends Morph {
     this.div.appendChild(<h2 style="color: #2B547E; font-size: 1.5em; text-align: center;">Query and Explore</h2>)
     this.div.id = 'monaco-editor-custom-lively';
 
-    
-
     this.parentNode.appendChild(this.div);
 
     this.editor = monaco.editor.create(this.div, {

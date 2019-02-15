@@ -3,8 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { deepMapKeys } from 'src/client/rename_obj.js';
 
-const visSettings = {
-  'BubbleChart': [
+const visType1Conf = [
     {
       name: 'Name',
       type: 'primitive',
@@ -13,18 +12,9 @@ const visSettings = {
       name: 'Value',
       type: 'number',
     }
-  ],
-  'BarChart': [
-    {
-      name: 'Name',
-      type: 'primitive',
-    },
-    {
-      name: 'Value',
-      type: 'number',
-    }
-  ],
-  'RadialTree': [
+  ];
+
+const visType2Conf = [
     {
       name: 'Name',
       type: 'primitive',
@@ -44,72 +34,19 @@ const visSettings = {
         }
       ]
     }
-  ],
-  'Tree': [
-    {
-      name: 'Name',
-      type: 'primitive',
-    },
-    {
-      name: 'Children',
-      type: 'object',
-      meta: [
-        {
-          name: 'Name',
-          type: 'primitive'
-        },
-        {
-          name: 'Size',
-          type: 'number',
-          optional: true,
-        }
-      ]
-    }
-  ],
-  'PlainTree': [
-    {
-      name: 'Name',
-      type: 'primitive',
-    },
-    {
-      name: 'Children',
-      type: 'object',
-      meta: [
-        {
-          name: 'Name',
-          type: 'primitive'
-        },
-        {
-          name: 'Size',
-          type: 'number',
-          optional: true,
-        }
-      ]
-    }
-  ],
-  'TreeMap': [
-    {
-      name: 'Name',
-      type: 'primitive',
-    },
-    {
-      name: 'Children',
-      type: 'object',
-      meta: [
-        {
-          name: 'Name',
-          type: 'primitive'
-        },
-        {
-          name: 'Size',
-          type: 'number',
-          optional: true,
-        }
-      ]
-    }
-  ],
+  ];
+
+
+const visSettings = {
+  'BubbleChart': visType1Conf,
+  'BarChart': visType1Conf,
+  'RadialTree': visType2Conf,
+  'Tree': visType2Conf,
+  'PlainTree': visType2Conf,
+  'TreeMap': visType2Conf,
 }
 
+// map to lively-components
 const visualizationComponents = {
   'BubbleChart': 'd3-bubblechart',
   'BarChart': 'd3-barchart-gh',
