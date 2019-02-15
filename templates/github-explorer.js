@@ -31,7 +31,6 @@ export default class GithubExplorer extends Morph {
 
   setupMonacoEditor() {
     this.div = <div style='margin: 0 auto; border: 1px solid grey;'></div>;
-    // this.div.style.width = "100px";
     this.div.style.height = '200px';
     this.div.appendChild(<h2 style="color: #2B547E; font-size: 1.5em; text-align: center;">Query and Explore</h2>)
     this.div.id = 'monaco-editor-custom-lively';
@@ -57,14 +56,12 @@ export default class GithubExplorer extends Morph {
   createDataPreviewElement() {
     this.get('#content').appendChild(
       <div style="max-height: 250px; overflow-y: scroll">
-        {' '}
-        <h2> Data Preview </h2> <table id='dataPreview' />{' '}
+        <h2> Data Preview </h2> <table id='dataPreview' />
       </div>,
     );
   }
 
   async runQuery() {
-    console.log(this.editor.getValue());
     const response = await fetchGithubData('/query?q=' + this.editor.getValue().replace(/\n/g, " "));
     this.createPreview(response);
     
@@ -90,7 +87,7 @@ export default class GithubExplorer extends Morph {
   }
 
   createPreviewHeader(response1) {
-    let tableHeader = <tr> </tr>;
+    let tableHeader = <tr />;
     
     const rowIndexHeader = <th class="rowIndex">#</th>;
     rowIndexHeader.onclick = () => lively.openInspector(response1, undefined, 'Whole Datapreview');
@@ -104,7 +101,7 @@ export default class GithubExplorer extends Morph {
   }
 
   createPreviewRow(row, index=undefined) {
-    let tableRow = <tr> </tr>;
+    let tableRow = <tr />;
     if(index !== undefined) {
       const indexRow = <td class='rowIndex'>{index}</td>;
       indexRow.onclick = () => lively.openInspector(row);
@@ -138,7 +135,6 @@ export default class GithubExplorer extends Morph {
         // if it is an object
         const element = (
           <td class='clickable'>
-            {' '}
             <i class='right' /> Object{' '}
           </td>
         );
@@ -156,7 +152,7 @@ export default class GithubExplorer extends Morph {
         // if it is a primitive
         tableRow.appendChild(
           <td title={row[key] ? row[key] : '-'}>
-            <div> {row[key] ? row[key] : '-'} </div>{' '}
+            <div> {row[key] ? row[key] : '-'} </div>
           </td>,
         );
       }
@@ -196,7 +192,6 @@ export default class GithubExplorer extends Morph {
   }
 
   onObjectClick(element, obj) {
-    console.log(element.textContent.trim());
     if (element.textContent.trim() !== 'Object') {
       element.innerHTML = '';
       element.appendChild(
@@ -214,37 +209,14 @@ export default class GithubExplorer extends Morph {
   async createExplorer(response) {
     this.dataExplorerWindow = await lively.openComponentInWindow('data-explorer');
     this.dataExplorerWindow.setData(response);
-    
-    // const dataExplorer = await lively.create('data-explorer');
-    // dataExplorer.setData(response);
-    // this.get('#content').appendChild(<div style="max-width: 800px; margin-left: auto; margin-right: auto;">{dataExplorer}</div>);
-  }
-
-  /* Lively-specific API */
-
-  livelyPreMigrate() {
-    // is called on the old object before the migration
-    // this.parentNode.removeChild(document.getElementById("monaco-editor-custom-lively"));
   }
 
   livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty;
-    // document.body.removeChild(this.div);
     this.start();
   }
 
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-    // console.log(this.parentNode);
-  }
-
-  livelyPrepareSave() {}
-
   async livelyExample() {
-    // this customizes a default instance to a pretty example
-    // this is used by the
     this.someJavaScriptProperty = 42;
   }
 }
