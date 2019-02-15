@@ -61,14 +61,18 @@ export default class GithubExplorer extends Morph {
   }
 
   async runQuery() {
-    const response = await fetchGithubData('/query?q=' + this.editor.getValue().replace(/\n/g, " "));
-    this.createPreview(response);
-    
-    this.get('#content').appendChild(<div id="visualization"></div>)
-    const showDataExplorerButton = <button class="visualizeButton">Visualize Data</button>;
-    showDataExplorerButton.onclick = () => this.createExplorer(response);
-    this.get('#visualization').innerHTML = '';
-    this.get('#visualization').appendChild(showDataExplorerButton);
+    try {
+      const response = await fetchGithubData('/query?q=' + this.editor.getValue().replace(/\n/g, " "));
+      this.createPreview(response);
+
+      this.get('#content').appendChild(<div id="visualization"></div>)
+      const showDataExplorerButton = <button class="visualizeButton">Visualize Data</button>;
+      showDataExplorerButton.onclick = () => this.createExplorer(response);
+      this.get('#visualization').innerHTML = '';
+      this.get('#visualization').appendChild(showDataExplorerButton);
+    } catch (error) {
+      lively.notify("Failed to execute (Error in Query or Server)")
+    }
   }
 
   createPreview(response) {
@@ -195,7 +199,6 @@ export default class GithubExplorer extends Morph {
       element.innerHTML = '';
       element.appendChild(
         <div>
-          {' '}
           <i class='right' /> Object{' '}
         </div>,
       );
