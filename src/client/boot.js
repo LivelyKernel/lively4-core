@@ -30,7 +30,7 @@ window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, 
 // localStorage["logLivelyBoot"] = true
 if (!(localStorage["logLivelyBoot"] == "true")) {
   window.lively4bootlog = function() {
-    // do nothgin
+    // do nothing
   }
 }
 

@@ -225,12 +225,14 @@ export default class Editor extends Morph {
     } else {
       window.LastData = data
       
+      var headers = {}
+      if (this.lastVersion) {
+        headers.lastversion = this.lastVersion
+      }
       return fetch(urlString, {
         method: 'PUT', 
         body: data,
-        headers: {
-          lastversion:  this.lastVersion
-        }
+        headers: headers
       }).then((response) => {
         // console.log("edited file " + url + " written.");
         var newVersion = response.headers.get("fileversion");

@@ -9,6 +9,7 @@ export class ExecutionTrace {
     this.parentNode = this.traceRoot;
     this.previousNode = this.traceRoot;
     this.lastOccurrenceMap = [];
+    this.traceRoot.order = 0;
   }
   
   newTraceNode(astNodeId) {
@@ -33,21 +34,9 @@ export class ExecutionTrace {
     return this.parentNode = traceNode;
   }
   
-  end(traceNode = this.parentNode) {
-    this.previousNode = traceNode.end(this.previousNode);
-    this.parentNode = traceNode.parent;
-  }
-  
   /*
    * Externally visible tracing functions
    */
-  
-  exp(id, exp) {
-    const traceNode = this.begin(id);
-    const value = traceNode.value = exp();
-    this.end(traceNode);
-    return value;
-  }
   
   val(id, value) {
     const traceNode = this.begin(id);
@@ -55,9 +44,11 @@ export class ExecutionTrace {
     return traceNode.value = value;
   }
   
-  func(id, args) {
+  exp(id, exp) {
     const traceNode = this.begin(id);
-    traceNode.setVariableValues(args);
+    const value = traceNode.value = exp();
+    this.end(traceNode);
+    return value;
   }
   
   asgn(id, exp, argFunc) {
@@ -73,20 +64,34 @@ export class ExecutionTrace {
     declarator.setVariableValues(args);
   }
   
-  stmt(id) {
-    this.begin(id);
+  func(id, args) {
+    const traceNode = this.begin(id);
+    traceNode.setVariableValues(args);
   }
   
   rtrn(id, exp) {
     const traceNode = this.begin(id);
     const value = traceNode.value = exp();
     let parent = traceNode;
-    while (!parent.isFunction()) {
+    while (!parent.isFunction) {
       this.end(parent);
       parent = traceNode.parent;
     }
     this.end(parent);
     return parent.value = value;
+  }
+  
+  iter() {
+    
+  }
+  
+  stmt(id) {
+    this.begin(id);
+  }
+  
+  end(traceNode = this.parentNode) {
+    this.previousNode = traceNode.end(this.previousNode);
+    this.parentNode = traceNode.parent;
   }
 }
 
@@ -103,6 +108,7 @@ export class TraceNode {
   setPredecessor(previous) {
     this.predecessor = previous;
     previous.successor = this;
+    this.order = previous.order + 1;
   }
   
   begin(previous) {
@@ -140,20 +146,15 @@ export class TraceNode {
     });
   }
   
-  get traceId() {
-    return this.astNode.traceid;
-  }
-  
-  get assignmentTargets() {
-    return this.astNode.assignmentTargets;
-  }
+  get traceId() { return this.astNode.traceid }
+  get assignmentTargets() { return this.astNode.assignmentTargets }
   
   /*
    * Tree Navigation
    */
   
   functionParent() {
-    return this.findParent((node) => node.isFunction());
+    return this.findParent((node) => node.isFunction);
   }
   
   descendantWithId(traceId) {
@@ -215,21 +216,17 @@ export class TraceNode {
     return node || null;
   }
   
-  get preceedsChildren() {
-    return true;
-  }
+  get preceedsChildren() { return true }
   
   /*
    * Control Flow
    */
   
-  branchesControlFlow() {
-    return false;
-  }
+  get branchesControlFlow() { return false }
   
   previousControlFlow(){
     return this.findParent((parent) => {
-      return parent.branchesControlFlow();
+      return parent.branchesControlFlow;
     });
   }
   
@@ -263,10 +260,8 @@ export class TraceNode {
   
   static mapToNodeType(astNode) {
     let nodeTypes = [
-      ProgramNode,
-      
       VariableExpressionNode,
-      LiteralExpressionNode, //catch all
+      LiteralExpressionNode, //group
       
       BinaryExpressionNode,
       UnaryExpressionNode,
@@ -278,17 +273,20 @@ export class TraceNode {
       MemberExpressionNode,
       DeclaratorNode,
       ReturnNode,
-      ExpressionNode, //catch all      
+      NewExpressionNode,
+      ConditionalExpressionNode,
+      ExpressionNode, //group
       
-      ForStatementNode,
       WhileStatementNode,
       DoWhileStatementNode,
-      LoopNode, //catch all
       
       IfStatementNode,
       VariableDeclarationNode,
       
-      FunctionNode //catch all
+      ProgramNode,
+      ForStatementNode,
+      BlockNode,
+      FunctionNode //group
     ];
     let nodeType = nodeTypes.find((nodeType) => {
       return nodeType.mapsTo(astNode)
@@ -305,9 +303,7 @@ export class TraceNode {
     })
   }
   
-  isFunction() {
-    return false;
-  }
+  get isFunction() { return false }
   
   /*
    * Display
@@ -376,20 +372,10 @@ export class TraceNode {
   }
 }
 
-class ProgramNode extends TraceNode {
-  static get astTypes() { return ['Program'] }
-  
-  branchesControlFlow() {
-    return true;
-  }
-}
-
 class ExpressionNode extends TraceNode {
   static get astTypes() { return ['Expression'] }
   
-  get preceedsChildren() {
-    return false;
-  }
+  get preceedsChildren() { return false }
   
   valueString() {
     return this.toDisplayString(this.value);
@@ -407,13 +393,8 @@ class ExpressionNode extends TraceNode {
 class BinaryExpressionNode extends ExpressionNode {
   static get astTypes() { return ['BinaryExpression', 'LogicalExpression'] }
   
-  get left() {
-    return this.children[0];
-  }
-  
-  get right() {
-    return this.children[1];
-  }
+  get left() { return this.children[0] }
+  get right() { return this.children[1] }
     
   labelString() {
     let op = this.astNode.operator;
@@ -426,9 +407,7 @@ class BinaryExpressionNode extends ExpressionNode {
 class UnaryExpressionNode extends ExpressionNode {
   static get astTypes() { return ['UnaryExpression'] }
   
-  get argument() {
-    return this.children[0];
-  }
+  get argument() { return this.children[0] }
   
   labelString() {
     return this.astNode.operator;
@@ -442,13 +421,10 @@ class UpdateExpressionNode extends ExpressionNode {
     if (t.isIdentifier(this.argument)) {
       return this.argument;
     } else {
-      return this.argument.identifier; //fix me, I might not to be an identifier
+      return this.argument.identifier; //argument might not to be an identifier
     }
   }
-  
-  get argument() {
-    return this.astNode.argument;
-  }
+  get argument() { return this.astNode.argument }
   
   labelString() {
     return `${this.argument.name} = ${this.valueString()}`;
@@ -466,13 +442,8 @@ class UpdateExpressionNode extends ExpressionNode {
 class AssignmentExpressionNode extends ExpressionNode {
   static get astTypes() { return ['AssignmentExpression'] }
   
-  get left() {
-    return this.astNode.left;
-  }
-  
-  get right() {
-    return this.children[0];
-  }
+  get left() { return this.astNode.left }
+  get right() { return this.children[0] }
   
   labelString() {
     return this.assignmentsString();
@@ -494,17 +465,9 @@ class AssignmentExpressionNode extends ExpressionNode {
 class MemberExpressionNode extends ExpressionNode {
   static get astTypes() { return ['MemberExpression'] }
   
-  get computed() {
-    return this.astNode.computed;
-  }
-  
-  get object() {
-    return this.children[0];
-  }
-  
-  get property() {
-    return this.computed ? this.children[1].value : this.astNode.property.name;
-  }
+  get computed() { return this.astNode.computed }
+  get object() { return this.children[0] }
+  get property() { return this.computed ? this.children[1].value : this.astNode.property.name }
   
   labelString() {
     let object = this.object.valueString();
@@ -520,32 +483,15 @@ class MemberExpressionNode extends ExpressionNode {
 class CallExpressionNode extends ExpressionNode {
   static get astTypes() { return ['CallExpression'] }
     
-  get function() {
-    return this.children[0].value;
-  }
-  
-  get numArgs() {
-    return this.children.length - (this.functionIsTraced() ? 2 : 1);
-  }
-  
-  get arguments() {
-    return this.children.slice(1, this.numArgs + 1);
-  }
-  
-  lastChild() {
-    return this.children[this.children.length - 1];
-  }
-  
-  get call() {
-    return this.functionIsTraced() ? this.lastChild() : null;
-  }
+  get function() { return this.children[0].value }
+  get numArgs() { return this.children.length - (this.functionIsTraced() ? 2 : 1) }
+  get arguments() { return this.children.slice(1, this.numArgs + 1) }
+  get lastChild() { return this.children[this.children.length - 1] }
+  get call() { return this.functionIsTraced() ? this.lastChild : null }
+  get branchesControlFlow() { return true }
   
   functionIsTraced() {
-    return this.lastChild().isFunction();
-  }
-  
-  branchesControlFlow() {
-    return true;
+    return this.lastChild.isFunction;
   }
   
   variablesOfInterest() {
@@ -605,12 +551,29 @@ class ArrayExpressionNode extends ExpressionNode {
   }
 }
 
+class NewExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['NewExpression'] }
+  
+  labelString() {
+    return ` new ${this.valueString()}`; //there's probably something better to do here
+  }
+}
+
+class ConditionalExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['ConditionalExpression'] }
+  
+  get branchesControlFlow() { return true }
+  get test() { return this.children[0] }
+  
+  labelString() {
+    return `${this.toDisplayString(!!this.test.value)} -> ${this.valueString()}`;
+  }
+}
+
 class DeclaratorNode extends ExpressionNode {
   static get astTypes() { return ['VariableDeclarator'] }
   
-  get init() {
-    return this.children[0];
-  }
+  get init() { return this.children[0] }
   
   assigns(identifier) {
     return this.assignmentTargets.some((id) => {
@@ -623,16 +586,14 @@ class DeclaratorNode extends ExpressionNode {
   }
   
   labelString() {
-    return this.assignmentsString();
+    return this.astNode.init ? this.assignmentsString() : this.astNode.id.name;
   }
 }
 
 class ReturnNode extends ExpressionNode {
   static get astTypes() { return ['ReturnStatement'] }
   
-  get argument() {
-    return this.children[0];
-  }
+  get argument() { return this.children[0] }
   
   hasArgument() {
     return this.astNode.argument !== null;
@@ -646,17 +607,9 @@ class ReturnNode extends ExpressionNode {
 class IfStatementNode extends TraceNode {
   static get astTypes() { return ['IfStatement'] }
   
-  get test() {
-    return this.children[0];
-  }
-  
-  get consequences() {
-    return this.children.slice(1, this.children.length);
-  }
-  
-  branchesControlFlow() {
-    return true;
-  }
+  get test() { return this.children[0] }
+  get consequences() { return this.children.slice(1, this.children.length) }
+  get branchesControlFlow() { return true }
   
   labelString() {
     return `if (${this.test.labelString()}) -> ${this.test.valueString()}`;
@@ -667,48 +620,80 @@ class IfStatementNode extends TraceNode {
   }
 }
 
-class LoopNode extends TraceNode {
-  static get astTypes() { return ['Loop'] }
-  
-  branchesControlFlow() {
-    return true;
-  }
-}
-
-class ForStatementNode extends LoopNode {
-  static get astTypes() { return ['ForStatement'] }
-  
-  labelString() {
-    return 'for{}'
-  }
-}
-
-class WhileStatementNode extends LoopNode {
+class WhileStatementNode extends TraceNode {
   static get astTypes() { return ['WhileStatement'] }
+  get branchesControlFlow() { return true }
   
   labelString() {
     return 'while{}'
   }
 }
 
-class DoWhileStatementNode extends LoopNode {
+class DoWhileStatementNode extends TraceNode {
   static get astTypes() { return ['DoWhileStatement'] }
+  get branchesControlFlow() { return true }
   
   labelString() {
     return 'do{}while'
   }
 }
 
-class FunctionNode extends TraceNode {
+class VariableDeclarationNode extends TraceNode {
+  static get astTypes() { return ['VariableDeclaration'] }
+  
+  get assignmentTargets() {
+    return this.children.reduce((vars, declarator) => {
+      return vars.concat(declarator.assignmentTargets);
+    }, []);
+  }
+  
+  variablesOfInterest() {
+    return this.assignmentTargets;
+  }
+  
+  labelString() {
+    const vars = this.assignmentTargets.map((id) => id.name).join(", ");
+    return `${this.astNode.kind} ${vars}`;
+  }
+}
+
+/*
+ * Scopes
+ */
+
+class ScopeNode extends TraceNode {
+  
+}
+
+class ProgramNode extends ScopeNode {
+  static get astTypes() { return ['Program'] }
+  
+  get branchesControlFlow() { return true } //might be seen as either
+}
+
+class BlockNode extends ScopeNode {
+  static get astTypes() { return ['BlockStatement'] }
+  
+  labelString() {
+    return ''
+  }
+}
+
+class ForStatementNode extends ScopeNode {
+  static get astTypes() { return ['ForStatement'] }
+  
+  get branchesControlFlow() { return true }
+  
+  labelString() {
+    return 'for{}'
+  }
+}
+
+class FunctionNode extends ScopeNode {
   static get astTypes() { return ['Function'] }
   
-  branchesControlFlow() {
-    return true;
-  }
-  
-  isFunction() {
-    return true;
-  }
+  get branchesControlFlow() { return true }
+  get isFunction() { return true }
   
   variablesOfInterest() {
     return this.assignmentTargets;
@@ -722,21 +707,6 @@ class FunctionNode extends TraceNode {
   
   labelString() {
     return `Function(${this.assignmentsString()})`;
-  }
-}
-
-class VariableDeclarationNode extends TraceNode {
-  static get astTypes() { return ['VariableDeclaration'] }
-  
-  get assignmentTargets() {
-    return this.children.reduce((vars, declarator) => {
-      return vars.concat(declarator.assignmentTargets);
-    }, []);
-  }
-  
-  labelString() {
-    const vars = this.assignmentTargets.map((id) => id.name).join(", ");
-    return `${this.astNode.kind} ${vars}`;
   }
 }
 

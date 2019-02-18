@@ -838,13 +838,20 @@ export default class Lively {
     await lively.ensureHand();
     // lively.selection;
 
+    // yes, we want also to change style of external websites...
+    lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
+    
+    // #Hack... just to be on the save side #ACM
+    // where to put side specific adapations... cannot be overriden by CSS? #TODO
+    document.body.style.textAlign = "left"
+    
+    
     if (loadedAsExtension) {
       lively.notify("Lively4 extension loaded!",
         "  CTRL+LeftClick  ... open halo\n" +
         "  CTRL+RightClick ... open menu");
+      
     } else {
-      // don't want to change style of external web-sites...
-      lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
 
       // only scroll thrugh CTRL+drag #TODO what does UX say?
       // document.body.style.overflow = "hidden"
