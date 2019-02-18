@@ -17,18 +17,18 @@ export default class LivelyAnalysisTable extends Morph {
     
     this.selectElement.addEventListener("change", () => this.onSelectionChanged())
     
-    this.setWidth(400, 'px')
-    this.setHeight(150, 'px')
+    this.setWidth(400)
+    this.setHeight(150)
   }
   
-  setWidth(width, unit) {
+  setWidth(width) {
     this.tableWidth = width
-    this.tableElement.style.width = width + unit
+    this.tableElement.style.width = width + 'px'
   }
   
-  setHeight(height, unit) {
+  setHeight(height) {
     this.tableHeight = height
-    this.tableElement.style.height = height + unit
+    this.tableElement.style.height = height + 'px'
   }
   
   setData(data) {

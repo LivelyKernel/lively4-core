@@ -6,7 +6,7 @@ import d3v5 from "src/external/d3.v5.js"
 
 export default class LivelyAnalysisHeatmap extends Morph {
   async initialize() {
-    this.windowTitle = "Lively Analysis Heatmap";
+    this.windowTitle = "Lively Analysis Version Heatmap";
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
@@ -34,14 +34,14 @@ export default class LivelyAnalysisHeatmap extends Morph {
     return this.data
   }
   
-  setWidth(width, unit) {
+  setWidth(width) {
     this.svgWidth = width
-    this.svgElement.style.width = width + unit
+    this.svgElement.style.width = width + 'px'
   }
   
-  setHeight(height, unit) {
+  setHeight(height) {
     this.svgHeight = height
-    this.svgElement.style.height = height + unit
+    this.svgElement.style.height = height + 'px'
   }
     
   async updateViz() {
@@ -205,8 +205,8 @@ export default class LivelyAnalysisHeatmap extends Morph {
   }
   
   tooltip(cell) {
-    this.tooltipElement.style.top = d3v5.event.pageY + 10 + 'px'
-    this.tooltipElement.style.left = d3v5.event.pageX + 10 + 'px'
+    this.tooltipElement.style.top = d3v5.event.pageY + 15 + 'px'
+    this.tooltipElement.style.left = d3v5.event.pageX + 15 + 'px'
     if (cell.children) {
       this.tooltipElement.innerHTML = '<h4 class="title"> Class: ' + cell.data.name + '</h4>'
         + '<strong>Modifications: ' + cell.data.modifications + '</strong>'

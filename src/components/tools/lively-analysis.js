@@ -3,7 +3,6 @@
 import Morph from 'src/components/widgets/lively-morph.js'
 import FileIndex from 'src/client/fileindex-analysis.js'
 import d3 from "src/external/d3.v5.js"
-import ContextMenu from 'src/client/contextmenu.js'
 
 export default class LivelyAnalysis extends Morph {
 
@@ -18,7 +17,6 @@ export default class LivelyAnalysis extends Morph {
     this.heatMapContainer = this.shadowRoot.querySelector('#lively-analysis-heatmap-container')
     
     // update listener
-   // this.get("#updateDirectory").addEventListener("update-directory", () => this.onUpdateDirectory)
     this.get("#updatePolymetric").addEventListener("update-polymetric", () => this.updatePolymetric)
     this.get("#updateVersions").addEventListener("update-versions", () => this.updateVersions)
     this.get("#updateBrokenLinks").addEventListener("update-broken-links", () => this.updateTableBrokenLinks)
@@ -29,11 +27,11 @@ export default class LivelyAnalysis extends Morph {
     this.updatePolymetricView()
   }
   
-  setViewWidth(width, unit) {
+  setViewWidth(width) {
     this.viewWidth = width
   }
   
-  setViewHeight(height, unit) {
+  setViewHeight(height) {
     this.viewHeight = height
   }
   
@@ -56,7 +54,7 @@ export default class LivelyAnalysis extends Morph {
       }
     }
     
-   FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
+   await FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
       findChilds(clazz)
       this.classes.children.push(clazz)
     })
@@ -129,24 +127,12 @@ export default class LivelyAnalysis extends Morph {
     lively.notify("Key Down!" + evt.charCode)
   }
 
-  // this method is automatically registered as handler through ``registerButtons``
- /* onUpdateDirectory() {
-    FileIndex.current().updateDirectory(lively4url + "/", true)
-  }*/
-
   async onUpdatePolymetric() {
-    // if (this.classes) {
-      var start = Date.now()
-      await this.setClassData()
-      console.log("setClassData in " + (Date.now() - start) + "ms")
-    // }
-    start = Date.now()
+    await this.setClassData()
     await this.updatePolymetricView()
-    console.log("updatePolymetricView in " + (Date.now() - start) + "ms")
   }
 
   async onUpdateVersions() {
-    //await FileIndex.current().updateAllVersions()
     await this.setVersionData()
     await this.updateVersionHeatMap()
   }
@@ -172,7 +158,9 @@ export default class LivelyAnalysis extends Morph {
     polymetric.setData(this.classes)  
     var  classes = d3.hierarchy(this.classes)
     /*
-    e.g Width metric = number of attributes (noa)???, height metric = number of methods (nom), color metric = number of lines of code.
+    Width = number of methods (nom)
+    height = lines of code (loc)
+    color = loc/nom
     */
     var maxValue = Math.max.apply(Math, classes.descendants().map(function(node){
       
@@ -184,9 +172,6 @@ export default class LivelyAnalysis extends Morph {
     var colorScale = d3.scaleLinear()
       .range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
       .domain([10, 20, 30, 40, 50, 60, maxValue])
-    //.domain([10, 20, 30, 40, 50, 60, maxValue])
-      /*.range(['#ffffe6', '#ffd6b8', '#ffad8a', '#ff855c', '#ff5c2e', '#ff3300'])
-      .domain([1, maxValue*0.2, maxValue*0.4, maxValue*0.6, maxValue*0.8, maxValue])*/
       .interpolate(d3.interpolateHcl);
     
     polymetric.config({
@@ -210,15 +195,6 @@ export default class LivelyAnalysis extends Morph {
       },
       onclick(node) {
         lively.openInspector(node.data)
-        /*if (!d3.event.shiftKey) {
-          d3.event.stopPropagation()
-          d3.event.preventDefault()
-          var menu = new ContextMenu(this, [
-            ["Open file", () => lively.openBrowser(node.data.url, true)],
-          ]);
-          menu.openIn(document.body, d3.event, this);
-          return true;
-        }*/
       },
     }) 
     polymetric.updateViz()
@@ -227,8 +203,8 @@ export default class LivelyAnalysis extends Morph {
 
   async updateVersionHeatMap() {
     var heatmap = await lively.create("lively-analysis-heatmap")
-    heatmap.setWidth(this.viewWidth,'px')
-    heatmap.setHeight(this.viewHeight,'px')
+    heatmap.setWidth(this.viewWidth)
+    heatmap.setHeight(this.viewHeight)
     heatmap.setData(this.versions)
     heatmap.updateViz()
     
@@ -239,14 +215,20 @@ export default class LivelyAnalysis extends Morph {
 
  async updateTableBrokenLinks() {
     var table = await lively.create("lively-analysis-table")
-    table.setWidth(this.viewWidth,'px')
-    table.setHeight(this.viewHeight,'px') 
+    table.setWidth(this.viewWidth)
+    table.setHeight(this.viewHeight) 
     table.setData(this.links)
     table.updateViz()
    
     this.brokenLinksContainer.innerHTML = ''
     this.brokenLinksContainer.appendChild(table)
     lively.notify("Update finished.")
+  }
+  
+  async updateViz() {
+    await this.onUpdatePolymetric()
+    await this.onUpdateVersions()
+    await this.onUpdateBrokenLinks()
   }
 
 
