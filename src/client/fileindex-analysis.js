@@ -143,7 +143,7 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-    this.db.transaction('rw', this.db.files, this.db.links, () => {
+    await this.db.transaction('rw', this.db.files, this.db.links, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -227,14 +227,8 @@ export default class FileIndex {
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
         })
-        if (i >= 9) break; // consider latest ten versions
+        //if (i >= 3) break; // consider latest two versions
       }
-      /*if (versions && versions[0] && versions[1]) {
-        var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
-        this.db.transaction("rw", this.db.versions, () => {
-          this.db.versions.bulkPut(modifications)
-        })
-      }*/ 
   } 
   
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
@@ -254,7 +248,7 @@ export default class FileIndex {
     for (let classLatest of latest.classes) {
       try {
         let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
-        if (!previousClass) { // added
+        if (!previousClass) { // added class
           modifications.push({
             url: fileUrl,
             class: classLatest.name,

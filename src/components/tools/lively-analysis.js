@@ -44,35 +44,22 @@ export default class LivelyAnalysis extends Morph {
       loc: 100,
       nom: 25,
     }
-    var superClasses = []
-  
-    await FileIndex.current().db.classes.where('superClassName').notEqual('').each(clazz => {
-      FileIndex.current().db.classes.where({'name': clazz.name, 'url':clazz.url}).each((superClass) => {
-        superClass.children = []
-        FileIndex.current().db.classes.where({'superClassName': superClass.name, 'superClassUrl':superClass.url}).each((subClass) => {
-          superClass.children.push(subClass)
-        })
-        superClasses.push(superClass)
-      })
-    })
-
-    await FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
-        superClasses.push(clazz)
-    })
-   this.classes.children = superClasses
-    /*await FileIndex.current().db.classes.each(clazz => {
-   
-      let superClass = clazz.superClass
+    
+    var findChilds = async function(clazz) {
+      clazz.children = []
+      var childs = await FileIndex.current().db.classes.where({'superClassName': clazz.name, 'superClassUrl':clazz.url}).toArray()
+      if (childs.length < 1) return clazz
       
-      this.classes.children.push({
-        name: clazz.name,
-        loc: clazz.loc,
-        superClass: clazz.superClass,
-        url: clazz.url,
-        children: [],
-        nom:  clazz.nom
-      })
-    })*/
+      for (let child of childs) {
+        clazz.children.push(child)
+        findChilds(child)
+      }
+    }
+
+   FileIndex.current().db.classes.each(clazz => {
+      findChilds(clazz)
+      this.classes.children.push(clazz)
+    })
   }
   
   async setVersionData() {
