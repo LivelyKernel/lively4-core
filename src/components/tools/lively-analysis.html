@@ -99,7 +99,8 @@
     background-color:rgba(0, 255, 0, 0.15);
   }
   
-  #tab-versions div {
+  #tab-versions > label {
+    font-size: 80%;
   }
   
 
@@ -126,7 +127,9 @@
           </article>
           <article id="tab-versions" class="tab2 tab-content">
             <button id="updateVersions">update heat map</button>
+            <label for="lively-analysis-heatmap-startdate">Start date:</label>
             <input type="date" id="lively-analysis-heatmap-startdate">
+            <label for="lively-analysis-heatmap-enddate">End date:</label>
             <input type="date" id="lively-analysis-heatmap-enddate">
             <div id="lively-analysis-heatmap-container"></div>
           </article>

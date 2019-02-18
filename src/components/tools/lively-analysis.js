@@ -55,8 +55,8 @@ export default class LivelyAnalysis extends Morph {
         findChilds(child)
       }
     }
-
-   FileIndex.current().db.classes.each(clazz => {
+    
+   FileIndex.current().db.classes.where('superClassName').equals('').each(clazz => {
       findChilds(clazz)
       this.classes.children.push(clazz)
     })
@@ -152,7 +152,6 @@ export default class LivelyAnalysis extends Morph {
   }
   
   async onUpdateBrokenLinks() {
-  //  await FileIndex.current().updateAllLinks()
     await this.setLinkData()
     await this.updateTableBrokenLinks()
   }
