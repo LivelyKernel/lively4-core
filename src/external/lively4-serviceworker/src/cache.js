@@ -19,7 +19,9 @@ import focalStorage from '../../focalStorage.js';
 
 
 import FileIndex from "src/client/fileindex.js" // for meta information....
-import FileIndexAnalysis from "src/client/fileindex-analysis.js" // for meta information....
+
+// not ready yet, #TODO has to be integrated into FileIndex, not a second infrastructure
+//import FileIndexAnalysis from "src/client/fileindex-analysis.js" // for meta information....
 
 
 let useCacheDictionary = false; // #Dev #Experimental
@@ -138,7 +140,7 @@ export class Cache {
           FileIndex.current().dropFile(request.url)
         } else {
           FileIndex.current().updateFile(request.url)
-          FileIndexAnalysis.current().updateFile(request.url)
+          // FileIndexAnalysis.current().updateFile(request.url)
         }
       })        
       

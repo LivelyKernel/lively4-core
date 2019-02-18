@@ -192,7 +192,7 @@ export default class HTML {
             anchor = href
           } else {
             path = dir + href // that leaves us RELATIVE paths
-            if(!path.match(/((\.[A-Za-z]+)|(\/))$/)) {
+            if(!path.match(/((\.[A-Za-z]+)|(\/))$/) && !path.match(/\?/)) {
               // no ending?
               // we could check, or assume md for the moment
               path += ".md"

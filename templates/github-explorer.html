@@ -10,14 +10,19 @@
 
   }
   
+  #content {
+    max-height: auto;
+    overflow-y: scroll;
+    
+  }
+  
   #dataPreview {
     border-collapse: collapse;
     font-family: 'Courier New', 'Monaco';
     //max-height: 200px;
-    width: auto%;
+    width: auto;
     margin-left: auto;
     margin-right: auto;
-    
   }
   
   #dataPreview th {
@@ -40,6 +45,11 @@
     overflow: hidden;
     max-height: 10px;
   }
+  
+  .rowIndex {
+    cursor: pointer;
+  }
+    
   
   tr:nth-child(even) {
     background-color: #f2f2f2;
@@ -85,6 +95,12 @@
 
   table th:last-child {
       border-right: none;
+  }
+  
+  content {
+    text-align: center;
+    padding: 14px 0;
+    overflow-y: scroll;
   }
   
   
@@ -174,6 +190,18 @@
   @media only screen and (max-width: 480px) {
     .col {  margin: 1% 0 1% 0%; }
     .span_1_of_4, .span_2_of_4, .span_3_of_4, .span_4_of_4 { width: 100%; }
+  }
+  
+  data-explorer {
+    margin: auto;
+  }
+  
+  .runButton {
+    margin-top: 48px;
+  }
+  
+  .visualizeButton {
+    margin-top: 24px;
   }
   
   </style>

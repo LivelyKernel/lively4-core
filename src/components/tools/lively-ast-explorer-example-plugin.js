@@ -6,6 +6,7 @@ export default function (babel) {
     name: "ast-transform", // not required
     visitor: { 
       CallExpression(path) {
+        debugger
         if(path.node.marked) { return; }
         path.node.marked = true;
         

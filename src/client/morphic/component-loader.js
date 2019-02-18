@@ -519,7 +519,7 @@ export default class ComponentLoader {
     return this.openIn(document.body, component, true);
   }
 
-  static openInWindow(component, pos, title) {
+  static async openInWindow(component, pos, title) {
     // this will call the window's createdCallback before
     // we append the child, if the window template is already
     // loaded
@@ -533,6 +533,10 @@ export default class ComponentLoader {
 
     this.openInBody(w);
 
+    if (!component.localName.match(/-/)) {
+      return w // standard elments... which are no components
+    }
+    
     // therefore, we need to call loadUnresolved again after
     // adding the child, so that it finds it and resolves it,
     // if it is currently unresolved

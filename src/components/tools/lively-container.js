@@ -8,8 +8,8 @@ import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 import files from "src/client/files.js"
 
-// import ScopedScripts from "src/client/scoped-scripts.js";
-let ScopedScript; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
+//import ScopedScripts from "src/client/scoped-scripts.js";
+let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
 import Clipboard from "src/client/clipboard.js";
 import { debounce, fileEnding, replaceFileEndingWith } from "utils";
@@ -716,9 +716,7 @@ export default class Container extends Morph {
 
   async scrollToAnchor(anchor) {
     if (anchor) {
-      
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
-      debugger
       if (this.isEditing()) {
         var codeMirror = await (await this.asyncGet("#editor")).get('#editor');
         codeMirror.find(name)
@@ -796,7 +794,7 @@ export default class Container extends Morph {
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict.
     // #DRAFT instead of using ScopedScripts as a singleton, we should instanciate it.
     if (!ScopedScripts) {
-      ScopedScripts = await System.import("src/client/scoped-scripts.js")
+      ScopedScripts = await System.import("src/client/scoped-scripts.js").then(m => m.default)
     }
     var layers = ScopedScripts.layers(this.getURL(), this.getContentRoot());
     ScopedScripts.openPromises = [];
@@ -805,14 +803,14 @@ export default class Container extends Morph {
       var script   = document.createElement("script");
       script.type  = "text/javascript";
 
-      layers.forEach( ea => ea.beGlobal());
+      layers.forEach( ea => ea && ea.beGlobal());
 
       if (scriptElement.src) {
         script.src  = scriptElement.src;
         script.onload = () => {
           // #WIP multiple activations are not covered.... through this...
           Promise.all(ScopedScripts.openPromises).then(() => {
-            layers.forEach( ea => ea.beNotGlobal());
+            layers.forEach( ea => ea && ea.beNotGlobal());
             // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
             resolve();
           }, reject);
@@ -822,11 +820,15 @@ export default class Container extends Morph {
       script.text  = scriptElement.textContent;
 
       cop.withLayers(layers, () => {
-        root.appendChild(script);
+        try {
+          root.appendChild(script);
+        } catch(e) {
+          console.error(e)  
+        }
       });
       if (!script.src) {
         Promise.all(ScopedScripts.openPromises).then(() => {
-          layers.forEach( ea => ea.beNotGlobal());
+          layers.forEach( ea => ea && ea.beNotGlobal());
           // console.log("ScopedScripts openPromises: " + ScopedScripts.openPromises)
           resolve();
         }, reject);
@@ -882,7 +884,11 @@ export default class Container extends Morph {
         (path) => this.followPath(path));
       for(var ea of nodes) {
         if (ea && ea.tagName == "SCRIPT") {
-          await this.appendScript(ea);
+          try {
+            await this.appendScript(ea);
+          } catch(e) {
+            console.error(e)
+          }
         } else {
           root.appendChild(ea);
           if (ea.querySelectorAll) {
@@ -922,6 +928,7 @@ export default class Container extends Morph {
       this.resetContentChanges()
       this.observeHTMLChanges()
     }, 0)
+    
   }
 
   async appendCSV(content, renderTimeStamp) {
@@ -1288,7 +1295,7 @@ export default class Container extends Morph {
     var renderTimeStamp = Date.now() // #Idean, this is clearly a use-case for #COP, I have to refactor this propagate this dynamical context asyncronously #AsyncContextJS
     this.renderTimeStamp = renderTimeStamp
     
-    var format = path.replace(/.*\./,"");
+    var format = path.replace(/\?.*/,"").replace(/.*\./,"");
     if (url.protocol == "search:") {
       format = "html"
     }
@@ -1300,7 +1307,11 @@ export default class Container extends Morph {
         format = "html" // e.g. #Bundle 
       }
     }
-
+    // ACM #Hack... #TODO -> find out when content is HTML
+    if (format == "cfm") {
+      format = "html"
+    }
+    
     if (files.isPicture(format)) {
       if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
       else return;
@@ -1340,6 +1351,8 @@ export default class Container extends Morph {
 
       return resp.text();
     }).then((content) => {
+      console.log("setPath content " + url)
+      
       this.content = content
       this.showNavbar();
       

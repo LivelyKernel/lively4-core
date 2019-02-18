@@ -62,11 +62,34 @@ export default class Whyline extends Morph {
     this.selectCallTraceNode(newNode)
   }
   
-  onDataFlowQuestion(evt){
+  onPreviousOccurrence(evt){
     let node = this.selectedNode
-    let newNode = node.findLastDataFlow()
-    this.selectCallTraceNode(newNode)
+    this.selectCallTraceNode(node.previousOccurrence)
   }
+  
+  onPredecessor(evt){
+    let node = this.selectedNode
+    this.selectCallTraceNode(node.predecessor)
+  }
+  
+  onPreviousControlFlow(evt){
+    let node = this.selectedNode
+    this.selectCallTraceNode(node.previousControlFlow())
+  }
+  
+    
+  onSuccessor(evt){
+    let node = this.selectedNode
+    this.selectCallTraceNode(node.successor)
+  }
+  
+  onNextOccurrence(evt){
+    let node = this.selectedNode
+    this.selectCallTraceNode(node.nextOccurrence)
+  }
+  
+  
+  
   
   onGenerateTrace(evt) {
     this.runCode()
@@ -161,6 +184,18 @@ export default class Whyline extends Morph {
     if (this.selectedNode.markId) {
       this.showMarker(this.selectedNode.markId)
     }
+    
+  
+    this.get('#previousOccurrence').disabled = Boolean(!this.selectedNode.previousOccurrence)
+    
+    this.get('#predecessor').disabled = Boolean(!this.selectedNode.predecessor)
+    
+    this.get('#previousControlFlow').disabled = Boolean(!this.selectedNode.parent)
+    
+    this.get('#successor').disabled = Boolean(!this.selectedNode.successor)
+    
+    this.get('#nextOccurrence').disabled = Boolean(!this.selectedNode.nextOccurrence)
+      
   }
   
   /*
@@ -184,17 +219,7 @@ export default class Whyline extends Morph {
   }
   
   questions(traceNode) {
-    return [...this.controlFlowQuestions(traceNode), ...this.dataFlowQuestions(traceNode)];
-  }
-  
-  controlFlowQuestions(traceNode) {
-    if (!traceNode.parent) return [];
-    return [
-      ['↞', () => traceNode.previousOccurrence],
-      ['↤', () => traceNode.predecessor],
-      ['↥', () => traceNode.previousControlFlow()],
-      ['↦', () => traceNode.successor],
-      ['↠', () => traceNode.nextOccurrence]];
+    return this.dataFlowQuestions(traceNode);
   }
   
   dataFlowQuestions(traceNode) {

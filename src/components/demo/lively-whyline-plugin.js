@@ -75,9 +75,15 @@ export default function (babel) {
         }
         
         let idcounter = 0;
+        const scopes = [];
         
         path.traverse({
           enter(path) {
+            /******/
+            const uid = path.scope.uid;
+            if (!scopes[uid]) scopes[uid] = [];
+            scopes[uid].push(path.node);
+            /******/
             path.node.traceid = idcounter++;
           },
           Identifier(path) {
@@ -103,6 +109,10 @@ export default function (babel) {
             });
           }
         });
+        
+        /*****/
+        console.log(scopes)
+        /*****/
         
         /*
          * Create copy of original AST.
@@ -243,7 +253,7 @@ export default function (babel) {
           exit(path) {
             console.log(`exit ${path.node.traceid}`);
           },*/
-          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression': {
+          'BinaryExpression|CallExpression|UnaryExpression|ObjectExpression|UpdateExpression|ArrayExpression|NewExpression|ConditionalExpression': {
             exit(path) {
               if (shouldTrace(path)) {
                 const newNode = wrapBlock(path.node.traceid, path);
@@ -260,32 +270,57 @@ export default function (babel) {
               }
             }
           },
+          'VariableDeclaration': {
+            enter(path) {
+              if (shouldTrace(path) && !t.isFor(path.parent)) {
+                path.insertBefore(statementBegin(path.node.traceid));
+                path.insertAfter(statementEnd());
+              }
+            }
+          },
           'VariableDeclarator': {
-            exit(path) {
+            enter(path) {
               if (shouldTrace(path)) {
                 const node = path.node;
+                const declaration = path.parentPath;
                 const init = path.get('init');
                 const newNode = wrapBlock(node.traceid, init.node || t.identifier("undefined"));
                 init.replaceWith(newNode);
-                const declaration = path.parentPath;
-                declaration.insertAfter(declaratorFollowup(node.traceid, node.assignmentTargets));
+                const followUp = declaratorFollowup(node.traceid, node.assignmentTargets);
+                if (!t.isFor(declaration.parent)) {
+                  declaration.insertAfter(followUp);
+                } else {
+                  const uid = t.identifier(declaration.scope.generateUid("decl"));
+                  path.insertAfter(t.variableDeclarator(uid, followUp.expression));
+                }
               }
             }
           },
-          'IfStatement|While|VariableDeclaration': {
-            enter(path) {
+          'IfStatement': {
+            exit(path) {
               if (shouldTrace(path)) {
                 path.insertBefore(statementBegin(path.node.traceid));
                 path.insertAfter(statementEnd());
               }
             }
           },
-          'ForStatement': {
-            enter(path) {
+          'For|While': {
+            exit(path) {
               if (shouldTrace(path)) {
-                path.skipKey("init");
+                path.get("body").unshiftContainer("body", checkRuntime());
                 path.insertBefore(statementBegin(path.node.traceid));
                 path.insertAfter(statementEnd());
+              }
+            }
+          },
+          'BlockStatement': {
+            enter(path) {
+              if (shouldTrace(path)) {
+                const parent = path.parent;
+                if (t.isFunction(parent) || t.isCatchClause(parent) || t.isTryStatement(parent)) return;
+                console.log(path.node);
+                path.unshiftContainer("body", statementBegin(path.node.traceid));
+                path.pushContainer("body", statementEnd());
               }
             }
           },

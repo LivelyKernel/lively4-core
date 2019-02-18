@@ -127,7 +127,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    // this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
  
   livelyMigrate(other) {
