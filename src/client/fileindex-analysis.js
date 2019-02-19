@@ -112,25 +112,23 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
+    
     for (var clazz of semantics.classes) {
-      await this.addClass(file.url, clazz)
+      if (clazz.superClassName && !clazz.superClassUrl) {
+        let superClass = semantics.classes.find(item => item.name == clazz.superClassName)
+        clazz.superClassName = (superClass) ? superClass.superClassName : ''
+        clazz.superClassUrl = (superClass) ? file.url : ''
+      } else if (clazz.superClassName && clazz.superClassUrl) {
+        clazz.superClassUrl = await System.resolve(clazz.superClassUrl, file.url)
+      }
+      clazz.url = file.url
+      clazz.nom = clazz.methods ? clazz.methods.length : 0
+      await this.addClass(clazz)
     }
   } 
   
-  async addClass(fileUrl, clazz) {
-    await this.db.classes.where({name: clazz.name, url: fileUrl}).delete()
-    let superClassUrl = ''
-    if (clazz.superClassName) {
-      if (clazz.superClassUrl) {
-        superClassUrl = await System.resolve(clazz.superClassUrl, fileUrl)
-      } else {
-        superClassUrl = fileUrl
-      }
-    }
-    clazz.url = fileUrl
-    clazz.superClassUrl = superClassUrl
-    clazz.superClassName = clazz.superClassName
-    clazz.nom = clazz.methods ? clazz.methods.length : 0
+  async addClass(clazz) {
+    await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
     this.db.classes.put(clazz)
   }
 
@@ -346,8 +344,8 @@ export default class FileIndex {
         if (path.node.id) {
           let clazz = {
             name: path.node.id.name,
-            start: path.node.start,
-            end: path.node.end,
+            start: path.node.start, // start byte 
+            end: path.node.end,     // end byte
             loc: path.node.loc.end.line - path.node.loc.start.line + 1
           }
           superClassName = (path.node.superClass) ? path.node.superClass.name : ''
@@ -376,20 +374,6 @@ export default class FileIndex {
     return {classes, dependencies}
   }
   
-  parseImportDeclaration(path) {
-    
-  }
-
-  async updateFunctionAndClasses() {
-    return this.showProgress("extract functions and classes", () => {
-      this.db.files.where("name").notEqual("").modify((file) => {
-        if (file.name && file.name.match(/\.js$/)) {
-          this.extractFunctionsAndClasses(file)
-        }
-      })
-    })
-  }
-  
   // ********************************************************
 
   showProgress(label, func) {
@@ -399,34 +383,6 @@ export default class FileIndex {
     })
   }
   
-  extractFunctionsAndClasses(file) {
-    var ast = this.parseSource(file.url, file.content)
-    var result = this.parseFunctionsAndClasses(ast)
-    
-    file.classes = result.classes
-    file.functions  = result.functions
-  }
-
-  parseFunctionsAndClasses(ast) {
-    var functions = []
-    var classes = []
-    babel.traverse(ast,{
-      Function(path) {
-        if (path.node.key) {
-          functions.push(path.node.key.name)
-        } else if (path.node.id) {
-          functions.push(path.node.id.name)
-        }
-      },
-      ClassDeclaration(path) {
-        if (path.node.id) {
-          classes.push(path.node.id.name)
-        }
-      }
-    })
-    return {functions, classes}
-  }
-
   parseSource(filename, source) {
     try {
       return babel.transform(source, {

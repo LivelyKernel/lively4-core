@@ -1,6 +1,6 @@
 ## Find Broken Links
 
-[a broken link](https://lively-kernel.org/jskdhfjkdhf/)
+[a broken link](https://lively-kernel.org/qwertz123/)  
 
 <script>
   import FileIndex from "src/client/fileindex-analysis.js" 
