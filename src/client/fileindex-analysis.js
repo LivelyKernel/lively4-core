@@ -220,7 +220,7 @@ export default class FileIndex {
   }
   
   async addVersion(file) {
-      let response = await lively.files.loadVersions(file.url) 
+      let response = await Files.loadVersions(file.url) 
       let json = await response.json()
       let versions = json.versions
       for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null

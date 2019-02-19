@@ -1,6 +1,4 @@
-## 2019-02-11
-
-# Playing with #GoogleScholar
+## 2019-02-11 Playing with #GoogleScholar
 
 
 * #META: I just lost this whole journal entry while typing it on google scholar... as it seems, the browser does not work right on foreign sites....*

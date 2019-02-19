@@ -288,7 +288,7 @@ export default class Files {
   
   
   static async _sortIntoFileTree(root, path, element) {
-    console.log("sort into " + path + " " + element.name )
+    // console.log("sort into " + path + " " + element.name )
     var next = path.shift()
     if (!next) {      
       root.children.push(element)
