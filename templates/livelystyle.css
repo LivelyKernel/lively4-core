@@ -32,12 +32,8 @@ button:disabled {
   color: #cccccc;
 }
 
-h1,h2,h3,h4 {
-  color: #2B547E;
-}
-
 a {
-  color: #2B547E;
+  color: rgb(0, 78, 151);
 }
 
 input {

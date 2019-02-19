@@ -44,9 +44,10 @@ div.lively-content  {
   user-select: text;
 } 
  */
-h1 {
-  color: #2B65EC;
+h1, h2, h3, h4 {
+  color: rgb(0, 78, 151);
 }
+
 /*
 ::-webkit-scrollbar { 
   display: none; 

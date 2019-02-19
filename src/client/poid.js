@@ -275,6 +275,7 @@ export class LivelyOpen extends Scheme {
     var result
     try {
       result = await lively.openComponentInWindow(openString)
+      if (result.livelyExample) result.livelyExample(); // fill in with example content}
     } catch(e) {
       return new Response("failed to open " + openString, {status: 400})
     }

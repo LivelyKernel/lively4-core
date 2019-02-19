@@ -16,7 +16,7 @@ import Rasterize from 'src/client/rasterize.js'
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
-  
+  P
   constructor(target, optItems) {
     this.target = target;
     this.items = optItems;
@@ -396,7 +396,7 @@ export default class ContextMenu {
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
-        ["Pi Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
+        ["Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
           "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Chrome Service-Workers", async evt => {
           // does not work... security?
