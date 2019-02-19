@@ -230,6 +230,14 @@ export class TraceNode {
     });
   }
   
+  isBefore(other) {
+    return this.order < other.order
+  }
+  
+  isAfter(other) {
+    return this.order > other.order
+  }
+  
   /*
    * Data Flow
    */
@@ -240,18 +248,34 @@ export class TraceNode {
     });
   }
   
-  variablesOfInterestFor(nodes) {
-    return nodes.reduce((vars, node) => {
-      return vars.concat(node.variablesOfInterest());
-    }, []);
+  variablesOfInterest() {
+    const variables = new Set;
+    this.collectVariablesOfInterest(variables);
+    variables.delete(null);
+    return [...variables];
   }
   
-  variablesOfInterest() {
-    return [];
+  collectVariablesOfInterest(variables) { }
+  
+  collectAssignmentTargets(variables) {
+    this.assignmentTargets.forEach((id) => {
+      variables.add(this.scope.variableNamed(id));
+    })
   }
   
   assigns(identifier) {
     return false;
+  }
+  
+  get readsVariable() { return false }
+  get writesVariable() { return false }
+  
+  get scope() {
+    return this._scope || (this._scope = this.getScope());
+  }
+  
+  getScope() {
+    return this.findParent((node) => node.isScope);
   }
   
   /*
@@ -304,6 +328,7 @@ export class TraceNode {
   }
   
   get isFunction() { return false }
+  get isScope() { return false }
   
   /*
    * Display
@@ -385,8 +410,8 @@ class ExpressionNode extends TraceNode {
     return '';
   }
   
-  variablesOfInterest() {
-    return this.variablesOfInterestFor(this.children);
+  collectVariablesOfInterest(variables) {
+    this.children.forEach((node) => node.collectVariablesOfInterest(variables));
   }
 }
 
@@ -411,54 +436,6 @@ class UnaryExpressionNode extends ExpressionNode {
   
   labelString() {
     return this.astNode.operator;
-  }
-}
-
-class UpdateExpressionNode extends ExpressionNode {
-  static get astTypes() { return ['UpdateExpression'] }
-  
-  get identifier() {
-    if (t.isIdentifier(this.argument)) {
-      return this.argument;
-    } else {
-      return this.argument.identifier; //argument might not to be an identifier
-    }
-  }
-  get argument() { return this.astNode.argument }
-  
-  labelString() {
-    return `${this.argument.name} = ${this.valueString()}`;
-  }
-  
-  variablesOfInterest() {
-    return [this.identifier, ...this.variablesOfInterestFor(this.children)];
-  }
-  
-  assigns(identifier) {
-    return equalIdentifiers(this.identifier, identifier);
-  }
-}
-
-class AssignmentExpressionNode extends ExpressionNode {
-  static get astTypes() { return ['AssignmentExpression'] }
-  
-  get left() { return this.astNode.left }
-  get right() { return this.children[0] }
-  
-  labelString() {
-    return this.assignmentsString();
-  }
-  
-  variablesOfInterest() {
-    return (this.assignmentTargets
-            .filter((node) => t.isIdentifier(node))
-            .concat(this.right.variablesOfInterest()));
-  }
-  
-  assigns(identifier) {
-    return this.assignmentTargets.some((id) => {
-      return equalIdentifiers(id, identifier);
-    });
   }
 }
 
@@ -494,9 +471,9 @@ class CallExpressionNode extends ExpressionNode {
     return this.lastChild.isFunction;
   }
   
-  variablesOfInterest() {
-    const allButFunction = this.children.slice(0, this.numArgs + 1);
-    return this.variablesOfInterestFor(allButFunction);
+  collectVariablesOfInterest(variables) {
+    this.arguments.forEach((node) => node.collectVariablesOfInterest(variables));
+    if (this.call) this.call.collectVariablesOfInterest(variables);
   }
   
   labelString() {
@@ -506,32 +483,6 @@ class CallExpressionNode extends ExpressionNode {
       return expNode.valueString();
     }).join(',');
     return `${name}(${argString}) -> ${this.valueString()}`;
-  }
-  
-  /*
-  variablesOfInterest() {
-    return this.variablesOfInterestFor(this.arguments);
-  }
-  */
-}
-
-class VariableExpressionNode extends ExpressionNode {
-  static get astTypes() { return ['Identifier'] }
-  
-  labelString() {
-    return this.astNode.name;
-  }
-  
-  variablesOfInterest() {
-    return [this.astNode];
-  }
-}
-
-class LiteralExpressionNode extends ExpressionNode {
-  static get astTypes() { return ['Literal'] }
-  
-  labelString() {
-    return this.valueString();
   }
 }
 
@@ -570,26 +521,6 @@ class ConditionalExpressionNode extends ExpressionNode {
   }
 }
 
-class DeclaratorNode extends ExpressionNode {
-  static get astTypes() { return ['VariableDeclarator'] }
-  
-  get init() { return this.children[0] }
-  
-  assigns(identifier) {
-    return this.assignmentTargets.some((id) => {
-      return equalIdentifiers(id, identifier);
-    });
-  }
-  
-  variablesOfInterest() {
-    return this.assignmentTargets.concat(this.variablesOfInterestFor(this.children));
-  }
-  
-  labelString() {
-    return this.astNode.init ? this.assignmentsString() : this.astNode.id.name;
-  }
-}
-
 class ReturnNode extends ExpressionNode {
   static get astTypes() { return ['ReturnStatement'] }
   
@@ -615,8 +546,8 @@ class IfStatementNode extends TraceNode {
     return `if (${this.test.labelString()}) -> ${this.test.valueString()}`;
   }
   
-  variablesOfInterest() {
-    return this.test.variablesOfInterest();
+  collectVariablesOfInterest(variables) {
+    this.test.collectVariablesOfInterest(variables);
   }
 }
 
@@ -640,6 +571,7 @@ class DoWhileStatementNode extends TraceNode {
 
 class VariableDeclarationNode extends TraceNode {
   static get astTypes() { return ['VariableDeclaration'] }
+  get kind() { return this.astNode.kind; }
   
   get assignmentTargets() {
     return this.children.reduce((vars, declarator) => {
@@ -647,8 +579,8 @@ class VariableDeclarationNode extends TraceNode {
     }, []);
   }
   
-  variablesOfInterest() {
-    return this.assignmentTargets;
+  collectVariablesOfInterest(variables) {
+    this.collectAssignmentTargets(variables);
   }
   
   labelString() {
@@ -657,18 +589,165 @@ class VariableDeclarationNode extends TraceNode {
   }
 }
 
+class LiteralExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['Literal'] }
+  
+  labelString() {
+    return this.valueString();
+  }
+}
+
+/*
+ * Variable Changes
+ */
+
+class VariableExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['Identifier'] }
+  get readsVariable() { return true }
+  get variable() { return this.scope.variableNamed(this.astNode.name) }
+  
+  end(...args) {
+    const variable = this.variable;
+    if (variable) variable.log(this); //todo: trace declarations, check against javascript globals
+    return super.end(...args);
+  }
+  
+  labelString() {
+    return this.astNode.name;
+  }
+  
+  collectVariablesOfInterest(variables) {
+    variables.add(this.variable);
+  }
+}
+
+class DeclaratorNode extends ExpressionNode {
+  static get astTypes() { return ['VariableDeclarator'] }
+  get init() { return this.children[0] }
+  get declaration() { return this.parent; }
+  get kind() { return this.declaration.kind; }
+  get writesVariable() { return true }
+  
+  setVariableValues(...args) {
+    super.setVariableValues(...args);
+    this.assignmentTargets.forEach((id) => {
+      this.scope.declareVariable(id.name, this, this.kind);
+    })
+  }
+  
+  assigns(identifier) {
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
+  }
+  
+  collectVariablesOfInterest(variables) {
+    this.collectAssignmentTargets(variables);
+    this.children.forEach((node) => node.collectVariablesOfInterest(variables));
+  }
+  
+  labelString() {
+    return this.astNode.init ? this.assignmentsString() : this.astNode.id.name;
+  }
+}
+
+class AssignmentExpressionNode extends ExpressionNode {
+  static get astTypes() { return ['AssignmentExpression'] }
+  
+  get left() { return this.astNode.left }
+  get right() { return this.children[0] }
+  get identifiers() { 
+    return this.assignmentTargets.filter((node) => t.isIdentifier(node));
+  }
+  get writesVariable() { return true }
+  
+  end(...args) {
+    this.identifiers.forEach((id) => {
+      this.scope.variableNamed(id.name).log(this);
+    })
+    return super.end(...args);
+  }
+  
+  collectVariablesOfInterest(variables) {
+    this.identifiers.forEach((id) => variables.add(this.scope.variableNamed(id.name)));
+    this.right.collectVariablesOfInterest(variables);
+  }
+  
+  assigns(identifier) {
+    return this.assignmentTargets.some((id) => {
+      return equalIdentifiers(id, identifier);
+    });
+  }
+  
+  labelString() {
+    return this.assignmentsString();
+  }
+}
+
+class UpdateExpressionNode extends ExpressionNode { //subclass AssignmentExpressionNode?
+  static get astTypes() { return ['UpdateExpression'] }
+  
+  get identifier() {
+    if (t.isIdentifier(this.argument)) {
+      return this.argument;
+    } else {
+      return this.argument.identifier; //argument might not to be an identifier
+    }
+  }
+  get argument() { return this.astNode.argument }
+  get writesVariable() { return true }
+  get readsVariable() { return true }
+  
+  end(...args) {
+    this.scope.variableNamed(this.identifier.name).log(this);
+    return super.end(...args);
+  }
+  
+  labelString() {
+    return `${this.argument.name} = ${this.valueString()}`;
+  }
+  
+  collectVariablesOfInterest(variables) {
+    variables.add(this.scope.variableNamed(this.identifier.name));
+    this.children.forEach((node) => node.collectVariablesOfInterest(variables));
+  }
+  
+  assigns(identifier) {
+    return equalIdentifiers(this.identifier, identifier);
+  }
+}
+
 /*
  * Scopes
  */
 
 class ScopeNode extends TraceNode {
+  constructor(...args) {
+    super(...args);
+    this.variables = {};
+  }
   
+  get isScope() { return true }
+  
+  declareVariable(name, sourceNode, kind) {
+    this.variables[name] = new Variable(name, sourceNode, kind);
+  }
+  
+  variableNamed(name) {
+    const variable = this.variables[name];
+    if (variable) {
+      return this.variables[name];
+    } else {
+      const scope = this.scope;
+      return scope ? scope.variableNamed(name) : null;
+    }
+  }
 }
 
 class ProgramNode extends ScopeNode {
   static get astTypes() { return ['Program'] }
-  
   get branchesControlFlow() { return true } //might be seen as either
+  
 }
 
 class BlockNode extends ScopeNode {
@@ -692,11 +771,19 @@ class ForStatementNode extends ScopeNode {
 class FunctionNode extends ScopeNode {
   static get astTypes() { return ['Function'] }
   
+  //getScope() {  } //todo: function's scope is set during its creation
   get branchesControlFlow() { return true }
   get isFunction() { return true }
   
-  variablesOfInterest() {
-    return this.assignmentTargets;
+  setVariableValues(...args) {
+    super.setVariableValues(...args);
+    this.assignmentTargets.forEach((id) => {
+      this.declareVariable(id.name, this, "param");
+    })
+  }
+  
+  collectVariablesOfInterest(variables) {
+    this.collectAssignmentTargets(variables);
   }
   
   assigns(identifier) {
@@ -707,6 +794,80 @@ class FunctionNode extends ScopeNode {
   
   labelString() {
     return `Function(${this.assignmentsString()})`;
+  }
+}
+
+/*
+ * state
+ */
+
+class Variable {
+  constructor(name, source, kind) {
+    this.name = name;
+    this.history = [source];
+    this.type = kind; //var, let, const, param
+  }
+  
+  log(traceNode) {
+    this.history.push(traceNode);
+  }
+  
+  indexBefore(traceNode) {
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const node = this.history[i];
+      if (traceNode.isAfter(node)) return i;
+    }
+    return -1;
+  }
+  
+  indexAfter(traceNode) {
+    for (let i = 0; i < this.history.length; i++) {
+      const node = this.history[i];
+      if (traceNode.isBefore(node)) return i;
+    }
+    return this.history.length;
+  }
+  
+  findBefore(tester, traceNode) {
+    let i = this.indexBefore(traceNode);
+    while (i >= 0) {
+      const node = this.history[i--];
+      if (tester(node)) return node;
+    }
+    return null;
+  }
+  
+  findAfter(tester, traceNode) {
+    let i = this.indexAfter(traceNode);
+    while (i < this.history.length) {
+      const node = this.history[i++];
+      if (tester(node)) return node;
+    }
+    return null;
+  }
+  
+  writeBefore(traceNode) {
+    return this.findBefore((node) => node.writesVariable, traceNode);
+  }
+  
+  writeAfter(traceNode) {
+    return this.findAfter((node) => node.writesVariable, traceNode);
+  }
+  
+  readBefore(traceNode) {
+    return this.findBefore((node) => node.readsVariable, traceNode);
+  }
+  
+  readAfter(traceNode) {
+    return this.findAfter((node) => node.readsVariable, traceNode);
+  }
+  
+  readOrWriteBefore(traceNode) {
+    return this.findBefore((node) => true, traceNode);
+  }
+  
+  readOrWriteAfter(traceNode) {
+    return this.findAfter((node) => true, traceNode);
   }
 }
 

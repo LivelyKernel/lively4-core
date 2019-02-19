@@ -88,6 +88,10 @@
     overflow: scroll;
   }
   
+  #questionPane {
+    overflow-y: scroll;
+  }
+  
   .traceLabel {
     font-size: 10px;
     /*
@@ -151,25 +155,23 @@
 </style>
   <div id="buttonRow" class="fill">
     <button id="generateTrace" title="generate trace from code">
-        <i class="fa fa-refresh" aria-hidden="true"></i>
+      <i class="fa fa-refresh" aria-hidden="true"></i>
     </button>
-    <button id="previousOccurrence" title="previousOccurrence">
-        <i class="fa fa-angle-double-left" aria-hidden="true"></i>
+    <button id="previousOccurrence" title="previous occurrence">
+      <i class="fa fa-angle-double-left" aria-hidden="true"></i>
     </button>
-        <button id="predecessor" title="predecessor">
-        <i class="fa fa-angle-left" aria-hidden="true"></i>
+    <button id="predecessor" title="step back">
+      <i class="fa fa-angle-left" aria-hidden="true"></i>
     </button>
-        <button id="previousControlFlow" title="previousControlFlow">
-        <i class="fa fa-angle-up" aria-hidden="true"></i>
+    <button id="previousControlFlow" title="last branch in control flow">
+      <i class="fa fa-angle-up" aria-hidden="true"></i>
     </button>
-        <button id="successor" title="successor">
-        <i class="fa fa-angle-right" aria-hidden="true"></i>
+    <button id="successor" title="step forward">
+      <i class="fa fa-angle-right" aria-hidden="true"></i>
     </button>
-    
-        <button id="nextOccurrence" title="nextOccurrence">
-        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+    <button id="nextOccurrence" title="next occurrence">
+      <i class="fa fa-angle-double-right" aria-hidden="true"></i>
     </button>
-    
   </div>
 
   <div id="firstRow">

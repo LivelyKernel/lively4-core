@@ -1,7 +1,4 @@
-## 2018-06-20
-
-
-### Widgets in Code Mirror
+## 2018-06-20 Widgets in #CodeMirror
 
 Our own little [moonchild](https://github.com/harc/moonchild) ;-)
 

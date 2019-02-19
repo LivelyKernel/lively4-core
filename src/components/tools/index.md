@@ -10,4 +10,10 @@
 <script>
   ComponentCreator.listComponentsUI(container)
 </script>
-  
+
+
+## Thumbnails
+
+
+- ![](lively-analysis-table.png)
+- ![](lively-analysis-heatmap.png)
