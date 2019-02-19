@@ -2,6 +2,7 @@
  * #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
  *
  */
+
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import * as _ from '../external/underscore.js';
@@ -1692,7 +1693,7 @@ export default class Lively {
    if (!result && element.isWindow) return; // scope that search to windows
    if (!result && element.parentElement) result = this.query(element.parentElement, query)
    if (!result && element.parentNode) result = this.query(element.parentNode, query)
-   if (!result && element.host) result = this.query(element.host, query)
+   if (!result && element.host && element.host.querySelector) result = this.query(element.host, query)
    return result
   }
   
@@ -1752,7 +1753,7 @@ export default class Lively {
     lively.lastScrollLeft = document.scrollingElement.scrollLeft;
   }
 
-  static onContextMenu(evt) {
+  static async onContextMenu(evt) {
     if (!evt.shiftKey) { // evt.ctrlKey
       evt.preventDefault();
       evt.stopPropagation();
@@ -1760,7 +1761,36 @@ export default class Lively {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
-      lively.openContextMenu(document.body, evt);
+      var link = Array.from(evt.path).find(ea => ea.localName == "a")
+      if (link) {
+        // #TODO can we shorten this or hide this context specific behavior, 
+        // e.g. asking a link for href in the "context" of a lively container should
+        // produce the following behavior! #ContextJS #UseCase 
+        var url = link.getAttribute("href")
+        var container = await lively.query(link, "lively-container")
+        if (!url.match(/^[a-zA-Z0-9]+:/)) {
+          if (container) {
+            url = container.getURL().toString().replace(/[^/]*$/,"") + url
+          }
+        }
+        var items = []
+        if (container) {
+          items.push(["follow", () => {
+            container.followPath(url)
+          }])
+        }
+        items.push(["open in window", () => {
+          lively.openBrowser(url)
+        }])
+        items.push(["edit in window", () => {
+          lively.openBrowser(url, true)
+        }])
+        var menu = new lively.contextmenu(this, items );
+        menu.openIn(document.body, evt, this);
+        
+      } else  {
+        lively.openContextMenu(document.body, evt);
+      }
       return false;
     }
   }
