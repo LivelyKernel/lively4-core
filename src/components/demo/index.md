@@ -1,3 +1,5 @@
+<link rel="stylesheet" type="text/css" href="../index-style.css"  />
+
 # Demo Components
   
 <script>
@@ -7,13 +9,20 @@
   ComponentCreator.createUI(container)
 </script>
   
+- lively-ball  {.component}
+- lively-bouncing-ball  {.component}
+- lively-continuous-editor  {.component}
+- lively-digital-clock  {.component}
+- lively-math  {.component}
+- lively-module-graph  {.component}
+- lively-soapbubble  {.component}
+- lively-whyline  {.component}
+- proweb18-jsx-intro-complex  {.component}
+- proweb18-jsx-intro  {.component}
+
+## *META*
+
 <script>
-  ComponentCreator.listComponentsUI(container)
+  var context = lively.query(this, "lively-markdown").shadowRoot
+  ComponentCreator.updateComponentsUI(container, context)
 </script>
-
-
-
-# Thumbnails
-
-
-![](lively-ball.png)
