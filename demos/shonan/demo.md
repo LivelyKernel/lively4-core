@@ -142,7 +142,25 @@ ul  li li::before{
 - Exploratory workflows can enrich HTML/JavaScript development experience
 - Tools and environment can be easier to create if external contributions are easier to integrate and use
 
----
+--- 
+### Demos
+
+- Self-supporting Environment
+  - Markdown wiki / Presentation
+  - HTML source code editing vs. manipulating HTML Elements and serialization
+- Work on stuff outside the environment...
+  - Working on HTML Element DOM
+    - Halo
+    - XRay / Elements Under (Example for Object-specific Behavior / Parts Workflow)
+  - Lively4-chrome extension
+- Reuse external content and programs
+  - CodeMirror for text editing
+  - DrawIO for figures
+  - D3 Visualization
+  - GraphViz for graph layout
+  - JavaScript, HTML, Markdown parser  
+  - ...
+
 ...
 
 ---
@@ -181,6 +199,16 @@ ul  li li::before{
 
 ---
 ## Applications
-  - Markdown Wiki with scripts and components
-  
-  
+- Markdown Wiki with scripts and components
+- see [Lively 4 Tools and Workflows](../../doc/presentation/index.md#)
+
+---
+### Ideas in Lively4
+
+- Embrace low-tech Markdown vs. rich text editing  
+- #Hashtag Navigation
+- Modules to separate behavior
+- Web-components as abstraction
+- #ShadowRoot as natural border for serialization
+
+---
