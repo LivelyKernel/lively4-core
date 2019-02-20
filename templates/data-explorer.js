@@ -42,7 +42,6 @@ const visSettings = {
   'BarChart': visType1Conf,
   'RadialTree': visType2Conf,
   'Tree': visType2Conf,
-  'PlainTree': visType2Conf,
   'TreeMap': visType2Conf,
 }
 
@@ -52,7 +51,6 @@ const visualizationComponents = {
   'BarChart': 'd3-barchart-gh',
   'RadialTree': 'd3-radialtree',
   'Tree': 'd3-tree',
-  'PlainTree': 'd3-plaintree',
   'TreeMap': 'd3-treemap',
 }
 
@@ -62,6 +60,9 @@ export default class DataExplorer extends Morph {
     this.registerButtons()
 
     lively.html.registerKeys(this);
+    
+    Object.keys(visSettings).forEach(vis => this.get('#visTypeSelection').appendChild(<option value={vis}>{vis}</option>))
+    
 
     this.get('#visTypeSelection').addEventListener("change", e => this.onVisualizationChange(e))
     this.get('#refinementEnd').addEventListener("change", e => {
@@ -79,6 +80,8 @@ export default class DataExplorer extends Morph {
     this.setupParameterVis();
     this.startIndex = 0;
     this.endIndex = 0;
+    
+    
     
     this.visualizationHeight = 400;
   }
@@ -271,7 +274,7 @@ export default class DataExplorer extends Morph {
   }
   
   async renderTreeType() {
-    const radialTree = await lively.create(visualizationComponents[this.selectedVisualizationType]);
+    const vis = await lively.create(visualizationComponents[this.selectedVisualizationType]);
     
     const nameField =  this.settingsVisualization[0].selection.value;
     const childField = this.settingsVisualization[1].selection.value;
@@ -293,8 +296,8 @@ export default class DataExplorer extends Morph {
       console.log('failed to find value value');
     }
     
-    radialTree.style.width = '100%';
-    radialTree.style.height = '100%';
+    vis.style.width = '100%';
+    vis.style.height = '100%';
     
     const renamedObject = deepMapKeys({data: this.data}, key => (mapShortToLong[key] || key))
     
@@ -303,41 +306,16 @@ export default class DataExplorer extends Morph {
       children: renamedObject.data,
     };
     
-    radialTree.setTreeData(data);  
-    this.visualizationEL.appendChild(radialTree);
+    vis.setTreeData(data);  
+    this.visualizationEL.appendChild(vis);
   }
   
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
-
-  // this method is automatically registered as handler through ``registerButtons``
-  onFirstButton() {
-    lively.notify("hello")
-  }
-
-  /* Lively-specific API */
-
-  livelyPreMigrate() {
-    // is called on the old object before the migration
-  }
-
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.data = other.data;
     this.originalData = other.data;
   }
-
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-
-  livelyPrepareSave() {
-
-  }
-
 
   async livelyExample() {
     // this customizes a default instance to a pretty example
@@ -364,7 +342,6 @@ export default class DataExplorer extends Morph {
           position: 1
         }
       ],
-      commentsCount: 3,
       tests: []
     }, {
       sha: "abc88fd2775f37e023ad628ec7d35a082394b6a",
@@ -377,7 +354,6 @@ export default class DataExplorer extends Morph {
         line: 1,
         position: 1
       }],
-      commentsCount: 1,
       tests: [{
           sha: "f0df88fd2775f37e023ad628ec7d35a082394b6b"
         },
