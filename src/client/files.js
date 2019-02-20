@@ -288,7 +288,7 @@ export default class Files {
   
   
   static async _sortIntoFileTree(root, path, element) {
-    console.log("sort into " + path + " " + element.name )
+    // console.log("sort into " + path + " " + element.name )
     var next = path.shift()
     if (!next) {      
       root.children.push(element)
@@ -372,19 +372,19 @@ export default class Files {
       method: "OPTIONS"
     }).then(r => r.json())).contents
     files.forEach(ea => {
-      var item = document.createElement("li")
+      // var item = document.createElement("li")
       var name =  ea.type == "directory" ? 
         ea.name + "/" :
         ea.name
       fileNames.push(name)
-      item.textContent = name
+      // item.textContent = name
       if (!links.includes(name)) {
-        list.appendChild(item)  
+        // list.appendChild(item)  
         source += `  - [${name}](${name})\n`
       }
     })
 
-    links.filter(ea => !fileNames.includes(ea)).forEach(ea => {
+    links.filter(ea => !fileNames.includes(ea) && !ea.match("/")).forEach(ea => {
       var item = document.createElement("li")
       item.textContent = "Missing " + ea
       list.appendChild(item)

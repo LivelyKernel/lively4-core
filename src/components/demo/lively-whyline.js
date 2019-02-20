@@ -88,9 +88,6 @@ export default class Whyline extends Morph {
     this.selectCallTraceNode(node.nextOccurrence)
   }
   
-  
-  
-  
   onGenerateTrace(evt) {
     this.runCode()
   }
@@ -186,15 +183,15 @@ export default class Whyline extends Morph {
     }
     
   
-    this.get('#previousOccurrence').disabled = Boolean(!this.selectedNode.previousOccurrence)
+    this.get('#previousOccurrence').disabled = !this.selectedNode.previousOccurrence
     
-    this.get('#predecessor').disabled = Boolean(!this.selectedNode.predecessor)
+    this.get('#predecessor').disabled = !this.selectedNode.predecessor
     
-    this.get('#previousControlFlow').disabled = Boolean(!this.selectedNode.parent)
+    this.get('#previousControlFlow').disabled = !this.selectedNode.parent
     
-    this.get('#successor').disabled = Boolean(!this.selectedNode.successor)
+    this.get('#successor').disabled = !this.selectedNode.successor
     
-    this.get('#nextOccurrence').disabled = Boolean(!this.selectedNode.nextOccurrence)
+    this.get('#nextOccurrence').disabled = !this.selectedNode.nextOccurrence
       
   }
   
@@ -206,16 +203,9 @@ export default class Whyline extends Morph {
     let questionPane = this.get("#questionPane")
     questionPane.innerHTML = '' //Clear previous buttons
 
-    for (let question of this.questions(traceNode)) {
-      let btn = document.createElement("BUTTON");
-      btn.className += " questionButton"
-      let t = document.createTextNode(question[0]);
-      btn.onclick = () => {
-        this.selectCallTraceNode(question[1]())
-      }
-      btn.appendChild(t);// Append the text to <button>
-      questionPane.appendChild(btn)
-    }
+    traceNode.variablesOfInterest().forEach((variable) => {
+      questionPane.appendChild(this.variableQuestionsDiv(variable));
+    })
   }
   
   questions(traceNode) {
@@ -234,6 +224,110 @@ export default class Whyline extends Morph {
     return referencedVars.map((id) => {
       return [`Previous assignment of '${id.name}'`, () => traceNode.previousAssignmentTo(id)];
     });
+  }
+  
+  variableQuestionsDiv(variable) {
+    const varDiv = document.createElement("DIV");
+    varDiv.style["display"] = "grid";
+    varDiv.style["border-style"] = "outset";
+    varDiv.style["margin"] = "1px";
+    const label = document.createElement("DIV");
+    label.appendChild(document.createTextNode(variable.name));
+    label.style["grid-column"] = "1 / 3";
+    varDiv.appendChild(label);
+    
+    this.variableQuestions(variable).forEach((question, i) => {
+      const column = (i % 2) + 1;
+      const row = Math.floor(i / 2) + 2;
+      const questionDiv = document.createElement("DIV");
+      questionDiv.style["grid-column"] = column.toString();
+      questionDiv.style["grid-row"] = row.toString();
+      questionDiv.style["display"] = "grid";
+      question.forEach((elem, i) => {
+        let elemDiv;
+        if (elem.isIcon) {
+          //elemDiv = document.createElement("DIV");
+          //elemDiv.appendChild(this.icon(elem.content));
+          elemDiv = this.icon(elem.content);
+          elemDiv.style["vertical-align"] = "middle";
+        } else {
+          const button = elemDiv = document.createElement("BUTTON");
+          button.disabled = !elem.result;
+          button.onclick = () => {
+            this.selectCallTraceNode(elem.result);
+          }
+          button.appendChild(this.icon(elem.content));
+          button.setAttribute("title", elem.title);
+        }
+        elemDiv.style["grid-column"] = i + 1;
+        elemDiv.style["grid-row"] = 1;
+        questionDiv.appendChild(elemDiv);
+      })
+      
+      varDiv.appendChild(questionDiv);
+    })
+    return varDiv;
+  }
+  
+  variableQuestions(variable) {
+    const selected = this.selectedNode;
+    return [
+      [
+        {
+          "content": "fa-book",
+          "isIcon": true
+        },
+        {
+          "title": "previous read operation",
+          "result": variable.readBefore(selected),
+          "content": "fa-angle-left"
+        },
+        {
+          "title": "next read operation",
+          "result": variable.readAfter(selected),
+          "content": "fa-angle-right"
+        }
+      ],
+      [
+        {
+          "content": "fa-pencil",
+          "isIcon": true
+        },
+        {
+          "title": "previous write operation",
+          "result": variable.writeBefore(selected),
+          "content": "fa-angle-left"
+        },
+        {
+          "title": "next write operation",
+          "result": variable.writeAfter(selected),
+          "content": "fa-angle-right"
+        }
+      ],
+      [
+        {
+          "content": "fa-pencil-square-o",
+          "isIcon": true
+        },
+        {
+          "title": "previous read or write operation",
+          "result": variable.readOrWriteBefore(selected),
+          "content": "fa-angle-left"
+        },
+        {
+          "title": "next read or write operation",
+          "result": variable.readOrWriteAfter(selected),
+          "content": "fa-angle-right"
+        }
+      ]
+    ]
+  }
+  
+  icon(name) {
+    const i = document.createElement("i");
+    i.className = `fa ${name}`;
+    i.setAttribute("aria-hidden", "true");
+    return i;
   }
   
   /*

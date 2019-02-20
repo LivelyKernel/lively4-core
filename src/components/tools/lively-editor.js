@@ -417,9 +417,13 @@ export default class Editor extends Morph {
   
   
   async pasteFile(fileItem, evt, generateName) {
+    var editor = this.currentEditor()
+    if (!editor) return;
     var file = fileItem.getAsFile();
     if (generateName) {
       var name = "file_" + moment(new Date()).format("YYMMDD_hhmmss")
+      var selection = editor.getSelection()
+      if (selection.length > 0 ) name = selection;
       var filename = name + "." + fileItem.type.replace(/.*\//,"")
       filename = await lively.prompt("paste as... ", filename)
       
@@ -448,9 +452,9 @@ export default class Editor extends Morph {
         if (files.isVideo(filename)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
         } else if (files.isPicture(filename)){
-          text = "\n![](" + text + ")" // #ContextSpecificBehavior ?  
+          text = "![](" + text + ")" // #ContextSpecificBehavior ?  
         } else {
-          text = `\n[${text.replace(/.*\//,"")}](${text})`
+          text = `[${text.replace(/.*\//,"")}](${text})`
           
         }
       }  

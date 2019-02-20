@@ -49,7 +49,7 @@ export default class FileIndex {
         files: 'url,name,type,version,modified,options,title,tags',
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
-        classes: '[name+url], name, url, loc, start, end, superClass, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
@@ -112,22 +112,23 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
+    
     for (var clazz of semantics.classes) {
-      await this.addClass(file.url, clazz)
+      if (clazz.superClassName && !clazz.superClassUrl) {
+        let superClass = semantics.classes.find(item => item.name == clazz.superClassName)
+        clazz.superClassName = (superClass) ? superClass.superClassName : ''
+        clazz.superClassUrl = (superClass) ? file.url : ''
+      } else if (clazz.superClassName && clazz.superClassUrl) {
+        clazz.superClassUrl = await System.resolve(clazz.superClassUrl, file.url)
+      }
+      clazz.url = file.url
+      clazz.nom = clazz.methods ? clazz.methods.length : 0
+      await this.addClass(clazz)
     }
   } 
   
-  async addClass(fileUrl, clazz) {
-    await this.db.classes.where({name: clazz.name, url: fileUrl}).delete()
-    let superClassUrl = ''
-    if (clazz.superClass.name && clazz.superClass.url) {
-      superClassUrl = await System.resolve(clazz.superClass.url, fileUrl)
-    }
-    clazz.url = fileUrl
-    clazz.superClass.url = superClassUrl
-    clazz.superClassUrl = superClassUrl
-    clazz.superClassName = clazz.superClass.name
-    clazz.nom = clazz.methods ? clazz.methods.length : 0
+  async addClass(clazz) {
+    await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
     this.db.classes.put(clazz)
   }
 
@@ -143,7 +144,7 @@ export default class FileIndex {
   }
   
   async updateAllLinks() {
-    this.db.transaction('rw', this.db.files, this.db.links, () => {
+    await this.db.transaction('rw', this.db.files, this.db.links, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addLinks(file) 
       })
@@ -177,7 +178,7 @@ export default class FileIndex {
         link: extractedLink,
         location: extractedLink.includes(window.location.hostname) ? "internal" : "external",
         url: file.url,
-        status: await this.validateLink(extractedLink)
+        status: links.find(link => link.link == extractedLink) ? extractedLink : await this.validateLink(extractedLink)
       }
       links.push(link)   
     }
@@ -205,8 +206,8 @@ export default class FileIndex {
   .catch((error) => {console.log(error, "Link: " + link); return "dead"})
   }
     
-  async updateAllLatestVersionHistories() {
-     this.db.transaction('rw', this.db.files, this.db.versions, () => {
+  async updateAllVersions() {
+     await this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
     }).then((files) => {
       files.forEach(file => {
@@ -229,12 +230,6 @@ export default class FileIndex {
         })
         if (i >= 9) break; // consider latest ten versions
       }
-      /*if (versions && versions[0] && versions[1]) {
-        var modifications = await this.findModifiedClassesAndMethods(file.url, versions[0], versions[1])
-        this.db.transaction("rw", this.db.versions, () => {
-          this.db.versions.bulkPut(modifications)
-        })
-      }*/ 
   } 
   
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
@@ -254,7 +249,7 @@ export default class FileIndex {
     for (let classLatest of latest.classes) {
       try {
         let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
-        if (!previousClass) { // added
+        if (!previousClass) { // added class
           modifications.push({
             url: fileUrl,
             class: classLatest.name,
@@ -344,16 +339,17 @@ export default class FileIndex {
         }
       },
       ClassDeclaration(path) {
-        let superClass = {}
+        let superClassName = ''
+        let superClassUrl = ''
         if (path.node.id) {
           let clazz = {
             name: path.node.id.name,
-            start: path.node.start,
-            end: path.node.end,
+            start: path.node.start, // start byte 
+            end: path.node.end,     // end byte
             loc: path.node.loc.end.line - path.node.loc.start.line + 1
           }
-          superClass.name = (path.node.superClass) ? path.node.superClass.name : ''
-          superClass.url = importDeclarations.get(superClass.name)
+          superClassName = (path.node.superClass) ? path.node.superClass.name : ''
+          superClassUrl = importDeclarations.get(superClassName)
           let methods = []
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
@@ -369,22 +365,13 @@ export default class FileIndex {
             })
           }
           clazz.methods = methods
-          clazz.superClass = superClass
+          clazz.superClassName = superClassName
+          clazz.superClassUrl = superClassUrl
           classes.push(clazz)
         } 
       }
     })
     return {classes, dependencies}
-  }
-
-  async updateFunctionAndClasses() {
-    return this.showProgress("extract functions and classes", () => {
-      this.db.files.where("name").notEqual("").modify((file) => {
-        if (file.name && file.name.match(/\.js$/)) {
-          this.extractFunctionsAndClasses(file)
-        }
-      })
-    })
   }
   
   // ********************************************************
@@ -396,34 +383,6 @@ export default class FileIndex {
     })
   }
   
-  extractFunctionsAndClasses(file) {
-    var ast = this.parseSource(file.url, file.content)
-    var result = this.parseFunctionsAndClasses(ast)
-    
-    file.classes = result.classes
-    file.functions  = result.functions
-  }
-
-  parseFunctionsAndClasses(ast) {
-    var functions = []
-    var classes = []
-    babel.traverse(ast,{
-      Function(path) {
-        if (path.node.key) {
-          functions.push(path.node.key.name)
-        } else if (path.node.id) {
-          functions.push(path.node.id.name)
-        }
-      },
-      ClassDeclaration(path) {
-        if (path.node.id) {
-          classes.push(path.node.id.name)
-        }
-      }
-    })
-    return {functions, classes}
-  }
-
   parseSource(filename, source) {
     try {
       return babel.transform(source, {
@@ -595,7 +554,7 @@ class BrokenLinkAnalysis {
     var extractedLinks =  new Array()
     
     if (file.url.match(/\.md$/)) {
-       let patternMdFiles = /(?<=(\]:\s*)|(\]\s*\())((http(s)?:\/\/(w{3}[.])?([a-z0-9.-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|((([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+([a-zA-Z0-9\-_#.?=%;]+)?))/gm
+       let patternMdFiles = /(?<=(\]:\s*)|(\]\s*\())((http(s)?:\/\/(w{3}[.])?([a-z0-9.-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([a-zA-Z0-9\/\.\-\_#.?=%;]*))|((([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+([a-zA-Z0-9\-_#.?=%;]+)?))/gm
            // /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
       extractedLinks = file.content.match(patternMdFiles)
     } else if (file.url.match(/\.(css|(x)?html)$/)) {

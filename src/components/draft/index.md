@@ -1,3 +1,5 @@
+<link rel="stylesheet" type="text/css" href="../index-style.css"  />
+
 # Draft Web Components
 
 <script>
@@ -7,7 +9,25 @@
   ComponentCreator.createUI(container)
 </script>
   
-<script>
-  ComponentCreator.listComponentsUI(container)
-</script>
+- draft-comp  {.component}
+- draft-example-component  {.component}
+- flower-script  {.component}
+- flower-values  {.component}
+- lively-application-bar  {.component}
+- lively-code-editor  {.component}
+- lively-code-mirror-simple  {.component}
+- lively-grail  {.component}
+- lively-handwriting  {.component}
+- lively-movie-list  {.component}
+- lively-movie  {.component}
+- lively-network  {.component}
+- lively-object-editor  {.component}
+- lively-tab-view  {.component}
+- lively-terminal  {.component}
+- lively-treeview  {.component}
+- lively-xterm  {.component}
   
+<script>
+  var context = lively.query(this, "lively-markdown").shadowRoot
+  ComponentCreator.updateComponentsUI(container, context)
+</script>

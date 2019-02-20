@@ -329,6 +329,96 @@ export default class ComponentCreator {
       })
     return list
   }
+  
+  static async  updateComponentsUI(container, context) {
+    if (!container || !container.getPath) {
+      return "no container as parentPath";
+    }
+    var path = "" + container.getPath();
+    var dir = path.replace(/[^/]*$/, "");
+    var opts = JSON.parse((await lively.files.statFile(dir)));
+    var testdir = lively4url + "/test/templates/";
+    var tests = JSON.parse((await lively.files.statFile(testdir))).contents.map(ea => ea.name);
 
+    var list = document.createElement("pre")
+    _.sortBy(opts.contents, ea => ea.name).filter(ea => ea.name.match(/html$/) && ea.name !== "index.html").forEach(ea => {
+
+      var name = ea.name.replace(/\.html/,"")
+
+      var li = Array.from(context.querySelectorAll("li.component")).find(ea => ea.textContent.match(new RegExp(name + "( |$)")))
+      if (!li) {
+        // and here we go.... return markdown source... to be added manually 
+        list.textContent += " - " +ea.name.replace(/\.html/, " ") + ' {.component}\n'
+        return
+      } else {
+        // console.log("INDEX Markdown: found " + name)
+      }
+
+      li.appendChild((<span> </span>));
+
+      li.appendChild((<a href={"open://" + name}>open</a>));
+      li.appendChild((<span> </span>));
+
+      var a = <a href={ea.name}>html</a>;
+      a.onclick = evt => {
+        evt.preventDefault();
+        container.followPath(dir + "/" + ea.name);
+        return true;
+      };
+      li.appendChild(a);
+
+      li.appendChild((<span> </span>));
+
+      var classFile = ea.name.replace(/\.html/, ".js");
+      if (opts.contents.find(ea => ea.name == classFile)) {
+        var classLink = document.createElement("a");
+        classLink.innerHTML = "js";
+        classLink.href = classFile;
+        // classLink.onclick = evt => {
+        //   evt.preventDefault();
+        //   container.followPath(dir + "/" + classFile);
+        //   return true;
+        // };
+        li.appendChild(classLink);
+      }
+
+      lively.html.fixLinks(li.querySelectorAll("a"), dir, url => container.followPath(url) )
+
+
+      var span = document.createElement("span");
+      span.textContent = " ";
+      li.appendChild(span);
+
+      var testFile = ea.name.replace(/\.html/, "-test.js");
+      if (tests.indexOf(testFile) !== -1) {
+        var testLink = document.createElement("a");
+        testLink.innerHTML = "test";
+        testLink.href = testFile;
+        testLink.onclick = evt => {
+          evt.preventDefault();
+          container.followPath(testdir + "/" + testFile);
+          return true;
+        };
+        li.appendChild(testLink);
+      }
+       li.appendChild(<br></br>);
+       var imgFile = ea.name.replace(/\.html/, ".png");
+      if (opts.contents.find(ea => ea.name == imgFile)) {
+        var img = document.createElement("img");
+        img.innerHTML = "";
+        img.src = dir + imgFile;
+        // img.onclick = evt => {
+        //   evt.preventDefault();
+        //   container.followPath(dir + "/" + classFile);
+        //   return true;
+        // };
+        li.appendChild(img);
+      }
+
+    });
+
+    var result = <div>{list}</div>
+    return result
+  }
 }
 

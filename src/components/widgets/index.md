@@ -1,3 +1,4 @@
+<link rel="stylesheet" type="text/css" href="../index-style.css"  />
 
 # Widgets Web Components
 
@@ -9,59 +10,55 @@
 </script>
 
 
-### lively-bibtex 
-![](lively-bibtex.png){width=300px}
+- lively-bibtex  {.component}
+- lively-bibtex-entry  {.component}
+- lively-code-mirror  {.component}
+- lively-connector  {.component}
+- lively-component-bin-tile  {.component}
+- lively-crayoncolors  {.component}
+- lively-dialog  {.component}
+- lively-drawboard  {.component}
+- lively-drawio  {.component}
+- lively-error  {.component}
+- lively-eval-element  {.component}
+- lively-figure  {.component}
+- lively-file  {.component}
+- lively-iframe  {.component}
+- lively-import  {.component}
+- lively-key-value-input  {.component}
+- lively-key-value-map  {.component}
+- lively-link  {.component}
+- lively-list  {.component}
+- lively-markdown  {.component}
+- lively-menu  {.component}
+- lively-notification-list  {.component}
+- lively-notification  {.component}
+- lively-paper  {.component}
+- lively-pdf  {.component}
+- lively-penchooser  {.component}
+- lively-presentation  {.component}
+- lively-progress  {.component}
+- lively-resizer  {.component}
+- lively-script  {.component}
+- lively-separator  {.component}
+- lively-svg  {.component}
+- lively-table  {.component}
+- lively-window  {.component}
 
-A bidtex contains other lively-bibtex-entry
+## Draft
 
-#### lively-bibtex-entry
+- lively-code-mirror-widget-import #Unfinshed {.component}
 
+## Trash
 
-
-### lively-code-mirror 
-![](lively-code-mirror.png){width=300px}
-
-#### lively-code-mirror-widget-import
-
-### lively-component-bin-tile
-
-### lively-connector
-![lively-crayoncolors](lively-crayoncolors.png){width=300px}
-
-## lively-dialog 
+- lively-essay #TODO #Unfinshed {.component}
 
 
-![](lively-drawboard.png) [open](open://lively-drawboard) 
-
-## lively-drawio [open](open://lively-drawio)
-### lively-error  
-### lively-essay
-### lively-eval-element
-### lively-file
-### lively-iframe
-### lively-import
-### lively-key-value-input
-### lively-key-value-map
-### lively-link
-### lively-list
-### lively-markdown
-### lively-menu
-### lively-notification-list
-### lively-notification
-### lively-paper
-### lively-pdf
-### lively-penchooser
-### lively-presentation
-### lively-progress
-### lively-resizer
-### lively-script
-### lively-separator
-### lively-svg
- ### lively-table
-### lively-window
-
+## META
 
 <script>
-  ComponentCreator.listComponentsUI(container)
+  var context = lively.query(this, "lively-markdown").shadowRoot
+  ComponentCreator.updateComponentsUI(container, context)
 </script>
+
 
