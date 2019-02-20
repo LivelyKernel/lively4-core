@@ -274,7 +274,7 @@ export default class DataExplorer extends Morph {
   }
   
   async renderTreeType() {
-    const radialTree = await lively.create(visualizationComponents[this.selectedVisualizationType]);
+    const vis = await lively.create(visualizationComponents[this.selectedVisualizationType]);
     
     const nameField =  this.settingsVisualization[0].selection.value;
     const childField = this.settingsVisualization[1].selection.value;
@@ -296,8 +296,8 @@ export default class DataExplorer extends Morph {
       console.log('failed to find value value');
     }
     
-    radialTree.style.width = '100%';
-    radialTree.style.height = '100%';
+    vis.style.width = '100%';
+    vis.style.height = '100%';
     
     const renamedObject = deepMapKeys({data: this.data}, key => (mapShortToLong[key] || key))
     
@@ -306,8 +306,8 @@ export default class DataExplorer extends Morph {
       children: renamedObject.data,
     };
     
-    radialTree.setTreeData(data);  
-    this.visualizationEL.appendChild(radialTree);
+    vis.setTreeData(data);  
+    this.visualizationEL.appendChild(vis);
   }
   
   livelyMigrate(other) {
