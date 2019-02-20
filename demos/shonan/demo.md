@@ -4,6 +4,33 @@
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
+<style>
+
+ul {list-style: none}
+ul  li::before{
+  content: "■"; /* □ */ 
+  color: rgb(255, 142, 0);
+  display: inline-block; 
+  width: 1.2em;
+  position: relative;
+  top: -4px;
+  font-size: 12pt;
+  margin-left: -1.2em;
+}
+
+ul  li li::before{
+  content: "□"; 
+  color: rgb(255, 142, 0);
+  display: inline-block; 
+  width: 1.2em;
+  position: relative;
+  top: -4px;
+  font-size: 12pt;
+  margin-left: -1.2em;
+}
+</style>
+
+
 
 <div class="title">
   Lively4: An Exploratory <br> Web-Programming Environment
@@ -25,26 +52,30 @@
 </div>
 
 ----
-<!-- Context: What is the broad context of the work? What is the importance of the general research area? -->
-### Context
-
-Exploratory programming workflows are often only applicable to content residing inside dedicated environments, requiring special workflows or languages. 
-
-<!-- E.g. special frameworks or languages are required. -->
+##  Context
+- Development Environments for Exploratory programming  
+- require: special workflows, frameworks or languages
+- Classic Smalltalk: persistent, pure, fully reflectional object graph
+- Our own project: Lively Kernel (Smalltalk/Morphic in a browser)
+  - Subset of JavaScript (custom Smalltalk-like class system)
+  - Full serializable object graph
+  - Reflective Morphic UI
 
 ---
-<!-- 
- Inquiry: What problem or question does the paper address? How has this problem or question been addressed by others (if at all)? 
--->
-### Inquiry  <!-- outside world cannot make use of cool inside tools -->
+## Inquiry / Problem  <!-- outside world cannot make use of cool inside tools -->
 
-While working on programs and objects that are not created in such a special way one cannot make use of exploratory workflows. Further even when creating new content inside a special exploratory environment, it is hard make use of content and programs created outside of that environment.
+1. Excludes working on content and programs not created 
+   <br> in specific environment/framework/language
+2. Hard make use of content and programs 
+   <br> created outside of that environment
+
+<!-- TODO insert figure here -->
 
 <!-- web: effortless collaborative development (wiki vs. git workflow) -->
 
 ---
 <!-- Approach: What was done that unveiled new knowledge? -->
-### Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
+## Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
 
 To overcome the gap between explorable content created in special environments and outside content as HTML content and JavaScript programs, we create Lively4, a new environment that embraces standard HTML and JavaScript. HTML used to be only a generation target UI for frameworks other systems. In Lively4, we use HTML/JavaScript to build a collaborative, self-supporting exploratory development environment for all HTML/JavaScript content.
 
