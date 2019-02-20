@@ -163,6 +163,13 @@ ul  li li::before{
   - GraphViz for graph layout
   - JavaScript, HTML, Markdown parser  
 
+--- 
+## More Demos
+
+- "Drag and Drop" and "Copy and Paste"
+- ACM vs. Academics ?
+- Files and Polymorphic Identifiers (Plex Demo / #Broken?)
+
 ---
 ... ...  ...
 
@@ -172,6 +179,7 @@ ul  li li::before{
   - all development can be done from within itself
 - Web-based Development Environment -> **Lively Wiki**
   - mostly client side
+
 
 ----
 ## Lively4 
