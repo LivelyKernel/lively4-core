@@ -1,4 +1,4 @@
-# Morphic
+# [Morphic](index.md)
 
 The Lively4 morphic implementation. The main contribution of this module is, that there is actually no morphic module we have to implement. 
 
@@ -13,7 +13,6 @@ That said we provide our own root class for HTML elements we call [Morph](../../
 - [component-loader.js](component-loader.js)
 - [event-helpers.js](event-helpers.js)
 - [events.js](events.js)
-- [index.md](index.md)
 - [node-helpers.js](node-helpers.js)
 - [snapping.js](snapping.js)
 - [selecting.js](selecting.js)
