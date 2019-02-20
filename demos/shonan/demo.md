@@ -1,12 +1,35 @@
 <!-- markdown-config presentation=true -->
 
+<!---
+
+There are so many stories to tell... so many angles to approach... which one should it be?
+
+--->
+
+
+
 <link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
 <style>
 
-ul {list-style: none}
+li:first-child {
+    margin-top: 0px;
+}
+
+li {
+  margin-bottom: -5px;
+}
+
+li:last-child {
+    margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+}
+
 ul  li::before{
   content: "■"; /* □ */ 
   color: rgb(255, 142, 0);
@@ -28,9 +51,10 @@ ul  li li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
+
+
+
 </style>
-
-
 
 <div class="title">
   Lively4: An Exploratory <br> Web-Programming Environment
@@ -60,6 +84,8 @@ ul  li li::before{
   - Subset of JavaScript (custom Smalltalk-like class system)
   - Full serializable object graph
   - Reflective Morphic UI
+  
+<!-- TODO insert picture of webwerkstatt here.... -->  
 
 ---
 ## Inquiry / Problem  <!-- outside world cannot make use of cool inside tools -->
@@ -69,7 +95,8 @@ ul  li li::before{
 2. Hard make use of content and programs 
    <br> created outside of that environment
 
-<!-- TODO insert figure here -->
+<!-- TODO show (1) and (2) here -->
+![](lively4-inquiry){style="position: absolute;   bottom: 50px; left: 30%; right: 30%"}
 
 <!-- web: effortless collaborative development (wiki vs. git workflow) -->
 
@@ -77,27 +104,52 @@ ul  li li::before{
 <!-- Approach: What was done that unveiled new knowledge? -->
 ## Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
 
-To overcome the gap between explorable content created in special environments and outside content as HTML content and JavaScript programs, we create Lively4, a new environment that embraces standard HTML and JavaScript. HTML used to be only a generation target UI for frameworks other systems. In Lively4, we use HTML/JavaScript to build a collaborative, self-supporting exploratory development environment for all HTML/JavaScript content.
+- To overcome the gap between 
+  - explorable content created in special environments
+  - outside content as HTML content and JavaScript programs  
+- We create Lively4
+  - a new environment that fully embraces standard HTML and JavaScript
+  - HTML used to be only a generation target UI for frameworks other systems
+- In Lively4, we use HTML/JavaScript to build a 
+  - collaborative
+  - self-supporting 
+  - exploratory development environment 
+  - for HTML/JavaScript content
 
 ---
 <!-- Knowledge: What new facts were uncovered? If the research was not results oriented, what new capabilities are enabled by the work? -->
+## Knowledge
 
-### Knowledge
-With this approach, we are pushing the boundaries of exploratory programming environments.
-Given the restrictions of HTML and JavaScript, we can explore how working with documents, names, explicit references compares to working with pure object graph of special environments. 
+- Pushing boundaries of exploratory programming environments
+  - Given the restrictions of HTML and JavaScript
+- Compare working with 
+  - Documents, names, explicit references (Lively4) 
+  - Pure object graph of special environments  (Lively Kernel / Smalltalk)
 
+---
 <!-- Grounding: What argument, feasibility proof, artifacts, or results and evaluation support this work? -->
-### Grounding
+## Grounding
 
-We build Lively4 environment in a self-supporting way,  which allowed us to develop, use and evolve tools and workflows from within it.
+- Build Lively4 environment in a self-supporting way
+- which allowed us:  
+  - develop, use and evolve 
+  - tools and workflows from within it.
 
 ---
 <!-- Importance: Why does this work matter? -->
-**Importance:** 
-Exploratory workflows can enrich HTML/JavaScript development experience.
-Tools and environment can be easier to create if external contributions are easier to integrate 
-and use.
+## Importance
 
+- Exploratory workflows can enrich HTML/JavaScript development experience
+- Tools and environment can be easier to create if external contributions are easier to integrate and use
+
+---
+...
+
+---
+... ... 
+
+---
+... ...  ...
 
 ---
 ## Background: Lively Kernel
