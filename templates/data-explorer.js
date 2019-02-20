@@ -42,7 +42,6 @@ const visSettings = {
   'BarChart': visType1Conf,
   'RadialTree': visType2Conf,
   'Tree': visType2Conf,
-  'PlainTree': visType2Conf,
   'TreeMap': visType2Conf,
 }
 
@@ -52,7 +51,6 @@ const visualizationComponents = {
   'BarChart': 'd3-barchart-gh',
   'RadialTree': 'd3-radialtree',
   'Tree': 'd3-tree',
-  'PlainTree': 'd3-plaintree',
   'TreeMap': 'd3-treemap',
 }
 
@@ -62,6 +60,9 @@ export default class DataExplorer extends Morph {
     this.registerButtons()
 
     lively.html.registerKeys(this);
+    
+    Object.keys(visSettings).forEach(vis => this.get('#visTypeSelection').appendChild(<option value={vis}>{vis}</option>))
+    
 
     this.get('#visTypeSelection').addEventListener("change", e => this.onVisualizationChange(e))
     this.get('#refinementEnd').addEventListener("change", e => {
@@ -79,6 +80,8 @@ export default class DataExplorer extends Morph {
     this.setupParameterVis();
     this.startIndex = 0;
     this.endIndex = 0;
+    
+    
     
     this.visualizationHeight = 400;
   }
