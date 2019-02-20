@@ -65,7 +65,6 @@ ul  li li::before{
 </div>
 
 <div class="credentials">
-  2019<br>
   <br>
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
   <br>
@@ -73,6 +72,8 @@ ul  li li::before{
   Shonan Meeting No.147 <br>
   on Self-supporting, Extensible Programming Languages and Environments <br>
   for Exploratory, Live Software Development
+  <br><br>Feb 2019
+  
 </div>
 
 ----
@@ -137,13 +138,14 @@ ul  li li::before{
 
 ---
 <!-- Importance: Why does this work matter? -->
-## Importance
+## Importance 
 
-- Exploratory workflows can enrich HTML/JavaScript development experience
-- Tools and environment can be easier to create if external contributions are easier to integrate and use
+1. Exploratory workflows can enrich <br>HTML/JavaScript development experience
+2. Tools and environment can be easier to create 
+  <br> if external contributions are easier to integrate and use
 
 --- 
-### Demos
+## Demos
 
 - Self-supporting Environment
   - Markdown wiki / Presentation
@@ -159,12 +161,7 @@ ul  li li::before{
   - D3 Visualization
   - GraphViz for graph layout
   - JavaScript, HTML, Markdown parser  
-  - ...
 
-...
-
----
-... ... 
 
 ---
 ... ...  ...
@@ -203,7 +200,7 @@ ul  li li::before{
 - see [Lively 4 Tools and Workflows](../../doc/presentation/index.md#)
 
 ---
-### Ideas in Lively4
+## Ideas in Lively4
 
 - Embrace low-tech Markdown vs. rich text editing  
 - #Hashtag Navigation
@@ -212,3 +209,27 @@ ul  li li::before{
 - #ShadowRoot as natural border for serialization
 
 ---
+
+
+---
+<!-- #TODO pull this up into presentation? -->
+<script>
+// poor men's slide master #Hack #TODO How to pull this better into lively-presentation?
+(async () => {
+  await lively.sleep(500)
+  var presentation = lively.query(this, "lively-presentation")
+  if (presentation && presentation.slides) {
+    presentation.slides().forEach(ea => {
+      var img = document.createElement("img")
+      img.classList.add("logo")
+      img.src="https://lively-kernel.org/lively4/lively4-seminars/PX2018/media/hpi_logo.png" 
+      img.setAttribute("width", "50px")
+      ea.appendChild(img)
+      var div = document.createElement("div")
+      div.classList.add("page-number")
+      ea.appendChild(div)
+    });
+  } 
+  return ""
+})()
+</script>
