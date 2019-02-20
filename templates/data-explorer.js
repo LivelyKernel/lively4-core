@@ -310,37 +310,12 @@ export default class DataExplorer extends Morph {
     this.visualizationEL.appendChild(radialTree);
   }
   
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
-
-  // this method is automatically registered as handler through ``registerButtons``
-  onFirstButton() {
-    lively.notify("hello")
-  }
-
-  /* Lively-specific API */
-
-  livelyPreMigrate() {
-    // is called on the old object before the migration
-  }
-
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.data = other.data;
     this.originalData = other.data;
   }
-
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-
-  livelyPrepareSave() {
-
-  }
-
 
   async livelyExample() {
     // this customizes a default instance to a pretty example
@@ -367,7 +342,6 @@ export default class DataExplorer extends Morph {
           position: 1
         }
       ],
-      commentsCount: 3,
       tests: []
     }, {
       sha: "abc88fd2775f37e023ad628ec7d35a082394b6a",
@@ -380,7 +354,6 @@ export default class DataExplorer extends Morph {
         line: 1,
         position: 1
       }],
-      commentsCount: 1,
       tests: [{
           sha: "f0df88fd2775f37e023ad628ec7d35a082394b6b"
         },
