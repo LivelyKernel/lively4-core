@@ -148,12 +148,13 @@ ul  li li::before{
 ## Demos
 
 - Self-supporting Environment
-  - Markdown wiki / Presentation
+  - Markdown wiki with scripts and components (e.g. this presentation)
   - HTML source code editing vs. manipulating HTML Elements and serialization
-- Work on stuff outside the environment...
+  - Editing files vs. structural editing of packages/classes/methods (#TODO)
+- Work on stuff outside the environment
   - Working on HTML Element DOM
-    - Halo
-    - XRay / Elements Under (Example for Object-specific Behavior / Parts Workflow)
+    - Morphic Halo for all HTML Elements 
+    - XRay / ElementsUnder (example for object-specific behavior / #PartsWorkflow)
   - Lively4-chrome extension
 - Reuse external content and programs
   - CodeMirror for text editing
@@ -161,7 +162,6 @@ ul  li li::before{
   - D3 Visualization
   - GraphViz for graph layout
   - JavaScript, HTML, Markdown parser  
-
 
 ---
 ... ...  ...
