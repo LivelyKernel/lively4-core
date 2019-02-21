@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import { deepMapKeys } from 'src/client/rename_obj.js';
+import { debounce } from "utils";
 
 const visType1Conf = [
     {
@@ -81,7 +82,7 @@ export default class DataExplorer extends Morph {
     this.startIndex = 0;
     this.endIndex = 0;
     
-    
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
     
     this.visualizationHeight = 400;
   }
@@ -223,6 +224,7 @@ export default class DataExplorer extends Morph {
         this.renderTreeType();
         break;
       case 'TreeMap':
+        this.renderTreeType();
         break;
       default:
         this.renderBubbleChart();
@@ -287,16 +289,16 @@ export default class DataExplorer extends Morph {
     try {
       mapShortToLong[this.settingsVisualization[1].meta[0].input.value] = 'name';  
     } catch(e) {
-      console.log('failed to find name value')
+      lively.notify('Failed to find this value for Name');
     }
     
     try {
       mapShortToLong[this.settingsVisualization[1].meta[1].input.value] = 'size'; 
     } catch(e) {
-      console.log('failed to find value value');
+      lively.notify('Failed to find this value for Size');
     }
-    
-    vis.style.width = '100%';
+        
+    vis.style.width = this.get('#content').getBoundingClientRect().width.toString() + 'px';
     vis.style.height = '100%';
     
     const renamedObject = deepMapKeys({data: this.data}, key => (mapShortToLong[key] || key))
@@ -311,15 +313,15 @@ export default class DataExplorer extends Morph {
   }
   
   livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
     this.data = other.data;
     this.originalData = other.data;
   }
+  
+  onExtentChanged() {
+    this.renderVisualization()
+  }
 
   async livelyExample() {
-    // this customizes a default instance to a pretty example
-    // this is used by the
     this.setData([{
       sha: "f0df88fd2775f37e023ad628ec7d35a082394b6b",
       author: {

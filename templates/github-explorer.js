@@ -55,7 +55,8 @@ export default class GithubExplorer extends Morph {
   createDataPreviewElement() {
     this.get('#content').appendChild(
       <div style="max-height: 250px; overflow-y: scroll">
-        <h2> Data Preview </h2> <table id='dataPreview' />
+        <h2> Data Preview </h2> 
+        <table id='dataPreview' />
       </div>,
     );
   }
