@@ -43,7 +43,28 @@ const visSettings = {
   'BarChart': visType1Conf,
   'RadialTree': visType2Conf,
   'Tree': visType2Conf,
-  'TreeMap': visType2Conf,
+  /** TreeMap is not working correctly as it its position is not set correctly in d3-treemap
+  'TreeMap': [
+    {
+      name: 'Name',
+      type: 'string',
+    },
+    {
+      name: 'Children',
+      type: 'object',
+      meta: [
+        {
+          name: 'Name',
+          type: 'primitive'
+        },
+        {
+          name: 'Size',
+          type: 'primitive',
+          optional: true,
+        }
+      ]
+    }
+  ] **/
 }
 
 // map to lively-components
