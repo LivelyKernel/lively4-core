@@ -30,8 +30,7 @@ const visType2Conf = [
         },
         {
           name: 'Size',
-          type: 'primitive',
-          optional: true,
+          type: 'number'
         }
       ]
     }
@@ -59,8 +58,7 @@ const visSettings = {
         },
         {
           name: 'Size',
-          type: 'primitive',
-          optional: true,
+          type: 'primitive'
         }
       ]
     }
@@ -74,6 +72,16 @@ const visualizationComponents = {
   'RadialTree': 'd3-radialtree',
   'Tree': 'd3-tree',
   'TreeMap': 'd3-treemap',
+}
+
+function getAllKeys(data) {
+  return (
+    data.reduce((keys, obj) => (
+    keys.concat(Object.keys(obj).filter(key => (
+      keys.indexOf(key) === -1))
+    )
+  ), [])
+  );
 }
 
 export default class DataExplorer extends Morph {
@@ -306,7 +314,8 @@ export default class DataExplorer extends Morph {
     
     mapShortToLong[nameField] = 'name';
     mapShortToLong[childField] = 'children';
-  
+    
+    
     try {
       mapShortToLong[this.settingsVisualization[1].meta[0].input.value] = 'name';  
     } catch(e) {
@@ -318,9 +327,19 @@ export default class DataExplorer extends Morph {
     } catch(e) {
       lively.notify('Failed to find this value for Size');
     }
+    
         
     vis.style.width = this.get('#content').getBoundingClientRect().width.toString() + 'px';
     vis.style.height = '100%';
+    
+    // rename all unused fields
+    const allKeys = getAllKeys(this.data);
+    allKeys.forEach(key => {
+      if(!(key in mapShortToLong)) {
+        // assign a random string
+        mapShortToLong[key] = Math.random().toString(36).substring(7);
+      }
+    })
     
     const renamedObject = deepMapKeys({data: this.data}, key => (mapShortToLong[key] || key))
     
