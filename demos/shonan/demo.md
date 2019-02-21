@@ -1,9 +1,60 @@
 <!-- markdown-config presentation=true -->
 
+<!---
+
+There are so many stories to tell... so many angles to approach... which one should it be?
+
+--->
+
+
+
 <link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
+<style>
+
+li:first-child {
+    margin-top: 0px;
+}
+
+li {
+  margin-bottom: -5px;
+}
+
+li:last-child {
+    margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+}
+
+ul  li::before{
+  content: "■"; /* □ */ 
+  color: rgb(255, 142, 0);
+  display: inline-block; 
+  width: 1.2em;
+  position: relative;
+  top: -4px;
+  font-size: 12pt;
+  margin-left: -1.2em;
+}
+
+ul  li li::before{
+  content: "□"; 
+  color: rgb(255, 142, 0);
+  display: inline-block; 
+  width: 1.2em;
+  position: relative;
+  top: -4px;
+  font-size: 12pt;
+  margin-left: -1.2em;
+}
+
+
+
+</style>
 
 <div class="title">
   Lively4: An Exploratory <br> Web-Programming Environment
@@ -14,7 +65,6 @@
 </div>
 
 <div class="credentials">
-  2019<br>
   <br>
   Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsdam, Germany
   <br>
@@ -22,51 +72,106 @@
   Shonan Meeting No.147 <br>
   on Self-supporting, Extensible Programming Languages and Environments <br>
   for Exploratory, Live Software Development
+  <br><br>Feb 2019
+  
 </div>
 
 ----
-<!-- Context: What is the broad context of the work? What is the importance of the general research area? -->
-### Context
-
-Exploratory programming workflows are often only applicable to content residing inside dedicated environments, requiring special workflows or languages. 
-
-<!-- E.g. special frameworks or languages are required. -->
+##  Context
+- Development Environments for Exploratory programming  
+- require: special workflows, frameworks or languages
+- Classic Smalltalk: persistent, pure, fully reflectional object graph
+- Our own project: Lively Kernel (Smalltalk/Morphic in a browser)
+  - Subset of JavaScript (custom Smalltalk-like class system)
+  - Full serializable object graph
+  - Reflective Morphic UI
+  
+<!-- TODO insert picture of webwerkstatt here.... -->  
 
 ---
-<!-- 
- Inquiry: What problem or question does the paper address? How has this problem or question been addressed by others (if at all)? 
--->
-### Inquiry  <!-- outside world cannot make use of cool inside tools -->
+## Inquiry / Problem  <!-- outside world cannot make use of cool inside tools -->
 
-While working on programs and objects that are not created in such a special way one cannot make use of exploratory workflows. Further even when creating new content inside a special exploratory environment, it is hard make use of content and programs created outside of that environment.
+1. Excludes working on content and programs not created 
+   <br> in specific environment/framework/language
+2. Hard make use of content and programs 
+   <br> created outside of that environment
+
+<!-- TODO show (1) and (2) here -->
+![](lively4-inquiry){style="position: absolute;   bottom: 50px; left: 30%; right: 30%"}
 
 <!-- web: effortless collaborative development (wiki vs. git workflow) -->
 
 ---
 <!-- Approach: What was done that unveiled new knowledge? -->
-### Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
+## Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
 
-To overcome the gap between explorable content created in special environments and outside content as HTML content and JavaScript programs, we create Lively4, a new environment that embraces standard HTML and JavaScript. HTML used to be only a generation target UI for frameworks other systems. In Lively4, we use HTML/JavaScript to build a collaborative, self-supporting exploratory development environment for all HTML/JavaScript content.
+- To overcome the gap between 
+  - explorable content created in special environments
+  - outside content as HTML content and JavaScript programs  
+- We create Lively4
+  - a new environment that fully embraces standard HTML and JavaScript
+  - HTML used to be only a generation target UI for frameworks other systems
+- In Lively4, we use HTML/JavaScript to build a 
+  - collaborative
+  - self-supporting 
+  - exploratory development environment 
+  - for HTML/JavaScript content
 
 ---
 <!-- Knowledge: What new facts were uncovered? If the research was not results oriented, what new capabilities are enabled by the work? -->
+## Knowledge
 
-### Knowledge
-With this approach, we are pushing the boundaries of exploratory programming environments.
-Given the restrictions of HTML and JavaScript, we can explore how working with documents, names, explicit references compares to working with pure object graph of special environments. 
+- Pushing boundaries of exploratory programming environments
+  - Given the restrictions of HTML and JavaScript
+- Compare working with 
+  - Documents, names, explicit references (Lively4) 
+  - Pure object graph of special environments  (Lively Kernel / Smalltalk)
 
+---
 <!-- Grounding: What argument, feasibility proof, artifacts, or results and evaluation support this work? -->
-### Grounding
+## Grounding
 
-We build Lively4 environment in a self-supporting way,  which allowed us to develop, use and evolve tools and workflows from within it.
+- Build Lively4 environment in a self-supporting way
+- which allowed us:  
+  - develop, use and evolve 
+  - tools and workflows from within it.
 
 ---
 <!-- Importance: Why does this work matter? -->
-**Importance:** 
-Exploratory workflows can enrich HTML/JavaScript development experience.
-Tools and environment can be easier to create if external contributions are easier to integrate 
-and use.
+## Importance 
 
+1. Exploratory workflows can enrich <br>HTML/JavaScript development experience
+2. Tools and environment can be easier to create 
+  <br> if external contributions are easier to integrate and use
+
+--- 
+## Demos
+
+- Self-supporting Environment
+  - Markdown wiki with scripts and components (e.g. this presentation)
+  - HTML source code editing vs. manipulating HTML Elements and serialization
+  - Editing files vs. structural editing of packages/classes/methods (#TODO)
+- Work on stuff outside the environment
+  - Working on HTML Element DOM
+    - Morphic Halo for all HTML Elements 
+    - XRay / ElementsUnder (example for object-specific behavior / #PartsWorkflow)
+  - Lively4-chrome extension
+- Reuse external content and programs
+  - CodeMirror for text editing
+  - DrawIO for figures
+  - D3 Visualization
+  - GraphViz for graph layout
+  - JavaScript, HTML, Markdown parser  
+
+--- 
+## More Demos
+
+- "Drag and Drop" and "Copy and Paste"
+- ACM vs. Academics ?
+- Files and Polymorphic Identifiers (Plex Demo / #Broken?)
+
+---
+... ...  ...
 
 ---
 ## Background: Lively Kernel
@@ -74,6 +179,7 @@ and use.
   - all development can be done from within itself
 - Web-based Development Environment -> **Lively Wiki**
   - mostly client side
+
 
 ----
 ## Lively4 
@@ -98,6 +204,40 @@ and use.
 
 ---
 ## Applications
-  - Markdown Wiki with scripts and components
-  
-  
+- Markdown Wiki with scripts and components
+- see [Lively 4 Tools and Workflows](../../doc/presentation/index.md#)
+
+---
+## Ideas in Lively4
+
+- Embrace low-tech Markdown vs. rich text editing  
+- #Hashtag Navigation
+- Modules to separate behavior
+- Web-components as abstraction
+- #ShadowRoot as natural border for serialization
+
+---
+
+
+---
+<!-- #TODO pull this up into presentation? -->
+<script>
+// poor men's slide master #Hack #TODO How to pull this better into lively-presentation?
+(async () => {
+  await lively.sleep(500)
+  var presentation = lively.query(this, "lively-presentation")
+  if (presentation && presentation.slides) {
+    presentation.slides().forEach(ea => {
+      var img = document.createElement("img")
+      img.classList.add("logo")
+      img.src="https://lively-kernel.org/lively4/lively4-seminars/PX2018/media/hpi_logo.png" 
+      img.setAttribute("width", "50px")
+      ea.appendChild(img)
+      var div = document.createElement("div")
+      div.classList.add("page-number")
+      ea.appendChild(div)
+    });
+  } 
+  return ""
+})()
+</script>

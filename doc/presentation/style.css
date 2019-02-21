@@ -64,18 +64,17 @@ h2 {
  font-size: 24pt;
 }
 
-ul li {
+ul li, ol li  {
   font-size: 18pt;
   padding: 3px;
   margin-top: 6px;
   line-height: 115%;
 }
 
-ul li ul li {
+ul li ul li, ol li ol li {
   font-size: 16pt;
   padding: 2px;
   margin-top: 5px;
-
 }
 
 

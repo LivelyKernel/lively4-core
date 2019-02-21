@@ -190,6 +190,8 @@ export default class LivelyPresentation extends Morph {
       slide.style.display = "block"  
     }
     this.slide = slide
+    this.slide.querySelectorAll("lively-drawio").forEach(ea => ea.update()) // #Hack, #TODO move it into drawio
+    
     this.updatePageNumber()
   }
   
