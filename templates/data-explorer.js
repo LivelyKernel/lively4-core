@@ -119,6 +119,7 @@ export default class DataExplorer extends Morph {
   setData(data) {    
     this.originalData = data;
     this.data = data;
+    this.createCountVariables();
     this.setupParameterVis();
     this.startIndex = 0;
     this.endIndex = this.data.length;
@@ -127,7 +128,6 @@ export default class DataExplorer extends Morph {
     this.get('#refinementEnd').value = this.endIndex;
     this.get('#refinementEnd').max = this.endIndex;
     this.get('#refinementStart').max = this.endIndex;
-    this.createCountVariables();
   }
   
   createCountVariables() {
@@ -310,22 +310,22 @@ export default class DataExplorer extends Morph {
     const nameField =  this.settingsVisualization[0].selection.value;
     const childField = this.settingsVisualization[1].selection.value;
     
-    const mapShortToLong = {};
+    const mapRename = {};
     
-    mapShortToLong[nameField] = 'name';
-    mapShortToLong[childField] = 'children';
+    mapRename[nameField] = 'name';
+    mapRename[childField] = 'children';
     
     
     try {
-      mapShortToLong[this.settingsVisualization[1].meta[0].input.value] = 'name';  
+      mapRename[this.settingsVisualization[1].meta[0].input.value] = 'name';  
     } catch(e) {
-      lively.notify('Failed to find this value for Name');
+      lively.notify('Failed to find this value for name');
     }
     
     try {
-      mapShortToLong[this.settingsVisualization[1].meta[1].input.value] = 'size'; 
+      mapRename[this.settingsVisualization[1].meta[1].input.value] = 'size'; 
     } catch(e) {
-      lively.notify('Failed to find this value for Size');
+      lively.notify('Failed to find this value for size');
     }
     
         
@@ -335,13 +335,13 @@ export default class DataExplorer extends Morph {
     // rename all unused fields
     const allKeys = getAllKeys(this.data);
     allKeys.forEach(key => {
-      if(!(key in mapShortToLong)) {
+      if(!(key in mapRename)) {
         // assign a random string
-        mapShortToLong[key] = Math.random().toString(36).substring(7);
+        mapRename[key] = Math.random().toString(36).substring(7);
       }
     })
     
-    const renamedObject = deepMapKeys({data: this.data}, key => (mapShortToLong[key] || key))
+    const renamedObject = deepMapKeys({data: this.data}, key => (mapRename[key] || key))
     
     const data = {
       name: 'data',
