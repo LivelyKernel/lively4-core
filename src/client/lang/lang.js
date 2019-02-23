@@ -101,6 +101,8 @@ extend(generatorPrototype, {
 });
 
 
+// const asyncGeneratorPrototype = (async function* foo() {}).prototype.constructor;
+
 /**
  * DATE
  */

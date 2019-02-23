@@ -65,3 +65,32 @@ extend(String.prototype, {
   }
 
 });
+
+
+/**
+ * FUNCTION
+ */
+import aexpr from 'active-expression-rewriting';
+
+const aexprByFunction = new WeakMap();
+
+extend(Function.prototype, {
+
+  asAExpr() {
+    return aexprByFunction.getOrCreate(this, () => aexpr(this));
+  },
+  
+  onChange(callback) {
+    return this.asAExpr().onChange(callback);
+  },
+  
+  onBecomeTrue(callback) {
+    return this.asAExpr().onBecomeTrue(callback);
+  },
+  
+  onBecomeFalse(callback) {
+    return this.asAExpr().onBecomeFalse(callback);
+  }
+
+});
+
