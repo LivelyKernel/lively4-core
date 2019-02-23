@@ -79,12 +79,10 @@ td i {
 </style>
 <input type="text" id="path-to-load" placeholder="path to load" title="path to load">
 <div id="container">
-  <div id='label-container'>
-    <h1 id="label"></h1>
-    <button id="delete-button" title="delete this knot">
-      <i class="fa fa-trash" aria-hidden="true"></i>
-    </button>
-  </div>
+  <div id='label-container'></div>
+  <button id="delete-button" title="delete this knot">
+    <i class="fa fa-trash" aria-hidden="true"></i>
+  </button>
   
   <h2>URLs</h2>
   <ul id ="url-list"></ul>
@@ -97,13 +95,13 @@ td i {
   
   <h2>Relations</h2>
   
-  <h3 id="As Subject">
+  <h3>
     As Subject
-    <button id="add-triple-as-subject" title="add triple with this as subject">
+    <button id="r-add-triple-as-subject" title="add triple with this as subject">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="po-table">
+  <table id="r-po-table">
     <thead>
       <tr>
         <th>Predicate</th>
@@ -113,13 +111,13 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Predicate">
+  <h3>
     As Predicate
-    <button id="add-triple-as-predicate" title="add triple with this as predicate">
+    <button id="r-add-triple-as-predicate" title="add triple with this as predicate">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="so-table">
+  <table id="r-so-table">
     <thead>
       <tr>
         <th>Subject</th>
@@ -129,13 +127,13 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Object">
+  <h3>
     As Object
-    <button id="add-triple-as-object" title="add triple with this as object">
+    <button id="r-add-triple-as-object" title="add triple with this as object">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="sp-table">
+  <table id="r-sp-table">
     <thead>
       <tr>
         <th>Subject</th>
@@ -148,13 +146,13 @@ td i {
   
   <h2>Relations (Old)</h2>
   
-  <h3 id="As Subject">
+  <h3>
     As Subject
     <button id="add-triple-as-subject" title="add triple with this as subject">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="po-table">
+  <table id="po-table">
     <thead>
       <tr>
         <th>Predicate</th>
@@ -164,13 +162,13 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Predicate">
+  <h3>
     As Predicate
     <button id="add-triple-as-predicate" title="add triple with this as predicate">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="so-table">
+  <table id="so-table">
     <thead>
       <tr>
         <th>Subject</th>
@@ -180,13 +178,13 @@ td i {
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="As Object">
+  <h3>
     As Object
     <button id="add-triple-as-object" title="add triple with this as object">
       <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </h3>
-  <table id ="sp-table">
+  <table id="sp-table">
     <thead>
       <tr>
         <th>Subject</th>
@@ -200,7 +198,7 @@ td i {
   <h2>Meta Data</h2>
   <table id="metadata-table"></table>
   <h2>Content</h2>
-  <ul id ="spo-list"></ul>
+  <ul id="spo-list"></ul>
   <lively-code-mirror id="content-editor" wrapmode="true"></lively-code-mirror>
 </div>
 </template>

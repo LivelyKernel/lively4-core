@@ -82,6 +82,26 @@ extend(Function, {
 
 
 /**
+ * GENERATOR
+ */
+
+const generatorPrototype = (function*() {}).prototype.constructor;
+
+extend(generatorPrototype, {
+
+  toArray(...args) {
+    const result = [];
+    
+    for (let item of this(...args)) {
+      result.push(item)
+    }
+    return result;
+  }
+  
+});
+
+
+/**
  * DATE
  */
 extend(Date.prototype, {

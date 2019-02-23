@@ -39,27 +39,33 @@ export default class KnotView extends Morph {
   }
   
   async initAExprs() {
+    lively.success('setup aexprs');
+    
     let graph = await Graph.getInstance();
     let tag = await graph.requestKnot(new URL(TAG_URL));
 
-    this.get('#container')
+    this.get('#label-container')
       .appendChild(<h1>{aexpr(() => this.knotLabel(this.knot))}</h1>);
     
-    lively.success('setup aexprs')
-    this.get('#container')
-      .appendChild(<table>    <thead>
-      <tr>
-        <th>Predicate</th>
-        <th>Object</th>
-        <th class="triple-header">Triple</th>
-      </tr>
-    </thead>
-    <tbody>{
-          ...select(Triple)
+    const triples = select(Triple);
+    
+    this.get('#r-po-table').appendChild(<tbody>{
+          ...triples
             .filter(t => t.subject === this.knot)
             .map(t => this.buildTableRowFor(t, t.predicate, t.object))
-        }</tbody></table>)
-    //<li>{this.knotLabel(t.object, 'no tag label')}</li>
+        }</tbody>);
+    
+    this.get('#r-so-table').appendChild(<tbody>{
+          ...triples
+            .filter(t => t.predicate === this.knot)
+            .map(t => this.buildTableRowFor(t, t.subject, t.object))
+        }</tbody>);
+    
+    this.get('#r-sp-table').appendChild(<tbody>{
+          ...triples
+            .filter(t => t.object === this.knot)
+            .map(t => this.buildTableRowFor(t, t.subject, t.predicate))
+        }</tbody>);
   }
   
   buildMetadata(knot) {
@@ -125,7 +131,6 @@ export default class KnotView extends Morph {
     this.knot = knot;
     
     this.get("#path-to-load").value = knot.url;
-    this.get("#label").innerHTML = knot.label();
     
     let deleteKnot = this.get('#delete-button');
     deleteKnot.onclick = event => this.deleteKnot(event);
