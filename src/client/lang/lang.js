@@ -148,6 +148,23 @@ extend(Date.prototype, {
 
 
 /**
+ * SET
+ */
+extend(Set.prototype, {
+
+  /**
+   * Computes a more fine-grained difference with a second Set or Array (@link(other)).
+   * @param other (Array/Set) the Set or Array to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight].
+   */
+  computeDiff(other) {
+    return Array.from(this).computeDiff(other);
+  },
+
+});
+
+
+/**
  * MAP/WEAKMAP
  */
 const mapExtensions = {
@@ -208,6 +225,21 @@ extend(Array.prototype, {
 
   intersect(...arrays) {
     return _.intersection(this, ...arrays);
+  },
+
+  /**
+   * Computes a more fine-grained difference with a second Array.
+   * @param other (Array/Set) the Array to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight].
+   */
+  computeDiff(other) {
+    const otherArray = Array.from(other);
+    
+    const onlyLeft = _.difference(this, otherArray);
+    const both = _.intersection(this, otherArray);
+    const onlyRight = _.difference(otherArray, this);
+
+    return [onlyLeft, both, onlyRight];
   },
 
   /**
