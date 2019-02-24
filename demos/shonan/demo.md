@@ -14,45 +14,6 @@ There are so many stories to tell... so many angles to approach... which one sho
 
 <style>
 
-li:first-child {
-    margin-top: 0px;
-}
-
-li {
-  margin-bottom: -5px;
-}
-
-li:last-child {
-    margin-bottom: 10px;
-}
-
-ul {
-  list-style: none;
-}
-
-ul  li::before{
-  content: "■"; /* □ */ 
-  color: rgb(255, 142, 0);
-  display: inline-block; 
-  width: 1.2em;
-  position: relative;
-  top: -4px;
-  font-size: 12pt;
-  margin-left: -1.2em;
-}
-
-ul  li li::before{
-  content: "□"; 
-  color: rgb(255, 142, 0);
-  display: inline-block; 
-  width: 1.2em;
-  position: relative;
-  top: -4px;
-  font-size: 12pt;
-  margin-left: -1.2em;
-}
-
-
 
 </style>
 

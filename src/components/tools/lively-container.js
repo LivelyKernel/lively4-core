@@ -524,13 +524,15 @@ export default class Container extends Morph {
 
   updateCSS() {
     var url = "" + this.getURL()
-    // lively.notify("update " + url)
-    // var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css"
-    var style = document.head.querySelector('link[href="'+ url  + '"]')
-    if (style && style.id) {
-      lively.notify("reload " + style.id)
-      lively.loadCSSThroughDOM(style.id, url)
-    }
+    Array.from(lively.allElements(true))
+      .filter(ea => ea.localName == "link")
+      .filter(ea => ea.href == url)
+      .forEach(ea => {
+        var parent = ea.parentElement
+        ea.remove()
+        parent.appendChild(ea)
+        lively.notify("update css",  ea.href)
+      })
   }
 
   updateOtherContainers() {
