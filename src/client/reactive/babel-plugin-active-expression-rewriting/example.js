@@ -1,4 +1,4 @@
 var x;
 x = 0;
-x.y
+y.y
 x.y = 0

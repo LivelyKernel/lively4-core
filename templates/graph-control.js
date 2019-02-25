@@ -51,8 +51,8 @@ export default class GraphControl extends Morph {
     const graph = await this.graph();
     
     const today = new Date();
-    const monday = today.mondayInWeek().toFormattedString('yyyy.mm.dd');
-    const friday = today.fridayInWeek().toFormattedString('yyyy.mm.dd');
+    const monday = today.mondayInWeek().toFormattedString('yyyy.MM.dd');
+    const friday = today.fridayInWeek().toFormattedString('yyyy.MM.dd');
     
     const knotTitle = `${title} ${monday}-${friday}`;
     

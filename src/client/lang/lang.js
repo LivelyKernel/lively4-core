@@ -129,19 +129,26 @@ extend(Date.prototype, {
   sundayInWeek(){ return this.dayInWeek(7); },
 
   toFormattedString(format){
-    if (format !== 'yyyy.mm.dd') {
-      throw new Error(`Format ${format} not yet supported`);
-    }
-
     function toStringWithTrailingZero(number) {
       return (number < 10 ? "0" : "") + number;
     }
 
-    const year = this.getFullYear();
-    const month = toStringWithTrailingZero(this.getMonth() + 1);
-    const day = toStringWithTrailingZero(this.getDate());
-
-    return `${year}.${month}.${day}`;
+    const yyyy = this.getFullYear();
+    const yy = yyyy.toString().substr(-2);
+    const MM = toStringWithTrailingZero(this.getMonth() + 1);
+    const dd = toStringWithTrailingZero(this.getDate());
+    const hh = toStringWithTrailingZero(this.getHours());
+    const mm = toStringWithTrailingZero(this.getMinutes());
+    const ss = toStringWithTrailingZero(this.getSeconds());
+    
+    return format
+      .replace(/yyyy/g, yyyy)
+      .replace(/yy/g, yy)
+      .replace(/MM/g, MM)
+      .replace(/dd/g, dd)
+      .replace(/hh/g, hh)
+      .replace(/mm/g, mm)
+      .replace(/ss/g, ss);
   }
   
 });
