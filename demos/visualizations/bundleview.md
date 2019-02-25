@@ -10,8 +10,6 @@ import d3 from "src/external/d3.v3.js"
 
 (async () => {
   var now = Date.now()
-  
-  
   var url = lively4url + "/src/client/"
   var tree = await files.fileTree(url)
 
@@ -29,9 +27,6 @@ import d3 from "src/external/d3.v3.js"
     urlMap.set(d.url, d)
   })
   
-  
-  
-  
   // connect our dababase entries with visualization data nodes
   await FileIndex.current().db.files.each(eaFile => {
     var d = urlMap.get(eaFile.url)
@@ -48,10 +43,6 @@ import d3 from "src/external/d3.v3.js"
   div.style.height = "800px"
   
   var treemap = await lively.create("d3-bundleview")
-
-
-  //   const flareJSON = await fetch('https://raw.githubusercontent.com/onsetsu/d3-bundleview/master/example/flare-compat.json').then(r => r.json());
-  // treemap.display(flareJSON);
 
   var relations = []
   Object.values(System.loads).forEach(load => {
@@ -76,7 +67,6 @@ import d3 from "src/external/d3.v3.js"
   })
 
   treemap.setData({nodes: tree, relations: relations})
-  
   treemap.style.backgroundColor = "lightgray"
   
   // positioning hack.... we make our coordinate system much easier by this
@@ -86,37 +76,12 @@ import d3 from "src/external/d3.v3.js"
   
   div.appendChild(treemap)
 
-  // var maxSize = 0
-  // visit(treemap.treeData, ea => {
-  //   if(ea.size) {
-  //     maxSize = Math.max(maxSize, Number(ea.size))
-  //   }
-  // })
-
-  // var color = d3.scaleLinear().domain([0,25])
-  //       .interpolate(d3.interpolateHcl)
-  //       .range([d3.rgb("#FFFFFF"), d3.rgb('#9A9A9A')]);
-
-
   treemap.dataSize = function(d) {
-    
-    // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
     if (d.data && d.data.index && d.data.index.size) {
       return (Number(d.data.index.size) * 0.001) + 5
     }
     return 5
-  }
-
-//   treemap.dataColor = function(d) {
-//     // return color(d.data.index && d.data.index.tags ? d.data.index.tags.length : 0)
-//     if (d.data && d.data.index) {
-//       var time = moment(d.data.index.modified)
-//       var days = (now - time._d.getTime()) / 1000 / 60 / 60 / 24
-
-//       return color(days)
-//     }
-//   }
-  
+  }  
   treemap.dataClick = function(d, evt) {
     if (evt.shiftKey) {
       lively.openInspector(d)
@@ -125,9 +90,6 @@ import d3 from "src/external/d3.v3.js"
       lively.openBrowser(d.url) // d.data.url vs d.url (separating vs merging data into node) #Discussion #D3 
     }
   }
-
-  // treemap.updateViz()
-
   return div
 })()
 </script>

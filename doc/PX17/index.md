@@ -3,6 +3,7 @@
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 <link rel="stylesheet" type="text/css" href="./style.css"  />
+<link rel="stylesheet" type="text/css" href="../presentation/style.css"  />
 
 <style>
 
@@ -107,7 +108,6 @@ Software Architecture Group <br>Hasso Plattner Institute<br> University of Potsd
 PX/17.2, October 22, 2017, Vancouver, Canada
 </div>
 
-
 <script>
 import {pt} from "src/client/graphics.js"
 
@@ -120,22 +120,14 @@ button.onclick = () => {
 
   var clock = document.createElement("lively-digital-clock")
     clock.id = id
-    lively.setPosition(clock, pt(0, 0))
-    lively.components.openIn(lively.query(this, "lively-container"), clock)
+    lively.setPosition(clock, pt(10, 40))
+    lively
+    lively.components.openIn(lively.query(this, "lively-container").getContentRoot(), clock)
 }
 button
 </script>
 
 
-<script>
-  import {presentationPrintButton} from "src/client/essay.js"
-  presentationPrintButton(this)
-</script>
-
-<script>
-  import {presentationFullscreenButton} from "src/client/essay.js"
-  presentationFullscreenButton(this)
-</script>
 
 ---
 <img class="logo" src="./hpi_logo.png" width="50px">
@@ -180,13 +172,14 @@ var button = document.createElement("button")
 button.textContent = "Bouncing Ball"
 button.onclick = () => {
   var id = "bouncingball"
-  var open = document.querySelector("#" + id)
+  var root = lively.query(this, "lively-container").getContentRoot()
+  var open = root.querySelector("#" + id)
   if (open) { open.remove(); return}
 
   Ball.livelyExample().then(container => {
     container.id = id
     lively.setPosition(container, pt(30, 170))
-    lively.query(this, "lively-container").appendChild(container) 
+    root.appendChild(container) 
   })
 }
 button
@@ -279,12 +272,13 @@ var button = document.createElement("button")
 button.textContent = "Soapbubble"
 button.onclick = () => {
   var id = "soapbubble"
-  var open = document.querySelector("#" + id)
+  var root = lively.query(this, "lively-container").getContentRoot()
+  var open = root.querySelector("#" + id)
   if (open) { open.remove(); return}
   Soap.livelyExample().then(container => {
     container.id = id
     lively.setPosition(container, pt(30, 170))
-    lively.query(this, "lively-container").appendChild(container) 
+    root.appendChild(container) 
   })
 }
 button

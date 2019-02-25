@@ -8,7 +8,7 @@
 
 <style>
   li.box {
-    width: 200px;
+    width: 250px;
     height: 150px;
     list-style-type: none;
     float: left;
@@ -27,6 +27,7 @@
   }
 </style>
 <style>
+
 
 
 </style>
@@ -205,13 +206,14 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ---
 ## Text Editing:
 
-- ### [LivelyCodeMirror](open://lively-code-mirror) ![](lively-codemirror.png){style="width:300px; float: right; margin-left: 50px"} {style="list-style-type: none;"} 
+### [LivelyCodeMirror](open://lively-code-mirror)
+![](lively-codemirror.png){style="width:300px; float: right; margin-left: 50px"} {style="list-style-type: none;"} 
   - powerfull editor of a text buffer
   - syntax highlighting and code completion
   - custom widgets and editor UI enhancements
-  
 
-- ### [LivelyEditor](open://lively-editor) ![](lively-editor.png){style="width:200px; float: right; margin-left: 100px"} {style="list-style-type: none;"} 
+### [LivelyEditor](open://lively-editor) 
+![](lively-editor.png){style="width:200px; float: right; margin-left: 100px"} {style="list-style-type: none;"} 
   - can edit files (urls)
   - can resolve conflicts with server and other editors
   - threewaymerge 
@@ -275,7 +277,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ## Media Browser
 
 - #Plex Media API [plex-media](open://plex-media)
-  - 
+
 
 ## Chrome Extension
 
