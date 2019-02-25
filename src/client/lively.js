@@ -1396,6 +1396,7 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       livelyContainer = comp;
+      livelyContainer.hideNavbar()
       comp.parentElement.style.width = "950px";
       comp.parentElement.style.height = "600px";
 

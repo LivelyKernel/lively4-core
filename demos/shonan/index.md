@@ -34,6 +34,28 @@ There are so many stories to tell... so many angles to approach... which one sho
   <br><br>Feb 2019
 </div>
 
+
+<script>
+import {pt} from "src/client/graphics.js"
+
+var button = document.createElement("button")
+button.textContent = "Timer"
+button.onclick = () => {
+  var id = "digital-clock"
+  var open = document.querySelector("#" + id)
+  if (open) { open.remove(); return}
+
+  var clock = document.createElement("lively-digital-clock")
+    clock.id = id
+    lively.setPosition(clock, lively.pt(10, 0))
+    lively.setExtent(clock, lively.pt(200,50))
+    clock.style.opacity = 0.5
+    lively.components.openIn(lively.query(this, "lively-container").getContentRoot(), clock)
+}
+button
+</script>
+
+
 ----
 ## Exploratory Programming Environments   
 
@@ -54,7 +76,7 @@ There are so many stories to tell... so many angles to approach... which one sho
 
 1. Excludes working on content and programs not created 
    <br> in specific environment/framework/language
-2. Hard make use of content and programs 
+2. Hard to make use of content and programs 
    <br> created outside of that environment
 
 <!-- TODO show (1) and (2) here -->
