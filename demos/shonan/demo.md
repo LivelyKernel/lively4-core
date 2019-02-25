@@ -38,9 +38,8 @@ There are so many stories to tell... so many angles to approach... which one sho
 </div>
 
 ----
-##  Context
-- Development Environments for Exploratory programming  
-- require: special workflows, frameworks or languages
+## Development Environments for Exploratory programming  
+- **Require**: special workflows, frameworks or languages
 - Classic Smalltalk: persistent, pure, fully reflectional object graph
 - Our own project: Lively Kernel (Smalltalk/Morphic in a browser)
   - Subset of JavaScript (custom Smalltalk-like class system)
@@ -50,7 +49,7 @@ There are so many stories to tell... so many angles to approach... which one sho
 <!-- TODO insert picture of webwerkstatt here.... -->  
 
 ---
-## Inquiry / Problem  <!-- outside world cannot make use of cool inside tools -->
+## Inside/Outside <-> Content/Code  <!-- outside world cannot make use of cool inside tools -->
 
 1. Excludes working on content and programs not created 
    <br> in specific environment/framework/language
@@ -58,48 +57,41 @@ There are so many stories to tell... so many angles to approach... which one sho
    <br> created outside of that environment
 
 <!-- TODO show (1) and (2) here -->
-![](lively4-inquiry){style="position: absolute;   bottom: 50px; left: 30%; right: 30%"}
+![](lively4-inquiry){style="position: absolute;   bottom: 0px; right: 0px}
 
 <!-- web: effortless collaborative development (wiki vs. git workflow) -->
 
 ---
 <!-- Approach: What was done that unveiled new knowledge? -->
-## Approach <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
+## From Lively Kernel to Lively4 <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
 
 - To overcome the gap between 
-  - explorable content created in special environments
-  - outside content as HTML content and JavaScript programs  
+  - Explorable content created in special environments
+  - Outside content as HTML content and JavaScript programs  
 - We create Lively4
-  - a new environment that fully embraces standard HTML and JavaScript
+  - New environment that fully embraces standard HTML and JavaScript
   - HTML used to be only a generation target UI for frameworks other systems
 - In Lively4, we use HTML/JavaScript to build a 
-  - collaborative
-  - self-supporting 
-  - exploratory development environment 
-  - for HTML/JavaScript content
+  - Collaborative
+  - Self-supporting 
+  - Exploratory development environment 
+  - For HTML/JavaScript content
 
 ---
 <!-- Knowledge: What new facts were uncovered? If the research was not results oriented, what new capabilities are enabled by the work? -->
-## Knowledge
+## Lively4
 
 - Pushing boundaries of exploratory programming environments
   - Given the restrictions of HTML and JavaScript
 - Compare working with 
   - Documents, names, explicit references (Lively4) 
   - Pure object graph of special environments  (Lively Kernel / Smalltalk)
-
----
-<!-- Grounding: What argument, feasibility proof, artifacts, or results and evaluation support this work? -->
-## Grounding
-
 - Build Lively4 environment in a self-supporting way
-- which allowed us:  
-  - develop, use and evolve 
-  - tools and workflows from within it.
+- Develop, use and evolve **tools** and **workflows** from within it
 
 ---
 <!-- Importance: Why does this work matter? -->
-## Importance 
+##  Conclusion 
 
 1. Exploratory workflows can enrich <br>HTML/JavaScript development experience
 2. Tools and environment can be easier to create 
@@ -124,12 +116,6 @@ There are so many stories to tell... so many angles to approach... which one sho
   - GraphViz for graph layout
   - JavaScript, HTML, Markdown parser  
 
---- 
-## More Demos
-
-- "Drag and Drop" and "Copy and Paste"
-- ACM vs. Academics ?
-- Files and Polymorphic Identifiers (Plex Demo / #Broken?)
 
 ---
 ... ...  ...
@@ -137,9 +123,9 @@ There are so many stories to tell... so many angles to approach... which one sho
 ---
 ## Background: Lively Kernel
 - Self-supporting System
-  - all development can be done from within itself
+  - All development can be done from within itself
 - Web-based Development Environment -> **Lively Wiki**
-  - mostly client side
+  - Mostly client side
 
 
 ----
@@ -176,6 +162,14 @@ There are so many stories to tell... so many angles to approach... which one sho
 - Modules to separate behavior
 - Web-components as abstraction
 - #ShadowRoot as natural border for serialization
+
+--- 
+## More Demos
+
+- "Drag and Drop" and "Copy and Paste"
+- ACM vs. Academics ?
+- Files and Polymorphic Identifiers (Plex Demo / #Broken?)
+
 
 ---
 
