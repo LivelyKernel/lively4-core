@@ -2,7 +2,11 @@
 <link rel="stylesheet" type="text/css" href="../index-style.css"  />
 
 # D3 Components
-  
+<script>
+  import ComponentCreator from "src/client/morphic/component-creator.js"
+  var container  = lively.query(this, "lively-container")
+</script>
+
 - d3-barchart-gh  {.component}
 - d3-barchart  {.component}
 - d3-boxplot  {.component}

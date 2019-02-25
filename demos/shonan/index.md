@@ -6,8 +6,6 @@ There are so many stories to tell... so many angles to approach... which one sho
 
 --->
 
-
-
 <link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
@@ -34,11 +32,12 @@ There are so many stories to tell... so many angles to approach... which one sho
   on Self-supporting, Extensible Programming Languages and Environments <br>
   for Exploratory, Live Software Development
   <br><br>Feb 2019
-  
 </div>
 
 ----
-## Development Environments for Exploratory programming  
+## Exploratory Programming Environments   
+
+
 - **Require**: special workflows, frameworks or languages
 - Classic Smalltalk: persistent, pure, fully reflectional object graph
 - Our own project: Lively Kernel (Smalltalk/Morphic in a browser)
@@ -47,6 +46,8 @@ There are so many stories to tell... so many angles to approach... which one sho
   - Reflective Morphic UI
   
 <!-- TODO insert picture of webwerkstatt here.... -->  
+
+![](webwerkstatt.png){width="600"; style="position: absolute; bottom: 0px; right: 0px}
 
 ---
 ## Inside/Outside <-> Content/Code  <!-- outside world cannot make use of cool inside tools -->
@@ -57,45 +58,64 @@ There are so many stories to tell... so many angles to approach... which one sho
    <br> created outside of that environment
 
 <!-- TODO show (1) and (2) here -->
-![](lively4-inquiry){style="position: absolute;   bottom: 0px; right: 0px}
+![](lively4-inquiry){style="position: absolute;  width:500px; bottom: 0px; right: 0px}
 
 <!-- web: effortless collaborative development (wiki vs. git workflow) -->
 
+
 ---
 <!-- Approach: What was done that unveiled new knowledge? -->
-## From Lively Kernel to Lively4 <!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
+## Approach: Lively4
 
-- To overcome the gap between 
+<!-- (e.g. Smalltalk-like Lively Kernel objects and workflows) -->
+ 
+- Overcome the gap between 
   - Explorable content created in special environments
   - Outside content as HTML content and JavaScript programs  
-- We create Lively4
-  - New environment that fully embraces standard HTML and JavaScript
+- We create new environment that fully embraces HTML and JavaScript
   - HTML used to be only a generation target UI for frameworks other systems
-- In Lively4, we use HTML/JavaScript to build a 
+  - HTML Elements become our persistent domain objects
+- We use HTML/JavaScript to build a 
   - Collaborative
   - Self-supporting 
   - Exploratory development environment 
   - For HTML/JavaScript content
 
 ---
-<!-- Knowledge: What new facts were uncovered? If the research was not results oriented, what new capabilities are enabled by the work? -->
-## Lively4
+## Tools and Workflows
 
-- Pushing boundaries of exploratory programming environments
-  - Given the restrictions of HTML and JavaScript
-- Compare working with 
-  - Documents, names, explicit references (Lively4) 
-  - Pure object graph of special environments  (Lively Kernel / Smalltalk)
-- Build Lively4 environment in a self-supporting way
-- Develop, use and evolve **tools** and **workflows** from within it
+<lively-import style="position:relative" src="./tools-and-workflows.html"></lively-import>
+
+
+---
+## Demo
+
+- Example of [D3/GraphViz visualization](browse://src/components/d3/index.md)
+  - [Bootlog](browse://demos/visualizations/bootlog.md) 
+  - [Core Module Dependecies](browse://demos/visualizations/graphviz.md) 
+  - <button onclick='lively.openPart("WorldMirror")'>XRay</button> / <button onclick='lively.openPart("elements-under")'>Elements under</button> 
+- [Developers Journal](browse://doc/journal/2019-01-18.md/index.md)
 
 ---
 <!-- Importance: Why does this work matter? -->
 ##  Conclusion 
 
-1. Exploratory workflows can enrich <br>HTML/JavaScript development experience
-2. Tools and environment can be easier to create 
+- Build Lively4 environment in a self-supporting way
+- Develop, use and evolve **tools** and **workflows** from within it
+- Can use and work on *outside* content and code 
+  - Exploratory workflows can enrich <br>HTML/JavaScript development experience
+  - Tools and environment can be easier to create 
   <br> if external contributions are easier to integrate and use
+
+---
+... ...  ...
+
+---
+
+<div class="title">
+  More on Lively4
+</div>
+
 
 --- 
 ## Demos
@@ -116,17 +136,12 @@ There are so many stories to tell... so many angles to approach... which one sho
   - GraphViz for graph layout
   - JavaScript, HTML, Markdown parser  
 
-
----
-... ...  ...
-
 ---
 ## Background: Lively Kernel
 - Self-supporting System
   - All development can be done from within itself
 - Web-based Development Environment -> **Lively Wiki**
   - Mostly client side
-
 
 ----
 ## Lively4 
@@ -170,9 +185,71 @@ There are so many stories to tell... so many angles to approach... which one sho
 - ACM vs. Academics ?
 - Files and Polymorphic Identifiers (Plex Demo / #Broken?)
 
+---
+## Lively4 
+
+- Technologies
+  - Markdown, Scripts, Components
+  - HTML / JavaScript / CSS
+  - Web Components
+  - Modules
+  - Persistable Object-specific Behavior
+- Shonan
+  - Meta Code -> Markdown 
+  - Visualizations Statements in Code
+  - openness of computational documents
+  - workflow: objects / run time first
 
 ---
+### Visualizations
 
+- [Components](browse://src/components/d3/index.md)
+- [Bootlog](browse://demos/visualizations/bootlog.md) 
+- [DOM Class Hierrachy](browse://demos/visualizations/classhierrachy.md)
+- [Core Module Dependecies](browse://demos/visualizations/graphviz.md) 
+- [All Module Dependecies](browse://demos/visualizations/graphviz_allmodules.md) 
+- [Object Graph](browse://demos/visualizations/object_graph.md)
+- [SqueakCalls](browse://demos/visualizations/squeakcalls.md) #Marcel
+- [File size TreeMape](browse://demos/visualizations/treemap_size.md)
+
+
+---
+## What is the "Code" (in Lively4)?
+
+- (Enhanced) JavaScript in Modules
+  - Language features
+  - More exploration friendly (access to module state)
+- HTML / CSS for components
+- Markdown for Wiki-content e.g. documentation, journal, drafts
+
+---
+## Where is "Code" used
+
+- Workspace
+  - DoIt (CTRL+D), PrintIt (CTRL+P)
+- SCRIPT Tag in Markdown
+  - Display results
+  - Our language features
+- Objects 
+  - Object specific-behavior through Object-editor (SHIFT+InspectIt)
+  - Fully serializeable (files, drag and drop, clipboard, browser local storage)
+- Modules / Components
+
+--- 
+## How to edit "Code"?
+
+- Workspace
+- (File) Browser / Container
+  - View and edit files
+  - Bidirectional editing
+- Inspector / Object Editor
+
+---
+## Exploration in Lively4?
+
+- Eval code?
+- Inspect objects / DOM Nodes
+  - extendable...
 
 ---
 <!-- #TODO pull this up into presentation? -->
