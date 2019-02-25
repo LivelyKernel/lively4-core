@@ -69,8 +69,20 @@ export default function(param) {
   function isGenerated(path) {
     return path.findParent(p => t.isFunctionDeclaration(p.node) && p.node[GENERATED_FUNCTION])
   }
+  
+  const tNonRewritable = new Proxy({}, {
+    get(target, prop, receiver) {
+      return (...args) => {
+        const node = t[prop](...args);
+        // --> #TODO: should use a common 'doNotRewriteNode' and 'doNotRewriteSubtree' flags
+        node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+        return node;
+      };
+    }
+  });
 
   function nonRewritableIdentifier(name) {
+    return tNonRewritable.identifier(name);
     const node = t.identifier(name);
     node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return node;
@@ -139,8 +151,12 @@ export default function(param) {
   // #TODO: add global flag for expression analysis mode
   function checkExpressionAnalysisMode(node) {
     return t.ifStatement(
-      t.booleanLiteral(true),
+      markMemberToNotBeRewritten(t.memberExpression(
+        nonRewritableIdentifier('self'),
+        nonRewritableIdentifier('__expressionAnalysisMode__')
+      )),
       t.expressionStatement(node)
+      // ,t.unaryExpression("void", t.numericLiteral(0), true)
     );
   }
 
@@ -578,13 +594,7 @@ export default function(param) {
                       t.sequenceExpression([
                         path.node,
                         t.conditionalExpression(
-                          // #TODO: make this working
-                          // add global flag for expression analysis mode
-                          // this is a SET operation and should not just be active in expressionAnalysisMode
-                          markMemberToNotBeRewritten(t.memberExpression(
-                            nonRewritableIdentifier('window'),
-                            nonRewritableIdentifier('__expressionAnalysisMode__')
-                          )),
+                          t.booleanLiteral(true),
                           t.callExpression(
                             addCustomTemplate(state.file, SET_LOCAL), [
                               getIdentifierForExplicitScopeObject(parentWithScope),

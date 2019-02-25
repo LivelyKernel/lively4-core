@@ -10,9 +10,11 @@ window.__expressionAnalysisMode__ = true;
 const analysisModeManager = {
   __enter__() {
     expressionAnalysisMode = true;
+    window.__expressionAnalysisMode__ = expressionAnalysisMode;
   },
   __exit__() {
     expressionAnalysisMode = !!aexprStack.top();
+    window.__expressionAnalysisMode__ = expressionAnalysisMode;
   }
 }
 class ExpressionAnalysis {
