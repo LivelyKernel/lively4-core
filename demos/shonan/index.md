@@ -123,7 +123,7 @@ button
 ##  Conclusion 
 
 - Build Lively4 environment in a self-supporting way
-- Develop, use and evolve **tools** and **workflows** from within it
+  - Develop, use and evolve **tools** and **workflows** from within it
 - Can use and work on *outside* content and code 
   - Exploratory workflows can enrich <br>HTML/JavaScript development experience
   - Tools and environment can be easier to create 

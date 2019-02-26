@@ -1,9 +1,8 @@
-# ![Lively 4](media/lively4_logo_smooth_100.png) A Self-supporting, Web-based Development Environment
+# ![Lively 4](http://localhost:9005/lively4-jens/media/lively4_logo_smooth_100.png) A Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
-
-## Getting Started 
+## Getting Started
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-core/doc/_navigation.html"></lively-import>
 
