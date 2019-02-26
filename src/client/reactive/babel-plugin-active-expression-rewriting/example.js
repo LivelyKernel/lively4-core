@@ -1,4 +1,7 @@
-var x;
-x = 0;
-y.y
-x.y = 0
+(() => {
+  var x = { y: 17 };
+  
+  aexpr(() => x.y).onChange(console.log);
+
+  x.y = 0
+})()

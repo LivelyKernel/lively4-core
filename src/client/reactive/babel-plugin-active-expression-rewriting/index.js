@@ -46,12 +46,7 @@ function markMemberToNotBeRewritten(path) {
   return path;
 }
 
-export default function(param) {
-  let {
-    types: t,
-    template,
-    traverse
-  } = param;
+export default function({ types: t, template, traverse }) {
 
   function getPropertyFromMemberExpression(node) {
     // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -205,6 +200,7 @@ export default function(param) {
               }
             });
           }
+          
           if (!shouldTransform) {
             return;
           }

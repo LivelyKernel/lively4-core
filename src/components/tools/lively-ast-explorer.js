@@ -18,6 +18,9 @@ export default class AstExplorer extends Morph {
   get sourceURL() { return this.sourceEditor.getURLString(); }
   get pluginURL() { return this.pluginEditor.getURLString(); }
   
+  get runTests() { return this.get('#run-tests').checked; }
+  set runTests(value) { return this.get('#run-tests').checked = value; }
+
   async initLivelyEditorFromAttribute(editor, attributeToRead, defaultPath) {
     var filePath =  this.getAttribute(attributeToRead);
     if (!filePath) {
@@ -195,9 +198,11 @@ export default class AstExplorer extends Morph {
       }
     }
     
-    executeAllTestRunners();
+    if(this.runTests) {
+      executeAllTestRunners();
+    }
   }
-
+  
   livelyPrepareSave() {
     this.setAttribute('source', this.sourceURL);
     this.setAttribute('plugin', this.pluginURL);
@@ -209,6 +214,7 @@ export default class AstExplorer extends Morph {
     this.addEventListener("initialize", () => {
       this.outputEditor.editor.setValue(other.outputEditor.editor.getValue()); 
       this.result = other.result;
+      this.runTests = other.runTests;
       this.updateAST();
     });
   }
@@ -249,19 +255,19 @@ export default class AstExplorer extends Morph {
   }
   
   onSourceSelectionChanged(evt) {
-    // setTimeout(() => {
-    //   if(this.sourceEditor.get("#editor").isFocused()) {
-    //     this.mapEditorsFromToPosition(
-    //       this.sourceEditor.get("#editor").currentEditor(), this.outputEditor.editor, false)
-    //   }
-    // }, 0);
+    setTimeout(() => {
+      if(this.sourceEditor.get('#editor').isFocused()) {
+        this.mapEditorsFromToPosition(
+          this.sourceEditor.get('#editor').editor, this.outputEditor.editor, false)
+      }
+    }, 0);
   }
   onOutputSelectionChanged(evt) {
-    // setTimeout(() => {
-    //   if(this.outputEditor.isFocused()) { 
-    //     this.mapEditorsFromToPosition(
-    //       this.outputEditor.editor, this.sourceEditor.get("#editor").currentEditor(), true)
-    //   }
-    // }, 0);
+    setTimeout(() => {
+      if(this.outputEditor.isFocused()) {
+        this.mapEditorsFromToPosition(
+          this.outputEditor.editor, this.sourceEditor.get('#editor').editor, true)
+      }
+    }, 0);
   }
 }
