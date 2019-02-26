@@ -77,7 +77,7 @@ import d3 from "src/external/d3.v5.js"
     
     var table = await lively.create("lively-table")
     var filtered = currentboot.filter(ea => ea.mode == mode)
-    var analysis = _.sortBy(filtered, ea => ea.time).reverse().slice(0, 10).map(ea => ({
+    var analysis = _.sortBy(filtered, ea => ea.time).reverse().slice(0, 5).map(ea => ({
       name: ea.url.replace(lively4url, ""),  
       time: (ea.time / 1000).toFixed(3)+ "s"}));
     analysis.push({name: "total", time: (filtered
