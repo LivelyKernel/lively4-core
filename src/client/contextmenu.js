@@ -16,7 +16,7 @@ import Rasterize from 'src/client/rasterize.js'
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
 export default class ContextMenu {
-  P
+  
   constructor(target, optItems) {
     this.target = target;
     this.items = optItems;
@@ -267,7 +267,7 @@ export default class ContextMenu {
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
       ["Browse/Edit", evt => {
           var container = _.last(document.querySelectorAll("lively-container"));
-          this.openComponentInWindow("lively-container", evt, worldContext, pt(950, 600)).then(comp => {
+          this.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700)).then(comp => {
             if (container)
               comp.followPath("" + container.getURL());
             else
