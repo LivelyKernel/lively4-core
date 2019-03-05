@@ -28,71 +28,72 @@ class ExpressionAnalysis {
 
 import CompositeKey from './composite-key.js';
 
+class BidirectionalMultiMap {
+
+  constructor() {
+    this.leftToRight = new Map();
+    this.rightToLeft = new Map();
+  }
+  
+  associate(left, right) {
+    this.getRightsFor(left).add(right);
+    this.getLeftsFor(right).add(left);
+  }
+  
+  remove(left, right) {
+    this.getRightsFor(left).delete(right);
+    this.getLeftsFor(right).delete(left);
+  }
+
+  removeAllRightFor(left) {
+    this.getRightsFor(left).forEach(right => this.remove(left, right));
+  }
+
+  removeAllLeftFor(right) {
+    this.getLeftsFor(right).forEach(left => this.remove(left, right));
+  }
+
+  clear() {
+    this.leftToRight.clear();
+    this.rightToLeft.clear();
+  }
+
+  getRightsFor(left) {
+    return this.leftToRight.getOrCreate(left, () => new Set());
+  }
+
+  getLeftsFor(right) {
+    return this.rightToLeft.getOrCreate(right, () => new Set());
+  }
+
+}
+
 class HookStorage {
   constructor() {
-    // this.objPropsByAExpr = new Map();
-
-    this.aexprsByObjProp = new Map();
+    // left: objProps; right: aexprs
+    this.objPropsToAExprs = new BidirectionalMultiMap();
   }
 
   associate(aexpr, obj, prop) {
-    // if(!this.objPropsByAExpr.has(aexpr)) {
-    //     this.objPropsByAExpr.set(aexpr, new Set());
-    // }
-    //
-    // let objPropSet = this.objPropsByAExpr.get(aexpr);
-    //
-    // objPropSet.add(CompositeKey.get(obj, prop));
-
-    // ---
     if (!aexpr) {
       throw new Error('aexpr is undefined');
     }
 
     const key = CompositeKey.for(obj, prop);
-    this.aexprsByObjProp.getOrCreate(key, () => new Set()).add(aexpr);
-    
-    if (!this.aexprsByObjProp.has(key)) {
-      this.aexprsByObjProp.set(key, new Set());
-    }
-
-    this.aexprsByObjProp.get(key).add(aexpr);
+    this.objPropsToAExprs.associate(key, aexpr);
   }
 
   disconnectAll(aexpr) {
-    // this.objPropsByAExpr.delete(aexpr);
-
-    // ---
-
-    this.aexprsByObjProp.forEach(setOfAExprs => {
-      setOfAExprs.delete(aexpr);
-    });
+    this.objPropsToAExprs.removeAllLeftFor(aexpr);
   }
 
   getAExprsFor(obj, prop) {
     const key = CompositeKey.for(obj, prop);
-    if (!this.aexprsByObjProp.has(key)) {
-      return [];
-    }
-    return Array.from(this.aexprsByObjProp.get(key));
-
-    // ---
-    // let comp = CompositeKey.get(obj, prop);
-    // return Array.from(this.objPropsByAExpr.keys()).filter(aexpr => {
-    //     return this.objPropsByAExpr.get(aexpr).has(comp);
-    // });
+    return Array.from(this.objPropsToAExprs.getRightsFor(key));
   }
 
   getCompKeysFor(aexpr) {
-    let compKeys = [];
-
-    this.aexprsByObjProp.forEach((aexprSet, compKey) => {
-      if (aexprSet.has(aexpr)) {
-        compKeys.push(compKey);
-      }
-    });
-
-    return compKeys;
+    return Array.from(this.objPropsToAExprs.getLeftsFor(aexpr));
   }
 
   /*
@@ -100,7 +101,7 @@ class HookStorage {
    * As a result
    */
   clear() {
-    this.aexprsByObjProp.clear();
+    this.objPropsToAExprs.clear();
   }
 }
 
