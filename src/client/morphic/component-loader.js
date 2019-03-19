@@ -266,14 +266,6 @@ export default class ComponentLoader {
   
   }
 
-  // this function creates the bootstrap script for the component templates
-  static createRegistrationScript(componentId) {
-    var script = document.createElement("script");
-    script.className = "registrationScript";
-    script.innerHTML = "lively.registerTemplate()";
-    return script;
-  }
-
   // this function loads all unregistered elements, starts looking in lookupRoot,
   // if lookupRoot is not set, it looks in the whole document.body,
   // if deep is set, it also looks into shadow roots
