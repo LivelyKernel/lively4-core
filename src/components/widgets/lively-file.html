@@ -1,11 +1,45 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>503 Service Unavailable</title>
-</head><body>
-<h1>Service Unavailable</h1>
-<p>The server is temporarily unable to service your
-request due to maintenance downtime or capacity
-problems. Please try again later.</p>
-<hr>
-<address>Apache/2.4.29 (Ubuntu) Server at lively-kernel.org Port 443</address>
-</body></html>
+<template id="lively-file">
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  
+  <style>
+    :host {
+      user-select: none;
+    }
+    
+    :host(.selected) {
+      border: 1px solid blue;
+    }
+    
+    #container {
+      text-align: center;
+    }
+
+    #item-icon {
+      height: 80%;
+      font-size: 36px;
+      width: 1.28571429em;
+    }
+
+    #item-name {
+      font-size: 80%;
+      text-align: center;
+      word-break: keep-all; /* break-all */
+    }
+    
+    .fa-folder {
+      color: #e99a01;
+    }
+
+    .fa-file-o {
+      color: #999;
+    }
+    
+
+  </style>
+  <div id="container">
+    <div id="icon">
+      <i id="item-icon" class="fa" aria-hidden="true"></i>
+    </div>
+    <div id="item-name"></div>
+  </div>
+</template>

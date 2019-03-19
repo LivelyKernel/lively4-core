@@ -109,7 +109,7 @@ if ('serviceWorker' in navigator || window.lively4chrome || externalSite) {
         // disable search widget for now
         // if (!window.lively4chrome)
         //   lively.initializeSearch(); // disable search widget in chrome extension setting
-        lively.components.loadUnresolved();
+        lively.components.loadUnresolved(document.body, true, "load.js", true)
         console.log("running on load callbacks:");
         loadCallbacks.forEach(function(cb) {
           try {

@@ -243,7 +243,7 @@ export default class Services extends Morph {
     }
   }
 
-  listServices(services) {
+  async listServices(services) {
     this.services = services;
     var item;
     var selectedPID = this.removeAllItems();
@@ -256,7 +256,7 @@ export default class Services extends Morph {
     var now = new Date().getTime();
     for (var id in services) {
       var service = services[id];
-      item = document.createElement('lively-services-item');
+      item = await lively.create('lively-services-item');
       item.setAttribute('data-id', id);
       if (id == selectedPID) {
         item.getSubmorph('.item').classList.add('selected');
