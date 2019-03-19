@@ -1,33 +1,32 @@
-<template id="lively-handwriting" data-class="LivelyHandwriting">
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  
-}
-#canvasSimple {
-   width="490px";
-   height="220px";
-}
-</style>
-                                             
-<h1 id="caption">WritePad Handwriting Recognition</h1>
+<template id="lively-handwriting">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      
+    }
+    #canvasSimple {
+       width="490px";
+       height="220px";
+    }
+  </style>
 
-<select id="language">
-  <option value="en">English</option>
-  <option value="de">Deutsch</option>
-</select>
+  <h1 id="caption">WritePad Handwriting Recognition</h1>
 
-<lively-paper id="drawingCanvas"></lively-paper>
+  <select id="language">
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+  </select>
 
-<div id="dynbuttons"></div>
-<div id="control">
-  <button id="clearText">Clear Text</button>
-</div>
-<div id="result"></div>
+  <lively-paper id="drawingCanvas"></lively-paper>
 
-<div id="hiddenContent">
-	<content></content>
-</div>
+  <div id="dynbuttons"></div>
+  <div id="control">
+    <button id="clearText">Clear Text</button>
+  </div>
+  <div id="result"></div>
+
+  <div id="hiddenContent">
+    <slot></slot>
+  </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

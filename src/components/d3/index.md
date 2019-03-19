@@ -18,12 +18,15 @@
 - d3-radialtree  {.component}
 - d3-treemap  {.component}
 - graphviz-dot  {.component}
- 
+
+
 ## Helper
- 
-  - [d3-component.js](d3-component.js) [html](d3-component.html)
-  - [d3-tree.js](d3-tree.js) [html](d3-tree.html)
-  - [d3-box.js](d3-box.js)
+
+- [d3-component.js](d3-component.js) [html](d3-component.html)
+- [d3-tree.js](d3-tree.js) [html](d3-tree.html)
+- [d3-box.js](d3-box.js)
+
+
 <!-- 
 <script>
 import Files from "src/client/files.js"

@@ -11,7 +11,7 @@ export default class Morph extends HTMLElement {
    * #FeatureIdea -- In Livel3, it could it also be used to look for owners and siblings  
    */ 
   connectedCallback() {
-    console.log('connected');
+    // console.log('connected');
   }
   
   get(selector) {

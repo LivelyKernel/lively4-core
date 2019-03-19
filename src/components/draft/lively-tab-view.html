@@ -1,4 +1,4 @@
- <template id="lively-tab-view" data-class="LivelyTabView">
+ <template id="lively-tab-view">
   <style>
   :host {
     display: flex;
@@ -42,7 +42,7 @@
     flex: 1;
   }
 
-  ::content .tab-view-inactive {
+  ::slot(*) .tab-view-inactive {
     display: none!important;
   }
 
@@ -52,8 +52,7 @@
   </ul>
 
   <div id="tab-content">
-    <content></content>
+    <slot></slot>
   </div>
 </template>
 
-<script class="registrationScript">lively.registerTemplate()</script>

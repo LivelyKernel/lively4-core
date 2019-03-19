@@ -1,46 +1,44 @@
-<template id="vivide-list-widget" data-class="VivideListWidget">
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  width: 100%;
-  height: 100%;
-  background-color: lightyellow;
-}
-#content {
-  width: 100%;
-  height: 100%;
-}
-li {
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -khtml-user-drag: element;
-  -webkit-user-drag: element;
-  user-drag: element;
-}
-li {
-  transition: color 0.2s ease-out;
-  transition: background-color 0.2s ease-out;
-  border: 0.5px solid transparent;
-}
-li.selected {
-  background-color: steelblue;
-}
-li.last-selected {
-  color: white;
-}
-li:hover {
-  background-color: lightblue;
-}
-li:focus {
-  box-shadow: inset 0 0 8px #000000;
-}
-</style>
+<template id="vivide-list-widget">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      width: 100%;
+      height: 100%;
+      background-color: lightyellow;
+    }
+    #content {
+      width: 100%;
+      height: 100%;
+    }
+    li {
+      -moz-user-select: none;
+      -khtml-user-select: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -khtml-user-drag: element;
+      -webkit-user-drag: element;
+      user-drag: element;
+    }
+    li {
+      transition: color 0.2s ease-out;
+      transition: background-color 0.2s ease-out;
+      border: 0.5px solid transparent;
+    }
+    li.selected {
+      background-color: steelblue;
+    }
+    li.last-selected {
+      color: white;
+    }
+    li:hover {
+      background-color: lightblue;
+    }
+    li:focus {
+      box-shadow: inset 0 0 8px #000000;
+    }
+  </style>
   <ul id="list">
-  <content></content>
+    <slot></slot>
   </ul>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

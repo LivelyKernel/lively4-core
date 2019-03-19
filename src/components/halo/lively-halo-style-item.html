@@ -1,4 +1,4 @@
-<template id="lively-halo-style-item" data-class="LivelyHaloStyleItem">
+<template id="lively-halo-style-item">
   <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
   <style data-src="/src/components/halo/lively-halo-item.css"></style>
   <style>
@@ -7,8 +7,5 @@
     }
   </style>
   <i class="fa fa-star-half-o" aria-hidden="true"></i>
-  <content></content>
+  <slot></slot>
 </template>
-<script class="registrationScript">
-  lively.registerTemplate()
-</script>

@@ -1,5 +1,3 @@
-'use strict';
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;

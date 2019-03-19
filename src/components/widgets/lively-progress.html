@@ -1,6 +1,4 @@
-<!-- Simple Progress Bar
--->
-<template id="lively-progress" data-class="LivelyProgress">
+<template id="lively-progress">
 	<style>
 	:host {
     position: relative;
@@ -42,12 +40,8 @@
   	<div id="progress">
 	  </div>
     <div id="label">
-      <content></content>  
+      <slot></slot>  
     </div>
-
   </div>
   </div>
-
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

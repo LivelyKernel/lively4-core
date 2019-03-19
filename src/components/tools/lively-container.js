@@ -485,7 +485,7 @@ export default class Container extends Morph {
       // lively.notify("!!!saved " + url)
       window.LastURL = url
       if (await this.urlInTemplate(url)) {
-        // lively.notify("update template")
+        lively.notify("update template")
         if (url.toString().match(/\.html/)) {
           // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
           var templateSourceCode = sourceCode
@@ -588,10 +588,9 @@ export default class Container extends Morph {
 
   async deleteFile(url, urls) {
     lively.notify("delelteFile " + url)
-    if (!urls.includes(url)) {
+    if (!urls || !urls.includes(url)) {
       urls = [url] // clicked somewhere else
     }
-    
     if (!urls) urls = [url]
     var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
     if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {

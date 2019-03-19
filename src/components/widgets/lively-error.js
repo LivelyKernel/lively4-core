@@ -1,11 +1,10 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
 import Files from 'src/client/files.js'
 
 export default class LivelyError extends Morph {
-  
+
   initialize() {
-    this.update() 
+    this.update()
   }
 
   set stack(s) {
@@ -19,10 +18,10 @@ export default class LivelyError extends Morph {
 
   update() {
     var stack = this.getAttribute("stack")
-    if(!stack) return;
-        
-    stack.split("\n").forEach( line => {
-      let lineSpan = document.createElement("span") 
+    if (!stack) return;
+
+    stack.split("\n").forEach(line => {
+      let lineSpan = document.createElement("span")
       var m = line.match(/(.*?)\(?(https?:\/\/.*:[0-9]+:[0-9]+)/)
       if (m) {
         var call = m[1]
@@ -36,7 +35,7 @@ export default class LivelyError extends Morph {
           lively.openBrowser(ref.url, true, ref)
           return true
         })
-        
+
         lineSpan.appendChild(link)
       } else {
         lineSpan.textContent = "" + line + "\n"
@@ -45,15 +44,12 @@ export default class LivelyError extends Morph {
     })
   }
   
-  attachedCallback() {
+  livelyExample() {
+    try {
+      var foo  = {}
+      foo.bar()
+    } catch(e) {
+      this.stack = e.stack
+    } 
   }
-
-  livelyMigrate(other) {
-
-  }
-  
 }
-      
-
-     
-      

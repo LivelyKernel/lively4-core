@@ -7,12 +7,17 @@ import { through } from "utils";
 // import html from "scr/client/html.js"
 
 // store promises of loaded and currently loading templates
-export var loadingPromises = {};
+
+if (!self.lively4loadingPromises) {
+  self.lively4loadingPromises = {} // just to be on the save side....
+}
+export var loadingPromises = self.lively4loadingPromises;
 
 // #MetaNote #UserCase this is an example for preserving module internal state while reloading a module
 var _templates;
 var _prototypes;
 var _proxies;
+
 var _templatePaths;
 var _templatePathsCache;
 var _templatePathsCacheTime;
@@ -55,43 +60,43 @@ export default class ComponentLoader {
     return _proxies;
   }
 
-  static protypeToComponentName(prototype) {
-    if (!prototype || !prototype.constructor) return
-    var prototypeName =  prototype.constructor.name
-    return _.keys(this.prototypes).find(name => {
-      var otherProto = this.prototypes[name]
-      var constructor = otherProto && otherProto.constructor;
-      return constructor && (constructor.name ===  prototypeName)});
-  }
-
-  static updatePrototype(prototype) {
-    var componentName = this.protypeToComponentName(prototype)
-    if (componentName) {
-      this.prototypes[componentName] = prototype
-      this.proxies[componentName].__proto__ = prototype
+  static updatePrototype(aClass, moduleName) {    
+    var componentName = moduleName.replace(/.*\//,"").replace(/\.js$/,"")
+    if (componentName && this.prototypes[componentName]) {
+      this.prototypes[componentName] = aClass
+      this.proxies[componentName].__proto__ = aClass
+      this.proxies[componentName].prototype.__proto__ = aClass.prototype
     }
   }
 
   static async onCreatedCallback(object, componentName) {
+    // console.log('onCreatedCallback ' + componentName)
     // if (persistence.isCurrentlyCloning()) {
     //   return;
     // }
-
-    // #Deprecation
-    // Element.createShadowRoot is deprecated and will be removed in M73, around March 2019. Please use Element.attachShadow instead. See https://www.chromestatus.com/features/4507242028072960 
-     var shadow = object.createShadowRoot();
-    // #NotWorkingYet as expected...
-    // var shadow = object.attachShadow({mode: 'open'});
     
-    // clone the template again, so when more elements are created,
-    // they get their own copy of elements
-    var clone = document.importNode(ComponentLoader.templates[componentName], true);
-    // #TODO replace the "template" reference with an indirection that can be changed from the outside,
-    // e.g. var clone = document.importNode(this.templates[componentName], true);
-    // but beeing able to modify it, because we have a reference should suffice at the moment...
+    // if (componentName == "lively-code-mirror") {
+    //   debugger
+    // }
 
-    shadow.appendChild(clone);
+//     if (!object.shadowRoot) {
+//     // #Deprecation
+//       // Element.createShadowRoot is deprecated and will be removed in M73, around March 2019. Please use Element.attachShadow instead. See https://www.chromestatus.com/features/4507242028072960 
+//       var shadow = object.createShadowRoot();
+//       // #NotWorkingYet as expected...
+//       // var shadow = object.attachShadow({mode: 'open'});
 
+//       // clone the template again, so when more elements are created,
+//       // they get their own copy of elements
+//       var clone = document.importNode(ComponentLoader.templates[componentName], true);
+//       // #TODO replace the "template" reference with an indirection that can be changed from the outside,
+//       // e.g. var clone = document.importNode(this.templates[componentName], true);
+//       // but beeing able to modify it, because we have a reference should suffice at the moment...
+
+//       shadow.appendChild(clone);
+//     }
+
+      
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(object);
     
@@ -103,7 +108,13 @@ export default class ComponentLoader {
     }
 
     // load any unknown elements, which this component might introduce
-    await ComponentLoader.loadUnresolved(object, true, "onCreated " + componentName).then((args) => {
+    // console.log('START onCreatedCallback loadUnresolved ' + componentName)
+            
+    this._livelyLoading = Promise.resolve()
+    this._livelyLoadingDep =  ComponentLoader.loadUnresolved(
+        object, true, "onCreated " + componentName, false).then((args) => {
+      // console.log('FINISHED onCreatedCallback loadUnresolved ' + componentName)
+
       // lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
         // call the initialize script, if it exists
       
@@ -113,19 +124,29 @@ export default class ComponentLoader {
         // console.log("dispatch created " +componentName )
         // console.log("Identitity: " + (window.LastRegistered === object))
         
-        object.dispatchEvent(new Event("created"));
       // })
       if (_templateFirstLoadTimes[componentName]) {
-        console.log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
+        // console.log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
         _templateFirstLoadTimes[componentName] = null;
       }
+      // console.log("LOADER fire created " + componentName)
+      object._lively4created = Date.now()
+      object.dispatchEvent(new Event("created")); // when we wait on other unresolved components, we can run into cyclic dependencies.... #Cyclic
     }).catch( e => {
       console.error(e); 
       return e
     });
+    this._livelyLoadingDep
   }
   
-  static onAttachedCallback(object, componentName) {
+  static async onAttachedCallback(object, componentName) {
+    
+    if (this._livelyLoading) {
+      await this._livelyLoading // should we provicde this robustness here? Or should these be more pure metal...
+    }
+    
+    // console.log("onAttachedCallback " + componentName)
+    
     // if (ComponentLoader.proxies[componentName]) {
     //   console.log("[component loader] WARNING: no proxy for " + componentName )
     //   return 
@@ -134,13 +155,17 @@ export default class ComponentLoader {
     if (object.attachedCallback && 
       ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
         object.attachedCallback.call(object);
-    }
-    if (ComponentLoader.prototypes[componentName].attachedCallback) {
+    } else if (ComponentLoader.prototypes[componentName].attachedCallback) {
       ComponentLoader.prototypes[componentName].attachedCallback.call(object);
     }
   }
   
-  static onDetachedCallback(object, componentName) {
+  static async onDetachedCallback(object, componentName) {
+    
+    if (this._livelyLoading) {
+      await this._livelyLoading
+    }
+    
     // if (ComponentLoader.proxies[componentName]) {
     //   console.log("[component loader] WARNING: no proxy for " + componentName )
     //   return 
@@ -154,58 +179,91 @@ export default class ComponentLoader {
     }
   }
   
+  static applyTemplate(element, componentName) {
+    if (!element.shadowRoot) {
+      element.attachShadow({mode: 'open'});
+    }
+    
+    var template = this.templates[componentName]
+    if (template) {
+      var fragment = template.cloneNode(true)
+      fragment.childNodes.forEach(ea => {
+        var clone = document.importNode(ea, true)
+        element.shadowRoot.appendChild(clone)
+      })
+    }
+  }
+  
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
-  static register(componentName, template, prototype) {
-    var proto = prototype || Object.create(Morph.prototype);
-
+  static async register(componentName, template, aClass) { 
+    // console.log("LOADER register " + componentName)
+    var proxy
+    
     // For reflection and debugging
     this.templates[componentName] = template;
-    this.prototypes[componentName] = proto;
-    this.proxies[componentName] = Object.create(proto) // not changeable
-  
-    lively.fillTemplateStyles(template, "source: " + componentName).then( () => {
+    this.prototypes[componentName] = aClass;
+    
+    if (template) {
+      await lively.fillTemplateStyles(template, "source: " + componentName)
+    }
+    
+    if (!this.proxies[componentName]) {
+      proxy = class extends HTMLElement {
+        static get name() {
+          return componentName
+        } 
+        
+        get _lively4version() {
+          return 2
+        }
+        
+        constructor() {
+          // console.log("LOADER Proxy Constructor " + componentName)
+    
+          super(); // always call super() first in the constructor.
+          
+          ComponentLoader.applyTemplate(this, componentName)
+          ComponentLoader.onCreatedCallback(this, componentName)
+        }
+
+        connectedCallback( args) {
+          // console.log('connectedCallback ' + componentName )
+          
+          
+          // return super.connectedCallback(...args)
+          // super seams to bind early?
+          ComponentLoader.onAttachedCallback(this, componentName)
+          if (this.constructor.__proto__.prototype.connectedCallback) {
+            return this.constructor.__proto__.prototype.connectedCallback.apply(this, args)
+          }
+        }
+        disconnectedCallback(...args) {
+          // return super.disconnectedCallback(...args)
+          ComponentLoader.onDetachedCallback(this, componentName)
+          if (this.constructor.__proto__.prototype.disconnectedCallback) {
+            return this.constructor.__proto__.prototype.disconnectedCallback.apply(this, args)
+          }
+        }
+
+        adoptedCallback(...args)	{
+          // return super.adoptedCallback(...args)
+          if (this.constructor.__proto__.prototype.adoptedCallback) {
+            return this.constructor.__proto__.prototype.adoptedCallback.apply(this, args)  
+          }
+        }
+      }
+      window.customElements.define(componentName, proxy);
+      this.proxies[componentName] =  proxy
+    } else {
+      proxy = this.proxies[componentName] 
+    }
+      
+    proxy.__proto__ = aClass
+    proxy.prototype.__proto__ = aClass.prototype
+    
 
   
-      // FOR DEBUGGING
-      // if (!window.createdCompontents)
-      //   window.createdCompontents = {}
-      // window.createdCompontents[componentName] = []
-  
-      // #Mystery #Debugging #ExperienceReport
-      // Task was to figure out why the created callback is called several times when loading the
-      // componen for the first time? E.g 5 ace editors for the container, where 2 are actually needed
-      // maybe they are also called for the template documents that we store?
-      // e.g. lively-editor (+ 1 ace + lively-version (+1 ace)) + lively-version (1 ace)
-      // that would actually account for the missing three instances
-      // It is Saturday night... past midnight and I finnally have at least an hypothesis, 
-      // where I was debugging in the dark the last 3 hours.
-      // I got burned so hard by the "created" event that was thrown at me even if not myself 
-      // was created but if a child of mine was created too... and we did not expected such behavior
-      // that this time I wanted to find out what was going on here. Even though it seemed to 
-      // be not a problem
-      
-      this.proxies[componentName].createdCallback = function() {
-        // window.createdCompontents[componentName].push(this)  
-        // console.log("[components] call createdCallback for " + componentName, this)
-        ComponentLoader.onCreatedCallback(this, componentName, this)
-      }
-      this.proxies[componentName].attachedCallback = function() {
-        ComponentLoader.onAttachedCallback(this, componentName)
-      };
-      this.proxies[componentName].detachedCallback = function() {
-         ComponentLoader.onDetachedCallback(this, componentName)
-      };
-  
-      // #Deprecation document.registerElement is deprecated and will be removed in M73, around March 2019. Please use window.customElements.define instead. See https://www.chromestatus.com/features/4642138092470272
-      // don't store it just in a lexical scope, but make it available for runtime development
-      document.registerElement(componentName, {
-        prototype: this.proxies[componentName]
-      });
-      // var proxyClass = class ProxyElement extends HTMLElement {}
-      // proxyClass.__proto__ =this.proxies[componentName].prototype
-      // window.customElements.define(componentName, proxyClass);
-    })
   }
 
   // this function creates the bootstrap script for the component templates
@@ -219,22 +277,29 @@ export default class ComponentLoader {
   // this function loads all unregistered elements, starts looking in lookupRoot,
   // if lookupRoot is not set, it looks in the whole document.body,
   // if deep is set, it also looks into shadow roots
-  static loadUnresolved(lookupRoot, deep, debuggingHint) {
+  static loadUnresolved(lookupRoot, deep, debuggingHint, withChildren=false, withyourself=false) {
     lookupRoot = lookupRoot || document.body;
 
     var selector = ":not(:defined)";
     var unresolved = []
     
     // check if lookupRoot is unresolved
-    if (lookupRoot.parentElement) {
-      var unresolvedSiblingsAndMe =  lookupRoot.parentElement.querySelectorAll(selector);
-      if (_.includes(unresolvedSiblingsAndMe, lookupRoot )) {
+    
+    // loot at me
+    if (withyourself && lookupRoot.parentElement) {
+      var unresolvedSiblingsAndMe = Array.from(lookupRoot.parentElement.querySelectorAll(selector));
+      if (unresolvedSiblingsAndMe.includes(lookupRoot)) {
         unresolved.push(lookupRoot)
       }
     }
-    
     // find all unresolved elements looking downwards from lookupRoot
-    var unresolved = unresolved.concat(Array.from(lookupRoot.querySelectorAll(selector)));
+    
+    // look at my children? 
+    if (withChildren) {
+      unresolved = unresolved.concat(Array.from(lookupRoot.querySelectorAll(selector)));
+    }
+    
+    // look into the shadow?
     if (deep) {
       var deepUnresolved = findUnresolvedDeep(lookupRoot);
       unresolved = unresolved.concat(deepUnresolved);
@@ -257,24 +322,32 @@ export default class ComponentLoader {
 
     // helper set to filter for unique tags
     var unique = new Set();
-
+    
+    
+    var __debugOpenPromisedComponents = new Set()
+    
     var promises = unresolved.filter((el) => {
       // filter for unique tag names
       if (!el.nodeName || el.nodeName.toLowerCase() == "undefined") return false;
       var name = el.nodeName.toLowerCase();
       return !unique.has(name) && unique.add(name);
     })
-    .map(async (el) => {
+    .map((el) => {
       var name = el.nodeName.toLowerCase();
       if (loadingPromises[name]) {
         // the loading was already triggered
         return loadingPromises[name];
       }
 
+      __debugOpenPromisedComponents.add(name)
       // create a promise that resolves once el is completely created
       var createdPromise = new Promise((resolve, reject) => {
+        if (el._lively4created) {
+          return resolve({target: el})
+        }
         el.addEventListener("created", (evt) => {
           evt.stopPropagation();
+          __debugOpenPromisedComponents.delete(name)
           resolve(evt);
         });
       });
@@ -282,21 +355,27 @@ export default class ComponentLoader {
       // trigger loading the template of the unresolved element
       loadingPromises[name] = createdPromise;
       
-      loadingPromises[name].name = name + " " + Date.now()
+      loadingPromises[name].name = "[Loaded " +name + " " + Date.now() + "]"
       
-      let didInsertTag = await this.loadByName(name);
-      
-      if(!didInsertTag) {
-        if(lively.notify) {
-          lively.notify("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+      this.loadByName(name).then((didInsertTag) => {
+        if(!didInsertTag) {
+          console.error("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+          delete loadingPromises[name];
+          return null;
         }
-        delete loadingPromises[name];
-        return null;
-      }
+      })
+      
 
       return createdPromise;
     })
     .filter(promise => promise != null);
+    
+    
+    // if (unique.has("lively-hand")) {
+    //   debugger
+    // }
+    
+    // console.log("findUnresolvedDeep components: ", promises)
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
@@ -319,14 +398,14 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
+          debugger
           resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
-          
-          lively.notify("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint )
+          console.warn("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint, " unresolved: " + Array.from(__debugOpenPromisedComponents).join(", ") )
         }
-      }, 10 * 1000)
+      }, 20 * 1000)
 
       Promise.all(promises).then( result => resolve(), err => {
-          console.log("ERROR loading component ", err)
+          // console.log("ERROR loading component ", err)
       })
     })
   }
@@ -408,13 +487,13 @@ export default class ComponentLoader {
     
     
     // the OPTIONS request seems to break karma... waits to long..
-	  if (!window.__karma__) { 
+    if (!window.__karma__) { 
       for(templateDir of templatePaths) {
         try {
           var stats = await this.getTemplatePathContent(templateDir);
           var found = stats.contents.find(ea => ea.name == filename)
         } catch(e) {
-          console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
+          // console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
           found = null
         }
         if (found) {
@@ -426,7 +505,7 @@ export default class ComponentLoader {
       // so the server did not understand OPTIONS, so lets ask for the files directly
       if (!found) {
         for(templateDir of templatePaths) {
-          var found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
+          found = await fetch(templateDir + filename, { method: 'GET' }) // #TODO use HEAD, after implementing it in lively4-server
             .then(resp => resp.status == 200); 
           if (found) {
             return templateDir + filename
@@ -436,31 +515,38 @@ export default class ComponentLoader {
     }
     return undefined
   }
-  
-  
-  // this function loads a component by adding a link tag to the head
+    
   static async loadByName(name) {
+    // console.log("LOADER loadByName " + name)
+    
     _templateFirstLoadTimes[name] = performance.now()
-    var url = await this.searchTemplateFilename(name + '.html')
-    if (!url) {
+    var modUrl = await this.searchTemplateFilename(name + '.js')
+    if (!modUrl) {
       throw new Error("Could not find template for " + name)
     }
-    console.log(window.lively4stamp, "load component: " + url)
-
+    
+    var templateURL = await this.searchTemplateFilename(name + '.html')
+   
     // Check  if the template will be loadable (this would e.g. fail if we were offline without cache)
     // We have to check this before inserting the link tag because otherwise we will have
     // the link tag even though the template was not properly loaded
     try {
-      let response = await fetch(url, { method: 'OPTIONS'});
+      let response = await fetch(modUrl, { method: 'OPTIONS'});
       if(response.ok) {
+        var mod = await System.import(modUrl)
+        var aClass = mod.default
         
-        
-        // #Deprecation HTML Imports is deprecated and will be removed in M73, around March 2019. Please use ES modules instead. See https://www.chromestatus.com/features/5144752345317376 for more details. 
-        var link = document.createElement("link");
-        link.rel = "import";
-        link.href = url;
-        link.dataset.lively4Donotpersist = "all";
-        document.head.appendChild(link);
+        if (templateURL) {
+          let templateResponse = await fetch(templateURL, { method: 'OPTIONS'});
+          if(templateResponse.ok) {
+            var templateSource = await fetch(templateURL).then(r => r.text());
+            var div = document.createElement("div")
+            div.innerHTML = templateSource
+            var template = div.querySelector("template")
+            template.remove()
+          }          
+        }
+        this.register(name, template.content, aClass)
         return true;
       } else {
         return false;
@@ -469,7 +555,7 @@ export default class ComponentLoader {
       return false;
     }
   }
-
+  
   static createComponent(tagString) {
     var comp = document.createElement(tagString);
     return comp;
@@ -486,7 +572,9 @@ export default class ComponentLoader {
   
   static openIn(parent, component, beginning) {
     var created = false;
-    var compPromise = new Promise((resolve, reject) => {
+    var compPromise = new Promise((resolve) => {
+      if (component._lively4created ) return resolve(component)
+      
       component.addEventListener("created", (e) => {
         if (e.path[0] !== component) {
           // console.log("[components] ingnore and stop created event from child " + e.path[0].tagName);
@@ -509,9 +597,7 @@ export default class ComponentLoader {
     } else {
       parent.appendChild(component);
     }
-    // this.loadUnresolved(parent, true, "openIn " + component);
-    this.loadUnresolved(component, true, "openIn " + component);
-
+    this.loadUnresolved(component, true, "openIn " + component, true, true);
     return compPromise;
   }
 
@@ -519,7 +605,7 @@ export default class ComponentLoader {
     return this.openIn(document.body, component, true);
   }
 
-  static async openInWindow(component, pos, title) {
+  static async openInWindow(component, pos) {
     // this will call the window's createdCallback before
     // we append the child, if the window template is already
     // loaded
@@ -530,7 +616,6 @@ export default class ComponentLoader {
     w.style.opacity = 0.2
     w.appendChild(component);
 
-
     this.openInBody(w);
 
     if (!component.localName.match(/-/)) {
@@ -540,7 +625,7 @@ export default class ComponentLoader {
     // therefore, we need to call loadUnresolved again after
     // adding the child, so that it finds it and resolves it,
     // if it is currently unresolved
-    var windowPromise = new Promise((resolve, reject) => {
+    var windowPromise = new Promise((resolve) => {
       this.loadUnresolved(document.body, true, "openInWindow " + component).then(() => {
         w.style.opacity = 1 
         if (component.windowTitle) 
@@ -553,33 +638,19 @@ export default class ComponentLoader {
     return windowPromise;
   }
 
-  static openComponentBin() {
-    var bin = createComponent("lively-component-bin");
-    openInWindow(bin);
-  }
-
   static reloadComponent(source) {
     var template = lively.html.parseHTML(source).find(ea => ea.localName == "template");
     if (!template) return;
     var name = template.id;
     if (!name) return;
     var templateClone = document.importNode(template.content, true);
-    lively.components.templates[name] = templateClone;
+    ComponentLoader.templates[name] = templateClone;
     
     return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
   }
   
-  // #Design #Draft Migration of class-side state (classes are objects themselve)
-  static livelyMigrate(other) {
-  
-  }
 }
 
-// #Design #Draft Migration of module-side state (modules are objects themselve)
-export function livelyMigrate(other) {
-// Problem: we cannot look into internal "other" state, we can do this with objects but not with
-// variable declarations, therefore we let our module system automigrate the module global variable state
-}
 
 
 _templatePathsCache = null

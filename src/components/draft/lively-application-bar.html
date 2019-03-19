@@ -1,4 +1,4 @@
-<template id="lively-application-bar" data-class="LivelyApplicationBar">
+<template id="lively-application-bar">
   <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
   <style>
   :host {
@@ -13,11 +13,7 @@
     border-bottom: 1px solid gray;
     padding-bottom: 1px;
   }
-  
-  ::content {
-    
-  }
-  
+ 
   #window-space {
     float: left;
   }
@@ -86,11 +82,9 @@
   </div>
   
   <div id="toolbar">
-      <content></content>
+      <slot></slot>
   </div>
-  
   <div id="clock">
     <lively-digital-clock></lively-digital-clock>
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

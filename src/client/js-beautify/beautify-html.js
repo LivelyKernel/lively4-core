@@ -1703,7 +1703,7 @@ Beautifier.prototype._print_custom_beatifier_text = function(printer, raw_token,
       // simply indent the string otherwise
       var white = text.match(/^\s*/)[0];
       var _level = white.match(/[^\n\r]*$/)[0].split(this._options.indent_string).length - 1;
-      var reindent = this._get_full_indent(script_indent_level - _level);
+      var reindent = printer.get_full_indent(script_indent_level - _level);
       text = (indentation + text.trim())
         .replace(/\r\n|\r|\n/g, '\n' + reindent);
     }

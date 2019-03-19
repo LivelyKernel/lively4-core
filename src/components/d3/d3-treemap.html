@@ -1,4 +1,4 @@
-<template id="d3-treemap" data-class="D3Treemap">
+<template id="d3-treemap">
   <style>
     :host {
       width: 200px;
@@ -11,29 +11,24 @@
       width: 100%;
       height: 100%;
     }
-    
-    
-    </style > 
+  </style>
   <style>
     svg {
       font: 10px sans-serif;
-  
     }
-    
+
     #contents {
       position: abosolute;
       top: 0px;
       left: 0px; 
     }
-    
+
     .small tspan {
         fill: none ;
     }
   </style>
   <svg id="svg"></svg>
   <div id="contents">
-    <content></content>
+    <slot></slot>
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

@@ -183,7 +183,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.isLoading = true
     this.root = this.shadowRoot // used in code mirror to find current element
     await LivelyCodeMirror.loadModules(); // lazy load modules...
-
+  
+    console.log("ATTACHED code-mirror")  
+    
     if (this.textContent) {
       var value = this.decodeHTML(this.textContent);
     } else {
@@ -629,7 +631,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       } else {
         this.printResult(" " + obj2string(result), result)
         if (result instanceof HTMLElement ) {
-          lively.showElement(result)
+          try {
+            lively.showElement(result)
+          } catch(e) {
+            // silent fail... not everything can be shown...
+          }
         }
       }
     }

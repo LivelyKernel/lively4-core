@@ -1,1 +1,2 @@
-let a = 3 + 2;
+let a = 4 + 2;
+console.log("a", a)

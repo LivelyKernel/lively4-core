@@ -1,4 +1,4 @@
-<template id="lively-testrunner" data-class="LivelyTestrunner">
+<template id="lively-testrunner" >
   <style>
     .container {
       width: 100%;
@@ -28,9 +28,7 @@
     </div>
   <div class="container">
     <div id="content">
-      <content></content>
+      <slot></slot>
     </div>
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

@@ -1,4 +1,4 @@
-<template id="d3-radialtree" data-class="D3Radialtree">
+<template id="d3-radialtree">
   <style>
     :host {
       display: inline-block;
@@ -48,8 +48,6 @@
   </style>
   <svg id="svg"></svg>
   <div id="contents">
-    <content></content>
+    <slot></slot>
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

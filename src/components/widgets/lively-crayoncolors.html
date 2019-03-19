@@ -1,11 +1,9 @@
-<template id="lively-crayoncolors" data-class="LivelyCrayoncolors">
+<template id="lively-crayoncolors">
   <style>
   :host {
     display: inline-block;
     width: 
   }
-  
-  
   #colorChooser {
     position: absolute;
     top: 22px;
@@ -17,8 +15,6 @@
     background: white;
     z-index: 1000;
   }
-  
-
   #field {
     position: relative;
     top: 0px;
@@ -28,7 +24,6 @@
     height: 20px;
     border: 1px solid gray;
   }
-  
   .color {
     display: inline-block;
     width: 20px;
@@ -37,7 +32,6 @@
     margin: 0.5px;
     padding: 0px;
   }
-  
   .row {
     display: block;
     margin: 0px;
@@ -51,11 +45,7 @@
     font-size: 10px;
   }
   </style>
-
   <div id="field"><div id="selectCustom">▼</div></div>
   <div id="colorChooser"></div>
-  <content></content>
+  <slot></slot>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-
- 
