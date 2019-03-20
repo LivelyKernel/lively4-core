@@ -277,6 +277,8 @@ export default class Lively {
 
 
   static fillTemplateStyles(root, debugInfo) {
+    debugger
+    
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     var promises = [];
     var allSrc = []
@@ -284,7 +286,7 @@ export default class Lively {
       var src = ea.getAttribute("data-src");
       if (src) {
         allSrc.push(src)
-        // console.log("load fillTemplateStyles: " + lively4url + src );
+        console.log("load fillTemplateStyles: " + lively4url + src );
         promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
           ea.innerHTML = css;
         }));
@@ -365,9 +367,10 @@ export default class Lively {
       lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     }
     // preload some components
-    await components.loadByName("lively-window");
-    await components.loadByName("lively-editor");
-    await components.loadByName("lively-script");
+    // #FixMe does not work this way, because this might conflict with the normal loading ....
+    // await components.loadByName("lively-window");
+    // await components.loadByName("lively-editor");
+    // await components.loadByName("lively-script");
     
     setTimeout(() => {
       // wait for the timeout and try again
@@ -808,7 +811,8 @@ export default class Lively {
     console.log("Lively4 initializeDocument" );
     // persistence.disable();
 
-    lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    await lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    
     lively.components.loadByName("lively-notification")
     lively.components.loadByName("lively-notification-list")
 
@@ -824,6 +828,10 @@ export default class Lively {
 
     console.log(window.lively4stamp, "load local lively content ")
     // #RACE #TODO ... 
+
+    // yes, we want also to change style of external websites...
+    await lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
+    
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     // here, we should scrap any existing (lazyly created) preference, there should only be one
@@ -831,9 +839,6 @@ export default class Lively {
     await lively.ensureHand();
     
     // lively.selection;
-
-    // yes, we want also to change style of external websites...
-    lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
     
     // #Hack... just to be on the save side #ACM
     // where to put side specific adapations... cannot be overriden by CSS? #TODO

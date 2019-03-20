@@ -4,14 +4,12 @@
 //   return Ofetch(...args);
 // }
 
-self.addEventListener('install', (event) => {
-  console.log("SWX Install Event")
-})
 
-self.oninstall = function() {
-  console.log("SWX oninstall Event") // why are they not called? Sometimes they are?
-}
+// self.addEventListener('install', (event) => {
+// })
 
+// self.oninstall = function() {
+// }
 
 function getChromeVersion () {     
     var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
