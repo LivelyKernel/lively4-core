@@ -901,7 +901,8 @@ export default class Container extends Morph {
       }
      
       
-      components.loadUnresolved(root);
+      await components.loadUnresolved(root, false, "container.js");
+      
       lively.clipboard.initializeElements(root.querySelectorAll("*"))
       
       if (nodes.length == 1 

@@ -205,6 +205,7 @@ export default class ComponentLoader {
     this.prototypes[componentName] = aClass;
     
     if (template) {
+      console.log("LOADER register fillTemplateStyles: " + componentName)
       await lively.fillTemplateStyles(template, "source: " + componentName)
     }
     

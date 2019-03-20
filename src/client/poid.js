@@ -54,8 +54,8 @@ export class Scheme {
 
   async handle(options) {
     if (!this.resolve()) {
-      if (options.method == "OPTIONS") {
-      return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
+      if (options && options.method == "OPTIONS") {
+        return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
       }
       return new Response("Could not resolve " + this.url, {status: 404})
     }  
@@ -563,6 +563,11 @@ if (!navigator.serviceWorker) {
         throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
       }
       let url= m[1] + "://" + m[2]    
+      if (!evt.ports[0]) {
+        debugger
+        console.log("poid.js got message... but could not answer")
+        return 
+      }
       if(evt.data.name == 'swx:pi:GET') {
         evt.ports[0].postMessage({content: await fetch(url).then(r => r.blob())}); 
       } else if(evt.data.name == 'swx:pi:PUT') {

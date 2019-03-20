@@ -92,7 +92,7 @@ export default class Persistence {
       }
       target.appendChild(ea);
     });
-    await lively.components.loadUnresolved(target)
+    await lively.components.loadUnresolved(target, true, "loadLivelyContentForURL", true)
     
     // restore zIndex in an Async way... it seems focus is responsible for it #Hack
     lively.sleep(0).then(() => {

@@ -5,15 +5,11 @@
 // }
 
 
-console.log("HUHU lets go 3!!!")
-self.addEventListener('install', (event) => {
-  console.log("HUHU Install")
-})
+// self.addEventListener('install', (event) => {
+// })
 
-self.oninstall = function() {
-  console.log("HUHU on install ") // why are they not called? Sometimes they are?
-}
-
+// self.oninstall = function() {
+// }
 
 function getChromeVersion () {     
     var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
@@ -26,21 +22,20 @@ var postfix = ""
 // #TODO only while developing
 // postfix += Date.now()
 
-postfix = "" // because 
 
 if (getChromeVersion() < 60) {
   console.log("disable SWX for now")
 } else {
-  console.log("ok, lets work on it... SWX")
+  console.log("SWX pre...")
 
-  importScripts('swx-pre.js?' + postfix);
+  importScripts('swx-pre.js');
   
   try {
-    importScripts('swx-boot.js?'+ postfix);
+    importScripts('swx-boot.js');
   } catch(e) {
     debugger
   }
   
   console.log("boot loaded...")
-  importScripts('swx-post.js?' + postfix);
+  importScripts('swx-post.js');
 }
