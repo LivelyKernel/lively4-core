@@ -24,6 +24,14 @@ var _templatePathsCacheTime;
 
 var _templateFirstLoadTimes = {}
 
+
+var _loggingEnabled = false
+var _log = function(...args) {
+  if (_loggingEnabled) {
+    console.log("ComponentLoader ",...args)
+  }
+}
+
 // for compatibility
 export function register(componentName, template, prototype) {
   return ComponentLoader.register(componentName, template, prototype);
@@ -70,7 +78,7 @@ export default class ComponentLoader {
   }
 
   static async onCreatedCallback(object, componentName) {
-    // console.log('onCreatedCallback ' + componentName)
+    _log('onCreatedCallback ' + componentName)
     // if (persistence.isCurrentlyCloning()) {
     //   return;
     // }
@@ -108,12 +116,12 @@ export default class ComponentLoader {
     }
 
     // load any unknown elements, which this component might introduce
-    // console.log('START onCreatedCallback loadUnresolved ' + componentName)
+    _log('START onCreatedCallback loadUnresolved ' + componentName)
             
     this._livelyLoading = Promise.resolve()
     this._livelyLoadingDep =  ComponentLoader.loadUnresolved(
         object, true, "onCreated " + componentName, false).then((args) => {
-      // console.log('FINISHED onCreatedCallback loadUnresolved ' + componentName)
+      _log('FINISHED onCreatedCallback loadUnresolved ' + componentName)
 
       // lively.fillTemplateStyles(object.shadowRoot, "source: " + componentName).then(() => {
         // call the initialize script, if it exists
@@ -121,15 +129,15 @@ export default class ComponentLoader {
         if (typeof object.initialize === "function") {
           object.initialize();
         }
-        // console.log("dispatch created " +componentName )
-        // console.log("Identitity: " + (window.LastRegistered === object))
+        _log("dispatch created " +componentName )
+        _log("Identitity: " + (window.LastRegistered === object))
         
       // })
       if (_templateFirstLoadTimes[componentName]) {
-        // console.log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
+        _log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
         _templateFirstLoadTimes[componentName] = null;
       }
-      // console.log("LOADER fire created " + componentName)
+      _log("LOADER fire created " + componentName)
       object._lively4created = Date.now()
       object.dispatchEvent(new Event("created")); // when we wait on other unresolved components, we can run into cyclic dependencies.... #Cyclic
     }).catch( e => {
@@ -145,7 +153,7 @@ export default class ComponentLoader {
       await this._livelyLoading // should we provicde this robustness here? Or should these be more pure metal...
     }
     
-    // console.log("onAttachedCallback " + componentName)
+    _log("onAttachedCallback " + componentName)
     
     // if (ComponentLoader.proxies[componentName]) {
     //   console.log("[component loader] WARNING: no proxy for " + componentName )
@@ -197,7 +205,7 @@ export default class ComponentLoader {
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
   static async register(componentName, template, aClass) { 
-    // console.log("LOADER register " + componentName)
+    _log("LOADER register " + componentName)
     var proxy
     
     // For reflection and debugging
@@ -208,6 +216,9 @@ export default class ComponentLoader {
       console.log("LOADER register fillTemplateStyles: " + componentName)
       await lively.fillTemplateStyles(template, "source: " + componentName)
     }
+    
+    console.log("LOADER DONE register fillTemplateStyles: " + componentName)
+    
     
     if (!this.proxies[componentName]) {
       proxy = class extends HTMLElement {
@@ -220,7 +231,7 @@ export default class ComponentLoader {
         }
         
         constructor() {
-          // console.log("LOADER Proxy Constructor " + componentName)
+          _log("LOADER Proxy Constructor " + componentName)
     
           super(); // always call super() first in the constructor.
           
@@ -229,7 +240,7 @@ export default class ComponentLoader {
         }
 
         connectedCallback( args) {
-          // console.log('connectedCallback ' + componentName )
+          _log('connectedCallback ' + componentName )
           
           
           // return super.connectedCallback(...args)
@@ -240,6 +251,8 @@ export default class ComponentLoader {
           }
         }
         disconnectedCallback(...args) {
+          _log('diconnectedCallback ' + componentName )
+          
           // return super.disconnectedCallback(...args)
           ComponentLoader.onDetachedCallback(this, componentName)
           if (this.constructor.__proto__.prototype.disconnectedCallback) {
@@ -248,21 +261,29 @@ export default class ComponentLoader {
         }
 
         adoptedCallback(...args)	{
+          _log('adoptedCallback ' + componentName )
           // return super.adoptedCallback(...args)
           if (this.constructor.__proto__.prototype.adoptedCallback) {
             return this.constructor.__proto__.prototype.adoptedCallback.apply(this, args)  
           }
         }
       }
-      window.customElements.define(componentName, proxy);
+      // set the prototype of the proxy the first time
+      // #Idea: use "extemds aClass" ?
+      proxy.__proto__ = aClass
+      proxy.prototype.__proto__ = aClass.prototype
+      
+      console.log("LOADER define component: " + componentName)
+      window.customElements.define(componentName, proxy); // #WebComponent #Magic
       this.proxies[componentName] =  proxy
     } else {
       proxy = this.proxies[componentName] 
+      
+      // change the prototype of the proxy
+      proxy.__proto__ = aClass
+      proxy.prototype.__proto__ = aClass.prototype
     }
       
-    proxy.__proto__ = aClass
-    proxy.prototype.__proto__ = aClass.prototype
-    
 
   
   }
@@ -368,7 +389,7 @@ export default class ComponentLoader {
     //   debugger
     // }
     
-    // console.log("findUnresolvedDeep components: ", promises)
+    _log("findUnresolvedDeep components: ", promises)
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
     // are completely created
@@ -398,7 +419,7 @@ export default class ComponentLoader {
       }, 20 * 1000)
 
       Promise.all(promises).then( result => resolve(), err => {
-          // console.log("ERROR loading component ", err)
+          _log("ERROR loading component ", err)
       })
     })
   }
@@ -486,7 +507,7 @@ export default class ComponentLoader {
           var stats = await this.getTemplatePathContent(templateDir);
           var found = stats.contents.find(ea => ea.name == filename)
         } catch(e) {
-          // console.log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
+          _log("searchTemplateFilename: could not get stats of  " + filename + " ERROR: ", e)
           found = null
         }
         if (found) {
@@ -510,7 +531,7 @@ export default class ComponentLoader {
   }
     
   static async loadByName(name) {
-    // console.log("LOADER loadByName " + name)
+    _log("LOADER loadByName " + name)
     
     _templateFirstLoadTimes[name] = performance.now()
     var modUrl = await this.searchTemplateFilename(name + '.js')
@@ -570,7 +591,7 @@ export default class ComponentLoader {
       
       component.addEventListener("created", (e) => {
         if (e.path[0] !== component) {
-          // console.log("[components] ingnore and stop created event from child " + e.path[0].tagName);
+          _log("[components] ingnore and stop created event from child " + e.path[0].tagName);
           return 
         }
         if (created) {

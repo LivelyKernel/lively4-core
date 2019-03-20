@@ -89,13 +89,12 @@ export default class VivideScriptEditor extends Morph {
     this.currentScript = currentScript;
     
     this.editorList.innerHTML = '';
+    
+     console.log("VIVIDE updateLoopState")
     await this.currentScript.forEachStepAsync(
       async step => {
-        console.warn('start processing step:', step);
-        return await this.appendNewStepEditorFor(step);
-      }
-    );
-    
+        await this.appendNewStepEditorFor(step)  
+    });    
     this.updateLoopState();
   }
   

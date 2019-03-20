@@ -277,8 +277,6 @@ export default class Lively {
 
 
   static fillTemplateStyles(root, debugInfo) {
-    debugger
-    
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     var promises = [];
     var allSrc = []
@@ -437,7 +435,22 @@ export default class Lively {
     });
   }
 
-  static async create(name="lively-table", parent=document.body) {
+  static ensureSpawnArea() {
+    var spawnId = "livelySpawnArea"
+    var spawn = document.body.querySelector("#" + spawnId)
+    if (!spawn) {
+      spawn = document.createElement("div")
+      spawn.id = spawnId
+      spawn.style.display = "none"
+      spawn.isMetaNode = true
+      document.body.appendChild(spawn)
+    }
+    return spawn
+  }
+  
+  
+  static async create(name="lively-table", parent=this.ensureSpawnArea()) {
+    
     var element = document.createElement(name)
     // #TODO normal elements will not resolve this promoise #BUG
     if (name.match("-")) {
