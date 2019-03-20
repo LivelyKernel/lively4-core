@@ -13,7 +13,7 @@ export default class VivideScriptEditor extends Morph {
   async initialize() {
     this.windowTitle = "VivideScriptEditor";
 
-    this.inspector.hideWorkspace();
+    // this.inspector.hideWorkspace();
   }
   
   initialFocus() {
@@ -90,7 +90,10 @@ export default class VivideScriptEditor extends Morph {
     
     this.editorList.innerHTML = '';
     await this.currentScript.forEachStepAsync(
-      async step => await this.appendNewStepEditorFor(step)
+      async step => {
+        console.warn('start processing step:', step);
+        return await this.appendNewStepEditorFor(step);
+      }
     );
     
     this.updateLoopState();
