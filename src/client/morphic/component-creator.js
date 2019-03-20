@@ -329,6 +329,7 @@ export default class ComponentCreator {
   }
   
   static async  updateComponentsUI(container, context) {
+    debugger
     if (!container || !container.getPath) {
       return "no container as parentPath";
     }

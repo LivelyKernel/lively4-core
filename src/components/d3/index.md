@@ -3,7 +3,9 @@
 
 # D3 Components
 <script>
-  import ComponentCreator from "src/client/morphic/component-creator.js"
+  console.log("hellloooooo")
+
+import ComponentCreator from "src/client/morphic/component-creator.js"
   var container  = lively.query(this, "lively-container")
 </script>
 
@@ -38,6 +40,7 @@ Files.generateMarkdownFileListing(md.shadowRoot)
 ## *META*
 
 <script>
+  console.log("hellloooooo")
   var context = lively.query(this, "lively-markdown").shadowRoot
   ComponentCreator.updateComponentsUI(container, context)
 </script>

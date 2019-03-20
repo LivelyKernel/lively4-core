@@ -213,12 +213,9 @@ export default class ComponentLoader {
     this.prototypes[componentName] = aClass;
     
     if (template) {
-      console.log("LOADER register fillTemplateStyles: " + componentName)
+      _log("LOADER register fillTemplateStyles: " + componentName)
       await lively.fillTemplateStyles(template, "source: " + componentName)
     }
-    
-    console.log("LOADER DONE register fillTemplateStyles: " + componentName)
-    
     
     if (!this.proxies[componentName]) {
       proxy = class extends HTMLElement {
@@ -270,22 +267,20 @@ export default class ComponentLoader {
       }
       // set the prototype of the proxy the first time
       // #Idea: use "extemds aClass" ?
-      proxy.__proto__ = aClass
-      proxy.prototype.__proto__ = aClass.prototype
+      //       proxy.__proto__ = aClass
+      //       proxy.prototype.__proto__ = aClass.prototype
       
-      console.log("LOADER define component: " + componentName)
+      _log("LOADER define component: " + componentName)
       window.customElements.define(componentName, proxy); // #WebComponent #Magic
       this.proxies[componentName] =  proxy
     } else {
       proxy = this.proxies[componentName] 
       
-      // change the prototype of the proxy
-      proxy.__proto__ = aClass
-      proxy.prototype.__proto__ = aClass.prototype
     }
-      
-
-  
+    
+    // change the prototype of the proxy
+    proxy.__proto__ = aClass
+    proxy.prototype.__proto__ = aClass.prototype
   }
 
   // this function loads all unregistered elements, starts looking in lookupRoot,
@@ -570,18 +565,10 @@ export default class ComponentLoader {
     }
   }
   
+  // #TODO refactor this to use lively.create(), because this is not enough... 
   static createComponent(tagString) {
     var comp = document.createElement(tagString);
     return comp;
-  }
-
-  static async loadAndOpenComponent(componentName, immediate = () => {}) {
-    var component = this.createComponent(componentName);
-    
-    const compPromise = this.openIn(<div />, component);
-    immediate(component);
-    
-    return compPromise.through(comp => comp.remove());
   }
   
   static openIn(parent, component, beginning) {

@@ -451,6 +451,8 @@ export default class Lively {
   
   static async create(name="lively-table", parent=this.ensureSpawnArea()) {
     
+    // =this.ensureSpawnArea()
+    
     var element = document.createElement(name)
     // #TODO normal elements will not resolve this promoise #BUG
     if (name.match("-")) {
