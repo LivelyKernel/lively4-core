@@ -1,37 +1,33 @@
-<template id="lively-hand" data-class="LivelyHand">
-<style>
-  :host {
-    position: absolute;
-    display: block;
-    z-index: 1000;
-    pointer-events: none; /* don't get the pointer events, but take them from the container */
-  }
+<template id="lively-hand" >
+  <style>
+    :host {
+      position: absolute;
+      display: block;
+      z-index: 1000;
+      pointer-events: none; /* don't get the pointer events, but take them from the container */
+    }
 
-  #content {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 3px;
-    height: 3px;
-    background-color: rgba(10,10,10,0.5);
-    pointer-events: none;
-  }
-  
-  #info {
-    position: absolute;
-    z-Index: 1001;
-    top: 0px;
-    right: 10px;
-    font
-  }
-  
+    #content {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 3px;
+      height: 3px;
+      background-color: rgba(10,10,10,0.5);
+      pointer-events: none;
+    }
 
-</style>
-<div id="info"></div>
-<div id="content">
-
-<content></content>
-</div>
+    #info {
+      position: absolute;
+      z-Index: 1001;
+      top: 0px;
+      right: 10px;
+      font
+    }
+  </style>
+  <div id="info"></div>
+  <div id="content">
+    <slot></slot>
+  </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
 

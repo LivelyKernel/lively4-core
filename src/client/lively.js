@@ -199,7 +199,7 @@ export default class Lively {
     let defaultClass = mod.default;
     if (defaultClass) {
       console.log("update template prototype: " + moduleName);
-      components.updatePrototype(defaultClass.prototype);
+      components.updatePrototype(defaultClass, moduleName);
     }
 
     /**
@@ -417,6 +417,7 @@ export default class Lively {
       comp.mode = "text/jsx";
       comp.value = string;
       comp.setAttribute("overscroll", "contain")
+      comp.style.height = "100%"
       var container = comp.parentElement
       if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");
@@ -704,7 +705,7 @@ export default class Lively {
       	timeout: 10,
       	details: "what's up?"})
    */
-  static notify(titleOrOptions, text, timeout, cb, color) {
+  static async notify(titleOrOptions, text, timeout, cb, color) {
     try {
       // #TODO make native notifications opitional?
       // this.nativeNotify(title, text, timeout, cb)
@@ -730,24 +731,15 @@ export default class Lively {
 
       var notificationList = document.querySelector("lively-notification-list")
       if (!notificationList) {
-       notificationList = document.createElement("lively-notification-list");
-        components.openIn(document.body, notificationList).then(() => {
-          if (notificationList.addNotification) {
-            notificationList.addNotification(title, text, timeout, cb, color);
-          }
-        });
+        notificationList = await lively.create("lively-notification-list", document.body);
+        notificationList.addNotification(title, text, timeout, cb, color);
       } else {
         var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
-
         if (duplicateNotification) {
           duplicateNotification.counter++;
           duplicateNotification.render();
         } else {
-          if(notificationList && notificationList.addNotification) {
-            notificationList.addNotification(title, text, timeout, cb, color);
-          } else {
-            console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
-          }
+          notificationList.addNotification(title, text, timeout, cb, color);
         }
       }
     } catch(e) {
@@ -837,6 +829,7 @@ export default class Lively {
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();
+    
     // lively.selection;
 
     // yes, we want also to change style of external websites...
@@ -1139,10 +1132,8 @@ export default class Lively {
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
-        className = template.getAttribute('data-class'),
-        baseName = this.templateClassNameToTemplateName(className),
-        moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
-      lively.openBrowser(moduleURL, true, className);
+        moduleURL = await this.components.searchTemplateFilename(object.localNam + ".js");
+      lively.openBrowser(moduleURL, true);
     } else {
       lively.notify("Could not show source for: " + object);
     }
@@ -1699,7 +1690,11 @@ export default class Lively {
   }
   
   static elementToCSSName(element) {
-    return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")
+    try {
+      return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")      
+    } catch(e) {
+      return "" // silent fail.... 
+    }
   }
 
   static async openPart(partName, worldContext=document.body) {

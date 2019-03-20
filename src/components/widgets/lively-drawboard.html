@@ -1,4 +1,4 @@
-<template id="lively-drawboard" data-class="LivelyDrawboard">
+<template id="lively-drawboard" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   
@@ -86,7 +86,7 @@
   }
 
   </style>
-  <content></content>
+  <slot></slot>
   
   <div id="controls">
     <button id="undoStroke">
@@ -106,6 +106,5 @@
   <lively-resizer></lively-resizer>
   
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
 
  

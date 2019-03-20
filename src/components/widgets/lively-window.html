@@ -1,4 +1,4 @@
-<template id="lively-window" data-class="LivelyWindow">
+<template id="lively-window" >
   <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
   <style>
   :host {
@@ -7,22 +7,21 @@
     width: 650px;
     height: 400px;
   }
+    
   :host(.window-fixed) {
     position: fixed;
   }
   :host * {
     box-sizing: border-box;
   }
-  ::content {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-  }
-  ::content > * {
+    
+  ::slotted(*)  {
     position: absolute;
+    
     height: 100%;
     width: 100%;
   }
+    
   .window {
     /* border-radius: 4px 4px 0px 0px; */
     width: 100%;
@@ -175,10 +174,9 @@
     </div>
 
     <div class="window-content" id="window-content">
-      <content></content>
+      <slot></slot>
     </div>
   </div>
   <lively-resizer></lively-resizer>
   <div class="window-global" id="window-global"></div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

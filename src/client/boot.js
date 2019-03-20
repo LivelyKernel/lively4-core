@@ -233,13 +233,14 @@ if (window.lively && window.lively4url) {
           await System.import("lang-ext");
           groupedMessageEnd();
 
-          groupedMessage(5, 6, 'Look for uninitialized instances of Web Compoments');
-          await lively.components.loadUnresolved();
-          groupedMessageEnd();
-
-          groupedMessage(6, 6, 'Initialize Document');
+          groupedMessage(5, 6, 'Initialize Document');
           await lively.initializeDocument(document, window.lively4chrome, loadContainer);
           groupedMessageEnd();
+
+          groupedMessage(6, 6, 'Look for uninitialized instances of Web Compoments');
+          await lively.components.loadUnresolved(document.body, true, "boot.js", true)
+          groupedMessageEnd();
+
 
           console.log("Finally loaded!");
 

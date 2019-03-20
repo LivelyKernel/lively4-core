@@ -65,12 +65,10 @@ export  function createTemplate(rootElement, info) {
 
 function saveTemplate(template, info) {
   var serializer = new XMLSerializer();
-  var registrationScript = componentLoader.createRegistrationScript(template.id);
 
   var templateString = serializer.serializeToString(template);
-  var regScriptString = serializer.serializeToString(registrationScript);
   // fix some bad escaping
-  var completeHTML = (templateString + regScriptString).replace(new RegExp("&lt;", "g"),"<").replace(new RegExp("&gt;", "g") ,">");
+  var completeHTML = (templateString).replace(new RegExp("&lt;", "g"),"<").replace(new RegExp("&gt;", "g") ,">");
 
   // beautify
   if (typeof htmlBeautify === "function") {

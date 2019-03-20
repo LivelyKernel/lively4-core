@@ -1,4 +1,4 @@
-<template id="lively-notification-list" data-class="LivelyNotificationList">
+<template id="lively-notification-list" >
 <style>
   :host {
     position: fixed;
@@ -14,8 +14,8 @@
   }
 </style>
 <div id='notifications'>
-    <content></content>
+    <slot></slot>
 </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
+
 

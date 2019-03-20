@@ -1,4 +1,4 @@
-<template id="lively-grail" data-class="LivelyGrail">
+<template id="lively-grail">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style>
   :host {
@@ -24,9 +24,6 @@
   </div>
   
   <div id="hiddenContent">
-    <content></content>
+    <slot></slot>
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-
- 

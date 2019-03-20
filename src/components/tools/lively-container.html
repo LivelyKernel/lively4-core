@@ -1,4 +1,4 @@
-<template id="lively-container" data-class="LivelyContainer">
+<template id="lively-container" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style data-src="/src/client/lively.css"></style>
@@ -212,7 +212,7 @@
         <div id="container-content" class="lively-no-paste">
           <div id="container-root" class="lively-no-paste">
           <!-- by default the content is hidden-->
-          <content></content>
+          <slot></slot>
           </div>
         </div>
         <div id="container-editor"></div>
@@ -224,4 +224,4 @@
     </div>
 
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
+

@@ -91,17 +91,34 @@ extend(generatorPrototype, {
 
   toArray(...args) {
     const result = [];
-    
+
     for (let item of this(...args)) {
       result.push(item)
     }
+
     return result;
   }
-  
+
 });
 
 
-// const asyncGeneratorPrototype = (async function* foo() {}).prototype.constructor;
+// #TODO: only written in this weird manner due to tooling not supporting async generators (parse error) #Tooling #Tools
+const asyncGeneratorPrototype = (new Function(`return async function*() {};`))().prototype.constructor;
+
+extend(asyncGeneratorPrototype, new Function(`return {
+
+  async toArray(...args) {
+    const result = [];
+
+    for await (let item of this(...args)) {
+      result.push(item)
+    }
+
+    return result;
+  }
+
+};`)());
+
 
 /**
  * DATE

@@ -25,7 +25,9 @@ export default class Debugger extends Morph {
     this.highlightedLineId = null;
     this.scopeList = document.createElement('ul');
     this.breakPoints = {}; // mapping: scriptId => {lineNumberN0 => breakpointId}
-    this.Range = ace.require('ace/range').Range;
+    
+    // #TODO refactor #ACE
+    // this.Range = ace.require('ace/range').Range;
 
     this.targetList = this.getSubmorph('#targetList');
     this.scriptList = this.getSubmorph('#scriptList');
@@ -38,8 +40,8 @@ export default class Debugger extends Morph {
 
 
     // ensure the extension is installed    
-    if (!lively4ChromeDebugger) {
-      if (window.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
+    if (!self.lively4ChromeDebugger) {
+      if (lively.confirm('Lively4 Debugger Extension not found. Do you want to install it?')) {
         window.open(debuggerGitHubURL, '_blank').focus();
       }
       return;
@@ -134,40 +136,42 @@ export default class Debugger extends Morph {
   }
   
   initializeCodeEditor() {
-    this.codeEditor.session.setMode("ace/mode/javascript");
-    this.codeEditor.currentLocationToScropeEnd = () => {
-      let text,
-          editor = this.codeEditor,
-          sel = editor.getSelectionRange(),
-          start = sel.start.row + 1, // 0-based
-          bracketCount = null,
-          currlineNumber = start;
-      var line = editor.session.getLine(currlineNumber);
-      while (!bracketCount || bracketCount > 0) {
-        if (Math.abs(bracketCount) > 2000) {
-          alert('Unable to match brackets');
-        }
-        bracketCount += (line.match(/{/g) || []).length;
-        bracketCount -= (line.match(/}/g) || []).length;
-        currlineNumber += 1;
-        line = editor.session.getLine(currlineNumber);
-        if (line.length == 0) break;
-      }
-      return {
-        start: start + 1, // next line
-        end: currlineNumber
-      };
-    };
-    this.codeEditor.commands.addCommand({
-      name: "saveIt",
-      bindKey: {win: "Ctrl-S", mac: "Command-S"},
-      exec: (editor) => {
-        this.onSave(editor)
-      }
-    });
-    this.codeEditor.on("guttermousedown", (e) => {
-      this.onSetBreakpoint()
-    });
+    // #TODO migrate from ACE to CodeMirror
+    // see https://codemirror.net/demo/marker.html
+    // this.codeEditor.session.setMode("ace/mode/javascript");
+    // this.codeEditor.currentLocationToScropeEnd = () => {
+    //   let text,
+    //       editor = this.codeEditor,
+    //       sel = editor.getSelectionRange(),
+    //       start = sel.start.row + 1, // 0-based
+    //       bracketCount = null,
+    //       currlineNumber = start;
+    //   var line = editor.session.getLine(currlineNumber);
+    //   while (!bracketCount || bracketCount > 0) {
+    //     if (Math.abs(bracketCount) > 2000) {
+    //       alert('Unable to match brackets');
+    //     }
+    //     bracketCount += (line.match(/{/g) || []).length;
+    //     bracketCount -= (line.match(/}/g) || []).length;
+    //     currlineNumber += 1;
+    //     line = editor.session.getLine(currlineNumber);
+    //     if (line.length == 0) break;
+    //   }
+    //   return {
+    //     start: start + 1, // next line
+    //     end: currlineNumber
+    //   };
+    // };
+    // this.codeEditor.commands.addCommand({
+    //   name: "saveIt",
+    //   bindKey: {win: "Ctrl-S", mac: "Command-S"},
+    //   exec: (editor) => {
+    //     this.onSave(editor)
+    //   }
+    // });
+    // this.codeEditor.on("guttermousedown", (e) => {
+    //   this.onSetBreakpoint()
+    // });
   }
   
   transpile(filename, src) {

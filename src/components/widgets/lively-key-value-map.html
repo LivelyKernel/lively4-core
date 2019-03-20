@@ -1,12 +1,8 @@
-<!-- This link here is needed since key-value-inputs are created dynamically -->
-<!-- Would be cleaner to use conponent-loader API -->
-<link rel="import" href="lively-key-value-input.html">
-<template id="lively-key-value-map" data-class="LivelyKeyValueMap">
+<template id="lively-key-value-map">
   <style>
   :host {
     display: block;
   }
   </style>
-  <content></content>
+  <slot></slot>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

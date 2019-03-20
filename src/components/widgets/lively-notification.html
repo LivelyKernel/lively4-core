@@ -1,4 +1,4 @@
-<template id="lively-notification" data-class="LivelyNotification">
+<template id="lively-notification">
 <style>
   :host {
     display: block;
@@ -58,8 +58,6 @@
     <div id="counter"></div>
     <div id="moreButton">more</div>
 
-    <content></content>
+    <slot></slot>
 </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

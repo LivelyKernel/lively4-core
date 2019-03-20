@@ -1,4 +1,4 @@
-<template id="graphviz-dot" data-class="GraphvizDot">
+<template id="graphviz-dot">
   <style>
   :host {
       min-width: 50px;
@@ -9,8 +9,6 @@
     #container {
       position: relative; /* positioning hack.... we make our coordinate system much easier by this */
       border: 2px solid gray;
-/*       width: 50%;
-      height: 50%; */
       overflow: hidden
     }
   
@@ -20,6 +18,3 @@
   </div>
   </div>
 </template>
-<script class="registrationScript">
-  lively.registerTemplate()
-</script>
