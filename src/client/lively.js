@@ -276,21 +276,23 @@ export default class Lively {
   }
 
 
-  static fillTemplateStyles(root, debugInfo) {
+  static async fillTemplateStyles(root, debugInfo) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
+    
+    // var start = performance.now()
     var promises = [];
     var allSrc = []
     root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src");
       if (src) {
         allSrc.push(src)
-        console.log("load fillTemplateStyles: " + lively4url + src );
         promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
           ea.innerHTML = css;
         }));
       }
     });
-    return Promise.all(promises)
+    await Promise.all(promises)    
+    // console.log("load fillTemplateStyles "  + (performance.now() - start) +"ms :"+ debugInfo);
   }
 
   static showError(error) {
