@@ -52,7 +52,7 @@ describe("Services Tool",  function() {
     checkListRefreshed(done);
   });
   
-  it("should list, select, and remove services", function(done) {
+  it("should list, select, and remove services", async function(done) {
     this.timeout(10000);
     var fakeServices = {
       '1': {
@@ -66,7 +66,7 @@ describe("Services Tool",  function() {
         'start': Date.now()
       }
     };
-    that.listServices(fakeServices);
+    await that.listServices(fakeServices);
     var items = getItems();
     expect(items.length).to.be.equal(2);
 
@@ -78,7 +78,7 @@ describe("Services Tool",  function() {
     items = getItems();
     expect(items.length).to.be.equal(0);
 
-    that.listServices({});
+    await that.listServices({});
     var emptyItem = that.serviceList.querySelectorAll('.empty');
     expect(emptyItem).to.not.be.null;
 
