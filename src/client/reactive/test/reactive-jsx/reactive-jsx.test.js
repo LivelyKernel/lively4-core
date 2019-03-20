@@ -23,8 +23,8 @@ describe('computed content', function() {
 });
 
 describe('async support for WebComponents', function() {
-  this.timeout = 30000;
-  it('simple WebComponent', async done => {
+  it('simple WebComponent', async function(done) {
+    this.timeout = 30000;
     let prom = <add-knot>Hello</add-knot>;
     expect(prom).to.be.an.instanceof(Promise);
 
