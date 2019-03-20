@@ -46,7 +46,9 @@ foo({ editMode: true })
 <script>execPrevElement(this);</script>
 
 
+## Fixing Plex after PolymorphicIdentifier demo
 
+![](plex_demo.png)
 
 
 

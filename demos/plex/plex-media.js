@@ -51,7 +51,7 @@ export default class PlexMedia extends Morph {
     if (media.children) {
       media.children.forEach(ea => {
         var dirElement = <a class={"directory " + ea.type} href={"plex:/" + ea.key.replace(/\/children$/,"/")} 
-            click={() => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
+            click={(event) => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
             {
               !ea.thumb ? "" :
                 <img class="thumb" src={lively.swxURL("plex:/" + ea.thumb)}></img>
