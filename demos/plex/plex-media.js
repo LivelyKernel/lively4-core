@@ -79,10 +79,10 @@ export default class PlexMedia extends Morph {
       }
     }
     // special container full extent #TODO, how to handle the generally?
-    var containerContent = this.parentElement && this.parentElement.get("#container-content")
+    var containerContent = this.parentElement && this.parentElement.querySelector("#container-content")
     if (containerContent) {
       lively.setPosition(this, pt(0,0))
-      lively.setExtent(this, lively.getExtent(this.parentElement.get("#container-content")))
+      lively.setExtent(this, lively.getExtent(this.parentElement.querySelector("#container-content")))
     }
   }
   
