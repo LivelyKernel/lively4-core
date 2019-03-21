@@ -1150,11 +1150,11 @@ export default class Lively {
 
   static async showClassSource(object, evt) {
     // object = that
-    if (object instanceof HTMLElement) {
+    if (object instanceof HTMLElement) {  
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
-        moduleURL = await this.components.searchTemplateFilename(object.localNam + ".js");
+        moduleURL = await this.components.searchTemplateFilename(object.localName + ".js");
       lively.openBrowser(moduleURL, true);
     } else {
       lively.notify("Could not show source for: " + object);
