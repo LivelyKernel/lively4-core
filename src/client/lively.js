@@ -1357,7 +1357,7 @@ export default class Lively {
       lively.setGlobalPosition(w, globalPos);
 
       return components.openIn(w, document.createElement(name)).then(comp => {
-        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        components.ensureWindowTitle(comp, w)
         return comp;
       });
     });

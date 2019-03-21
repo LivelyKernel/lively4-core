@@ -383,3 +383,21 @@ extend(Promise.prototype, {
   }
 
 });
+
+
+/**
+ * URL
+ */
+extend(URL.prototype, {
+
+  // hook for rendering the internals of an object in the inspector
+  livelyInspect(contentNode, inspector) {
+    contentNode.innerHTML = ""
+    var entries = lively.allKeys(this);
+    for(let key of entries) {
+      const node = inspector.display(this[key], true, key)
+      if (node) contentNode.appendChild(node);   
+    }
+  }
+
+});

@@ -304,10 +304,7 @@ export default class KnotView extends Morph {
         // this.refresh();
       }
       editorComp.doSave = saveKnot;
-      const debouncedSave = debounce.call(() => {
-        lively.notify('debounced');
-        saveKnot(editorComp.value)
-      }, 2000);
+      const debouncedSave = (() => saveKnot(editorComp.value)).debounce(2000);
       lively.addEventListener('knot-view-editor', editorComp, 'change', debouncedSave);
     }
   }
