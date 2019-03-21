@@ -54,7 +54,7 @@ export default class PlexMedia extends Morph {
             click={(event) => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
             {
               !ea.thumb ? "" :
-                <img class="thumb" src={lively.swxURL("plex:/" + ea.thumb)}></img>
+                <img class="thumb" src={lively.swxURL("cached:plex:/" + ea.thumb)}></img>
             } <br />
             <span class="title"><b>{ea.parentTitle}</b><br />{ea.title}</span>
           </a>

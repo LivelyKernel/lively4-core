@@ -340,6 +340,45 @@ export class LivelyBrowse extends Scheme {
 }
 
 
+class CachedRequest extends Scheme {
+  
+  get scheme() {
+    return "cached"
+  }
+
+  resolve() {
+    this.realURL = this.url.replace(new RegExp("^" + this.scheme + ":/?/?"),"") // #Hack
+    return true
+  }  
+  
+  async GET(options) {
+    
+    if (!this.promisedCache) {
+      this.promisedCache = self.caches.open("PoidCachesScheme")
+    }
+    var cache = await this.promisedCache;
+    var request = "https://" + this.realURL // Hack, to convice the CACHE API 
+    var result = await cache.match(request)
+    if (!result) {
+      result = await fetch(this.realURL)
+      if (!result.ok) {
+        throw new TypeError('Bad response status');
+      }
+      cache.put(request, result.clone())
+    }
+    return result
+  }
+
+  PUT(options) {
+    return fetch(this.realURL, options)
+  }
+    
+  OPTIONS(options) {
+    return fetch(this.realURL, options)
+  }
+}
+
+
 /* 
   EXAMPLES:
     // fetch("query://#haha", {method: "PUT", body: "<h1>foo</h1>heyho"})
@@ -502,6 +541,7 @@ export default class PolymorphicIdentifier {
     this.register(LivelySearch)
     this.register(LivelyOpen)
     this.register(LivelyBrowse)
+    this.register(CachedRequest)
   }
   
   static url(request) {
@@ -514,7 +554,7 @@ export default class PolymorphicIdentifier {
   
   // #Refactor schemeFor
   static schemaFor(url) {
-    var m = url.match(/^([A-Za-z0-9]+):\/\//)
+    var m = url.match(/^([A-Za-z0-9]+):\/?\/?/) // 
     if (!m || !this.schemas) return
     return this.schemas[m[1]]  
   }
@@ -591,6 +631,7 @@ if (!navigator.serviceWorker) {
 PolymorphicIdentifier.load()
 
 // window.fetch  = window.originalFetch
+
 
 // fetch("https://lively-kernel.org/lively4/lively4-jens/README.md")t
 

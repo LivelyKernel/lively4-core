@@ -1,4 +1,4 @@
-# ![Lively 4](http://localhost:9005/lively4-jens/media/lively4_logo_smooth_100.png) A Self-supporting, Web-based Development Environment
+# ![Lively 4](media/lively4_logo_smooth_100.png) A Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
