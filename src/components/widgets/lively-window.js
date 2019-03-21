@@ -39,6 +39,20 @@ export default class Window extends Morph {
     if (this.isMinimized() || this.isMaximized())
       this.displayResizeHandle(false);
 
+    this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {
+        if(mutation.type == "attributes") {
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName)
+          )
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+    
+    
     this.setAttribute("tabindex", 0)
   }
 

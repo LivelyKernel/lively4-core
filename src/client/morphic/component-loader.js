@@ -628,9 +628,8 @@ export default class ComponentLoader {
     // if it is currently unresolved
     var windowPromise = new Promise((resolve) => {
       this.loadUnresolved(document.body, true, "openInWindow " + component).then(() => {
-        w.style.opacity = 1 
-        if (component.windowTitle) 
-          w.setAttribute('title', '' + component.windowTitle);
+        w.style.opacity = 1.0
+        this.ensureWindowTitle(component, w)
 
         resolve(w);
       });
@@ -638,6 +637,13 @@ export default class ComponentLoader {
 
     return windowPromise;
   }
+  
+  static ensureWindowTitle(component, w) {
+    debugger
+    if (component.windowTitle) {
+      w.setAttribute('title', '' + component.windowTitle);
+    }
+  }  
 
   static reloadComponent(source) {
     var template = lively.html.parseHTML(source).find(ea => ea.localName == "template");

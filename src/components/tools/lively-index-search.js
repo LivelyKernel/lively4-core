@@ -87,7 +87,7 @@ export default class IndexSearch extends Morph {
       link.title = ea.file
       var self = this
       link.onclick = (evt) => {
-        if (evt.shiftKey) {
+        if (evt.shiftKey || evt.ctrlKey) {
           this.browseSearchResult(url, lineAndColumn);
         } else {
           this.showSearchResult(url, lineAndColumn);
