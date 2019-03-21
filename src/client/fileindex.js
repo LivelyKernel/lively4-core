@@ -156,9 +156,12 @@ export default class FileIndex {
       // console.log("FileIndex ignore  " + url)
       return
     }
+    if (!name) {
+      console.warn("FileIndex addFile failed because no name for  " + url)
+      return
+    }
     
     console.log("FileIndex update  " + url)
-    
 
     var file = {
       url: url,
@@ -256,9 +259,7 @@ export default class FileIndex {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
           this.dropFile(eaURL)
         }
-      })
-      
-      
+      })    
     } finally {
       if (showProgress) progress.remove()
     }

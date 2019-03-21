@@ -183,8 +183,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.isLoading = true
     this.root = this.shadowRoot // used in code mirror to find current element
     await LivelyCodeMirror.loadModules(); // lazy load modules...
-  
-    console.log("ATTACHED code-mirror")  
     
     if (this.textContent) {
       var value = this.decodeHTML(this.textContent);

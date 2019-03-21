@@ -276,21 +276,23 @@ export default class Lively {
   }
 
 
-  static fillTemplateStyles(root, debugInfo) {
+  static async fillTemplateStyles(root, debugInfo) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
+    
+    // var start = performance.now()
     var promises = [];
     var allSrc = []
     root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src");
       if (src) {
         allSrc.push(src)
-        console.log("load fillTemplateStyles: " + lively4url + src );
         promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
           ea.innerHTML = css;
         }));
       }
     });
-    return Promise.all(promises)
+    await Promise.all(promises)    
+    // console.log("load fillTemplateStyles "  + (performance.now() - start) +"ms :"+ debugInfo);
   }
 
   static showError(error) {
@@ -1148,11 +1150,11 @@ export default class Lively {
 
   static async showClassSource(object, evt) {
     // object = that
-    if (object instanceof HTMLElement) {
+    if (object instanceof HTMLElement) {  
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
-        moduleURL = await this.components.searchTemplateFilename(object.localNam + ".js");
+        moduleURL = await this.components.searchTemplateFilename(object.localName + ".js");
       lively.openBrowser(moduleURL, true);
     } else {
       lively.notify("Could not show source for: " + object);

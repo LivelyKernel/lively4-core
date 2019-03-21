@@ -510,7 +510,7 @@ export default class ContextMenu {
         ],
         ["Journal", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
-            comp.followPath(lively4url + "/doc/journal/index.html");
+            comp.followPath(lively4url + "/doc/journal/index.md");
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],

@@ -901,7 +901,7 @@ export default class Container extends Morph {
       }
      
       
-      await components.loadUnresolved(root, false, "container.js");
+      await components.loadUnresolved(root, false, "container.js", true);
       
       lively.clipboard.initializeElements(root.querySelectorAll("*"))
       
@@ -1301,6 +1301,10 @@ export default class Container extends Morph {
     if (url.protocol == "search:") {
       format = "html"
     }
+    if (path.match(/\?html/)) {
+      format = "html"
+    }
+    
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
       if (!options || !options["index-available"]) {

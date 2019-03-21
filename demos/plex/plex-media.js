@@ -51,7 +51,7 @@ export default class PlexMedia extends Morph {
     if (media.children) {
       media.children.forEach(ea => {
         var dirElement = <a class={"directory " + ea.type} href={"plex:/" + ea.key.replace(/\/children$/,"/")} 
-            click={() => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
+            click={(event) => {event.preventDefault(); this.showDetails(dirElement, ea)}}>
             {
               !ea.thumb ? "" :
                 <img class="thumb" src={lively.swxURL("plex:/" + ea.thumb)}></img>
@@ -79,10 +79,10 @@ export default class PlexMedia extends Morph {
       }
     }
     // special container full extent #TODO, how to handle the generally?
-    var containerContent = this.parentElement && this.parentElement.get("#container-content")
+    var containerContent = this.parentElement && this.parentElement.querySelector("#container-content")
     if (containerContent) {
       lively.setPosition(this, pt(0,0))
-      lively.setExtent(this, lively.getExtent(this.parentElement.get("#container-content")))
+      lively.setExtent(this, lively.getExtent(this.parentElement.querySelector("#container-content")))
     }
   }
   

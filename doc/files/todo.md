@@ -5,7 +5,9 @@
 
   (async () => {
     var ul = document.createElement("ul")
-    var files = await FileCache.current().db.files.filter(ea => ea.tags && ea.tags.indexOf("#TODO") != -1).toArray();
+    var files = await FileCache.current().db.files
+      .filter(ea => ea.url.match(lively4url)) // only show local files...
+      .filter(ea => ea.tags && ea.tags.indexOf("#TODO") != -1).toArray();
     files.forEach(ea => {
       ea.content.split("\n").filter(ea => ea.match(/#TODO/)).forEach(line => {
         var li = document.createElement("li")
