@@ -259,9 +259,7 @@ export default class FileIndex {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
           this.dropFile(eaURL)
         }
-      })
-      
-      
+      })    
     } finally {
       if (showProgress) progress.remove()
     }

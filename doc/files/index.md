@@ -50,7 +50,9 @@
     var table = await lively.create("lively-table", this)
     var files = (await FileCache.current().db.files.toArray());
     table.setFromJSO(
-      files.map(ea => {
+      files
+        .filter(ea => ea.url.match(lively4url)) // only show local files...
+        .map(ea => {
           return {
             file: ea.url.replace(lively4url, "") + '</a> ', 
             size: ea.size,
