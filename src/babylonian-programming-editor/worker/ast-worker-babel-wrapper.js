@@ -1,4 +1,8 @@
 
+
+var myPath = "src/babylonian-programming-editor/worker/ast-worker-babel-wrapper.js"
+self.lively4url = self.location.toString().replace(myPath, "");
+
 importScripts("../../worker/livelyworker.js")
 
 // React to messages

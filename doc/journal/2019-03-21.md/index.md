@@ -50,3 +50,10 @@ this._attrObserver = new MutationObserver(mutations => {
 this._attrObserver.observe(this, { attributes: true });
 ```
 
+## Implemented a [CacheScheme](browse:/src/client/poid.js) for #PolymorphicIdentifiers 
+
+- https://dl.acm.org/citation.cfm?id=2508168.2508169
+
+[Plex cover art](plex://library/sections/3/decade/1990/) is now fast!
+
+![](plex_covers.png)

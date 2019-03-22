@@ -1886,7 +1886,7 @@ export default class Lively {
   }
   
   static swxURL(url) {
-    var m = url.toString().match(/^([a-zA-Z0-9]+)\:\/\/(.*)$/)
+    var m = url.toString().match(/^([a-zA-Z0-9]+)\:\/?\/?(.*)$/)
     if (!m) {
       throw new Error("coudl not convert url to an swx form: " + url)
     }
