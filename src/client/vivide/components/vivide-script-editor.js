@@ -14,6 +14,7 @@ export default class VivideScriptEditor extends Morph {
     this.windowTitle = "VivideScriptEditor";
 
     this.inspector.hideWorkspace();
+    this.inspector.inspect(this)
   }
   
   initialFocus() {

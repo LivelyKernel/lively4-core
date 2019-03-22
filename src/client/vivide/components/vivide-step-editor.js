@@ -379,7 +379,7 @@ export default class VivideStepEditor extends Morph {
     this.scriptEditor = scriptEditor;
   }
   
-  async showTypeMenu(evt) {
+  async showTypeMenu() {
     const createStepAfterThisOne = type => {
       menu.remove();
       this.scriptEditor.insertStepAfter(type, this.step, this);
@@ -403,7 +403,8 @@ export default class VivideStepEditor extends Morph {
     ]];
 
     // #TODO: is there a better way to position the menu? @Jens
-    const menu = await ContextMenu.openIn(this.get('#menu-holder'), evt, undefined, document.body, menuItems);
+    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body, menuItems);
+    lively.setGlobalPosition(menu, lively.getGlobalPosition(this));
   }
   
   showLoopMarker() {
