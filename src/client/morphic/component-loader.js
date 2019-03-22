@@ -9,6 +9,7 @@ import { through } from "utils";
 // store promises of loaded and currently loading templates
 
 if (!self.lively4loadingPromises) {
+  // WARNING: only used by loadUnresolved and not loadByName
   self.lively4loadingPromises = {} // just to be on the save side....
 }
 export var loadingPromises = self.lively4loadingPromises;
@@ -21,9 +22,7 @@ var _proxies;
 var _templatePaths;
 var _templatePathsCache;
 var _templatePathsCacheTime;
-
 var _templateFirstLoadTimes = {}
-
 
 var _loggingEnabled = false
 var _log = function(...args) {
@@ -379,11 +378,6 @@ export default class ComponentLoader {
     })
     .filter(promise => promise != null);
     
-    
-    // if (unique.has("lively-hand")) {
-    //   debugger
-    // }
-    
     _log("findUnresolvedDeep components: ", promises)
 
     // return a promise that resolves once all unresolved elements from the unresolved-array
@@ -524,7 +518,8 @@ export default class ComponentLoader {
     }
     return undefined
   }
-    
+  
+  // #TODO use loadingPromises here... #Issue, as we used it in livley.js directly, we loaded lively-window in parralel... 
   static async loadByName(name) {
     _log("LOADER loadByName " + name)
     
@@ -639,7 +634,6 @@ export default class ComponentLoader {
   }
   
   static ensureWindowTitle(component, w) {
-    debugger
     if (component.windowTitle) {
       w.setAttribute('title', '' + component.windowTitle);
     }
