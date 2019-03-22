@@ -58,7 +58,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Loading the editor
    */
 
-  initialize() {
+  async initialize() {
     this.windowTitle = "Babylonian Programming Editor";
 
     // Lock evaluation until we are fully loaded
@@ -99,7 +99,13 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.updateButtons();
 
     // CodeMirror
-    this.editorComp().addEventListener("editor-loaded", () => {
+
+    var editorComp = this.editorComp()
+      
+    console.log("Babylonian: load editor" + editorComp)
+    editorComp.addEventListener("editor-loaded", () => {
+      
+      console.log("Babylonian: editor loaded ", this.livelyEditor())
       // Patch editor to load/save comments
       this.livelyEditor().loadFile = this.load.bind(this);
       this.livelyEditor().saveFile = this.save.bind(this);
