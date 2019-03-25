@@ -14,7 +14,6 @@
 - flower-script  {.component}
 - flower-values  {.component}
 - lively-application-bar  {.component}
-- lively-code-editor  {.component}
 - lively-code-mirror-simple  {.component}
 - lively-grail  {.component}
 - lively-handwriting  {.component}

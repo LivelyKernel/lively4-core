@@ -493,7 +493,7 @@ export default class LivelyContainerNavbar extends Morph {
 
   showSublistHTML(subList) {
     if (!this.sourceContent) return;
-    var template =  lively.html.parseHTML(source).find(ea => ea.localName == "template");
+    var template =  lively.html.parseHTML(this.sourceContent).find(ea => ea.localName == "template");
       if (!template) {
         console.log("showNavbar: no template found");
         return;

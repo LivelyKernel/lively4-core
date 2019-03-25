@@ -1,10 +1,19 @@
 /*
  * Lively 4 Text Editor
- * - based Ace editor
  * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  * - updates change indicator while when editting,loading, and saving
  */
 
+/* 
+## EDITOR ... we have to many objects called "editor", because the wrap around and FACADE each other...
+
+- (babylonian-programming-editor)
+ - lively-editor
+   - lively-code-mirror
+     - cm CodeMirror object
+ 
+
+*/
 import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
@@ -182,6 +191,7 @@ export default class Editor extends Morph {
         this.currentEditor().selection.setRange(oldRange)
       }
     }
+    return text
   }
   
   updateAceMode() {
@@ -210,6 +220,7 @@ export default class Editor extends Morph {
        return this.setText(text, true); 
     }, (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
+        return ""
     });
   }
 
@@ -339,8 +350,17 @@ export default class Editor extends Morph {
   withEditorObjectDo(func) {
     var editor = this.currentEditor()
     if (editor) {
-     	return func(editor)
+      return func(editor)
     }    
+  }
+  
+  
+  livelyEditor() {
+    return this  
+  }
+  
+  livelyCodeMirror() {
+    return this.get('#editor')
   }
   
   async awaitEditor() {
