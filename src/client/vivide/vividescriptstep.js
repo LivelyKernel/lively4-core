@@ -118,7 +118,6 @@ export default class ScriptStep {
     this.cursor = json ? json.cursor : undefined;
     this.route = json ? json.route : undefined;
     
-    this._hiddenLastLinearStep = true;
     this._prevLinearStep = undefined;
     this._nextLinearStep = undefined;
     this._loopTargetStep = undefined;
