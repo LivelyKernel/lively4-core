@@ -21,10 +21,11 @@ class WidgetChooser {
     if (forest && forest.length > 0) {
       // #Question: this model has an objects array, what is the data structure of this model?
       const model = forest[0];
-      if(model.properties.has('dataPoints') &&
-         typeof model.properties.get('dataPoints')[0] === 'number'
-      ) {
+      
+      if(model.properties.has('dataPoints') && typeof model.properties.get('dataPoints')[0] === 'number') {
         return 'boxplot';
+      } else if (model.properties.has('text')) {
+        return 'text';
       }
     }
     return 'tree';
