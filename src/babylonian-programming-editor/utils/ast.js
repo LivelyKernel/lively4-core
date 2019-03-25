@@ -652,9 +652,9 @@ const stringForPath = (path) => {
 }
 
 export const bodyForPath = (path) => {
-  if(path.node.body) {
+  if(path.node && path.node.body) {
     return path.get("body");
-  } else if(path.parentPath.node.body) {
+  } else if(path.parentPath && path.parentPath.node && path.parentPath.node.body) {
     return path.parentPath.get("body");
   }
   return null;

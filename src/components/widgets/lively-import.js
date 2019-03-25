@@ -6,5 +6,11 @@ export default class LivelyImport extends Morph {
     if (!url) return;
     var src = await fetch(url).then(r => r.text())
     this.shadowRoot.innerHTML = "" + src 
+    var container = lively.query(this, "lively-container")
+    if (container) {
+      var dir = url.replace(/[^/]*$/,"")
+      lively.html.fixLinks(this.shadowRoot.childNodes, dir, 
+        (path) => container.followPath(path))
+    }
   }
 }
