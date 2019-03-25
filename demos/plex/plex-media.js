@@ -168,7 +168,7 @@ export default class PlexMedia extends Morph {
         <div class="title">{media.title}</div>
         <div class="parentTitle">{media.parentTitle}{media.year ? " (" + media.year +")"  : ""}</div>
         <table class="tracks">
-        {...(detailMedia.children.map(ea => {
+        {...((detailMedia.children || []).map(ea => {
             let track = <tr class="track">
                   <td>{(ea.index !== undefined ? ea.index + ". " : "")}</td>
                   <td>{this.titleOf(ea)}</td>
