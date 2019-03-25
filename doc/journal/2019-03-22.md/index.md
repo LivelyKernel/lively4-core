@@ -8,3 +8,11 @@
 ### Babylonian Programming Editor works again!
 
 ![](babylonian_programming.png)
+
+
+### Custom vs Default Inspector
+
+![](custom_inspector.png)
+
+
+![](default_inspector.png)

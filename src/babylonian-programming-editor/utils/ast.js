@@ -101,7 +101,7 @@ export function /*example:*/canBeSlider/*{"id":"4426_b3f0_d927","name":{"mode":"
  * Checks whether a path can be an example
  */
 export const canBeExample = (path) => {
-  if(!path) {
+  if(!path || !path.getFunctionParent) {
     return false;
   }
   

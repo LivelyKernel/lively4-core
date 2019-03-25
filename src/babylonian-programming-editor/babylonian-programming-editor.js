@@ -19,10 +19,6 @@ import {
   bodyForPath
 } from "./utils/ast.js";
 import {
-  loadFile,
-  saveFile
-} from "./utils/load-save.js";
-import {
   defaultContext,
   defaultAnnotations
 } from "./utils/defaults.js";
@@ -82,7 +78,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._deadMarkers = []; // [TextMarker]
 
     // All Annotations
-    this._annotations = defaultAnnotations;
+    this._annotations = defaultAnnotations();
     this._customInstances = [];
 
     // Module context
@@ -107,8 +103,10 @@ export default class BabylonianProgrammingEditor extends Morph {
       
       console.log("Babylonian: editor loaded ", this.livelyEditor())
       // Patch editor to load/save comments
-      this.livelyEditor().loadFile = this.load.bind(this);
-      this.livelyEditor().saveFile = this.save.bind(this);
+      
+      
+      this.livelyEditor().onLoadButton = () => this.load();
+      this.livelyEditor().onSaveButton = () => this.save();
 
       // Test file
       this.livelyEditor().setURL(DEFAULT_FILE_URL);
@@ -149,7 +147,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._customInstances.length = 0;
 
     // Load file from network
-    let text = await loadFile(this.livelyEditor());
+    let text = await this.livelyEditor().loadFile();
     let comments = [];
     try {
       comments = astForCode(text).comments;
@@ -246,15 +244,15 @@ export default class BabylonianProgrammingEditor extends Morph {
           break;
         case "instance":
           obj = this.addInstanceAtPath(this.pathForKey(annotation.location));
-          obj.load(annotation);
+          obj && obj.load(annotation);
           break;
         case "example":
           obj = this.addExampleAtPath(this.pathForKey(annotation.location), false);
-          obj.load(annotation);
+          obj && obj.load(annotation);
           break;
         case "replacement":
           obj = this.addReplacementAtPath(this.pathForKey(annotation.location));
-          obj.load(annotation);
+          obj && obj.load(annotation);
       }
     }
 
@@ -322,7 +320,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       customInstances: this._customInstances.map(i => i.serializeForSave())
     });
     text = `${text}/* Context: ${appendString} */`;
-    saveFile(this.livelyEditor(), text);
+    // #BUG... Babylonian editor seems to violate the assumtion that the editor holds all the text...! #continue
+    this.value = text
+    return this.livelyEditor().saveFile();
   }
 
 
@@ -844,9 +844,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this._ast._locationMap[key];
   }
 
-  livelyEditor() {
-    return this.get("#source");
-  }
+
 
   editorComp() {
     return this.livelyEditor().get("lively-code-mirror");
@@ -880,7 +878,95 @@ export default class BabylonianProgrammingEditor extends Morph {
   get context() { return this._context; }
   get customInstances() { return this._customInstances; }
   get url() { return this.livelyEditor().getURL().toString(); }
-  get value() { return this.editor().getValue(); }
+  
+  get value() { return this.editor().getValue() }
+  set value(value) { return this.editor().value =  value }
+  
 
+  
+  /* EDITOR Levels / FACADEs */
+  
+  babylonianProgrammingEditor() {
+    return this
+  }
+  
+  livelyEditor() {
+    return this.get("#source")
+  }
+
+  livelyCodeMirror() {
+    return this.editorComp()
+  }
+  
+  livelyCodeMirrorEditor() {
+    return this.editor() // the cm object
+  }
+  
+  
+  /*
+   * Editor API Facade
+   */
+  hideToolbar() {
+     return this.livelyEditor().hideToolbar()
+  }
+  
+  setScrollInfo(info) {
+    return this.livelyEditor().setScrollInfo(info)
+  }
+  
+  getScrollInfo() {
+    return this.livelyEditor().getScrollInfo()
+  }
+  
+  currentEditor() {
+    return this.editor()
+  }
+
+  getCursor() {
+    return this.livelyEditor().getCursor()
+  }
+  
+  setCursor(cur) {
+     return this.livelyEditor().setCursor(cur)
+  }
+
+  getURL(url) {
+     return this.livelyEditor().getURL()
+  }
+  
+  setURL(url) {
+    this.livelyEditor().setURL(url)
+    return this.load()
+  }
+
+  setText(text, preserveView) {
+    return this.livelyEditor().setText(text, preserveView)
+  }
+
+  getText() {
+    return this.livelyEditor().getText()
+  }
+  
+  async saveFile() {
+    return this.save()
+    
+  }
+  
+  loadFile() {
+    return this.load()
+  }
+  
+
+  
+  async awaitEditor() {
+    while(!editor) {
+      var editor = this.currentEditor()
+      if (!editor) {
+        await lively.sleep(10) // busy wait
+      }
+    }
+    return editor
+  }
+  
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

@@ -1063,48 +1063,50 @@ export default class Container extends Morph {
     return encodeURI(this.shadowRoot.querySelector("#container-path").value);
   }
 
-  getEditor() {
+  async getEditor(editorType) {
+    editorType = editorType || this.currentEditorType || "lively-editor"
+    this.currentEditorType = editorType
+    
     var container = this.get('#container-editor');
-    var editor = container.querySelector("lively-editor");
-    if (editor) return Promise.resolve(editor);
-    // console.log("[container] create editor")
-    editor = lively.components.createComponent("lively-editor");
-    editor.id = "editor";
-    return lively.components.openIn(container, editor).then( async () => {
-      // console.log("[container] opened editor")
-      editor.hideToolbar();
-      var aceComp = editor.get('#editor');
-      if (!aceComp) throw new Error("Could not initialalize lively-editor");
-      if (aceComp.tagName == "LIVELY-CODE-MIRROR") {
-        await new Promise(resolve => {
-          if (aceComp["editor-loaded"]) {
-            resolve() // the editor was very quick and the event was fired in the past
-          } else {
-            aceComp.addEventListener("editor-loaded", resolve)
-          }
-        })
-        // console.log("[container] editor loaded")
-
-      }
-
-      aceComp.enableAutocompletion();
-      aceComp.getDoitContext = () => window.that;
-      // aceComp.getDoitContextModuleUrl = () => {
-      //   return this.getURL()
-      // }
-      if (aceComp.aceRequire) {
-        aceComp.aceRequire('ace/ext/searchbox');
-      }
-      aceComp.doSave = text => {
-        if (aceComp.tagName !== "LIVELY-CODE-MIRROR") {
-        	this.onSave(); // CTRL+S does not come through...
+    var livelyEditor = container.querySelector("lively-editor, babylonian-programming-editor");
+    
+    if (livelyEditor && (livelyEditor.localName != editorType)) {
+      livelyEditor.remove()
+      livelyEditor = null
+    }
+    
+    if (livelyEditor) return Promise.resolve(livelyEditor);
+      
+    livelyEditor = await lively.create(editorType, container);
+    livelyEditor.id = "editor";
+    
+    // console.log("[container] opened editor")
+    livelyEditor.hideToolbar();
+    await livelyEditor.awaitEditor();
+    var livelyCodeMirror = livelyEditor.livelyCodeMirror();
+    if (!livelyCodeMirror) throw new Error("Could not initialalize lively-editor");
+    if (livelyCodeMirror.tagName == "LIVELY-CODE-MIRROR") {
+      await new Promise(resolve => {
+        if (livelyCodeMirror["editor-loaded"]) {
+          resolve() // the livelyEditor was very quick and the event was fired in the past
+        } else {
+          livelyCodeMirror.addEventListener("editor-loaded", resolve)
         }
-      };
-      return editor;
-    });
+      })
+    }
+
+    livelyCodeMirror.enableAutocompletion();
+    livelyCodeMirror.getDoitContext = () => window.that;
+
+    livelyCodeMirror.doSave = text => {
+      if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
+        this.onSave(); // CTRL+S does not come through...
+      }
+    }
+    return livelyEditor;
   }
 
-  getAceEditor() {
+  getLivelyCodeMirror() {
     var livelyEditor = this.get('lively-editor');
     if (!livelyEditor) return;
     return livelyEditor.get('#editor');
@@ -1114,7 +1116,7 @@ export default class Container extends Morph {
   async realAceEditor() {
     return new Promise(resolve => {
       var checkForEditor = () => {
-        var editor = this.getAceEditor();
+        var editor = this.getLivelyCodeMirror();
         if (editor && editor.editor) {
           resolve(editor.editor);
         } else {
@@ -1424,7 +1426,7 @@ export default class Container extends Morph {
 
   navigateToName(name) {
     // lively.notify("navigate to " + name);
-    var editor = this.getAceEditor()
+    var editor = this.getLivelyCodeMirror()
     if (editor) {
       editor.find(name);
     } else {      
@@ -1509,67 +1511,67 @@ export default class Container extends Morph {
   }
 
 
-  editFile(path) {
+  async editFile(path) {
     // console.log("[container] editFile " + path)
     this.setAttribute("mode","edit"); // make it persistent
-    return (path ? this.setPath(path, true /* do not render */) : Promise.resolve()).then( () => {
-      this.clear();
-      var containerContent=  this.get('#container-content');
-      containerContent.style.display = "none";
-      var containerEditor =  this.get('#container-editor');
-      containerEditor.style.display = "block";
+    if(path) await this.setPath(path, true /* do not render */) 
+    
+    this.clear();
+    var containerContent=  this.get('#container-content');
+    containerContent.style.display = "none";
+    var containerEditor =  this.get('#container-editor');
+    containerEditor.style.display = "block";
 
-      var urlString = this.getURL().toString();
-      this.resetLoadingFailed();
+    var urlString = this.getURL().toString();
+    this.resetLoadingFailed();
 
-      this.showNavbar();
+    this.showNavbar();
 
-      // console.log("[container] editFile befor getEditor")
-      return this.getEditor().then(livelyEditor => {
-        // console.log("[container] editFile got editor ")
+    // console.log("[container] editFile befor getEditor")
+    var editorType = urlString.match("babylonian-programming-editor/demos") ? "babylonian-programming-editor" : "lively-editor";
 
-        var codeMirror = livelyEditor.get('#editor');
+    var livelyEditor = await this.getEditor(editorType)
+      // console.log("[container] editFile got editor ")
+    
+    await livelyEditor.awaitEditor()
+    var codeMirror = livelyEditor.livelyCodeMirror();
 
-        codeMirror.addEventListener("change", evt => this.onTextChanged(evt))
+    codeMirror.addEventListener("change", evt => this.onTextChanged(evt))
 
-        var url = this.getURL();
-        livelyEditor.setURL(url);
-        // console.log("[container] editFile setURL " + url)
-        if (codeMirror.editor && codeMirror.editor.session) {
-          codeMirror.editor.session.setOptions({
-      			mode: "ace/mode/javascript",
-          	tabSize: 2,
-          	useSoftTabs: true
-      		});
-        }
-      	codeMirror.changeModeForFile(url.pathname);
-
-        // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
-        livelyEditor.setText(this.sourceContent); // directly setting the source we got
-
-        if (codeMirror.editor) {
-          if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {
-            codeMirror.editor.selection.moveCursorTo(0,0);
-            var lineWidth = 100
-            codeMirror.editor.session.setWrapLimit(lineWidth);
-            codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
-          }
-        }
-
-        livelyEditor.lastVersion = this.lastVersion;
-        this.showCancelAndSave();
-
-        if ((""+url).match(/\.((js)|(py))$/)) {
-          codeMirror.setTargetModule("" + url); // for editing
-        }
-        
-        if (this.anchor) {
-          this.scrollToAnchor(this.anchor)
-        }
-        
-        // livelyEditor.loadFile() // ALT: Load the file again?
+    var url = this.getURL();
+    livelyEditor.setURL(url);
+    // console.log("[container] editFile setURL " + url)
+    if (codeMirror.editor && codeMirror.editor.session) {
+      codeMirror.editor.session.setOptions({
+        mode: "ace/mode/javascript",
+        tabSize: 2,
+        useSoftTabs: true
       });
-    });
+    }
+    codeMirror.changeModeForFile(url.pathname);
+
+    // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
+    livelyEditor.setText(this.sourceContent); // directly setting the source we got
+
+    if (codeMirror.editor) {
+      if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {
+        codeMirror.editor.selection.moveCursorTo(0,0);
+        var lineWidth = 100
+        codeMirror.editor.session.setWrapLimit(lineWidth);
+        codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
+      }
+    }
+
+    livelyEditor.lastVersion = this.lastVersion;
+    this.showCancelAndSave();
+
+    if ((""+url).match(/\.((js)|(py))$/)) {
+      codeMirror.setTargetModule("" + url); // for editing
+    }
+
+    if (this.anchor) {
+      this.scrollToAnchor(this.anchor)
+    }
   }
 
   getHTMLSource() {
@@ -1794,8 +1796,8 @@ export default class Container extends Morph {
   }
 
   focus() {
-    const editor = this.getAceEditor();
-    if (editor) { editor.focus(); }
+    const livelyCodeMirror = this.getLivelyCodeMirror();
+    if (livelyCodeMirror) { livelyCodeMirror.focus(); }
   }
 
   createLink(base, name, href) {
@@ -1833,10 +1835,10 @@ export default class Container extends Morph {
   livelyPreMigrate() {
     // do something before I got replaced
     this.oldContentScroll = this.get("#container-content").scrollTop;
- 	var fileEditor = this.get("#editor");
-    if (fileEditor) {
-      this.oldScrollInfo = fileEditor.getScrollInfo()
-      this.oldCursor = fileEditor.getCursor()
+ 	  var livelyEditor = this.get("#editor");
+    if (livelyEditor) {
+      this.oldScrollInfo = livelyEditor.getScrollInfo()
+      this.oldCursor = livelyEditor.getCursor()
       this.oldFocused = document.activeElement == this
     }
   }
@@ -1865,15 +1867,15 @@ export default class Container extends Morph {
     this.preserveContentScroll = other.oldContentScroll;
     var editor = other.get("#editor");
     if (editor) {
-      var otherAce = editor.currentEditor();
-      if (otherAce && otherAce.selection) {
-        var range = otherAce.selection.getRange();
-        var scrollTop = otherAce.session.getScrollTop();
+      var otherCodeMirror = editor.currentEditor();
+      if (otherCodeMirror && otherCodeMirror.selection) {
+        var range = otherCodeMirror.selection.getRange();
+        var scrollTop = otherCodeMirror.session.getScrollTop();
         this.asyncGet("#editor").then( editor => {
-          var thisAce = editor.currentEditor();
-          if (otherAce && thisAce) {
-            thisAce.session.setScrollTop(scrollTop);
-            thisAce.selection.setRange(range);
+          var thisCodeMirror = editor.currentEditor();
+          if (otherCodeMirror && thisCodeMirror) {
+            thisCodeMirror.session.setScrollTop(scrollTop);
+            thisCodeMirror.selection.setRange(range);
           }
           this.isMigrating = false;
         }).catch(() => {
