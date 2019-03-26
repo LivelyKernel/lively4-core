@@ -1549,7 +1549,7 @@ export default class Container extends Morph {
       });
     }
     codeMirror.changeModeForFile(url.pathname);
-
+    
     // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
     livelyEditor.setText(this.sourceContent); // directly setting the source we got
 
