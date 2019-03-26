@@ -578,6 +578,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
+        console.log("am I dead: " + path.node._id)
         if(!BabylonianWorker.tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
@@ -663,6 +664,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
 
   onTrackerChanged() {
+    // console.log("BAB onTrackerChanged", this)
     if(this.hadParseError) {
       this.status("error", "Syntax Error");
     } else if(this.hadEvalError) {
