@@ -21,13 +21,27 @@
     }
 
     lively-code-mirror {
-       border-top: solid 1px lightgrey;
-       border: solid 1px lightgrey;
+      border: solid 1px lightgrey;
 
       flex: 1;
       min-height: unset;
       height: auto;
     }
+
+    lively-code-mirror:hover {
+      border: solid 1px grey;
+    }
+    lively-code-mirror:focus-within {
+      border: solid 1px blue;
+    }
+    #content:empty::before  {
+      content: 'No data items for this widget.';
+      background-color: lightgrey;
+    }
+    #editor-pool {
+      display: none;
+    }
   </style>
   <div id="content"></div>
+  <div id="editor-pool"></div>
 </template>
