@@ -25,7 +25,7 @@ export default function(param) {
         if(window.__pluginDoitThisRefs__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
         
           var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
-          if (filename.match(".babylonian")) {
+          if (filename.match(/\.babylonian$/)) {
             // #BackwardCompapitibily
             
             // do nothing.... 

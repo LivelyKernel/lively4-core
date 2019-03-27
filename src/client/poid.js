@@ -340,6 +340,31 @@ export class LivelyBrowse extends Scheme {
 }
 
 
+
+export class LivelyEdit extends LivelyBrowse {
+  
+  get scheme() {
+    return "edit"
+  }
+
+  async GET(options) {
+    var openString = this.url.toString().replace(/^edit:\/\//,"") 
+    var result
+    try {
+      
+      result = await lively.openBrowser(lively4url + "/" + openString, true )
+    } catch(e) {
+      return new Response("failed to open " + openString, {status: 400})
+    }
+    
+    return new ObjectResponse(result, {status: 200});
+    
+  }
+
+}
+
+
+
 class CachedRequest extends Scheme {
   
   get scheme() {
@@ -541,6 +566,7 @@ export default class PolymorphicIdentifier {
     this.register(LivelySearch)
     this.register(LivelyOpen)
     this.register(LivelyBrowse)
+    this.register(LivelyEdit)
     this.register(CachedRequest)
   }
   

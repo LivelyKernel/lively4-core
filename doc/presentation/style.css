@@ -22,16 +22,21 @@ p {
 }
   
 
-.title, .authors, .credentials, .conference {
+.title, .subtitle, .authors, .credentials, .conference {
   margin-top: 30px;
   text-align: center;
 }
 
 .title {
   margin-top: 150px;
-  margin-bottom: 30px;
   font-size: 26pt;
   color: #1C6BA0;
+  font-weight: bold;
+}
+
+.subtitle {
+  font-size: 20pt;
+  color: #f28500;
   font-weight: bold;
 }
 

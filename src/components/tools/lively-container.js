@@ -1528,7 +1528,7 @@ export default class Container extends Morph {
     this.showNavbar();
 
     // console.log("[container] editFile befor getEditor")
-    var editorType = urlString.match("babylonian-programming-editor/demos") ? "babylonian-programming-editor" : "lively-editor";
+    var editorType = urlString.match(/babylonian-programming-editor\/demos\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
