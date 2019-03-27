@@ -1,5 +1,18 @@
-const workspaces = new Map();
-const workspaceURLs = new Map();
+
+if (!self.lively4workspaces) {
+  self.lively4workspaces = new Map
+}
+const workspaces = self.lively4workspaces
+
+if (!self.lively4workspaceURLs) {
+  self.lively4workspaceURLs = new Map
+}
+const workspaceURLs = self.lively4workspaceURLs
+
+
+
+// const workspaces = new Map();
+// const workspaceURLs = new Map();
 
 
 export function getCode(id) {

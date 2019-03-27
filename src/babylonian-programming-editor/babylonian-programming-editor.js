@@ -62,9 +62,6 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Register editor
     BabylonianWorker.registerEditor(this);
-    this.parentElement.afterWindowClosed = () => {
-      BabylonianWorker.unregisterEditor(this);
-    }
 
     // AST
     this._ast = null; // Node
@@ -96,6 +93,20 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // CodeMirror
 
+    this.livelyEditor().postLoadFile = (text) => {
+      return this.loadFileBabylonian(text)
+    }
+    
+    this.livelyEditor().preSaveFile = (text) => {
+      return this.saveFileBabylonian(text)
+    }
+    
+    this.livelyEditor().addEventListener("url-changed", (evt) => {
+      this.setAttribute("url", this.livelyEditor().getURL())
+    })
+     
+     
+    
     var editorComp = this.editorComp()
       
     console.log("Babylonian: load editor" + editorComp)
@@ -103,14 +114,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       
       console.log("Babylonian: editor loaded ", this.livelyEditor())
       // Patch editor to load/save comments
-      
-      
-      this.livelyEditor().onLoadButton = () => this.load();
-      this.livelyEditor().onSaveButton = () => this.save();
 
       // Test file
-      this.livelyEditor().setURL(DEFAULT_FILE_URL);
-      this.livelyEditor().loadFile();
+      // this.livelyEditor().setURL(DEFAULT_FILE_URL);
 
       // Event listeners
       this.editor().on("change", () => {
@@ -132,13 +138,27 @@ export default class BabylonianProgrammingEditor extends Morph {
       const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
       this.livelyEditor().shadowRoot.appendChild(livelyEditorStyle);
       this.editorComp().shadowRoot.appendChild(codeMirrorStyle);
+      
+      var url = this.getAttribute("url")
+      if (url) {
+        this.setURL(url)
+        this.loadFile()
+      }
+      
     });
   }
+  
+  
+  detachedCallback() {
+     BabylonianWorker.unregisterEditor(this);
+  }
 
-  async load() {
+  async loadFileBabylonian(text) {
+    
+    console.log("Babylonian  loadFileBabylonian")
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
-
+    
     // Remove all existing annotations
     this.removeAnnotations();
     this._annotations = defaultAnnotations();
@@ -146,9 +166,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._context = defaultContext();
     this._customInstances.length = 0;
 
-    // Load file from network
-    let text = await this.livelyEditor().loadFile();
     let comments = [];
+    
+    console.log("AST for code ", text)
     try {
       comments = astForCode(text).comments;
     } catch(e) {
@@ -261,9 +281,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     setTimeout(() => {
       this._evaluationLocked = false;
     }, 2000);
+    
+    return text
   }
 
-  async save() {
+  async saveFileBabylonian(textFromEditor) {
     // Serialize annotations
     const serializedAnnotations = [];
     for(let key in this._annotations) {
@@ -322,7 +344,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     text = `${text}/* Context: ${appendString} */`;
     // #BUG... Babylonian editor seems to violate the assumtion that the editor holds all the text...! #continue
     this.value = text
-    return this.livelyEditor().saveFile();
+    return text
   }
 
 
@@ -512,13 +534,23 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   updateExamples() {
     for(let example of this._annotations.examples) {
-      const path = this.pathForAnnotation(example);
-      if(BabylonianWorker.tracker.errors.has(example.id)) {
-        example.error = BabylonianWorker.tracker.errors.get(example.id);
-      } else {
-        example.error = null;
+      try {
+        const path = this.pathForAnnotation(example);
+        if (!path) {
+          console.log("BabylonianProgrammingEditor could not updateExamples ", example)
+          return 
+        }
+        
+        if(BabylonianWorker.tracker.errors.has(example.id)) {
+          example.error = BabylonianWorker.tracker.errors.get(example.id);
+        } else {
+          example.error = null;
+        }
+        example.keys = parameterNamesForFunctionIdentifier(path);
+      } catch(e) {
+        debugger
+        console.error("updateExamples Error" + e, example, this)
       }
-      example.keys = parameterNamesForFunctionIdentifier(path);
     }
   }
 
@@ -546,6 +578,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
+        console.log("am I dead: " + path.node._id)
         if(!BabylonianWorker.tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
@@ -631,6 +664,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
 
   onTrackerChanged() {
+    // console.log("BAB onTrackerChanged", this)
     if(this.hadParseError) {
       this.status("error", "Syntax Error");
     } else if(this.hadEvalError) {
@@ -830,7 +864,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   pathForAnnotation(annotation) {
-    if(this.hasWorkingAst()) {
+    if(annotation.locationAsKey && this.hasWorkingAst()) {
       return this.pathForKey(annotation.locationAsKey);
     }
     return null;
@@ -931,16 +965,16 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   getURL(url) {
-     return this.livelyEditor().getURL()
+    return this.livelyEditor().getURL()  // || this.getAttribute("url")
   }
   
   setURL(url) {
-    this.livelyEditor().setURL(url)
-    return this.load()
+    this.setAttribute("url", url)
+    return this.livelyEditor().setURL(url)
   }
 
-  setText(text, preserveView) {
-    return this.livelyEditor().setText(text, preserveView)
+  async setText(text, preserveView) {
+    await this.loadFileBabylonian(text)
   }
 
   getText() {
@@ -948,15 +982,14 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
   
   async saveFile() {
-    return this.save()
+    return this.livelyEditor().saveFile()
     
   }
   
   loadFile() {
-    return this.load()
+    return this.livelyEditor().loadFile()
   }
   
-
   
   async awaitEditor() {
     while(!editor) {
@@ -967,6 +1000,14 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     return editor
   }
+  
+  livelyExample() {
+    this.setURL(DEFAULT_FILE_URL)
+    this.loadFile()
+  }
+  
+  
+  
   
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
