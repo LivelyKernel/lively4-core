@@ -14,13 +14,22 @@
   h2 {
     text-align: center;
   }
+  
+  
+  a:visited.plain, a:link.plain {
+    color: inherit;
+    text-decoration: none;
+  }
+
 </style>
 
 
 ![](babylonian_lion.png){style="width: 200px; position: absolute; right: 20px;  bottom: 20px;"}
 
 <div class="title">
+<a class="plain" href="https://arxiv.org/pdf/1902.00549">
 Babylonian-Style Programming 
+</a>
 </div>
 <div class="subtitle">
 Design and Implementation of a General-purpose Editor Integrating Live Examples Into Source Code
@@ -33,11 +42,11 @@ David Rauch, Patrick Rein, Stefan Ramson, Jens Lincke, and Robert Hirschfeld
 
 <div class="credentials">
   <br>
-Software Architecture Group<br>
-Hasso Plattner Institute, University of Potsdam, Germany
+  <a class="plain" href="https://www.hpi.uni-potsdam.de/hirschfeld/">Software Architecture Group<br>
+Hasso Plattner Institute, University of Potsdam, Germany</a>
   <br>
   <br>
-  <b>‹Programming› 2019<br> Mon 1 - Thu 4 April 2019 Genoa, Italy</b>
+  <a class="plain" href="https://2019.programming-conference.org/"><b>‹Programming› 2019<br> Mon 1 - Thu 4 April 2019 Genoa, Italy</b></a>
 </div>
 
 
@@ -63,6 +72,8 @@ button
 </script>
 
 
+
+
 ----
 ## The Long Loop
 
@@ -82,13 +93,47 @@ button
 
 ![](the_long_loop_live-programming.png){.centered}
 
+---
+## Concrete Examples vs Abstract Code
 
+![](babylonian_figure1.png){.centered}
+
+Live results for a concrete implementation (left) and an abstract implementation with live examples (right)
 
 ---
 
 ## Existing Example-based Systems
 
 ![](example_based_systems.png){.centered}
+
+---
+## Feature Space for Example-based Systems
+
+Example: Set of input values for a function/method (example invocation) 
+
+
+- Feedback on Runtime State
+  - Feedback granularity
+  - State over time
+  - State over modules
+  - Arbitrary objects
+  - Domain-specific feedback
+- Associating Examples with Code
+  - Multiple examples for one part of the application
+  - Reusing parts of examples	
+
+{style="width:45%; float: left"}
+
+
+- Specifying Context
+  - Determining Relevant Sections of Code
+  - Control flow
+  - Runtime state
+  - Program output
+- Keeping Track of Assumptions {style="margin-top:10px"}
+- Navigating the Trace{style="margin-top:10px"}
+
+{style="width:45%; float: left"}
 
 
 ---
@@ -100,10 +145,52 @@ button
 ---
 ## Demo
 
-<browse://src/babylonian-programming-editor/demos/>
+<!--
+<script>
+(async () => {
+  var demo = await lively.create("lively-markdown")
+  demo.setContent(await fetch(lively4url + "/src/babylonian-programming-editor/demos/index.md").then(r => r.text()))
+  return demo
+})()
+</script>
+-->
+
 
 ![](babylonian_demo.png){.centered}
 
+<browse://src/babylonian-programming-editor/demos/>
+
+
+<!--
+
+this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, width)
+
+-->
+
+---
+## Babylonian-Style Programming Editor
+
+- Feedback on Runtime State
+  - Feedback granularity
+  - State over time
+  - State over modules
+  - Arbitrary objects
+  - Domain-specific feedback
+- Associating Examples with Code
+  - Multiple examples for one part of the application
+  - Reusing parts of examples
+- Specifying Context
+- Determining Relevant Sections of Code
+  - Control Flow
+  - Runtime State
+  - Program Output
+- Keeping Track of Assumptions
+- Navigating the Trace
+
+{style="transform: scale(0.8); transform-origin: top left; width:45%; float: left"}
+
+
+![](babylonian_demo.png){style="width: 500px; position: absolute; bottom: 40px; right: 20px"}
 
 ---
 
