@@ -130,8 +130,6 @@ ul  li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-
-
   
 ul  li li::before{
   content: "□"; 
@@ -143,8 +141,6 @@ ul  li li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-
-
 
 
 /* ul, li {
