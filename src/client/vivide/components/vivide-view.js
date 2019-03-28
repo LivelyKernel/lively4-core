@@ -163,7 +163,10 @@ export default class VivideView extends Morph {
   }
   
   getDataToTransmit() {
+      lively.warn('display all data')
     if(this.widget && this.widget.multiSelectionEnabled) {
+      return this.getSelectedData();
+    } else if (this.widget && this.widget.localName === 'vivide-text-widget') {
       return this.getSelectedData();
     } else {
       // use all data

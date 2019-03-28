@@ -13,7 +13,7 @@ export default class VivideTextWidget extends VivideWidget {
       await this.processObject(model);
     }
   }
-  
+
   get list() { return this.get('#content'); }
   get shownEditors() { return Array.from(this.list.childNodes);}
   get editorPool() { return this.get('#editor-pool'); }
@@ -29,13 +29,33 @@ export default class VivideTextWidget extends VivideWidget {
     const editor = await this.createEditor();
     this.list.appendChild(editor);
 
-    const text = model.properties.get('text') || textualRepresentation(model.object);
-    editor.value = text;
-    
-    editor.editorLoaded().then(x => {
-      editor.doSave = text => this.stepSaved(text);
+    editor.editorLoaded().then(async () => {
+      // text
+      // #VivideProperty text(String) The text to be displayed
+      // #VivideProperty label(String) The text to be displayed (fallback for <text>)
+      const content = model.properties.get('text') || model.properties.get('label');
+      // #VivideProperty file(String) The url-string of the file you are editing
+      const file = model.properties.get('file');
+      if (content) {
+        editor.value = content;
+      } else if (file) {
+        editor.value = await fetch(file).then(r => r.text());
+      } else {
+        editor.value = textualRepresentation(model.object);
+      }
+
+      // save
+      // #VivideProperty onSave(Function<text:String>) The callback invoked when the editor is saved.
+      const onSave = model.properties.get('onSave');
+      if (onSave) {
+        editor.doSave = onSave;
+      } else if (file) {
+        editor.doSave = text => lively.files.saveFile(file, text);
+      }
 
       const cm = editor.editor;
+
+      cm.on('focus', () => this.setSelectedData([model.object]));
 
       cm.addKeyMap({
         // #KeyboardShortcut Alt-Up focus previous step editor
@@ -44,6 +64,15 @@ export default class VivideTextWidget extends VivideWidget {
         "Alt-Down": () => this.editorNavigation(editor, false),
       });
     });
+  }
+  
+  setSelectedData(data) {
+    this._selectedData = data;
+    this.selectionChanged(this._selectedData);
+  }
+  
+  getSelectedData() {
+    return this._selectedData || [];
   }
   
   async editorNavigation(currentEditor, up) {
