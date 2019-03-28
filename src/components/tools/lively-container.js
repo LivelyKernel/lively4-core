@@ -536,6 +536,7 @@ export default class Container extends Morph {
   }
 
   updateOtherContainers() {
+    console.warn('updateContainers')
     var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()

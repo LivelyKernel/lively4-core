@@ -111,7 +111,7 @@ button
   // include title slide again here
   var title = lively.query(this, ".title")
   // linked styles are included by accident.... and it looks right because of that
-  title ? title.parentElement.innerHTML : ""
+  title ? title.parentElement && title.parentElement.classList.contains('lively-slide') && title.parentElement.innerHTML : ""
 </script>
 
 ---
