@@ -54,8 +54,35 @@
     margin-top: -20px;
   }
 
+
+
+
+
+
+
 </style>
 
+
+![](knuth_1972_page1.png){style="position:absolute; top:40px; left:40px; width:400px; border: 1px solid lightgray"}
+
+---
+
+![](knuth_1972_page1.png){style="position:absolute; top:40px; left:40px; width:400px; border: 1px solid lightgray"}
+
+![](knuth_1972_cistern.png){style="position:absolute; top:50px; left:450px; width:500px; border: 1px solid lightgray"}
+
+
+
+---
+
+![](knuth_1972_page1.png){style="position:absolute; top:40px; left:40px; width:400px; border: 1px solid lightgray"}
+
+![](knuth_1972_cistern.png){style="position:absolute; top:50px; left:450px; width:500px; border: 1px solid lightgray"}
+
+![](babylonian_smalltalk_motivation.png){style="position:absolute; top:290px; left:130px; width:800px; border: 1px solid lightgray"}
+
+
+---
 
 ![](babylonian_lion.png){style="width: 200px; position: absolute; right: 20px;  bottom: 20px;"}
 
@@ -146,11 +173,11 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 
 ![](example_based_systems.png){.centered}
 
-
 ---
 # Approach
 
 ![](steps.png){.centered}
+
 
 ---
 # Survey
@@ -164,7 +191,6 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
   - Limitations and features
 
 ![](survey.png){.right}
-
 
 ---
 # Survey
@@ -217,37 +243,7 @@ Example: Set of input values for a function/method (example invocation)
 Live results for a concrete implementation (left) and an abstract implementation with live examples (right)
 -->
 
-
 ![](babylonian_figure1.png){.centered}
-
----
-## Babylonian-Style Programming Editor
-
-<!--
-<script>
-(async () => {
-  var demo = await lively.create("lively-markdown")
-  demo.setContent(await fetch(lively4url + "/src/babylonian-programming-editor/demos/index.md").then(r => r.text()))
-  return demo
-})()
-</script>
--->
-
-
-![](babylonian_demo.png){style="width: 600px; position: absolute; top: 120px; right: 20px"}
-
-- [demos](browse://src/babylonian-programming-editor/demos/)
-- [binary search](edit://src/babylonian-programming-editor/demos/binary-search.js)
-- [tree-scene](edit://src/babylonian-programming-editor/demos/tree-scene.js)
-  - [tree-base](edit://src/babylonian-programming-editor/demos/tree-base.js)
-- [utils/ast](edit://src/babylonian-programming-editor/utils/ast.js)
-  - [location-converter.js](edit://src/babylonian-programming-editor/utils/location-converter.js)
-
-<!--
-
-this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, width)
-
--->
 
 ---
 # Design
@@ -260,67 +256,6 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
   - Follow examples across modules
 
 ![](final_editor.png){.right}
-
-
----
-# Implementation 
-
-- Implemented and integrated in Lively4 web-based development environment
-- CodeMirror-based
-- Executed when user stops typing
-
-![](implementation.png)
-
-
-
----
-# Future Work
-
-- **Projectional Editing:** Persistent AST 
-- **Example Execution Paths:** How did an example reach a certain point?
-- Non-terminating Examples: How to support? 
-- Non-“deep” systems: How to realize complex features? 
-- Unit Tests: How to integrate examples and unit tests?
-
----
-# Conclusion
-
-- Integrated live examples into source code of complex applications
-- Surveyed existing systems 
-- **Designed and implemented a new editor**
-- **Evaluation: Editor enables new use-cases**
-- Focus on complex applications opens new research questions
-
-
----
-# Babylonian-Style Programming Editor
-
-- Feedback on Runtime State
-  - Feedback granularity
-  - State over time
-  - State over modules
-  - Arbitrary objects
-  - Domain-specific feedback
-- Associating Examples with Code
-  - Multiple examples for one part of the application
-  - Reusing parts of examples
-- Specifying Context
-- Determining Relevant Sections of Code
-  - Control Flow
-  - Runtime State
-  - Program Output
-- Keeping Track of Assumptions
-- Navigating the Trace
-
-{style="transform: scale(0.7); transform-origin: top left; width:45%; float: left"}
-
-
-![](babylonian_demo.png){style="width: 600px; position: absolute; top: 200px; right: 20px"}
-
----
-# Backup Slides
----
-
 
 ---
 # Design
@@ -382,6 +317,7 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 ![](design_behavioural_highlighting.png){.right}
 
+
 ---
 # Design
 ## Persistent Examples  {.sub}
@@ -406,11 +342,109 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 ![](design_additional_features.png){.right}
 
+---
+# Demo
+## Babylonian-Style Programming Editor {.sub}
+
+<!--
+<script>
+(async () => {
+  var demo = await lively.create("lively-markdown")
+  demo.setContent(await fetch(lively4url + "/src/babylonian-programming-editor/demos/index.md").then(r => r.text()))
+  return demo
+})()
+</script>
+-->
+
+
+![](babylonian_demo.png){style="width: 600px; position: absolute; top: 180px; right: 20px"}
+
+- [demos](browse://src/babylonian-programming-editor/demos/)
+- [binary search](edit://src/babylonian-programming-editor/demos/binary-search.js)
+- [tree-scene](edit://src/babylonian-programming-editor/demos/tree-scene.js)
+  - [tree-base](edit://src/babylonian-programming-editor/demos/tree-base.js)
+- [utils/ast](edit://src/babylonian-programming-editor/utils/ast.js)
+  - [location-converter.js](edit://src/babylonian-programming-editor/utils/location-converter.js)
+
+<!--
+
+this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, width)
+
+-->
+
+---
+# Implementation 
+
+- Implemented and integrated in Lively4 web-based development environment
+- CodeMirror-based
+- Executed when user stops typing
+
+![](implementation.png)
+
+
+---
+# Future Work
+
+- **Projectional Editing:** Persistent AST 
+- **Example Execution Paths:** How did an example reach a certain point?
+- Non-terminating Examples: How to support? 
+- Non-“deep” systems: How to realize complex features? 
+- Unit Tests: How to integrate examples and unit tests?
+
+---
+# Conclusion
+
+- Integrated live examples into source code of complex applications
+- Surveyed existing systems 
+- **Designed and implemented a new editor**
+- **Evaluation: Editor enables new use-cases**
+- Focus on complex applications opens new research questions
+
+
+---
+# Babylonian-Style Programming Editor
+
+- Feedback on Runtime State
+  - Feedback granularity
+  - State over time
+  - State over modules
+  - Arbitrary objects
+  - Domain-specific feedback
+- Associating Examples with Code
+  - Multiple examples for one part of the application
+  - Reusing parts of examples
+- Specifying Context
+- Determining Relevant Sections of Code
+  - Control Flow
+  - Runtime State
+  - Program Output
+- Keeping Track of Assumptions
+- Navigating the Trace
+
+{style="transform: scale(0.7); transform-origin: top left; width:45%; float: left"}
+
+
+![](babylonian_demo.png){style="width: 600px; position: absolute; top: 200px; right: 20px"}
+
+---
+
+<div class="title">Backup Slides</div>
+
 --- 
 # Implementation
 ## AST Transformation{.sub}
 
 ![](implementation_ast_transformation.png)
+
+---
+
+# Evaluation
+
+- Editor features 
+  - Binary Search 
+  - Canvas
+- Editor performance 
+  - Responsiveness in different scenarios
 
 ---
 # Evaluation
@@ -442,19 +476,7 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
   ""
 </script>
 
-
 ![](evaluation_performance_2.png){.right}
-
-
-
-<script>
-  // include title slide again here
-  var title = lively.query(this, ".title")
-  // linked styles are included by accident.... and it looks right because of that
-  title ? title.parentElement && title.parentElement.classList.contains('lively-slide') && title.parentElement.innerHTML : ""
-</script>
-
-
 
 ---
 <!-- #TODO pull this up into presentation? -->
