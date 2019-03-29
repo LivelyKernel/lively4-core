@@ -1,8 +1,8 @@
 {
-    "script": "[(input, output) => {\n  input\n    .map(item => item)\n    .forEach(item => output.push(item))\n}, {\n  \n}]",
+    "script": "[async function* transform(input) {\n  for await (let item of input) {\n    yield item;\n  }\n}, {\n  \n}]",
     "cursor": {
-      "anchor": { "line": 2, "ch": 21},
-      "head": { "line": 2, "ch": 21}
+      "anchor": { "line": 2, "ch": 14},
+      "head": { "line": 2, "ch": 14}
     },
     "type": "transform"
 }

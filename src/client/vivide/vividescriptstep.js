@@ -1,5 +1,5 @@
 import boundEval from "src/client/bound-eval.js";
-import { uuid } from 'utils';
+import { uuid, functionMetaInfo } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 
 import VivideObject from 'src/client/vivide/vivideobject.js';
@@ -64,7 +64,7 @@ export class ScriptProcessor {
       return [d];
     }
   }
-  
+  // #TODO: use Array::flatten native function
   flatten(data) {
     let result = [];
 
@@ -74,9 +74,7 @@ export class ScriptProcessor {
   }
   
   async singleTransform(data, module) {
-    const output = [];
-    await module(data, output);
-    return output;
+    return await Promise.all(await module.toArray(data));
   }
   async transform(data, _modules) {
     let input = data.slice(0);
