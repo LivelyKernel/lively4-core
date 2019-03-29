@@ -15,7 +15,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"041d_a6df_bfab","name":{"mode"
   }
   
   // Scene
-  /*example:*//*example:*/drawTo/*{"id":"c6e1_19d7_d93f","name":{"mode":"input","value":"Day scene"},"color":"hsl(120, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"c6e1_19d7_d93f_canvas"}},"instanceId":{"mode":"select","value":"041d_a6df_bfab"},"prescript":"","postscript":""}*//*{"id":"adae_12ea_92df","name":{"mode":"input","value":"Night scene"},"color":"hsl(100, 30%, 70%)","values":{"canvas":{"mode":"connect","value":"adae_12ea_92df_canvas"}},"instanceId":{"mode":"select","value":"8f4d_e4fa_d9c8"},"prescript":"","postscript":""}*/(canvas) {
+  /*example:*//*example:*/drawTo/*{"id":"c6e1_19d7_d93f","name":{"mode":"input","value":"Day scene"},"color":"hsl(120, 30%, 70%)","values":{"canvas":{"mode":"select","value":"90ad_13f3_ab24"}},"instanceId":{"mode":"select","value":"041d_a6df_bfab"},"prescript":"","postscript":""}*//*{"id":"adae_12ea_92df","name":{"mode":"input","value":"Night scene"},"color":"hsl(100, 30%, 70%)","values":{"canvas":{"mode":"select","value":"90ad_13f3_ab24"}},"instanceId":{"mode":"select","value":"8f4d_e4fa_d9c8"},"prescript":"","postscript":""}*/(canvas) {
     this.ctx = canvas.getContext('2d');
     
     this.canvasWidth = canvas.width;

@@ -84,6 +84,8 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 
 <!---
 
+
+
 ---
 
 ## Motivation -  Classic (Application) Programming Workflow
@@ -103,9 +105,8 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 ## Motivation - Live (Application) Programming Workflow
 
 ![](the_long_loop_live-programming.png){.centered}
-
-
 -->
+
 
 ---
 # Motivation 
@@ -134,10 +135,11 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 # Motivation
 ## Concrete Examples vs Abstract Code {.sub}
 
-Live results for a concrete implementation (left) and an abstract implementation with live examples (right)
--->
+
 
 ---
+-->
+
 ---
 # Motivation
 ## Existing Example-based Systems {.sub}
@@ -146,7 +148,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 
 
 ---
-# Steps
+# Approach
 
 ![](steps.png){.centered}
 
@@ -199,12 +201,10 @@ Example: Set of input values for a function/method (example invocation)
 ![](requirements_table.png)
 
 
-<!--
 --- 
 ## Survey -  Identified Features
 
 ![](features.png){.centered}
--->
 
 
 ---
@@ -213,6 +213,8 @@ Example: Set of input values for a function/method (example invocation)
 
 <!--
 ![](babylonian-style_programming_editor.png){.centered}
+
+Live results for a concrete implementation (left) and an abstract implementation with live examples (right)
 -->
 
 
@@ -258,6 +260,67 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
   - Follow examples across modules
 
 ![](final_editor.png){.right}
+
+
+---
+# Implementation 
+
+- Implemented and integrated in Lively4 web-based development environment
+- CodeMirror-based
+- Executed when user stops typing
+
+![](implementation.png)
+
+
+
+---
+# Future Work
+
+- **Projectional Editing:** Persistent AST 
+- **Example Execution Paths:** How did an example reach a certain point?
+- Non-terminating Examples: How to support? 
+- Non-“deep” systems: How to realize complex features? 
+- Unit Tests: How to integrate examples and unit tests?
+
+---
+# Conclusion
+
+- Integrated live examples into source code of complex applications
+- Surveyed existing systems 
+- **Designed and implemented a new editor**
+- **Evaluation: Editor enables new use-cases**
+- Focus on complex applications opens new research questions
+
+
+---
+# Babylonian-Style Programming Editor
+
+- Feedback on Runtime State
+  - Feedback granularity
+  - State over time
+  - State over modules
+  - Arbitrary objects
+  - Domain-specific feedback
+- Associating Examples with Code
+  - Multiple examples for one part of the application
+  - Reusing parts of examples
+- Specifying Context
+- Determining Relevant Sections of Code
+  - Control Flow
+  - Runtime State
+  - Program Output
+- Keeping Track of Assumptions
+- Navigating the Trace
+
+{style="transform: scale(0.7); transform-origin: top left; width:45%; float: left"}
+
+
+![](babylonian_demo.png){style="width: 600px; position: absolute; top: 200px; right: 20px"}
+
+---
+# Backup Slides
+---
+
 
 ---
 # Design
@@ -343,16 +406,6 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 ![](design_additional_features.png){.right}
 
----
-# Implementation 
-
-- Implemented and integrated in Lively4 web-based development environment
-- CodeMirror-based
-- Executed when user stops typing
-
-![](implementation.png)
-
-
 --- 
 # Implementation
 ## AST Transformation{.sub}
@@ -392,51 +445,7 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 ![](evaluation_performance_2.png){.right}
 
----
-# Future Work
 
-- **Projectional Editing:** Persistent AST 
-- **Example Execution Paths:** How did an example reach a certain point?
-- Non-terminating Examples: How to support? 
-- Non-“deep” systems: How to realize complex features? 
-- Unit Tests: How to integrate examples and unit tests?
-
----
-# Conclusion
-
-- Integrated live examples into source code of complex applications
-- Surveyed existing systems 
-- **Designed and implemented a new editor **
-- **Evaluation: Editor enables new use-cases**
-- Focus on complex applications opens new research questions
-
-
----
-# Babylonian-Style Programming Editor
-
-- Feedback on Runtime State
-  - Feedback granularity
-  - State over time
-  - State over modules
-  - Arbitrary objects
-  - Domain-specific feedback
-- Associating Examples with Code
-  - Multiple examples for one part of the application
-  - Reusing parts of examples
-- Specifying Context
-- Determining Relevant Sections of Code
-  - Control Flow
-  - Runtime State
-  - Program Output
-- Keeping Track of Assumptions
-- Navigating the Trace
-
-{style="transform: scale(0.7); transform-origin: top left; width:45%; float: left"}
-
-
-![](babylonian_demo.png){style="width: 600px; position: absolute; top: 200px; right: 20px"}
-
----
 
 <script>
   // include title slide again here
