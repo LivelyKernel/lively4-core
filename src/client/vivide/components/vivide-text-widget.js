@@ -1,6 +1,7 @@
 import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 import { textualRepresentation } from 'utils';
 
+// #VivideWidget VivideTextWidget
 export default class VivideTextWidget extends VivideWidget {
   async initialize() {
     this.windowTitle = "VivideTextWidget";
