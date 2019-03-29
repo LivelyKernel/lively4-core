@@ -27,6 +27,8 @@ const result = <div>
   <h2>Module Specific Shortcuts</h2>
   <h2>Vivide Step Editor Shortcuts</h2>
   {extractShortCuts(lively4url + "/src/client/vivide/components/vivide-step-editor.js")}
+  <h2>Vivide Text Widget Shortcuts</h2>
+  {extractShortCuts(lively4url + "/src/client/vivide/components/vivide-text-widget.js")}
   <h2>Expose Shortcuts</h2>
   {extractShortCuts(lively4url + "/src/client/expose.js")}
   <h2>Graffle Shortcuts</h2>

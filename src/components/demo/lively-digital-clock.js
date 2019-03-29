@@ -3,7 +3,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class DigitalClock extends Morph {
 
   initialize() {
-    this.style.backgroundColor = 'gray'
+    this.style.backgroundColor = ''
     if (!this.start)
       this.start = Date.now()
   }

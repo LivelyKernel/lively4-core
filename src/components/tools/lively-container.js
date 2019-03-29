@@ -536,6 +536,7 @@ export default class Container extends Morph {
   }
 
   updateOtherContainers() {
+    console.warn('updateContainers')
     var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
@@ -1528,7 +1529,8 @@ export default class Container extends Morph {
     this.showNavbar();
 
     // console.log("[container] editFile befor getEditor")
-    var editorType = urlString.match("babylonian-programming-editor/demos") ? "babylonian-programming-editor" : "lively-editor";
+    // ... demos\/
+    var editorType = urlString.match(/babylonian-programming-editor\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
@@ -1549,7 +1551,7 @@ export default class Container extends Morph {
       });
     }
     codeMirror.changeModeForFile(url.pathname);
-
+    
     // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
     livelyEditor.setText(this.sourceContent); // directly setting the source we got
 

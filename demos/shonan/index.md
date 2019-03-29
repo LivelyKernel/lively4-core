@@ -276,6 +276,9 @@ button
 ---
 <!-- #TODO pull this up into presentation? -->
 <script>
+var ctx = this;
+debugger
+
 // poor men's slide master #Hack #TODO How to pull this better into lively-presentation?
 (async () => {
   await lively.sleep(500)

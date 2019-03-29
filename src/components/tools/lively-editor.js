@@ -22,7 +22,7 @@ import components from "src/client/morphic/component-loader.js";
 
 import {pt} from "src/client/graphics.js"
 
-import {getObjectFor} from "utils";
+import {getObjectFor, updateEditors} from "utils";
 import files from "src/client/files.js"
 
 
@@ -92,17 +92,9 @@ export default class Editor extends Morph {
   }
   
   updateOtherEditors() {
-    var url = this.getURL().toString();
-    var editors = Array.from(document.querySelectorAll(
-      "lively-index-search::shadow lively-editor, lively-container::shadow lively-editor, lively-editor"));
-
-    var editorsToUpdate = editors.filter( ea => 
-      ea.getURLString() == url && !ea.textChanged && ea !== this);
-          
-    editorsToUpdate.forEach( ea => {
-      // lively.showElement(ea);
-      ea.loadFile()
-    });
+    console.warn('updateEditors')
+    const url = this.getURL().toString();
+    updateEditors(url, [this]);
   }
 
   onSaveButton() {
@@ -201,13 +193,13 @@ export default class Editor extends Morph {
       editorComp.changeModeForFile(url.pathname);
     }
   }
-
+  
   async loadFile(version) {
     var url = this.getURL();
     console.log("load " + url);
     this.updateAceMode();
 
-    return fetch(url, {
+    var result = await fetch(url, {
       headers: {
         fileversion: version
       }
@@ -222,14 +214,23 @@ export default class Editor extends Morph {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
         return ""
     });
+    if (this.postLoadFile) {
+      result = await this.postLoadFile(result) // #TODO babylonian programming requires to adapt editor behavior
+    }
+    return result
   }
 
   
-  saveFile() {
+  async saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
     // console.log("version " + this.latestVersion);
     var data = this.currentEditor().getValue();
+    if (this.preSaveFile) {
+      data = await this.preSaveFile(data)
+    }
+    
+    
     var urlString = url.toString();
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
@@ -240,7 +241,7 @@ export default class Editor extends Morph {
       if (this.lastVersion) {
         headers.lastversion = this.lastVersion
       }
-      return fetch(urlString, {
+      await fetch(urlString, {
         method: 'PUT', 
         body: data,
         headers: headers

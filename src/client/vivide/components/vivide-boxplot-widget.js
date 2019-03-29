@@ -3,6 +3,7 @@ import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 import Annotations from 'src/client/reactive/utils/annotations.js';
 
+// #VivideWidget VivideBoxplotWidget
 export default class VivideBoxplotWidget extends VivideWidget {
   get multiSelectionConfig() {
     return [this.innerPlot, {

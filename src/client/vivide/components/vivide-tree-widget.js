@@ -2,6 +2,7 @@ import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 import MultiSelection from 'src/client/vivide/multiselection.js';
 import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
+// #VivideWidget VivideTreeWidget
 export default class VivideTreeWidget extends VivideWidget {
   get multiSelectionConfig() {
     return [this, {
