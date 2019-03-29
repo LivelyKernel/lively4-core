@@ -1,5 +1,11 @@
 # The Home of VivideJS
 
+## Using Vivide/JS
+
+Refer to the [cheatsheet](./cheatsheet.md).
+
+## Developing Vivide/JS
+
 ### naming
 
 For consistent naming, here are some guidelines:
@@ -12,10 +18,12 @@ For consistent naming, here are some guidelines:
   - **children** *\<VivideObject[]\>* - Child nodes of this model node representing a part-whole-relationship. (cannot be accessed directly, instead they are computed lazily)
 - **forest** *\<VivideObject[]\>* - Any set of models.
 
-# transform steps
+### Todos
+
+#### transform steps
 
 current:
-```
+```javascript
 [(input, output) => {
   for (let item of input) {
     output.push(item);
@@ -25,8 +33,8 @@ current:
 }]
 ```
 
-desired:
-```
+desired?:
+```javascript
 [async function*(input) {
   for await(let item of input) {
     yield item;

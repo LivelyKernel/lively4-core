@@ -508,6 +508,11 @@ export default class ContextMenu {
           },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         ],
+        ["Vivide CheatSheet", evt => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/src/client/vivide/cheatsheet.md");
+          });
+        },undefined, '<i class="fa fa-inbox" aria-hidden="true"></i>'],
         ["Journal", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
             comp.followPath(lively4url + "/doc/journal/index.md");
