@@ -209,6 +209,12 @@ export default class VivideView extends Morph {
     this.addEventListener('dragover', evt => this.dragover(evt), false);
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
+
+//     var json = this.getAttribute("vivide-input")
+//     if (json) {
+//       var data = JSON.parse(json)
+//       this.newDataFromUpstream(data)
+//     }
   }
   
   onExtentChanged() {
@@ -357,6 +363,10 @@ export default class VivideView extends Morph {
 
     return scriptEditor;
   }
+  
+  // livelyPrepareSave() {
+  //   this.setAttribute("vivide-input", JSON.stringify(this.getInputData()))
+  // }
   
   async livelyExample() {
     const exampleData = [

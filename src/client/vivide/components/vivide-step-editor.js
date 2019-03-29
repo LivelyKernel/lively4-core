@@ -253,6 +253,9 @@ export default class VivideStepEditor extends Morph {
   isValidFoldPath(path) {
     return path.isProgram() ||
       path.isForOfStatement() ||
+      path.isFunctionExpression() ||
+      path.isForAwaitStatement() ||
+      (path.parentPath && path.parentPath.isYieldExpression()) ||
       path.isArrowFunctionExpression();
   }
   nextFoldingPath(startingPath, obeyCursor) {
