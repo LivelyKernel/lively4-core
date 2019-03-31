@@ -142,6 +142,7 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 ![](motivation_classic_programming_workflow.png){.centered}
 
 
+<!-- Gap between code and behavior -->
 
 ---
 # Motivation
