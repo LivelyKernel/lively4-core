@@ -395,15 +395,16 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 -->
 
 ---
-# Implementation 
+# Implementation
 
 - Implemented and integrated in Lively4 web-based development environment
-- CodeMirror-based
-- Executed when user stops typing
+- Embedded Widgets in  CodeMirror
+- Example Evaluation, when user stops typing:
 
+<!--
 ![](implementation.png)
-
-
+-->
+<lively-drawio src="./implementation.xml"></lively-drawio:{.centered}>
 ---
 # Future Work
 
