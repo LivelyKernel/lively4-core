@@ -88,15 +88,15 @@
 
 <div class="title">
 <a class="plain" href="https://arxiv.org/pdf/1902.00549">
-Babylonian-Style Programming 
+Babylonian-style Programming 
 </a>
 </div>
 <div class="subtitle">
-Design and Implementation of a General-purpose Editor Integrating Live Examples Into Source Code
+Design and Implementation of a General-purpose Editor<br>Supporting the Integration of Live Examples into Source Code
 </div>
 
 <div class="authors">
-David Rauch, Patrick Rein, Stefan Ramson, Jens Lincke, and Robert Hirschfeld
+David Rauch, Patrick Rein, Stefan Ramson, <u>Jens Lincke</u>, and Robert Hirschfeld
 </div>
 
 
@@ -198,26 +198,25 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 
 Example: Set of input values for a function/method (example invocation) 
 
-- Feedback on Runtime State
+- Feedback on runtime state
   - Feedback granularity
   - State over time
   - State over modules
   - Arbitrary objects
   - Domain-specific feedback
-- Associating Examples with Code
+- Associating examples with code
   - Multiple examples for one part of the application
   - Reusing parts of examples	
 
 {style="width:45%; float: left"}
 
-
-- Specifying Context
-  - Determining Relevant Sections of Code
+- Specifying context
+- Determining relevant sections of code
   - Control flow
   - Runtime state
   - Program output
-- Keeping Track of Assumptions {style="margin-top:10px"}
-- Navigating the Trace{style="margin-top:10px"}
+- Keeping track of assumptions {style="margin-top:10px"}
+- Navigating the trace{style="margin-top:10px"}
 
 {style="width:45%; float: left"}
 
@@ -230,12 +229,18 @@ Example: Set of input values for a function/method (example invocation)
 --- 
 ## Survey -  Identified Features
 
+<!--
+
 ![](features.png){.centered}
+
+-->
+
+<lively-drawio src="./survey-features.xml"></lively-drawio>{.centered}
 
 
 ---
 # Approach
-## Babylonian-Style Programming Editor {.sub}
+## Babylonian-style Programming Editor {.sub}
 
 <!--
 ![](babylonian-style_programming_editor.png){.centered}
@@ -249,10 +254,10 @@ Live results for a concrete implementation (left) and an abstract implementation
 # Design
 
 - Single panel 
-  - Behavioural information inline
-- IDE-Integrated 
+  - Behavioral information inline
+- Editor integration 
   - Annotations are UI widgets
-- Multiple Editors 
+- Multiple editors 
   - Follow examples across modules
 
 ![](final_editor.png){.right}
@@ -264,7 +269,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Multiple examples per function 
 - May be activated or deactivated 
 - Named examples 
-- Assigned colours
+- Assigned colors
 
 ![](design_multiple_examples.png){.right}
 
@@ -300,29 +305,33 @@ Live results for a concrete implementation (left) and an abstract implementation
 
 - Supported by probes 
 - Usable in examples 
-- (Custom) Instance Templates 
+- (Custom) instance templates 
 - Links
 
- ![](design_objects_and_data_structures_1.png){.bottomLeft}
+![](design_objects_and_data_structures_1.png){.bottomLeft}
 ![](design_objects_and_data_structures_2.png){.right}
+
+<!-- #TODO source: @rhi, Fibonacci -> similar.... -->
 
 ---
 # Design
-## Behavioural Highlighting  {.sub}
+## Behavioral Highlighting  {.sub}
 
 - Examples indicate intent 
 - Fade out code that was not reached 
 - Quickly find relevant code 
 - Examine conditions without probes
 
+
 ![](design_behavioural_highlighting.png){.right}
 
+<!-- Behavioral highlighting for a conditional -->
 
 ---
 # Design
 ## Persistent Examples  {.sub}
 
-- Serialised to JSON 
+- Serialized to JSON 
 - Saved as comments 
 - Before and after syntax elements
 - On load: parse and hide
@@ -336,15 +345,15 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Replacements 
   - Replace source code 
   - Only for example evaluation
-- Pre- and Postscript 
+- Pre- and postscript 
   - Run before and after example 
-  - Compare setup and teardown
+  - Similar to setup and teardown
 
 ![](design_additional_features.png){.right}
 
 ---
 # Demo
-## Babylonian-Style Programming Editor {.sub}
+## Babylonian-style Programming Editor {.sub}
 
 <!--
 <script>
@@ -402,29 +411,30 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 
 ---
-# Babylonian-Style Programming Editor
+# Babylonian-style Programming Editor
 
-- Feedback on Runtime State
+- Feedback on runtime state
   - Feedback granularity
   - State over time
   - State over modules
   - Arbitrary objects
   - Domain-specific feedback
-- Associating Examples with Code
+- Associating examples with code
   - Multiple examples for one part of the application
-  - Reusing parts of examples
-- Specifying Context
-- Determining Relevant Sections of Code
-  - Control Flow
-  - Runtime State
-  - Program Output
-- Keeping Track of Assumptions
-- Navigating the Trace
-
-{style="transform: scale(0.7); transform-origin: top left; width:45%; float: left"}
+  - Reusing parts of examples	
+- Specifying context
+- Determining relevant sections of code
+  - Control flow
+  - Runtime state
+  - Program output
+- Keeping track of assumptions {style="margin-top:10px"}
+- Navigating the trace{style="margin-top:10px"}
 
 
-![](babylonian_demo.png){style="width: 600px; position: absolute; top: 200px; right: 20px"}
+{style="transform: scale(0.8); transform-origin: top left; width:45%; float: left"}
+
+
+![](babylonian_demo.png){style="width: 550px; position: absolute; top: 200px; right: 20px"}
 
 ---
 
