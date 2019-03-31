@@ -139,8 +139,12 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 # Motivation 
 ## Classic (Application) Programming Workflow {.sub}
 
-![](motivation_classic_programming_workflow.png){.centered}
+<!--
 
+![](motivation_classic_programming_workflow.png){.centered}
+-->
+
+<lively-drawio src="./motivation.xml"></lively-drawio:{.centered}>
 
 <!-- Gap between code and behavior -->
 
