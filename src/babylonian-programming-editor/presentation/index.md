@@ -152,15 +152,23 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 # Motivation
 ## Live (Application) Programming Workﬂow {.sub}
 
+<!--
 
 ![](motivation_live_programming_workflow.png){.centered}
+-->
+
+<lively-drawio src="./motivation_live.xml"></lively-drawio:{.centered}>
 
 
 ---
 # Motivation
 ## Example-based (Application) Programming Workflow {.sub}
 
+<!--
 ![](motivation_example-based_programming_workflow.png)
+-->
+
+<lively-drawio src="./motivation_example.xml"></lively-drawio:{.centered}>
 
 
 <!--
