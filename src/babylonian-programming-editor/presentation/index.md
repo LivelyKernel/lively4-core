@@ -181,8 +181,7 @@ Hasso Plattner Institute, University of Potsdam, Germany</a>
 -->
 
 ---
-# Motivation
-## Existing Example-based Systems {.sub}
+## Existing Example-based Systems
 
 ![](example_based_systems.png){.centered}
 
@@ -273,7 +272,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Multiple editors 
   - Follow examples across modules
 
-![](final_editor.png){.right}
+![](final_editor.png){.right style="width:53%"}
 
 ---
 # Design
@@ -284,7 +283,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Named examples 
 - Assigned colors
 
-![](design_multiple_examples.png){.right}
+![](design_multiple_examples.png){.bottomRight style="width:65%"}
 
 ---
 # Design
@@ -297,7 +296,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Chronological order 
 - Object inspector supported
 
-![](design_probes.png){.right}
+![](design_probes.png){.right style="width:58%"}
 
 --- 
 # Design
@@ -309,7 +308,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Probes filter values 
 - Easier correlation of values
 
-![](design_state_over_time.png){.right}
+![](design_state_over_time.png){.right style="width:40%"}
 
 
 --- 
@@ -405,6 +404,8 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 ![](implementation.png)
 -->
 <lively-drawio src="./implementation.xml"></lively-drawio:{.centered}>
+
+
 ---
 # Future Work
 
@@ -413,6 +414,12 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 - Non-terminating Examples: How to support? 
 - Non-“deep” systems: How to realize complex features? 
 - Unit Tests: How to integrate examples and unit tests?
+
+<!--
+
+- Integration of tracing
+
+-->
 
 ---
 # Conclusion
@@ -425,7 +432,8 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 
 ---
-# Babylonian-style Programming Editor
+
+## Babylonian-style Programming Editor {style="position:absolute; bottom: 10px; right: 20px"}
 
 - Feedback on runtime state
   - Feedback granularity
@@ -445,10 +453,16 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 - Navigating the trace{style="margin-top:10px"}
 
 
-{style="transform: scale(0.8); transform-origin: top left; width:45%; float: left"}
+{style="transform: scale(1); transform-origin: top left; width:45%; float: left"}
 
 
-![](babylonian_demo.png){style="width: 550px; position: absolute; top: 200px; right: 20px"}
+
+![](knuth_1972_page1.png){style="position:absolute; top:20px; left:460px; width:200px; border: 1px solid lightgray"}
+
+![](knuth_1972_cistern.png){style="position:absolute; top:120px; left:580px; width:300px; border: 1px solid lightgray"}
+
+
+![](babylonian_demo.png){style="width: 450px; position: absolute; bottom: 80px; right: 10px"}
 
 ---
 
