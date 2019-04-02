@@ -1368,7 +1368,7 @@ export default class Lively {
       var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
-      var topLeft = pt(200,100)
+      var topLeft = pt(50,50)
 
       for(var i=0; !pos; i++) {
         let p1 = pt(i * offset, i * offset)
@@ -1410,8 +1410,8 @@ export default class Lively {
     return containerPromise.then(comp => {
       livelyContainer = comp;
       livelyContainer.hideNavbar()
-      comp.parentElement.style.width = "1200px";
-      comp.parentElement.style.height = "700px";
+      comp.parentElement.style.width = "750px";
+      comp.parentElement.style.height = "800px";
 
       if (lastWindow) {
         lively.setPosition(comp.parentElement,

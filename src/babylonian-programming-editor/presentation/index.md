@@ -382,6 +382,8 @@ Live results for a concrete implementation (left) and an abstract implementation
 
 - [demos](browse://src/babylonian-programming-editor/demos/)
 - [binary search](edit://src/babylonian-programming-editor/demos/binary-search.js)
+- [tree](edit://src/babylonian-programming-editor/demos/tree.js)
+  - [canvas](open://example-canvas)
 - [tree-scene](edit://src/babylonian-programming-editor/demos/tree-scene.js)
   - [tree-base](edit://src/babylonian-programming-editor/demos/tree-base.js)
 - [utils/ast](edit://src/babylonian-programming-editor/utils/ast.js)
@@ -390,6 +392,21 @@ Live results for a concrete implementation (left) and an abstract implementation
 <!--
 
 this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, width)
+
+-->
+
+
+<!--
+
+---
+<example-canvas style="position:absolute; top: 80px; right:20px; width: 300px; height:300px;border:1px solid gray"></example-canvas>
+
+<!--
+<example-canvas style="position:absolute; top: 350px; right:20px; width: 300px; height:300px;border:1px solid gray"></example-canvas>
+
+
+<babylonian-programming-editor url="http://localhost:9005/lively4-jens/src/babylonian-programming-editor/demos/tree.js" style="heigth:800px; width: 600px">
+</babylonian-programming-editor>
 
 -->
 
