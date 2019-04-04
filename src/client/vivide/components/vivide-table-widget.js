@@ -42,9 +42,27 @@ export default class VivideTableWidget extends VivideWidget {
   tableHeadFromConfig(config) {
     this.thead.innerHTML = '';
       // #VivideProperty label(String) !script-property! shown in the table header
-    this.thead.appendChild(<tr>{...config.getAll('header').map(header => <th>{header}</th>)}</tr>)
+    this.thead.appendChild(<tr>{...config.getAll('header').map(header => <th>{header}</th>)}</tr>);
   }
-  
+
+  async hideSubTree(treeItem) {
+    treeItem.expanded = false;
+
+    treeItem.querySelector('#expander').innerHTML = '▶';
+
+    const toRemove = [];
+    let iter = treeItem;
+    while (iter) {
+      iter = iter.nextSibling;
+      if (iter && iter.level > treeItem.level) {
+        toRemove.push(iter);
+      } else {
+        break;
+      }
+    }
+    toRemove.forEach(elem => elem.remove());
+  }
+
   async toggleTree(treeItem) {
     const vivideObject = this.modelByTableRow.get(treeItem);
     if (!await vivideObject.hasChildren()) { return; }
@@ -57,26 +75,9 @@ export default class VivideTableWidget extends VivideWidget {
       const childForest = await vivideObject.getChildren();
       await this.insertChildModels(childForest, treeItem, treeItem.level+1)
     }
-    const hideSubTree = async () => {
-      treeItem.expanded = false;
-
-      treeItem.querySelector('#expander').innerHTML = '▶';
-      
-      const toRemove = [];
-      let iter = treeItem;
-      while (iter) {
-        iter = iter.nextSibling;
-        if (iter && iter.level > treeItem.level) {
-          toRemove.push(iter);
-        } else {
-          break;
-        }
-      }
-      toRemove.forEach(elem => elem.remove());
-    }
     
     if (treeItem.expanded) {
-      hideSubTree();
+      this.hideSubTree(treeItem);
     } else {
       showSubTree();
     }
@@ -118,7 +119,7 @@ export default class VivideTableWidget extends VivideWidget {
         }
       });
     } else {
-      expander.style.color = 'rgba(0,0,0,0)';
+      expander.style.color = 'rgba(0,0,0,0.1)';
       expander.innerHTML = '⚫';
     }
     treeItemInner[0].prepend(expander);
@@ -157,6 +158,11 @@ export default class VivideTableWidget extends VivideWidget {
   async processObject(model, parent, forest, level) {
     const siblingsHaveChildren = await this.anyChildrenInForest(forest)
     const treeItem = await this.getTableRow(model, siblingsHaveChildren, level);
+
+    // reset expanding status #TODO #Refactor
+    if (await model.hasChildren()) {
+      this.hideSubTree(treeItem);
+    }
     
     if (!parent) {
       this.tbody.appendChild(treeItem);
