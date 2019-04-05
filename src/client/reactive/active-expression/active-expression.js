@@ -163,7 +163,7 @@ export class BaseActiveExpression {
   getCurrentValue() {
     return this.cachingFetch.trace(() => {
       return this.cachingPromise.trace(() => {
-        return this.func(...(this.params));
+        return this.func(...this.params);
       });
     });
   }
@@ -203,7 +203,7 @@ export class BaseActiveExpression {
    */
   checkAndNotify() {
     const currentValue = this.getCurrentValue();
-    resolveValue(currentValue, (value) => {
+    resolveValue(currentValue, value => {
       if(this.compareResults(this.lastValue, value)) { return; }
       const lastValue = this.lastValue;
       this.storeResult(value);
@@ -307,7 +307,7 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       if(value) { callback() }
     });
 
@@ -322,7 +322,7 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       if(!value) { callback() }
     });
 
@@ -335,7 +335,7 @@ export class BaseActiveExpression {
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       this.notify(value, {});
     });
 
