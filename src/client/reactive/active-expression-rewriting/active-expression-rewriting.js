@@ -68,10 +68,76 @@ class BidirectionalMultiMap {
 
 }
 
+class InjectiveMap {
+
+  constructor() {
+    this.leftToRight = new Map();
+    this.rightToLeft = new Map();
+  }
+  
+  associate(left, right) {
+    this.leftToRight.set(left, right);
+    this.rightToLeft.set(right, left);
+  }
+  
+  getRightFor(left) {
+    return this.leftToRight.get(left);
+  }
+
+  getLeftFor(right) {
+    return this.rightToLeft.get(right);
+  }
+
+}
+
+class Dependency {
+  static for(obj, prop, hookStorage) {
+    const key = CompositeKey.for(obj, prop);
+    const dependency = hookStorage.dependenciesByCompositeKey.getOrCreate(key, () => {
+      const dep = new Dependency();
+      hookStorage.compositeKeyByDependencies.set(dep, key);
+      return dep;
+    });
+    return dependency;
+  }
+  
+  static compositeKeyFor(dependency, hookStorage) {
+    return hookStorage.compositeKeyByDependencies.get(dependency)
+  }
+}
+
+const DependenciesToAExprs = {
+  depsToAExprs: new BidirectionalMultiMap(),
+  associate(dep, aexpr) {
+    this.depsToAExprs.associate(dep, aexpr);
+  },
+  disconnectAllForAExpr(aexpr) {
+    this.depsToAExprs.removeAllLeftFor(aexpr);
+  },
+  getAExprsForDep(dep) {
+    return Array.from(this.depsToAExprs.getRightsFor(dep));
+  },
+  getDepsForAExpr(aexpr) {
+    return Array.from(this.depsToAExprs.getLeftsFor(aexpr));
+  },
+  /*
+   * Removes all associations.
+   */
+  clear() {
+    this.depsToAExprs.clear();
+  }
+};
+
 class HookStorage {
   constructor() {
-    // left: objProps; right: aexprs
-    this.objPropsToAExprs = new BidirectionalMultiMap();
+    // 1. (obj, prop) -> CompKey
+    // - given via CompKey
+    // 2. CompKey -> Dependency
+    this.dependenciesByCompositeKey = new Map(); // main
+    this.compositeKeyByDependencies = new Map();
+    // 3. Dependency <-> AExpr
+    DependenciesToAExprs
+    // this.dependenciesToAExprs = new BidirectionalMultiMap();
   }
 
   associate(aexpr, obj, prop) {
@@ -79,33 +145,28 @@ class HookStorage {
       throw new Error('aexpr is undefined');
     }
 
-    const key = CompositeKey.for(obj, prop);
-    this.objPropsToAExprs.associate(key, aexpr);
+    const dependency = Dependency.for(obj, prop, this);
+    // this.dependenciesToAExprs.associate(dependency, aexpr);
+    DependenciesToAExprs.associate(dependency, aexpr);
   }
 
   disconnectAll(aexpr) {
-    this.objPropsToAExprs.removeAllLeftFor(aexpr);
+    DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
 
   getAExprsFor(obj, prop) {
-    const key = CompositeKey.for(obj, prop);
-    return Array.from(this.objPropsToAExprs.getRightsFor(key));
+    const dependency = Dependency.for(obj, prop, this);
+    return DependenciesToAExprs.getAExprsForDep(dependency);
   }
 
   getCompKeysFor(aexpr) {
-    return Array.from(this.objPropsToAExprs.getLeftsFor(aexpr));
-  }
-
-  /*
-   * Removes all associations.
-   * As a result
-   */
-  clear() {
-    this.objPropsToAExprs.clear();
+    return DependenciesToAExprs.getDepsForAExpr(aexpr)
+      .filter(dep => this.compositeKeyByDependencies.has(dep))
+      .map(dependency => Dependency.compositeKeyFor(dependency, this));
   }
 }
 
-const aexprStorage = new HookStorage();
+const aexprStorageForMembers = new HookStorage();
 const aexprStorageForLocals = new HookStorage();
 const aexprStack = new Stack();
 
@@ -166,7 +227,7 @@ class DependencyAPI {
   }
 
   members() {
-    const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
+    const compKeys = aexprStorageForMembers.getCompKeysFor(this._aexpr);
 
     return compKeys
       .map(DependencyAPI.compositeKeyToMember)
@@ -174,7 +235,7 @@ class DependencyAPI {
   }
 
   globals() {
-    const compKeys = aexprStorage.getCompKeysFor(this._aexpr);
+    const compKeys = aexprStorageForMembers.getCompKeysFor(this._aexpr);
 
     const globals = [];
     compKeys.forEach(compKey => {
@@ -205,12 +266,17 @@ class DependencyManager {
   }
 
   static disconnectAllFor(aexpr) {
-    aexprStorage.disconnectAll(aexpr);
+    aexprStorageForMembers.disconnectAll(aexpr);
     aexprStorageForLocals.disconnectAll(aexpr);
   }
 
+  /**
+   * **************************************************************
+   * ********************** associate *****************************
+   * **************************************************************
+   */
   static associateMember(obj, prop) {
-    aexprStorage.associate(this.currentAExpr, obj, prop);
+    aexprStorageForMembers.associate(this.currentAExpr, obj, prop);
   }
 
   static associateGlobal(globalName) {
@@ -221,8 +287,13 @@ class DependencyManager {
     aexprStorageForLocals.associate(this.currentAExpr, scope, varName);
   }
 
+  /**
+   * **************************************************************
+   * ********************** update ********************************
+   * **************************************************************
+   */
   static memberUpdated(obj, prop) {
-    const aexprs = aexprStorage.getAExprsFor(obj, prop);
+    const aexprs = aexprStorageForMembers.getAExprsFor(obj, prop);
     this.checkAndNotifyAExprs(aexprs);
   }
 
@@ -254,8 +325,7 @@ class DependencyManager {
  * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
-  aexprStorage.clear();
-  aexprStorageForLocals.clear();
+  DependenciesToAExprs.clear();
   CompositeKey.clear();
 }
 
@@ -385,6 +455,7 @@ export function getGlobal(globalName) {
     DependencyManager.associateGlobal(globalName);
   }
 }
+
 export function setGlobal(globalName) {
   DependencyManager.globalUpdated(globalName);
 }

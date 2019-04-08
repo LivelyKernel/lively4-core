@@ -1,0 +1,91 @@
+<template id="vivide-table-widget">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/client/vivide/components/vivide.css"></style>
+  <style>
+    :host {
+      
+    }
+    #container {
+      background-color: beige;
+    }
+    thead {
+      background-color: lightgrey;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 5px;
+    }
+
+    li > ul {
+      display: none;
+      margin: 0;
+    }
+
+    .expander {
+      width: 25px;
+      cursor: pointer;
+      position: absolute;
+      left: 0;
+    }
+    #expander:hover {
+      color: orange;
+    }
+
+    .expanded > ul {
+      display: block;
+      padding-left: 0;
+    }
+
+    tr {
+      padding-left: 25px;
+      position: relative;
+      -moz-user-select: none;
+      -khtml-user-select: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -khtml-user-drag: element;
+      -webkit-user-drag: element;
+      user-drag: element;
+    }
+    tr {
+      transition: color 0.2s ease-out;
+      transition: background-color 0.2s ease-out;
+      border: 0.5px solid transparent;
+    }
+    tr.selected {
+      background-color: #789;
+    }
+    tr.last-selected {
+      color: white;
+    }
+    tr:hover {
+      background-color: lightblue;
+    }
+    tr:focus {
+      box-shadow: inset 0 0 8px #000000;
+    }
+
+    .small {
+      font-size: 8px;
+      line-height: 16px;
+    }
+
+    .tooltip {
+      display: none;
+    }
+    #thead {
+      position: sticky;
+    }
+  </style>
+  <div id='container'>
+    <table id='table'>
+      <thead id='thead'>
+      </thead>
+      <tbody id='tbody'>
+      </tbody>
+    </table>
+  </div>
+</template>
