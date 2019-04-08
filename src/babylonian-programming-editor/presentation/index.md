@@ -262,6 +262,8 @@ Live results for a concrete implementation (left) and an abstract implementation
 
 ![](babylonian_figure1.png){.centered}
 
+[smiley](edit://src/babylonian-programming-editor/demos/canvas/demo.js) [class](edit://src/babylonian-programming-editor/demos/canvas/demoClass.js) [canvas](open://example-canvas) {style="position:absolute; bottom: 5px; right: 50px; font-size: 12pt"}
+
 ---
 # Design
 
@@ -274,6 +276,12 @@ Live results for a concrete implementation (left) and an abstract implementation
 
 ![](final_editor.png){.right style="width:53%"}
 
+[search](edit://src/babylonian-programming-editor/demos/binary-search.js) [classes](edit://src/babylonian-programming-editor/demos/classes.js)  {style="position:absolute; bottom: 5px; right: 50px; font-size: 12pt"}
+
+<!--
+[person](edit://src/babylonian-programming-editor/demos/presentation/02_person.js)
+-->
+
 ---
 # Design
 ## Multiple Examples {.sub}
@@ -284,6 +292,7 @@ Live results for a concrete implementation (left) and an abstract implementation
 - Assigned colors
 
 ![](design_multiple_examples.png){.bottomRight style="width:65%"}
+
 
 ---
 # Design
@@ -378,6 +387,8 @@ Live results for a concrete implementation (left) and an abstract implementation
 -->
 
 
+
+
 ![](babylonian_demo.png){style="width: 600px; position: absolute; top: 180px; right: 20px"}
 
 - [demos](browse://src/babylonian-programming-editor/demos/)
@@ -389,26 +400,14 @@ Live results for a concrete implementation (left) and an abstract implementation
 - [utils/ast](edit://src/babylonian-programming-editor/utils/ast.js)
   - [location-converter.js](edit://src/babylonian-programming-editor/utils/location-converter.js)
 
+
+
 <!--
 
 this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, width)
 
 -->
 
-
-<!--
-
----
-<example-canvas style="position:absolute; top: 80px; right:20px; width: 300px; height:300px;border:1px solid gray"></example-canvas>
-
-<!--
-<example-canvas style="position:absolute; top: 350px; right:20px; width: 300px; height:300px;border:1px solid gray"></example-canvas>
-
-
-<babylonian-programming-editor url="http://localhost:9005/lively4-jens/src/babylonian-programming-editor/demos/tree.js" style="heigth:800px; width: 600px">
-</babylonian-programming-editor>
-
--->
 
 ---
 # Implementation
@@ -428,12 +427,13 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 
 - **Projectional Editing:** Persistent AST 
 - **Example Execution Paths:** How did an example reach a certain point?
+  - Integration of tracing
 - Non-terminating Examples: How to support? 
-- Non-“deep” systems: How to realize complex features? 
 - Unit Tests: How to integrate examples and unit tests?
 
 <!--
 
+- Non-“deep” systems: How to realize complex features? 
 - Integration of tracing
 
 -->
@@ -447,10 +447,11 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 - **Evaluation: Editor enables new use-cases**
 - Focus on complex applications opens new research questions
 
+![](babylonian_demo.png){style="width: 450px; position: absolute; bottom: 80px; right: 10px"}
 
 ---
 
-## Babylonian-style Programming Editor {style="position:absolute; bottom: 10px; right: 20px"}
+## Babylonian-style Programming Editor {style="z-index: 2; background: white; position:absolute; bottom: -7px; right: 10px"}
 
 - Feedback on runtime state
   - Feedback granularity
@@ -536,6 +537,9 @@ this.drawBranches(ctx, random, i+2, angle + random(0.3, 0.6), tipX + 1, tipY, wi
 ---
 <!-- #TODO pull this up into presentation? -->
 <script>
+
+
+
 // poor men's slide master #Hack #TODO How to pull this better into lively-presentation?
 var ctx = this;
 (async () => {
@@ -553,6 +557,14 @@ var ctx = this;
       ea.appendChild(div)
     });
   } 
+
+// hot fix
+  await lively.sleep(500)
+  Array.from(lively.allElements(true))
+  .filter(ea => ea.textContent && ea.textContent.match(/^Like douc/)).forEach(ea => ea.textContent = "Like documentation")
+
+
+  
   return ""
 })()
 </script>
