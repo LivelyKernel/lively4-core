@@ -1411,7 +1411,7 @@ export default class Lively {
       livelyContainer = comp;
       livelyContainer.hideNavbar()
       comp.parentElement.style.width = "750px";
-      comp.parentElement.style.height = "800px";
+      comp.parentElement.style.height = "600px";
 
       if (lastWindow) {
         lively.setPosition(comp.parentElement,
