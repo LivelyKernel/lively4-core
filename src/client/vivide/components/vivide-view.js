@@ -210,11 +210,24 @@ export default class VivideView extends Morph {
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
 
-//     var json = this.getAttribute("vivide-input")
-//     if (json) {
-//       var data = JSON.parse(json)
-//       this.newDataFromUpstream(data)
-//     }
+    // restore data... 
+    
+    // not migrating, but initializing from source
+    if (!this.myCurrentScript) {
+      var scriptJSON = this.getAttribute("vivide-script")
+      if (scriptJSON) {
+        this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
+      } else {
+        await this.initDefaultScript();
+      }
+
+      var dataJSON = this.getAttribute("vivide-data")
+      if (dataJSON) {
+        // await this.createScriptEditor();
+        var data = JSON.parse(dataJSON)
+        this.newDataFromUpstream(data)
+      }      
+    }
   }
   
   onExtentChanged() {
@@ -364,9 +377,10 @@ export default class VivideView extends Morph {
     return scriptEditor;
   }
   
-  // livelyPrepareSave() {
-  //   this.setAttribute("vivide-input", JSON.stringify(this.getInputData()))
-  // }
+  livelyPrepareSave() {
+    this.setAttribute("vivide-script", this.myCurrentScript.toJSON())
+    this.setAttribute("vivide-data", JSON.stringify(this.getInputData()))
+  }
   
   async livelyExample() {
     const exampleData = [

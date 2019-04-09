@@ -238,7 +238,7 @@ export default class ScriptStep {
   }
   
   // #TODO: implement properly
-  toJSON() {
+  toJSO() {
     const scriptJson = {
       type: this.type,
       source: this.source,
@@ -249,6 +249,10 @@ export default class ScriptStep {
     // #TODO: maybe need to save next step id or loop target
     
     return scriptJson
+  }
+  
+  toJSON() {
+    return JSON.stringify(this.toJSO())
   }
   
   async getExecutable() {
