@@ -144,9 +144,11 @@ export default class HaloGrabItem extends HaloItem {
     if (droptarget) {
       
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
+      
       if (this.dropIndicator) this.dropIndicator.remove()
-      this.dropIndicator = lively.showElement(droptarget)
-      this.dropIndicator.textContent = ""
+      this.dropIndicator = lively.showElement(droptarget)      
+      this.dropIndicator.style.color = "gray"
+      this.dropIndicator.textContent = lively.elementToCSSName(droptarget)
       this.dropIndicator.style.border = "1px dashed lightgray"
       this.dropIndicator.classList.add("no")
       
