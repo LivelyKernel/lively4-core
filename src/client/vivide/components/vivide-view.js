@@ -44,8 +44,8 @@ class WidgetChooser {
 }
 
 export default class VivideView extends Morph {
-  static findViewWithId(id) {
-    return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
+  static findViewWithId(id, context=document.body) {
+    return lively.query(context, `vivide-view[vivide-view-id=${id}]`);
   }
   
   static getIdForView(view) {
@@ -90,7 +90,7 @@ export default class VivideView extends Morph {
     let ids = this.getJSONAttribute(VivideView.outportAttribute);
     if(ids) {
       return flatMap.call(ids, id => {
-        let view = VivideView.findViewWithId(id);
+        let view = VivideView.findViewWithId(id, lively.findWorldContext(this)) ;
         if(view === null) {
           lively.error('could not find view: ' + id);
           return [];
@@ -422,6 +422,23 @@ export default class VivideView extends Morph {
 
     this.newDataFromUpstream(other.input);
   }
+  
+  livelyInspect(contentNode, inspector) {
+    if (this.myCurrentScript) {
+      contentNode.appendChild(inspector.display(this.myCurrentScript, false, "#script", this));
+    }
+    if (this.input) {
+      contentNode.appendChild(inspector.display(this.input, false, "#input", this));
+    }
+    
+    var outportTargets = this.outportTargets
+    if (outportTargets) {
+      contentNode.appendChild(inspector.display(outportTargets, false, "#outportTargets", this));
+    }
+    
+    
+  }
+  
   
   livelyHalo() {
     return {

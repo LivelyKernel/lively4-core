@@ -143,8 +143,7 @@ export default class Script {
   }
 
   static async fromJSON(json, view) {
-    debugger
-//     // this is deserialization of a script
+    // this is deserialization of a script
     let jsonScripts = JSON.parse(json)
     let scripts = {};
 
