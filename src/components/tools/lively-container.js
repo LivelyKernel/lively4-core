@@ -1749,7 +1749,7 @@ export default class Container extends Morph {
   }
 
   contentIsEditable() {
-    return this.getPath().match(/\.html$/)
+    return this.getPath().match(/\.html$/) || this.getPath().match(/\.md$/)
   }
 
   checkForContentChanges() {

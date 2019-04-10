@@ -17,7 +17,7 @@ export default class HaloGrabItem extends HaloItem {
  
  static get droppingBlacklist() {
       return {"*": 
-        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector", "lively-code-mirror", "lively-markdown", "lively-presentation"]
+        ["h1","h2","h3","h4","h5", "lively-window", "button", "input", "lively-halo", "html",  "lively-selection", "lively-connector", "lively-code-mirror",  "lively-presentation"] // "lively-markdown",
       }
   }
  
@@ -141,8 +141,7 @@ export default class HaloGrabItem extends HaloItem {
   
   dropAtEvent(grabShadow, evt) {
     var droptarget = this.droptargetAtEvent(grabShadow, evt);
-    if (droptarget) {
-      
+    if (droptarget) {      
       this.moveGrabShadowToTargetAtEvent(droptarget, evt);
       
       if (this.dropIndicator) this.dropIndicator.remove()
@@ -190,8 +189,18 @@ export default class HaloGrabItem extends HaloItem {
     for (var i = 0; i < elementsUnderCursor.length; i++) {
       var targetNode = elementsUnderCursor[i];
       if (HaloGrabItem.canDropInto(node, targetNode) ) {
+        
+        // #TODO redirect drops into components... that want their drops go into the shadow
         if (targetNode.localName == "lively-container") {
-          return targetNode.getContentRoot()  
+          var root = targetNode.getContentRoot() 
+          // we could still be in markdown...
+          var markdown = root.querySelector("lively-markdown")
+          if (markdown) {
+            return markdown.get("#content")   
+          }
+          return root
+        } if (targetNode.localName == "lively-markdown") {
+          return targetNode.get("#content") 
         } else {
           return targetNode;
         }
@@ -245,18 +254,22 @@ export default class HaloGrabItem extends HaloItem {
     if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
     
-    var worldContext = lively.findWorldContext(targetNode);
-    if (!(worldContext === document.body 
-      || (worldContext.id == "container-root")
-      || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN"))) return false;
     
-    console.log("canDropInto "  + targetNode.id)
-    return node !== targetNode &&
+    var worldContext = lively.findWorldContext(targetNode);
+    if (!(worldContext === document.body)) return false;
+    
+    //       || (worldContext.id == "container-root")
+    // || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN")
+    
+    var result =  node !== targetNode &&
       !targetNode.isMetaNode &&
       !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
       !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
       !(this.droppingBlacklist['*'] || []).includes(targetTag) && 
       (!targetNode.livelyAcceptsDrop || targetNode.livelyAcceptsDrop(node))
+    
+    // console.log("canDropInto " + lively.elementToCSSName(targetNode)  + " worldContext " + worldContext + " -> " + result)
+    return result
   }
   
   nodeComesBehind(node, pos) {
