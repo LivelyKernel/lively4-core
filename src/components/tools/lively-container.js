@@ -1757,6 +1757,13 @@ export default class Container extends Morph {
       this.contentChanged = false
       return
     }
+    
+    // don't know how to check for edits here... 
+    if (!this.isEditing() && this.getPath().match(/\.md$/)) {
+      this.contentChanged = false
+      return
+    }
+    
 
     if (this.isPersisting) return;
     this.isPersisting = true;
