@@ -125,7 +125,8 @@ export default class ScriptStep {
     if(this.cursor) {
       return [this.cursor.anchor, this.cursor.head];
     }
-    lively.error('no cursor available', 'fallback for default cursor position');
+    // #TODO is it important to persists cursor position, and should we restore it?
+    console.warn('no cursor available', 'fallback for default cursor position');
     return [{ line: 1, ch: 0}, { line: 1, ch: 0}];
   }
   setCursorPosition(anchor, head) {
