@@ -12,8 +12,9 @@ import files from "src/client/files.js"
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
 import Clipboard from "src/client/clipboard.js";
-import { debounce, fileEnding, replaceFileEndingWith } from "utils";
+import { debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils";
 import ViewNav from "src/client/viewnav.js"
+
 
 export default class Container extends Morph {
   
@@ -536,7 +537,7 @@ export default class Container extends Morph {
   }
 
   updateOtherContainers() {
-    console.warn('updateContainers')
+    console.warn('updateOtherContainers')
     var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
@@ -545,7 +546,10 @@ export default class Container extends Morph {
         ea.setPath(ea.getURL() + "");
       }
     });
+    
+    updateEditors(url, [])
   }
+  
 
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
