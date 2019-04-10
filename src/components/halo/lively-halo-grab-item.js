@@ -190,7 +190,11 @@ export default class HaloGrabItem extends HaloItem {
     for (var i = 0; i < elementsUnderCursor.length; i++) {
       var targetNode = elementsUnderCursor[i];
       if (HaloGrabItem.canDropInto(node, targetNode) ) {
-        return targetNode;
+        if (targetNode.localName == "lively-container") {
+          return targetNode.getContentRoot()  
+        } else {
+          return targetNode;
+        }
       }
     }
     return document.body;
