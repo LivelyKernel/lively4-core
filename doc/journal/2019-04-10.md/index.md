@@ -2,7 +2,7 @@
 
 
 <div style="height:400px">
-<lively-import src="https://lively-kernel.org/lively4/lively4-jens/doc/journal/2019-04-10.md/VivideDataFlow.html"></lively-import>
+<lively-import src="VivideDataFlow.html"></lively-import>
 </div>
 
 
