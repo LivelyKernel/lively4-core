@@ -29,5 +29,62 @@ describe('Poid', () => {
       this.elementa.remove()
     });
     
-  })  
-})
+  })
+  
+  describe('Primitives', () => {
+
+    describe('String', () => {
+
+      const expected = 'hello world';
+      const urlString = `string:${expected}`;
+
+      it('returns a string as value', async function() {
+        const value = await fetch(urlString).then(r => r.value());
+        expect(value).to.equal(expected);
+      });
+
+      it('returns a string as object', async function() {
+        const object = await fetch(urlString).then(r => r.object());
+        expect(object).to.equal(expected);
+      });
+
+      it('returns a string as text', async function() {
+        const text = await fetch(urlString).then(r => r.text());
+        expect(text).to.equal(expected);
+      });
+
+      it('returns a string as json', async function() {
+        const json = await fetch(urlString).then(r => r.json());
+        expect(json).to.equal(expected);
+      });
+    });
+
+    describe('Number', () => {
+
+      const expected = -2.34;
+      const urlString = `number:${expected}`;
+
+      it('returns a string as value', async function() {
+        const value = await fetch(urlString).then(r => r.value());
+        expect(value).to.equal(expected);
+      });
+
+      it('returns a string as object', async function() {
+        const object = await fetch(urlString).then(r => r.object());
+        expect(object).to.equal(expected);
+      });
+
+      it('returns a string as text', async function() {
+        const text = await fetch(urlString).then(r => r.text());
+        expect(text).to.equal(''+expected);
+      });
+
+      it('returns a string as json', async function() {
+        const json = await fetch(urlString).then(r => r.json());
+        expect(json).to.equal(expected);
+      });
+    });
+
+  });
+
+});

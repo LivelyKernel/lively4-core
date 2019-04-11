@@ -5,9 +5,9 @@ var FileCache = FileIndex
 
 export class ObjectResponse {
  
-  constructor(result, options) {
-    this.status = (options && options.status) ? options.status : 200;
-    this.result = result
+  constructor(result, { status = 200 } = {}) {
+    this.result = result;
+    this.status = status;
   }
   
   async object() {
@@ -555,19 +555,118 @@ export class InnerHTMLElementQuery extends ElementQuery {
  
 }
 
+export class ValueResponse {
+ 
+  constructor(value, { status = 200 } = {}) {
+    this._value = value;
+    this.status = status;
+  }
+  
+  // #TODO: remove in favor of .value?
+  async object() {
+    return this.value();
+  }
+  
+  async value() {
+    return this._value;
+  }
+  
+  async text() {
+    return '' + this._value;
+  }
+
+  async json() {
+    const jsonString = JSON.stringify(await this.value());
+    return JSON.parse(jsonString);
+  }
+
+  async blob() {
+    throw new Error("blob not supported")
+  }
+}
+
+export class StringScheme extends Scheme {
+
+  get scheme() { return "string"; }
+
+  resolve() {
+    return true;
+  }
+
+  GET(options) {
+    const string = new URL(this.url).pathname;
+    return new ValueResponse(string, {status: 200})      
+  }
+
+}
+
+export class NumberScheme extends Scheme {
+
+  get scheme() { return "number"; }
+
+  resolve() {
+    return true;
+  }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(parseFloat(content), {status: 200})      
+  }
+
+}
+
+export class DateScheme extends Scheme {
+
+  get scheme() { return "date"; }
+
+  resolve() {
+    return true;
+  }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new Response(content, {status: 200})      
+  }
+
+}
+
+export class BooleanScheme extends Scheme {
+
+  get scheme() { return "bool"; }
+
+  resolve() {
+    return true;
+  }
+
+  GET(options) {
+    
+    const content = new URL(this.url).pathname;
+    return new Response(content, {status: 200})
+    
+    return super.GET(options)
+  }
+
+}
+
 
 export default class PolymorphicIdentifier {
   
   static load() {
-    this.register(LivelyFile) 
-    this.register(ElementQuery) 
-    this.register(ElementQueryAll) 
-    this.register(InnerHTMLElementQuery) 
-    this.register(LivelySearch)
-    this.register(LivelyOpen)
-    this.register(LivelyBrowse)
-    this.register(LivelyEdit)
-    this.register(CachedRequest)
+    [
+      LivelyFile, 
+      ElementQuery, 
+      ElementQueryAll, 
+      InnerHTMLElementQuery, 
+      LivelySearch,
+      LivelyOpen,
+      LivelyBrowse,
+      LivelyEdit,
+      CachedRequest,
+      StringScheme,
+      NumberScheme,
+      DateScheme,
+      BooleanScheme,
+    ].forEach(scheme => this.register(scheme));
   }
   
   static url(request) {

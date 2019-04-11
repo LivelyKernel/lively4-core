@@ -551,6 +551,24 @@ export default class Container extends Morph {
   }
   
 
+  async updateFavInfo() {
+    const button = this.get('#favorite');
+    const starIcon = button.querySelector('i');
+    
+    if (starIcon.classList.contains('fa-star-o')) {
+      starIcon.classList.add('fa-star');
+      starIcon.classList.remove('fa-star-o');
+    } else {
+      starIcon.classList.add('fa-star-o');
+      starIcon.classList.remove('fa-star');
+    }
+    
+  }
+  
+  async onFavorite() {
+    this.updateFavInfo()
+    lively.notify(this.getPath())
+  }
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
     if (ending !== 'js' && ending !== 'css' && ending !== 'html') {

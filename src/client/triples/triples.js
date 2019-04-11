@@ -161,6 +161,7 @@ export const SAME_AS_URL = DEFAULT_FOLDER_URL + 'same_as.md';
 export const CONTAINS_URL = DEFAULT_FOLDER_URL + 'contains.md';
 
 const ROOT_KNOWLEDGE_BASES_KEY = 'triple-notes-root-knowledge-bases';
+const PREFERRED_KNOWLEDGE_BASE_KEY = 'triple-notes-preferred-knowledge-base';
 
 function isInternalURL(url) {
   const origin = url.origin;
