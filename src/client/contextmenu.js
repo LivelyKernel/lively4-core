@@ -12,6 +12,7 @@ import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
 import * as _ from 'src/external/lodash/lodash.js'
 import Rasterize from 'src/client/rasterize.js'
+import Favorites from "src/client/favorites.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -407,6 +408,25 @@ export default class ContextMenu {
           workspace.mode = "text"
         }],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
+      [
+        "Favorites",
+          Favorites.get().then(urls => {
+            return urls.map(url => [
+              url.replace(/.*\//i, ''), // only files names
+              async evt => {
+                const comp = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600));
+                return comp.editFile(url);
+              },
+              <span click={function (event) {
+                const li = lively.query(this, 'li');
+                if(li) { li.remove(); }
+                event.stopPropagation();
+                Favorites.remove(url);
+              }}><i class="fa fa-close" aria-hidden="true"></i></span>,
+              undefined
+            ]);
+          }), undefined, '<i class="fa fa-star" aria-hidden="true"></i>'
+      ],
       [
         "Parts",
           fetch(lively4url + "/src/parts", {

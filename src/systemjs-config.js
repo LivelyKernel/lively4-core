@@ -139,7 +139,7 @@ SystemJS.config({
     [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
     
     // blacklist all projects included for active expressions
-    [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
+    [lively4url + "/src/client/reactive/*.js"]: liveES7,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
     [lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,

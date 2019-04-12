@@ -5,6 +5,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import Favorites from 'src/client/favorites.js';
 
 import files from "src/client/files.js"
 
@@ -552,22 +553,20 @@ export default class Container extends Morph {
   
 
   async updateFavInfo() {
-    const button = this.get('#favorite');
-    const starIcon = button.querySelector('i');
-    
-    if (starIcon.classList.contains('fa-star-o')) {
+    const starIcon = this.get('#favorite').querySelector('i');
+
+    if (await Favorites.has(this.getPath())) {
       starIcon.classList.add('fa-star');
       starIcon.classList.remove('fa-star-o');
     } else {
       starIcon.classList.add('fa-star-o');
       starIcon.classList.remove('fa-star');
     }
-    
   }
   
   async onFavorite() {
+    await Favorites.toggle(this.getPath());
     this.updateFavInfo()
-    lively.notify(this.getPath())
   }
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
@@ -1440,6 +1439,7 @@ export default class Container extends Morph {
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
+      this.updateFavInfo();
     })
     .catch(function(err){
       console.log("Error: ", err);

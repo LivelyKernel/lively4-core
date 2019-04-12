@@ -4,7 +4,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 import FileIndex from "src/client/fileindex.js"
 
-
 export default class IndexSearch extends Morph {
   initialize() {
     this.windowTitle = "File Search";
@@ -153,7 +152,6 @@ export default class IndexSearch extends Morph {
   async searchFilesList(pattern) {
     this.searchInProgres = true;
     
-
     var search = new RegExp(pattern)
     var result = []
     var searchTime = await lively.time(async () => {

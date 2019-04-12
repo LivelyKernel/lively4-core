@@ -84,26 +84,48 @@ class InjectiveMap {
     return this.leftToRight.get(left);
   }
 
+  hasRightFor(left) {
+    return this.leftToRight.has(left);
+  }
+
+  getOrCreateRightFor(left, constructorCallback) {
+    if (!this.hasRightFor(left)) {
+      this.associate(left, constructorCallback(left));
+    }
+    return this.leftToRight.get(left);
+  }
+
   getLeftFor(right) {
+    return this.rightToLeft.get(right);
+  }
+
+  hasLeftFor(right) {
+    return this.rightToLeft.has(right);
+  }
+
+  getOrCreateLeftFor(right, constructorCallback) {
+    if (!this.hasLeftFor(right)) {
+      this.associate(constructorCallback(right), right);
+    }
     return this.rightToLeft.get(right);
   }
 
 }
 
 class Dependency {
-  static for(obj, prop, hookStorage) {
-    const key = CompositeKey.for(obj, prop);
-    const dependency = hookStorage.dependenciesByCompositeKey.getOrCreate(key, () => {
-      const dep = new Dependency();
-      hookStorage.compositeKeyByDependencies.set(dep, key);
-      return dep;
-    });
-    return dependency;
-  }
   
-  static compositeKeyFor(dependency, hookStorage) {
-    return hookStorage.compositeKeyByDependencies.get(dependency)
-  }
+}
+
+class LocalDependency extends Dependency {
+  
+}
+
+class MemberDependency extends Dependency {
+  
+}
+
+class GlobalDependency extends Dependency {
+  
 }
 
 const DependenciesToAExprs = {
@@ -120,6 +142,7 @@ const DependenciesToAExprs = {
   getDepsForAExpr(aexpr) {
     return Array.from(this.depsToAExprs.getLeftsFor(aexpr));
   },
+  
   /*
    * Removes all associations.
    */
@@ -128,46 +151,15 @@ const DependenciesToAExprs = {
   }
 };
 
-class HookStorage {
-  constructor() {
-    // 1. (obj, prop) -> CompKey
-    // - given via CompKey
-    // 2. CompKey -> Dependency
-    this.dependenciesByCompositeKey = new Map(); // main
-    this.compositeKeyByDependencies = new Map();
-    // 3. Dependency <-> AExpr
-    DependenciesToAExprs
-    // this.dependenciesToAExprs = new BidirectionalMultiMap();
-  }
+// 1. (obj, prop) -> CompositeKey
+// - given via CompositeKey
+// 2. CompositeKey 1<->1 Dependency
+// - membersToDependencies, localsToDependencies
+// 3. Dependency *<->* AExpr
+// - DependenciesToAExprs
 
-  associate(aexpr, obj, prop) {
-    if (!aexpr) {
-      throw new Error('aexpr is undefined');
-    }
-
-    const dependency = Dependency.for(obj, prop, this);
-    // this.dependenciesToAExprs.associate(dependency, aexpr);
-    DependenciesToAExprs.associate(dependency, aexpr);
-  }
-
-  disconnectAll(aexpr) {
-    DependenciesToAExprs.disconnectAllForAExpr(aexpr);
-  }
-
-  getAExprsFor(obj, prop) {
-    const dependency = Dependency.for(obj, prop, this);
-    return DependenciesToAExprs.getAExprsForDep(dependency);
-  }
-
-  getCompKeysFor(aexpr) {
-    return DependenciesToAExprs.getDepsForAExpr(aexpr)
-      .filter(dep => this.compositeKeyByDependencies.has(dep))
-      .map(dependency => Dependency.compositeKeyFor(dependency, this));
-  }
-}
-
-const aexprStorageForMembers = new HookStorage();
-const aexprStorageForLocals = new HookStorage();
+const membersToDependencies = new InjectiveMap();
+const localsToDependencies = new InjectiveMap();
 const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
@@ -211,7 +203,9 @@ class DependencyAPI {
   }
 
   locals() {
-    const compKeys = aexprStorageForLocals.getCompKeysFor(this._aexpr);
+    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
+      .filter(dep => localsToDependencies.hasLeftFor(dep))
+      .map(dependency => localsToDependencies.getLeftFor(dependency));
 
     return compKeys.map(DependencyAPI.compositeKeyToLocal);
   }
@@ -227,7 +221,9 @@ class DependencyAPI {
   }
 
   members() {
-    const compKeys = aexprStorageForMembers.getCompKeysFor(this._aexpr);
+    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
+      .filter(dep => membersToDependencies.hasLeftFor(dep))
+      .map(dependency => membersToDependencies.getLeftFor(dependency));
 
     return compKeys
       .map(DependencyAPI.compositeKeyToMember)
@@ -235,7 +231,9 @@ class DependencyAPI {
   }
 
   globals() {
-    const compKeys = aexprStorageForMembers.getCompKeysFor(this._aexpr);
+    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
+      .filter(dep => membersToDependencies.hasLeftFor(dep))
+      .map(dependency => membersToDependencies.getLeftFor(dependency));
 
     const globals = [];
     compKeys.forEach(compKey => {
@@ -266,8 +264,7 @@ class DependencyManager {
   }
 
   static disconnectAllFor(aexpr) {
-    aexprStorageForMembers.disconnectAll(aexpr);
-    aexprStorageForLocals.disconnectAll(aexpr);
+    DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
 
   /**
@@ -276,7 +273,9 @@ class DependencyManager {
    * **************************************************************
    */
   static associateMember(obj, prop) {
-    aexprStorageForMembers.associate(this.currentAExpr, obj, prop);
+    const key = CompositeKey.for(obj, prop);
+    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
   static associateGlobal(globalName) {
@@ -284,7 +283,9 @@ class DependencyManager {
   }
 
   static associateLocal(scope, varName) {
-    aexprStorageForLocals.associate(this.currentAExpr, scope, varName);
+    const key = CompositeKey.for(scope, varName);
+    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
   /**
@@ -293,7 +294,9 @@ class DependencyManager {
    * **************************************************************
    */
   static memberUpdated(obj, prop) {
-    const aexprs = aexprStorageForMembers.getAExprsFor(obj, prop);
+    const key = CompositeKey.for(obj, prop);
+    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const aexprs = DependenciesToAExprs.getAExprsForDep(dependency);
     this.checkAndNotifyAExprs(aexprs);
   }
 
@@ -302,7 +305,9 @@ class DependencyManager {
   }
 
   static localUpdated(scope, varName) {
-    const affectedAExprs = aexprStorageForLocals.getAExprsFor(scope, varName);
+    const key = CompositeKey.for(scope, varName);
+    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const affectedAExprs = DependenciesToAExprs.getAExprsForDep(dependency);
     this.checkAndNotifyAExprs(affectedAExprs);
   }
 

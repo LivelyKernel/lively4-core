@@ -282,6 +282,23 @@ extend(Array.prototype, {
     return _.zip(this, ...arrays);
   },
   
+  /**
+   * A generator yielding all items in this array. For propagating.
+   * @example <caption>Propagating yield* statements to items.</caption>
+   * function* example(arr) {
+   *   yield* arr.yieldAll();
+   * }
+   *
+   * for (let item of example([1,2,3])) {
+   *   lively.notify(item);
+   * }
+   */
+  *yieldAll() {
+    for (let item of this) {
+      yield item;
+    }
+  }
+
 });
 
 
