@@ -76,6 +76,7 @@ export default class Separator extends Morph {
   }
 
   setWidth(element, w) {
+    
     if (!element) return
     var flex = this.getOriginalFlex(element)
 
@@ -93,6 +94,16 @@ export default class Separator extends Morph {
         this.setFlex(element, flex)
       } else {
         this.setFlex(element, newFlex)
+        var newWidth = element.getBoundingClientRect().width
+        if (Math.abs(w - newWidth) > 10) {
+            // try again...  
+            newFlex = w / newWidth * this.getFlex(element)
+            // console.log('TRY AGAIN ', w, newWidth , " -> " + newFlex + "flex")
+            
+            this.setFlex(element, newFlex)
+        }
+        
+        
       }
     } else {
       element.style.width = w + "px";
@@ -160,14 +171,14 @@ export default class Separator extends Morph {
     if (force || this.getOriginalFlex(prev) === undefined) {
       this.setOriginalFlex(prev, this.getFlex(prev))
     }
-    if (force ||this.getOriginalFlex(next) === undefined) {
+    if (force || this.getOriginalFlex(next) === undefined) {
       this.setOriginalFlex(next, this.getFlex(next))
     }
 
-    if (force ||this.getOriginalLength(prev) === undefined) {
+    if (force || this.getOriginalLength(prev) === undefined) {
       this.setOriginalLength(prev, this.getLength(prev))
     }
-    if (force ||this.getOriginalLength(next) === undefined) {
+    if (force || this.getOriginalLength(next) === undefined) {
       this.setOriginalLength(next, this.getLength(next))
     }
   }
@@ -183,9 +194,16 @@ export default class Separator extends Morph {
     
     this.rememberOriginals()
     
-    if (this.lastPrevLength) {
-      this.setLength(prev, this.lastPrevLength);
-      this.setLength(next, this.lastNextLength);
+    var prevLength = this.getLength(prev);
+    if (this.lastPrevLength || prevLength < 2) {
+      if (!this.lastPrevLength) {
+        var newPrevLength = 200
+        this.setLength(prev, newPrevLength);
+        this.setLength(next, this.getLength(next));                
+      } else {
+        this.setLength(prev, this.lastPrevLength);
+        this.setLength(next, this.lastNextLength);        
+      }
       delete this.lastPrevLength
       delete this.lastNextLength;
     } else {
@@ -218,6 +236,9 @@ export default class Separator extends Morph {
       
     var newNext = this.getOriginalLength(next) - delta
     var newPrev = this.getOriginalLength(prev) + delta
+    
+    // console.log("drag ",newNext, newPrev )
+    
     
     // 2. constrain new values
     if (newPrev < 0) {
