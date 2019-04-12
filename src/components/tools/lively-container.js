@@ -1130,8 +1130,7 @@ export default class Container extends Morph {
 
   getLivelyCodeMirror() {
     var livelyEditor = this.get('lively-editor');
-    if (!livelyEditor) return;
-    return livelyEditor.get('#editor');
+    return livelyEditor && livelyEditor.get && livelyEditor.get('#editor');
   }
 
   // #TODO replace this with asyncGet

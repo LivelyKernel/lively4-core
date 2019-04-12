@@ -1,11 +1,17 @@
-<template id="lively-generic-search" >
+f<template id="lively-generic-search" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  background-color: beige;
-  
-}
+  :host {
+    opacity: 0.9;
+    z-index: 1000;
+    background-color: PowderBlue;
+    border: 1px solid gray;
+    box-shadow: 10px 10px 6px 2px rgba(0, 0, 0, .2);
+  }
+  input {
+    width: calc(100% - 5px);
+  }
   #outer {
     background-color: beige;
     border: 1px solid blue;
@@ -16,11 +22,14 @@
     background-color: red;
     border: 1px solid green;
   }
+  .item.selected {
+    background-color: steelblue;
+    color: ivory;
+  }
 </style>
-  <div id='outer'>
-    <div id='inner'>
-      <input id='input' type='text' placeholder='search modifiers and terms'/>
-    </div>
+  <input id='input' type='text' placeholder='search modifiers and terms'/>
+  <div id='list'>
+    
   </div>
 </template>
 
