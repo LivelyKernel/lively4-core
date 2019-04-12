@@ -109,10 +109,10 @@ export default class Separator extends Morph {
       element.style.width = w + "px";
     }
   }
-
+  
   getFlex(element) {
     if (!element) return 0
-    return parseFloat(getComputedStyle(element).flexGrow)
+    return parseFloat(getComputedStyle(element).flexGrow) 
   }
 
   setFlex(element, f) {
@@ -121,7 +121,7 @@ export default class Separator extends Morph {
       f = 0.0001; // we cannot distinguish between flex and not flex otherwise...
     }
     if (!element) return
-    element.style.flex = f
+    element.style.flex = f 
   }
 
   getLength(element) {
@@ -270,12 +270,12 @@ export default class Separator extends Morph {
     a.id = "red"
     a.style.backgroundColor = "red"
     a.textContent = "a"
-    a.style.flex = 0.2
+    a.style.flex = 20
     var b = document.createElement("div")
     b.style.backgroundColor = "blue"
     b.id = "blue"
     b.textContent = "b"
-    b.style.flex = 0.8
+    b.style.flex = 80
     var c = document.createElement("div")
     this.parentElement.appendChild(c)
     c.style.display = "flex"
