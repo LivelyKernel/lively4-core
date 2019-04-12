@@ -100,6 +100,12 @@ export default class Keys {
         ["Hide Search Widget", keyCode == 27, evt => {
           lively.hideSearchWidget();
         }], 
+        // #KeyboardShortcut Ctrl-Alt-L open generic search widget
+        ["Generic Search Widget", ctrl && altKey && char == "L", async evt => {
+          const search = document.body.querySelector('lively-generic-search') || await lively.create('lively-generic-search');
+          document.body.appendChild(search);
+          search.init();
+        }],
         ["Do It", ctrl && !altKey && char == "D", evt => {
           if (handledInCodeMirror(evt)) {
             return; // code mirror does not stop it's propagation
