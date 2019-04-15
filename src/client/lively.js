@@ -912,7 +912,7 @@ export default class Lively {
     var container = document.querySelector('main-content')
     if (container) return container;
 
-    container = document.createElement("lively-container");
+    container = await lively.create("lively-container");
     container.id = 'main-content';
     container.setAttribute("load", "auto");
 
