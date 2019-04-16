@@ -401,7 +401,6 @@ export default class ComponentLoader {
           }
         })
         if (unfinished) {
-          debugger
           resolve("timeout") // "(if) the fuel gauge breaks, call maintenance. If they are not there in 20 minutes, fuck it."
           console.warn("Timout due to unresolved promises, while loading " + unfinishedPromise.name + " context: " + debuggingHint, " unresolved: " + Array.from(__debugOpenPromisedComponents).join(", ") )
         }
