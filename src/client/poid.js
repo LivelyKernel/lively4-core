@@ -1,25 +1,30 @@
 /* Polymorphic Identifier */
 
 import FileIndex from 'src/client/fileindex.js'
-var FileCache = FileIndex 
+var FileCache = FileIndex;
 
-export class ObjectResponse {
+export class ValueResponse {
  
-  constructor(result, { status = 200 } = {}) {
-    this.result = result;
+  constructor(value, { status = 200 } = {}) {
+    this._value = value;
     this.status = status;
   }
   
   async object() {
-    return this.result
+    return this._value;
+  }
+  
+  async value() {
+    return this._value;
   }
   
   async text() {
-    return ""
+    return '' + this._value;
   }
 
   async json() {
-    return this.text().then(t => JSON.parse(t))  
+    const jsonString = JSON.stringify(await this.value());
+    return JSON.parse(jsonString);
   }
 
   async blob() {
@@ -280,7 +285,7 @@ export class LivelyOpen extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -320,7 +325,7 @@ export class LivelyBrowse extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -357,7 +362,7 @@ export class LivelyEdit extends LivelyBrowse {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -446,7 +451,7 @@ export class ElementQuery extends Scheme {
   GET(options) {
     var element = this.element
     if (element) {
-      return new ObjectResponse(element, {status: 200});
+      return new ValueResponse(element, {status: 200});
     }
     return super.GET(options)
   }
@@ -517,7 +522,7 @@ export class ElementQueryAll extends Scheme {
   
   GET(options) {
     if (this.elements) {
-      return new ObjectResponse(this.elements, {status: 200});
+      return new ValueResponse(this.elements, {status: 200});
     }
     return super.GET(options)
   }
@@ -555,43 +560,10 @@ export class InnerHTMLElementQuery extends ElementQuery {
  
 }
 
-export class ValueResponse {
- 
-  constructor(value, { status = 200 } = {}) {
-    this._value = value;
-    this.status = status;
-  }
-  
-  // #TODO: remove in favor of .value?
-  async object() {
-    return this.value();
-  }
-  
-  async value() {
-    return this._value;
-  }
-  
-  async text() {
-    return '' + this._value;
-  }
-
-  async json() {
-    const jsonString = JSON.stringify(await this.value());
-    return JSON.parse(jsonString);
-  }
-
-  async blob() {
-    throw new Error("blob not supported")
-  }
-}
-
 export class StringScheme extends Scheme {
 
   get scheme() { return "string"; }
-
-  resolve() {
-    return true;
-  }
+  resolve() { return true; }
 
   GET(options) {
     const string = new URL(this.url).pathname;
@@ -603,10 +575,7 @@ export class StringScheme extends Scheme {
 export class NumberScheme extends Scheme {
 
   get scheme() { return "number"; }
-
-  resolve() {
-    return true;
-  }
+  resolve() { return true; }
 
   GET(options) {
     const content = new URL(this.url).pathname;
@@ -618,14 +587,11 @@ export class NumberScheme extends Scheme {
 export class DateScheme extends Scheme {
 
   get scheme() { return "date"; }
-
-  resolve() {
-    return true;
-  }
+  resolve() { return true; }
 
   GET(options) {
     const content = new URL(this.url).pathname;
-    return new Response(content, {status: 200})      
+    return new ValueResponse(new Date(parseInt(content)), {status: 200})      
   }
 
 }
@@ -633,17 +599,11 @@ export class DateScheme extends Scheme {
 export class BooleanScheme extends Scheme {
 
   get scheme() { return "bool"; }
-
-  resolve() {
-    return true;
-  }
+  resolve() { return true; }
 
   GET(options) {
-    
     const content = new URL(this.url).pathname;
-    return new Response(content, {status: 200})
-    
-    return super.GET(options)
+    return new ValueResponse(content === 'true' ? true : false, {status: 200})
   }
 
 }
