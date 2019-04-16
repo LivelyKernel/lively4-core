@@ -93,7 +93,7 @@ describe('Poid', () => {
 
       it('returns a date as json', async function() {
         const json = await fetch(urlString).then(r => r.json());
-        expect(json).to.equal('2018-01-01T19:15:45.000Z');
+        expect(json).to.equal(JSON.parse(JSON.stringify(expected)));
       });
 
     });
