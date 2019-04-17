@@ -160,6 +160,7 @@ export default class Container extends Morph {
   }
 
   hideCancelAndSave() {
+    return;
     _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
@@ -171,6 +172,7 @@ export default class Container extends Morph {
   }
 
   showCancelAndSave() {
+    return;
     _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
@@ -564,6 +566,13 @@ export default class Container extends Morph {
     }
   }
   
+  async onToggleOptions() {
+    if (this.classList.contains('show-options')) {
+      this.classList.remove('show-options');
+    } else {
+      this.classList.add('show-options');
+    }
+  }
   async onFavorite() {
     await Favorites.toggle(this.getPath());
     this.updateFavInfo()
