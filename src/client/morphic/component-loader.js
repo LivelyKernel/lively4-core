@@ -4,6 +4,10 @@ import Morph from "src/components/widgets/lively-morph.js";
 import {pt} from '../graphics.js';
 import { through } from "utils";
 
+import files from "../files.js"
+
+
+
 // import html from "scr/client/html.js"
 
 // store promises of loaded and currently loading templates
@@ -30,6 +34,14 @@ var _log = function(...args) {
     console.log("ComponentLoader ",...args)
   }
 }
+
+var _timeEnabled = true
+var _timeLog = function(name, msg, ...args) {
+  if (_timeEnabled) {
+    console.log("[component] " + name + " " + Math.round(performance.now() - _templateFirstLoadTimes[name]) +"ms "+ msg, ...args)
+  }
+}
+
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -78,31 +90,6 @@ export default class ComponentLoader {
 
   static async onCreatedCallback(object, componentName) {
     _log('onCreatedCallback ' + componentName)
-    // if (persistence.isCurrentlyCloning()) {
-    //   return;
-    // }
-    
-    // if (componentName == "lively-code-mirror") {
-    //   debugger
-    // }
-
-//     if (!object.shadowRoot) {
-//     // #Deprecation
-//       // Element.createShadowRoot is deprecated and will be removed in M73, around March 2019. Please use Element.attachShadow instead. See https://www.chromestatus.com/features/4507242028072960 
-//       var shadow = object.createShadowRoot();
-//       // #NotWorkingYet as expected...
-//       // var shadow = object.attachShadow({mode: 'open'});
-
-//       // clone the template again, so when more elements are created,
-//       // they get their own copy of elements
-//       var clone = document.importNode(ComponentLoader.templates[componentName], true);
-//       // #TODO replace the "template" reference with an indirection that can be changed from the outside,
-//       // e.g. var clone = document.importNode(this.templates[componentName], true);
-//       // but beeing able to modify it, because we have a reference should suffice at the moment...
-
-//       shadow.appendChild(clone);
-//     }
-
       
     // attach lively4scripts from the shadow root to this
     scriptManager.attachScriptsFromShadowDOM(object);
@@ -136,7 +123,7 @@ export default class ComponentLoader {
         _log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
         _templateFirstLoadTimes[componentName] = null;
       }
-      _log("LOADER fire created " + componentName)
+      _log("[component loader] fire created " + componentName)
       object._lively4created = Date.now()
       object.dispatchEvent(new Event("created")); // when we wait on other unresolved components, we can run into cyclic dependencies.... #Cyclic
     }).catch( e => {
@@ -154,11 +141,6 @@ export default class ComponentLoader {
     
     _log("onAttachedCallback " + componentName)
     
-    // if (ComponentLoader.proxies[componentName]) {
-    //   console.log("[component loader] WARNING: no proxy for " + componentName )
-    //   return 
-    // }
-
     if (object.attachedCallback && 
       ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
         object.attachedCallback.call(object);
@@ -172,11 +154,6 @@ export default class ComponentLoader {
     if (this._livelyLoading) {
       await this._livelyLoading
     }
-    
-    // if (ComponentLoader.proxies[componentName]) {
-    //   console.log("[component loader] WARNING: no proxy for " + componentName )
-    //   return 
-    // }
     
     if (object.detachedCallback 
     && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
@@ -204,7 +181,7 @@ export default class ComponentLoader {
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
   static async register(componentName, template, aClass) { 
-    _log("LOADER register " + componentName)
+    _log("[component loader] register " + componentName)
     var proxy
     
     // For reflection and debugging
@@ -212,7 +189,7 @@ export default class ComponentLoader {
     this.prototypes[componentName] = aClass;
     
     if (template) {
-      _log("LOADER register fillTemplateStyles: " + componentName)
+      _log("[component loader] register fillTemplateStyles: " + componentName)
       await lively.fillTemplateStyles(template, "source: " + componentName)
     }
     
@@ -227,7 +204,7 @@ export default class ComponentLoader {
         }
         
         constructor() {
-          _log("LOADER Proxy Constructor " + componentName)
+          _log("[component loader] Proxy Constructor " + componentName)
     
           super(); // always call super() first in the constructor.
           
@@ -269,7 +246,7 @@ export default class ComponentLoader {
       //       proxy.__proto__ = aClass
       //       proxy.prototype.__proto__ = aClass.prototype
       
-      _log("LOADER define component: " + componentName)
+      _log("[component loader] define component: " + componentName)
       window.customElements.define(componentName, proxy); // #WebComponent #Magic
       this.proxies[componentName] =  proxy
     } else {
@@ -419,12 +396,12 @@ export default class ComponentLoader {
   }
 
   static async getTemplatePathContent(path) {
-    // return  await fetch(path, { method: 'OPTIONS' }).then(resp => resp.json());
     
     if (!_templatePathsCache) {
       _templatePathsCache = {}
       _templatePathsCacheTime = {}
-    } 
+    }
+    
     let cacheInvalidationTime = 60 * 5 * 1000;
     let cached = _templatePathsCache[path]
     let time = _templatePathsCacheTime[path]
@@ -520,29 +497,33 @@ export default class ComponentLoader {
   
   // #TODO use loadingPromises here... #Issue, as we used it in livley.js directly, we loaded lively-window in parralel... 
   static async loadByName(name) {
-    _log("LOADER loadByName " + name)
+    _log("[component loader] loadByName " + name)
     
     _templateFirstLoadTimes[name] = performance.now()
     var modUrl = await this.searchTemplateFilename(name + '.js')
     if (!modUrl) {
       throw new Error("Could not find template for " + name)
     }
+    _timeLog(name, " found module filename")
     
     var templateURL = await this.searchTemplateFilename(name + '.html')
-   
+    _timeLog(name, " found template filename")
+    
     // Check  if the template will be loadable (this would e.g. fail if we were offline without cache)
     // We have to check this before inserting the link tag because otherwise we will have
     // the link tag even though the template was not properly loaded
     try {
-      let response = await fetch(modUrl, { method: 'OPTIONS'});
-      if(response.ok) {
+      if(files.exists(modUrl)) {
+        _timeLog(name, "module exists")
         var mod = await System.import(modUrl)
+        _timeLog(name, "module loaded")
         var aClass = mod.default
         
         if (templateURL) {
-          let templateResponse = await fetch(templateURL, { method: 'OPTIONS'});
-          if(templateResponse.ok) {
+          if(files.exists(templateURL)) {
+            _timeLog(name, "template exits")
             var templateSource = await fetch(templateURL).then(r => r.text());
+            _timeLog(name, "template loaded")
             var div = document.createElement("div")
             div.innerHTML = templateSource
             var template = div.querySelector("template")
@@ -550,6 +531,7 @@ export default class ComponentLoader {
           }          
         }
         this.register(name, template.content, aClass)
+        _timeLog(name, "registered")
         return true;
       } else {
         return false;
