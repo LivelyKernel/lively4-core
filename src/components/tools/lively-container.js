@@ -28,6 +28,11 @@ export default class Container extends Morph {
     // files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
     //   this.shadowRoot.querySelector("#livelySt\yle").innerHTML = css
     // })
+    if (!this.getAttribute("mode")) {
+      this.setAttribute("mode", "show")
+    }
+    
+    
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
