@@ -8,10 +8,13 @@ import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-ex
 import * as frameBasedAExpr from "active-expression-frame-based";
 import * as tickingAExpr from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 
-import { countBy } from 'utils';
-
 describe('Reflection API', () => {
 
+  /**
+   * **************************************************************
+   * ****************** meta information **************************
+   * **************************************************************
+   */
   describe('meta information', () => {
 
     it('set and read a property', () => {
@@ -53,6 +56,11 @@ describe('Reflection API', () => {
 
   });
 
+  /**
+   * **************************************************************
+   * ******************** dependencies ****************************
+   * **************************************************************
+   */
   describe('dependencies', () => {
 
     describe('supportsDependencies', () => {
@@ -77,11 +85,11 @@ describe('Reflection API', () => {
 
     });
 
-    describe('getDependencies', () => {
+    describe('dependencies', () => {
 
-      it('getDependencies is defined for Rewriting AExprs', () => {
+      it('dependencies is defined for Rewriting AExprs', () => {
         const expr = aexpr(() => {});
-        expect(expr).to.respondTo('getDependencies');
+        expect(expr).to.respondTo('dependencies');
       });
 
       it('get a local dependency', () => {
@@ -91,7 +99,7 @@ describe('Reflection API', () => {
         
         x = 42;
 
-        const deps = expr.getDependencies();
+        const deps = expr.dependencies();
         expect(deps.locals()).to.have.lengthOf(1);
         expect(deps.locals()[0]).to.have.property('name', 'x');
         expect(deps.locals()[0]).to.have.property('value', 42);
@@ -103,7 +111,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => x + y);
         
-        const deps = expr.getDependencies();
+        const deps = expr.dependencies();
         expect(deps.locals()).to.have.lengthOf(2);
         expect(deps.locals()[0]).to.have.property('name', 'x');
         expect(deps.locals()[0]).to.have.property('value', 17);
@@ -114,7 +122,7 @@ describe('Reflection API', () => {
         x = 42;
         y = 42;
 
-        const deps2 = expr.getDependencies();
+        const deps2 = expr.dependencies();
         expect(deps2.locals()).to.have.lengthOf(2);
         expect(deps2.locals()[0]).to.have.property('name', 'x');
         expect(deps2.locals()[0]).to.have.property('value', 42);
@@ -130,7 +138,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => x ? 42 : y);
         
-        const deps = expr.getDependencies();
+        const deps = expr.dependencies();
         expect(deps.locals()).to.have.lengthOf(2);
         expect(deps.locals()[0]).to.have.property('name', 'x');
         expect(deps.locals()[0]).to.have.property('value', false);
@@ -140,7 +148,7 @@ describe('Reflection API', () => {
 
         x = true;
 
-        const deps2 = expr.getDependencies();
+        const deps2 = expr.dependencies();
         expect(deps2.locals()).to.have.lengthOf(1);
         expect(deps2.locals()[0]).to.have.property('name', 'x');
         expect(deps2.locals()[0]).to.have.property('value', true);
@@ -155,7 +163,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => obj.x);
 
-        const memberDeps = expr.getDependencies().members();
+        const memberDeps = expr.dependencies().members();
         expect(memberDeps).to.have.lengthOf(1);
         expect(memberDeps[0]).to.have.property('object', obj);
         expect(memberDeps[0]).to.have.property('property', 'x');
@@ -167,7 +175,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => obj.x.y);
 
-        const memberDeps = expr.getDependencies().members();
+        const memberDeps = expr.dependencies().members();
         expect(memberDeps).to.have.lengthOf(2);
         expect(memberDeps[0]).to.have.property('object', obj);
         expect(memberDeps[0]).to.have.property('property', 'x');
@@ -187,7 +195,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => obj.get());
 
-        const memberDeps = expr.getDependencies().members();
+        const memberDeps = expr.dependencies().members();
         expect(memberDeps).to.have.lengthOf(2);
         expect(memberDeps[0]).to.have.property('object', obj);
         expect(memberDeps[0]).to.have.property('property', 'get');
@@ -206,7 +214,7 @@ describe('Reflection API', () => {
         
         const expr = aexpr(() => useWidth ? rect.width : rect.height);
 
-        const depsForWidth = expr.getDependencies().members();
+        const depsForWidth = expr.dependencies().members();
         expect(depsForWidth).to.have.lengthOf(1);
         expect(depsForWidth[0]).to.have.property('object', rect);
         expect(depsForWidth[0]).to.have.property('property', 'width');
@@ -214,7 +222,7 @@ describe('Reflection API', () => {
         
         useWidth = false;
 
-        const memberDeps = expr.getDependencies().members();
+        const memberDeps = expr.dependencies().members();
         expect(memberDeps).to.have.lengthOf(1);
         expect(memberDeps[0]).to.have.property('object', rect);
         expect(memberDeps[0]).to.have.property('property', 'height');
@@ -233,8 +241,8 @@ describe('Reflection API', () => {
           temp = undefined;
         });
         
-        it('getDependencies is defined for Rewriting AExprs', () => {
-          const deps = aexpr(() => {}).getDependencies();
+        it('dependencies is defined for Rewriting AExprs', () => {
+          const deps = aexpr(() => {}).dependencies();
           expect(deps).to.respondTo('globals');
           expect(deps.globals()).to.be.an('array');
         });
@@ -244,10 +252,10 @@ describe('Reflection API', () => {
 
           const expr = aexpr(() => foo);
 
-          const memberDeps = expr.getDependencies().members();
+          const memberDeps = expr.dependencies().members();
           expect(memberDeps).to.have.lengthOf(0);
           
-          const globalDeps = expr.getDependencies().globals();
+          const globalDeps = expr.dependencies().globals();
           expect(globalDeps).to.have.lengthOf(1);
           expect(globalDeps[0]).to.have.property('name', 'foo');
           expect(globalDeps[0]).to.have.property('value', 200);
@@ -257,7 +265,11 @@ describe('Reflection API', () => {
       
     });
 
-    // All.AExpr
+    /**
+     * **************************************************************
+     * **************** all Active Expression ***********************
+     * **************************************************************
+     */
     describe('track all undisposed AExprs', () => {
 
       describe('`allAsArray`', () => {

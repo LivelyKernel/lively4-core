@@ -26,106 +26,64 @@ class ExpressionAnalysis {
   }
 }
 
+
 import CompositeKey from './composite-key.js';
+import InjectiveMap from './injective-map.js';
+import BidirectionalMultiMap from './bidirectional-multi-map.js';
 
-class BidirectionalMultiMap {
-
-  constructor() {
-    this.leftToRight = new Map();
-    this.rightToLeft = new Map();
-  }
-  
-  associate(left, right) {
-    this.getRightsFor(left).add(right);
-    this.getLeftsFor(right).add(left);
-  }
-  
-  remove(left, right) {
-    this.getRightsFor(left).delete(right);
-    this.getLeftsFor(right).delete(left);
-  }
-
-  removeAllRightFor(left) {
-    this.getRightsFor(left).forEach(right => this.remove(left, right));
-  }
-
-  removeAllLeftFor(right) {
-    this.getLeftsFor(right).forEach(left => this.remove(left, right));
-  }
-
-  clear() {
-    this.leftToRight.clear();
-    this.rightToLeft.clear();
-  }
-
-  getRightsFor(left) {
-    return this.leftToRight.getOrCreate(left, () => new Set());
-  }
-
-  getLeftsFor(right) {
-    return this.rightToLeft.getOrCreate(right, () => new Set());
-  }
-
-}
-
-class InjectiveMap {
-
-  constructor() {
-    this.leftToRight = new Map();
-    this.rightToLeft = new Map();
-  }
-  
-  associate(left, right) {
-    this.leftToRight.set(left, right);
-    this.rightToLeft.set(right, left);
-  }
-  
-  getRightFor(left) {
-    return this.leftToRight.get(left);
-  }
-
-  hasRightFor(left) {
-    return this.leftToRight.has(left);
-  }
-
-  getOrCreateRightFor(left, constructorCallback) {
-    if (!this.hasRightFor(left)) {
-      this.associate(left, constructorCallback(left));
-    }
-    return this.leftToRight.get(left);
-  }
-
-  getLeftFor(right) {
-    return this.rightToLeft.get(right);
-  }
-
-  hasLeftFor(right) {
-    return this.rightToLeft.has(right);
-  }
-
-  getOrCreateLeftFor(right, constructorCallback) {
-    if (!this.hasLeftFor(right)) {
-      this.associate(constructorCallback(right), right);
-    }
-    return this.rightToLeft.get(right);
-  }
-
-}
+const dependencyCompositeKey = new CompositeKey();
 
 class Dependency {
-  
-}
+  constructor(type) {
+    this.type = type;
+  }
 
-class LocalDependency extends Dependency {
-  
-}
+  isMemberDependency() {
+    return this.type === 'member' && !this.isGlobal();
+  }
+  isGlobalDependency() {
+    return this.type === 'member' && this.isGlobal();
+  }
+  isLocalDependency() {
+    return this.type === 'local';
+  }
+  isGlobal() {
+    const compKey = membersToDependencies.getLeftFor(this);
+    if (!compKey) {
+      return false;
+    }
+    const [object] = dependencyCompositeKey.keysFor(compKey);
+    return object === self;
+  }
 
-class MemberDependency extends Dependency {
-  
-}
-
-class GlobalDependency extends Dependency {
-  
+  getAsDependencyDescription() {
+    if (this.isMemberDependency()) {
+      const compKey = membersToDependencies.getLeftFor(this);
+      const [object, property] = dependencyCompositeKey.keysFor(compKey);
+      return {
+        object,
+        property,
+        value: object !== undefined ? object[property] : undefined
+      };
+    } else if (this.isGlobalDependency()) {
+      const compKey = membersToDependencies.getLeftFor(this);
+      const [object, name] = dependencyCompositeKey.keysFor(compKey);
+      return {
+        name,
+        value: object[name]
+      };
+    } else if (this.isLocalDependency()) {
+      const compKey = localsToDependencies.getLeftFor(this);
+      const [scope, name] = dependencyCompositeKey.keysFor(compKey);
+      return {
+        scope,
+        name,
+        value: scope !== undefined ? scope[name] : undefined
+      };
+    } else {
+      throw new Error('Dependency is neighter local, member, nor global.');
+    }
+  }
 }
 
 const DependenciesToAExprs = {
@@ -151,9 +109,9 @@ const DependenciesToAExprs = {
   }
 };
 
-// 1. (obj, prop) -> CompositeKey
-// - given via CompositeKey
-// 2. CompositeKey 1<->1 Dependency
+// 1. (obj, prop) -> dependencyCompositeKey
+// - given via dependencyCompositeKey
+// 2. dependencyCompositeKey 1<->1 Dependency
 // - membersToDependencies, localsToDependencies
 // 3. Dependency *<->* AExpr
 // - DependenciesToAExprs
@@ -182,7 +140,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
     return true;
   }
 
-  getDependencies() {
+  dependencies() {
     return new DependencyAPI(this);
   }
 }
@@ -191,62 +149,27 @@ class DependencyAPI {
   constructor(aexpr) {
     this._aexpr = aexpr;
   }
-
-  static compositeKeyToLocal(compKey) {
-    // #TODO: refactor
-    const [scope, name] = CompositeKey.keysFor(compKey);
-    return {
-      scope,
-      name,
-      value: scope !== undefined ? scope[name] : undefined
-    };
+  
+  getDependencies() {
+    return DependenciesToAExprs.getDepsForAExpr(this._aexpr);
   }
 
   locals() {
-    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
-      .filter(dep => localsToDependencies.hasLeftFor(dep))
-      .map(dependency => localsToDependencies.getLeftFor(dependency));
-
-    return compKeys.map(DependencyAPI.compositeKeyToLocal);
-  }
-
-  static compositeKeyToMember(compKey) {
-    // #TODO: refactor
-    const [object, property] = CompositeKey.keysFor(compKey);
-    return {
-      object,
-      property,
-      value: object !== undefined ? object[property] : undefined
-    };
+    return this.getDependencies()
+      .filter(dependency => dependency.isLocalDependency())
+      .map(dependency => dependency.getAsDependencyDescription());
   }
 
   members() {
-    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
-      .filter(dep => membersToDependencies.hasLeftFor(dep))
-      .map(dependency => membersToDependencies.getLeftFor(dependency));
-
-    return compKeys
-      .map(DependencyAPI.compositeKeyToMember)
-      .filter(member => member.object !== self);
+    return this.getDependencies()
+      .filter(dependency => dependency.isMemberDependency())
+      .map(dependency => dependency.getAsDependencyDescription());
   }
 
   globals() {
-    const compKeys = DependenciesToAExprs.getDepsForAExpr(this._aexpr)
-      .filter(dep => membersToDependencies.hasLeftFor(dep))
-      .map(dependency => membersToDependencies.getLeftFor(dependency));
-
-    const globals = [];
-    compKeys.forEach(compKey => {
-      const [object, name] = CompositeKey.keysFor(compKey);
-      if (object === self) {
-        globals.push({
-          name,
-          value: object[name]
-        });
-      }
-    });
-
-    return globals;
+    return this.getDependencies()
+      .filter(dependency => dependency.isGlobalDependency())
+      .map(dependency => dependency.getAsDependencyDescription());
   }
 }
 
@@ -273,8 +196,8 @@ class DependencyManager {
    * **************************************************************
    */
   static associateMember(obj, prop) {
-    const key = CompositeKey.for(obj, prop);
-    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const key = dependencyCompositeKey.for(obj, prop);
+    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency('member'));
     DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
@@ -283,8 +206,8 @@ class DependencyManager {
   }
 
   static associateLocal(scope, varName) {
-    const key = CompositeKey.for(scope, varName);
-    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const key = dependencyCompositeKey.for(scope, varName);
+    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency('local'));
     DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
@@ -294,8 +217,8 @@ class DependencyManager {
    * **************************************************************
    */
   static memberUpdated(obj, prop) {
-    const key = CompositeKey.for(obj, prop);
-    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const key = dependencyCompositeKey.for(obj, prop);
+    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency('member'));
     const aexprs = DependenciesToAExprs.getAExprsForDep(dependency);
     this.checkAndNotifyAExprs(aexprs);
   }
@@ -305,8 +228,8 @@ class DependencyManager {
   }
 
   static localUpdated(scope, varName) {
-    const key = CompositeKey.for(scope, varName);
-    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency());
+    const key = dependencyCompositeKey.for(scope, varName);
+    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency('local'));
     const affectedAExprs = DependenciesToAExprs.getAExprsForDep(dependency);
     this.checkAndNotifyAExprs(affectedAExprs);
   }
@@ -314,6 +237,7 @@ class DependencyManager {
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs) {
     aexprs.forEach(aexpr => {
+      // #TODO: compute diff of Dependencies
       this.disconnectAllFor(aexpr);
       ExpressionAnalysis.check(aexpr);
     });
@@ -331,7 +255,7 @@ class DependencyManager {
  */
 export function reset() {
   DependenciesToAExprs.clear();
-  CompositeKey.clear();
+  dependencyCompositeKey.clear();
 }
 
 /**
