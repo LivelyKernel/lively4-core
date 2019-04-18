@@ -74,6 +74,13 @@ async function logTime(msg, exec) {
 
 async function invalidateFileCaches()  {
   Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
+ await logTime("initialize fileInfoDB", async () => {
+    fileInfoDB = new Dexie("fileInfoDB");
+    fileInfoDB.version("1").stores({
+      files: 'url, modified, version',
+    }).upgrade(function () { })
+  })
+  
   if (self.lively4useTranspilationCache) {
     await logTime("initialize transpilation cache", async () => {
       self.lively4transpilationCacheDB = new Dexie("transpilationCache");
@@ -93,12 +100,7 @@ async function invalidateFileCaches()  {
       })
     }) 
     
-    await logTime("initialize fileInfoDB", async () => {
-      fileInfoDB = new Dexie("fileInfoDB");
-      fileInfoDB.version("1").stores({
-        files: 'url, modified, version',
-      }).upgrade(function () { })
-    })
+   
   }
   var offlineFirstCache
   var json
@@ -157,6 +159,7 @@ async function invalidateFileCaches()  {
   var start = performance.now()
   var filelist = []
   
+  
   fileInfoDB.transaction("rw", ["files"], async () => {
     await Promise.all(list.map(async ea => {
       if (!ea.name) return
@@ -188,11 +191,39 @@ async function invalidateFileCaches()  {
       }
     }))
   })
+  
   await lively4fillCachedFileMap(filelist)
   console.log("[boot] invalidateFileCaches: cache invalidation for loop in " + (performance.now() - start) 
               + "ms, in cache  " + found + " files, " 
               + "ignored" + ignored +" files, deleted " + invalidated + " files")
 }
+
+async function preloadFileCaches() {
+  var fileCacheURL = lively4url + "/bootfilelist.json"
+  try {
+    var filelist = await fetch(fileCacheURL).then(r => r.json())  
+  } catch(e) {
+    console.warn("could not load bootfilelist, continue anyway...")
+    return
+  }
+  
+  urllist = filelist.map(ea => lively4url + "/" + ea)
+
+  var uncachedFiles = urllist.filter(ea => !lively4cacheFiles.get(ea))
+  
+  var bootingMessageUI = document.querySelector("#lively-booting-message")
+  var count = 0
+  return Promise.all(uncachedFiles.map((ea, index) => {
+    var url = ea
+    return fetch(url).then(r => {
+      if (bootingMessageUI ) {
+        bootingMessageUI.textContent = "preload " + (count++) +"/" + uncachedFiles.length + "files" 
+      }
+      
+    }) // ok, just fetch them, some will hit the cache, some will go through
+  })) 
+}
+
 
 window.lively4invalidateFileCaches = invalidateFileCaches
 
@@ -316,6 +347,7 @@ if (window.lively && window.lively4url) {
             await invalidateFileCaches()
           groupedMessageEnd();
 
+
           
           groupedMessage('Initialize SystemJS');
             await System.import(lively4url + "/src/client/preload.js");
@@ -325,6 +357,12 @@ if (window.lively && window.lively4url) {
             await (await System.import(lively4url + "/src/client/load-swx.js")).whenLoaded; // wait on service worker
           groupedMessageEnd();
 
+          // this has to come after the service worker is active...
+          groupedMessage('Preload Files');
+          await preloadFileCaches()
+          // we could wait, or not... if we load transpiled things... waiting is better
+          groupedMessageEnd();
+          
           groupedMessage('Load Base System (lively.js)');
             await System.import("src/client/lively.js")
 

@@ -914,18 +914,20 @@ export default class Lively {
     var container = document.querySelector('main-content')
     if (container) return container;
 
+    var w = await lively.create("lively-window");
+    document.body.appendChild(w)
     container = await lively.create("lively-container");
+    w.appendChild(container)
     container.id = 'main-content';
     container.setAttribute("load", "auto");
+    
+    container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+    container.get('#container-content').style.overflow = "visible";
+    container.parentElement.toggleMaximize()
+    container.parentElement.hideTitlebar()
+    container.parentElement.style.zIndex = 0
+    container.parentElement.setAttribute("data-lively4-donotpersist","all");
 
-    await components.openInWindow(container).then( () => {
-      container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
-      container.get('#container-content').style.overflow = "visible";
-      container.parentElement.toggleMaximize()
-      container.parentElement.hideTitlebar()
-      container.parentElement.style.zIndex = 0
-      container.parentElement.setAttribute("data-lively4-donotpersist","all");
-    });
     return container
   }
 

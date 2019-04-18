@@ -91,7 +91,9 @@ export class Cache {
     this.offlineFirstReady = (async () => {
       if (!self.caches) return; // #MacCachesBug
       this.offlineFirstCache = await caches.open("offlineFirstCache")
-      lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
+      
+      // lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
+      lively4offlineFirst = true // otherwise... it will be to slow.... 
       
       this.fileInfoDB = new Dexie("fileInfoDB");
       this.fileInfoDB.version("1").stores({
@@ -143,16 +145,15 @@ export class Cache {
       this.offlineFirstCache.delete(request.url)
       var result =  doNetworkRequest()    
       result.then(() => {
-          self.clients.matchAll().then((clients) => {          
-            clients.forEach(client => {
-              client.postMessage({
-                name: "swx:cache:update",
-                method: request.method,
-                url: request.url
-              })
+        self.clients.matchAll().then((clients) => {          
+          clients.forEach(client => {
+            client.postMessage({
+              name: "swx:cache:update",
+              method: request.method,
+              url: request.url
             })
+          })
         })
-  
         if (request.method == "DELETE") {
           FileIndex.current().dropFile(request.url)
         } else {
