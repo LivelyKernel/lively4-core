@@ -136,6 +136,16 @@ export class Cache {
       this.offlineFirstCache.delete(request.url)
       var result =  doNetworkRequest()    
       result.then(() => {
+          self.clients.matchAll().then((clients) => {          
+            clients.forEach(client => {
+              client.postMessage({
+                name: "swx:cache:update",
+                method: request.method,
+                url: request.url
+              })
+            })
+        })
+  
         if (request.method == "DELETE") {
           FileIndex.current().dropFile(request.url)
         } else {

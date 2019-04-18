@@ -3,8 +3,29 @@ import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
 import Strings from 'src/client/strings.js'
 
-
 export default class Files {
+
+  static async fillCachedFileMap() {
+    var root = lively4url +  "/"
+    var filelist =   await fetch(root, {
+      method: "OPTIONS",
+      headers: {
+        filelist: true
+      }
+    }).then(r => r.json()).then(r => r.contents.map(ea => ea.name.replace(/^\.\//,url)))
+    var map = this.cachedFileMap()
+    for(var url of filelist) {
+      map.set(url, {exists: true})
+    }
+  }
+  
+  static cachedFileMap() {
+    if (!self.lively4cacheFiles) {
+      self.lively4cacheFiles = new Map()  // indexDB or dexie are to slow (60ms for simple checking if it is there #TODO)
+    } 
+    return self.lively4cacheFiles 
+  }
+  
   
   static parseSourceReference(ref) {
     if(ref.match("!")) {
@@ -176,7 +197,12 @@ export default class Files {
     return (await this.stats(url)).type
   }
 
-  static async exists(urlString){
+  static async exists(urlString) {
+    var cachedInfo = this.cachedFileMap().get(urlString)
+    if (cachedInfo) {
+      return cachedInfo.exists
+    }
+  
     var resp = (await fetch(urlString, {method: "OPTIONS"}))
     if (resp.status != 200) return false
     var stats = await resp.json()
@@ -468,3 +494,6 @@ export default class Files {
     }, url) 
   }
 }
+
+
+

@@ -683,13 +683,14 @@ if (!navigator.serviceWorker) {
   lively.removeEventListener("poid", navigator.serviceWorker)
   lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {
     try {
+      if(!evt.data.name || !evt.data.name.match('swx:pi:')) return; // not for me
+        
       let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)(?:\/(.*))?$/)
       if (!m) {
         throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
       }
       let url= m[1] + "://" + m[2]    
       if (!evt.ports[0]) {
-        debugger
         console.log("poid.js got message... but could not answer")
         return 
       }
@@ -716,8 +717,6 @@ if (!navigator.serviceWorker) {
 PolymorphicIdentifier.load()
 
 // window.fetch  = window.originalFetch
-
-
 // fetch("https://lively-kernel.org/lively4/lively4-jens/README.md")t
 
 
