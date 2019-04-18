@@ -152,7 +152,10 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
-      .then(m => m.TernCodeMirrorWrapper);
+      .then(m => {
+        this.ternLoaded = true
+        return m.TernCodeMirrorWrapper
+      });
   }
 
   initialize() {
@@ -378,8 +381,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("keyMap",  "sublime")
 		
     editor.on("cursorActivity", cm => {
-      this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      if (this.ternLoaded) {
+        this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      }
     });
+    
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
       // this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
@@ -631,7 +637,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then && result instanceof Promise) {
+      if (result && result.then) { //  && result instanceof Promise
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {

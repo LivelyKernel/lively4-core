@@ -2,6 +2,8 @@
 import { Dictionary as IndexDBDictionary} from './dictionary.js';
 import { Dictionary as CacheDictionary } from './cache-dictionary.js'; 
 
+import Dexie from "src/external/dexie.js"
+
 import Serializer from './serializer.js';
 import { ConnectionManager } from './connectionmanager.js';
 import * as msg from './messaging.js'
@@ -90,6 +92,11 @@ export class Cache {
       if (!self.caches) return; // #MacCachesBug
       this.offlineFirstCache = await caches.open("offlineFirstCache")
       lively4offlineFirst = await focalStorage.getItem("swxOfflineFirst")
+      
+      this.fileInfoDB = new Dexie("fileInfoDB");
+      this.fileInfoDB.version("1").stores({
+        files: 'url, modified, version',
+      }).upgrade(function () { })
       
       if (this.offlineFirst) {
         console.log("offlineFirst Cache enabled")

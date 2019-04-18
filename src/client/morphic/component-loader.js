@@ -35,7 +35,7 @@ var _log = function(...args) {
   }
 }
 
-var _timeEnabled = true
+var _timeEnabled = false
 var _timeLog = function(name, msg, ...args) {
   if (_timeEnabled) {
     console.log("[component] " + name + " " + Math.round(performance.now() - _templateFirstLoadTimes[name]) +"ms "+ msg, ...args)

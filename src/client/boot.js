@@ -11,8 +11,6 @@
   - currently we have different entry points we should unify
  */
 
-
-
 async function lively4fillCachedFileMap(filelist) {
   var root = lively4url +  "/"
   if (!filelist) {
@@ -57,11 +55,13 @@ if (!(localStorage["logLivelyBoot"] == "true")) {
 // localStorage["useTranspilationCache"]  = true
 self.lively4useTranspilationCache = localStorage["useTranspilationCache"]
 self.lively4transpilationCache = {
-  cache: new Map(),
-  update: new Set()} 
+  cache: new Map()
+} 
 
 var Dexie;
-var transpilationCacheDB
+self.transpilationCacheDB
+
+var fileInfoDB
 
 
 let PerformanceLogsEnabled = true
@@ -73,12 +73,30 @@ async function logTime(msg, exec) {
 
 
 async function invalidateFileCaches()  {
+  Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
   if (self.lively4useTranspilationCache) {
     await logTime("initialize transpilation cache", async () => {
-      Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
-      transpilationCacheDB = new Dexie("transpilationCache");
-      transpilationCacheDB.version("1").stores({
+      self.lively4transpilationCacheDB = new Dexie("transpilationCache");
+      self.lively4transpilationCacheDB.version("1").stores({
         transpilations: 'url, modified, version',
+      }).upgrade(function () { })
+    })
+
+    
+    await self.lively4transpilationCacheDB.transpilations.each(ea => {
+      self.lively4transpilationCache.cache.set(ea.url, {
+        input: ea.input,
+        output: ea.output,
+        map: ea.map && JSON.parse(ea.map),
+        modified: ea.modified,
+        version: ea.version
+      })
+    }) 
+    
+    await logTime("initialize fileInfoDB", async () => {
+      fileInfoDB = new Dexie("fileInfoDB");
+      fileInfoDB.version("1").stores({
+        files: 'url, modified, version',
       }).upgrade(function () { })
     })
   }
@@ -138,31 +156,38 @@ async function invalidateFileCaches()  {
   
   var start = performance.now()
   var filelist = []
-  await Promise.all(list.map(async ea => {
-    if (!ea.name) return
-    var fileURL = url + ea.name.replace(/^.\//,"")
-    
-    if (fileURL.match(/node_modules/)) {
-      ignored++
-      return  // ignore 4000 files we don't care
-    }
-    filelist.push(fileURL)
-    
-    var cached  = await offlineFirstCache.match(fileURL)
+  
+  fileInfoDB.transaction("rw", ["files"], async () => {
+    await Promise.all(list.map(async ea => {
+      if (!ea.name) return
+      var fileURL = url + ea.name.replace(/^.\//,"")
 
-    if (cached) {
-      found++
-      // #TODO this means loading over 2000 files (or responses) from the disk... and looking at their headers, we should maybe use indexdDB for this? Merge our file index? 
-      var cachedModified = cached.headers.get("modified")
-      if (ea.modified > cachedModified) {
-        console.log("invalidate cache " + fileURL + `${ea.modified} > ${cachedModified}`)
-        offlineFirstCache.delete(fileURL) // we could start loading it again?
-        invalidated++
-      } else {
-        // console.log("keep " + ea.modified)
+      if (fileURL.match(/node_modules/)) {
+        ignored++
+        return  // ignore 4000 files we don't care
       }
-    }
-  }))
+      filelist.push(fileURL)
+
+      fileInfoDB.files.put({
+          url: fileURL,
+          modified: ea.modified})
+
+      var cached  = await offlineFirstCache.match(fileURL)
+
+      if (cached) {
+        found++
+        // #TODO this means loading over 2000 files (or responses) from the disk... and looking at their headers, we should maybe use indexdDB for this? Merge our file index? 
+        var cachedModified = cached.headers.get("modified")
+        if (ea.modified > cachedModified) {
+          console.log("invalidate cache " + fileURL + `${ea.modified} > ${cachedModified}`)
+          offlineFirstCache.delete(fileURL) // we could start loading it again?
+          invalidated++
+        } else {
+          // console.log("keep " + ea.modified)
+        }
+      }
+    }))
+  })
   await lively4fillCachedFileMap(filelist)
   console.log("[boot] invalidateFileCaches: cache invalidation for loop in " + (performance.now() - start) 
               + "ms, in cache  " + found + " files, " 
@@ -336,31 +361,7 @@ if (window.lively && window.lively4url) {
             var str =  self.lively4bootGroupedMessages.map(ea => {
               return ea.part + " "  + Math.round(ea.end - ea.begin) + "ms "+ ea.message
             }).join("\n")
-            console.log("BOOK", str)
-          }
-          
-          if (self.lively4useTranspilationCache) {
-            console.log("UPDATE Transpilateion Cache")
-            transpilationCacheDB.transaction("rw", transpilationCacheDB.cache, () => {
-              
-              console.log("UPDATE WRITE Transpilateion Cache ")
-              for(var ea of self.lively4transpilationCache.update) {
-                console.log("update transpilation cache " + ea)
-                var cache = self.lively4transpilationCache.cache.get(ea)
-                if (cache) {
-                  transpilationCacheDB.transpilations.put({
-                    url: ea,
-                    input: cache.input,
-                    output: cache.output,
-                    map: JSON.stringify(cache.map),
-                    modified: null,
-                    version: null,
-                  })                 
-                } else {
-                  console.warn("TRANSPILATION cache not found even though it was in the update list... ", ea)
-                }
-              }
-            })
+            console.log("BOOT", str)
           }
           
           if (window.lively4bootlogData) {
