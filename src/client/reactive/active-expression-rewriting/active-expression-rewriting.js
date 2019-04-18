@@ -1,7 +1,12 @@
 import 'lang';
 
 import { BaseActiveExpression } from 'active-expression';
+
 import Stack from 'src/client/reactive/utils/stack.js';
+import CompositeKey from './composite-key.js';
+import InjectiveMap from './injective-map.js';
+import BidirectionalMultiMap from './bidirectional-multi-map.js';
+
 import { using } from 'utils';
 
 let expressionAnalysisMode = false;
@@ -25,11 +30,6 @@ class ExpressionAnalysis {
     });
   }
 }
-
-
-import CompositeKey from './composite-key.js';
-import InjectiveMap from './injective-map.js';
-import BidirectionalMultiMap from './bidirectional-multi-map.js';
 
 const dependencyCompositeKey = new CompositeKey();
 
