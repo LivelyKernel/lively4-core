@@ -11,6 +11,8 @@ Lively4.sublime-project
 Lively4.sublime-workspace
 *~
 Wiki
+.transpiled
+test.zip
 
 # Lively search index
 *.l4idx

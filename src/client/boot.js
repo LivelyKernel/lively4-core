@@ -11,6 +11,32 @@
   - currently we have different entry points we should unify
  */
 
+
+// BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
+function loadJavaScriptThroughDOM(name, src, force) {
+  return new Promise(function (resolve) {
+    var scriptNode = document.querySelector(name);
+    if (scriptNode) {
+      scriptNode.remove();
+    }
+    var script = document.createElement("script");
+    script.id = name;
+    script.charset = "utf-8";
+    script.type = "text/javascript";
+    script.setAttribute("data-lively4-donotpersist","all");
+    if (force) {
+      src += +"?" + Date.now();
+    }
+    script.src = src;
+    script.onload = function () {
+      resolve();
+    };
+    document.head.appendChild(script);
+  });
+}
+// END COPIED
+
+
 async function lively4fillCachedFileMap(filelist) {
   var root = lively4url +  "/"
   if (!filelist) {
@@ -115,6 +141,7 @@ async function invalidateFileCaches()  {
         lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
       }
       offlineFirstCache = await caches.open("offlineFirstCache")
+      self.lively4offlineFirstCache = offlineFirstCache
       json = await Promise.race([
         new Promise(r => {
           setTimeout(() => r(false), 5000) // give the server 5secs ... might be an old one or somthing, anyway keep going!
@@ -199,29 +226,70 @@ async function invalidateFileCaches()  {
 }
 
 async function preloadFileCaches() {
-  var fileCacheURL = lively4url + "/bootfilelist.json"
-  try {
-    var filelist = await fetch(fileCacheURL).then(r => r.json())  
-  } catch(e) {
-    console.warn("could not load bootfilelist, continue anyway...")
-    return
+  debugger
+  await loadJavaScriptThroughDOM("JSZip", lively4url + "/src/external/jszip.js" )
+  
+  
+  var start = performance.now()
+  var preloadurl = lively4url + "/test.zip"
+  var resp = await fetch(preloadurl)
+  if (resp.status != "200") {
+    console.warn("NO preload cache found in", preloadurl)
+    return 
   }
-  
-  urllist = filelist.map(ea => lively4url + "/" + ea)
+  var contents = await resp.blob()
 
-  var uncachedFiles = urllist.filter(ea => !lively4cacheFiles.get(ea))
-  
-  var bootingMessageUI = document.querySelector("#lively-booting-message")
-  var count = 0
-  return Promise.all(uncachedFiles.map((ea, index) => {
-    var url = ea
-    return fetch(url).then(r => {
-      if (bootingMessageUI ) {
-        bootingMessageUI.textContent = "preload " + (count++) +"/" + uncachedFiles.length + "files" 
+  var archive = await self.JSZip.loadAsync(contents)
+  console.log("[boot] preloadFileCache fetched contents in  " + Math.round(performance.now() - start) + "ms")
+
+  start = performance.now()
+  for(var ea of Object.keys(archive.files)) {
+    var file = archive.file(ea);
+    if (file) {
+      var modified = file.date.toISOString().replace(/T/, " ").replace(/\..*/, "")
+      var url = lively4url + "/" + ea
+      var cached = await self.lively4offlineFirstCache.match(url)
+      if (cached && cached.headers.get("modified") == modified) {
+        // do nothing
+        // console.log("PRECACHE IGNORE " + ea)
+      } else {
+        console.log("[boot] preloadFileCaches: " + ea)
+        var  mimeType = " text/plain"
+        if (url.match(/\.js$/)) mimeType = "application/javascript"
+        if (url.match(/\.css$/)) mimeType = "text/css"
+        self.lively4offlineFirstCache.put(url, new Response(await file.async("string"), {
+          headers: {
+            "content-type": mimeType,
+            modified: modified
+          }
+        }))                           
       }
+    }
+  } 
+  console.log("[boot] preloadFileCache updated caches in  " + Math.round(performance.now() - start) + "ms")
+//   var fileCacheURL = lively4url + "/bootfilelist.json"
+//   try {
+//     var filelist = await fetch(fileCacheURL).then(r => r.json())  
+//   } catch(e) {
+//     console.warn("could not load bootfilelist, continue anyway...")
+//     return
+//   }
+  
+//   urllist = filelist.map(ea => lively4url + "/" + ea)
+
+//   var uncachedFiles = urllist.filter(ea => !lively4cacheFiles.get(ea))
+  
+//   var bootingMessageUI = document.querySelector("#lively-booting-message")
+//   var count = 0
+//   return Promise.all(uncachedFiles.map((ea, index) => {
+//     var url = ea
+//     return fetch(url).then(r => {
+//       if (bootingMessageUI ) {
+//         bootingMessageUI.textContent = "preload " + (count++) +"/" + uncachedFiles.length + "files" 
+//       }
       
-    }) // ok, just fetch them, some will hit the cache, some will go through
-  })) 
+//     }) // ok, just fetch them, some will hit the cache, some will go through
+//   })) 
 }
 
 
@@ -262,7 +330,7 @@ if (window.lively && window.lively4url) {
     self.lively4bootGroupedMessages = []
     var lastMessage
     
-    var estimatedSteps = 7
+    var estimatedSteps = 8
     var stepCounter = 1
     
     function groupedMessage( message) {
@@ -308,29 +376,7 @@ if (window.lively && window.lively4url) {
 
     console.log("lively4url: " + lively4url);
 
-    // BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
-    var loadJavaScriptThroughDOM = function(name, src, force) {
-      return new Promise(function (resolve) {
-        var scriptNode = document.querySelector(name);
-        if (scriptNode) {
-          scriptNode.remove();
-        }
-        var script = document.createElement("script");
-        script.id = name;
-        script.charset = "utf-8";
-        script.type = "text/javascript";
-        script.setAttribute("data-lively4-donotpersist","all");
-        if (force) {
-          src += +"?" + Date.now();
-        }
-        script.src = src;
-        script.onload = function () {
-          resolve();
-        };
-        document.head.appendChild(script);
-      });
-    }
-    // END COPIED
+   
 
     Promise.resolve().then(async () => {
 
@@ -347,6 +393,10 @@ if (window.lively && window.lively4url) {
             await invalidateFileCaches()
           groupedMessageEnd();
 
+          groupedMessage('Preload Files');
+          await preloadFileCaches()
+          // we could wait, or not... if we load transpiled things... waiting is better
+          groupedMessageEnd();
 
           
           groupedMessage('Initialize SystemJS');
@@ -357,11 +407,6 @@ if (window.lively && window.lively4url) {
             await (await System.import(lively4url + "/src/client/load-swx.js")).whenLoaded; // wait on service worker
           groupedMessageEnd();
 
-          // this has to come after the service worker is active...
-          groupedMessage('Preload Files');
-          await preloadFileCaches()
-          // we could wait, or not... if we load transpiled things... waiting is better
-          groupedMessageEnd();
           
           groupedMessage('Load Base System (lively.js)');
             await System.import("src/client/lively.js")
