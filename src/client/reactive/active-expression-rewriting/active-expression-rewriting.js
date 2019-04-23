@@ -32,6 +32,11 @@ class ExpressionAnalysis {
 }
 
 class Dependency {
+  static getOrCreateFor(context, identifier, type) {
+    const key = ContextAndIdentifierCompositeKey.for(context, identifier);
+    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(type));
+  }
+  
   constructor(type) {
     this.type = type;
     
@@ -59,17 +64,8 @@ class Dependency {
     HooksToDependencies.remove(SourceCodeHook.getOrCreateFor(context, identifier), this);
   }
   getContextAndIdentifier() {
-    let compKey;
-    if (this.isMemberDependency()) {
-      compKey = membersToDependencies.getLeftFor(this);
-    } else if (this.isGlobalDependency()) {
-      compKey = membersToDependencies.getLeftFor(this);
-    } else if (this.isLocalDependency()) {
-      compKey = localsToDependencies.getLeftFor(this);
-    } else {
-      throw new Error('Dependency is neighter local, member, nor global.');
-    }
-    const [context, identifier] = dependencyCompositeKey.keysFor(compKey);
+    const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
     return [context, identifier];
   }
 
@@ -88,42 +84,40 @@ class Dependency {
     return this.type === 'local';
   }
   isGlobal() {
-    const compKey = membersToDependencies.getLeftFor(this);
+    const compKey = CompositeKeyToDependencies.getLeftFor(this);
     if (!compKey) {
       return false;
     }
-    const [object] = dependencyCompositeKey.keysFor(compKey);
+    const [object] = ContextAndIdentifierCompositeKey.keysFor(compKey);
     return object === self;
   }
 
   getAsDependencyDescription() {
+    const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
+    
     if (this.isMemberDependency()) {
-      const compKey = membersToDependencies.getLeftFor(this);
-      const [object, property] = dependencyCompositeKey.keysFor(compKey);
       return {
-        object,
-        property,
-        value: object !== undefined ? object[property] : undefined
+        object: context,
+        property: identifier,
+        value: context !== undefined ? context[identifier] : undefined
       };
     } else if (this.isGlobalDependency()) {
-      const compKey = membersToDependencies.getLeftFor(this);
-      const [object, name] = dependencyCompositeKey.keysFor(compKey);
       return {
-        name,
-        value: object[name]
+        name: identifier,
+        value: context[identifier]
       };
     } else if (this.isLocalDependency()) {
-      const compKey = localsToDependencies.getLeftFor(this);
-      const [scope, name] = dependencyCompositeKey.keysFor(compKey);
       return {
-        scope,
-        name,
-        value: scope !== undefined ? scope[name] : undefined
+        scope: context,
+        name: identifier,
+        value: context !== undefined ? context[identifier] : undefined
       };
     } else {
       throw new Error('Dependency is neighter local, member, nor global.');
     }
   }
+
 }
 
 const DependenciesToAExprs = {
@@ -200,23 +194,20 @@ const HooksToDependencies = {
   }
 };
 
-// 1.1. (obj, prop) -> dependencyCompositeKey
-// - given via dependencyCompositeKey
-const dependencyCompositeKey = new CompositeKey();
-// 1.2. dependencyCompositeKey 1<->1 Dependency
-// - membersToDependencies, localsToDependencies
-const membersToDependencies = new InjectiveMap();
-const localsToDependencies = new InjectiveMap();
-// 1.3. Dependency *<->* AExpr
+// 1. (obj, prop) or (scope, name) -> ContextAndIdentifierCompositeKey
+// - given via ContextAndIdentifierCompositeKey
+const ContextAndIdentifierCompositeKey = new CompositeKey();
+
+// 2.1. ContextAndIdentifierCompositeKey 1<->1 Dependency
+// - CompositeKeyToDependencies
+const CompositeKeyToDependencies = new InjectiveMap();
+// 2.2. Dependency *<->* AExpr
 // - DependenciesToAExprs
 
-// 2.1. (obj, prop) -> sourceCodeHookCompositeKey
-// - given via sourceCodeHookCompositeKey
-const sourceCodeHookCompositeKey = new CompositeKey();
-// 2.2. sourceCodeHookCompositeKey 1<->1 SourceCodeHook
-// - compositeKeyToSourceCodeHook
-const compositeKeyToSourceCodeHook = new InjectiveMap();
-// 2.3. SourceCodeHook *<->* Dependency
+// 3.1. ContextAndIdentifierCompositeKey 1<->1 SourceCodeHook
+// - CompositeKeyToSourceCodeHook
+const CompositeKeyToSourceCodeHook = new InjectiveMap();
+// 3.2. SourceCodeHook *<->* Dependency
 // - HooksToDependencies
 
 class Hook {
@@ -227,8 +218,8 @@ class Hook {
 
 class SourceCodeHook extends Hook {
   static getOrCreateFor(context, identifier) {
-    const compKey = sourceCodeHookCompositeKey.for(context, identifier);
-    return compositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
+    const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
+    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
   }
   
   constructor(context, identifier) {
@@ -336,18 +327,17 @@ class DependencyManager {
    * **************************************************************
    */
   static associateMember(obj, prop) {
-    const key = dependencyCompositeKey.for(obj, prop);
-    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency('member'));
+    const dependency = Dependency.getOrCreateFor(obj, prop, 'member');
     DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
   static associateGlobal(globalName) {
-    this.associateMember(globalRef, globalName);
+    const dependency = Dependency.getOrCreateFor(globalRef, globalName, 'member');
+    DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
   static associateLocal(scope, varName) {
-    const key = dependencyCompositeKey.for(scope, varName);
-    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency('local'));
+    const dependency = Dependency.getOrCreateFor(scope, varName, 'local');
     DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
@@ -382,9 +372,13 @@ class TracingHandler {
  * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
+  ContextAndIdentifierCompositeKey.clear();
+
+  CompositeKeyToDependencies.clear();
   DependenciesToAExprs.clear();
-  dependencyCompositeKey.clear();
-  sourceCodeHookCompositeKey.clear();
+
+  CompositeKeyToSourceCodeHook.clear();
+  HooksToDependencies.clear();
 }
 
 /**

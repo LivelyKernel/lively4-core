@@ -40,4 +40,9 @@ export default class InjectiveMap {
     return this.rightToLeft.get(right);
   }
 
+  clear() {
+    this.leftToRight.clear();
+    this.rightToLeft.clear();
+  }
+
 }
