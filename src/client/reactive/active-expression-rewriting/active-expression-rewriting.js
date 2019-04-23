@@ -31,13 +31,53 @@ class ExpressionAnalysis {
   }
 }
 
-const dependencyCompositeKey = new CompositeKey();
-
 class Dependency {
   constructor(type) {
     this.type = type;
+    
+    this.isTracked = false;
+  }
+  
+  updateTracking() {
+    if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) { return; }
+    if (this.isTracked) {
+      this.untrack();
+    } else {
+      this.track();
+    }
+  }
+  track() {
+    this.isTracked = true;
+
+    const [context, identifier] = this.getContextAndIdentifier();
+    HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
+  }
+  untrack() {
+    this.isTracked = false;
+
+    const [context, identifier] = this.getContextAndIdentifier();
+    HooksToDependencies.remove(SourceCodeHook.getOrCreateFor(context, identifier), this);
+  }
+  getContextAndIdentifier() {
+    let compKey;
+    if (this.isMemberDependency()) {
+      compKey = membersToDependencies.getLeftFor(this);
+    } else if (this.isGlobalDependency()) {
+      compKey = membersToDependencies.getLeftFor(this);
+    } else if (this.isLocalDependency()) {
+      compKey = localsToDependencies.getLeftFor(this);
+    } else {
+      throw new Error('Dependency is neighter local, member, nor global.');
+    }
+    const [context, identifier] = dependencyCompositeKey.keysFor(compKey);
+    return [context, identifier];
   }
 
+  notifyAExprs() {
+    const aexprs = DependenciesToAExprs.getAExprsForDep(this);
+    DependencyManager.checkAndNotifyAExprs(aexprs);
+  }
+  
   isMemberDependency() {
     return this.type === 'member' && !this.isGlobal();
   }
@@ -87,37 +127,127 @@ class Dependency {
 }
 
 const DependenciesToAExprs = {
-  depsToAExprs: new BidirectionalMultiMap(),
+  _depsToAExprs: new BidirectionalMultiMap(),
+
   associate(dep, aexpr) {
-    this.depsToAExprs.associate(dep, aexpr);
+    this._depsToAExprs.associate(dep, aexpr);
+    dep.updateTracking();
   },
+
   disconnectAllForAExpr(aexpr) {
-    this.depsToAExprs.removeAllLeftFor(aexpr);
+    const deps = this.getDepsForAExpr(aexpr);
+    this._depsToAExprs.removeAllLeftFor(aexpr);
+    deps.forEach(dep => dep.updateTracking());
   },
+
   getAExprsForDep(dep) {
-    return Array.from(this.depsToAExprs.getRightsFor(dep));
+    return Array.from(this._depsToAExprs.getRightsFor(dep));
   },
   getDepsForAExpr(aexpr) {
-    return Array.from(this.depsToAExprs.getLeftsFor(aexpr));
+    return Array.from(this._depsToAExprs.getLeftsFor(aexpr));
+  },
+
+  hasAExprsForDep(dep) {
+    return this.getAExprsForDep(dep).length >= 1;
+  },
+  hasDepsForAExpr(aexpr) {
+    return this.getDepsForAExpr(aexpr).length >= 1;
   },
   
   /*
    * Removes all associations.
    */
   clear() {
-    this.depsToAExprs.clear();
+    this._depsToAExprs.clear();
+    this._depsToAExprs.getAllLeft()
+      .forEach(dep => dep.updateTracking());
   }
 };
 
-// 1. (obj, prop) -> dependencyCompositeKey
-// - given via dependencyCompositeKey
-// 2. dependencyCompositeKey 1<->1 Dependency
-// - membersToDependencies, localsToDependencies
-// 3. Dependency *<->* AExpr
-// - DependenciesToAExprs
+const HooksToDependencies = {
+  _hooksToDeps: new BidirectionalMultiMap(),
+  
+  associate(hook, dep) {
+    this._hooksToDeps.associate(hook, dep);
+  },
+  remove(hook, dep) {
+    this._hooksToDeps.remove(hook, dep);
+  },
+  
+  disconnectAllForDependency(dep) {
+    this._hooksToDeps.removeAllLeftFor(dep);
+  },
+  
+  getDepsForHook(hook) {
+    return Array.from(this._hooksToDeps.getRightsFor(hook));
+  },
+  getHooksForDep(dep) {
+    return Array.from(this._hooksToDeps.getLeftsFor(dep));
+  },
+  
+  hasDepsForHook(hook) {
+    return this.getDepsForHook(hook).length >= 1;
+  },
+  hasHooksForDep(dep) {
+    return this.getHooksForDep(dep).length >= 1;
+  },
+  
+  /*
+   * Removes all associations.
+   */
+  clear() {
+    this._hooksToDeps.clear();
+  }
+};
 
+// 1.1. (obj, prop) -> dependencyCompositeKey
+// - given via dependencyCompositeKey
+const dependencyCompositeKey = new CompositeKey();
+// 1.2. dependencyCompositeKey 1<->1 Dependency
+// - membersToDependencies, localsToDependencies
 const membersToDependencies = new InjectiveMap();
 const localsToDependencies = new InjectiveMap();
+// 1.3. Dependency *<->* AExpr
+// - DependenciesToAExprs
+
+// 2.1. (obj, prop) -> sourceCodeHookCompositeKey
+// - given via sourceCodeHookCompositeKey
+const sourceCodeHookCompositeKey = new CompositeKey();
+// 2.2. sourceCodeHookCompositeKey 1<->1 SourceCodeHook
+// - compositeKeyToSourceCodeHook
+const compositeKeyToSourceCodeHook = new InjectiveMap();
+// 2.3. SourceCodeHook *<->* Dependency
+// - HooksToDependencies
+
+class Hook {
+  constructor() {
+    this.installed = false;
+  }
+}
+
+class SourceCodeHook extends Hook {
+  static getOrCreateFor(context, identifier) {
+    const compKey = sourceCodeHookCompositeKey.for(context, identifier);
+    return compositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
+  }
+  
+  constructor(context, identifier) {
+    super();
+
+    this.context = context;
+    this.identifier = identifier;
+  }
+  
+  install() {}
+  uninstall() {}
+  
+  notifyDependencies() {
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs())
+  }
+}
+
+class DataStructureHook extends Hook {}
+
 const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
@@ -221,27 +351,25 @@ class DependencyManager {
     DependenciesToAExprs.associate(dependency, this.currentAExpr);
   }
 
+}
+
+class TracingHandler {
+
   /**
    * **************************************************************
    * ********************** update ********************************
    * **************************************************************
    */
   static memberUpdated(obj, prop) {
-    const key = dependencyCompositeKey.for(obj, prop);
-    const dependency = membersToDependencies.getOrCreateRightFor(key, () => new Dependency('member'));
-    const aexprs = DependenciesToAExprs.getAExprsForDep(dependency);
-    this.checkAndNotifyAExprs(aexprs);
+    SourceCodeHook.getOrCreateFor(obj, prop).notifyDependencies();
   }
 
   static globalUpdated(globalName) {
-    this.memberUpdated(globalRef, globalName);
+    SourceCodeHook.getOrCreateFor(globalRef, globalName).notifyDependencies();
   }
 
   static localUpdated(scope, varName) {
-    const key = dependencyCompositeKey.for(scope, varName);
-    const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency('local'));
-    const affectedAExprs = DependenciesToAExprs.getAExprsForDep(dependency);
-    this.checkAndNotifyAExprs(affectedAExprs);
+    SourceCodeHook.getOrCreateFor(scope, varName).notifyDependencies();
   }
 
 }
@@ -256,6 +384,7 @@ class DependencyManager {
 export function reset() {
   DependenciesToAExprs.clear();
   dependencyCompositeKey.clear();
+  sourceCodeHookCompositeKey.clear();
 }
 
 /**
@@ -285,85 +414,85 @@ export function getAndCallMember(obj, prop, args = []) {
 
 export function setMember(obj, prop, val) {
   const result = obj[prop] = val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberAddition(obj, prop, val) {
   const result = obj[prop] += val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberSubtraction(obj, prop, val) {
   const result = obj[prop] -= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberMultiplication(obj, prop, val) {
   const result = obj[prop] *= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberDivision(obj, prop, val) {
   const result = obj[prop] /= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberRemainder(obj, prop, val) {
   const result = obj[prop] %= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberExponentiation(obj, prop, val) {
   const result = obj[prop] **= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberLeftShift(obj, prop, val) {
   const result = obj[prop] <<= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberRightShift(obj, prop, val) {
   const result = obj[prop] >>= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberUnsignedRightShift(obj, prop, val) {
   const result = obj[prop] >>>= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberBitwiseAND(obj, prop, val) {
   const result = obj[prop] &= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberBitwiseXOR(obj, prop, val) {
   const result = obj[prop] ^= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function setMemberBitwiseOR(obj, prop, val) {
   const result = obj[prop] |= val;
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
 export function deleteMember(obj, prop) {
   const result = delete obj[prop];
-  DependencyManager.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop);
   return result;
 }
 
@@ -376,7 +505,7 @@ export function getLocal(scope, varName, value) {
 
 export function setLocal(scope, varName, value) {
   scope[varName] = value;
-  DependencyManager.localUpdated(scope, varName);
+  TracingHandler.localUpdated(scope, varName);
 }
 
 export function getGlobal(globalName) {
@@ -386,7 +515,7 @@ export function getGlobal(globalName) {
 }
 
 export function setGlobal(globalName) {
-  DependencyManager.globalUpdated(globalName);
+  TracingHandler.globalUpdated(globalName);
 }
 
 export default aexpr;

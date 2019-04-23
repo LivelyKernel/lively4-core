@@ -35,5 +35,13 @@ export default class BidirectionalMultiMap {
   getLeftsFor(right) {
     return this.rightToLeft.getOrCreate(right, () => new Set());
   }
+  
+  getAllLeft() {
+    return Array.from(this.leftToRight.keys());
+  }
+
+  getAllRight() {
+    return Array.from(this.rightToLeft.keys());
+  }
 
 }
