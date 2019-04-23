@@ -1,3 +1,7 @@
+console.log("BABEL PLUGIN ONE")
+
+debugger
+
 var babel = require('systemjs-babel-build').babel;
 
 // the SystemJS babel build includes standard presets

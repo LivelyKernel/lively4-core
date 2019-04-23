@@ -211,6 +211,18 @@ class ServiceWorker {
 
     // console.log(lively4stamp(), "SWX.fetch " + request.method + " " + url + ", " + pending);
     // console.log(`fetch(${url})`);
+    
+    // notify clients.... that I was requested to fetch something. USE CASE: make a list for files to preload...
+    self.clients.matchAll().then((clients) => {          
+      clients.forEach(client => {
+        client.postMessage({
+          name: "swx:fech:request",
+          method: request.method,
+          url: request.url
+        })
+      })
+    })
+    
 
     if (url.pathname.match(/\/_git\//)) return;
     if (url.pathname.match(/\/_search\//)) return; 
