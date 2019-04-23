@@ -190,6 +190,16 @@ class DependencyManager {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
 
+  // #TODO, #REFACTOR: extract into configurable dispatcher class
+  static checkAndNotifyAExprs(aexprs) {
+    aexprs.forEach(aexpr => {
+      // #TODO: compute diff of Dependencies
+      this.disconnectAllFor(aexpr);
+      ExpressionAnalysis.check(aexpr);
+    });
+    aexprs.forEach(aexpr => aexpr.checkAndNotify());
+  }
+
   /**
    * **************************************************************
    * ********************** associate *****************************
@@ -232,16 +242,6 @@ class DependencyManager {
     const dependency = localsToDependencies.getOrCreateRightFor(key, () => new Dependency('local'));
     const affectedAExprs = DependenciesToAExprs.getAExprsForDep(dependency);
     this.checkAndNotifyAExprs(affectedAExprs);
-  }
-
-  // #TODO, #REFACTOR: extract into configurable dispatcher class
-  static checkAndNotifyAExprs(aexprs) {
-    aexprs.forEach(aexpr => {
-      // #TODO: compute diff of Dependencies
-      this.disconnectAllFor(aexpr);
-      ExpressionAnalysis.check(aexpr);
-    });
-    aexprs.forEach(aexpr => aexpr.checkAndNotify());
   }
 
 }
