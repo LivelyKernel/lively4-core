@@ -608,6 +608,35 @@ export class BooleanScheme extends Scheme {
 
 }
 
+export class Lively4URLScheme extends Scheme {
+  
+  get scheme() {
+    return "lively4url";
+  }
+
+  resolve() {
+    return true;
+  }  
+  
+  _fetch(options) {
+    const filePath = lively4url + "/" + new URL(this.url).pathname;
+    lively.warn(filePath, options && options.method)
+    return fetch(lively4url + "/" + new URL(this.url).pathname, options);
+  }
+  
+  async GET(options) {
+    return this._fetch(options);
+  }
+
+  PUT(options) {
+    return this._fetch(options);
+  }
+    
+  OPTIONS(options) {
+    return this._fetch(options);
+  }
+}
+
 
 export default class PolymorphicIdentifier {
   
@@ -626,6 +655,7 @@ export default class PolymorphicIdentifier {
       NumberScheme,
       DateScheme,
       BooleanScheme,
+      Lively4URLScheme,
     ].forEach(scheme => this.register(scheme));
   }
   
