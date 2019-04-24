@@ -25,16 +25,18 @@ export default class Connector {
   }
   
   _onTargetSelect(event) {
+    debugger
+    var target = event.path[0]
     // Connect to the canvas if there is one
-    const canvas = event.target.shadowRoot ?
-                   event.target.shadowRoot.querySelector("canvas") :
-                   event.target.querySelector("canvas");
+    const canvas = target.shadowRoot ?
+                   target.shadowRoot.querySelector("canvas") :
+                   target.querySelector("canvas");
     
     if(canvas) {
       this.target = canvas;
       this._targetKind = "canvas";
     } else {
-      this.target = event.target;
+      this.target = target;
       this._targetKind = "component";
     }
   }
@@ -101,3 +103,4 @@ export default class Connector {
   }
 }
 
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

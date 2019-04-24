@@ -16,6 +16,7 @@
   .layout-row {
     display: flex;
     flex-direction: row;
+    overflow-y: auto;
   }
 
   #outputPane, #astPane, #resultPane {
@@ -29,12 +30,12 @@
   
   #sourcePane {
     flex: 0.33;
-    overflow: hidden;
+/*     overflow-y: auto; */
   }
   
   #outputPane {
     flex: 0.33;
-		overflow: hidden
+/* 		overflow-y: auto */
   }
   
   #astPane {
@@ -43,7 +44,7 @@
   
   #pluginPane {
     flex: 0.66;
-    overflow: hidden;
+/*     overflow-y: auto; */
   }
   
   #resultPane {
@@ -52,6 +53,7 @@
 
   lively-code-mirror {
     flex: 1;
+/*     height: fill-available; */
   }
     
   lively-editor {

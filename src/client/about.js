@@ -21,6 +21,4 @@ export default class AboutLively {
       return [key, value.length]
     })
   }
-
-
 }

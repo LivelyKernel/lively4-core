@@ -1,5 +1,5 @@
 import boundEval from "src/client/bound-eval.js";
-import { uuid } from 'utils';
+import { uuid, functionMetaInfo } from 'utils';
 import { stepFolder } from 'src/client/vivide/utils.js';
 
 import VivideObject from 'src/client/vivide/vivideobject.js';
@@ -64,7 +64,7 @@ export class ScriptProcessor {
       return [d];
     }
   }
-  
+  // #TODO: use Array::flatten native function
   flatten(data) {
     let result = [];
 
@@ -74,9 +74,7 @@ export class ScriptProcessor {
   }
   
   async singleTransform(data, module) {
-    const output = [];
-    await module(data, output);
-    return output;
+    return await Promise.all(await module.toArray(data));
   }
   async transform(data, _modules) {
     let input = data.slice(0);
@@ -127,7 +125,8 @@ export default class ScriptStep {
     if(this.cursor) {
       return [this.cursor.anchor, this.cursor.head];
     }
-    lively.error('no cursor available', 'fallback for default cursor position');
+    // #TODO is it important to persists cursor position, and should we restore it?
+    console.warn('no cursor available', 'fallback for default cursor position');
     return [{ line: 1, ch: 0}, { line: 1, ch: 0}];
   }
   setCursorPosition(anchor, head) {
@@ -240,7 +239,7 @@ export default class ScriptStep {
   }
   
   // #TODO: implement properly
-  toJSON() {
+  toJSO() {
     const scriptJson = {
       type: this.type,
       source: this.source,
@@ -251,6 +250,10 @@ export default class ScriptStep {
     // #TODO: maybe need to save next step id or loop target
     
     return scriptJson
+  }
+  
+  toJSON() {
+    return JSON.stringify(this.toJSO())
   }
   
   async getExecutable() {

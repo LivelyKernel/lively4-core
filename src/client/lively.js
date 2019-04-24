@@ -3,6 +3,7 @@
  *
  */
 
+
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import * as _ from '../external/underscore.js';
@@ -393,6 +394,8 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    
+    await System.import("src/client/files-caches.js") // depends on me
   }
   
 
@@ -912,18 +915,20 @@ export default class Lively {
     var container = document.querySelector('main-content')
     if (container) return container;
 
-    container = document.createElement("lively-container");
+    var w = await lively.create("lively-window");
+    document.body.appendChild(w)
+    container = await lively.create("lively-container");
+    w.appendChild(container)
     container.id = 'main-content';
     container.setAttribute("load", "auto");
+    
+    container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+    container.get('#container-content').style.overflow = "visible";
+    container.parentElement.toggleMaximize()
+    container.parentElement.hideTitlebar()
+    container.parentElement.style.zIndex = 0
+    container.parentElement.setAttribute("data-lively4-donotpersist","all");
 
-    await components.openInWindow(container).then( () => {
-      container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
-      container.get('#container-content').style.overflow = "visible";
-      container.parentElement.toggleMaximize()
-      container.parentElement.hideTitlebar()
-      container.parentElement.style.zIndex = 0
-      container.parentElement.setAttribute("data-lively4-donotpersist","all");
-    });
     return container
   }
 
@@ -1368,7 +1373,7 @@ export default class Lively {
       var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
-      var topLeft = pt(200,100)
+      var topLeft = pt(50,50)
 
       for(var i=0; !pos; i++) {
         let p1 = pt(i * offset, i * offset)
@@ -1410,8 +1415,8 @@ export default class Lively {
     return containerPromise.then(comp => {
       livelyContainer = comp;
       livelyContainer.hideNavbar()
-      comp.parentElement.style.width = "1200px";
-      comp.parentElement.style.height = "700px";
+      comp.parentElement.style.width = "750px";
+      comp.parentElement.style.height = "600px";
 
       if (lastWindow) {
         lively.setPosition(comp.parentElement,

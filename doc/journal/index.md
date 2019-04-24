@@ -11,14 +11,17 @@ var createEntry = async () => {
   
   var dateStr = moment(new Date()).format("YYYY-MM-DD")
   var filename =  dateStr + ".md"
-  var url = dir  + "/" + filename
+  
+  var dirURL = dir   + filename + "/"
+  var url = dirURL + "index.md" 
 
   lively.notify("create " + url)
-  if (await lively.files.existFile(url)) {
-    lively.notify("Could not create " + url + ", beacuse it already exists!")
+  if (await lively.files.existFile(dirURL)) {
+    lively.notify("Could not create " + dirURL + ", because it already exists!")
   } else {
     var src = "## " + dateStr + "\n\n"
     
+    await lively.files.saveFile(dirURL, src)
     await lively.files.saveFile(url, src)
   }
   container.followPath(url)

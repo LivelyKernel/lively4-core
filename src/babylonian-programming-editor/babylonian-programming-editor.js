@@ -124,7 +124,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         this._changeTimer.start();
       });
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
-      this.editor().setOption("extraKeys", {
+      this.livelyCodeMirror().registerExtraKeys({
         "Ctrl-1": () => this.addAnnotationAtSelection("probe"),
         "Ctrl-2": () => this.addAnnotationAtSelection("slider"),
         "Ctrl-3": () => this.addAnnotationAtSelection("example"),

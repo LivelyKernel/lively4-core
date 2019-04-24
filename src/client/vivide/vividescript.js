@@ -128,30 +128,46 @@ export default class Script {
     return script;
   }
 
-  toJSON() {
+  toJSO() {
     const jsonContainer = {};
 
     this.stepsAsArray().forEach(step => {
-      jsonContainer[step.id] = step.toJSON();
+      jsonContainer[step.id] = step.toJSO();
     });
 
     return jsonContainer;
   }
+  
+  toJSON() {
+    return JSON.stringify(this.toJSO())
+  }
 
-  static fromJSON() {
-//     // this is deserialization of a script
-//     let jsonScripts = this._view.getJSONAttribute(VivideView.scriptAttribute);
-//     let scripts = {};
+  static async fromJSON(json, view) {
+    // this is deserialization of a script
+    let jsonScripts = JSON.parse(json)
+    let scripts = {};
 
-//     for (let scriptId in jsonScripts) {
-//       scripts[scriptId] = new ScriptStep(
-//         jsonScripts[scriptId].source,
-//         jsonScripts[scriptId].type,
-//         scriptId,
-//       );
-//     }
-
-// TODO: link steps
+    var firstScriptStep
+    var lastScriptStep
+    
+    const script = new Script(view);
+    for (let scriptId in jsonScripts) {
+      let step = new ScriptStep(
+        jsonScripts[scriptId].source,
+        jsonScripts[scriptId].type,
+        scriptId,
+      );
+      step.setScript(script);
+      scripts[scriptId] = step
+      if (!firstScriptStep) firstScriptStep = step;
+      if (lastScriptStep) {
+        lastScriptStep.insertAfter(step);
+      }
+      lastScriptStep = step
+    }
+    
+    script.setInitialStep(firstScriptStep);
+    return script;
   }
 }
 

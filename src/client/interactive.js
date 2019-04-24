@@ -3,6 +3,7 @@ import {pt,rect, Point, Rectangle} from "src/client/graphics.js"
 import Preferences from './preferences.js';
 import select, { trackInstance } from 'active-group';
 import { Knot } from 'src/client/triples/triples.js';
+import aexpr from 'active-expression-rewriting';
 
 /* Layer for interactive development, that will not be active by default
  *
@@ -70,6 +71,9 @@ cop.layer(window, "InteractiveLayer")
     return cop
   },
 
+  get aexpr() {
+    return aexpr;
+  },
   get select() {
     return select;
   },

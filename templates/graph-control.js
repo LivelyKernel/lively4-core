@@ -3,7 +3,7 @@ import 'lang';
 import Morph from 'src/components/widgets/lively-morph.js';
 import KnotView from "templates/knot-view.js";
 
-import { Graph, DEFAULT_FOLDER_URL } from 'src/client/triples/triples.js';
+import { Graph } from 'src/client/triples/triples.js';
 
 export default class GraphControl extends Morph {
   async initialize() {

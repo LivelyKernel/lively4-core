@@ -1,25 +1,30 @@
 /* Polymorphic Identifier */
 
 import FileIndex from 'src/client/fileindex.js'
-var FileCache = FileIndex 
+var FileCache = FileIndex;
 
-export class ObjectResponse {
+export class ValueResponse {
  
-  constructor(result, options) {
-    this.status = (options && options.status) ? options.status : 200;
-    this.result = result
+  constructor(value, { status = 200 } = {}) {
+    this._value = value;
+    this.status = status;
   }
   
   async object() {
-    return this.result
+    return this._value;
+  }
+  
+  async value() {
+    return this._value;
   }
   
   async text() {
-    return ""
+    return '' + this._value;
   }
 
   async json() {
-    return this.text().then(t => JSON.parse(t))  
+    const jsonString = JSON.stringify(await this.value());
+    return JSON.parse(jsonString);
   }
 
   async blob() {
@@ -280,7 +285,7 @@ export class LivelyOpen extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -320,7 +325,7 @@ export class LivelyBrowse extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -357,7 +362,7 @@ export class LivelyEdit extends LivelyBrowse {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -446,7 +451,7 @@ export class ElementQuery extends Scheme {
   GET(options) {
     var element = this.element
     if (element) {
-      return new ObjectResponse(element, {status: 200});
+      return new ValueResponse(element, {status: 200});
     }
     return super.GET(options)
   }
@@ -517,7 +522,7 @@ export class ElementQueryAll extends Scheme {
   
   GET(options) {
     if (this.elements) {
-      return new ObjectResponse(this.elements, {status: 200});
+      return new ValueResponse(this.elements, {status: 200});
     }
     return super.GET(options)
   }
@@ -555,19 +560,103 @@ export class InnerHTMLElementQuery extends ElementQuery {
  
 }
 
+export class StringScheme extends Scheme {
+
+  get scheme() { return "string"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const string = new URL(this.url).pathname;
+    return new ValueResponse(string, {status: 200})      
+  }
+
+}
+
+export class NumberScheme extends Scheme {
+
+  get scheme() { return "number"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(parseFloat(content), {status: 200})      
+  }
+
+}
+
+export class DateScheme extends Scheme {
+
+  get scheme() { return "date"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(new Date(parseInt(content)), {status: 200})      
+  }
+
+}
+
+export class BooleanScheme extends Scheme {
+
+  get scheme() { return "bool"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(content === 'true' ? true : false, {status: 200})
+  }
+
+}
+
+export class Lively4URLScheme extends Scheme {
+  
+  get scheme() {
+    return "lively4url";
+  }
+
+  resolve() {
+    return true;
+  }  
+  
+  _fetch(options) {
+    const filePath = lively4url + "/" + new URL(this.url).pathname;
+    lively.warn(filePath, options && options.method)
+    return fetch(lively4url + "/" + new URL(this.url).pathname, options);
+  }
+  
+  async GET(options) {
+    return this._fetch(options);
+  }
+
+  PUT(options) {
+    return this._fetch(options);
+  }
+    
+  OPTIONS(options) {
+    return this._fetch(options);
+  }
+}
+
 
 export default class PolymorphicIdentifier {
   
   static load() {
-    this.register(LivelyFile) 
-    this.register(ElementQuery) 
-    this.register(ElementQueryAll) 
-    this.register(InnerHTMLElementQuery) 
-    this.register(LivelySearch)
-    this.register(LivelyOpen)
-    this.register(LivelyBrowse)
-    this.register(LivelyEdit)
-    this.register(CachedRequest)
+    [
+      LivelyFile, 
+      ElementQuery, 
+      ElementQueryAll, 
+      InnerHTMLElementQuery, 
+      LivelySearch,
+      LivelyOpen,
+      LivelyBrowse,
+      LivelyEdit,
+      CachedRequest,
+      StringScheme,
+      NumberScheme,
+      DateScheme,
+      BooleanScheme,
+      Lively4URLScheme,
+    ].forEach(scheme => this.register(scheme));
   }
   
   static url(request) {
@@ -624,13 +713,14 @@ if (!navigator.serviceWorker) {
   lively.removeEventListener("poid", navigator.serviceWorker)
   lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {
     try {
+      if(!evt.data.name || !evt.data.name.match('swx:pi:')) return; // not for me
+        
       let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)(?:\/(.*))?$/)
       if (!m) {
         throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
       }
       let url= m[1] + "://" + m[2]    
       if (!evt.ports[0]) {
-        debugger
         console.log("poid.js got message... but could not answer")
         return 
       }
@@ -657,8 +747,6 @@ if (!navigator.serviceWorker) {
 PolymorphicIdentifier.load()
 
 // window.fetch  = window.originalFetch
-
-
 // fetch("https://lively-kernel.org/lively4/lively4-jens/README.md")t
 
 

@@ -51,7 +51,7 @@ export default class ProbeWidget extends Widget {
       }
       
       // run: {before, after: {type, value, name}}
-      if(run.after.value instanceof Array) {
+      if(run.after && (run.after.value instanceof Array)) {
         // We have an array
         if(run.before) {
           const combinedArray = run.before.value.map(e => [e, undefined]);
@@ -268,3 +268,4 @@ export default class ProbeWidget extends Widget {
     lively.openInspector(inspectorValue);
   }
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

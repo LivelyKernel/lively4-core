@@ -112,7 +112,11 @@ export default class Selecting {
 
       
       var rootNode = this.findRootNode(document.body)
+      
       var path = this.slicePathIfContainerContent(e.path);
+      
+      // var rootNode = lively.findWorldContext(path)
+      
       // workaround weird toplevel event issues... the halo should not get the event
       // lively.notify("path " + e.path.map(ea => ea.tagName))
       if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {

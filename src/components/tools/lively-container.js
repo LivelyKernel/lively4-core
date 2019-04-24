@@ -5,6 +5,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
+import Favorites from 'src/client/favorites.js';
 
 import files from "src/client/files.js"
 
@@ -12,8 +13,9 @@ import files from "src/client/files.js"
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
 import Clipboard from "src/client/clipboard.js";
-import { debounce, fileEnding, replaceFileEndingWith } from "utils";
+import { debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils";
 import ViewNav from "src/client/viewnav.js"
+
 
 export default class Container extends Morph {
   
@@ -26,6 +28,11 @@ export default class Container extends Morph {
     // files.loadFile(lively4url + "/templates/livelystyle.css").then(css => {
     //   this.shadowRoot.querySelector("#livelySt\yle").innerHTML = css
     // })
+    if (!this.getAttribute("mode")) {
+      this.setAttribute("mode", "show")
+    }
+    
+    
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
@@ -158,6 +165,7 @@ export default class Container extends Morph {
   }
 
   hideCancelAndSave() {
+    return;
     _.each(this.shadowRoot.querySelectorAll(".edit"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
@@ -169,6 +177,7 @@ export default class Container extends Morph {
   }
 
   showCancelAndSave() {
+    return;
     _.each(this.shadowRoot.querySelectorAll(".browse"), (ea) => {
       ea.style.visibility = "hidden";
       ea.style.display = "none";
@@ -536,7 +545,7 @@ export default class Container extends Morph {
   }
 
   updateOtherContainers() {
-    console.warn('updateContainers')
+    console.warn('updateOtherContainers')
     var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
@@ -545,8 +554,34 @@ export default class Container extends Morph {
         ea.setPath(ea.getURL() + "");
       }
     });
+    
+    updateEditors(url, [])
   }
+  
 
+  async updateFavInfo() {
+    const starIcon = this.get('#favorite').querySelector('i');
+
+    if (await Favorites.has(this.getPath())) {
+      starIcon.classList.add('fa-star');
+      starIcon.classList.remove('fa-star-o');
+    } else {
+      starIcon.classList.add('fa-star-o');
+      starIcon.classList.remove('fa-star');
+    }
+  }
+  
+  async onToggleOptions() {
+    if (this.classList.contains('show-options')) {
+      this.classList.remove('show-options');
+    } else {
+      this.classList.add('show-options');
+    }
+  }
+  async onFavorite() {
+    await Favorites.toggle(this.getPath());
+    this.updateFavInfo()
+  }
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
     if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
@@ -1109,8 +1144,7 @@ export default class Container extends Morph {
 
   getLivelyCodeMirror() {
     var livelyEditor = this.get('lively-editor');
-    if (!livelyEditor) return;
-    return livelyEditor.get('#editor');
+    return livelyEditor && livelyEditor.get && livelyEditor.get('#editor');
   }
 
   // #TODO replace this with asyncGet
@@ -1418,6 +1452,7 @@ export default class Container extends Morph {
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
+      this.updateFavInfo();
     })
     .catch(function(err){
       console.log("Error: ", err);
@@ -1745,7 +1780,7 @@ export default class Container extends Morph {
   }
 
   contentIsEditable() {
-    return this.getPath().match(/\.html$/)
+    return this.getPath().match(/\.html$/) || this.getPath().match(/\.md$/)
   }
 
   checkForContentChanges() {
@@ -1753,6 +1788,13 @@ export default class Container extends Morph {
       this.contentChanged = false
       return
     }
+    
+    // don't know how to check for edits here... 
+    if (!this.isEditing() && this.getPath().match(/\.md$/)) {
+      this.contentChanged = false
+      return
+    }
+    
 
     if (this.isPersisting) return;
     this.isPersisting = true;

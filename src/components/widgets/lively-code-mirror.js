@@ -152,7 +152,10 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
-      .then(m => m.TernCodeMirrorWrapper);
+      .then(m => {
+        this.ternLoaded = true
+        return m.TernCodeMirrorWrapper
+      });
   }
 
   initialize() {
@@ -241,7 +244,127 @@ export default class LivelyCodeMirror extends HTMLElement {
     //   this.enableTern();
     // }
   }
+  
+  ensureExtraKeys() {
+    if (!this.extraKeys) {
+      var editor = this.editor
+      this.extraKeys = {
+        "Alt-F": "findPersistent",
+        // "Ctrl-F": "search",
+        // #KeyboardShortcut Ctrl-H search and replace
+        "Insert": (cm) => {
+          // do nothing... ther INSERT mode is so often actived by accident 
+        },
+        "Ctrl-Insert": (cm) => {
+          // do nothing... ther INSERT mode is so often actived by accident 
+          cm.toggleOverwrite()
+        },
+        "Ctrl-H": (cm) => {
+          setTimeout(() => {
+              editor.execCommand("replace");
+              this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+          }, 10)
+        },
+        // #KeyboardShortcut Ctrl-F search
+        "Ctrl-F": (cm) => {
+          // something immediately grabs the "focus" and we close the search dialog..
+          // #Hack...
+          setTimeout(() => {
+              editor.execCommand("findPersistent");
+              this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+          }, 10)
+          // editor.execCommand("find")
+        },
+        // #KeyboardShortcut Ctrl-Space auto complete
+        "Ctrl-Space": cm => {
+          this.fixHintsPosition()
+          cm.execCommand("autocomplete")
+        },
+        // #KeyboardShortcut Ctrl-Alt-Space auto complete
+        "Ctrl-Alt-Space": cm => {
+          this.fixHintsPosition()
+          cm.execCommand("autocomplete")
+        },
+        // #KeyboardShortcut Ctrl-P eval and print selelection or line
+        "Ctrl-P": (cm) => {
+            let text = this.getSelectionOrLine()
+            this.tryBoundEval(text, true);
+        },
+        // #KeyboardShortcut Ctrl-I eval and inspect selection or line
+        "Ctrl-I": (cm) => {
+          let text = this.getSelectionOrLine()
+          this.inspectIt(text)
+        },
+        // #KeyboardShortcut Ctrl-I eval selection or line (do it)
+        "Ctrl-D": (cm, b, c) => {
+            let text = this.getSelectionOrLine();
+            this.tryBoundEval(text, false);
+            return true
+        },
+        // #KeyboardShortcut Ctrl-Alt-Right multiselect next
+        "Ctrl-Alt-Right": "selectNextOccurrence",
+        // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
+        "Ctrl-Alt-Left": "undoSelection",
 
+        // #KeyboardShortcut Ctrl-/ indent slelection
+        "Ctrl-/": "toggleCommentIndented",
+        // #KeyboardShortcut Ctrl-# indent slelection
+        "Ctrl-#": "toggleCommentIndented",
+        // #KeyboardShortcut Tab insert tab or soft indent
+        'Tab': (cm) => {
+          if (cm.somethingSelected()) {
+            cm.indentSelection("add");
+          } else {
+            cm.execCommand('insertSoftTab')
+          }
+        },
+        // #KeyboardShortcut Ctrl-S save content
+        "Ctrl-S": (cm) => {
+          this.doSave(cm.getValue());
+        },
+        // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
+        "Ctrl-Alt-V": async cm => {
+          let text = this.getSelectionOrLine();
+          let result = await this.tryBoundEval(text, false);
+          letsScript(result);
+        },
+        // #KeyboardShortcut Ctrl-Alt-C show type using tern
+        "Ctrl-Alt-I": cm => {
+          this.ternWrapper.then(tw => tw.showType(cm, this));
+        },
+        // #KeyboardShortcut Alt-. jump to definition using tern
+        "Alt-.": cm => {
+          lively.notify("try to JUMP TO DEFINITION")
+          this.ternWrapper.then(tw => tw.jumpToDefinition(cm, this));
+        },
+        // #KeyboardShortcut Alt-, jump back from definition using tern
+        "Alt-,": cm => {
+          this.ternWrapper.then(tw => tw.jumpBack(cm, this));
+        },
+        // #KeyboardShortcut Shift-Alt-. show references using tern
+        "Shift-Alt-.": cm => {
+          this.ternWrapper.then(tw => tw.showReferences(cm, this));
+        },
+        // #KeyboardShortcut Alt-C capitalize letter
+        // #copied from keymap/emacs.js
+        "Alt-C": repeated(function(cm) {
+          operateOnWord(cm, function(w) {
+            var letter = w.search(/\w/);
+            if (letter == -1) return w;
+            return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
+          });
+        }),
+      }
+    }
+    return this.extraKeys
+  }
+  
+  registerExtraKeys(options={}) {
+    var extraKeys = Object.assign(this.ensureExtraKeys(), options)
+    this.editor.setOption("extraKeys", extraKeys);
+  }
+    
+  
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
@@ -256,116 +379,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
     editor.setOption("keyMap",  "sublime")
-		editor.setOption("extraKeys", {
-      "Alt-F": "findPersistent",
-      // "Ctrl-F": "search",
-      // #KeyboardShortcut Ctrl-H search and replace
-      "Insert": (cm) => {
-        // do nothing... ther INSERT mode is so often actived by accident 
-      },
-      "Ctrl-Insert": (cm) => {
-        // do nothing... ther INSERT mode is so often actived by accident 
-        cm.toggleOverwrite()
-      },
-      "Ctrl-H": (cm) => {
-        setTimeout(() => {
-            editor.execCommand("replace");
-            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
-        }, 10)
-      },
-      // #KeyboardShortcut Ctrl-F search
-      "Ctrl-F": (cm) => {
-		    // something immediately grabs the "focus" and we close the search dialog..
-        // #Hack...
-        setTimeout(() => {
-            editor.execCommand("findPersistent");
-            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
-        }, 10)
-        // editor.execCommand("find")
-      },
-      // #KeyboardShortcut Ctrl-Space auto complete
-      "Ctrl-Space": cm => {
-        this.fixHintsPosition()
-        cm.execCommand("autocomplete")
-      },
-      // #KeyboardShortcut Ctrl-Alt-Space auto complete
-      "Ctrl-Alt-Space": cm => {
-        this.fixHintsPosition()
-        cm.execCommand("autocomplete")
-      },
-      // #KeyboardShortcut Ctrl-P eval and print selelection or line
-      "Ctrl-P": (cm) => {
-          let text = this.getSelectionOrLine()
-          this.tryBoundEval(text, true);
-      },
-      // #KeyboardShortcut Ctrl-I eval and inspect selection or line
-      "Ctrl-I": (cm) => {
-        let text = this.getSelectionOrLine()
-        this.inspectIt(text)
-      },
-      // #KeyboardShortcut Ctrl-I eval selection or line (do it)
-      "Ctrl-D": (cm, b, c) => {
-        	let text = this.getSelectionOrLine();
-          this.tryBoundEval(text, false);
-        	return true
-      },
-      // #KeyboardShortcut Ctrl-Alt-Right multiselect next
-      "Ctrl-Alt-Right": "selectNextOccurrence",
-      // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
-  		"Ctrl-Alt-Left": "undoSelection",
-
-      // #KeyboardShortcut Ctrl-/ indent slelection
-      "Ctrl-/": "toggleCommentIndented",
-      // #KeyboardShortcut Ctrl-# indent slelection
-      "Ctrl-#": "toggleCommentIndented",
-      // #KeyboardShortcut Tab insert tab or soft indent
-      'Tab': (cm) => {
-        if (cm.somethingSelected()) {
-    			cm.indentSelection("add");
-  			} else {
-        	cm.execCommand('insertSoftTab')
-        }
-      },
-      // #KeyboardShortcut Ctrl-S save content
-      "Ctrl-S": (cm) => {
-        this.doSave(cm.getValue());
-      },
-      // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
-      "Ctrl-Alt-V": async cm => {
-        let text = this.getSelectionOrLine();
-        let result = await this.tryBoundEval(text, false);
-        letsScript(result);
-      },
-      // #KeyboardShortcut Ctrl-Alt-C show type using tern
-      "Ctrl-Alt-I": cm => {
-        this.ternWrapper.then(tw => tw.showType(cm, this));
-      },
-      // #KeyboardShortcut Alt-. jump to definition using tern
-      "Alt-.": cm => {
-        lively.notify("try to JUMP TO DEFINITION")
-        this.ternWrapper.then(tw => tw.jumpToDefinition(cm, this));
-      },
-      // #KeyboardShortcut Alt-, jump back from definition using tern
-      "Alt-,": cm => {
-        this.ternWrapper.then(tw => tw.jumpBack(cm, this));
-      },
-      // #KeyboardShortcut Shift-Alt-. show references using tern
-      "Shift-Alt-.": cm => {
-        this.ternWrapper.then(tw => tw.showReferences(cm, this));
-      },
-      // #KeyboardShortcut Alt-C capitalize letter
-      // #copied from keymap/emacs.js
-      "Alt-C": repeated(function(cm) {
-        operateOnWord(cm, function(w) {
-          var letter = w.search(/\w/);
-          if (letter == -1) return w;
-          return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
-        });
-      }),
-    });
+		
     editor.on("cursorActivity", cm => {
-      this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      if (this.ternLoaded) {
+        this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      }
     });
+    
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
       // this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
@@ -386,6 +406,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       codemirror: this,
       closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
     });
+    
+    this.registerExtraKeys()
   }
 
   
@@ -615,7 +637,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then && result instanceof Promise) {
+      if (result && result.then) { //  && result instanceof Promise
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {

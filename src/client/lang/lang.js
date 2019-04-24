@@ -244,6 +244,9 @@ extend(Array.prototype, {
   get first() { return this[0]; },
   set first(value) { return this[0] = value; },
 
+  get second() { return this[1]; },
+  set second(value) { return this[1] = value; },
+
   get last() { return this[this.length - 1]; },
   set last(value) { return this[this.length - 1] = value; },
 
@@ -279,6 +282,23 @@ extend(Array.prototype, {
     return _.zip(this, ...arrays);
   },
   
+  /**
+   * A generator yielding all items in this array. For propagating.
+   * @example <caption>Propagating yield* statements to items.</caption>
+   * function* example(arr) {
+   *   yield* arr.yieldAll();
+   * }
+   *
+   * for (let item of example([1,2,3])) {
+   *   lively.notify(item);
+   * }
+   */
+  *yieldAll() {
+    for (let item of this) {
+      yield item;
+    }
+  }
+
 });
 
 

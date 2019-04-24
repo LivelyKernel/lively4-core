@@ -126,11 +126,12 @@ export default class LivelyMenu extends Morph {
     }
   }
   
-  onRightDown(evt) {
-    if (!this.currentItem) return
+  async onRightDown(evt) {
+    if (!this.currentItem) { return; }
   
     var entry = this.currentItem.entry
-    if (entry[1] instanceof Array) {
+
+    if (await entry[1] instanceof Array) {
       this.enterSubmenu(evt);
     }
   }

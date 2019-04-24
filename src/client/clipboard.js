@@ -163,6 +163,8 @@ export default class Clipboard {
     if (flat) {
       return topLevel
     }
+    lively.components.loadUnresolved(result, true, "pasteHTMLDataInto", true)
+    
     return result
   }
   
