@@ -55,13 +55,26 @@ class Dependency {
     this.isTracked = true;
 
     const [context, identifier] = this.getContextAndIdentifier();
+    const value = context !== undefined ? context[identifier] : undefined;
+
+    // always employ the source code hook
     HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
+
+    // 
+    var dataStructure;
+    if (this.type === 'member') {
+      dataStructure = context;
+    } else if(this.type === 'local') {
+      dataStructure = value;
+    }
+    if (dataStructure instanceof Set) {
+      const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
+      HooksToDependencies.associate(dataHook, this);
+    }
   }
   untrack() {
     this.isTracked = false;
-
-    const [context, identifier] = this.getContextAndIdentifier();
-    HooksToDependencies.remove(SourceCodeHook.getOrCreateFor(context, identifier), this);
+    HooksToDependencies.disconnectAllForDependency(this);
   }
   getContextAndIdentifier() {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
@@ -93,8 +106,7 @@ class Dependency {
   }
 
   getAsDependencyDescription() {
-    const compKey = CompositeKeyToDependencies.getLeftFor(this);
-    const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
+    const [context, identifier] = this.getContextAndIdentifier();
     
     if (this.isMemberDependency()) {
       return {
@@ -204,15 +216,24 @@ const CompositeKeyToDependencies = new InjectiveMap();
 // 2.2. Dependency *<->* AExpr
 // - DependenciesToAExprs
 
+/** Source Code Hooks */
 // 3.1. ContextAndIdentifierCompositeKey 1<->1 SourceCodeHook
 // - CompositeKeyToSourceCodeHook
 const CompositeKeyToSourceCodeHook = new InjectiveMap();
 // 3.2. SourceCodeHook *<->* Dependency
 // - HooksToDependencies
 
+/** Data Structure Hooks */
+// 4.1 DataStructureHookByDataStructure
+const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Map), DataStructureHook>
+
 class Hook {
   constructor() {
     this.installed = false;
+  }
+  
+  notifyDependencies() {
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs())
   }
 }
 
@@ -231,13 +252,19 @@ class SourceCodeHook extends Hook {
   
   install() {}
   uninstall() {}
-  
-  notifyDependencies() {
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs())
-  }
 }
 
-class DataStructureHook extends Hook {}
+class DataStructureHook extends Hook {
+  static forStructure(set) {
+    const hook = new DataStructureHook();
+    set.add = function add(...args) {
+      const result = Set.prototype.add.call(this, ...args);
+      hook.notifyDependencies();
+      return result;
+    }
+    return hook;
+  }
+}
 
 const aexprStack = new Stack();
 

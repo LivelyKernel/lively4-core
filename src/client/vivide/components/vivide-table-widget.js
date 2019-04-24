@@ -41,7 +41,7 @@ export default class VivideTableWidget extends VivideWidget {
   
   tableHeadFromConfig(config) {
     this.thead.innerHTML = '';
-      // #VivideProperty label(String) !script-property! shown in the table header
+      // #VivideProperty header(String) !script-property! shown in the table header
     this.thead.appendChild(<tr>{...config.getAll('header').map(header => <th>{header}</th>)}</tr>);
   }
 
