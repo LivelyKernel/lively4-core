@@ -339,16 +339,37 @@ exports.translate = async function(load, traceOpts) {
       
       debugLog("[plugin-babel] update INDEXDB Cache " +  load.name  )
       // update cache in LocalStorage
-      self.lively4transpilationCacheDB.transpilations.put({
+      
+      
+      var cacheJSO = {
         url: cacheKey,
         input: cache.input,
         output: cache.output,
         map: JSON.stringify(cache.map),
-        modified: null,
-        version: null,
-      })                 
+        // modified: null,
+        // version: null,
+      }
       
-        
+      self.lively4transpilationCacheDB.transpilations.put(cacheJSO)                 
+      if (!cacheKey.match(/^workspacejs/)) {
+        console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
+        var transpileCacheURL = lively4url + "/.transpiled/" + cacheKey.replace(lively4url + "/","").replace(/\//g,"_") // flatten path
+        fetch(transpileCacheURL, {
+          method: "PUT",
+          headers: {
+            nocommit: true, // .transpiled is in gitignore... and the server cannot handle it automaitcally
+          },
+          body: cacheJSO.output
+        })
+
+        fetch(transpileCacheURL + ".map.json", {
+          method: "PUT",
+          headers: {
+            nocommit: true
+          },
+          body: cacheJSO.map
+        })        
+      }
     } 
 
     if (!self.babelTransformTimer) self.babelTransformTimer = []

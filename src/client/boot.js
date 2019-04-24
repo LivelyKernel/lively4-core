@@ -226,7 +226,6 @@ async function invalidateFileCaches()  {
 }
 
 async function preloadFileCaches() {
-  debugger
   await loadJavaScriptThroughDOM("JSZip", lively4url + "/src/external/jszip.js" )
   
   
@@ -257,13 +256,37 @@ async function preloadFileCaches() {
         var  mimeType = " text/plain"
         if (url.match(/\.js$/)) mimeType = "application/javascript"
         if (url.match(/\.css$/)) mimeType = "text/css"
-        self.lively4offlineFirstCache.put(url, new Response(await file.async("string"), {
+        var content = await file.async("string")
+        self.lively4offlineFirstCache.put(url, new Response(content, {
           headers: {
             "content-type": mimeType,
             modified: modified
           }
-        }))                           
+        }))
       }
+      if (ea.match(/.js$/) && !ea.match(/\.transpiled\//)) {
+          var transpiledPath = ".transpiled/" + ea.replace(/\//g,"_")
+          var transpiledFile = archive.file(transpiledPath)
+          var mapFile = archive.file(transpiledPath + ".map.json");
+          
+          if (transpiledFile) { 
+            console.log("[boot] preloadFileCache initialize transpiled javascript: " + ea)
+            try {
+              var transpiledCode = await transpiledFile.async("string")
+              if (mapFile) {
+                var map = JSON.parse(await mapFile.async("string"))
+              }
+              self.lively4transpilationCache.cache.set(url, {
+                  input: content, 
+                  output: transpiledCode,
+                  map: map,
+                  modified: modified
+                })
+            } catch(e) {
+              console.error("[boot] error in loading transpiled code: " + ea, e)
+            }
+          }
+        }
     }
   } 
   console.log("[boot] preloadFileCache updated caches in  " + Math.round(performance.now() - start) + "ms")
