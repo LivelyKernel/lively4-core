@@ -36,10 +36,28 @@ describe('Data Structure Hooks', () => {
     it('detects a newly added element', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
-      const expr = aexpr(() => set).onChange(spy);
+      aexpr(() => set).onChange(spy);
 
       set.add(42);
-      // expr.checkAndNotify();
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(set);
+    });
+    it('do not detect an already existing item', () => {
+      const spy = sinon.spy();
+      const set = new Set([1,2]);
+      aexpr(() => set).onChange(spy);
+
+      set.add(2);
+
+      expect(spy).not.to.be.called;
+    });
+    xit('detects a cleared set', () => {
+      const spy = sinon.spy();
+      const set = new Set([1,2]);
+      aexpr(() => set).onChange(spy);
+
+      set.clear();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
