@@ -4,7 +4,6 @@ import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
 import Strings from 'src/client/strings.js'
 
-
 /*
  * Kitchensink for all HTML manipulation utilities
  */

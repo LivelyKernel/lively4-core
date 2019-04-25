@@ -414,6 +414,8 @@ export default class Files {
       var name =  ea.type == "directory" ? 
         ea.name + "/" :
         ea.name
+      if (name == "index.md") return // don't include yourself
+      
       fileNames.push(name)
       // item.textContent = name
       if (!links.includes(name)) {

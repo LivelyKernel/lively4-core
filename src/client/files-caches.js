@@ -12,9 +12,10 @@ export function updateCachedFilesList() {
               .map(ea => ea.url.replace(lively4url + "/",""))
               ::uniq().sort()
  
-  return fetch(lively4url + "/bootfilelist.json", {
+  return fetch(lively4url + "/bootfilelist", {
     method: "PUT",
-    body: JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
+    body: list.join("\n")
+    //JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
   })
   
 }
