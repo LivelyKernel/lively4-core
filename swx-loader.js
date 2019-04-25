@@ -1,40 +1,13 @@
-// let Ofetch = fetch;
-// fetch = function(...args) {
-//   console.warn('FETCH' + args[0].url)
-//   return Ofetch(...args);
-// }
+
+// importScripts('src/worker/service-worker.js');
 
 
-// self.addEventListener('install', (event) => {
-// })
+var pendingRequests  = []; // will be used in boot and unset in swx
+var startSwxTime = Date.now();
 
-// self.oninstall = function() {
-// }
-
-function getChromeVersion () {     
-    var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
-    return raw ? parseInt(raw[2], 10) : false;
+try {
+  importScripts('swx-boot.js');
+} catch(e) {
+  debugger
 }
-
-// console.log("chrome version: " + getChromeVersion())
-var postfix = ""
-
-// #TODO only while developing
-// postfix += Date.now()
-
-if (getChromeVersion() < 60) {
-  console.log("disable SWX for now")
-} else {
-  console.log("SWX pre...")
-
-  importScripts('swx-pre.js');
   
-  try {
-    importScripts('swx-boot.js');
-  } catch(e) {
-    debugger
-  }
-  
-  console.log("boot loaded...")
-  importScripts('swx-post.js');
-}

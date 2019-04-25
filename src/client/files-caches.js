@@ -1,6 +1,6 @@
 import Files from "./files.js"
 
-self.lively4fetchLog = self.lively4fetchLog || []
+// self.lively4fetchLog = self.lively4fetchLog || []
 
 import {uniq} from "utils"
 
@@ -30,15 +30,15 @@ if (!navigator.serviceWorker) {
   lively.removeEventListener("files", navigator.serviceWorker)
   lively.addEventListener("files", navigator.serviceWorker, "message", async (evt) => {
     try {
-      if(evt.data.name == 'swx:fech:request') {
-        var map = Files.cachedFileMap()
-        console.log("[files] fetch request: " + evt.data.method + " "+ evt.data.url)
-        self.lively4fetchLog.push({
-          time: performance.now(),
-          method: evt.data.method,
-          url: evt.data.url
-        }) 
-      }
+      // if(evt.data.name == 'swx:fech:request') {
+      //   var map = Files.cachedFileMap()
+      //   console.log("[files] fetch request: " + evt.data.method + " "+ evt.data.url)
+      //   self.lively4fetchLog.push({
+      //     time: performance.now(),
+      //     method: evt.data.method,
+      //     url: evt.data.url
+      //   }) 
+      // }
 
       if(evt.data.name == 'swx:cache:update') {
         var map = Files.cachedFileMap()
