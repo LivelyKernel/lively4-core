@@ -5,24 +5,20 @@ self.lively4fetchLog = self.lively4fetchLog || []
 import {uniq} from "utils"
 
 
-
 export function updateCachedFilesList() {
   var list = self.lively4fetchLog.filter(ea => ea.method == "GET")
               .filter(ea => ea.url.match(lively4url))
               .map(ea => ea.url.replace(lively4url + "/",""))
               ::uniq().sort()
  
-  return fetch(lively4url + "/bootfilelist", {
+  return fetch(lively4url + "/.lively4bootfilelist", {
     method: "PUT",
     body: list.join("\n")
     //JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
   })
-  
 }
 
 // updateCachedFilesList()
-
-
 
 if (!navigator.serviceWorker) {
   console.warn("[files]... could not register message handler with no-existing service worker")

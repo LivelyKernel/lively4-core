@@ -3,6 +3,7 @@ import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
 import Strings from 'src/client/strings.js'
 
+
 export default class Files {
 
   static async fillCachedFileMap() {
@@ -25,7 +26,6 @@ export default class Files {
     } 
     return self.lively4cacheFiles 
   }
-  
   
   static parseSourceReference(ref) {
     if(ref.match("!")) {

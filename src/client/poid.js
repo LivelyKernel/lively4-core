@@ -640,6 +640,10 @@ export class Lively4URLScheme extends Scheme {
 
 export default class PolymorphicIdentifier {
   
+  get isPolymorphicIdentifierHandler() {
+    true
+  } 
+  
   static load() {
     [
       LivelyFile, 
@@ -696,14 +700,25 @@ export default class PolymorphicIdentifier {
 // And we do it because we can support arbitrary URLs that way and don't have to missuse HTTP // requests to https://lively4/
 
 // ContextJS seems to have a problem with this.. so we do it manaally
-if (!window.originalFetch) window.originalFetch = window.fetch
 
-window.fetch = async function(request, options, ...rest) {
-  var handler = PolymorphicIdentifier.handle(request, options)
-  if (handler) return handler.result;
-  // #TODO: lazy loading of schemes should go here
-  return window.originalFetch.apply(window, [request, options, ...rest])
+
+if (self.lively4fetchHandlers) {
+  
+  // get rid of old mes?
+  self.lively4fetchHandlers = self.lively4fetchHandlers
+    .filter(ea => !ea.isPolymorphicIdentifierHandler)
+  
+  self.lively4fetchHandlers.push(PolymorphicIdentifier)  
 }
+
+// if (!window.originalFetch) window.originalFetch = window.fetch
+// window.fetch = async function(request, options, ...rest) {
+//   var handler = PolymorphicIdentifier.handle(request, options)
+//   if (handler) return handler.result;
+//   // #TODO: lazy loading of schemes should go here
+//   return window.originalFetch.apply(window, [request, options, ...rest])
+// }
+
 
 
 
