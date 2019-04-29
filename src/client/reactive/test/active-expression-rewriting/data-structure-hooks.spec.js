@@ -62,23 +62,20 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
     });
-    xit('identity does not matter/sets as value classes', () => {
+    xit('detects a changed set size', () => {
       const spy = sinon.spy();
-      let set = new Set([1,2]);
-      const expr = aexpr(() => set).onChange(spy);
+      const set = new Set([1,2]);
+      aexpr(() => set.size).onChange(spy);
 
-      set = new Set([1,2]);
+      set.add(3);
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(set.size);
+      spy.reset();
 
-      expect(spy).not.to.be.called;
-    });
-    xit('order of insertion does not matter/set semantic', () => {
-      const spy = sinon.spy();
-      let set = new Set([1,2]);
-      const expr = aexpr(() => set).onChange(spy);
-
-      set = new Set([2,1]);
-
-      expect(spy).not.to.be.called;
+      set.clear();
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(set.size);
+      spy.reset();
     });
   });
   describe('Maps as Data Structures', () => {
