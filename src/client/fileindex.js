@@ -352,3 +352,36 @@ cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collecti
   }
 })
 
+
+if (self.lively4fetchHandlers) {  
+  
+  // remove old instances of me
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isFileIndexHandler);
+  self.lively4fetchHandlers.unshift({
+    isFileIndexHandler: true,
+    handle(request, options) {
+      // do nothing
+    },
+    finsihed(request, options) {
+      var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      
+      var serverURL = lively4url.replace(/\/[^/]*$/,"")
+      if (url.match(serverURL)) {
+        if (method == "PUT") {
+         //  
+          FileIndex.current().updateFile(url)
+        }
+        if (method == "DELETE") {
+          //
+          FileIndex.current().dropFile(url)   
+        }
+      }
+    }
+  })
+  
+}
+
+
+

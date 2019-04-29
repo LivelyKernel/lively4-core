@@ -187,7 +187,7 @@ async function preloadFileCaches() {
   
   
   var start = performance.now()
-  var preloadurl = lively4url + "/.lively4bundle.zip"
+  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now()
   var resp = await fetch(preloadurl)
   if (resp.status != "200") {
     console.warn("NO preload cache found in", preloadurl)
@@ -280,19 +280,28 @@ self.lively4fetchHandlers = []
 function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
+    var result = await new Promise(resolve => {
+      if (self.lively4fetchHandlers) {
+        // go through our list of handlers... the first one who handles it wins
+        for(var handler of self.lively4fetchHandlers) {
+          var handled = handler.handle && handler.handle(request, options)
+          if (handled) return resolve(handled.result);        
+        }
+      }
+      return resolve(self.originalFetch.apply(self, [request, options, ...rest]))
+    })
     if (self.lively4fetchHandlers) {
-      // go through our list of handlers... the first one who handles it wins
+      // anybody insterested when it finished
       for(var handler of self.lively4fetchHandlers) {
-        var handled = handler.handle(request, options)
-        if (handled) return handled.result;        
+        handler.finsihed && handler.finsihed(request, options)
       }
     }
-    return self.originalFetch.apply(self, [request, options, ...rest])
+    return result
   }  
 }
 
 function installCachingFetch() {
-  self.lively4fetchHandlers.push({
+  self.lively4fetchHandlers.push({    
     handle(request, options) {
       var url = (request.url || request).toString()
       var method = "GET"
@@ -308,12 +317,12 @@ function installCachingFetch() {
         if (method == "GET") {
           var match = self.lively4syncCache.get(url)
           if (match) {
-            // console.log("SYNC CACHED " + url)
+            console.log("[boot] SYNC CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
           } else {
-            console.log("SYNC MISSED " + url)
+            console.log("[boot] SYNC MISSED " + url)
           }          
         } if (method == "PUT") {
           // clear cache for PUT
@@ -329,6 +338,9 @@ function installCachingFetch() {
           
         }
       }
+    },
+    finished(request, options) {
+      console.log("[boot] FINISHED fetch " + request.toString()) 
     }
   })
 }
