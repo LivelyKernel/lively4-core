@@ -305,7 +305,6 @@ export default class Input {
 
   update() {
     this.updateGamepad();
-    this.updateTool();
   }
 
   updateGamepad() {
@@ -394,10 +393,6 @@ export default class Input {
     }
   }
 
-  updateTool() {
-    if(this.tool)
-      this.tool.update();
-  }
 }
 
 	Input.KEY = {
