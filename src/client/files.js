@@ -5,6 +5,12 @@ import Strings from 'src/client/strings.js'
 
 
 export default class Files {
+  
+  static hello() {
+    return "Hello World"
+  }
+  
+  
 
   static async fillCachedFileMap() {
     var root = lively4url +  "/"

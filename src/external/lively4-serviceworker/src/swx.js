@@ -16,7 +16,8 @@ import schemefs from './fs/scheme.js'
 
 import focalStorage from './external/focalStorage.js';
 
-import { Cache } from './cache.js';
+// we might need it again... but not now
+// import { Cache } from './cache.js';
 
 const storagePrefix = "LivelySync_";
 
@@ -55,7 +56,7 @@ class ServiceWorker {
     this.promisedToken = focalStorage.getItem(storagePrefix+ "githubToken")
     
     // Create cache
-    this._cache = new Cache(this.filesystem);
+    // this._cache = new Cache(this.filesystem);
   }
 
   static instance() {
@@ -139,38 +140,38 @@ class ServiceWorker {
     
   
   
-  fetchLively4url(request, event, pending, url) {
-    try {
-        // Prepare a function that performs the network request if necessary
-        let doNetworkRequest = async () => {
-          // If we are not navigating using the browser, inject header information
-          if(request.mode !== 'navigate') {
-            return this.fetchLively4authenticated(request) 
-          } else {
-            // If we are navigating in the browser, simply forward the request
-            return self.fetch(request).catch(e => {
-              console.error("fetch error: "  + e);
-              return new Response("Could not fetch " + url +", because of: " + e);
-            })
-          }
-        };
+//   fetchLively4url(request, event, pending, url) {
+//     try {
+//         // Prepare a function that performs the network request if necessary
+//         let doNetworkRequest = async () => {
+//           // If we are not navigating using the browser, inject header information
+//           if(request.mode !== 'navigate') {
+//             return this.fetchLively4authenticated(request) 
+//           } else {
+//             // If we are navigating in the browser, simply forward the request
+//             return self.fetch(request).catch(e => {
+//               console.error("fetch error: "  + e);
+//               return new Response("Could not fetch " + url +", because of: " + e);
+//             })
+//           }
+//         };
 
-        // Use the cache if possible, and answer pending request #TODO #Refactor
-        // #Duplicate with fetchLively4fs
-        if (pending) {
-          this._cache.fetch(event.request, doNetworkRequest, pending)
-        } else {
-          event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
-        }
-      } catch(err) {
-        // TODO: improve the solution, matching errors by message should be done better
-        if (err.toString().match("The fetch event has already been responded to.")) {
-          console.error("How can we check for this before? ", err);
-        } else {
-          throw err;
-        }
-      }
-  }
+//         // Use the cache if possible, and answer pending request #TODO #Refactor
+//         // #Duplicate with fetchLively4fs
+//         if (pending) {
+//           this._cache.fetch(event.request, doNetworkRequest, pending)
+//         } else {
+//           event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
+//         }
+//       } catch(err) {
+//         // TODO: improve the solution, matching errors by message should be done better
+//         if (err.toString().match("The fetch event has already been responded to.")) {
+//           console.error("How can we check for this before? ", err);
+//         } else {
+//           throw err;
+//         }
+//       }
+//   }
   
   fetchLively4fs(request, event, pending, url) {
     // Prepare a function that performs the network request if necessary
@@ -196,11 +197,14 @@ class ServiceWorker {
       });
     } 
 
-    if (pending) {
-      this._cache.fetch(event.request, doNetworkRequest, pending)
-    } else {
-      event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
-    }
+    // if (pending) {
+    //   this._cache.fetch(event.request, doNetworkRequest, pending)
+    // } else {
+    //   event.respondWith(this._cache.fetch(event.request, doNetworkRequest));
+    // }
+    
+    event.respondWith(doNetworkRequest());
+
   }
 
   fetch(event, pending) {
@@ -233,7 +237,10 @@ class ServiceWorker {
     // if (url.pathname.match(/noserviceworker/)) return; // #Debug
 
     if (url.hostname !== 'pi' && url.hostname !== 'lively4' && url.hostname == location.hostname/* && request.mode != 'navigate'*/) {
-      this.fetchLively4url(request, event, pending, url)
+      
+      // don't handle lively4urls any more #TODO we could force load/cache the bundle here?
+      return
+      // this.fetchLively4url(request, event, pending, url)
     } else if (url.hostname === 'lively4') {
       this.fetchLively4fs(request, event, pending, url)
     }

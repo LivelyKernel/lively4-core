@@ -4,7 +4,6 @@
 
 import { Base, Stat, StatNotFoundError, File, FileNotFoundError, IsDirectoryError } from './base.js'
 import * as util from '../util.js'
-import * as cache from '../cache.js'
 
 export default class Filesystem extends Base {
   constructor(path, options) {
@@ -98,23 +97,7 @@ export default class Filesystem extends Base {
   }
   
   async _getResponse(request, no_cache) {
-    /*if (!no_cache) {
-      // Check if device is online
-      if (navigator.onLine) {
-        // TODO: Replace with new version
-        return await cache.match(request, 5 * 60 * 1000);
-      } else {
-      // TODO: Replace with new version
-        return await cache.match(request);
-      }
-    } else {
-      // TODO: Replace with new version
-      cache.purge(request);
-    }*/
-
     let response = await self.fetch(request);
-    // TODO: Replace with new version
-    //cache.put(request, response);
     return response.clone();
   }
 
