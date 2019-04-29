@@ -21,21 +21,7 @@ let transformCache
 
 var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
-var useCacheAPI = true // #TODO refactor when we found a fast solution... 
-
-// 3. approach at caching this... after two have failed!
-var useCacheHack = self.lively4useTranspilationCache 
-self.lively4transpilationCache = self.lively4transpilationCache || {
-  cache: new Map(),
-  update: new Set()} // just to be sure
-
 // var diff = require('src/external/diff-match-patch.js').default;
-
-
-// import {getScopeIdForModule} from "./../babel-plugin-var-recorder.js" 
-function getScopeIdForModule(moduleName) {
-  return moduleName.replace(/[^a-zA-Z0-9]/g, "_")
-}
 
 var externalHelpers = require('systemjs-babel-build').externalHelpers;
 var runtimeTransform = require('systemjs-babel-build').runtimeTransform;
@@ -232,18 +218,18 @@ exports.translate = async function(load, traceOpts) {
   let cachedInputCode, cachedOutputCode, cachedOutputMap
 
   var useCache  
-  if (useCacheHack) {
-    // now we get dirty... both indexDB and caches API are pretty slow... so fuck it, we hack around their limiations! Do you hear me chrome god, we are going to fuck with you!
-    // #Idea: preload everything into memory.... and bulk store the transpilation results after boot
-    
+  
+  // now we get dirty... both indexDB and caches API are pretty slow... so fuck it, we hack around their limiations! Do you hear me chrome god, we are going to fuck with you!
+  // #Idea: preload everything into memory.... and bulk store the transpilation results after boot  
+  if (self.lively4transpilationCache) {
     var cached = self.lively4transpilationCache.cache.get(key)
     if (cached) {
-      
+
       if (load.source == cached.input) {
 
         debugLog("[plugin-babel] USE CACHE " + key) 
         useCache = true
-        
+
         cachedInputCode = cached.input
         cachedOutputCode = cached.output
         cachedOutputMap = cached.map      
@@ -252,22 +238,17 @@ exports.translate = async function(load, traceOpts) {
       }
     } else {
       debugLog("[plugin-babel] NOT IN CACHE " + key) 
-    }
-  } 
+    }   
+  }
+   
   if (cachedOutputCode) {
     debugLog("plugin babel use cache: " + load.name)
     if(cachedInputCode == load.source) {
       try {
-
         output = {
           code: cachedOutputCode,
           map: cachedOutputMap
         }
-
-        // side effects of using the transformation
-        var moduleURL = SystemJS.normalizeSync(load.name)
-        // a) var recorder
-        _recorder_[getScopeIdForModule(moduleURL)] = {} // #Idea maybe this should go lazy into the module? @Stefan
       } catch (e) {
         console.warn("something went wrong... while loading cache " + e)
         output = undefined
@@ -326,19 +307,16 @@ exports.translate = async function(load, traceOpts) {
       }
     });
 
-    // debugLog("output ", output)  
-    if (useCacheHack) {
-        // update cache in memory
-      var cache = {
-          input:load.source, 
-          output: output.code, 
-          map: output.map
-      }
-      
-      self.lively4transpilationCache.update(cacheKey, cache)
-      // update cache in LocalStorage
-    } 
+    var cache = {
+        input:load.source, 
+        output: output.code, 
+        map: output.map
+    }
 
+    if (self.lively4transpilationCache) {
+      self.lively4transpilationCache.update(cacheKey, cache)      
+    }
+    
     if (!self.babelTransformTimer) self.babelTransformTimer = []
     self.babelTransformTimer.push({
       name: load.name,

@@ -1,9 +1,8 @@
 import Files from "./files.js"
 
-// self.lively4fetchLog = self.lively4fetchLog || []
+self.lively4fetchLog = self.lively4fetchLog || []
 
 import {uniq} from "utils"
-
 
 
 export function updateCachedFilesList() {
@@ -12,17 +11,14 @@ export function updateCachedFilesList() {
               .map(ea => ea.url.replace(lively4url + "/",""))
               ::uniq().sort()
  
-  return fetch(lively4url + "/bootfilelist", {
+  return fetch(lively4url + "/.lively4bootfilelist", {
     method: "PUT",
     body: list.join("\n")
     //JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
   })
-  
 }
 
 // updateCachedFilesList()
-
-
 
 if (!navigator.serviceWorker) {
   console.warn("[files]... could not register message handler with no-existing service worker")
@@ -30,15 +26,15 @@ if (!navigator.serviceWorker) {
   lively.removeEventListener("files", navigator.serviceWorker)
   lively.addEventListener("files", navigator.serviceWorker, "message", async (evt) => {
     try {
-      // if(evt.data.name == 'swx:fech:request') {
-      //   var map = Files.cachedFileMap()
-      //   console.log("[files] fetch request: " + evt.data.method + " "+ evt.data.url)
-      //   self.lively4fetchLog.push({
-      //     time: performance.now(),
-      //     method: evt.data.method,
-      //     url: evt.data.url
-      //   }) 
-      // }
+      if(evt.data.name == 'swx:fech:request') {
+        var map = Files.cachedFileMap()
+        console.log("[files] fetch request: " + evt.data.method + " "+ evt.data.url)
+        self.lively4fetchLog.push({
+          time: performance.now(),
+          method: evt.data.method,
+          url: evt.data.url
+        }) 
+      }
 
       if(evt.data.name == 'swx:cache:update') {
         var map = Files.cachedFileMap()

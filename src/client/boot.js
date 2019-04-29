@@ -69,7 +69,6 @@ if (!(localStorage["logLivelyBoot"] == "true")) {
   }
 }
 
-self.lively4useTranspilationCache = true // localStorage["useTranspilationCache"]
 self.lively4transpilationCache = {
   update(cacheKey, cache) {
     this.cache.set(cacheKey, cache)
@@ -103,11 +102,6 @@ self.lively4transpilationCache = {
   cache: new Map()
 } 
 
-var Dexie;
-self.transpilationCacheDB
-
-var fileInfoDB
-
 self.lively4syncCache = new Map()
 self.lively4fetchLog = []
 
@@ -118,42 +112,8 @@ async function logTime(msg, exec) {
   if (PerformanceLogsEnabled) console.log(msg + " (" + Math.round(performance.now() - start) + "ms)")
 }
 
-
 async function invalidateFileCaches()  {
-  // Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
-  
-  
-  // await logTime("initialize fileInfoDB", async () => {
-  //   fileInfoDB = new Dexie("fileInfoDB");
-  //   fileInfoDB.version("1").stores({
-  //     files: 'url, modified, version',
-  //   }).upgrade(function () { })
-  // })
-  
-//   if (self.lively4useTranspilationCache) {
-    
-//     await logTime("initialize transpilation cache", async () => {
-//       self.lively4transpilationCacheDB = new Dexie("transpilationCache");
-//       self.lively4transpilationCacheDB.version("1").stores({
-//         transpilations: 'url, modified, version',
-//       }).upgrade(function () { })
-//     })
-
-    
-//     await self.lively4transpilationCacheDB.transpilations.each(ea => {
-//       self.lively4transpilationCache.cache.set(ea.url, {
-//         input: ea.input,
-//         output: ea.output,
-//         map: ea.map && JSON.parse(ea.map),
-//         modified: ea.modified,
-//         version: ea.version
-//       })
-//     }) 
-    
-   
-//   }
-  
-  
+ 
   var offlineFirstCache
   var json
   var url = lively4url + "/"
@@ -215,40 +175,7 @@ async function invalidateFileCaches()  {
   
   var start = performance.now()
   var filelist = []
-  
-  
-//   fileInfoDB.transaction("rw", ["files"], async () => {
-//     await Promise.all(list.map(async ea => {
-//       if (!ea.name) return
-//       var fileURL = url + ea.name.replace(/^.\//,"")
-
-//       if (fileURL.match(/node_modules/)) {
-//         ignored++
-//         return  // ignore 4000 files we don't care
-//       }
-//       filelist.push(fileURL)
-
-//       fileInfoDB.files.put({
-//           url: fileURL,
-//           modified: ea.modified})
-
-//       var cached  = await offlineFirstCache.match(fileURL)
-
-//       if (cached) {
-//         found++
-//         // #TODO this means loading over 2000 files (or responses) from the disk... and looking at their headers, we should maybe use indexdDB for this? Merge our file index? 
-//         var cachedModified = cached.headers.get("modified")
-//         if (ea.modified > cachedModified) {
-//           // console.log("invalidate cache " + fileURL + `${ea.modified} > ${cachedModified}`)
-//           offlineFirstCache.delete(fileURL) // we could start loading it again?
-//           invalidated++
-//         } else {
-//           // console.log("keep " + ea.modified)
-//         }
-//       }
-//     }))
-//   })
-  
+    
   // await lively4fillCachedFileMap(filelist)
   console.log("[boot] invalidateFileCaches: cache invalidation for loop in " + (performance.now() - start) 
               + "ms, in cache  " + found + " files, " 
@@ -260,7 +187,7 @@ async function preloadFileCaches() {
   
   
   var start = performance.now()
-  var preloadurl = lively4url + "/test.zip"
+  var preloadurl = lively4url + "/.lively4bundle.zip"
   var resp = await fetch(preloadurl)
   if (resp.status != "200") {
     console.warn("NO preload cache found in", preloadurl)
@@ -378,15 +305,28 @@ function installCachingFetch() {
           url: url
         }) 
         if (!self.lively4syncCache) return
-        if (options && options.method && options.method !== "GET") return
-        var match = self.lively4syncCache.get(url)
-        if (match) {
-          // console.log("SYNC CACHED " + url)
-          return {
-            result: Promise.resolve(match.clone())
+        if (method == "GET") {
+          var match = self.lively4syncCache.get(url)
+          if (match) {
+            // console.log("SYNC CACHED " + url)
+            return {
+              result: Promise.resolve(match.clone())
+            }          
+          } else {
+            console.log("SYNC MISSED " + url)
           }          
+        } if (method == "PUT") {
+          // clear cache for PUT
+          // so next GET will get the new content
+          self.lively4syncCache.set(url, null) 
+          
+          // #TODO we could further store the PUT already locally? 
+          // PRO: offline support
+          // CONTRA: not sure if the file reached the server....
+          
+          // and don't further handle it... so that it will be saved on the server
         } else {
-          console.log("SYNC MISSED " + url)
+          
         }
       }
     }

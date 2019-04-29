@@ -1,7 +1,21 @@
 /* Shared SystemJS Config */
 
 // setup var recorder object
+
 window._recorder_ = {_module_:{}}
+
+// window._recorder_ = new Proxy({}, {
+//   set: function(obj, prop, value) {
+//     debugger
+//     console.log("RECORDER set " + prop)
+//     obj[prop] = value
+//     return true
+//   },  
+  
+//   get: function(obj, prop) {
+//     return obj[prop]
+//   }
+// });
 
 const moduleOptionsNon = {
   babelOptions: {

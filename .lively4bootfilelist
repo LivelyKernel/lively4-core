@@ -1,4 +1,4 @@
-README.md
+.lively4bundle.zip
 demos/plex/plex-scheme.js
 src/client/ContextJS/src/Layers.js
 src/client/ContextJS/src/contextjs.js
@@ -20,7 +20,6 @@ src/client/graffle.js
 src/client/graphics.js
 src/client/html.js
 src/client/info.js
-src/client/interactive.js
 src/client/keys.js
 src/client/lang/lang-ext.js
 src/client/lang/lang.js
@@ -143,10 +142,6 @@ src/components/widgets/lively-code-mirror.css
 src/components/widgets/lively-code-mirror.html
 src/components/widgets/lively-code-mirror.js
 src/components/widgets/lively-dialog.js
-src/components/widgets/lively-import.html
-src/components/widgets/lively-import.js
-src/components/widgets/lively-markdown.html
-src/components/widgets/lively-markdown.js
 src/components/widgets/lively-morph.js
 src/components/widgets/lively-notification-list.html
 src/components/widgets/lively-notification-list.js
@@ -187,21 +182,14 @@ src/external/font-awesome/css/font-awesome.css
 src/external/font-awesome/css/font-awesome.min.css
 src/external/highlight.css
 src/external/highlight.js
-src/external/htmlparser2.js
 src/external/jszip.js
 src/external/lodash/lodash.js
-src/external/markdown-it-attrs.js
-src/external/markdown-it-hashtag.js
-src/external/markdown-it-tasks.js
-src/external/markdown-it.js
 src/external/moment.js
 src/external/rasterizeHTML.js
 src/external/source-map.min.js
 src/external/typo.js
 src/external/underscore.js
-src/external/upndown.js
 src/worker/systemjs-worker.js
 templates/graph-control.js
 templates/knot-view.js
 templates/livelystyle.css
-test.zip
