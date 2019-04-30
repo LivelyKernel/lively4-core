@@ -16,6 +16,7 @@ import Favorites from "src/client/favorites.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
+
 export default class ContextMenu {
   
   constructor(target, optItems) {
