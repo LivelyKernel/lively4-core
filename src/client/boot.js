@@ -105,81 +105,17 @@ self.lively4transpilationCache = {
 self.lively4syncCache = new Map()
 self.lively4fetchLog = []
 
-let PerformanceLogsEnabled = true
-async function logTime(msg, exec) {
-  var start = performance.now()
-  await exec()
-  if (PerformanceLogsEnabled) console.log(msg + " (" + Math.round(performance.now() - start) + "ms)")
-}
-
 async function invalidateFileCaches()  {
  
-  var offlineFirstCache
-  var json
   var url = lively4url + "/"
   
-  await logTime("load file list from server", async () => {
-    try {
-      if (!self.caches) {
-        console.warn("self.caches not defined")
-        return
-      }
-      if (self.lively && lively.fileIndexWorker) {
-        lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
-      }
-      
-      // offlineFirstCache = await caches.open("offlineFirstCache")
-      // self.lively4offlineFirstCache = offlineFirstCache
-      
-      json = await Promise.race([
-        new Promise(r => {
-          setTimeout(() => r(false), 5000) 
-          // give the server 5secs ... might be an old one or somthing, anyway keep going!
-        })
-        ,fetch(url, {
-          method: "OPTIONS",
-          headers: {
-            filelist  : true
-          }
-        }).then(async resp => {
-          if (resp.status != 200) {
-            console.log("PROBLEM invalidateFileCaches SERVER RESP " + resp.status)
-            return false
-          } else {
-            try {
-              var text = await resp.text()
-              return JSON.parse(text)
-            } catch(e) {
-              console.log("could not parse: " + text)
-              return undefined
-            }
-          }
-        })
-      ])
-    } catch(e) {
-      console.log("PROBLEM invalidateFileCaches " + e)
-      return
-    }
-  })
-
-  if (!json) {
-    console.log('[boot] invalidateFileCaches: could not invalidate flash... should we clean it all?')
-    return
+  if (self.lively && lively.fileIndexWorker) {
+    lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
   }
-  var list = json.contents
   
-
-  var found = 0
-  var ignored = 0
-  var invalidated = 0
+  const FilesCaches = await System.import("src/client/files-caches.js")
+  console.log("[boot] invalidateFileCaches:\n" + FilesCaches.invalidateTranspiledFiles())
   
-  var start = performance.now()
-  var filelist = []
-    
-  // await lively4fillCachedFileMap(filelist)
-  console.log("[boot] invalidateFileCaches: cache invalidation for loop in " + (performance.now() - start) 
-              + "ms, in cache  " + found + " files, " 
-              + "ignored" + ignored +" files, deleted " + invalidated + " files")
 }
 
 async function preloadFileCaches() {
