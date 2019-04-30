@@ -15,6 +15,10 @@ import * as spellCheck from "src/external/codemirror-spellcheck.js"
 
 import {isSet} from 'utils'
 
+
+import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
+self.CodeMirror = CodeMirror // for modules
+
 let loadPromise = undefined;
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
@@ -58,8 +62,18 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModule(path, force) {
-    return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
-      this.codeMirrorPath + path, force)
+    if (!self.CodeMirror) {
+      console.warn("CodeMirror is missing, could not initialize " + path )
+      return 
+    }
+    var code = await fetch(this.codeMirrorPath + path).then(r => r.text())
+    try {
+      eval(code)
+    } catch(e) {
+      console.error("Could not load CodeMirror module " + path, e)
+    }
+    // return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
+    //   this.codeMirrorPath + path, force)
   }
 
   static async loadCSS(path) {
@@ -72,7 +86,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
-      await this.loadModule("lib/codemirror.js")
 
       await this.loadModule("addon/fold/foldcode.js")
 
