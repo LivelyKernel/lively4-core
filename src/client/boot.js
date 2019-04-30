@@ -382,8 +382,8 @@ if (self.lively && self.lively4url) {
     self.lively4bootGroupedMessages = []
     var lastMessage
     
-    var estimatedSteps = 8
-    var stepCounter = 1
+    var estimatedSteps = 9;
+    var stepCounter = 1;
     
     function groupedMessage( message) {
       var part = stepCounter++
