@@ -407,6 +407,15 @@ export default class ContextMenu {
           workspace.parentElement.setAttribute("title","open this in a tab...")
           workspace.mode = "text"
         }],
+         ["Update Cached Bootfiles", async evt => {
+           
+          const FilesCaches = await System.import("src/client/files-caches.js")
+          var list = await FilesCaches. updateCachedFilesList()
+          var workspace = await lively.openWorkspace("" + list.join("\n"))
+          workspace.parentElement.setAttribute("title","open this in a tab...")
+          workspace.mode = "text"
+          
+        }],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       [
         "Favorites",
