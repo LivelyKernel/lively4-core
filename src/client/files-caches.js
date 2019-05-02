@@ -19,6 +19,7 @@ export async function updateCachedFilesList() {
   return list
 }
 
+
 export async function purgeTranspiledFiles() {
   var transpiledFiles = await Files.walkDir(lively4url + "/.transpiled/")
   var log = ""

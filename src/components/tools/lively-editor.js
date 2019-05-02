@@ -463,7 +463,7 @@ export default class Editor extends Morph {
   }
   
   async pasteDataUrlAs(dataURL, newurl, filename, evt) {
-    
+
     var blob = await fetch(dataURL).then(r => r.blob())
     await files.saveFile(newurl, blob)
     
