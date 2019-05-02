@@ -318,7 +318,7 @@ if (self.lively && self.lively4url) {
     self.lively4bootGroupedMessages = []
     var lastMessage
     
-    var estimatedSteps = 9;
+    var estimatedSteps = 8;
     var stepCounter = 1;
     
     function groupedMessage( message) {
@@ -374,10 +374,6 @@ if (self.lively && self.lively4url) {
       groupedMessageEnd();
 
       try {
-          groupedMessage('Invalidate Caches (in boot.js)')
-          // await invalidateFileCaches()
-          groupedMessageEnd();
-
           groupedMessage('Preload Files');
           await preloadFileCaches()
           // we could wait, or not... if we load transpiled things... waiting is better
