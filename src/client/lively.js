@@ -286,8 +286,10 @@ export default class Lively {
     root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src");
       if (src) {
+        var cssURL = lively4url + src
         allSrc.push(src)
-        promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
+        promises.push(fetch(cssURL).then(r => r.text()).then(css => {
+          // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
           ea.innerHTML = css;
         }));
       }
@@ -882,7 +884,6 @@ export default class Lively {
         document.head.appendChild(titleTag);
       }
 
-
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
@@ -898,13 +899,11 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    // just for more accurate measurement, since we load them anyway...
-    await lively.components.loadByName("lively-container")
-    await lively.components.loadByName("lively-code-mirror")
         
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
+    
+    
     setTimeout(() => {
       console.log("start persistence...")
       persistence.current.start()
@@ -913,22 +912,13 @@ export default class Lively {
 
   static async showMainContainer() {
     var container = document.querySelector('main-content')
-    if (container) return container;
-
-    var w = await lively.create("lively-window");
-    document.body.appendChild(w)
-    container = await lively.create("lively-container");
-    w.appendChild(container)
-    container.id = 'main-content';
-    container.setAttribute("load", "auto");
-    
-    container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
-    container.get('#container-content').style.overflow = "visible";
-    container.parentElement.toggleMaximize()
-    container.parentElement.hideTitlebar()
-    container.parentElement.style.zIndex = 0
-    container.parentElement.setAttribute("data-lively4-donotpersist","all");
-
+    if (!container) {
+      var w = await lively.create("lively-window");
+      document.body.appendChild(w)
+      container = await lively.create("lively-container");
+      w.appendChild(container)
+      container.becomeMainContainer()
+    }
     return container
   }
 

@@ -251,3 +251,9 @@ templates/graph-control.js
 templates/knot-view.js
 templates/lively4.css
 templates/livelystyle.css
+templates/
+src/components/
+src/components/widgets/
+src/components/tools/
+src/components/halo/
+templates/

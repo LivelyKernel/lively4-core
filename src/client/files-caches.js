@@ -30,14 +30,18 @@ export async function purgeTranspiledFiles() {
   return transpiledFiles.map(ea => ea.replace(lively4url + "/.transpiled/", ""))
 }
 
-
-export async function invalidateTranspiledFiles() {
-  var files = await fetch(lively4url + "/", {
+function defaultFileList() {
+  return fetch(lively4url + "/", {
     method: "OPTIONS",
     headers: {
       filelist: true
     }
   }).then(r => r.json())
+}
+
+
+export async function invalidateTranspiledFiles(files) {
+  files = files || await defaultFileList()
   
   var log = ""
   var map = new Map() // make file lookup faster
@@ -60,16 +64,56 @@ export async function invalidateTranspiledFiles() {
           log += "delete " + mapURL + "\n"
           fetch(jsURL, {method: "DELETE"})
           fetch(mapURL, {method: "DELETE"})
-        } else {
-          // log += `ignore ${transpiled.name} ${file.modified}\n` // < ${transpiled.modified}
         }
-      } else {
-        // log += `not found ` + transpiledPath +"\n"
       }
-      
     }
   }
   return log
+}
+
+export async function invalidateOptionsFiles(files) {
+  files = files || await defaultFileList()
+  
+  var log = ""
+  var map = new Map() // make file lookup faster
+  for(let file of files.contents) {
+    let path = file.name.replace(/^\.\//, "")
+    if (path.match(/^\.options\//)) {
+      map.set(path, file)
+    }
+  }
+  for(let file of files.contents) {
+    var path = file.name.replace(/^\.\//,"")
+      var optionsPath = ".options/" + path.replace(/\//g,"_")
+      var opotionsFile = map.get(optionsPath)
+      if (opotionsFile) {
+        if (file.modified > opotionsFile.modified) {
+          var optionsURL = lively4url + "/" + optionsPath
+          log += "delete " + optionsURL + "\n"
+          fetch(optionsURL, {method: "DELETE"})
+        } 
+      }  }
+  return log
+}
+
+
+export async function ensureBootlistOptionsFiles() {
+  var bootfiles = (await fetch(lively4url +"/" + ".lively4bootfilelist").then(r => r.text())).split("\n")
+  for  (var ea of bootfiles) {
+    var optionsContents = await fetch(ea, {
+      method: "OPTIONS"
+    }).then(r => r.text())
+    
+    var optionsURL = lively4url + "/.options/" + ea.replace(/\//g, "_")
+    await fetch(optionsURL, {
+      method: "PUT",
+      body: optionsContents, 
+      headers: {
+        nocommit: true  
+      }
+    })
+    console.log("[files-caches] ensureBootlistOptionsFiles: updated " + ea)
+  }
 }
 
 
