@@ -36,24 +36,6 @@ function loadJavaScriptThroughDOM(name, src, force) {
 }
 // END COPIED
 
-async function lively4fillCachedFileMap(filelist) {
-  var root = lively4url +  "/"
-  if (!filelist) {
-    filelist =   await fetch(root, {
-      method: "OPTIONS",
-      headers: {
-        filelist: true
-      }
-    }).then(r => r.json()).then(r => r.contents.map(ea => ea.name.replace(/^\.\//,url)))
-  }
-  if (!self.lively4cacheFiles) {
-    self.lively4cacheFiles = new Map()  // indexDB or dexie are to slow (60ms for simple checking if it is there #TODO)
-  } 
-  var map =self.lively4cacheFiles 
-  for(var url of filelist) {
-    map.set(url, {exists: true})
-  }
-}
 
 self.lively4currentbootid = "" + new Date()
 self.lively4bootlogData = []
@@ -103,6 +85,7 @@ self.lively4transpilationCache = {
 } 
 
 self.lively4syncCache = new Map()
+self.lively4optionsCache = new Map()
 self.lively4fetchLog = []
 
 async function invalidateFileCaches()  {
@@ -136,6 +119,8 @@ async function preloadFileCaches() {
 
   start = performance.now()
   for(var ea of Object.keys(archive.files)) {
+    if (ea.match(/\.transpiled\//) || ea.match(/\.options\//)) continue;
+    
     var file = archive.file(ea);
     if (file) {
       var modified = file.date.toISOString().replace(/T/, " ").replace(/\..*/, "")
@@ -159,9 +144,20 @@ async function preloadFileCaches() {
       //   // console.log("[boot] preloadFileCaches: " + ea)
       //   self.lively4offlineFirstCache.put(url, response)
       // }
+
       
+      var optionsPath = ".options/" + ea.replace(/\//g,"_")
+      var optionsFile = archive.file(optionsPath)
+      if (optionsFile) {
+        var optionsContent = await optionsFile.async("string")
+        self.lively4optionsCache.set(url, new Response(optionsContent, {
+          headers: {
+            "content-type": "application/json"
+          }
+        }))
+      }
       
-      if (ea.match(/.js$/) && !ea.match(/\.transpiled\//)) {
+      if (ea.match(/.js$/)) {
           var transpiledPath = ".transpiled/" + ea.replace(/\//g,"_")
           var transpiledFile = archive.file(transpiledPath)
           var mapFile = archive.file(transpiledPath + ".map.json");
@@ -260,7 +256,7 @@ function installCachingFetch() {
           } else {
             console.log("[boot] SYNC MISSED " + url)
           }          
-        } if (method == "PUT") {
+        } else if (method == "PUT") {
           // clear cache for PUT
           // so next GET will get the new content
           self.lively4syncCache.set(url, null) 
@@ -270,8 +266,18 @@ function installCachingFetch() {
           // CONTRA: not sure if the file reached the server....
           
           // and don't further handle it... so that it will be saved on the server
+        } else if (method == "OPTIONS") {
+          var match = self.lively4optionsCache.get(url)
+          if (match) {
+            console.log("[boot] SYNC OPTIONS CACHED " + url)
+            return {
+              result: Promise.resolve(match.clone())
+            }          
+          } else {
+            console.log("[boot] SYNC OPTIONS MISSED " + url)
+          }      
         } else {
-          
+          // do nothing
         }
       }
     },

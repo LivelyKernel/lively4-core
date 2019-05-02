@@ -32,7 +32,6 @@ export default class Container extends Morph {
       this.setAttribute("mode", "show")
     }
     
-    
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
@@ -44,9 +43,6 @@ export default class Container extends Morph {
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     
-    // lively.addEventListener("Container", this.get("#back"), "mousedown", evt => this.onBackDown(evt));
-    // lively.addEventListener("Container", this.get("#back"), "mouseup", evt => this.onBackUp(evt));
-   
     lively.html.addDeepMousePressed(this.get("#back"), () => this.history(), (evt, url) => {
       this.unwindAndFollowHistoryUntil(url)
     })
@@ -64,6 +60,8 @@ export default class Container extends Morph {
     // var halos = halo.halo && halo.halo[0];
     // if (halos)
     //   halos.registerBodyDragAndDrop(this); // for content selection
+    
+    
     if (this.useBrowserHistory()) {
       window.onpopstate = (event) => {
         var state = event.state;
@@ -97,7 +95,7 @@ export default class Container extends Morph {
     } else {
     	var src = this.getAttribute("src");
     	if (src) {
-    		this.setPath(src).then(() => {
+    		this.followPath(src).then(() => {
           if (this.getAttribute("mode") == "edit") {
             this.editFile();
       		}
