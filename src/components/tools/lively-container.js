@@ -22,6 +22,7 @@ export default class Container extends Morph {
   get target() { return this.childNodes[0] }
 
   initialize() {
+    
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
 
     // there seems to be no <link ..> tag allowed to reference css inside of templates
@@ -62,47 +63,14 @@ export default class Container extends Morph {
     //   halos.registerBodyDragAndDrop(this); // for content selection
     
     
-    if (this.useBrowserHistory()) {
-      window.onpopstate = (event) => {
-        var state = event.state;
-        if (state && state.followInline) {
-          console.log("follow " + state.path);
-          this.followPath(state.path);
-        }
-      };
-      var path = lively.preferences.getURLParameter("load");
-      var edit = lively.preferences.getURLParameter("edit");
-      var fullsreen = lively.preferences.getURLParameter("fullscreen");
-
-      // force read mode
-      if(this.getAttribute("mode") == "read" && edit) {
-        path = edit;
-        edit = undefined;
-      }
-      if (path) {
-          this.setPath(path);
-      } else if (edit) {
-          this.setPath(edit, true).then(() => {
-            this.editFile();
-          });
-      } else {
-        if (lively4url.match(/github\.io/)) {
-          this.setPath("/"); // the lively4url is not listable
-        } else {
-          this.setPath(lively4url +"/");
-        }
-      }
-    } else {
-    	var src = this.getAttribute("src");
-    	if (src) {
-    		this.followPath(src).then(() => {
-          if (this.getAttribute("mode") == "edit") {
-            this.editFile();
-      		}
-        });
-    	}
+    let path, edit;
+    if (!this.useBrowserHistory()) {
+    	path = this.getAttribute("src");
+    	edit = this.getAttribute("mode") == "edit"
     }
-
+    this.viewOrEditPath(path, edit)
+   
+    
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
     input.addEventListener("keyup", event => {
@@ -120,7 +88,7 @@ export default class Container extends Morph {
     this.setAttribute("tabindex", 0);
     this.hideCancelAndSave();
 
-    if(this.getAttribute("controls") =="hidden" || fullsreen) {
+    if(this.getAttribute("controls") =="hidden") {
       this.hideControls()
     }
     this.withAttributeDo("leftpane-flex", value =>
@@ -128,7 +96,54 @@ export default class Container extends Morph {
     this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
   }
+  
+  viewOrEditPath(path, edit) {
+     if (path) {
+      if (edit) {
+        this.livelyContentLoaded = this.editFile(path);
+      } else {    
+        this.livelyContentLoaded = this.followPath(path)
+      }      
+    }
+  }
 
+  becomeMainContainer() {
+    this.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+    this.get('#container-content').style.overflow = "visible";
+    
+    this.parentElement.toggleMaximize()
+    this.parentElement.hideTitlebar()
+    this.parentElement.style.zIndex = 0
+    this.parentElement.setAttribute("data-lively4-donotpersist","all");
+    
+    this.id = 'main-content';
+    this.setAttribute("load", "auto");
+      
+    let path, edit;
+    window.onpopstate = (event) => {
+        var state = event.state;
+        if (state && state.followInline) {
+          console.log("follow " + state.path);
+          this.followPath(state.path);
+        }
+    };
+    path = lively.preferences.getURLParameter("load");
+    edit = lively.preferences.getURLParameter("edit");
+
+
+    // force read mode
+    if(this.getAttribute("mode") == "read" && edit) {
+      path = edit;
+      edit = undefined;
+    }
+
+    if (!path || path == "null") {
+      path = lively4url + "/"
+    }
+
+    this.viewOrEditPath(path, edit) 
+  }
+  
   onContextMenu(evt) {
     // fall back to system context menu if shift pressed
     if (!evt.shiftKey) {

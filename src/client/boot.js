@@ -324,7 +324,7 @@ if (self.lively && self.lively4url) {
     self.lively4bootGroupedMessages = []
     var lastMessage
     
-    var estimatedSteps = 8;
+    var estimatedSteps = 9;
     var stepCounter = 1;
     
     function groupedMessage( message) {
@@ -424,7 +424,16 @@ if (self.lively && self.lively4url) {
           groupedMessage('Look for uninitialized instances of Web Compoments');
             await lively.components.loadUnresolved(document.body, true, "boot.js", true)
           groupedMessageEnd();
-
+        
+        
+          var componentWithContent = Array.from(lively.allElements(document.body))
+              .filter(ea => ea.livelyContentLoaded && ea.livelyContentLoaded.then)
+          groupedMessage(`Wait on ${componentWithContent.length} components with content`);
+          
+        
+          // wait on all components to intialize their content.... e.g. the container loading a file
+            await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+          groupedMessageEnd();
 
           console.log("Finally loaded!");
           if (self.lively4bootGroupedMessages) {

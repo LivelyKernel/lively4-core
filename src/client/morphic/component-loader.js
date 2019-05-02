@@ -1,17 +1,7 @@
 import scriptManager from  "src/client/script-manager.js";
-// import * as persistence from  "src/client/persistence.js";
-import Morph from "src/components/widgets/lively-morph.js";
-import {pt} from '../graphics.js';
-import { through } from "utils";
-
 import files from "../files.js"
 
-
-
-// import html from "scr/client/html.js"
-
 // store promises of loaded and currently loading templates
-
 if (!self.lively4loadingPromises) {
   // WARNING: only used by loadUnresolved and not loadByName
   self.lively4loadingPromises = {} // just to be on the save side....
