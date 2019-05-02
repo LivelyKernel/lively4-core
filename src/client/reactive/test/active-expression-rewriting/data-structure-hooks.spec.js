@@ -15,19 +15,22 @@ describe('Data Structure Hooks', () => {
       const expr = aexpr(() => arr).onChange(spy);
 
       arr.push(42);
-      expr.checkAndNotify();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
-    xit('identity does not matter/arrays as value classes', () => {
+    xit('detects changes to the length property', () => {
       const spy = sinon.spy();
       let arr = [1,2];
       const expr = aexpr(() => arr).onChange(spy);
 
-      arr = [1,2];
+      arr.length = 1;
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(arr);
 
-      expect(spy).not.to.be.called;
+      arr.length = 0;
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(arr);
     });
     
   });
@@ -52,7 +55,7 @@ describe('Data Structure Hooks', () => {
 
       expect(spy).not.to.be.called;
     });
-    xit('detects a cleared set', () => {
+    it('detects a cleared set', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
       aexpr(() => set).onChange(spy);
@@ -62,7 +65,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
     });
-    xit('detects a changed set size', () => {
+    it('detects a changed set size', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
       aexpr(() => set.size).onChange(spy);
