@@ -8,6 +8,8 @@ import { isString, clone, cloneDeep } from 'utils';
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
+window.__compareAExprResults__ = false;
+
 function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
@@ -241,7 +243,12 @@ export class BaseActiveExpression {
 
   // #TODO: extract into CompareAndStore classes
   compareResults(lastResult, newResult) {
-    return this.matcher.compare(lastResult, newResult);
+    try {
+      window.__compareAExprResults__ = true;
+      return this.matcher.compare(lastResult, newResult);
+    } finally {
+      window.__compareAExprResults__ = false;
+    }
     
     // array
     if(Array.isArray(lastResult) && Array.isArray(newResult)) {

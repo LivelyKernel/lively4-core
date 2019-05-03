@@ -8,7 +8,7 @@ import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
 
-import { using } from 'utils';
+import { using, isFunction } from 'utils';
 
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = true;
@@ -258,11 +258,57 @@ class SourceCodeHook extends Hook {
 class DataStructureHook extends Hook {
   static forStructure(set) {
     const hook = new DataStructureHook();
-    set.add = function add(...args) {
-      const result = Set.prototype.add.call(this, ...args);
-      hook.notifyDependencies();
-      return result;
+    
+    function getPrototypeDescriptors(obj) {
+      const proto = obj.constructor.prototype;
+
+      const descriptors = Object.getOwnPropertyDescriptors(proto);
+      return Object.entries(descriptors).map(([key, desc]) => (desc.key = key, desc))
     }
+
+    function wrapProperty(obj, descriptor, after) {
+      Object.defineProperty(obj, descriptor.key, Object.assign({}, descriptor, {
+        value(...args) {
+          try {
+            return descriptor.value.apply(this, args);
+          } finally {
+            after.call(this, ...args)
+          }
+        }
+      }));
+    }
+
+    function monitorProperties(obj) {
+      const prototypeDescriptors = getPrototypeDescriptors(obj);
+      Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
+
+      prototypeDescriptors.forEach(addDescriptor => {
+        // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
+        if (addDescriptor.value) {
+          if (isFunction(addDescriptor.value)) {
+            wrapProperty(obj, addDescriptor, function() {
+              // #HACK #TODO we need an `withoutLayer` equivalent here
+              if (window.__compareAExprResults__) { return; }
+
+              this; // references the modified container
+              hook.notifyDependencies();
+            });
+          } else {
+            console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+          }
+        } else {
+          console.warn(`Property ${addDescriptor.key} has no value.`)
+        }
+      });
+    }
+
+    monitorProperties(set);
+    
+    // set.add = function add(...args) {
+    //   const result = Set.prototype.add.call(this, ...args);
+    //   hook.notifyDependencies();
+    //   return result;
+    // }
     return hook;
   }
 }
