@@ -257,3 +257,13 @@ src/components/widgets/
 src/components/tools/
 src/components/halo/
 templates/
+README.md
+src/components/widgets/lively-markdown.js
+src/external/markdown-it.js
+src/external/markdown-it-hashtag.js
+src/external/markdown-it-tasks.js
+src/external/markdown-it-attrs.js
+src/external/upndown.js
+src/external/htmlparser2.js
+src/components/widgets/lively-import.js
+src/components/widgets/lively-import.html
