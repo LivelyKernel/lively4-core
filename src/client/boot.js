@@ -13,26 +13,33 @@
 
 
 // BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
-function loadJavaScriptThroughDOM(name, src, force) {
-  return new Promise(function (resolve) {
-    var scriptNode = document.querySelector(name);
-    if (scriptNode) {
-      scriptNode.remove();
-    }
-    var script = document.createElement("script");
-    script.id = name;
-    script.charset = "utf-8";
-    script.type = "text/javascript";
-    script.setAttribute("data-lively4-donotpersist","all");
-    if (force) {
-      src += +"?" + Date.now();
-    }
-    script.src = src;
-    script.onload = function () {
-      resolve();
-    };
-    document.head.appendChild(script);
-  });
+async function loadJavaScriptThroughDOM(name, src, force) {
+  var code = await fetch(src).then(r => r.text())
+  eval(code)
+  
+//   return new Promise(function (resolve) {
+    
+    
+    
+    
+//     var scriptNode = document.querySelector(name);
+//     if (scriptNode) {
+//       scriptNode.remove();
+//     }
+//     var script = document.createElement("script");
+//     script.id = name;
+//     script.charset = "utf-8";
+//     script.type = "text/javascript";
+//     script.setAttribute("data-lively4-donotpersist","all");
+//     if (force) {
+//       src += +"?" + Date.now();
+//     }
+//     script.src = src;
+//     script.onload = function () {
+//       resolve();
+//     };
+//     document.head.appendChild(script);
+//   });
 }
 // END COPIED
 
@@ -249,7 +256,7 @@ function installCachingFetch() {
         if (method == "GET") {
           var match = self.lively4syncCache.get(url)
           if (match) {
-            console.log("[boot] SYNC CACHED " + url)
+            // console.log("[boot] SYNC CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
@@ -269,7 +276,7 @@ function installCachingFetch() {
         } else if (method == "OPTIONS") {
           var match = self.lively4optionsCache.get(url)
           if (match) {
-            console.log("[boot] SYNC OPTIONS CACHED " + url)
+            // console.log("[boot] SYNC OPTIONS CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
@@ -374,18 +381,17 @@ if (self.lively && self.lively4url) {
       instrumentFetch()
       installCachingFetch()
       
-      groupedMessage('Setup SystemJS');
-      await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
-      await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
+      groupedMessage('Preload Files');
+        await preloadFileCaches()
+        // we could wait, or not... if we load transpiled things... waiting is better
       groupedMessageEnd();
 
-      try {
-          groupedMessage('Preload Files');
-          await preloadFileCaches()
-          // we could wait, or not... if we load transpiled things... waiting is better
-          groupedMessageEnd();
+      groupedMessage('Setup SystemJS');
+        await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+        await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
+      groupedMessageEnd();
 
-          
+      try {  
           groupedMessage('Initialize SystemJS');
             await System.import(lively4url + "/src/client/preload.js");
           groupedMessageEnd();

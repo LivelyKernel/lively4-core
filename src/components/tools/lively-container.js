@@ -16,7 +16,6 @@ import Clipboard from "src/client/clipboard.js";
 import { debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils";
 import ViewNav from "src/client/viewnav.js"
 
-
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
