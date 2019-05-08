@@ -12,6 +12,7 @@ import * as messaging from './messaging.js';
 import preferences from './preferences.js';
 import persistence from './persistence.js';
 import html from './html.js';
+import * as reflection from './reflection.js';
 import files from './files.js';
 import paths from './paths.js';
 import contextmenu from './contextmenu.js';
@@ -46,6 +47,7 @@ var exportmodules = [
   "keys",
   "paths",
   "html",
+  "reflection",
   "components",
   "persistence",
   // "color",

@@ -594,10 +594,15 @@ export default class LivelyCodeMirror extends HTMLElement {
         })
       } else {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))
-          table.style.maxHeight = "300px"
-          table.style.overflow = "auto"
-          return table
+          table.setFromJSO(obj.map((ea,index) => {
+            return {
+              index: index,
+              value: this.ensuredPrintString(ea)
+            }
+          }));
+          table.style.maxHeight = "300px";
+          table.style.overflow = "auto";
+          return table;
         })
       }
     } else if(objClass ==  "Matrix") {
@@ -623,6 +628,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
 
+  ensuredPrintString(obj) {
+    var s = "";
+    try {
+      s += obj // #HACK some objects cannot be printed any more
+    } catch(e) {
+      s += `UnprintableObject[Error: ${e}]`; // so we print something else
+    }
+    return s
+  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -638,15 +652,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       return e;
     }
     var result = resp.value
-    var obj2string = function(obj) {
-      var s = "";
-      try {
-        s += obj // #HACK some objects cannot be printed any more
-      } catch(e) {
-        s += "UnprintableObject["+ Object.keys(e) + "]" // so we print something else
-      }
-      return s
-    }
 
     if (printResult) {
       // alaways wait on promises.. when interactively working...
@@ -654,7 +659,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result), result, true)
+            this.printResult("RESOLVED: " + this.ensuredPrintString(result), result, true)
           })
           .catch( error => {
             console.error(error);
@@ -662,7 +667,7 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.printResult("Error in Promise: \n" +error)
           })
       } else {
-        this.printResult(" " + obj2string(result), result)
+        this.printResult(" " + this.ensuredPrintString(result), result)
         if (result instanceof HTMLElement ) {
           try {
             lively.showElement(result)
