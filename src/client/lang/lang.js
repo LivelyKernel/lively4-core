@@ -22,6 +22,24 @@ function extendFromLodash(obj, propNames) {
 }
 
 
+function pairComparator(pair1, pair2) {
+  return pair1.first === pair2.first && pair1.second === pair2.second;
+}
+
+/**
+ * utility function used to compute turn Objects and
+ */
+function pairsDiff(obj1, obj2) {
+  const pairs1 = obj1.toPairs();
+  const pairs2 = obj2.toPairs();
+
+  const onlyLeft = _.differenceWith(pairs1, pairs2, pairComparator);
+  const both = _.intersectionWith(pairs1, pairs2, pairComparator);
+  const onlyRight = _.differenceWith(pairs2, pairs1, pairComparator);
+
+  return [onlyLeft, both, onlyRight];
+}
+
 /**
  * OBJECT
  */
@@ -40,7 +58,17 @@ extend(Object.prototype, {
     } else {
       return _.get(this, paths);
     }
+  },
+  
+  /**
+   * Computes a more fine-grained difference with a second Object (@link(other)).
+   * @param other (Object/Map) the Object to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Objects corresponding to the respective side of comparison.
+   */
+  computeDiff(other) {
+    return pairsDiff(this, other).map(arr => _.fromPairs(arr));
   }
+
 });
 
 /**
@@ -177,12 +205,13 @@ extend(Date.prototype, {
 extend(Set.prototype, {
 
   /**
-   * Computes a more fine-grained difference with a second Set or Array (@link(other)).
-   * @param other (Array/Set) the Set or Array to be compared to.
-   * @returns {Array} [onlyLeft, both, onlyRight].
+   * Computes a more fine-grained difference with a second Set (@link(other)).
+   * @param other (Set) the Set to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Sets corresponding to the respective side of comparison.
    */
   computeDiff(other) {
-    return Array.from(this).computeDiff(other);
+    const arrs = Array.from(this).computeDiff(other);
+    return arrs.map(arr => new Set(arr));
   },
 
 });
@@ -214,6 +243,19 @@ const mapExtensions = {
 
 extend(Map.prototype, mapExtensions);
 extend(WeakMap.prototype, mapExtensions);
+
+extend(Map.prototype, {
+
+  /**
+   * Computes a more fine-grained difference with a second Map (@link(other)).
+   * @param other (Object/Map) the Set to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Maps corresponding to the respective side of comparison.
+   */
+  computeDiff(other) {
+    return pairsDiff(this, other).map(arr => new Map(arr));
+  },
+
+});
 
 
 /**
