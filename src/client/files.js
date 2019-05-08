@@ -1,8 +1,5 @@
-import focalStorage from './../external/focalStorage.js';
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
-import Strings from 'src/client/strings.js'
-
 
 export default class Files {
   
@@ -35,8 +32,8 @@ export default class Files {
   
   static parseSourceReference(ref) {
     if(ref.match("!")) {
-      var url = ref.replace(/\!.*/,"")
-      var args = ref.replace(/.*\!/,"").split(/:/)
+      var url = ref.replace(/!.*/,"")
+      var args = ref.replace(/.*!/,"").split(/:/)
     } else {
       var m = ref.match(/(.*):([0-9]+):([0-9]+)$/)
       args = [m[2], m[3]]
@@ -480,6 +477,12 @@ export default class Files {
       container.remove() // we really opened a graphical object for this
     }
   }
+  
+  static async unzip(url) {
+    var blob = fetch(url).then(r => r.blob())
+    return  JSZip.loadAsync(blob)
+  }
+  
   
   static async githubFileInfo(url) {
     return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
