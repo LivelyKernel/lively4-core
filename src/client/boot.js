@@ -339,9 +339,10 @@ async function installProxyFetch() {
           
           
         }
-        return  {
-          result:new Response("Could not handle " + url)
-        }          
+        // give SWX a chance to handle POID requests...
+        // return  {
+        //   result: new Response("Could not handle " + url)
+        // }          
       }
     }
   })

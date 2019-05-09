@@ -732,6 +732,7 @@ if (!navigator.serviceWorker) {
         
       let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)(?:\/(.*))?$/)
       if (!m) {
+        debugger
         throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
       }
       let url= m[1] + "://" + m[2]    
