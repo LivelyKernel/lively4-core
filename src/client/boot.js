@@ -322,12 +322,43 @@ async function installProxyFetch() {
     isProxyFetch: true,
     handle(request, options) {
       var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      
       var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)/)
       if (m) {
         console.log("proxy fetch " + url)
         var mountPoint = m[1]
         var rest = m[2]
        
+        if (mountPoint == "/sys" && rest == "/mounts") {
+          if (method == "GET") {
+            return {
+              result: new Response(JSON.stringify(mounts, null, 2))
+            }            
+          } else if (method == "PUT") {
+            
+            return {
+              result: Promise.resolve().then(async json => {
+                try {
+                  var json = options.body
+                  var newMounts = JSON.parse(json)
+                } catch(e) {
+                  // json could not be parsed
+                }
+                if (newMounts) {
+                  mounts = newMounts
+                  await focalStorage.setItem("lively4mounts", mounts)
+                  return new Response("updated mounts", {status: 200})
+                  
+                } else {
+                  return new Response("could not parse json: " + json, {status: 500})
+                }
+              })
+            }
+          }
+        }
+        
         for (var proxy of mounts.filter(ea => ea.name == "http")) {
           if (mountPoint == proxy.path) {
             if (!proxy.options || !proxy.options.base) 
@@ -336,8 +367,6 @@ async function installProxyFetch() {
               result: proxyRequest(proxy.options.base + rest, options)
             }  
           }
-          
-          
         }
         // give SWX a chance to handle POID requests...
         // return  {
