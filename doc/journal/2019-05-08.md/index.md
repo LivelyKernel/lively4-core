@@ -1,6 +1,38 @@
 ## 2019-05-08 
 
-### Circular References in JSON!
+
+# Fast Lively Loading works, now lets move on.! <br> ... to the Service Worker
+
+## Plan: 
+
+1. Don't shoot myself in the foot!
+2. get rid of the old service worker... 
+3. hopefully everything works as intended 
+
+
+## What did our service worker do
+
+- Caching #Done
+- Insert credentials.... maybe this was the wrong place any way. #TODO do this in fetch or files PUT
+
+```javascript
+  // swx fetch code....
+   if (authentificationNeeded) {
+        await this.authentificationLoaded
+        options.headers.set("gitusername", await this.promisedUsername);
+        options.headers.set("gitemail", await this.promisedEmail);
+        options.headers.set("gitpassword", await this.promisedToken);
+      } 
+```
+
+- host "https://lively4/" special URL via `fetchLively4fs`
+  - this provided access to Dropbox / Googledrive / etc
+  - simple proxy to mount other "https" resource
+  - hook for POID for everthing fetch could not catch on the client side
+
+
+
+# Circular References in JSON!
 
 TechReport Title: Serializing Object Graphs with circular references in Javascript using JOSN.stringify and JSON.parse with replacer and reviver fucntions
 

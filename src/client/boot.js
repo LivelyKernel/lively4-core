@@ -294,6 +294,62 @@ function installCachingFetch() {
   })
 }
 
+
+async function installProxyFetch() {
+  var focalStorage = (await System.import("src/external/focalStorage.js")).default
+  
+  var mounts = await focalStorage.getItem("lively4mounts")
+  
+  if (!mounts) return 
+  
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isProxyFetch);
+  
+  async function proxyRequest(url, options={}) {
+    console.log("PROXY reqest: " + options.method + " " + url)
+    return self.originalFetch(url, {
+        mode: options.mode,
+        cache: options.cache,
+        method: options.method,
+        headers: options.headers,
+        redirect: options.redirect,
+        referrer: options.referrer,
+        credentials: options.credentials,
+        body: options.body && await options.body
+      })
+  }
+  
+  self.lively4fetchHandlers.push({
+    isProxyFetch: true,
+    handle(request, options) {
+      var url = (request.url || request).toString()
+      var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)/)
+      if (m) {
+        console.log("proxy fetch " + url)
+        var mountPoint = m[1]
+        var rest = m[2]
+       
+        for (var proxy of mounts.filter(ea => ea.name == "http")) {
+          if (mountPoint == proxy.path) {
+            if (!proxy.options || !proxy.options.base) 
+              throw new Error("options.base is missing in mount config for " + mountPoint)
+            return {
+              result: proxyRequest(proxy.options.base + rest, options)
+            }  
+          }
+          
+          
+        }
+        return  {
+          result:new Response("Could not handle " + url)
+        }          
+      }
+    }
+  })
+}
+
+// installProxyFetch()
+
+
 self.lively4invalidateFileCaches = invalidateFileCaches
 
 
@@ -331,7 +387,7 @@ if (self.lively && self.lively4url) {
     self.lively4bootGroupedMessages = []
     var lastMessage
     
-    var estimatedSteps = 9;
+    var estimatedSteps = 10;
     var stepCounter = 1;
     
     function groupedMessage( message) {
@@ -385,12 +441,17 @@ if (self.lively && self.lively4url) {
         await preloadFileCaches()
         // we could wait, or not... if we load transpiled things... waiting is better
       groupedMessageEnd();
-
+    
+      
       groupedMessage('Setup SystemJS');
         await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
         await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
       groupedMessageEnd();
 
+      groupedMessage('Setup fetch proxy');
+        await installProxyFetch()
+      groupedMessageEnd();
+    
       try {  
           groupedMessage('Initialize SystemJS');
             await System.import(lively4url + "/src/client/preload.js");
