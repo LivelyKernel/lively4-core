@@ -288,7 +288,7 @@ function installCachingFetch() {
               result: Promise.resolve(match.clone())
             }          
           } else {
-            console.log("[boot] SYNC OPTIONS MISSED " + url)
+            // console.log("[boot] SYNC OPTIONS MISSED " + url)
           }      
         } else {
           // do nothing
