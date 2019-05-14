@@ -332,9 +332,17 @@ async function installProxyFetch() {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
-      
-      var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)/)
+      var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)?/)
       if (m) {
+        if (m[1] == "/") {
+          return {
+              result: new Response(JSON.stringify({
+                name: "root",
+                contents: []
+              }, null, 2))
+          }
+        }
+        
         console.log("proxy fetch " + url)
         var mountPoint = m[1]
         var rest = m[2]
