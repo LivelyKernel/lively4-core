@@ -11,7 +11,7 @@ import BidirectionalMultiMap from './bidirectional-multi-map.js';
 import { using, isFunction } from 'utils';
 
 let expressionAnalysisMode = false;
-window.__expressionAnalysisMode__ = true;
+window.__expressionAnalysisMode__ = false;
 
 const analysisModeManager = {
   __enter__() {
@@ -24,12 +24,20 @@ const analysisModeManager = {
   }
 }
 class ExpressionAnalysis {
-  // Do the function execution in ExpressionAnalysisMode
+  
+  static recalculateDependencies(aexpr) {
+    // #TODO: compute diff of Dependencies
+    DependencyManager.disconnectAllFor(aexpr);
+    this.check(aexpr);
+  }
+  
   static check(aexpr) {
     using([analysisModeManager], () => {
+      // Do the function execution in ExpressionAnalysisMode
       aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
     });
   }
+
 }
 
 class Dependency {
@@ -319,7 +327,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
     super(func, ...args);
     this.meta({ strategy: 'Rewriting' });
-    ExpressionAnalysis.check(this);
+    ExpressionAnalysis.recalculateDependencies(this);
 
     if (new.target === RewritingActiveExpression) {
       this.addToRegistry();
@@ -388,9 +396,7 @@ class DependencyManager {
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs) {
     aexprs.forEach(aexpr => {
-      // #TODO: compute diff of Dependencies
-      this.disconnectAllFor(aexpr);
-      ExpressionAnalysis.check(aexpr);
+      ExpressionAnalysis.recalculateDependencies(aexpr);
     });
     aexprs.forEach(aexpr => aexpr.checkAndNotify());
   }
