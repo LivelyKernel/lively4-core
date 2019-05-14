@@ -264,7 +264,7 @@ function installCachingFetch() {
               result: Promise.resolve(match.clone())
             }          
           } else {
-            console.log("[boot] SYNC MISSED " + url)
+            // console.log("[boot] SYNC MISSED " + url)
           }          
         } else if (method == "PUT") {
           // clear cache for PUT
