@@ -27,7 +27,7 @@ export async function installProxyFetch() {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
-      var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)?/)
+      var m = url.match(/^https?:\/\/lively4(\/[^/]*)(\/.*)?/)
       if (m) {
         if (m[1] == "/") {
           return {
