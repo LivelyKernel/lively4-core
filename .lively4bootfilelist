@@ -17,6 +17,7 @@ src/client/favorites.js
 src/client/fileindex.js
 src/client/files-caches.js
 src/client/files.js
+src/client/fetch.js
 src/client/graffle.js
 src/client/graphics.js
 src/client/grid.svg
