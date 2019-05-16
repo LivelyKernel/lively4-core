@@ -229,6 +229,71 @@ describe('Reflection API', () => {
         expect(memberDeps[0]).to.have.property('value', 200);
       });
       
+      describe('all dependencies', () => {
+        it('no dependencies', () => {
+          const deps = aexpr(() => {}).dependencies().all();
+          expect(deps).to.be.an('array');
+          expect(deps).to.have.a.lengthOf(0);
+        });
+
+        it('returns all dependencies', () => {
+          var x = 42;
+          const deps = aexpr(() => x).dependencies().all();
+          expect(deps).to.be.an('array');
+          expect(deps).to.have.a.lengthOf(1);
+          const dep = deps.first.getAsDependencyDescription();
+          expect(dep).to.have.property('scope');
+          expect(dep).to.have.property('name', 'x');
+          expect(dep).to.have.property('value', 42);
+        });
+
+        it('returns all dependencies', () => {
+          var x = { value: 42};
+          const deps = aexpr(() => x.value).dependencies().all();
+          expect(deps).to.be.an('array');
+          expect(deps).to.have.a.lengthOf(2);
+
+          const localDep = deps.find(dep => dep.type === 'local');
+          expect(localDep).to.be.defined;
+          const localDepDescription = localDep.getAsDependencyDescription();
+          expect(localDepDescription).to.have.property('scope');
+          expect(localDepDescription).to.have.property('name', 'x');
+          expect(localDepDescription).to.have.property('value', x);
+
+          const memberDep = deps.find(dep => dep.type === 'member');
+          expect(memberDep).to.be.defined;
+          const memberDepDescription = memberDep.getAsDependencyDescription();
+          expect(memberDepDescription).to.have.property('object', x);
+          expect(memberDepDescription).to.have.property('property', 'value');
+          expect(memberDepDescription).to.have.property('value', 42);
+        });
+
+      });
+
+      describe('sharesDependenciesWith', () => {
+
+        it('available on aexprs', () => {
+          expect(aexpr(() => {})).to.respondTo('sharedDependenciesWith');
+        });
+        
+        it('compute shared dependencies between two aexprs', () => {
+          var x = 1, y = 2, z = 3;
+          
+          expect(aexpr(() => {})).to.respondTo('sharedDependenciesWith');
+          const sharedDeps = aexpr(() => x + y).sharedDependenciesWith(aexpr(() => y + z));
+
+          expect(sharedDeps).to.be.an('array');
+          expect(sharedDeps).to.have.a.lengthOf(1);
+          
+          const sharedDep = sharedDeps.first;
+          expect(sharedDep).to.be.defined;
+          const sharedDepDescription = sharedDep.getAsDependencyDescription();
+          expect(sharedDepDescription).to.have.property('scope');
+          expect(sharedDepDescription).to.have.property('name', 'y');
+          expect(sharedDepDescription).to.have.property('value', y);
+        });
+      });
+
       describe('global dependencies not modelled member dependencies, but its own access', () => {
         let temp;
         
