@@ -176,6 +176,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -195,6 +196,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -213,6 +215,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',

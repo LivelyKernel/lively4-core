@@ -346,6 +346,13 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   dependencies() {
     return new DependencyAPI(this);
   }
+  
+  sharedDependenciesWith(otherAExpr) {
+    const ownDependencies = this.dependencies().all();
+    const otherDependencies = otherAExpr.dependencies().all();
+    const [own, shared, other] = ownDependencies.computeDiff(otherDependencies);
+    return shared;
+  }
 }
 
 class DependencyAPI {
@@ -357,6 +364,10 @@ class DependencyAPI {
     return DependenciesToAExprs.getDepsForAExpr(this._aexpr);
   }
 
+  all() {
+    return Array.from(this.getDependencies())
+  }
+  
   locals() {
     return this.getDependencies()
       .filter(dependency => dependency.isLocalDependency())
