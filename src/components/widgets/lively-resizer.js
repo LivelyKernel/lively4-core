@@ -8,11 +8,9 @@ import {Grid} from 'src/client/morphic/snapping.js';
 export default class Resizer extends Morph {
   initialize() {
     // console.log("intialize separator " )
-    this.draggable = true;
     // #TODO #Refactor, because we use drag and drop semantically now, use PointerEvents here...
-    lively.addEventListener('lively', this,'dragstart', evt => this.onDragStart(evt));
-    lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
-    lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
+    
+    this.addEventListener('pointerdown', (evt) => { this.onPointerMoveStart(evt) });
     
     this.originalLengths = new Map()
     this.originalFlexs = new Map()
@@ -113,7 +111,7 @@ export default class Resizer extends Morph {
     return pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(document.body))
   }
   
-  onDragStart(evt) {
+  onPointerMoveStart(evt) {
     this.count = 0
     var element = this.getElement()
     if (!element) return; // do nothging... should this happen?
@@ -123,14 +121,17 @@ export default class Resizer extends Morph {
       
     this.dragOffset = this.getEventLength(evt);
 
-    evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0);
-    evt.dataTransfer.setData("ui/interaction", '');
     evt.stopPropagation();
+    
+    
+    lively.addEventListener('lively-resizer-drag', document.documentElement, 'pointermove',
+      evt => this.onPointerMove(evt), true);
+    lively.addEventListener('lively-resizer-drag', document.documentElement, 'pointerup',
+      evt => this.onPointerMoveEnd(evt));
+    
   }
   
-
-  
-  onDrag(evt) {
+  onPointerMove(evt) {
     if (!evt.clientX) return
 
     var element = this.getElement()
@@ -139,9 +140,6 @@ export default class Resizer extends Morph {
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
     
-    // DEBUG with: 
-    // lively.showPoint(pt(evt.clientX, evt.clientY)).innerHTML = "" + this.count
-
     // 1. calculate values
     var pos = this.getEventLength(evt)
     // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
@@ -170,10 +168,11 @@ export default class Resizer extends Morph {
     evt.preventDefault();
   }
   
-  onDragEnd(evt) {
-    // Do nothing...
-	  evt.stopPropagation();
+  onPointerMoveEnd(evt) {
+    evt.stopPropagation();
     evt.preventDefault();
+    
+    lively.removeEventListener('lively-resizer-drag',  document.documentElement)
   }
 
 }
