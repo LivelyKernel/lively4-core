@@ -195,7 +195,7 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          if (options && options.headers && options.headers["fileversion"]) {
+          if (options && options.headers && (options.headers["fileversion"] || options.headers["forediting"])) {
             return // don't cache versions request...
           }
           

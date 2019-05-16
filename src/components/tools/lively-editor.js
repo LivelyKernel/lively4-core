@@ -170,7 +170,7 @@ export default class Editor extends Morph {
       this.updateChangeIndicator();
       codeMirror.setValue(text);
       if (codeMirror.resize) codeMirror.resize();
-      this.updateAceMode();
+      this.updateEditorMode();
     } else {
       // Code Mirror
       this.get('#editor').value = text
@@ -186,7 +186,7 @@ export default class Editor extends Morph {
     return text
   }
   
-  updateAceMode() {
+  updateEditorMode() {
     var url = this.getURL();
     var editorComp = this.get("#editor");
     if (editorComp && editorComp.changeModeForFile) {
@@ -197,7 +197,7 @@ export default class Editor extends Morph {
   async loadFile(version) {
     var url = this.getURL();
     console.log("load " + url);
-    this.updateAceMode();
+    this.updateEditorMode();
 
     var result = await fetch(url, {
       headers: {

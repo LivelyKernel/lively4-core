@@ -1388,6 +1388,10 @@ export default class Container extends Morph {
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
     }
+    
+    if (url.toString().match(lively4url)) {
+      headers["forediting"] = true
+    }
   
     return fetch(url, {
       method: "GET",
