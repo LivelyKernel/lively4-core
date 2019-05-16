@@ -240,7 +240,7 @@ const dropOnDocumentBehavior = {
   
   
   onDragOver(evt) {
-    this.lastDropTarget = Array.from(evt.path).filter(ea => ea && ea.classList && ea.classList.contains("lively-content"))[0]
+    this.lastDropTarget = Array.from(evt.composedPath()).filter(ea => ea && ea.classList && ea.classList.contains("lively-content"))[0]
     if (this.lastDropTargetHighlight) this.lastDropTargetHighlight.remove()
     this.lastDropTargetHighlight = lively.showElement(this.lastDropTarget)
     
@@ -284,7 +284,7 @@ const dropOnDocumentBehavior = {
   },
   
   async onDrop(evt) {
-    // var target = evt.path.find(ea => ea.classList.contains("lively-content") )
+    // var target = evt.composedPath().find(ea => ea.classList.contains("lively-content") )
     const dt = evt.dataTransfer;
     
     /*

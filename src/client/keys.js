@@ -28,7 +28,7 @@ export default class Keys {
 
   static handle(evt) {
     function handledInCodeMirror(evt) {
-      return evt.path.find(node => node.tagName == "LIVELY-CODE-MIRROR");
+      return evt.composedPath().find(node => node.tagName == "LIVELY-CODE-MIRROR");
     }
     
     // #Hack, fix a little but in ContextMenu movement...
@@ -47,7 +47,7 @@ export default class Keys {
         }],
         // #KeyboardShortcut Ctrl-Shift-F search throughout the whole repository
         ["Search", ctrl && shiftKey && char == "F", evt => {
-          lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
+          lively.openSearchWidget(this.getTextSelection(), null, evt.composedPath()[0]);
         }],
         // #KeyboardShortcut Ctrl-Shift-B open browser
         ["Open Container", shiftKey && ctrl && char == "B", evt => {

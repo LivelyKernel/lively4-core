@@ -90,7 +90,7 @@ export default class Graffle {
   static async onKeyDown(evt) {        
     if (!lively.preferences.get("GraffleMode")) return;
 
-    if (!lively.isGlobalKeyboardFocusElement(evt.path[0])) 
+    if (!lively.isGlobalKeyboardFocusElement(evt.composedPath()[0])) 
       return; 
     var key = String.fromCharCode(evt.keyCode)
 
@@ -329,9 +329,9 @@ export default class Graffle {
   
   static ensureTargetContainer(evt) {
     
-    var targetContainer = evt.path.find(ea => ea.localName == "lively-figure")
+    var targetContainer = evt.composedPath().find(ea => ea.localName == "lively-figure")
     if (!targetContainer) {
-      targetContainer = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+      targetContainer = evt.composedPath().find(ea => ea.tagName == "LIVELY-CONTAINER")
     }
     if (targetContainer) {
       lively.showElement(targetContainer)

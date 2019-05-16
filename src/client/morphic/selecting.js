@@ -22,16 +22,16 @@ export default class Selecting {
   }
 
   static handleMouseDown(e) {
-    // lively.showElement(e.path[0])
+    // lively.showElement(e.composedPath()[0])
     
     if (this.shouldHandle(e)) {
   
    
       
-      // lively.showElement(e.path[0])
+      // lively.showElement(e.composedPath()[0])
     
       
-      // if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
+      // if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
       //   lively.notify("clicked on halo")
       //   this.hideHalos()
       //   e.stopPropagation();
@@ -51,9 +51,9 @@ export default class Selecting {
       e.stopPropagation();
       e.preventDefault();
     } else {
-      // if (e.path[0] == document.documentElement) {
-      // lively.notify("path: " + e.path)
-      if (e.path.find(ea => ea.isHaloItem)) {
+      // if (e.composedPath()[0] == document.documentElement) {
+      // lively.notify("path: " + e.composedPath())
+      if (e.composedPath().find(ea => ea.isHaloItem)) {
         // lively.notify("we are doing someing")
       } else {
         this.hideHalos()
@@ -65,7 +65,6 @@ export default class Selecting {
     
     return !((element instanceof HTMLElement) || (element instanceof SVGElement))
       || element instanceof ShadowRoot 
-      || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 
       || (element.isMetaNode && !element.isSelection)
       || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
@@ -95,32 +94,32 @@ export default class Selecting {
       }
     })
     // lively.notify("container " + isContainer  + " content " + isContent)
-    // e.path.forEach(ea => lively.showElement(ea))
+    // e.composedPath().forEach(ea => lively.showElement(ea))
     if (isContainer && isContent) {
-      // window.lastPath = e.path
+      // window.lastPath = e.composedPath()
       path = path.slice(0, containerIndex)
     }
     return path
   }
   
   static handleSelect(e) {
-    // lively.notify("path " + e.path.map(ea => ea.tagName))
+    // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
 
     
     if (this.shouldHandle(e)) { 
-    // lively.showElement(e.path[0],1300).textContent = "path: " + e.path.map(ea => ea.tagName).join(",")
+    // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
 
       
       var rootNode = this.findRootNode(document.body)
       
-      var path = this.slicePathIfContainerContent(e.path);
+      var path = this.slicePathIfContainerContent(e.composedPath());
       
       // var rootNode = lively.findWorldContext(path)
       
       // workaround weird toplevel event issues... the halo should not get the event
-      // lively.notify("path " + e.path.map(ea => ea.tagName))
-      if (e.path.find(ea => ea.tagName == "LIVELY-HALO")) {
-        path = this.lastPath || e.path
+      // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
+      if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
+        path = this.lastPath || e.composedPath()
       }      
       this.lastPath = path
       path = path
@@ -128,7 +127,7 @@ export default class Selecting {
         .filter(ea => ! this.isIgnoredOnMagnify(ea))
       
       if (e.shiftKey) {
-        var idx = e.path.indexOf(document.body);
+        var idx = e.composedPath().indexOf(document.body);
         path= path
       } else {
         // by default: don't go into the shadows

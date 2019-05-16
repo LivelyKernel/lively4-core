@@ -8,24 +8,46 @@ console.log("NEW SERVICE Worker")
 
 */
 
+async function sendMessage(client, data) {
+  return new Promise((resolve, reject) => {
+    let channel = new MessageChannel()
+    var done = false
+    channel.port1.onmessage = (...args) => {
+      done  = true
+      resolve(...args)
+    }
+    client.postMessage(data, [channel.port2])
+    setTimeout(() => {
+      if (!done) reject("timeout")
+    }, 5 * 60 * 1000)
+  })
+}
 
 self.addEventListener('fetch', (evt) => {
   
   var url = evt.request.url 
-  console.log("[swx] fetch " +  evt.request.method  + " " + url)  
+  // console.log("[swx] fetch " +  evt.request.method  + " " + url)  
   
   var method = evt.request.method
-  if (url.match(/^https\:\/\/lively4\/scheme/,"")) {
+  var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)
+  if (m) {
+    var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    if(method == "GET") {
-      console.log("[swx] POID GET " + url)  
-      
-    } else if(method == "PUT") {
-      console.log("[swx] POID PUT " + url)  
-      
-    } else if(method == "OPTIONS") {    
-      console.log("[swx] POID OPTIONS " + url)  
-    }
+    console.log("[swx] POID GET " + url)  
+    evt.respondWith(
+      self.clients.get(evt.clientId)
+        .then(async client => {
+          if (!client) {
+            throw new Error(`no client for event found`) 
+          }
+          return sendMessage(client, {
+            name: 'swx:pi:' + method, 
+            path: path,
+            content: await evt.request.text()
+          })
+        }).then(evt => {
+          return new Response(evt.data.content)              
+        }))
   }
 
   // event.respondWith(promise);

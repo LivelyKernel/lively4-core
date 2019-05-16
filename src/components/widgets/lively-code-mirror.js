@@ -838,7 +838,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async livelyMigrate(other) {
     lively.addEventListener("Migrate", this, "editor-loaded", evt => {
-      if (evt.path[0] !== this) return; // bubbled from another place... that is not me!
+      if (evt.composedPath()[0] !== this) return; // bubbled from another place... that is not me!
       lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {

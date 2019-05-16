@@ -153,9 +153,9 @@ export default class LivelyPDF extends Morph {
   
   onAnnotationClick(e) {
     if(this.deleteMode) {
-      this.deleteAnnotation(e.path[0]);
+      this.deleteAnnotation(e.composedPath()[0]);
     } else {
-      this.editAnnotation(e.path[0]);
+      this.editAnnotation(e.composedPath()[0]);
     }
   }
   

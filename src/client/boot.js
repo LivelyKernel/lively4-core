@@ -12,37 +12,10 @@
  */
 
 
-// BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
-async function loadJavaScriptThroughDOM(name, src, force) {
+async function loadJavaScript(name, src, force) {
   var code = await fetch(src).then(r => r.text())
   eval(code)
-  
-//   return new Promise(function (resolve) {
-    
-    
-    
-    
-//     var scriptNode = document.querySelector(name);
-//     if (scriptNode) {
-//       scriptNode.remove();
-//     }
-//     var script = document.createElement("script");
-//     script.id = name;
-//     script.charset = "utf-8";
-//     script.type = "text/javascript";
-//     script.setAttribute("data-lively4-donotpersist","all");
-//     if (force) {
-//       src += +"?" + Date.now();
-//     }
-//     script.src = src;
-//     script.onload = function () {
-//       resolve();
-//     };
-//     document.head.appendChild(script);
-//   });
 }
-// END COPIED
-
 
 self.lively4currentbootid = "" + new Date()
 self.lively4bootlogData = []
@@ -68,7 +41,7 @@ self.lively4transpilationCache = {
         map: JSON.stringify(cache.map),
       }
       
-      if (!cacheKey.match(/^workspace/)) {
+      if (!cacheKey.match(/^workspace/) && !self.__karma__) {
         console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
         var transpileCacheURL = lively4url + "/.transpiled/" + cacheKey.replace(lively4url + "/","").replace(/\//g,"_") // flatten path
         fetch(transpileCacheURL, {
@@ -96,7 +69,6 @@ self.lively4optionsCache = new Map()
 self.lively4fetchLog = []
 
 async function invalidateFileCaches()  {
- 
   var url = lively4url + "/"
   
   if (self.lively && lively.fileIndexWorker) {
@@ -107,9 +79,11 @@ async function invalidateFileCaches()  {
   console.log("[boot] invalidateFileCaches:\n" + FilesCaches.invalidateTranspiledFiles())
   
 }
+self.lively4invalidateFileCaches = invalidateFileCaches
+
 
 async function preloadFileCaches() {
-  await loadJavaScriptThroughDOM("JSZip", lively4url + "/src/external/jszip.js" )
+  await loadJavaScript("JSZip", lively4url + "/src/external/jszip.js" )
   
   
   var start = performance.now()
@@ -190,29 +164,6 @@ async function preloadFileCaches() {
     }
   } 
   console.log("[boot] preloadFileCache updated caches in  " + Math.round(performance.now() - start) + "ms")
-//   var fileCacheURL = lively4url + "/bootfilelist.json"
-//   try {
-//     var filelist = await fetch(fileCacheURL).then(r => r.json())  
-//   } catch(e) {
-//     console.warn("could not load bootfilelist, continue anyway...")
-//     return
-//   }
-  
-//   urllist = filelist.map(ea => lively4url + "/" + ea)
-
-//   var uncachedFiles = urllist.filter(ea => !lively4cacheFiles.get(ea))
-  
-//   var bootingMessageUI = document.querySelector("#lively-booting-message")
-//   var count = 0
-//   return Promise.all(uncachedFiles.map((ea, index) => {
-//     var url = ea
-//     return fetch(url).then(r => {
-//       if (bootingMessageUI ) {
-//         bootingMessageUI.textContent = "preload " + (count++) +"/" + uncachedFiles.length + "files" 
-//       }
-      
-//     }) // ok, just fetch them, some will hit the cache, some will go through
-//   })) 
 }
 
 self.lively4fetchHandlers = []
@@ -254,14 +205,18 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          var match = self.lively4syncCache.get(url)
+          if (options && options.headers && options.headers["fileversion"]) {
+            return // don't cache versions request...
+          }
+          
+          let match = self.lively4syncCache.get(url)
           if (match) {
             // console.log("[boot] SYNC CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
           } else {
-            console.log("[boot] SYNC MISSED " + url)
+            // console.log("[boot] SYNC MISSED " + url)
           }          
         } else if (method == "PUT") {
           // clear cache for PUT
@@ -274,14 +229,18 @@ function installCachingFetch() {
           
           // and don't further handle it... so that it will be saved on the server
         } else if (method == "OPTIONS") {
-          var match = self.lively4optionsCache.get(url)
+           if (options && options.headers && options.headers["showversions"]) {
+            return // don't cache versions request...
+          }
+
+          let match = self.lively4optionsCache.get(url)
           if (match) {
             // console.log("[boot] SYNC OPTIONS CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
           } else {
-            console.log("[boot] SYNC OPTIONS MISSED " + url)
+            // console.log("[boot] SYNC OPTIONS MISSED " + url)
           }      
         } else {
           // do nothing
@@ -293,64 +252,6 @@ function installCachingFetch() {
     }
   })
 }
-
-
-async function installProxyFetch() {
-  var focalStorage = (await System.import("src/external/focalStorage.js")).default
-  
-  var mounts = await focalStorage.getItem("lively4mounts")
-  
-  if (!mounts) return 
-  
-  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isProxyFetch);
-  
-  async function proxyRequest(url, options={}) {
-    console.log("PROXY reqest: " + options.method + " " + url)
-    return self.originalFetch(url, {
-        mode: options.mode,
-        cache: options.cache,
-        method: options.method,
-        headers: options.headers,
-        redirect: options.redirect,
-        referrer: options.referrer,
-        credentials: options.credentials,
-        body: options.body && await options.body
-      })
-  }
-  
-  self.lively4fetchHandlers.push({
-    isProxyFetch: true,
-    handle(request, options) {
-      var url = (request.url || request).toString()
-      var m = url.match(/^https:\/\/lively4(\/[^/]*)(\/.*)/)
-      if (m) {
-        console.log("proxy fetch " + url)
-        var mountPoint = m[1]
-        var rest = m[2]
-       
-        for (var proxy of mounts.filter(ea => ea.name == "http")) {
-          if (mountPoint == proxy.path) {
-            if (!proxy.options || !proxy.options.base) 
-              throw new Error("options.base is missing in mount config for " + mountPoint)
-            return {
-              result: proxyRequest(proxy.options.base + rest, options)
-            }  
-          }
-          
-          
-        }
-        return  {
-          result:new Response("Could not handle " + url)
-        }          
-      }
-    }
-  })
-}
-
-// installProxyFetch()
-
-
-self.lively4invalidateFileCaches = invalidateFileCaches
 
 
 if (self.lively && self.lively4url) {
@@ -444,19 +345,22 @@ if (self.lively && self.lively4url) {
     
       
       groupedMessage('Setup SystemJS');
-        await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
-        await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
+        await loadJavaScript("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+        await loadJavaScript("systemjs-config", lively4url + "/src/systemjs-config.js");
       groupedMessageEnd();
 
-      groupedMessage('Setup fetch proxy');
-        await installProxyFetch()
-      groupedMessageEnd();
     
       try {  
           groupedMessage('Initialize SystemJS');
             await System.import(lively4url + "/src/client/preload.js");
           groupedMessageEnd();
           
+          groupedMessage('Setup fetch proxy');
+            await System.import(lively4url + "/src/client/fetch.js").then(mod => {
+              return mod.installProxyFetch()                                                   
+            })
+          groupedMessageEnd();
+
           groupedMessage('Wait on service worker (in load.js)');
             await (await System.import(lively4url + "/src/client/load-swx.js")).whenLoaded; // wait on service worker
           groupedMessageEnd();
