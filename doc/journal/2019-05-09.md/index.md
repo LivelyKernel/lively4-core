@@ -1,6 +1,7 @@
 ## 2019-05-09 Mounts without SWX
 
 Given the fact that you used Lively4's mounts feature... e.g. with something like this:
+
 ```javascript
 
 import focalStorage from "src/external/focalStorage.js"
