@@ -65,7 +65,6 @@ export default class Selecting {
     
     return !((element instanceof HTMLElement) || (element instanceof SVGElement))
       || element instanceof ShadowRoot 
-      || element instanceof HTMLContentElement 
       || element.getAttribute("data-is-meta") 
       || (element.isMetaNode && !element.isSelection)
       || (element.tagName == "I" && element.classList.contains("fa")) // font-awesome icons
