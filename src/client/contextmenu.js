@@ -389,7 +389,7 @@ export default class ContextMenu {
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["JSX-Ray ", async evt => {
-          const jsxRay  = await lively.create("jsx-ray") 
+          const jsxRay  = await lively.create("jsx-ray", document.body) 
           lively.setGlobalPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
