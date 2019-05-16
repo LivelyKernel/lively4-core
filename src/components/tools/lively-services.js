@@ -76,7 +76,7 @@ export default class Services extends Morph {
    */
   itemClick(evt) {
     this.unselectAll();
-    var item = evt.path.find(ea => ea.localName == 'lively-services-item')
+    var item = evt.composedPath().find(ea => ea.localName == 'lively-services-item')
     item.getSubmorph('.item').classList.add('selected');
     this.pid = evt.target.getAttribute('data-id');
     this.showService();

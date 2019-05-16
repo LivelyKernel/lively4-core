@@ -55,7 +55,7 @@ export default class LivelyHand extends Morph {
 
   elementUnderHand(evt) {
 
-    var path = evt.path.slice(evt.path.indexOf(evt.srcElement))
+    var path = evt.composedPath().slice(evt.composedPath().indexOf(evt.srcElement))
       .filter(ea => !Selecting.isIgnoredOnMagnify(ea) &&
         GrabItem.canDropInto(this, ea)
       )

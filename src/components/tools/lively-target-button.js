@@ -45,7 +45,7 @@ export default class LivelyTargetButton extends Morph {
   }
 
   onChooseTargetHighlight(evt) {
-    this.highlightTarget = evt.path[0]
+    this.highlightTarget = evt.composedPath()[0]
     this.showHighlight(this.highlightTarget)
   }
   

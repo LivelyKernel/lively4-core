@@ -677,7 +677,7 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    if (evt.path[0] !== document.body) return;
+    if (evt.composedPath()[0] !== document.body) return;
     console.log("hide context menu:" + evt);
     contextmenu.hide();
   }
@@ -847,7 +847,7 @@ export default class Lively {
     this.initializeHalos();
 
     lively.addEventListener("preventDragCopy", document, "dragstart", (evt) => {
-      if ((evt.path[0] === document.body)) {
+      if ((evt.composedPath()[0] === document.body)) {
         evt.stopPropagation()
         evt.preventDefault()
       }
@@ -1779,7 +1779,7 @@ export default class Lively {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
-      var link = Array.from(evt.path).find(ea => ea.localName == "a")
+      var link = Array.from(evt.composedPath()).find(ea => ea.localName == "a")
       if (link) {
         // #TODO can we shorten this or hide this context specific behavior, 
         // e.g. asking a link for href in the "context" of a lively container should

@@ -34,6 +34,8 @@ describe("Hand Component",  function() {
     root.appendChild(inner)
 
     var evt = new MockEvent(element, {altKey: true})
+    
+    // #TODO evt.path not support in #FireFox #Refactor
     // emulate the evt.path of an event hitting inside the shadow 
     var oldPath = evt.path
     evt.path = []

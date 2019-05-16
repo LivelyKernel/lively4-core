@@ -1872,7 +1872,7 @@ export default class Container extends Morph {
   livelyAllowsSelection(evt) {
     if (!this.contentIsEditable() || this.isEditing()) return false
 
-    if (evt.path[0].id == "container-content") return true;
+    if (evt.composedPath()[0].id == "container-content") return true;
 
     return false
   }

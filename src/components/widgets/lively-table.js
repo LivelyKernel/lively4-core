@@ -364,7 +364,7 @@ export default class LivelyTable extends Morph {
   
   onMouseDown(evt) {
     
-    var cell = evt.path[0]
+    var cell = evt.composedPath()[0]
     if(cell === this.currentCell) return;
     
     if (cell !== this.currentCell) {
@@ -385,7 +385,7 @@ export default class LivelyTable extends Morph {
   }
   
   onMouseMoveSelection(evt) {
-    var cell = evt.path[0];
+    var cell = evt.composedPath()[0];
     if (this.isCell(cell)) {
       if (cell === this.currentCell) return;
     
@@ -412,7 +412,7 @@ export default class LivelyTable extends Morph {
     lively.removeEventListener("LivelyTable", document.body, "mousemove")
     lively.removeEventListener("LivelyTable", document.body, "mouseup")
      
-    var cell = evt.path[0];
+    var cell = evt.composedPath()[0];
     if (cell === this.currentCell) return; 
     
     this.setFocusAndTextSelection(this.currentCell)    

@@ -25,7 +25,7 @@ export default class Treeview extends Morph {
     // activate/deactivate leaves
     this.addEventListener("click", (evt) => {      
       
-      var target = evt.path.find(ea => ea && ea.classList && ea.classList.contains("leaf"))
+      var target = evt.composedPath().find(ea => ea && ea.classList && ea.classList.contains("leaf"))
       if (!target) return;
       this.onItemClick(target)
     });
