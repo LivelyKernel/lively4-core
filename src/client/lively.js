@@ -133,6 +133,7 @@ export default class Lively {
   static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
     try {
+      // #BUG this leads to trying to reloading a module a second time if there was an error #375
       await System.import(normalizedPath).then(module => {
         if(module && typeof module.__unload__ === "function") {
           module.__unload__();
