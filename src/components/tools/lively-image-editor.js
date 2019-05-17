@@ -5,7 +5,6 @@ export default class LivelyImageEditor extends Morph {
     this.windowTitle = "Image Editor";
 
     this.canvas = this.get("#canvas")
-
     this.canvas.height = 500
     this.canvas.width = 500
 
@@ -30,16 +29,43 @@ export default class LivelyImageEditor extends Morph {
     
   }
   
+  
+  
+  // BEGIN EDITOR API
+  saveFile() {
+    return lively.files.copyURLtoURL(this.canvas.toDataURL(), this.getURL())
+  }
+
+  getURL(url) {
+    return this.getAttribute("src")
+  }
+
+  setURL(url) {
+    if(this.getURL() != url) {
+      this.loadImage(url)
+    }
+  }
+  
+  currentEditor() {
+    var canvas = this.canvas
+    return {
+      getValue() { return canvas.toDataURL()}
+    }
+  }
+  // END EDITOR API
+  
+  
   loadImage(url) {
+    debugger
     this.setAttribute("src", url)
     var img = new Image();
     img.onload = () => {
       this.canvas.height = img.height
       this.canvas.width = img.width
-      lively.notify("load " + url)
       this.ctx.drawImage(img, 0, 0); // Or at whatever offset you like
+      
     };
-    img.src = "https://lively-kernel.org/lively4/foo/test.png";
+    img.src = url
   }
 
   posFromEvent(evt) {
@@ -47,8 +73,15 @@ export default class LivelyImageEditor extends Morph {
   }
   
   paint(pos) {
-    this.ctx.fillStyle = "#FF0000";
-    this.ctx.fillRect(pos.x, pos.y, 4, 4);
+    this.ctx.strokeStyle = "#FF0000";
+    this.ctx.lineWidth = 1;
+    if (this.lastPos) {
+      this.ctx.moveTo(this.lastPos.x, this.lastPos.y);      
+      this.ctx.lineTo(pos.x, pos.y);
+      this.ctx.closePath();
+      this.ctx.stroke();
+    }
+    this.lastPos = pos
   }
 
   onPointerDown(evt) {
@@ -68,13 +101,14 @@ export default class LivelyImageEditor extends Morph {
     var pos = this.posFromEvent(evt)
     this.paint(pos)
     this.isDown = false
+    this.lastPos = undefined
   }
   
   async onSave(url) {
     url = url || this.getAttribute("src") 
     if (url) {
       this.setAttribute("src", url)
-      await lively.files.copyURLtoURL(this.canvas.toDataURL(), url)
+      this.saveFile()
       lively.notify("saved " + url)
     } else {
       this.onSaveAs()
@@ -91,7 +125,8 @@ export default class LivelyImageEditor extends Morph {
   async onOpen() {
     var url = await lively.prompt("load", this.getAttribute("src") || "")
     if (url) {
-      this.loadImage(url)
+      await this.loadImage(url)
+      lively.notify("load " + url)
     }
   }
 
@@ -101,26 +136,11 @@ export default class LivelyImageEditor extends Morph {
       ["save as...", () => this.onSaveAs()],
       ["open image", () => this.onOpen()],
     ];
-
     const menu = new lively.contextmenu(this, menuElements)
     menu.openIn(document.body, evt, this)
-
   }
-
-  livelyMigrate(other) {
-
-  }
-
-  livelyPrepareSave() {
-
-  }
-
- 
-  
   
   async livelyExample() {
     this.loadImage("https://lively-kernel.org/lively4/foo/test.png")
   }
-
-
 }

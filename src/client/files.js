@@ -504,6 +504,11 @@ export default class Files {
       }  
     }, url) 
   }
+  
+  static getEnding(path) {
+    return path.replace(/\?.*/,"").replace(/.*\./,"");
+  }
+  
 }
 
 
