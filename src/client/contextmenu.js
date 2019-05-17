@@ -169,6 +169,23 @@ export default class ContextMenu {
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
+      ["edit", async () => {
+          if (target instanceof Image) {
+            var url = target.getAttribute("src")
+            if (url.match(/^data\:/)) {
+              var editor = await lively.openComponentInWindow("lively-image-editor")
+              editor.setTarget(target)
+              
+            } else {
+              lively.openBrowser(url, true)
+            }
+            
+          } else {
+              lively.openInspector(target)
+          }
+        },
+        "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+      ],
       ["save as png ...", async () => {
           var previewAttrName = "data-lively-preview-src"
           var url = target.getAttribute(previewAttrName)
@@ -181,8 +198,14 @@ export default class ContextMenu {
           url = await lively.prompt("save as png", url);
           if (url) {
             target.setAttribute(previewAttrName, url)
-            await Rasterize.elementToURL(target, url)
-            lively.notify("save to " + url)
+            if (target instanceof Image) {
+              await lively.files.copyURLtoURL(target.src, url) 
+            } else {
+              await Rasterize.elementToURL(target, url)
+            }
+            lively.notify("saved image to ", url, 10, () => {
+              lively.openBrowser(url)
+            })
           }
         },
         "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'

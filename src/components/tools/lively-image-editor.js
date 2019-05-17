@@ -60,16 +60,24 @@ export default class LivelyImageEditor extends Morph {
     this.setAttribute("src", url)
     var img = new Image();
     img.onload = () => {
-      this.canvas.height = img.height
-      this.canvas.width = img.width
-      this.ctx.drawImage(img, 0, 0); // Or at whatever offset you like
-      
+      this.loadFromImageElement(img) 
     };
     img.src = url
   }
-
+  
+  loadFromImageElement(img) {
+    this.canvas.height = img.height
+    this.canvas.width = img.width
+    this.ctx.drawImage(img, 0, 0); // Or at whatever offset you like
+  }
+  
   posFromEvent(evt) {
     return lively.getPosition(evt).subPt(lively.getGlobalPosition(this.canvas))
+  }
+  
+  setTarget(img) {
+    this.target = img
+    this.loadFromImageElement(img)
   }
   
   paint(pos) {
@@ -104,7 +112,15 @@ export default class LivelyImageEditor extends Morph {
     this.lastPos = undefined
   }
   
+  saveToTarget() {
+    this.target.src = this.canvas.toDataURL()
+  }
+  
   async onSave(url) {
+    if (!url && this.target) {
+      return this.saveToTarget()
+    }
+    
     url = url || this.getAttribute("src") 
     if (url) {
       this.setAttribute("src", url)
