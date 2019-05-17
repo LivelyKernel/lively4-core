@@ -10,6 +10,10 @@ export default class LivelyImageEditor extends Morph {
 
     this.ctx = this.canvas.getContext("2d");
 
+    this.get("#penColor").value = this.color;
+    this.get("#penSize").value = this.penSize;
+
+    
     lively.removeEventListener("pointer", this)
     lively.addEventListener("pointer", this, "pointerdown", e => this.onPointerDown(e))
     lively.addEventListener("pointer", this, "pointermove", e => this.onPointerMove(e))
@@ -24,13 +28,42 @@ export default class LivelyImageEditor extends Morph {
       }
     }, false);
     
-    var url = this.getAttribute("src")
-    if (url) this.loadImage(url)
     
+    lively.addEventListener("imageeditor", this.get('#penColor'), "value-changed", 
+      e => this.onPenColor(e.detail.value));  
+    lively.addEventListener("imageeditor", this.get('#penSize'), "value-changed", 
+      e => this.onPenSize(e.detail.value)); 
+    
+    if(this.target) {
+      this.loadFromImageElement(this.target)
+    } else {
+      var url = this.getAttribute("src")
+      if (url) {
+        this.loadImage(url)
+      }   
+    }
+  }
+  
+  // ACCESSORS
+  
+  get color() {
+    return this.getAttribute("color")
+  }
+  
+  set color(value) {
+    this.setAttribute("color", value)
+  }
+  
+  get penSize() {
+    return this.getAttribute("pen-size")
+  }
+  
+  set penSize(value) {
+    this.setAttribute("pen-size", value)
   }
   
   
-  
+
   // BEGIN EDITOR API
   saveFile() {
     return lively.files.copyURLtoURL(this.canvas.toDataURL(), this.getURL())
@@ -55,8 +88,17 @@ export default class LivelyImageEditor extends Morph {
   // END EDITOR API
   
   
+  onPenColor(color) {
+    this.color = color
+  }
+  
+  onPenSize(size) {
+    this.penSize = size
+  }
+  
+  
+  
   loadImage(url) {
-    debugger
     this.setAttribute("src", url)
     var img = new Image();
     img.onload = () => {
@@ -81,12 +123,13 @@ export default class LivelyImageEditor extends Morph {
   }
   
   paint(pos) {
-    this.ctx.strokeStyle = "#FF0000";
-    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle =  this.color;
+    this.ctx.lineWidth = this.penSize;
     if (this.lastPos) {
       this.ctx.moveTo(this.lastPos.x, this.lastPos.y);      
       this.ctx.lineTo(pos.x, pos.y);
-      this.ctx.closePath();
+     
+     this.ctx.closePath();
       this.ctx.stroke();
     }
     this.lastPos = pos
@@ -95,6 +138,7 @@ export default class LivelyImageEditor extends Morph {
   onPointerDown(evt) {
     this.isDown = true
     var pos = this.posFromEvent(evt)
+    this.ctx.beginPath()
     this.paint(pos)
   }
   
@@ -154,6 +198,10 @@ export default class LivelyImageEditor extends Morph {
     ];
     const menu = new lively.contextmenu(this, menuElements)
     menu.openIn(document.body, evt, this)
+  }
+  
+  livelyMigrate(other) {
+    this.target = other.target
   }
   
   async livelyExample() {
