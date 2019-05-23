@@ -541,6 +541,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   wrapWidget(name, from, to, options) {
     var widget = document.createElement("span");
+    widget.classList.add("lively-widget")
     widget.style.whiteSpace = "normal";
     var promise = lively.create(name, widget);
     promise.then(comp => {

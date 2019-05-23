@@ -14,6 +14,9 @@
  
 
 */
+
+import Strings from "src/client/strings.js"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
@@ -161,6 +164,7 @@ export default class Editor extends Morph {
     var codeMirror = this.currentEditor();
     var cur = this.getCursor()
     var scroll = this.getScrollInfo()
+
     
     if (codeMirror) {
       if (!this.isCodeMirror()) {
@@ -171,6 +175,9 @@ export default class Editor extends Morph {
       codeMirror.setValue(text);
       if (codeMirror.resize) codeMirror.resize();
       this.updateEditorMode();
+      
+      this.showEmbeddedWidgets()
+      
     } else {
       // Code Mirror
       this.get('#editor').value = text
@@ -426,6 +433,7 @@ export default class Editor extends Morph {
                                   element.name, 
                                   evt)
             }
+            
             // lively.showElement(element)
           })
           
@@ -489,6 +497,7 @@ export default class Editor extends Morph {
         editor.setSelection(coords)        
       }
       editor.replaceSelection(text, "around")
+      
     })
     
     
@@ -504,6 +513,8 @@ export default class Editor extends Morph {
       evt.stopPropagation()
       evt.preventDefault();
     }
+    
+    this.showEmbeddedWidgets()
   }
   
   async onBrowse() {
@@ -518,6 +529,29 @@ export default class Editor extends Morph {
     }
   }
   
+  async showEmbeddedWidgets() {
+    var type = files.getEnding(this.getURL().toString())
+    var widget;
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+
+    if (type == "js") {
+      for(var m of Strings.matchAll(/\/\*HTML(.*)?HTML\*\//, codeMirrorComponent.value)) {
+          widget = await codeMirrorComponent.wrapWidget("div", codeMirrorComponent.editor.posFromIndex(m.index),  codeMirrorComponent.editor.posFromIndex(m.index + m[0].length))
+          widget.style.border = "2px dashed orange "
+          lively.removeEventListener('widget', widget)
+          widget.innerHTML = m[1]                
+        }
+    }
+  }
+  
+  async hideEmbeddedWidgets() {
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
+  }
+
   livelyExample() {
     this.setURL(lively4url + "/README.md");
     this.loadFile()
