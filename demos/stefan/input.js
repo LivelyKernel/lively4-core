@@ -388,7 +388,7 @@ export default class Input {
     }
     else {
       var length = vector.normalize();
-      console.log(length, (length - deadzone), (length - deadzone) / (1 - deadzone));
+      // console.log(length, (length - deadzone), (length - deadzone) / (1 - deadzone));
       vector.mulFloatSelf((length - deadzone) / (1 - deadzone));
     }
   }
