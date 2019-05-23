@@ -76,7 +76,7 @@ class Dependency {
     } else if(this.type === 'local') {
       dataStructure = value;
     }
-    if (dataStructure instanceof Set) {
+    if (dataStructure instanceof Array || dataStructure instanceof Set || dataStructure instanceof Map) {
       const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
       HooksToDependencies.associate(dataHook, this);
     }
@@ -264,7 +264,7 @@ class SourceCodeHook extends Hook {
 }
 
 class DataStructureHook extends Hook {
-  static forStructure(set) {
+  static forStructure(dataStructure) {
     const hook = new DataStructureHook();
     
     function getPrototypeDescriptors(obj) {
@@ -310,7 +310,7 @@ class DataStructureHook extends Hook {
       });
     }
 
-    monitorProperties(set);
+    monitorProperties(dataStructure);
     
     // set.add = function add(...args) {
     //   const result = Set.prototype.add.call(this, ...args);

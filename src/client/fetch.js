@@ -50,7 +50,7 @@ export async function installProxyFetch() {
           } else if (method == "PUT") {
             
             return {
-              result: Promise.resolve().then(async json => {
+              result: (async () => {
                 try {
                   var json = options.body
                   var newMounts = JSON.parse(json)
@@ -61,11 +61,10 @@ export async function installProxyFetch() {
                   mounts = newMounts
                   await focalStorage.setItem("lively4mounts", mounts)
                   return new Response("updated mounts", {status: 200})
-                  
                 } else {
                   return new Response("could not parse json: " + json, {status: 500})
                 }
-              })
+              })()
             }
           }
         }
