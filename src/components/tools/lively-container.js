@@ -9,6 +9,7 @@ import Favorites from 'src/client/favorites.js';
 
 import files from "src/client/files.js"
 
+
 //import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
@@ -107,7 +108,7 @@ export default class Container extends Morph {
   }
 
   becomeMainContainer() {
-    this.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
+    this.__ignoreUpdates = true; // a hack... since I am missing DevLayers...
     this.get('#container-content').style.overflow = "visible";
     
     this.parentElement.toggleMaximize()
@@ -401,10 +402,8 @@ export default class Container extends Morph {
     }
     this.followPath(url)
   }
-  
-  
+
   onBack() {
-    
     if (this.history().length < 2) {
       lively.notify("No history to go back!");
       return;
@@ -499,48 +498,56 @@ export default class Container extends Morph {
       return;
     }
     this.get("#editor").setURL(this.getURL());
-    return this.get("#editor").saveFile().then( async () => {
-      var sourceCode = this.getSourceCode();
-      var url = this.getURL()
-      url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
-      // lively.notify("!!!saved " + url)
-      window.LastURL = url
-      if (await this.urlInTemplate(url)) {
-        lively.notify("update template")
-        if (url.toString().match(/\.html/)) {
-          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
-          var templateSourceCode = sourceCode
-          lively.updateTemplate(templateSourceCode);
-        }
-      }
-      if (this.getPath().match(/.*css/)) {
-        this.updateCSS();
-      }
-      this.updateOtherContainers();
+    await this.get("#editor").saveFile()
+    this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
+    var sourceCode = this.getSourceCode();
+    var url = this.getURL()
+    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
+    // lively.notify("!!!saved " + url)
+    window.LastURL = url
+    if (await this.urlInTemplate(url)) {
+      lively.notify("update template")
+      if (url.toString().match(/\.html/)) {
+        // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
+        var templateSourceCode = sourceCode
 
-      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
-      if (moduleName) {
-        moduleName = moduleName[1];
+        await lively.updateTemplate(templateSourceCode);
 
-        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
-        if (this.lastLoadingFailed) {
-          console.log("last loading failed... reload")
-          this.reloadModule(url); // use our own mechanism...
-        } else if (this.getPath().match(testRegexp)) {
-          this.loadTestModule(url);
-        } else if (this.get("#live").checked) {
-          // lively.notify("load module " + moduleName)
-          await this.loadModule("" + url)
-          lively.findDependedModules("" + url).forEach(ea => {
-            if (ea.match(testRegexp)) {
-              this.loadTestModule(ea);
-            }
-          })
-        } else {
-          lively.notify("ignore module " + moduleName)
-        }
       }
-    }).then(() => this.showNavbar());
+    }
+    if (this.getPath().match(/.*css/)) {
+      this.updateCSS();
+    }
+    this.updateOtherContainers();
+
+    var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
+    if (moduleName) {
+      moduleName = moduleName[1];
+
+      const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
+      if (this.lastLoadingFailed) {
+        console.log("last loading failed... reload")
+        await this.reloadModule(url); // use our own mechanism...
+      } else if (this.getPath().match(testRegexp)) {
+        await this.loadTestModule(url);
+      } else if (this.get("#live").checked) {
+        // lively.notify("load module " + moduleName)
+        await this.loadModule("" + url)
+        lively.findDependedModules("" + url).forEach(ea => {
+          if (ea.match(testRegexp)) {
+            this.loadTestModule(ea);
+          }
+        })
+      } else {
+        lively.notify("ignore module " + moduleName)
+      }
+    }
+    this.showNavbar();
+    
+    // something async... 
+    lively.sleep(5000).then(() => {
+      this.__ignoreUpdates = false
+    })
   }
 
   updateCSS() {
@@ -1116,7 +1123,7 @@ export default class Container extends Morph {
     this.currentEditorType = editorType
     
     var container = this.get('#container-editor');
-    var livelyEditor = container.querySelector("lively-editor, babylonian-programming-editor");
+    var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor");
     
     if (livelyEditor && (livelyEditor.localName != editorType)) {
       livelyEditor.remove()
@@ -1128,28 +1135,30 @@ export default class Container extends Morph {
     livelyEditor = await lively.create(editorType, container);
     livelyEditor.id = "editor";
     
-    // console.log("[container] opened editor")
-    livelyEditor.hideToolbar();
-    await livelyEditor.awaitEditor();
-    var livelyCodeMirror = livelyEditor.livelyCodeMirror();
-    if (!livelyCodeMirror) throw new Error("Could not initialalize lively-editor");
-    if (livelyCodeMirror.tagName == "LIVELY-CODE-MIRROR") {
-      await new Promise(resolve => {
-        if (livelyCodeMirror["editor-loaded"]) {
-          resolve() // the livelyEditor was very quick and the event was fired in the past
-        } else {
-          livelyCodeMirror.addEventListener("editor-loaded", resolve)
-        }
-      })
-    }
-
-    livelyCodeMirror.enableAutocompletion();
-    livelyCodeMirror.getDoitContext = () => window.that;
-
-    livelyCodeMirror.doSave = text => {
-      if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
-        this.onSave(); // CTRL+S does not come through...
+    if (livelyEditor.awaitEditor) {
+      // console.log("[container] opened editor")
+      livelyEditor.hideToolbar();
+      await livelyEditor.awaitEditor();
+      var livelyCodeMirror = livelyEditor.livelyCodeMirror();
+      if (!livelyCodeMirror) throw new Error("Could not initialalize lively-editor");
+      if (livelyCodeMirror.tagName == "LIVELY-CODE-MIRROR") {
+        await new Promise(resolve => {
+          if (livelyCodeMirror["editor-loaded"]) {
+            resolve() // the livelyEditor was very quick and the event was fired in the past
+          } else {
+            livelyCodeMirror.addEventListener("editor-loaded", resolve)
+          }
+        })
       }
+
+      livelyCodeMirror.enableAutocompletion();
+      livelyCodeMirror.getDoitContext = () => window.that;
+
+      livelyCodeMirror.doSave = text => {
+        if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
+          this.onSave(); // CTRL+S does not come through...
+        }
+      }      
     }
     return livelyEditor;
   }
@@ -1346,7 +1355,7 @@ export default class Container extends Morph {
     var renderTimeStamp = Date.now() // #Idean, this is clearly a use-case for #COP, I have to refactor this propagate this dynamical context asyncronously #AsyncContextJS
     this.renderTimeStamp = renderTimeStamp
     
-    var format = path.replace(/\?.*/,"").replace(/.*\./,"");
+    var format = files.getEnding(path)
     if (url.protocol == "search:") {
       format = "html"
     }
@@ -1387,6 +1396,10 @@ export default class Container extends Morph {
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
+    }
+    
+    if (url.toString().match(lively4url)) {
+      headers["forediting"] = true
     }
   
     return fetch(url, {
@@ -1558,6 +1571,10 @@ export default class Container extends Morph {
     this.get("lively-separator").style.display  = "";
   }
 
+  editPicture() {
+    var url = this.getURL()
+    
+  }
 
   async editFile(path) {
     // console.log("[container] editFile " + path)
@@ -1565,60 +1582,73 @@ export default class Container extends Morph {
     if(path) await this.setPath(path, true /* do not render */) 
     
     this.clear();
+    var urlString = this.getURL().toString();
+    
     var containerContent=  this.get('#container-content');
     containerContent.style.display = "none";
     var containerEditor =  this.get('#container-editor');
     containerEditor.style.display = "block";
 
-    var urlString = this.getURL().toString();
+
     this.resetLoadingFailed();
 
     this.showNavbar();
 
+    
+    
     // console.log("[container] editFile befor getEditor")
     // ... demos\/
     var editorType = urlString.match(/babylonian-programming-editor\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
+    if (files.isPicture(files.getEnding(urlString))) {
+      editorType = "lively-image-editor"
+    }
+
+    
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
     
-    await livelyEditor.awaitEditor()
-    var codeMirror = livelyEditor.livelyCodeMirror();
+    if (livelyEditor.awaitEditor) {
+      await livelyEditor.awaitEditor()
+      var codeMirror = livelyEditor.livelyCodeMirror();
 
-    codeMirror.addEventListener("change", evt => this.onTextChanged(evt))
+      codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
+    }
 
     var url = this.getURL();
     livelyEditor.setURL(url);
     // console.log("[container] editFile setURL " + url)
-    if (codeMirror.editor && codeMirror.editor.session) {
-      codeMirror.editor.session.setOptions({
-        mode: "ace/mode/javascript",
-        tabSize: 2,
-        useSoftTabs: true
-      });
-    }
-    codeMirror.changeModeForFile(url.pathname);
-    
-    // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
-    livelyEditor.setText(this.sourceContent); // directly setting the source we got
+    if (codeMirror) {
+      if (codeMirror.editor && codeMirror.editor.session) {
+        codeMirror.editor.session.setOptions({
+          mode: "ace/mode/javascript",
+          tabSize: 2,
+          useSoftTabs: true
+        });
+      }
+      codeMirror.changeModeForFile(url.pathname);
 
-    if (codeMirror.editor) {
-      if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {
-        codeMirror.editor.selection.moveCursorTo(0,0);
-        var lineWidth = 100
-        codeMirror.editor.session.setWrapLimit(lineWidth);
-        codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
+      // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
+      livelyEditor.setText(this.sourceContent); // directly setting the source we got
+
+      if (codeMirror.editor) {
+        if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {
+          codeMirror.editor.selection.moveCursorTo(0,0);
+          var lineWidth = 100
+          codeMirror.editor.session.setWrapLimit(lineWidth);
+          codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
+        }
       }
     }
 
     livelyEditor.lastVersion = this.lastVersion;
     this.showCancelAndSave();
 
-    if ((""+url).match(/\.((js)|(py))$/)) {
+    if (codeMirror && (""+url).match(/\.((js)|(py))$/)) {
       codeMirror.setTargetModule("" + url); // for editing
     }
 
-    if (this.anchor) {
+    if (codeMirror && this.anchor) {
       this.scrollToAnchor(this.anchor)
     }
   }

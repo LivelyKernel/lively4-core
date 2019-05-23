@@ -683,7 +683,6 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-
     if (window.HaloService && 
         (HaloService.areHalosActive() ||
         (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)))) {
@@ -957,7 +956,7 @@ export default class Lively {
       objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
     objectToMigrate.forEach(oldInstance => {
-      if (oldInstance.__ingoreUpdates) return;
+      if (oldInstance.__ignoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows

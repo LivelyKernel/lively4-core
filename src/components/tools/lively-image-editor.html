@@ -1,0 +1,45 @@
+<template id="lively-image-editor">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      background-color: gray;
+    }
+
+    #canvas {
+      background-color: white;
+    }
+    
+    #penColor, #backgroundColor {
+      margin: 3px;
+    }
+  
+    button {
+      vertical-align: top
+    }
+
+    #penSize {
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+      margin: 3px;
+      padding: 0px;
+      font-size: 0;
+      vertical-align: top
+    }
+  
+    #controls {
+      background-color: lightgray;
+        position: absolute;
+    right: 0pt;
+    border: 1px gray solid;
+    width: 100%;
+    }
+    
+  </style>
+   <div id="controls">
+    <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
+    <lively-penchooser id="penSize"></lively-penchooser>
+  </div>
+  <canvas id="canvas"></canvas>
+</template>
