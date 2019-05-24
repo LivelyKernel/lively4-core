@@ -574,7 +574,7 @@ export default class Container extends Morph {
       }
     });
     
-    updateEditors(url, [])
+    updateEditors(url, [this.get("lively-editor")])
   }
   
 

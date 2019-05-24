@@ -23,31 +23,6 @@ let loadPromise = undefined;
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
-// BEGIN #copied from emacs.js
-function repeated(cmd) {
-  var f = typeof cmd == "string" ? function(cm) { cm.execCommand(cmd); } : cmd;
-  return function(cm) {
-    var prefix = getPrefix(cm);
-    f(cm);
-    for (var i = 1; i < prefix; ++i) f(cm);
-  };
-}
-
-function getPrefix(cm, precise) {
-  var digits = cm.state.emacsPrefix;
-  if (!digits) return precise ? null : 1;
-  clearPrefix(cm);
-  return digits == "-" ? -1 : Number(digits);
-}
-
-function operateOnWord(cm, op) {
-  var start = cm.getCursor(), end = cm.findPosH(start, 1, "word");
-  cm.replaceRange(op(cm.getRange(start, end)), start, end);
-  cm.setCursor(end);
-}
-// END
-
-
 export default class LivelyCodeMirror extends HTMLElement {
 
   get mode() {
@@ -258,6 +233,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     // }
   }
   
+  addKeys(keymap) {
+    var keys = this.ensureExtraKeys()
+    this.extraKeys = Object.assign(keys, keymap)
+  }
+  
+  
   ensureExtraKeys() {
     if (!this.extraKeys) {
       var editor = this.editor
@@ -277,16 +258,6 @@ export default class LivelyCodeMirror extends HTMLElement {
               editor.execCommand("replace");
               this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
           }, 10)
-        },
-        // #KeyboardShortcut Ctrl-F search
-        "Ctrl-F": (cm) => {
-          // something immediately grabs the "focus" and we close the search dialog..
-          // #Hack...
-          setTimeout(() => {
-              editor.execCommand("findPersistent");
-              this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
-          }, 10)
-          // editor.execCommand("find")
         },
         // #KeyboardShortcut Ctrl-Space auto complete
         "Ctrl-Space": cm => {
@@ -314,6 +285,17 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.tryBoundEval(text, false);
             return true
         },
+        // #KeyboardShortcut Ctrl-F search
+        "Ctrl-F": (cm) => {
+          // something immediately grabs the "focus" and we close the search dialog..
+          // #Hack...
+          setTimeout(() => {
+                editor.execCommand("findPersistent");
+                this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+          }, 10)
+          // editor.execCommand("find")
+        },
+        
         // #KeyboardShortcut Ctrl-Alt-Right multiselect next
         "Ctrl-Alt-Right": "selectNextOccurrence",
         // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
@@ -358,15 +340,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-.": cm => {
           this.ternWrapper.then(tw => tw.showReferences(cm, this));
         },
-        // #KeyboardShortcut Alt-C capitalize letter
-        // #copied from keymap/emacs.js
-        "Alt-C": repeated(function(cm) {
-          operateOnWord(cm, function(w) {
-            var letter = w.search(/\w/);
-            if (letter == -1) return w;
-            return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
-          });
-        }),
+        
       }
     }
     return this.extraKeys
@@ -374,7 +348,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   registerExtraKeys(options={}) {
     var extraKeys = Object.assign(this.ensureExtraKeys(), options)
-    this.editor.setOption("extraKeys", extraKeys);
+    extraKeys = Object.assign(extraKeys, CodeMirror.keyMap.sublime)
+    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(extraKeys));
   }
     
   
@@ -391,7 +366,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
-    editor.setOption("keyMap",  "sublime")
+    // editor.setOption("keyMap",  "sublime")
 		
     editor.on("cursorActivity", cm => {
       if (this.ternLoaded) {

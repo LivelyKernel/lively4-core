@@ -44,6 +44,7 @@ export default class Editor extends Morph {
     editor.setAttribute("tabsize", 2)
         
     
+    
     editor.doSave = text => {
       this.saveFile(); // CTRL+S does not come through...    
     };
@@ -76,6 +77,12 @@ export default class Editor extends Morph {
     
     this.addEventListener("paste", evt => this.onPaste(evt))
 
+    
+    // wait for CodeMirror for adding custom keys
+    await  editor.editorLoaded()
+    editor.addKeys({
+      "Alt-P": cm => this.toggleWidgets()
+    })
   }
   
   onTextChanged() {
@@ -513,8 +520,6 @@ export default class Editor extends Morph {
       evt.stopPropagation()
       evt.preventDefault();
     }
-    
-    this.showEmbeddedWidgets()
   }
   
   async onBrowse() {
@@ -531,17 +536,57 @@ export default class Editor extends Morph {
   
   async showEmbeddedWidgets() {
     var type = files.getEnding(this.getURL().toString())
-    var widget;
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
 
     if (type == "js") {
-      for(var m of Strings.matchAll(/\/\*HTML(.*)?HTML\*\//, codeMirrorComponent.value)) {
-          widget = await codeMirrorComponent.wrapWidget("div", codeMirrorComponent.editor.posFromIndex(m.index),  codeMirrorComponent.editor.posFromIndex(m.index + m[0].length))
+      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD))(.*?)\1\*\//, codeMirrorComponent.value)) {
+          var widgetName = "div"
+          var mode = m[1]
+          if (mode == "MD") {
+            widgetName = "lively-markdown"
+          }
+          let cm = codeMirrorComponent.editor,
+            // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
+            fromIndex = m.index,
+            toIndex = m.index + m[0].length
+                           
+          // if (cursorIndex > fromIndex && cursorIndex < toIndex) continue;
+          var from = cm.posFromIndex(fromIndex)
+          var to = cm.posFromIndex(toIndex)
+          let widget = await codeMirrorComponent.wrapWidget(widgetName, from, to)
           widget.style.border = "2px dashed orange "
           lively.removeEventListener('widget', widget)
-          widget.innerHTML = m[1]                
-        }
+          widget.style.padding = "5px"
+          lively.addEventListener("context", widget, "contextmenu", evt => {
+            if (!evt.shiftKey) {
+               const menuElements = [
+                ["edit source", () =>  widget.marker.clear()],
+              ];
+              const menu = new lively.contextmenu(this, menuElements)
+              menu.openIn(document.body, evt, this)
+              
+              evt.stopPropagation();
+              evt.preventDefault();
+              return true;
+            }
+          })
+        
+          if (mode == "MD") {
+            widget.setContent(m[2])    
+            
+          } else {
+            widget.innerHTML = m[2]
+            var container = lively.query(this, "lively-container")
+            if (container) {
+              lively.html.fixLinks(widget.querySelectorAll("img, a"), 
+                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    url => container.followPath(url))
+            }
+            
+          }
+      }
+     
     }
   }
   
@@ -551,6 +596,23 @@ export default class Editor extends Morph {
     codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
   }
+  
+  toggleWidgets() {
+    lively.notify("yeah...")
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    
+    
+    
+    var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
+    if (allWidgets.length == 0) {
+      this.showEmbeddedWidgets()
+    } else {
+      this.hideEmbeddedWidgets()
+    }
+  }
+  
 
   livelyExample() {
     this.setURL(lively4url + "/README.md");
