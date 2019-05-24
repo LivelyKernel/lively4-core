@@ -9,6 +9,7 @@ chai.use(sinonChai);
 describe('Data Structure Hooks', () => {
 
   describe('Arrays as Data Structures', () => {
+
     it('detects a newly pushed element', () => {
       const spy = sinon.spy();
       const arr = [1,2];
@@ -19,6 +20,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
+
     it('detects indexed access in expression', () => {
       const spy = sinon.spy();
       const arr = [1,2,3];
@@ -29,6 +31,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(0);
     });
+
     it('detects access in expression for first element', () => {
       const spy = sinon.spy();
       const arr = [1,2,3];
@@ -39,6 +42,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(0);
     });
+
     it('detects write access to first element', () => {
       const spy = sinon.spy();
       const arr = [1,2,3];
@@ -49,6 +53,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(0);
     });
+
     it('detects access in expression for last element', () => {
       const spy = sinon.spy();
       const arr = [1,2,3];
@@ -59,6 +64,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(4);
     });
+
     it('detects write access to last element', () => {
       const spy = sinon.spy();
       const arr = [1,2,3];
@@ -69,6 +75,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(0);
     });
+
     xit('detects an indexed write', () => {
       const spy = sinon.spy();
       const arr = [1,2];
@@ -79,6 +86,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
+
     xit('detects an indexed write outside existing values', () => {
       const spy = sinon.spy();
       const arr = [1,2];
@@ -89,6 +97,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
+
     xit('detects changes to the length property', () => {
       const spy = sinon.spy();
       let arr = [1,2];
@@ -102,6 +111,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
+
     it('monitoring does not influence length property', () => {
       let arr = [1,2];
       const expr = aexpr(() => arr);
@@ -122,6 +132,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
     });
+
     it('do not detect an already existing item', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
@@ -131,6 +142,7 @@ describe('Data Structure Hooks', () => {
 
       expect(spy).not.to.be.called;
     });
+
     it('detects a cleared set', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
@@ -141,6 +153,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
     });
+
     it('detects a changed set size', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
@@ -156,7 +169,9 @@ describe('Data Structure Hooks', () => {
       expect(spy.getCall(0).args[0]).to.equal(set.size);
       spy.reset();
     });
+
   });
+
   describe('Maps as Data Structures', () => {
     it('detects a newly added element (maps)', () => {
       const spy = sinon.spy();
@@ -168,6 +183,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(map);
     });
+
     it('detects a new value for existing key', () => {
       const spy = sinon.spy();
       const map = new Map([[1,2]]);
@@ -178,6 +194,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(map);
     });
+
     it('do not detect identical value for key', () => {
       const spy = sinon.spy();
       const map = new Map([[1,2]]);
@@ -187,6 +204,7 @@ describe('Data Structure Hooks', () => {
 
       expect(spy).not.to.be.called;
     });
+
     it('detects a cleared map', () => {
       const spy = sinon.spy();
       const map = new Map([[1,2]]);
@@ -197,6 +215,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(map);
     });
+
     it('detects a changed map size', () => {
       const spy = sinon.spy();
       const map = new Map([[1,2]]);
@@ -211,6 +230,7 @@ describe('Data Structure Hooks', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(map.size);
     });
+
     it('identity does not matter/maps as value classes', () => {
       const spy = sinon.spy();
       let map = new Map([[1,2]]);
@@ -220,6 +240,7 @@ describe('Data Structure Hooks', () => {
 
       expect(spy).not.to.be.called;
     });
+
     it('order of insertion does not matter/map semantic', () => {
       const spy = sinon.spy();
       let map = new Map([[1,2],[3,4]]);
@@ -229,5 +250,7 @@ describe('Data Structure Hooks', () => {
 
       expect(spy).not.to.be.called;
     });
+
   });
+
 });

@@ -290,24 +290,26 @@ class DataStructureHook extends Hook {
       const prototypeDescriptors = getPrototypeDescriptors(obj);
       Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
 
-      prototypeDescriptors.forEach(addDescriptor => {
-        // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
-        if (addDescriptor.value) {
-          if (isFunction(addDescriptor.value)) {
-            wrapProperty(obj, addDescriptor, function() {
-              // #HACK #TODO we need an `withoutLayer` equivalent here
-              if (window.__compareAExprResults__) { return; }
+      prototypeDescriptors
+        .filter(descriptor => descriptor.key !== 'constructor') // the property constructor needs to be a constructor if called (as in cloneDeep in lodash); We leave it out explicitly as the constructor does not change any state #TODO
+        .forEach(addDescriptor => {
+          // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
+          if (addDescriptor.value) {
+            if (isFunction(addDescriptor.value)) {
+              wrapProperty(obj, addDescriptor, function() {
+                // #HACK #TODO we need an `withoutLayer` equivalent here
+                if (window.__compareAExprResults__) { return; }
 
-              this; // references the modified container
-              hook.notifyDependencies();
-            });
+                this; // references the modified container
+                hook.notifyDependencies();
+              });
+            } else {
+              console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+            }
           } else {
-            console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+            console.warn(`Property ${addDescriptor.key} has no value.`)
           }
-        } else {
-          console.warn(`Property ${addDescriptor.key} has no value.`)
-        }
-      });
+        });
     }
 
     monitorProperties(dataStructure);

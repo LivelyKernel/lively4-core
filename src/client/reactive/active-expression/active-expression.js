@@ -96,6 +96,21 @@ class IdentityMatcher {
 
 class ShallowMatcher {
   static compare(lastResult, newResult) {
+    // array
+    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+      return shallowEqualsArray(lastResult, newResult);
+    }
+    
+    // set
+    if(lastResult instanceof Set && newResult instanceof Set) {
+      return shallowEqualsSet(lastResult, newResult);
+    }
+
+    // map
+    if(lastResult instanceof Map && newResult instanceof Map) {
+      return shallowEqualsMap(lastResult, newResult);
+    }
+
     return shallowEquals(lastResult, newResult) ;
   }
   
@@ -249,48 +264,15 @@ export class BaseActiveExpression {
     } finally {
       window.__compareAExprResults__ = false;
     }
-    
-    // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
-      return shallowEqualsArray(lastResult, newResult);
-    }
-    
-    // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
-      return shallowEqualsSet(lastResult, newResult);
-    }
-
-    // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
-      return shallowEqualsMap(lastResult, newResult);
-    }
-
-    return lastResult == newResult;
   }
   
   storeResult(result) {
-    this.lastValue = this.matcher.store(result);
-    return;
-    
-    // array
-    if(Array.isArray(result)) {
-      this.lastValue = Array.prototype.slice.call(result)
-      return;
+    try {
+      window.__compareAExprResults__ = true;
+      this.lastValue = this.matcher.store(result);
+    } finally {
+      window.__compareAExprResults__ = false;
     }
-    
-    // set
-    if(result instanceof Set) {
-      this.lastValue = new Set(result);
-      return;
-    }
-    
-    // map
-    if(result instanceof Map) {
-      this.lastValue = new Map(result);
-      return;
-    }
-    
-    this.lastValue = result;
   }
 
   notify(...args) {

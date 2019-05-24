@@ -1,159 +1,25 @@
-// 'enable aexpr';
+'enable aexpr';
 'use strict';
-
-import { using, isFunction } from 'utils';
 
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-const hook = {
-  notifyFuncCalled(arr, prop, ...args) {
-    lively.notify(prop)
-  },
-  notifyProp(arr, prop, getSet, val) {
-    
-  },
-}
-
-function getPrototypeDescriptors(obj) {
-  const proto = obj.constructor.prototype;
-
-  const descriptors = Object.getOwnPropertyDescriptors(proto);
-  return Object.entries(descriptors).map(([key, desc]) => (desc.key = key, desc))
-}
-
-function wrapProperty(obj, descriptor, after) {
-  Object.defineProperty(obj, descriptor.key, Object.assign({}, descriptor, {
-    value(...args) {
-      try {
-        return descriptor.value.apply(this, args);
-      } finally {
-        after.call(this, ...args)
-      }
-    }
-  }));
-}
-
-function monitorProperties(obj) {
-  const prototypeDescriptors = getPrototypeDescriptors(obj);
-  Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
-
-  prototypeDescriptors.forEach(descriptor => {
-    // var descriptor = prototypeDescriptors.find(d => d.key === 'add')
-    if (descriptor.value) {
-      if (isFunction(descriptor.value)) {
-        wrapProperty(obj, descriptor, function(...args) {
-          // #HACK #TODO we need an `withoutLayer` equivalent here
-          if (window.__compareAExprResults__) { return; }
-
-          this; // references the modified container
-          hook.notifyFuncCalled(this, descriptor.key, ...args);
-        });
-      } else {
-        console.warn(`Property ${descriptor.key} has a value that is not a function, but ${descriptor.value}.`)
-      }
-    } else {
-      console.warn(`Property ${descriptor.key} has no value.`)
-    }
-  });
-}
-
-
-function wrapArray(arr) {
-  monitorProperties(arr);
-  return arr;
-  
-  // Object.defineProperty(arr, 0)
-
-  const internal = Array.from(arr);
-
-  arr.length = 0;
-
-  const proxy = new Proxy(internal, {
-    // A trap for Object.getPrototypeOf.
-    getPrototypeOf: function(target) {
-      return Reflect.getPrototypeOf(target);
-    },
-    // A trap for Object.setPrototypeOf.
-    setPrototypeOf: function(target, prototype) {
-      return Reflect.setPrototypeOf(target, prototype);
-    },
-    // A trap for Object.isExtensible.
-    isExtensible: function(target) {
-      return Reflect.isExtensible(target);
-    },
-    // A trap for Object.preventExtensions.
-    preventExtensions: function(target) {
-      return Reflect.preventExtensions(target)
-    },
-    // A trap for Object.getOwnPropertyDescriptor.
-    getOwnPropertyDescriptor: function(target, prop) {
-      return Reflect.getOwnPropertyDescriptor(target, prop)
-    },
-    // A trap for Object.defineProperty.
-    defineProperty: function(target, prop, descriptor) {
-      return Reflect.defineProperty(target, prop, descriptor)
-    },
-    // A trap for the in operator.
-    has: function(target, prop) {
-      return Reflect.has(target, prop);
-    },
-    // A trap for getting property values.
-    get: function(target, prop, receiver) {
-      lively.notify('GET ' + whatIsWhat.get(receiver))
-      return Reflect.get(target, prop, receiver);
-    },
-    // A trap for setting property values.
-    set: function(target, property, value, receiver) {
-      lively.notify('SET ' + whatIsWhat.get(receiver))
-      return Reflect.set(target, property, value, receiver);
-    },
-    // A trap for the delete operator.
-    deleteProperty: function(target, property) {
-      return Reflect.deleteProperty(target, property)
-    },
-    // A trap for Object.getOwnPropertyNames and Object.getOwnPropertySymbols.
-    ownKeys: function(target) {
-      return Reflect.ownKeys(target)
-    },
-    // A trap for a function call.
-    apply: function(target, thisArgument, argumentsList) {
-      return Reflect.apply(target, thisArgument, argumentsList)
-    },
-    // A trap for the new operator.
-    construct: function(target, argumentsList, newTarget) {
-      return Reflect.construct(target, argumentsList, newTarget)
-    },
-  });
-  const whatIsWhat = new Map();
-  whatIsWhat.set(arr, 'original');
-  whatIsWhat.set(internal, 'internal');
-  whatIsWhat.set(proxy, 'proxy');
-
-  Object.setPrototypeOf(arr, proxy);
-  
-  arr.length = internal.length;
-  
-  return arr;
-}
-
-//---------------------------------------------------
-//---------------------------------------------------
-//---------------------------------------------------
-//---------------------------------------------------
-//---------------------------------------------------
-
 function test(name, fn) {
+  const arr012 = [0,1,2];
+  const spy = sinon.spy();
+  const changeSpy = sinon.spy();
+  const expr = aexpr(() => arr012).onChange(changeSpy);
+  
   it(name, () => fn({
-    get arr012() { return wrapArray([0,1,2]); },
-    get _arr012() { return [0,1,2]; },
-    get spy() { return sinon.spy(); },
+    arr012,
+    spy,
+    changeSpy,
   }));
 }
 
-describe('Arrays as Data Structures', () => {
+describe('AExpr Monitoring preserves Array Semantics', () => {
 
   test('read 0', ({ arr012 }) => {
     expect(arr012[0]).to.equal(0);
