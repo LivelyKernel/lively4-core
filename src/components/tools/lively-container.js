@@ -1826,6 +1826,7 @@ export default class Container extends Morph {
   }
 
   checkForContentChanges() {
+    
     if (!this.contentIsEditable()) {
       this.contentChanged = false
       return
@@ -1875,6 +1876,7 @@ export default class Container extends Morph {
   updateChangeIndicator() {
     var indicator = this.get("#changeIndicator")
     if (indicator && this.contentChanged) {
+      debugger
       indicator.style.backgroundColor = "rgb(220,30,30)";
     } else {
       indicator.style.backgroundColor = "rgb(200,200,200)";

@@ -558,19 +558,19 @@ export default class Editor extends Morph {
           widget.style.border = "2px dashed orange "
           lively.removeEventListener('widget', widget)
           widget.style.padding = "5px"
-          lively.addEventListener("context", widget, "contextmenu", evt => {
-            if (!evt.shiftKey) {
-               const menuElements = [
-                ["edit source", () =>  widget.marker.clear()],
-              ];
-              const menu = new lively.contextmenu(this, menuElements)
-              menu.openIn(document.body, evt, this)
+//           lively.addEventListener("context", widget, "contextmenu", evt => {
+//             if (!evt.shiftKey) {
+//                const menuElements = [
+//                 ["edit source", () =>  widget.marker.clear()],
+//               ];
+//               const menu = new lively.contextmenu(this, menuElements)
+//               menu.openIn(document.body, evt, this)
               
-              evt.stopPropagation();
-              evt.preventDefault();
-              return true;
-            }
-          })
+//               evt.stopPropagation();
+//               evt.preventDefault();
+//               return true;
+//             }
+//           })
         
           if (mode == "MD") {
             widget.setContent(m[2])    
