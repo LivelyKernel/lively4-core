@@ -1,7 +1,10 @@
 import 'lang';
 
-import { BaseActiveExpression } from 'active-expression';
+/*HTML 
+<img src="https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_100.png"></img>'s Implementation of AExprs
+HTML*/
 
+import { BaseActiveExpression } from 'active-expression';
 
 import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
@@ -10,6 +13,7 @@ import BidirectionalMultiMap from './bidirectional-multi-map.js';
 
 import { using, isFunction } from 'utils';
 
+/*MD # Dependency Analysis MD*/
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
 
@@ -45,13 +49,13 @@ class Dependency {
     const key = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(type));
   }
-  
+
   constructor(type) {
     this.type = type;
     
     this.isTracked = false;
   }
-  
+
   updateTracking() {
     if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) { return; }
     if (this.isTracked) {
@@ -60,16 +64,18 @@ class Dependency {
       this.track();
     }
   }
+
   track() {
     this.isTracked = true;
 
     const [context, identifier] = this.getContextAndIdentifier();
     const value = context !== undefined ? context[identifier] : undefined;
 
+    /*HTML Source Code Hook HTML*/
     // always employ the source code hook
     HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
 
-    // 
+    /*HTML Data Structure Hook HTML*/
     var dataStructure;
     if (this.type === 'member') {
       dataStructure = context;
@@ -80,6 +86,13 @@ class Dependency {
       const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
       HooksToDependencies.associate(dataHook, this);
     }
+
+    /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
+    if (this.isGlobalDependency() && identifier === 'that') {
+      const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
+      HooksToDependencies.associate(wrappingHook, this);
+    }
+
   }
   untrack() {
     this.isTracked = false;
@@ -235,6 +248,9 @@ const CompositeKeyToSourceCodeHook = new InjectiveMap();
 /** Data Structure Hooks */
 // 4.1 DataStructureHookByDataStructure
 const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Map), DataStructureHook>
+/** Wrapping Hooks */
+// 4.2 PropertyWrappingHookByProperty
+const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), PropertyWrappingHook>
 
 class Hook {
   constructor() {
@@ -323,6 +339,32 @@ class DataStructureHook extends Hook {
   }
 }
 
+class PropertyWrappingHook extends Hook {
+  static getOrCreateForProperty(property) {
+    return PropertyWrappingHookByProperty.getOrCreate(property, () => new PropertyWrappingHook(property));
+  }
+  
+  constructor(property) {
+    super();
+
+    this.value = self[property];
+    const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
+
+    // #TODO: keep old property accessors if present (otherwise, we do not interact with COP and ourselves, i.e. other property wrappers)
+    Object.defineProperty(self, property, {
+      configurable,
+      enumerable,
+      
+      get: () => this.value,
+      set: value => {
+        const result = this.value = value;
+        this.notifyDependencies();
+        return result;
+      }
+    });
+  }
+}
+
 const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
@@ -367,7 +409,7 @@ class DependencyAPI {
   }
 
   all() {
-    return Array.from(this.getDependencies())
+    return Array.from(this.getDependencies());
   }
   
   locals() {
@@ -401,7 +443,8 @@ class DependencyManager {
   static get currentAExpr() {
     return aexprStack.top();
   }
-
+  
+  // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
@@ -474,6 +517,7 @@ export function reset() {
   HooksToDependencies.clear();
 }
 
+/*MD # Source Code Point Cuts MD*/
 /**
  * (C)RUD for member attributes
  */

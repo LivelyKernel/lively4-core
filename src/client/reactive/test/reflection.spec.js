@@ -330,6 +330,46 @@ describe('Reflection API', () => {
       
     });
 
+    describe('Object.prototype.dependentAExprs', () => {
+
+      it('is a method on Object', () => {
+        expect({}).to.respondTo('dependentAExprs');
+      });
+
+      it('returns a list', () => {
+        expect(({}).dependentAExprs()).to.be.an('array');
+      });
+
+      it('returns an empty list if not tracked', () => {
+        expect(({}).dependentAExprs()).to.be.empty;
+      });
+
+      it('returns a list of AExprs', () => {
+        const obj = {};
+        expect(obj.dependentAExprs()).to.be.empty;
+        
+        const expr1 = aexpr(() => obj);
+        
+        const list = obj.dependentAExprs();
+        expect(list).to.have.lengthOf(1);
+        expect(list).to.include(expr1);
+      });
+
+      it('returns a list of two AExprs', () => {
+        const obj1 = {};
+        const obj2 = {};
+        const obj3 = {};
+        
+        const expr12 = aexpr(() => (obj1, obj2));
+        const expr23 = aexpr(() => (obj2, obj3));
+
+        const list = obj2.dependentAExprs();
+        expect(list).to.have.lengthOf(2);
+        expect(list).to.include(expr12);
+        expect(list).to.include(expr23);
+      });
+
+    });
     /**
      * **************************************************************
      * **************** all Active Expression ***********************
