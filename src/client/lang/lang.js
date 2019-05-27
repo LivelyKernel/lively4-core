@@ -40,9 +40,9 @@ function pairsDiff(obj1, obj2) {
   return [onlyLeft, both, onlyRight];
 }
 
-/**
- * OBJECT
- */
+/*MD
+## OBJECT
+MD*/
 extendFromLodash(Object.prototype, [
   'clone',
   'cloneDeep',
@@ -71,9 +71,9 @@ extend(Object.prototype, {
 
 });
 
-/**
- * FUNCTION
- */
+/*MD
+## FUNCTION
+MD*/
 extendFromLodash(Function.prototype, [
   'debounce',
   'defer',
@@ -109,9 +109,9 @@ extend(Function, {
 });
 
 
-/**
- * GENERATOR
- */
+/*MD
+## GENERATOR
+MD*/
 
 const generatorPrototype = (function*() {}).prototype.constructor;
 
@@ -148,9 +148,9 @@ extend(asyncGeneratorPrototype, new Function(`return {
 };`)());
 
 
-/**
- * DATE
- */
+/*MD
+## DATE
+MD*/
 extend(Date.prototype, {
   
   dayInWeek(offset) {
@@ -199,9 +199,9 @@ extend(Date.prototype, {
 });
 
 
-/**
- * SET
- */
+/*MD
+## SET
+MD*/
 extend(Set.prototype, {
 
   /**
@@ -217,9 +217,9 @@ extend(Set.prototype, {
 });
 
 
-/**
- * MAP/WEAKMAP
- */
+/*MD
+## MAP/WEAKMAP
+MD*/
 const mapExtensions = {
   
   /**
@@ -258,9 +258,9 @@ extend(Map.prototype, {
 });
 
 
-/**
- * ARRAY
- */
+/*MD
+## ARRAY
+MD*/
 extendFromLodash(Array.prototype, [
   'sortBy',
   'difference',
@@ -344,9 +344,9 @@ extend(Array.prototype, {
 });
 
 
-/**
- * NUMBER
- */
+/*MD
+## NUMBER
+MD*/
 extendFromLodash(Number.prototype, [
   'ceil',
   'clamp',
@@ -365,9 +365,9 @@ extend(Number.prototype, {
 });
 
 
-/**
- * STRING
- */
+/*MD
+## STRING
+MD*/
 extendFromLodash(String.prototype, [
   'camelCase',
   'capitalize',
@@ -427,9 +427,9 @@ extend(String.prototype, {
 });
 
 
-/**
- * PROMISE
- */
+/*MD
+## PROMISE
+MD*/
 extend(Promise.prototype, {
 
   /**
@@ -447,9 +447,9 @@ extend(Promise.prototype, {
 });
 
 
-/**
- * URL
- */
+/*MD
+## URL
+MD*/
 extend(URL.prototype, {
 
   // hook for rendering the internals of an object in the inspector

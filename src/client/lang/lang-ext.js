@@ -2,9 +2,9 @@ import 'lang';
 import { extend } from './utils.js';
 
 
-/**
- * OBJECT
- */
+/*MD
+## OBJECT
+MD*/
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
 
 extend(Object.prototype, {
@@ -25,9 +25,9 @@ extend(Object.prototype, {
 });
 
 
-/**
- * STRING
- */
+/*MD
+## STRING
+MD*/
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -78,9 +78,9 @@ extend(String.prototype, {
 });
 
 
-/**
- * FUNCTION
- */
+/*MD
+## FUNCTION
+MD*/
 import aexpr from 'active-expression-rewriting';
 
 const aexprByFunction = new WeakMap();
