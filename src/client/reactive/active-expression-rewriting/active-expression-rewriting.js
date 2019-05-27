@@ -1,7 +1,10 @@
 import 'lang';
 
-import { BaseActiveExpression } from 'active-expression';
+/*HTML 
+<img src="https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_100.png"></img>'s Implementation of AExprs
+HTML*/
 
+import { BaseActiveExpression } from 'active-expression';
 
 import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
@@ -10,6 +13,7 @@ import BidirectionalMultiMap from './bidirectional-multi-map.js';
 
 import { using, isFunction } from 'utils';
 
+/*MD # Dependency Analysis MD*/
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
 
@@ -367,7 +371,7 @@ class DependencyAPI {
   }
 
   all() {
-    return Array.from(this.getDependencies())
+    return Array.from(this.getDependencies());
   }
   
   locals() {
@@ -401,7 +405,8 @@ class DependencyManager {
   static get currentAExpr() {
     return aexprStack.top();
   }
-
+  
+  // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
@@ -474,6 +479,7 @@ export function reset() {
   HooksToDependencies.clear();
 }
 
+/*MD # Source Code Point Cuts MD*/
 /**
  * (C)RUD for member attributes
  */

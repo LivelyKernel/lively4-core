@@ -5,12 +5,23 @@ import { extend } from './utils.js';
 /**
  * OBJECT
  */
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
+
 extend(Object.prototype, {
 
   dependentAExprs() {
-    // #TODO: implement2
+    return AExprRegistry.allAsArray().filter(ae => {
+      if(!ae.supportsDependencies()) { return false; }
+      
+      const dependencies = ae.dependencies().all();
+      return dependencies.find(dep => {
+        const desc = dep.getAsDependencyDescription();
+        return desc.object === this ||
+          desc.value === this ||
+          desc.scope === this;
+      });
+    });
   }
-
 });
 
 
