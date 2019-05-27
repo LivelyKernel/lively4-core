@@ -49,13 +49,13 @@ class Dependency {
     const key = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(type));
   }
-  
+
   constructor(type) {
     this.type = type;
     
     this.isTracked = false;
   }
-  
+
   updateTracking() {
     if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) { return; }
     if (this.isTracked) {
@@ -64,16 +64,18 @@ class Dependency {
       this.track();
     }
   }
+
   track() {
     this.isTracked = true;
 
     const [context, identifier] = this.getContextAndIdentifier();
     const value = context !== undefined ? context[identifier] : undefined;
 
+    /*HTML Source Code Hook HTML*/
     // always employ the source code hook
     HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
 
-    // 
+    /*HTML Data Structure Hook HTML*/
     var dataStructure;
     if (this.type === 'member') {
       dataStructure = context;
@@ -84,6 +86,13 @@ class Dependency {
       const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
       HooksToDependencies.associate(dataHook, this);
     }
+
+    /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
+    if (this.isGlobalDependency() && identifier === 'that') {
+      const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
+      HooksToDependencies.associate(wrappingHook, this);
+    }
+
   }
   untrack() {
     this.isTracked = false;
@@ -239,6 +248,9 @@ const CompositeKeyToSourceCodeHook = new InjectiveMap();
 /** Data Structure Hooks */
 // 4.1 DataStructureHookByDataStructure
 const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Map), DataStructureHook>
+/** Wrapping Hooks */
+// 4.2 PropertyWrappingHookByProperty
+const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), PropertyWrappingHook>
 
 class Hook {
   constructor() {
@@ -324,6 +336,32 @@ class DataStructureHook extends Hook {
     //   return result;
     // }
     return hook;
+  }
+}
+
+class PropertyWrappingHook extends Hook {
+  static getOrCreateForProperty(property) {
+    return PropertyWrappingHookByProperty.getOrCreate(property, () => new PropertyWrappingHook(property));
+  }
+  
+  constructor(property) {
+    super();
+
+    this.value = self[property];
+    const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
+
+    // #TODO: keep old property accessors if present (otherwise, we do not interact with COP and ourselves, i.e. other property wrappers)
+    Object.defineProperty(self, property, {
+      configurable,
+      enumerable,
+      
+      get: () => this.value,
+      set: value => {
+        const result = this.value = value;
+        this.notifyDependencies();
+        return result;
+      }
+    });
   }
 }
 
