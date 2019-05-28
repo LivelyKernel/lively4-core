@@ -13,6 +13,7 @@ export default class LivelyImageEditor extends Morph {
     this.get("#penColor").value = this.color;
     this.get("#penSize").value = this.penSize;
 
+    lively.html.registerKeys(this, "keys", this, true)
     
     lively.removeEventListener("pointer", this)
     lively.addEventListener("pointer", this, "pointerdown", e => this.onPointerDown(e))
@@ -62,11 +63,20 @@ export default class LivelyImageEditor extends Morph {
     this.setAttribute("pen-size", value)
   }
   
-  
+  onKeyDown(evt) {
+    var key = String.fromCharCode(evt.keyCode)
+    if (evt.ctrlKey && key == "S") {
+      this.onSave()  
+    }
+  }
 
+  
   // BEGIN EDITOR API
   saveFile() {
-    return lively.files.copyURLtoURL(this.canvas.toDataURL(), this.getURL())
+    
+    var data = this.canvas.toDataURL()
+    this.lastSource = data
+    return lively.files.copyURLtoURL(data, this.getURL())
   }
 
   getURL(url) {
@@ -99,18 +109,29 @@ export default class LivelyImageEditor extends Morph {
   
   
   loadImage(url) {
+      
     this.setAttribute("src", url)
+      
+    if (!url.toString().match(/^https?:\/\//)) {
+      var resolvedURL = lively.swxURL(url)
+    } else {
+      resolvedURL = url
+    }
+      
+    
     var img = new Image();
     img.onload = () => {
       this.loadFromImageElement(img) 
     };
-    img.src = url
+    img.src = resolvedURL
   }
   
   loadFromImageElement(img) {
     this.canvas.height = img.height
     this.canvas.width = img.width
     this.ctx.drawImage(img, 0, 0); // Or at whatever offset you like
+    this.lastSource = this.canvas.toDataURL();
+
   }
   
   posFromEvent(evt) {
@@ -154,10 +175,13 @@ export default class LivelyImageEditor extends Morph {
     this.paint(pos)
     this.isDown = false
     this.lastPos = undefined
+    this.updateChangeIndicator()
   }
   
   saveToTarget() {
-    this.target.src = this.canvas.toDataURL()
+    var data = this.canvas.toDataURL()
+    this.lastSource = data
+    this.target.src = data
   }
   
   async onSave(url) {
@@ -202,6 +226,28 @@ export default class LivelyImageEditor extends Morph {
   
   livelyMigrate(other) {
     this.target = other.target
+  }
+  
+  get lastSource() {
+    return this._lastSource  
+  }
+  
+  set lastSource(value) {
+    this._lastSource  = value
+    this.updateChangeIndicator()
+    
+  }
+  
+  updateChangeIndicator() {
+    if (!this.lastSource) return;
+    var newSource = this.canvas.toDataURL();
+    if (newSource !== this.lastSource) {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(200,30,30)";
+      this.textChanged = true;
+    } else {
+      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
+      this.textChanged = false;
+    }
   }
   
   async livelyExample() {

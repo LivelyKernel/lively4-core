@@ -9,7 +9,7 @@
     #canvas {
       background-color: white;
     }
-    
+      
     #penColor, #backgroundColor {
       margin: 3px;
     }
@@ -30,10 +30,19 @@
   
     #controls {
       background-color: lightgray;
-        position: absolute;
-    right: 0pt;
+        
     border: 1px gray solid;
     width: 100%;
+    }
+    
+    #changeIndicator {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: 17px;
+      top: 0px;
+      z-index: 10;
+      background: rgb(220,30,30)
     }
     
   </style>
@@ -41,5 +50,7 @@
     <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
     <lively-penchooser id="penSize"></lively-penchooser>
   </div>
+  
+  <div id="changeIndicator"></div>
   <canvas id="canvas"></canvas>
 </template>
