@@ -1377,7 +1377,10 @@ export default class Container extends Morph {
     }
     
     if (files.isPicture(format)) {
-      if (render) return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
+      if (render) {
+        fetch(resolvedURL) // cache bust IMG resources.... otherwise the SWX is not asked by the browser
+        return this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
+      }
       else return;
     } else if (files.isVideo(format)) {
       //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);

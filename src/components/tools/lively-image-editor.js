@@ -109,12 +109,21 @@ export default class LivelyImageEditor extends Morph {
   
   
   loadImage(url) {
+      
     this.setAttribute("src", url)
+      
+    if (!url.toString().match(/^https?:\/\//)) {
+      var resolvedURL = lively.swxURL(url)
+    } else {
+      resolvedURL = url
+    }
+      
+    
     var img = new Image();
     img.onload = () => {
       this.loadFromImageElement(img) 
     };
-    img.src = url
+    img.src = resolvedURL
   }
   
   loadFromImageElement(img) {
@@ -234,10 +243,10 @@ export default class LivelyImageEditor extends Morph {
     var newSource = this.canvas.toDataURL();
     if (newSource !== this.lastSource) {
       this.get("#changeIndicator").style.backgroundColor = "rgb(200,30,30)";
-      this.imageChanged = true;
+      this.textChanged = true;
     } else {
       this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
-      this.imageChanged = false;
+      this.textChanged = false;
     }
   }
   

@@ -3,6 +3,7 @@
 import FileIndex from 'src/client/fileindex.js'
 var FileCache = FileIndex;
 
+
 export class ValueResponse {
  
   constructor(value, { status = 200 } = {}) {
@@ -114,10 +115,12 @@ export class LivelyFile extends Scheme {
   resolve() {
     this.element = LivelyFile.pathToFile(this.url)
     console.log("found " + this.element, this.url)
+    // lively.showElement(this.element) // very funny to see which file is asked...
     return this.element 
   }  
 
   GET(options) {
+    console.log("LivelyFile GET " + this.url)
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
       return fetch(element.url)
