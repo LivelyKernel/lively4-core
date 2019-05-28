@@ -1,0 +1,29 @@
+<template id="simple-button-anim" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+  #container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%) };
+    
+  }
+#target:not(:hover) {
+  color: red;
+}
+#target:hover {
+  color: green;
+}
+</style>
+<div id="container">
+  <button id="target">button</button>
+  </div>
+  
+</template>
+
+
