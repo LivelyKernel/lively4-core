@@ -346,10 +346,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     return this.extraKeys
   }
   
-  registerExtraKeys(options={}) {
-    var extraKeys = Object.assign(this.ensureExtraKeys(), options)
-    extraKeys = Object.assign(extraKeys, CodeMirror.keyMap.sublime)
-    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(extraKeys));
+  registerExtraKeys(options) {
+    if (options) this.addKeys(options)
+    var keys = {}
+    keys = Object.assign(keys, CodeMirror.keyMap.sublime)
+    keys = Object.assign(keys, this.ensureExtraKeys())
+    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(keys));
   }
     
   
