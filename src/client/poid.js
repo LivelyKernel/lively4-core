@@ -174,7 +174,7 @@ export class LivelyFile extends Scheme {
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
         if (element.setContent && options) {
-          element.setContent(options.body, options.headers['Content-Type'])
+          element.setContent(options.body, options.headers && options.headers['Content-Type'])
           return new Response("")
         } else {
           return new Response("Hmm... I don't know.", {status: 500})      

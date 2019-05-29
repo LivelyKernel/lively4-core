@@ -590,6 +590,9 @@ export default class LivelyDrawboard extends Morph {
 
     if(!urlString || urlString === '') { return; }
     
+    this.get('#svg').setAttribute("width", lively.getExtent(this).x)
+    this.get('#svg').setAttribute("height", lively.getExtent(this).y)
+    
     let svg = this.get('#svg').outerHTML;
     
     try {

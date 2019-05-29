@@ -1603,7 +1603,7 @@ export default class Container extends Morph {
     // ... demos\/
     var editorType = urlString.match(/babylonian-programming-editor\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
-    if (url && url.toString().match(/((png)|(jpe?g)|(gif))$/i)) {
+    if (urlString.match(/((png)|(jpe?g)|(gif))$/i)) {
       editorType = "lively-image-editor"
     }
 
@@ -1632,6 +1632,11 @@ export default class Container extends Morph {
       codeMirror.changeModeForFile(url.pathname);
 
       // NOTE: we don't user loadFile directly... because we don't want to edit PNG binaries etc...
+      if (urlString.match(/\.svg$/)) {
+        this.sourceContent  = await fetch(urlString).then(r => r.text())
+      }
+      
+      
       livelyEditor.setText(this.sourceContent); // directly setting the source we got
 
       if (codeMirror.editor) {
