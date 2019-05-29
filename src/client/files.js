@@ -110,7 +110,11 @@ export default class Files {
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
-      return fetch(urlString, {method: 'PUT', body: data});
+      var options = {method: 'PUT', headers: {}, body: data}
+      if (url.match(/\.svg$/)) {
+        options.headers['Content-Type'] = 'image/svg+xml'
+      }
+      return fetch(urlString, options);
     }
   }
   

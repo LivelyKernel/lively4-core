@@ -1603,7 +1603,7 @@ export default class Container extends Morph {
     // ... demos\/
     var editorType = urlString.match(/babylonian-programming-editor\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
-    if (files.isPicture(files.getEnding(urlString))) {
+    if (url && url.toString().match(/((png)|(jpe?g)|(gif))$/i)) {
       editorType = "lively-image-editor"
     }
 

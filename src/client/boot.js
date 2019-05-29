@@ -161,12 +161,17 @@ function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
     var result = await new Promise(resolve => {
-      if (self.lively4fetchHandlers) {
-        // go through our list of handlers... the first one who handles it wins
-        for(var handler of self.lively4fetchHandlers) {
-          var handled = handler.handle && handler.handle(request, options)
-          if (handled) return resolve(handled.result);        
+      try {
+
+        if (self.lively4fetchHandlers) {
+          // go through our list of handlers... the first one who handles it wins
+          for(var handler of self.lively4fetchHandlers) {
+            var handled = handler.handle && handler.handle(request, options)
+            if (handled) return resolve(handled.result);        
+          }
         }
+      } catch(e) {
+        console.error(`FETCH ERROR during rques: ${request} falling back because of`, e)
       }
       return resolve(self.originalFetch.apply(self, [request, options, ...rest]))
     })

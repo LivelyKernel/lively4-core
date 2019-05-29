@@ -142,14 +142,14 @@ export default class File extends Morph {
     return this.getAttribute('url')
   }
   
-  async setContent(data) {
+  async setContent(data, contenttype="text/plain") {
     
     if (data instanceof Blob) {
       var dataURL = await lively.files.readBlobAsDataURL(data)
       console.log("data: ", dataURL)
       this.url = dataURL
     } else {
-      this.url = "data:text/plain;base64," + btoa(data);
+      this.url = `data:${contenttype};base64,` + btoa(data);
     }
   }
 
