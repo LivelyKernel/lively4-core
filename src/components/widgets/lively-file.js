@@ -17,7 +17,10 @@ export default class File extends Morph {
     html.registerAttributeObservers(this);
   }
   
-  
+  attachedCallback() {
+    this.updateView(this.name)
+  }
+
   onClick(evt) {
     if (evt.shiftKey) {
       // add and remove to a selection
