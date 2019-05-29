@@ -344,6 +344,13 @@ extend(Array.prototype, {
 });
 
 
+/*MD # Array-like MD*/
+extendFromLodash(NodeList.prototype, [
+  'map',
+  'filter',
+  'reduce'
+]);
+
 /*MD
 ## NUMBER
 MD*/
