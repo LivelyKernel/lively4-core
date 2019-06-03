@@ -1,31 +1,29 @@
-<template id="vivide-view" data-class="VivideView">
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  overflow-y: scroll;
-  box-sizing: border-box;
-  margin: 0px;
-  padding: 0px;
-  width: 100%;
-  height: 100%;
-  
-/*   background-color: lightgray; */
-  border: 2px transparent solid;
-}
-:host(.over.accept-drop) {
-  background-color: lightgreen;
-  border: 2px green solid;
-}
-:host(.over.reject-drop) {
-  background-color: lightpink;
-  border: 2px red solid;
-}
-</style>
-<content></content>
+<template id="vivide-view">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      overflow-y: auto;
+      box-sizing: border-box;
+      margin: 0px;
+      padding: 0px;
+      width: 100%;
+      height: 100%;
+      
+    /*   background-color: lightgray; */
+      border: 2px transparent solid;
+    }
+    :host(.over.accept-drop) {
+      background-color: lightgreen;
+      border: 2px green solid;
+    }
+    :host(.over.reject-drop) {
+      background-color: lightpink;
+      border: 2px red solid;
+    }
+  </style>
+  <slot></slot>
   <div id="scripts">
-    
+
   </div>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

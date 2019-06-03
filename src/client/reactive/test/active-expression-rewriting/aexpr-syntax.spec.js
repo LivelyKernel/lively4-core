@@ -5,7 +5,6 @@ import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
 import {RewritingActiveExpression} from 'active-expression-rewriting';
-import * as frameBasedAExpr from "active-expression-frame-based";
 
 aexpr(()=>{});
 

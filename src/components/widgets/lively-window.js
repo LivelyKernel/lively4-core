@@ -39,6 +39,20 @@ export default class Window extends Morph {
     if (this.isMinimized() || this.isMaximized())
       this.displayResizeHandle(false);
 
+    this._attrObserver = new MutationObserver(mutations => {
+	    mutations.forEach(mutation => {
+        if(mutation.type == "attributes") {
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName)
+          )
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+    
+    
     this.setAttribute("tabindex", 0)
   }
 
@@ -375,15 +389,16 @@ export default class Window extends Morph {
       this.dragging = pt(evt.clientX, evt.clientY)
     }
     lively.removeEventListener('lively-window-drag', this.windowTitle)
-
-    this.windowTitle.setPointerCapture(evt.pointerId)
-    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointermove',
+    
+    lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
-    lively.addEventListener('lively-window-drag', this.windowTitle, 'pointerup',
+    lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
       evt => this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
   }
 
+  
+  
   onWindowMouseMove(evt) {
     // lively.showEvent(evt)
 
@@ -404,10 +419,10 @@ export default class Window extends Morph {
   onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
-    this.windowTitle.releasePointerCapture(evt.pointerId)
+    // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
-    lively.removeEventListener('lively-window-drag', this.windowTitle)
+    lively.removeEventListener('lively-window-drag',  document.documentElement)
   }
 
   onExtentChanged(evt) {

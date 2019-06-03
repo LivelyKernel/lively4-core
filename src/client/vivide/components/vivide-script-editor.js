@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { clamp, uuid, shake } from 'utils';
+import { shake } from 'utils';
 
 export default class VivideScriptEditor extends Morph {
   static get vivideScript() { return 'vivide_script_id'; }
@@ -14,6 +14,7 @@ export default class VivideScriptEditor extends Morph {
     this.windowTitle = "VivideScriptEditor";
 
     this.inspector.hideWorkspace();
+    this.inspector.inspect(this)
   }
   
   initialFocus() {
@@ -59,7 +60,7 @@ export default class VivideScriptEditor extends Morph {
 
     // focus suitable editor
     const updatedEditors = this.getAllSubmorphs('vivide-step-editor');
-    index = clamp.call(index, 0, updatedEditors.length - 1);
+    index = index.clamp(0, updatedEditors.length - 1);
     this.delayedFocusOnStepEditor(updatedEditors[index]);
   }
   
@@ -90,9 +91,9 @@ export default class VivideScriptEditor extends Morph {
     
     this.editorList.innerHTML = '';
     await this.currentScript.forEachStepAsync(
-      async step => await this.appendNewStepEditorFor(step)
-    );
-    
+      async step => {
+        await this.appendNewStepEditorFor(step)  
+    });    
     this.updateLoopState();
   }
   
@@ -118,7 +119,7 @@ export default class VivideScriptEditor extends Morph {
   navigateStepEditors(from, moveDownwards) {
     const editors = this.getAllSubmorphs('vivide-step-editor');
     let index = editors.indexOf(from) + (moveDownwards ? 1 : -1);
-    index = clamp.call(index, 0, editors.length - 1);
+    index = index.clamp(0, editors.length - 1);
     this.delayedFocusOnStepEditor(editors[index]);
   }
   

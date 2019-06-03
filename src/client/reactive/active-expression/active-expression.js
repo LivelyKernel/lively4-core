@@ -8,6 +8,8 @@ import { isString, clone, cloneDeep } from 'utils';
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
+window.__compareAExprResults__ = false;
+
 function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
@@ -94,6 +96,21 @@ class IdentityMatcher {
 
 class ShallowMatcher {
   static compare(lastResult, newResult) {
+    // array
+    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+      return shallowEqualsArray(lastResult, newResult);
+    }
+    
+    // set
+    if(lastResult instanceof Set && newResult instanceof Set) {
+      return shallowEqualsSet(lastResult, newResult);
+    }
+
+    // map
+    if(lastResult instanceof Map && newResult instanceof Map) {
+      return shallowEqualsMap(lastResult, newResult);
+    }
+
     return shallowEquals(lastResult, newResult) ;
   }
   
@@ -163,7 +180,7 @@ export class BaseActiveExpression {
   getCurrentValue() {
     return this.cachingFetch.trace(() => {
       return this.cachingPromise.trace(() => {
-        return this.func(...(this.params));
+        return this.func(...this.params);
       });
     });
   }
@@ -203,7 +220,7 @@ export class BaseActiveExpression {
    */
   checkAndNotify() {
     const currentValue = this.getCurrentValue();
-    resolveValue(currentValue, (value) => {
+    resolveValue(currentValue, value => {
       if(this.compareResults(this.lastValue, value)) { return; }
       const lastValue = this.lastValue;
       this.storeResult(value);
@@ -241,49 +258,21 @@ export class BaseActiveExpression {
 
   // #TODO: extract into CompareAndStore classes
   compareResults(lastResult, newResult) {
-    return this.matcher.compare(lastResult, newResult);
-    
-    // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
-      return shallowEqualsArray(lastResult, newResult);
+    try {
+      window.__compareAExprResults__ = true;
+      return this.matcher.compare(lastResult, newResult);
+    } finally {
+      window.__compareAExprResults__ = false;
     }
-    
-    // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
-      return shallowEqualsSet(lastResult, newResult);
-    }
-
-    // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
-      return shallowEqualsMap(lastResult, newResult);
-    }
-
-    return lastResult == newResult;
   }
   
   storeResult(result) {
-    this.lastValue = this.matcher.store(result);
-    return;
-    
-    // array
-    if(Array.isArray(result)) {
-      this.lastValue = Array.prototype.slice.call(result)
-      return;
+    try {
+      window.__compareAExprResults__ = true;
+      this.lastValue = this.matcher.store(result);
+    } finally {
+      window.__compareAExprResults__ = false;
     }
-    
-    // set
-    if(result instanceof Set) {
-      this.lastValue = new Set(result);
-      return;
-    }
-    
-    // map
-    if(result instanceof Map) {
-      this.lastValue = new Map(result);
-      return;
-    }
-    
-    this.lastValue = result;
   }
 
   notify(...args) {
@@ -307,7 +296,7 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       if(value) { callback() }
     });
 
@@ -322,7 +311,7 @@ export class BaseActiveExpression {
       }
     });
     // check initial state
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       if(!value) { callback() }
     });
 
@@ -335,7 +324,7 @@ export class BaseActiveExpression {
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
-    resolveValue(this.getCurrentValue(), (value) => {
+    resolveValue(this.getCurrentValue(), value => {
       this.notify(value, {});
     });
 

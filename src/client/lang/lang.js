@@ -22,9 +22,27 @@ function extendFromLodash(obj, propNames) {
 }
 
 
+function pairComparator(pair1, pair2) {
+  return pair1.first === pair2.first && pair1.second === pair2.second;
+}
+
 /**
- * OBJECT
+ * utility function used to compute turn Objects and
  */
+function pairsDiff(obj1, obj2) {
+  const pairs1 = obj1.toPairs();
+  const pairs2 = obj2.toPairs();
+
+  const onlyLeft = _.differenceWith(pairs1, pairs2, pairComparator);
+  const both = _.intersectionWith(pairs1, pairs2, pairComparator);
+  const onlyRight = _.differenceWith(pairs2, pairs1, pairComparator);
+
+  return [onlyLeft, both, onlyRight];
+}
+
+/*MD
+## OBJECT
+MD*/
 extendFromLodash(Object.prototype, [
   'clone',
   'cloneDeep',
@@ -40,12 +58,22 @@ extend(Object.prototype, {
     } else {
       return _.get(this, paths);
     }
+  },
+  
+  /**
+   * Computes a more fine-grained difference with a second Object (@link(other)).
+   * @param other (Object/Map) the Object to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Objects corresponding to the respective side of comparison.
+   */
+  computeDiff(other) {
+    return pairsDiff(this, other).map(arr => _.fromPairs(arr));
   }
+
 });
 
-/**
- * FUNCTION
- */
+/*MD
+## FUNCTION
+MD*/
 extendFromLodash(Function.prototype, [
   'debounce',
   'defer',
@@ -81,9 +109,9 @@ extend(Function, {
 });
 
 
-/**
- * GENERATOR
- */
+/*MD
+## GENERATOR
+MD*/
 
 const generatorPrototype = (function*() {}).prototype.constructor;
 
@@ -91,21 +119,38 @@ extend(generatorPrototype, {
 
   toArray(...args) {
     const result = [];
-    
+
     for (let item of this(...args)) {
       result.push(item)
     }
+
     return result;
   }
-  
+
 });
 
 
-// const asyncGeneratorPrototype = (async function* foo() {}).prototype.constructor;
+// #TODO: only written in this weird manner due to tooling not supporting async generators (parse error) #Tooling #Tools
+const asyncGeneratorPrototype = (new Function(`return async function*() {};`))().prototype.constructor;
 
-/**
- * DATE
- */
+extend(asyncGeneratorPrototype, new Function(`return {
+
+  async toArray(...args) {
+    const result = [];
+
+    for await (let item of this(...args)) {
+      result.push(item)
+    }
+
+    return result;
+  }
+
+};`)());
+
+
+/*MD
+## DATE
+MD*/
 extend(Date.prototype, {
   
   dayInWeek(offset) {
@@ -154,26 +199,27 @@ extend(Date.prototype, {
 });
 
 
-/**
- * SET
- */
+/*MD
+## SET
+MD*/
 extend(Set.prototype, {
 
   /**
-   * Computes a more fine-grained difference with a second Set or Array (@link(other)).
-   * @param other (Array/Set) the Set or Array to be compared to.
-   * @returns {Array} [onlyLeft, both, onlyRight].
+   * Computes a more fine-grained difference with a second Set (@link(other)).
+   * @param other (Set) the Set to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Sets corresponding to the respective side of comparison.
    */
   computeDiff(other) {
-    return Array.from(this).computeDiff(other);
+    const arrs = Array.from(this).computeDiff(other);
+    return arrs.map(arr => new Set(arr));
   },
 
 });
 
 
-/**
- * MAP/WEAKMAP
- */
+/*MD
+## MAP/WEAKMAP
+MD*/
 const mapExtensions = {
   
   /**
@@ -198,10 +244,23 @@ const mapExtensions = {
 extend(Map.prototype, mapExtensions);
 extend(WeakMap.prototype, mapExtensions);
 
+extend(Map.prototype, {
 
-/**
- * ARRAY
- */
+  /**
+   * Computes a more fine-grained difference with a second Map (@link(other)).
+   * @param other (Object/Map) the Set to be compared to.
+   * @returns {Array} [onlyLeft, both, onlyRight] the three Maps corresponding to the respective side of comparison.
+   */
+  computeDiff(other) {
+    return pairsDiff(this, other).map(arr => new Map(arr));
+  },
+
+});
+
+
+/*MD
+## ARRAY
+MD*/
 extendFromLodash(Array.prototype, [
   'sortBy',
   'difference',
@@ -226,6 +285,9 @@ extend(Array.prototype, {
 
   get first() { return this[0]; },
   set first(value) { return this[0] = value; },
+
+  get second() { return this[1]; },
+  set second(value) { return this[1] = value; },
 
   get last() { return this[this.length - 1]; },
   set last(value) { return this[this.length - 1] = value; },
@@ -262,12 +324,36 @@ extend(Array.prototype, {
     return _.zip(this, ...arrays);
   },
   
+  /**
+   * A generator yielding all items in this array. For propagating.
+   * @example <caption>Propagating yield* statements to items.</caption>
+   * function* example(arr) {
+   *   yield* arr.yieldAll();
+   * }
+   *
+   * for (let item of example([1,2,3])) {
+   *   lively.notify(item);
+   * }
+   */
+  *yieldAll() {
+    for (let item of this) {
+      yield item;
+    }
+  }
+
 });
 
 
-/**
- * NUMBER
- */
+/*MD # Array-like MD*/
+extendFromLodash(NodeList.prototype, [
+  'map',
+  'filter',
+  'reduce'
+]);
+
+/*MD
+## NUMBER
+MD*/
 extendFromLodash(Number.prototype, [
   'ceil',
   'clamp',
@@ -286,9 +372,9 @@ extend(Number.prototype, {
 });
 
 
-/**
- * STRING
- */
+/*MD
+## STRING
+MD*/
 extendFromLodash(String.prototype, [
   'camelCase',
   'capitalize',
@@ -348,9 +434,9 @@ extend(String.prototype, {
 });
 
 
-/**
- * PROMISE
- */
+/*MD
+## PROMISE
+MD*/
 extend(Promise.prototype, {
 
   /**
@@ -363,6 +449,24 @@ extend(Promise.prototype, {
    */
   through(func, ...args) {
     return this.then(val => (func(val, ...args), val));
+  }
+
+});
+
+
+/*MD
+## URL
+MD*/
+extend(URL.prototype, {
+
+  // hook for rendering the internals of an object in the inspector
+  livelyInspect(contentNode, inspector) {
+    contentNode.innerHTML = ""
+    var entries = lively.allKeys(this);
+    for(let key of entries) {
+      const node = inspector.display(this[key], true, key)
+      if (node) contentNode.appendChild(node);   
+    }
   }
 
 });

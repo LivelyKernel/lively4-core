@@ -3,7 +3,9 @@
 
 # D3 Components
 <script>
-  import ComponentCreator from "src/client/morphic/component-creator.js"
+  console.log("hellloooooo")
+
+import ComponentCreator from "src/client/morphic/component-creator.js"
   var container  = lively.query(this, "lively-container")
 </script>
 
@@ -18,12 +20,15 @@
 - d3-radialtree  {.component}
 - d3-treemap  {.component}
 - graphviz-dot  {.component}
- 
+
+
 ## Helper
- 
-  - [d3-component.js](d3-component.js) [html](d3-component.html)
-  - [d3-tree.js](d3-tree.js) [html](d3-tree.html)
-  - [d3-box.js](d3-box.js)
+
+- [d3-component.js](d3-component.js) [html](d3-component.html)
+- [d3-tree.js](d3-tree.js) [html](d3-tree.html)
+- [d3-box.js](d3-box.js)
+
+
 <!-- 
 <script>
 import Files from "src/client/files.js"
@@ -35,6 +40,7 @@ Files.generateMarkdownFileListing(md.shadowRoot)
 ## *META*
 
 <script>
+  console.log("hellloooooo")
   var context = lively.query(this, "lively-markdown").shadowRoot
   ComponentCreator.updateComponentsUI(container, context)
 </script>

@@ -3,7 +3,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class DigitalClock extends Morph {
 
   initialize() {
-    this.style.backgroundColor = 'white'
+    this.style.backgroundColor = ''
     if (!this.start)
       this.start = Date.now()
   }
@@ -11,6 +11,7 @@ export default class DigitalClock extends Morph {
   attachedCallback() {
     this.setup();
   }
+  
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     switch (attrName) {
@@ -34,16 +35,17 @@ export default class DigitalClock extends Morph {
     this.render();
     
     setTimeout(
-    	this.renderLoop.bind(this),
-    	1000
-  	);
+      this.renderLoop.bind(this),
+      1000
+    );
   }
   
   formatTime(dateTime) {
     var hours = ("0" + dateTime.getHours()).substr(-2);
     var minutes = ("0" + dateTime.getMinutes()).substr(-2);
-    
-    return hours + ":" + minutes;
+    var seconds = ("0" + dateTime.getSeconds()).substr(-2);
+
+    return hours + ":" + minutes + ":" + seconds;
   }
   
   updateTime() {

@@ -128,7 +128,7 @@ export default class Preferences {
     
     const msg = `on${preferenceKey}Preference`
     if (!lively[msg]) { 
-      console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
+      // console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
       return
     }
     

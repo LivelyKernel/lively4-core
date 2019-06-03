@@ -149,7 +149,7 @@ export default class LivelyMarkdown extends Morph {
     //  highlight.highlightBlock(block);
     //});
     
-    await components.loadUnresolved(root);    
+    await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
   }
 

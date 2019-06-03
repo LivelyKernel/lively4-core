@@ -12,8 +12,10 @@ import {Grid} from "src/client/morphic/snapping.js"
 import Info from "src/client/info.js"
 import * as _ from 'src/external/lodash/lodash.js'
 import Rasterize from 'src/client/rasterize.js'
+import Favorites from "src/client/favorites.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
+
 
 export default class ContextMenu {
   
@@ -167,6 +169,55 @@ export default class ContextMenu {
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
+      ["edit", async () => {
+          if (target instanceof Image) {
+            var url = target.getAttribute("src")
+            if (url.match(/^data\:/)) {
+              var editor = await lively.openComponentInWindow("lively-image-editor")
+              editor.setTarget(target)
+              
+            } else {
+              lively.openBrowser(url, true)
+            }
+            
+          } else {
+              lively.openInspector(target)
+          }
+        },
+        "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+      ],
+      target.localName == "lively-file" ?
+        [ "become content", async () => {
+            if (target.url && target.name.match(/\.png$/)) {
+              debugger
+              var element = await (<img id={target.name}></img>)
+              element.src = target.url
+              target.parentElement.appendChild(element)
+              lively.setPosition(element, lively.getPosition(target))
+              target.remove()
+            } else {
+               lively.notify("not supported")
+            }
+          },
+          "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+        ] :
+      [  "become file", async () => {
+            if (target.src) {
+              var name  = this.id || await lively.prompt("convert to file named: ", "newfile.png")
+              var element = await (<lively-file name={name}></lively-file>)
+              target.parentElement.appendChild(element)
+              
+              element.setAttribute("url",await lively.files.readBlobAsDataURL(await fetch(target.src).then(r => r.blob())))
+              lively.setPosition(element, lively.getPosition(target))
+
+              target.remove()
+
+            } else {
+              lively.notify("not supported")
+            }
+          },
+          "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+        ],
       ["save as png ...", async () => {
           var previewAttrName = "data-lively-preview-src"
           var url = target.getAttribute(previewAttrName)
@@ -179,8 +230,14 @@ export default class ContextMenu {
           url = await lively.prompt("save as png", url);
           if (url) {
             target.setAttribute(previewAttrName, url)
-            await Rasterize.elementToURL(target, url)
-            lively.notify("save to " + url)
+            if (target instanceof Image) {
+              await lively.files.copyURLtoURL(target.src, url) 
+            } else {
+              await Rasterize.elementToURL(target, url)
+            }
+            lively.notify("saved image to ", url, 10, () => {
+              lively.openBrowser(url)
+            })
           }
         },
         "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
@@ -191,8 +248,13 @@ export default class ContextMenu {
         if (!name) return;
         // var name = "foo.html"
         var url = name
+        
         if (!url.match(/https?:\/\//)) {
-          url = lively4url + "/" + url 
+          if (url.match(/^[a-zA-Z0-9]+\:/)) {
+            // url = lively.swxURL(url)
+          } else {
+            url = lively4url + "/" + url 
+          }
         }
         var source = ""
         if (name.match(/\.html$/)) {
@@ -387,7 +449,7 @@ export default class ContextMenu {
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["JSX-Ray ", async evt => {
-          const jsxRay  = await lively.create("jsx-ray") 
+          const jsxRay  = await lively.create("jsx-ray", document.body) 
           lively.setGlobalPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
@@ -407,6 +469,54 @@ export default class ContextMenu {
           workspace.mode = "text"
         }],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
+      ["Server", [
+         ["Invalidate Transpiled Files", async evt => {
+           
+          const FilesCaches = await System.import("src/client/files-caches.js")
+          var list = await FilesCaches.invalidateTranspiledFiles()
+          var workspace = await lively.openWorkspace("" + list)
+          workspace.parentElement.setAttribute("title","Purged Transpiled Files")
+          workspace.mode = "text"
+          
+        }],
+         ["Purged Transpiled Files WARNING! SLOW!", async evt => {
+           
+          const FilesCaches = await System.import("src/client/files-caches.js")
+          var list = await FilesCaches.purgeTranspiledFiles()
+          var workspace = await lively.openWorkspace("" + list.join("\n"))
+          workspace.parentElement.setAttribute("title","Purged Transpiled Files")
+          workspace.mode = "text"
+          
+        }],
+         ["Update Cached Bootfiles", async evt => {
+           
+          const FilesCaches = await System.import("src/client/files-caches.js")
+          var list = await FilesCaches.updateCachedFilesList()
+          var workspace = await lively.openWorkspace("" + list.join("\n"))
+          workspace.parentElement.setAttribute("title","Updated Cached Bootfiles")
+          workspace.mode = "text"
+          
+        }],
+      ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
+      [
+        "Favorites",
+          Favorites.get().then(urls => {
+            return urls.map(url => [
+              url.replace(/.*\//i, ''), // only files names
+              async evt => {
+                const comp = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600));
+                return comp.editFile(url);
+              },
+              <span click={function (event) {
+                const li = lively.query(this, 'li');
+                if(li) { li.remove(); }
+                event.stopPropagation();
+                Favorites.remove(url);
+              }}><i class="fa fa-close" aria-hidden="true"></i></span>,
+              undefined
+            ]);
+          }), undefined, '<i class="fa fa-star" aria-hidden="true"></i>'
+      ],
       [
         "Parts",
           fetch(lively4url + "/src/parts", {
@@ -508,9 +618,14 @@ export default class ContextMenu {
           },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         ],
+        ["Vivide CheatSheet", evt => {
+          this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
+            comp.followPath(lively4url + "/src/client/vivide/cheatsheet.md");
+          });
+        },undefined, '<i class="fa fa-inbox" aria-hidden="true"></i>'],
         ["Journal", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
-            comp.followPath(lively4url + "/doc/journal/index.html");
+            comp.followPath(lively4url + "/doc/journal/index.md");
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],

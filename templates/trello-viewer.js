@@ -22,7 +22,7 @@ export default class TrelloViewer extends Morph {
       focalStorage.setItem(TrelloViewer.DEVELOPER_KEY_FOCAL_STORAGE, key);
     }
 
-    await lively.loadJavaScriptThroughDOM("Trello", `https://api.trello.com/1/client.js?key=${key}`);
+    await lively.loadJavaScriptThroughDOM("Trello_script", `https://api.trello.com/1/client.js?key=${key}`);
     
     await new Promise((resolve, reject) => {
       localStorage.removeItem('trello_token');

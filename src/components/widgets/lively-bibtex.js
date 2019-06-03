@@ -88,7 +88,7 @@ export default class LivelyBibtex extends Morph {
     var value = this.parseEntries(source)
     if (value) {
       value = value[0]
-      var beforeEntry = this.findEntryInPath(evt.path)
+      var beforeEntry = this.findEntryInPath(evt.composedPath())
       var newEntry = await this.appendBibtexEntry(value)
       if (beforeEntry) this.insertBefore(newEntry, beforeEntry)
     }
@@ -111,7 +111,7 @@ export default class LivelyBibtex extends Morph {
   onClick(evt) {
     if (this.isEditing()) return;
     // var oldScroll
-    var entry = this.findEntryInPath(evt.path)
+    var entry = this.findEntryInPath(evt.composedPath())
     if (!entry) return;
     this.select(entry, evt.shiftKey)
     

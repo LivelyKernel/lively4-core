@@ -5,7 +5,9 @@ export default class PolymorphicIdendifierFs extends Base {
     super('scheme', path, options)
   }
 
-  read(path) {
+  read(path, request) {
+    // WARNING, path is normalized so "foo//bar" is converted to "foo/bar"
+    path = request.url.replace(/^https\:\/\/lively4\/scheme/,"")
     return this._rpc({name: 'swx:pi:GET', path: path})
       .then((event) => event.data.content)
   }
@@ -42,7 +44,7 @@ export default class PolymorphicIdendifierFs extends Base {
         
         setTimeout(() => {
           if (!done) reject("timeout")
-        }, 10 * 1000)
+        }, 5 * 60 * 1000)
       })
     }).then((event) => {
       console.log('RPC response:', event.data)

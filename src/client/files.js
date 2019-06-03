@@ -1,15 +1,39 @@
-import focalStorage from './../external/focalStorage.js';
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
-import Strings from 'src/client/strings.js'
-
 
 export default class Files {
   
+  static hello() {
+    return "Hello World"
+  }
+  
+  
+
+  static async fillCachedFileMap() {
+    var root = lively4url +  "/"
+    var filelist =   await fetch(root, {
+      method: "OPTIONS",
+      headers: {
+        filelist: true
+      }
+    }).then(r => r.json()).then(r => r.contents.map(ea => ea.name.replace(/^\.\//,url)))
+    var map = this.cachedFileMap()
+    for(var url of filelist) {
+      map.set(url, {exists: true})
+    }
+  }
+  
+  static cachedFileMap() {
+    if (!self.lively4cacheFiles) {
+      self.lively4cacheFiles = new Map()  // indexDB or dexie are to slow (60ms for simple checking if it is there #TODO)
+    } 
+    return self.lively4cacheFiles 
+  }
+  
   static parseSourceReference(ref) {
     if(ref.match("!")) {
-      var url = ref.replace(/\!.*/,"")
-      var args = ref.replace(/.*\!/,"").split(/:/)
+      var url = ref.replace(/!.*/,"")
+      var args = ref.replace(/.*!/,"").split(/:/)
     } else {
       var m = ref.match(/(.*):([0-9]+):([0-9]+)$/)
       args = [m[2], m[3]]
@@ -86,7 +110,11 @@ export default class Files {
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
-      return fetch(urlString, {method: 'PUT', body: data});
+      var options = {method: 'PUT', headers: {}, body: data}
+      if (url.match(/\.svg$/)) {
+        options.headers['Content-Type'] = 'image/svg+xml'
+      }
+      return fetch(urlString, options);
     }
   }
   
@@ -131,24 +159,36 @@ export default class Files {
    * @returns an array of files
    */
   static async walkDir(dir) {
-    if(dir.endsWith('/')) { dir = dir.slice(0, -1); }
-    const json = await lively.files.statFile(dir).then(JSON.parse);
-    if(json.type !== 'directory') {
-      throw new Error('Cannot walkDir. Given path is not a directory.')
-    }
+    
+    var url = dir.replace(/\/?$/,"/")
+    
+    // iterate on the server vs client (is 400ms vs 4000ms)
+    var result = await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+        filelist: true
+      }
+    }).then(r => r.json()).then(r => r.contents.map(ea => ea.name.replace(/^\.\//,url)))
+    return result
 
-    let files = json.contents
-      .filter(entry => entry.type === 'file')
-      .map(entry => dir + '/' + entry.name);
+//     if(dir.endsWith('/')) { dir = dir.slice(0, -1); }
+//     const json = await lively.files.statFile(dir).then(JSON.parse);
+//     if(json.type !== 'directory') {
+//       throw new Error('Cannot walkDir. Given path is not a directory.')
+//     }
 
-    let folders = json.contents
-      .filter(entry => entry.type === 'directory')
-      .map(entry => dir + '/' + entry.name);
+//     let files = json.contents
+//       .filter(entry => entry.type === 'file')
+//       .map(entry => dir + '/' + entry.name);
 
-    let subfolderResults = await Promise.all(folders.map(folder => this.walkDir(folder)));
-    subfolderResults.forEach(filesInSubfolder => files.push(...filesInSubfolder));
+//     let folders = json.contents
+//       .filter(entry => entry.type === 'directory')
+//       .map(entry => dir + '/' + entry.name);
 
-    return files;
+//     let subfolderResults = await Promise.all(folders.map(folder => this.walkDir(folder)));
+//     subfolderResults.forEach(filesInSubfolder => files.push(...filesInSubfolder));
+
+//     return files;
   }
 
   // #Depricated
@@ -164,7 +204,12 @@ export default class Files {
     return (await this.stats(url)).type
   }
 
-  static async exists(urlString){
+  static async exists(urlString) {
+    var cachedInfo = this.cachedFileMap().get(urlString)
+    if (cachedInfo) {
+      return cachedInfo.exists
+    }
+  
     var resp = (await fetch(urlString, {method: "OPTIONS"}))
     if (resp.status != 200) return false
     var stats = await resp.json()
@@ -376,6 +421,8 @@ export default class Files {
       var name =  ea.type == "directory" ? 
         ea.name + "/" :
         ea.name
+      if (name == "index.md") return // don't include yourself
+      
       fileNames.push(name)
       // item.textContent = name
       if (!links.includes(name)) {
@@ -435,6 +482,12 @@ export default class Files {
     }
   }
   
+  static async unzip(url) {
+    var blob = fetch(url).then(r => r.blob())
+    return  JSZip.loadAsync(blob)
+  }
+  
+  
   static async githubFileInfo(url) {
     return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
       var serverURL = syncTool.getServerURL()    
@@ -455,4 +508,12 @@ export default class Files {
       }  
     }, url) 
   }
+  
+  static getEnding(path) {
+    return path.replace(/\?.*/,"").replace(/.*\./,"");
+  }
+  
 }
+
+
+

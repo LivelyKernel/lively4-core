@@ -17,7 +17,7 @@ export default class HaloVivideCombineItem extends HaloItem {
   }
   
   async onClick(evt) {
-    if (evt.path.find(ea => ea.tagName == "LIVELY-STYLE-EDITOR")) return;
+    if (evt.composedPath().find(ea => ea.tagName == "LIVELY-STYLE-EDITOR")) return;
 
     var inspectTarget = window.that;
 

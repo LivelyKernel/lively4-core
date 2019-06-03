@@ -1,54 +1,26 @@
-<template id="lively-presentation" data-class="LivelyPresentation">
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-  :host {
-/*     width: 800px;
-    height: 600px; */   
-  }
-  #content {
- 
-  }
+<template id="lively-presentation">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    button {
+      background: none;
+      border: none;
+      color: lightgray;
+      font-size: 8pt;
+      padding: 1px;
 
-  #prevButton {
-    
-  }
+    }
+    #buttons {
+      width: 300px;
+      top: 10px;
 
-  #gotoButton {
-    
-  }
-
-  #nextButton {
-    
-  }
-
-  #fullscreenButton {
-    
-  }
-
-  button {
-    background: none;
-    border: none;
-    color: lightgray;
-    font-size: 8pt;
-    padding: 1px;
-    
-  }
-    
-  
-  
-  #buttons {
-    width: 300px;
-    top: 10px;
-    
-    position: absolute;
-    z-index: 10000;
-  }
-  
-</style>
+      position: absolute;
+      z-index: 10000;
+    }
+  </style>
 
   <div id="content">
-  <content></content>  
+    <slot></slot>
   </div>
   <div id="buttons">
     <button id="fullscreenButton" title="toggle fullscreen"><i class="fa fa-arrows-alt"></i></button>
@@ -57,7 +29,4 @@
     <button id="nextButton" title="next slide"><i class="fa fa-caret-right"></i></button>
     <button id="printButton" title="print presentation"><i class="fa fa-print"></i></button>
   </div>
-
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
-

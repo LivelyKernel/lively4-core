@@ -1,7 +1,21 @@
 /* Shared SystemJS Config */
 
 // setup var recorder object
+
 window._recorder_ = {_module_:{}}
+
+// window._recorder_ = new Proxy({}, {
+//   set: function(obj, prop, value) {
+//     debugger
+//     console.log("RECORDER set " + prop)
+//     obj[prop] = value
+//     return true
+//   },  
+  
+//   get: function(obj, prop) {
+//     return obj[prop]
+//   }
+// });
 
 const moduleOptionsNon = {
   babelOptions: {
@@ -55,7 +69,8 @@ SystemJS.config({
     'babel-plugin-syntax-do-expressions': lively4url + '/src/external/babel-plugin-syntax-do-expressions.js',
     'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
     'babel-plugin-syntax-async-generators': lively4url + '/src/external/babel-plugin-syntax-async-generators.js',
-
+    'babel-plugin-syntax-object-rest-spread': lively4url + '/src/external/babel-plugin-syntax-object-rest-spread.js',
+    
     // support for doits
     'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
     'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
@@ -139,7 +154,7 @@ SystemJS.config({
     [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
     
     // blacklist all projects included for active expressions
-    [lively4url + "/src/client/reactive/*.js"]: moduleOptionsNon,
+    [lively4url + "/src/client/reactive/*.js"]: liveES7,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
     [lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
@@ -162,6 +177,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -181,6 +197,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -199,6 +216,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',

@@ -119,10 +119,19 @@ export default class Inspector extends Morph {
         
     var contentNode = node.querySelector("#content");
 
-    // handle dedicated data structures
-    var handlerMethod = `render${obj.constructor.name}Object`;
-    if (this[handlerMethod]) {
-      return this[handlerMethod](contentNode, obj)
+    if (obj.livelyInspect) {
+      try {
+        obj.livelyInspect(contentNode, this)
+      } catch(e) {
+        var selection = <div class="element" style="color:red"><b>Error in livleyInspect:</b> {e}</div>;
+        contentNode.appendChild(selection);
+      }
+      return
+    } 
+      
+    if(obj && obj[Symbol.iterator]) {
+      this.renderIterable(contentNode, obj);
+      return;
     }
     
     contentNode.innerHTML = "";
@@ -583,21 +592,6 @@ export default class Inspector extends Morph {
       const node = this.display(value, true, key)
       if (node) contentNode.appendChild(node);   
     }
-  }
-  
-  // callbacks for system objects...
-  renderHeadersObject(contentNode, obj) {
-    this.renderIterable(contentNode, obj)
-  }
-  
-  // callbacks for system objects...
-  renderMapObject(contentNode, obj) {
-    this.renderIterable(contentNode, obj)
-  }
-  
-  // callbacks for system objects...
-  renderSetObject(contentNode, obj) {
-    this.renderIterable(contentNode, obj)
   }
   
   static inspectArrayAsTable(array) {

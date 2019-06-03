@@ -1,4 +1,4 @@
-<template id="lively-whyline" data-class="LivelyWhyline">
+<template id="lively-whyline">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
 <style>
@@ -12,11 +12,11 @@
     flex-direction: column;
   }
     
-  #buttonRow, #firstRow, #secondRow, #thirdRow {
+  #buttonRow, #firstRow, #secondRow {
     border: 1px gray solid;
   }
 
-  #firstRow, #secondRow, #thirdRow {
+  #firstRow, #secondRow {
     display: flex;
     flex-direction: row;
     flex: 1;
@@ -71,7 +71,7 @@
     flex: 1;
   }
 
-  lively-code-editor {
+  lively-editor {
     flex: 1;
   }
   
@@ -177,7 +177,7 @@
   <div id="firstRow">
     <div id="firstColumn">
       <div id="sourcePane">
-        <lively-code-editor id="source"></lively-code-editor>
+        <lively-editor id="source"></lively-editor>
         <canvas id="canvas" width="0px" height="0px"></canvas>
       </div>    
     </div>
@@ -214,5 +214,3 @@
     </div>
   </div>
 </template>
-
-<script class="registrationScript">lively.registerTemplate()</script>

@@ -3,6 +3,7 @@
  *
  */
 
+
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import * as _ from '../external/underscore.js';
@@ -11,6 +12,7 @@ import * as messaging from './messaging.js';
 import preferences from './preferences.js';
 import persistence from './persistence.js';
 import html from './html.js';
+import * as reflection from './reflection.js';
 import files from './files.js';
 import paths from './paths.js';
 import contextmenu from './contextmenu.js';
@@ -45,6 +47,7 @@ var exportmodules = [
   "keys",
   "paths",
   "html",
+  "reflection",
   "components",
   "persistence",
   // "color",
@@ -130,11 +133,14 @@ export default class Lively {
   static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
     try {
-      await System.import(normalizedPath).then(module => {
-        if(module && typeof module.__unload__ === "function") {
-          module.__unload__();
-        }
-      });
+      // check, to prevent trying to reloading a module a second time if there was an error #375
+      if (System.get(normalizedPath)) {
+        await System.import(normalizedPath).then(module => {
+          if(module && typeof module.__unload__ === "function") {
+            module.__unload__();
+          }
+        });        
+      }      
     } catch(e) {
       console.log("WARNING: error while trying to unload " + path)
     }
@@ -199,7 +205,7 @@ export default class Lively {
     let defaultClass = mod.default;
     if (defaultClass) {
       console.log("update template prototype: " + moduleName);
-      components.updatePrototype(defaultClass.prototype);
+      components.updatePrototype(defaultClass, moduleName);
     }
 
     /**
@@ -276,21 +282,25 @@ export default class Lively {
   }
 
 
-  static fillTemplateStyles(root, debugInfo) {
+  static async fillTemplateStyles(root, debugInfo) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
+    
+    // var start = performance.now()
     var promises = [];
     var allSrc = []
     root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src");
       if (src) {
+        var cssURL = lively4url + src
         allSrc.push(src)
-        // console.log("load fillTemplateStyles: " + lively4url + src );
-        promises.push(fetch(lively4url + src).then(r => r.text()).then(css => {
+        promises.push(fetch(cssURL).then(r => r.text()).then(css => {
+          // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
           ea.innerHTML = css;
         }));
       }
     });
-    return Promise.all(promises)
+    await Promise.all(promises)    
+    // console.log("load fillTemplateStyles "  + (performance.now() - start) +"ms :"+ debugInfo);
   }
 
   static showError(error) {
@@ -365,9 +375,10 @@ export default class Lively {
       lively.loadCSSThroughDOM("livelystyle", lively4url + "/templates/lively4.css");
     }
     // preload some components
-    await components.loadByName("lively-window");
-    await components.loadByName("lively-editor");
-    await components.loadByName("lively-script");
+    // #FixMe does not work this way, because this might conflict with the normal loading ....
+    // await components.loadByName("lively-window");
+    // await components.loadByName("lively-editor");
+    // await components.loadByName("lively-script");
     
     setTimeout(() => {
       // wait for the timeout and try again
@@ -390,6 +401,8 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    
+    await System.import("src/client/files-caches.js") // depends on me
   }
   
 
@@ -417,6 +430,7 @@ export default class Lively {
       comp.mode = "text/jsx";
       comp.value = string;
       comp.setAttribute("overscroll", "contain")
+      comp.style.height = "100%"
       var container = comp.parentElement
       if (pos) lively.setGlobalPosition(container,pos);
       container.setAttribute("title", "Workspace");
@@ -433,7 +447,24 @@ export default class Lively {
     });
   }
 
-  static async create(name="lively-table", parent=document.body) {
+  static ensureSpawnArea() {
+    var spawnId = "livelySpawnArea"
+    var spawn = document.body.querySelector("#" + spawnId)
+    if (!spawn) {
+      spawn = document.createElement("div")
+      spawn.id = spawnId
+      spawn.style.display = "none"
+      spawn.isMetaNode = true
+      document.body.appendChild(spawn)
+    }
+    return spawn
+  }
+  
+  
+  static async create(name="lively-table", parent=this.ensureSpawnArea()) {
+    
+    // =this.ensureSpawnArea()
+    
     var element = document.createElement(name)
     // #TODO normal elements will not resolve this promoise #BUG
     if (name.match("-")) {
@@ -646,13 +677,12 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    if (evt.path[0] !== document.body) return;
+    if (evt.composedPath()[0] !== document.body) return;
     console.log("hide context menu:" + evt);
     contextmenu.hide();
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-
     if (window.HaloService && 
         (HaloService.areHalosActive() ||
         (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)))) {
@@ -704,7 +734,7 @@ export default class Lively {
       	timeout: 10,
       	details: "what's up?"})
    */
-  static notify(titleOrOptions, text, timeout, cb, color) {
+  static async notify(titleOrOptions, text, timeout, cb, color) {
     try {
       // #TODO make native notifications opitional?
       // this.nativeNotify(title, text, timeout, cb)
@@ -730,24 +760,15 @@ export default class Lively {
 
       var notificationList = document.querySelector("lively-notification-list")
       if (!notificationList) {
-       notificationList = document.createElement("lively-notification-list");
-        components.openIn(document.body, notificationList).then(() => {
-          if (notificationList.addNotification) {
-            notificationList.addNotification(title, text, timeout, cb, color);
-          }
-        });
+        notificationList = await lively.create("lively-notification-list", document.body);
+        notificationList.addNotification(title, text, timeout, cb, color);
       } else {
         var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
-
         if (duplicateNotification) {
           duplicateNotification.counter++;
           duplicateNotification.render();
         } else {
-          if(notificationList && notificationList.addNotification) {
-            notificationList.addNotification(title, text, timeout, cb, color);
-          } else {
-            console.log('%ccould not notify about', 'font-size: 9px; color: red', title, text);
-          }
+          notificationList.addNotification(title, text, timeout, cb, color);
         }
       }
     } catch(e) {
@@ -816,7 +837,8 @@ export default class Lively {
     console.log("Lively4 initializeDocument" );
     // persistence.disable();
 
-    lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    await lively.loadCSSThroughDOM("font-awesome", lively4url + "/src/external/font-awesome/css/font-awesome.min.css");
+    
     lively.components.loadByName("lively-notification")
     lively.components.loadByName("lively-notification-list")
 
@@ -824,7 +846,7 @@ export default class Lively {
     this.initializeHalos();
 
     lively.addEventListener("preventDragCopy", document, "dragstart", (evt) => {
-      if ((evt.path[0] === document.body)) {
+      if ((evt.composedPath()[0] === document.body)) {
         evt.stopPropagation()
         evt.preventDefault()
       }
@@ -832,15 +854,17 @@ export default class Lively {
 
     console.log(window.lively4stamp, "load local lively content ")
     // #RACE #TODO ... 
+
+    // yes, we want also to change style of external websites...
+    await lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
+    
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();
+    
     // lively.selection;
-
-    // yes, we want also to change style of external websites...
-    lively.loadCSSThroughDOM("lively4", lively4url +"/src/client/lively.css");
     
     // #Hack... just to be on the save side #ACM
     // where to put side specific adapations... cannot be overriden by CSS? #TODO
@@ -864,7 +888,6 @@ export default class Lively {
         document.head.appendChild(titleTag);
       }
 
-
       document.body.style.backgroundColor = "rgb(240,240,240)"
       ViewNav.enable(document.body)
 
@@ -880,13 +903,11 @@ export default class Lively {
       document.scrollingElement.scrollTop = this.deferredUpdateScroll.y;
       delete this.deferredUpdateScroll;
 		}
-    
-    // just for more accurate measurement, since we load them anyway...
-    await lively.components.loadByName("lively-container")
-    await lively.components.loadByName("lively-code-mirror")
         
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s")
     console.log(window.lively4stamp, "lively persistence start ")
+    
+    
     setTimeout(() => {
       console.log("start persistence...")
       persistence.current.start()
@@ -895,20 +916,13 @@ export default class Lively {
 
   static async showMainContainer() {
     var container = document.querySelector('main-content')
-    if (container) return container;
-
-    container = document.createElement("lively-container");
-    container.id = 'main-content';
-    container.setAttribute("load", "auto");
-
-    await components.openInWindow(container).then( () => {
-      container.__ingoreUpdates = true; // a hack... since I am missing DevLayers...
-      container.get('#container-content').style.overflow = "visible";
-      container.parentElement.toggleMaximize()
-      container.parentElement.hideTitlebar()
-      container.parentElement.style.zIndex = 0
-      container.parentElement.setAttribute("data-lively4-donotpersist","all");
-    });
+    if (!container) {
+      var w = await lively.create("lively-window");
+      document.body.appendChild(w)
+      container = await lively.create("lively-container");
+      w.appendChild(container)
+      container.becomeMainContainer()
+    }
     return container
   }
 
@@ -942,7 +956,7 @@ export default class Lively {
       objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
     objectToMigrate.forEach(oldInstance => {
-      if (oldInstance.__ingoreUpdates) return;
+      if (oldInstance.__ignoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
@@ -1135,14 +1149,12 @@ export default class Lively {
 
   static async showClassSource(object, evt) {
     // object = that
-    if (object instanceof HTMLElement) {
+    if (object instanceof HTMLElement) {  
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
-        className = template.getAttribute('data-class'),
-        baseName = this.templateClassNameToTemplateName(className),
-        moduleURL = await this.components.searchTemplateFilename(baseName + ".js");
-      lively.openBrowser(moduleURL, true, className);
+        moduleURL = await this.components.searchTemplateFilename(object.localName + ".js");
+      lively.openBrowser(moduleURL, true);
     } else {
       lively.notify("Could not show source for: " + object);
     }
@@ -1344,7 +1356,7 @@ export default class Lively {
       lively.setGlobalPosition(w, globalPos);
 
       return components.openIn(w, document.createElement(name)).then(comp => {
-        if (comp.windowTitle) w.setAttribute('title', '' + comp.windowTitle);
+        components.ensureWindowTitle(comp, w)
         return comp;
       });
     });
@@ -1355,7 +1367,7 @@ export default class Lively {
       var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"))
       var offset = 20
       var pos
-      var topLeft = pt(200,100)
+      var topLeft = pt(50,50)
 
       for(var i=0; !pos; i++) {
         let p1 = pt(i * offset, i * offset)
@@ -1397,8 +1409,8 @@ export default class Lively {
     return containerPromise.then(comp => {
       livelyContainer = comp;
       livelyContainer.hideNavbar()
-      comp.parentElement.style.width = "1200px";
-      comp.parentElement.style.height = "700px";
+      comp.parentElement.style.width = "750px";
+      comp.parentElement.style.height = "600px";
 
       if (lastWindow) {
         lively.setPosition(comp.parentElement,
@@ -1699,7 +1711,11 @@ export default class Lively {
   }
   
   static elementToCSSName(element) {
-    return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")
+    try {
+      return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")      
+    } catch(e) {
+      return "" // silent fail.... 
+    }
   }
 
   static async openPart(partName, worldContext=document.body) {
@@ -1762,7 +1778,7 @@ export default class Lively {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
-      var link = Array.from(evt.path).find(ea => ea.localName == "a")
+      var link = Array.from(evt.composedPath()).find(ea => ea.localName == "a")
       if (link) {
         // #TODO can we shorten this or hide this context specific behavior, 
         // e.g. asking a link for href in the "context" of a lively container should
@@ -1869,7 +1885,7 @@ export default class Lively {
   }
   
   static swxURL(url) {
-    var m = url.toString().match(/^([a-zA-Z0-9]+)\:\/\/(.*)$/)
+    var m = url.toString().match(/^([a-zA-Z0-9]+)\:\/?\/?(.*)$/)
     if (!m) {
       throw new Error("coudl not convert url to an swx form: " + url)
     }

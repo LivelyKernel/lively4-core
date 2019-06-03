@@ -28,7 +28,7 @@ export default class Keys {
 
   static handle(evt) {
     function handledInCodeMirror(evt) {
-      return evt.path.find(node => node.tagName == "LIVELY-CODE-MIRROR");
+      return evt.composedPath().find(node => node.tagName == "LIVELY-CODE-MIRROR");
     }
     
     // #Hack, fix a little but in ContextMenu movement...
@@ -47,7 +47,7 @@ export default class Keys {
         }],
         // #KeyboardShortcut Ctrl-Shift-F search throughout the whole repository
         ["Search", ctrl && shiftKey && char == "F", evt => {
-          lively.openSearchWidget(this.getTextSelection(), null, evt.path[0]);
+          lively.openSearchWidget(this.getTextSelection(), null, evt.composedPath()[0]);
         }],
         // #KeyboardShortcut Ctrl-Shift-B open browser
         ["Open Container", shiftKey && ctrl && char == "B", evt => {
@@ -100,6 +100,12 @@ export default class Keys {
         ["Hide Search Widget", keyCode == 27, evt => {
           lively.hideSearchWidget();
         }], 
+        // #KeyboardShortcut F8 open generic search widget
+        ["Generic Search Widget", keyCode === 119, async evt => {
+          const search = document.body.querySelector('lively-generic-search') || await lively.create('lively-generic-search');
+          document.body.appendChild(search);
+          search.setFocus();
+        }],
         ["Do It", ctrl && !altKey && char == "D", evt => {
           if (handledInCodeMirror(evt)) {
             return; // code mirror does not stop it's propagation
@@ -124,3 +130,6 @@ export default class Keys {
     }
   }
 }
+/*
+lively.keys = Keys
+*/

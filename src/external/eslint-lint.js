@@ -29,6 +29,8 @@
         System: true,
         SystemJS: true,
         CodeMirror: true,
+        a: true,
+        b: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {

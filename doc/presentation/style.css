@@ -22,16 +22,21 @@ p {
 }
   
 
-.title, .authors, .credentials, .conference {
+.title, .subtitle, .authors, .credentials, .conference {
   margin-top: 30px;
   text-align: center;
 }
 
 .title {
   margin-top: 150px;
-  margin-bottom: 30px;
   font-size: 26pt;
   color: #1C6BA0;
+  font-weight: bold;
+}
+
+.subtitle {
+  font-size: 20pt;
+  color: #f28500;
   font-weight: bold;
 }
 
@@ -125,8 +130,6 @@ ul  li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-
-
   
 ul  li li::before{
   content: "□"; 
@@ -138,8 +141,6 @@ ul  li li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-
-
 
 
 /* ul, li {

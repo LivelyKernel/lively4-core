@@ -1,4 +1,4 @@
-<template id="lively-debugger" data-class="LivelyDebugger">
+<template id="lively-debugger" >
     <style data-src="/templates/livelystyle.css"></style>
     <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
 
@@ -132,9 +132,9 @@
         <div class="column-left">
           <select id="scriptList"></select>
           <!-- #TODO replace ace editor with code-mirror -->
-          <juicy-ace-editor id="codeEditor"></juicy-ace-editor>
+          <lively-code-mirror id="codeEditor"></lively-code-mirror>
           <lively-separator></lively-separator>
-          <juicy-ace-editor id="debuggerWorkspace"></juicy-ace-editor>
+          <lively-code-mirror id="debuggerWorkspace"></lively-code-mirror>
         </div>
         <lively-separator></lively-separator>
         <div class="column-right">
@@ -149,4 +149,3 @@
     </div>
 </template>
 
-<script class="registrationScript">lively.registerTemplate();</script>

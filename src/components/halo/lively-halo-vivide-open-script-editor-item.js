@@ -6,6 +6,7 @@ export default class HaloVivideOpenScriptEditorItem extends HaloItem {
   async onClick(evt) {
     var inspectTarget = window.that;
 
+    debugger
     this.hideHalo();
     let scriptEditor = await inspectTarget.createScriptEditor();
     scriptEditor.initialFocus();

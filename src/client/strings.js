@@ -22,7 +22,7 @@ export default class Strings {
   
   static matchAll(regExString, s) {
     var all  =[]
-    var regEx = new RegExp(regExString, "g")
+    var regEx = new RegExp(regExString, "gs")
     do {
       var m = regEx.exec(s)
       if (m) all.push(m)

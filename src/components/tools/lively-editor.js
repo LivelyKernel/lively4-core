@@ -1,9 +1,21 @@
 /*
  * Lively 4 Text Editor
- * - based Ace editor
  * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  * - updates change indicator while when editting,loading, and saving
  */
+
+/* 
+## EDITOR ... we have to many objects called "editor", because the wrap around and FACADE each other...
+
+- (babylonian-programming-editor)
+ - lively-editor
+   - lively-code-mirror
+     - cm CodeMirror object
+ 
+
+*/
+
+import Strings from "src/client/strings.js"
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
@@ -13,7 +25,7 @@ import components from "src/client/morphic/component-loader.js";
 
 import {pt} from "src/client/graphics.js"
 
-import {getObjectFor} from "utils";
+import {getObjectFor, updateEditors} from "utils";
 import files from "src/client/files.js"
 
 
@@ -31,6 +43,7 @@ export default class Editor extends Morph {
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
         
+    
     
     editor.doSave = text => {
       this.saveFile(); // CTRL+S does not come through...    
@@ -64,6 +77,12 @@ export default class Editor extends Morph {
     
     this.addEventListener("paste", evt => this.onPaste(evt))
 
+    
+    // wait for CodeMirror for adding custom keys
+    await  editor.editorLoaded()
+    editor.addKeys({
+      "Alt-P": cm => this.toggleWidgets()
+    })
   }
   
   onTextChanged() {
@@ -83,17 +102,9 @@ export default class Editor extends Morph {
   }
   
   updateOtherEditors() {
-    var url = this.getURL().toString();
-    var editors = Array.from(document.querySelectorAll(
-      "lively-index-search::shadow lively-editor, lively-container::shadow lively-editor, lively-editor"));
-
-    var editorsToUpdate = editors.filter( ea => 
-      ea.getURLString() == url && !ea.textChanged && ea !== this);
-          
-    editorsToUpdate.forEach( ea => {
-      // lively.showElement(ea);
-      ea.loadFile()
-    });
+    console.warn('updateEditors')
+    const url = this.getURL().toString();
+    updateEditors(url, [this]);
   }
 
   onSaveButton() {
@@ -160,6 +171,7 @@ export default class Editor extends Morph {
     var codeMirror = this.currentEditor();
     var cur = this.getCursor()
     var scroll = this.getScrollInfo()
+
     
     if (codeMirror) {
       if (!this.isCodeMirror()) {
@@ -169,7 +181,10 @@ export default class Editor extends Morph {
       this.updateChangeIndicator();
       codeMirror.setValue(text);
       if (codeMirror.resize) codeMirror.resize();
-      this.updateAceMode();
+      this.updateEditorMode();
+      
+      this.showEmbeddedWidgets()
+      
     } else {
       // Code Mirror
       this.get('#editor').value = text
@@ -182,22 +197,23 @@ export default class Editor extends Morph {
         this.currentEditor().selection.setRange(oldRange)
       }
     }
+    return text
   }
   
-  updateAceMode() {
+  updateEditorMode() {
     var url = this.getURL();
     var editorComp = this.get("#editor");
     if (editorComp && editorComp.changeModeForFile) {
       editorComp.changeModeForFile(url.pathname);
     }
   }
-
+  
   async loadFile(version) {
     var url = this.getURL();
     console.log("load " + url);
-    this.updateAceMode();
+    this.updateEditorMode();
 
-    return fetch(url, {
+    var result = await fetch(url, {
       headers: {
         fileversion: version
       }
@@ -210,15 +226,25 @@ export default class Editor extends Morph {
        return this.setText(text, true); 
     }, (err) => {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
+        return ""
     });
+    if (this.postLoadFile) {
+      result = await this.postLoadFile(result) // #TODO babylonian programming requires to adapt editor behavior
+    }
+    return result
   }
 
   
-  saveFile() {
+  async saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
     // console.log("version " + this.latestVersion);
     var data = this.currentEditor().getValue();
+    if (this.preSaveFile) {
+      data = await this.preSaveFile(data)
+    }
+    
+    
     var urlString = url.toString();
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
@@ -229,7 +255,11 @@ export default class Editor extends Morph {
       if (this.lastVersion) {
         headers.lastversion = this.lastVersion
       }
-      return fetch(urlString, {
+      if (urlString.match(/\.svg$/)) {
+        headers['Content-Type'] = 'image/svg+xml'
+      }
+      
+      await fetch(urlString, {
         method: 'PUT', 
         body: data,
         headers: headers
@@ -339,8 +369,17 @@ export default class Editor extends Morph {
   withEditorObjectDo(func) {
     var editor = this.currentEditor()
     if (editor) {
-     	return func(editor)
+      return func(editor)
     }    
+  }
+  
+  
+  livelyEditor() {
+    return this  
+  }
+  
+  livelyCodeMirror() {
+    return this.get('#editor')
   }
   
   async awaitEditor() {
@@ -405,6 +444,7 @@ export default class Editor extends Morph {
                                   element.name, 
                                   evt)
             }
+            
             // lively.showElement(element)
           })
           
@@ -442,7 +482,7 @@ export default class Editor extends Morph {
   }
   
   async pasteDataUrlAs(dataURL, newurl, filename, evt) {
-    
+
     var blob = await fetch(dataURL).then(r => r.blob())
     await files.saveFile(newurl, blob)
     
@@ -468,6 +508,7 @@ export default class Editor extends Morph {
         editor.setSelection(coords)        
       }
       editor.replaceSelection(text, "around")
+      
     })
     
     
@@ -497,6 +538,86 @@ export default class Editor extends Morph {
     }
   }
   
+  async showEmbeddedWidgets() {
+    var type = files.getEnding(this.getURL().toString())
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+
+    if (type == "js") {
+      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD))(.*?)\1\*\//, codeMirrorComponent.value)) {
+          var widgetName = "div"
+          var mode = m[1]
+          if (mode == "MD") {
+            widgetName = "lively-markdown"
+          }
+          let cm = codeMirrorComponent.editor,
+            // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
+            fromIndex = m.index,
+            toIndex = m.index + m[0].length
+                           
+          // if (cursorIndex > fromIndex && cursorIndex < toIndex) continue;
+          var from = cm.posFromIndex(fromIndex)
+          var to = cm.posFromIndex(toIndex)
+          let widget = await codeMirrorComponent.wrapWidget(widgetName, from, to)
+          widget.style.border = "2px dashed orange "
+          lively.removeEventListener('widget', widget)
+          widget.style.padding = "5px"
+//           lively.addEventListener("context", widget, "contextmenu", evt => {
+//             if (!evt.shiftKey) {
+//                const menuElements = [
+//                 ["edit source", () =>  widget.marker.clear()],
+//               ];
+//               const menu = new lively.contextmenu(this, menuElements)
+//               menu.openIn(document.body, evt, this)
+              
+//               evt.stopPropagation();
+//               evt.preventDefault();
+//               return true;
+//             }
+//           })
+        
+          if (mode == "MD") {
+            widget.setContent(m[2])    
+            
+          } else {
+            widget.innerHTML = m[2]
+            var container = lively.query(this, "lively-container")
+            if (container) {
+              lively.html.fixLinks(widget.querySelectorAll("img, a"), 
+                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    url => container.followPath(url))
+            }
+            
+          }
+      }
+     
+    }
+  }
+  
+  async hideEmbeddedWidgets() {
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
+  }
+  
+  toggleWidgets() {
+    lively.notify("yeah...")
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    
+    
+    
+    var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
+    if (allWidgets.length == 0) {
+      this.showEmbeddedWidgets()
+    } else {
+      this.hideEmbeddedWidgets()
+    }
+  }
+  
+
   livelyExample() {
     this.setURL(lively4url + "/README.md");
     this.loadFile()

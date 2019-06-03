@@ -19,10 +19,6 @@ import {
   bodyForPath
 } from "./utils/ast.js";
 import {
-  loadFile,
-  saveFile
-} from "./utils/load-save.js";
-import {
   defaultContext,
   defaultAnnotations
 } from "./utils/defaults.js";
@@ -58,7 +54,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    * Loading the editor
    */
 
-  initialize() {
+  async initialize() {
     this.windowTitle = "Babylonian Programming Editor";
 
     // Lock evaluation until we are fully loaded
@@ -66,9 +62,6 @@ export default class BabylonianProgrammingEditor extends Morph {
 
     // Register editor
     BabylonianWorker.registerEditor(this);
-    this.parentElement.afterWindowClosed = () => {
-      BabylonianWorker.unregisterEditor(this);
-    }
 
     // AST
     this._ast = null; // Node
@@ -82,7 +75,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._deadMarkers = []; // [TextMarker]
 
     // All Annotations
-    this._annotations = defaultAnnotations;
+    this._annotations = defaultAnnotations();
     this._customInstances = [];
 
     // Module context
@@ -99,14 +92,31 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.updateButtons();
 
     // CodeMirror
-    this.editorComp().addEventListener("editor-loaded", () => {
+
+    this.livelyEditor().postLoadFile = (text) => {
+      return this.loadFileBabylonian(text)
+    }
+    
+    this.livelyEditor().preSaveFile = (text) => {
+      return this.saveFileBabylonian(text)
+    }
+    
+    this.livelyEditor().addEventListener("url-changed", (evt) => {
+      this.setAttribute("url", this.livelyEditor().getURL())
+    })
+     
+     
+    
+    var editorComp = this.editorComp()
+      
+    console.log("Babylonian: load editor" + editorComp)
+    editorComp.addEventListener("editor-loaded", () => {
+      
+      console.log("Babylonian: editor loaded ", this.livelyEditor())
       // Patch editor to load/save comments
-      this.livelyEditor().loadFile = this.load.bind(this);
-      this.livelyEditor().saveFile = this.save.bind(this);
 
       // Test file
-      this.livelyEditor().setURL(DEFAULT_FILE_URL);
-      this.livelyEditor().loadFile();
+      // this.livelyEditor().setURL(DEFAULT_FILE_URL);
 
       // Event listeners
       this.editor().on("change", () => {
@@ -114,7 +124,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         this._changeTimer.start();
       });
       this.editor().on("beforeSelectionChange", this.onSelectionChanged.bind(this));
-      this.editor().setOption("extraKeys", {
+      this.livelyCodeMirror().registerExtraKeys({
         "Ctrl-1": () => this.addAnnotationAtSelection("probe"),
         "Ctrl-2": () => this.addAnnotationAtSelection("slider"),
         "Ctrl-3": () => this.addAnnotationAtSelection("example"),
@@ -128,13 +138,27 @@ export default class BabylonianProgrammingEditor extends Morph {
       const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
       this.livelyEditor().shadowRoot.appendChild(livelyEditorStyle);
       this.editorComp().shadowRoot.appendChild(codeMirrorStyle);
+      
+      var url = this.getAttribute("url")
+      if (url) {
+        this.setURL(url)
+        this.loadFile()
+      }
+      
     });
   }
+  
+  
+  detachedCallback() {
+     BabylonianWorker.unregisterEditor(this);
+  }
 
-  async load() {
+  async loadFileBabylonian(text) {
+    
+    console.log("Babylonian  loadFileBabylonian")
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
-
+    
     // Remove all existing annotations
     this.removeAnnotations();
     this._annotations = defaultAnnotations();
@@ -142,9 +166,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._context = defaultContext();
     this._customInstances.length = 0;
 
-    // Load file from network
-    let text = await loadFile(this.livelyEditor());
     let comments = [];
+    
+    console.log("AST for code ", text)
     try {
       comments = astForCode(text).comments;
     } catch(e) {
@@ -240,15 +264,15 @@ export default class BabylonianProgrammingEditor extends Morph {
           break;
         case "instance":
           obj = this.addInstanceAtPath(this.pathForKey(annotation.location));
-          obj.load(annotation);
+          obj && obj.load(annotation);
           break;
         case "example":
           obj = this.addExampleAtPath(this.pathForKey(annotation.location), false);
-          obj.load(annotation);
+          obj && obj.load(annotation);
           break;
         case "replacement":
           obj = this.addReplacementAtPath(this.pathForKey(annotation.location));
-          obj.load(annotation);
+          obj && obj.load(annotation);
       }
     }
 
@@ -257,9 +281,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     setTimeout(() => {
       this._evaluationLocked = false;
     }, 2000);
+    
+    return text
   }
 
-  async save() {
+  async saveFileBabylonian(textFromEditor) {
     // Serialize annotations
     const serializedAnnotations = [];
     for(let key in this._annotations) {
@@ -316,7 +342,9 @@ export default class BabylonianProgrammingEditor extends Morph {
       customInstances: this._customInstances.map(i => i.serializeForSave())
     });
     text = `${text}/* Context: ${appendString} */`;
-    saveFile(this.livelyEditor(), text);
+    // #BUG... Babylonian editor seems to violate the assumtion that the editor holds all the text...! #continue
+    this.value = text
+    return text
   }
 
 
@@ -506,13 +534,23 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   updateExamples() {
     for(let example of this._annotations.examples) {
-      const path = this.pathForAnnotation(example);
-      if(BabylonianWorker.tracker.errors.has(example.id)) {
-        example.error = BabylonianWorker.tracker.errors.get(example.id);
-      } else {
-        example.error = null;
+      try {
+        const path = this.pathForAnnotation(example);
+        if (!path) {
+          console.log("BabylonianProgrammingEditor could not updateExamples ", example)
+          return 
+        }
+        
+        if(BabylonianWorker.tracker.errors.has(example.id)) {
+          example.error = BabylonianWorker.tracker.errors.get(example.id);
+        } else {
+          example.error = null;
+        }
+        example.keys = parameterNamesForFunctionIdentifier(path);
+      } catch(e) {
+        debugger
+        console.error("updateExamples Error" + e, example, this)
       }
-      example.keys = parameterNamesForFunctionIdentifier(path);
     }
   }
 
@@ -625,6 +663,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
 
   onTrackerChanged() {
+    // console.log("BAB onTrackerChanged", this)
     if(this.hadParseError) {
       this.status("error", "Syntax Error");
     } else if(this.hadEvalError) {
@@ -824,7 +863,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
   pathForAnnotation(annotation) {
-    if(this.hasWorkingAst()) {
+    if(annotation.locationAsKey && this.hasWorkingAst()) {
       return this.pathForKey(annotation.locationAsKey);
     }
     return null;
@@ -838,9 +877,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this._ast._locationMap[key];
   }
 
-  livelyEditor() {
-    return this.get("#source");
-  }
+
 
   editorComp() {
     return this.livelyEditor().get("lively-code-mirror");
@@ -874,7 +911,102 @@ export default class BabylonianProgrammingEditor extends Morph {
   get context() { return this._context; }
   get customInstances() { return this._customInstances; }
   get url() { return this.livelyEditor().getURL().toString(); }
-  get value() { return this.editor().getValue(); }
+  
+  get value() { return this.editor().getValue() }
+  set value(value) { return this.editor().value =  value }
+  
 
+  
+  /* EDITOR Levels / FACADEs */
+  
+  babylonianProgrammingEditor() {
+    return this
+  }
+  
+  livelyEditor() {
+    return this.get("#source")
+  }
+
+  livelyCodeMirror() {
+    return this.editorComp()
+  }
+  
+  livelyCodeMirrorEditor() {
+    return this.editor() // the cm object
+  }
+  
+  
+  /*
+   * Editor API Facade
+   */
+  hideToolbar() {
+     return this.livelyEditor().hideToolbar()
+  }
+  
+  setScrollInfo(info) {
+    return this.livelyEditor().setScrollInfo(info)
+  }
+  
+  getScrollInfo() {
+    return this.livelyEditor().getScrollInfo()
+  }
+  
+  currentEditor() {
+    return this.editor()
+  }
+
+  getCursor() {
+    return this.livelyEditor().getCursor()
+  }
+  
+  setCursor(cur) {
+     return this.livelyEditor().setCursor(cur)
+  }
+
+  getURL(url) {
+    return this.livelyEditor().getURL()  // || this.getAttribute("url")
+  }
+  
+  setURL(url) {
+    this.setAttribute("url", url)
+    return this.livelyEditor().setURL(url)
+  }
+
+  async setText(text, preserveView) {
+    await this.loadFileBabylonian(text)
+  }
+
+  getText() {
+    return this.livelyEditor().getText()
+  }
+  
+  async saveFile() {
+    return this.livelyEditor().saveFile()
+    
+  }
+  
+  loadFile() {
+    return this.livelyEditor().loadFile()
+  }
+  
+  
+  async awaitEditor() {
+    while(!editor) {
+      var editor = this.currentEditor()
+      if (!editor) {
+        await lively.sleep(10) // busy wait
+      }
+    }
+    return editor
+  }
+  
+  livelyExample() {
+    this.setURL(DEFAULT_FILE_URL)
+    this.loadFile()
+  }
+  
+  
+  
+  
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

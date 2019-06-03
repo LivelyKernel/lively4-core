@@ -8,7 +8,7 @@ export function applyDragCSSClass() {
   this.addEventListener('drop', evt => this.classList.remove("drag"));
 }
 
-function appendToBodyAt(node, evt) {
+function appendToContainerAt(node, evt) {
   dropOnDocumentBehavior.openAt(node, evt)
   // document.body.appendChild(node);
   // lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
@@ -35,10 +35,10 @@ class DropOnBodyHandler {
     if(element) {
       if(element.then) {
         element.then( r => {
-          appendToBodyAt(r, evt);  
+          appendToContainerAt(r, evt);  
         })
       } else {
-        appendToBodyAt(element, evt);
+        appendToContainerAt(element, evt);
       }
       return true;
     } else {
@@ -46,6 +46,13 @@ class DropOnBodyHandler {
     }
   }
 }
+
+function findDropContext(element, path, container=document.body) {
+  return path.find(ea => {
+    return ea && (ea === container || (ea.classList && ea.classList.contains("lively-content")) || ea.localName == "lively-folder")
+  }) || container
+}
+
 
 // drop and a dragged html element into a container
 export class DropElementHandler {
@@ -57,7 +64,8 @@ export class DropElementHandler {
   }
   
   handleElement(element, evt) {
-    this.container.appendChild(element)
+    var container = findDropContext(element, evt.composedPath(), this.container)
+    container.appendChild(element)
     lively.setGlobalPosition(element, lively.getPosition(evt))
     if (element.lastDragOffset) {
       lively.moveBy(element, element.lastDragOffset)
@@ -240,7 +248,8 @@ const dropOnDocumentBehavior = {
   
   
   onDragOver(evt) {
-    this.lastDropTarget = Array.from(evt.path).filter(ea => ea && ea.classList && ea.classList.contains("lively-content"))[0]
+    this.lastDropTarget = Array.from(evt.composedPath())
+      .find(ea => ea && ((ea.classList && ea.classList.contains("lively-content")) || ea.localName == "lively-folder"))
     if (this.lastDropTargetHighlight) this.lastDropTargetHighlight.remove()
     this.lastDropTargetHighlight = lively.showElement(this.lastDropTarget)
     
@@ -263,7 +272,7 @@ const dropOnDocumentBehavior = {
             reader.onload = event => {
               const dataURL = event.target.result.replace(/^data\:image\/png;/, `data:image/png;name=${file.name};`);
               const img = <img class="lively-content" src={dataURL}></img>;
-              appendToBodyAt(img, evt);
+              appendToContainerAt(img, evt);
             };
             reader.readAsDataURL(file); 
         } 
@@ -284,7 +293,7 @@ const dropOnDocumentBehavior = {
   },
   
   async onDrop(evt) {
-    // var target = evt.path.find(ea => ea.classList.contains("lively-content") )
+    // var target = evt.composedPath().find(ea => ea.classList.contains("lively-content") )
     const dt = evt.dataTransfer;
     
     /*

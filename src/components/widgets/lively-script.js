@@ -98,5 +98,10 @@ export default class LivelyScript extends Morph {
     return "[LivelyScript]"
   }
   
+  livelyExample() {
+    this.textContent = "3 + 4"
+    this.initialize()
+  }
+  
   
 }

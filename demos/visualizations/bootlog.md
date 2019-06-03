@@ -5,12 +5,20 @@ import Bootlog from "src/client/bootlog.js"
 import d3 from "src/external/d3.v5.js"
 
 (async() => {
+
+
   var currentboot = []
+
+  var starttime = performance.now()
+
   await Bootlog.current().db.logs.each(ea => {
     if (ea.bootid == lively4currentbootid) {
       currentboot.push(ea)
     }
   })
+
+  // console.log("loaded Bootlog in " + (performance.now() - starttime))
+
 
   if (currentboot.length == 0) {
     return "no log for current boot, please enable <b>Preference > keep bootlog</b>"

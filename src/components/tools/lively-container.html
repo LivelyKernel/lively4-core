@@ -1,4 +1,4 @@
-<template id="lively-container" data-class="LivelyContainer">
+<template id="lively-container" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style data-src="/src/client/lively.css"></style>
@@ -24,9 +24,9 @@
         visibility: hidden;
         display: none;
       }
-
+    
       #container-rightpane {
-        flex: 0.8;
+        flex: 80;
         position: relative;
  	      border-top: 1px solid #d5d5d5;
  	      /*
@@ -40,7 +40,7 @@
       
       #layout-center {
         overflow: hidden;
-        flex: 1;
+        flex: 100;
         display: flex;
         flex-direction: row;
       }
@@ -50,7 +50,7 @@
         height: 100%;
         overflow: auto;
         overscroll-behavior: contain; 
-        flex: 1; 
+        flex: 100;
         margin: 0px;
         padding: 0px;
         z-index: 0;
@@ -68,11 +68,11 @@
       #container-editor {
         width: 100%;
         height: 100%;
-        flex: 1;
+        flex: 100;
     	}
     	
       #container-leftpane {
-        flex: 0.2;
+        flex: 20;
         margin: 0;
         overflow: auto;
         overflow-x: hidden;
@@ -100,7 +100,7 @@
       
       input {
         width: 40px;
-        flex: 1;
+        flex: 100;
         margin: 2px;
       }
       
@@ -160,7 +160,50 @@
         z-index: 10;
         background: rgb(220,30,30)
       }
-      
+
+    
+    #container-navigation .edit, #container-navigation .browse {
+      display: none;
+      visibility: hidden;
+    }
+
+    :host([mode="edit"]) #container-navigation .edit {
+      display: inline;
+      visibility: visible;
+    }
+
+    
+    :host([mode="show"]) #container-navigation .browse {
+      display: inline;
+      visibility: visible;
+    }
+
+    :host([mode="edit"]) #container-navigation .edit.optional {
+      display: none;
+      visibility: hidden;
+    }
+    :host([mode="edit"].show-options) #container-navigation .edit {
+      display: inline;
+      visibility: visible;
+    }
+    :host([mode="show"]) #container-navigation .browse.optional {
+      display: none;
+      visibility: hidden;
+    }
+    
+    :host([mode="show"].show-options) #container-navigation .browse {
+      display: inline;
+      visibility: visible;
+    }
+    
+    :host(.show-options) #toggleOptions i {
+    }
+    
+    button.optional {
+      color: steelblue;
+      border: steelblue 1px dashed;
+    }
+    
     </style>
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
@@ -170,37 +213,42 @@
       
       <input type="text" id="container-path" value="">
 
-      <div class="edit" id="eval">
+      <div class="optional edit" id="eval">
           <input type="checkbox" id="live" title="auto apply code or template one save" checked/>
       </div>
-      <button class="edit" id="beautify" title="beatify the code">
+      
+      <button class="optional edit browse" id="favorite" title="fav this file">
+        <i class="fa fa-star-o"></i></button>
+      <button class="optional edit" id="beautify" title="beatify the code">
         <i class="fa fa-paint-brush"></i></button>
       <button class="edit" id="apply" title="apply code or template">
         <i class="fa fa-gears" aria-hidden="true"></i></button>
       <button class="edit" id="browse" title="open new browser for url">
         <i class="fa fa-external-link" aria-hidden="true"></i></button>
-      <button class="edit" id="dependencies" title="browse dependencies">
+      <button class="optional edit" id="dependencies" title="browse dependencies">
         <i class="fa fa-sitemap" aria-hidden="true"></i></button>
-      <button class="edit" id="sync" title="sync changes">
+      <button class="optional edit" id="sync" title="sync changes">
         <i class="fa fa-refresh" aria-hidden="true"></i></button>
-      <button class="edit" id="delete" title="delete file">
+      <button class="optional edit" id="delete" title="delete file">
         <i class="fa fa-trash" aria-hidden="true"></i></button>
-      <button class="browse edit" id="newfile" title="create new file">
+      <button class="optional browse edit" id="newfile" title="create new file">
         <i class="fa fa-file-o" aria-hidden="true"></i></button>
-      <button class="browse edit" id="newdirectory" title="create new directory">
+      <button class="optional browse edit" id="newdirectory" title="create new directory">
         <i class="fa fa-folder-o" aria-hidden="true"></i></button>
-      <button class="edit" id="versions" title="versions">
+      <button class="optional edit" id="versions" title="versions">
         <i class="fa fa-code-fork" aria-hidden="true"></i></button>
-      <button class="browse edit" id="save" title="save file CTRL+S"> 
+      <button class="optional browse edit" id="save" title="save file CTRL+S"> 
         <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-      <button class="edit" id="accept" title="accept changes CTRL+SHIFT+S">
+      <button class="optional edit" id="accept" title="accept changes CTRL+SHIFT+S">
         <i class="fa fa-check-circle" aria-hidden="true"></i></button>
       <button class="edit" id="cancel" title="cancel and quit editor">
         <i class="fa fa-ban" aria-hidden="true"></i></button> 
       <button class="browse" id="edit" title="edit file">
         <i class="fa fa-pencil" aria-hidden="true"></i></button>
-      <button class="browse edit" id="fullscreen" title="fullscreen">
-        <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>   
+      <button class="optional browse edit" id="fullscreen" title="fullscreen">
+        <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>
+      <button class="browse edit" id="toggleOptions" title="more options">
+        <i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>
     </div>
 
     <div id="layout-center">
@@ -212,7 +260,7 @@
         <div id="container-content" class="lively-no-paste">
           <div id="container-root" class="lively-no-paste">
           <!-- by default the content is hidden-->
-          <content></content>
+          <slot></slot>
           </div>
         </div>
         <div id="container-editor"></div>
@@ -224,4 +272,4 @@
     </div>
 
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>
+

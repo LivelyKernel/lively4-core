@@ -1,5 +1,5 @@
 import boundEval from 'src/client/bound-eval.js';
-import { setCode } from 'src/client/workspaces.js';
+import  * as workspaces from 'src/client/workspaces.js';
 
 import ASTWorkerPromiseWrapper from "./ast-worker-promise-wrapper.js";
 import {
@@ -115,7 +115,7 @@ class BabylonianWorker {
         }
         someEditor.activeExamples.forEach(e => this.activeExamples.add(e));
 
-        console.log(`Executing ${someEditor.url}`);
+        console.log(`BAB execute module with example: ${someEditor.url}`);
         const evalResult = await boundEval(someEditor.executableCode, {
           tracker: this.tracker,
           connections: defaultConnections(),
@@ -138,7 +138,7 @@ class BabylonianWorker {
   }
   
   async _load(code, url, thisReference) {
-    // Based on boundEval()
+    // Based on boundEval() 
     const workspaceName = `${url}.babylonian`;
     const path = `workspacejs:${workspaceName}`;
     
@@ -149,14 +149,17 @@ class BabylonianWorker {
     if (!self.__pluginDoitThisRefs__) {
       self.__pluginDoitThisRefs__ = {};
     } 
+    
     self.__pluginDoitThisRefs__[workspaceName] = thisReference;
+    
     
     if (!self.__topLevelVarRecorder_ModuleNames__) {
       self.__topLevelVarRecorder_ModuleNames__ = {};
     } 
+    self.__topLevelVarRecorder_ModuleNames__[path] = workspaceName;
     
     try {
-      setCode(workspaceName, code);
+      workspaces.setCode(path, code);
 
       return await System.import(path)
         .then(m => {
@@ -165,6 +168,7 @@ class BabylonianWorker {
             path: path
           })});
     } catch(err) {
+      console.log("BAB _load error", err)
       return Promise.resolve({
         value: err,
         isError: true

@@ -1,4 +1,4 @@
-<template id="lively-continuous-editor" data-class="LivelyContinuousEditor">
+<template id="lively-continuous-editor">
   <style>
   :host {
     width: 50px;
@@ -54,7 +54,7 @@
     flex: 1;
   }
 
-  lively-code-editor {
+  lively-editor {
     flex: 1;
   }
 
@@ -145,7 +145,7 @@
   </style>
 <div id="firstRow">
   <div id="sourcePane">
-    <lively-code-editor  id="source" ></lively-code-editor>
+    <lively-editor  id="source" ></lively-editor>
   </div>
 </div>
 <lively-separator></lively-separator>
@@ -167,4 +167,3 @@
 </div>
 
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

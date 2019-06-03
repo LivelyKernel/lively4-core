@@ -418,7 +418,7 @@ export default class FileIndex {
       // console.log("FileIndex ignore  " + url)
       return
     }    
-    console.log("FileIndex Analysis update " + url)
+    console.log("FileIndexAnalysis addFile " + url)
 
     var file = {
       url: url,
@@ -457,7 +457,7 @@ export default class FileIndex {
   }
 
   async dropFile(url) {
-    console.log("FileIndex drop " + url + " from index")
+    console.log("FileIndexAnalysis drop " + url + " from index")
     this.db.transaction("rw", this.db.files, () => {
       this.db.files.delete(url)
     })

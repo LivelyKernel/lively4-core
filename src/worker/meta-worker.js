@@ -1,4 +1,11 @@
 
+var path = self.location.pathname.split("/")
+// any idea of how to get rid of the last three elements?
+path.pop() // livelyworker.js
+path.pop() // /worker/
+path.pop() //  src
+self.lively4url = self.location.origin + path.join("/");
+
 importScripts("./livelyworker.js")
 
 onmessage = function(evt) {

@@ -163,6 +163,8 @@ export default class Clipboard {
     if (flat) {
       return topLevel
     }
+    lively.components.loadUnresolved(result, true, "pasteHTMLDataInto", true)
+    
     return result
   }
   
@@ -230,14 +232,14 @@ export default class Clipboard {
   }
 
   static onBodyMouseDown(evt) {
-    var target = evt.path[0]
+    var target = evt.composedPath()[0]
     if (target == document.body.parentElement) target = document.body
     
     if(target && target.classList) {
       if (target.classList.contains("lively-no-paste")) {
-        target = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+        target = evt.composedPath().find(ea => ea.tagName == "LIVELY-CONTAINER")
       } else {
-        var container = evt.path.find(ea => ea.tagName == "LIVELY-CONTAINER")
+        var container = evt.composedPath().find(ea => ea.tagName == "LIVELY-CONTAINER")
         if (container && !container.isEditing()) {
           target = container
           var activeElement = container.shadowRoot.activeElement
@@ -251,7 +253,7 @@ export default class Clipboard {
         } else {
             // this.lastTarget = container
           // } else {
-          if (evt.path.find(ea => ea.constructor.name == "ShadowRoot")) { // #TODO is there a better test for the shadow root?
+          if (evt.composedPath().find(ea => ea.constructor.name == "ShadowRoot")) { // #TODO is there a better test for the shadow root?
             // lively.notify("shadow")
             this.lastTarget = null
             this.lastClickPos = null

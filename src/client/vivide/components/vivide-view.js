@@ -21,10 +21,11 @@ class WidgetChooser {
     if (forest && forest.length > 0) {
       // #Question: this model has an objects array, what is the data structure of this model?
       const model = forest[0];
-      if(model.properties.has('dataPoints') &&
-         typeof model.properties.get('dataPoints')[0] === 'number'
-      ) {
+      
+      if(model.properties.has('dataPoints') && typeof model.properties.get('dataPoints')[0] === 'number') {
         return 'boxplot';
+      } else if (model.properties.has('text')) {
+        return 'text';
       }
     }
     return 'tree';
@@ -43,8 +44,8 @@ class WidgetChooser {
 }
 
 export default class VivideView extends Morph {
-  static findViewWithId(id) {
-    return document.body.querySelector(`vivide-view[vivide-view-id=${id}]`);
+  static findViewWithId(id, context=document.body) {
+    return lively.query(context, `vivide-view[vivide-view-id=${id}]`);
   }
   
   static getIdForView(view) {
@@ -89,7 +90,7 @@ export default class VivideView extends Morph {
     let ids = this.getJSONAttribute(VivideView.outportAttribute);
     if(ids) {
       return flatMap.call(ids, id => {
-        let view = VivideView.findViewWithId(id);
+        let view = VivideView.findViewWithId(id, lively.findWorldContext(this)) ;
         if(view === null) {
           lively.error('could not find view: ' + id);
           return [];
@@ -162,7 +163,10 @@ export default class VivideView extends Morph {
   }
   
   getDataToTransmit() {
+      lively.warn('display all data')
     if(this.widget && this.widget.multiSelectionEnabled) {
+      return this.getSelectedData();
+    } else if (this.widget && this.widget.localName === 'vivide-text-widget') {
       return this.getSelectedData();
     } else {
       // use all data
@@ -205,6 +209,25 @@ export default class VivideView extends Morph {
     this.addEventListener('dragover', evt => this.dragover(evt), false);
     this.addEventListener('dragleave', evt => this.dragleave(evt), false);
     this.addEventListener('drop', evt => this.drop(evt), false);
+
+    // restore data... 
+    
+    // not migrating, but initializing from source
+    if (!this.myCurrentScript) {
+      var scriptJSON = this.getAttribute("vivide-script")
+      if (scriptJSON) {
+        this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
+      } else {
+        await this.initDefaultScript();
+      }
+
+      var dataJSON = this.getAttribute("vivide-data")
+      if (dataJSON) {
+        // await this.createScriptEditor();
+        var data = JSON.parse(dataJSON)
+        this.newDataFromUpstream(data)
+      }      
+    }
   }
   
   onExtentChanged() {
@@ -354,6 +377,17 @@ export default class VivideView extends Morph {
     return scriptEditor;
   }
   
+  livelyPrepareSave() {
+    this.setAttribute("vivide-script", this.myCurrentScript.toJSON())
+    
+    try {
+      var json = JSON.stringify(this.getInputData())
+      this.setAttribute("vivide-data", json)
+    } catch(e) {
+      console.warn("could not persist vivide data", this.getInputData() )
+    }
+  }
+  
   async livelyExample() {
     const exampleData = [
       {
@@ -394,6 +428,23 @@ export default class VivideView extends Morph {
 
     this.newDataFromUpstream(other.input);
   }
+  
+  livelyInspect(contentNode, inspector) {
+    if (this.myCurrentScript) {
+      contentNode.appendChild(inspector.display(this.myCurrentScript, false, "#script", this));
+    }
+    if (this.input) {
+      contentNode.appendChild(inspector.display(this.input, false, "#input", this));
+    }
+    
+    var outportTargets = this.outportTargets
+    if (outportTargets) {
+      contentNode.appendChild(inspector.display(outportTargets, false, "#outportTargets", this));
+    }
+    
+    
+  }
+  
   
   livelyHalo() {
     return {

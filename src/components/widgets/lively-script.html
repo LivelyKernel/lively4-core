@@ -1,11 +1,7 @@
-<template id="lively-script" data-class="LivelyScript">
+<template id="lively-script">
   <style data-src="/templates/livelystyle.css"></style>
   <style data-src="/src/client/lively.css"></style>
   <style>
-  :host {
-    
-  }
-  
   #content {
     display: none; 
   }
@@ -13,7 +9,6 @@
   <div id="result">
   </div>
   <div id="content">
-    <content></content>
+    <slot></slot>
   </div>  
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

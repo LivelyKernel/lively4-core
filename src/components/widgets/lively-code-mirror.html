@@ -1,4 +1,4 @@
-<template id="lively-code-mirror" data-class="LivelyCodeMirror">
+<template id="lively-code-mirror">
   <!--
     CodeMirror is a richt editor component that allows for better embedded content that the Ace editor. 
     #CodeMirror #Editor #Tool #Component 
@@ -18,6 +18,8 @@
     position: relative;
     font-size: 0; /* hide text content perstists data #FontSizeHost */
     /* min-height: 100px; this would disallow auto-resize*/ 
+    
+    
   }
     .CodeMirror-lint-tooltip {
       z-index: 1000;
@@ -144,6 +146,5 @@
   <style id="customStyle"></style>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>
-  <content></content>
+  <slot></slot>
 </template>
-<script class="registrationScript">lively.registerTemplate()</script>

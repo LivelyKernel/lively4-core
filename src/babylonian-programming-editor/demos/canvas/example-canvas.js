@@ -21,6 +21,8 @@ export default class ExampleCanvas extends Morph {
       return;
     }
 
+    if (this.canvas.width == 0 || this.canvas.height == 0) return;
+    
     const imageData = this.canvas.getContext("2d").getImageData(0, 0, this.canvas.width, this.canvas.height);
     
     this.canvas.style.width = bounds.width + "px";
@@ -33,4 +35,4 @@ export default class ExampleCanvas extends Morph {
     this._oldWidth = bounds.width;
     this._oldHeight = bounds.height;
   }
-}
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

@@ -206,13 +206,13 @@ export default class upndown {
           if (attribs[ea].length == 0) return ""
           return attribs[ea].split(" ").map(eaClass => "."+eaClass).join(" ")
         } else {
-          return ea + '="' +attribs[ea] +'"'
+          if (attribs[ea] && attribs[ea] !== null && attribs[ea] !== "null") {
+            return ea + '="' +attribs[ea] +'"'
+          }
         }
       }).filter(ea => ea).join(" ")
       if (result == "") return ""
-      return "{" + result + "}"
-      
-      
+      return "{" + result + "}" 
     }
   
     wrap_h1(node, markdown) {

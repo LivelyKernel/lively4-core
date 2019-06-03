@@ -403,5 +403,20 @@ export function shake(target) {
 }
 
 
+export function updateEditors(url, excludedEditors = []) {
+  
+  
+  
+  const editors = lively.findAllElements(ea => ea.localName == "lively-editor", true)
+     
+  // DEPRECATED
+  // Array.from(document.querySelectorAll("lively-index-search::shadow lively-editor, lively-container::shadow lively-editor, lively-editor"));
 
+  const editorsToUpdate = editors.filter( ea => ea.getURLString() === url && !ea.textChanged && !excludedEditors.includes(ea));
+
+  editorsToUpdate.forEach( ea => {
+    // lively.showElement(ea);
+    ea.loadFile()
+  });
+}
 

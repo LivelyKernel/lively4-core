@@ -3,291 +3,417 @@
  *
  **/
 
-/* global lively4performance */
 /* eslint no-console: off */
 
+
 /*
- #TODO refactor booting/loading/init of lively4
-  - currently we have different entry points we should unify
+ * HELPER
  */
 
-
-// #BUG the browser cache API blocks (promises does not resolve) sometimes?
-// #BUG the performance, in our alternative to use IndexedDB can quickly degrate when DB gets to big...
-// window.localStorage["livel4systemjscache"] = false
-window.lively4plugincache = window.localStorage["livel4systemjscache"] == "true";
-if (lively4plugincache) {
-  console.log("ENABLE " + lively4plugincache)
+async function loadJavaScript(name, src, force) {
+  var code = await fetch(src).then(r => r.text())
+  eval(code)
 }
 
-window.lively4currentbootid = "" + new Date()
-window.lively4bootlogData = []
-window.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, parentURL) {
-  lively4bootlogData.push({
-    url, date, mode, time, parentURL, bootid: lively4currentbootid
+self.lively4currentbootid = "" + new Date()
+self.lively4bootlogData = []
+self.lively4bootlog = function add(url, date=Date.now(), mode="load", time=0, parentURL) {
+  self.lively4bootlogData.push({
+    url, date, mode, time, parentURL, bootid: self.lively4currentbootid
   })
 }
-// localStorage["logLivelyBoot"] = true
+
 if (!(localStorage["logLivelyBoot"] == "true")) {
-  window.lively4bootlog = function() {
+  self.lively4bootlog = function() {
     // do nothing
   }
 }
 
-// localStorage["useTranspilationCache"]  = true
-self.lively4useTranspilationCache = localStorage["useTranspilationCache"]
+/*
+ * CACHES
+ */
 self.lively4transpilationCache = {
-  cache: new Map(),
-  update: new Set()} 
+  update(cacheKey, cache) {
+    this.cache.set(cacheKey, cache)
+    var cacheJSO = {
+      url: cacheKey,
+      input: cache.input,
+      output: cache.output,
+      map: JSON.stringify(cache.map),
+    }
 
-var Dexie;
-var transpilationCacheDB
+    if (!cacheKey.match(/^workspace/) && !self.__karma__) {
+      console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
+      var transpileCacheURL = lively4url + "/.transpiled/" + cacheKey.replace(lively4url + "/","").replace(/\//g,"_") // flatten path
+      fetch(transpileCacheURL, {
+        method: "PUT",
+        headers: {
+          nocommit: true, // .transpiled is in gitignore... and the server cannot handle it automaitcally
+        },
+        body: cacheJSO.output
+      })
+
+      fetch(transpileCacheURL + ".map.json", {
+        method: "PUT",
+        headers: {
+          nocommit: true
+        },
+        body: cacheJSO.map
+      })        
+    }
+  },
+  cache: new Map()
+} 
+ 
+self.lively4syncCache = new Map()
+self.lively4optionsCache = new Map()
+self.lively4fetchLog = []
 
 async function invalidateFileCaches()  {
-  if (self.lively4useTranspilationCache) {
-    Dexie = (await System.import(lively4url + "/src/external/dexie.js")).default
-    console.log("I got Dexie!", Dexie)
-    transpilationCacheDB = new Dexie("transpilationCache");
-    transpilationCacheDB.version("1").stores({
-      transpilations: 'url, modified, version',
-    }).upgrade(function () {
-    })
+  var url = lively4url + "/"
+  
+  if (self.lively && lively.fileIndexWorker) {
+    lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
   }
   
-  try {
-    if (!window.caches) {
-      console.warn("window.caches not defined")
-      return
-    }
-    var url = lively4url + "/"
-    if (self.lively && lively.fileIndexWorker) {
-      lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
-    }
-    var offlineFirstCache = await caches.open("offlineFirstCache")
-    var json = await Promise.race([
-      new Promise(r => {
-        setTimeout(() => r(false), 5000) // give the server 5secs ... might be an old one or somthing, anyway keep going!
-      })
-      ,fetch(url, {
-        method: "OPTIONS",
+  const FilesCaches = await System.import("src/client/files-caches.js")
+  console.log("[boot] invalidateFileCaches:\n" + FilesCaches.invalidateTranspiledFiles())
+  
+}
+self.lively4invalidateFileCaches = invalidateFileCaches
+
+async function preloadFileCaches() {
+  await loadJavaScript("JSZip", lively4url + "/src/external/jszip.js" )
+  
+  var start = performance.now()
+  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now()
+  var resp = await fetch(preloadurl)
+  if (resp.status != "200") {
+    console.warn("NO preload cache found in", preloadurl)
+    return 
+  }
+  var contents = await resp.blob()
+
+  var archive = await self.JSZip.loadAsync(contents)
+  console.log("[boot] preloadFileCache fetched contents in  " + Math.round(performance.now() - start) + "ms")
+
+  start = performance.now()
+  for(let ea of Object.keys(archive.files)) {
+    if (ea.match(/\.transpiled\//) || ea.match(/\.options\//)) continue;
+    
+    let file = archive.file(ea);
+    if (file) {
+      let modified = file.date.toISOString().replace(/T/, " ").replace(/\..*/, ""),
+        url = lively4url + "/" + ea,
+        content = await file.async("string"),
+        mimeType = " text/plain"
+      if (url.match(/\.js$/)) mimeType = "application/javascript"
+      if (url.match(/\.css$/)) mimeType = "text/css"
+      var response = new Response(content, {
         headers: {
-          filelist  : true
+          "content-type": mimeType,
+          modified: modified
         }
-      }).then(async resp => {
-        if (resp.status != 200) {
-          console.log("PROBLEM invalidateFileCaches SERVER RESP " + resp.status)
-          return false
-        } else {
+      })
+      self.lively4syncCache.set(url, response)
+      
+      let optionsPath = ".options/" + ea.replace(/\//g,"_"), 
+        optionsFile = archive.file(optionsPath)
+      if (optionsFile) {
+        let optionsContent = await optionsFile.async("string")
+        self.lively4optionsCache.set(url, new Response(optionsContent, {
+          headers: {
+            "content-type": "application/json"
+          }
+        }))
+      }
+      
+      if (ea.match(/.js$/)) {
+        let transpiledPath = ".transpiled/" + ea.replace(/\//g,"_"),
+            transpiledFile = archive.file(transpiledPath),
+            mapFile = archive.file(transpiledPath + ".map.json");
+
+        if (transpiledFile) { 
+          // console.log("[boot] preloadFileCache initialize transpiled javascript: " + ea)
           try {
-            var text = await resp.text()
-            return JSON.parse(text)
+            var transpiledCode = await transpiledFile.async("string")
+            if (mapFile) {
+              var map = JSON.parse(await mapFile.async("string"))
+            }
+            self.lively4transpilationCache.cache.set(url, {
+              input: content, 
+              output: transpiledCode,
+              map: map,
+              modified: modified
+            })
           } catch(e) {
-            console.log("could not parse: " + text)
-            return undefined
+            console.error("[boot] error in loading transpiled code: " + ea, e)
           }
         }
-      })
-    ])
-  } catch(e) {
-    console.log("PROBLEM invalidateFileCaches " + e)
-    return
-  }
-
-  if (!json) {
-    console.log('[boot] invalidateFileCaches: could not invalidate flash... should we clean it all?')
-    return
-  }
-  var list = json.contents
-
-  for(let ea of list) {
-    if (!ea.name) continue;
-    var fileURL = url + ea.name.replace(/^.\//,"")
-    var cached  = await offlineFirstCache.match(fileURL)
-
-    if (cached) {
-      var cachedModified = cached.headers.get("modified")
-      if (ea.modified > cachedModified) {
-        console.log("invalidate cache " + fileURL + `${ea.modified} > ${cachedModified}`)
-        offlineFirstCache.delete(fileURL) // we could start loading it again?
-      } else {
-        // console.log("keep " + ea.modified)
       }
     }
-  }
+  } 
+  console.log("[boot] preloadFileCache updated caches in  " + Math.round(performance.now() - start) + "ms")
 }
 
-window.lively4invalidateFileCaches = invalidateFileCaches
+self.lively4fetchHandlers = []
+function instrumentFetch() {
+  if (!self.originalFetch) self.originalFetch = self.fetch
+  self.fetch = async function(request, options, ...rest) {
+    var result = await new Promise(resolve => {
+      try {
 
+        if (self.lively4fetchHandlers) {
+          // go through our list of handlers... the first one who handles it wins
+          for(var handler of self.lively4fetchHandlers) {
+            var handled = handler.handle && handler.handle(request, options)
+            if (handled) return resolve(handled.result);        
+          }
+        }
+      } catch(e) {
+        console.error(`FETCH ERROR during rques: ${request} falling back because of`, e)
+      }
+      return resolve(self.originalFetch.apply(self, [request, options, ...rest]))
+    })
+    if (self.lively4fetchHandlers) {
+      // anybody insterested when it finished
+      for(var handler of self.lively4fetchHandlers) {
+        handler.finsihed && handler.finsihed(request, options)
+      }
+    }
+    return result
+  }  
+}
 
-if (window.lively && window.lively4url) {
-  console.log("CANCEL BOOT Lively4, because it is already loaded")
-} else {
-  (function() {
-    
-    // for finding the baseURL...
-    var script = document.currentScript;
-    var scriptURL = script.src;
-    window.lively4url = scriptURL.replace("/src/client/boot.js","");
-    
-    // early feedback due to long loading time
-    let livelyBooting = document.createElement('div');
-    Object.assign(livelyBooting.style, {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
+function installCachingFetch() {
+  self.lively4fetchHandlers.push({    
+    handle(request, options) {
+      var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      
+      if (url.match(lively4url)) {
+        self.lively4fetchLog.push({
+          time: performance.now(),
+          method: method,
+          url: url
+        }) 
+        if (!self.lively4syncCache) return
+        if (method == "GET") {
+          if (options && options.headers && (options.headers["fileversion"] || options.headers["forediting"])) {
+            return // don't cache versions request...
+          }
+          
+          let match = self.lively4syncCache.get(url)
+          if (match) {
+            // console.log("[boot] SYNC CACHED " + url)
+            return {
+              result: Promise.resolve(match.clone())
+            }          
+          } else {
+            // console.log("[boot] SYNC MISSED " + url)
+          }          
+        } else if (method == "PUT") {
+          // clear cache for PUT
+          // so next GET will get the new content
+          self.lively4syncCache.set(url, null) 
+          
+          // #TODO we could further store the PUT already locally? 
+          // PRO: offline support
+          // CONTRA: not sure if the file reached the server....
+          
+          // and don't further handle it... so that it will be saved on the server
+        } else if (method == "OPTIONS") {
+           if (options && options.headers && options.headers["showversions"]) {
+            return // don't cache versions request...
+          }
 
-      zIndex: '10000',
+          let match = self.lively4optionsCache.get(url)
+          if (match) {
+            // console.log("[boot] SYNC OPTIONS CACHED " + url)
+            return {
+              result: Promise.resolve(match.clone())
+            }          
+          } else {
+            // console.log("[boot] SYNC OPTIONS MISSED " + url)
+          }      
+        } else {
+          // do nothing
+        }
+      }
+    },
+    finished(request, options) {
+      console.log("[boot] FINISHED fetch " + request.toString()) 
+    }
+  })
+}
 
-      backgroundColor: 'white',
-      border: 'black 1px solid',
-      padding: '5px',
-      boxShadow: '0px 0px 3px 0px rgba(40, 40, 40,0.66)'
-    });
-    livelyBooting.innerHTML = `<img alt="Lively 4" style="display:block; margin:auto;" src="${lively4url}/media/lively4_logo_smooth_100.png" />
+/*
+ * MAIN BOOT FUNCTION: load Lively4 and get it going....
+ */
+async function intializeLively() {
+  if(self.lively && self.lively4url) {
+    return console.log("CANCEL BOOT Lively4, because it is already loaded")
+  }
+  // for finding the baseURL...
+  var script = document.currentScript;
+  var scriptURL = script.src;
+  self.lively4url = scriptURL.replace("/src/client/boot.js","");
+
+  // early feedback due to long loading time
+  let livelyBooting = document.createElement('div');
+  Object.assign(livelyBooting.style, {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+
+    zIndex: '10000',
+
+    backgroundColor: 'white',
+    border: 'black 1px solid',
+    padding: '5px',
+    boxShadow: '0px 0px 3px 0px rgba(40, 40, 40,0.66)'
+  });
+  livelyBooting.innerHTML = `<img alt="Lively 4" style="display:block; margin:auto;" src="${lively4url}/media/lively4_logo_smooth_100.png" />
 <span style="font-size: large;font-family:arial">Booting:</span>
 <div style="font-family:arial" id="lively-booting-message"></div>`;
-    document.body.appendChild(livelyBooting);
+  document.body.appendChild(livelyBooting);
 
-    function groupedMessage(part, numberOfSteps, message) {
-      console.group(`${part}/${numberOfSteps}: ${message}.`);
 
-      let messageDiv = document.body.querySelector('#lively-booting-message');
-      if(messageDiv) {
-        messageDiv.innerHTML = `<span>${part}</span>/<span>${numberOfSteps}</span>: <span>${message}.</span>`;
+  self.lively4bootGroupedMessages = []
+  var lastMessage
+
+  var estimatedSteps = 10;
+  var stepCounter = 1;
+
+  function groupedMessage( message) {
+    var part = stepCounter++
+    var numberOfSteps = estimatedSteps
+    lastMessage =  {part, message, begin: performance.now()}
+
+    console.group(`${part}/${numberOfSteps}: ${message}.`);
+
+    let messageDiv = document.body.querySelector('#lively-booting-message');
+    if(messageDiv) {
+      messageDiv.innerHTML = `<span>${part}</span>/<span>${numberOfSteps}</span>: <span>${message}.</span>`;
+    }
+  }
+
+  function groupedMessageEnd() {
+    console.groupEnd();
+    if (lastMessage) {
+      lastMessage.end = performance.now()
+      self.lively4bootGroupedMessages.push(lastMessage)
+    }
+  }
+
+  console.group("BOOT");
+
+  // some performance logging
+  self.lively4performance = {start: performance.now()}
+  try {
+    Object.defineProperty(window, 'lively4stamp', {
+      get: function() {
+        if (!self.lively4performance) return;
+        var newLast = performance.now()
+        var t = (newLast - (self.lively4performance.last || self.lively4performance.start)) / 1000
+        self.lively4performance.last = newLast
+        return (t.toFixed(3) + "s ")
       }
-    }
+    })
+  } catch(e) {
+    console.error(e)
+  }
 
-    function groupedMessageEnd() {
-      console.groupEnd();
-    }
+  var loadContainer = script.getAttribute("data-container"); // some simple configuration
 
-    console.group("BOOT");
+  console.log("lively4url: " + lively4url);
 
+  // first things first
+  instrumentFetch()
+  installCachingFetch()
 
+  groupedMessage('Preload Files');
+    await preloadFileCaches()
+    // we could wait, or not... if we load transpiled things... waiting is better
+  groupedMessageEnd();
 
-    // some performance logging
-    window.lively4performance = {start: performance.now()}
-    try {
-      Object.defineProperty(window, 'lively4stamp', {
-        get: function() {
-          if (!window.lively4performance) return;
-          var newLast = performance.now()
-          var t = (newLast - (lively4performance.last || lively4performance.start)) / 1000
-          lively4performance.last = newLast
-          return (t.toFixed(3) + "s ")
-        }
+  groupedMessage('Setup SystemJS');
+    await loadJavaScript("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+    await loadJavaScript("systemjs-config", lively4url + "/src/systemjs-config.js");
+  groupedMessageEnd();
+
+  try {  
+    groupedMessage('Initialize SystemJS');
+      await System.import(lively4url + "/src/client/preload.js");
+    groupedMessageEnd();
+
+    groupedMessage('Setup fetch proxy');
+      await System.import(lively4url + "/src/client/fetch.js").then(mod => {
+        return mod.installProxyFetch()                                                   
       })
-    } catch(e) {
-      console.error(e)
-    }
+    groupedMessageEnd();
 
-    var loadContainer = script.getAttribute("data-container"); // some simple configuration
+    groupedMessage('Wait on service worker (in load.js)');
+      await (await System.import(lively4url + "/src/client/load-swx.js")).whenLoaded; // wait on service worker
+    groupedMessageEnd();
 
-    console.log("lively4url: " + lively4url);
+    groupedMessage('Load Base System (lively.js)');
+      await System.import("src/client/lively.js")
 
-    // BEGIN COPIED HERE BECAUSE resuse through libs does not work yet
-    var loadJavaScriptThroughDOM = function(name, src, force) {
-      return new Promise(function (resolve) {
-        var scriptNode = document.querySelector(name);
-        if (scriptNode) {
-          scriptNode.remove();
-        }
-        var script = document.createElement("script");
-        script.id = name;
-        script.charset = "utf-8";
-        script.type = "text/javascript";
-        script.setAttribute("data-lively4-donotpersist","all");
-        if (force) {
-          src += +"?" + Date.now();
-        }
-        script.src = src;
-        script.onload = function () {
-          resolve();
+      // from load.js
+      // lively.components.loadUnresolved(document.body, true, "load.js", true)
+
+      // Customize.... #TODO where should it go?
+      if (!self.__karma__ && navigator.userAgent.toLowerCase().indexOf('electron/') == -1) {
+        self.onbeforeunload = function() {
+          return 'Do you really want to leave this page?'; // gets overriden by Chrome native
         };
-        document.head.appendChild(script);
-      });
+        self.onunload = function() {
+          lively.onUnload && lively.onUnload()
+        };
+      }          
+    groupedMessageEnd();
+
+    groupedMessage('Load Standard Library');
+      await System.import("lang");
+      await System.import("lang-ext");
+    groupedMessageEnd();
+
+    groupedMessage('Initialize Document (in lively.js)' );
+      await lively.initializeDocument(document, self.lively4chrome, loadContainer);
+    groupedMessageEnd();
+
+    groupedMessage('Look for uninitialized instances of Web Compoments');
+      await lively.components.loadUnresolved(document.body, true, "boot.js", true)
+    groupedMessageEnd();
+
+    // wait on all components to intialize their content.... e.g. the container loading a file
+    var componentWithContent = Array.from(lively.allElements(document.body))
+        .filter(ea => ea.livelyContentLoaded && ea.livelyContentLoaded.then)  
+    groupedMessage(`Wait on ${componentWithContent.length} components with content`);          
+      await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    groupedMessageEnd();
+
+    console.log("Finally loaded!");
+    if (self.lively4bootGroupedMessages) {
+      var str =  self.lively4bootGroupedMessages.map(ea => {
+        return ea.part + " "  + Math.round(ea.end - ea.begin) + "ms "+ ea.message
+      }).join("\n")
+      console.log("BOOT", str)
     }
-    // END COPIED
 
-    Promise.resolve().then(async () => {
-
-      groupedMessage(1, 6, 'Setup SystemJS');
-      await loadJavaScriptThroughDOM("systemjs", lively4url + "/src/external/systemjs/system.src.js");
-      await loadJavaScriptThroughDOM("systemjs-config", lively4url + "/src/systemjs-config.js");
-      groupedMessageEnd();
-
-      try {
-        var livelyloaded = new Promise(async livelyloadedResolve => {
-          groupedMessage(2, 6, 'Invalidate Caches')
-          await invalidateFileCaches()
-          groupedMessageEnd();
-
-          groupedMessage(3, 6, 'Wait for Service Worker');
-          const { whenLoaded } = await System.import(lively4url + "/src/client/load.js");
-          await new Promise(whenLoaded);
-          groupedMessageEnd();
-
-          groupedMessage(4, 6, 'Load Standard Library');
-          await System.import("lang");
-          await System.import("lang-ext");
-          groupedMessageEnd();
-
-          groupedMessage(5, 6, 'Look for uninitialized instances of Web Compoments');
-          await lively.components.loadUnresolved();
-          groupedMessageEnd();
-
-          groupedMessage(6, 6, 'Initialize Document');
-          await lively.initializeDocument(document, window.lively4chrome, loadContainer);
-          groupedMessageEnd();
-
-          console.log("Finally loaded!");
-
-          
-          if (self.lively4useTranspilationCache) {
-            console.log("UPDATE Transpilateion Cache")
-            transpilationCacheDB.transaction("rw", transpilationCacheDB.cache, () => {
-              debugger
-              console.log("UPDATE WRITE Transpilateion Cache ")
-              for(var ea of lively4transpilationCache.update) {
-                console.log("update transpilation cache " + ea)
-                var cache = lively4transpilationCache.cache.get(ea)
-                if (cache) {
-                  transpilationCacheDB.transpilations.put({
-                    url: ea,
-                    input: cache.input,
-                    output: cache.output,
-                    map: JSON.stringify(cache.map),
-                    modified: null,
-                    version: null,
-                  })                 
-                } else {
-                  console.warn("TRANSPILATION cache not found even though it was in the update list... ", ea)
-                }
-              }
-            })
-          }
-          
-          if (window.lively4bootlogData) {
-            System.import("src/client/bootlog.js").then(m => {
-              m.default.current().addLogs(lively4bootlogData)
-            }).then(() => console.log("saved bootlog"))            
-          }
-
-          document.dispatchEvent(new Event("livelyloaded"));
-
-          livelyloadedResolve(true);
-        })
-
-        await livelyloaded
-      } catch(err) {
-        console.error("Lively Loading failed");
-        console.error(err);
-        alert("load Lively4 failed:" + err);
-      } finally {
-        console.groupEnd(); // BOOT
-        livelyBooting.remove();
-      }
-    });
-  })();
+    if (self.lively4bootlogData) {
+      System.import("src/client/bootlog.js").then(m => {
+        m.default.current().addLogs(self.lively4bootlogData)
+      }).then(() => console.log("saved bootlog"))            
+    }
+    document.dispatchEvent(new Event("livelyloaded"));
+  } finally {
+    console.groupEnd(); // BOOT
+    livelyBooting.remove();
+  }
 }
+
+intializeLively()

@@ -1,25 +1,31 @@
 /* Polymorphic Identifier */
 
 import FileIndex from 'src/client/fileindex.js'
-var FileCache = FileIndex 
+var FileCache = FileIndex;
 
-export class ObjectResponse {
+
+export class ValueResponse {
  
-  constructor(result, options) {
-    this.status = (options && options.status) ? options.status : 200;
-    this.result = result
+  constructor(value, { status = 200 } = {}) {
+    this._value = value;
+    this.status = status;
   }
   
   async object() {
-    return this.result
+    return this._value;
+  }
+  
+  async value() {
+    return this._value;
   }
   
   async text() {
-    return ""
+    return '' + this._value;
   }
 
   async json() {
-    return this.text().then(t => JSON.parse(t))  
+    const jsonString = JSON.stringify(await this.value());
+    return JSON.parse(jsonString);
   }
 
   async blob() {
@@ -54,8 +60,12 @@ export class Scheme {
 
   async handle(options) {
     if (!this.resolve()) {
-      if (options.method == "OPTIONS") {
-      return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
+      if (this.PUT && options && options.method == "PUT") {
+        return this.PUT(options, true)  
+      }
+      
+      if (options && options.method == "OPTIONS") {
+        return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
       }
       return new Response("Could not resolve " + this.url, {status: 404})
     }  
@@ -109,22 +119,62 @@ export class LivelyFile extends Scheme {
   resolve() {
     this.element = LivelyFile.pathToFile(this.url)
     console.log("found " + this.element, this.url)
+    // lively.showElement(this.element) // very funny to see which file is asked...
     return this.element 
   }  
 
   GET(options) {
+    console.log("LivelyFile GET " + this.url)
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
+      if (!element.url) {
+         return new Response(`lively-file found, but url attribute is missing...`, {status: 500})
+      }
       return fetch(element.url)
     }
     return super.GET(options)
   }
 
-  PUT(options) {
+  async PUT(options, newfile) {
+    if (newfile) {
+      
+      var filename = this.url.replace(/.*\//,"")
+      var parentURL = this.url.replace(/\/[^/]*$/,"")
+      var parent = LivelyFile.pathToFile(parentURL) 
+      if (!parent) {
+        return new Response(`Could not create ${filename}, because parent element not found: ${parentURL}`, {status: 404})
+      } 
+      var siblings = Array.from(parent.querySelectorAll(":scope > lively-file")).sort((a,b) => {
+        var aPos = lively.getPosition(a),
+          bPos =  lively.getPosition(b)
+        if (aPos.y == bPos.y ) {
+          return aPos.x - bPos.x
+        }
+        return aPos.y - bPos.y
+      })
+      this.element = await lively.create("lively-file", parent)
+      this.element.name = filename
+      lively.setPosition(this.element, lively.pt(0,0))
+      if (siblings.length > 0 ) {
+        var lastSibling = siblings.last
+        var pos = lively.getPosition(lastSibling)
+        pos = pos.addPt(lively.pt(80,0))
+        if (pos.x + 50 > lively.getExtent(parent).x) {
+          pos = lively.pt(0, pos.y + 80)
+        } 
+        
+        lively.setPosition(this.element, pos)
+        
+      }
+      
+      lively.showElement(this.element)
+      
+    }
+    
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
         if (element.setContent && options) {
-          element.setContent(options.body)
+          element.setContent(options.body, options.headers && options.headers['Content-Type'])
           return new Response("")
         } else {
           return new Response("Hmm... I don't know.", {status: 500})      
@@ -280,7 +330,7 @@ export class LivelyOpen extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -320,7 +370,7 @@ export class LivelyBrowse extends Scheme {
       return new Response("failed to open " + openString, {status: 400})
     }
     
-    return new ObjectResponse(result, {status: 200});
+    return new ValueResponse(result, {status: 200});
     
   }
 
@@ -336,6 +386,70 @@ export class LivelyBrowse extends Scheme {
       contents: []
     }
     return new Response(JSON.stringify(result), {status: 200})
+  }
+}
+
+
+
+export class LivelyEdit extends LivelyBrowse {
+  
+  get scheme() {
+    return "edit"
+  }
+
+  async GET(options) {
+    var openString = this.url.toString().replace(/^edit:\/\//,"") 
+    var result
+    try {
+      
+      result = await lively.openBrowser(lively4url + "/" + openString, true )
+    } catch(e) {
+      return new Response("failed to open " + openString, {status: 400})
+    }
+    
+    return new ValueResponse(result, {status: 200});
+    
+  }
+
+}
+
+
+
+class CachedRequest extends Scheme {
+  
+  get scheme() {
+    return "cached"
+  }
+
+  resolve() {
+    this.realURL = this.url.replace(new RegExp("^" + this.scheme + ":/?/?"),"") // #Hack
+    return true
+  }  
+  
+  async GET(options) {
+    
+    if (!this.promisedCache) {
+      this.promisedCache = self.caches.open("PoidCachesScheme")
+    }
+    var cache = await this.promisedCache;
+    var request = "https://" + this.realURL // Hack, to convice the CACHE API 
+    var result = await cache.match(request)
+    if (!result) {
+      result = await fetch(this.realURL)
+      if (!result.ok) {
+        throw new TypeError('Bad response status');
+      }
+      cache.put(request, result.clone())
+    }
+    return result
+  }
+
+  PUT(options) {
+    return fetch(this.realURL, options)
+  }
+    
+  OPTIONS(options) {
+    return fetch(this.realURL, options)
   }
 }
 
@@ -382,7 +496,7 @@ export class ElementQuery extends Scheme {
   GET(options) {
     var element = this.element
     if (element) {
-      return new ObjectResponse(element, {status: 200});
+      return new ValueResponse(element, {status: 200});
     }
     return super.GET(options)
   }
@@ -453,7 +567,7 @@ export class ElementQueryAll extends Scheme {
   
   GET(options) {
     if (this.elements) {
-      return new ObjectResponse(this.elements, {status: 200});
+      return new ValueResponse(this.elements, {status: 200});
     }
     return super.GET(options)
   }
@@ -491,17 +605,107 @@ export class InnerHTMLElementQuery extends ElementQuery {
  
 }
 
+export class StringScheme extends Scheme {
+
+  get scheme() { return "string"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const string = new URL(this.url).pathname;
+    return new ValueResponse(string, {status: 200})      
+  }
+
+}
+
+export class NumberScheme extends Scheme {
+
+  get scheme() { return "number"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(parseFloat(content), {status: 200})      
+  }
+
+}
+
+export class DateScheme extends Scheme {
+
+  get scheme() { return "date"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(new Date(parseInt(content)), {status: 200})      
+  }
+
+}
+
+export class BooleanScheme extends Scheme {
+
+  get scheme() { return "bool"; }
+  resolve() { return true; }
+
+  GET(options) {
+    const content = new URL(this.url).pathname;
+    return new ValueResponse(content === 'true' ? true : false, {status: 200})
+  }
+
+}
+
+export class Lively4URLScheme extends Scheme {
+  
+  get scheme() {
+    return "lively4url";
+  }
+
+  resolve() {
+    return true;
+  }  
+  
+  _fetch(options) {
+    const filePath = lively4url + "/" + new URL(this.url).pathname;
+    lively.warn(filePath, options && options.method)
+    return fetch(lively4url + "/" + new URL(this.url).pathname, options);
+  }
+  
+  async GET(options) {
+    return this._fetch(options);
+  }
+
+  PUT(options) {
+    return this._fetch(options);
+  }
+    
+  OPTIONS(options) {
+    return this._fetch(options);
+  }
+}
+
 
 export default class PolymorphicIdentifier {
   
+  get isPolymorphicIdentifierHandler() {
+    true
+  } 
+  
   static load() {
-    this.register(LivelyFile) 
-    this.register(ElementQuery) 
-    this.register(ElementQueryAll) 
-    this.register(InnerHTMLElementQuery) 
-    this.register(LivelySearch)
-    this.register(LivelyOpen)
-    this.register(LivelyBrowse)
+    [
+      LivelyFile, 
+      ElementQuery, 
+      ElementQueryAll, 
+      InnerHTMLElementQuery, 
+      LivelySearch,
+      LivelyOpen,
+      LivelyBrowse,
+      LivelyEdit,
+      CachedRequest,
+      StringScheme,
+      NumberScheme,
+      DateScheme,
+      BooleanScheme,
+      Lively4URLScheme,
+    ].forEach(scheme => this.register(scheme));
   }
   
   static url(request) {
@@ -514,7 +718,7 @@ export default class PolymorphicIdentifier {
   
   // #Refactor schemeFor
   static schemaFor(url) {
-    var m = url.match(/^([A-Za-z0-9]+):\/\//)
+    var m = url.match(/^([A-Za-z0-9]+):\/?\/?/) // 
     if (!m || !this.schemas) return
     return this.schemas[m[1]]  
   }
@@ -541,14 +745,25 @@ export default class PolymorphicIdentifier {
 // And we do it because we can support arbitrary URLs that way and don't have to missuse HTTP // requests to https://lively4/
 
 // ContextJS seems to have a problem with this.. so we do it manaally
-if (!window.originalFetch) window.originalFetch = window.fetch
 
-window.fetch = async function(request, options, ...rest) {
-  var handler = PolymorphicIdentifier.handle(request, options)
-  if (handler) return handler.result;
-  // #TODO: lazy loading of schemes should go here
-  return window.originalFetch.apply(window, [request, options, ...rest])
+
+if (self.lively4fetchHandlers) {
+  
+  // get rid of old mes?
+  self.lively4fetchHandlers = self.lively4fetchHandlers
+    .filter(ea => !ea.isPolymorphicIdentifierHandler)
+  
+  self.lively4fetchHandlers.push(PolymorphicIdentifier)  
 }
+
+// if (!window.originalFetch) window.originalFetch = window.fetch
+// window.fetch = async function(request, options, ...rest) {
+//   var handler = PolymorphicIdentifier.handle(request, options)
+//   if (handler) return handler.result;
+//   // #TODO: lazy loading of schemes should go here
+//   return window.originalFetch.apply(window, [request, options, ...rest])
+// }
+
 
 
 
@@ -558,11 +773,18 @@ if (!navigator.serviceWorker) {
   lively.removeEventListener("poid", navigator.serviceWorker)
   lively.addEventListener("poid", navigator.serviceWorker, "message", async (evt) => {
     try {
+      if(!evt.data.name || !evt.data.name.match('swx:pi:')) return; // not for me
+        
       let m = evt.data.path.match(/^\/([a-zA-Z0-9]+)(?:\/(.*))?$/)
       if (!m) {
+        debugger
         throw new Error("Requested path does not fit a scheme! path='" + evt.data.path +"'")        
       }
       let url= m[1] + "://" + m[2]    
+      if (!evt.ports[0]) {
+        console.log("poid.js got message... but could not answer")
+        return 
+      }
       if(evt.data.name == 'swx:pi:GET') {
         evt.ports[0].postMessage({content: await fetch(url).then(r => r.blob())}); 
       } else if(evt.data.name == 'swx:pi:PUT') {
@@ -586,7 +808,6 @@ if (!navigator.serviceWorker) {
 PolymorphicIdentifier.load()
 
 // window.fetch  = window.originalFetch
-
 // fetch("https://lively-kernel.org/lively4/lively4-jens/README.md")t
 
 

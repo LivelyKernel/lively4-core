@@ -9,10 +9,13 @@ chai.use(sinonChai);
 import { BaseActiveExpression } from '../../active-expression/active-expression.js';
 
 describe('Configurable Comparison Function', () => {
+
   describe('Identity as default for objects', () => {
   });
+
   // #TODO: other implementation strategies have to detect those changes
   describe('Arrays as Data Structures', () => {
+
     it('detects a newly pushed element', () => {
       const spy = sinon.spy();
       const arr = [1,2];
@@ -24,6 +27,7 @@ describe('Configurable Comparison Function', () => {
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
     });
+
     it('identity does not matter/arrays as value classes', () => {
       const spy = sinon.spy();
       let arr = [1,2];
@@ -57,7 +61,7 @@ describe('Configurable Comparison Function', () => {
     });
     
     describe('explicit option set to shallow', () => {
-      it('array modification triggers callbacks', () => {
+      it('array modification triggers callbacks2', () => {
         const spy = sinon.spy();
         const arr = [1,2];
         const expr = aexpr(() => arr, { match: 'shallow' }).onChange(spy);
@@ -178,6 +182,17 @@ describe('Configurable Comparison Function', () => {
       const spy = sinon.spy();
       const set = new Set([1,2]);
       const expr = aexpr(() => set).onChange(spy);
+
+      set.add(42);
+      expr.checkAndNotify();
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(set);
+    });
+    it('set modification triggers callbacks with shallow matcher', () => {
+      const spy = sinon.spy();
+      const set = new Set([1,2]);
+      const expr = aexpr(() => set, { match: 'shallow' }).onChange(spy);
 
       set.add(42);
       expr.checkAndNotify();

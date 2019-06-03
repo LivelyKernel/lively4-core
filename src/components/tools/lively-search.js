@@ -164,18 +164,30 @@ export default class Search extends Morph {
     }
     for (var file of this.files) {
       let url = file.url
-      let contents = await fetch(url).then(ea => ea.text())
-      let newcontents = contents.replace(pattern, replace)
+      var getRequest = await fetch(url)
+      var lastVersion = getRequest.headers.get("fileversion")
+      debugger
+      let contents = await getRequest.text()
+      let newcontents = contents.replace(new RegExp(pattern), replace)
+      if (contents == newcontents) {
+        this.log("pattern did not match " + pattern)
+        return 
+      }
+      var headers = {}
+      if (lastVersion) {
+        headers.lastversion = lastVersion
+      }
       let putRequest = await fetch(url, {
         method: "PUT",
-        body: newcontents
+        body: newcontents,
+        headers: headers
       })
       this.log("replaced in " + pattern + " with "+ replace + " in " +url)
       if (putRequest.status == 200) {
         // #Idea: show diff?
         lively.notify("Replaced in " + file.file)
       } else {
-        throw new Error("could not change " + file)
+        console.log("could not change " + file + ", because " + putRequest )
       }  
     }  
   }

@@ -2,21 +2,32 @@ import 'lang';
 import { extend } from './utils.js';
 
 
-/**
- * OBJECT
- */
+/*MD
+## OBJECT
+MD*/
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
+
 extend(Object.prototype, {
 
   dependentAExprs() {
-    // #TODO: implement2
+    return AExprRegistry.allAsArray().filter(ae => {
+      if(!ae.supportsDependencies()) { return false; }
+      
+      const dependencies = ae.dependencies().all();
+      return dependencies.find(dep => {
+        const desc = dep.getAsDependencyDescription();
+        return desc.object === this ||
+          desc.value === this ||
+          desc.scope === this;
+      });
+    });
   }
-
 });
 
 
-/**
- * STRING
- */
+/*MD
+## STRING
+MD*/
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -67,9 +78,9 @@ extend(String.prototype, {
 });
 
 
-/**
- * FUNCTION
- */
+/*MD
+## FUNCTION
+MD*/
 import aexpr from 'active-expression-rewriting';
 
 const aexprByFunction = new WeakMap();

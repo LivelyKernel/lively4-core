@@ -17,7 +17,10 @@ export default class File extends Morph {
     html.registerAttributeObservers(this);
   }
   
-  
+  attachedCallback() {
+    this.updateView(this.name)
+  }
+
   onClick(evt) {
     if (evt.shiftKey) {
       // add and remove to a selection
@@ -139,8 +142,14 @@ export default class File extends Morph {
     return this.getAttribute('url')
   }
   
-  setContent(data) {
-    this.url = "data:text/plain;base64," + btoa(data);
+  async setContent(data, contenttype) {
+    if (data instanceof Blob) {
+      var dataURL = await lively.files.readBlobAsDataURL(data)
+      console.log("data: ", dataURL)
+      this.url = dataURL
+    } else {
+      this.url = `data:${contenttype || "text/plain" };base64,` + btoa(data);
+    }
   }
 
   set type(value) {

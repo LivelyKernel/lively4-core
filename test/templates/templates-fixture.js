@@ -13,6 +13,11 @@ export class MockEvent {
     }
   }
   
+  composedPath() {
+    return this.path
+  }
+  
+  
   generatePath(element) {
     if (!this.path) this.path = [];
     if (element) {

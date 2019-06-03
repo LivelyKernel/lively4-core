@@ -1,13 +1,11 @@
 const moduleNameToVarRecorderName = new Map();
 
-function randomModuleId() {
-  return (`_module_${Math.random()}`).replace('.', '');
-}
 
 export function getScopeIdForModule(moduleName) {
-  // console.log("XXX", moduleName);
+  // console.log("[babel-plugin-var-recorder] getScopeIdForModule", moduleName);
   if(!moduleNameToVarRecorderName.has(moduleName)) {
-    moduleNameToVarRecorderName.set(moduleName, (moduleName || "undefined").replace(/[^a-zA-Z0-9]/g,"_") /* randomModuleId() */);
+    moduleNameToVarRecorderName.set(moduleName, 
+      (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g,"_"));
   }
 
   return moduleNameToVarRecorderName.get(moduleName);
@@ -82,160 +80,175 @@ export default function({ types: t, template, traverse, }) {
       // console.log('YYYY', ...args);
     },
     visitor: {
-      Program(program, { file }) {
-        const DOIT_MATCHER = /^workspace(async)?(js)?:/;
-        const MODULE_MATCHER = /.js$/;
-        
-        let filename = file.log.filename;
-        // console.log('visitor!', program, filename);
-        
-        const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
-        let MODULE_NAME;
-        if(window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
-          var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
-          MODULE_NAME = window.__topLevelVarRecorder_ModuleNames__[codeId];
-          // console.log("boundEval MODULE_NAME: " + MODULE_NAME + " codeId: " + codeId)
-        } else if (!DOIT_MATCHER.test(filename) && MODULE_MATCHER.test(filename)) {
-          // eval a .js file
-          MODULE_NAME = filename;
-        } else {
-          throw new Error('Transpiling neither a .js module nor workspace code');
-        }
-        let MODULE_IDENTIFIER = getScopeIdForModule(MODULE_NAME);
+      Program: {
+        exit(path, state) {
+          const VAR_RECORDER_NAME = state.var_recorder_info.VAR_RECORDER_NAME;
+          const MODULE_IDENTIFIER = state.var_recorder_info.MODULE_IDENTIFIER;
+          const lazyInitializeModuleScopeTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER} = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER} || {}`);
+          const lazyInitializeModuleScope = lazyInitializeModuleScopeTemplate();
+          path.unshiftContainer('body', lazyInitializeModuleScope);
+        },
+        enter(program, state) {
+          const file = state.file;
+          state.var_recorder_info = {};
+          const DOIT_MATCHER = /^workspace(async)?(js)?:/;
+          const MODULE_MATCHER = /.js$/;
 
-        const varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
-              recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
-              referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
-        function replaceReference(ref) {
-          ref.replaceWith(referenceTemplate({ reference: ref.node }).expression);
-          ref.skip();
-        }
-        
-        window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
-        window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
-        let moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
-        // console.log('bound names:', ...moduleBoundGlobals);
+          let filename = file.log.filename;
+          // console.log('visitor!', program, filename);
 
-        let bindings = program.scope.getAllBindings();
-
-        // iterate all module wide bindings
-        Object.values(bindings).forEach(binding => {
-
-          
-          function partOfForStatement(binding) {
-            const parentPath = binding.path.parentPath; 
-            const shouldSortOut = binding.path.isVariableDeclarator() &&
-              parentPath.isVariableDeclaration() &&
-              parentPath.node.kind === "var" && ((
-                (
-                parentPath.parentPath.isForAwaitStatement() ||
-                parentPath.parentPath.isForInStatement() ||
-                parentPath.parentPath.isForOfStatement()
-                ) && parentPath.parentKey === "left"
-              ) || (
-                parentPath.parentPath.isForStatement()
-                && parentPath.parentKey ===  "init"
-              )
-              );
-            return shouldSortOut;
-          }
-          
-          if(partOfForStatement(binding)) {
-            // console.error("sort out", binding.identifier.name)
-            // console.warn(binding)
-            binding.__ignoreRecorder__ = true;
-            return;
-            
+          const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
+          let MODULE_NAME;
+          if(window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
+            var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
+            MODULE_NAME = window.__topLevelVarRecorder_ModuleNames__[codeId];
+            // console.log("boundEval MODULE_NAME: " + MODULE_NAME + " codeId: " + codeId)
+          } else if (!DOIT_MATCHER.test(filename) && MODULE_MATCHER.test(filename)) {
+            // eval a .js file
+            MODULE_NAME = filename;
           } else {
-            // console.error("not matching", binding.identifier.name)
-            // console.warn(binding)
+            throw new Error('Transpiling neither a .js module nor workspace code');
           }
+          let MODULE_IDENTIFIER = getScopeIdForModule(MODULE_NAME);
+          state.var_recorder_info.VAR_RECORDER_NAME = VAR_RECORDER_NAME;
+          state.var_recorder_info.MODULE_IDENTIFIER = MODULE_IDENTIFIER;
           
-          binding.referencePaths
-            .filter(ref => {
-              // ExportNamedDeclarations should not be rewritten as reference
-              // they are already rewritten as binding
-                        
-              if(ref.isExportNamedDeclaration()) {
-                return false;
-              }
-              // Same for declaring the default export
-              if(ref.isExportDefaultDeclaration()) {
-                return false;
-              }
-              
-              // handle named exports special
-              if(ref.parentPath.isExportSpecifier() && ref.parentKey === 'local') {
-                ref
-                  .find(path => path.parentPath.isProgram())
-                  .insertBefore(recordToVarTemplate({ reference: mark(t.identifier(binding.identifier.name)) }))
-                  .forEach(newPath => newPath.skip());
-                ref.skip();
-                return false;
-              }
-              
-              // ObjectPatterns and ArrayPatterns in VariableDeclarations do not accept MemberExpressions.
-              // Thus, we have to filter out these cases explicitly.
-              if(ref.findParent(p=>p.isPattern()) && ref.findParent(p=>p.isDeclaration())) {
-                let pattern = bubbleThroughPattern(ref);
-                if(pattern.parentPath.isVariableDeclarator() && pattern.parentKey === 'id') return false;
-              }
-              return true;
-            })
-            .forEach(replaceReference);
-          
-          // dealing with the declaration of the binding
-          let varToRecord = varToRecordTemplate({ reference: t.identifier(binding.identifier.name) });
-          if(binding.kind === 'hoisted'/* || binding.kind === 'module'*/) {
-            binding.path
-              .find(path => path.isProgram())
-              .unshiftContainer('body', varToRecord);
-          } else {
-            // #DesignQuestion
-            // a) should we add a guard here and check if the variable was recorded and we are reloaded
-            // b) change the semantics of variable declarations to be assigned with "undefined" if first time loaded [as implemented below]
-            if (!binding.path.node.init)
-              binding.path.node.init = referenceTemplate({
-                reference: t.identifier(binding.identifier.name)}).expression;
-            binding.path
-              .getStatementParent()
-              .insertAfter(varToRecord)
-              .forEach(newPath => newPath.skip());
+          const varToRecordTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference`),
+                recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
+                referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
+          function replaceReference(ref) {
+            ref.replaceWith(referenceTemplate({ reference: ref.node }).expression);
+            ref.skip();
           }
-        });
-    
-        program.traverse({
-          Identifier(path) {            
-            
-            if(isMarked(path.node)) return;
-            if(!isVariable(path)) return;
-    
-            // special case of assigning to a reference
-            let pattern = bubbleThroughPattern(path);
-            if(pattern.parentPath.isAssignmentExpression() && pattern.parentKey === 'left') {
-              let par = path.find(parent => parent.scope.hasOwnBinding(path.node.name));
-              // is our binding scope the module-wide scope?
-              if(par && par.scope === program.scope) {
-                
-                // is it part of a for in declaration
-                const binding = par.scope.getOwnBinding(path.node.name)
-                if(binding && binding.__ignoreRecorder__) { return; }
+
+
+          window[VAR_RECORDER_NAME] = window[VAR_RECORDER_NAME] || {};
+          window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] = window[VAR_RECORDER_NAME][MODULE_IDENTIFIER] || {};
+          let moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
+          // console.log('bound names:', ...moduleBoundGlobals);
+
+
+          let bindings = program.scope.getAllBindings();
+
+          // iterate all module wide bindings
+          Object.values(bindings).forEach(binding => {
+
+
+            function partOfForStatement(binding) {
+              const parentPath = binding.path.parentPath; 
+              const shouldSortOut = binding.path.isVariableDeclarator() &&
+                parentPath.isVariableDeclaration() &&
+                parentPath.node.kind === "var" && ((
+                  (
+                  parentPath.parentPath.isForAwaitStatement() ||
+                  parentPath.parentPath.isForInStatement() ||
+                  parentPath.parentPath.isForOfStatement()
+                  ) && parentPath.parentKey === "left"
+                ) || (
+                  parentPath.parentPath.isForStatement()
+                  && parentPath.parentKey ===  "init"
+                )
+                );
+              return shouldSortOut;
+            }
+
+            if(partOfForStatement(binding)) {
+              // console.error("sort out", binding.identifier.name)
+              // console.warn(binding)
+              binding.__ignoreRecorder__ = true;
+              return;
+
+            } else {
+              // console.error("not matching", binding.identifier.name)
+              // console.warn(binding)
+            }
+
+            binding.referencePaths
+              .filter(ref => {
+                // ExportNamedDeclarations should not be rewritten as reference
+                // they are already rewritten as binding
+
+                if(ref.isExportNamedDeclaration()) {
+                  return false;
+                }
+                // Same for declaring the default export
+                if(ref.isExportDefaultDeclaration()) {
+                  return false;
+                }
+
+                // handle named exports special
+                if(ref.parentPath.isExportSpecifier() && ref.parentKey === 'local') {
+                  ref
+                    .find(path => path.parentPath.isProgram())
+                    .insertBefore(recordToVarTemplate({ reference: mark(t.identifier(binding.identifier.name)) }))
+                    .forEach(newPath => newPath.skip());
+                  ref.skip();
+                  return false;
+                }
+
+                // ObjectPatterns and ArrayPatterns in VariableDeclarations do not accept MemberExpressions.
+                // Thus, we have to filter out these cases explicitly.
+                if(ref.findParent(p=>p.isPattern()) && ref.findParent(p=>p.isDeclaration())) {
+                  let pattern = bubbleThroughPattern(ref);
+                  if(pattern.parentPath.isVariableDeclarator() && pattern.parentKey === 'id') return false;
+                }
+                return true;
+              })
+              .forEach(replaceReference);
+
+            // dealing with the declaration of the binding
+            let varToRecord = varToRecordTemplate({ reference: t.identifier(binding.identifier.name) });
+            if(binding.kind === 'hoisted'/* || binding.kind === 'module'*/) {
+              binding.path
+                .find(path => path.isProgram())
+                .unshiftContainer('body', varToRecord);
+            } else {
+              // #DesignQuestion
+              // a) should we add a guard here and check if the variable was recorded and we are reloaded
+              // b) change the semantics of variable declarations to be assigned with "undefined" if first time loaded [as implemented below]
+              if (!binding.path.node.init)
+                binding.path.node.init = referenceTemplate({
+                  reference: t.identifier(binding.identifier.name)}).expression;
+              binding.path
+                .getStatementParent()
+                .insertAfter(varToRecord)
+                .forEach(newPath => newPath.skip());
+            }
+          });
+
+          program.traverse({
+            Identifier(path) {            
+
+              if(isMarked(path.node)) return;
+              if(!isVariable(path)) return;
+
+              // special case of assigning to a reference
+              let pattern = bubbleThroughPattern(path);
+              if(pattern.parentPath.isAssignmentExpression() && pattern.parentKey === 'left') {
+                let par = path.find(parent => parent.scope.hasOwnBinding(path.node.name));
+                // is our binding scope the module-wide scope?
+                if(par && par.scope === program.scope) {
+
+                  // is it part of a for in declaration
+                  const binding = par.scope.getOwnBinding(path.node.name)
+                  if(binding && binding.__ignoreRecorder__) { return; }
+                  replaceReference(path);
+                  return path.skip();
+                }
+              }
+
+              // Distinguish between module-bound variables and real globals
+              if(
+                path.scope.hasGlobal(path.node.name) &&
+                  moduleBoundGlobals.includes(path.node.name)
+              ) {
                 replaceReference(path);
                 return path.skip();
               }
             }
-            
-            // Distinguish between module-bound variables and real globals
-            if(
-              path.scope.hasGlobal(path.node.name) &&
-                moduleBoundGlobals.includes(path.node.name)
-            ) {
-              replaceReference(path);
-              return path.skip();
-            }
-          }
-        });
-      }
+          });
+        }
+      },
     }
   };
 

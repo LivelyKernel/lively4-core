@@ -15,34 +15,13 @@ import * as spellCheck from "src/external/codemirror-spellcheck.js"
 
 import {isSet} from 'utils'
 
+
+import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
+self.CodeMirror = CodeMirror // for modules
+
 let loadPromise = undefined;
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
-
-// BEGIN #copied from emacs.js
-function repeated(cmd) {
-  var f = typeof cmd == "string" ? function(cm) { cm.execCommand(cmd); } : cmd;
-  return function(cm) {
-    var prefix = getPrefix(cm);
-    f(cm);
-    for (var i = 1; i < prefix; ++i) f(cm);
-  };
-}
-
-function getPrefix(cm, precise) {
-  var digits = cm.state.emacsPrefix;
-  if (!digits) return precise ? null : 1;
-  clearPrefix(cm);
-  return digits == "-" ? -1 : Number(digits);
-}
-
-function operateOnWord(cm, op) {
-  var start = cm.getCursor(), end = cm.findPosH(start, 1, "word");
-  cm.replaceRange(op(cm.getRange(start, end)), start, end);
-  cm.setCursor(end);
-}
-// END
-
 
 export default class LivelyCodeMirror extends HTMLElement {
 
@@ -58,8 +37,18 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModule(path, force) {
-    return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
-      this.codeMirrorPath + path, force)
+    if (!self.CodeMirror) {
+      console.warn("CodeMirror is missing, could not initialize " + path )
+      return 
+    }
+    var code = await fetch(this.codeMirrorPath + path).then(r => r.text())
+    try {
+      eval(code)
+    } catch(e) {
+      console.error("Could not load CodeMirror module " + path, e)
+    }
+    // return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
+    //   this.codeMirrorPath + path, force)
   }
 
   static async loadCSS(path) {
@@ -72,7 +61,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (loadPromise && !force) return loadPromise
     loadPromise = (async () => {
 
-      await this.loadModule("lib/codemirror.js")
 
       await this.loadModule("addon/fold/foldcode.js")
 
@@ -152,7 +140,10 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
-      .then(m => m.TernCodeMirrorWrapper);
+      .then(m => {
+        this.ternLoaded = true
+        return m.TernCodeMirrorWrapper
+      });
   }
 
   initialize() {
@@ -183,7 +174,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.isLoading = true
     this.root = this.shadowRoot // used in code mirror to find current element
     await LivelyCodeMirror.loadModules(); // lazy load modules...
-
+    
     if (this.textContent) {
       var value = this.decodeHTML(this.textContent);
     } else {
@@ -241,7 +232,129 @@ export default class LivelyCodeMirror extends HTMLElement {
     //   this.enableTern();
     // }
   }
+  
+  addKeys(keymap) {
+    var keys = this.ensureExtraKeys()
+    this.extraKeys = Object.assign(keys, keymap)
+  }
+  
+  
+  ensureExtraKeys() {
+    if (!this.extraKeys) {
+      var editor = this.editor
+      this.extraKeys = {
+        "Alt-F": "findPersistent",
+        // "Ctrl-F": "search",
+        // #KeyboardShortcut Ctrl-H search and replace
+        "Insert": (cm) => {
+          // do nothing... ther INSERT mode is so often actived by accident 
+        },
+        "Ctrl-Insert": (cm) => {
+          // do nothing... ther INSERT mode is so often actived by accident 
+          cm.toggleOverwrite()
+        },
+        "Ctrl-H": (cm) => {
+          setTimeout(() => {
+              editor.execCommand("replace");
+              this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+          }, 10)
+        },
+        // #KeyboardShortcut Ctrl-Space auto complete
+        "Ctrl-Space": cm => {
+          this.fixHintsPosition()
+          cm.execCommand("autocomplete")
+        },
+        // #KeyboardShortcut Ctrl-Alt-Space auto complete
+        "Ctrl-Alt-Space": cm => {
+          this.fixHintsPosition()
+          cm.execCommand("autocomplete")
+        },
+        // #KeyboardShortcut Ctrl-P eval and print selelection or line
+        "Ctrl-P": (cm) => {
+            let text = this.getSelectionOrLine()
+            this.tryBoundEval(text, true);
+        },
+        // #KeyboardShortcut Ctrl-I eval and inspect selection or line
+        "Ctrl-I": (cm) => {
+          let text = this.getSelectionOrLine()
+          this.inspectIt(text)
+        },
+        // #KeyboardShortcut Ctrl-I eval selection or line (do it)
+        "Ctrl-D": (cm, b, c) => {
+            let text = this.getSelectionOrLine();
+            this.tryBoundEval(text, false);
+            return true
+        },
+        // #KeyboardShortcut Ctrl-F search
+        "Ctrl-F": (cm) => {
+          // something immediately grabs the "focus" and we close the search dialog..
+          // #Hack...
+          setTimeout(() => {
+                editor.execCommand("findPersistent");
+                this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+          }, 10)
+          // editor.execCommand("find")
+        },
+        
+        // #KeyboardShortcut Ctrl-Alt-Right multiselect next
+        "Ctrl-Alt-Right": "selectNextOccurrence",
+        // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
+        "Ctrl-Alt-Left": "undoSelection",
 
+        // #KeyboardShortcut Ctrl-/ indent slelection
+        "Ctrl-/": "toggleCommentIndented",
+        // #KeyboardShortcut Ctrl-# indent slelection
+        "Ctrl-#": "toggleCommentIndented",
+        // #KeyboardShortcut Tab insert tab or soft indent
+        'Tab': (cm) => {
+          if (cm.somethingSelected()) {
+            cm.indentSelection("add");
+          } else {
+            cm.execCommand('insertSoftTab')
+          }
+        },
+        // #KeyboardShortcut Ctrl-S save content
+        "Ctrl-S": (cm) => {
+          this.doSave(cm.getValue());
+        },
+        // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
+        "Ctrl-Alt-V": async cm => {
+          let text = this.getSelectionOrLine();
+          let result = await this.tryBoundEval(text, false);
+          letsScript(result);
+        },
+        // #KeyboardShortcut Ctrl-Alt-C show type using tern
+        "Ctrl-Alt-I": cm => {
+          this.ternWrapper.then(tw => tw.showType(cm, this));
+        },
+        // #KeyboardShortcut Alt-. jump to definition using tern
+        "Alt-.": cm => {
+          lively.notify("try to JUMP TO DEFINITION")
+          this.ternWrapper.then(tw => tw.jumpToDefinition(cm, this));
+        },
+        // #KeyboardShortcut Alt-, jump back from definition using tern
+        "Alt-,": cm => {
+          this.ternWrapper.then(tw => tw.jumpBack(cm, this));
+        },
+        // #KeyboardShortcut Shift-Alt-. show references using tern
+        "Shift-Alt-.": cm => {
+          this.ternWrapper.then(tw => tw.showReferences(cm, this));
+        },
+        
+      }
+    }
+    return this.extraKeys
+  }
+  
+  registerExtraKeys(options) {
+    if (options) this.addKeys(options)
+    var keys = {}
+    keys = Object.assign(keys, CodeMirror.keyMap.sublime)
+    keys = Object.assign(keys, this.ensureExtraKeys())
+    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(keys));
+  }
+    
+  
   setupEditorOptions(editor) {
     editor.setOption("matchBrackets", true)
     editor.setOption("styleSelectedText", true)
@@ -255,117 +368,14 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
-    editor.setOption("keyMap",  "sublime")
-		editor.setOption("extraKeys", {
-      "Alt-F": "findPersistent",
-      // "Ctrl-F": "search",
-      // #KeyboardShortcut Ctrl-H search and replace
-      "Insert": (cm) => {
-        // do nothing... ther INSERT mode is so often actived by accident 
-      },
-      "Ctrl-Insert": (cm) => {
-        // do nothing... ther INSERT mode is so often actived by accident 
-        cm.toggleOverwrite()
-      },
-      "Ctrl-H": (cm) => {
-        setTimeout(() => {
-            editor.execCommand("replace");
-            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
-        }, 10)
-      },
-      // #KeyboardShortcut Ctrl-F search
-      "Ctrl-F": (cm) => {
-		    // something immediately grabs the "focus" and we close the search dialog..
-        // #Hack...
-        setTimeout(() => {
-            editor.execCommand("findPersistent");
-            this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
-        }, 10)
-        // editor.execCommand("find")
-      },
-      // #KeyboardShortcut Ctrl-Space auto complete
-      "Ctrl-Space": cm => {
-        this.fixHintsPosition()
-        cm.execCommand("autocomplete")
-      },
-      // #KeyboardShortcut Ctrl-Alt-Space auto complete
-      "Ctrl-Alt-Space": cm => {
-        this.fixHintsPosition()
-        cm.execCommand("autocomplete")
-      },
-      // #KeyboardShortcut Ctrl-P eval and print selelection or line
-      "Ctrl-P": (cm) => {
-          let text = this.getSelectionOrLine()
-          this.tryBoundEval(text, true);
-      },
-      // #KeyboardShortcut Ctrl-I eval and inspect selection or line
-      "Ctrl-I": (cm) => {
-        let text = this.getSelectionOrLine()
-        this.inspectIt(text)
-      },
-      // #KeyboardShortcut Ctrl-I eval selection or line (do it)
-      "Ctrl-D": (cm, b, c) => {
-        	let text = this.getSelectionOrLine();
-          this.tryBoundEval(text, false);
-        	return true
-      },
-      // #KeyboardShortcut Ctrl-Alt-Right multiselect next
-      "Ctrl-Alt-Right": "selectNextOccurrence",
-      // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
-  		"Ctrl-Alt-Left": "undoSelection",
-
-      // #KeyboardShortcut Ctrl-/ indent slelection
-      "Ctrl-/": "toggleCommentIndented",
-      // #KeyboardShortcut Ctrl-# indent slelection
-      "Ctrl-#": "toggleCommentIndented",
-      // #KeyboardShortcut Tab insert tab or soft indent
-      'Tab': (cm) => {
-        if (cm.somethingSelected()) {
-    			cm.indentSelection("add");
-  			} else {
-        	cm.execCommand('insertSoftTab')
-        }
-      },
-      // #KeyboardShortcut Ctrl-S save content
-      "Ctrl-S": (cm) => {
-        this.doSave(cm.getValue());
-      },
-      // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
-      "Ctrl-Alt-V": async cm => {
-        let text = this.getSelectionOrLine();
-        let result = await this.tryBoundEval(text, false);
-        letsScript(result);
-      },
-      // #KeyboardShortcut Ctrl-Alt-C show type using tern
-      "Ctrl-Alt-I": cm => {
-        this.ternWrapper.then(tw => tw.showType(cm, this));
-      },
-      // #KeyboardShortcut Alt-. jump to definition using tern
-      "Alt-.": cm => {
-        lively.notify("try to JUMP TO DEFINITION")
-        this.ternWrapper.then(tw => tw.jumpToDefinition(cm, this));
-      },
-      // #KeyboardShortcut Alt-, jump back from definition using tern
-      "Alt-,": cm => {
-        this.ternWrapper.then(tw => tw.jumpBack(cm, this));
-      },
-      // #KeyboardShortcut Shift-Alt-. show references using tern
-      "Shift-Alt-.": cm => {
-        this.ternWrapper.then(tw => tw.showReferences(cm, this));
-      },
-      // #KeyboardShortcut Alt-C capitalize letter
-      // #copied from keymap/emacs.js
-      "Alt-C": repeated(function(cm) {
-        operateOnWord(cm, function(w) {
-          var letter = w.search(/\w/);
-          if (letter == -1) return w;
-          return w.slice(0, letter) + w.charAt(letter).toUpperCase() + w.slice(letter + 1).toLowerCase();
-        });
-      }),
-    });
+    // editor.setOption("keyMap",  "sublime")
+		
     editor.on("cursorActivity", cm => {
-      this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      if (this.ternLoaded) {
+        this.ternWrapper.then(tw => tw.updateArgHints(cm, this))
+      }
     });
+    
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
       // this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
@@ -386,6 +396,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       codemirror: this,
       closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
     });
+    
+    this.registerExtraKeys()
   }
 
   
@@ -506,6 +518,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   wrapWidget(name, from, to, options) {
     var widget = document.createElement("span");
+    widget.classList.add("lively-widget")
     widget.style.whiteSpace = "normal";
     var promise = lively.create(name, widget);
     promise.then(comp => {
@@ -559,10 +572,15 @@ export default class LivelyCodeMirror extends HTMLElement {
         })
       } else {
         promisedWidget = this.printWidget("lively-table").then( table => {
-          table.setFromJSO(obj.map((ea,index) => { return {index:index, value: "" + ea}}))
-          table.style.maxHeight = "300px"
-          table.style.overflow = "auto"
-          return table
+          table.setFromJSO(obj.map((ea,index) => {
+            return {
+              index: index,
+              value: this.ensuredPrintString(ea)
+            }
+          }));
+          table.style.maxHeight = "300px";
+          table.style.overflow = "auto";
+          return table;
         })
       }
     } else if(objClass ==  "Matrix") {
@@ -588,6 +606,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
 
+  ensuredPrintString(obj) {
+    var s = "";
+    try {
+      s += obj // #HACK some objects cannot be printed any more
+    } catch(e) {
+      s += `UnprintableObject[Error: ${e}]`; // so we print something else
+    }
+    return s
+  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -603,23 +630,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       return e;
     }
     var result = resp.value
-    var obj2string = function(obj) {
-      var s = "";
-      try {
-        s += obj // #HACK some objects cannot be printed any more
-      } catch(e) {
-        s += "UnprintableObject["+ Object.keys(e) + "]" // so we print something else
-      }
-      return s
-    }
 
     if (printResult) {
       // alaways wait on promises.. when interactively working...
-      if (result && result.then && result instanceof Promise) {
+      if (result && result.then) { //  && result instanceof Promise
         // we will definitly return a promise on which we can wait here
         result
           .then( result => {
-            this.printResult("RESOLVED: " + obj2string(result), result, true)
+            this.printResult("RESOLVED: " + this.ensuredPrintString(result), result, true)
           })
           .catch( error => {
             console.error(error);
@@ -627,9 +645,13 @@ export default class LivelyCodeMirror extends HTMLElement {
             this.printResult("Error in Promise: \n" +error)
           })
       } else {
-        this.printResult(" " + obj2string(result), result)
+        this.printResult(" " + this.ensuredPrintString(result), result)
         if (result instanceof HTMLElement ) {
-          lively.showElement(result)
+          try {
+            lively.showElement(result)
+          } catch(e) {
+            // silent fail... not everything can be shown...
+          }
         }
       }
     }
@@ -794,7 +816,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async livelyMigrate(other) {
     lively.addEventListener("Migrate", this, "editor-loaded", evt => {
-      if (evt.path[0] !== this) return; // bubbled from another place... that is not me!
+      if (evt.composedPath()[0] !== this) return; // bubbled from another place... that is not me!
       lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {

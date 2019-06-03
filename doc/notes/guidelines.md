@@ -2,7 +2,7 @@
 
 ## Naming Guidelines
 namespace identifier: "lively-"
-(e.g. used to name classes like lively-code-editor)
+(e.g. used to name classes like lively-editor)
 
 ## Node identification
 

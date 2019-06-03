@@ -8,7 +8,6 @@
 - [external/](external/) - External libraries, some of them contain modifications
 
 
-
 ## Misc
 
 Seminar Project code, where should it go?

@@ -178,14 +178,14 @@ export default class KnotView extends Morph {
     this.get('#add-tag').onclick = event => this.addTag(event);
 
     // spo tables
-    this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
-    this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
-    this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
+    // this.replaceTableBodyFor('#po-table', knot, _, _, 'predicate', 'object');
+    // this.replaceTableBodyFor('#so-table', _, knot, _, 'subject', 'object');
+    // this.replaceTableBodyFor('#sp-table', _, _, knot, 'subject', 'predicate');
 
     // add button behavior
-    this.get('#add-triple-as-subject').onclick = evt => this.addTripleWithKnotAsSubject(evt);
-    this.get('#add-triple-as-predicate').onclick = evt => this.addTripleWithKnotAsPredicate(evt);
-    this.get('#add-triple-as-object').onclick = evt => this.addTripleWithKnotAsObject(evt);
+    this.get('#r-add-triple-as-subject').onclick = evt => this.addTripleWithKnotAsSubject(evt);
+    this.get('#r-add-triple-as-predicate').onclick = evt => this.addTripleWithKnotAsPredicate(evt);
+    this.get('#r-add-triple-as-object').onclick = evt => this.addTripleWithKnotAsObject(evt);
 
     // metadata
     //this.buildMetadata(knot);
@@ -304,10 +304,7 @@ export default class KnotView extends Morph {
         // this.refresh();
       }
       editorComp.doSave = saveKnot;
-      const debouncedSave = debounce.call(() => {
-        lively.notify('debounced');
-        saveKnot(editorComp.value)
-      }, 2000);
+      const debouncedSave = (() => saveKnot(editorComp.value)).debounce(2000);
       lively.addEventListener('knot-view-editor', editorComp, 'change', debouncedSave);
     }
   }

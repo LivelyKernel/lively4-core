@@ -331,7 +331,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 # Documentation
 
 - [User stories](../stories.md)
-- [Developer Journal](../journal/index.html)
+- [Developer Journal](../journal/index.md)
 
 
 ## Misc

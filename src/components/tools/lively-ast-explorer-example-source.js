@@ -1,1 +1,2 @@
-let a = 3 + 2;
+export const foo = 7
+2
