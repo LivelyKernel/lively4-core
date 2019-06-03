@@ -43,9 +43,9 @@ export default class Github {
     return this._current
   }
   
-  constructor() {
-    this.user = "LivelyKernel"
-    this.repo = "lively4-core"
+  constructor(user= "LivelyKernel", repo= "lively4-core") {
+    this.user = user
+    this.repo = repo
   }
 
   token() {
@@ -60,6 +60,91 @@ export default class Github {
     })
   }
   
+  async ensureBranch(name, original="master") {
+    var info = await this.getBranch(name)
+    if (info.ref) return info
+    
+    var originalInfo = await this.getBranch(original)
+    if (!originalInfo.ref) throw new Error("Could not find original branch " + original)
+    
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/git/refs`, {
+      method: "POST",
+      headers: {
+       Authorization: "token " + await this.token() 
+      },
+      body: JSON.stringify({
+        "ref": `refs/heads/${name}` ,
+        "sha": originalInfo.object.sha
+      })
+    }).then(r => r.json())
+  }
+  
+  async getBranch(name) {
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/git/refs/heads/${name}`, {
+      headers: {
+       Authorization: "token " + await this.token() 
+      }
+    }).then(r => r.json())
+  }
+
+  async getFile(path, branch) {
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}` 
+                 + (branch  ? `?ref=${branch}` : ""), {
+      headers: {
+       Authorization: "token " + await this.token() 
+      }
+    }).then(r => r.json())
+  }
+
+  async setFile(path, branch, content) {
+    var file = await this.getFile(path, branch)
+    var body = {
+        "message": "LIVELY COMMIT " + path,
+        "committer": {
+          "name": "Lively",
+          "email": "lively@lively-kernel.org"
+        },
+        "content": btoa(content),
+        
+      }
+    if (file.sha)  body.sha = file.sha
+    if (branch) body.branch = branch
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}`, {
+      method: "PUT",
+      headers: {
+       Authorization: "token " + await this.token() 
+      }, 
+      body: JSON.stringify(body)
+    }).then(r => r.json())
+  }
+  
+  async deleteFile(path, branch) {
+    var file = await this.getFile(path, branch)
+    if (!file.sha) throw new Error("File not found")
+    
+    var body = {
+        "message": "LIVELY COMMIT DELETE " + path,
+        "committer": {
+          "name": "Lively",
+          "email": "lively@lively-kernel.org"
+        },
+      }
+    body.sha = file.sha
+    if (branch) body.branch = branch
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}`, {
+      method: "DELETE",
+      headers: {
+       Authorization: "token " + await this.token() 
+      }, 
+      body: JSON.stringify(body)
+    }).then(r => r.json())
+  }
+
+  async getContent(path, branch) {
+    var file = await this.getFile(path, branch)
+    if (file.content) return atob(file.content)
+  }
+
   async issueByTitle(searchInTitle) {
     var issues = await this.issues()
     return issues.find(ea => ea.title.match(searchInTitle))
@@ -399,6 +484,4 @@ export default class Github {
     var updateContent = this.stringifyMarkdownStories(stories)
     return lively.files.saveFile(url, updateContent)
   }
-  
-  
 }
