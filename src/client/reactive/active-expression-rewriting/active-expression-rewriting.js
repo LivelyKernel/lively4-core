@@ -10,6 +10,10 @@ import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
+/*HTML <editor-widget-location-info></editor-widget-location-info> HTML*/
+/*HTML <codemirror-playground></codemirror-playground> HTML*/
+
+/*HTML <span style="color: red">hello</span> HTML*/
 
 import { using, isFunction } from 'utils';
 
