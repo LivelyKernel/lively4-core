@@ -127,6 +127,9 @@ export class LivelyFile extends Scheme {
     console.log("LivelyFile GET " + this.url)
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
+      if (!element.url) {
+         return new Response(`lively-file found, but url attribute is missing...`, {status: 500})
+      }
       return fetch(element.url)
     }
     return super.GET(options)
@@ -171,7 +174,7 @@ export class LivelyFile extends Scheme {
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
         if (element.setContent && options) {
-          element.setContent(options.body)
+          element.setContent(options.body, options.headers && options.headers['Content-Type'])
           return new Response("")
         } else {
           return new Response("Hmm... I don't know.", {status: 500})      

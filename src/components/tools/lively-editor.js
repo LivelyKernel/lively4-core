@@ -255,6 +255,10 @@ export default class Editor extends Morph {
       if (this.lastVersion) {
         headers.lastversion = this.lastVersion
       }
+      if (urlString.match(/\.svg$/)) {
+        headers['Content-Type'] = 'image/svg+xml'
+      }
+      
       await fetch(urlString, {
         method: 'PUT', 
         body: data,

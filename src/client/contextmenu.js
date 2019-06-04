@@ -186,6 +186,38 @@ export default class ContextMenu {
         },
         "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
       ],
+      target.localName == "lively-file" ?
+        [ "become content", async () => {
+            if (target.url && target.name.match(/\.png$/)) {
+              debugger
+              var element = await (<img id={target.name}></img>)
+              element.src = target.url
+              target.parentElement.appendChild(element)
+              lively.setPosition(element, lively.getPosition(target))
+              target.remove()
+            } else {
+               lively.notify("not supported")
+            }
+          },
+          "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+        ] :
+      [  "become file", async () => {
+            if (target.src) {
+              var name  = this.id || await lively.prompt("convert to file named: ", "newfile.png")
+              var element = await (<lively-file name={name}></lively-file>)
+              target.parentElement.appendChild(element)
+              
+              element.setAttribute("url",await lively.files.readBlobAsDataURL(await fetch(target.src).then(r => r.blob())))
+              lively.setPosition(element, lively.getPosition(target))
+
+              target.remove()
+
+            } else {
+              lively.notify("not supported")
+            }
+          },
+          "", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'
+        ],
       ["save as png ...", async () => {
           var previewAttrName = "data-lively-preview-src"
           var url = target.getAttribute(previewAttrName)
@@ -216,8 +248,13 @@ export default class ContextMenu {
         if (!name) return;
         // var name = "foo.html"
         var url = name
+        
         if (!url.match(/https?:\/\//)) {
-          url = lively4url + "/" + url 
+          if (url.match(/^[a-zA-Z0-9]+\:/)) {
+            // url = lively.swxURL(url)
+          } else {
+            url = lively4url + "/" + url 
+          }
         }
         var source = ""
         if (name.match(/\.html$/)) {
