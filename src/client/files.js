@@ -111,7 +111,7 @@ export default class Files {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
       var options = {method: 'PUT', headers: {}, body: data}
-      if (url.match(/\.svg$/)) {
+      if (url.match && url.match(/\.svg$/)) {
         options.headers['Content-Type'] = 'image/svg+xml'
       }
       return fetch(urlString, options);
