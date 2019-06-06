@@ -1,5 +1,9 @@
+"enable examples";
+
 import authGithub from "src/client/auth-github.js"
 import Strings from "src/client/strings.js"
+
+const LivelyWebhookService = "https://lively-kernel.org/lively4/_webhook/signal"
 
 export class Issue {
   constructor(props) {
@@ -34,33 +38,79 @@ export class Comment extends Issue {
 }
 
 
-export default class Github {
+
+export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":"input","value":"dummy"},"values":{"user":{"mode":"input","value":"\"LivelyKernel\""},"repo":{"mode":"input","value":"\"lively4-dummy\""}}}*/ {
   
   static current(force) {
     if (!this._current || force) {
-      this._current = new Github()
+      this._current = new GitHub()
     }
     return this._current
   }
   
+  get storagePrefix() {
+    return "LivelySync_"
+  }
+  
+  /*example:*/hello/*{"id":"7cd7_e348_a121","name":{"mode":"input","value":""},"color":"hsl(280, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
+    /*probe:*/return/*{}*/ Promise.resolve(3)
+  }
+  
+  
+  async /*example:*/storeValue/*{"id":"f98c_ae45_820c","name":{"mode":"input","value":""},"color":"hsl(160, 30%, 70%)","values":{"key":{"mode":"input","value":"\"foo\""},"value":{"mode":"input","value":"\"bar\""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(key, value) {
+    return  lively.focalStorage.setItem(this.storagePrefix + key, value)
+  }
+  
+  async /*example:*/loadValue/*{"id":"168b_a1d5_6793","name":{"mode":"input","value":"me"},"color":"hsl(190, 30%, 70%)","values":{"key":{"mode":"input","value":"\"foo\""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(key) {
+    /*probe:*/return/*{}*/ lively.focalStorage.getItem(this.storagePrefix + key)
+  }
+  
+  githubApi(path, token) {
+    return fetch("https://api.github.com" + path, {
+      headers: new Headers({
+        Authorization: "token " + token
+    })}).then(r => r.json());
+  }
+  
+  async loadCredentials() {
+    // this.updateLoginStatus()
+    this.token = await this.loadValue("githubToken")
+    if (!this.token) {
+       this.token = await new Promise((resolve, reject) => {
+          authGithub.challengeForAuth(Date.now(), async (token) => {
+              var user = await this.githubApi("/user", token);
+              var username = user.login;
+              var emails =  await this.githubApi("/user/emails", token);
+              var email = emails.find(ea => ea.primary).email;
+              this.storeValue("githubUsername", username);
+              this.storeValue("githubEmail", email);
+              this.storeValue("githubToken", token);
+              resolve(token);
+        });
+       })
+    }
+    this.username = await this.loadValue("githubUsername");
+    this.email = await this.loadValue("githubEmail");
+  }
+  
+  
   constructor(user= "LivelyKernel", repo= "lively4-core") {
     this.user = user
     this.repo = repo
+    this.loaded = this.loadCredentials()
   }
 
-  token() {
-    return new Promise(resolve => {
-      if (this._token) {
-        return resolve(this._token)
-      }
-      authGithub.challengeForAuth(Date.now(), async (token) => {
-          this._token = token
-          resolve(this._token)
-      })
-    })
+  async token() {
+    if (!this.token ) {
+      this.loaded = this.loadCredentials()
+      await this.loaded
+    }
+    return this.token
   }
   
   async ensureBranch(name, original="master") {
+    await this.loaded
+    
     var info = await this.getBranch(name)
     if (info.ref) return info
     
@@ -70,7 +120,7 @@ export default class Github {
     return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/git/refs`, {
       method: "POST",
       headers: {
-       Authorization: "token " + await this.token() 
+       Authorization: "token " + this.token 
       },
       body: JSON.stringify({
         "ref": `refs/heads/${name}` ,
@@ -79,30 +129,82 @@ export default class Github {
     }).then(r => r.json())
   }
   
+  async apiFetch(api, options={}) {
+    await this.loaded
+    var baseHeaders =  {
+      Authorization: "token " + this.token
+    }
+    var baseOptions = {
+      method: "GET"
+    }
+    var composedOptions = Object.assign(baseOptions, options)
+    composedOptions.headers = Object.assign(baseHeaders, options.headers || {})
+    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}` + api, composedOptions).then(r => r.json())
+  }
+  
+  
   async getBranch(name) {
-    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/git/refs/heads/${name}`, {
-      headers: {
-       Authorization: "token " + await this.token() 
-      }
-    }).then(r => r.json())
+    return this.apiFetch(`/git/refs/heads/${name}`)
   }
 
-  async getFile(path, branch) {
-    return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}` 
+  async /*example:*/getFile/*{"id":"31df_87f4_e96e","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"path":{"mode":"input","value":"\"README.md\""},"branch":{"mode":"input","value":""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(path, branch) {
+    await this.loaded
+    var /*probe:*/result/*{}*/ = await fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}` 
                  + (branch  ? `?ref=${branch}` : ""), {
       headers: {
-       Authorization: "token " + await this.token() 
+       Authorization: "token " + this.token 
       }
     }).then(r => r.json())
+    return result
+  }
+  
+  async /*example:*/listWebhooks/*{"id":"2031_068d_1eee","name":{"mode":"input","value":""},"color":"hsl(290, 30%, 70%)","values":{},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/() {
+    var /*probe:*/hooks/*{}*/ = await this.apiFetch(`/hooks`)
+    return hooks
+  }  
+
+  async ensureWebhook(url=LivelyWebhookService) {
+    var hooks = await this.listWebhooks()
+    var found = hooks.find(ea => ea.config.url == url)
+    if (found) {
+      return found
+    } else {
+      return this.createWebhook(url)
+    }
   }
 
-  async setFile(path, branch, content) {
+  async createWebhook(url=LivelyWebhookService) {
+    return await this.apiFetch(`/hooks`, {
+      method: "POST",
+      body: JSON.stringify({
+        "name": "web",
+        "active": true,
+        "events": [
+          "push"
+        ],
+        "config": {
+          "url": url,
+          "content_type": "json",
+          "insecure_ssl": "0"
+        }
+      })
+    })
+  }
+  
+  fixPath(path) {
+   return path && path.replace(/^\//,"") // do not start with /
+  }
+
+  async setFile(path, branch, content, message="LIVELY COMMIT") {
+    path = this.fixPath(path) 
+    debugger
+    await this.loaded
     var file = await this.getFile(path, branch)
     var body = {
-        "message": "LIVELY COMMIT " + path,
+        "message": message,
         "committer": {
-          "name": "Lively",
-          "email": "lively@lively-kernel.org"
+          "name": this.user,
+          "email": this.email
         },
         "content": btoa(content),
         
@@ -112,21 +214,22 @@ export default class Github {
     return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}`, {
       method: "PUT",
       headers: {
-       Authorization: "token " + await this.token() 
+       Authorization: "token " + this.token 
       }, 
       body: JSON.stringify(body)
     }).then(r => r.json())
   }
   
-  async deleteFile(path, branch) {
+  async deleteFile(path, branch, message="LIVELY COMMIT DELETE") {
+    await this.loaded
     var file = await this.getFile(path, branch)
     if (!file.sha) throw new Error("File not found")
     
     var body = {
-        "message": "LIVELY COMMIT DELETE " + path,
+        "message": message,
         "committer": {
-          "name": "Lively",
-          "email": "lively@lively-kernel.org"
+          "name": this.user,
+          "email": this.email
         },
       }
     body.sha = file.sha
@@ -134,7 +237,7 @@ export default class Github {
     return fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}`, {
       method: "DELETE",
       headers: {
-       Authorization: "token " + await this.token() 
+       Authorization: "token " + this.token 
       }, 
       body: JSON.stringify(body)
     }).then(r => r.json())
@@ -157,6 +260,7 @@ export default class Github {
   
   
   async create(title, body) {
+    await this.loaded
     if (!title) throw new Error("title is missing") 
     if (!body) throw new Error("body is missing") 
     return fetch("https://api.github.com/repos/" 
@@ -167,13 +271,14 @@ export default class Github {
           body: body
         }),
         headers: {
-          Authorization: "token " + await this.token(),
+          Authorization: "token " + this.token,
           'Content-Type': 'application/json'
         }
       }).then(r => r.json())
   }
   
   async patch(number, issuePatch) {
+    await this.loaded
     if (!number) throw new Error("number is missing") 
     if (!issuePatch) throw new Error("issuePatch is missing") 
 
@@ -182,7 +287,7 @@ export default class Github {
         method: "PATCH",
         body: JSON.stringify(issuePatch),
         headers: {
-          Authorization: "token " + await this.token(),
+          Authorization: "token " + this.token,
           'Content-Type': 'application/json'
         }
       }).then(r => r.json())
@@ -204,16 +309,14 @@ export default class Github {
     return links;
   }
   
-  tokenSync() {
-    return this._token
-  }
+
   async getURLAuthorized(url, force) {
-    var token = this.tokenSync();
-    if (!token || force) token = await this.token();
+    // force not used...
+    await this.loaded
     return fetch(url, {
         method: "GET",
         headers: {
-          Authorization: "token " + token
+          Authorization: "token " + this.token
         }
       })
   }
@@ -243,7 +346,7 @@ export default class Github {
    */
   parseMarkdownStories(source, recursive) {
     var lines = source.split(/\r?\n/)
-    var stories = lines.map((ea, index) => {
+    var stories = lines.map((ea) => {
       var result =  Strings.matchDo(/^## +(.*)/, ea, title => 
         new Project({isProject: true, project: title, stories: [], comments: []}))
       if (!result) result = Strings.matchDo(/^(- )(.*)/, ea, (prefix, issue) => {
@@ -484,4 +587,4 @@ export default class Github {
     var updateContent = this.stringifyMarkdownStories(stories)
     return lively.files.saveFile(url, updateContent)
   }
-}
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

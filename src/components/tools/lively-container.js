@@ -693,18 +693,38 @@ export default class Container extends Morph {
     this.newfile(this.getPath())
   }
 
-  async newfile(path) {
+  async newfile(path, type) {
+    
+    var content = "here we go...."
+    var ending = "md2" + type
+    if (type == "drawio") {
+      ending = "xml"
+      content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
+    }
+    
+    path = path + "newfile2." + ending 
+    
     var fileName = window.prompt('Please enter the name of the file', path);
     if (!fileName) {
       lively.notify("no file created");
       return;
     }
-    await files.saveFile(fileName,"");
+    await files.saveFile(fileName, content);
     lively.notify("created " + fileName);
-    this.setAttribute("mode", "edit");
+    
+    if (type == "drawio") {
+      this.setAttribute("mode", "show");      
+    } else {
+      this.setAttribute("mode", "edit");
+    }
+    
     this.showCancelAndSave();
 
-    this.followPath(fileName);
+    await this.followPath(fileName);
+    
+    
+    
+    this.focus()
   }
 
   async onNewdirectory() {
@@ -1124,6 +1144,8 @@ export default class Container extends Morph {
     this.currentEditorType = editorType
     
     var container = this.get('#container-editor');
+    
+    
     var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor");
     
     if (livelyEditor && (livelyEditor.localName != editorType)) {
@@ -1529,7 +1551,7 @@ export default class Container extends Morph {
     // implement hooks
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
-    navbar.newfile = (url) => { this.newfile(url) }
+    navbar.newfile = (url, type) => { this.newfile(url, type) }
     navbar.followPath = (path, lastPath) => { 
       this.contextURL = lastPath
       this.followPath(path) 
@@ -1602,8 +1624,12 @@ export default class Container extends Morph {
     
     // console.log("[container] editFile befor getEditor")
     // ... demos\/
-    var editorType = urlString.match(/babylonian-programming-editor\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
+    var editorType = urlString.match(/babylonian-programming-editor\/demos\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
+    if (this.sourceContent && this.sourceContent.match('^.*"enable examples"')) {
+      editorType = "babylonian-programming-editor"
+    }
+    
     if (urlString.match(/((png)|(jpe?g)|(gif))$/i)) {
       editorType = "lively-image-editor"
     }
@@ -1885,7 +1911,6 @@ export default class Container extends Morph {
   updateChangeIndicator() {
     var indicator = this.get("#changeIndicator")
     if (indicator && this.contentChanged) {
-      debugger
       indicator.style.backgroundColor = "rgb(220,30,30)";
     } else {
       indicator.style.backgroundColor = "rgb(200,200,200)";
