@@ -197,7 +197,6 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
 
   async setFile(path, branch, content, message="LIVELY COMMIT") {
     path = this.fixPath(path) 
-    debugger
     await this.loaded
     var file = await this.getFile(path, branch)
     var body = {
