@@ -4,6 +4,7 @@ self.lively4fetchLog = self.lively4fetchLog || []
 
 import {uniq} from "utils"
 
+// _.uniq(that.value.split("\n")).join("\n")
 export async function updateCachedFilesList() {
   var list = self.lively4fetchLog.filter(ea => ea.method == "GET")
               .filter(ea => ea.url.match(lively4url))

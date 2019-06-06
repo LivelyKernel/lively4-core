@@ -52,3 +52,24 @@ fetch("https://api.github.com/repos/hpi-swa-lab/markdown-paper-template/git/refs
   })
 }).then(r => r.text())
 ```
+
+
+# New Github Methods
+
+```javascript
+import GitHub from "src/client/github.js"
+
+var gh = new GitHub("hpi-swa-lab", "markdown-paper-template")
+
+gh.getBranch("drawio")
+
+gh.ensureBranch("drawio6", "drawio")
+
+gh.getFile("README.md")
+
+gh.setFile("foo2.txt", "drawio", "yea")
+
+gh.deleteFile("foo.txt", "drawio")
+
+gh.getContent("README.md")
+```

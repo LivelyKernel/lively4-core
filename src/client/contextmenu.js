@@ -492,10 +492,7 @@ export default class ContextMenu {
            
           const FilesCaches = await System.import("src/client/files-caches.js")
           var list = await FilesCaches.updateCachedFilesList()
-          var workspace = await lively.openWorkspace("" + list.join("\n"))
-          workspace.parentElement.setAttribute("title","Updated Cached Bootfiles")
-          workspace.mode = "text"
-          
+          lively.openBrowser(lively4url + "/.lively4bootfilelist", true)        
         }],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       [
