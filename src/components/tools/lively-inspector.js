@@ -247,6 +247,11 @@ export default class Inspector extends Morph {
       return;
     }
 
+    if (obj instanceof Document) {
+      return;
+    }
+
+    
     
     if (obj instanceof ShadowRoot) {
       node.appendChild(this.expandTemplate(node)) 
@@ -300,6 +305,8 @@ export default class Inspector extends Morph {
     this.renderAttributes(node, obj);
 
     var contentNode = node.querySelector("#content");
+    if (!contentNode) return 
+    
     this.attachHandlers(node, obj);
     
     var expandChildren = obj.livelyIsParentPlaceholder || false;
