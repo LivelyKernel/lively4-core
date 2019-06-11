@@ -5,7 +5,6 @@ import BabylonianWorker from "../worker/babylonian-worker.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
-
 export default class ProbeWidget extends Widget {
   constructor(editor, location, kind, deleteCallback) {
     super(editor, location, kind, deleteCallback);
@@ -30,6 +29,7 @@ export default class ProbeWidget extends Widget {
   }
 
   _update() {
+    
     const renderValue = (value) => {
       if(value === null || value === undefined) {
         return null;
@@ -44,13 +44,31 @@ export default class ProbeWidget extends Widget {
     
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
+      
+      
       let runElement = null;
       
       if(!run || !(run.before || run.after)) {
         return <span class="run noexec">/</span>
       }
       
-      // run: {before, after: {type, value, name}}
+      
+      // #FutureWork #Issue deal with promises...
+//       // run: we have a promise
+//       if(run.after &&  run.after.type == "Promise") {
+//         var promisedSpan = <span class="result"></span>
+//         run.after.value.then(resolved => {
+//           promisedSpan.appendChild(elementForRun({after: {
+//             type: typeof resolved,
+//             value: resolved
+            
+//           }} ))
+//         })
+            
+//         return <span class="promise">Promised{result}</span>
+//       }
+      
+      
       if(run.after && (run.after.value instanceof Array)) {
         // We have an array
         if(run.before) {

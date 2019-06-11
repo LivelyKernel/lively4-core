@@ -1,6 +1,8 @@
 import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
+// ensure global variable 'that'
+self.that = self.that;
 
 function extendFromLodash(obj, propNames) {
   function genFunc(name) {

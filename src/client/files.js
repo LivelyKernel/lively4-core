@@ -497,15 +497,27 @@ export default class Files {
       var remoteURL = await syncTool.gitControl("remoteurl")
       remoteURL = remoteURL.replace(/\n/,"")
       
-      return {
+      var userAndRepository = remoteURL.replace(/https:\/\/github.com\//,"").replace(/git@github.com:/,"").replace(/\.git/,"")
+      var [user, repo] = userAndRepository.split("/")
+      
+      var result =  {
         url,
+        user,
+        repo,
         serverURL,
         respository,
-        path,
+        path: path && path.replace(/^\//,""),
         remoteURL,
         branch,
         rawURL: remoteURL + "/raw/" + branch + path
-      }  
+      }
+      
+      if (!remoteURL || !branch || !path) {
+        console.warn("Github fileInfo not complete: " + JSON.stringify(result))
+        return null
+      }
+      
+      return result  
     }, url) 
   }
   

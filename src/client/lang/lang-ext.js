@@ -65,6 +65,56 @@ extend(String.prototype, {
       resolveModuleSource: undefined
     }).ast;
   },
+  
+  /**
+   * @example providing a visitor object
+   * var ids = [];
+   * `let x = 0, y = x +2;`.traverseAsAST({
+   *   Identifier(path) {
+   *     ids.push(path.node.name);
+   *   }
+   * });
+   * ids;
+   * 
+   * @example providing a full-fledged plugin function
+   * var ids = [];
+   * `let x = 0, y = x +2;`.traverseAsAST(({ types: t, template, traverse }) => ({
+   *   visitor: {
+   *     Identifier(path) {
+   *       ids.push(path.node.name);
+   *     }
+   *   }
+   * }));
+   * ids;
+   */
+  // #TODO: eliminate code duplication
+  traverseAsAST(fullPluginOrVisitor) {
+    let iteratorPlugin;
+    if(fullPluginOrVisitor instanceof Function) {
+      iteratorPlugin = fullPluginOrVisitor;
+    } else {
+      // only got the visitor: need to bridge to a plugin function as expected by babel
+      iteratorPlugin = babel => ({ visitor: fullPluginOrVisitor });
+    }
+
+    const filename = "tempfile.js";
+    
+    return babel.transform(this, {
+      babelrc: false,
+      plugins: [...SYNTAX_PLUGINS, iteratorPlugin],
+      presets: [],
+      filename: filename,
+      sourceFileName: filename,
+      moduleIds: false,
+      sourceMaps: true,
+      // inputSourceMap: load.metadata.sourceMap,
+      compact: false,
+      comments: true,
+      code: true,
+      ast: true,
+      resolveModuleSource: undefined
+    }).ast;
+  },
 
   async boundEval(thisReference, targetModule) {
     const result = await boundEval(this, thisReference, targetModule);
