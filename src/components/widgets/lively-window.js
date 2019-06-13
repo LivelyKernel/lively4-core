@@ -364,6 +364,11 @@ export default class Window extends Morph {
     if (this.afterWindowClosed instanceof Function) {
       this.afterWindowClosed();
     }
+    
+    var last = this.allWindows().first
+    if (last) {
+      lively.focusWithoutScroll(last)
+    }
   }
 
   onMenuButtonClicked(evt) {

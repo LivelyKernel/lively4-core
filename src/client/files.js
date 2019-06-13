@@ -2,12 +2,6 @@ import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
-  
-  static hello() {
-    return "Hello World"
-  }
-  
-  
 
   static async fillCachedFileMap() {
     var root = lively4url +  "/"
@@ -327,7 +321,7 @@ export default class Files {
          showversions: true   
       }      
     })
-    versionscache.put(url, resp)
+    versionscache.put(url, resp.clone())
     return resp
   }
   
@@ -433,6 +427,7 @@ export default class Files {
 
     links.filter(ea => !fileNames.includes(ea) && !ea.match("/")).forEach(ea => {
       var item = document.createElement("li")
+       if (ea == "index.md") return // don't include yourself
       item.textContent = "Missing " + ea
       list.appendChild(item)
     })

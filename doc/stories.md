@@ -207,7 +207,7 @@ div
   - Methods, Classes, Modules
   - Headlines, Text, Nodes
   - Handwriting
-- fast through caching content and meta-information (prototyped with  and [TODO pages](../todo.html) #Dexie #feature #TagAndSearch #open #170
+- fast through caching content and meta-information (prototyped with  and [TODO pages](files/todo.md) #Dexie #feature #TagAndSearch #open #170
 
 ## Lively Graffle
 - provide a graffle like whiteboard feeling text/shape/connectors #WIP #feature #graffle #open #171

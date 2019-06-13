@@ -8,6 +8,7 @@ import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js";
 
+
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
     this.addEventListener("drop", this.onDrop);
@@ -467,7 +468,6 @@ export default class LivelyContainerNavbar extends Morph {
          () => {}, "", '>'],
       ])
     }
-    debugger
     if (selection.length == 1) {
       menuElements.push(...[
         [`rename`, () => this.renameFile(otherUrl)],
