@@ -1,5 +1,8 @@
 "enable aexpr";
-let x = 0;
+
+// Alt-A to show hints!
+
+let xbar
 {
   let x = 6;
 }
