@@ -9,13 +9,25 @@ import Strings from "src/client/strings.js"
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 import * as cop from "src/client/ContextJS/src/contextjs.js";
+import Files from "src/client/files.js"
+import Paths from "src/client/paths.js"
+
+import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
+import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
+import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
+import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
+
+const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
+
+const FETCH_TIMEOUT = 5000
+
 
 export default class FileIndex {
 
   static current() {
     // FileIndex._current = null
     if (!this._current) {
-      this._current = new FileIndex("file_cache")
+      this._current = new FileIndex("file_index")
     }
     return this._current
   }
@@ -25,8 +37,12 @@ export default class FileIndex {
   }
 
   clear() {
-    this.db.files.clear()
-    // this.db.delete()
+    this.db.files.clear()   
+    this.db.modules.clear()
+    this.db.links.clear()
+    this.db.classes.clear()
+    this.db.versions.clear()
+    // this.db.delete() 
   }
 
   constructor(name) {
@@ -37,15 +53,17 @@ export default class FileIndex {
   fileCacheDB() {
     var db = new Dexie(this.name);
 
-    db.version("1").stores({
-        files: 'url,name,type,version,modified,options,title,tags,classes,functions',
-        modules: '++id,url,name,dependencies',
-        classes: '++id,url,name,methods',
-        methods: '++id,url,name'
+    db.version("2").stores({
+        files: 'url,name,type,version,modified,options,title,tags,versions',
+        history: '[url+version],url,name,type,version,modified,options,title,tags',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user'
     }).upgrade(function () {
     })
-
-    return db
+   
+    return db 
   }
 
   async toArray() {
@@ -54,31 +72,16 @@ export default class FileIndex {
 
   async update() {
     await this.updateTitleAndTags()
-    await this.updateFunctionAndClasses()
+    await this.updateAllModuleSemantics()
+    await this.updateAllLinks()
+    await this.updateAllLatestVersionHistories() 
   }
-
-  async updateFunctionAndClasses() {
-    return this.showProgress("extract functions and classes", () => {
-      this.db.files.where("name").notEqual("").modify((file) => {
-        if (file.name && file.name.match(/\.js$/)) {
-          this.extractFunctionsAndClasses(file)
-        }
-      })
-    })
-  }
-
+  
   async updateTitleAndTags() {
     return this.showProgress("update title", () => {
       return this.db.files.where("name").notEqual("").modify((ea) => {
          this.extractTitleAndTags(ea)
       });
-    })
-  }
-
-  showProgress(label, func) {
-    ShowDexieProgress.currentLabel = label
-    return cop.withLayers([ShowDexieProgress], () => {
-        return func()
     })
   }
 
@@ -88,43 +91,347 @@ export default class FileIndex {
     file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
       .map(ea => ea[1])
   }
-
-  extractFunctionsAndClasses(file) {
-    var ast = this.parseSource(file.url, file.content)
-    var result = this.parseFunctionsAndClasses(ast)
-//     console.log(file.url + " functions: " + result.functions)
-//     console.log(file.url + " classes: " + file.classes)
-    
-    file.classes = result.classes
-    file.functions =  result.functions
+  
+  async updateAllModuleSemantics() {
+    this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
+      this.db.files.where("type").equals("file").each((file) => {
+        this.addModuleSemantics(file)
+      })
+    })
   }
   
- 
-  parseFunctionsAndClasses(ast) {
-    var functions = []
-    var classes = []
+  async addModuleSemantics(file) {
+    if (file.name && file.name.match(/\.js$/)) { 
+      var result = this.extractModuleSemantics(file)
+      this.updateModule(file.url, result)
+      this.updateClasses(file, result)
+    }
+  }
+  
+  extractModuleSemantics(file) {
+    var ast = this.parseSource(file.url, file.content)
+    if(!ast) {
+      console.info('Could not parse file:', file.url)
+      return []
+    }
+    var results = this.parseModuleSemantics(ast)
+    return results;
+  }
+  
+  async updateClasses(file, semantics) {
+    if (!semantics || !semantics.classes) {
+      return
+    }
+    
+    for (var clazz of semantics.classes) {
+      if (clazz.superClassName && !clazz.superClassUrl) {
+        let superClass = semantics.classes.find(item => item.name == clazz.superClassName)
+        clazz.superClassName = (superClass) ? superClass.superClassName : ''
+        clazz.superClassUrl = (superClass) ? file.url : ''
+      } else if (clazz.superClassName && clazz.superClassUrl) {
+        clazz.superClassUrl = await System.resolve(clazz.superClassUrl, file.url)
+      }
+      clazz.url = file.url
+      clazz.nom = clazz.methods ? clazz.methods.length : 0
+      await this.addClass(clazz)
+    }
+  } 
+  
+  async addClass(clazz) {
+    await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
+    this.db.classes.put(clazz)
+  }
+
+  async updateModule(fileUrl, semantics) {
+    if (!semantics || !semantics.dependencies) {
+      return
+    }
+   
+    let resolvedDependencies = await ModuleDependencyAnalysis.resolveModuleDependencies(fileUrl, semantics.dependencies)
+    this.db.transaction("rw", this.db.modules, () => {
+      this.db.modules.put(resolvedDependencies)
+    })
+  }
+  
+  /* extract links and check status */
+  async updateAllLinks() {
+    await this.db.transaction('rw', this.db.files, this.db.links, () => {
+      this.db.files.where("type").equals("file").each((file) => {
+        this.addLinks(file) 
+      })
+    })
+    console.log('updateAllLinks() finished.')
+  }
+  
+  async addLinks(file) {
+    BrokenLinkAnalysis.extractLinks(file).then(links => {
+      this.db.transaction("rw!", this.db.links, async () => {
+        this.db.links.where("url").equals(file.url).delete()
+        if (links) {
+          this.db.links.bulkPut(links)
+        }
+      })
+    })
+  }
+  
+  
+  /* checks status of links */
+  async checkLink(link, statusCache=new Map()) {
+    var normalizedLink = Paths.normalizePath(link.link, link.url)
+    console.log("[fileindex] checkLink " + link.url + " -> " +normalizedLink)
+    var status = statusCache.get(normalizedLink)
+    if (!status) {
+      status = await this.validateLink(normalizedLink)
+      statusCache.set(normalizedLink, status)
+    }
+    if (status == "broken") {
+      console.warn("[fileindex ] broken link " + link.url + " -> " + link.link)
+    }
+    await this.db.transaction("rw", this.db.links, () => {
+      this.db.links.where({url: link.url, link: link.link}).modify({status:  status})
+    })
+    return status
+  }
+
+  async checkLinks(links) {
+    var statusCache = new Map()
+    for(var link of links) {
+      await this.checkLink(link, statusCache)
+      console.log("[fileindex] updated status " + link.link + " " + link.status )
+    }
+  }
+  
+  async checkLinksFile(url) {
+    return this.checkLinks(await this.db.links.where({url: url}).toArray())
+  }
+
+  async checkAllLinks() {
+    return this.checkLinks(await this.db.links.toArray())
+  }
+  
+  async extractLinks(file) { 
+   return BrokenLinkAnalysis.extractLinks(file)
+  }
+  
+  async validateLink(link) { 
+    return BrokenLinkAnalysis.validateLink(link)
+  }
+    
+  async updateAllVersions() {
+     await this.db.transaction('rw', this.db.files, this.db.versions, () => {
+      return this.db.files.where("type").equals("file").toArray()
+    }).then((files) => {
+      files.forEach(file => {
+        if (file.name && file.name.match(/\.js$/))
+          this.addVersions(file)
+      })
+    }) 
+  }
+  
+  async loadVersions(url) {
+    try {
+      let response = await Files.loadVersions(url) 
+      let text = await response.text()
+      return JSON.parse(text).versions
+    }  catch(e) {
+      console.error("[fileindex] could not parse versions for " + url, e) 
+      // throw new Error("[fileindex] could not parse versions for " + url, e) 
+    }
+    return []
+  }
+  
+  
+  async addVersions(file) {
+    
+    let versions = await this.loadVersions(file.url)
+    for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
+      let version = versions[i]
+      let versionPrevious = versions[i+1]
+      
+      var historicFileResult  = await this.db.history.where({'url': "" + file.url, 'version': "" + version.version}).toArray()
+      if (historicFileResult.length > 0) {
+        // console.log("[fileindex] found ", historicFileResult)
+      } else {
+        var historicFile = {
+          url: file.url,
+          type: file.type,
+          name: file.name,
+          version: version.version,
+          previous: versionPrevious
+        }
+        console.log("[fileindex] add ", historicFile)
+
+        await this.db.transaction("rw", this.db.history, () => { 
+          this.db.history.put(historicFile) 
+        })
+
+        var modifications = await this.findModifiedClassesAndMethods(file.url, version, versionPrevious)
+        this.db.transaction("rw", this.db.versions, () => {
+          this.db.versions.bulkPut(modifications)
+        })          
+        
+        
+        // if (i >= 9) break; // consider latest ten versions        
+      }
+    }
+  } 
+  
+  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
+    let modifications = new Array()
+    let latestContent = await Files.loadFile(fileUrl, latestVersion.version)
+    let previousContent = await Files.loadFile(fileUrl, previousVersion.version)
+    let astLastest = await this.parseSource(fileUrl, latestContent)
+    let astPrevious = await this.parseSource(fileUrl, previousContent)
+
+    if (!astLastest || !astPrevious) {
+      return modifications
+    }
+
+    let latest = await this.parseModuleSemantics(astLastest)
+    let previous = await this.parseModuleSemantics(astPrevious)
+    // classes
+    for (let classLatest of latest.classes) {
+      try {
+        let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
+        if (!previousClass) { // added class
+          modifications.push({
+            url: fileUrl,
+            class: classLatest.name,
+            method: "+null+",
+            date: latestVersion.date,
+            user: latestVersion.author,
+            commitId: latestVersion.version,
+            action: (!previousClass) ? "added" : "modified"
+          })
+        }
+        
+        // methods
+        for (let methodLastest of classLatest.methods) {
+          if (!previousClass) { // added method
+             modifications.push({
+                url: fileUrl,
+                class: classLatest.name,
+                method: methodLastest.name,
+                date: latestVersion.date,
+                user: latestVersion.author,
+                commitId: latestVersion.version,
+                action: "added"
+              })
+          } else {
+            let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name)
+            if ((!methodPreviousClass) || (methodPreviousClass && latestContent.substring(methodLastest.start, methodLastest.end) != previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)) ) { // added or modified method
+              modifications.push({
+                url: fileUrl,
+                class: classLatest.name,
+                method: methodLastest.name,
+                date: latestVersion.date,
+                user: latestVersion.author,
+                commitId: latestVersion.version,
+                action: (!methodPreviousClass) ? "added" : "modified"
+              })
+            }
+          }
+        }
+      
+        if (!previousClass) continue;
+        for (let methodPreviousClass of previousClass.methods) {
+          let latestClassMethod = classLatest.methods.find(method => method.name == methodPreviousClass.name)
+          if (!latestClassMethod) { // deleted method
+            modifications.push({
+              url: fileUrl,
+              class: classLatest.name,
+              method: methodPreviousClass.name,
+              user: latestVersion.author,
+              date: latestVersion.date,
+              commitId: latestVersion.version,
+              action: "deleted"
+            })
+          }
+        }
+      } catch(error) {
+        console.error("Version history couldn't created for class: ", classLatest, error)
+      }
+    }
+    return modifications 
+  }
+  
+  parseModuleSemantics(ast) {
+    let classes = []
+    let dependencies = []
+    let importDeclarations = new Map()
     babel.traverse(ast,{
-      Function(path) {
-        if (path.node.key) {
-          functions.push(path.node.key.name)
-        } else if (path.node.id) {
-          functions.push(path.node.id.name)
+      ImportDeclaration(path) {
+        if (path.node.source && path.node.source.value) {
+          let specifierNames = []
+          let moduleUrl = path.node.source.value
+          if (path.node.specifiers) { 
+            path.node.specifiers.forEach(function(item) {
+              if (item.type === "ImportNamespaceSpecifier") {
+                specifierNames.push('*')
+                importDeclarations.set('*', moduleUrl)
+              } else {
+                specifierNames.push(item.local.name)
+                importDeclarations.set(item.local.name, moduleUrl)
+              }
+            })
+          }
+          let dependency = {
+            url: path.node.source.value,
+            names: specifierNames
+          }
+           dependencies.push(dependency)
         }
       },
       ClassDeclaration(path) {
+        let superClassName = ''
+        let superClassUrl = ''
         if (path.node.id) {
-          classes.push(path.node.id.name)
-        }
+          let clazz = {
+            name: path.node.id.name,
+            start: path.node.start, // start byte 
+            end: path.node.end,     // end byte
+            loc: path.node.loc.end.line - path.node.loc.start.line + 1
+          }
+          superClassName = (path.node.superClass) ? path.node.superClass.name : ''
+          superClassUrl = importDeclarations.get(superClassName)
+          let methods = []
+          if (path.node.body.body) {
+            path.node.body.body.forEach(function(item) {
+              if(item.type === "ClassMethod") {
+                let method = {
+                  name: item.key.name,
+                  loc: item.loc.end.line - item.loc.start.line + 1,
+                  start: item.start,
+                  end: item.end,
+                }
+                methods.push(method)
+              }
+            })
+          }
+          clazz.methods = methods
+          clazz.superClassName = superClassName
+          clazz.superClassUrl = superClassUrl
+          classes.push(clazz)
+        } 
       }
     })
-    return {functions, classes}
+    return {classes, dependencies}
   }
+  
+  // ********************************************************
 
+  showProgress(label, func) {
+    ShowDexieProgress.currentLabel = label
+    return cop.withLayers([ShowDexieProgress], () => {
+        return func()
+    })
+  }
+  
   parseSource(filename, source) {
     try {
       return babel.transform(source, {
           babelrc: false,
-          plugins: [],
+          plugins: [...syntaxPlugins],
           presets: [],
           filename: filename,
           sourceFileName: filename,
@@ -137,54 +444,47 @@ export default class FileIndex {
           resolveModuleSource: undefined
       }).ast
     } catch(e) {
-      console.log('FileIndex, could not parse: ' + filename)
+      console.log('FileIndex, could not parse: ' + filename, e)
       return undefined
     }
   }
 
   async updateFile(url) {
-    console.log("FileCache updateFile " + url)
+    console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS"
-    }).then(r => r.json())
+    }).then(r => r.clone().json())
+    
+    
     this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
-  }
+  } 
     
-  async addFile(url, name, type, size, modified) {
-    
+  async addFile(url, name, type, size, modified) {    
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
       return
-    }
-    if (!name) {
-      console.warn("FileIndex addFile failed because no name for  " + url)
-      return
+    }    
+    console.log("FileIndex addFile " + url)
+
+    if (type == "file") {
+      var versions = (await this.loadVersions(url)).map(ea => ea && ea.version).filter(ea => ea)
     }
     
-    console.log("FileIndex update  " + url)
-
     var file = {
       url: url,
       name: name,
       size: size,
-      modified: modified
+      modified: modified,
+      versions: versions
     }
     
     if (name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
       if (size < 100000) {
         let response = await fetch(url)
-        file.version = response.headers.get("fileversion")
-        file.content = await response.text()    
+        file.version = response.clone().headers.get("fileversion")
+        file.content = await response.clone().text()    
       }
-    };
-
-
-    // await new Promise(resolve => setTimeout(resolve, 100))
-
-    // let options = await fetch(url,
-    //  {method: "OPTIONS", headers: {showversions: true}}).then(resp => resp.json())
-    //  versions: options.versions
-    
+    }
 
     let fileType = url.replace(/.*\./,"")
     if(type == "directory") {
@@ -192,15 +492,21 @@ export default class FileIndex {
     }
     file.type = type
     
+    await this.db.transaction("rw", this.db.files, () => { 
+      this.db.files.put(file) 
+    })
+
+
+
     if (file.content) {
-      this.extractTitleAndTags(file)
-      if (type == "js") {
-        this.extractFunctionsAndClasses(file)
+      this.extractTitleAndTags(file) 
+      this.addLinks(file)
+
+      if (file.name.match(/\.js$/)) {
+        this.addModuleSemantics(file)
+        this.addVersions(file)
       }      
     }
-    this.db.transaction("rw", this.db.files, () => {
-      this.db.files.put(file)
-    })
   }
 
   async dropFile(url) {
@@ -209,8 +515,6 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
-
-  
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
@@ -259,54 +563,16 @@ export default class FileIndex {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
           this.dropFile(eaURL)
         }
-      })    
+      }) 
     } finally {
       if (showProgress) progress.remove()
-    }
-    
+    } 
     console.log("FileIndex updateDirectory finished")
   }
 
   async addDirectory(baseURL) {
-    
-
-    
     this.updateDirectory(baseURL, true) // much faster and better
   }
-    
-//   async addDirectory(baseURL, depth) {
-//     console.log("addDirectory " + baseURL + " "  + depth)
-//     var contents = (await fetch(baseURL, {method: "OPTIONS"}).then( resp => resp.json())).contents
-//     var progress = await lively.showProgress("add " + baseURL.replace(/.*\//,""))
-//     var total = contents.length
-//     var i=0
-//     try {
-//       for(let ea of contents) {
-//         progress.value = i++ / total;
-//         let eaURL = baseURL.replace(/\/$/,"")  + "/" + ea.name
-//         let name = eaURL.replace(/.*\//,"")
-//         let size = ea.size;
-//         if (name.match(/^\./)) {
-//           console.log("ignore hidden file " + eaURL)
-//           continue
-//         };
-
-//         if (ea.type == "directory" && (depth > 0)) {
-//           console.log("[file cache] decent recursively: " + eaURL )
-//           this.addDirectory(eaURL, depth - 1)
-//         }
-//         if (await this.db.files.where("url").equals(eaURL).first()) {
-//           console.log("already in cache: " + eaURL)
-//         } else {
-//           this.addFile(eaURL, name, ea.type,  size, ea.modified /* may be be set */)
-//         }
-//       }
-//     } finally {
-//       progress.remove()
-//     }
-//   }
-
-
   showAsTable() {
     var result= []
     this.db.files.each(ea => {
@@ -326,10 +592,108 @@ export default class FileIndex {
         table.style.overflow = "auto"
         table.column("size").forEach(cell => cell.classList.add("number"))
       })
-      console.log("result: " + result.length)
     })
   }
 }
+
+class BrokenLinkAnalysis {
+
+  static async extractLinks(file) {
+    if (!file || !file.content || file.url.includes("/src/external/") || file.url.match(/\.js$/)) {
+      return [];
+    }
+  
+    var links = new Array()
+    var statusCache = new Map()
+    var extractedLinks =  new Array()
+    
+    if (file.url.match(/\.md$/)) {
+       let patternMdFiles = /(?<=(\]:\s*)|(\]\s*\())((http(s)?:\/\/(w{3}[.])?([a-z0-9.-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([a-zA-Z0-9\/\.\-\_#.?=%;]*))|((([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+([a-zA-Z0-9\-_#.?=%;]+)?))/gm
+           // /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+      extractedLinks = file.content.match(patternMdFiles)
+    } else if (file.url.match(/\.(css|(x)?html)$/)) {
+      let patternHtmlCssFiles = /(?<=(src\s*=\s*|href\s*=\s*|[a-zA-Z0-9\-_]+\s*\{\s*.*\s*:\s*)('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
+      extractedLinks = file.content.match(patternHtmlCssFiles)
+    }
+    if(!extractedLinks) {
+      return [];
+    }
+    for (const extractedLink of extractedLinks) {
+      var normalizedLink = Paths.normalizePath(extractedLink, file.url)
+      var status = statusCache.get(normalizedLink)
+      if (!status) {
+        status = await this.validateLink(normalizedLink)
+        statusCache.set(normalizedLink, status)
+      }
+      
+      let link = {
+        link: extractedLink,
+        location: extractedLink.includes('lively-kernel.org') ? "internal" : "external",
+        url: file.url,
+        status: status,
+      }
+      links.push(link)  
+    }
+    return links
+  }
+   
+  static async validateLink(url) { 
+    console.log("[fileindex] validateLink " + url)  
+    try {
+      var response = await  BrokenLinkAnalysis.fetch(url, { 
+        method: "GET", // "GET" or "HEAD" or "OPTIONS" 
+        mode: 'no-cors', 
+        redirect: "follow",
+        referrer: "no-referrer", // no-referrer, *client
+      }, FETCH_TIMEOUT) 
+
+      if (response.type === "basic") { // internal link
+        if (response.ok) {
+          return "alive"
+        } else {
+          return "broken"
+        } 
+      } else if (response.type === "opaque") { // external link
+        return "alive"
+      }
+    } catch(e) {
+      return "broken"
+    } 
+    return "alive" // at least nothing went wrong?
+  }
+
+  static async fetch(url, options, timeout) {
+    return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) =>
+            setTimeout(() => {
+              reject(new Error('Fetch timeout: ' + url))
+        }, timeout)
+        )
+    ]);
+  }
+}
+
+class ModuleDependencyAnalysis {
+  
+   static async resolveModuleDependencies(fileUrl, dependencies) {
+    let resolvedDependencies = new Array()
+    for (const dependency of dependencies) {
+      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
+      if (!resolvedDependency) {
+        resolvedDependencies.push(dependency.url)  
+      } else {
+        resolvedDependencies.push(resolvedDependency)
+      }
+    }
+     
+    return {
+      url: fileUrl,
+      dependencies: resolvedDependencies
+    }
+  }
+}
+
 
 cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
   async modify(func) {
@@ -382,6 +746,3 @@ if (self.lively4fetchHandlers) {
   })
   
 }
-
-
-

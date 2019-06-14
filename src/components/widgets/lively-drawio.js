@@ -43,8 +43,6 @@ export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
-    await this.updateGithubInfo()
-    await this.updateWebhook()
     this.update()  
   }
   
@@ -77,17 +75,58 @@ export default class LivelyDrawio extends Morph {
     }
   }
   
-  extractSource(xml) {
-    let doc = new DOMParser().parseFromString(xml, 'text/xml'),
-      encoded = doc.querySelector("diagram").textContent,
-      data = atob(encoded),
-      source = decodeURIComponent(bytesToString(pako.inflateRaw(data)))
-    return XML.prettify(source)
+  extractEncodedSource(doc) {
+    return doc.querySelector("diagram").textContent
   }
   
-  async getSource() {
-    var xml = await fetch(this.src).then(r => r.text())
-    return this.extractSource(xml)
+  extractSource(doc, prettyPrint) {
+    let encoded = this.extractEncodedSource(doc),
+      data = atob(encoded),
+      source = decodeURIComponent(bytesToString(pako.inflateRaw(data)))
+    if (prettyPrint) {
+      return XML.prettify(source) 
+    }
+    return source
+  }
+  
+  encodeSource(source) {
+    return btoa(bytesToString(pako.deflateRaw(encodeURIComponent(source))))
+  }
+  
+  async loadXML() {
+     var s = await fetch(this.src).then(r => r.text())
+     return new DOMParser().parseFromString(s, 'text/xml')
+  }
+
+  async saveXML(doc) {
+    return await fetch(this.src, {
+      method: "PUT",
+      body: new XMLSerializer().serializeToString(doc)
+    })
+  }
+
+  
+  async getSource(prettyPrint) {
+    return this.extractSource(await this.loadXML(), prettyPrint)
+  }
+  
+  async getGraphModel() {
+    var source = await this.getSource()
+      return new DOMParser().parseFromString(source, 'text/xml')
+  }
+
+  async setGraphModel(model) {
+    var source = new XMLSerializer().serializeToString(model)
+    return this.setSource(source)
+  }
+
+  
+  async setSource(source) {
+    let doc = await this.loadXML()
+    doc.querySelector("diagram").textContent =  this.encodeSource(source) 
+    var result = this.saveXML(doc)
+    this.update()
+    return result
   }
   
   onContextMenu(evt) {
@@ -189,6 +228,9 @@ export default class LivelyDrawio extends Morph {
 
   async editAtDrawIO(parent) {
     if (!this.src) throw new Error("src attribute not set");
+
+    await this.updateGithubInfo()
+    await this.updateWebhook()
 
     var drawioURL;
     var githubInfo = await Files.githubFileInfo(this.src)

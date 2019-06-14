@@ -33,22 +33,54 @@
   })(this.parentElement)
 </script>
 
+
 <script>
   (async (container) => {
     var button = document.createElement("button");
-    button.addEventListener("click", () => {
-      FileCache.current().clear()
+    button.addEventListener("click", async () => {
+      await FileCache.current().update()
+      lively.show("finished analysis")
     });
-    button.innerHTML = "clear file cache";
+    button.innerHTML = "analyse";
     return button;
   })(this.parentElement)
 </script>
+
+
+<script>
+  var markdown = lively.query(this, "lively-markdown");
+  (async (container) => {
+    var button = document.createElement("button");
+
+    button.addEventListener("click", () => {
+      var table = markdown.get("#table").get("lively-table")
+      debugger
+      if (table) {
+        table.setFromJSO(table.asJSO().sortBy(ea => Number(ea.versions)).reverse())
+      }      
+    });
+    button.innerHTML = "sort";
+    return button;
+  })(this.parentElement)
+</script>
+
 
 <script>
   var container = lively.query(this, "lively-container");
   (async () => {
     var table = await lively.create("lively-table", this)
     var files = (await FileCache.current().db.files.toArray());
+    
+    var button = document.createElement("button");
+
+    button.addEventListener("click", () => {
+      
+      if (table) {
+        table.setFromJSO(table.asJSO().sortBy(ea => Number(ea.versions)).reverse())
+      }      
+    });
+    button.innerHTML = "sort";
+    
     table.setFromJSO(
       files
         .filter(ea => ea.url.match(lively4url)) // only show local files...
@@ -56,6 +88,7 @@
           return {
             file: ea.url.replace(lively4url, "") + '</a> ', 
             size: ea.size,
+            versions: ea.versions && ea.versions.length,
             title: ea.title && ea.title.slice(0,100).replace(/</g,"&gt;"),
             tags: ea.tags && ea.tags.sort(), // Array.from(new Set(ea.tags))
 
@@ -65,6 +98,9 @@
           //   evt.preventDefault()
           // }
       }))
-    return table
+    var div = document.createElement("div")
+    div.appendChild(button)
+    div.appendChild(table)
+    return div
   })()
 </script>
