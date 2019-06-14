@@ -242,31 +242,36 @@ export default class FileIndex {
   
   
   async addVersions(file) {
-    let versions = this.loadVersions(file.url)
+    
+    let versions = await this.loadVersions(file.url)
     for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
       let version = versions[i]
       let versionPrevious = versions[i+1]
       
       var historicFileResult  = await this.db.history.where({'url': "" + file.url, 'version': "" + version.version}).toArray()
       if (historicFileResult.length > 0) {
-        // do nothing
+        // console.log("[fileindex] found ", historicFileResult)
       } else {
+        var historicFile = {
+          url: file.url,
+          type: file.type,
+          name: file.name,
+          version: version.version,
+          previous: versionPrevious
+        }
+        console.log("[fileindex] add ", historicFile)
+
         await this.db.transaction("rw", this.db.history, () => { 
-          var historicFile = {
-            url: file.url,
-            type: file.type,
-            name: file.name,
-            version: version.version,
-            previous: versionPrevious
-          }
           this.db.history.put(historicFile) 
         })
-        // #ContinueHere
+
         var modifications = await this.findModifiedClassesAndMethods(file.url, version, versionPrevious)
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
-        })
-        if (i >= 9) break; // consider latest ten versions        
+        })          
+        
+        
+        // if (i >= 9) break; // consider latest ten versions        
       }
     }
   } 

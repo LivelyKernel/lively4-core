@@ -1,0 +1,16 @@
+<lively-window class="global" tabindex="0" style="z-index: 112; position: absolute; left: 733px; top: 28.45px; width: 1149px; height: 384.5px;" title="Workspace" active="true" id="AsyncWorkspace"><lively-code-mirror mode="text/jsx" overscroll="contain" style="height: 100%;">import FileIndex from "src/client/fileindex.js"
+
+var versions;
+(async () =&gt; {
+  
+
+var versionsTable = FileIndex.current().db.versions
+
+
+versions = await versionsTable.limit(10).toArray()
+versions
+
+
+
+})()
+</lively-code-mirror></lively-window>
