@@ -27,6 +27,55 @@ export default class CodemirrorPlayground extends Morph {
     const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
     this.editor.shadowRoot.prepend(livelyEditorStyle);
     this.lcm.shadowRoot.prepend(codeMirrorStyle);
+    
+    await this.lcm.editorLoaded();
+    this.$.addKeyMap({
+      // #KeyboardShortcut Alt-A show additional info of this Active Expression
+      "Alt-A": cm => {
+        this.showAExprInfo();
+      },
+    });
+
+  }
+  
+  async showAExprInfo() {
+    lively.notify('stuff');
+    let that = this
+    that.lcm.ternWrapper.then(tw => {
+      
+    });
+    return;
+    this.$.showHint({
+      hint(...args) {
+        lively.warn(args)
+        return {
+          list: [{
+            text: 'gfoo',
+            displayText: 'shows gfoo',
+            className: 'cssClass',
+            render(Element, self, data) {
+              return Element.appendChild(<span><span style="color: blue">hello: </span><span style="color: orange">Foo</span></span>);
+            },
+            hint(CodeMirror, self, data) {
+              lively.success('selected', data.text)
+            },
+            from: {line:3, ch:5},
+            to: {line:3, ch:10},
+          }, 'bar'],
+          from: {line:1, ch:5},
+          to: {line:1, ch:10},
+          selectedHint: 1
+        };
+      },
+      completeSingle: false,
+      alignWithWord: true,
+      closeCharacters: /[\s()\[\]{};:>,]/,
+      closeOnUnfocus: true,
+      completeOnSingleClick: true,
+      container: null,
+      customKeys: null,
+      extraKeys: null
+    });
   }
   
   instantUpdate() {
@@ -189,11 +238,21 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   lineWidget() {
-    const element = <span class={"widget " + "kind"}>wdfdfwdw</span>;
-    const line = 6;
+    this.lcm.value.traverseAsAST({
+      Identifier: path => {
+        if (path.node.name === 'aexpr') {
+          this._lineWidget(path.node.loc)
+        }
+      }
+    });
+    
+  }
+  
+  _lineWidget(location) {
+    const element = <span class={"widget " + "probe-example"}>wdfdfwdw</span>;
+    const line = location.start.line - 1;
     this.$.addLineWidget(line, element);
-    const column = 5;
-    const indentation = column;
+    const indentation = location.start.column;
     element.style.left = `${indentation}ch`;
   }
   
