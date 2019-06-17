@@ -22,6 +22,7 @@ export default class Expose {
   }
 
   static toggle() {
+
     if (Expose.isOpen) {
       this.close()
     } else {
@@ -30,7 +31,7 @@ export default class Expose {
   }
 
   static open() {
-
+   
     if (!Expose.current) return
     
     lively.html.registerKeys(document.body, "expose", Expose.current, true)
@@ -267,6 +268,8 @@ export default class Expose {
   }
 
   onLeftDown(evt) {
+    
+    
     Expose.selectPrev();
   }
   

@@ -86,7 +86,7 @@ import FileCache from "src/client/fileindex.js"
         li.appendChild(span)
         var span = document.createElement("span")
         span.style.width = "40px"
-        span.innerHTML = " " + file.title.replace(/\d\d\d\d-\d\d-\d\d,? ?/,"").replace(/</g,"&lt;")
+        span.innerHTML = " " + (file.title ? file.title.replace(/\d\d\d\d-\d\d-\d\d,? ?/,"").replace(/</g,"&lt;") : "")
         li.appendChild(span)        
       }
       

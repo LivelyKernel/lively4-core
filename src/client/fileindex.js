@@ -230,7 +230,12 @@ export default class FileIndex {
   
   async loadVersions(url) {
     try {
-      let response = await Files.loadVersions(url) 
+      let response = await await fetch(url, {
+            method: "OPTIONS",
+            headers: {
+              showversions: true
+            }
+          })
       let text = await response.text()
       return JSON.parse(text).versions
     }  catch(e) {
@@ -243,6 +248,7 @@ export default class FileIndex {
   
   async addVersions(file) {
     
+    
     let versions = await this.loadVersions(file.url)
     for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
       let version = versions[i]
@@ -252,6 +258,8 @@ export default class FileIndex {
       if (historicFileResult.length > 0) {
         // console.log("[fileindex] found ", historicFileResult)
       } else {
+        // console.log("[fileindex] NEW VERSION " + file.url)
+        
         var historicFile = {
           url: file.url,
           type: file.type,
@@ -259,13 +267,13 @@ export default class FileIndex {
           version: version.version,
           previous: versionPrevious
         }
-        console.log("[fileindex] add ", historicFile)
-
+        // console.log("[fileindex] add history", historicFile)
         await this.db.transaction("rw", this.db.history, () => { 
           this.db.history.put(historicFile) 
         })
 
         var modifications = await this.findModifiedClassesAndMethods(file.url, version, versionPrevious)
+        // console.log("[fileindex] add method modifications ", modifications)
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
         })          
@@ -276,10 +284,24 @@ export default class FileIndex {
     }
   } 
   
+  async loadVersion(url, version) {
+    if (!window.FileIndexFileCache) {
+      window.FileIndexFileCache = new Map()
+    }
+    var key = url + "@" +version
+    var cached = window.FileIndexFileCache.get(key)
+    if (!cached) {
+      cached =  await Files.loadFile(url, version)
+      window.FileIndexFileCache.set(key, cached)
+    }
+    return cached
+  }
+  
   async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
+    console.log("findModifiedClassesAndMethods ", fileUrl, latestVersion, previousVersion)
     let modifications = new Array()
-    let latestContent = await Files.loadFile(fileUrl, latestVersion.version)
-    let previousContent = await Files.loadFile(fileUrl, previousVersion.version)
+    let latestContent = await this.loadVersion(fileUrl, latestVersion.version)
+    let previousContent = await this.loadVersion(fileUrl, previousVersion.version)
     let astLastest = await this.parseSource(fileUrl, latestContent)
     let astPrevious = await this.parseSource(fileUrl, previousContent)
 
@@ -305,30 +327,43 @@ export default class FileIndex {
           })
         }
         
+        
+        
         // methods
         for (let methodLastest of classLatest.methods) {
+          var latestSource = latestContent.substring(methodLastest.start, methodLastest.end)
+          var modification = {
+                  url: fileUrl,
+                  class: classLatest.name,
+                  method: methodLastest.name,
+                  static: methodLastest.static,
+                  kind: methodLastest.kind,
+                  start: methodLastest.start,
+                  end: methodLastest.end,
+                  date: latestVersion.date,
+                  user: latestVersion.author,
+                  commitId: latestVersion.version,
+                  source: latestSource
+          }
           if (!previousClass) { // added method
-             modifications.push({
-                url: fileUrl,
-                class: classLatest.name,
-                method: methodLastest.name,
-                date: latestVersion.date,
-                user: latestVersion.author,
-                commitId: latestVersion.version,
-                action: "added"
-              })
+            modification.action = "added" 
+            modifications.push(modification)
           } else {
-            let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name)
-            if ((!methodPreviousClass) || (methodPreviousClass && latestContent.substring(methodLastest.start, methodLastest.end) != previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)) ) { // added or modified method
-              modifications.push({
-                url: fileUrl,
-                class: classLatest.name,
-                method: methodLastest.name,
-                date: latestVersion.date,
-                user: latestVersion.author,
-                commitId: latestVersion.version,
-                action: (!methodPreviousClass) ? "added" : "modified"
-              })
+            let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name 
+                                                                  && method.static == methodLastest.static
+                                                                  && method.kind == methodLastest.kind)
+            if (methodPreviousClass) {
+              var prevSource = previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)
+              if (prevSource != latestSource) {
+                modification.action = "modified"
+                modifications.push(modification) 
+              } else {
+                // the source was the same in the previous version
+              }
+            } else  {
+              // method was not there in previous version
+              modification.action = "added"
+              modifications.push(modification) 
             }
           }
         }
@@ -402,6 +437,8 @@ export default class FileIndex {
                   name: item.key.name,
                   loc: item.loc.end.line - item.loc.start.line + 1,
                   start: item.start,
+                  kind: item.kind,
+                  static: item.static,
                   end: item.end,
                 }
                 methods.push(method)
@@ -495,18 +532,14 @@ export default class FileIndex {
     await this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
     })
-
-
-
     if (file.content) {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
-
-      if (file.name.match(/\.js$/)) {
-        this.addModuleSemantics(file)
-        this.addVersions(file)
-      }      
     }
+    if (file.name.match(/\.js$/)) {
+      this.addModuleSemantics(file)
+      this.addVersions(file)
+    }      
   }
 
   async dropFile(url) {
