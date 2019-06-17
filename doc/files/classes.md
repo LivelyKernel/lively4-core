@@ -18,7 +18,6 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
     set(s) { return this.textContent = s }
   });
   
-  
   var classes = await FileCache.current().db.classes.toArray();
   classes = classes
     .filter(ea => ea.url.match(lively4url)) // only show local files...

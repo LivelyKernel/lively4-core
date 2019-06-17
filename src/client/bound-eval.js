@@ -36,7 +36,7 @@ export default async function boundEval(source, thisReference, targetModule) {
       source = rewriteSourceWithAsyncAwaitSupport(source);
     }  
     if (Preferences.get('UseAsyncWorkspace')) {
-      path = path.replace(/^workspace/, "workspaceasyncjs")
+      path = path.replace(/^workspace/, "workspaceasyncjs") /// does not work yet #TODO 
     } else if (Preferences.get('DisableAExpWorkspace')) {
       path = path.replace(/^workspace/, "workspacejs")
     }
