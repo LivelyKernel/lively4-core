@@ -237,19 +237,37 @@ export default class CodemirrorPlayground extends Morph {
     markerLine.appendChild(resultNode)
   }
   
+  /*MD ## Line Widget MD*/
   lineWidget() {
     this.lcm.value.traverseAsAST({
-      Identifier: path => {
-        if (path.node.name === 'aexpr') {
-          this._lineWidget(path.node.loc)
+      CallExpression: path => {
+        const callee = path.get('callee');
+        if (!callee) { return; }
+        
+        if (callee.isIdentifier() && callee.node.name === 'aexpr') {
+          const arrowFunction = path.get('arguments')[0];
+          if (arrowFunction.isArrowFunctionExpression()) {
+            const expression = arrowFunction.get('body');
+            expression.traverse({
+              Identifier: path => {
+                this.lcm.ternWrapper.then(async tw => {
+                  await tw.playgroundGetDefinition(this.$, this.lcm, path.node.loc)
+                  this._lineWidget(path.node.loc, path.node.name)
+                })
+
+              }
+            })
+          }
+          
         }
+        
       }
     });
     
   }
   
-  _lineWidget(location) {
-    const element = <span class={"widget " + "probe-example"}>wdfdfwdw</span>;
+  _lineWidget(location, text) {
+    const element = <span class={"widget " + "probe-example"}>{text}</span>;
     const line = location.start.line - 1;
     this.$.addLineWidget(line, element);
     const indentation = location.start.column;

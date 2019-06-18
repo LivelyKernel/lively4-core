@@ -420,3 +420,22 @@ export function updateEditors(url, excludedEditors = []) {
   });
 }
 
+export function babelPositionToCMPosition(babelPosition) {
+  return {
+    line: babelPosition.line - 1,
+    ch: babelPosition.column
+  };
+}
+
+export function cmPositionToBabelPosition(cmPosition) {
+  return {
+    line: cmPosition.line + 1,
+    column: cmPosition.ch
+  };
+}
+
+export function cmPositionIsBefore(small, big) {
+  return small.line < big.line ||
+    small.line === big.line && small.ch <= big.ch;
+}
+

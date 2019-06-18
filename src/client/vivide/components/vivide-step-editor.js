@@ -9,6 +9,8 @@ import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
 
+import { babelPositionToCMPosition, cmPositionIsBefore } from 'utils';
+
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
   get cm() { return this.editor.editor; }
@@ -185,8 +187,8 @@ export default class VivideStepEditor extends Morph {
       let selectionEnd = this.cm.getCursor();
       let maxPath = pathToShow.find(path => {
         const pathLocation = path.node.loc;
-        const pathStart = this.toCMPosition(pathLocation.start);
-        const pathEnd = this.toCMPosition(pathLocation.end);
+        const pathStart = babelPositionToCMPosition(pathLocation.start);
+        const pathEnd = babelPositionToCMPosition(pathLocation.end);
         
         return this.isStrictBefore(pathStart, selectionStart) || this.isStrictBefore(selectionEnd, pathEnd)
       }) || pathToShow;
@@ -221,23 +223,11 @@ export default class VivideStepEditor extends Morph {
     };
   }
   isCursorIn(location, cursorStart) {
-    function toCMPosition(babelPosition) {
-      return {
-        line: babelPosition.line - 1,
-        ch: babelPosition.column
-      };
-    }
-    
-    function isBefore(small, big) {
-      return small.line < big.line ||
-        small.line === big.line && small.ch <= big.ch;
-    }
-
-    const start = toCMPosition(location.start);
+    const start = babelPositionToCMPosition(location.start);
     const cursor = this.cm.getCursor(cursorStart);
-    const end = toCMPosition(location.end);
+    const end = babelPositionToCMPosition(location.end);
     
-    return isBefore(start, cursor) && isBefore(cursor, end);
+    return cmPositionIsBefore(start, cursor) && cmPositionIsBefore(cursor, end);
   }
   unfold() {
     const prevPath = this.getPathForRoute(this.routeToShownPath)

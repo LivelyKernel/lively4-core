@@ -81,7 +81,10 @@ export default class Editor extends Morph {
     // wait for CodeMirror for adding custom keys
     await  editor.editorLoaded()
     editor.addKeys({
-      "Alt-P": cm => this.toggleWidgets()
+      "Alt-P": cm => {
+        lively.notify('Toggle Widgets');
+        this.toggleWidgets();
+      }
     })
   }
   

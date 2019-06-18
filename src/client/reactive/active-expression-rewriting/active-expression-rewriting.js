@@ -51,11 +51,12 @@ class ExpressionAnalysis {
 class Dependency {
   static getOrCreateFor(context, identifier, type) {
     const key = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(type));
+    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(context, identifier, type));
   }
 
-  constructor(type) {
-    this.type = type;
+  // #TODO: compute and cache isGlobal
+  constructor(context, identifier, type) {
+    this._type = type;
     
     this.isTracked = false;
   }
@@ -72,8 +73,7 @@ class Dependency {
   track() {
     this.isTracked = true;
 
-    const [context, identifier] = this.getContextAndIdentifier();
-    const value = context !== undefined ? context[identifier] : undefined;
+    const [context, identifier, value] = this.contextIdentifierValue();
 
     /*HTML Source Code Hook HTML*/
     // always employ the source code hook
@@ -81,9 +81,9 @@ class Dependency {
 
     /*HTML Data Structure Hook HTML*/
     var dataStructure;
-    if (this.type === 'member') {
+    if (this._type === 'member') {
       dataStructure = context;
-    } else if(this.type === 'local') {
+    } else if(this._type === 'local') {
       dataStructure = value;
     }
     if (dataStructure instanceof Array || dataStructure instanceof Set || dataStructure instanceof Map) {
@@ -98,14 +98,19 @@ class Dependency {
     }
 
   }
+
   untrack() {
     this.isTracked = false;
     HooksToDependencies.disconnectAllForDependency(this);
   }
-  getContextAndIdentifier() {
+
+  contextIdentifierValue() {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    
     const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
-    return [context, identifier];
+    const value = context !== undefined ? context[identifier] : undefined;
+    
+    return [context, identifier, value];
   }
 
   notifyAExprs() {
@@ -114,13 +119,13 @@ class Dependency {
   }
   
   isMemberDependency() {
-    return this.type === 'member' && !this.isGlobal();
+    return this._type === 'member' && !this.isGlobal();
   }
   isGlobalDependency() {
-    return this.type === 'member' && this.isGlobal();
+    return this._type === 'member' && this.isGlobal();
   }
   isLocalDependency() {
-    return this.type === 'local';
+    return this._type === 'local';
   }
   isGlobal() {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
@@ -132,24 +137,24 @@ class Dependency {
   }
 
   getAsDependencyDescription() {
-    const [context, identifier] = this.getContextAndIdentifier();
+    const [context, identifier, value] = this.contextIdentifierValue();
     
     if (this.isMemberDependency()) {
       return {
         object: context,
         property: identifier,
-        value: context !== undefined ? context[identifier] : undefined
+        value
       };
     } else if (this.isGlobalDependency()) {
       return {
         name: identifier,
-        value: context[identifier]
+        value
       };
     } else if (this.isLocalDependency()) {
       return {
         scope: context,
         name: identifier,
-        value: context !== undefined ? context[identifier] : undefined
+        value
       };
     } else {
       throw new Error('Dependency is neighter local, member, nor global.');
