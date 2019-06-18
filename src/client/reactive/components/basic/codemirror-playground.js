@@ -3,6 +3,8 @@
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
+import { babelPositionToCMPosition, cmPositionToBabelPosition, location, range } from 'utils';
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 const COMPONENT_URL = `${lively4url}/src/babylonian-programming-editor`;
@@ -108,6 +110,13 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   highlightText() {
+    Location.fromBabel
+    Location.fromTern
+    Location.fromCM
+    Range
+    function babelLocationToCMSelection(loc) {
+      babelPositionToCMPosition, cmPositionToBabelPosition
+    }
     const ast_node = {
       loc: {
         start: { line: 1, column: 1 },
@@ -115,8 +124,8 @@ export default class CodemirrorPlayground extends Morph {
       }
     }
     const marker = this.$.markText(
-      {line: ast_node.loc.start.line - 1, ch: ast_node.loc.start.column}, 
-      {line: ast_node.loc.end.line - 1, ch: ast_node.loc.end.column}, 
+      babelPositionToCMPosition(ast_node.loc.start),
+      babelPositionToCMPosition(ast_node.loc.end),
       {
         isTraceMark: true,
         className: "marked " +  1,

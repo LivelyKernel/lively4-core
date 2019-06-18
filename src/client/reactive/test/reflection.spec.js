@@ -253,14 +253,14 @@ describe('Reflection API', () => {
           expect(deps).to.be.an('array');
           expect(deps).to.have.a.lengthOf(2);
 
-          const localDep = deps.find(dep => dep.type === 'local');
+          const localDep = deps.find(dep => dep.isLocalDependency());
           expect(localDep).to.be.defined;
           const localDepDescription = localDep.getAsDependencyDescription();
           expect(localDepDescription).to.have.property('scope');
           expect(localDepDescription).to.have.property('name', 'x');
           expect(localDepDescription).to.have.property('value', x);
 
-          const memberDep = deps.find(dep => dep.type === 'member');
+          const memberDep = deps.find(dep => dep.isMemberDependency());
           expect(memberDep).to.be.defined;
           const memberDepDescription = memberDep.getAsDependencyDescription();
           expect(memberDepDescription).to.have.property('object', x);

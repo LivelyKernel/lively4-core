@@ -420,6 +420,48 @@ export function updateEditors(url, excludedEditors = []) {
   });
 }
 
+class Location {
+  get isLocation() { return true; }
+  
+  constructor(l) {
+    this._cmLine = l.line;
+    this._cmCharacter = l.ch;
+  }
+  
+  asBabel() {}
+  asCM() {}
+  
+  toString() {
+    return `Location(line: ${this._cmLine}, ch: ${this._cmCharacter})`;
+  }
+}
+
+export function location(l) {
+  if (l.isLocation) {
+    return l;
+  } else {
+    if (l.ch !== undefined) {
+      // cm
+    } else {
+      // babel
+    }
+  }
+}
+
+Object.assign(location, {
+  fromBabel(l) {
+    const cmLoc = babelPositionToCMPosition(l)
+    return this.fromCM(cmLoc);
+  },
+  fromCM(cmLoc) {
+    return new Location(cmLoc);
+  },
+});
+
+export function range() {
+  
+}
+
 export function babelPositionToCMPosition(babelPosition) {
   return {
     line: babelPosition.line - 1,
