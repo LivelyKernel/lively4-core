@@ -3,7 +3,7 @@
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import { babelPositionToCMPosition, cmPositionToBabelPosition, location, range } from 'utils';
+import { loc, range } from 'utils';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -40,13 +40,32 @@ export default class CodemirrorPlayground extends Morph {
 
   }
   
+  snapToNextAEXpr() {
+    const aexprRanges = [];
+    this.lcm.value.traverseAsAST({
+      Identifier(path) {
+        if (path.node.name === 'aexpr') {
+          aexprRanges.push(range(path.node.loc));
+        }
+      }
+    });
+    
+    if (aexprRanges.length === 0) { return; }
+    
+    const cursor = this.$.getCursor()
+    const rangeToSelect = aexprRanges.find(r => r.contains(cursor)) ||
+      aexprRanges.find(r => r.isBehind(cursor)) ||
+      aexprRanges.last;
+    
+    rangeToSelect.selectInCM(this.$);
+  }
   async showAExprInfo() {
-    lively.notify('stuff');
     let that = this
     that.lcm.ternWrapper.then(tw => {
       
     });
-    return;
+    // return;
+    await lively.sleep(200);
     this.$.showHint({
       hint(...args) {
         lively.warn(args)
@@ -78,6 +97,7 @@ export default class CodemirrorPlayground extends Morph {
       customKeys: null,
       extraKeys: null
     });
+    that.snapToNextAEXpr()
   }
   
   instantUpdate() {
@@ -110,13 +130,6 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   highlightText() {
-    Location.fromBabel
-    Location.fromTern
-    Location.fromCM
-    Range
-    function babelLocationToCMSelection(loc) {
-      babelPositionToCMPosition, cmPositionToBabelPosition
-    }
     const ast_node = {
       loc: {
         start: { line: 1, column: 1 },
@@ -124,12 +137,11 @@ export default class CodemirrorPlayground extends Morph {
       }
     }
     const marker = this.$.markText(
-      babelPositionToCMPosition(ast_node.loc.start),
-      babelPositionToCMPosition(ast_node.loc.end),
+      ...range(ast_node.loc).asCM(),
       {
         isTraceMark: true,
         className: "marked " +  1,
-        css: "background-color: rgba(255, 255, 0, 0.5); border: solid 1px red",
+        css: "background-color: rgba(255, 255, 0, 0.5); border: solid 0.1px red",
         title: 'This is some type'
       });
   }

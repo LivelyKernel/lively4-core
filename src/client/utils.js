@@ -420,6 +420,21 @@ export function updateEditors(url, excludedEditors = []) {
   });
 }
 
+/*MD Source Code Locations and Ranges MD*/
+function babelToCM(babelPosition) {
+  return {
+    line: babelPosition.line - 1,
+    ch: babelPosition.column
+  };
+}
+
+function cmToBabel(cmPosition) {
+  return {
+    line: cmPosition.line + 1,
+    column: cmPosition.ch
+  };
+}
+
 class Location {
   get isLocation() { return true; }
   
@@ -428,56 +443,95 @@ class Location {
     this._cmCharacter = l.ch;
   }
   
-  asBabel() {}
-  asCM() {}
+  isBefore(l) {
+    const other = loc(l)
+    return this._cmLine < other._cmLine ||
+      (this._cmLine === other._cmLine && this._cmCharacter <= other._cmCharacter);
+  }
+  isStrictBefore(l) {
+    const other = loc(l)
+    return this._cmLine < other._cmLine ||
+      (this._cmLine === other._cmLine && this._cmCharacter < other._cmCharacter);
+  }
+  
+  asBabel() {
+    return cmToBabel(this.asCM());
+  }
+  asCM() {
+    return {
+      line: this._cmLine,
+      ch: this._cmCharacter
+    };
+  }
+  
+  innerToString() {
+    return `${this._cmLine}:${this._cmCharacter}`;
+  }
+  toString() {
+    return `loc(${this.innerToString()})`;
+  }
+}
+
+export function loc(l) {
+  if (l.isLocation) {
+    return l
+  }
+  // cm style
+  if (l.ch !== undefined) {
+    return new Location(l)
+  }
+  // babel style
+  if (l.column !== undefined) {
+    return new Location(babelToCM(l))
+  }
+  throw new Error(`Location value ${l} not recognized.`);
+}
+
+class Range {
+  get isRange() { return true; }
+
+  constructor(start, end) {
+    this._start = loc(start);
+    this._end = loc(end);
+  }
+  
+  asBabel() {
+    throw new Error('asBabel not yet implemented.');
+  }
+  asCM() {
+    // from, to
+    return [this._start.asCM(), this._end.asCM()]
+  }
+
+  contains(l) {
+    const ll = loc(l);
+    return this._start.isBefore(ll) && ll.isBefore(this._end);
+  }
+  isBehind(l) {
+    return loc(l).isBefore(this._start)
+  }
+  
+  selectInCM(cm) {
+    cm.setSelection(...this.asCM())
+  }
   
   toString() {
-    return `Location(line: ${this._cmLine}, ch: ${this._cmCharacter})`;
+    return `range(${this._start.innerToString()}, ${this._end.innerToString()})`
   }
 }
 
-export function location(l) {
-  if (l.isLocation) {
-    return l;
-  } else {
-    if (l.ch !== undefined) {
-      // cm
-    } else {
-      // babel
-    }
+export function range(r) {
+  if (r.isRange) {
+    return r;
   }
-}
-
-Object.assign(location, {
-  fromBabel(l) {
-    const cmLoc = babelPositionToCMPosition(l)
-    return this.fromCM(cmLoc);
-  },
-  fromCM(cmLoc) {
-    return new Location(cmLoc);
-  },
-});
-
-export function range() {
-  
-}
-
-export function babelPositionToCMPosition(babelPosition) {
-  return {
-    line: babelPosition.line - 1,
-    ch: babelPosition.column
-  };
-}
-
-export function cmPositionToBabelPosition(cmPosition) {
-  return {
-    line: cmPosition.line + 1,
-    column: cmPosition.ch
-  };
-}
-
-export function cmPositionIsBefore(small, big) {
-  return small.line < big.line ||
-    small.line === big.line && small.ch <= big.ch;
+  // cm style
+  if (Array.isArray(r)) {
+    return new Range(r.first, r.second)
+  }
+  // babel style
+  if (r.start && r.end) {
+    return new Range(r.start, r.end)
+  }
+  throw new Error(`Range value ${r} not recognized.`);
 }
 
