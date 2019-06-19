@@ -3,6 +3,8 @@
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
+import { loc, range } from 'utils';
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 const COMPONENT_URL = `${lively4url}/src/babylonian-programming-editor`;
@@ -38,13 +40,32 @@ export default class CodemirrorPlayground extends Morph {
 
   }
   
+  snapToNextAEXpr() {
+    const aexprRanges = [];
+    this.lcm.value.traverseAsAST({
+      Identifier(path) {
+        if (path.node.name === 'aexpr') {
+          aexprRanges.push(range(path.node.loc));
+        }
+      }
+    });
+    
+    if (aexprRanges.length === 0) { return; }
+    
+    const cursor = this.$.getCursor()
+    const rangeToSelect = aexprRanges.find(r => r.contains(cursor)) ||
+      aexprRanges.find(r => r.isBehind(cursor)) ||
+      aexprRanges.last;
+    
+    rangeToSelect.selectInCM(this.$);
+  }
   async showAExprInfo() {
-    lively.notify('stuff');
     let that = this
     that.lcm.ternWrapper.then(tw => {
       
     });
-    return;
+    // return;
+    await lively.sleep(200);
     this.$.showHint({
       hint(...args) {
         lively.warn(args)
@@ -76,6 +97,7 @@ export default class CodemirrorPlayground extends Morph {
       customKeys: null,
       extraKeys: null
     });
+    that.snapToNextAEXpr()
   }
   
   instantUpdate() {
@@ -115,12 +137,11 @@ export default class CodemirrorPlayground extends Morph {
       }
     }
     const marker = this.$.markText(
-      {line: ast_node.loc.start.line - 1, ch: ast_node.loc.start.column}, 
-      {line: ast_node.loc.end.line - 1, ch: ast_node.loc.end.column}, 
+      ...range(ast_node.loc).asCM(),
       {
         isTraceMark: true,
         className: "marked " +  1,
-        css: "background-color: rgba(255, 255, 0, 0.5); border: solid 1px red",
+        css: "background-color: rgba(255, 255, 0, 0.5); border: solid 0.1px red",
         title: 'This is some type'
       });
   }
@@ -237,19 +258,37 @@ export default class CodemirrorPlayground extends Morph {
     markerLine.appendChild(resultNode)
   }
   
+  /*MD ## Line Widget MD*/
   lineWidget() {
     this.lcm.value.traverseAsAST({
-      Identifier: path => {
-        if (path.node.name === 'aexpr') {
-          this._lineWidget(path.node.loc)
+      CallExpression: path => {
+        const callee = path.get('callee');
+        if (!callee) { return; }
+        
+        if (callee.isIdentifier() && callee.node.name === 'aexpr') {
+          const arrowFunction = path.get('arguments')[0];
+          if (arrowFunction.isArrowFunctionExpression()) {
+            const expression = arrowFunction.get('body');
+            expression.traverse({
+              Identifier: path => {
+                this.lcm.ternWrapper.then(async tw => {
+                  await tw.playgroundGetDefinition(this.$, this.lcm, path.node.loc)
+                  this._lineWidget(path.node.loc, path.node.name)
+                })
+
+              }
+            })
+          }
+          
         }
+        
       }
     });
     
   }
   
-  _lineWidget(location) {
-    const element = <span class={"widget " + "probe-example"}>wdfdfwdw</span>;
+  _lineWidget(location, text) {
+    const element = <span class={"widget " + "probe-example"}>{text}</span>;
     const line = location.start.line - 1;
     this.$.addLineWidget(line, element);
     const indentation = location.start.column;
