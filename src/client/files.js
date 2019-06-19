@@ -315,10 +315,12 @@ export default class Files {
     })
   }  
   
-  static async loadVersions(url) {
+  static async loadVersions(url, cached=false) {
     var versionscache = await caches.open("file_versions")
-    var resp = await versionscache.match(url)
-    if (resp) return resp
+    if (cached) {
+      var resp = await versionscache.match(url)
+      if (resp) return resp      
+    }
     resp = await fetch(url, {
       method: "OPTIONS",
       headers: {
