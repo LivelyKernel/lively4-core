@@ -10,10 +10,7 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
   import moment from "src/external/moment.js";  
   import diff from 'src/external/diff-match-patch.js';
 
-
   var dmp = new diff.diff_match_patch();
-  
-  
   
   var container = lively.query(this, "lively-container");
   (async () => {
@@ -61,7 +58,7 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
     
     var selectMethodVersion = function(method, version, li) {
       var details = li.querySelector(".details")
-     
+      details.textContent  = version.date + "\n" + version.source
       // var diff1 = dmp.diff_main("xxx", version.source);
       // details.innerHTML = "" = dmp.patch_toText(dmp.patch_make(diff1))
      
@@ -82,6 +79,9 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
       if (sorted) {
         data = data.sortBy(ea => ea.count).reverse()
       }
+
+      data = data.slice(0,100)
+
 
       data.forEach(ea => {
         var row = <tr >

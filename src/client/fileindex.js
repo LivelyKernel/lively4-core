@@ -248,9 +248,11 @@ export default class FileIndex {
   
   
   async addVersions(file) {
-    
-    
+
     let versions = await this.loadVersions(file.url)
+    
+    
+    
     for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
       let version = versions[i]
       let versionPrevious = versions[i+1]
