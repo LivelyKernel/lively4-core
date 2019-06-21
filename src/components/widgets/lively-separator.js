@@ -7,11 +7,11 @@ import {pt}  from 'src/client/graphics.js';
 export default class Separator extends Morph {
   initialize() {
     // console.log("intialize separator " )
-    this.draggable = true;
-    lively.addEventListener('lively', this,'dragstart', evt => this.onDragStart(evt));
-    lively.addEventListener('lively', this,'drag', evt => this.onDrag(evt));
-    lively.addEventListener('lively', this,'dragend', evt => this.onDragEnd(evt));
-    lively.addEventListener('lively', this,'click', evt => this.onClick(evt));
+    lively.addEventListener('lively', this,'pointerdown', evt => this.onPointerMoveStart(evt));
+    
+    
+    // we have to synthesize our own click
+    // lively.addEventListener('lively', this,'click', evt => this.onClick(evt));
     
     this.originalLengths = new Map()
     this.originalFlexs = new Map()
@@ -149,14 +149,17 @@ export default class Separator extends Morph {
     }
   }
   
-  onDragStart(evt) {
-    if (this.lastPrevLength) { this.onClick(); }
+  onPointerMoveStart(evt) {
+    this.lastPointerDown = Date.now()
     
     this.count = 0;
     this.rememberOriginals(true);
     this.dragOffset = this.getEventLength(evt);
-    evt.dataTransfer.setDragImage(document.createElement('div'), 0, 0);
-    evt.dataTransfer.setData('ui/interaction', '');
+    
+    lively.addEventListener('lively-separator-drag', document.documentElement, 'pointermove', evt => this.onPointerMove(evt));
+    lively.addEventListener('lively-separator-drag', document.documentElement, 'pointerup', evt => this.onPointerMoveEnd(evt));
+
+    
     
     evt.stopPropagation();
   }
@@ -184,7 +187,7 @@ export default class Separator extends Morph {
   }
    
    
-  onClick() {
+  onClick(evt) {
     this.toggleCollapse()  
   }
   
@@ -220,7 +223,7 @@ export default class Separator extends Morph {
   }
   
 
-  onDrag(evt) {
+  onPointerMove(evt) {
     if (!evt.clientX) return
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
@@ -254,12 +257,19 @@ export default class Separator extends Morph {
     this.setLength(next, newNext)
       
     evt.stopPropagation();
+    evt.preventDefault();
   }
   
   
-  onDragEnd(evt) {
-    // Do nothing...
+  onPointerMoveEnd(evt) {
     evt.stopPropagation();
+    evt.preventDefault();
+    lively.removeEventListener('lively-separator-drag',  document.documentElement)
+    
+    
+    var clickTime = Date.now() - this.lastPointerDown;
+    if (clickTime < 200) this.onClick(evt)
+    
   }
 
 

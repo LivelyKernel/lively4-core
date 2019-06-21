@@ -260,7 +260,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 ## Drafts
 
-- https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md
+- [COP Promises](<https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md>)
   - #Aysnc #COP with #Promises and syntax support
   - #LiterateProgramming / #ActiveEssay Library / Environment
 

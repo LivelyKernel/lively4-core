@@ -69,7 +69,8 @@ SystemJS.config({
     'babel-plugin-syntax-do-expressions': lively4url + '/src/external/babel-plugin-syntax-do-expressions.js',
     'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
     'babel-plugin-syntax-async-generators': lively4url + '/src/external/babel-plugin-syntax-async-generators.js',
-
+    'babel-plugin-syntax-object-rest-spread': lively4url + '/src/external/babel-plugin-syntax-object-rest-spread.js',
+    
     // support for doits
     'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
     'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
@@ -176,6 +177,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -195,6 +197,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
@@ -213,6 +216,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          // lively4url + '/demos/swe/debugging-plugin.js',
           'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',

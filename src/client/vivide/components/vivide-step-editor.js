@@ -9,6 +9,8 @@ import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
 
+import { loc, range } from 'utils';
+
 export default class VivideStepEditor extends Morph {
   get editor() { return this.get('#editor'); }
   get cm() { return this.editor.editor; }
@@ -181,14 +183,14 @@ export default class VivideStepEditor extends Morph {
     
     if(pathToShow) {
       // go up again
-      let selectionStart = this.cm.getCursor('anchor');
-      let selectionEnd = this.cm.getCursor();
+      let selectionStart = loc(this.cm.getCursor('anchor'));
+      let selectionEnd = loc(this.cm.getCursor());
       let maxPath = pathToShow.find(path => {
         const pathLocation = path.node.loc;
-        const pathStart = this.toCMPosition(pathLocation.start);
-        const pathEnd = this.toCMPosition(pathLocation.end);
+        const pathStart = loc(pathLocation.start);
+        const pathEnd = loc(pathLocation.end);
         
-        return this.isStrictBefore(pathStart, selectionStart) || this.isStrictBefore(selectionEnd, pathEnd)
+        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd)
       }) || pathToShow;
       
       this.selectPath(maxPath);
@@ -210,10 +212,6 @@ export default class VivideStepEditor extends Morph {
     return small.line < big.line ||
       small.line === big.line && small.ch <= big.ch;
   }
-  isStrictBefore(small, big) {
-    return small.line < big.line ||
-      small.line === big.line && small.ch < big.ch;
-  }
   toCMPosition(babelPosition) {
     return {
       line: babelPosition.line - 1,
@@ -221,23 +219,7 @@ export default class VivideStepEditor extends Morph {
     };
   }
   isCursorIn(location, cursorStart) {
-    function toCMPosition(babelPosition) {
-      return {
-        line: babelPosition.line - 1,
-        ch: babelPosition.column
-      };
-    }
-    
-    function isBefore(small, big) {
-      return small.line < big.line ||
-        small.line === big.line && small.ch <= big.ch;
-    }
-
-    const start = toCMPosition(location.start);
-    const cursor = this.cm.getCursor(cursorStart);
-    const end = toCMPosition(location.end);
-    
-    return isBefore(start, cursor) && isBefore(cursor, end);
+    return range(location).contains(this.cm.getCursor(cursorStart));
   }
   unfold() {
     const prevPath = this.getPathForRoute(this.routeToShownPath)

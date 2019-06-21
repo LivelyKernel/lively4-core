@@ -2,21 +2,32 @@ import 'lang';
 import { extend } from './utils.js';
 
 
-/**
- * OBJECT
- */
+/*MD
+## OBJECT
+MD*/
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
+
 extend(Object.prototype, {
 
   dependentAExprs() {
-    // #TODO: implement2
+    return AExprRegistry.allAsArray().filter(ae => {
+      if(!ae.supportsDependencies()) { return false; }
+      
+      const dependencies = ae.dependencies().all();
+      return dependencies.find(dep => {
+        const desc = dep.getAsDependencyDescription();
+        return desc.object === this ||
+          desc.value === this ||
+          desc.scope === this;
+      });
+    });
   }
-
 });
 
 
-/**
- * STRING
- */
+/*MD
+## STRING
+MD*/
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -54,6 +65,56 @@ extend(String.prototype, {
       resolveModuleSource: undefined
     }).ast;
   },
+  
+  /**
+   * @example providing a visitor object
+   * var ids = [];
+   * `let x = 0, y = x +2;`.traverseAsAST({
+   *   Identifier(path) {
+   *     ids.push(path.node.name);
+   *   }
+   * });
+   * ids;
+   * 
+   * @example providing a full-fledged plugin function
+   * var ids = [];
+   * `let x = 0, y = x +2;`.traverseAsAST(({ types: t, template, traverse }) => ({
+   *   visitor: {
+   *     Identifier(path) {
+   *       ids.push(path.node.name);
+   *     }
+   *   }
+   * }));
+   * ids;
+   */
+  // #TODO: eliminate code duplication
+  traverseAsAST(fullPluginOrVisitor) {
+    let iteratorPlugin;
+    if(fullPluginOrVisitor instanceof Function) {
+      iteratorPlugin = fullPluginOrVisitor;
+    } else {
+      // only got the visitor: need to bridge to a plugin function as expected by babel
+      iteratorPlugin = babel => ({ visitor: fullPluginOrVisitor });
+    }
+
+    const filename = "tempfile.js";
+    
+    return babel.transform(this, {
+      babelrc: false,
+      plugins: [...SYNTAX_PLUGINS, iteratorPlugin],
+      presets: [],
+      filename: filename,
+      sourceFileName: filename,
+      moduleIds: false,
+      sourceMaps: true,
+      // inputSourceMap: load.metadata.sourceMap,
+      compact: false,
+      comments: true,
+      code: true,
+      ast: true,
+      resolveModuleSource: undefined
+    }).ast;
+  },
 
   async boundEval(thisReference, targetModule) {
     const result = await boundEval(this, thisReference, targetModule);
@@ -67,9 +128,9 @@ extend(String.prototype, {
 });
 
 
-/**
- * FUNCTION
- */
+/*MD
+## FUNCTION
+MD*/
 import aexpr from 'active-expression-rewriting';
 
 const aexprByFunction = new WeakMap();

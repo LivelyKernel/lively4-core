@@ -304,6 +304,48 @@ export class TernCodeMirrorWrapper {
       showError(cmEditor, error);
     }
   }
+  static async playgroundGetDefinition(cmEditor, livelyCodeMirror) {
+    if(!atInterestingExpression(cmEditor)) {
+      showError(cmEditor, 'No interesting variable found');
+      return;
+    }
+
+    let cursorPosition = cmEditor.getCursor();
+
+    try {
+      let data = await this.request({
+        query: {
+          type: "definition",
+          file: livelyCodeMirror.getTargetModule(),
+          end: cursorPosition,
+          start: undefined, // #TODO: improve by checking for selections first
+          lineCharPositions: true
+        },
+        files: [{
+          type: 'full',
+          name: livelyCodeMirror.getTargetModule(),
+          text: livelyCodeMirror.value
+        }]
+      });
+
+      // properties of response data
+      // [start, end, file, context, contextOffset, doc, url, origin]
+
+      if (data.file) {
+        this.jumpStack.push({
+          file: livelyCodeMirror.getTargetModule(),
+          start: cmEditor.getCursor("from"),
+          end: cmEditor.getCursor("to")
+        });
+        // ### Stackpush, then moveTo
+        this.moveTo(cmEditor, livelyCodeMirror, data);
+      } else {
+        showError(cmEditor, `Could not find a definition.`);
+      }
+    } catch(error) {
+      showError(cmEditor, error);
+    }
+  }
   static async jumpBack(cmEditor, livelyCodeMirror) {
     jumpBack(cmEditor, livelyCodeMirror, this);
   }

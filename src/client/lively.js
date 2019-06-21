@@ -133,11 +133,14 @@ export default class Lively {
   static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
     try {
-      await System.import(normalizedPath).then(module => {
-        if(module && typeof module.__unload__ === "function") {
-          module.__unload__();
-        }
-      });
+      // check, to prevent trying to reloading a module a second time if there was an error #375
+      if (System.get(normalizedPath)) {
+        await System.import(normalizedPath).then(module => {
+          if(module && typeof module.__unload__ === "function") {
+            module.__unload__();
+          }
+        });        
+      }      
     } catch(e) {
       console.log("WARNING: error while trying to unload " + path)
     }
@@ -674,13 +677,12 @@ export default class Lively {
   }
 
   static hideContextMenu(evt) {
-    if (evt.path[0] !== document.body) return;
+    if (evt.composedPath()[0] !== document.body) return;
     console.log("hide context menu:" + evt);
     contextmenu.hide();
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-
     if (window.HaloService && 
         (HaloService.areHalosActive() ||
         (HaloService.halosHidden && ((Date.now() - HaloService.halosHidden) < 500)))) {
@@ -844,7 +846,7 @@ export default class Lively {
     this.initializeHalos();
 
     lively.addEventListener("preventDragCopy", document, "dragstart", (evt) => {
-      if ((evt.path[0] === document.body)) {
+      if ((evt.composedPath()[0] === document.body)) {
         evt.stopPropagation()
         evt.preventDefault()
       }
@@ -954,7 +956,7 @@ export default class Lively {
       objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
     objectToMigrate.forEach(oldInstance => {
-      if (oldInstance.__ingoreUpdates) return;
+      if (oldInstance.__ignoreUpdates) return;
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
@@ -1776,7 +1778,7 @@ export default class Lively {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
-      var link = Array.from(evt.path).find(ea => ea.localName == "a")
+      var link = Array.from(evt.composedPath()).find(ea => ea.localName == "a")
       if (link) {
         // #TODO can we shorten this or hide this context specific behavior, 
         // e.g. asking a link for href in the "context" of a lively container should

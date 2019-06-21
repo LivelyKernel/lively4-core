@@ -53,10 +53,10 @@ export default class Selection extends Morph {
     // lively.showEvent(evt)
 
     if (evt.ctrlKey || evt.altKey) return;
-    var target = evt.path.find(ea => this.allowsSelection(ea, evt)); // start with the innermost
-    // console.log('evt path:' + evt.path.map(ea => ea.classList).join("|")+ ": " + target)
+    var target = evt.composedPath().find(ea => this.allowsSelection(ea, evt)); // start with the innermost
+    // console.log('evt path:' + evt.composedPath().map(ea => ea.classList).join("|")+ ": " + target)
     
-    if (evt.path[0] !== document.body && evt.path[0] !==  document.documentElement && !target) return 
+    if (evt.composedPath()[0] !== document.body && evt.composedPath()[0] !==  document.documentElement && !target) return 
     if (evt.pointerType == "touch") return; // no selection via touch
     
     lively.showEvent(evt).style.display = "none"; // #HACK, weired event shit.. without it the world scrolls #TODO
@@ -72,13 +72,13 @@ export default class Selection extends Morph {
   onPointerDown(evt) {
     var target;
     if (evt.ctrlKey || evt.altKey) return;
-    if (evt.path[0] === document.body || evt.path[0] ===  document.documentElement) {
+    if (evt.composedPath()[0] === document.body || evt.composedPath()[0] ===  document.documentElement) {
       target = document.body
     } 
     if (evt.pointerType == "touch") return; // no selection via touch
     
     if (!target)
-      target = evt.path.find(ea => ea.classList && ea.classList.contains("lively-group"))
+      target = evt.composedPath().find(ea => ea.classList && ea.classList.contains("lively-group"))
     // if (target) lively.showElement(target)
     if (!target) return;
     

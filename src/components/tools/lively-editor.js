@@ -14,6 +14,9 @@
  
 
 */
+
+import Strings from "src/client/strings.js"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import moment from "src/external/moment.js";
 import diff from 'src/external/diff-match-patch.js';
@@ -40,6 +43,7 @@ export default class Editor extends Morph {
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
         
+    
     
     editor.doSave = text => {
       this.saveFile(); // CTRL+S does not come through...    
@@ -73,6 +77,15 @@ export default class Editor extends Morph {
     
     this.addEventListener("paste", evt => this.onPaste(evt))
 
+    
+    // wait for CodeMirror for adding custom keys
+    await  editor.editorLoaded()
+    editor.addKeys({
+      "Alt-P": cm => {
+        lively.notify('Toggle Widgets');
+        this.toggleWidgets();
+      }
+    })
   }
   
   onTextChanged() {
@@ -161,6 +174,7 @@ export default class Editor extends Morph {
     var codeMirror = this.currentEditor();
     var cur = this.getCursor()
     var scroll = this.getScrollInfo()
+
     
     if (codeMirror) {
       if (!this.isCodeMirror()) {
@@ -170,7 +184,10 @@ export default class Editor extends Morph {
       this.updateChangeIndicator();
       codeMirror.setValue(text);
       if (codeMirror.resize) codeMirror.resize();
-      this.updateAceMode();
+      this.updateEditorMode();
+      
+      this.showEmbeddedWidgets()
+      
     } else {
       // Code Mirror
       this.get('#editor').value = text
@@ -186,7 +203,7 @@ export default class Editor extends Morph {
     return text
   }
   
-  updateAceMode() {
+  updateEditorMode() {
     var url = this.getURL();
     var editorComp = this.get("#editor");
     if (editorComp && editorComp.changeModeForFile) {
@@ -197,7 +214,7 @@ export default class Editor extends Morph {
   async loadFile(version) {
     var url = this.getURL();
     console.log("load " + url);
-    this.updateAceMode();
+    this.updateEditorMode();
 
     var result = await fetch(url, {
       headers: {
@@ -241,6 +258,10 @@ export default class Editor extends Morph {
       if (this.lastVersion) {
         headers.lastversion = this.lastVersion
       }
+      if (urlString.match(/\.svg$/)) {
+        headers['Content-Type'] = 'image/svg+xml'
+      }
+      
       await fetch(urlString, {
         method: 'PUT', 
         body: data,
@@ -426,6 +447,7 @@ export default class Editor extends Morph {
                                   element.name, 
                                   evt)
             }
+            
             // lively.showElement(element)
           })
           
@@ -489,6 +511,7 @@ export default class Editor extends Morph {
         editor.setSelection(coords)        
       }
       editor.replaceSelection(text, "around")
+      
     })
     
     
@@ -518,6 +541,86 @@ export default class Editor extends Morph {
     }
   }
   
+  async showEmbeddedWidgets() {
+    var type = files.getEnding(this.getURL().toString())
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+
+    if (type == "js") {
+      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD))(.*?)\1\*\//, codeMirrorComponent.value)) {
+          var widgetName = "div"
+          var mode = m[1]
+          if (mode == "MD") {
+            widgetName = "lively-markdown"
+          }
+          let cm = codeMirrorComponent.editor,
+            // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
+            fromIndex = m.index,
+            toIndex = m.index + m[0].length
+                           
+          // if (cursorIndex > fromIndex && cursorIndex < toIndex) continue;
+          var from = cm.posFromIndex(fromIndex)
+          var to = cm.posFromIndex(toIndex)
+          let widget = await codeMirrorComponent.wrapWidget(widgetName, from, to)
+          widget.style.border = "2px dashed orange "
+          lively.removeEventListener('widget', widget)
+          widget.style.padding = "5px"
+//           lively.addEventListener("context", widget, "contextmenu", evt => {
+//             if (!evt.shiftKey) {
+//                const menuElements = [
+//                 ["edit source", () =>  widget.marker.clear()],
+//               ];
+//               const menu = new lively.contextmenu(this, menuElements)
+//               menu.openIn(document.body, evt, this)
+              
+//               evt.stopPropagation();
+//               evt.preventDefault();
+//               return true;
+//             }
+//           })
+        
+          if (mode == "MD") {
+            widget.setContent(m[2])    
+            
+          } else {
+            widget.innerHTML = m[2]
+            var container = lively.query(this, "lively-container")
+            if (container) {
+              lively.html.fixLinks(widget.querySelectorAll("img, a"), 
+                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    url => container.followPath(url))
+            }
+            
+          }
+      }
+     
+    }
+  }
+  
+  async hideEmbeddedWidgets() {
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
+  }
+  
+  toggleWidgets() {
+    lively.notify("yeah...")
+    var codeMirrorComponent = this.get("lively-code-mirror")
+    if (!codeMirrorComponent) return
+    
+    
+    
+    var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
+      .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
+    if (allWidgets.length == 0) {
+      this.showEmbeddedWidgets()
+    } else {
+      this.hideEmbeddedWidgets()
+    }
+  }
+  
+
   livelyExample() {
     this.setURL(lively4url + "/README.md");
     this.loadFile()

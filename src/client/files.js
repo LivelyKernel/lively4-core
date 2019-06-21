@@ -2,12 +2,6 @@ import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
-  
-  static hello() {
-    return "Hello World"
-  }
-  
-  
 
   static async fillCachedFileMap() {
     var root = lively4url +  "/"
@@ -24,6 +18,10 @@ export default class Files {
   }
   
   static cachedFileMap() {
+    
+    
+    
+    
     if (!self.lively4cacheFiles) {
       self.lively4cacheFiles = new Map()  // indexDB or dexie are to slow (60ms for simple checking if it is there #TODO)
     } 
@@ -110,7 +108,11 @@ export default class Files {
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
     } else {
-      return fetch(urlString, {method: 'PUT', body: data});
+      var options = {method: 'PUT', headers: {}, body: data}
+      if (url.match && url.match(/\.svg$/)) {
+        options.headers['Content-Type'] = 'image/svg+xml'
+      }
+      return fetch(urlString, options);
     }
   }
   
@@ -313,17 +315,19 @@ export default class Files {
     })
   }  
   
-  static async loadVersions(url) {
+  static async loadVersions(url, cached=false) {
     var versionscache = await caches.open("file_versions")
-    var resp = await versionscache.match(url)
-    if (resp) return resp
+    if (cached) {
+      var resp = await versionscache.match(url)
+      if (resp) return resp      
+    }
     resp = await fetch(url, {
       method: "OPTIONS",
       headers: {
          showversions: true   
       }      
     })
-    versionscache.put(url, resp)
+    versionscache.put(url, resp.clone())
     return resp
   }
   
@@ -429,6 +433,7 @@ export default class Files {
 
     links.filter(ea => !fileNames.includes(ea) && !ea.match("/")).forEach(ea => {
       var item = document.createElement("li")
+       if (ea == "index.md") return // don't include yourself
       item.textContent = "Missing " + ea
       list.appendChild(item)
     })
@@ -493,17 +498,34 @@ export default class Files {
       var remoteURL = await syncTool.gitControl("remoteurl")
       remoteURL = remoteURL.replace(/\n/,"")
       
-      return {
+      var userAndRepository = remoteURL.replace(/https:\/\/github.com\//,"").replace(/git@github.com:/,"").replace(/\.git/,"")
+      var [user, repo] = userAndRepository.split("/")
+      
+      var result =  {
         url,
+        user,
+        repo,
         serverURL,
         respository,
-        path,
+        path: path && path.replace(/^\//,""),
         remoteURL,
         branch,
         rawURL: remoteURL + "/raw/" + branch + path
-      }  
+      }
+      
+      if (!remoteURL || !branch || !path) {
+        console.warn("Github fileInfo not complete: " + JSON.stringify(result))
+        return null
+      }
+      
+      return result  
     }, url) 
   }
+  
+  static getEnding(path) {
+    return path.replace(/\?.*/,"").replace(/.*\./,"");
+  }
+  
 }
 
 

@@ -545,7 +545,7 @@ export default class LivelyDrawboard extends Morph {
   }
 
   async onLoadFile() {
-    let fileName = window.prompt('Load the following file:', 'https://lively4/dropbox/_test.svg');
+    let fileName = await lively.prompt('Load the following file:', 'https://lively4/dropbox/_test.svg');
     if(!fileName) { return; }
 
     this.svg && this.svg.remove();
@@ -574,8 +574,8 @@ export default class LivelyDrawboard extends Morph {
     this.windowTitle = "Draw Board";
   }
   
-  onActivateSave() {
-    let fileName = window.prompt('Choose file to sync with:', 'https://lively4/dropbox/_test.svg');
+  async onActivateSave() {
+    let fileName = await lively.prompt('Choose file to sync with:', 'https://lively4/dropbox/_test.svg');
     this.autosaveTo = undefined;
     this.resetWindowTitle();
     
@@ -589,6 +589,9 @@ export default class LivelyDrawboard extends Morph {
     let urlString = this.autosaveTo;
 
     if(!urlString || urlString === '') { return; }
+    
+    this.get('#svg').setAttribute("width", lively.getExtent(this).x)
+    this.get('#svg').setAttribute("height", lively.getExtent(this).y)
     
     let svg = this.get('#svg').outerHTML;
     

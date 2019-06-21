@@ -38,8 +38,6 @@ a.tag {
 1. → [*start.html*](../../start.html)
 2. [**boot.js**](boot.js), loads systemjs/babel, not a module itself
    - [bootlog.js](bootlog.js),  optionally benchmark and log boot whole boot process
-3. [load.js](load.js), first module
-   - loads service worker and then lively.js
 
 ### Base System
 - [**lively.js**](lively.js) #KitchenSink #CircularDepency #Refactor to submodules
@@ -123,7 +121,6 @@ a.tag {
 
 ### Draft
 - [pen-editor/](pen-editor/) 
-- [fileindex-analysis.js](fileindex-analysis.js) #SeminarProject
 - [rename_obj.js](rename_obj.js) #SeminarProject
 - [signature-db.js](signature-db.js) #SeminarProject
 - [github-explorer.js](github-explorer.js) #SeminarProject

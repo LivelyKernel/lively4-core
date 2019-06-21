@@ -3,6 +3,7 @@
 import FileIndex from 'src/client/fileindex.js'
 var FileCache = FileIndex;
 
+
 export class ValueResponse {
  
   constructor(value, { status = 200 } = {}) {
@@ -59,6 +60,10 @@ export class Scheme {
 
   async handle(options) {
     if (!this.resolve()) {
+      if (this.PUT && options && options.method == "PUT") {
+        return this.PUT(options, true)  
+      }
+      
       if (options && options.method == "OPTIONS") {
         return new Response(JSON.stringify({error: "Could not resolve " + this.url}), {status: 404})  
       }
@@ -114,22 +119,62 @@ export class LivelyFile extends Scheme {
   resolve() {
     this.element = LivelyFile.pathToFile(this.url)
     console.log("found " + this.element, this.url)
+    // lively.showElement(this.element) // very funny to see which file is asked...
     return this.element 
   }  
 
   GET(options) {
+    console.log("LivelyFile GET " + this.url)
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
+      if (!element.url) {
+         return new Response(`lively-file found, but url attribute is missing...`, {status: 500})
+      }
       return fetch(element.url)
     }
     return super.GET(options)
   }
 
-  PUT(options) {
+  async PUT(options, newfile) {
+    if (newfile) {
+      
+      var filename = this.url.replace(/.*\//,"")
+      var parentURL = this.url.replace(/\/[^/]*$/,"")
+      var parent = LivelyFile.pathToFile(parentURL) 
+      if (!parent) {
+        return new Response(`Could not create ${filename}, because parent element not found: ${parentURL}`, {status: 404})
+      } 
+      var siblings = Array.from(parent.querySelectorAll(":scope > lively-file")).sort((a,b) => {
+        var aPos = lively.getPosition(a),
+          bPos =  lively.getPosition(b)
+        if (aPos.y == bPos.y ) {
+          return aPos.x - bPos.x
+        }
+        return aPos.y - bPos.y
+      })
+      this.element = await lively.create("lively-file", parent)
+      this.element.name = filename
+      lively.setPosition(this.element, lively.pt(0,0))
+      if (siblings.length > 0 ) {
+        var lastSibling = siblings.last
+        var pos = lively.getPosition(lastSibling)
+        pos = pos.addPt(lively.pt(80,0))
+        if (pos.x + 50 > lively.getExtent(parent).x) {
+          pos = lively.pt(0, pos.y + 80)
+        } 
+        
+        lively.setPosition(this.element, pos)
+        
+      }
+      
+      lively.showElement(this.element)
+      
+    }
+    
     var element = this.element
     if (element.tagName == "LIVELY-FILE") {
         if (element.setContent && options) {
-          element.setContent(options.body)
+          element.setContent(options.body, options.headers && options.headers['Content-Type'])
           return new Response("")
         } else {
           return new Response("Hmm... I don't know.", {status: 500})      

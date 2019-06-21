@@ -543,8 +543,8 @@ export default class ComponentLoader {
       if (component._lively4created ) return resolve(component)
       
       component.addEventListener("created", (e) => {
-        if (e.path[0] !== component) {
-          _log("[components] ingnore and stop created event from child " + e.path[0].tagName);
+        if (e.composedPath()[0] !== component) {
+          _log("[components] ingnore and stop created event from child " + e.composedPath[0].tagName);
           return 
         }
         if (created) {

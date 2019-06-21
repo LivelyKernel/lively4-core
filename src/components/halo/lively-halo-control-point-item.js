@@ -180,7 +180,7 @@ export default class HaloControlPointItem extends HaloItem {
     this.hideHighlight()
     
     // does only work with "mousemove" but not with "pointermove"
-    // var element = evt.path.find(ea => {
+    // var element = evt.composedPath().find(ea => {
     //   lively.showElement(ea)
     //   return ea.classList && ea.classList.contains("lively-content") && ea !== this 
     // }) 

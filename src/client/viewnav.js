@@ -60,7 +60,7 @@ export default class ViewNav {
     if (!evt.ctrlKey || evt.button != 0)
       return;
       
-    this.targetContainer = evt.path.find(ea => {
+    this.targetContainer = evt.composedPath().find(ea => {
       return ea.tagName == "LIVELY-CONTAINER"
     })
   

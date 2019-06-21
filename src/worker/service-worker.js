@@ -26,7 +26,7 @@ async function sendMessage(client, data) {
 self.addEventListener('fetch', (evt) => {
   
   var url = evt.request.url 
-  console.log("[swx] fetch " +  evt.request.method  + " " + url)  
+  // console.log("[swx] fetch " +  evt.request.method  + " " + url)  
   
   var method = evt.request.method
   var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)

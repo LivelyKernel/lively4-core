@@ -356,13 +356,22 @@ export class Graph {
         
         const total = fileNames.length;
         let i = 0;
-        Promise.all(fileNames.map(fileName => {
-          const knotURL = new URL(fileName, directoryURL);
-          return this.requestKnot(knotURL)
-            .through(() => progress.value = i++ / total);
-        }))
-          .then(resolve)
-          .then(() => progress.remove());
+        const pool = new Set();
+        const limit = 100;
+        const arr = [1,2,3,4,5,6]
+        let ii = 0;
+        const groups = fileNames.groupBy((...args) => (ii++ / limit).floor())
+        for (let group of Object.values(groups)) {
+          await Promise.all(group.map(fileName => {
+            const knotURL = new URL(fileName, directoryURL);
+            const prom = this.requestKnot(knotURL);
+            progress.value = i++ / total
+            return prom
+          }));
+        }
+        
+        await resolve();
+        await progress.remove()
       }));
     }
     return this.loadedDirectoryPromises.get(directory);

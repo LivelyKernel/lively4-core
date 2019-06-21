@@ -1,5 +1,3 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js'
 import FileIndex from 'src/client/fileindex-analysis.js'
 import d3 from "src/external/d3.v5.js"

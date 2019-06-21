@@ -1,15 +1,23 @@
 import 'lang';
 
-import { BaseActiveExpression } from 'active-expression';
+/*HTML 
+<img src="https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_100.png"></img>'s Implementation of AExprs
+HTML*/
 
+import { BaseActiveExpression } from 'active-expression';
 
 import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
+/*HTML <editor-widget-location-info></editor-widget-location-info> HTML*/
+/*HTML <codemirror-playground></codemirror-playground> HTML*/
+
+/*HTML <span style="color: red">hello</span> HTML*/
 
 import { using, isFunction } from 'utils';
 
+/*MD # Dependency Analysis MD*/
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
 
@@ -43,15 +51,16 @@ class ExpressionAnalysis {
 class Dependency {
   static getOrCreateFor(context, identifier, type) {
     const key = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(type));
+    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(context, identifier, type));
   }
-  
-  constructor(type) {
-    this.type = type;
+
+  // #TODO: compute and cache isGlobal
+  constructor(context, identifier, type) {
+    this._type = type;
     
     this.isTracked = false;
   }
-  
+
   updateTracking() {
     if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) { return; }
     if (this.isTracked) {
@@ -60,35 +69,48 @@ class Dependency {
       this.track();
     }
   }
+
   track() {
     this.isTracked = true;
 
-    const [context, identifier] = this.getContextAndIdentifier();
-    const value = context !== undefined ? context[identifier] : undefined;
+    const [context, identifier, value] = this.contextIdentifierValue();
 
+    /*HTML Source Code Hook HTML*/
     // always employ the source code hook
     HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
 
-    // 
+    /*HTML Data Structure Hook HTML*/
     var dataStructure;
-    if (this.type === 'member') {
+    if (this._type === 'member') {
       dataStructure = context;
-    } else if(this.type === 'local') {
+    } else if(this._type === 'local') {
       dataStructure = value;
     }
-    if (dataStructure instanceof Set) {
+    if (dataStructure instanceof Array || dataStructure instanceof Set || dataStructure instanceof Map) {
       const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
       HooksToDependencies.associate(dataHook, this);
     }
+
+    /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
+    if (this.isGlobalDependency() && identifier === 'that') {
+      const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
+      HooksToDependencies.associate(wrappingHook, this);
+    }
+
   }
+
   untrack() {
     this.isTracked = false;
     HooksToDependencies.disconnectAllForDependency(this);
   }
-  getContextAndIdentifier() {
+
+  contextIdentifierValue() {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    
     const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
-    return [context, identifier];
+    const value = context !== undefined ? context[identifier] : undefined;
+    
+    return [context, identifier, value];
   }
 
   notifyAExprs() {
@@ -97,13 +119,13 @@ class Dependency {
   }
   
   isMemberDependency() {
-    return this.type === 'member' && !this.isGlobal();
+    return this._type === 'member' && !this.isGlobal();
   }
   isGlobalDependency() {
-    return this.type === 'member' && this.isGlobal();
+    return this._type === 'member' && this.isGlobal();
   }
   isLocalDependency() {
-    return this.type === 'local';
+    return this._type === 'local';
   }
   isGlobal() {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
@@ -115,24 +137,24 @@ class Dependency {
   }
 
   getAsDependencyDescription() {
-    const [context, identifier] = this.getContextAndIdentifier();
+    const [context, identifier, value] = this.contextIdentifierValue();
     
     if (this.isMemberDependency()) {
       return {
         object: context,
         property: identifier,
-        value: context !== undefined ? context[identifier] : undefined
+        value
       };
     } else if (this.isGlobalDependency()) {
       return {
         name: identifier,
-        value: context[identifier]
+        value
       };
     } else if (this.isLocalDependency()) {
       return {
         scope: context,
         name: identifier,
-        value: context !== undefined ? context[identifier] : undefined
+        value
       };
     } else {
       throw new Error('Dependency is neighter local, member, nor global.');
@@ -235,6 +257,9 @@ const CompositeKeyToSourceCodeHook = new InjectiveMap();
 /** Data Structure Hooks */
 // 4.1 DataStructureHookByDataStructure
 const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Map), DataStructureHook>
+/** Wrapping Hooks */
+// 4.2 PropertyWrappingHookByProperty
+const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), PropertyWrappingHook>
 
 class Hook {
   constructor() {
@@ -264,7 +289,7 @@ class SourceCodeHook extends Hook {
 }
 
 class DataStructureHook extends Hook {
-  static forStructure(set) {
+  static forStructure(dataStructure) {
     const hook = new DataStructureHook();
     
     function getPrototypeDescriptors(obj) {
@@ -290,27 +315,29 @@ class DataStructureHook extends Hook {
       const prototypeDescriptors = getPrototypeDescriptors(obj);
       Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
 
-      prototypeDescriptors.forEach(addDescriptor => {
-        // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
-        if (addDescriptor.value) {
-          if (isFunction(addDescriptor.value)) {
-            wrapProperty(obj, addDescriptor, function() {
-              // #HACK #TODO we need an `withoutLayer` equivalent here
-              if (window.__compareAExprResults__) { return; }
+      prototypeDescriptors
+        .filter(descriptor => descriptor.key !== 'constructor') // the property constructor needs to be a constructor if called (as in cloneDeep in lodash); We leave it out explicitly as the constructor does not change any state #TODO
+        .forEach(addDescriptor => {
+          // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
+          if (addDescriptor.value) {
+            if (isFunction(addDescriptor.value)) {
+              wrapProperty(obj, addDescriptor, function() {
+                // #HACK #TODO we need an `withoutLayer` equivalent here
+                if (window.__compareAExprResults__) { return; }
 
-              this; // references the modified container
-              hook.notifyDependencies();
-            });
+                this; // references the modified container
+                hook.notifyDependencies();
+              });
+            } else {
+              console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+            }
           } else {
-            console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+            console.warn(`Property ${addDescriptor.key} has no value.`)
           }
-        } else {
-          console.warn(`Property ${addDescriptor.key} has no value.`)
-        }
-      });
+        });
     }
 
-    monitorProperties(set);
+    monitorProperties(dataStructure);
     
     // set.add = function add(...args) {
     //   const result = Set.prototype.add.call(this, ...args);
@@ -318,6 +345,32 @@ class DataStructureHook extends Hook {
     //   return result;
     // }
     return hook;
+  }
+}
+
+class PropertyWrappingHook extends Hook {
+  static getOrCreateForProperty(property) {
+    return PropertyWrappingHookByProperty.getOrCreate(property, () => new PropertyWrappingHook(property));
+  }
+  
+  constructor(property) {
+    super();
+
+    this.value = self[property];
+    const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
+
+    // #TODO: keep old property accessors if present (otherwise, we do not interact with COP and ourselves, i.e. other property wrappers)
+    Object.defineProperty(self, property, {
+      configurable,
+      enumerable,
+      
+      get: () => this.value,
+      set: value => {
+        const result = this.value = value;
+        this.notifyDependencies();
+        return result;
+      }
+    });
   }
 }
 
@@ -346,6 +399,13 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   dependencies() {
     return new DependencyAPI(this);
   }
+  
+  sharedDependenciesWith(otherAExpr) {
+    const ownDependencies = this.dependencies().all();
+    const otherDependencies = otherAExpr.dependencies().all();
+    const [own, shared, other] = ownDependencies.computeDiff(otherDependencies);
+    return shared;
+  }
 }
 
 class DependencyAPI {
@@ -357,6 +417,10 @@ class DependencyAPI {
     return DependenciesToAExprs.getDepsForAExpr(this._aexpr);
   }
 
+  all() {
+    return Array.from(this.getDependencies());
+  }
+  
   locals() {
     return this.getDependencies()
       .filter(dependency => dependency.isLocalDependency())
@@ -388,7 +452,8 @@ class DependencyManager {
   static get currentAExpr() {
     return aexprStack.top();
   }
-
+  
+  // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
@@ -461,6 +526,7 @@ export function reset() {
   HooksToDependencies.clear();
 }
 
+/*MD # Source Code Point Cuts MD*/
 /**
  * (C)RUD for member attributes
  */

@@ -1,3 +1,5 @@
+"enable examples";
+
 import Rasterize from "src/client/rasterize.js"
 /* globals GraphViewer */
 
@@ -7,13 +9,126 @@ import ContextMenu from 'src/client/contextmenu.js'
 import Files from "src/client/files.js"
 import {pt} from 'src/client/graphics.js'
 
+import GitHub from "src/client/github.js"
+
+const DrawioBranch = "drawio"
+import Webhook from "src/client/webhook.js"
+
+import pako from "https://jgraph.github.io/drawio-tools/tools/deflate/pako.min.js"
+
+import XML from "src/client/xml.js"
+
+export function foo(a) {
+  return a + 1
+}
+
+
+function stringToBytes(str) {
+    var arr = new Array(str.length);
+    for (var i = 0; i < str.length; i++){
+        arr[i] = str.charCodeAt(i);
+    }
+    return arr;
+}
+
+function bytesToString(arr) {
+    var str = '';
+    for (var i = 0; i < arr.length; i++){
+        str += String.fromCharCode(arr[i]);
+    }
+    return str;
+}
+
 export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
-    this.update()
+    this.update()  
+  }
+  
+  async updateGithubInfo() {
+    this.githubInfo = await Files.githubFileInfo(this.src)
+  }
+  
+  async updateWebhook() {
+    if (this.githubInfo) {
+      this.webhook = new Webhook(this.githubInfo.user,  this.githubInfo.repo , 
+                                 change => this.onWebhook(change))
+      await this.webhook.create()
+      this.webhook.start()
+    }
+  }
+  
+  attachedCallback() {
+    this.webhook && this.webhook.start()
+  }
+  
+  detachedCallback() {
+    this.webhook && this.webhook.stop()
+    
   }
 
+  async onWebhook(change) {
+    if (change.commits.find(ea => 
+          ea.modified.find(path => path == this.githubInfo.path))) {
+      this.updateFromDrawIO(change.after)
+    }
+  }
+  
+  extractEncodedSource(doc) {
+    return doc.querySelector("diagram").textContent
+  }
+  
+  extractSource(doc, prettyPrint) {
+    let encoded = this.extractEncodedSource(doc),
+      data = atob(encoded),
+      source = decodeURIComponent(bytesToString(pako.inflateRaw(data)))
+    if (prettyPrint) {
+      return XML.prettify(source) 
+    }
+    return source
+  }
+  
+  encodeSource(source) {
+    return btoa(bytesToString(pako.deflateRaw(encodeURIComponent(source))))
+  }
+  
+  async loadXML() {
+     var s = await fetch(this.src).then(r => r.text())
+     return new DOMParser().parseFromString(s, 'text/xml')
+  }
+
+  async saveXML(doc) {
+    return await fetch(this.src, {
+      method: "PUT",
+      body: new XMLSerializer().serializeToString(doc)
+    })
+  }
+
+  
+  async getSource(prettyPrint) {
+    return this.extractSource(await this.loadXML(), prettyPrint)
+  }
+  
+  async getGraphModel() {
+    var source = await this.getSource()
+      return new DOMParser().parseFromString(source, 'text/xml')
+  }
+
+  async setGraphModel(model) {
+    var source = new XMLSerializer().serializeToString(model)
+    return this.setSource(source)
+  }
+
+  
+  async setSource(source) {
+    let doc = await this.loadXML()
+    doc.querySelector("diagram").textContent =  this.encodeSource(source) 
+    var result = this.saveXML(doc)
+    this.update()
+    return result
+  }
+  
   onContextMenu(evt) {
     if (!evt.shiftKey) {
       evt.stopPropagation();
@@ -26,6 +141,10 @@ export default class LivelyDrawio extends Morph {
             ["edit @ drawio", () => {
                 this.editAtDrawIO()   
             },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+            ["update from drawio", () => {
+                this.updateFromDrawIO()   
+            },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+        
             ["export as pdf", () => {
                 this.exportAsPDF()   
             }, "", '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'],
@@ -87,18 +206,44 @@ export default class LivelyDrawio extends Morph {
     this.setAttribute("src", url)
     this.update()
   }
+  
+  async updateFromDrawIO(sha) {
+    
+    var githubInfo = await Files.githubFileInfo(this.src)
+    if (githubInfo) {
+      var userAndRepository = githubInfo.user +"/" + githubInfo.repo
+      var gh = new GitHub(githubInfo.user, githubInfo.repo)
 
-  async editAtDrawIO(useIFrame=true) {
+      // create new branch where drawio edits go into....
+      await gh.ensureBranch(DrawioBranch, githubInfo.branch)
+      
+      
+      var content = await gh.getContent(githubInfo.path, sha || DrawioBranch)
+      // console.log("source: ", this.extractSource(content))
+      await lively.files.saveFile(this.src, content)      
+      await this.update()
+      lively.notify("updated " + this.src)
+    }
+  }
+
+  async editAtDrawIO(parent) {
     if (!this.src) throw new Error("src attribute not set");
+
+    await this.updateGithubInfo()
+    await this.updateWebhook()
 
     var drawioURL;
     var githubInfo = await Files.githubFileInfo(this.src)
     if (githubInfo) {
-      if (!githubInfo.remoteURL || !githubInfo.branch || !githubInfo.path) {
-        throw new Error("Github fileInfo not complete: " + JSON.stringify(githubInfo))
-      }
-
-      var githubPath = githubInfo.remoteURL.replace(/https:\/\/github.com\//,"").replace(/git@github.com:/,"").replace(/\.git/,"") + "/" +  githubInfo.branch + githubInfo.path
+      var userAndRepository = githubInfo.user +"/" + githubInfo.repo 
+      var gh = new GitHub(githubInfo.user, githubInfo.repo)
+      
+      // create new branch where drawio edits go into....
+      await gh.ensureBranch(DrawioBranch, githubInfo.branch)
+      
+      var content = await fetch(this.src).then(r => r.text())
+      await gh.setFile(githubInfo.path, DrawioBranch, content)
+      var githubPath = userAndRepository + "/" +  DrawioBranch + "/" +githubInfo.path
       drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
     }
     
@@ -111,24 +256,14 @@ export default class LivelyDrawio extends Morph {
           encodeURIComponent(this.src.replace(githubPrefix, ""))
     } 
     if (drawioURL) {
-      if (useIFrame) {
-        var iFrame = await lively.openComponentInWindow("lively-iframe")
+        var iFrame = await(parent ? lively.create("lively-iframe") : lively.openComponentInWindow("lively-iframe"))
         lively.setExtent(iFrame.parentElement, pt(1200,800))
         iFrame.setURL(drawioURL)
-      } else {
-        window.open(drawioURL)
-      }
     } else {
       lively.notify("editing not supported for", this.src)
     }
   }
-  
-  async updateSourceFromGithub() {
-    if (!this.src) throw new Error("src attribute not set");
-    var githubInfo = await Files.checkoutGithubFile(this.src)  
-  }
-  
-  
+
   
   async exportAsPDF() {
     var targetURL = this.src.replace(/xml$/,"pdf") // #Warning override without asking... yeah we need sharp tools!
@@ -182,16 +317,11 @@ export default class LivelyDrawio extends Morph {
   // })
   }
   
-  
-  
-   
   async livelyExample() {
     // this.src = "https://lively-kernel.org/lively4/lively4-jens/doc/figures/testdrawio.xml"
     this.src = "https://raw.githubusercontent.com/JensLincke/drawio-figures/master/contextjs_promises_01.xml"
     // this.src = "https://raw.githubusercontent.com/JensLincke/drawio-figures/master/contextjs_promises_02.xml"
     // this.edit = "https://www.draw.io/#HJensLincke%2Fdrawio-figures%2Fmaster%2Fcontextjs_promises_01.xml"
-    
-    
   }
   
-}
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

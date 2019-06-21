@@ -8,6 +8,7 @@ import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js";
 
+
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
     this.addEventListener("drop", this.onDrop);
@@ -15,6 +16,14 @@ export default class LivelyContainerNavbar extends Morph {
     // this.addEventListener("dragenter", this.onDragEnter)
     this::applyDragCSSClass();
     this.lastSelection = [];
+    this.addEventListener('contextmenu', (evt) => {
+        if (!evt.shiftKey) {
+          this.onContextMenu(evt, this.getRoot())
+          evt.stopPropagation();
+          evt.preventDefault();
+          return true;
+        }
+    }, false);
   }
   
   clear(parentElement=this.get("#navbar")) {
@@ -439,19 +448,44 @@ export default class LivelyContainerNavbar extends Morph {
     await components.openInWindow(editor);
   }
 
-  onContextMenu(evt, otherUrl) {
-    const menuElements = [
-      ["delete file", () => this.deleteFile(otherUrl, this.getSelection())],
-      ["rename file", () => this.renameFile(otherUrl)],
-      ["become bundle", () => this.convertFileToBundle(otherUrl)],
-      ["new file", () => this.newfile(otherUrl)],
-      ["edit", () => lively.openBrowser(otherUrl, true)],
-      ["browse", () => lively.openBrowser(otherUrl)],
-      ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-      ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
-      ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
-    ];
+  onContextMenu(evt, otherUrl=this.getRoot()) {
+    var isDir = otherUrl.match(/\/$/,"")
+    var file = otherUrl.replace(/\/$/,"").replace(/.*\//,"");
     
+    const menuElements = []
+    
+    var selection =  this.getSelection()
+    
+    if (selection.length > 0) {
+      menuElements.push(...[
+        ['<b>' + (selection.map(ea => ea.replace(/.*\//, "")).join(", ") + "</b>"), 
+         () => {}, "", '>'],
+        [`delete `, () => this.deleteFile(otherUrl, selection)],
+      ])
+    } else {
+      menuElements.push(...[
+        ['<b>' + file + "</b>", 
+         () => {}, "", '>'],
+      ])
+    }
+    if (selection.length == 1) {
+      menuElements.push(...[
+        [`rename`, () => this.renameFile(otherUrl)],
+        [`become bundle`, () => this.convertFileToBundle(otherUrl)],
+        
+        ["edit ", () => lively.openBrowser(otherUrl, true)],
+        ["browse", () => lively.openBrowser(otherUrl)],
+        ["save as png", () => lively.html.saveAsPNG(otherUrl)],
+        ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
+        ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
+      ])
+    }
+    menuElements.push(...[
+      ["new", [
+        [`text file`, () => this.newfile(otherUrl)],
+        ["drawio figure", () => this.newfile(otherUrl, "drawio")],
+      ], "", ''],  
+    ])
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)
   }
@@ -464,7 +498,7 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify("please implement renameFile()")
   }
 
-  newfile(path) {
+  newfile(path, type) {
     lively.notify("please implement newfile()")
   }
   
