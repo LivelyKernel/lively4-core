@@ -18,7 +18,12 @@ export default class D3Polymetricview extends D3Component {
   }
   
   updateViz() {
+    debugger
     var bounds = this.getBoundingClientRect()
+    if (bounds.width == 0) { // we are not opened
+      bounds = lively.getBounds(this)
+    }
+    
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
 
