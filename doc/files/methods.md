@@ -44,23 +44,33 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
       var element = row.querySelector(".methods")
       element.innerHTML = ""
       var lastVersion
-      method.changes.forEach(ea => {
-        var li = <li>{ea.commitId} <a href={ea.date} click={(evt => {
-          evt.preventDefault()
-          selectMethodVersion(method, ea, li)
-        })}>{
-           moment(ea.date).format("YYYY-MM-DD hh:mm:ss")
-        }</a><div class="details"></div></li>
-        element.appendChild(li)
-      })
+      method.changes
+        .sortBy(ea => moment(ea.date).format("YYYY-MM-DD hh:mm:ss"))
+        .forEach(ea => {
+          var li = <li>{ea.action} {ea.commitId} <a href={ea.date} click={(evt => {
+            evt.preventDefault()
+            selectMethodVersion(method, ea, li)
+          })}>{
+             moment(ea.date).format("YYYY-MM-DD hh:mm:ss")
+          }</a><div class="details"></div></li>
+          element.appendChild(li)
+        })
       
     }
     
     var selectMethodVersion = function(method, version, li) {
       var details = li.querySelector(".details")
-      details.textContent  = version.date + "\n" + version.source
-      // var diff1 = dmp.diff_main("xxx", version.source);
-      // details.innerHTML = "" = dmp.patch_toText(dmp.patch_make(diff1))
+      if (details.textContent == "") {
+        details.textContent  = version.source
+        if (version.action == "modified") {
+          var diff1 = dmp.diff_main(version.previousSource, version.source);
+          dmp.diff_cleanupSemantic(diff1)
+          details.innerHTML = dmp.diff_prettyHtml(diff1)      
+        }      
+      } else {
+        details.textContent = ""
+      }
+      
      
     }
     
@@ -69,7 +79,11 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
 
       var versionsTable = FileIndex.current().db.versions
       versions = await versionsTable.toArray()
-      groups = _.groupBy(versions, ea => ea.class + ">>" + ea.method)
+      
+      // #FastFeedback #Pattern Reduce working set to get faster feedback #Example
+      // versions = versions.filter(ea => ea.url.toString().match("/files.js"))
+      
+      groups = _.groupBy(versions, ea => (ea.static ? "static " : "") +(ea.kind) + " "+ ea.class + ">>" + ea.method)
       data = Object.keys(groups).map(ea => ({
           methodOfClass: ea, 
           count: groups[ea].length, 
@@ -80,7 +94,7 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
         data = data.sortBy(ea => ea.count).reverse()
       }
 
-      data = data.slice(0,100)
+      // data = data.slice(0,1000)
 
 
       data.forEach(ea => {
@@ -88,7 +102,8 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
             <td><a href={ea.methodOfClass} click={(evt) => {
               evt.preventDefault()
               if (evt.shiftKey) {
-                lively.openInspector(ea)
+                lively.openBrowser(ea.changes[0].url, true)
+                // lively.openInspector(ea)
               } else {
                 selectMethod(ea, row)
               }
