@@ -54,7 +54,10 @@ export default class LivelyScript extends Morph {
       if (container) {
         
         await waitForDeepProperty(container, "getURL")
-        moduleName = (container.getURL() || lively4url).toString()
+        container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
+        
+        // all scripts in one container share the same module... but a second container will get a different module
+        moduleName = (container.getURL() || lively4url).toString() + "_" +container.livelyScriptContainerId
       } else {
         // no container, so we assume lively4 as root
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...

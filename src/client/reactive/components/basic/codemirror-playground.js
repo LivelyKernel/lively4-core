@@ -36,6 +36,10 @@ export default class CodemirrorPlayground extends Morph {
       "Alt-A": cm => {
         this.showAExprInfo();
       },
+      // #KeyboardShortcut Alt-S snap to the next Active Expression
+      "Alt-S": cm => {
+        this.snapToNextAEXpr()
+      },
     });
 
   }
@@ -60,12 +64,9 @@ export default class CodemirrorPlayground extends Morph {
     rangeToSelect.selectInCM(this.$);
   }
   async showAExprInfo() {
-    let that = this
-    that.lcm.ternWrapper.then(tw => {
+    this.lcm.ternWrapper.then(tw => {
       
     });
-    // return;
-    await lively.sleep(200);
     this.$.showHint({
       hint(...args) {
         lively.warn(args)
@@ -97,7 +98,6 @@ export default class CodemirrorPlayground extends Morph {
       customKeys: null,
       extraKeys: null
     });
-    that.snapToNextAEXpr()
   }
   
   instantUpdate() {

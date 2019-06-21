@@ -85,23 +85,23 @@ describe('Trigger for Active Expressions', () => {
     expect(spy).to.be.calledTwice;
   });
 
-  describe('nowAndOnChange', () => {
-    it("aexprs define nowAndOnChange", () => {
-      expect(aexpr(() => {})).to.respondTo('nowAndOnChange');
+  describe('dataflow', () => {
+    it("aexprs define dataflow", () => {
+      expect(aexpr(() => {})).to.respondTo('dataflow');
     });
 
-    it("nowAndOnChange is chainable", () => {
+    it("dataflow is chainable", () => {
       let expectedAxp = aexpr(() => {});
-      let actualAxp = expectedAxp.nowAndOnChange(() => {});
+      let actualAxp = expectedAxp.dataflow(() => {});
       expect(actualAxp).to.equal(expectedAxp);
     });
 
-    it("nowAndOnChange invokes callback immediately", () => {
+    it("dataflow invokes callback immediately", () => {
     let obj = {a: -2},
         spy = sinon.spy();
 
       let axp = aexpr(() => obj.a)
-        .nowAndOnChange(spy);
+        .dataflow(spy);
 
       expect(spy).to.be.calledOnce;
       expect(spy).to.be.calledWithMatch(-2);

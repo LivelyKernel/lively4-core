@@ -173,7 +173,7 @@ export class BaseActiveExpression {
 
   /**
    * Executes the encapsulated expression with the given parameters.
-   * aliases with 'now' (#TODO: caution, consider ambigous terminology: 'now' as in 'give me the value' or as in 'nowAndOnChange'?)
+   * aliases with 'now' (#TODO: caution, consider ambigous terminology: 'now' as in 'give me the value' or as in 'dataflow'?)
    * @public
    * @returns {*} the current value of the expression
    */
@@ -318,7 +318,7 @@ export class BaseActiveExpression {
     return this;
   }
 
-  nowAndOnChange(callback) {
+  dataflow(callback) {
     // setup dependency
     this.onChange(callback);
 
