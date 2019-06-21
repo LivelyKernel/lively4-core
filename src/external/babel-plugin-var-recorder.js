@@ -100,7 +100,6 @@ export default function({ types: t, template, traverse, }) {
           const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
           let MODULE_NAME;
           if(window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
-            debugger
             var codeIdAndPath = filename.replace(DOIT_MATCHER,"")// workspace: becomes workspacejs... e.g. and we are only interested in the id ...
             var codeId = codeIdAndPath.replace(/\/.*/,"") // strip path... that we encoded.... 
             
