@@ -5,8 +5,12 @@
 Auto-generated list of taggedFiles found in (browser-local) files data-base.
 
 <script>
-  import FileCache from "src/client/fileindex.js"
+  import FileIndex from "src/client/fileindex.js"
   import Paths from "src/client/paths.js"
+  import moment from "src/external/moment.js";  
+  import diff from 'src/external/diff-match-patch.js';
+
+  var dmp = new diff.diff_match_patch();
   
   var container = lively.query(this, "lively-container");
   (async () => {
@@ -15,7 +19,7 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
     var update = document.createElement("button");
     update.addEventListener("click", async () => {
       try {
-        await FileCache.current().updateAllLinks()
+        await FileIndex.current().updateAllLinks()
       } catch(e) {
         lively.notify("Error while analyzing links", e)
       }
@@ -39,11 +43,14 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
     var selectMethod = function(method, row) {
       var element = row.querySelector(".methods")
       element.innerHTML = ""
+      var lastVersion
       method.changes.forEach(ea => {
-        var li = <li><a href={ea.date} click={(evt => {
+        var li = <li>{ea.commitId} <a href={ea.date} click={(evt => {
           evt.preventDefault()
           selectMethodVersion(method, ea, li)
-        })}>{ea.date}</a><div class="details"></div></li>
+        })}>{
+           moment(ea.date).format("YYYY-MM-DD hh:mm:ss")
+        }</a><div class="details"></div></li>
         element.appendChild(li)
       })
       
@@ -51,8 +58,10 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
     
     var selectMethodVersion = function(method, version, li) {
       var details = li.querySelector(".details")
-      details.innerHTML = "" + version.source
-      
+      details.textContent  = version.date + "\n" + version.source
+      // var diff1 = dmp.diff_main("xxx", version.source);
+      // details.innerHTML = "" = dmp.patch_toText(dmp.patch_make(diff1))
+     
     }
     
     var updateTable = async (sorted) => {
@@ -70,6 +79,9 @@ Auto-generated list of taggedFiles found in (browser-local) files data-base.
       if (sorted) {
         data = data.sortBy(ea => ea.count).reverse()
       }
+
+      data = data.slice(0,100)
+
 
       data.forEach(ea => {
         var row = <tr >

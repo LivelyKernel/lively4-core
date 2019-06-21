@@ -53,9 +53,10 @@ export default class FileIndex {
   fileCacheDB() {
     var db = new Dexie(this.name);
 
-    db.version("2").stores({
+    db.version(1).stores({
         files: 'url,name,type,version,modified,options,title,tags,versions',
         history: '[url+version],url,name,type,version,modified,options,title,tags',
+        commits: 'hash,message,date',
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
         classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
@@ -247,12 +248,28 @@ export default class FileIndex {
   
   
   async addVersions(file) {
-    
-    
+
     let versions = await this.loadVersions(file.url)
+    
+    
+    
     for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
       let version = versions[i]
       let versionPrevious = versions[i+1]
+      
+      var commit = (await this.db.commits.where({'hash': "" + version.version}).toArray())[0]
+      if (!commit) {
+         commit = {
+          hash: version.version,
+          previous: versionPrevious.version,
+        }
+         
+        // console.log("[fileindex] add history", historicFile)
+        await this.db.transaction("rw", this.db.commits, () => { 
+          this.db.commits.put(commit) 
+        })
+      }
+      
       
       var historicFileResult  = await this.db.history.where({'url': "" + file.url, 'version': "" + version.version}).toArray()
       if (historicFileResult.length > 0) {
@@ -265,7 +282,7 @@ export default class FileIndex {
           type: file.type,
           name: file.name,
           version: version.version,
-          previous: versionPrevious
+          previous: versionPrevious.version
         }
         // console.log("[fileindex] add history", historicFile)
         await this.db.transaction("rw", this.db.history, () => { 
@@ -323,6 +340,7 @@ export default class FileIndex {
             date: latestVersion.date,
             user: latestVersion.author,
             commitId: latestVersion.version,
+            previousCommitId: previousVersion ? previousVersion.version : undefined,
             action: (!previousClass) ? "added" : "modified"
           })
         }

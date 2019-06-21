@@ -34,7 +34,11 @@ export default class GraphvizDot extends Morph {
     var bounds = this.getBoundingClientRect()
     var div = this.get("#graph")
     try {
-      div.innerHTML = Viz(this.querySelector("script").innerHTML, options)
+      var sourceContainer = this.querySelector("script")
+      if (sourceContainer) {
+        var source  = sourceContainer.innerHTML
+        div.innerHTML = Viz(source, options)
+      }
     } catch(e) {
       div.innerHTML =`<lively-error>${e}</lively-error>`
     }

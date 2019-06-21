@@ -19,3 +19,10 @@ function()  {
   var a = window.foobarx()
 }
 ```
+
+<script>
+
+  var foo = Math.random();
+  
+  <button click={evt => lively.notify(foo)}>show foo</button>
+</script>

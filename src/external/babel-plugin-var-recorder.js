@@ -100,7 +100,18 @@ export default function({ types: t, template, traverse, }) {
           const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
           let MODULE_NAME;
           if(window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(filename) && !MODULE_MATCHER.test(filename)) {
-            var codeId = filename.replace(DOIT_MATCHER,"") // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
+            debugger
+            var codeIdAndPath = filename.replace(DOIT_MATCHER,"")// workspace: becomes workspacejs... e.g. and we are only interested in the id ...
+            var codeId = codeIdAndPath.replace(/\/.*/,"") // strip path... that we encoded.... 
+            
+            codeId = codeId + "/" // see bound-eval.js 
+            
+            // (A) - filename
+            // (B) - code id (per doit?) and a path....
+            
+            // TODO the path should be the module in the first place.....
+            
+            // why not: MODULE_NAME = codeIdAndPath.replace(/^[\/]*/,"")
             MODULE_NAME = window.__topLevelVarRecorder_ModuleNames__[codeId];
             // console.log("boundEval MODULE_NAME: " + MODULE_NAME + " codeId: " + codeId)
           } else if (!DOIT_MATCHER.test(filename) && MODULE_MATCHER.test(filename)) {
