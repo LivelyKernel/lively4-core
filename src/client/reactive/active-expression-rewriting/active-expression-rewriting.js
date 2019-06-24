@@ -97,6 +97,11 @@ class Dependency {
       HooksToDependencies.associate(wrappingHook, this);
     }
 
+    /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: <span style="color: green; font-weight: bold;">"that"</span> HTML*/
+    if (this._type === 'member' && context instanceof HTMLElement) {
+      const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
+      HooksToDependencies.associate(mutationObserverHook, this);
+    }
   }
 
   untrack() {
@@ -260,6 +265,9 @@ const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Ma
 /** Wrapping Hooks */
 // 4.2 PropertyWrappingHookByProperty
 const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), PropertyWrappingHook>
+/** Mutation Observer Hooks */
+// 4.3 DataStructureHookByDataStructure
+const MutationObserverHookByHTMLElement = new WeakMap(); // WeakMap<(HTMLElement), MutationObserverHook>
 
 class Hook {
   constructor() {
@@ -374,6 +382,21 @@ class PropertyWrappingHook extends Hook {
   }
 }
 
+class MutationObserverHook extends Hook {
+  static getOrCreateForElement(element) {
+    return MutationObserverHookByHTMLElement.getOrCreate(element, () => new MutationObserverHook(element));
+  }
+  
+  constructor(element) {
+    super();
+
+    this._element = element;
+  }
+
+  changeHappened() {
+    this.notifyDependencies();
+  }
+}
 const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
@@ -390,6 +413,10 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   dispose() {
     super.dispose();
     DependencyManager.disconnectAllFor(this);
+  }
+  
+  asAExpr() {
+    return this;
   }
 
   supportsDependencies() {
