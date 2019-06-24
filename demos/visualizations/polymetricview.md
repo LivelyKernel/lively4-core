@@ -4,90 +4,70 @@
 import FileIndex from "src/client/fileindex.js"
 import files from "src/client/files.js"
 import moment from "src/external/moment.js";
+import d3 from "src/external/d3.v5.js"
 
-
-import d3 from "src/external/d3.v3.js"
+var data
 
 (async () => {
- 
-   var now = Date.now()
-  
-  var url = lively4url + "/src/client/"
-  var tree = await files.fileTree(url)
+  var div = await lively.create("div", this)
+  div.style = "width:400px; height:200px"
 
-  function visit(d, cb) {
-    cb(d)
-    d.children && d.children.forEach(ea => visit(ea,cb))
-  }
-
-  var urlMap = new Map()
-  visit(tree, ea => urlMap.set(ea.url, ea))
-  
-  // connect our dababase entries with visualization data nodes
-  await FileIndex.current().db.files.each(ea => {
-    var d = urlMap.get(ea.url)
-    if (d) {
-      d.index = ea
-    }
-  })
-  
-  var div = await lively.create("div")
-  div.style.position = "relative"
-  div.style.width = "2000px"
-  div.style.height = "800px"
-  
-  var treemap = await lively.create("d3-polymetricview")
-
-  treemap.setData(tree)
-  
-  treemap.style.backgroundColor = "lightgray"
-  
-  // positioning hack.... we make our coordinate system much easier by this
-  lively.setPosition(treemap, lively.pt(0,0))
-
-  treemap.style.width = "100%"
-  treemap.style.height = "100%"
+  var treemap = await lively.create("d3-polymetricview", div)
+  treemap.style.width = "500px"
+  treemap.style.height = "500px"
   
   div.appendChild(treemap)
-
-
-  treemap.config({
+  
+  
+   treemap.config({
       color(node) {
+        return "red"
         if (!node.data) return ""
         return `hsl(10, 0%,  ${node.data.size / 100}%)`
       },
-
+      
       width(node) {
+        return 20
         if (node.data.width === undefined) {
-          if (node.data.size) {
-            node.data.width = Math.sqrt(node.data.size) / 2
-          } else {
-            node.data.width = 30
-          }
+          node.data.width = Math.random() * 200
         } 
         return  node.data.width
       },
 
       height(node) {
+      return 20
         if (node.data.height === undefined) {
-          if (node.data.size) {
-            node.data.height = node.data.size / (Math.sqrt(node.data.size) / 2)
-          } else {
-            node.data.height = 30
-          }
+          node.data.height = Math.random() * 200
         } 
         return  node.data.height
-     },
+      },
       
       onclick(node) {
-        lively.openInspector(node.data)
+        lively.openInspector(node)
       },
-
     })
   
   
-  treemap.updateViz()
-
+  // data =  JSON.parse(await fetch(lively4url + "/src/components/demo/flare.json").then(r => r.text()))
+  // treemap.setData(data)
+  // treemap.livelyExample()
+  
+  treemap.setData({
+      name: "classes",
+      children: [
+        {name: "class A", loc: 10, size: 10, children: [{name: "method A1", loc: 3, size: 3}, {name: "method A2", loc: 7, size: 7}]},
+        {name: "class B", loc: 30, size: 30, children: [{name: "method B1", loc: 30, size: 30}]},
+        {name: "class C", loc: 50, size: 50, children: [{name: "method C1", loc: 50, size: 50}]}
+      ]
+    })
+  
+  
+  
+  
+  treemap.get("svg").style.overflow = "visible"
+  
+  
+  
   return div
 })()
 </script>

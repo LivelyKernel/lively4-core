@@ -17,6 +17,11 @@ import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
 import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
+// import moment from "src/external/moment.js";  
+import diff from 'src/external/diff-match-patch.js';
+
+const dmp = new diff.diff_match_patch();
+
 const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
 
 const FETCH_TIMEOUT = 5000
@@ -249,47 +254,33 @@ export default class FileIndex {
   
   async addVersions(file) {
 
-    let versions = await this.loadVersions(file.url)
+    let versions = (await this.loadVersions(file.url)).filter(ea => ea)
     
-    
-    
-    for (let i = 0; i < versions.length-2; ++i) { // length-2: last object is always null
-      let version = versions[i]
-      let versionPrevious = versions[i+1]
-      
-      var commit = (await this.db.commits.where({'hash': "" + version.version}).toArray())[0]
-      if (!commit) {
-         commit = {
-          hash: version.version,
-          previous: versionPrevious.version,
-        }
-         
-        // console.log("[fileindex] add history", historicFile)
-        await this.db.transaction("rw", this.db.commits, () => { 
-          this.db.commits.put(commit) 
-        })
-      }
-      
-      
-      var historicFileResult  = await this.db.history.where({'url': "" + file.url, 'version': "" + version.version}).toArray()
+    for (let version of versions) {
+      var historicFileResult  = await this.db.history.where({
+        'url': "" + file.url, 
+        'version': "" + version.version}).toArray()
       if (historicFileResult.length > 0) {
         // console.log("[fileindex] found ", historicFileResult)
       } else {
         // console.log("[fileindex] NEW VERSION " + file.url)
+        
+        if (!version.parents) throw new Error("parents missing")
+        var parentVersionHash = version.parents.split(" ")[0]
         
         var historicFile = {
           url: file.url,
           type: file.type,
           name: file.name,
           version: version.version,
-          previous: versionPrevious.version
+          previous: parentVersionHash
         }
         // console.log("[fileindex] add history", historicFile)
         await this.db.transaction("rw", this.db.history, () => { 
           this.db.history.put(historicFile) 
         })
 
-        var modifications = await this.findModifiedClassesAndMethods(file.url, version, versionPrevious)
+        var modifications = await this.findModifiedClassesAndMethods(file.url, version, parentVersionHash)
         // console.log("[fileindex] add method modifications ", modifications)
         this.db.transaction("rw", this.db.versions, () => {
           this.db.versions.bulkPut(modifications)
@@ -314,14 +305,49 @@ export default class FileIndex {
     return cached
   }
   
-  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersion) {
-    console.log("findModifiedClassesAndMethods ", fileUrl, latestVersion, previousVersion)
+  findSameMethodInClass(aClass, aMethod) {
+    return aClass.methods.find(method => 
+        method.name == aMethod.name 
+        && method.static == aMethod.static
+        && method.kind == aMethod.kind)
+  }
+  
+  findSameClassInModule(aModule, aClass) {
+    return aModule.classes.find(ea => ea.name == aClass.name)
+  }
+  
+  createModification(fileUrl, action, version, previousVersionHash, aClass, aMethod, source="") {
+    var result =  {
+        url: fileUrl,
+        class: aClass.name,
+        method: "+null+",
+        date: version.date,
+        user: version.author,
+        commitId: version.version,
+        previousCommitId: previousVersionHash,
+        action: action,
+        source: source
+    }
+    if (aMethod) {
+      result.method = aMethod.name
+      result.static = aMethod.static,
+      result.kind = aMethod.kind
+      result.start = aMethod.start
+      result.end = aMethod.end
+    }
+    return result
+  }
+  
+  
+  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersionHash) {
+    console.log("findModifiedClassesAndMethods ", fileUrl, latestVersion, previousVersionHash)
     let modifications = new Array()
     let latestContent = await this.loadVersion(fileUrl, latestVersion.version)
-    let previousContent = await this.loadVersion(fileUrl, previousVersion.version)
+    let previousContent = await this.loadVersion(fileUrl, previousVersionHash)
     let astLastest = await this.parseSource(fileUrl, latestContent)
     let astPrevious = await this.parseSource(fileUrl, previousContent)
 
+    
     if (!astLastest || !astPrevious) {
       return modifications
     }
@@ -331,49 +357,30 @@ export default class FileIndex {
     // classes
     for (let classLatest of latest.classes) {
       try {
-        let previousClass = previous.classes.find(clazz => clazz.name == classLatest.name)
+        let previousClass = this.findSameClassInModule(previous, classLatest)
         if (!previousClass) { // added class
-          modifications.push({
-            url: fileUrl,
-            class: classLatest.name,
-            method: "+null+",
-            date: latestVersion.date,
-            user: latestVersion.author,
-            commitId: latestVersion.version,
-            previousCommitId: previousVersion ? previousVersion.version : undefined,
-            action: (!previousClass) ? "added" : "modified"
-          })
+          modifications.push(this.createModification(
+            fileUrl,
+            (!previousClass) ? "added" : "modified", 
+            latestVersion,  previousVersionHash, 
+            classLatest))
         }
-        
-        
-        
         // methods
         for (let methodLastest of classLatest.methods) {
           var latestSource = latestContent.substring(methodLastest.start, methodLastest.end)
-          var modification = {
-                  url: fileUrl,
-                  class: classLatest.name,
-                  method: methodLastest.name,
-                  static: methodLastest.static,
-                  kind: methodLastest.kind,
-                  start: methodLastest.start,
-                  end: methodLastest.end,
-                  date: latestVersion.date,
-                  user: latestVersion.author,
-                  commitId: latestVersion.version,
-                  source: latestSource
-          }
+          var modification = this.createModification(fileUrl, "added", latestVersion,  previousVersionHash, classLatest, methodLastest, latestSource)
+         
           if (!previousClass) { // added method
-            modification.action = "added" 
             modifications.push(modification)
           } else {
-            let methodPreviousClass = previousClass.methods.find(method => method.name == methodLastest.name 
-                                                                  && method.static == methodLastest.static
-                                                                  && method.kind == methodLastest.kind)
+            let methodPreviousClass = this.findSameMethodInClass(previousClass, methodLastest)
             if (methodPreviousClass) {
               var prevSource = previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)
               if (prevSource != latestSource) {
                 modification.action = "modified"
+                var diff1 = dmp.diff_main(prevSource, latestSource);
+                modification.patch = dmp.patch_toText(dmp.patch_make(diff1))
+                modification.previousSource = prevSource
                 modifications.push(modification) 
               } else {
                 // the source was the same in the previous version
@@ -388,17 +395,10 @@ export default class FileIndex {
       
         if (!previousClass) continue;
         for (let methodPreviousClass of previousClass.methods) {
-          let latestClassMethod = classLatest.methods.find(method => method.name == methodPreviousClass.name)
+          let latestClassMethod =  this.findSameMethodInClass(classLatest, methodPreviousClass) 
           if (!latestClassMethod) { // deleted method
-            modifications.push({
-              url: fileUrl,
-              class: classLatest.name,
-              method: methodPreviousClass.name,
-              user: latestVersion.author,
-              date: latestVersion.date,
-              commitId: latestVersion.version,
-              action: "deleted"
-            })
+            modifications.push(
+              this.createModification(fileUrl, "deleted", latestVersion,  previousVersionHash, classLatest, methodPreviousClass, ""))
           }
         }
       } catch(error) {
