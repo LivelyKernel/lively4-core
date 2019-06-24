@@ -10,10 +10,6 @@ import moment from "src/external/moment.js";
 import d3 from "src/external/d3.v5.js"
 
 (async () => {
- 
-   
-  
-  
   var now = moment(Date.now())
   var url = lively4url + "/demos/"
   var tree = {
@@ -27,23 +23,33 @@ import d3 from "src/external/d3.v5.js"
 
   var nodesMap = new Map()
 
-  function ensureNode(data, path=[]) {
+  function addNode(node) {
+    var parent = ensureNode(node.url.replace(lively4url, "").split("/").reverse())
+    parent.children.push(node)
+  }
+
+  function ensureNode(path) {
     if (path.length == 0) {
       return tree
     }
-    var node = nodesMap.get(path.join("/"))
+    var key = path.join("/")
+    var node = nodesMap.get(key)
     if (!node) {
-      node = data
-      if (!node.children) node.children = []
-      nodesMap.set(path.join("/"), node)
+      console.log("add " + key)
       var [parentName, ...parentPath] = path
-      var parent = ensureNode({name: parentName, children: []}, parentPath)
+      node = {
+        name: parentName, 
+        url: lively4url + path.reverse().join("/"),
+        children: []
+      }
+      nodesMap.set(key, node)
+      var parent = ensureNode(parentPath)
       parent.children.push(node)
     }
     return node
   }
   
-  classes.forEach(ea => ensureNode(ea, new URL(ea.url).pathname.split("/").reverse()))
+  classes.forEach(ea => addNode(ea) )
 
 
   function visit(d, cb) {
@@ -65,28 +71,31 @@ import d3 from "src/external/d3.v5.js"
   var div = await lively.create("div")
   div.style.position = "relative"
   
-  var treemap = await lively.create("d3-polymetricview")
+  var treeviz = await lively.create("d3-polymetricview")
+  // var treeviz = await lively.create("d3-radialtree")
 
-  treemap.setData(tree)
+  treeviz.setData(tree)
   
-  treemap.style.backgroundColor = "lightgray"
+  treeviz.style.backgroundColor = "lightgray"
   
   // positioning hack.... we make our coordinate system much easier by this
-  lively.setPosition(treemap, lively.pt(0,0))
+  lively.setPosition(treeviz, lively.pt(0,0))
 
-  treemap.style.width = "3000px"
-  treemap.style.height = "400px"
+  treeviz.style.width = "3000px"
+  treeviz.style.height = "400px"
   
-  div.appendChild(treemap)
+  div.appendChild(treeviz)
+
+  var minSize = 150
 
   var colorScale = d3.scaleLinear()
       .range(['#aaccff', '#808080'])
       .domain([10, 1 * 355])
       .interpolate(d3.interpolateHcl);
 
-  treemap.config({
+  treeviz.config({
       color(node) {
-        if (!node.data || !node.data.index) return ""
+        if (!node.data || !node.data.index) return "gray"
         var days = moment.duration(now.diff(moment(node.data.index.modified))).asDays()
         
         return colorScale(days)
@@ -95,36 +104,40 @@ import d3 from "src/external/d3.v5.js"
       calcSize(node) {
         try {
           var size = node.data.end - node.data.start
-          debugger
           if (size > 0) return size
-          return 10
+          return minSize
         } catch(e) {
-          return 10
+          return minSize
         }
       },
 
       width(node) {
-        if (!node.data) return 10
+        if (!node.data) return minSize
         var size = Math.sqrt(this.calcSize(node))
         
         return size
       },
 
       height(node) {
-        if (!node.data) return 10
+        if (!node.data) return minSize
         var size = Math.sqrt(this.calcSize(node))
         
         return size
      },
       
-      onclick(node) {
-        lively.openInspector(node.data)
+      onclick(node, evt) {
+      
+        if (evt.shiftKey && node.data.url) {
+          lively.openBrowser(node.data.url)  
+        } else {
+          lively.openInspector(node.data)
+        }
       },
 
     })
   
   
-  treemap.updateViz()
+  treeviz.updateViz()
 
   return div
 })()
