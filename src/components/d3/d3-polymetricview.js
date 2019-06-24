@@ -1,15 +1,9 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
-
 import { debounce } from "utils";
-
 import "src/external/d3-selection-multi.v1.js"
-
 import flextree from "src/external/d3-flextree.js"
-
-
 import D3Component from "./d3-component.js"
-
 
 export default class D3Polymetricview extends D3Component {
 
@@ -18,11 +12,11 @@ export default class D3Polymetricview extends D3Component {
   }
   
   updateViz() {
-    debugger
     var bounds = this.getBoundingClientRect()
     if (bounds.width == 0) { // we are not opened
       bounds = lively.getBounds(this)
     }
+   
     
     this.shadowRoot.querySelector("svg").innerHTML = ""
 
@@ -30,7 +24,7 @@ export default class D3Polymetricview extends D3Component {
     var treeData = this.getData()
     if (!treeData) return; // nothing to render
 
-    var margin = { top: 20, right: 20, bottom: 20, left: 20 }
+    var margin = { top: 10, right: 10, bottom: 10, left: 10 }
     var width = bounds.width,
       height = bounds.height;
 
@@ -65,8 +59,6 @@ export default class D3Polymetricview extends D3Component {
     const minHeight = (tree) => tree.nodes.reduce(
       (min, n) => {return Math.min(min, this.dataHeight(n))}, Infinity) ;
 
-    
-    
     var hackSizeX = 10
     var hackSizeY = 10
     
@@ -90,7 +82,7 @@ export default class D3Polymetricview extends D3Component {
         (width + scale * (extents.right + extents.left)) / 2;
       
       
-      var reverseScale = 5
+      var reverseScale = 1
     
       var scaleG = svg.append('g')
         .attr('transform',
@@ -218,6 +210,12 @@ export default class D3Polymetricview extends D3Component {
   }
   
   async livelyExample() {
+    var seed = 1;
+    function random() {
+        var x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+    
     this.config({
       color(node) {
         if (!node.data) return ""
@@ -226,14 +224,30 @@ export default class D3Polymetricview extends D3Component {
       
       width(node) {
         if (node.data.width === undefined) {
-          node.data.width = Math.random() * 200
+          try {
+            var width = Math.sqrt(Number(node.data.size))
+            if (! width > 0) {
+              width = 1
+            }
+          } catch(e) {
+            width = 1
+          }
+          node.data.width =  width
         } 
         return  node.data.width
       },
 
       height(node) {
         if (node.data.height === undefined) {
-          node.data.height = Math.random() * 200
+          try {
+            var height = Math.sqrt(Number(node.data.size))
+            if (! height > 0) {
+              height = 1
+            }
+          } catch(e) {
+            height = 1
+          }
+          node.data.height =  height
         } 
         return  node.data.height
       },
