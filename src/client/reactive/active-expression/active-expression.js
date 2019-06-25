@@ -37,11 +37,11 @@ export const AExprRegistry = {
 };
 
 function resolveValue(value, func) {
-  if(isPromise(value)) {
-    value.then(func);
-  } else {
+  // if(isPromise(value)) {
+  //   value.then(func);
+  // } else {
     func(value);
-  }
+  // }
 }
 
 class DefaultMatcher {
@@ -178,11 +178,11 @@ export class BaseActiveExpression {
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
-    return this.cachingFetch.trace(() => {
-      return this.cachingPromise.trace(() => {
+    // return this.cachingFetch.trace(() => {
+    //   return this.cachingPromise.trace(() => {
         return this.func(...this.params);
-      });
-    });
+    //   });
+    // });
   }
 
   /**

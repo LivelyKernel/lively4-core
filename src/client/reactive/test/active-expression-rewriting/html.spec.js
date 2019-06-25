@@ -67,26 +67,59 @@ describe('HTML Elements and Web Components', () => {
 
   describe('CodeMirror', () => {
 
-    xit('value', () => {
+    it('value', async () => {
+      const editor = await lively.create('lively-code-mirror');
+      await editor.editorLoaded();
+
+      editor.value = `some string`;
+
+      const spy = sinon.spy();
+      aexpr(() => editor.value).onChange(spy);
+
+      editor.editor.replaceRange("added ", {line:0, ch:0}, {line:0, ch:0})
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal("added some string");
     });
 
   });
 
   describe('input element', () => {
 
-    xit('detects a change in text input', () => {
+    // this is a meta test to check whether we can invoke an InputEvent programmatically (needed to test further functionality)
+    it('programmatically invoke a user event', () => {
+      const input = gen(<input value="hello"></input>);
       const spy = sinon.spy();
-      const input = gen(<input value="hello"></input>)
+      input.addEventListener('input', spy);
       
-      const expr = aexpr(() => input.value).onChange(spy);
+      eval('input.value = "world";');
+      input.dispatchEvent(new Event('input'));
+      
+      expect(spy).to.be.calledOnce;
+    });
 
-      eval('input.value = "world";')
-
+    it('detects a change in text input', () => {
+      const input = gen(<input value="hello"></input>);
+      const spy = sinon.spy();
+      aexpr(() => input.value).onChange(spy);
+      
+      eval('input.value = "world";');
+      input.dispatchEvent(new Event('input'));
+      
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal("world");
     });
 
-    xit('detects a change in checkbox', () => {
+    it('detects a change in checkbox', () => {
+      const input = gen(<input type="checkbox" checked></input>);
+      const spy = sinon.spy();
+      aexpr(() => input.checked).onChange(spy);
+
+      eval('input.checked = false;');
+      input.dispatchEvent(new Event('input'));
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal(false);
     });
 
   });
