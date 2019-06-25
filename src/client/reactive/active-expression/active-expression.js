@@ -1,6 +1,4 @@
 import Annotations from '../utils/annotations.js';
-import CachingFetch from '../utils/caching-fetch.js';
-import CachingPromise from '../utils/caching-promise.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
@@ -9,10 +7,6 @@ import { isString, clone, cloneDeep } from 'utils';
 const HACK = {};
 
 window.__compareAExprResults__ = false;
-
-function isPromise(obj) {
-  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
-}
 
 export const AExprRegistry = {
 
@@ -37,11 +31,7 @@ export const AExprRegistry = {
 };
 
 function resolveValue(value, func) {
-  // if(isPromise(value)) {
-  //   value.then(func);
-  // } else {
-    func(value);
-  // }
+  func(value);
 }
 
 class DefaultMatcher {
@@ -146,12 +136,7 @@ export class BaseActiveExpression {
   constructor(func, { params = [], match } = {}) {
     this.func = func;
     this.params = params;
-    this.cachingFetch = new CachingFetch();
-    this.cachingPromise = new CachingPromise(this.cachingFetch);
     let currentValue = this.getCurrentValue();
-    if(isPromise(currentValue)) {
-      this.isAsync = true;
-    }
     this.setupMatcher(match);
     resolveValue(currentValue, (value) => {
       this.storeResult(value);
@@ -178,11 +163,7 @@ export class BaseActiveExpression {
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
-    // return this.cachingFetch.trace(() => {
-    //   return this.cachingPromise.trace(() => {
-        return this.func(...this.params);
-    //   });
-    // });
+    return this.func(...this.params);
   }
 
   /**
@@ -220,16 +201,14 @@ export class BaseActiveExpression {
    */
   checkAndNotify() {
     const currentValue = this.getCurrentValue();
-    resolveValue(currentValue, value => {
-      if(this.compareResults(this.lastValue, value)) { return; }
-      const lastValue = this.lastValue;
-      this.storeResult(value);
+    if(this.compareResults(this.lastValue, currentValue)) { return; }
+    const lastValue = this.lastValue;
+    this.storeResult(currentValue);
 
-      this.notify(value, {
-        lastValue,
-        expr: this.func ,
-        aexpr: this
-      });
+    this.notify(currentValue, {
+      lastValue,
+      expr: this.func ,
+      aexpr: this
     });
   }
   
@@ -295,10 +274,10 @@ export class BaseActiveExpression {
         callback();
       }
     });
+
     // check initial state
-    resolveValue(this.getCurrentValue(), value => {
-      if(value) { callback() }
-    });
+    const value = this.getCurrentValue();
+    if(value) { callback(); }
 
     return this;
   }
@@ -310,10 +289,10 @@ export class BaseActiveExpression {
         callback();
       }
     });
+
     // check initial state
-    resolveValue(this.getCurrentValue(), value => {
-      if(!value) { callback() }
-    });
+    const value = this.getCurrentValue();
+    if(!value) { callback(); }
 
     return this;
   }
@@ -324,9 +303,9 @@ export class BaseActiveExpression {
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
-    resolveValue(this.getCurrentValue(), value => {
-      this.notify(value, {});
-    });
+    const value = this.getCurrentValue();
+    // #BUG: use callback(value, {}) instead; test
+    this.notify(value, {});
 
     return this;
   }

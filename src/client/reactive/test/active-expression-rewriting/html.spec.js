@@ -67,7 +67,9 @@ describe('HTML Elements and Web Components', () => {
 
   describe('CodeMirror', () => {
 
-    it('value', async () => {
+    it('value', async function() {
+      // this.timeout(55000);
+      
       const editor = await lively.create('lively-code-mirror');
       await editor.editorLoaded();
 

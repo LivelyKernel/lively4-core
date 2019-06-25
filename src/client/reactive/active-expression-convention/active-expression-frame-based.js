@@ -20,9 +20,9 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
   }
 
   getCurrentValue() {
-    if(this.isAsync !== true || this.cachingFetch.hasTraced()) {
-      return super.getCurrentValue();
-    }
+    // if(this.isAsync !== true || this.cachingFetch.hasTraced()) {
+    //   return super.getCurrentValue();
+    // }
 
     let time = new Date().getTime();
     if((time - this.cachedCurrentValueUpdatedAt) > 5000) {

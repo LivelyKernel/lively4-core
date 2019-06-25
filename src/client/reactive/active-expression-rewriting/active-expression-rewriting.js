@@ -435,7 +435,6 @@ class EventBasedHook extends Hook {
     this._element = element;
 
     // #TODO: when the type of an input element changes, 'value' or 'checked' become unavailable
-    lively.warn(this._element.tagName);
     if (this._element.tagName === 'INPUT') {
       this._element.addEventListener('input', () => this.changeHappened());
     } else if (this._element.tagName === 'LIVELY-CODE-MIRROR') {
