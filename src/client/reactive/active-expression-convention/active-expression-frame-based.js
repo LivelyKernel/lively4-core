@@ -10,9 +10,9 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
     // needed for check function for aexpr-ticking
     this.enabled = true;
 
-    if(this.isAsync === true) {
-      this.cachedCurrentValueUpdatedAt = 0;
-    }
+    // if(this.isAsync === true) {
+    //   this.cachedCurrentValueUpdatedAt = 0;
+    // }
     
     if(new.target === FrameBasedActiveExpression) {
       this.addToRegistry();
