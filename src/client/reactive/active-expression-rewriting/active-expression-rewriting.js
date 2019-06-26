@@ -417,9 +417,55 @@ class MutationObserverHook extends Hook {
     super();
 
     this._element = element;
+    // return;
+    
+    const o = new MutationObserver((mutations, observer) => {
+      // const mutationRecords = o.takeRecords();
+      lively.notify(`mutation on ${this._element.tagName}; ${mutations
+                    .filter(m => m.type === "attributes")
+                    .map(m => m.attributeName).join(', ')}.`)
+      this.changeHappened();
+      // mutations.forEach(mutation => {
+      //   if(mutation.type == "attributes") {
+      //     lively.notify(
+      //       `${mutation.oldValue} -> ${mutation.target.getAttribute(mutation.attributeName)}`,
+      //       `attribute: ${mutation.attributeName}`
+      //     );
+      //   }
+      //   if(mutation.type == "characterData") {
+      //     lively.notify(
+      //       `${mutation.oldValue}}`,
+      //       `characterData`
+      //     );
+      //   }
+      //   if(mutation.type == "childList") {
+      //     lively.success(
+      //       `${mutation.addedNodes.length} added, ${mutation.removedNodes.length} removed`,
+      //       `childList`
+      //     );
+      //   }
+      // });
+    });
+
+    o.observe(this._element, {
+      attributes: true,
+      attributeFilter: undefined,
+      attributeOldValue: true,
+
+      characterData: true,
+      characterDataOldValue: true,
+
+      childList: true,
+
+      subtree: true,
+    });
+    
+    // o.disconnect();
   }
 
   changeHappened() {
+    debugger
+    lively.warn('signal change for ' + this._element.tagName);
     this.notifyDependencies();
   }
 }

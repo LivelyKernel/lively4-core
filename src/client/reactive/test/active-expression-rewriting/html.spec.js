@@ -15,18 +15,29 @@ describe('HTML Elements and Web Components', () => {
 
   describe('html elements', () => {
 
-    xit('setAttribute', () => {
+    it('setAttribute', async () => {
       const spy = sinon.spy();
       const p = gen(<p testAttr="5"></p>)
+      self.xTest = 0;
 
-      const expr = aexpr(() => p.getAttribute('testAttr')).onChange(spy);
+      // aexpr(() => p.getAttribute('testAttr')).onChange(spy);
+      aexpr(() => p.getAttribute('testAttr')).onChange(val => {
+        self.xTest++;
+        debugger
+        lively.notify('WORK',val+' <-');
+        spy(val);
+      });
 
+      // spy(43)
       expect(p.getAttribute('testAttr')).to.equal("5");
 
       p.setAttribute('testAttr', 42)
+      expect(p.getAttribute('testAttr')).to.equal('42');
+      await lively.sleep(10)
 
+      expect(self.xTest).to.equal(1);
       expect(spy).to.be.calledOnce;
-      expect(spy.getCall(0).args[0]).to.equal(43);
+      expect(spy.getCall(0).args[0]).to.equal('42');
     });
 
     xit('id', () => {
