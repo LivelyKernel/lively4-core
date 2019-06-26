@@ -561,9 +561,10 @@ export default class Editor extends Morph {
           var from = cm.posFromIndex(fromIndex)
           var to = cm.posFromIndex(toIndex)
           let widget = await codeMirrorComponent.wrapWidget(widgetName, from, to)
-          widget.style.border = "2px dashed orange "
+          // widget.style.border = "2px dashed orange "
+          widget.classList.add('inline-embedded-widget');
           lively.removeEventListener('widget', widget)
-          widget.style.padding = "5px"
+          // widget.style.padding = "5px"
 //           lively.addEventListener("context", widget, "contextmenu", evt => {
 //             if (!evt.shiftKey) {
 //                const menuElements = [

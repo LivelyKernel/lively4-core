@@ -10,13 +10,25 @@ import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
-/*HTML <editor-widget-location-info></editor-widget-location-info> HTML*/
-/*HTML <codemirror-playground></codemirror-playground> HTML*/
+/*HTML 
+<div style='border: 1px dashed orange'>
+<editor-widget-location-info></editor-widget-location-info>
+</div>
+HTML*/
+/*HTML
+<div style='border: 1px dashed orange'>
+<codemirror-playground></codemirror-playground>
+</div>
+HTML*/
 
-/*HTML <span style="color: red">hello</span> HTML*/
+/*HTML
+<div style='border: 1px dashed orange'>
+<span style="color: red">hello</span>
+</div>
+HTML*/
 
 import { using, isFunction } from 'utils';
-
+/*HTML <div style="background-color: green">hoo</div> HTML*/
 /*MD # Dependency Analysis MD*/
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
@@ -75,11 +87,11 @@ class Dependency {
 
     const [context, identifier, value] = this.contextIdentifierValue();
 
-    /*HTML Source Code Hook HTML*/
+    /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
     HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
 
-    /*HTML Data Structure Hook HTML*/
+    /*HTML <span style="font-weight: bold;">Data Structure Hook</span>: for <span style="color: green; font-weight: bold;">Sets, Arrays, Maps</span> HTML*/
     var dataStructure;
     if (this._type === 'member') {
       dataStructure = context;
@@ -97,10 +109,20 @@ class Dependency {
       HooksToDependencies.associate(wrappingHook, this);
     }
 
-    /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: <span style="color: green; font-weight: bold;">"that"</span> HTML*/
+    /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
+      // TODO: the member also influences what kind of observer we want to use!
       const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
       HooksToDependencies.associate(mutationObserverHook, this);
+    }
+
+    /*HTML <span style="font-weight: bold;">Event-based Change Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
+    if (this._type === 'member' && context instanceof HTMLElement) {
+      const eventBasedHook = EventBasedHook.getOrCreateForElement(context);
+      // #TODO: we have to acknowledge that different properties require different events to listen on
+      //  e.g. code-mirror might have 'value' (so need to listen for 'change') or 'getCursor' (so need to listen for 'cursorActivity')
+      // eventBasedHook.listenFor(identifier);
+      HooksToDependencies.associate(eventBasedHook, this);
     }
   }
 
@@ -267,7 +289,11 @@ const DataStructureHookByDataStructure = new WeakMap(); // WeakMap<(Set/Array/Ma
 const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), PropertyWrappingHook>
 /** Mutation Observer Hooks */
 // 4.3 DataStructureHookByDataStructure
-const MutationObserverHookByHTMLElement = new WeakMap(); // WeakMap<(HTMLElement), MutationObserverHook>
+const MutationObserverHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement, MutationObserverHook>
+/** Mutation Observer Hooks */
+// 4.3 DataStructureHookByDataStructure
+const EventBasedHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement, EventBasedHook>
+
 
 class Hook {
   constructor() {
@@ -391,12 +417,85 @@ class MutationObserverHook extends Hook {
     super();
 
     this._element = element;
+    // return;
+    
+    const o = new MutationObserver((mutations, observer) => {
+      // const mutationRecords = o.takeRecords();
+      lively.notify(`mutation on ${this._element.tagName}; ${mutations
+                    .filter(m => m.type === "attributes")
+                    .map(m => m.attributeName).join(', ')}.`)
+      this.changeHappened();
+      // mutations.forEach(mutation => {
+      //   if(mutation.type == "attributes") {
+      //     lively.notify(
+      //       `${mutation.oldValue} -> ${mutation.target.getAttribute(mutation.attributeName)}`,
+      //       `attribute: ${mutation.attributeName}`
+      //     );
+      //   }
+      //   if(mutation.type == "characterData") {
+      //     lively.notify(
+      //       `${mutation.oldValue}}`,
+      //       `characterData`
+      //     );
+      //   }
+      //   if(mutation.type == "childList") {
+      //     lively.success(
+      //       `${mutation.addedNodes.length} added, ${mutation.removedNodes.length} removed`,
+      //       `childList`
+      //     );
+      //   }
+      // });
+    });
+
+    o.observe(this._element, {
+      attributes: true,
+      attributeFilter: undefined,
+      attributeOldValue: true,
+
+      characterData: true,
+      characterDataOldValue: true,
+
+      childList: true,
+
+      subtree: true,
+    });
+    
+    // o.disconnect();
   }
 
+  changeHappened() {
+    debugger
+    lively.warn('signal change for ' + this._element.tagName);
+    this.notifyDependencies();
+  }
+}
+
+class EventBasedHook extends Hook {
+  static getOrCreateForElement(element) {
+    return EventBasedHookByHTMLElement.getOrCreate(element, () => new EventBasedHook(element));
+  }
+  
+  constructor(element) {
+    super();
+
+    this._element = element;
+
+    // #TODO: when the type of an input element changes, 'value' or 'checked' become unavailable
+    if (this._element.tagName === 'INPUT') {
+      this._element.addEventListener('input', () => this.changeHappened());
+    } else if (this._element.tagName === 'LIVELY-CODE-MIRROR') {
+      this._element.editor.on('changes', () => {
+        this.changeHappened()
+      });
+    }
+  }
+  
   changeHappened() {
     this.notifyDependencies();
   }
 }
+
+
 const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
