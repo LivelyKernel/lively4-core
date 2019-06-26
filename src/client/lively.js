@@ -397,6 +397,8 @@ export default class Lively {
     }) // depends on me
     await System.import("src/client/graffle.js") // depends on me
     await System.import("src/client/draganddrop.js") // depends on me
+    
+    
     await System.import("src/client/poid.js") // depends on me
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
