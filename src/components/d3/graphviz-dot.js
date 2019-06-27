@@ -20,28 +20,61 @@ export default class GraphvizDot extends Morph {
     })
   }
   
-
+  useServer() {
+    return this.getAttribute("server") == "true"
+  }
+    
+  getEngine() {
+    return  this.getAttribute("engine") || "dot"
+  }
   
   async updateViz() {
     var svgContainer = this.get("#container")
     svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
     svgContainer.style.height = this.style.height
     
-    var options = {
-      engine: this.getAttribute("engine") || "dot",
-    }
-    
+
     var bounds = this.getBoundingClientRect()
     var div = this.get("#graph")
-    try {
-      var sourceContainer = this.querySelector("script")
-      if (sourceContainer) {
-        var source  = sourceContainer.innerHTML
-        div.innerHTML = Viz(source, options)
-      }
-    } catch(e) {
-      div.innerHTML =`<lively-error>${e}</lively-error>`
+    
+    var sourceContainer = this.querySelector("script")
+    if (sourceContainer) {
+      var source  = sourceContainer.innerHTML
     }
+    if (!source) return
+
+    div.innerHTML = "layouting... wait for it"
+    
+    if (this.useServer()) {
+      var svgResultResp = await fetch(lively4url.replace(/[^/]+$/,"") +"/_graphviz/", {
+        method: "POST",
+        headers: {
+          graphtype: "svg",
+          graphlayout:  this.getEngine()
+        },
+        body: source
+      })
+      var result = await svgResultResp.text()
+      if (svgResultResp.status == 200) {
+          div.innerHTML  = result
+      } else {
+          div.innerHTML  =  <lively-error>${result}</lively-error>
+      }
+      
+      
+    } else {
+      
+      var options = {
+        engine: this.getEngine(),
+        totalMemory: 32 * 1024 * 1024 
+      }
+
+      try {
+        div.innerHTML = Viz(source, options)
+      } catch(e) {
+        div.innerHTML =`<lively-error>${e}</lively-error>`
+      }
+    }    
   }
   onExtentChanged() {
     // this.updateViz()
