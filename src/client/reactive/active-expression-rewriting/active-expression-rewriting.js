@@ -417,13 +417,12 @@ class MutationObserverHook extends Hook {
     super();
 
     this._element = element;
-    // return;
     
     const o = new MutationObserver((mutations, observer) => {
       // const mutationRecords = o.takeRecords();
-      lively.notify(`mutation on ${this._element.tagName}; ${mutations
-                    .filter(m => m.type === "attributes")
-                    .map(m => m.attributeName).join(', ')}.`)
+      // lively.notify(`mutation on ${this._element.tagName}; ${mutations
+      //               .filter(m => m.type === "attributes")
+      //               .map(m => m.attributeName).join(', ')}.`)
       this.changeHappened();
       // mutations.forEach(mutation => {
       //   if(mutation.type == "attributes") {

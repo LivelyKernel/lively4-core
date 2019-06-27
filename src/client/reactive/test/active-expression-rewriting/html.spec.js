@@ -6,41 +6,41 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-
-function gen(ele) {
-  return ele;
-}
-
 describe('HTML Elements and Web Components', () => {
 
   describe('html elements', () => {
 
     it('setAttribute', async () => {
       const spy = sinon.spy();
-      const p = gen(<p testAttr="5"></p>)
-      self.xTest = 0;
+      const p = <p testAttr="5"></p>;
 
-      // aexpr(() => p.getAttribute('testAttr')).onChange(spy);
-      aexpr(() => p.getAttribute('testAttr')).onChange(val => {
-        self.xTest++;
-        debugger
-        lively.notify('WORK',val+' <-');
-        spy(val);
-      });
+      aexpr(() => p.getAttribute('testAttr')).onChange(spy);
 
-      // spy(43)
       expect(p.getAttribute('testAttr')).to.equal("5");
 
       p.setAttribute('testAttr', 42)
       expect(p.getAttribute('testAttr')).to.equal('42');
+
+      // need to wait for Mutation Observer to detect the change
       await lively.sleep(10)
 
-      expect(self.xTest).to.equal(1);
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal('42');
     });
 
-    xit('id', () => {
+    it('id', async () => {
+      const spy = sinon.spy();
+      const p = <p id="my_old_id"></p>;
+      expect(p.id).to.equal('my_old_id');
+
+      aexpr(() => p.id).onChange(spy);
+
+      eval("p.id = 'my_new_id';");
+
+      await lively.sleep(10)
+
+      expect(spy).to.be.calledOnce;
+      expect(spy.getCall(0).args[0]).to.equal('my_new_id');
     });
     xit('classList', () => {
     });
@@ -102,7 +102,7 @@ describe('HTML Elements and Web Components', () => {
 
     // this is a meta test to check whether we can invoke an InputEvent programmatically (needed to test further functionality)
     it('programmatically invoke a user event', () => {
-      const input = gen(<input value="hello"></input>);
+      const input = <input value="hello"></input>;
       const spy = sinon.spy();
       input.addEventListener('input', spy);
       
@@ -113,7 +113,7 @@ describe('HTML Elements and Web Components', () => {
     });
 
     it('detects a change in text input', () => {
-      const input = gen(<input value="hello"></input>);
+      const input = <input value="hello"></input>;
       const spy = sinon.spy();
       aexpr(() => input.value).onChange(spy);
       
@@ -125,7 +125,7 @@ describe('HTML Elements and Web Components', () => {
     });
 
     it('detects a change in checkbox', () => {
-      const input = gen(<input type="checkbox" checked></input>);
+      const input = <input type="checkbox" checked></input>;
       const spy = sinon.spy();
       aexpr(() => input.checked).onChange(spy);
 
