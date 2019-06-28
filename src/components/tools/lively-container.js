@@ -1406,10 +1406,10 @@ export default class Container extends Morph {
       }
       else return;
     } else if (files.isVideo(format)) {
-      //if (render) return this.appendHtml('<lively-movie src="' + url +'"></lively-movie>', renderTimeStamp);
-      
-
       if (render) return this.appendHtml(`<video autoplay controls><source src="${resolvedURL}" type="video/${format}"></video>`, renderTimeStamp);
+      else return;
+    } else if (files.isAudio(format)) {
+      if (render) return this.appendHtml(`<audio controls src="${resolvedURL}"></audio>`, renderTimeStamp); 
       else return;
     } else if (format == "pdf") {
       if (render) return this.appendHtml('<lively-pdf overflow="visible" src="'
