@@ -4,8 +4,8 @@ export default class LivelyIFrame extends Morph {
   
   async initialize() {
     this.windowTitle = "iFrame Browser"
-    var i = this.shadowRoot.querySelector("#input");
-    i.onchange = () => this.get(i.value);
+    var input = this.get("#input");
+    input.onchange = () => this.update();
 
     if (!this.getAttribute("src")) {
       this.setURL("//lively-kernel.org/")    
@@ -14,14 +14,23 @@ export default class LivelyIFrame extends Morph {
     }
   }
   
-  get() {
-    var i = this.shadowRoot.querySelector("#input");
-    this.shadowRoot.querySelector("#frame").src = i.value;
+  update() {
+    var input = this.get("#input");
+    this.get("#frame").src = input.value;
   }
   
   setURL(url){
     this.setAttribute("src", url)
-    this.shadowRoot.querySelector("#input").value = url
-    this.shadowRoot.querySelector("#frame").src = url;
+    this.get("#input").value = url
+    this.get("#frame").src = url;
   }
+  
+  hideMenubar() {
+    this.get("#menubar").hidden = true
+  }
+  
+  showMenubar() {
+    this.get("#menubar").hidden = false
+  }
+
 }
