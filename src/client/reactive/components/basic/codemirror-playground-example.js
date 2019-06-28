@@ -14,7 +14,7 @@ let ae = aexpr(() => x+y);
 ae.onChange(lively.notify);
 
 
-let ae2 = aexpr(() => x+y), ae3 = aexpr(() => x+y);
+let ae2 = aexpr(() => x+y+y), ae3 = aexpr(() => x+y);
 
 dsadw
 foo + bar

@@ -5,6 +5,8 @@ import 'src/external/aexpr/tern/infer.js';
 import 'src/external/aexpr/tern/modules.js';
 import 'src/external/aexpr/tern/es_modules.js';
 
+import { loc, range } from 'utils';
+
 t;
 
 import { fileName } from 'utils';
@@ -304,20 +306,15 @@ export class TernCodeMirrorWrapper {
       showError(cmEditor, error);
     }
   }
-  static async playgroundGetDefinition(cmEditor, livelyCodeMirror) {
-    if(!atInterestingExpression(cmEditor)) {
-      showError(cmEditor, 'No interesting variable found');
-      return;
-    }
-
-    let cursorPosition = cmEditor.getCursor();
+  static async playgroundGetDefinition(cmEditor, livelyCodeMirror, location, callback) {
+    const r = range(location)
 
     try {
       let data = await this.request({
         query: {
           type: "definition",
           file: livelyCodeMirror.getTargetModule(),
-          end: cursorPosition,
+          end: r._end.asCM(),
           start: undefined, // #TODO: improve by checking for selections first
           lineCharPositions: true
         },
@@ -332,18 +329,12 @@ export class TernCodeMirrorWrapper {
       // [start, end, file, context, contextOffset, doc, url, origin]
 
       if (data.file) {
-        this.jumpStack.push({
-          file: livelyCodeMirror.getTargetModule(),
-          start: cmEditor.getCursor("from"),
-          end: cmEditor.getCursor("to")
-        });
-        // ### Stackpush, then moveTo
-        this.moveTo(cmEditor, livelyCodeMirror, data);
+        return data;
       } else {
-        showError(cmEditor, `Could not find a definition.`);
+        return;
       }
     } catch(error) {
-      showError(cmEditor, error);
+      return;
     }
   }
   static async jumpBack(cmEditor, livelyCodeMirror) {

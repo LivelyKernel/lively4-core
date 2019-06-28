@@ -1,1 +1,2 @@
-var world = 3
+var world = 3;
+await 3

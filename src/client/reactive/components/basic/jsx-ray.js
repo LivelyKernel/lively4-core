@@ -8,11 +8,12 @@ export default class JsxRay extends Morph {
     lively.warn('initialize')
     this.windowTitle = "JSX-Ray";
 
-    this.livelyLoad()
+    this.livelyLoad2()
     
     lively.removeEventListener('jsx-ray', document);
     lively.addEventListener('jsx-ray', document, 'keydown', evt => JsxRay.onKeyDown(evt), { capture: true, passive: true})
     lively.addEventListener('jsx-ray', document, 'keyup', evt => JsxRay.onKeyUp(evt), { capture: true, passive: true})
+
   }
 
   static onKeyDown(evt) {
@@ -411,7 +412,7 @@ export default class JsxRay extends Morph {
     lively.setPosition(this.frameHandlesLeftLabel, lively.pt(0, barHeight - 10))
 }
 
-  livelyLoad() {
+  livelyLoad2() {
     this.cop = cop;
     this.events = events;
     
@@ -554,8 +555,13 @@ export default class JsxRay extends Morph {
   }
   
   livelyMigrate(other) {
-    lively.warn('migrate')
-    this.stopAll()
+    this.stopAll();
+    
+    this.nodeFilter.value = other.nodeFilter.value;
+    this.eventFilter.value = other.eventFilter.value;
+
+    lively.setPosition(this.handle, lively.getPosition(other.handle));
+    this.ajustRootPosition();
   }
   
   livelyInspect(contentNode, inspector) {

@@ -271,24 +271,33 @@ export default class CodemirrorPlayground extends Morph {
             const expression = arrowFunction.get('body');
             expression.traverse({
               Identifier: path => {
-                this.lcm.ternWrapper.then(async tw => {
-                  await tw.playgroundGetDefinition(this.$, this.lcm, path.node.loc)
-                  this._lineWidget(path.node.loc, path.node.name)
-                })
+                const clickCallback = async e => {
+                  this.lcm.ternWrapper.then(async tw => {
+                    const data = await tw.playgroundGetDefinition(
+                      this.$,
+                      this.lcm,
+                      path.node.loc
+                    );
+                    if (data) {
+                      range(data).selectInCM(this.$)
+                    }
+                  });
+                };
 
+                const element = <span
+                  class={"widget " + "probe-example"}
+                  click={clickCallback}
+                >find definition of {path.node.name}</span>;
+                this._lineWidget(path.node.loc, element);
               }
-            })
+            });
           }
-          
         }
-        
       }
     });
-    
   }
   
-  _lineWidget(location, text) {
-    const element = <span class={"widget " + "probe-example"}>{text}</span>;
+  _lineWidget(location, element) {
     const line = location.start.line - 1;
     this.$.addLineWidget(line, element);
     const indentation = location.start.column;
