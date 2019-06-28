@@ -463,8 +463,6 @@ class MutationObserverHook extends Hook {
   }
 
   changeHappened() {
-    debugger
-    lively.warn('signal change for ' + this._element.tagName);
     this.notifyDependencies();
   }
 }
