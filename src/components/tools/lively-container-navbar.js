@@ -228,10 +228,17 @@ export default class LivelyContainerNavbar extends Morph {
     return this.get("#navbar")
   }
   
-
+  findItem(url) {
+    return _.find(this.getRootElement().querySelectorAll("li"), ea => {
+      if (ea.textContent == "../") return false
+      var link = ea.querySelector("a")
+      return link && (link.href == url )
+    });
+  }
+  
   
   async show(targetURL, sourceContent, contextURL, force=false) {
-    // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
@@ -241,16 +248,21 @@ export default class LivelyContainerNavbar extends Morph {
     var lastDir = this.currentDir
     this.currentDir = this.getRoot(targetURL);
 
-
-    // #TODO #Refactor `isIndexFile` 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
-    this.targetItem = _.find(this.getRootElement().querySelectorAll("li"), ea => {
-      if (ea.textContent == "../") return false
-      var link = ea.querySelector("a")
+    this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
+    
+    var parentURL = this.url.replace(/[^/]*$/,"")   
+    
+    this.targetParentItem = this.findItem(parentURL)
 
-      return link && (link.href == this.url || link.href == urlWithoutIndex)
-    });
-    if (this.targetItem) {
+    if (this.targetItem || this.targetParentItem ) {
+        
+      if (!this.targetItem) {
+        // newfile or deleted file?
+        // lively.notify("NEW ?RESET DIR")
+        this.targetItem = this.targetParentItem
+      }
+      
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
         this.showSublist()
@@ -258,10 +270,11 @@ export default class LivelyContainerNavbar extends Morph {
         this.showSublist()
       } else if (lastContent != this.sourceContent) {
         this.showSublisContent(true)
-      }
-
+      }        
+      
       return         
     } else {
+      // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
     }

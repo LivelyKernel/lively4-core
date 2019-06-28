@@ -693,16 +693,16 @@ export default class Container extends Morph {
     this.newfile(this.getPath())
   }
 
-  async newfile(path, type) {
+  async newfile(path="", type="md") {
     
     var content = "here we go...."
-    var ending = "md2" + type
+    var ending = type
     if (type == "drawio") {
       ending = "xml"
       content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
     }
     
-    path = path + "newfile2." + ending 
+    path = path.replace(/[^/]*$/,"") + "newfile." + ending 
     
     var fileName = window.prompt('Please enter the name of the file', path);
     if (!fileName) {
