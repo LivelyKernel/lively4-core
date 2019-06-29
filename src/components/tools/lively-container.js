@@ -1065,7 +1065,8 @@ export default class Container extends Morph {
     if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
         && !path.match(window.location.host)
         && !path.match("https://www.draw.io/")
-        && path.match(/https?:\/\//)) {
+        // && path.match(/https?:\/\//)
+      ) {
       if (!options) {
         return window.open(path);
       }
@@ -1488,7 +1489,7 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
         }
-      } else if (format == "xml") {
+      } else if (format == "xml" || format == "drawio") {
         this.sourceContent = content;
         if (render && content.match(/^\<mxfile/)) {
           return this.appendHtml(`<lively-drawio src="${resolvedURL}"></<lively-drawio>`, renderTimeStamp);
