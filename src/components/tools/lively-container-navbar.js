@@ -235,8 +235,7 @@ export default class LivelyContainerNavbar extends Morph {
       return link && (link.href == url )
     });
   }
-  
-  
+
   async show(targetURL, sourceContent, contextURL, force=false) {
     console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
@@ -433,20 +432,25 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onItemClick(link, evt) {
+    debugger
     if (evt.shiftKey) {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
-      if (!link.parentElement.classList.contains("selected")) {
+      // collapse previousely expanded tree
+      var sublist = link.parentElement.querySelector("ul")
+      
+      if (!link.parentElement.classList.contains("selected") && !sublist) {
         this.followPath(link.href);
       } else {
         // this.url = undefined
         this.currentDir = null
         
         link.parentElement.classList.remove("selected")
-        var sublist = link.parentElement.querySelector("ul")
         if (sublist) sublist.remove()
+        
+
       }
     }
   }
@@ -677,7 +681,10 @@ export default class LivelyContainerNavbar extends Morph {
     if (!this.targetItem) return 
     var subList = this.targetItem.querySelector("ul")
     if (!subList) return // we are a sublist item?
-    this.clearSublists()
+    
+    // keep expanded trees open... or not
+    // this.clearSublists()
+    
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
     } else if (this.url.match(/\.js$/)) {
