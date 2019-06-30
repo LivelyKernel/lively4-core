@@ -6,7 +6,8 @@ import components from 'src/client/morphic/component-loader.js';
 import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
-import moment from "src/external/moment.js";
+import moment from "src/external/moment.js"; 
+import FileCache from "src/client/fileindex.js"
 
 
 export default class LivelyContainerNavbar extends Morph {
@@ -497,6 +498,12 @@ export default class LivelyContainerNavbar extends Morph {
         ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
     }
+    if (isDir) {
+      menuElements.push(...[
+        [`add search root`, () => this.addSearchRoot(otherUrl)],
+      ])
+    }
+    
     menuElements.push(...[
       ["new", [
         [`text file`, () => this.newfile(otherUrl)],
@@ -505,6 +512,17 @@ export default class LivelyContainerNavbar extends Morph {
     ])
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)
+  }
+  
+  /*
+   * add url to local file index rember to search there  
+   */
+  addSearchRoot(url) {
+    var roots = lively.preferences.get("ExtraSearchRoots")
+    roots = _.uniq(roots.concat([url]))
+    FileCache.current().addDirectory(url)     
+    lively.preferences.set("ExtraSearchRoots", roots)
+    lively.notify("Current Search Roots:", roots)
   }
   
   deleteFile(url, selectedURLs) {
