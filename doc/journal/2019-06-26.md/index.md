@@ -26,3 +26,7 @@ fetch("https://lively-kernel.org/lively4S2/_graphviz/", {
 but there is lots to do...
 
 ![](home_4000_details.png)
+
+without CreativeWorks
+
+![](home_without_creative_works.png)

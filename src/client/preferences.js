@@ -26,7 +26,7 @@ export default class Preferences {
       PiTerminalURL: {default: "http://localhost:3000/", short: "url of pi terminal"},
       PiTerminalCWD: {default: "", short: "current working directory of pi terminal"},
       PiTerminalSecret: {default: "", short: "pi terminal credentials"},
-      
+      ExtraSearchRoots: {default: [], short: "extra search roots"},
     }
   }
   

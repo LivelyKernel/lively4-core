@@ -16,21 +16,26 @@ limit <input id="limit">
   import Strings from 'src/client/strings.js'  
   import Colors from "src/external/tinycolor.js"
   import d3 from "src/external/d3.v5.js"
+  import beautify from "src/client/js-beautify/beautify.js"
+
+
 
   function transformSTONToJS(source) {
-    var source  = source
+    var source  =  source
       // .replace(/\n/g, "")
-      .replace(/([A-Za-z0-9_\-]+)\{/g, "{_class: '$1', ")
+      .replace(/\{-\}/g, " - ")
+      .replace(/(^|[^\\A-Za-z0-9_])([A-Za-z0-9_\-]+)\{/g, "$1{_class: '$2', ")
       .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3") 
       .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3")  // OH NO... use lookahead?
-      .replace(/\:\@([0-9]+)/g, ":'@$1'") 
+      .replace(/([: ])\@([0-9]+)/g, "$1'@$2'") 
       .replace(/OrderedCollection\[/g, "[") 
       .replace(/Set\[/g, "[")
       .replace(/\\\\/g, "\\")
       // `\\\\'`
     return "(" +source + ")"
   }
-
+    
+  
   function parseSTON(source) {
     if (!source) return {}
     var nil = undefined
@@ -108,8 +113,11 @@ limit <input id="limit">
       var objectMap = window.SmalltalkHomeObjectsMap 
       
       function reset() {
+        window.SmalltalkHomeObjectsCache = new Map()
         window.SmalltalkHomeObjectsMap = new Map()
       }
+      
+      
       // reset()
       
       var objects
@@ -119,6 +127,7 @@ limit <input id="limit">
       
       var selectedChange 
       var selectedNode 
+      var lastSelectedNode
 
       var linkToFilenameMap
 
@@ -173,12 +182,13 @@ limit <input id="limit">
         var start = performance.now()
         
         var addObject = async (eaName) => {
+          console.log("addObject ")
           if (i > 100) {
             debugger
           }
           if (objects.get(key(eaName))) {
             console.log("stop " + eaName)
-            return // we have it already
+            return key(eaName) // we have it already
           }
 
           var unfinished=false
@@ -202,42 +212,59 @@ limit <input id="limit">
             }
             ea.contents = contents
           }
+          if (ea.object && ea.object._class == "CreativeWork") {
+            return 
+          }
+
+
+          // #Dev show only errors
+          // if (!ea.error) {
+          //   return 
+          // }
+
+
           objects.set(key(eaName), ea)
 
-
           if (ea.links) { 
-            ea.links.forEach(link => {
+            for(var link of ea.links) {
               if (!objects.get(key(link))) {
                 if (i < limitElement.value) {
-
-                  addEdge(eaName, link, `[color="gray"]`)            
-                  addObject(linkToFilename(link))
+                  var filename = linkToFilename(link)
+                  if (filename) {
+                    if (await addObject(filename)) {
+                      addEdge(eaName, link, `[color="gray"]`)            
+                    }
+                  } else {
+                    console.log("could not find file for:" + link)
+                    debugger
+                  }
                 } else {
                   unfinished=true
                   // nodes.push(key(link) + `[color="lightgray" label="..."]`)
                   // addEdge(eaName, link, `[color="gray"]`)            
                 }
-
               }
-            })            
+            }            
           }
 
           var style
+          var size = ea.contents ? Math.sqrt(ea.contents.length) / 20 : 0
           if (ea.object) {
             var color = classColors.get(ea.object._class)
             if (!color) {
               color = Colors.random().desaturate().toHexString()
               classColors.set(ea.object._class, color)
             }
-            style = `[style="${unfinished ? "" : "filled"}" color="${color}" label="${i} ${ea.object._class}"]`  // style="filled" 
+            style = `[style="${unfinished ? "" : "filled"}" color="${color}"  label="${i} ${ea.object._class}"]`  // style="filled" 
           } else {
-            style = `[fontcolor="red" label="ERROR"]`
+            style = `[fontcolor="red" label="ERROR" width="${size}" height="${size}"]`
           }
           console.log("NODE " + key(eaName))
           console.log("add " + i + " " + eaName)
           progress.value = i++ / total
 
           nodes.push(key(eaName) + style)
+          return key(eaName)
         }
         
         
@@ -255,6 +282,7 @@ limit <input id="limit">
 // 
 // overlap=scale;
         var source = `digraph {
+          rankdir=LR;
           edge [ len=4] 
         
           node [ style="filled" color="lightgray" fontsize="8pt" fontname="helvetica"]; 
@@ -272,6 +300,13 @@ limit <input id="limit">
         var zoomElement = document.createElementNS("http://www.w3.org/2000/svg", "g")
         
         var zoomG = d3.select(zoomElement)
+        
+        
+        // TODO does not work D3 kommt durcheinander...
+//         if (window.lively4LastD3ZoomTransform) {
+//           zoomG.attr("transform", window.lively4LastD3ZoomTransform); // preserve context through development...
+//         }
+        
         var svgOuter = d3.select(svg)
         var svgGraph = d3.select(graphviz.get("#graph0"))
         
@@ -280,7 +315,10 @@ limit <input id="limit">
           .call(d3.zoom()
               .scaleExtent([1 / 30, 30])
               .on("zoom", () => {
-                zoomG.attr("transform", d3.event.transform);
+                details.hidden = true
+                var trans = d3.event.transform
+                // window.lively4LastD3ZoomTransform = trans
+                zoomG.attr("transform", trans);
               }));
         
         svg.appendChild(zoomElement)
@@ -304,15 +342,38 @@ limit <input id="limit">
               })
               return
             }
-
-
-
-            if (selectedNode) {
-              selectedNode.querySelector("polygon,ellipse").setAttribute("fill", "none")
-            }
             selectedNode = ea
-            selectedNode.querySelector("polygon,ellipse").setAttribute("fill", "lightgray")
             selectedChange = object
+            
+            
+            if(object) {
+              if (lastSelectedNode == selectedNode) {
+                details.hidden = true
+                selectedNode = undefined
+              } else {
+                // if (selectedNode) {
+                //   selectedNode.querySelector("polygon,ellipse").setAttribute("fill", "none")
+                // }
+                // selectedNode.querySelector("polygon,ellipse").setAttribute("fill", "lightgray")
+                details.hidden = false
+                if (object.object) {
+                  details.value = "(" +JSON.stringify(object.object, undefined, 2) +")"
+                } else if (object.error) {
+                  details.value = `// ERROR: ${object.error} \n` +global.js_beautify(object.transformed);
+
+                  // details.innerHTML = object.contents + "<br>" + object.error
+                } else {
+
+                  details.value = object.contents
+                }
+
+                // JSON.stringify(change, undefined, 2)
+                lively.setGlobalPosition(details, lively.getGlobalBounds(selectedNode).topRight().addPt(lively.pt(10,0)))            
+              }
+            }
+            
+            
+            lastSelectedNode = selectedNode
           })
         })
         
@@ -320,6 +381,19 @@ limit <input id="limit">
 
       updateTable()
 
+      var details = await (<div id="details"><lively-code-mirror ></lively-code-mirror></div>)
+      
+      Object.defineProperty(details, 'value', {
+        get() { 
+          return details.querySelector("lively-code-mirror").value
+        },
+        set(newValue) { 
+          details.querySelector("lively-code-mirror").value = newValue || ""
+        },
+        enumerable: true,
+        configurable: true
+      });
+      
       var style = document.createElement("style")
       style.textContent = `
       td.comment {
@@ -327,6 +401,19 @@ limit <input id="limit">
       }
       div#root {
         overflow: visible;
+      }
+      
+      div#details lively-code-mirror {
+        width: 100%;
+        height: 100%;
+      }
+      
+      div#details {
+        position: absolute;
+        width: 800px;
+        height: 400px;
+        background-color: lightgray;
+        border: 1px solid gray;
       }
       `
       graphviz
@@ -345,6 +432,7 @@ limit <input id="limit">
         <button click={evt => updateTable()}>update</button>
       </div>)
       div.appendChild(graphviz)
+      div.appendChild(details)
       
       return div
     }

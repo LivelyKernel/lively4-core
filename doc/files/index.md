@@ -59,7 +59,7 @@
         table.setFromJSO(table.asJSO().sortBy(ea => Number(ea.versions)).reverse())
       }      
     });
-    button.innerHTML = "sort";
+    button.innerHTML = "sortx";
     return button;
   })(this.parentElement)
 </script>
