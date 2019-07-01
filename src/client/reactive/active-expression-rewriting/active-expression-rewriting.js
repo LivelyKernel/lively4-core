@@ -111,9 +111,12 @@ class Dependency {
 
     /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
-      // TODO: the member also influences what kind of observer we want to use!
-      const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
-      HooksToDependencies.associate(mutationObserverHook, this);
+      // #HACK #TODO: for now, ignore Knotview if unused for Mutations -> need to better separate those hooks, e.g. do not recursively check ALL attribute change, etc.
+      if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel'))) {
+        // TODO: the member also influences what kind of observer we want to use!
+        const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
+        HooksToDependencies.associate(mutationObserverHook, this);
+      }
     }
 
     /*HTML <span style="font-weight: bold;">Event-based Change Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
