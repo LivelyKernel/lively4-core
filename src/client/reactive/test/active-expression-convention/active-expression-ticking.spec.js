@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr, check, clearDefaultActiveExpressions } from '../../active-expression-onvention/active-expression-ticking.js';
+import { aexpr, check, clearDefaultActiveExpressions } from '../../active-expression-convention/active-expression-ticking.js';
 
 describe('Ticking Active Expressions', () => {
     it("runs a basic aexpr", () => {
