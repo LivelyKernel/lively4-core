@@ -62,7 +62,6 @@ range :<input id="limitStart" > - <input id="limitEnd">
 
       var selectChange = function(change, row) {
         var element = row.querySelector(".details")
-        debugger
         if (element.textContent == "") {
           element.textContent = JSON.stringify(change, null, 2)
         } else {

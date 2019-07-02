@@ -1,4 +1,4 @@
-## 2019-06-28 
+## 2019-06-28  Changes Log 2 
 
 ## Get Changes from a time period
 
@@ -19,7 +19,7 @@ headers: {
   var after = <input value="2019-06-01" /> 
   var until = <input value="2019-06-10"/> 
   async function update() {
-    var changes = await fetch("http://localhost:9006/lively4-core/", {
+    var changes = await fetch(lively4url + "/", {
       method: "OPTIONS",
       headers: {
         showversions: "true",

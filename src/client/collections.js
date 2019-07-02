@@ -49,6 +49,11 @@ export class GroupMap  {
     add(key, value) {
       this.ensureItems(key).add(value)
     }
+
+    get(key) {
+      return this.ensureItems(key)
+    }
+
     
     remove(key, value) {
       this.ensureItems(key).delete(value)

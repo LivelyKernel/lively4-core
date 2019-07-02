@@ -1,7 +1,4 @@
-# Home Object Soups...
-
-
-<lively-import src="_navigation.html"></lively-import>
+# Home Object Soup Analysis
 
 <div>
 url <input style="width:500px" id="url" value=""><br>
@@ -11,7 +8,6 @@ limit <input id="limit">
 <script>
   const MAX_ELEMENTS = 20000
 
-
   import moment from "src/external/moment.js";  
   import Strings from 'src/client/strings.js'  
   import Colors from "src/external/tinycolor.js"
@@ -19,218 +15,88 @@ limit <input id="limit">
   import beautify from "src/client/js-beautify/beautify.js"
   import {GroupMap} from "src/client/collections.js"
 
-
-
-
-
-  function transformSTONToJS(source) {
-    var source  =  source
-      // .replace(/\n/g, "")
-      .replace(/\{-\}/g, " - ")
-      .replace(/(^|[^\\A-Za-z0-9_])([A-Za-z0-9_\-]+)\{/g, "$1{_class: '$2', ")
-      .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3") 
-      .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3")  // OH NO... use lookahead?
-      .replace(/([: ])\@([0-9]+)/g, "$1'@$2'") 
-      .replace(/OrderedCollection\[/g, "[") 
-      .replace(/Set\[/g, "[")
-      .replace(/\\\\/g, "\\")
-      // `\\\\'`
-    return "(" +source + ")"
-  }
-    
+  import {key} from "./home.js" // #Bug #TODO, Home as the default class is undefined in this list...
+  import Home from "./home.js" // and here not
   
-  function parseSTON(source) {
-    if (!source) return {}
-    var nil = undefined
-    var DateAndTime = new Proxy({}, {
-      get(target, key, receiver) {
-        return moment(key)
-      }
-    })
-    var Date = new Proxy({}, {
-      get(target, key, receiver) {
-        return moment(key)
-      }
-    })
-    var UUID = new Proxy({}, {
-      get(target, key, receiver) {
-        return `${key}` 
-      }
-    })
-    return eval(transformSTONToJS(source))
-  }
+  import ScriptApp from "./scriptapp.js"
   
-  
-  class ObjectGraph {
+  class ObjectAnalysis extends ScriptApp {
 
-    static connectInput(element, initValue, update) {
-      element.value = initValue
-      element.addEventListener("change", function(evt) {
-          update(this.value)
-      })
-    }
-    
-    static query(query) {
-      return lively.query(this.ctx, query)
-    }
-    
     static async create(ctx) {
+      // var url = "livelyfile:///object-storage.zip"
+      var url = "http://localhost:9005/Desktop/object-storage.zip"
+      this.home = new Home(url)
+      var home = this.home
       this.ctx = ctx
   
-      var url = "http://localhost:9005/Desktop/object-storage.zip"
-
-      this.query("input#url").value = url
-      var limitElement = this.query("input#limit")
-
+      this.get("input#url").value = this.url
+      var limitElement = this.get("input#limit")
       limitElement.value = MAX_ELEMENTS
       
-      var urlElement = this.query("input#url")
-      
-
-      var limit = Number(limitElement.value)
-      limitElement.addEventListener("change", function(evt) {
-          limit = Number(this.value)
-          updateTable() // on Enter
-      });
-      
-      urlElement.addEventListener("change", function(evt) {
-        url = this.value
+      var urlElement = this.get("input#url")
+      urlElement.value = home.url
+      urlElement.addEventListener("change", async function(evt) {
+        home.url = this.value
+        lively.notify('HOME ' + home.url )
+        await home.updateData()
         updateTable() // on Enter
       });
-
-      window.SmalltalkHomeObjectsCache = window.SmalltalkHomeObjectsCache || new Map()
-      var fileCache = window.SmalltalkHomeObjectsCache 
+    
       
-      
-      window.SmalltalkHomeObjectsMap = window.SmalltalkHomeObjectsMap || new Map()
-      var objectMap = window.SmalltalkHomeObjectsMap 
-      
-      function reset() {
-        window.SmalltalkHomeObjectsCache = new Map()
-        window.SmalltalkHomeObjectsMap = new Map()
-      }
-      
-      
-      // reset()
-      
-      var objects
-      
-      
-
-      var linkToFilenameMap
-
       function linkToFilename(link) {
         return linkToFilenameMap.get(link)
       }
 
-      function key(id) {
-        if (!id) throw ("id missing")
-        return "_" + id.replace(/.*\//,"").replace(/[^a-z0-9A-Z_]/g,"")
-      }
-
-      
       var classColors = new Map()
-      
-      
-      var all = [];
-   
-      var dataByUUID = new Map()
-   
-      var updateData = async () => {
-        objects = new Map()
+     
+      this.home.objectLimit = limitElement.value
+      await this.home.updateData()
 
-        if (!zip) {
-          var zip = window.SmalltalkHomeObjects
-          var blob = await fetch(url).then(r => r.blob())
-          zip = await JSZip.loadAsync(blob)
-          window.SmalltalkHomeObjects = zip
+      this.tablesElement = <div id="tables"></div>
+      await this.updateTables()
+
+      var style = document.createElement("style")
+      style.textContent = `
+        td.comment {
+          max-width: 300px
         }
-        var data  =  Object.keys(zip.files)
-        
-        linkToFilenameMap = new Map()
-        data.forEach(ea => {
-          var link = ea.replace(/.*\//,"").replace(/[^0-9A-Za-z]/g,"")
-          linkToFilenameMap.set(link, ea)
-        })
-
-        var progress = await lively.showProgress("update");
-        var total = data.length;
-        var i=0
-        var start = performance.now()
-        
-        var addObject = async (eaName) => {
-          var ea = objectMap.get(eaName)
-          if(!ea) {
-            ea = {name: eaName, file: zip.files[eaName]}
-            objectMap.set(eaName, ea)
-
-            var contents = fileCache.get(eaName)
-            if (!contents) {
-              contents = await ea.file.async("string")
-              fileCache.set(eaName, contents)            
-            }
-
-            ea.links = Strings.matchAll(/DomainObjectLink\{\#uuid\:UUID\['([A-Za-z0-9\-]+)'\]/g, contents).map(ea => ea[1])
-            try {
-              ea.object  = parseSTON(contents)
-            } catch(e) {
-              ea.error = e
-              ea.transformed = transformSTONToJS(contents || "")
-            }
-            ea.contents = contents
-          }
-
-//           if (ea.links) { 
-//             for(var link of ea.links) {
-//               if (!objects.get(key(link))) {
-//                 if (i < limitElement.value) {
-//                   var filename = linkToFilename(link)
-//                   if (filename) {
-//                     // await addObject(filename))
-//                   } else {
-//                     console.log("could not find file for:" + link)
-        
-//                   }
-//                 } else {
-//                   unfinished=true   
-//                 }
-//               }
-//             }            
-//          }
-
-          progress.value = i++ / total
-          return ea
+        div#root {
+          overflow: visible;
         }
-        
-        
-        
-
-        
-        try {
-          for(var eaName of data) {
-            if (i > limitElement.value) break; 
-            var ea = await addObject(eaName)
-            if (!ea) continue;
-            if (ea.object) {
-              all.push(ea.object)
-              dataByUUID.set(ea.object.uuid, ea)
-            }
-            // analysis.push({type: object.object && object.object._class})
-          }
-        } finally {
-          progress.remove()
-        }   
-      }
-
-      var tables = []
-      async function addTableFromDataCB(title, array) {
-        var table = await (<lively-table></lively-table>)
-        table.setFromJSO(array)
-        tables.push(<div><h2>{title}</h2>{table}</div>)
-      }
-
-      await updateData()
+      `
+      var div = document.createElement("div")
+      div.id = "root"
       
+      div.appendChild(style)
+      div.appendChild(<div>
+        <button click={async (evt) => {
+          lively.notify("reset")
+          this.tables.innerHTML = ""
+          await this.home.reset();
+          await this.home.updateData()
+          await this.updateTables()
+        }}>reset</button>
+        <button click={async (evt) => {
+          this.tables.innerHTML = ""
+          await this.home.updateData()
+          await this.updateTables()
+        }}>update</button>
+        {this.tablesElement}
+      </div>)
+      return div
+    }
+
+    static async addTableFromDataCB(title, array) {
+      var table = await (<lively-table></lively-table>)
+      table.setFromJSO(array)
+      this.tables.push(<div><h2>{title}</h2>{table}</div>)
+    }
+
+
+    static async updateTables() {
+      this.tables = []
+      var tables = this.tables
+
       function genClass(ea) {
         if (ea && ea._class == "CreativeWork") {
           var result =ea._class 
@@ -247,14 +113,13 @@ limit <input id="limit">
         return (ea && ea._class)  || "undefined"
       }
 
-      
-      var byClass = _.groupBy(all, ea => genClass(ea))
-      var byTag = new GroupMap()
-      for(var ea of all) {
+      this.byClass = _.groupBy(this.home.all, ea => genClass(ea))
+      this.byTag = new GroupMap()
+      for(var ea of this.home.all) {
           if (ea.additionalState && ea.additionalState.tags) {
             var tags = ea.additionalState.tags
             if (_.isString(tags)) {
-              byTag.add(tags, ea)
+              this.byTag.add(tags, ea)
             } else {
               for(var eaTag of tags) {
                 if (eaTag && eaTag.split) {
@@ -262,137 +127,84 @@ limit <input id="limit">
                     if (eaSubTag == "b") {
                       debugger
                     }
-                    byTag.add("" + eaSubTag, ea)
+                    this.byTag.add("" + eaSubTag, ea)
                   })
                 } else {
-                   byTag.add("" + eaTag, ea)
+                   this.byTag.add("" + eaTag, ea)
                 }
-                
+
               }
             }
           }
       }
 
-      var relations  = []
-
-      function extractRelations(object, sub=object, path=[]) {
-        Object.keys(sub).forEach(key => {
-          var target = sub[key] 
-          if (_.isObject(target)) {
-            if (target._class == "DomainObjectLink") {
-              var other = dataByUUID.get(target.uuid)
-              if (!other) {
-                // console.warn("UUID reference not found " + target.uuid + " in " + object.uuid)
-              } else {
-                var kind = key
-                if (_.isNumber(key) || key.match(/^[0-9]+$/)) {
-                  kind = path[path.length - 1]       
-                  if (_.isNumber(kind) || kind.match(/^[0-9]+$/)) {
-                    // array in array #BUG in data.... @Patrick?
-                    kind = path[path.length - 2]
-                  }
-                  
-                } 
-                var relation = { kind: kind, object: object, target: target}
-                relations.push(relation)
-                // console.log("relation", relation)
-              }
-            } else {
-              extractRelations(object, target, path.concat([key]))
-            }
-          }
-        })
+      for(var ea of this.home.all) {
+         this.home.extractRelations(ea)
       }
-                            
-      
-      for(var ea of all) {
-         extractRelations(ea)
-      }
-      var relationsByKind = _.groupBy(relations, ea => ea.kind)
+      var relationsByKind = _.groupBy(this.home.relations, ea => ea.kind)
       var relationsHistogram = Object.keys(relationsByKind)
           .map(key => ({name: key, count: relationsByKind[key].length}))
           // .filter(ea => ea.count > 1)
           .sortBy(ea => ea.count)
           .reverse()
-      
-      await addTableFromDataCB("Relations", relationsHistogram)
 
+      await this.addTableFromDataCB("Relations", relationsHistogram)
 
-
-      await addTableFromDataCB("Classes", Object.keys(byClass).map(ea => ({name: ea, instances: byClass[ea].length})))
-      await addTableFromDataCB("Tags", 
-        byTag
+      await this.addTableFromDataCB("Classes", Object.keys(this.byClass).map(ea => 
+        ({name: ea, instances: this.byClass[ea].length})))
+      await this.addTableFromDataCB("Tags", 
+        this.byTag
           .map((key, values) => ({name: key, count: values.size}))
           .filter(ea => ea.count > 10)
           .sortBy(ea => ea.count)
           .reverse())
-   
-      function addKeyValuePrintObject(value) {
-        const maxPrintKeyLength = 100
-        return ("" + JSON.stringify(value)).slice(0,maxPrintKeyLength)
-      } 
-      
-      function addKeyValue(row, key, value) {
-        if (value instanceof Array) {
-          for(var i=0; i< value.length; i++) {
-            row[key +"_" +i]  =  addKeyValuePrintObject(value[i])
-          }
-        } else {
-          row[key]  = addKeyValuePrintObject(value)
+
+      await this.printClassExcerps()
+
+      this.tablesElement.innerHTML = ""
+      this.tables.forEach(ea => {
+        this.tablesElement.appendChild(ea)
+      })
+    }
+
+    static addKeyValuePrintObject(value) {
+      const maxPrintKeyLength = 100
+      return ("" + JSON.stringify(value)).slice(0, maxPrintKeyLength)
+    }
+
+    static addKeyValue(row, key, value) {
+      if (value instanceof Array) {
+        for(var i=0; i< value.length; i++) {
+          row[key +"_" +i] = this.addKeyValuePrintObject(value[i])
         }
+      } else {
+        row[key] = this.addKeyValuePrintObject(value)
       }
-     
-      async function printClassExcerps() {
-        for(var eaClassName of Object.keys(byClass)) {
-          var allInstances = byClass[eaClassName]
-          await addTableFromDataCB("Sample Objects of " + eaClassName, allInstances.slice(0,5).map( ea => {
-              var row = {}
-              if(!ea) return row
-              var datum = dataByUUID.get(ea.uuid);
-              if (datum.links) {
-                row._linksCount = datum.links.length
-              }
-              for(var key of Object.keys(ea)) {
-                addKeyValue(row, key, ea[key])
-              }
-              if (ea.additionalState) {
-                Object.keys(ea.additionalState).forEach(key => {
-                  addKeyValue(row, key, ea.additionalState[key])
-                })
-                delete row.additionalState
-              }
-              return row
-            }))
-        }      
-      } 
-      
-      
-      await printClassExcerps()
-      
-      var style = document.createElement("style")
-      style.textContent = `
-        td.comment {
-          max-width: 300px
-        }
-        div#root {
-          overflow: visible;
-        }
-      `
-      var div = document.createElement("div")
-      div.id = "root"
-      
-      div.appendChild(style)
-      div.appendChild(<div>
-        <button click={evt => {
-          lively.notify("reset")
-          reset();
-          updateTable()
-        }}>reset</button>
-        <button click={evt => updateTable()}>update</button>
-        <div id="tables">{...tables}</div>
-      </div>)
-      return div
+    }
+
+    static async printClassExcerps() {
+      for(var eaClassName of Object.keys(this.byClass)) {
+        var allInstances = this.byClass[eaClassName]
+        await this.addTableFromDataCB("Sample Objects of " + eaClassName, allInstances.slice(0,5).map( ea => {
+            var row = {}
+            if(!ea) return row
+            var datum = this.home.dataByUUID.get(ea.uuid);
+            if (datum.links) {
+              row._linksCount = datum.links.length
+            }
+            for(var key of Object.keys(ea)) {
+              this.addKeyValue(row, key, ea[key])
+            }
+            if (ea.additionalState) {
+              Object.keys(ea.additionalState).forEach(key => {
+                this.addKeyValue(row, key, ea.additionalState[key])
+              })
+              delete row.additionalState
+            }
+            return row
+          }))
+      }      
     }
   }
-  ObjectGraph.create(this)
+  ObjectAnalysis.create(this)
 </script>

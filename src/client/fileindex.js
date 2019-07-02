@@ -547,13 +547,14 @@ export default class FileIndex {
     }
     file.type = type
     
-    await this.db.transaction("rw", this.db.files, () => { 
-      this.db.files.put(file) 
-    })
     if (file.content) {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
     }
+    await this.db.transaction("rw", this.db.files, () => { 
+      this.db.files.put(file) 
+    })
+
     if (file.name.match(/\.js$/)) {
       this.addModuleSemantics(file)
       this.addVersions(file)
