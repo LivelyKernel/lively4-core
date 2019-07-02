@@ -1,7 +1,4 @@
-# Home Object Soups...
-
-
-<lively-import src="_navigation.html"></lively-import>
+# Home Object Soup Graph
 
 <div>
 url <input style="width:500px" id="url" value=""><br>
@@ -9,81 +6,40 @@ limit <input id="limit">
 </div>
 
 <script>
-  const MAX_ELEMENTS = 400
-
+  const MAX_ELEMENTS = 100
+  const GraphvizEngine = "neato" // "dot" , "neato"
 
   import moment from "src/external/moment.js";  
   import Strings from 'src/client/strings.js'  
   import Colors from "src/external/tinycolor.js"
   import d3 from "src/external/d3.v5.js"
   import beautify from "src/client/js-beautify/beautify.js"
+  import {GroupMap} from "src/client/collections.js"
 
-
-
-  function transformSTONToJS(source) {
-    var source  =  source
-      // .replace(/\n/g, "")
-      .replace(/\{-\}/g, " - ")
-      .replace(/(^|[^\\A-Za-z0-9_])([A-Za-z0-9_\-]+)\{/g, "$1{_class: '$2', ")
-      .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3") 
-      .replace(/([,{\[] ?)#([A-Za-z0-9_\-]+)([:,\]])/g, "$1'$2'$3")  // OH NO... use lookahead?
-      .replace(/([: ])\@([0-9]+)/g, "$1'@$2'") 
-      .replace(/OrderedCollection\[/g, "[") 
-      .replace(/Set\[/g, "[")
-      .replace(/\\\\/g, "\\")
-      // `\\\\'`
-    return "(" +source + ")"
-  }
-    
+  import {key} from "./home.js" // #Bug #TODO, Home as the default class is undefined in this list...
+  import Home from "./home.js" // and here not
   
-  function parseSTON(source) {
-    if (!source) return {}
-    var nil = undefined
-    var DateAndTime = new Proxy({}, {
-      get(target, key, receiver) {
-        return moment(key)
-      }
-    })
-    var Date = new Proxy({}, {
-      get(target, key, receiver) {
-        return moment(key)
-      }
-    })
-    var UUID = new Proxy({}, {
-      get(target, key, receiver) {
-        return `${key}` 
-      }
-    })
-    return eval(transformSTONToJS(source))
-  }
+  import ScriptApp from "./scriptapp.js"
   
-  
-  class ObjectGraph {
-
-    static connectInput(element, initValue, update) {
-      element.value = initValue
-      element.addEventListener("change", function(evt) {
-          update(this.value)
-      })
-    }
-    
-    static query(query) {
-      return lively.query(this.ctx, query)
-    }
+  class ObjectGraph extends ScriptApp {
     
     static async create(ctx) {
+      // var url = "livelyfile:///object-storage.zip"
+      var url = "http://localhost:9005/Desktop/object-storage.zip"
+      this.home = new Home(url)
+      var home = this.home
+
       this.ctx = ctx
   
-      var url = "http://localhost:9005/Desktop/object-storage.zip"
 
-      this.query("input#url").value = url
-      var limitElement = this.query("input#limit")
+      this.get("input#url").value = url
+      var limitElement = this.get("input#limit")
 
       limitElement.value = MAX_ELEMENTS
       
-      var urlElement = this.query("input#url")
-      var container = this.query("lively-container");
-      var graphviz = await (<graphviz-dot engine="neato" server="true"></graphviz-dot>)
+      var urlElement = this.get("input#url")
+      var container = this.get("lively-container");
+      var graphviz = await (<graphviz-dot engine={GraphvizEngine} server="true"></graphviz-dot>)
       
       
       var width = 1800
@@ -104,26 +60,16 @@ limit <input id="limit">
         url = this.value
         updateTable() // on Enter
       });
-
-      window.SmalltalkHomeObjectsCache = window.SmalltalkHomeObjectsCache || new Map()
-      var fileCache = window.SmalltalkHomeObjectsCache 
       
-      
-      window.SmalltalkHomeObjectsMap = window.SmalltalkHomeObjectsMap || new Map()
-      var objectMap = window.SmalltalkHomeObjectsMap 
-      
-      function reset() {
-        window.SmalltalkHomeObjectsCache = new Map()
-        window.SmalltalkHomeObjectsMap = new Map()
-      }
-      
-      
-      // reset()
+      this.home.objectLimit = limitElement.value
+      await this.home.updateData()
       
       var objects
       var edges
       var nodes
       
+      var outgoing = new GroupMap()
+      var incoming = new GroupMap() 
       
       var selectedChange 
       var selectedNode 
@@ -142,6 +88,9 @@ limit <input id="limit">
 
 
       function addEdge(a , b, style="") {
+        outgoing.add(key(a), key(b))
+        incoming.add(key(b), key(a))
+        
         edges.add(key(a)  + " -> " +  key(b) + style)
       }
       
@@ -152,10 +101,7 @@ limit <input id="limit">
 
         objects = new Map()
         edges = new Set()
-        nodes = []
-
-
-
+        nodes = new Map()
 
         if (!zip) {
           var zip = window.SmalltalkHomeObjects
@@ -181,7 +127,7 @@ limit <input id="limit">
         var i=0
         var start = performance.now()
         
-        var addObject = async (eaName) => {
+        var addNode = async (eaName) => {
           console.log("addObject ")
           if (i > 100) {
             debugger
@@ -190,48 +136,31 @@ limit <input id="limit">
             console.log("stop " + eaName)
             return key(eaName) // we have it already
           }
-
           var unfinished=false
-          var ea = objectMap.get(eaName)
-          if(!ea) {
-            ea = {name: eaName, file: zip.files[eaName]}
-            objectMap.set(eaName, ea)
-
-            var contents = fileCache.get(eaName)
-            if (!contents) {
-              contents = await ea.file.async("string")
-              fileCache.set(eaName, contents)            
+          var ea = this.home.objectMap.get(eaName)
+          if (ea.object) {
+            if (ea.object._class == "CreativeWork") {
+              if (_.isArray(ea.object.additionalState.tags)) {
+                  if (ea.object.additionalState.tags.includes("live programming study")) {
+                    return
+                  }
+              }
+              // return 
             }
-
-            ea.links = Strings.matchAll(/DomainObjectLink\{\#uuid\:UUID\['([A-Za-z0-9\-]+)'\]/g, contents).map(ea => ea[1])
-            try {
-              ea.object  = parseSTON(contents)
-            } catch(e) {
-              ea.error = e
-              ea.transformed = transformSTONToJS(contents || "")
-            }
-            ea.contents = contents
+          } else {
+            // could not parse
+            if (ea.transformed.match(/_class: 'CreativeWork'/))
+              return 
           }
-          if (ea.object && ea.object._class == "CreativeWork") {
-            return 
-          }
-
-
-          // #Dev show only errors
-          // if (!ea.error) {
-          //   return 
-          // }
-
 
           objects.set(key(eaName), ea)
-
           if (ea.links) { 
             for(var link of ea.links) {
               if (!objects.get(key(link))) {
                 if (i < limitElement.value) {
                   var filename = linkToFilename(link)
                   if (filename) {
-                    if (await addObject(filename)) {
+                    if (await addNode(filename)) {
                       addEdge(eaName, link, `[color="gray"]`)            
                     }
                   } else {
@@ -240,9 +169,10 @@ limit <input id="limit">
                   }
                 } else {
                   unfinished=true
-                  // nodes.push(key(link) + `[color="lightgray" label="..."]`)
-                  // addEdge(eaName, link, `[color="gray"]`)            
+                  
                 }
+              } else {
+                addEdge(eaName, link, `[color="gray"]`)      
               }
             }            
           }
@@ -263,15 +193,18 @@ limit <input id="limit">
           console.log("add " + i + " " + eaName)
           progress.value = i++ / total
 
-          nodes.push(key(eaName) + style)
+          nodes.set(key(eaName), key(eaName) + style)
           return key(eaName)
         }
         
         
         try {
           for(var eaName of data) {
+              await this.home.addObject(eaName)
+          }
+          for(var eaName of data) {
             if (i > limitElement.value) break; 
-            await addObject(eaName)
+            await addNode(eaName)
           }
         } finally {
           progress.remove()
@@ -279,15 +212,32 @@ limit <input id="limit">
         }
         lively.notify("loaded in " + Math.round(performance.now() - start) + "ms")
         
+        // AND NOW we filter the last time
+        
+        var totalNodesCount = 0
+        var renderedNodesCount = 0
+        
+        Array.from(nodes.keys()).forEach(key => {
+          
+        totalNodesCount ++
+          if (incoming.get(key).size == 0 && outgoing.get(key).size == 0) {
+            nodes.delete(key)
+          } else {
+          renderedNodesCount ++ 
+          }
+        })
+        
+        console.log("total nodes: " + totalNodesCount + " rendered: " +renderedNodesCount )
+        
 // 
 // overlap=scale;
         var source = `digraph {
           rankdir=LR;
-          edge [ len=4] 
+          edge [ len=2] 
         
           node [ style="filled" color="lightgray" fontsize="8pt" fontname="helvetica"]; 
           ${Array.from(edges).join(";")} 
-          ${nodes.join(";")} 
+          ${Array.from(nodes.values()).join(";")} 
         }`
           
           
@@ -416,9 +366,7 @@ limit <input id="limit">
         border: 1px solid gray;
       }
       `
-      graphviz
-
-
+      
       var div = document.createElement("div")
       div.id = "root"
       

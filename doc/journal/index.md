@@ -36,10 +36,9 @@ var button = document.createElement("button")
 button.addEventListener("click", () => {createEntry()})
 button.innerHTML = "new"
 button
-</script></lively-script>
+</script>
 
-
-<lively-script><script>
+<script>
 import FileCache from "src/client/fileindex.js"
 (async () => {
   var container = lively.query(this, "lively-container");

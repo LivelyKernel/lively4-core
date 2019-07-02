@@ -433,7 +433,6 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onItemClick(link, evt) {
-    debugger
     if (evt.shiftKey) {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
