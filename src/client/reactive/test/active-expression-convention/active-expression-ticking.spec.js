@@ -265,7 +265,7 @@ describe('Ticking Active Expressions', () => {
 
             check([expr]);
 
-           expect(spy.called).to.be.true;
+            expect(spy.called).to.be.true;
         });
     });
 });
