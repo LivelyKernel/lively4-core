@@ -55,6 +55,38 @@ describe("life-cycle management", function() {
     });
   });
 
+  // #TODO: duplicate with above (de-)activate
+  // #TODO: is this useful?
+  describe('disable and re-enable', () => {
+    xit("disabled aexprs do not fire notify the callback", () => {
+      let val = 17, spy = sinon.spy();
+
+      aexpr(() => val)
+        .onChange(spy)
+        .disable();
+
+      val = 33;
+      expect(spy.called).to.be.false;
+    });
+
+    xit("disabled aexprs do nothing when explicitly listed to be checked2", () => {
+      let val = 17,
+          spy = sinon.spy(),
+          expr = aexpr(() => val)
+              .onChange(spy)
+              .disable();
+
+      val = 33;
+      expect(spy.called).to.be.false;
+
+      expr.enable();
+
+      val = 33;
+      expect(spy.calledOnce).to.be.true;
+    });
+
+  });
+
   describe("dispose", function() {
     it("aexprs define dispose", () => {
       expect(aexpr(() => {})).to.respondTo('dispose');
