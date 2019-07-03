@@ -147,10 +147,7 @@ limit <input id="limit">
         var start = performance.now()
         
         var addNode = async (eaName) => {
-          console.log("addObject ")
-          
           if (objects.get(key(eaName))) {
-            console.log("stop " + eaName)
             return key(eaName) // we have it already
           }
           var unfinished=false
@@ -204,6 +201,12 @@ limit <input id="limit">
           if (ea.object) {
             var label = i + " "+ ea.object._class
             var color = classColors(ea.object._class)
+            
+            // CreativeWork
+            if (ea.object.additionalState && ea.object.additionalState.publicationtype) {
+              label = label + " " + cleanName(ea.object.additionalState.publicationtype)
+            } 
+            
             if (ea.object.title) {
               label = label + "\n" + cleanName(ea.object.title)
             } else if (ea.object.fullName) {
@@ -214,6 +217,10 @@ limit <input id="limit">
             
             }
             
+            if (ea.object.additionalState && ea.object.additionalState.tags) {
+              label = label + "\n" + cleanName(ea.object.additionalState.tags)
+            }
+            
             if (!color) {
               color = classColors(ea.object._class)
             }
@@ -221,10 +228,7 @@ limit <input id="limit">
           } else {
             style = `[fontcolor="red" label="ERROR" width="${size}" height="${size}"]`
           }
-          console.log("NODE " + key(eaName))
-          console.log("add " + i + " " + eaName)
           progress.value = i++ / total
-
           nodes.set(key(eaName), key(eaName) + style)
           return key(eaName)
         }
