@@ -1,6 +1,6 @@
-# Home Object Soup Graph
 
-<div>
+<div style="position:absolute; top: 20px; left: 30px; z-index: 1">
+<h1>Home Object Soup Graph</h1>
 url <input style="width:500px" id="url" value=""><br>
 limit <input id="limit">
 </div>
@@ -13,6 +13,9 @@ limit <input id="limit">
   import Strings from 'src/client/strings.js'  
   import Colors from "src/external/tinycolor.js"
   import d3 from "src/external/d3.v5.js"
+  
+  import _ from 'src/external/lodash/lodash.js'
+
   import beautify from "src/client/js-beautify/beautify.js"
   import {GroupMap} from "src/client/collections.js"
 
@@ -20,6 +23,7 @@ limit <input id="limit">
   import Home from "./home.js" // and here not
   
   import ScriptApp from "./scriptapp.js"
+  
   
   class ObjectGraph extends ScriptApp {
     
@@ -39,15 +43,30 @@ limit <input id="limit">
       
       var urlElement = this.get("input#url")
       var container = this.get("lively-container");
+      var containerContent = container.get("#container-content")
       var graphviz = await (<graphviz-dot engine={GraphvizEngine} server="true"></graphviz-dot>)
       
+
+      var extent, width, height;
       
-      var width = 1800
-      var height = 1200
+      var updateExtent = () => {
+        extent = lively.getExtent(containerContent)
+        width = extent.x - 40
+        height = extent.y - 40
+        graphviz.width = width
+        graphviz.height = height
       
-      
-      graphviz.style.width = width + "px"
-      graphviz.style.height = height +"px"
+      }
+      updateExtent()
+
+
+      lively.removeEventListener("graphvizContent", container)
+      lively.addEventListener("graphvizContent", container, "extent-changed", function(evt) {
+        updateExtent()
+        lively.notify(graphviz.style.width)
+      });
+     
+
 
 
       var limit = Number(limitElement.value)
@@ -94,7 +113,7 @@ limit <input id="limit">
         edges.add(key(a)  + " -> " +  key(b) + style)
       }
       
-      var classColors = new Map()
+      var classColors =  d3.scaleOrdinal(d3.schemePastel2); // d3.schemeCategory10
    
 
       var updateTable = async () => {
@@ -129,9 +148,7 @@ limit <input id="limit">
         
         var addNode = async (eaName) => {
           console.log("addObject ")
-          if (i > 100) {
-            debugger
-          }
+          
           if (objects.get(key(eaName))) {
             console.log("stop " + eaName)
             return key(eaName) // we have it already
@@ -153,6 +170,7 @@ limit <input id="limit">
               return 
           }
 
+
           objects.set(key(eaName), ea)
           if (ea.links) { 
             for(var link of ea.links) {
@@ -165,7 +183,6 @@ limit <input id="limit">
                     }
                   } else {
                     console.log("could not find file for:" + link)
-                    debugger
                   }
                 } else {
                   unfinished=true
@@ -178,14 +195,29 @@ limit <input id="limit">
           }
 
           var style
-          var size = ea.contents ? Math.sqrt(ea.contents.length) / 20 : 0
+          var size = ea.contents ? Math.sqrt(ea.contents.length) / 20 : 0 
+          
+          function cleanName(s) {
+            return _.trim(s,50).replace(/[^A-Za-z09-_ ]/g,"")
+          }
+          
           if (ea.object) {
-            var color = classColors.get(ea.object._class)
-            if (!color) {
-              color = Colors.random().desaturate().toHexString()
-              classColors.set(ea.object._class, color)
+            var label = i + " "+ ea.object._class
+            var color = classColors(ea.object._class)
+            if (ea.object.title) {
+              label = label + "\n" + cleanName(ea.object.title)
+            } else if (ea.object.fullName) {
+              label = label + "\n" + cleanName(ea.object.fullName)
+            
+            } else if (ea.object.description) {
+              label = label + "\n" + cleanName(ea.object.description)
+            
             }
-            style = `[style="${unfinished ? "" : "filled"}" color="${color}"  label="${i} ${ea.object._class}"]`  // style="filled" 
+            
+            if (!color) {
+              color = classColors(ea.object._class)
+            }
+            style = `[style="${unfinished ? "" : "filled"}" color="${color}" fixedsize="true" width="${size}" height="${size}"  label="${label}"]`  // style="filled" 
           } else {
             style = `[fontcolor="red" label="ERROR" width="${size}" height="${size}"]`
           }
@@ -233,7 +265,7 @@ limit <input id="limit">
 // overlap=scale;
         var source = `digraph {
           rankdir=LR;
-          edge [ len=2] 
+          edge [ len=4] 
         
           node [ style="filled" color="lightgray" fontsize="8pt" fontname="helvetica"]; 
           ${Array.from(edges).join(";")} 
@@ -247,6 +279,12 @@ limit <input id="limit">
         lively.notify("layouted  in " + Math.round(performance.now() - start) + "ms" )
         
         var svg = graphviz.get("svg")
+        if (!svg) {
+          lively.warn("no svg found") // should we wait?
+          return
+        }
+        
+        
         var zoomElement = document.createElementNS("http://www.w3.org/2000/svg", "g")
         
         var zoomG = d3.select(zoomElement)
@@ -332,6 +370,7 @@ limit <input id="limit">
       updateTable()
 
       var details = await (<div id="details"><lively-code-mirror ></lively-code-mirror></div>)
+      details.hidden = true
       
       Object.defineProperty(details, 'value', {
         get() { 
@@ -365,6 +404,14 @@ limit <input id="limit">
         background-color: lightgray;
         border: 1px solid gray;
       }
+      
+      #graphviz {
+        position: absolute;
+        top: 0px
+        left: 0px;
+      
+      }
+      
       `
       
       var div = document.createElement("div")

@@ -28,11 +28,35 @@ export default class GraphvizDot extends Morph {
     return  this.getAttribute("engine") || "dot"
   }
   
-  async updateViz() {
+  set width(v) {
+    this.style.width = v + "px"
+    this.updateExtent() 
+    return v
+  }
+  
+  get width() {
+    return parseFloat(this.style.width)
+  }
+  
+  set height(v) {
+    this.style.height = v + "px"
+    this.updateExtent() 
+    return v
+  }
+    
+  get height() {
+    return parseFloat(this.style.height)
+  }
+  
+  updateExtent() {
     var svgContainer = this.get("#container")
     svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
-    svgContainer.style.height = this.style.height
-    
+    svgContainer.style.height = this.style.height 
+  }
+  
+  
+  async updateViz() {
+    this.updateExtent()
 
     var bounds = this.getBoundingClientRect()
     var div = this.get("#graph")
@@ -54,11 +78,10 @@ export default class GraphvizDot extends Morph {
         },
         body: source
       })
-      var result = await svgResultResp.text()
       if (svgResultResp.status == 200) {
-          div.innerHTML  = result
+        div.innerHTML  = await svgResultResp.text()
       } else {
-          div.innerHTML  =  <lively-error>${result}</lively-error>
+          div.innerHTML  =  "ERROR" + await svgResultResp.text()
       }
       
       
