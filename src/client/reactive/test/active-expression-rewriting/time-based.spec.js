@@ -209,7 +209,7 @@ describe('Time-based Triggers for Active Expressions', () => {
           expect(spy).not.to.be.called;
         });
 
-        xit("new Date()/detects the global Date object, referenced as constructor", async () => {
+        it("new Date()/detects the global Date object, referenced as constructor", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
 

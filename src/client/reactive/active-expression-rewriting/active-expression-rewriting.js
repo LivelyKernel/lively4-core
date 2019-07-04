@@ -130,10 +130,11 @@ class Dependency {
     }
 
     /*HTML <span style="font-weight: bold;">Frame-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">Date</span> HTML*/
-    if ((this._type === 'member' && context === Date && identifier === 'now') ||
-        (this.isGlobalDependency() && identifier === 'Date')) {
-      HooksToDependencies.associate(FrameBasedHook.instance, this);
-    }
+// -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
+// -        (this.isGlobalDependency() && identifier === 'Date')) {
+    // if (this.isGlobalDependency() && identifier === 'Date') {
+    //   HooksToDependencies.associate(FrameBasedHook.instance, this);
+    // }
   }
 
   untrack() {
