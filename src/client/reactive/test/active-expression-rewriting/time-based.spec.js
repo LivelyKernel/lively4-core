@@ -177,9 +177,9 @@ describe('Time-based Triggers for Active Expressions', () => {
     });
 
         // TODO: is this useful?
-    describe('disable and re-enable', () => {
+    describe('Date.now()', () => {
       
-        xit("100 ms timer", async () => {
+        it("100 ms timer", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
 
@@ -190,6 +190,36 @@ describe('Time-based Triggers for Active Expressions', () => {
           expect(spy).not.to.be.called;
 
           await wait(100);
+          expect(spy).to.be.calledOnce;
+        });
+
+        it("100 ms timer but aexpr disposed in between", async () => {
+          let spy = sinon.spy();
+          let referenceTime = Date.now();
+
+          // fires in 100 milliseconds
+          const ae = aexpr(() => Date.now() >= 1000 + referenceTime).onChange(spy);
+
+          await wait(500);
+          expect(spy).not.to.be.called;
+
+          ae.dispose();
+
+          await wait(1000);
+          expect(spy).not.to.be.called;
+        });
+
+        xit("new Date()/detects the global Date object, referenced as constructor", async () => {
+          let spy = sinon.spy();
+          let referenceTime = Date.now();
+
+          // fires in 100 milliseconds
+          aexpr(() => new Date().getTime() >= 1000 + referenceTime).onChange(spy);
+          
+          await wait(500);
+          expect(spy).not.to.be.called;
+
+          await wait(1000);
           expect(spy).to.be.calledOnce;
         });
 
