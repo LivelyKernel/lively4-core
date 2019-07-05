@@ -198,14 +198,14 @@ describe('Time-based Triggers for Active Expressions', () => {
           let referenceTime = Date.now();
 
           // fires in 100 milliseconds
-          const ae = aexpr(() => Date.now() >= 1000 + referenceTime).onChange(spy);
+          const ae = aexpr(() => Date.now() >= 100 + referenceTime).onChange(spy);
 
-          await wait(500);
+          await wait(50);
           expect(spy).not.to.be.called;
 
           ae.dispose();
 
-          await wait(1000);
+          await wait(100);
           expect(spy).not.to.be.called;
         });
 
@@ -214,28 +214,24 @@ describe('Time-based Triggers for Active Expressions', () => {
           let referenceTime = Date.now();
 
           // fires in 100 milliseconds
-          aexpr(() => new Date().getTime() >= 1000 + referenceTime).onChange(spy);
+          aexpr(() => new Date().getTime() >= 100 + referenceTime).onChange(spy);
           
-          await wait(500);
+          await wait(50);
           expect(spy).not.to.be.called;
 
+          await wait(100);
+          expect(spy).to.be.calledOnce;
+        });
+
+        it("date.toFormattedString", async () => {
+          let spy = sinon.spy();
+
+          aexpr(() => new Date().toFormattedString('hh.mm.ss')).onChange(spy);
+          
           await wait(1000);
           expect(spy).to.be.calledOnce;
         });
 
     });
 
-    describe('clearDefaultActiveExpressions', () => {
-        it("clear global fallback set of active expressions", () => {
-            let val = 17,
-                spy = sinon.spy();
-
-            let expr = aexpr(() => val)
-                .onChange(spy);
-
-            val = 33;
-
-            expect(spy.called).to.be.true;
-        });
-    });
 });

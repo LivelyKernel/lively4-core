@@ -5,6 +5,22 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
+describe('simple listeners', () => {
+
+  it("listen on a local variable", () => {
+      let val = 17,
+          spy = sinon.spy();
+
+      aexpr(() => val)
+          .onChange(spy);
+
+      val = 33;
+
+      expect(spy.called).to.be.true;
+  });
+
+});
+
 describe('asAExpr', () => {
   
   it('rewriting aexprs support asAExprs', () => {

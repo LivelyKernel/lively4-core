@@ -87,6 +87,7 @@ class Dependency {
     this.isTracked = true;
 
     const [context, identifier, value] = this.contextIdentifierValue();
+    const isGlobal = this.isGlobalDependency();
 
     /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
@@ -105,7 +106,7 @@ class Dependency {
     }
 
     /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
-    if (this.isGlobalDependency() && identifier === 'that') {
+    if (isGlobal && identifier === 'that') {
       const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
       HooksToDependencies.associate(wrappingHook, this);
     }
@@ -131,10 +132,9 @@ class Dependency {
 
     /*HTML <span style="font-weight: bold;">Frame-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">Date</span> HTML*/
 // -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
-// -        (this.isGlobalDependency() && identifier === 'Date')) {
-    // if (this.isGlobalDependency() && identifier === 'Date') {
-    //   HooksToDependencies.associate(FrameBasedHook.instance, this);
-    // }
+    if (isGlobal && identifier === 'Date') {
+      HooksToDependencies.associate(FrameBasedHook.instance, this);
+    }
   }
 
   untrack() {
