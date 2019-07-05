@@ -483,15 +483,20 @@ export default function({ types: t, template, traverse }) {
                       )
                     );
                   } else if (path.scope.hasGlobal(path.node.name)) {
-                    path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                    prependGetGlobal(path);
+                    // #TODO: remove this code duplication
+                    if (path.node.name !== 'eval') {
+                      path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                      prependGetGlobal(path);
+                    }
                   } else {
                     // #TODO: can this be the case? Neither locally scoped nor global.
                   }
                 } else {
                   //logIdentifier('get global var', path);
-                  path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                  prependGetGlobal(path);
+                  if (path.node.name !== 'eval') {
+                    path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                    prependGetGlobal(path);
+                  }
                 }
                 return;
               }
