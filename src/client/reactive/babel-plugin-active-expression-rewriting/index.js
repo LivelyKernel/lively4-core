@@ -116,6 +116,7 @@ export default function({ types: t, template, traverse }) {
 
     let identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
+    identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
 
     // let ref = customTemplates[name];
@@ -166,7 +167,7 @@ export default function({ types: t, template, traverse }) {
     return !!isInForLoop;
   }
   
-  function isInDesctructuringAssignment(path) {
+  function isInDestructuringAssignment(path) {
     const patternParent = path.find(p => {
       if(!p.isPattern()) { return false; }
       if(!p.parentPath) { return false; }
@@ -231,6 +232,34 @@ export default function({ types: t, template, traverse }) {
             return uniqueIdentifier;
           }
 
+          function rewriteReadGlobal(path) {
+            if (path.node.name !== 'eval') {
+              path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+              prependGetGlobal(path);
+            }
+          }
+          function prependGetGlobal(path) {
+            path.insertBefore(
+              checkExpressionAnalysisMode(
+                t.callExpression(
+                  addCustomTemplate(state.file, GET_GLOBAL), [t.stringLiteral(path.node.name)]
+                )
+              )
+            );
+          }
+          function wrapSetGlobal(path) {
+            const valueToReturn = t.identifier(path.node.left.name);
+            valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+            path.replaceWith(
+              t.sequenceExpression([
+                path.node,
+                t.callExpression(
+                  addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name)]
+                ),
+                valueToReturn
+              ]));
+          }
+
           // ------------- ensureBlock -------------
           const maybeWrapInStatement = (node, wrapInReturnStatement) => {
             if(t.isStatement(node)) {
@@ -288,7 +317,7 @@ export default function({ types: t, template, traverse }) {
 
             UnaryExpression(path) {
               if(isInForLoopIterator(path)) { return; }
-              if(isInDesctructuringAssignment(path)) { return; }
+              if(isInDestructuringAssignment(path)) { return; }
 
               // handle delete operator
               if(path.node.operator === 'delete') {
@@ -333,7 +362,7 @@ export default function({ types: t, template, traverse }) {
               const prefix = path.node.prefix;
               const argument = path.get('argument');
               if(isInForLoopIterator(path)) { return; }
-              if(isInDesctructuringAssignment(path)) { return; }
+              if(isInDestructuringAssignment(path)) { return; }
 
               if(argument.isMemberExpression() || argument.isIdentifier()) {
                 
@@ -359,6 +388,7 @@ export default function({ types: t, template, traverse }) {
               }
             },
 
+            /*MD # Identifier MD*/
             Identifier(path) {
               //console.log(path.node.name);
 
@@ -417,7 +447,7 @@ export default function({ types: t, template, traverse }) {
                 (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))
               ) {
                 if(isInForLoopIterator(path)) { return; }
-                if(isInDesctructuringAssignment(path)) { return; }
+                if(isInDestructuringAssignment(path)) { return; }
   
                 if (path.scope.hasBinding(path.node.name)) {
                   //logIdentifier('get local var', path)
@@ -458,18 +488,15 @@ export default function({ types: t, template, traverse }) {
                         )
                       )
                     );
+                  } else if (path.scope.hasGlobal(path.node.name)) {
+                    // #TODO: remove this code duplication
+                    rewriteReadGlobal(path);
+                  } else {
+                    // #TODO: can this be the case? Neither locally scoped nor global.
                   }
                 } else {
                   //logIdentifier('get global var', path);
-                  path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-
-                  path.insertBefore(
-                    checkExpressionAnalysisMode(
-                      t.callExpression(
-                        addCustomTemplate(state.file, GET_GLOBAL), [t.stringLiteral(path.node.name)]
-                      )
-                    )
-                  );
+                  rewriteReadGlobal(path);
                 }
                 return;
               }
@@ -534,9 +561,10 @@ export default function({ types: t, template, traverse }) {
                 console.log("global", path.node.name);
               }
             },
+            /*MD # AssigmentExpression MD*/
             AssignmentExpression(path) {
               if(isInForLoopIterator(path)) { return; }
-              if(isInDesctructuringAssignment(path)) { return; }
+              if(isInDestructuringAssignment(path)) { return; }
               // check, whether we assign to a member (no support for pattern right now)
               if (t.isMemberExpression(path.node.left) &&
                 !isGenerated(path) &&
@@ -603,28 +631,23 @@ export default function({ types: t, template, traverse }) {
                         valueToReturn
                       ])
                     );
+                  } else if (path.get('left').scope.hasGlobal(path.node.left.name)) {
+                    path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
+                    wrapSetGlobal(path);
+                  } else {
+                    // #TODO: can this be the case? Neither locally scoped nor global.
                   }
                 } else {
                   // global assginment
                   //console.log('---global---', path.node.left.name);
                   path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
-
-                  let valueToReturn = t.identifier(path.node.left.name);
-                  valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                  path.replaceWith(
-                    t.sequenceExpression([
-                      path.node,
-                      t.callExpression(
-                        addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name)]
-                      ),
-                      valueToReturn
-                    ]));
-
+                  wrapSetGlobal(path);
                 }
               }
 
             },
 
+            /*MD # MemberExpression MD*/
             MemberExpression(path) {
               // lval (left values) are ignored for now
               if(path.parentPath.isCallExpression() && path.parentKey === "callee") { return; }
@@ -635,7 +658,7 @@ export default function({ types: t, template, traverse }) {
               if (t.isSuper(path.node.object)) { return; }
               if (isGenerated(path)) { return; }
               if(isInForLoopIterator(path)) { return; }
-              if(isInDesctructuringAssignment(path)) { return; }
+              if(isInDestructuringAssignment(path)) { return; }
               if(path.node[FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION]) { return; }
               
               path.replaceWith(
@@ -648,12 +671,13 @@ export default function({ types: t, template, traverse }) {
               );
             },
 
+            /*MD # CallExpression MD*/
             CallExpression(path) {
               if(isGenerated(path)) { return; }
               if(path.node.callee && t.isSuper(path.node.callee.object)) { return; }
               if(path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION]) { return; }
               if(isInForLoopIterator(path)) { return; }
-              if(isInDesctructuringAssignment(path)) { return; }
+              if(isInDestructuringAssignment(path)) { return; }
 
               // check whether we call a MemberExpression
               if(t.isMemberExpression(path.node.callee)) {

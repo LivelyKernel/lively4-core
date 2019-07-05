@@ -30,6 +30,18 @@ describe("when utility", function() {
     await wait(50);
     expect(spy).to.be.calledOnce;
   });
+  it("accepts an aexpr as condition", async () => {
+    let spy = sinon.spy();
+    let condition = false;
+    
+    when(aexpr(() => condition)).then(spy);
+    await wait(50);
+    expect(spy).not.to.be.called;
+
+    condition = true;
+    await wait(50);
+    expect(spy).to.be.calledOnce;
+  });
   it("resolves instantaneously", async () => {
     await when(() => true);
   });
@@ -42,7 +54,7 @@ describe("when utility", function() {
     let referenceTime = Date.now();
 
     // fires in 100 milliseconds
-    when(() => Date.now() >= 100 + referenceTime, { strategy: frameBasedAExpr.aexpr})
+    when(() => Date.now() >= 100 + referenceTime)
       .then(spy);
 
     await wait(50);

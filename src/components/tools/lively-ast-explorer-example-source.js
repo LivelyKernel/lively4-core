@@ -1,2 +1,1 @@
-var world = 3;
-await 3
+DataView = DataView

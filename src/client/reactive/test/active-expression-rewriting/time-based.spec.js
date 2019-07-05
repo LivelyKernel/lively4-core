@@ -177,9 +177,9 @@ describe('Time-based Triggers for Active Expressions', () => {
     });
 
         // TODO: is this useful?
-    describe('disable and re-enable', () => {
+    describe('Date.now()', () => {
       
-        xit("100 ms timer", async () => {
+        it("100 ms timer", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
 
@@ -193,19 +193,45 @@ describe('Time-based Triggers for Active Expressions', () => {
           expect(spy).to.be.calledOnce;
         });
 
-    });
+        it("100 ms timer but aexpr disposed in between", async () => {
+          let spy = sinon.spy();
+          let referenceTime = Date.now();
 
-    describe('clearDefaultActiveExpressions', () => {
-        it("clear global fallback set of active expressions", () => {
-            let val = 17,
-                spy = sinon.spy();
+          // fires in 100 milliseconds
+          const ae = aexpr(() => Date.now() >= 100 + referenceTime).onChange(spy);
 
-            let expr = aexpr(() => val)
-                .onChange(spy);
+          await wait(50);
+          expect(spy).not.to.be.called;
 
-            val = 33;
+          ae.dispose();
 
-            expect(spy.called).to.be.true;
+          await wait(100);
+          expect(spy).not.to.be.called;
         });
+
+        it("new Date()/detects the global Date object, referenced as constructor", async () => {
+          let spy = sinon.spy();
+          let referenceTime = Date.now();
+
+          // fires in 100 milliseconds
+          aexpr(() => new Date().getTime() >= 100 + referenceTime).onChange(spy);
+          
+          await wait(50);
+          expect(spy).not.to.be.called;
+
+          await wait(100);
+          expect(spy).to.be.calledOnce;
+        });
+
+        it("date.toFormattedString", async () => {
+          let spy = sinon.spy();
+
+          aexpr(() => new Date().toFormattedString('hh.mm.ss')).onChange(spy);
+          
+          await wait(1000);
+          expect(spy).to.be.calledOnce;
+        });
+
     });
+
 });

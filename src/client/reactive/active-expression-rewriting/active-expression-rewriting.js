@@ -5,6 +5,7 @@ import 'lang';
 HTML*/
 
 import { BaseActiveExpression } from 'active-expression';
+import * as frameBasedAExpr from "active-expression-frame-based";
 
 import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
@@ -86,6 +87,7 @@ class Dependency {
     this.isTracked = true;
 
     const [context, identifier, value] = this.contextIdentifierValue();
+    const isGlobal = this.isGlobalDependency();
 
     /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
@@ -104,12 +106,12 @@ class Dependency {
     }
 
     /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
-    if (this.isGlobalDependency() && identifier === 'that') {
+    if (isGlobal && identifier === 'that') {
       const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
       HooksToDependencies.associate(wrappingHook, this);
     }
 
-    /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
+    /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
       // #HACK #TODO: for now, ignore Knotview if unused for Mutations -> need to better separate those hooks, e.g. do not recursively check ALL attribute change, etc.
       if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel'))) {
@@ -119,13 +121,19 @@ class Dependency {
       }
     }
 
-    /*HTML <span style="font-weight: bold;">Event-based Change Hook</span>: <span style="color: green; font-weight: bold;">handling HTMLElements</span> HTML*/
+    /*HTML <span style="font-weight: bold;">Event-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
       const eventBasedHook = EventBasedHook.getOrCreateForElement(context);
       // #TODO: we have to acknowledge that different properties require different events to listen on
       //  e.g. code-mirror might have 'value' (so need to listen for 'change') or 'getCursor' (so need to listen for 'cursorActivity')
       // eventBasedHook.listenFor(identifier);
       HooksToDependencies.associate(eventBasedHook, this);
+    }
+
+    /*HTML <span style="font-weight: bold;">Frame-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">Date</span> HTML*/
+// -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
+    if (isGlobal && identifier === 'Date') {
+      HooksToDependencies.associate(FrameBasedHook.instance, this);
     }
   }
 
@@ -293,8 +301,8 @@ const PropertyWrappingHookByProperty = new Map(); // Map<(String/Symbol), Proper
 /** Mutation Observer Hooks */
 // 4.3 DataStructureHookByDataStructure
 const MutationObserverHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement, MutationObserverHook>
-/** Mutation Observer Hooks */
-// 4.3 DataStructureHookByDataStructure
+/** XXX */
+// 4.4 XXX
 const EventBasedHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement, EventBasedHook>
 
 
@@ -482,12 +490,36 @@ class EventBasedHook extends Hook {
 
     // #TODO: when the type of an input element changes, 'value' or 'checked' become unavailable
     if (this._element.tagName === 'INPUT') {
-      this._element.addEventListener('input', () => this.changeHappened());
+      this._element.addEventListener('input', () => {
+        this.changeHappened();
+      });
     } else if (this._element.tagName === 'LIVELY-CODE-MIRROR') {
       this._element.editor.on('changes', () => {
-        this.changeHappened()
+        this.changeHappened();
       });
     }
+  }
+  
+  changeHappened() {
+    this.notifyDependencies();
+  }
+}
+
+class FrameBasedHook extends Hook {
+  static get instance() {
+    return this._instance = this._instance || new FrameBasedHook();
+  }
+  
+  constructor() {
+    super();
+    
+    let x = 0;
+    // #TODO: caution, we currently use a side-effect function! How can we mitigate this? E.g. using `Date.now()` as expression
+    let ae = frameBasedAExpr.aexpr(() => x++)
+    ae.onChange(() => {
+      this.changeHappened();
+    })
+
   }
   
   changeHappened() {
