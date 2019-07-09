@@ -12,5 +12,6 @@ export default class LivelyImport extends Morph {
       lively.html.fixLinks(this.shadowRoot.childNodes, dir, 
         (path) => container.followPath(path))
     }
+    await lively.components.loadUnresolved(this.shadowRoot, false, "lively-import", true);
   }
 }

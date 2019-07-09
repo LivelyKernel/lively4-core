@@ -129,7 +129,10 @@ export default class Container extends Morph {
     };
     path = lively.preferences.getURLParameter("load");
     edit = lively.preferences.getURLParameter("edit");
-
+    let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
+    if (fullscreen) {
+      this.onFullscreen() // #TODO replace toggle logic with enableFullscreen, disableFullscreen
+    }
 
     // force read mode
     if(this.getAttribute("mode") == "read" && edit) {
@@ -137,6 +140,8 @@ export default class Container extends Morph {
       edit = undefined;
     }
 
+    
+    
     if (!path || path == "null") {
       path = lively4url + "/"
     }
