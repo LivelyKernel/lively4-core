@@ -205,14 +205,14 @@ export default class HTML {
               node.setAttribute("data-href", href) // so we keep the original somewhere..
               node.setAttribute("href", path)
             }            
-            node.addEventListener("click", (evt) => { 
+            lively.addEventListener("lively", node, "click", (evt) => { 
               evt.preventDefault()
               evt.stopPropagation()
               followPath(path); 
               return false; 
             });
           } else if (anchor) {
-            node.addEventListener("click", (evt) => { 
+            lively.addEventListener("lively", node, "click", (evt) => { 
               debugger
               evt.preventDefault()
               evt.stopPropagation()

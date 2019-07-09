@@ -524,7 +524,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     promise.then(comp => {
       Object.assign(comp.style, {
         display: "inline",
-        backgroundColor: "rgb(250,250,250)",
+        // backgroundColor: "rgb(250,250,250)",
         display: "inline-block",
         minWidth: "20px",
         minHeight: "20px"

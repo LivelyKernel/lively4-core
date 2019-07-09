@@ -5,15 +5,13 @@ import FileIndex from "src/client/fileindex.js"
 import files from "src/client/files.js"
 import moment from "src/external/moment.js";
 
-
-import d3 from "src/external/d3.v3.js"
-
 (async () => {
  
    var now = Date.now()
   
-  var url = lively4url + "/src/client/"
+  var url = lively4url + "/demos/"
   var tree = await files.fileTree(url)
+
 
   function visit(d, cb) {
     cb(d)
@@ -33,8 +31,6 @@ import d3 from "src/external/d3.v3.js"
   
   var div = await lively.create("div")
   div.style.position = "relative"
-  div.style.width = "2000px"
-  div.style.height = "800px"
   
   var treemap = await lively.create("d3-polymetricview")
 
@@ -45,8 +41,8 @@ import d3 from "src/external/d3.v3.js"
   // positioning hack.... we make our coordinate system much easier by this
   lively.setPosition(treemap, lively.pt(0,0))
 
-  treemap.style.width = "100%"
-  treemap.style.height = "100%"
+  treemap.style.width = "3000px"
+  treemap.style.height = "400px"
   
   div.appendChild(treemap)
 
@@ -71,7 +67,7 @@ import d3 from "src/external/d3.v3.js"
       height(node) {
         if (node.data.height === undefined) {
           if (node.data.size) {
-            node.data.height = node.data.size / (Math.sqrt(node.data.size) / 2)
+            node.data.height = (Math.sqrt(node.data.size) / 2)
           } else {
             node.data.height = 30
           }

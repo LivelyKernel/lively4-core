@@ -3,7 +3,6 @@
 import FileIndex from 'src/client/fileindex.js'
 var FileCache = FileIndex;
 
-
 export class ValueResponse {
  
   constructor(value, { status = 200 } = {}) {
@@ -390,6 +389,52 @@ export class LivelyBrowse extends Scheme {
 }
 
 
+export class LivelyWikipedia extends Scheme {
+  
+  get scheme() {
+    return "wikipedia"
+  }
+
+  resolve() {
+    return true
+  }  
+  
+  async GET(options) {
+
+    var result
+    try {
+      var m = this.url.toString().match(/^wikipedia:\/?\/?([a-z]*)\/?(.*)/,"") 
+      var lang = m[1] || "en"
+      var term = m[2] || ""
+      result = await lively.openComponentInWindow("lively-iframe")
+      lively.setExtent(result.parentElement, lively.pt(800, 600))
+      result.parentElement.setAttribute("title","Wikipedia: " + term)
+      
+      result.setURL(`https://${lang}.wikipedia.org/wiki/${term}`)
+      result.hideMenubar()
+    } catch(e) {
+      return new Response("failed to open " + term, {status: 400})
+    }
+    return new ValueResponse(result, {status: 200});
+  }
+
+  PUT(options) {
+    return new Response("Does not make sense, to PUT a search...", {status: 400})
+  }
+    
+  OPTIONS() {
+    var result = {
+      name: "open ",
+      type: "file",
+      donotfollowpath: true,
+      contents: []
+    }
+    return new Response(JSON.stringify(result), {status: 200})
+  }
+}
+
+
+
 
 export class LivelyEdit extends LivelyBrowse {
   
@@ -698,6 +743,7 @@ export default class PolymorphicIdentifier {
       LivelySearch,
       LivelyOpen,
       LivelyBrowse,
+      LivelyWikipedia,
       LivelyEdit,
       CachedRequest,
       StringScheme,

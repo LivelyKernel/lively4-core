@@ -80,9 +80,8 @@ export default class Editor extends Morph {
     
     // wait for CodeMirror for adding custom keys
     await  editor.editorLoaded()
-    editor.addKeys({
+    editor.registerExtraKeys({
       "Alt-P": cm => {
-        lively.notify('Toggle Widgets');
         this.toggleWidgets();
       }
     })
@@ -562,9 +561,10 @@ export default class Editor extends Morph {
           var from = cm.posFromIndex(fromIndex)
           var to = cm.posFromIndex(toIndex)
           let widget = await codeMirrorComponent.wrapWidget(widgetName, from, to)
-          widget.style.border = "2px dashed orange "
+          // widget.style.border = "2px dashed orange "
+          widget.classList.add('inline-embedded-widget');
           lively.removeEventListener('widget', widget)
-          widget.style.padding = "5px"
+          // widget.style.padding = "5px"
 //           lively.addEventListener("context", widget, "contextmenu", evt => {
 //             if (!evt.shiftKey) {
 //                const menuElements = [
@@ -580,8 +580,14 @@ export default class Editor extends Morph {
 //           })
         
           if (mode == "MD") {
-            widget.setContent(m[2])    
-            
+            await widget.setContent(m[2])    
+             var container = lively.query(this, "lively-container")
+             
+            if (container) {
+              lively.html.fixLinks(widget.shadowRoot.querySelectorAll("img, a"), 
+                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    url => container.followPath(url))
+            }
           } else {
             widget.innerHTML = m[2]
             var container = lively.query(this, "lively-container")
@@ -605,7 +611,6 @@ export default class Editor extends Morph {
   }
   
   toggleWidgets() {
-    lively.notify("yeah...")
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
     

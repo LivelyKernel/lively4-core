@@ -6,7 +6,8 @@ import components from 'src/client/morphic/component-loader.js';
 import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
-import moment from "src/external/moment.js";
+import moment from "src/external/moment.js"; 
+import FileCache from "src/client/fileindex.js"
 
 
 export default class LivelyContainerNavbar extends Morph {
@@ -228,10 +229,16 @@ export default class LivelyContainerNavbar extends Morph {
     return this.get("#navbar")
   }
   
+  findItem(url) {
+    return _.find(this.getRootElement().querySelectorAll("li"), ea => {
+      if (ea.textContent == "../") return false
+      var link = ea.querySelector("a")
+      return link && (link.href == url )
+    });
+  }
 
-  
   async show(targetURL, sourceContent, contextURL, force=false) {
-    // console.log("show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
@@ -241,16 +248,21 @@ export default class LivelyContainerNavbar extends Morph {
     var lastDir = this.currentDir
     this.currentDir = this.getRoot(targetURL);
 
-
-    // #TODO #Refactor `isIndexFile` 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
-    this.targetItem = _.find(this.getRootElement().querySelectorAll("li"), ea => {
-      if (ea.textContent == "../") return false
-      var link = ea.querySelector("a")
+    this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
+    
+    var parentURL = this.url.replace(/[^/]*$/,"")   
+    
+    this.targetParentItem = this.findItem(parentURL)
 
-      return link && (link.href == this.url || link.href == urlWithoutIndex)
-    });
-    if (this.targetItem) {
+    if (this.targetItem || this.targetParentItem ) {
+        
+      if (!this.targetItem) {
+        // newfile or deleted file?
+        // lively.notify("NEW ?RESET DIR")
+        this.targetItem = this.targetParentItem
+      }
+      
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
         this.showSublist()
@@ -258,10 +270,11 @@ export default class LivelyContainerNavbar extends Morph {
         this.showSublist()
       } else if (lastContent != this.sourceContent) {
         this.showSublisContent(true)
-      }
-
+      }        
+      
       return         
     } else {
+      // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
     }
@@ -425,15 +438,19 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
-      if (!link.parentElement.classList.contains("selected")) {
+      // collapse previousely expanded tree
+      var sublist = link.parentElement.querySelector("ul")
+      
+      if (!link.parentElement.classList.contains("selected") && !sublist) {
         this.followPath(link.href);
       } else {
         // this.url = undefined
         this.currentDir = null
         
         link.parentElement.classList.remove("selected")
-        var sublist = link.parentElement.querySelector("ul")
         if (sublist) sublist.remove()
+        
+
       }
     }
   }
@@ -480,6 +497,12 @@ export default class LivelyContainerNavbar extends Morph {
         ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
     }
+    if (isDir) {
+      menuElements.push(...[
+        [`add search root`, () => this.addSearchRoot(otherUrl)],
+      ])
+    }
+    
     menuElements.push(...[
       ["new", [
         [`text file`, () => this.newfile(otherUrl)],
@@ -488,6 +511,17 @@ export default class LivelyContainerNavbar extends Morph {
     ])
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)
+  }
+  
+  /*
+   * add url to local file index rember to search there  
+   */
+  addSearchRoot(url) {
+    var roots = lively.preferences.get("ExtraSearchRoots")
+    roots = _.uniq(roots.concat([url]))
+    FileCache.current().addDirectory(url)     
+    lively.preferences.set("ExtraSearchRoots", roots)
+    lively.notify("Current Search Roots:", roots)
   }
   
   deleteFile(url, selectedURLs) {
@@ -664,7 +698,10 @@ export default class LivelyContainerNavbar extends Morph {
     if (!this.targetItem) return 
     var subList = this.targetItem.querySelector("ul")
     if (!subList) return // we are a sublist item?
-    this.clearSublists()
+    
+    // keep expanded trees open... or not
+    // this.clearSublists()
+    
     if (this.url.match(/templates\/.*html$/)) {
       this.showSublistHTML(subList)
     } else if (this.url.match(/\.js$/)) {

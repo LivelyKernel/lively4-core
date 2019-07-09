@@ -20,28 +20,84 @@ export default class GraphvizDot extends Morph {
     })
   }
   
-
+  useServer() {
+    return this.getAttribute("server") == "true"
+  }
+    
+  getEngine() {
+    return  this.getAttribute("engine") || "dot"
+  }
   
-  async updateViz() {
+  set width(v) {
+    this.style.width = v + "px"
+    this.updateExtent() 
+    return v
+  }
+  
+  get width() {
+    return parseFloat(this.style.width)
+  }
+  
+  set height(v) {
+    this.style.height = v + "px"
+    this.updateExtent() 
+    return v
+  }
+    
+  get height() {
+    return parseFloat(this.style.height)
+  }
+  
+  updateExtent() {
     var svgContainer = this.get("#container")
     svgContainer.style.width = this.style.width // hard to find out how to do this in CSS, ... with "relative"
-    svgContainer.style.height = this.style.height
-    
-    var options = {
-      engine: this.getAttribute("engine") || "dot",
-    }
-    
+    svgContainer.style.height = this.style.height 
+  }
+  
+  
+  async updateViz() {
+    this.updateExtent()
+
     var bounds = this.getBoundingClientRect()
     var div = this.get("#graph")
-    try {
-      var sourceContainer = this.querySelector("script")
-      if (sourceContainer) {
-        var source  = sourceContainer.innerHTML
-        div.innerHTML = Viz(source, options)
-      }
-    } catch(e) {
-      div.innerHTML =`<lively-error>${e}</lively-error>`
+    
+    var sourceContainer = this.querySelector("script")
+    if (sourceContainer) {
+      var source  = sourceContainer.innerHTML
     }
+    if (!source) return
+
+    div.innerHTML = "layouting... wait for it"
+    
+    if (this.useServer()) {
+      var svgResultResp = await fetch(lively4url.replace(/[^/]+$/,"") +"/_graphviz/", {
+        method: "POST",
+        headers: {
+          graphtype: "svg",
+          graphlayout:  this.getEngine()
+        },
+        body: source
+      })
+      if (svgResultResp.status == 200) {
+        div.innerHTML  = await svgResultResp.text()
+      } else {
+          div.innerHTML  =  "ERROR" + await svgResultResp.text()
+      }
+      
+      
+    } else {
+      
+      var options = {
+        engine: this.getEngine(),
+        totalMemory: 32 * 1024 * 1024 
+      }
+
+      try {
+        div.innerHTML = Viz(source, options)
+      } catch(e) {
+        div.innerHTML =`<lively-error>${e}</lively-error>`
+      }
+    }    
   }
   onExtentChanged() {
     // this.updateViz()
