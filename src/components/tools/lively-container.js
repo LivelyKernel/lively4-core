@@ -1046,7 +1046,7 @@ export default class Container extends Morph {
     }
     
     if (this.unsavedChanges()) {
-      if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
+      if (!await lively.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
       }
     }
@@ -1766,6 +1766,8 @@ export default class Container extends Morph {
   }
 
   unsavedChanges() {
+    if (this.getURL().toString().match(/\/$/)) return false // isDirectory...
+    
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
     return  editor.textChanged;
