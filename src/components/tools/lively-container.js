@@ -1085,6 +1085,8 @@ export default class Container extends Morph {
     if (lastPath !== path) {
       if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
+      } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
+        // we have a index file redirection here...
       } else {
         this.history().push(path);
       }
@@ -1094,7 +1096,7 @@ export default class Container extends Morph {
     if (this.useBrowserHistory() && this.isFullscreen()) {
       opts="&fullscreen=true"
     }
-
+    
     if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
