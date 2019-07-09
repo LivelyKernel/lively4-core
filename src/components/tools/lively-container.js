@@ -173,6 +173,7 @@ export default class Container extends Morph {
         this.parentElement.get(".window-titlebar").style.display = "none"
         this.parentElement.style.zIndex = 0
       } else {
+        this.parentElement.style.zIndex = 1000
         this.parentElement.get(".window-titlebar").style.display = ""
       }
     }
@@ -1601,7 +1602,9 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
-    this.get("#container-rightpane").style.flex = 0.8
+    
+    this.get("#container-leftpane").style.flex = 20
+    this.get("#container-rightpane").style.flex = 80
     this.get("lively-separator").style.display  = "";
   }
 
