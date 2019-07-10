@@ -1766,7 +1766,9 @@ export default class Container extends Morph {
   }
 
   unsavedChanges() {
-    if (this.getURL().toString().match(/\/$/)) return false // isDirectory...
+    var url = this.getURL()
+    if (!url) return false;
+    if (url.toString().match(/\/$/)) return false // isDirectory...
     
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
