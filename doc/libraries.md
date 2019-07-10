@@ -93,6 +93,9 @@ Since Lively4 commits just to html5, we are agnostic when it comes to canvas or 
 
 
 
+# Graph Layout
+
+-[Interactive Graph Layout Example, SWD Project](https://lively-kernel.org/repository/webwerkstatt/projects/GraphLayout/draft.xhtml)
 
 
 

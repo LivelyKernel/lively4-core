@@ -129,7 +129,10 @@ export default class Container extends Morph {
     };
     path = lively.preferences.getURLParameter("load");
     edit = lively.preferences.getURLParameter("edit");
-
+    let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
+    if (fullscreen) {
+      this.onFullscreen() // #TODO replace toggle logic with enableFullscreen, disableFullscreen
+    }
 
     // force read mode
     if(this.getAttribute("mode") == "read" && edit) {
@@ -137,6 +140,8 @@ export default class Container extends Morph {
       edit = undefined;
     }
 
+    
+    
     if (!path || path == "null") {
       path = lively4url + "/"
     }
@@ -168,6 +173,7 @@ export default class Container extends Morph {
         this.parentElement.get(".window-titlebar").style.display = "none"
         this.parentElement.style.zIndex = 0
       } else {
+        this.parentElement.style.zIndex = 1000
         this.parentElement.get(".window-titlebar").style.display = ""
       }
     }
@@ -1040,7 +1046,7 @@ export default class Container extends Morph {
     }
     
     if (this.unsavedChanges()) {
-      if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
+      if (!await lively.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
       }
     }
@@ -1080,6 +1086,8 @@ export default class Container extends Morph {
     if (lastPath !== path) {
       if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
+      } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
+        // we have a index file redirection here...
       } else {
         this.history().push(path);
       }
@@ -1089,7 +1097,7 @@ export default class Container extends Morph {
     if (this.useBrowserHistory() && this.isFullscreen()) {
       opts="&fullscreen=true"
     }
-
+    
     if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
@@ -1594,7 +1602,9 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
-    this.get("#container-rightpane").style.flex = 0.8
+    
+    this.get("#container-leftpane").style.flex = 20
+    this.get("#container-rightpane").style.flex = 80
     this.get("lively-separator").style.display  = "";
   }
 
@@ -1756,6 +1766,10 @@ export default class Container extends Morph {
   }
 
   unsavedChanges() {
+    var url = this.getURL()
+    if (!url) return false;
+    if (url.toString().match(/\/$/)) return false // isDirectory...
+    
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
     return  editor.textChanged;

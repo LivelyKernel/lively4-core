@@ -1,4 +1,3 @@
-
 <div style="position:absolute; top: 20px; left: 30px; z-index: 1">
 <h1>Home Object Soup Graph</h1>
 url <input style="width:500px" id="url" value=""><br>
@@ -7,7 +6,8 @@ limit <input id="limit">
 
 <script>
   const MAX_ELEMENTS = 100
-  const GraphvizEngine = "neato" // "dot" , "neato"
+  // see https://www.graphviz.org/about/
+  const GraphvizEngine = "fdp" // "dot" , "neato", "fdp", "osage" 
 
   import moment from "src/external/moment.js";  
   import Strings from 'src/client/strings.js'  
@@ -44,11 +44,9 @@ limit <input id="limit">
       var urlElement = this.get("input#url")
       var container = this.get("lively-container");
       var containerContent = container.get("#container-content")
-      var graphviz = await (<graphviz-dot engine={GraphvizEngine} server="true"></graphviz-dot>)
+      var graphviz = await (<graphviz-dot engine={GraphvizEngine} server="true" ></graphviz-dot>) // 
       
-
-      var extent, width, height;
-      
+      var extent, width, height;      
       var updateExtent = () => {
         extent = lively.getExtent(containerContent)
         width = extent.x - 40
@@ -59,15 +57,10 @@ limit <input id="limit">
       }
       updateExtent()
 
-
       lively.removeEventListener("graphvizContent", container)
       lively.addEventListener("graphvizContent", container, "extent-changed", function(evt) {
         updateExtent()
-        lively.notify(graphviz.style.width)
       });
-     
-
-
 
       var limit = Number(limitElement.value)
       limitElement.addEventListener("change", function(evt) {

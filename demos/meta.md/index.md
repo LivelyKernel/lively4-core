@@ -52,6 +52,16 @@
 - [Rousillon: Scraping Distributed Hierarchical Web Data](https://www.youtube.com/watch?v=6SeZlm4TraU)
 - [Fusion: Opportunistic Web Prototyping with UI Mashups](https://www.youtube.com/watch?v=x2FYkAivXaQ)
 
+## Baudisch
+
+- [grafter: remixing 3D printed machines](https://www.youtube.com/watch?v=WAiLwPlW098)
+  - <iframe width="560" height="315" src="https://www.youtube.com/embed/WAiLwPlW098" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+- [ Alexandra Ion, David Lindlbauer, Philipp Herholz, Marc Alexa, and Patrick Baudisch. *Understanding Metamaterial Mechanisms* (CHI 2019), 4:00min](https://www.youtube.com/watch?v=L6lUH0r-w-o)
+  - #Music #NoAudioCommentary #Subtitles
+  - <iframe width="560" height="315" src="https://www.youtube.com/embed/L6lUH0r-w-o" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+- [Patrick Baudisch. *Kyub: A 3D Editor for Modeling Sturdy Laser-Cut Objects*](https://www.youtube.com/watch?v=7QXbwj9nT9Y)
+  - #RealVideo #Audio
+  - <iframe width="560" height="315" src="https://www.youtube.com/embed/7QXbwj9nT9Y" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 # Questions:
 
