@@ -5,17 +5,13 @@
 :host(*) {
   overflow-y: auto;
 }
-#canvasSimple {
-   width="490px";
-   height="220px";
-}
-  #ast {
+  #ast-new {
     border: 1px black dashed;
   }
   #fileName {
-    width: 90%;
+    width: 99%;
   }
 </style>
   <input id="fileName" />
-<div id="ast"></div>
+  <slot id="ast-new"></slot>
 </template>

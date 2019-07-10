@@ -7,27 +7,6 @@ import { extend } from './utils.js';
 MD*/
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
 
-extend(Object.prototype, {
-
-  dependentAExprs() {
-    return AExprRegistry.allAsArray().filter(ae => {
-      if(!ae.supportsDependencies()) { return false; }
-      
-      const dependencies = ae.dependencies().all();
-      return dependencies.find(dep => {
-        const desc = dep.getAsDependencyDescription();
-        return desc.object === this ||
-          desc.value === this ||
-          desc.scope === this;
-      });
-    });
-  }
-});
-
-
-/*MD
-## STRING
-MD*/
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -42,53 +21,40 @@ const SYNTAX_PLUGINS = [
   asyncGenerators
 ];
 
-import boundEval from "src/client/bound-eval.js";
+const filename = "tempfile.js";
+const BABEL_CONFIG_DEFAULT = {
+  babelrc: false,
+  plugins: SYNTAX_PLUGINS,
+  presets: [],
+  filename: filename,
+  sourceFileName: filename,
+  moduleIds: false,
+  sourceMaps: true,
+  // inputSourceMap: load.metadata.sourceMap,
+  compact: false,
+  comments: true,
+  code: true,
+  ast: true,
+  resolveModuleSource: undefined
+};
 
-extend(String.prototype, {
+extend(Object.prototype, {
 
-  toAST() {
-    const filename = "tempfile.js";
-
-    return babel.transform(this, {
-      babelrc: false,
-      plugins: SYNTAX_PLUGINS,
-      presets: [],
-      filename: filename,
-      sourceFileName: filename,
-      moduleIds: false,
-      sourceMaps: true,
-      // inputSourceMap: load.metadata.sourceMap,
-      compact: false,
-      comments: true,
-      code: true,
-      ast: true,
-      resolveModuleSource: undefined
-    }).ast;
+  dependentAExprs() {
+    return AExprRegistry.allAsArray().filter(ae => {
+      if(!ae.supportsDependencies()) { return false; }
+      
+      const dependencies = ae.dependencies().all();
+      return dependencies.find(dep => {
+        const desc = dep.getAsDependencyDescription();
+        return desc.object === this ||
+          desc.value === this ||
+          desc.scope === this;
+      });
+    });
   },
   
-  /**
-   * @example providing a visitor object
-   * var ids = [];
-   * `let x = 0, y = x +2;`.traverseAsAST({
-   *   Identifier(path) {
-   *     ids.push(path.node.name);
-   *   }
-   * });
-   * ids;
-   * 
-   * @example providing a full-fledged plugin function
-   * var ids = [];
-   * `let x = 0, y = x +2;`.traverseAsAST(({ types: t, template, traverse }) => ({
-   *   visitor: {
-   *     Identifier(path) {
-   *       ids.push(path.node.name);
-   *     }
-   *   }
-   * }));
-   * ids;
-   */
-  // #TODO: eliminate code duplication
-  traverseAsAST(fullPluginOrVisitor) {
+  transformAsAST(fullPluginOrVisitor) {
     let iteratorPlugin;
     if(fullPluginOrVisitor instanceof Function) {
       iteratorPlugin = fullPluginOrVisitor;
@@ -97,24 +63,70 @@ extend(String.prototype, {
       iteratorPlugin = babel => ({ visitor: fullPluginOrVisitor });
     }
 
-    const filename = "tempfile.js";
-    
-    return babel.transform(this, {
-      babelrc: false,
-      plugins: [...SYNTAX_PLUGINS, iteratorPlugin],
-      presets: [],
-      filename: filename,
-      sourceFileName: filename,
-      moduleIds: false,
-      sourceMaps: true,
-      // inputSourceMap: load.metadata.sourceMap,
-      compact: false,
-      comments: true,
-      code: true,
-      ast: true,
-      resolveModuleSource: undefined
-    }).ast;
+    const babelConfig = Object.assign({}, BABEL_CONFIG_DEFAULT, {
+      plugins: [...SYNTAX_PLUGINS, iteratorPlugin]
+    });
+
+    return babel.transformFromAst(this, undefined, babelConfig).ast;
   },
+
+  // using `babel.traverse` also allows for wild cards to match AST nodes
+  traverseAsAST(visitor) {
+    return babel.traverse(this, visitor)
+  }
+
+});
+
+
+/*MD
+## STRING
+MD*/
+
+import boundEval from "src/client/bound-eval.js";
+
+extend(String.prototype, {
+
+  toAST() {
+    return babel.transform(this, BABEL_CONFIG_DEFAULT).ast;
+  },
+  
+  /**
+   * @example providing a visitor object
+   * var ids = [];
+   * `let x = 0, y = x +2;`.transformAsAST({
+   *   Identifier(path) {
+   *     ids.push(path.node.name);
+   *   }
+   * });
+   * ids;
+   * 
+   * @example providing a full-fledged plugin function
+   * var ids = [];
+   * `let x = 0, y = x +2;`.transformAsAST(({ types: t, template, traverse }) => ({
+   *   visitor: {
+   *     Identifier(path) {
+   *       ids.push(path.node.name);
+   *     }
+   *   }
+   * }));
+   * ids;
+   */
+  transformAsAST(fullPluginOrVisitor) {
+    return this.toAST().transformAsAST(fullPluginOrVisitor);
+  },
+  
+  /*
+   * @example printing all node types found in source code
+   * `var a = 42, b = 423; lively::foo`.traverseAsAST({
+   *    enter(path) {
+   *      lively.notify(path.node.type)
+   *    }
+   *  });
+   */
+  traverseAsAST(visitor) {
+    return this.toAST().traverseAsAST(visitor);
+  },
+
 
   async boundEval(thisReference, targetModule) {
     const result = await boundEval(this, thisReference, targetModule);
