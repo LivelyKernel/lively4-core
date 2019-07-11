@@ -21,11 +21,9 @@ const babel = babelDefault.babel;
 //((babel.types.NODE_FIELDS.BlockStatement.directives.validate).chainOf[1].each).oneOfNodeTypes[0] === 'Directive'
 
 export default class PenEditor extends Morph {
-  get ast() {
-    return this;
-    return this.get('#ast-new');
-  }
   get fileName() { return this.get('input#fileName'); }
+  get history() { return this.get('#history'); }
+  get projectionChild() { return this; }
   
   initialize() {
     this.windowTitle = "AST Editor";
@@ -35,18 +33,25 @@ export default class PenEditor extends Morph {
   
   async setAST(ast) {
     this.__ast__ = ast;
-    return this.buildAST(ast);
+    return this.buildProjection(ast);
   }
   
   getAST() {
     return this.__ast__
   }
   
-  async buildAST(ast) {
-    var astNode = await (<generic-ast-node></generic-ast-node>)
-    this.ast.innerHTML = '';
-    this.ast.appendChild(astNode);
-    astNode.setNode(ast.program)
+  async buildProjection(ast) {
+    var astNode = await (<generic-ast-node></generic-ast-node>);
+    this.projectionChild.innerHTML = '';
+    this.projectionChild.appendChild(astNode);
+    astNode.setNode(ast.program);
+  }
+
+  async buildTransformation(ast) {
+    var astNode = await (<generic-ast-node></generic-ast-node>);
+    this.projectionChild.innerHTML = '';
+    this.projectionChild.appendChild(astNode);
+    astNode.setNode(ast.program);
   }
 
   livelyMigrate(other) {
@@ -66,8 +71,7 @@ export default class PenEditor extends Morph {
     this.setAST(ast)
   }
   
-  async saveFile(filePath) {
-    
-  }
+  // #TODO: implement
+  async saveFile(filePath) {}
   
 }

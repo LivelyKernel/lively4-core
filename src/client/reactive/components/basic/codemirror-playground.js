@@ -46,7 +46,7 @@ export default class CodemirrorPlayground extends Morph {
   
   snapToNextAEXpr() {
     const aexprRanges = [];
-    this.lcm.value.transformAsAST({
+    this.lcm.value.traverseAsAST({
       Identifier(path) {
         if (path.node.name === 'aexpr') {
           aexprRanges.push(range(path.node.loc));
@@ -205,7 +205,7 @@ export default class CodemirrorPlayground extends Morph {
   }
 
   extragutterMarker() {
-    this.lcm.value.transformAsAST({
+    this.lcm.value.traverseAsAST({
       Identifier: path => {
         if (path.node.name === 'aexpr') {
           this._extragutterMarker(path.node.loc.start.line-1, <div class="extragutter-marker" click={e => lively.notify('extra gutter marker')}><span>{path.node.name}</span></div>)
@@ -225,7 +225,7 @@ export default class CodemirrorPlayground extends Morph {
 
   /*MD #### Right Gutter MD*/
   identifierToRightGutter() {
-    this.lcm.value.transformAsAST({
+    this.lcm.value.traverseAsAST({
       Identifier: path => {
         this._rightGutter(path.node.loc.start.line-1, path.node.name)
       }
@@ -260,7 +260,7 @@ export default class CodemirrorPlayground extends Morph {
   
   /*MD ## Line Widget MD*/
   lineWidget() {
-    this.lcm.value.transformAsAST({
+    this.lcm.value.traverseAsAST({
       CallExpression: path => {
         const callee = path.get('callee');
         if (!callee) { return; }

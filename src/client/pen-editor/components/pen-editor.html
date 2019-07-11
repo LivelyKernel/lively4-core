@@ -2,9 +2,9 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host(*) {
-  overflow-y: auto;
-}
+  :host(*) {
+    overflow-y: auto;
+  }
   #ast-new {
     border: 1px black dashed;
   }
@@ -13,5 +13,10 @@
   }
 </style>
   <input id="fileName" />
+  <div id="history"></div>
+  <button id="test-buttom">
+    Transform
+  </button>
+  <lively-code-mirror id="lcm"></lively-code-mirror>
   <slot id="ast-new"></slot>
 </template>

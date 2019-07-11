@@ -67,7 +67,7 @@ extend(Object.prototype, {
       plugins: [...SYNTAX_PLUGINS, iteratorPlugin]
     });
 
-    return babel.transformFromAst(this, undefined, babelConfig).ast;
+    return babel.transformFromAst(this, undefined, babelConfig);
   },
 
   // using `babel.traverse` also allows for wild cards to match AST nodes
