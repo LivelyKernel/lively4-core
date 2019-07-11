@@ -21,8 +21,9 @@ const babel = babelDefault.babel;
 //((babel.types.NODE_FIELDS.BlockStatement.directives.validate).chainOf[1].each).oneOfNodeTypes[0] === 'Directive'
 
 export default class PenEditor extends Morph {
-  get ast() { return this.get('#ast'); }
   get fileName() { return this.get('input#fileName'); }
+  get history() { return this.get('#history'); }
+  get projectionChild() { return this; }
   
   initialize() {
     this.windowTitle = "AST Editor";
@@ -32,57 +33,45 @@ export default class PenEditor extends Morph {
   
   async setAST(ast) {
     this.__ast__ = ast;
-    return this.buildAST(ast);
+    return this.buildProjection(ast);
   }
   
   getAST() {
     return this.__ast__
   }
   
-  async buildAST(ast) {
-    var astNode = await (<generic-ast-node></generic-ast-node>)
-    this.ast.innerHTML = '';
-    this.ast.appendChild(astNode);
-    astNode.setNode(ast.program)
+  async buildProjection(ast) {
+    var astNode = await (<generic-ast-node></generic-ast-node>);
+    this.projectionChild.innerHTML = '';
+    this.projectionChild.appendChild(astNode);
+    astNode.setNode(ast.program);
+  }
+
+  async buildTransformation(ast) {
+    var astNode = await (<generic-ast-node></generic-ast-node>);
+    this.projectionChild.innerHTML = '';
+    this.projectionChild.appendChild(astNode);
+    astNode.setNode(ast.program);
   }
 
   livelyMigrate(other) {
+    lively.success('PEN Editor Migrate')
     this.setAST(other.getAST())
   }
   
   async livelyExample() {
+    lively.success('PEN Editor Example')
     await this.loadFile(lively4url + '/src/client/pen-editor/components/example.js');
   }
   
   async loadFile(filePath) {
-    const syntaxPlugins = (await Promise.all([
-      'babel-plugin-syntax-jsx',
-      'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind',
-      'babel-plugin-syntax-async-generators'
-    ]
-      .map(syntaxPlugin => System.import(syntaxPlugin))))
-      .map(m => m.default);
+    const source = await filePath.fetchText();
+    const ast = source.toAST();
 
-    const source = await fetch(filePath).then(r => r.text());
-    
-    var ast = babel.transform(source, {
-      babelrc: false,
-      plugins: syntaxPlugins,
-      presets: [],
-      moduleIds: false,
-      sourceMaps: true,
-      compact: false,
-      comments: true,
-      code: true,
-      ast: true,
-      resolveModuleSource: undefined
-    }).ast;
     this.setAST(ast)
   }
   
-  async saveFile(filePath) {
-    
-  }
+  // #TODO: implement
+  async saveFile(filePath) {}
   
 }

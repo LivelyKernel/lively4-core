@@ -22,6 +22,15 @@ export default class NodeAncestryList extends Morph {
   get parentElements() { return this.get('#parentElements'); }
   get sourceEditor() { return this.get('#sourceEditor'); }
 
+  openBrowserForElementOrigin(ele) {
+    if (ele.jsxMetaData && ele.jsxMetaData.sourceLocation) {
+      const srcRange = ele.jsxMetaData.sourceLocation;
+      lively.success('open!!');
+      lively.openBrowser(srcRange, true, srcRange);
+    } else {
+      lively.warn('no source');
+    }
+  }
   buildElementListFor(element) {
 
     this.parentElements.style.display = 'block';
@@ -60,11 +69,19 @@ export default class NodeAncestryList extends Morph {
             jsxCSSClass += ' active-group-item';
           }
         }
+      
+        const clickHandler = evt => {
+          if (evt.shiftKey || evt.ctrlKey) {
+            this.openBrowserForElementOrigin(ele);
+          } else {
+            this.jsxRay.selectElement(ele);
+          }
+        }
 
         const container = <div mouseenter={evt => {
           this.innerSelect(ele)
           this.selectElementForParentElementsList(ele)
-        }} click={evt => this.jsxRay.selectElement(ele)} class={jsxCSSClass}>{entry}</div>;
+        }} click={clickHandler} class={jsxCSSClass}>{entry}</div>;
         container.isMetaNode = true;
         this.parentElements.appendChild(container);
 
