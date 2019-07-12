@@ -25,6 +25,22 @@ export default class Keys {
   static getTextSelection() {
     return window.getSelection().toLocaleString();
   }
+  
+  static keyInfo(evt) {
+    const ctrlKey = evt.ctrlKey || evt.metaKey;
+    const { shiftKey, altKey, keyCode, charCode } = evt;
+    return {
+      char: this.getChar(evt),
+      ctrl: ctrlKey,
+      ctrlKey,
+      shift: shiftKey,
+      shiftKey,
+      alt: altKey,
+      altKey,
+      keyCode,
+      charCode
+    }
+  }
 
   static handle(evt) {
     function handledInCodeMirror(evt) {
@@ -36,9 +52,7 @@ export default class Keys {
     lively.lastScrollLeft = document.scrollingElement.scrollLeft;
     
     try {
-      const char = this.getChar(evt);
-      const ctrl = evt.ctrlKey || evt.metaKey;
-      const { shiftKey, altKey, keyCode, charCode } = evt;
+      const { char, ctrl, shiftKey, altKey, keyCode, charCode } = this.keyInfo(evt);
       
       const keyHandlers = [
         // #KeyboardShortcut Ctrl-K open workspace

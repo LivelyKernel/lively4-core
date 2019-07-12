@@ -10,5 +10,7 @@ export default class AstNodeIdentifier extends AbstractAstNode {
   
   async setNode(babelASTNode) {
     this.name.value = babelASTNode.name;
+    
+    return this;
   }
 }
