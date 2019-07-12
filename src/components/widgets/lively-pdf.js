@@ -23,7 +23,92 @@ export default class LivelyPDF extends Morph {
     
     // Store event object to be able to remove the listener later 
     eventFunctionObject = this.onAnnotationClick.bind(this);
+    
+    lively.html.registerKeys(this, "PDF")
+  
+      // Register event handlers for edit mode for annotations
+    lively.addEventListener("pdf", this.getSubmorph("#pdf-edit-button"), "click",
+                          () => this.onPdfEdit());
+    lively.addEventListener("pdf", this.getSubmorph("#pdf-add-button"), "click",
+                          () => this.onPdfAdd());
+    lively.addEventListener("pdf", this.getSubmorph("#pdf-save-button"), "click",
+                          () => this.onPdfSave());
+    lively.addEventListener("pdf", this.getSubmorph("#pdf-cancel-button"), "click",
+                          () => this.onPdfCancel());
+    lively.addEventListener("pdf", this.getSubmorph("#pdf-delete-button"), "click",
+                          () => this.onPdfDelete());
+    this.registerButtons()
+    
+    this.currentPage = 1
   }
+  
+  // pageNumber first==1
+  getPage(pageNumber) {
+    return this.pages().find(ea => ea.getAttribute("data-page-number") == pageNumber)
+  }
+  
+  pages() {
+    return Array.from(this.get("#viewerContainer").querySelectorAll(".page"))
+  }
+  
+  showPage(page) {
+    if (!page) return;
+    this.pages().forEach(ea => ea.hidden = true)
+    page.hidden = false
+    this.page = page
+  }
+  
+  prevPage() {
+    var page = this.getPage(this.currentPage--) 
+    if (!page) {
+      this.currentPage = Number(this.pages().last.getAttribute("data-page-number")) // wrap around
+      page = this.getPage(this.currentPage)  
+    }
+    return page
+  }
+  
+  nextPage() {
+    var page = this.getPage(this.currentPage++) 
+    if (!page) {
+      this.currentPage = 1// wrap around
+      page = this.getPage(this.currentPage)  
+    }
+    return page
+  }
+  
+  onUpDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.showPage(this.prevPage())
+  }
+
+  onLeftDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.showPage(this.prevPage())
+  }
+
+  
+  onDownDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.showPage(this.nextPage())
+  }
+  
+  onRightDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.showPage(this.nextPage())
+  }
+  
+  onPrevButton() {
+    this.showPage(this.prevPage())
+  }
+  
+  onNextButton() {
+    this.showPage(this.nextPage())
+  }
+  
   
   async setURL(url) {
     this.setAttribute("src", url)
@@ -45,34 +130,28 @@ export default class LivelyPDF extends Morph {
     // Loading document
     // Load a blob, transform the blob into base64
     // Base64 is the format we need since it is editable and can be shown by PDFJS at the same time.
-    var that = this;
     fetch(url).then(response => {
       return response.blob();
     }).then(blob => {
       let fileReader = new FileReader();
-      fileReader.addEventListener('loadend', function() {
-        that.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-        that.originalPdfText = that.editedPdfText;
+      fileReader.addEventListener('loadend', () => {
+        this.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
+        this.originalPdfText = this.editedPdfText;
       });
       
       fileReader.readAsDataURL(blob);
       return URL.createObjectURL(blob);
     }).then(base64pdf => {
-      PDFJS.getDocument(base64pdf).then(function (pdfDocument) {
-        that.pdfViewer.setDocument(pdfDocument);
-        that.pdfLinkService.setDocument(pdfDocument, null);
+      PDFJS.getDocument(base64pdf).then(async (pdfDocument) => {
+        this.pdfViewer.setDocument(pdfDocument);
+        this.pdfLinkService.setDocument(pdfDocument, null);
     
-        // Register event handlers for edit mode for annotations
-        lively.addEventListener("pdf", that.getSubmorph("#pdf-edit-button"), "click",
-                              () => that.onPdfEdit());
-        lively.addEventListener("pdf", that.getSubmorph("#pdf-add-button"), "click",
-                              () => that.onPdfAdd());
-        lively.addEventListener("pdf", that.getSubmorph("#pdf-save-button"), "click",
-                              () => that.onPdfSave());
-        lively.addEventListener("pdf", that.getSubmorph("#pdf-cancel-button"), "click",
-                              () => that.onPdfCancel());
-        lively.addEventListener("pdf", that.getSubmorph("#pdf-delete-button"), "click",
-                              () => that.onPdfDelete());
+        await this.pdfViewer.pagesPromise
+        // #TODO can we advice the pdfView to only render the current page we need?
+        // if (this.getAttribute("mode") != "scroll") {
+        //   this.currentPage = 1 
+        //   this.showPage(this.getPage(this.currentPage))
+        // }
       });
     });
     
@@ -237,8 +316,10 @@ export default class LivelyPDF extends Morph {
   
   setChangeIndicator(contentChanged) {
     let livelyContainer = lively.query(this, "lively-container")
-    livelyContainer.contentChanged = contentChanged;
-    livelyContainer.updateChangeIndicator();
+    if (livelyContainer) {
+      livelyContainer.contentChanged = contentChanged;
+      livelyContainer.updateChangeIndicator();
+    }
   }
   
   createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content) {
