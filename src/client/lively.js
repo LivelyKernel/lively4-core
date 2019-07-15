@@ -969,7 +969,9 @@ export default class Lively {
       if (oldInstance.livelyPreMigrate) {
         oldInstance.livelyPreMigrate(oldInstance);
       }
-      owner.replaceChild(newInstance, oldInstance);
+      if (owner) {
+        owner.replaceChild(newInstance, oldInstance);
+      }
       Array.from(oldInstance.childNodes).forEach(ea => {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);

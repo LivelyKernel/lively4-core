@@ -8,13 +8,18 @@
 }
   #container {
     font-size: small;
-    border: 5px solid rgba(255,0,0,0.2);
+    border: 1px solid rgba(255,0,0,0.2);
+    border-radius: 2px;
 /*     display: flex;
     flex-direction: row; */
   }
+  #container:hover {
+    border: 1px solid rgba(0,0,0,1);
+  }
   #node-type {
-    border: 5px solid rgba(255,255,0,0.2);
-    color: gray;
+    font-size: smaller;
+/*     border: 1px solid rgba(255,255,0,0.2); */
+/*     color: gray; */
     background-color: rgba(1,1,1,0.1);
   }
   #child-list {
@@ -31,7 +36,13 @@
     border: 2px solid rgba(0,0,255,0.3);
   }
   .property-key {
-    color: drakgray;
+    font-size: smaller;
+/*     color: red; */
+    background-color: red;
+/*     border: 3px red solid; */
+  }
+  slot {
+    border: 5px red solid;
   }
 </style>
   <div id="container">
