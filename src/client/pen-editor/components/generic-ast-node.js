@@ -43,6 +43,8 @@ export default class GenericAstNode extends AbstractAstNode {
       }
       this.childList.appendChild(<span class="kv-pair"><span class="property-key">{key}</span> {childNode}</span>)
     }
+    
+    return this;
   }
   
   /* Lively-specific API */

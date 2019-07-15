@@ -11,12 +11,37 @@
   #fileName {
     width: 99%;
   }
+  #history {
+    display: flex;
+    flex-direction: horizontal;
+  }
+  .history-entry {
+    width: 20px;
+    height: 20px;
+    background-color: steelblue;
+    margin: 2px 2px;
+    text-align: center;
+    
+    border: 2px rgba(1,1,1,0) dashed;
+  }
+  .history-entry:hover {
+    border: 2px red dashed;
+  }
+  .history-entry.selected {
+    background-color: orange;
+  }
 </style>
   <input id="fileName" />
   <div id="history"></div>
-  <button id="test-buttom">
-    Transform
-  </button>
+  <div>
+    <button id="testButton">Simple Transform</button>
+    <button id="resetHistory">ResetHistory</button>
+    <button id="toggleInspector">Toggle Inspector</button>
+    <button id="toggleCodeMirror">Toggle LCM</button>
+  </div>
+  <div id="inspector-container">
+    <lively-inspector id="inspector"></lively-inspector>
+  </div>
   <lively-code-mirror id="lcm"></lively-code-mirror>
   <slot id="ast-new"></slot>
 </template>

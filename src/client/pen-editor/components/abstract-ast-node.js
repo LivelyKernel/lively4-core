@@ -8,11 +8,12 @@ export default class AbstractAstNode extends Morph {
   }
   
   getAppropriateNode(babelASTNode) {
-      return <generic-ast-node></generic-ast-node>;
     if (babelASTNode && babelASTNode.type === 'Identifier') {
       return <ast-node-identifier></ast-node-identifier>;
-    } else {
+    } else if (babelASTNode && babelASTNode.type === 'MemberExpression') {
+      return <ast-node-member-expression></ast-node-member-expression>;
     }
+    return <generic-ast-node></generic-ast-node>;
   }
   
   get editor() {
