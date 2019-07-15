@@ -522,7 +522,13 @@ export default class FileIndex {
     console.log("FileIndex addFile " + url)
 
     if (type == "file") {
-      var versions = (await this.loadVersions(url)).map(ea => ea && ea.version).filter(ea => ea)
+      var json = (await this.loadVersions(url))
+      if (json) {
+        var versions = json.map(ea => ea && ea.version).filter(ea => ea)  
+      } else {
+        console.warn("[lively-index] could not addFile " +url)
+      }
+       
     }
     
     var file = {
