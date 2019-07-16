@@ -8,6 +8,8 @@ const babel = babelDefault.babel;
 export default class GenericAstNode extends AbstractAstNode {
   async initialize() {
     this.windowTitle = "GenericAstNode";
+    
+    this.tabIndex = 0;
   }
   
   get nodeType() { return this.get('#node-type'); }

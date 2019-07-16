@@ -1,0 +1,26 @@
+<template id="ast-node-binary-expression" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  display: flex;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+#operator {
+}
+</style>
+<div id="content">
+	<slot name="left"></slot>
+	<span id="operator"></span>
+	<slot name="right"></slot>
+</div>
+</template>
+
+
