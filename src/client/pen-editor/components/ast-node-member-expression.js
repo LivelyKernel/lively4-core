@@ -8,6 +8,9 @@ export default class AstNodeMemberExpression extends AbstractAstNode {
   }
   
   async setNode(babelASTNode) {
+    this.innerHTML = '';
+    this.astNode = babelASTNode
+
     const object = await this.getAppropriateNode(babelASTNode.object);
     await object.setNode(babelASTNode.object);
     object.slot="object";
@@ -24,7 +27,9 @@ export default class AstNodeMemberExpression extends AbstractAstNode {
   
   /* Lively-specific API */
   livelyPreMigrate() {}
-  livelyMigrate(other) {}
+  livelyMigrate(other) {
+    this.setNode(other.astNode)
+  }
   livelyInspect(contentNode, inspector) {}
   livelyPrepareSave() {}
   async livelyExample() {}

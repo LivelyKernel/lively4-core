@@ -3,7 +3,9 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import { uuid } from 'utils';
+import AbstractAstNode from './abstract-ast-node.js';
+
+import { uuid, shake } from 'utils';
 
 import Keys from 'src/client/keys.js';
 
@@ -47,6 +49,32 @@ class History {
     this.render();
   }
   
+  undo() {
+    const newIndex = Math.max(this.currentIndex - 1, 0);
+    
+    const isNew = newIndex < this.currentIndex;
+    if (isNew) {
+      this.currentIndex = newIndex;
+      this.render();
+    } else {
+      this.shakeCurrentEntry();
+    }
+    return isNew;
+  }
+  
+  redo() {
+    const newIndex = Math.min(this.currentIndex + 1, this.inner.length - 1);
+    
+    const isNew = newIndex > this.currentIndex;
+    if (isNew) {
+      this.currentIndex = newIndex;
+      this.render();
+    } else {
+      this.shakeCurrentEntry();
+    }
+    return isNew;
+  }
+  
   jumpTo(index) {
     this.currentIndex = index;
 
@@ -66,10 +94,12 @@ class History {
     this.render();
   }
   
+  get historyView() { return this.editor && this.editor.historyView; }
+  
   render() {
     if (!this.editor) { return; }
     
-    const historyView = this.editor.historyView;
+    const historyView = this.historyView;
     historyView.innerHTML = '';
     
     this.inner
@@ -85,24 +115,35 @@ class History {
       })
       .forEach(element => historyView.appendChild(element));
   }
+  
+  shakeCurrentEntry() {
+    if (!this.editor) { return; }
+    
+    const historyView = this.historyView;
+    if (historyView && historyView.children && historyView.children[this.currentIndex]) {
+      shake(historyView.children[this.currentIndex]);
+    }
+    
+  }
 
 }
 
 export default class PenEditor extends Morph {
 
+  /*MD ## Accessors MD*/
   get fileName() { return this.get('input#fileName'); }
   get historyView() { return this.get('#history'); }
   get projectionChild() { return this; }
   get lcm() { return this.get('#lcm'); }
   get inspector() { return this.get('#inspector'); }
 
+  get history() { return this._history = this._history || new History().setEditor(this); }
+  set history(value) { return this._history = value; }
+
   trace(method) {
     this._ordering = this._ordering || 1;
     return lively.success(this._ordering++ + ': ' + method);
   }
-
-  get history() { return this._history = this._history || new History().setEditor(this); }
-  set history(value) { return this._history = value; }
 
   initialize() {
     this.trace('initialize PEN Editor')
@@ -113,16 +154,83 @@ export default class PenEditor extends Morph {
     this.fileName.value = lively4url + '/src/client/pen-editor/components/example.js';
     
     this.addEventListener('keydown', evt => this.onKeydown(evt));
+
+    this.initToggleButtons();
+    this.initLCM();
+  }
+  initToggleButtons() {
+    this.initToggleButton({
+      button: this.get('#toggleInspector'),
+      target: this.inspector,
+      persistAttribute: 'show-inspector',
+    });
+    this.initToggleButton({
+      button: this.get('#toggleCodeMirror'),
+      target: this.lcm,
+      persistAttribute: 'show-code-mirror',
+    });
+  }
+  initToggleButton({
+    button, hideClassButton = 'toggle-button-hide', showClassButton = 'toggle-button-show',
+    target, hideClassTarget = 'toggle-target-hide', showClassTarget = 'toggle-target-show',
+    defaultValue = false, persistAttribute
+  }) {
+    let shown = this.hasAttribute(persistAttribute) ?
+        JSON.parse(this.getAttribute(persistAttribute)) :
+        defaultValue;
+    
+    const updateToggleState = () => {
+      if (shown) {
+        button.classList.add(showClassButton);
+        button.classList.remove(hideClassButton);
+        target.classList.add(showClassTarget);
+        target.classList.remove(hideClassTarget);
+        if (target.tagName === 'LIVELY-CODE-MIRROR') {
+          target.editorLoaded().then(() => target.editor.refresh());
+        }
+      } else {
+        button.classList.add(hideClassButton);
+        button.classList.remove(showClassButton);
+        target.classList.add(hideClassTarget);
+        target.classList.remove(showClassTarget);
+      }
+      this.setAttribute(persistAttribute, JSON.stringify(shown))
+    }
+
+    updateToggleState();
+    button.addEventListener('click', evt => {
+      shown = !shown;
+      updateToggleState();
+    });
+  }
+  initLCM() {
+    this.lcm.editorLoaded().then(() => {
+      this.lcm.registerExtraKeys({
+        'Ctrl-Shift-S': cm => {
+          lively.files.saveFile(this.fileName.value, this.lcm.value);
+        }
+      });
+      this.lcm.doSave = text => this.onLCMSave(text);
+    });
+  }
+  onLCMSave(text) {
+    this.setAST(text.toAST());
   }
   onKeydown(evt) {
     const { char, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
     
-    lively.warn(`${char} [${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`);
-    if (ctrl && char === 'Z') {
-      
-    } else if (ctrl && (char === 'Y' || (shift && char === 'Z'))) {
-      
+    if (alt && char === 'Z') {
+      if (this.history.undo()) {
+        this.project(this.history.current());
+      }
+      return;
+    } else if (alt && (char === 'Y' || (shift && char === 'Z'))) {
+      if (this.history.redo()) {
+        this.project(this.history.current());
+      }
+      return;
     }
+    lively.warn(`${char} [${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`);
   }
   
   async setAST(ast) {
@@ -151,12 +259,8 @@ export default class PenEditor extends Morph {
     this.history.clear();
   }
   
-  onToggleInspector() {
-    this.inspector.classList.toggle('hidden')
-  }
-  onToggleCodeMirror() {
-    this.lcm.classList.toggle('hidden')
-  }
+  onToggleInspector() {}
+  onToggleCodeMirror() {}
   
   onSelectHistoryEntry(evt, ast, id) {
     const ast2 = this.history.jumpTo(id);
@@ -175,7 +279,7 @@ export default class PenEditor extends Morph {
   }
   
   async buildProjection(ast) {
-    var astNode = await (<generic-ast-node></generic-ast-node>);
+    const astNode = await AbstractAstNode.getAppropriateNode(ast.program);
     this.projectionChild.innerHTML = '';
     this.projectionChild.appendChild(astNode);
     astNode.setNode(ast.program);
