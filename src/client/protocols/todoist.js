@@ -4,8 +4,14 @@ import focalStorage from "src/external/focalStorage.js"
 import {parseQuery, getDeepProperty} from 'utils'
 
 var lastTokenPromted
-
 var todoistData
+
+
+/*MD
+
+[API documentation](https://developer.todoist.com/sync/v8)
+
+MD*/
 
 export class TodoistScheme extends Scheme {
   
@@ -44,14 +50,17 @@ export class TodoistScheme extends Scheme {
     return todoistData
   }
   
+ async renderHTML(result) {
+   return "<pre>" + JSON.stringify(result, undefined, 2) + "</pre>"
+ }
+  
   async GET(options) {
-   let data = await this.getData()
+    let data = await this.getData()
     let urlObj = new URL(this.url)
     let m = urlObj.pathname.match(/^\/*([^/]+)\/?([^/]+)?$/)
     let type = m && m[1]
     let id = m && m[2]
-    lively.notify("path" +urlObj.pathname+"type: " + type + " id:" + id)
-    let result;
+     let result;
     if (!type ) {
       result =  data   
     } else {
@@ -63,7 +72,10 @@ export class TodoistScheme extends Scheme {
        result =  item
       }
     }
-    return new Response(JSON.stringify(result), {status: 200})
+    if (urlObj.search == "?html") {
+      return new Response(await this.renderHTML(result), {status: 200})  
+    }
+    return new Response(JSON.stringify(result, undefined, 2), {status: 200})
   }
 
   itemToFile(type, item) {

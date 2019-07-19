@@ -1071,7 +1071,7 @@ export default class Container extends Morph {
     if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
         && !path.match(window.location.host)
         && !path.match("https://www.draw.io/")
-        // && path.match(/https?:\/\//)
+        && path.match(/https?:\/\//)
       ) {
       if (!options) {
         return window.open(path);
