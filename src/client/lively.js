@@ -1154,7 +1154,7 @@ export default class Lively {
   static async showSource(object, evt) {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
-        components.openInWindow(comp).then((async (container) => {
+        components.openInWindow(comp, lively.getPosition(evt)).then((async (container) => {
           comp.editFile(await this.components.searchTemplateFilename(object.localName + ".html"));
         }));
     } else {
