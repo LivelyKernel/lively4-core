@@ -4,6 +4,7 @@ import AbstractAstNode from './abstract-ast-node.js'
 
 export default class AstNodeIdentifier extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "AstNodeIdentifier";
   }
   get name() { return this.get('#name'); }
@@ -16,14 +17,4 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     return this;
   }
 
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}
-  
-  
 }

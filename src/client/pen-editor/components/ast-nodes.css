@@ -1,0 +1,28 @@
+
+
+
+.border-wrap {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+
+:host(.border-wrap) {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+
+:host(.selected) {
+  outline: black 2px solid;
+}
+
+:host(.node-hover) {
+  outline: green inset 2px;
+}
+
+:host(:focus) {
+  outline: orange 2px solid;
+}

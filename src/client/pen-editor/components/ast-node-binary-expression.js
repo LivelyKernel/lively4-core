@@ -7,9 +7,10 @@ const babel = babelDefault.babel;
 
 export default class AstNodeBinaryExpression extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "AstNodeBinaryExpression";
   }
-  
+
   get operator() { return this.get('#operator'); }
   
   async setNode(babelASTNode) {
@@ -18,17 +19,8 @@ export default class AstNodeBinaryExpression extends AbstractAstNode {
     
     this.operator.innerHTML = babelASTNode.operator
     
-    const left = await this.getAppropriateNode(babelASTNode.left);
-    await left.setNode(babelASTNode.left);
-    left.slot="left";
-    left.setAttribute('slot',"left");
-    this.appendChild(left);
-    
-    const right = await this.getAppropriateNode(babelASTNode.right);
-    await right.setNode(babelASTNode.right);
-    right.slot="right";
-    right.setAttribute('slot',"right");
-    this.appendChild(right);
+    await this.createSubtreeForNode(babelASTNode.left, "left");
+    await this.createSubtreeForNode(babelASTNode.right, "right");
 
     return this;
   }
@@ -62,15 +54,5 @@ export default class AstNodeBinaryExpression extends AbstractAstNode {
     <option>instanceof</option>;
     <option>|></option>;
   }
-
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}
-  
   
 }

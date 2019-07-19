@@ -4,6 +4,7 @@ import AbstractAstNode from './abstract-ast-node.js'
 
 export default class AstNodeMemberExpression extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "AstNodeMemberExpression";
   }
   
@@ -11,28 +12,10 @@ export default class AstNodeMemberExpression extends AbstractAstNode {
     this.innerHTML = '';
     this.astNode = babelASTNode
 
-    const object = await this.getAppropriateNode(babelASTNode.object);
-    await object.setNode(babelASTNode.object);
-    object.slot="object";
-    object.setAttribute('slot',"object");
-    this.appendChild(object)
-    const property = await this.getAppropriateNode(babelASTNode.property);
-    await property.setNode(babelASTNode.property);
-    property.slot="property";
-    property.setAttribute('slot',"property");
-    this.appendChild(property)
+    await this.createSubtreeForNode(babelASTNode.object, "object");
+    await this.createSubtreeForNode(babelASTNode.property, "property");
     
     return this;
   }
-  
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}
-  
   
 }

@@ -190,31 +190,41 @@ export default class Lively {
     // and update them
     for(let ea of dependedModules) {
       // console.log("reload " + path + " triggers reload of " + ea)
-      this.unloadModule(ea);
+      await this.unloadModule(ea);
       //System.registry.delete(ea);
     }
     // now the system may build up a cache again
     for(let ea of dependedModules) {
-      System.import(ea);
+      // console.log("import " + ea)
+      // #TODO, #BUG: does not seem to work as intended
+      // however, import statement triggers the execution
+      await System.import(ea);
+    }
+    // now check for dependent web components
+    for(let ea of dependedModules) {
+      // System.import(ea);
     }
 
-    /**
-     * Update a templates prototype
-     */
-    let moduleName = path.replace(/[^/]*/,"");
-    let defaultClass = mod.default;
-    if (defaultClass) {
-      console.log("update template prototype: " + moduleName);
-      components.updatePrototype(defaultClass, moduleName);
-    }
 
     /**
      * Update Templates: Reload a template's .html file
      */
-    [path].concat(dependedModules).forEach(eaPath => {
-      console.log("update dependend: ", eaPath, 3, "blue")
+    debugger
+    for (let eaPath of [path].concat(dependedModules)) {
+      console.log("update dependend: ", eaPath)
       let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
       if (found) {
+        /**
+         * Update a templates prototype
+         */
+        let moduleName = eaPath.replace(/[^/]*/,"");
+        let mod = await System.import(eaPath);
+        let defaultClass = mod.default;
+        if (defaultClass) {
+          console.log("update template prototype: " + moduleName);
+          components.updatePrototype(defaultClass, moduleName);
+        }
+
         let templateURL = eaPath.replace(/\.js$/,".html");
         try {
           console.log("[templates] update template " + templateURL);
@@ -227,7 +237,7 @@ export default class Lively {
           lively.notify("[templates] could not update template " + templateURL, ""+e);
         }
       }
-    });
+    }
 
     return mod;
   }
@@ -950,6 +960,7 @@ export default class Lively {
    *
    */
   static async updateTemplate(html) {
+    debugger
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 

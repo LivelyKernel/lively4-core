@@ -7,7 +7,10 @@ const babel = babelDefault.babel;
 
 export default class AstNodeVariableDeclaration extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "AstNodeVariableDeclaration";
+    
+    this.classList.add('border-wrap')
   }
   
   get kind() { return this.get('#kind'); }
@@ -18,28 +21,9 @@ export default class AstNodeVariableDeclaration extends AbstractAstNode {
 
     this.kind.innerHTML = babelASTNode.kind;
     
-    const childElements = await Promise.all(babelASTNode.declarations.map(async childStep => {
-      const childElement = await this.getAppropriateNode(childStep);
-      await childElement.setNode(childStep);
-      childElement.slot="declarations";
-      childElement.setAttribute('slot',"declarations");
-      return childElement;
-    }));
-    childElements.forEach(childElement => {
-      this.appendChild(childElement)
-    });
+    this.createSubtreeForNodes(babelASTNode.declarations, "declarations");
 
     return this;
   }
 
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}
-
-  
 }

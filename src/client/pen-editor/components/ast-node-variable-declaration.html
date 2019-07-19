@@ -1,18 +1,18 @@
 <template id="ast-node-variable-declaration" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
 <style>
-:host(*) {}
-#content {
+:host(*) {
   display: flex;
   flex-direction: horizontal;
-}
-  #kind-container, #declarations-container {
-    background-color: #dddddd;
-    border: orange 1px solid;
+  
   }
+#content {
+}
   #kind-container {
     display: grid;
+    border-right: solid 1px goldenrod;
   }
   #kind {
     align-self: center;
@@ -20,14 +20,12 @@
   }
 </style>
   
-<span id="content">
   <div id="kind-container">
     <span id="kind">kind</span>
   </div>
   <div id="declarations-container">
     <slot name="declarations"></slot>
   </div>
-</span>
 
 </template>
 

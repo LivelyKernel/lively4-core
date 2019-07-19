@@ -7,6 +7,7 @@ const babel = babelDefault.babel;
 
 export default class GenericAstNode extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "GenericAstNode";
     
     this.tabIndex = 0;
@@ -69,20 +70,4 @@ export default class GenericAstNode extends AbstractAstNode {
     return this;
   }
   
-  /* Lively-specific API */
-
-  livelyPreMigrate() {} // is called on the old object before the migration
-  
-  livelyMigrate(other) {
-    this.setNode(other.astNode);
-  }
-  
-  livelyInspect(contentNode, inspector) {}
-  
-  livelyPrepareSave() {}
-  
-  async livelyExample() {
-
-  }
-
 }

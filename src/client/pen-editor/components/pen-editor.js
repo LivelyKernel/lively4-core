@@ -230,12 +230,23 @@ export default class PenEditor extends Morph {
       }
       return;
     }
-    lively.warn(`${char} [${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`);
+    lively.warn(`${char} (${keyCode}, ${charCode})[${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`);
   }
   
   async setAST(ast) {
-    this.addToHistory(ast)
+    this.assignUUIDsForAllNodes(ast);
+    this.addToHistory(ast);
     this.project(ast);
+  }
+  
+  assignUUIDsForAllNodes(ast) {
+    ast.traverseAsAST({
+      enter: path => this.ensureUUID(path.node)
+    });
+  }
+  
+  ensureUUID(node) {
+    node.uuid = node.uuid || uuid();
   }
   
   addToHistory(ast) {

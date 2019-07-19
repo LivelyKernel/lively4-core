@@ -7,7 +7,8 @@ const babel = babelDefault.babel;
 
 export default class AstNodeAssignmentExpression extends AbstractAstNode {
   async initialize() {
-    this.windowTitle = "AstNodeAssignmentExpression";
+    await super.initialize();
+    this.windowTitle = this.constructor.name;
   }
   
   get operator() { return this.get('#operator'); }
@@ -17,28 +18,11 @@ export default class AstNodeAssignmentExpression extends AbstractAstNode {
     this.astNode = babelASTNode
 
     this.operator.innerHTML = babelASTNode.operator;
-    
-    const left = await this.getAppropriateNode(babelASTNode.left);
-    await left.setNode(babelASTNode.left);
-    left.slot="left";
-    left.setAttribute('slot',"left");
-    this.appendChild(left);
-    
-    const right = await this.getAppropriateNode(babelASTNode.right);
-    await right.setNode(babelASTNode.right);
-    right.slot="right";
-    right.setAttribute('slot',"right");
-    this.appendChild(right)
+    await this.createSubtreeForNode(babelASTNode.left, "left");
+    await this.createSubtreeForNode(babelASTNode.right, "right");
     
     return this;
   }
-  
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}  
+
 }
+// AbstractAstNode.addChildType(AstNodeAssignmentExpression);

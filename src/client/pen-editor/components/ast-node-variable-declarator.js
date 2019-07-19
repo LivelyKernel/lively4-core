@@ -7,6 +7,7 @@ const babel = babelDefault.babel;
 
 export default class AstNodeVariableDeclarator extends AbstractAstNode {
   async initialize() {
+    await super.initialize();
     this.windowTitle = "AstNodeVariableDeclarator";
   }
   
@@ -16,19 +17,11 @@ export default class AstNodeVariableDeclarator extends AbstractAstNode {
     this.innerHTML = '';
     this.astNode = babelASTNode;
     
-    const id = await this.getAppropriateNode(babelASTNode.id);
-    await id.setNode(babelASTNode.id);
-    id.slot="id";
-    id.setAttribute('slot',"id");
-    this.appendChild(id);
+    await this.createSubtreeForNode(babelASTNode.id, "id");
     
     if (babelASTNode.init !== null) {
       this.classList.remove('no-init');
-      const init = await this.getAppropriateNode(babelASTNode.init);
-      await init.setNode(babelASTNode.init);
-      init.slot="init";
-      init.setAttribute('slot',"init");
-      this.appendChild(init);
+      await this.createSubtreeForNode(babelASTNode.init, "init");
     } else {
       this.classList.add('no-init');
     }
@@ -36,14 +29,4 @@ export default class AstNodeVariableDeclarator extends AbstractAstNode {
     return this;
   }
 
-  /* Lively-specific API */
-  livelyPreMigrate() {}
-  livelyMigrate(other) {
-    this.setNode(other.astNode)
-  }
-  livelyInspect(contentNode, inspector) {}
-  livelyPrepareSave() {}
-  async livelyExample() {}
-  
-  
 }
