@@ -11,12 +11,17 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#operator {
+#left, #operator, #right {
+  align-self: center;
 }
 </style>
-	<slot name="left"></slot>
+  <span id="left">
+	  <slot name="left"></slot>
+  </span>
 	<span id="operator"></span>
-	<slot name="right"></slot>
+  <span id="right">
+  	<slot name="right"></slot>
+  </span>
 </template>
 
 

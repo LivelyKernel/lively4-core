@@ -1,4 +1,4 @@
-<template id="ast-node-member-expression" >
+<template id="ast-node-return-statement" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
@@ -6,10 +6,14 @@
 :host(*) {
   display: flex;
 }
+#sign, #argument {
+  align-self: center;
+}
 </style>
-	<slot id="object" name="object"></slot>
-  .
-	<slot id="property" name="property"></slot>
+	<span id="sign">^</span>
+  <span id="argument">
+    <slot name="argument"></slot>
+  </span>
 </template>
 
 

@@ -24,6 +24,12 @@ async function getAppropriateNode(babelASTNode) {
   if (babelASTNode.type === 'VariableDeclarator') {
     return <ast-node-variable-declarator></ast-node-variable-declarator>;
   }
+  if (babelASTNode.type === 'CallExpression') {
+    return <ast-node-call-expression></ast-node-call-expression>;
+  }
+  if (babelASTNode.type === 'ReturnStatement') {
+    return <ast-node-return-statement></ast-node-return-statement>;
+  }
   if (babelASTNode.type === 'AssignmentExpression') {
     return <ast-node-assignment-expression></ast-node-assignment-expression>;
   }

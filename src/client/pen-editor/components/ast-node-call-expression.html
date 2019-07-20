@@ -1,4 +1,4 @@
-<template id="ast-node-assignment-expression" >
+<template id="ast-node-call-expression" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
@@ -6,24 +6,22 @@
 :host {
   display: flex;
 }
-#content {
-
-  margin: 1px;
-  padding: 1px;
+.content {
+  width: min-content;
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#callee, #open-bracket, #arguments, #closing-bracket {
   align-self: center;
 }
-  </style>
-  <span id="left">
-    <slot name="left"></slot>
+</style>
+  <span id="callee">
+    <slot name="callee"></slot>
   </span>
-  <span id="operator"></span>
-  <span id="right">
-    <slot name="right"></slot>
+  <span id="open-bracket">(</span>
+  <span id="arguments">
+    <slot name="arguments"></slot>
   </span>
+  <span id="closing-bracket">)</span>
 </template>
-
 
