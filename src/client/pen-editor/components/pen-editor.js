@@ -217,7 +217,7 @@ export default class PenEditor extends Morph {
     this.setAST(text.toAST());
   }
   onKeydown(evt) {
-    const { char, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+    const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
     
     if (alt && char === 'Z') {
       if (this.history.undo()) {
@@ -230,7 +230,18 @@ export default class PenEditor extends Morph {
       }
       return;
     }
-    lively.warn(`${char} (${keyCode}, ${charCode})[${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`);
+    this.printKeydown(evt);
+  }
+  
+  printKeydown(evt) {
+    const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+    const modifiers = [];
+    if (meta) modifiers.push('meta');
+    if (ctrl) modifiers.push('ctrl');
+    if (shift) modifiers.push('shift');
+    if (alt) modifiers.push('alt');
+    
+    lively.warn(`${char} (${keyCode}, ${charCode})[${modifiers.join(', ')}]`);
   }
   
   async setAST(ast) {

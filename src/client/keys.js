@@ -27,10 +27,11 @@ export default class Keys {
   }
   
   static keyInfo(evt) {
-    const ctrlKey = evt.ctrlKey || evt.metaKey;
-    const { shiftKey, altKey, keyCode, charCode } = evt;
+    const { metaKey, ctrlKey, shiftKey, altKey, keyCode, charCode } = evt;
     return {
       char: this.getChar(evt),
+      meta: metaKey,
+      metaKey,
       ctrl: ctrlKey,
       ctrlKey,
       shift: shiftKey,
