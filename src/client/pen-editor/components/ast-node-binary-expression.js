@@ -15,12 +15,11 @@ export default class AstNodeBinaryExpression extends AbstractAstNode {
   
   async setNode(babelASTNode) {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
     
     this.operator.innerHTML = babelASTNode.operator
     
-    await this.createSubtreeForNode(babelASTNode.left, "left");
-    await this.createSubtreeForNode(babelASTNode.right, "right");
+    await this.createSubElementForPath(this.path.get('left'), 'left');
+    await this.createSubElementForPath(this.path.get('right'), 'right');
 
     return this;
   }

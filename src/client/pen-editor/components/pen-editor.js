@@ -128,6 +128,115 @@ class History {
 
 }
 
+export function nodeEqual(node1, node2) {
+  return node1 && node1.uuid && node2 && node2.uuid && node1.uuid === node2.uuid;
+}
+
+class Navigation {
+  setEditor(editor) { return this; }
+  up(element, evt) {
+    if (
+      element.parentElement && element.parentElement.localName.includes('ast-node')
+    ) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      element.parentElement.focus();
+      return true;
+    }
+    return false;
+  }
+  getElementForNode(node, editor) {
+    return editor.getElementForNode(node);
+  }
+  navigateNextInList(element, editor, linearizedNodeList) {
+    const currentNode = linearizedNodeList.find(n => nodeEqual(n, element.astNode));
+    const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
+    const newNode = linearizedNodeList[newIndex];
+    if (newNode) {
+      const target = this.getElementForNode(newNode, editor);
+      if (target) {
+        target.focus();
+      } else {
+        lively.warn('no target found')
+      }
+    } else {
+      lively.warn('reached end of list')
+    }
+  }
+  left(element, evt) {
+
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    function reversedEnterList(ast) {
+      const linearizedNodeList = [];
+      ast.traverseAsAST({
+        enter(path) {
+          linearizedNodeList.push(path.node);
+        }
+      });
+      return linearizedNodeList.reverse();
+    }
+
+    const linearizedNodeList = reversedEnterList(element.editor.history.current());
+    this.navigateNextInList(element, element.editor, linearizedNodeList);
+    return;
+  }
+  right(element, evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    function exitList(ast) {
+      const linearizedNodeList = [];
+      ast.traverseAsAST({
+        exit(path) {
+          linearizedNodeList.push(path.node);
+        }
+      });
+      return linearizedNodeList;
+    }
+
+    const linearizedNodeList = exitList(element.editor.history.current());
+    this.navigateNextInList(element, element.editor, linearizedNodeList);
+    return;
+  }
+  down(element, evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    function getFirstChildNode(currentNode, ast) {
+      let target;
+      ast.traverseAsAST({
+        enter(path) {
+          if (nodeEqual(currentNode, path.node)) {
+            path.traverse({
+              enter(pathChild) {
+                target = target || pathChild.node;
+              }
+            });
+          }
+        }
+      });
+      return target;
+    }
+
+    const child = getFirstChildNode(element.astNode, element.editor.history.current());
+    if (child) {
+      debugger
+      const newElement = this.getElementForNode(child, element.editor)
+      if (newElement) {
+        newElement.focus();
+        return true;
+      } else {
+        lively.warn('no element for child found')
+      }
+    } else {
+      lively.warn('no child found')
+    }
+    return false;
+  }
+}
+
 export default class PenEditor extends Morph {
 
   /*MD ## Accessors MD*/
@@ -139,6 +248,9 @@ export default class PenEditor extends Morph {
 
   get history() { return this._history = this._history || new History().setEditor(this); }
   set history(value) { return this._history = value; }
+
+  get navigation() { return this._navigation = this._navigation || new Navigation().setEditor(this); }
+  set navigation(value) { return this._navigation = value; }
 
   trace(method) {
     this._ordering = this._ordering || 1;
@@ -230,11 +342,17 @@ export default class PenEditor extends Morph {
       }
       return;
     }
+    
     this.printKeydown(evt);
+  }
+  
+  getElementForNode(node) {
+    return this.querySelectorAll('*').find(element => nodeEqual(element.astNode, node));
   }
   
   printKeydown(evt) {
     const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+    
     const modifiers = [];
     if (meta) modifiers.push('meta');
     if (ctrl) modifiers.push('ctrl');
@@ -300,11 +418,23 @@ export default class PenEditor extends Morph {
     this.inspector.inspect(ast)
   }
   
+  getProgramPath(ast) {
+    let programPath;
+    ast.traverseAsAST({
+      Program(path) {
+        programPath = path;
+      }
+    });
+    return programPath;
+  }
+  
   async buildProjection(ast) {
-    const astNode = await AbstractAstNode.getAppropriateNode(ast.program);
+    const path = this.getProgramPath(ast);
+    const astNode = await AbstractAstNode.getAppropriateNode(path);
+    astNode.setPath(path);
+
     this.projectionChild.innerHTML = '';
     this.projectionChild.appendChild(astNode);
-    astNode.setNode(ast.program);
   }
 
   async buildTransformation(ast) {
@@ -342,9 +472,17 @@ document.querySelectorAll("pen-editor").forEach(pe => {
   const history = pe.history;
   if (history) {
     // evil live programming
-    history.constructor === History
+    history.constructor = History
 
     // we can fix this, so we can do live development again....
     history.__proto__ = History.prototype
+  }
+  const navigation = pe.navigation;
+  if (navigation) {
+    // evil live programming
+    navigation.constructor = Navigation
+
+    // we can fix this, so we can do live development again....
+    navigation.__proto__ = Navigation.prototype
   }
 });

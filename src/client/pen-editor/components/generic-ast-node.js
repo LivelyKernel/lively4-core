@@ -16,44 +16,46 @@ export default class GenericAstNode extends AbstractAstNode {
   get nodeType() { return this.get('#node-type'); }
   get childList() { return this.get('#child-list'); }
 
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode
 
-    this.nodeType.innerHTML = this.astNode.type;
-    const fields = babel.types.NODE_FIELDS[this.astNode.type];
+    const type = this.path.type;
+    this.nodeType.innerHTML = type;
+
+    const fields = babel.types.NODE_FIELDS[type];
     if (!fields) { return; }
     for (let [key, value] of Object.entries(fields)) {
-      let childNode;
-      let slotName = key;
+      let childElement;
+      const slotName = key;
       
       if (!this.astNode[key] || !this.astNode[key].type) {
         if (Array.isArray(this.astNode[key])) {
-          const children = this.astNode[key];
-          childNode = await Promise.all(children.map(async child => {
-            const node = await this.getAppropriateNode(child);
-            await node.setNode(child);
-            return node;
+          const childPaths = this.path.get(key);
+          childElement = await Promise.all(childPaths.map(async childPath => {
+            const element = await this.getAppropriateElement(childPath);
+            await element.setPath(childPath);
+            return element;
           }));
         } else {
           if (this.astNode[key] === true || this.astNode[key] === false) {
-            childNode = await (<primitive-boolean></primitive-boolean>);
-            childNode.checked = this.astNode[key];
+            childElement = await (<primitive-boolean></primitive-boolean>);
+            childElement.checked = this.astNode[key];
           } else {
-            childNode = document.createTextNode(this.astNode[key]);
+            childElement = document.createTextNode(this.astNode[key]);
           }
         }
       } else {
-        childNode = await this.getAppropriateNode(this.astNode[key]);
-        await childNode.setNode(this.astNode[key]);
+        let childPath = this.path.get(key);
+        childElement = await this.getAppropriateElement(childPath);
+        await childElement.setPath(childPath);
       }
       
       const slot = <slot name={slotName}></slot>;
       const kvPair = <span class="kv-pair"><span class="property-key">{key}</span> <div>{slot}</div></span>;
       this.childList.appendChild(kvPair);
 
-      childNode = Array.isArray(childNode) ? childNode : [childNode];
-      childNode.forEach(node => {
+      childElement = Array.isArray(childElement) ? childElement : [childElement];
+      childElement.forEach(node => {
         node.slot = slotName;
         try {
           node.setAttribute('slot', slotName);

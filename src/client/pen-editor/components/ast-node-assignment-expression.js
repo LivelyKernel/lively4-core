@@ -13,16 +13,12 @@ export default class AstNodeAssignmentExpression extends AbstractAstNode {
   
   get operator() { return this.get('#operator'); }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode
 
-    this.operator.innerHTML = babelASTNode.operator;
-    await this.createSubtreeForNode(babelASTNode.left, "left");
-    await this.createSubtreeForNode(babelASTNode.right, "right");
-    
-    return this;
+    this.operator.innerHTML = this.node.operator;
+    await this.createSubElementForPath(this.path.get('left'), 'left');
+    await this.createSubElementForPath(this.path.get('right'), 'right');
   }
 
 }
-// AbstractAstNode.addChildType(AstNodeAssignmentExpression);

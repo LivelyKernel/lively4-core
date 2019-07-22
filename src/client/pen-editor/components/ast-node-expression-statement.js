@@ -11,13 +11,10 @@ export default class AstNodeExpressionStatement extends AbstractAstNode {
     this.windowTitle = "AstNodeExpressionStatement";
   }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
 
-    await this.createSubtreeForNode(babelASTNode.expression, "expression");
-    
-    return this;
+    await this.createSubElementForPath(this.path.get('expression'), 'expression');
   }
   
 }

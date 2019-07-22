@@ -8,14 +8,11 @@ export default class AstNodeMemberExpression extends AbstractAstNode {
     this.windowTitle = "AstNodeMemberExpression";
   }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode
 
-    await this.createSubtreeForNode(babelASTNode.object, "object");
-    await this.createSubtreeForNode(babelASTNode.property, "property");
-    
-    return this;
+    await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('property'), 'property');
   }
   
 }

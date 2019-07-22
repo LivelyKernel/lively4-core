@@ -11,14 +11,11 @@ export default class AstNodeCallExpression extends AbstractAstNode {
     this.windowTitle = "AstNodeCallExpression";
   }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
 
-    this.createSubtreeForNode(babelASTNode.callee, "callee");
-    this.createSubtreeForNodes(babelASTNode.arguments, "arguments");
-    
-    return this;
+    await this.createSubElementForPath(this.path.get('callee'), 'callee');
+    await this.createSubElementForPaths(this.path.get('arguments'), 'arguments');
   }
 
 }

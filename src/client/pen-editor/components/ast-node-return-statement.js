@@ -11,12 +11,9 @@ export default class AstNodeReturnStatement extends AbstractAstNode {
     this.windowTitle = "AstNodeReturnStatement";
   }
 
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
     
-    await this.createSubtreeForNode(babelASTNode.argument, "argument");
-
-    return this;
+    await this.createSubElementForPath(this.path.get('argument'), 'argument');
   }  
 }

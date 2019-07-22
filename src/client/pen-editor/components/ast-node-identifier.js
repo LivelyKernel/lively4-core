@@ -7,14 +7,11 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     await super.initialize();
     this.windowTitle = "AstNodeIdentifier";
   }
-  get name() { return this.get('#name'); }
-  
-  async setNode(babelASTNode) {
-    this.astNode = babelASTNode
 
-    this.name.value = babelASTNode.name;
-    
-    return this;
+  get name() { return this.get('#name'); }
+
+  async updateProjection() {
+    this.name.value = this.node.name;
   }
 
 }

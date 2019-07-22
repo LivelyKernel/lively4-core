@@ -13,13 +13,8 @@ export default class AstNodeNumericLiteral extends AbstractAstNode {
   
   get number() { return this.get('#number'); }
   
-  async setNode(babelASTNode) {
-    this.innerHTML = '';
-    this.astNode = babelASTNode
-    
-    this.number.innerHTML = babelASTNode.value;
-
-    return this;
+  async updateProjection() {
+    this.number.innerHTML = this.node.value;
   }
   
 }

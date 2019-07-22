@@ -209,9 +209,8 @@ export default class Lively {
     /**
      * Update Templates: Reload a template's .html file
      */
-    debugger
     for (let eaPath of [path].concat(dependedModules)) {
-      console.log("update dependend: ", eaPath)
+      // console.log("update dependend: ", eaPath)
       let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
       if (found) {
         /**
@@ -960,7 +959,6 @@ export default class Lively {
    *
    */
   static async updateTemplate(html) {
-    debugger
     var tagName = await components.reloadComponent(html);
     if (!tagName) return;
 

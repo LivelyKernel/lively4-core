@@ -13,20 +13,17 @@ export default class AstNodeVariableDeclarator extends AbstractAstNode {
   
   get operator() { return this.get('#operator'); }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
-    
-    await this.createSubtreeForNode(babelASTNode.id, "id");
-    
-    if (babelASTNode.init !== null) {
+
+    await this.createSubElementForPath(this.path.get('id'), 'id');
+
+    if (this.node.init !== null) {
       this.classList.remove('no-init');
-      await this.createSubtreeForNode(babelASTNode.init, "init");
+      await this.createSubElementForPath(this.path.get('init'), 'init');
     } else {
       this.classList.add('no-init');
     }
-
-    return this;
   }
 
 }

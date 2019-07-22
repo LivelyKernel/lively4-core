@@ -15,15 +15,12 @@ export default class AstNodeVariableDeclaration extends AbstractAstNode {
   
   get kind() { return this.get('#kind'); }
   
-  async setNode(babelASTNode) {
+  async updateProjection() {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
 
-    this.kind.innerHTML = babelASTNode.kind;
+    this.kind.innerHTML = this.node.kind;
     
-    this.createSubtreeForNodes(babelASTNode.declarations, "declarations");
-
-    return this;
+    await this.createSubElementForPaths(this.path.get('declarations'), 'declarations');
   }
 
 }

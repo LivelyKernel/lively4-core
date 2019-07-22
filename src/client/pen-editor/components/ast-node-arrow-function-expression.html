@@ -1,19 +1,15 @@
-<template id="ast-node-return-statement" >
+<template id="ast-node-arrow-function-expression" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
 <style>
-:host(*) {
+:host {
   display: flex;
 }
-#sign, #argument {
-  align-self: center;
-}
 </style>
-	<span id="sign">↑</span>
-  <span id="argument">
-    <slot name="argument"></slot>
-  </span>
+  <span id="async">async</span>
+	(<slot name="params"></slot>) =>
+	<slot name="body"></slot>
 </template>
 
 

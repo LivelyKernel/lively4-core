@@ -15,5 +15,6 @@ bar2 += foo - bar.baz.blub(43, ...arr);
 // x.toString();
 // x['toString'];
 Promise.resolve(42).then((n1, n2) => {
+  n1++;
   return n1 + n2;
 });

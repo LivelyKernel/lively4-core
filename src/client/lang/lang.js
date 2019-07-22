@@ -350,7 +350,8 @@ extend(Array.prototype, {
 extendFromLodash(NodeList.prototype, [
   'map',
   'filter',
-  'reduce'
+  'reduce',
+  'find'
 ]);
 
 /*MD

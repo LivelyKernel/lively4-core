@@ -5,10 +5,16 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Keys from 'src/client/keys.js';
 
 async function getAppropriateNode(babelASTNode) {
+
   if (!babelASTNode) {
     return <generic-ast-node></generic-ast-node>;
   }
 
+  // handle pathes like this for now
+  if (babelASTNode.node) {
+    return getAppropriateNode(babelASTNode.node);
+  }
+  
   if (babelASTNode.type === 'Identifier') {
     return <ast-node-identifier></ast-node-identifier>;
   }
@@ -42,119 +48,15 @@ async function getAppropriateNode(babelASTNode) {
   if (babelASTNode.type === 'MemberExpression') {
     return <ast-node-member-expression></ast-node-member-expression>;
   }
+  if (babelASTNode.type === 'ArrowFunctionExpression') {
+    return <ast-node-arrow-function-expression></ast-node-arrow-function-expression>;
+  }
+  if (babelASTNode.type === 'BlockStatement') {
+    return <ast-node-block-statement></ast-node-block-statement>;
+  }
 
   return <generic-ast-node></generic-ast-node>;
 }
-
-// #TODO: not ideal live programming :(
-function onMouseOver(evt) {
-  evt.stopPropagation();
-  this.classList.add('node-hover');
-}
-function onMouseOut(evt) {
-  this.classList.remove('node-hover');
-}
-function onClick(evt) {
-  evt.stopPropagation();
-  lively.warn('foo4')
-  // this.classList.toggle('selected');
-}
-function onKeydown(evt) {
-  const { char, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
-
-  function selectNode() {
-    
-  }
-  function navigateNextInList(me, editor, linearizedNodeList) {
-    const currentNode = linearizedNodeList.find(n => n.uuid && (n.uuid === me.astNode.uuid));
-    const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
-    if (linearizedNodeList[newIndex]) {
-      let target;
-      editor.querySelectorAll('*').forEach(element => {
-        if (element.astNode === linearizedNodeList[newIndex]) {
-          target = element;
-        }
-      });
-      if (target) {
-        target.focus();
-      } else {
-        lively.warn('no target found')
-      }
-    } else {
-      lively.warn('reached end of list')
-    }
-  }
-  if (alt && keyCode === 38) {
-    // Alt-up
-    if (
-      this.parentElement && this.parentElement.localName.includes('ast-node')
-    ) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      this.parentElement.focus()
-    }
-    return;
-  } else if (alt && keyCode === 37) {
-    // alt-left
-    evt.stopPropagation();
-    evt.preventDefault();
-    
-    function reversedEnterList(ast) {
-      const linearizedNodeList = [];
-      ast.traverseAsAST({
-        enter(path) {
-          linearizedNodeList.push(path.node);
-        }
-      });
-      return linearizedNodeList.reverse();
-    }
-
-    const linearizedNodeList = reversedEnterList(this.editor.history.current());
-    navigateNextInList(this, this.editor, linearizedNodeList);
-    return;
-  } else if (alt && keyCode === 39) {
-    // alt-right
-    evt.stopPropagation();
-    evt.preventDefault();
-
-    function exitList(ast) {
-      const linearizedNodeList = [];
-      ast.traverseAsAST({
-        exit(path) {
-          linearizedNodeList.push(path.node);
-        }
-      });
-      return linearizedNodeList;
-    }
-    
-    const linearizedNodeList = exitList(this.editor.history.current());
-    navigateNextInList(this, this.editor, linearizedNodeList);
-    return;
-  } else if (alt && keyCode === 40) {
-    // alt-down
-    evt.stopPropagation();
-    evt.preventDefault();
-
-    let childToSelect;
-    this.editor.history.current().traverseAsAST({
-      enter: path => {
-        if (path.node === this.astNode) {
-          path.traverse({
-            enter(path) {
-              childToSelect = childToSelect || path.node;
-            }
-          });
-        }
-      }
-    });
-    return linearizedNodeList.reverse();
-
-    return;
-  }
-
-  lively.success(`${char} (${keyCode}, ${charCode})[${ctrl ? 'ctrl' : ''}, ${shift ? 'shift' : ''}, ${alt ? 'alt' : ''}]`, this.astNode && this.astNode.type);
-}
-
 
 export default class AbstractAstNode extends Morph {
 
@@ -170,10 +72,10 @@ export default class AbstractAstNode extends Morph {
     this.initHover();
     this.addEventListener('click', evt => this.onClick(evt));
     this.addEventListener('keydown', evt => this.onKeydown(evt));
-    this.addEventListener('blur', evt => { lively.notify('blur', this.astNode.type); });
-    this.addEventListener('focus', evt => { lively.notify('focus', this.astNode.type); });
-    this.addEventListener('focusin', evt => { lively.notify('focusin', this.astNode.type); });
-    this.addEventListener('focusout', evt => { lively.notify('focusout', this.astNode.type); });
+    // this.addEventListener('blur', evt => { lively.notify('blur', this.path.type); });
+    // this.addEventListener('focus', evt => { lively.notify('focus', this.path.type); });
+    // this.addEventListener('focusin', evt => { lively.notify('focusin', this.path.type); });
+    // this.addEventListener('focusout', evt => { lively.notify('focusout', this.path.type); });
   }
   
   initHover() {
@@ -182,17 +84,39 @@ export default class AbstractAstNode extends Morph {
   }
 
   onMouseOver(evt) {
-    onMouseOver.call(this, evt);
+    evt.stopPropagation();
+    this.classList.add('node-hover');
   }
   onMouseOut(evt) {
-    onMouseOut.call(this, evt);
+    this.classList.remove('node-hover');
   }
   onClick(evt) {
-  lively.warn('bar5')
-    onClick.call(this, evt);
+    evt.stopPropagation();
+    const type = this.path && this.path.type;
+    if (type) {
+      lively.notify('clicked ' + type);
+    } else {
+      lively.warn('no type found for clicked element');
+    }
   }
   onKeydown(evt) {
-    onKeydown.call(this, evt);
+    const { char, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+
+    if (alt && keyCode === 38) {
+      // Alt-up
+      return this.editor.navigation.up(this, evt);
+    } else if (alt && keyCode === 37) {
+      // alt-left
+      return this.editor.navigation.left(this, evt);
+    } else if (alt && keyCode === 39) {
+      // alt-right
+      return this.editor.navigation.right(this, evt);
+    } else if (alt && keyCode === 40) {
+      // alt-down
+      return this.editor.navigation.down(this, evt);
+    }
+
+    this.editor.printKeydown(evt);
   }
   
   // #TODO: remove indirections, but keep live programming
@@ -202,15 +126,55 @@ export default class AbstractAstNode extends Morph {
   getAppropriateNode(babelASTNode) {
     return AbstractAstNode.getAppropriateNode(babelASTNode);
   }
+  getAppropriateElement(babelASTNode) {
+    return AbstractAstNode.getAppropriateNode(babelASTNode);
+  }
+  
+  get node() { return this._node; }
+  set node(value) { return this._node = value; }
+
+  get astNode() { return this._node; }
+  set astNode(value) { return this._node = value; }
+
+  async setPath(path) {
+    this.path = path;
+    this.node = path.node;
+    
+    await this.setNode(path.node);
+  }
+  
+  async setNode(babelASTNode) {
+    this.node = babelASTNode;
+
+    await this.updateProjection(babelASTNode);
+    
+    return this;
+  }
+  
+  async createSubElementForPath(astPath, slotName) {
+    const subElement = await this.getAppropriateNode(astPath);
+    await subElement.setPath(astPath);
+
+    subElement.slot= slotName;
+    subElement.setAttribute('slot', slotName);
+
+    this.appendChild(subElement);
+  }
   
   async createSubtreeForNode(astNode, slotName) {
-    const subNode = await this.getAppropriateNode(astNode);
-    await subNode.setNode(astNode);
+    const subElement = await this.getAppropriateNode(astNode);
+    await subElement.setNode(astNode);
 
-    subNode.slot= slotName;
-    subNode.setAttribute('slot', slotName);
+    subElement.slot= slotName;
+    subElement.setAttribute('slot', slotName);
 
-    this.appendChild(subNode);
+    this.appendChild(subElement);
+  }
+  
+  async createSubElementForPaths(paths, slotName) {
+    for (let path of paths) {
+      await this.createSubElementForPath(path, slotName);
+    }
   }
   
   async createSubtreeForNodes(astNodes, slotName) {
@@ -226,16 +190,10 @@ export default class AbstractAstNode extends Morph {
   /* Lively-specific API */
   livelyPreMigrate() {}
   livelyMigrate(other) {
-    this.setNode(other.astNode)
+    this.setPath(other.path)
   }
   livelyInspect(contentNode, inspector) {}
   livelyPrepareSave() {}
   async livelyExample() {}
 
 }
-
-// self.AstNodeTypes = self.AstNodeTypes || [];
-// lively.notify(self.AstNodeTypes.length);
-// self.AstNodeTypes.forEach(type => {
-//   type.__proto__ = AbstractAstNode;
-// });

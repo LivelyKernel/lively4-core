@@ -11,13 +11,10 @@ export default class AstNodeProgram extends AbstractAstNode {
     this.windowTitle = "AstNodeProgram";
   }
   
-  async setNode(babelASTNode) {
+  async updateProjection(babelASTNode) {
     this.innerHTML = '';
-    this.astNode = babelASTNode;
 
-    this.createSubtreeForNodes(babelASTNode.body, "body");
-    
-    return this;
+    this.createSubElementForPaths(this.path.get('body'), 'body');
   }
 
 }
