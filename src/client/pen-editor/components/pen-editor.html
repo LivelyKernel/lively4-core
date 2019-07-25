@@ -3,14 +3,18 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host(*) {
+    display: flex;
+    flex-direction: column;
+    
+  }
+  #main {
     overflow-y: auto;
+    
   }
   #ast-new {
     border: 1px black dashed;
   }
-  #fileName {
-    width: 99%;
-  }
+
   #history {
     display: flex;
     flex-direction: horizontal;
@@ -30,6 +34,7 @@
   .history-entry.selected {
     background-color: orange;
   }
+
   .toggle-button-hide {
     color: gray;
   }
@@ -40,22 +45,31 @@
     display: none;
   }
   .toggle-target-show {}
+
+  .temp-button {
+    font-size: x-small;
+  }
 </style>
   <input id="fileName" />
-  <div id="history"></div>
+  <div id="main">
+    <div id="history"></div>
+    <div >
+      <button id="testButton" class="temp-button">Simple Transform</button>
+      <button id="resetHistory" class="temp-button">ResetHistory</button>
+      <button id="toggleInspector" class="temp-button" title="toggle inspector">
+        <i class="fa fa-share-alt fa-rotate-90" aria-hidden="true"></i>
+      </button>
+      <button id="toggleCodeMirror" class="temp-button" title="toggle lively-code-mirror">
+        <i class="fa fa-align-left fa-flip-vertical" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div id="inspector-container">
+      <lively-inspector id="inspector"></lively-inspector>
+    </div>
+    <lively-code-mirror id="lcm"></lively-code-mirror>
+    <slot id="ast-new"></slot>
+  </div>
   <div>
-    <button id="testButton">Simple Transform</button>
-    <button id="resetHistory">ResetHistory</button>
-    <button id="toggleInspector" title="toggle inspector">
-      <i class="fa fa-share-alt fa-rotate-90" aria-hidden="true"></i>
-    </button>
-    <button id="toggleCodeMirror" title="toggle lively-code-mirror">
-      <i class="fa fa-align-left fa-flip-vertical" aria-hidden="true"></i>
-    </button>
+    <span>Info-line</span>
   </div>
-  <div id="inspector-container">
-    <lively-inspector id="inspector"></lively-inspector>
-  </div>
-  <lively-code-mirror id="lcm"></lively-code-mirror>
-  <slot id="ast-new"></slot>
 </template>

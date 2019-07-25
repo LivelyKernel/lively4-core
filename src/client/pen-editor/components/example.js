@@ -8,6 +8,27 @@ const hello = 42;
 let world = hello * 17 + 38 / foo,
     baz;
 
+function* yieldAll(...arr) {
+  yield arr[0];
+  yield* arr;
+}
+let fn = async function (a, b) {
+  return a + b;
+};
+
+class Being {
+  set [hello + 2](value) {}
+}
+class Person extends Being {
+  static async new(name) {
+    return new Person();
+  }
+
+  constructor() {}
+  *sfcd() {}
+  get sfcd() {}
+}
+
 foo;
 bar;
 bar2 += foo - bar.baz.blub(43, ...arr);

@@ -6,23 +6,19 @@
 :host(*) {
   display: flex;
   flex-direction: horizontal;
-  
   }
-#content {
-}
   #kind-container {
     display: grid;
     border-right: solid 1px goldenrod;
   }
   #kind {
     align-self: center;
-    font-weight: bold;
   }
 
 </style>
   
   <div id="kind-container">
-    <span id="kind">kind</span>
+    <span id="kind" class="keyword">kind</span>
   </div>
   <div id="declarations-container">
     <slot name="declarations"></slot>

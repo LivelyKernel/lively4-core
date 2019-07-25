@@ -239,6 +239,7 @@ class Navigation {
 
 export default class PenEditor extends Morph {
 
+  static get defaultFile() { return lively4url + '/src/client/pen-editor/components/example.js'; }
   /*MD ## Accessors MD*/
   get fileName() { return this.get('input#fileName'); }
   get historyView() { return this.get('#history'); }
@@ -263,12 +264,27 @@ export default class PenEditor extends Morph {
     
     this.registerButtons();
     
-    this.fileName.value = lively4url + '/src/client/pen-editor/components/example.js';
+    this.initFileInput();
     
     this.addEventListener('keydown', evt => this.onKeydown(evt));
 
     this.initToggleButtons();
     this.initLCM();
+  }
+  
+  initFileInput() {
+    PenEditor.defaultFile
+
+    this.fileName.value = PenEditor.defaultFile;
+    
+    this.fileName.addEventListener('keydown', async evt => {
+      const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+      
+      if (keyCode === 13) {
+        await this.loadFile(this.fileName.value);
+      }
+
+    });
   }
   initToggleButtons() {
     this.initToggleButton({
@@ -322,6 +338,7 @@ export default class PenEditor extends Morph {
           lively.files.saveFile(this.fileName.value, this.lcm.value);
         }
       });
+      // Ctrl-S
       this.lcm.doSave = text => this.onLCMSave(text);
     });
   }
@@ -359,7 +376,7 @@ export default class PenEditor extends Morph {
     if (shift) modifiers.push('shift');
     if (alt) modifiers.push('alt');
     
-    lively.warn(`${char} (${keyCode}, ${charCode})[${modifiers.join(', ')}]`);
+    lively.notify(`${char} (${keyCode}, ${charCode})[${modifiers.join(', ')}]`);
   }
   
   async setAST(ast) {
@@ -452,7 +469,7 @@ export default class PenEditor extends Morph {
   async livelyExample() {
     this.trace('livelyExample (PEN Editor Example)')
     
-    await this.loadFile(lively4url + '/src/client/pen-editor/components/example.js');
+    await this.loadFile(PenEditor.defaultFile);
   }
   
   async loadFile(filePath) {

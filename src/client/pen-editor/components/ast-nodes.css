@@ -26,3 +26,18 @@
 :host(:focus) {
   outline: orange 2px solid;
 }
+
+.keyword {
+  font-weight: bold;
+}
+
+:host(*) {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+  transform: translate(0px, 0px) scale(1.0);
+  box-shadow: 0em 0em 0em transparent;
+}
+:host(.node-hover), :host(:focus) {
+  box-shadow: 0em 0.5em 0.4em darkgray;
+  transform: translate(0px, -2px) scale(1.1);
+}
