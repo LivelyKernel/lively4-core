@@ -15,20 +15,19 @@
   background-color: #eeeeee;
 }
 
-:host(.selected) {
-  outline: black 2px solid;
+.keyword {
+  font-weight: bold;
 }
 
+:host(.node-selected) {
+  background-color: #fafbcb;
+  outline: black inset 2px;
+}
 :host(.node-hover) {
   outline: green inset 2px;
 }
-
 :host(:focus) {
   outline: orange 2px solid;
-}
-
-.keyword {
-  font-weight: bold;
 }
 
 :host(*) {
@@ -37,7 +36,7 @@
   transform: translate(0px, 0px) scale(1.0);
   box-shadow: 0em 0em 0em transparent;
 }
-:host(.node-hover), :host(:focus) {
+:host(:focus) {
   box-shadow: 0em 0.5em 0.4em darkgray;
   transform: translate(0px, -2px) scale(1.1);
 }

@@ -11,17 +11,19 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+  #separator {
+    margin-right: 3px;
+  }
+#label, #separator, #body {
   align-self: center;
 }
 </style>
-  AstNodeLabeledStatement
-  <span id="left">
-	  <slot name="left"></slot>
+  <span id="label">
+	  <slot name="label"></slot>
   </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
+	<span id="separator">:</span>
+  <span id="body">
+  	<slot name="body"></slot>
   </span>
 </template>
 

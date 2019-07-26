@@ -3,8 +3,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class PrimitiveString extends Morph {
+
   get input() { return this.get('#input'); }
-  
+
   async initialize() {
     this.windowTitle = "PrimitiveString";
 
@@ -12,6 +13,9 @@ export default class PrimitiveString extends Morph {
     this.enableAutoResize();
   }
   
+  focus() {
+    this.input.focus();
+  }
   get value() {
     return this.input;
   }
@@ -39,27 +43,11 @@ export default class PrimitiveString extends Morph {
   
   /* Lively-specific API */
 
-  livelyPreMigrate() {
-    // is called on the old object before the migration
-  }
-  
+  livelyPreMigrate() {}
   livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
     this.input.value = other.input.value;
   }
-  
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-  
-  livelyPrepareSave() {
-    
-  }
-  
-  
-  async livelyExample() {
-  }
-  
-  
+  livelyInspect(contentNode, inspector) {}
+  livelyPrepareSave() {}
+  async livelyExample() {}
 }

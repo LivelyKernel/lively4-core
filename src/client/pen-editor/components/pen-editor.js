@@ -3,11 +3,11 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import AbstractAstNode from './abstract-ast-node.js';
+import { getAppropriateElement } from './abstract-ast-node.js';
 
 import { uuid, shake } from 'utils';
 
-import Keys from 'src/client/keys.js';
+import keyInfo from 'src/client/keyinfo.js';
 
 // https://github.com/babel/babel/blob/8ee24fdfc04870dade1f7318b29bb27b59fdec79/packages/babel-types/src/definitions/core.js
 // validator https://github.com/babel/babel/blob/eac4c5bc17133c2857f2c94c1a6a8643e3b547a7/scripts/generators/utils.js
@@ -133,29 +133,64 @@ export function nodeEqual(node1, node2) {
 }
 
 class Navigation {
-  setEditor(editor) { return this; }
+  setEditor(editor) {
+    this._editor = editor;
+    return this;
+  }
+  get editor() { return this._editor; }
+
+  get classSelected() { return 'node-selected'; }
+  get selectorSelected() { return '.' + this.classSelected; }
+
+  selectElement(element) {
+    this.removeSelection();
+    element.classList.add(this.classSelected);
+  }
+  getSelectedElements() {
+    return this.editor.getAllSubmorphs(this.selectorSelected);
+  }
+  removeSelection() {
+    this.editor.getAllSubmorphs(this.selectorSelected).forEach(element => {
+      element.classList.remove(this.classSelected);
+    });
+  }
+  navigate(from, to, evt) {
+    const ctrl = keyInfo(evt).shift;
+    if(!ctrl) { this.removeSelection(); }
+
+    to.focus();
+
+    if(ctrl) {
+      // just change focus
+    } else {
+      to.classList.add(this.classSelected);
+    }
+  }
   up(element, evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+
     if (
-      element.parentElement && element.parentElement.localName.includes('ast-node')
+      element.parentElement &&
+      element.parentElement.localName.includes('ast-node') &&
+      element.parentElement.localName !== 'ast-node-program'
     ) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      element.parentElement.focus();
+      this.navigate(element, element.parentElement, evt);
       return true;
     }
     return false;
   }
-  getElementForNode(node, editor) {
-    return editor.getElementForNode(node);
+  getElementForNode(node) {
+    return this.editor.getElementForNode(node);
   }
-  navigateNextInList(element, editor, linearizedNodeList) {
+  navigateNextInList(element, editor, linearizedNodeList, evt) {
     const currentNode = linearizedNodeList.find(n => nodeEqual(n, element.astNode));
     const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
     const newNode = linearizedNodeList[newIndex];
     if (newNode) {
-      const target = this.getElementForNode(newNode, editor);
-      if (target) {
-        target.focus();
+      const target = this.getElementForNode(newNode);
+      if (target && target.localName !== 'ast-node-program') {
+        this.navigate(element, target, evt);
       } else {
         lively.warn('no target found')
       }
@@ -179,10 +214,11 @@ class Navigation {
     }
 
     const linearizedNodeList = reversedEnterList(element.editor.history.current());
-    this.navigateNextInList(element, element.editor, linearizedNodeList);
+    this.navigateNextInList(element, element.editor, linearizedNodeList, evt);
     return;
   }
   right(element, evt) {
+
     evt.stopPropagation();
     evt.preventDefault();
 
@@ -197,10 +233,11 @@ class Navigation {
     }
 
     const linearizedNodeList = exitList(element.editor.history.current());
-    this.navigateNextInList(element, element.editor, linearizedNodeList);
+    this.navigateNextInList(element, element.editor, linearizedNodeList, evt);
     return;
   }
   down(element, evt) {
+
     evt.stopPropagation();
     evt.preventDefault();
 
@@ -222,10 +259,9 @@ class Navigation {
 
     const child = getFirstChildNode(element.astNode, element.editor.history.current());
     if (child) {
-      debugger
       const newElement = this.getElementForNode(child, element.editor)
       if (newElement) {
-        newElement.focus();
+        this.navigate(element, newElement, evt);
         return true;
       } else {
         lively.warn('no element for child found')
@@ -234,6 +270,68 @@ class Navigation {
       lively.warn('no child found')
     }
     return false;
+  }
+  // alt-space
+  toggle(element, evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    element.classList.toggle(this.classSelected);
+
+    return true;
+  }
+  // alt-escape
+  clear(element, evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    this._removeSelection();
+
+    const focussedElement = this.editor.get(':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within');
+    if(focussedElement) {
+      focussedElement.classList.add(this.classSelected);
+    }
+
+    return true;
+  }
+
+  handleKeydown(element, evt) {
+    const info = keyInfo(evt);
+
+    if (!info.ctrl) { return false; }
+
+    if (info.up) {
+      this.up(element, evt);
+      return true;
+    } else if (info.left) {
+      this.left(element, evt);
+      return true;
+    } else if (info.right) {
+      this.right(element, evt);
+      return true;
+    } else if (info.down) {
+      this.down(element, evt);
+      return true;
+    } else if (info.space) {
+      this.toggle(element, evt);
+      return true;
+    } else if (info.escape) {
+      this.clear(element, evt);
+      return true;
+    }
+
+    return false;
+  }
+  
+  onClickElement(element, evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    if(evt.ctrlKey) {
+      element.classList.toggle(this.classSelected);
+    } else {
+      this.selectElement(element);
+    }
   }
 }
 
@@ -278,9 +376,10 @@ export default class PenEditor extends Morph {
     this.fileName.value = PenEditor.defaultFile;
     
     this.fileName.addEventListener('keydown', async evt => {
-      const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+      const info = keyInfo(evt);
+      const { char, meta, ctrl, shift, alt, keyCode, charCode, enter } = info;
       
-      if (keyCode === 13) {
+      if (enter) {
         await this.loadFile(this.fileName.value);
       }
 
@@ -308,19 +407,12 @@ export default class PenEditor extends Morph {
         defaultValue;
     
     const updateToggleState = () => {
-      if (shown) {
-        button.classList.add(showClassButton);
-        button.classList.remove(hideClassButton);
-        target.classList.add(showClassTarget);
-        target.classList.remove(hideClassTarget);
-        if (target.tagName === 'LIVELY-CODE-MIRROR') {
-          target.editorLoaded().then(() => target.editor.refresh());
-        }
-      } else {
-        button.classList.add(hideClassButton);
-        button.classList.remove(showClassButton);
-        target.classList.add(hideClassTarget);
-        target.classList.remove(showClassTarget);
+      button.classList.toggle(showClassButton, shown);
+      button.classList.toggle(hideClassButton, !shown);
+      target.classList.toggle(showClassTarget, shown);
+      target.classList.toggle(hideClassTarget, !shown);
+      if (shown && target.tagName === 'LIVELY-CODE-MIRROR') {
+        target.editorLoaded().then(() => target.editor.refresh());
       }
       this.setAttribute(persistAttribute, JSON.stringify(shown))
     }
@@ -346,7 +438,8 @@ export default class PenEditor extends Morph {
     this.setAST(text.toAST());
   }
   onKeydown(evt) {
-    const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+    const info = keyInfo(evt);
+    const { char, meta, ctrl, shift, alt, keyCode, charCode } = info;
     
     if (alt && char === 'Z') {
       if (this.history.undo()) {
@@ -360,23 +453,11 @@ export default class PenEditor extends Morph {
       return;
     }
     
-    this.printKeydown(evt);
+    info.notify();
   }
   
   getElementForNode(node) {
     return this.querySelectorAll('*').find(element => nodeEqual(element.astNode, node));
-  }
-  
-  printKeydown(evt) {
-    const { char, meta, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
-    
-    const modifiers = [];
-    if (meta) modifiers.push('meta');
-    if (ctrl) modifiers.push('ctrl');
-    if (shift) modifiers.push('shift');
-    if (alt) modifiers.push('alt');
-    
-    lively.notify(`${char} (${keyCode}, ${charCode})[${modifiers.join(', ')}]`);
   }
   
   async setAST(ast) {
@@ -406,6 +487,21 @@ export default class PenEditor extends Morph {
     ast.traverseAsAST({
       Identifier(path) {
         path.node.name += 'X';
+      }
+    });
+    
+    this.setAST(ast);
+  }
+  
+  changeIdentifier(node, newName) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    ast.traverseAsAST({
+      Identifier(path) {
+        if (nodeEqual(path.node, node)) {
+          path.node.name = newName;
+        }
       }
     });
     
@@ -447,11 +543,11 @@ export default class PenEditor extends Morph {
   
   async buildProjection(ast) {
     const path = this.getProgramPath(ast);
-    const astNode = await AbstractAstNode.getAppropriateNode(path);
-    astNode.setPath(path);
+    const programElement = await getAppropriateElement(path);
+    programElement.setPath(path);
 
     this.projectionChild.innerHTML = '';
-    this.projectionChild.appendChild(astNode);
+    this.projectionChild.appendChild(programElement);
   }
 
   async buildTransformation(ast) {

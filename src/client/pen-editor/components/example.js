@@ -2,6 +2,12 @@
 /*
  * Block comment
  */
+
+`123 ${hello + world} 
+d
+
+${world}
+wd`;
 42;
 // import { uuid as genUUID } from 'utils';
 const hello = 42;
@@ -21,7 +27,7 @@ class Being {
 }
 class Person extends Being {
   static async new(name) {
-    return new Person();
+    return new Person(name);
   }
 
   constructor() {}
@@ -35,7 +41,9 @@ bar2 += foo - bar.baz.blub(43, ...arr);
 // var x = 3 + /* inline comment */4; // Line comment2
 // x.toString();
 // x['toString'];
-Promise.resolve(42).then((n1, n2) => {
-  n1++;
-  return n1 + n2;
-});
+myLabel: {
+  Promise.resolve(42).then((n1, n2) => {
+    n1++;
+    return n1 + n2;
+  });
+}

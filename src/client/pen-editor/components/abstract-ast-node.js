@@ -2,9 +2,9 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import Keys from 'src/client/keys.js';
+import keyInfo from 'src/client/keyinfo.js';
 
-async function getAppropriateNode(babelASTNode) {
+export async function getAppropriateElement(babelASTNode) {
 
   if (!babelASTNode) {
     return <generic-ast-node></generic-ast-node>;
@@ -12,7 +12,7 @@ async function getAppropriateNode(babelASTNode) {
 
   // handle pathes like this for now
   if (babelASTNode.node) {
-    return getAppropriateNode(babelASTNode.node);
+    return getAppropriateElement(babelASTNode.node);
   }
   
   if (babelASTNode.type === 'Identifier') { return <ast-node-identifier></ast-node-identifier>; }
@@ -119,9 +119,12 @@ export default class AbstractAstNode extends Morph {
     this.addEventListener('click', evt => this.onClick(evt));
     this.addEventListener('keydown', evt => this.onKeydown(evt));
     // this.addEventListener('blur', evt => { lively.notify('blur', this.path.type); });
-    // this.addEventListener('focus', evt => { lively.notify('focus', this.path.type); });
+    this.addEventListener('focus', evt => { this.onFocus(evt); });
     // this.addEventListener('focusin', evt => { lively.notify('focusin', this.path.type); });
     // this.addEventListener('focusout', evt => { lively.notify('focusout', this.path.type); });
+    this.addEventListener('copy', evt => this.onCopy(evt));
+    this.addEventListener('cut', evt => this.onCut(evt));
+    this.addEventListener('paste', evt => this.onPaste(evt));
   }
   
   initHover() {
@@ -144,36 +147,54 @@ export default class AbstractAstNode extends Morph {
     } else {
       lively.warn('no type found for clicked element');
     }
+    this.editor.navigation.onClickElement(this, evt);
   }
   onKeydown(evt) {
-    const { char, ctrl, shift, alt, keyCode, charCode } = Keys.keyInfo(evt);
+    const info = keyInfo(evt);
+    const { char, ctrl, shift, alt, keyCode, charCode } = info;
 
-    if (alt && keyCode === 38) {
-      // Alt-up
-      return this.editor.navigation.up(this, evt);
-    } else if (alt && keyCode === 37) {
-      // alt-left
-      return this.editor.navigation.left(this, evt);
-    } else if (alt && keyCode === 39) {
-      // alt-right
-      return this.editor.navigation.right(this, evt);
-    } else if (alt && keyCode === 40) {
-      // alt-down
-      return this.editor.navigation.down(this, evt);
+    const handledByNavigation = this.editor.navigation.handleKeydown(this, evt);
+    if (handledByNavigation) { return false; }
+    
+    if (ctrl && (info.backspace || info.del)) {
+      lively.warn('should delete')
+      return;
     }
 
-    this.editor.printKeydown(evt);
+    if (ctrl && char === 'C') {
+      this.copyNodeToClipboard(evt);
+      return;
+    }
+
+    info.notify();
+    
+    return false;
+  }
+  onFocus(evt) {
+    var list = [];
+    this.path.find(p => {list.unshift(p);})
+    this.editor.get('#path-info').innerHTML = (list.map(p => p.type).join('<i class="fa fa-angle-right" aria-hidden="true"></i>'));
+  }
+  onCopy(evt) {
+    debugger
+    lively.notify('copy')
+  }
+  onCut(evt) {
+        lively.notify('cut')
+
+  }
+  onPaste(evt) {
+        lively.notify('paste')
+
   }
   
-  // #TODO: remove indirections, but keep live programming
-  static getAppropriateNode(babelASTNode) {
-    return getAppropriateNode(babelASTNode);
+  getAppropriateElement(path) {
+    return getAppropriateElement(path);
   }
-  getAppropriateNode(babelASTNode) {
-    return AbstractAstNode.getAppropriateNode(babelASTNode);
-  }
-  getAppropriateElement(babelASTNode) {
-    return AbstractAstNode.getAppropriateNode(babelASTNode);
+  
+  copyNodeToClipboard(evt) {
+      lively.warn('should COPY')
+    
   }
   
   get node() { return this._node; }
@@ -198,18 +219,8 @@ export default class AbstractAstNode extends Morph {
   }
   
   async createSubElementForPath(astPath, slotName) {
-    const subElement = await this.getAppropriateNode(astPath);
+    const subElement = await this.getAppropriateElement(astPath);
     await subElement.setPath(astPath);
-
-    subElement.slot= slotName;
-    subElement.setAttribute('slot', slotName);
-
-    this.appendChild(subElement);
-  }
-  
-  async createSubtreeForNode(astNode, slotName) {
-    const subElement = await this.getAppropriateNode(astNode);
-    await subElement.setNode(astNode);
 
     subElement.slot= slotName;
     subElement.setAttribute('slot', slotName);
@@ -220,12 +231,6 @@ export default class AbstractAstNode extends Morph {
   async createSubElementForPaths(paths, slotName) {
     for (let path of paths) {
       await this.createSubElementForPath(path, slotName);
-    }
-  }
-  
-  async createSubtreeForNodes(astNodes, slotName) {
-    for (let astNode of astNodes) {
-      await this.createSubtreeForNode(astNode, slotName);
     }
   }
   

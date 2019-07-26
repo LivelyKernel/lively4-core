@@ -11,7 +11,8 @@ export default class AstNodeLabeledStatement extends AbstractAstNode {
   async updateProjection() {
     this.innerHTML = '';
 
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('label'), 'label');
+    await this.createSubElementForPath(this.path.get('body'), 'body');
   }
   
 }
