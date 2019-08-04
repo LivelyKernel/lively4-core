@@ -132,76 +132,101 @@ export function nodeEqual(node1, node2) {
   return node1 && node1.uuid && node2 && node2.uuid && node1.uuid === node2.uuid;
 }
 
+function cancelEvent(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+}
+  
 class Navigation {
+
+  get editor() { return this._editor; }
   setEditor(editor) {
     this._editor = editor;
     return this;
   }
-  get editor() { return this._editor; }
 
   get classSelected() { return 'node-selected'; }
   get selectorSelected() { return '.' + this.classSelected; }
 
-  selectElement(element) {
-    this.removeSelection();
-    element.classList.add(this.classSelected);
+  getPrimarySelection() {
+    return this.editor.get(':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within');
   }
-  getSelectedElements() {
+
+  getSelection() {
     return this.editor.getAllSubmorphs(this.selectorSelected);
   }
-  removeSelection() {
-    this.editor.getAllSubmorphs(this.selectorSelected).forEach(element => {
-      element.classList.remove(this.classSelected);
-    });
+  toggleInSelection(element) {
+    element.classList.toggle(this.classSelected);
   }
-  navigate(from, to, evt) {
-    const ctrl = keyInfo(evt).shift;
-    if(!ctrl) { this.removeSelection(); }
+  setSelection(selectedElements, primaryElement) {
+    // remove selection
+    this.getSelection().forEach(element => element.classList.remove(this.classSelected));
 
-    to.focus();
-
-    if(ctrl) {
-      // just change focus
-    } else {
-      to.classList.add(this.classSelected);
+    if (primaryElement) {
+      primaryElement.focus();
+    }
+    for (let selectedElement of selectedElements.values()) {
+      selectedElement.classList.add(this.classSelected);
     }
   }
-  up(element, evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
 
-    if (
-      element.parentElement &&
-      element.parentElement.localName.includes('ast-node') &&
-      element.parentElement.localName !== 'ast-node-program'
-    ) {
-      this.navigate(element, element.parentElement, evt);
-      return true;
-    }
-    return false;
-  }
   getElementForNode(node) {
     return this.editor.getElementForNode(node);
   }
-  navigateNextInList(element, editor, linearizedNodeList, evt) {
-    const currentNode = linearizedNodeList.find(n => nodeEqual(n, element.astNode));
-    const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
-    const newNode = linearizedNodeList[newIndex];
-    if (newNode) {
-      const target = this.getElementForNode(newNode);
-      if (target && target.localName !== 'ast-node-program') {
-        this.navigate(element, target, evt);
+  transformSelection(getNextSelection) {
+    const selectedElements = this.getSelection();
+    const primarySelection = this.getPrimarySelection();
+    
+    const newElements = [];
+    let newPrimarySelection;
+    
+    selectedElements.forEach(selectedElement => {
+      const target = getNextSelection(selectedElement);
+      if (target) {
+        newElements.push(target);
+        if (primarySelection === selectedElement) {
+          newPrimarySelection = target;
+        }
       } else {
-        lively.warn('no target found')
+        lively.warn('No navigation target found.')
       }
-    } else {
-      lively.warn('reached end of list')
-    }
+    });
+    
+    this.setSelection(newElements, newPrimarySelection);
+  }
+
+  up(element, evt) {
+    cancelEvent(evt);
+
+    this.transformSelection(selectedElement => {
+      if (
+        selectedElement.parentElement &&
+        selectedElement.parentElement.localName.includes('ast-node') &&
+        selectedElement.parentElement.localName !== 'ast-node-program'
+      ) {
+        return selectedElement.parentElement;
+      } else {
+        lively.warn('Top-level node reached.')
+        return selectedElement;
+      }
+    });
+  }
+  navNextInList(element, evt, linearizedNodeList) {
+    this.transformSelection(selectedElement => {
+      const currentNode = linearizedNodeList.find(n => nodeEqual(n, selectedElement.astNode));
+      const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
+      const newNode = linearizedNodeList[newIndex];
+      if (newNode) {
+        const target = this.getElementForNode(newNode);
+        if (target && target.localName !== 'ast-node-program') {
+          return target;
+        }
+      }
+      return selectedElement;
+    });
   }
   left(element, evt) {
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    cancelEvent(evt);
 
     function reversedEnterList(ast) {
       const linearizedNodeList = [];
@@ -214,13 +239,11 @@ class Navigation {
     }
 
     const linearizedNodeList = reversedEnterList(element.editor.history.current());
-    this.navigateNextInList(element, element.editor, linearizedNodeList, evt);
+    this.navNextInList(element, evt, linearizedNodeList);
     return;
   }
   right(element, evt) {
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    cancelEvent(evt);
 
     function exitList(ast) {
       const linearizedNodeList = [];
@@ -233,13 +256,11 @@ class Navigation {
     }
 
     const linearizedNodeList = exitList(element.editor.history.current());
-    this.navigateNextInList(element, element.editor, linearizedNodeList, evt);
+    this.navNextInList(element, evt, linearizedNodeList);
     return;
   }
   down(element, evt) {
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    cancelEvent(evt);
 
     function getFirstChildNode(currentNode, ast) {
       let target;
@@ -257,39 +278,30 @@ class Navigation {
       return target;
     }
 
-    const child = getFirstChildNode(element.astNode, element.editor.history.current());
-    if (child) {
-      const newElement = this.getElementForNode(child, element.editor)
-      if (newElement) {
-        this.navigate(element, newElement, evt);
-        return true;
+    const ast = element.editor.history.current();
+    this.transformSelection(selectedElement => {
+      const child = getFirstChildNode(selectedElement.astNode, ast);
+      if (child) {
+        const newElement = this.getElementForNode(child, element.editor)
+        if (newElement) {
+          return newElement;
+        } else {
+          lively.warn('no element for child found')
+        }
       } else {
-        lively.warn('no element for child found')
+        lively.warn('no child found')
       }
-    } else {
-      lively.warn('no child found')
-    }
-    return false;
-  }
-  // alt-space
-  toggle(element, evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-
-    element.classList.toggle(this.classSelected);
-
-    return true;
+      return selectedElement;
+    });
   }
   // alt-escape
   clear(element, evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
+    cancelEvent(evt);
 
-    this._removeSelection();
+    const focussedElement = this.getPrimarySelection();
 
-    const focussedElement = this.editor.get(':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within');
     if(focussedElement) {
-      focussedElement.classList.add(this.classSelected);
+      this.setSelection([focussedElement], focussedElement);
     }
 
     return true;
@@ -297,25 +309,21 @@ class Navigation {
 
   handleKeydown(element, evt) {
     const info = keyInfo(evt);
+    const { ctrl } = info;
 
-    if (!info.ctrl) { return false; }
-
-    if (info.up) {
+    if (!ctrl && info.up) {
       this.up(element, evt);
       return true;
-    } else if (info.left) {
+    } else if (!ctrl && info.left) {
       this.left(element, evt);
       return true;
-    } else if (info.right) {
+    } else if (!ctrl && info.right) {
       this.right(element, evt);
       return true;
-    } else if (info.down) {
+    } else if (!ctrl && info.down) {
       this.down(element, evt);
       return true;
-    } else if (info.space) {
-      this.toggle(element, evt);
-      return true;
-    } else if (info.escape) {
+    } else if (!ctrl && info.escape) {
       this.clear(element, evt);
       return true;
     }
@@ -324,17 +332,17 @@ class Navigation {
   }
   
   onClickElement(element, evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
+    cancelEvent(evt);
 
     if(evt.ctrlKey) {
-      element.classList.toggle(this.classSelected);
+      this.toggleInSelection(element);
     } else {
-      this.selectElement(element);
+      this.setSelection([element], element);
     }
   }
 }
 
+/*MD # PenEditor MD*/
 export default class PenEditor extends Morph {
 
   static get defaultFile() { return lively4url + '/src/client/pen-editor/components/example.js'; }
@@ -482,11 +490,24 @@ export default class PenEditor extends Morph {
   
   onTestButton(evt) {
     const current = this.history.current();
-    let ast = current.cloneDeep();
+    const ast = current.cloneDeep();
 
     ast.traverseAsAST({
       Identifier(path) {
         path.node.name += 'X';
+      }
+    });
+    
+    this.setAST(ast);
+  }
+  onComplexTransform(evt) {
+    lively.showElement(this.get(':focus'));
+    const current = this.history.current();
+    const ast = current.cloneDeep();
+
+    ast.traverseAsAST({
+      Identifier(path) {
+        path.node.name += 'Y';
       }
     });
     
