@@ -9,8 +9,6 @@ export default class AstNodeImportDefaultSpecifier extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
     await this.createSubElementForPath(this.path.get('local'), 'local');
   }
   

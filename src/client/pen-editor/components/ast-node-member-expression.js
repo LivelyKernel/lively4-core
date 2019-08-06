@@ -10,6 +10,8 @@ export default class AstNodeMemberExpression extends AbstractAstNode {
   
   async updateProjection() {
     this.innerHTML = '';
+    
+    this.classList.toggle('computed', this.node.computed);
 
     await this.createSubElementForPath(this.path.get('object'), 'object');
     await this.createSubElementForPath(this.path.get('property'), 'property');

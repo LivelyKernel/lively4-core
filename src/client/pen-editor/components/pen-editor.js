@@ -3,9 +3,10 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import { getAppropriateElement } from './abstract-ast-node.js';
+import AbstractAstNode from './abstract-ast-node.js';
 
 import { uuid, shake } from 'utils';
+import { nodeEqual } from './utils.js';
 
 import keyInfo from 'src/client/keyinfo.js';
 
@@ -128,9 +129,6 @@ class History {
 
 }
 
-export function nodeEqual(node1, node2) {
-  return node1 && node1.uuid && node2 && node2.uuid && node1.uuid === node2.uuid;
-}
 
 function cancelEvent(evt) {
   evt.stopPropagation();
@@ -147,27 +145,49 @@ class Navigation {
 
   get classSelected() { return 'node-selected'; }
   get selectorSelected() { return '.' + this.classSelected; }
+  get primarySelector() { return ':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within'; }
 
   getPrimarySelection() {
-    return this.editor.get(':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within');
+    return this.editor.get(this.primarySelector);
   }
 
   getSelection() {
     return this.editor.getAllSubmorphs(this.selectorSelected);
   }
   toggleInSelection(element) {
-    element.classList.toggle(this.classSelected);
+    let selection = this.getSelection();
+    let primary = this.getPrimarySelection();
+    
+    const wasSelected = selection.includes(element);
+    const wasPrimary = primary === element;
+
+    if (selection.length === 1 && wasSelected) {
+      lively.warn('Cannot deselect last element.')
+      return;
+    }
+    
+    if (wasSelected) {
+      primary = selection[(selection.indexOf(element) + 1) % selection.length]
+      selection = selection.filter(ele => ele !== element);
+    } else {
+      primary = element;
+      selection.push(element);
+    }
+    
+    this.setSelection(selection, primary);
   }
   setSelection(selectedElements, primaryElement) {
     // remove selection
     this.getSelection().forEach(element => element.classList.remove(this.classSelected));
 
-    if (primaryElement) {
+    if (primaryElement && !primaryElement.matches(this.primarySelector)) {
       primaryElement.focus();
     }
     for (let selectedElement of selectedElements.values()) {
       selectedElement.classList.add(this.classSelected);
     }
+    
+    this.editor.buildPathInfo();
   }
 
   getElementForNode(node) {
@@ -201,7 +221,7 @@ class Navigation {
     this.transformSelection(selectedElement => {
       if (
         selectedElement.parentElement &&
-        selectedElement.parentElement.localName.includes('ast-node') &&
+        selectedElement.parentElement.isAstNode &&
         selectedElement.parentElement.localName !== 'ast-node-program'
       ) {
         return selectedElement.parentElement;
@@ -564,15 +584,28 @@ export default class PenEditor extends Morph {
   
   async buildProjection(ast) {
     const path = this.getProgramPath(ast);
-    const programElement = await getAppropriateElement(path);
-    programElement.setPath(path);
-
-    this.projectionChild.innerHTML = '';
-    this.projectionChild.appendChild(programElement);
+    AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
   }
 
   async buildTransformation(ast) {
     this.lcm.value = ast.transformAsAST().code
+  }
+  
+  get pathInfo() { return this.get('#path-info'); }
+  buildPathInfo() {
+    const selection = this.navigation.getSelection();
+
+    function joinElements(elements, builder) {
+      
+    }
+    this.pathInfo.innerHTML = selection
+      .map(element => {
+        const list = [];
+        element.path.find(p => { list.unshift(p); });
+        
+        return `<div>${list.map(p => p.type).join('<i class="fa fa-angle-right" aria-hidden="true"></i>')}</div>`;
+      })
+      .join('');
   }
 
   livelyMigrate(other) {

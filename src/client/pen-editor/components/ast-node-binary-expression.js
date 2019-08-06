@@ -14,14 +14,10 @@ export default class AstNodeBinaryExpression extends AbstractAstNode {
   get operator() { return this.get('#operator'); }
   
   async setNode(babelASTNode) {
-    this.innerHTML = '';
-    
     this.operator.innerHTML = babelASTNode.operator
     
     await this.createSubElementForPath(this.path.get('left'), 'left');
     await this.createSubElementForPath(this.path.get('right'), 'right');
-
-    return this;
   }
 
   operatorOptions() {

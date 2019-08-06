@@ -3,13 +3,19 @@
  * Block comment
  */
 
-`123 ${hello + world} 
-d
+// `123 ${hello + world} 
+// d
 
-${world}
-wd`;
+// ${world}
+// wd`;
 42;
-// import { uuid as genUUID } from 'utils';
+world;
+true;
+import 'utils';
+import { uuid as genUUID, shake } from 'utils';
+import { uuid } from 'utils';
+import * as utilsNamespace from 'utils';
+import utilsDefault from 'utils';
 const hello = 42;
 let world = hello * 17 + 38 / foo,
     baz;

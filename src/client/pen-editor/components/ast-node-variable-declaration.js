@@ -16,8 +16,6 @@ export default class AstNodeVariableDeclaration extends AbstractAstNode {
   get kind() { return this.get('#kind'); }
   
   async updateProjection() {
-    this.innerHTML = '';
-
     this.kind.innerHTML = this.node.kind;
     
     await this.createSubElementForPaths(this.path.get('declarations'), 'declarations');

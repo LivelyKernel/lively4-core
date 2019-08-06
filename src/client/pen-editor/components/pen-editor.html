@@ -11,7 +11,7 @@
     overflow-y: auto;
     
   }
-  #ast-new {
+  #ast {
     border: 1px black dashed;
   }
 
@@ -71,9 +71,11 @@
       <lively-inspector id="inspector"></lively-inspector>
     </div>
     <lively-code-mirror id="lcm"></lively-code-mirror>
-    <slot id="ast-new"></slot>
+    <div>
+      <slot name="ast">no ast given</slot>
+    </div>
   </div>
   <div>
-    <span id="path-info">Info-line</span>
+    <div id="path-info">Info-line</div>
   </div>
 </template>

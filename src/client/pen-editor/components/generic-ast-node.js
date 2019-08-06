@@ -32,7 +32,7 @@ export default class GenericAstNode extends AbstractAstNode {
         if (Array.isArray(this.astNode[key])) {
           const childPaths = this.path.get(key);
           childElement = await Promise.all(childPaths.map(async childPath => {
-            const element = await this.getAppropriateElement(childPath);
+            const [element] = await this.getAppropriateElement(childPath);
             await element.setPath(childPath);
             return element;
           }));
@@ -46,7 +46,7 @@ export default class GenericAstNode extends AbstractAstNode {
         }
       } else {
         let childPath = this.path.get(key);
-        childElement = await this.getAppropriateElement(childPath);
+        [childElement] = await this.getAppropriateElement(childPath);
         await childElement.setPath(childPath);
       }
       

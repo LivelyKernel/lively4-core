@@ -341,6 +341,23 @@ extend(Array.prototype, {
     for (let item of this) {
       yield item;
     }
+  },
+
+  /**
+   *
+   */
+  joinElements(builder) {
+    const result = [];
+    let lastItem;
+    for (let item of this) {
+      // not the first item
+      if (result.length > 0) {
+        result.push(builder(lastItem, item));
+      }
+      result.push(item);
+      lastItem = item;
+    }
+    return result;
   }
 
 });

@@ -11,18 +11,13 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#star, #as, #local {
   align-self: center;
 }
 </style>
-  AstNodeImportNamespaceSpecifier
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+	<span id="as" class="keyword">*</span>
+	<span id="as" class="keyword">as</span>
+  <slot id="local" class="aliased" name="local"></slot>
 </template>
 
 

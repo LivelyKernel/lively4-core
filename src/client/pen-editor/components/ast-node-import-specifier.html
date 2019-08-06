@@ -11,18 +11,18 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+:host(.basic) .aliased {
+  display: none;
+}
+#imported, #local, #as, .bracket {
   align-self: center;
 }
 </style>
-  AstNodeImportSpecifier
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <span class="bracket">{</span>
+  <slot id="imported" name="imported"></slot>
+	<span id="as" class="keyword aliased">as</span>
+  <slot id="local" class="aliased" name="local"></slot>
+  <span class="bracket">}</span>
 </template>
 
 

@@ -6,10 +6,16 @@
 :host(*) {
   display: flex;
 }
+  :host(.computed) #dot{
+    display: none;
+  }
+  :host(:not(.computed)) .brackets{
+    display: none;
+  }
 </style>
 	<slot id="object" name="object"></slot>
-  .
+  <span id="dot">.</span>
+  <span class="brackets">[</span>
 	<slot id="property" name="property"></slot>
+  <span class="brackets">]</span>
 </template>
-
-

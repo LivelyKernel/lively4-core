@@ -14,8 +14,6 @@ export default class AstNodeVariableDeclarator extends AbstractAstNode {
   get operator() { return this.get('#operator'); }
   
   async updateProjection() {
-    this.innerHTML = '';
-
     await this.createSubElementForPath(this.path.get('id'), 'id');
 
     if (this.node.init !== null) {

@@ -9,9 +9,7 @@ export default class AstNodeImportNamespaceSpecifier extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('local'), 'local');
   }
   
 }
