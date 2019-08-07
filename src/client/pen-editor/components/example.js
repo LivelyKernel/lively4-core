@@ -4,8 +4,16 @@
  */
 
 ({
-  get foo() {},
-  bar: 42,
+  *[fo](a) {
+    yield a;
+  },
+  set foo(a) {
+    return a + b;
+  },
+  async fooo(a, ...b) {
+    return a + b;
+  },
+  bar: 43,
   baz,
   [bar + foo]: 17
 });
@@ -16,7 +24,7 @@
 // #basic
 // ${world}
 // wd`;
-423.83773;
+4232222.3;
 world;
 true;false;
 this + "a string";

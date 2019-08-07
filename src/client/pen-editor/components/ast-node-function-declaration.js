@@ -12,8 +12,6 @@ export default class AstNodeFunctionDeclaration extends AbstractAstNode {
   get async() { return this.get('#async'); }
   
   async updateProjection() {
-    this.innerHTML = '';
-
     // generator: boolean;
     this.generator.classList.toggle('hidden', !this.node.generator);
 
