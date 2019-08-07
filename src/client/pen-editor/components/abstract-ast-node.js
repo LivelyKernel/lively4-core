@@ -165,12 +165,6 @@ export default class AbstractAstNode extends Morph {
       Math.random() * 0.2 + 0.4,
       Math.random() * 0.2 + 0.8
     )}`;
-    this.constructor.name == 'ast-node-program' ?
-    this.style.border = `solid 3px ${d3.hsl(
-      Math.random() * 360,
-      Math.random() * 0.2 + 0.4,
-      Math.random() * 0.2 + 0.4
-    )}` : void 0;
   }
   
   initHover() {

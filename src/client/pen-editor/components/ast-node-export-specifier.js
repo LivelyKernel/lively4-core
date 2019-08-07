@@ -9,9 +9,17 @@ export default class AstNodeExportSpecifier extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('local'), 'local');
+    const aliased = this.node.local.name !== this.node.exported.name;
+    this.classList.toggle('aliased', aliased);
+    if (aliased) {
+      await this.createSubElementForPath(this.path.get('exported'), 'exported');
+    } else {
+      const exported = this.get(':scope > [slot=exported]');
+      if (exported) {
+        exported.remove();
+      }
+    }
   }
   
 }

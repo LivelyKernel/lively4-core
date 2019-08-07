@@ -11,18 +11,13 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#left, #equals, #right {
   align-self: center;
 }
 </style>
-  AstNodeAssignmentPattern
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <slot name="left"></slot>
+	<span id="equals">=</span>
+  <slot name="right"></slot>
 </template>
 
 

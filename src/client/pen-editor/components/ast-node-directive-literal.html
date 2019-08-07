@@ -5,23 +5,13 @@
 <style>
 :host(*) {
   display: flex;
-
-  margin: 1px;
-  padding: 1px;
-  border: 1px solid goldenrod;
-  background-color: #eeeeee;
 }
-#left, #operator, #right {
-  align-self: center;
+#coloring {
+  color: gray;
 }
 </style>
-  AstNodeDirectiveLiteral
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
+  <span id="coloring">
+    "<span id="value"></span>";
   </span>
 </template>
 

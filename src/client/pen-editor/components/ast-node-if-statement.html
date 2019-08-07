@@ -5,24 +5,30 @@
 <style>
 :host(*) {
   display: flex;
+  flex-direction: column;
 
   margin: 1px;
   padding: 1px;
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+  #header {
+    display: flex;
+  }
+#if, #test, #alternate {
   align-self: center;
 }
+  :host(:not(.has-alternate)) #else {
+    display: none;
+  }
 </style>
-  AstNodeIfStatement
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <div id="header">
+    <span id="if" class="keyword">if</span>
+    <slot id="test" name="test"></slot>
+  </div>
+  <slot id="consequent" name="consequent"></slot>
+	<span id="else" class="keyword">else</span>
+  <slot id="alternate" name="alternate"></slot>
 </template>
 
 

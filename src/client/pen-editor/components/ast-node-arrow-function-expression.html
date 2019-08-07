@@ -6,9 +6,15 @@
 :host {
   display: flex;
 }
+  #async, .bracket, #params, #arrow {
+    align-self: center;
+  }
 </style>
   <span id="async">async</span>
-	(<slot name="params"></slot>) =>
+  <span class="bracket">(</span>
+	<slot id="params" name="params"></slot>
+  <span class="bracket">)</span>
+  <span id="arrow">=></span>
 	<slot name="body"></slot>
 </template>
 

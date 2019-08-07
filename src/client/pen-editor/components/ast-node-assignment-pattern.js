@@ -9,9 +9,8 @@ export default class AstNodeAssignmentPattern extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('left'), 'left');
+    await this.createSubElementForPath(this.path.get('right'), 'right');
   }
   
 }

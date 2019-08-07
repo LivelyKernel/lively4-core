@@ -9,9 +9,7 @@ export default class AstNodeDirectiveLiteral extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    this.get('#value').innerHTML = this.node.value;
   }
   
 }

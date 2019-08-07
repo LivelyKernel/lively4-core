@@ -9,8 +9,6 @@ export default class AstNodeBlockStatement extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-    
     await this.createSubElementForPaths(this.path.get('body'), 'body');
   }
   

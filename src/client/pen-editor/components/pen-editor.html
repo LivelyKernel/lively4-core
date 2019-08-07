@@ -54,19 +54,19 @@
   }
 </style>
   <input id="fileName" />
+  <div id="history"></div>
+  <div >
+    <button id="testButton" class="temp-button">Simple Transform</button>
+    <button id="complexTransform" class="temp-button">Conplex Transform</button>
+    <button id="resetHistory" class="temp-button">ResetHistory</button>
+    <button id="toggleInspector" class="temp-button" title="toggle inspector">
+      <i class="fa fa-share-alt fa-rotate-90" aria-hidden="true"></i>
+    </button>
+    <button id="toggleCodeMirror" class="temp-button" title="toggle lively-code-mirror">
+      <i class="fa fa-align-left fa-flip-vertical" aria-hidden="true"></i>
+    </button>
+  </div>
   <div id="main">
-    <div id="history"></div>
-    <div >
-      <button id="testButton" class="temp-button">Simple Transform</button>
-      <button id="complexTransform" class="temp-button">Conplex Transform</button>
-      <button id="resetHistory" class="temp-button">ResetHistory</button>
-      <button id="toggleInspector" class="temp-button" title="toggle inspector">
-        <i class="fa fa-share-alt fa-rotate-90" aria-hidden="true"></i>
-      </button>
-      <button id="toggleCodeMirror" class="temp-button" title="toggle lively-code-mirror">
-        <i class="fa fa-align-left fa-flip-vertical" aria-hidden="true"></i>
-      </button>
-    </div>
     <div id="inspector-container">
       <lively-inspector id="inspector"></lively-inspector>
     </div>

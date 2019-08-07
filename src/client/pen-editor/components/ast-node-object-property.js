@@ -11,8 +11,8 @@ export default class AstNodeObjectProperty extends AbstractAstNode {
   async updateProjection() {
     this.classList.toggle('computed', this.node.computed);
     await this.createSubElementForPath(this.path.get('key'), 'key');
-    
     this.classList.toggle('shorthand', this.node.shorthand);
+    
     await this.createSubElementForPath(this.path.get('value'), 'value');
   }
   

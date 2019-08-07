@@ -1,10 +1,29 @@
+"enable aexprs";
+
 // Line comment
 /*
  * Block comment
  */
 
+export { foo, bar };
+export { foo23 } from "mod";
+export var foo12 = 1;
+export { we as foo242 } from "bar";
+export default 1;
+export * from "mod";
+
+for (let x of [1, 2, 3]) {
+  console.log(x);
+}
+for (x of [1, 2, 3]) {
+  console.log(x);
+}
+
+null;
+
 ({
-  *[fo](a) {
+  f({ a, c = 42, x: y = z }, [d,, f = 42, ...g]) {},
+  *[fo](a = 2 + 3) {
     yield a;
   },
   set foo(a) {
@@ -43,6 +62,9 @@ switch (hello + world) {
     // falls keine der case-Klauseln mit expression übereinstimmt
     break;
 }
+
+"another directive";
+
 // #imports
 import 'utils';
 import { uuid as genUUID, shake } from 'utils';
@@ -69,7 +91,7 @@ try {
 }
 const hello = 42;
 let world = hello * 17 + 38 / foo,
-    baz;
+    [baz, baz2, { xx },, ...xxx] = blubdiblub;
 arr.map(thing => thing.prop);
 arr.map(thing => thing.method());
 function* yieldAll(...arr) {

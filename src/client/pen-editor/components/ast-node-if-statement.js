@@ -10,8 +10,10 @@ export default class AstNodeIfStatement extends AbstractAstNode {
   
   async updateProjection() {
     this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('test'), 'test');
+    await this.createSubElementForPath(this.path.get('consequent'), 'consequent');
+    this.classList.toggle('has-alternate', this.node.alternate);
+    await this.createSubElementForPath(this.path.get('alternate'), 'alternate');
   }
   
 }
