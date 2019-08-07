@@ -13,6 +13,10 @@ export default class PrimitiveString extends Morph {
     this.enableAutoResize();
   }
   
+  on(evtName, callback) {
+    return this.input.addEventListener(evtName, callback, false);
+  }
+  
   focus() {
     this.input.focus();
   }

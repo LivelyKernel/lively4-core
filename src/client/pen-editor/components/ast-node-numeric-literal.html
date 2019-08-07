@@ -9,8 +9,15 @@
 #content {
   background-color: gray;
 }
+  ::part(input-field) {
+    color: #164;
+  }
+  :host(.use-inner) ::part(input-field) {
+    font-weight: bold;
+    color: #000;
+  }
 </style>
-  <span id="number"></span>
+  <primitive-string id="number"></primitive-string>
 </template>
 
 

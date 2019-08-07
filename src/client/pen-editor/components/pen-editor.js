@@ -549,6 +549,36 @@ export default class PenEditor extends Morph {
     this.setAST(ast);
   }
   
+  commandToggleBooleanLiteral(node) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    ast.traverseAsAST({
+      BooleanLiteral(path) {
+        if (nodeEqual(path, node)) {
+          path.node.value = !path.node.value;
+        }
+      }
+    });
+    
+    this.setAST(ast);
+  }
+  
+  commandModifyNumericLiteral(node, value) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    ast.traverseAsAST({
+      NumericLiteral(path) {
+        if (nodeEqual(path, node)) {
+          path.node.value = value;
+        }
+      }
+    });
+    
+    this.setAST(ast);
+  }
+  
   onResetHistory() {
     this.history.clear();
   }

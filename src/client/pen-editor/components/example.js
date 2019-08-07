@@ -16,7 +16,7 @@
 // #basic
 // ${world}
 // wd`;
-42;
+423.83773;
 world;
 true;false;
 this + "a string";
