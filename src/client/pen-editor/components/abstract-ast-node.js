@@ -25,12 +25,27 @@ export async function getAppropriateElement(path, oldElement) {
   return [element, !shouldReuseOldElement];
 }
 
+function matchesAccessFunctionShorthand(path) {
+  return path.isArrowFunctionExpression() &&
+    path.node.expression === true &&
+    path.get('body').isMemberExpression() &&
+    path.get('body.object').isIdentifier() &&
+    !path.get('body').node.computed &&
+    path.get('params').length === 1 &&
+    path.get('params')[0].isIdentifier() &&
+    path.get('params')[0].node.name === path.get('body.object').node.name;
+}
+
 function getAppropriateElementTagName(path) {
 
   if (!path) {
     return 'generic-ast-node';
   }
 
+  if (matchesAccessFunctionShorthand(path)) {
+    return 'compound-node-access-function-shorthand';
+  }
+  
   if (path.node.type === 'Identifier') { return 'ast-node-identifier'; }
   if (path.node.type === 'Program') { return 'ast-node-program'; }
   if (path.node.type === 'ExpressionStatement') { return 'ast-node-expression-statement'; }
@@ -248,8 +263,13 @@ export default class AbstractAstNode extends Morph {
   }
 
   async createSubElementForPath(astPath, slotName) {
-    if (astPath.node.type === 'NumericLiteral') {debugger}
     const oldElement = this.get(`:scope > [slot=${slotName}]`);
+    
+    if (!astPath.node) {
+      oldElement && oldElement.remove();
+      return;
+    }
+    
     const [element, isNew] = await prepareElementForPath(astPath, slotName, oldElement);
 
     if (oldElement) {
@@ -278,6 +298,8 @@ export default class AbstractAstNode extends Morph {
 
     const newElements = new Map();
     for (let path of paths) {
+      if (path.node === null) { continue; }
+
       const oldElement = currentMatches.get(path);
       const [element, isNew] = await prepareElementForPath(path, slotName, oldElement);
       newElements.set(path, [element, isNew]);
@@ -285,6 +307,9 @@ export default class AbstractAstNode extends Morph {
 
     paths.forEach(path => {
       const oldElement = currentMatches.get(path);
+
+      // #Todo #Workaround some nodes allow for null elements in multi-child fields, e.g. ArrayExpression::elements could have `null` as an element
+      if (!newElements.has(path)) { return; }
       const [element, isNew] = newElements.get(path);
 
       // append here

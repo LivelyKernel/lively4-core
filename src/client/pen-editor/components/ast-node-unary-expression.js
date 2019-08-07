@@ -10,8 +10,14 @@ export default class AstNodeUnaryExpression extends AbstractAstNode {
   
   async updateProjection() {
     this.innerHTML = '';
+    
+    if (!this.node.prefix) {
+      lively.error('non-prefix unary expression!')
+    }
+    
+    this.get('#operator').innerHTML = this.node.operator;
 
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('argument'), 'argument');
   }
   
 }

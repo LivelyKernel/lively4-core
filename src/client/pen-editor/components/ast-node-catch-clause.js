@@ -9,9 +9,15 @@ export default class AstNodeCatchClause extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    if (this.node.param) {
+      await this.createSubElementForPath(this.path.get('param'), 'param');
+    } else {
+      const param = this.get(':scope > [slot=param]')
+      if (param) {
+        param.remove();
+      }
+    }
+    await this.createSubElementForPath(this.path.get('body'), 'body');
   }
   
 }

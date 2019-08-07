@@ -5,24 +5,22 @@
 <style>
 :host(*) {
   display: flex;
+  flex-direction: column;
 
   margin: 1px;
   padding: 1px;
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
-  align-self: center;
+#try {
+  vertical-align: middle;
 }
 </style>
-  AstNodeTryStatement
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <span id="try" class="keyword">try</span>
+  <slot name="block"></slot>
+  <slot name="handler"></slot>
+  <span id="finally" class="keyword">finally</span>
+  <slot name="finalizer"></slot>
 </template>
 
 

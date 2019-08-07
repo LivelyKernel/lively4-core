@@ -11,18 +11,21 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+  :host(:not(.computed)) .bracket {
+    display: none;
+  }
+  :host(.shorthand) #colon, :host(.shorthand) #value {
+    display: none;
+  }
+.bracket, #key, #colon, #value {
   align-self: center;
 }
 </style>
-  AstNodeObjectProperty
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+	<span class="bracket">[</span>
+  <slot id="key" name="key"></slot>
+	<span class="bracket">]</span>
+	<span id="colon">:</span>
+  <slot id="value" name="value"></slot>
 </template>
 
 

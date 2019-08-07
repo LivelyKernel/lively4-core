@@ -11,18 +11,14 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#bracket, #pattern, #flags {
   align-self: center;
 }
 </style>
-  AstNodeRegExpLiteral
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <span id="bracket">/</span>
+  <span id="pattern"></span>
+  <span id="bracket">/</span>
+  <span id="flags"></span>
 </template>
 
 

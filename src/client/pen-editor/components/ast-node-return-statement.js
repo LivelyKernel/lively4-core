@@ -12,8 +12,6 @@ export default class AstNodeReturnStatement extends AbstractAstNode {
   }
 
   async updateProjection() {
-    this.innerHTML = '';
-    
     await this.createSubElementForPath(this.path.get('argument'), 'argument');
   }  
 }

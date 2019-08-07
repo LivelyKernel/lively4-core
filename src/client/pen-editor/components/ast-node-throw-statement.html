@@ -11,18 +11,15 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+  #throw {
+    margin-right: 3px;
+  }
+#throw, #argument {
   align-self: center;
 }
 </style>
-  AstNodeThrowStatement
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <span id="throw" class="keyword">throw</span>
+  <slot id="argument" name="argument"></slot>
 </template>
 
 

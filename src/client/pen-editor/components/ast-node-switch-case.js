@@ -9,9 +9,9 @@ export default class AstNodeSwitchCase extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    this.classList.toggle('default-case', !this.node.test);
+    await this.createSubElementForPath(this.path.get('test'), 'test');
+    await this.createSubElementForPaths(this.path.get('consequent'), 'consequent');
   }
   
 }

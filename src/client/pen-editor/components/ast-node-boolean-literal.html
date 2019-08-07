@@ -3,26 +3,14 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
 <style>
-:host(*) {
-  display: flex;
-
-  margin: 1px;
-  padding: 1px;
-  border: 1px solid goldenrod;
-  background-color: #eeeeee;
-}
-#left, #operator, #right {
-  align-self: center;
-}
+  i.fa-times {
+    color:red;
+  }
+  i.fa-check {
+    color:green;
+  }
 </style>
-  AstNodeBooleanLiteral
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <span><i id="icon" class="fa"></i></span>
 </template>
 
 

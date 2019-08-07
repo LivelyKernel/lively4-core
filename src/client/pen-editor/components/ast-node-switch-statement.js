@@ -9,9 +9,8 @@ export default class AstNodeSwitchStatement extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    await this.createSubElementForPath(this.path.get('discriminant'), 'discriminant');
+    await this.createSubElementForPaths(this.path.get('cases'), 'cases');
   }
   
 }

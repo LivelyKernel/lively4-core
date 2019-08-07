@@ -5,24 +5,28 @@
 <style>
 :host(*) {
   display: flex;
+  flex-direction: column;
 
   margin: 1px;
   padding: 1px;
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+  #header {
+    display: flex;
+  }
+  #catch {
+    margin-right: 3px;
+  }
+#catch, #param {
   align-self: center;
 }
 </style>
-  AstNodeCatchClause
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
-	<span id="operator"></span>
-  <span id="right">
-  	<slot name="right"></slot>
-  </span>
+  <div id="header">
+    <span id="catch" class="keyword">catch</span>
+    <slot id="param" name="param"></slot>
+  </div>
+  <slot name="body"></slot>
 </template>
 
 

@@ -11,15 +11,14 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#operator, #argument {
   align-self: center;
 }
 </style>
-  AstNodeUnaryExpression
-  <span id="left">
-	  <slot name="left"></slot>
-  </span>
 	<span id="operator"></span>
+  <slot id="argument" name="argument"></slot>
+  <span id="left">
+  </span>
   <span id="right">
   	<slot name="right"></slot>
   </span>

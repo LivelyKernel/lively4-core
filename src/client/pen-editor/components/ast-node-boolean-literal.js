@@ -9,9 +9,9 @@ export default class AstNodeBooleanLiteral extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    const icon = this.get('#icon');
+    icon.classList.toggle('fa-check', this.node.value);
+    icon.classList.toggle('fa-times', !this.node.value);
   }
   
 }

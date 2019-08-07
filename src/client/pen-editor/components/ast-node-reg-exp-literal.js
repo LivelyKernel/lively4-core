@@ -9,9 +9,8 @@ export default class AstNodeRegExpLiteral extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
-
-    // await this.createSubElementForPath(this.path.get('object'), 'object');
+    this.get('#pattern').innerHTML = this.node.pattern;
+    this.get('#flags').innerHTML = this.node.flags;
   }
   
 }

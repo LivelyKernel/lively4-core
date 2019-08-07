@@ -9,7 +9,7 @@ export default class $$TEMPLATE_CLASS extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.innerHTML = '';
+    // this.innerHTML = '';
 
     // await this.createSubElementForPath(this.path.get('object'), 'object');
   }
