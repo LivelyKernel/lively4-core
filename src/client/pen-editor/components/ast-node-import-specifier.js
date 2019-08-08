@@ -9,9 +9,18 @@ export default class AstNodeImportSpecifier extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.classList.toggle('basic', this.path.node.local.name === this.path.node.imported.name)
+    const aliased = this.path.node.local.name !== this.path.node.imported.name;
 
-    await this.createSubElementForPath(this.path.get('local'), 'local');
+    this.classList.toggle('basic', !aliased);
+
+    if (aliased) {
+      await this.createSubElementForPath(this.path.get('local'), 'local');
+    } {
+      const local = this.get(':scope > [slot=local]');
+      if (local) {
+        local.remove();
+      }
+    }
     await this.createSubElementForPath(this.path.get('imported'), 'imported');
   }
   

@@ -234,8 +234,12 @@ class Navigation {
   navNextInList(element, evt, linearizedNodeList) {
     this.transformSelection(selectedElement => {
       const currentNode = linearizedNodeList.find(n => nodeEqual(n, selectedElement.astNode));
-      const newIndex = linearizedNodeList.indexOf(currentNode) + 1;
-      const newNode = linearizedNodeList[newIndex];
+      const currentIndex = linearizedNodeList.indexOf(currentNode);
+      const newNode = linearizedNodeList.find((node, index) => {
+        if (index <= currentIndex) { return false; }
+        const element = node && this.getElementForNode(node);
+        return element && element.style && element.style.display !== 'none';
+      });
       if (newNode) {
         const target = this.getElementForNode(newNode);
         if (target && target.localName !== 'ast-node-program') {
