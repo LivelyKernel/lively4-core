@@ -216,6 +216,10 @@ export default class LivelyContainerNavbar extends Morph {
 
   }
   
+  getSelectedItems() {
+    return this.shadowRoot.querySelectorAll(".selected")
+  }
+  
   getSelection() {
     return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
   }
@@ -432,6 +436,22 @@ export default class LivelyContainerNavbar extends Morph {
     // this.clearSublists()
   }
   
+  getLink(item) {
+    return item.querySelector(":scope > a")
+  }
+  
+  isDirectory(item) {
+    if (!item) return false
+    var link = this.getLink(item)
+    return link && link.href.match(/\/$/) && true
+  }
+  
+  isSelected(item)  {
+    var selectedChild = item.querySelector(".selected")
+    
+    return item.classList.contains("selected") || selectedChild
+  }
+  
   onItemClick(link, evt) {
     if (evt.shiftKey) {
       link.parentElement.classList.toggle("selected")
@@ -439,11 +459,11 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.lastSelection = []
       // collapse previousely expanded tree
-      var sublist = link.parentElement.querySelector("ul")
-      
-      if (link.parentElement.classList.contains("selected") && sublist) {
+      var item = link.parentElement
+      if (this.isSelected(item)) {
         this.currentDir = null
-        link.parentElement.classList.remove("selected")
+        item.classList.remove("selected")
+        var sublist = item.querySelector("ul")
         if (sublist) sublist.remove()
       } else {
         this.followPath(link.href);
