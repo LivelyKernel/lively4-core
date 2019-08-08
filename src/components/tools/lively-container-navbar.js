@@ -441,16 +441,12 @@ export default class LivelyContainerNavbar extends Morph {
       // collapse previousely expanded tree
       var sublist = link.parentElement.querySelector("ul")
       
-      if (!link.parentElement.classList.contains("selected") && !sublist) {
-        this.followPath(link.href);
-      } else {
-        // this.url = undefined
+      if (link.parentElement.classList.contains("selected") && sublist) {
         this.currentDir = null
-        
         link.parentElement.classList.remove("selected")
         if (sublist) sublist.remove()
-        
-
+      } else {
+        this.followPath(link.href);
       }
     }
   }
