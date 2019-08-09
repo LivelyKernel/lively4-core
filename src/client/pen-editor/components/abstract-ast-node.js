@@ -25,17 +25,33 @@ export async function getAppropriateElement(path, oldElement) {
   return [element, !shouldReuseOldElement];
 }
 
-function matchesAccessFunctionShorthand(path) {
+function matchesFunctionShorthand(path) {
   return path.isArrowFunctionExpression() &&
     path.node.expression === true &&
-    path.get('body').isMemberExpression() &&
-    path.get('body.object').isIdentifier() &&
-    !path.get('body').node.computed &&
     path.get('params').length === 1 &&
-    path.get('params')[0].isIdentifier() &&
+    path.get('params')[0].isIdentifier();
+}
+
+function isSimpleMemberExpression(path) {
+  return path.isMemberExpression() &&
+    path.get('object').isIdentifier() &&
+    !path.node.computed;
+}
+
+function matchesAccessFunctionShorthand(path) {
+  return matchesFunctionShorthand(path) &&
+    isSimpleMemberExpression(path.get('body')) &&
     path.get('params')[0].node.name === path.get('body.object').node.name;
 }
 
+function matchesCallFunctionShorthand(path) {
+  return matchesFunctionShorthand(path) &&
+    path.get('body').isCallExpression() &&
+    path.get('body.arguments').length === 0 &&
+    isSimpleMemberExpression(path.get('body.callee')) &&
+    path.get('params')[0].node.name === path.get('body.callee.object').node.name;
+}
+that.path
 function getAppropriateElementTagName(path) {
 
   if (!path) {
@@ -44,6 +60,9 @@ function getAppropriateElementTagName(path) {
 
   if (matchesAccessFunctionShorthand(path)) {
     return 'compound-node-access-function-shorthand';
+  }
+  if (matchesCallFunctionShorthand(path)) {
+    return 'compound-node-call-function-shorthand';
   }
   
   if (path.node.type === 'Identifier') { return 'ast-node-identifier'; }
@@ -160,11 +179,11 @@ export default class AbstractAstNode extends Morph {
     this.addEventListener('paste', evt => this.onPaste(evt));
     
     // color [0-360], saturation [0-1], lightness [0-1]
-    this.style.backgroundColor = `${d3.hsl(
-      Math.random() * 360,
-      Math.random() * 0.2 + 0.4,
-      Math.random() * 0.2 + 0.8
-    )}`;
+    // this.style.backgroundColor = `${d3.hsl(
+    //   Math.random() * 360,
+    //   Math.random() * 0.2 + 0.4,
+    //   Math.random() * 0.2 + 0.8
+    // )}`;
   }
   
   initHover() {

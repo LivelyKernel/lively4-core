@@ -143,6 +143,31 @@ class Navigation {
     return this;
   }
 
+  /*MD ### Utilities MD*/
+  forwardList(ast, filterFunction = () => true) {
+    const linearizedNodeList = [];
+    ast.traverseAsAST({
+      exit(path) {
+        if (filterFunction(path)) {
+          linearizedNodeList.push(path.node);
+        }
+      }
+    });
+    return linearizedNodeList;
+  }
+  backwardList(ast, filterFunction = () => true) {
+    const linearizedNodeList = [];
+    ast.traverseAsAST({
+      enter(path) {
+        if (filterFunction(path)) {
+          linearizedNodeList.push(path.node);
+        }
+      }
+    });
+    return linearizedNodeList.reverse();
+  }
+
+  /*MD ### Selection MD*/
   get classSelected() { return 'node-selected'; }
   get selectorSelected() { return '.' + this.classSelected; }
   get primarySelector() { return ':focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within'; }
@@ -215,6 +240,7 @@ class Navigation {
     this.setSelection(newElements, newPrimarySelection);
   }
 
+  /*MD ### Navigation Handler MD*/
   up(element, evt) {
     cancelEvent(evt);
 
@@ -252,34 +278,14 @@ class Navigation {
   left(element, evt) {
     cancelEvent(evt);
 
-    function reversedEnterList(ast) {
-      const linearizedNodeList = [];
-      ast.traverseAsAST({
-        enter(path) {
-          linearizedNodeList.push(path.node);
-        }
-      });
-      return linearizedNodeList.reverse();
-    }
-
-    const linearizedNodeList = reversedEnterList(element.editor.history.current());
+    const linearizedNodeList = this.backwardList(element.editor.history.current());
     this.navNextInList(element, evt, linearizedNodeList);
     return;
   }
   right(element, evt) {
     cancelEvent(evt);
 
-    function exitList(ast) {
-      const linearizedNodeList = [];
-      ast.traverseAsAST({
-        exit(path) {
-          linearizedNodeList.push(path.node);
-        }
-      });
-      return linearizedNodeList;
-    }
-
-    const linearizedNodeList = exitList(element.editor.history.current());
+    const linearizedNodeList = this.forwardList(element.editor.history.current());
     this.navNextInList(element, evt, linearizedNodeList);
     return;
   }
@@ -306,7 +312,7 @@ class Navigation {
     this.transformSelection(selectedElement => {
       const child = getFirstChildNode(selectedElement.astNode, ast);
       if (child) {
-        const newElement = this.getElementForNode(child, element.editor)
+        const newElement = this.getElementForNode(child)
         if (newElement) {
           return newElement;
         } else {
@@ -330,6 +336,44 @@ class Navigation {
 
     return true;
   }
+  
+  nextEquivalentIdentifier(element, evt, backwards) {
+    cancelEvent(evt);
+    
+    const ast = element.editor.history.current();
+    const nodeList = backwards ? this.backwardList(ast) : this.forwardList(ast);
+    
+    this.transformSelection(selectedElement => {
+      const currentNode = nodeList.find(n => nodeEqual(n, selectedElement.astNode));
+      const currentIndex = nodeList.indexOf(currentNode);
+      
+      if (selectedElement.path.isIdentifier()) {
+        const name = currentNode.name;
+        lively.notify('searching', name);
+
+        const isAppropriateIdentifier = node => {
+          return node.type === 'Identifier' &&
+            node.name === name &&
+            this.getElementForNode(node);
+        };
+        
+        const newNode = nodeList.find((node, index) => index > currentIndex && isAppropriateIdentifier(node));
+        if (newNode) {
+          return this.getElementForNode(newNode);
+        } else {
+          const fallbackNode = nodeList.find(isAppropriateIdentifier);
+          if (fallbackNode) {
+            return this.getElementForNode(fallbackNode);
+          } else {
+            return selectedElement;
+          }
+        }
+      } else {
+        // #TODO: select next identifier
+        return selectedElement;
+      }
+    });
+  }
 
   handleKeydown(element, evt) {
     const info = keyInfo(evt);
@@ -349,6 +393,9 @@ class Navigation {
       return true;
     } else if (!ctrl && info.escape) {
       this.clear(element, evt);
+      return true;
+    } else if (!ctrl && info.tab) {
+      this.nextEquivalentIdentifier(element, evt, info.shift);
       return true;
     }
 

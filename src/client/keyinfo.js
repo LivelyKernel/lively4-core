@@ -31,6 +31,7 @@ export class KeyInfo {
   get backspace() { return this.keyCode === 8; }
   get del() { return this.delete; }
   get delete() { return this.keyCode === 46; }
+  get tab() { return this.keyCode === 9; }
 
   get left() { return this.keyCode === 37; }
   get up() { return this.keyCode === 38; }
