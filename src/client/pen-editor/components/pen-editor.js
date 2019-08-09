@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
+debugger;
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -416,7 +416,7 @@ class Navigation {
 /*MD # PenEditor MD*/
 export default class PenEditor extends Morph {
 
-  static get defaultFile() { return lively4url + '/src/client/pen-editor/components/example.js'; }
+  static get defaultFile() { return lively4url + '/src/client/pen-editor/demos/example.js'; }
   /*MD ## Accessors MD*/
   get fileName() { return this.get('input#fileName'); }
   get historyView() { return this.get('#history'); }

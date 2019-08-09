@@ -51,7 +51,7 @@ function matchesCallFunctionShorthand(path) {
     isSimpleMemberExpression(path.get('body.callee')) &&
     path.get('params')[0].node.name === path.get('body.callee.object').node.name;
 }
-that.path
+
 function getAppropriateElementTagName(path) {
 
   if (!path) {
