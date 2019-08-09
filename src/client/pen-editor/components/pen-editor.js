@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-debugger;
+
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
@@ -713,6 +713,12 @@ export default class PenEditor extends Morph {
   
   // #TODO: implement
   async saveFile(filePath) {}
+  
+  get livelyUpdateStrategy() { return 'inplace'; }
+  livelyUpdate() {
+    this.xxx = this.xxx || Math.random();
+    lively.notify(this.xxx)
+  }
   
 }
 

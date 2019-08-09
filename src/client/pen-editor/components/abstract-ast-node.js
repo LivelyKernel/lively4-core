@@ -342,10 +342,16 @@ export default class AbstractAstNode extends Morph {
   /* Lively-specific API */
   livelyPreMigrate() {}
   livelyMigrate(other) {
+    lively.error("WRONG")
     this.setPath(other.path);
   }
   livelyInspect(contentNode, inspector) {}
   livelyPrepareSave() {}
   async livelyExample() {}
 
+  get livelyUpdateStrategy() { return 'inplace'; }
+  livelyUpdate() {
+        lively.success("WRONG")
+
+  }
 }
