@@ -151,7 +151,9 @@ export default class Lively {
   }
 
   static async reloadModule(path, force) {
-    // console.log("reload module " + path)
+    // var start = performance.now()
+    // console.profile('reloadModule')
+
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule];
@@ -187,25 +189,35 @@ export default class Lively {
       dependedModules = lively.findDependedModules(path);
     }
 
+    // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+
+    
     // and update them
-    for(let ea of dependedModules) {
-      // console.log("reload " + path + " triggers reload of " + ea)
-      await this.unloadModule(ea);
-      //System.registry.delete(ea);
-    }
-    // now the system may build up a cache again
-    for(let ea of dependedModules) {
-      // console.log("import " + ea)
-      // #TODO, #BUG: does not seem to work as intended
-      // however, import statement triggers the execution
-      await System.import(ea);
-    }
+    await Promise.all(dependedModules.map(dependentModule => this.unloadModule(dependentModule)));
+
+    // console.log("[reloadModule] unload dependend modules ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+
+    await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
+    // for(let ea of dependedModules) {
+    //   // console.log("reload " + path + " triggers reload of " + ea)
+    //   //System.registry.delete(ea);
+    // }
+    // // now the system may build up a cache again
+    // for(let ea of dependedModules) {
+    //   // console.log("import " + ea)
+    //   // #TODO, #BUG: does not seem to work as intended
+    //   // however, import statement triggers the execution
+    // }
     // now check for dependent web components
     for(let ea of dependedModules) {
       // System.import(ea);
     }
 
-
+    // console.log("[reloadModule] updated depended modules ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+    
     /**
      * Update Templates: Reload a template's .html file
      */
@@ -237,6 +249,9 @@ export default class Lively {
         }
       }
     }
+
+    // console.log("[reloadModule] updated components ",(performance.now() - start) + `ms` ) 
+    // console.profileEnd('reloadModule')
 
     return mod;
   }
@@ -968,7 +983,8 @@ export default class Lively {
     }
     objectToMigrate.forEach(oldInstance => {
       if (oldInstance.__ignoreUpdates) return;
-
+      if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
+      
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 

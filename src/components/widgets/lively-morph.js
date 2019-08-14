@@ -97,5 +97,8 @@ export default class Morph extends HTMLElement {
   setJSONAttribute(name, json) {
     this.setAttribute(name, JSON.stringify(json));
     return json;
-  } 
+  }
+  
+  // another option is 'inplace'
+  get livelyUpdateStrategy() { return 'migrate'; }
 }
