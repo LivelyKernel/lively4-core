@@ -82,6 +82,14 @@ export class Scheme {
       return this.PUT(options)
     } else if (this.OPTIONS && options.method == "OPTIONS") {
       return this.OPTIONS(options)
+    } else if (this.PATCH && options.method == "PATCH") {
+      return this.PATCH(options)
+    } else if (this.POST && options.method == "POST") {
+      return this.POST(options)
+    } else if (this.DELETE && options.method == "DELETE") {
+      return this.DELETE(options)
+    } else if (this.HEAD && options.method == "HEAD") {
+      return this.HEAD(options)
     }
     return new Response("Request not supported", {status: 400})    
   }     

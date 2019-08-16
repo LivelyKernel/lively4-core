@@ -43,19 +43,20 @@ export class MicrosoftScheme extends Scheme {
     return `Bearer ${await this.auth().ensureToken()}`
   }
   
-  async getDefaultHeaders() {
-    let headers = new Headers();
+  async getDefaultHeaders(headers) {
+    headers = new Headers(headers);
     headers.append('Authorization', await this.getBearerToken());
     // headers.append('content-type', "application/json");
     
     return headers;
   }
     
-  async api(method="GET", path) {
-    var headers = await this.getDefaultHeaders()
+  async api(method="GET", path, options={}) {
+    var headers = await this.getDefaultHeaders(options.headers)
     var resp = await fetch(this.baseURL + path, {
       method: method,
-      headers: headers
+      headers: headers,
+      body: options.body
     })
     if (resp.status == 401) {
       await this.auth().logout()
@@ -94,8 +95,25 @@ export class MicrosoftScheme extends Scheme {
       auth.logout()
       return new Response("logged out")
     }
-    return await this.api("GET", this.path)
+    return await this.api("GET", this.path, options)
   }
+  
+  async PATCH(options) {
+    return await this.api("PATCH", this.path, options)
+  }
+  
+  async PUT(options) {
+    return await this.api("PUT", this.path, options)
+  }
+  
+  async POST(options) {
+    return await this.api("POST", this.path, options)
+  }
+
+  async DELETE(options) {
+    return await this.api("DELETE", this.path, options)
+  }
+
   
   async getMetaData() {
     if (!window.lively4MicrosoftCachedMetadata) {
