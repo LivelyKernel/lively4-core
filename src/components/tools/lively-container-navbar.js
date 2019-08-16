@@ -253,6 +253,12 @@ export default class LivelyContainerNavbar extends Morph {
     this.currentDir = this.getRoot(targetURL);
 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
+    
+    if (this.url.match(/microsoft:\/\//)) {
+      urlWithoutIndex = urlWithoutIndex.replace(/\/contents/,"")
+    }
+    
+    
     this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
     
     var parentURL = this.url.replace(/[^/]*$/,"")   
@@ -588,8 +594,9 @@ export default class LivelyContainerNavbar extends Morph {
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
         element.onclick = () => {
-          this.navigateToName(
-            `data-name="${ea.getAttribute('data-name')}"`);
+            this.navigateToName(
+              `data-name="${ea.getAttribute('data-name')}"`);
+          
         };
         subList.appendChild(element) ;
       });
@@ -673,8 +680,11 @@ export default class LivelyContainerNavbar extends Morph {
           class="link subitem" title={ea.name}>{ea.name}</li>
       subList.appendChild(element);
       element.onclick = () => {
-        lively.notify("follow " + ea.name)
-        this.followPath(url + "/" + ea.name)
+        if (ea.href) {
+          this.followPath(ea.href);
+        } else {
+          this.followPath(url + "/" + ea.name)
+        }
       }
     }
   }

@@ -1068,10 +1068,10 @@ export default class Container extends Morph {
       // no options... found
     }
     // this check could happen later
-    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
+    if (path.match(/^https?:\/\//) 
+        && !path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
         && !path.match(window.location.host)
         && !path.match("https://www.draw.io/")
-        && path.match(/https?:\/\//)
       ) {
       if (!options) {
         return window.open(path);
@@ -1441,9 +1441,13 @@ export default class Container extends Morph {
       method: "GET",
       headers: headers
     }).then( resp => {
+    
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
-      
+      if (this.contentType.match("image"))  {
+        this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
+        return  
+      }   
 
       // console.log("[container] lastVersion " +  this.lastVersion)
 
@@ -1503,11 +1507,13 @@ export default class Container extends Morph {
           return this.appendHtml(`<lively-drawio src="${resolvedURL}"></<lively-drawio>`, renderTimeStamp);
         }
       } else {
-        if (content.length > (1 * 1024 * 1024)) {
-          if (render) return this.appendHtml("file size to large", renderTimeStamp); 
-        } else {
-          this.sourceContent = content;
-          if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        if (content) {
+          if (content.length > (1 * 1024 * 1024)) {
+            if (render) return this.appendHtml("file size to large", renderTimeStamp); 
+          } else {
+            this.sourceContent = content;
+            if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+          }          
         }
       }
     }).then(() => {

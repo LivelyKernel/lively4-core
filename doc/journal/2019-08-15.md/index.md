@@ -34,5 +34,27 @@ var services = {
 
 To not store those IDs and urls in a repository, we could load them dynamically after loading lively4-auth. #TODO #OAuth
 
+## Experiments with OData
+
+But I am not so sure if it will bring us forward...
+
+```javascript
+import OAuth2 from "src/client/oauth2.js"
+import {o} from "src/external/odata.min.js"
+
+var auth = new OAuth2("microsoft");
+auth.logout();
+
+(async () => {
+  
+  
+  return o("https://graph.microsoft.com/v1.0/", {
+    headers: {
+      'Authorization': `Bearer ${await auth.ensureToken()}`
+    }
+  }).get('drive/root')
+    .query();
+})()
+```
 
 
