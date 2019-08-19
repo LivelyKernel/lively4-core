@@ -1084,7 +1084,7 @@ export default class Container extends Morph {
 
     var lastPath = _.last(this.history())
     if (lastPath !== path) {
-      if (lastPath && path && (path == lastPath) && lastPath.match(/\.md\/?$/)) {
+      if (lastPath && path && path.startsWith(lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
       } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
         // we have a index file redirection here...
@@ -1448,6 +1448,12 @@ export default class Container extends Morph {
         this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
         return  
       }   
+      
+      // if (this.contentType.match("text/html"))  {
+      //   format = "html"  
+      // }
+      
+      
 
       // console.log("[container] lastVersion " +  this.lastVersion)
 
@@ -1464,7 +1470,7 @@ export default class Container extends Morph {
       this.showNavbar();
       
       
-      if (format == "html" || this.contentType == "text/html")  {
+      if (format == "html" || this.contentType.match("text/html"))  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {

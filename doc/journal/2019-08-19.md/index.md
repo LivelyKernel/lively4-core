@@ -1,4 +1,4 @@
-## 2019-08-19
+## 2019-08-19 #OneNote via #Microsoft Protocol
 
 ### Microsoft uses POID ;-) #RelatedWork
 
@@ -39,3 +39,28 @@
       }
     },
 ```
+
+
+
+### Patch #OneNote Elements
+
+works as described on https://docs.microsoft.com/en-us/graph/onenote-update-page
+
+```javascript
+fetch("microsoft://users/jensl81@gmx.de/onenote/pages/0-d277a55b04d2418cb8238a97b25d6656!9-D333AEE656452F8B!169954/content", {
+  method: "PATCH",
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify([
+    {
+      'target':'p:{85276b74-153d-4f23-b2d8-36666ea7c8e2}{232}',
+      'action':'replace',
+      'content':'<p>and what about this?</p>'
+    }
+  ])
+}).then(r => r.text())
+```
+
+
+![](onenote_what_about_this.png)

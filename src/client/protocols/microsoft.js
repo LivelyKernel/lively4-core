@@ -234,6 +234,7 @@ export class MicrosoftScheme extends Scheme {
             name: ea.name || ea.displayName || ea.title || ea.createdDateTime || "",
             type: "directory"
         }
+        debugger
         if (ea.url && ea.url.match(/^[a-zA-Z0-9/]+$/)) {
           child.href =  "microsoft://" + ea.url                                                                  
         } else if (ea.sectionsUrl) { // #OneNote
@@ -241,10 +242,15 @@ export class MicrosoftScheme extends Scheme {
           child.href =  "microsoft://" + ea.sectionsUrl.replace("https://graph.microsoft.com/v1.0/","")                                                       
         } else if (ea.pagesUrl) { // #OneNote pages
           child.href =  "microsoft://" + ea.pagesUrl.replace("https://graph.microsoft.com/v1.0/","")                                                       
-        } else if (ea.self && ea.self.match("https://graph.microsoft.com/v1.0")) { 
-          child.href =  "microsoft://" + ea.self.replace("https://graph.microsoft.com/v1.0/","")
-          ea.type = "file"
-        }
+        } else if (ea.self && ea.self.startsWith("https://graph.microsoft.com/v1.0")) { 
+          debugger
+          child.href =  "microsoft://" + ea.self.replace("https://graph.microsoft.com/v1.0/","") 
+          child.type = "file"
+          if (ea.self.match(/\/onenote\/pages\//)) {
+            child.href += "/content?includeIDs=true"
+          }
+          
+        } 
         return child
       }))
       
@@ -291,43 +297,7 @@ export class MicrosoftScheme extends Scheme {
       await addContentsFromType(contextPath)
       
     } else {
-      debugger
       await addContentsFromType(this.path) // maybe the path itselve is already a type?
-          
-    // #Reflection #Hack https://docs.microsoft.com/en-us/graph/integrate-with-onenote
-    /* this is in the Graph Def #TODO
-      <EntityType Name="onenote" BaseType="microsoft.graph.entity">
-        <NavigationProperty Name="notebooks" Type="Collection(microsoft.graph.notebook)" ContainsTarget="true"/>
-        <NavigationProperty Name="sections" Type="Collection(microsoft.graph.onenoteSection)" ContainsTarget="true"/>
-        <NavigationProperty Name="sectionGroups" Type="Collection(microsoft.graph.sectionGroup)" ContainsTarget="true"/>
-        <NavigationProperty Name="pages" Type="Collection(microsoft.graph.onenotePage)" ContainsTarget="true"/>
-        <NavigationProperty Name="resources" Type="Collection(microsoft.graph.onenoteResource)" ContainsTarget="true"/>
-        <NavigationProperty Name="operations" Type="Collection(microsoft.graph.onenoteOperation)" ContainsTarget="true"/>
-      </EntityType>
-  */
-    // if (this.path.match(/^me\/onenote\/?$/)) { 
-    //   return new Response(JSON.stringify({
-    //       name: "onenote",
-    //       type: "direcotry",
-    //       contents: [
-    //         {
-    //           name: "notebooks",
-    //           type: "directory"
-    //         },
-    //         {
-    //           name: "sections",
-    //           type: "directory"
-    //         },
-    //         {
-    //           name: "pages",
-    //           type: "directory"
-    //         }
-    //       ]
-    //   }, undefined, 2))
-    // }
-      
-      
-      
     }
     
     
@@ -358,26 +328,6 @@ export class MicrosoftScheme extends Scheme {
           }))
       }      
     }
-    
-    // if (json["@microsoft.graph.downloadUrl"]) {
-    //   result.contents.push({
-    //     name: "download",
-    //     type: "file",
-    //     href: "cached://"+json["@microsoft.graph.downloadUrl"]
-    //   })
-    // }
-    
-//     result.contents.push({
-//       name: "children",
-//       type: "link",
-//       href:  "microsoft://" + this.path.replace(/\/$/,"") + "/children"
-//     })
-    
-//     result.contents.push({
-//       name: "content",
-//       type: "link",
-//       href:  "microsoft://" + this.path.replace(/\/$/,"") + "/content"
-//     })
     
     
     return new Response(JSON.stringify(result, undefined, 2))
