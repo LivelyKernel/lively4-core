@@ -89,13 +89,16 @@ export class MicrosoftScheme extends Scheme {
     return urlObj.pathname.replace(/^\/*/,"")
   }
   
+  
+  
   async GET(options) {
     if (this.path == "logout") {
       var auth = new OAuth2("microsoft")
       auth.logout()
       return new Response("logged out")
     }
-    return await this.api("GET", this.path, options)
+    let urlObj = new URL(this.url)
+    return await this.api("GET", this.path + urlObj.search, options)
   }
   
   async PATCH(options) {
@@ -207,64 +210,52 @@ export class MicrosoftScheme extends Scheme {
   
   
   async OPTIONS(options) {
-    var json = await this.apiJSON("GET", this.path + "")
-    
+  
     var result = {
       name: this.path,
       type: "directory",
       contents: []
     }
-  
+    
+    try {
+      var json = await this.apiJSON("GET", this.path + "")
+      
+    } catch(e) {
+      json = {}
+      // do nothing
+    }
+
+
     
     if (json.value) {
       
       result.contents.push(...json.value.map(ea => {
         var child = {
-            name: ea.name,
+            name: ea.name || ea.displayName || ea.title || ea.createdDateTime || "",
             type: "directory"
         }
         if (ea.url && ea.url.match(/^[a-zA-Z0-9/]+$/)) {
           child.href =  "microsoft://" + ea.url                                                                  
+        } else if (ea.sectionsUrl) { // #OneNote
+          // there is also sectionGroupsUrl
+          child.href =  "microsoft://" + ea.sectionsUrl.replace("https://graph.microsoft.com/v1.0/","")                                                       
+        } else if (ea.pagesUrl) { // #OneNote pages
+          child.href =  "microsoft://" + ea.pagesUrl.replace("https://graph.microsoft.com/v1.0/","")                                                       
+        } else if (ea.self && ea.self.match("https://graph.microsoft.com/v1.0")) { 
+          child.href =  "microsoft://" + ea.self.replace("https://graph.microsoft.com/v1.0/","")
+          ea.type = "file"
         }
         return child
       }))
       
     }
     
-    if (json.folder) {
-      var children = await this.apiJSON("GET", this.path + "/children")
-      if (children && children.value) {
-        
-        result.contents.push(...children.value.map(ea => {
-            var child = ({
-              name: ea.name,
-              type: "link",
-              //href: "microsoft://me/drive/items/" + ea.id 
-            })
-            
-            child.href = "microsoft://" + this.path.replace(/[\/:]*$/,"") + (this.path.match(/\:/)  ?  "/" : ":/") + ea.name + ":"
-
-            if (ea.folder) {
-              child.type = "directory"
-            } else if (ea.file) {
-              child.type = "file"
-              if (ea.file.mimeType.match("text/") || ea.file.mimeType.match("image/")) {
-                // guess... I want to see the content
-                child.href += "/content"
-              }
-            }
-            return child
-          }))
-      }      
-    }
     
     if (json.parentReference) {
       result.parent =  "microsoft://me/drive/items/" + json.parentReference.id + "/"
     }
     
-    if (json['@odata.context']) {
-      var contextPath = new URL(json["@odata.context"]).hash.replace(/^#/,"")
-      
+    var addContentsFromType = async (contextPath) => {
       var entityType = await this.getMetaDataType(contextPath)  
       if (entityType) {
         var navigationProperties = entityType.querySelectorAll("NavigationProperty")  
@@ -291,10 +282,82 @@ export class MicrosoftScheme extends Scheme {
           }))        
         }
       }
+    }
+    
+    
+    
+    if (json['@odata.context']) {
+      var contextPath = new URL(json["@odata.context"]).hash.replace(/^#/,"")
+      await addContentsFromType(contextPath)
+      
+    } else {
+      debugger
+      await addContentsFromType(this.path) // maybe the path itselve is already a type?
+          
+    // #Reflection #Hack https://docs.microsoft.com/en-us/graph/integrate-with-onenote
+    /* this is in the Graph Def #TODO
+      <EntityType Name="onenote" BaseType="microsoft.graph.entity">
+        <NavigationProperty Name="notebooks" Type="Collection(microsoft.graph.notebook)" ContainsTarget="true"/>
+        <NavigationProperty Name="sections" Type="Collection(microsoft.graph.onenoteSection)" ContainsTarget="true"/>
+        <NavigationProperty Name="sectionGroups" Type="Collection(microsoft.graph.sectionGroup)" ContainsTarget="true"/>
+        <NavigationProperty Name="pages" Type="Collection(microsoft.graph.onenotePage)" ContainsTarget="true"/>
+        <NavigationProperty Name="resources" Type="Collection(microsoft.graph.onenoteResource)" ContainsTarget="true"/>
+        <NavigationProperty Name="operations" Type="Collection(microsoft.graph.onenoteOperation)" ContainsTarget="true"/>
+      </EntityType>
+  */
+    // if (this.path.match(/^me\/onenote\/?$/)) { 
+    //   return new Response(JSON.stringify({
+    //       name: "onenote",
+    //       type: "direcotry",
+    //       contents: [
+    //         {
+    //           name: "notebooks",
+    //           type: "directory"
+    //         },
+    //         {
+    //           name: "sections",
+    //           type: "directory"
+    //         },
+    //         {
+    //           name: "pages",
+    //           type: "directory"
+    //         }
+    //       ]
+    //   }, undefined, 2))
+    // }
+      
       
       
     }
     
+    
+    
+    if (result.contents.find(ea => ea.name == "children")) {
+      var children = await this.apiJSON("GET", this.path + "/children")
+      if (children && children.value) {
+        
+        result.contents.push(...children.value.map(ea => {
+            var child = ({
+              name: ea.name,
+              type: "link",
+              //href: "microsoft://me/drive/items/" + ea.id 
+            })
+            
+            child.href = "microsoft://" + this.path.replace(/[\/:]*$/,"") + (this.path.match(/\:/)  ?  "/" : ":/") + ea.name + ":"
+
+            if (ea.folder) {
+              child.type = "directory"
+            } else if (ea.file) {
+              child.type = "file"
+              if (ea.file.mimeType.match("text/") || ea.file.mimeType.match("image/")) {
+                // guess... I want to see the content
+                child.href += "/content"
+              }
+            }
+            return child
+          }))
+      }      
+    }
     
     // if (json["@microsoft.graph.downloadUrl"]) {
     //   result.contents.push({

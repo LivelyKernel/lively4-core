@@ -1084,7 +1084,7 @@ export default class Container extends Morph {
 
     var lastPath = _.last(this.history())
     if (lastPath !== path) {
-      if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
+      if (lastPath && path && (path == lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
       } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
         // we have a index file redirection here...
