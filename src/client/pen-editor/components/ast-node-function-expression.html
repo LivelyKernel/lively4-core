@@ -1,0 +1,33 @@
+<template id="ast-node-function-expression" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host {
+  display: flex;
+}
+.content {
+  width: min-content;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+  #async, #function, #generator {
+    margin-right: 3px;
+  }
+#async, #function, #generator, #callee, #open-bracket, #arguments, #closing-bracket {
+  align-self: center;
+}
+</style>
+  
+  <span id="async" class="keyword">async</span>
+  <span id="function" class="keyword">function</span>
+  <span id="generator" class="keyword">*</span>
+  <span id="open-bracket">(</span>
+  <span id="params">
+    <slot name="params"></slot>
+  </span>
+  <span id="closing-bracket">)</span>
+    <slot name="body"></slot>
+</template>
+
+

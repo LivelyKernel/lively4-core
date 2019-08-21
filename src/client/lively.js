@@ -151,7 +151,9 @@ export default class Lively {
   }
 
   static async reloadModule(path, force) {
-    // console.log("reload module " + path)
+    // var start = performance.now()
+    // console.profile('reloadModule')
+
     path = "" + path;
     var changedModule = System.normalizeSync(path);
     var load = System.loads[changedModule];
@@ -187,34 +189,53 @@ export default class Lively {
       dependedModules = lively.findDependedModules(path);
     }
 
+    // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+
+    
     // and update them
+    await Promise.all(dependedModules.map(dependentModule => this.unloadModule(dependentModule)));
+
+    // console.log("[reloadModule] unload dependend modules ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+
+    await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
+    // for(let ea of dependedModules) {
+    //   // console.log("reload " + path + " triggers reload of " + ea)
+    //   //System.registry.delete(ea);
+    // }
+    // // now the system may build up a cache again
+    // for(let ea of dependedModules) {
+    //   // console.log("import " + ea)
+    //   // #TODO, #BUG: does not seem to work as intended
+    //   // however, import statement triggers the execution
+    // }
+    // now check for dependent web components
     for(let ea of dependedModules) {
-      // console.log("reload " + path + " triggers reload of " + ea)
-      this.unloadModule(ea);
-      //System.registry.delete(ea);
-    }
-    // now the system may build up a cache again
-    for(let ea of dependedModules) {
-      System.import(ea);
+      // System.import(ea);
     }
 
-    /**
-     * Update a templates prototype
-     */
-    let moduleName = path.replace(/[^/]*/,"");
-    let defaultClass = mod.default;
-    if (defaultClass) {
-      console.log("update template prototype: " + moduleName);
-      components.updatePrototype(defaultClass, moduleName);
-    }
-
+    // console.log("[reloadModule] updated depended modules ",(performance.now() - start) + `ms` ) 
+    // start = performance.now()
+    
     /**
      * Update Templates: Reload a template's .html file
      */
-    [path].concat(dependedModules).forEach(eaPath => {
-      console.log("update dependend: ", eaPath, 3, "blue")
+    for (let eaPath of [path].concat(dependedModules)) {
+      // console.log("update dependend: ", eaPath)
       let found = lively.components.getTemplatePaths().find(templatePath => eaPath.match(templatePath))
       if (found) {
+        /**
+         * Update a templates prototype
+         */
+        let moduleName = eaPath.replace(/[^/]*/,"");
+        let mod = await System.import(eaPath);
+        let defaultClass = mod.default;
+        if (defaultClass) {
+          console.log("update template prototype: " + moduleName);
+          components.updatePrototype(defaultClass, moduleName);
+        }
+
         let templateURL = eaPath.replace(/\.js$/,".html");
         try {
           console.log("[templates] update template " + templateURL);
@@ -227,7 +248,10 @@ export default class Lively {
           lively.notify("[templates] could not update template " + templateURL, ""+e);
         }
       }
-    });
+    }
+
+    // console.log("[reloadModule] updated components ",(performance.now() - start) + `ms` ) 
+    // console.profileEnd('reloadModule')
 
     return mod;
   }
@@ -403,6 +427,7 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me
   }
@@ -959,7 +984,8 @@ export default class Lively {
     }
     objectToMigrate.forEach(oldInstance => {
       if (oldInstance.__ignoreUpdates) return;
-
+      if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
+      
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
@@ -969,7 +995,9 @@ export default class Lively {
       if (oldInstance.livelyPreMigrate) {
         oldInstance.livelyPreMigrate(oldInstance);
       }
-      owner.replaceChild(newInstance, oldInstance);
+      if (owner) {
+        owner.replaceChild(newInstance, oldInstance);
+      }
       Array.from(oldInstance.childNodes).forEach(ea => {
         if (ea) { // there are "undefined" elemented in childNodes... sometimes #TODO
           newInstance.appendChild(ea);
@@ -1141,7 +1169,7 @@ export default class Lively {
   static async showSource(object, evt) {
     if (object instanceof HTMLElement) {
         var comp  = document.createElement("lively-container");
-        components.openInWindow(comp).then((async (container) => {
+        components.openInWindow(comp, lively.getPosition(evt)).then((async (container) => {
           comp.editFile(await this.components.searchTemplateFilename(object.localName + ".html"));
         }));
     } else {
@@ -1499,11 +1527,13 @@ export default class Lively {
       return this.findWorldContext(element.parentElement)
   }
 
-  static activeElement(worldContext) {
+  
+  static activeElement(worldContext, type) {
     worldContext = worldContext || document
     var element = worldContext.activeElement
+    if (type && element.localName == type) return element
     if (element.shadowRoot && element.shadowRoot.activeElement)
-      return this.activeElement(element.shadowRoot); // probe if we want to go deeper
+      return this.activeElement(element.shadowRoot, type); // probe if we want to go deeper
     return element
   }
 

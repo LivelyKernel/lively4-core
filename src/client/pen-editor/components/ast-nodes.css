@@ -1,0 +1,39 @@
+
+
+
+.border-wrap {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+
+:host(.border-wrap) {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+
+.keyword {
+  font-weight: bold;
+}
+
+:host(.node-hover) {
+  outline: green inset 2px;
+}
+:host(.node-selected, :focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within) {
+  background-color: #fafbcb;
+  outline: orange 2px solid;
+}
+
+:host(*) {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+  transform: translate(0px, 0px) scale(1.0);
+  box-shadow: 0em 0em 0em transparent;
+}
+:host(:focus, ast-node-identifier:focus-within, ast-node-numeric-literal:focus-within, ast-node-string-literal:focus-within) {
+  box-shadow: 0em 0.5em 0.4em darkgray;
+  transform: translate(0px, -2px) scale(1.1);
+}

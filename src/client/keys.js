@@ -11,21 +11,14 @@
 
 import boundEval from "src/client/bound-eval.js";
 import GraphControl from "templates/graph-control.js";
+import keyInfo from "src/client/keyinfo.js";
 
 export default class Keys {
-
-  static getChar(evt) {
-    return String.fromCharCode(evt.keyCode || evt.charCode);
-  }
-
-  static logEvent(evt) {
-    console.log(`Pressed ${this.getChar(evt)} (shift=${evt.shiftKey}, ctrl=${evt.ctrlKey}, alt=${evt.altKey}, meta=${evt.metaKey})`);
-  }
 
   static getTextSelection() {
     return window.getSelection().toLocaleString();
   }
-
+  
   static handle(evt) {
     function handledInCodeMirror(evt) {
       return evt.composedPath().find(node => node.tagName == "LIVELY-CODE-MIRROR");
@@ -36,9 +29,7 @@ export default class Keys {
     lively.lastScrollLeft = document.scrollingElement.scrollLeft;
     
     try {
-      const char = this.getChar(evt);
-      const ctrl = evt.ctrlKey || evt.metaKey;
-      const { shiftKey, altKey, keyCode, charCode } = evt;
+      const { char, ctrl, shiftKey, altKey, keyCode, charCode } = keyInfo(evt);
       
       const keyHandlers = [
         // #KeyboardShortcut Ctrl-K open workspace

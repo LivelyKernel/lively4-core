@@ -1,0 +1,47 @@
+<template id="ast-node-class-method" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+  flex-direction: column;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+#header {
+  display: flex;
+}
+.modifiers {
+  margin-right: 3px;
+}
+.modifiers, #key, .computed-brackets, .params-brackets, #params {
+  align-self: center;
+}
+</style>
+  <div id="header">
+    <span id="static" class="keyword modifiers">static</span>
+    <span id="async" class="keyword modifiers">async</span>
+    <span id="generator" class="keyword modifiers">*</span>
+    <span id="kind" class="keyword modifiers">kind</span>
+    <span class="computed-brackets">[</span>
+    <span id="key">
+      <slot name="key"></slot>
+    </span>
+    <span class="computed-brackets">]</span>
+    <span class="params-brackets">(</span>
+    <span id="params">
+      <slot name="params"></slot>
+    </span>
+    <span class="params-brackets">)</span>
+  </div>
+
+  <div id="body-container">
+    <slot name="body"></slot>
+  </div>
+</template>
+
+

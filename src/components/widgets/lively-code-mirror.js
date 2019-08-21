@@ -15,16 +15,23 @@ import * as spellCheck from "src/external/codemirror-spellcheck.js"
 
 import {isSet} from 'utils'
 
+import fake from "./lively-code-mirror-fake.js"
 
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
 self.CodeMirror = CodeMirror // for modules
 
 let loadPromise = undefined;
 
+import { loc, range } from 'utils';
+
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  fake(...args) {
+    fake(this.editor, ...args)
+  }
+  
   get mode() {
     return this.getAttribute('mode');
   }
@@ -213,7 +220,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   setupEditor() {
-  	var editor = this.editor;
+    var editor = this.editor;
     if (this.mode) {
       editor.setOption("mode", this.mode);
     }
@@ -223,7 +230,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("matchTags", true)
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
-    editor.on("change", (() => this.checkSyntax())::debounce(500))
+    editor.on("change", (() => this.checkSyntax()).debounce(500))
 
 		// apply attributes
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));
@@ -243,8 +250,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (!this.extraKeys) {
       var editor = this.editor
       this.extraKeys = {
-        "Alt-F": "findPersistent",
-        // "Ctrl-F": "search",
         // #KeyboardShortcut Ctrl-H search and replace
         "Insert": (cm) => {
           // do nothing... ther INSERT mode is so often actived by accident 
@@ -341,10 +346,248 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.ternWrapper.then(tw => tw.showReferences(cm, this));
         },
         
+        // #KeyboardShortcut Alt-Up expand selection in ast-aware manner
+        "Alt-Up": cm => {
+          this.expandSelection(cm)
+        },
+        // #KeyboardShortcut Alt-Down show references using tern
+        "Alt-Down": cm => {
+        },
+        // #KeyboardShortcut Alt-Right show references using tern
+        "Alt-Right": cm => {
+        },
+        // #KeyboardShortcut Alt-Left show references using tern
+        "Alt-Left": cm => {
+        },
+        // #KeyboardShortcut Alt-F fold (inverse code folding)
+        "Alt-F": cm => {
+          this.fold(cm);
+        },
+        // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
+        "Shift-Alt-F": cm => {
+          this.unfold(cm);
+        },
+        
+        // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
+        "Ctrl-Shift-Alt-F": cm => {
+          this.autoFoldMax()
+        },
+        
+        
       }
     }
     return this.extraKeys
   }
+  
+  /*MD ### AST-aware Navigation MD*/
+  get selectionRanges() {
+    return this.editor.listSelections().map(range);
+  }
+  get programPath() {
+    let programPath;
+    this.value.traverseAsAST({
+      Program(path) {
+        programPath = path;
+      }
+    });
+    return programPath;
+  }
+  getPathForRoute(route) {
+    let path = this.programPath;
+    if(!path) {
+      lively.warn('No programPath found');
+    }
+    
+    route.forEach(routePoint => {
+      path = path.get(routePoint.inList ? routePoint.listKey + '.' + routePoint.key : routePoint.key);
+    });
+    
+    return path;
+  }
+  nextPath(startingPath, isValid) {
+    let pathToShow;
+
+    startingPath.traverse({
+      enter(path) {
+        if(!pathToShow && isValid(path)) {
+          pathToShow = path;
+        }
+      }
+    });
+
+    return pathToShow;
+  }
+  getInnermostPath(startingPath, nextPathCallback) {
+    let pathToShow = startingPath;
+    while(true) {
+      let nextPath = nextPathCallback(pathToShow);
+      if(nextPath) {
+        pathToShow = nextPath;
+      } else {
+        break;
+      }
+    }
+
+    return pathToShow;
+  }
+  expandSelection(cm) {
+    
+    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+
+      // go down to minimal selected node
+      const nextPathContainingCursor = (startingPath, {anchor, head}) => {
+        return this.nextPath(startingPath, path => {
+          const location = range(path.node.loc);
+          return location.contains(anchor) && location.contains(head);
+        });
+      }
+      const pathToShow = this.getInnermostPath(this.programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+
+      // go up again
+      let selectionStart = loc(anchor);
+      let selectionEnd = loc(head);
+      return pathToShow.find(path => {
+        const pathLocation = path.node.loc;
+        const pathStart = loc(pathLocation.start);
+        const pathEnd = loc(pathLocation.end);
+
+        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd)
+      }) || pathToShow;
+    });
+
+    this.selectPaths(maxPaths);
+  }
+  
+  selectPaths(paths) {
+    const ranges = paths.map(path => {
+      const [anchor, head] = range(path.node.loc).asCM();
+      return { anchor, head };
+    });
+    this.editor.setSelections(ranges);
+  }
+  selectPath(path) {
+    range(path.node.loc).selectInCM(this.editor);
+  }
+  isCursorIn(location, cursorStart) {
+    return range(location).contains(this.editor.getCursor(cursorStart));
+  }
+  
+  
+  get routeToShownPath() { return this._routeToShownPath = this._routeToShownPath || []; }
+  set routeToShownPath(value) { return this._routeToShownPath = value; }
+  get markerWrappers() { return this._markerWrappers = this._markerWrappers || []; }
+  set markerWrappers(value) { return this._markerWrappers = value; }
+
+  unfold() {
+    const prevPath = this.getPathForRoute(this.routeToShownPath)
+
+    const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
+    
+    if(pathToShow) {
+      this.foldPath(pathToShow);
+    } else {
+      lively.warn("No previous folding level found");
+    }
+  }
+  isValidFoldPath(path) {
+    return true;
+    return path.isProgram() ||
+      path.isForOfStatement() ||
+      path.isFunctionExpression() ||
+      path.isForAwaitStatement() ||
+      (path.parentPath && path.parentPath.isYieldExpression()) ||
+      path.isArrowFunctionExpression();
+  }
+  nextFoldingPath(startingPath) {
+    return this.nextPath(startingPath, path => {
+      const location = path.node.loc;
+      if(!this.isCursorIn(location, 'anchor')) { return false; }
+      if(!this.isCursorIn(location, 'head')) { return false; }
+
+      return this.isValidFoldPath(path);
+    });
+  }
+  fold() {
+    const prevPath = this.getPathForRoute(this.routeToShownPath)
+    
+    const pathToShow = this.nextFoldingPath(prevPath);
+    
+    if(pathToShow) {
+      this.foldPath(pathToShow);
+    } else {
+      lively.warn("No next folding level found");
+    }
+  }
+  autoFoldMax() {
+    const pathToShow = this.getInnermostPath(this.programPath, prevPath => this.nextFoldingPath(prevPath));
+    
+    if(pathToShow) {
+      this.foldPath(pathToShow);
+    } else {
+      lively.warn("No folding level for automatic fold found");
+    }
+  }
+  getRouteForPath(path) {
+    const route = [];
+    
+    path.find(path => {
+      if(path.isProgram()) { return false; } // we expect to start at a Program node
+
+      route.unshift({
+        inList: path.inList,
+        listKey: path.listKey,
+        key: path.key
+      });
+      
+      return false;
+    })
+    
+    return route;
+  }
+  foldPath(path) {
+    this.removeFolding();
+
+    this.routeToShownPath = this.getRouteForPath(path);
+
+    const location = path.node.loc;
+
+    this.createWrapper({
+      line: 0, ch: 0
+    }, {
+      line: location.start.line - 1, ch: location.start.column
+    });
+    this.createWrapper({
+      line: location.end.line - 1, ch: location.end.column
+    }, {
+      line: this.editor.lineCount(), ch: 0
+    });
+
+    requestAnimationFrame(() => {
+      this.editor.refresh();
+    });
+  }
+  createWrapper(from, to) {
+    const divStyle = {
+      width: "2px",
+      height: "1px",
+      minWidth: "2px",
+      minHeight: "1px",
+      borderRadius: "1px",
+      backgroundColor: "green"
+    };
+
+    return this.wrapWidget('div', from, to).then(div => {
+      // div.innerHTML='<i class="fa fa-plus"></i>xx'
+      Object.assign(div.style, divStyle);
+      this.markerWrappers.push(div);
+    });
+  }
+  removeFolding() {
+    this.markerWrappers.forEach(wrapper => wrapper.marker.clear());
+    this.markerWrappers.length = 0;
+  }
+  
+  /*MD ### /AST-aware Navigation MD*/
   
   registerExtraKeys(options) {
     if (options) this.addKeys(options)

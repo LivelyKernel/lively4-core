@@ -129,7 +129,10 @@ export default class Container extends Morph {
     };
     path = lively.preferences.getURLParameter("load");
     edit = lively.preferences.getURLParameter("edit");
-
+    let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
+    if (fullscreen) {
+      this.onFullscreen() // #TODO replace toggle logic with enableFullscreen, disableFullscreen
+    }
 
     // force read mode
     if(this.getAttribute("mode") == "read" && edit) {
@@ -137,6 +140,8 @@ export default class Container extends Morph {
       edit = undefined;
     }
 
+    
+    
     if (!path || path == "null") {
       path = lively4url + "/"
     }
@@ -168,6 +173,7 @@ export default class Container extends Morph {
         this.parentElement.get(".window-titlebar").style.display = "none"
         this.parentElement.style.zIndex = 0
       } else {
+        this.parentElement.style.zIndex = 1000
         this.parentElement.get(".window-titlebar").style.display = ""
       }
     }
@@ -1040,7 +1046,7 @@ export default class Container extends Morph {
     }
     
     if (this.unsavedChanges()) {
-      if (!window.confirm("You will lose unsaved changes, continue anyway?")) {
+      if (!await lively.confirm("You will lose unsaved changes, continue anyway?")) {
         return;
       }
     }
@@ -1062,10 +1068,10 @@ export default class Container extends Morph {
       // no options... found
     }
     // this check could happen later
-    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
+    if (path.match(/^https?:\/\//) 
+        && !path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
         && !path.match(window.location.host)
         && !path.match("https://www.draw.io/")
-        // && path.match(/https?:\/\//)
       ) {
       if (!options) {
         return window.open(path);
@@ -1078,8 +1084,10 @@ export default class Container extends Morph {
 
     var lastPath = _.last(this.history())
     if (lastPath !== path) {
-      if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
+      if (lastPath && path && path.startsWith(lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
+      } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
+        // we have a index file redirection here...
       } else {
         this.history().push(path);
       }
@@ -1089,7 +1097,7 @@ export default class Container extends Morph {
     if (this.useBrowserHistory() && this.isFullscreen()) {
       opts="&fullscreen=true"
     }
-
+    
     if (this.isEditing() && (!path.match(/\/$/) || path.match(/\.((md)|(l4d))\//))) {
       if (this.useBrowserHistory())
         window.history.pushState({ followInline: true, path: path },
@@ -1433,8 +1441,18 @@ export default class Container extends Morph {
       method: "GET",
       headers: headers
     }).then( resp => {
+    
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
+      if (this.contentType.match("image"))  {
+        this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
+        return  
+      }   
+      
+      // if (this.contentType.match("text/html"))  {
+      //   format = "html"  
+      // }
+      
       
 
       // console.log("[container] lastVersion " +  this.lastVersion)
@@ -1452,7 +1470,7 @@ export default class Container extends Morph {
       this.showNavbar();
       
       
-      if (format == "html" || this.contentType == "text/html")  {
+      if (format == "html" || this.contentType.match("text/html"))  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {
@@ -1495,11 +1513,13 @@ export default class Container extends Morph {
           return this.appendHtml(`<lively-drawio src="${resolvedURL}"></<lively-drawio>`, renderTimeStamp);
         }
       } else {
-        if (content.length > (1 * 1024 * 1024)) {
-          if (render) return this.appendHtml("file size to large", renderTimeStamp); 
-        } else {
-          this.sourceContent = content;
-          if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        if (content) {
+          if (content.length > (1 * 1024 * 1024)) {
+            if (render) return this.appendHtml("file size to large", renderTimeStamp); 
+          } else {
+            this.sourceContent = content;
+            if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+          }          
         }
       }
     }).then(() => {
@@ -1594,7 +1614,9 @@ export default class Container extends Morph {
     this.get("#fullscreenInline").style.display = "none"
     this.get("#container-navigation").style.display  = "";
     this.get("#container-leftpane").style.display  = "";
-    this.get("#container-rightpane").style.flex = 0.8
+    
+    this.get("#container-leftpane").style.flex = 20
+    this.get("#container-rightpane").style.flex = 80
     this.get("lively-separator").style.display  = "";
   }
 
@@ -1756,6 +1778,10 @@ export default class Container extends Morph {
   }
 
   unsavedChanges() {
+    var url = this.getURL()
+    if (!url) return false;
+    if (url.toString().match(/\/$/)) return false // isDirectory...
+    
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
     return  editor.textChanged;

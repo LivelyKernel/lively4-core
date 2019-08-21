@@ -1,0 +1,29 @@
+<template id="ast-node-variable-declarator" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+  :host(*) {
+    display: flex;
+    flex-direction: horizontal;
+  }
+  #id, #equation-container, #init-container {
+    align-self: center;
+  }
+:host(.no-init) #init-container, :host(.no-init) #equation-container {
+  display: none;
+}
+</style>
+  <span id="id">
+	<slot name="id"></slot>
+  </span>
+  <span id="equation-container">
+    =
+  </span>
+  <span id="init-container">
+	  <slot name="init"></slot>
+  </span>
+  
+</template>
+
+

@@ -1,0 +1,26 @@
+<template id="ast-node-export-specifier" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+  :host(:not(.aliased)) #as {
+    display: none;
+  }
+#exported, #local {
+  align-self: center;
+}
+</style>
+  <slot id="local" name="local"></slot>
+	<span id="as" class="keyword">as</span>
+  <slot id="exported" name="exported"></slot>
+</template>
+
+

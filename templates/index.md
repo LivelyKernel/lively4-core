@@ -26,7 +26,6 @@
 
 ## Misc 
 - add-seminar-topic  {.component}
-- ast-node-program  {.component}
 - bibtex-cleaner  {.component}
 - d3-example  {.component}
 - data-explorer  {.component}

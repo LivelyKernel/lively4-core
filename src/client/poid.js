@@ -57,6 +57,14 @@ export class Scheme {
     return new Response("not supported yet", {status: 300})
   }  
 
+  POST() {
+    return new Response("not supported yet", {status: 300})
+  }  
+
+  DELETE() {
+    return new Response("not supported yet", {status: 300})
+  }  
+
   async handle(options) {
     if (!this.resolve()) {
       if (this.PUT && options && options.method == "PUT") {
@@ -74,6 +82,14 @@ export class Scheme {
       return this.PUT(options)
     } else if (this.OPTIONS && options.method == "OPTIONS") {
       return this.OPTIONS(options)
+    } else if (this.PATCH && options.method == "PATCH") {
+      return this.PATCH(options)
+    } else if (this.POST && options.method == "POST") {
+      return this.POST(options)
+    } else if (this.DELETE && options.method == "DELETE") {
+      return this.DELETE(options)
+    } else if (this.HEAD && options.method == "HEAD") {
+      return this.HEAD(options)
     }
     return new Response("Request not supported", {status: 400})    
   }     
@@ -482,7 +498,7 @@ class CachedRequest extends Scheme {
     if (!result) {
       result = await fetch(this.realURL)
       if (!result.ok) {
-        throw new TypeError('Bad response status');
+        console.error("Bad Response Status for: " + this.realURL)
       }
       cache.put(request, result.clone())
     }
