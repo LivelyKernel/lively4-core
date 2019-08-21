@@ -32,10 +32,19 @@ export default class LivelyHandwriting extends Morph {
     this.points = []
     this.text = ''
 	
-    lively.setExtent(this, lively.pt(600,300))
+    lively.setExtent(this, lively.pt(1000,300))
     
    // instanceVariableNames: 'points recording text'
   }
+
+  get height() {
+    return lively.getExtent(this).y
+  }
+  
+  get fontHeight() {
+    return 100
+  }
+  
   
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
@@ -58,7 +67,6 @@ export default class LivelyHandwriting extends Morph {
      
     let seq = aCollection.map(ea => ea[0]).join(""); 
     
-    
     this.get("#log").textContent = "seq=" +seq
     
     if(seq.match(/^r$/)) {return " "}
@@ -68,33 +76,35 @@ export default class LivelyHandwriting extends Morph {
     if(seq.match(/^durdl?rd?l$/)) {return "B"}
     if(seq.match(/^u?ldru?$/)) {return "C"}
     if(seq.match(/^dur?dl$/)) {
-      if ((this.pointInUpper(aPointCollection.last, 0.7, aPointCollection))) {
-        return "P"
-      } else {
-        return  "D"
-      }
+      return this.pointInUpper(aPointCollection.last, 0.7, aPointCollection) ? "P" : "D"
     }
     if(seq.match(/^ld?r?l?d?r$/)) {return "E"}
     if(seq.match(/^lr?d$/)) {return "F"}
     if(seq.match(/^l?drul?rd?$/)) {
-      if ((this.pointInUpper(aPointCollection.last, 0.2, aPointCollection))) {
-        return "Q"
-      } else {
-        return  "G"
-      }
+      return this.pointInUpper(aPointCollection.last, 0.2, aPointCollection) ? "Q" : "G"
     }
     if(seq.match(/^dr?u?r?d$/)) {return "H"}
     if(seq.match(/^d$/)) {return "I"}
     if(seq.match(/^dl$/)) {return "J"}
     if(seq.match(/^l?dlurdr?$/)) {return "K"}
-    // if(seq.match(/^dr$/)) {return     ^ (aPointCollection last y > (self height * 0.6))) {returnL] ifFalse: [$4]} " potentially wonky, maybe relative? "
+    if(seq.match(/^dr$/)) {
+      return (aPointCollection.last.y > (this.height * 0.6)) ? "L" : "4" // potentially wonky, maybe relative? 
+    }
     if(seq.match(/^ur?dr?u?r?d$/)) {return "M"}
     if(seq.match(/^ur?dr?u$/)) {return "N"}
-    // if(seq.match(/^l?drul$/)) {return     ^ (self point: aPointCollection last inUpper: 0.3 of: aPointCollection)) {returnO] ifFalse: [$6]}
+    
+    if(seq.match(/^l?drul$/)) {
+      return (this.pointInUpper(aPointCollection.last, 0.3, aPointCollection)) ? "O" : "6"
+    }
+
     if(seq.match(/^dur?dl?d?r?$/)) {return "R"}
-   " disambiguate against 8 by checking that we ended in a low area "
-   // m = seq.match(/^ld?r?d?lu?r?') and: [(self point: aPointCollection last inUpper: 0.3 of: aPointCollection) not] ifTrue: [^ $S}
-    // if(seq.match(/^rd$/)) {return     ^ (self point: aPointCollection last inLeft: 0.6 of: aPointCollection)) {return7] ifFalse: [$T]}
+    // disambiguate against 8 by checking that we ended in a low area
+    if(seq.match(/^ld?r?d?lu?r?$/) && !(this.pointInUpper(aPointCollection.last, 0.3, aPointCollection))) {
+      return "S"
+    }
+    if(seq.match(/^rd$/)) {
+      return (this.pointInUpper(aPointCollection.last, 0.6, aPointCollection)) ? "7" : "T"
+    }
     if(seq.match(/^drud?$/)) {return "U"}
     if(seq.match(/^dur?$/)) {return "V"}
     if(seq.match(/^dr?u?dr?u$/)) {return "W"}
@@ -110,39 +120,24 @@ export default class LivelyHandwriting extends Morph {
     if(seq.match(/^u?l?dr?d?lur?u?l?$/)) {return "8"}
     if(seq.match(/^ldrudl?u?r?$/)) {return "9"}
 
-   return undefined
+    return undefined
   }
-
- 
-  
   
   directionFromTo(aPoint, anotherPoint) {
     if (!aPoint || !anotherPoint) return
     
-    console.log("directions from " +  aPoint + " " + anotherPoint)
-    
-    
     let sub = (aPoint.subPt(anotherPoint))
-    let delta = pt(Math.abs(sub.x), Math.abs(sub.y)) ;
-	
+    let delta = pt(Math.abs(sub.x), Math.abs(sub.y))
     if (delta.x > delta.y) {
-      if (aPoint.x > anotherPoint.x) {
-        return "left"
-      } else {
-        return "right"
-      }
+      return (aPoint.x > anotherPoint.x) ? "left" : "right"
     } else {
-      if(aPoint.y > anotherPoint.y) {
-        return "up"
-      } else {
-        return "down"
-      }
+      return (aPoint.y > anotherPoint.y) ? "up" : "down"
     }
   }
 
        
   changed() {
-    var fontHeight = 150;
+    var fontHeight = this.fontHeight;
     
     let canvas = this.get("canvas")
     var extent = lively.getExtent(this)
@@ -271,6 +266,19 @@ point: aPoint inLeft: aNumber of: aCollection
 	^ (refX / rangeX extent) < aNumber! !
 
 */
+  
+  
+  pointInLeft(aPoint, aNumber, aCollection) {
+    var start = 9e8
+    var stop = 0
+    for (var point of aCollection) {
+      if (point.x < start) { start = point.x }
+      if (point.x > stop) { stop = point.x }
+    }
+    
+    let refX= aPoint.x - start;
+    return (refX / Math.abs(start - stop)) < aNumber
+  }
 
   pointInUpper(aPoint, aNumber, aCollection) {
 
