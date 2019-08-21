@@ -31,7 +31,7 @@ export default class LivelyHandwriting extends Morph {
     this.points = []
     this.text = ''
 	
-    lively.setExtent(this, lively.pt(1000,300))
+    lively.setExtent(this, lively.pt(400,200))
     this.changed()
    // instanceVariableNames: 'points recording text'
   }
@@ -40,8 +40,12 @@ export default class LivelyHandwriting extends Morph {
     return lively.getExtent(this).y
   }
   
+  get width() {
+    return lively.getExtent(this).x
+  }
+  
   get fontHeight() {
-    return 100
+    return 50
   }
   
   
@@ -83,7 +87,9 @@ export default class LivelyHandwriting extends Morph {
       return this.pointInUpper(aPointCollection.last, 0.2, aPointCollection) ? "Q" : "G"
     }
     if(seq.match(/^dr?u?r?d$/)) {return "H"}
-    if(seq.match(/^d$/)) {return "I"}
+    if(seq.match(/^d$/)) {
+      return this.inTextArea(aPointCollection) ? "I" : "1"
+    }
     if(seq.match(/^dl$/)) {return "J"}
     if(seq.match(/^l?dlurdr?$/)) {return "K"}
     if(seq.match(/^dr$/)) {
@@ -102,17 +108,26 @@ export default class LivelyHandwriting extends Morph {
       return "S"
     }
     if(seq.match(/^rd$/)) {
-      return (this.pointInUpper(aPointCollection.last, 0.6, aPointCollection)) ? "7" : "T"
+      return this.inTextArea(aPointCollection) ? "T" : "7"
+
+      // return (this.pointInUpper(aPointCollection.last, 0.6, aPointCollection)) ? "7" : "T"
     }
     if(seq.match(/^drud?$/)) {return "U"}
     if(seq.match(/^dur?$/)) {return "V"}
     if(seq.match(/^dr?u?dr?u$/)) {return "W"}
     if(seq.match(/^dlur?$/)) {return "X"}
     if(seq.match(/^dru?d?l?ur?$/)) {return "Y"}
-    if(seq.match(/^rl?dl?d?r$/)) {return "Z"}
+    if(seq.match(/^rl?dl?d?r$/)) {
+      return this.inTextArea(aPointCollection) ? "Z" : "2"
+    }
 
+    if(seq.match(/^u$/)) {
+      this.shiftDown = !this.shiftDown;
+      return "SHIFT"
+    }
+    // if(seq.match(/^u$/)) {return "1"}
+    
     if(seq.match(/^rdlur$/)) {return "0"}
-    if(seq.match(/^u$/)) {return "1"}
     if(seq.match(/^urdl?d?r$/)) {return "2"}
     if(seq.match(/^u?rdl?d?rdlu?$/)) {return "3"}
     if(seq.match(/^drdlu?$/)) {return "5"}
@@ -134,9 +149,23 @@ export default class LivelyHandwriting extends Morph {
     }
   }
 
+  get alphaNumberSpaceRatio() {
+    return 0.7
+  }
+  
        
   changed() {
     var fontHeight = this.fontHeight;
+    
+    if (this.shiftDown) {
+      this.get("#mode").innerHTML = `<i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i>`
+    } else if (this.capslock) {
+      this.get("#mode").innerHTML = `<i class="fa fa-arrow-circle-up" aria-hidden="true"></i>`
+    } else {
+      this.get("#mode").innerHTML = ""
+    }
+
+    
     
     let canvas = this.get("canvas")
     var extent = lively.getExtent(this)
@@ -156,6 +185,19 @@ export default class LivelyHandwriting extends Morph {
     ctx.fillText(this.text, 0, fontHeight);
     
     var cursorStart = pt(ctx.measureText(this.text).width, 0)
+
+    ctx.strokeStyle = "gray"
+    ctx.lineWidth = "1px"
+    ctx.beginPath();
+    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, 0);
+    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, 10);
+
+    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, this.height);
+    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, this.height - 10);
+
+    ctx.stroke();
+
+    
     
     ctx.strokeStyle = "red"
     ctx.lineWidth = "2px"
@@ -260,13 +302,39 @@ export default class LivelyHandwriting extends Morph {
 
     let character = this.characterFromStrokes(strokes, this.points)
     if (character) {
-      if (character == '\b') {
-        this.text = this.text.slice(0, this.text.length - 1)
-      }  else {
-        this.text += character
+      
+      if (character.length > 1) { // control symbols
+        if (character == "SHIFT") {
+          if (this.capslock) {
+            this.capslock =  false
+            this.shiftDown = false
+          } else {
+            if (this.lastCharacter == "SHIFT") {
+              this.capslock = true  
+            } else {
+              this.shiftDown = true
+            }
+          }
+          
+        } 
+      
+      } else {
+        if (this.shiftDown || this.capslock) {
+          character = character.toUpperCase()
+          this.shiftDown = false
+        } else {
+          character = character.toLowerCase()
+        }
+
+        if (character == '\b') {
+          this.text = this.text.slice(0, this.text.length - 1)
+        }  else {
+          this.text += character
+        }        
       }
-      this.changed()
+      this.lastCharacter = character
     }
+      this.changed()
   }
 
 /*
@@ -284,6 +352,9 @@ point: aPoint inLeft: aNumber of: aCollection
 
 */
   
+  inTextArea(aPointCollection) {
+    return aPointCollection.last.x < (this.width * this.alphaNumberSpaceRatio)
+  }  
   
   pointInLeft(aPoint, aNumber, aCollection) {
     var start = 9e8

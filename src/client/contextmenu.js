@@ -468,6 +468,15 @@ export default class ContextMenu {
           workspace.parentElement.setAttribute("title","open this in a tab...")
           workspace.mode = "text"
         }],
+        ["Handwriting", async evt => {
+          var morph  = await this.openComponentInWindow("lively-handwriting", evt, worldContext)
+          
+          lively.setExtent(morph.parentElement, lively.getExtent(morph).addPt(pt(0,20)))
+          // lively.setPosition(morph, lively.pt(0,0), "fixed")
+          // morph.style.bottom = "0px"
+          // morph.style.right= "0px"
+          this.hide();
+        }],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {
