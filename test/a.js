@@ -2,12 +2,12 @@
 
 
 export function foo() {
-  return "XXX a does somthing."
+  return "XXX a does something."
 };
 
 export class FooClass {
   static foo() {
-    return "fooclass does somthing!"
+    return "fooclass does something!"
   }
 }
 
