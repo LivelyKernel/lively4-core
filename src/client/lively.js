@@ -1527,11 +1527,13 @@ export default class Lively {
       return this.findWorldContext(element.parentElement)
   }
 
-  static activeElement(worldContext) {
+  
+  static activeElement(worldContext, type) {
     worldContext = worldContext || document
     var element = worldContext.activeElement
+    if (type && element.localName == type) return element
     if (element.shadowRoot && element.shadowRoot.activeElement)
-      return this.activeElement(element.shadowRoot); // probe if we want to go deeper
+      return this.activeElement(element.shadowRoot, type); // probe if we want to go deeper
     return element
   }
 

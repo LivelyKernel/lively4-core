@@ -2,6 +2,9 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
+    #content {
+      position: relative;
+    }
     #log {
       position: absolute;
       top: 0px;
@@ -17,10 +20,12 @@
     }
     
     canvas {
-      touch-action: none;    
+      touch-action: none; /* This disables scrolling, when using pen */   
     }
   </style>
-  <canvas></canvas>
-  <div id="log"></div>
-  <div id="mode"></div>
+  <div id="content">
+    <canvas></canvas>
+    <div id="log"></div>
+    <div id="mode"></div>
+  </div>
 </template>

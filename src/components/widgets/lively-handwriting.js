@@ -8,20 +8,22 @@ import {pt} from 'src/client/graphics.js';
 
 ## Based on Tom's Smalltalk Grafiti Implementation 
 
+![](lively-handwriting.png){width="50%"}
+
 ## Idea: 
 
 - (1) Convert Strokes to a String of Directions
 - (2) User Regular Expressions to match Characters
 
+ 
 MD*/
-
 
 export default class LivelyHandwriting extends Morph {
   async initialize() {
     this.windowTitle = "LivelyHandwriting";
     this.registerButtons()
 
-     lively.html.registerKeys(this); // automatically installs handler for some methods
+    // lively.html.registerKeys(this); // automatically installs handler for some methods
 
     // lively.addEventListener("livelyhandwriting", this, "pointerdown", evt => this.onMouseDown(evt))
     this.addEventListener("pointerdown", evt => this.onMouseDown(evt), true)
@@ -152,8 +154,7 @@ export default class LivelyHandwriting extends Morph {
   get alphaNumberSpaceRatio() {
     return 0.7
   }
-  
-       
+   
   changed() {
     var fontHeight = this.fontHeight;
     
@@ -164,8 +165,6 @@ export default class LivelyHandwriting extends Morph {
     } else {
       this.get("#mode").innerHTML = ""
     }
-
-    
     
     let canvas = this.get("canvas")
     var extent = lively.getExtent(this)
@@ -196,8 +195,6 @@ export default class LivelyHandwriting extends Morph {
     ctx.lineTo(this.width * this.alphaNumberSpaceRatio, this.height - 10);
 
     ctx.stroke();
-
-    
     
     ctx.strokeStyle = "red"
     ctx.lineWidth = "2px"
@@ -229,7 +226,6 @@ export default class LivelyHandwriting extends Morph {
     ctx.stroke();
     }  
   }
-
 
   onMouseDown(evt) {
     evt.stopPropagation()
@@ -331,10 +327,18 @@ export default class LivelyHandwriting extends Morph {
         }  else {
           this.text += character
         }        
+        this.applyCharacter(character)  
       }
       this.lastCharacter = character
     }
-      this.changed()
+    this.changed()
+  }
+  
+  applyCharacter(char) {
+    var activeElement = this.target || lively.activeElement(document, "lively-code-mirror")
+    if (activeElement && activeElement.localName == "lively-code-mirror") {
+      activeElement.fake(char)
+    }
   }
 
 /*
