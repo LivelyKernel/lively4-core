@@ -21,11 +21,10 @@ export default class LivelyHandwriting extends Morph {
     this.windowTitle = "LivelyHandwriting";
     this.registerButtons()
 
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+     lively.html.registerKeys(this); // automatically installs handler for some methods
 
-    lively.addEventListener("livelyhandwriting", this, "mousedown", evt => this.onMouseDown(evt))
-    lively.addEventListener("livelyhandwriting", this, "mousemove", evt => this.onMouseMove(evt))
-    lively.addEventListener("livelyhandwriting", this, "mouseup", evt => this.onMouseUp(evt))
+    // lively.addEventListener("livelyhandwriting", this, "pointerdown", evt => this.onMouseDown(evt))
+    this.addEventListener("pointerdown", evt => this.onMouseDown(evt), true)
     
 	
     this.recording = false;
@@ -33,7 +32,7 @@ export default class LivelyHandwriting extends Morph {
     this.text = ''
 	
     lively.setExtent(this, lively.pt(1000,300))
-    
+    this.changed()
    // instanceVariableNames: 'points recording text'
   }
 
@@ -190,23 +189,41 @@ export default class LivelyHandwriting extends Morph {
   }
 
 
-  onMouseDown(anEvent) {
+  onMouseDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    lively.addEventListener("livelyhandwriting", document.body, "pointermove", evt => this.onMouseMove(evt))
+    lively.addEventListener("livelyhandwriting", document.body, "pointerup", evt => this.onMouseUp(evt))
+    
+    
     this.recording = true
     this.points = []
-    this.points.push(lively.getPosition(anEvent).subPt(lively.getGlobalPosition(this)))
+    this.points.push(lively.getPosition(evt).subPt(lively.getGlobalPosition(this)))
     this.changed()
   }
 
-  onMouseMove(anEvent) {
+  onMouseMove(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    
     if (!this.recording) return 
-    var p = lively.getPosition(anEvent).subPt(lively.getGlobalPosition(this))
-    // console.log("p", lively.getPosition(anEvent))
+    var p = lively.getPosition(evt).subPt(lively.getGlobalPosition(this))
+    // console.log("p", lively.getPosition(evt))
     this.points.push(p)
     this.changed()
+
   }
 
 
-  onMouseUp(anEvent) {
+  onMouseUp(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+   
+    
+    lively.removeEventListener("livelyhandwriting", document.body)
+
     this.recording = false;
     if(this.points.length == 1) {
       this.text = ''
