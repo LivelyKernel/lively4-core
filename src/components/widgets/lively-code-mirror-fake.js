@@ -58,10 +58,13 @@ export default function fake(editor, originalCode, modifiers)
     code = code || prettyCodeNames[originalCode] || originalCode;
     if (typeof code === "string")
         code = code.charCodeAt(0);
-    if (fakeCMKeyEvent(editor, "keydown", code, modifiers, charCode))
-        return;
-    if (fakeCMKeyEvent(editor, "keypress", code, modifiers, charCode))
-        return;
+    if (fakeCMKeyEvent(editor, "keydown", code, modifiers, charCode)) {
+      // return 
+    }
+        
+    if (fakeCMKeyEvent(editor, "keypress", code, modifiers, charCode)) {
+        // return;
+    }
     fakeCMInput(editor, originalCode);
     fakeCMKeyEvent(editor, "keyup", code, modifiers, charCode);
 }
