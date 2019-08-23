@@ -32,8 +32,8 @@ export default class LivelyHandwriting extends Morph {
     this.recording = false;
     this.points = []
     this.text = ''
-	    
-    this.debugMode = true
+
+    // this.debugMode = true
     
     this.changed()
    // instanceVariableNames: 'points recording text'
