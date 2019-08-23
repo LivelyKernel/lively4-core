@@ -268,9 +268,10 @@ export default class Container extends Morph {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       console.group("run test: " + this.getPath());
-      testRunner.clearTests();
-      await this.reloadModule(url.toString())
-      testRunner.runTests();
+      await testRunner.clearTests();
+      await lively.reloadModule(url.toString())
+      await System.import(url.toString());
+      await testRunner.runTests();
     } else {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }

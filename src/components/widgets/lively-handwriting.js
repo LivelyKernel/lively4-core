@@ -28,13 +28,12 @@ export default class LivelyHandwriting extends Morph {
     // lively.addEventListener("livelyhandwriting", this, "pointerdown", evt => this.onMouseDown(evt))
     this.addEventListener("pointerdown", evt => this.onMouseDown(evt), true)
     
-	  this.extent = lively.pt(400,200)
+    this.extent = lively.pt(400,200)
     this.recording = false;
     this.points = []
     this.text = ''
-	
-    
-    // this.debugMode = true
+	    
+    this.debugMode = true
     
     this.changed()
    // instanceVariableNames: 'points recording text'
@@ -87,6 +86,10 @@ export default class LivelyHandwriting extends Morph {
     this.get("#log").textContent = "seq=" +seq + " diag=" + diag
     
     if(diag.match(/^C$/)) {return "\n"}
+    if(diag.match(/^A$/)) {
+      debugger
+      return "leftArrow"}
+    if(diag.match(/^B$/)) {return "rightArrow"}
     
     if(seq.match(/^r$/)) {return " "}
     if(seq.match(/^l$/)) {return "\b"}
@@ -243,7 +246,7 @@ export default class LivelyHandwriting extends Morph {
   } 
   
   
-  changed() {
+  async changed() {
     
     if (this.shiftDown) {
       this.get("#mode").innerHTML = `<i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i>`
@@ -269,7 +272,14 @@ export default class LivelyHandwriting extends Morph {
         debugCanvas = <canvas id="HandwritingDebug"></canvas>
         document.body.appendChild(debugCanvas)
       }
-      lively.setPosition(debugCanvas, pt(0,0), "fixed")
+      
+      var debugLog = document.body.querySelector("#HandwritingDebugLog") 
+      if (!debugLog) {
+        debugLog = await lively.openWorkspace()
+        debugLog.parentElement.setAttribute("title", "Handwriting DebugLog")
+        debugLog.id = "HandwritingDebugLog"
+      }
+      this._debugLog = debugLog
 
       const ctx = debugCanvas.getContext('2d');
         
@@ -287,6 +297,11 @@ export default class LivelyHandwriting extends Morph {
     
     
      
+  }
+  
+  debugLog(s) {
+    if (!this._debugLog) return;
+    this._debugLog.value += s + "\n"
   }
 
   onMouseDown(evt) {
@@ -332,7 +347,7 @@ export default class LivelyHandwriting extends Morph {
   }
   
   smoothingThresholdSquared() {
-    var a = 30
+    var a = 20
     return a * a
   } 
 
@@ -417,6 +432,7 @@ export default class LivelyHandwriting extends Morph {
       return
     }
       
+    var originalPoints = this.points
     this.points = this.thinPoints(this.points)
   
     let strokes = this.isolateDirections()
@@ -453,11 +469,20 @@ export default class LivelyHandwriting extends Morph {
         }  else {
           this.text += character
         }        
-        this.applyCharacter(character)  
       }
+      this.applyCharacter(character)  
       this.lastCharacter = character
     }
     this.changed()
+    if (this.debugMode) {
+      this.debugLog(JSON.stringify({
+        character: character,
+        points: this.points,
+        rawPoints: originalPoints,
+        strokes: strokes,
+        strokesWithDiagonals: strokesWithDiagonals
+      }, undefined, 0))
+    }
   }
   
   applyCharacter(char) {
