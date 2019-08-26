@@ -606,6 +606,7 @@ export default class LivelyContainerNavbar extends Morph {
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
         element.onclick = () => {
+            this.selectSublistItem(element, subList)
             this.navigateToName(
               `data-name="${ea.getAttribute('data-name')}"`);
           
@@ -643,12 +644,23 @@ export default class LivelyContainerNavbar extends Morph {
           element.innerHTML = name;
           element.classList.add("link");
           element.classList.add("subitem");
-          element.onclick = () => this.navigateToName(navigateToName);
+          element.onclick = () => {
+            this.selectSublistItem(element, subList)
+            this.navigateToName(navigateToName);
+          }
           subList.appendChild(element) ;
         }
       }
     });
   }
+  
+  selectSublistItem(element, subList) {
+    for(var ea of subList.querySelectorAll(".selected")) {
+      ea.classList.remove("selected")
+    }
+    element.classList.add("selected")
+  }
+  
   
   showSublistMD(subList) {
     // console.log("sublist md " + this.sourceContent.length)
@@ -671,6 +683,7 @@ export default class LivelyContainerNavbar extends Morph {
       element.classList.add("level" + item.level);
 
       element.onclick = () => {
+        this.selectSublistItem(element, subList)
         this.navigateToName(item.name);
       };
       subList.appendChild(element);
@@ -692,6 +705,7 @@ export default class LivelyContainerNavbar extends Morph {
           class="link subitem" title={ea.name}>{ea.name}</li>
       subList.appendChild(element);
       element.onclick = () => {
+        this.selectSublistItem(element, subList)
         if (ea.href) {
           this.followPath(ea.href);
         } else {
@@ -734,7 +748,20 @@ export default class LivelyContainerNavbar extends Morph {
     // show console.log("show sublist content " + this.url)
      
     if (!this.targetItem) return 
+    
+    
+    var details = this.get("#details")
+    
     var subList = this.targetItem.querySelector("ul")
+    
+    if (details) {
+      debugger
+      details.innerHTML = ""
+      
+      subList = <ul></ul>
+      details.appendChild(subList)
+    }
+    
     if (!subList) return // we are a sublist item?
     
     // keep expanded trees open... or not
