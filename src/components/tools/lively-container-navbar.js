@@ -8,6 +8,8 @@ import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js"; 
 import FileCache from "src/client/fileindex.js"
+import Strings from "src/client/strings.js"
+
 
 
 export default class LivelyContainerNavbar extends Morph {
@@ -253,6 +255,12 @@ export default class LivelyContainerNavbar extends Morph {
     this.currentDir = this.getRoot(targetURL);
 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
+    
+    if (this.url.match(/microsoft:\/\//)) {
+      urlWithoutIndex = urlWithoutIndex.replace(/\/contents/,"")
+    }
+    
+    
     this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
     
     var parentURL = this.url.replace(/[^/]*$/,"")   
@@ -362,6 +370,7 @@ export default class LivelyContainerNavbar extends Morph {
     
     parentElement.url = targetURL
    
+    var lastTitle = ""
     files.forEach((ea) => {
 
       var element = document.createElement("li");
@@ -399,8 +408,17 @@ export default class LivelyContainerNavbar extends Morph {
         element.classList.add("file")
       }
       var title = ea.title || name
+      
       // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML =  icon + title;
+      
+      var prefix = Strings.longestCommonPrefix([title, lastTitle])
+      prefix = prefix.replace(/-([a-zA-Z0-9])*$/,"-")
+      if (prefix.length < 4) {
+        prefix = ""
+      }      
+      link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>");
+      lastTitle = title
+      
       var href = ea.href || ea.name;
       if (ea.type == "directory" && !href.endsWith("/")) {
         href += "/"
@@ -588,8 +606,9 @@ export default class LivelyContainerNavbar extends Morph {
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
         element.onclick = () => {
-          this.navigateToName(
-            `data-name="${ea.getAttribute('data-name')}"`);
+            this.navigateToName(
+              `data-name="${ea.getAttribute('data-name')}"`);
+          
         };
         subList.appendChild(element) ;
       });
@@ -673,8 +692,11 @@ export default class LivelyContainerNavbar extends Morph {
           class="link subitem" title={ea.name}>{ea.name}</li>
       subList.appendChild(element);
       element.onclick = () => {
-        lively.notify("follow " + ea.name)
-        this.followPath(url + "/" + ea.name)
+        if (ea.href) {
+          this.followPath(ea.href);
+        } else {
+          this.followPath(url + "/" + ea.name)
+        }
       }
     }
   }

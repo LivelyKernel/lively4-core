@@ -268,9 +268,10 @@ export default class Container extends Morph {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       console.group("run test: " + this.getPath());
-      testRunner.clearTests();
-      await this.reloadModule(url.toString())
-      testRunner.runTests();
+      await testRunner.clearTests();
+      await lively.reloadModule(url.toString())
+      await System.import(url.toString());
+      await testRunner.runTests();
     } else {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
@@ -1068,10 +1069,10 @@ export default class Container extends Morph {
       // no options... found
     }
     // this check could happen later
-    if (!path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
+    if (path.match(/^https?:\/\//) 
+        && !path.match("https://lively4") && !path.match(/http:?\/\/localhost/)
         && !path.match(window.location.host)
         && !path.match("https://www.draw.io/")
-        && path.match(/https?:\/\//)
       ) {
       if (!options) {
         return window.open(path);
@@ -1084,7 +1085,7 @@ export default class Container extends Morph {
 
     var lastPath = _.last(this.history())
     if (lastPath !== path) {
-      if (lastPath && path && path.match(lastPath) && lastPath.match(/\.md\/?$/)) {
+      if (lastPath && path && path.startsWith(lastPath) && lastPath.match(/\.md\/?$/)) {
         // we have a #Bundle here... and the navigation is already in the history
       } else if(lastPath && path && (path.replace(/\/index\.((html)|(md))$/,"") == lastPath.replace(/\/?$/,""))) {
         // we have a index file redirection here...
@@ -1441,8 +1442,18 @@ export default class Container extends Morph {
       method: "GET",
       headers: headers
     }).then( resp => {
+    
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
+      if (this.contentType.match("image"))  {
+        this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
+        return  
+      }   
+      
+      // if (this.contentType.match("text/html"))  {
+      //   format = "html"  
+      // }
+      
       
 
       // console.log("[container] lastVersion " +  this.lastVersion)
@@ -1460,7 +1471,7 @@ export default class Container extends Morph {
       this.showNavbar();
       
       
-      if (format == "html" || this.contentType == "text/html")  {
+      if (format == "html" || this.contentType.match("text/html"))  {
         this.sourceContent = content;
         if (render) return this.appendHtml(content), renderTimeStamp;
       } else if (format == "md") {
@@ -1503,11 +1514,13 @@ export default class Container extends Morph {
           return this.appendHtml(`<lively-drawio src="${resolvedURL}"></<lively-drawio>`, renderTimeStamp);
         }
       } else {
-        if (content.length > (1 * 1024 * 1024)) {
-          if (render) return this.appendHtml("file size to large", renderTimeStamp); 
-        } else {
-          this.sourceContent = content;
-          if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+        if (content) {
+          if (content.length > (1 * 1024 * 1024)) {
+            if (render) return this.appendHtml("file size to large", renderTimeStamp); 
+          } else {
+            this.sourceContent = content;
+            if (render) return this.appendHtml("<pre><code>" + content.replace(/</g, "&lt;") +"</code></pre>", renderTimeStamp);
+          }          
         }
       }
     }).then(() => {

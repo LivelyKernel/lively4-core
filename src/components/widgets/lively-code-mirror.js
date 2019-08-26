@@ -15,6 +15,8 @@ import * as spellCheck from "src/external/codemirror-spellcheck.js"
 
 import {isSet} from 'utils'
 
+import fake from "./lively-code-mirror-fake.js"
+
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
 self.CodeMirror = CodeMirror // for modules
 
@@ -26,6 +28,10 @@ function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  fake(...args) {
+    fake(this.editor, ...args)
+  }
+  
   get mode() {
     return this.getAttribute('mode');
   }

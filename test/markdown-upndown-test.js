@@ -30,7 +30,7 @@ describe('Markdown Upndown', () => {
       var source = await converter.convert("<h1 class='foo'>hello</h1", {keepHtml: true})
       expect(source).equal(`# hello{.foo}`)
     });
-    
+
     it('should mark strip null and defined', async () => {
       var converter = new Upndown()
       var source = await converter.convert("<h1 foo='null'>hello</h1", {keepHtml: true})
