@@ -15,20 +15,14 @@ export default class AstNodeTryStatement extends AbstractAstNode {
     if (this.node.handler) {
       await this.createSubElementForPath(this.path.get('handler'), 'handler');
     } else {
-      const handler = this.get(':scope > [slot=handler]')
-      if (handler) {
-        handler.remove();
-      }
+      this.removeSubElementInSlot('handler');
     }
     
     this.classList.toggle('has-finalizer', this.node.finalizer)
     if (this.node.finalizer) {
       await this.createSubElementForPath(this.path.get('finalizer'), 'finalizer');
     } else {
-      const finalizer = this.get(':scope > [slot=finalizer]')
-      if (finalizer) {
-        finalizer.remove();
-      }
+      this.removeSubElementInSlot('finalizer');
     }
   }
   

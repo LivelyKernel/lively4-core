@@ -13,10 +13,7 @@ export default class AstNodeObjectProperty extends AbstractAstNode {
     const shorthand = this.node.shorthand;
     this.classList.toggle('shorthand', shorthand);
     if (shorthand) {
-      const key = this.get(':scope > [slot=key]');
-      if (key) {
-        key.remove();
-      }
+      this.removeSubElementInSlot('key');
     } else {
       await this.createSubElementForPath(this.path.get('key'), 'key');
     }

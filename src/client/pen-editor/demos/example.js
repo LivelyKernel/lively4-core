@@ -110,6 +110,10 @@ class Person extends Being {
     return new Person(name);
   }
 
+  get element() {
+    return this.get('#id');
+  }
+
   constructor() {}
   *sfcd() {}
   get sfcd() {

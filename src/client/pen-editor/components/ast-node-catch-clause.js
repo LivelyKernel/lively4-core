@@ -12,11 +12,9 @@ export default class AstNodeCatchClause extends AbstractAstNode {
     if (this.node.param) {
       await this.createSubElementForPath(this.path.get('param'), 'param');
     } else {
-      const param = this.get(':scope > [slot=param]')
-      if (param) {
-        param.remove();
-      }
+      this.removeSubElementInSlot('param');
     }
+
     await this.createSubElementForPath(this.path.get('body'), 'body');
   }
   
