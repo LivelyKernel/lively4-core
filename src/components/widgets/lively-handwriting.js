@@ -86,9 +86,7 @@ export default class LivelyHandwriting extends Morph {
     this.get("#log").textContent = "seq=" +seq + " diag=" + diag
     
     if(diag.match(/^C$/)) {return "\n"}
-    if(diag.match(/^A$/)) {
-      debugger
-      return "leftArrow"}
+    if(diag.match(/^A$/)) {return "leftArrow"}
     if(diag.match(/^B$/)) {return "rightArrow"}
     
     if(seq.match(/^r$/)) {return " "}
@@ -436,7 +434,7 @@ export default class LivelyHandwriting extends Morph {
     this.points = this.thinPoints(this.points)
   
     let strokes = this.isolateDirections()
-    let strokesWithDiagonals = this.isolateDirections(["right", "A", "up", "B", "right", "D", "down", "C"])
+    let strokesWithDiagonals = this.isolateDirections(["left", "A", "up", "B", "right", "D", "down", "C"])
     
     let character = this.characterFromStrokes(strokes, strokesWithDiagonals, this.points)
     if (character) {
