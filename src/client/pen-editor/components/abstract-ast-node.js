@@ -52,6 +52,23 @@ function matchesCallFunctionShorthand(path) {
     path.get('params')[0].node.name === path.get('body.callee.object').node.name;
 }
 
+function matchesSubmorphGetter(path) {
+  return path.isClassMethod() &&
+    path.node.kind === "get" &&
+    path.get('key').isIdentifier() &&
+    path.get('body').isBlockStatement() &&
+    path.get('body.body').length === 1 &&
+    path.get('body.body.0').isReturnStatement() &&
+    path.get('body.body.0.argument').isCallExpression() &&
+    path.get('body.body.0.argument.callee').isMemberExpression() &&
+    path.get('body.body.0.argument.callee.object').isThisExpression() &&
+    path.get('body.body.0.argument.callee.property').isIdentifier() &&
+    path.get('body.body.0.argument.callee.property').node.name === 'get' &&
+    !path.get('body.body.0.argument.callee').node.computed &&
+    path.get('body.body.0.argument.arguments').length === 1 &&
+    path.get('body.body.0.argument.arguments.0').isStringLiteral();
+}
+
 function getAppropriateElementTagName(path) {
 
   if (!path) {
@@ -64,6 +81,11 @@ function getAppropriateElementTagName(path) {
   if (matchesCallFunctionShorthand(path)) {
     return 'compound-node-call-function-shorthand';
   }
+  
+  if (matchesSubmorphGetter(path)) {
+    return 'compound-node-submorph-getter';
+  }
+  
   
   if (path.node.type === 'Identifier') { return 'ast-node-identifier'; }
   if (path.node.type === 'Program') { return 'ast-node-program'; }
@@ -179,11 +201,11 @@ export default class AbstractAstNode extends Morph {
     this.addEventListener('paste', evt => this.onPaste(evt));
     
     // color [0-360], saturation [0-1], lightness [0-1]
-    // this.style.backgroundColor = `${d3.hsl(
-    //   Math.random() * 360,
-    //   Math.random() * 0.2 + 0.4,
-    //   Math.random() * 0.2 + 0.8
-    // )}`;
+    this.style.backgroundColor = `${d3.hsl(
+      Math.random() * 360,
+      Math.random() * 0.2 + 0.4,
+      Math.random() * 0.2 + 0.8
+    )}`;
   }
   
   initHover() {
@@ -335,16 +357,20 @@ export default class AbstractAstNode extends Morph {
     });
   }
   
+  removeSubElementInSlot(slotName) {
+    const subElement = this.get(`:scope > [slot=${slotName}]`)
+    if (subElement) {
+      subElement.remove();
+    }
+  }
+  
   get editor() {
     return this._editor = this._editor || lively.allParents(this, [], true).find(ele => ele.localName === 'pen-editor');
   }
 
   /* Lively-specific API */
   livelyPreMigrate() {}
-  livelyMigrate(other) {
-    lively.error("WRONG")
-    this.setPath(other.path);
-  }
+  livelyMigrate(other) { throw new Error('livelyMigrate should not be called'); }
   livelyInspect(contentNode, inspector) {}
   livelyPrepareSave() {}
   async livelyExample() {}

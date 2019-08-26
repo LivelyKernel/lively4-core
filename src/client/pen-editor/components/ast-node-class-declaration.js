@@ -11,16 +11,18 @@ export default class AstNodeClassDeclaration extends AbstractAstNode {
   get id() { return this.get('#id'); }
   
   async updateProjection() {
-    this.innerHTML = '';
-
     if (this.node.id || this.path.parentPath.type !== 'ExportDefaultDeclaration') {
       await this.createSubElementForPath(this.path.get('id'), 'id');
+    } else {
+      this.removeSubElementInSlot('id');
     }
     
     const hasSuperClass = this.node.superClass;
     this.get('#extends').classList.toggle('hidden', !hasSuperClass);
     if (hasSuperClass) {
       await this.createSubElementForPath(this.path.get('superClass'), 'superClass');
+    } else {
+      this.removeSubElementInSlot('superClass');
     }
 
     await this.createSubElementForPath(this.path.get('body'), 'body');
