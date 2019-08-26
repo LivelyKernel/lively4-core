@@ -50,6 +50,15 @@ export default class Strings {
       if (m)  func.call(...m)
     } while(m)
   }
-
   
+  /* source: https://www.w3resource.com/javascript-exercises/javascript-array-exercise-28.php */
+  static longestCommonPrefix(arr1){
+    const arr= arr1.concat().sort();
+    const a1= arr[0];
+    const a2= arr[arr.length-1];
+    const L= a1.length;
+    let i= 0;
+    while(i< L && a1.charAt(i)=== a2.charAt(i)) i++;
+    return a1.substring(0, i);
+  }
 }
