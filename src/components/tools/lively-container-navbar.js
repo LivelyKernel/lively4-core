@@ -14,6 +14,9 @@ import Strings from "src/client/strings.js"
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
+    lively.html.registerKeys(this);
+    lively.html.registerKeys(this.get("#navbar"));
+    lively.html.registerKeys(this.get("#details"));
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragOver);
     // this.addEventListener("dragenter", this.onDragEnter)
@@ -58,6 +61,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   onItemDragStart(link, evt) {
+    this.cursorItem = null
+    this.cursorDetailsItem = null
+    this.navigateColum = "files"
+    
     let urls = this.getSelection();
     if (urls.length > 1) {
       this.dragFilesAsZip(urls, evt)
@@ -281,7 +288,7 @@ export default class LivelyContainerNavbar extends Morph {
       } else if (lastURL !== this.url) {
         this.showSublist()
       } else if (lastContent != this.sourceContent) {
-        this.showSublisContent(true)
+        this.showSublistContent(true)
       }        
       
       return         
@@ -471,6 +478,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onItemClick(link, evt) {
+    this.focus()
     if (evt.shiftKey) {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
@@ -574,8 +582,16 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify(`please implement navigateToName(${url})`)
   }
 
-  followPath(url, lastPath) {
-    this.show(new URL(url), "", this.contextURL)
+  async followPath(url, lastPath) {
+    var resp = await fetch(url)
+    var content = ""
+    var contentType = resp.headers.get("content-type")
+    if (contentType.match(/text\//)) {
+      content = await resp.text()
+    } else {
+      // lively.notify("content type not suppored: " + contentType)
+    }
+    this.show(new URL(url), content, this.contextURL)
   }
 
   async convertFileToBundle(url) {
@@ -749,24 +765,19 @@ export default class LivelyContainerNavbar extends Morph {
       var optionsWasHandles = true
       await this.showDirectory(this.url, subList)
     }
-    this.showSublisContent(optionsWasHandles)
+    this.showSublistContent(optionsWasHandles)
   } 
   
   
-  async showSublisContent(optionsWasHandles) {
-    // show console.log("show sublist content " + this.url)
-     
+  async showSublistContent(optionsWasHandles) {
+    // show console.log("show sublist content " + this.url) 
     if (!this.targetItem) return 
     
-    
     var details = this.get("#details")
-    
     var subList = this.targetItem.querySelector("ul")
     
     if (details) {
-      debugger
       details.innerHTML = ""
-      
       subList = <ul></ul>
       details.appendChild(subList)
     }
@@ -789,14 +800,139 @@ export default class LivelyContainerNavbar extends Morph {
         this.showSublistOptions(subList)
       }
     }
-  } 
+  }
+
+
+  onRightDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    if (!this.navigateColum || this.navigateColum == "files") {
+      this.navigateColum = "details"
+      var details = this.get("#details")
+      details.focus()
+      this.setCursorItem(details.querySelector("li"))
+    } else if (this.navigateColum == "details") {
+    
+      var container = lively.query(this, "lively-container")
+      if (container) container.focus()
+    
+      
+    }   
+  }
+  
+  onLeftDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    if (!this.navigateColum != "files") {
+      this.navigateColum = "files"
+      this.get("#navbar").focus()      
+      
+      
+    }    
+  }
+
+
+  onUpDown(evt) {
+    this.navigateItem("up", evt)
+  }
+
+  onDownDown(evt) {
+    this.navigateItem("down", evt)
+  }
+  
+  onEnterDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    if (this.navigateColum == "details") {
+      if (this.cursorDetailsItem) {
+        this.cursorDetailsItem.onclick()
+        this.get("#details").focus()  
+      }
+    } else if (this.cursorItem ) {
+       var nextLink = this.cursorItem.querySelector("a")
+      this.onItemClick(nextLink, evt) 
+    }
+  }
+  
+  nextDownItem(item, doNotDecent) {
+    var sublist = item.querySelector("ul")
+    if (!doNotDecent && sublist) {
+      var nextSubListItem = sublist.querySelector("li")
+      if (nextSubListItem) return nextSubListItem
+    } 
+    
+    if (item.nextElementSibling) {
+      return item.nextElementSibling
+    } else if (item.parentElement && item.parentElement.parentElement &&
+               item.parentElement.localName == "ul" &&
+               item.parentElement.parentElement.localName == "li") {
+      return this.nextDownItem(item.parentElement.parentElement, true)
+    }
+    
+  }
+
+  nextUpItem(item) {
+    
+    if (item.previousElementSibling) {
+      var sublist = item.previousElementSibling.querySelector("ul")
+      if(sublist) {
+        var prevSubListItem =Array.from(sublist.querySelectorAll("li")).last
+        if (prevSubListItem) return prevSubListItem 
+      }
+      
+      return item.previousElementSibling
+    } else if (item.parentElement && item.parentElement.parentElement &&
+        item.parentElement.localName == "ul" && 
+        item.parentElement.parentElement.localName == "li") {
+      
+      return this.nextUpItem(item.parentElement.parentElement)
+    }
+  }
+
+  navigateItem(direction, evt) {
+    evt.stopPropagation()
+    evt.preventDefault()    
+    var startItem = this.getCursorItem()
+    
+    if (!startItem) return
+    if (direction == "down") {
+      var nextItem = this.nextDownItem(startItem)
+    } else {
+      nextItem = this.nextUpItem(startItem)
+    }
+    this.setCursorItem(nextItem)
+  }
+  
+  getCursorItem() {
+    var startItem = this.cursorItem || this.targetItem || this.get("li")
+    if (this.navigateColum == "details") {
+      startItem = this.cursorDetailsItem || this.get("#details").querySelector("li")
+    }
+    return startItem
+  }
+  
+  setCursorItem(nextItem) {
+    var startItem = this.getCursorItem()
+    startItem.classList.remove("cursor")
+    if (nextItem) {
+        nextItem.classList.add("cursor")
+        if (this.navigateColum == "details") {
+          this.cursorDetailsItem = nextItem  
+        } else {
+          this.cursorItem = nextItem  
+        }
+      }
+  }
+  
+  
   async livelyMigrate(other) {
     await this.show(other.url, other.sourceContentthis, other.contextURL, true)
   }
 
   livelyUpdate() {
-    
-
     this.clear()
     this.show(this.url,this.sourceContent, this.contextURL, true)
   }
@@ -804,7 +940,7 @@ export default class LivelyContainerNavbar extends Morph {
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
-    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/"
+    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
   }
