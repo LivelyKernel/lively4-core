@@ -661,6 +661,15 @@ export default class LivelyContainerNavbar extends Morph {
     element.classList.add("selected")
   }
   
+  clearNameMD(name) {
+    return name
+      .replace(/<.*?>/g, "")
+      .replace(/\{.*/g, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/[\[\]]/g, "")
+      .replace(/\n/g, "")
+      .replace(/([ ,])#/g, "$1")
+  }
   
   showSublistMD(subList) {
     // console.log("sublist md " + this.sourceContent.length)
@@ -677,14 +686,14 @@ export default class LivelyContainerNavbar extends Morph {
     _.keys(links).forEach( name => {
       var item = links[name];
       var element = document.createElement("li");
-      element.textContent = name.replace(/<.*?>/g,"");
+      element.textContent = this.clearNameMD(name)
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
 
       element.onclick = () => {
         this.selectSublistItem(element, subList)
-        this.navigateToName(item.name);
+        this.navigateToName(this.clearNameMD(item.name))
       };
       subList.appendChild(element);
     });

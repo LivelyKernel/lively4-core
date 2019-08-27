@@ -1,8 +1,11 @@
-# ![Lively 4](https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_100.png) A Self-supporting, Web-based Development Environment
+![](https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_200.png){style="float: left"}
 
-[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
+# An Explorative, Self-supporting, <br> Web-based Development Environment
 
-## Getting Started
+ [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
+
+
+## Getting Started {style="clear:both"}
 
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-core/doc/_navigation.html"></lively-import>
