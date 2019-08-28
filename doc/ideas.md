@@ -14,3 +14,8 @@ Means for storing the links:
 - elastic search or similar service (fulltext search possible)
 - any key value store
 <div class="lively-content" style="width: 800px; height: max-content; position: absolute; left: 364px; top: 293.6px;"> <!--StartFragment--> <!--EndFragment--></div>
+
+
+## #Icons
+
+http://picol.org/picol_icon_font.php
