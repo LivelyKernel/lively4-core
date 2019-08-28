@@ -375,27 +375,58 @@ class Navigation {
     });
   }
 
+  goToOutermostScopeNode(element, evt) {
+    cancelEvent(evt);
+    
+    this.transformSelection(selectedElement => {
+      const path = selectedElement.path;
+
+      // we are already at Program level
+      if (!path.parentPath) {
+        lively.notify('no parent path! We are a ' + path.node.type);
+        return selectedElement;
+      }
+      
+      const newPath = path.findParent(p => {
+        if (p.isProgram()) { return true; }
+        return p.parentPath && p.scope !== p.parentPath.scope;
+      });
+      
+      if (!newPath) {
+        lively.warn('no new parent found for ' + newPath.node.type);
+        return selectedElement;
+      }
+      
+      return this.getElementForNode(newPath.node);
+    });
+  }
+
   handleKeydown(element, evt) {
     const info = keyInfo(evt);
     const { ctrl } = info;
 
-    if (!ctrl && info.up) {
+    if (ctrl) { return false; }
+
+    if (info.up) {
       this.up(element, evt);
       return true;
-    } else if (!ctrl && info.left) {
+    } else if (info.left) {
       this.left(element, evt);
       return true;
-    } else if (!ctrl && info.right) {
+    } else if (info.right) {
       this.right(element, evt);
       return true;
-    } else if (!ctrl && info.down) {
+    } else if (info.down) {
       this.down(element, evt);
       return true;
-    } else if (!ctrl && info.escape) {
+    } else if (info.escape) {
       this.clear(element, evt);
       return true;
-    } else if (!ctrl && info.tab) {
+    } else if (info.tab) {
       this.nextEquivalentIdentifier(element, evt, info.shift);
+      return true;
+    } else if (info.pageup) {
+      this.goToOutermostScopeNode(element, evt);
       return true;
     }
 
@@ -665,7 +696,8 @@ export default class PenEditor extends Morph {
   
   async buildProjection(ast) {
     const path = this.getProgramPath(ast);
-    AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
+    await AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
+    this.get(':scope > [slot=ast]').updateStyleSheet();
   }
 
   async buildTransformation(ast) {

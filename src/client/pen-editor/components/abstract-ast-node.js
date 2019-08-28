@@ -201,12 +201,41 @@ export default class AbstractAstNode extends Morph {
     this.addEventListener('paste', evt => this.onPaste(evt));
     
     // color [0-360], saturation [0-1], lightness [0-1]
-    this.style.backgroundColor = `${d3.hsl(
-      Math.random() * 360,
-      Math.random() * 0.2 + 0.4,
-      Math.random() * 0.2 + 0.8
-    )}`;
+    // this.style.backgroundColor = `${d3.hsl(
+    //   Math.random() * 360,
+    //   Math.random() * 0.2 + 0.4,
+    //   Math.random() * 0.2 + 0.8
+    // )}`;
   }
+  
+  updateStyle() {
+    this.updateStyleSheet();
+
+    this.getAllSubmorphs(`:scope > *`)
+      .filter(child => child.updateStyle)
+      .forEach(child => child.updateStyle());
+  }
+  
+  updateStyleSheet() {
+    const styleId = 'pen-editor-style';
+    this.shadowRoot.querySelectorAll(`#${styleId}`).forEach(style => style.remove());
+
+    const css = `
+:host(*) {
+  background-color: ${d3.hsl(
+    Math.random() * 360,
+    Math.random() * 0.2 + 0.4,
+    Math.random() * 0.2 + 0.8
+  )};
+}
+
+${this.furtherStyles()}
+`;
+    const style = <style id={styleId} type="text/css">{css}</style>;
+    this.shadowRoot.appendChild(style);
+  }
+  
+  furtherStyles() { return ''; }
   
   initHover() {
     this.addEventListener('mouseover', evt => this.onMouseOver(evt));
@@ -377,7 +406,7 @@ export default class AbstractAstNode extends Morph {
 
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
-        lively.success("WRONG")
-
+    this.updateStyleSheet();
+    lively.success("WRONG")
   }
 }

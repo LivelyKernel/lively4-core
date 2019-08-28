@@ -5,6 +5,16 @@
  * Block comment
  */
 
+label: stmt;
+
+function fff() {
+  const x = () => {
+    {
+      x;
+    }
+  };
+}
+
 export { foo, bar };
 export { foo23 } from "mod";
 export var foo12 = 1;
