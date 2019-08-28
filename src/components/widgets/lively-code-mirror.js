@@ -97,8 +97,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/search/searchcursor.js")
       await this.loadModule("addon/search/search.js")
       await this.loadModule("addon/search/jump-to-line.js")
- 			await this.loadModule("addon/search/matchesonscrollbar.js")
- 			await this.loadModule("addon/search/match-highlighter.js")
+      await this.loadModule("addon/search/matchesonscrollbar.js")
+      await this.loadModule("addon/search/match-highlighter.js")
       await this.loadModule("addon/scroll/annotatescrollbar.js")
       await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/dialog/dialog.js")
@@ -154,8 +154,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   initialize() {
-  	this._attrObserver = new MutationObserver(mutations => {
-	    mutations.forEach(mutation => {
+    this._attrObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
@@ -187,14 +187,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else {
       value = this.value || "";
     }
-  	this.editView(value)
+    this.editView(value)
     this.isLoading = false
     // console.log("[editor] #dispatch editor-loaded")
     var event = new CustomEvent("editor-loaded")
     // event.stopPropagation();
     this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
-  };
+  }
 
   async editorLoaded() {
     if(!this["editor-loaded"]) {
@@ -373,6 +373,20 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.autoFoldMax()
         },
         
+        "alt-Backspace": async cm => {
+          var container = lively.query(this, "lively-container")
+          if (container) {
+            await lively.sleep(10)
+            // it seems not to bubble acros shadow root boundaries #Bug ?
+            // so we do it manually, but keep it an event
+            container.dispatchEvent(new CustomEvent("editorbacknavigation", {
+              bubbles: true,
+              cancelable: true,
+            }))
+            
+          }
+          
+        },
         
       }
     }
@@ -676,7 +690,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //     break;
       case "wrapmode":
         this.setOption("lineWrapping", newVal)
-      	break;
+        break;
     }
   }
 
@@ -1063,14 +1077,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {
-      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
+        this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
       }
     })
   }
 
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
-      pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
+  pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
 
 
@@ -1376,21 +1390,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     // #TODO this is horrible... Why is there not a standard method for this?
 	if (!this.editor) return;
     var found = false;
-  	this.value.split("\n").forEach((ea, index) => {
+    this.value.split("\n").forEach((ea, index) => {
       var startPos = ea.indexOf(str)
       if (!found && (startPos != -1)) {
 	    this.editor.setCursor(index + 20, 10000);// line end ;-)
         this.editor.focus()
         this.editor.setSelection({line: index, ch: startPos }, {line: index, ch: startPos + str.length})
         found = ea;
-  	  }
+      }
     })
   }
 
   unsavedChanges() {
     if (this.editor.getValue() === "") return false
     return  true // workspaces should be treated carefully
-  }
+   }
 
 
 }
