@@ -61,4 +61,9 @@ export default class Strings {
     while(i< L && a1.charAt(i)=== a2.charAt(i)) i++;
     return a1.substring(0, i);
   }
+    
+  /* source: https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex */  
+  static escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+  }
 }

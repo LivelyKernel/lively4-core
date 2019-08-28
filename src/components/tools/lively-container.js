@@ -8,7 +8,7 @@ import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import Favorites from 'src/client/favorites.js';
 
 import files from "src/client/files.js"
-
+import Strings from "src/client/strings.js"
 
 //import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
@@ -834,7 +834,7 @@ export default class Container extends Morph {
       if (!element) { 
         
         // search for the text nodes because they are the smallest entities and go to a nearby entity..
-        var node = lively.allTextNodes(root).find(ea => ea.textContent.match(name))
+        var node = lively.allTextNodes(root).find(ea => ea.textContent.match(Strings.escapeRegExp(name)))
         // going one level up will go to far... in most cases
         // so we cannot do: element = node.parentElement 
         if (node) element = node.previousElementSibling // instead we go sideways
@@ -1537,10 +1537,11 @@ export default class Container extends Morph {
     // lively.notify("navigate to " + name);
     var editor = this.getLivelyCodeMirror()
     if (editor) {
+      debugger
       editor.find(name);
     } else {      
       var baseURL = this.getURL().toString().replace(/\#.*/,"")
-      var anchor = "#" + name.replace(/# ?/g,"")
+      var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
       var nextURL = baseURL + anchor
       this.setPathAttributeAndInput(nextURL)
       this.history().push(nextURL);

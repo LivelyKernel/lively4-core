@@ -75,23 +75,34 @@
     
     ul li.subitem {
       margin: 0px;
-      padding: 0px 0px 0px 25px;
-      font-size: 9pt;
+      padding: 0px 0px 0px 5px;
+      font-size: 11pt;
       color: gray;
     }
     
     ul li.subitem.level1 {
-      padding-left: 25px;
+      padding-left: 15px;
+      color: rgb(0, 78, 151);
+      font-weight: bold;
+      
     }
     
     ul li.subitem.level2 {
-      padding-left: 35px;
+      padding-left: 25px;
+      color: gray;
     }
     
     ul li.subitem.level3 {
-      padding-left: 45px;
+      padding-left: 35px;
+      color: lightgray
     }
     
+
+    ul li.subitem.selected {
+      background-color: rgba(215,215,215);
+      cursor: pointer
+    }
+
     
     ul li .fa-folder {
       color: #e99a01;
@@ -109,6 +120,40 @@
       background-color: rgba(215,215,215);
       cursor: pointer
     }
+
+    .cursor > a {
+      border: 1px inset black;
+      cursor: pointer
+    }
+
+    .subitem.cursor  {
+      border: 1px inset black;
+      cursor: pointer
+    }
+    
+    #row {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    
+    #details {
+      background-color: rgb(250, 250, 250);       
+      flex: 35%;
+    }
+
+    #navbar {
+      flex: 65%
+    }
+    
+    #details, #navbar {
+      white-space: nowrap;
+      height: 100%;
+      overflow: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain; 
+    }
+    
     
   </style>
   <div id="dragHint">
@@ -116,7 +161,13 @@
       Drop files to this folder?
     </span>
   </div>
+  <div id="row">
   <ul id="navbar">
   </ul>
+  <!--
+    <lively-separator></lively-separator>
+  -->
+  <div id="details"></div>
+  </div>
   <slot></slot>
 </template>
