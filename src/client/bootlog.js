@@ -24,11 +24,12 @@ export default class Bootlog {
 
   bootlogDB() {
     var db = new Dexie(this.name);
-    db.version("1").stores({
+    db.version("1")
+      .stores({
         logs: '++id,url, date, mode',
-    }).upgrade(function () {
-    })
-    return db
+      })
+      .upgrade(function () {});
+    return db;
   }
   
   async addLogs(logArray) {

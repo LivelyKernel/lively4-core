@@ -18,8 +18,8 @@ import pako from "https://jgraph.github.io/drawio-tools/tools/deflate/pako.min.j
 
 import XML from "src/client/xml.js"
 
-export function foo(a) {
-  return a + 1
+export function /*example:*/foo/*{"id":"8ea3_3c2d_b3f6","name":{"mode":"input","value":"foo"},"color":"hsl(70, 30%, 70%)","values":{"a":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(a) {
+  /*probe:*/return/*{}*/ a + 1
 }
 
 
