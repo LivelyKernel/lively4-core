@@ -5,23 +5,17 @@ import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
-import {pt, rect} from 'src/client/graphics.js';
+import {pt} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
-
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
-
 import {isSet} from 'utils'
-
 import fake from "./lively-code-mirror-fake.js"
-
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
 self.CodeMirror = CodeMirror // for modules
-
 let loadPromise = undefined;
-
 import { loc, range } from 'utils';
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
@@ -350,14 +344,18 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-Up": cm => {
           this.expandSelection(cm)
         },
-        // #KeyboardShortcut Alt-Down show references using tern
+        // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
         },
-        // #KeyboardShortcut Alt-Right show references using tern
+        // #KeyboardShortcut Alt-Right 
         "Alt-Right": cm => {
         },
-        // #KeyboardShortcut Alt-Left show references using tern
+        // #KeyboardShortcut Alt-Left Leave Editor and got to Navigation
         "Alt-Left": cm => {
+          this.singalEditorbackNavigation()
+        },
+        "shift-Alt-Left": cm => {
+          this.singalEditorbackNavigation(true)
         },
         // #KeyboardShortcut Alt-F fold (inverse code folding)
         "Alt-F": cm => {
@@ -373,24 +371,33 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.autoFoldMax()
         },
         
+        // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
-          var container = lively.query(this, "lively-container")
-          if (container) {
-            await lively.sleep(10)
-            // it seems not to bubble acros shadow root boundaries #Bug ?
-            // so we do it manually, but keep it an event
-            container.dispatchEvent(new CustomEvent("editorbacknavigation", {
-              bubbles: true,
-              cancelable: true,
-            }))
-            
-          }
-          
+          this.singalEditorbackNavigation()
+        },
+        // #KeyboardShortcut Alt-Backspace Leave and Close Editor and got to Navigation
+        "shift-alt-Backspace": async cm => {
+          this.singalEditorbackNavigation(true)
         },
         
       }
     }
     return this.extraKeys
+  }
+  
+  async singalEditorbackNavigation(closeEditor) {
+    var container = lively.query(this, "lively-container")
+    if (container) {
+      if (closeEditor) await container.onCancel()
+      await lively.sleep(10)
+      // it seems not to bubble acros shadow root boundaries #Bug ?
+      // so we do it manually, but keep it an event
+      container.dispatchEvent(new CustomEvent("editorbacknavigation", {
+        bubbles: true,
+        cancelable: true,
+      }))
+
+    }
   }
   
   /*MD ### AST-aware Navigation MD*/

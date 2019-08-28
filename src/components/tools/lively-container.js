@@ -376,9 +376,9 @@ export default class Container extends Morph {
     this.editFile();
   }
 
-  onCancel() {
+  async onCancel() {
     if (this.unsavedChanges()) {
-      if (!confirm("There are unsaved changes. Discard them?")) {
+      if (!await lively.confirm("There are unsaved changes. Discard them?")) {
         return;
       }
     }
@@ -465,7 +465,7 @@ export default class Container extends Morph {
   }
   
   onEditorBackNavigation() {
-    this.get("lively-container-navbar").focus()
+    this.get("lively-container-navbar").focusDetails()
   }
 
   async onSaveAs() {
