@@ -6,6 +6,8 @@ import keyInfo from 'src/client/keyinfo.js';
 import d3 from 'src/external/d3.v5.js';
 import { nodeEqual } from './utils.js';
 
+import ComponentLoader from "src/client/morphic/component-loader.js";
+
 async function prepareElementForPath(path, slotName, oldElement) {
   const [element, isNew] = await getAppropriateElement(path, oldElement);
 
@@ -406,7 +408,19 @@ ${this.furtherStyles()}
 
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
+    this.updateFromTemplate();
     this.updateStyleSheet();
-    lively.success("WRONG")
+    lively.success("WRONG");
+  }
+  updateFromTemplate() {
+    // #Paper #WebComponents #ObjectMigration
+    // object migration strategy:
+    // - keep identity
+    // - but replace internal state
+    // #TODO: was about external children
+    // #TODO: reuse part of old state in more fine-grained manner
+    // #GOAL: keep as much object identity as possible alive, due to potentially exposed references to internal state
+    this.shadowRoot.innerHTML = "";
+    ComponentLoader.applyTemplate(this, this.localName);
   }
 }

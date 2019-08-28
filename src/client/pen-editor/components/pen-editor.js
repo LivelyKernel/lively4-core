@@ -478,6 +478,20 @@ export default class PenEditor extends Morph {
 
     this.initToggleButtons();
     this.initLCM();
+    this.initStyle();
+  }
+  
+  initStyle() {
+    const styleId = 'pen-editor-style';
+    document.body.querySelectorAll(`#${styleId}`).forEach(style => style.remove());
+
+    const css = `
+::part(this-is-a-test) {
+  color: red;
+}
+`;
+    const style = <style id={styleId} data-choice="default" type="text/css">{css}</style>;
+    document.body.appendChild(style);
   }
   
   initFileInput() {
@@ -561,9 +575,15 @@ export default class PenEditor extends Morph {
         this.project(this.history.current());
       }
       return;
+    } else if (alt && info.char === "S") {
+      this.openStyleContextMenu(evt);
     }
     
     info.notify();
+  }
+  openStyleContextMenu() {
+    lively.notify('STUFF2')
+    
   }
   
   getElementForNode(node) {
@@ -750,6 +770,7 @@ export default class PenEditor extends Morph {
   livelyUpdate() {
     this.xxx = this.xxx || Math.random();
     lively.notify(this.xxx)
+    this.initStyle();
   }
   
 }
