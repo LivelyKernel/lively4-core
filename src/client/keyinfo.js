@@ -33,6 +33,9 @@ export class KeyInfo {
   get delete() { return this.keyCode === 46; }
   get tab() { return this.keyCode === 9; }
 
+  get pageup() { return this.keyCode === 33; }
+  get pagedown() { return this.keyCode === 34; }
+
   get left() { return this.keyCode === 37; }
   get up() { return this.keyCode === 38; }
   get right() { return this.keyCode === 39; }

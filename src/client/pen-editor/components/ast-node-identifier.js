@@ -6,6 +6,8 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import keyInfo from 'src/client/keyinfo.js';
+import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-rewriting/utils.js';
+import d3 from 'src/external/d3.v5.js';
 
 export default class AstNodeIdentifier extends AbstractAstNode {
   async initialize() {
@@ -13,6 +15,19 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     this.windowTitle = "AstNodeIdentifier";
   }
 
+  furtherStyles() { return `
+::part(input-field) {
+  ${isVariable(this.path) ?
+    
+    'text-decoration: underline; font-weight: bold; color: ' + d3.hsl(
+      Math.random() * 360,
+      Math.random() * 0.2 + 0.4,
+      Math.random() * 0.2 + 0.4
+    )
+    : ''}
+}
+`; }
+  
   get name() { return this.get('#name'); }
 
   async updateProjection() {
