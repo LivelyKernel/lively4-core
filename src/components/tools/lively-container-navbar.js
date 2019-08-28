@@ -60,10 +60,14 @@ export default class LivelyContainerNavbar extends Morph {
     lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
   }
 
-  onItemDragStart(link, evt) {
+  resetCursor() {
     this.cursorItem = null
     this.cursorDetailsItem = null
     this.navigateColum = "files"
+  }
+  
+  onItemDragStart(link, evt) {
+    this.resetCursor()
     
     let urls = this.getSelection();
     if (urls.length > 1) {
@@ -293,6 +297,7 @@ export default class LivelyContainerNavbar extends Morph {
       
       return         
     } else {
+      this.resetCursor()
       // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
@@ -840,14 +845,11 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()
     
-    if (!this.navigateColum != "files") {
+    if (!this.navigateColum || this.navigateColum == "details") {
       this.navigateColum = "files"
-      this.get("#navbar").focus()      
-      
-      
+      this.get("#navbar").focus()    
     }    
   }
-
 
   onUpDown(evt) {
     this.navigateItem("up", evt)
@@ -857,17 +859,24 @@ export default class LivelyContainerNavbar extends Morph {
     this.navigateItem("down", evt)
   }
   
-  onEnterDown(evt) {
+  async onEnterDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
     
     if (this.navigateColum == "details") {
       if (this.cursorDetailsItem) {
+        if (evt.shiftKey) {
+          var container = lively.query(this, "lively-container")
+          if (container) {
+            debugger
+            await container.editFile()
+          }
+        } 
         this.cursorDetailsItem.onclick()
         this.get("#details").focus()  
       }
     } else if (this.cursorItem ) {
-       var nextLink = this.cursorItem.querySelector("a")
+      var nextLink = this.cursorItem.querySelector("a")
       this.onItemClick(nextLink, evt) 
     }
   }
@@ -911,7 +920,7 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()    
     var startItem = this.getCursorItem()
-    
+
     if (!startItem) return
     if (direction == "down") {
       var nextItem = this.nextDownItem(startItem)
@@ -922,16 +931,23 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   getCursorItem() {
-    var startItem = this.cursorItem || this.targetItem || this.get("li")
+    if (this.cursorItem && !this.cursorItem.parentElement) {
+      this.cursorItem = null
+    }
+    var startItem
     if (this.navigateColum == "details") {
       startItem = this.cursorDetailsItem || this.get("#details").querySelector("li")
+    } else {
+      startItem = this.cursorItem || this.targetItem || this.get("#navbar").querySelector("li")
     }
     return startItem
   }
   
   setCursorItem(nextItem) {
     var startItem = this.getCursorItem()
-    startItem.classList.remove("cursor")
+    if (startItem) {
+      startItem.classList.remove("cursor")
+    }
     if (nextItem) {
         nextItem.classList.add("cursor")
         if (this.navigateColum == "details") {

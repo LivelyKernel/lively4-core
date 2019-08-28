@@ -95,6 +95,11 @@ export default class Container extends Morph {
       this.get("#container-leftpane").style.flex = value)
     this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
+    
+    this.addEventListener("editorbacknavigation", (evt) => {
+      this.onEditorBackNavigation(evt)
+    })
+    
   }
   
   viewOrEditPath(path, edit) {
@@ -458,6 +463,10 @@ export default class Container extends Morph {
       tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
     })
   }
+  
+  onEditorBackNavigation() {
+    this.get("lively-container-navbar").focus()
+  }
 
   async onSaveAs() {
     var newPath = await lively.prompt("Save as..", this.getPath())
@@ -493,6 +502,7 @@ export default class Container extends Morph {
     return editor.currentEditor().getValue()
   }
 
+  
   async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
@@ -1948,7 +1958,11 @@ export default class Container extends Morph {
 
   focus() {
     const livelyCodeMirror = this.getLivelyCodeMirror();
-    if (livelyCodeMirror) { livelyCodeMirror.focus(); }
+    if (livelyCodeMirror) { 
+      livelyCodeMirror.focus(); 
+    } else {
+      this.get("lively-container-navbar").focus()  
+    }
   }
 
   createLink(base, name, href) {
