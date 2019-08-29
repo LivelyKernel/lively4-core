@@ -73,10 +73,14 @@ export default class Container extends Morph {
     
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
-    input.addEventListener("keyup", event => {
-      if (event.keyCode == 13) { // ENTER
+    input.addEventListener("keyup", evt => {
+      if (evt.code == "Enter") { 
         this.onPathEntered(input.value);
       }
+      if (evt.altKey && evt.code == "ArrowDown") {
+        this.get("lively-container-navbar").focusFiles()
+      }
+      lively.notify("code: " + evt.code)
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
 

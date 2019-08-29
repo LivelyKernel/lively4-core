@@ -301,8 +301,22 @@ export default class LivelyContainerNavbar extends Morph {
       // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
+      this.scrollToItem(this.targetItem)
+    }
+    
+    
+  }
+  
+  
+  scrollToItem(element) {
+    if (element) {
+      var list = this.get("#navbar")
+      // #ContinueHere
+      var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
+      this.get("#navbar").scrollTo(0, relativeY)
     }
   }
+  
   
   async fetchStats(targetURL) {
     
@@ -866,13 +880,23 @@ export default class LivelyContainerNavbar extends Morph {
     }    
   }
 
-  onUpDown(evt) {
+  async onUpDown(evt) {
+    if (evt.altKey) {
+      evt.stopPropagation()
+      evt.preventDefault()
+      var container = lively.query(this, "lively-container")
+      if (container) {
+        container.get("#container-path").focus()
+      }
+      return
+    }
     this.navigateItem("up", evt)
   }
 
   onDownDown(evt) {
     this.navigateItem("down", evt)
   }
+  
   
   async onEnterDown(evt) {
     evt.stopPropagation()
