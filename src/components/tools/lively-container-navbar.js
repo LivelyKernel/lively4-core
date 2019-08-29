@@ -11,6 +11,11 @@ import FileCache from "src/client/fileindex.js"
 import Strings from "src/client/strings.js"
 
 
+const FILTER_KEY_BLACKLIST = [
+  'Control', 'Shift', 'Capslock', 'Alt',
+  ' ', 'Enter',
+  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'
+];
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -34,6 +39,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   clear(parentElement=this.get("#navbar")) {
     parentElement.innerHTML = ""
+    this.updateFilter("")
   }
   
   async dragFilesAsZip(urls, evt) {
@@ -513,6 +519,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onItemClick(link, evt) {
     this.focus()
+    this.updateFilter("")
     if (evt.shiftKey && evt.code != "Enter") {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
@@ -856,6 +863,7 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()
     
+    this.updateFilter("")
     if (!this.navigateColumn || this.navigateColumn == "files") {
       this.navigateColumn = "details"
       var details = this.get("#details")
@@ -873,6 +881,7 @@ export default class LivelyContainerNavbar extends Morph {
   onLeftDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
+    this.updateFilter("")
     
     if (!this.navigateColumn || this.navigateColumn == "details") {
       this.navigateColumn = "files"
@@ -919,6 +928,30 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
+  nextValidSibling(item) {
+    if (!item) return;
+    var element = item.nextElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.nextValidSibling(element)
+    }
+  }
+  
+  prevValidSibling(item) {
+    
+    if (!item) return;
+    var element = item.previousElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.prevValidSibling(element)
+    }
+  }
+  
+  
   nextDownItem(item, doNotDecent) {
     var sublist = item.querySelector("ul")
     if (!doNotDecent && sublist) {
@@ -926,8 +959,9 @@ export default class LivelyContainerNavbar extends Morph {
       if (nextSubListItem) return nextSubListItem
     } 
     
-    if (item.nextElementSibling) {
-      return item.nextElementSibling
+    var next = this.nextValidSibling(item)
+    if (next) {
+      return next
     } else if (item.parentElement && item.parentElement.parentElement &&
                item.parentElement.localName == "ul" &&
                item.parentElement.parentElement.localName == "li") {
@@ -937,15 +971,14 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   nextUpItem(item) {
-    
-    if (item.previousElementSibling) {
-      var sublist = item.previousElementSibling.querySelector("ul")
+    var prev = this.prevValidSibling(item)
+    if (prev) {
+      var sublist = prev.querySelector("ul")
       if(sublist) {
-        var prevSubListItem =Array.from(sublist.querySelectorAll("li")).last
+        var prevSubListItem = Array.from(sublist.querySelectorAll("li")).last
         if (prevSubListItem) return prevSubListItem 
       }
-      
-      return item.previousElementSibling
+      return prev
     } else if (item.parentElement && item.parentElement.parentElement &&
         item.parentElement.localName == "ul" && 
         item.parentElement.parentElement.localName == "li") {
@@ -1005,7 +1038,65 @@ export default class LivelyContainerNavbar extends Morph {
     this.navigateColumn = "files"
     this.get("#navbar").focus()
   }
+  
+  /* Copied from lively-menu */
+  // lazy filter property
+  get filter() { return this._filter = this._filter || ''; }
+  set filter(value) { return this._filter = value; }
+  
+  onKeyDown(evt) {
+    if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
 
+    // lively.notify("key: " + evt.key)
+    
+    if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
+      this.filter = '';
+    } else {
+      this.filter += evt.key;
+    }
+    
+    this.updateFilter()
+  }
+  
+  updateFilter(filter=this.filter) {
+    this.filter = filter
+    this.get('#filter-hint').innerHTML = this.filter;
+    
+    // lively.warn(evt.key, this.filter)
+    
+    this.items.forEach(item => item.classList.remove('filtered-out'));
+    this.nonMatchingItems.forEach(item => item.classList.add('filtered-out'));
+    
+    if (this.filter.length > 0) {
+      this.setCursorItem(this.matchingItems.first)
+    }
+  }
+  
+  
+    
+  get items() {
+    if(this.navigateColumn == "details") {
+      return Array.from(this.get("#details").querySelectorAll("li"));
+    } else {
+      return Array.from(this.get("#navbar").querySelectorAll("li"));
+    }
+    
+  }
+  
+  matchFilter(item) {
+    if (this.filter.length == 0) return true;
+    if(!item ) { return false; }
+    return item.textContent.toLowerCase().includes(this.filter.toLowerCase());
+  }
+  
+  get matchingItems() {
+    return this.items.filter(item => this.matchFilter(item));
+  }
+  
+  get nonMatchingItems() {
+    return this.items.filter(item => !this.matchFilter(item));
+  }
+  
   async livelyMigrate(other) {
     await this.show(other.url, other.sourceContentthis, other.contextURL, true)
   }
