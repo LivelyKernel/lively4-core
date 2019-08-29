@@ -519,7 +519,6 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onItemClick(link, evt) {
     this.focus()
-    this.updateFilter("")
     if (evt.shiftKey && evt.code != "Enter") {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
@@ -527,7 +526,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      if (this.isSelected(item) && evt.code != "Enter") {
+      if (this.isSelected(item) ) {
         this.currentDir = null
         item.classList.remove("selected")
         var sublist = item.querySelector("ul")
@@ -541,6 +540,7 @@ export default class LivelyContainerNavbar extends Morph {
       
       }
     }
+    this.updateFilter("")
     this.focusFiles()
   }
   
