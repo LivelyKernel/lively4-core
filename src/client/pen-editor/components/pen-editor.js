@@ -523,8 +523,8 @@ ast-node-directive::before {
     _.range(200).forEach(identifierId => {
       let color = d3.hsl(
         Math.random() * 360,
-        0.6,
-        0.5
+        Math.random() * 0.2 + 0.4,
+        Math.random() * 0.2 + 0.4
       );
       identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) {
   color: ${color};
@@ -866,7 +866,6 @@ ${scopeStyles.join('\n\r')}
   async buildProjection(ast) {
     const path = this.getProgramPath(ast);
     await AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
-    this.get(':scope > [slot=ast]').updateStyleSheet();
   }
 
   async buildTransformation(ast) {

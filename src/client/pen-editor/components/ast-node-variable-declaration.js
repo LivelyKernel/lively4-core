@@ -9,8 +9,6 @@ export default class AstNodeVariableDeclaration extends AbstractAstNode {
   async initialize() {
     await super.initialize();
     this.windowTitle = "AstNodeVariableDeclaration";
-    
-    this.classList.add('border-wrap')
   }
   
   get kind() { return this.get('#kind'); }

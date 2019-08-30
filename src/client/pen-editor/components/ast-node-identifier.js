@@ -18,30 +18,16 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     this.windowTitle = "AstNodeIdentifier";
   }
 
-  furtherStyles() { return `
-::part(input-field) {
-  ${isVariable(this.path) ?
-    
-    ' font-weight: bold; color: ' + d3.hsl(
-      Math.random() * 360,
-      Math.random() * 0.2 + 0.4,
-      Math.random() * 0.2 + 0.4
-    )
-    : ''}
-}
-`; }
-  
   addNodeStylingInfo(path) {
-    lively.notify('hello')
     super.addNodeStylingInfo(path);
     
     if (!isVariable(path)) { return; }
     if (!path.scope.hasBinding(path.node.name)) { return; }
 
+    // #TODO: this is a simple error-afflicted method to discover binding
+    // first, learn more about the actual use case, before optimizing too far
     this.setAttribute('ast-node-identifier-id', VARIABLE_ID_MAP.getOrCreate(path.scope.getBinding(path.node.name), () => NEXT_VARIABLE_ID++ % 200));
   }
-
-
   
   get name() { return this.get('#name'); }
 

@@ -1,20 +1,4 @@
 
-
-
-.border-wrap {
-  margin: 1px;
-/*   padding: 1px; */
-  border: 1px solid goldenrod;
-  background-color: #eeeeee;
-}
-
-:host(.border-wrap) {
-  margin: 1px;
-/*   padding: 1px; */
-  border: 1px solid goldenrod;
-  background-color: #eeeeee;
-}
-
 .keyword {
   font-weight: bold;
 }

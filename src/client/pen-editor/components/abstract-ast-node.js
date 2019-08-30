@@ -213,36 +213,7 @@ export default class AbstractAstNode extends Morph {
     // )}`;
     this.classList.add('ast-node');
   }
-  
-  updateStyle() {
-    this.updateStyleSheet();
 
-    this.getAllSubmorphs(`:scope > *`)
-      .filter(child => child.updateStyle)
-      .forEach(child => child.updateStyle());
-  }
-  
-  updateStyleSheet() {
-    const styleId = 'pen-editor-style';
-    this.shadowRoot.querySelectorAll(`#${styleId}`).forEach(style => style.remove());
-
-    const css = `
-:host(*) {
-  background-color: ${d3.hsl(
-    Math.random() * 360,
-    Math.random() * 0.2 + 0.4,
-    Math.random() * 0.2 + 0.8
-  )};
-}
-
-${this.furtherStyles()}
-`;
-    const style = <style id={styleId} type="text/css">{css}</style>;
-    this.shadowRoot.appendChild(style);
-  }
-  
-  furtherStyles() { return ''; }
-  
   initHover() {
     this.addEventListener('mouseover', evt => this.onMouseOver(evt));
     this.addEventListener('mouseout', evt => this.onMouseOut(evt));
@@ -429,7 +400,6 @@ ${this.furtherStyles()}
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
     this.updateFromTemplate();
-    this.updateStyleSheet();
     // lively.success("WRONG");
   }
   updateFromTemplate() {
