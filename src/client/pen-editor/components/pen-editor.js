@@ -4,11 +4,16 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import AbstractAstNode from './abstract-ast-node.js';
+import d3 from 'src/external/d3.v5.js';
 
 import { uuid, shake } from 'utils';
 import { nodeEqual } from './utils.js';
 
 import keyInfo from 'src/client/keyinfo.js';
+
+import ContextMenu from 'src/client/contextmenu.js';
+
+import focalStorage from 'src/external/focalStorage.js';
 
 // https://github.com/babel/babel/blob/8ee24fdfc04870dade1f7318b29bb27b59fdec79/packages/babel-types/src/definitions/core.js
 // validator https://github.com/babel/babel/blob/eac4c5bc17133c2857f2c94c1a6a8643e3b547a7/scripts/generators/utils.js
@@ -481,22 +486,159 @@ export default class PenEditor extends Morph {
     this.initStyle();
   }
   
-  initStyle() {
-    const styleId = 'pen-editor-style';
-    document.body.querySelectorAll(`#${styleId}`).forEach(style => style.remove());
-
-    const css = `
-::part(this-is-a-test) {
+  /*MD ## Options MD*/
+  _asPersistenceKey(key) { return 'pen-editor-' + key; }
+  async getOption(key, defaultValue) {
+    const persistedValue = await focalStorage.getItem(this._asPersistenceKey(key));
+    return persistedValue || defaultValue;
+  }
+  async setOption(key, value) {
+    return focalStorage.setItem(this._asPersistenceKey(key), value);
+  }
+  /*MD ## Styles MD*/
+  styleDefault() {
+    return `
+ast-node-directive::before {
+  content: "default style";
+} 
+.the-class::part(this-is-a-test) {
   color: red;
 }
 `;
-    const style = <style id={styleId} data-choice="default" type="text/css">{css}</style>;
+  }
+
+  styleColorizeVariables() {
+    const identifierStyles = [];
+    _.range(200).forEach(identifierId => {
+      let color = d3.hsl(
+        Math.random() * 360,
+        0.6,
+        0.5
+      );
+      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) { color: ${color}; }`);
+    });
+    return `
+ast-node-directive::before {
+  content: "colorize variables";
+}
+ast-node-identifier::part(input-field) {
+  font-weight: bold;
+}
+${identifierStyles.join('\n\r')}
+`;
+  }
+
+  styleColorizeScopes() {
+    const scopeStyles = [];
+    _.range(20).forEach(scopeId => {
+      let color;
+      _.range(20).forEach(depth => {
+        if (depth === 0) {
+          color = d3.hsl(
+            Math.random() * 360,
+            0.3,
+            0.7
+          );
+        // } else if (depth >= 8) {
+        //   color = d3.hsl(0,0,0);
+        } else {
+          color = color.brighter(0.1);
+        }
+        scopeStyles.push(`.ast-node[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
+      background-color: ${color};
+      border: 1px solid ${color};
+    }`);
+      });
+    });
+
+    return `
+ast-node-directive::before {
+  content: "colorize scopes";
+} 
+.the-class::part(this-is-a-test) {
+  color: red;
+}
+ast-node-identifier {
+/* border: 3px solid red; */
+}
+::part(input-field) {
+
+}
+ast-node-identifier::part(prim) {
+  border: 3px solid yellow;
+}
+ast-node-identifier::part(input-field) {
+  font-weight: bold;
+
+/*
+  color: red;
+  border: 3px solid blue;
+  font-style: underline;
+*/
+}
+.ast-node {
+  background-color: #cfeea7;
+}
+.ast-node {
+/*  border: 1px solid goldenrod; */
+}
+${scopeStyles.join('\n\r')}
+`;
+  }
+
+  /*MD ## Handle Styling MD*/
+
+  get styleId() { return 'pen-editor-style'; }
+  get styleSelector() { return `#${this.styleId}`; }
+  get stylePersistKey() { return 'style-type'; }
+  get styleTypeDefault() { return 'styleDefault'; }
+
+  async initStyle({
+    force = false,
+    type
+  } = {}) {
+    if (type) {
+      this.setOption(this.stylePersistKey, type);
+    } else {
+      type = await this.getOption(this.stylePersistKey, this.styleTypeDefault);
+    }
+
+    const oldStyle = document.body.querySelector(this.styleSelector);
+    
+    // replace style
+    if (force || !oldStyle || oldStyle.getAttribute('data-style-type') !== type) {
+      this.replaceStyle(type);
+    }
+  }
+
+  replaceStyle(type) {
+    document.body.querySelectorAll(this.styleSelector).forEach(style => style.remove());
+
+    const css = this[type]();
+    const style = <style id={this.styleId} data-style-type={type} type="text/css">{css}</style>;
     document.body.appendChild(style);
   }
+
+  async openStyleContextMenu(evt) {
+    const updateStyleTo = type => {
+      menu.remove();
+      this.initStyle({ type, force: true });
+      // #TODO: re-apply focus
+    };
+    const menuItems = [
+      ['default', () => updateStyleTo(this.styleTypeDefault), 'plain gray-ish', '<i class="fa fa-circle"></i>'],
+      ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', '<i class="fa fa-share"></i>'],
+      ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', '<i class="fa fa-th-large"></i>'],
+    ];
+    
+    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  
+  /*MD ## Misc. MD*/
   
   initFileInput() {
-    PenEditor.defaultFile
-
     this.fileName.value = PenEditor.defaultFile;
     
     this.fileName.addEventListener('keydown', async evt => {
@@ -580,10 +722,6 @@ export default class PenEditor extends Morph {
     }
     
     info.notify();
-  }
-  openStyleContextMenu() {
-    lively.notify('STUFF2')
-    
   }
   
   getElementForNode(node) {
@@ -770,7 +908,7 @@ export default class PenEditor extends Morph {
   livelyUpdate() {
     this.xxx = this.xxx || Math.random();
     lively.notify(this.xxx)
-    this.initStyle();
+    this.initStyle({ force: true });
   }
   
 }

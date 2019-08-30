@@ -9,6 +9,9 @@ import keyInfo from 'src/client/keyinfo.js';
 import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-rewriting/utils.js';
 import d3 from 'src/external/d3.v5.js';
 
+const SCOPE_MAP = new Map();
+let NEXT_SCOPE_ID = 0;
+
 export default class AstNodeIdentifier extends AbstractAstNode {
   async initialize() {
     await super.initialize();
@@ -19,7 +22,7 @@ export default class AstNodeIdentifier extends AbstractAstNode {
 ::part(input-field) {
   ${isVariable(this.path) ?
     
-    'text-decoration: underline; font-weight: bold; color: ' + d3.hsl(
+    ' font-weight: bold; color: ' + d3.hsl(
       Math.random() * 360,
       Math.random() * 0.2 + 0.4,
       Math.random() * 0.2 + 0.4
@@ -27,6 +30,15 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     : ''}
 }
 `; }
+  
+  addNodeStylingInfo(path) {
+    lively.notify('hello')
+    super.addNodeStylingInfo(path);
+    
+    this.setAttribute('ast-node-identifier-id', SCOPE_MAP.getOrCreate(path.node.name, () => NEXT_SCOPE_ID++ % 200));
+  }
+
+
   
   get name() { return this.get('#name'); }
 

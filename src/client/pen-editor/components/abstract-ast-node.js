@@ -178,6 +178,9 @@ function getAppropriateElementTagName(path) {
   return 'generic-ast-node';
 }
 
+const SCOPE_MAP = new WeakMap();
+let NEXT_SCOPE_ID = 0;
+
 export default class AbstractAstNode extends Morph {
 
   get isAstNode() { return true; }
@@ -208,6 +211,7 @@ export default class AbstractAstNode extends Morph {
     //   Math.random() * 0.2 + 0.4,
     //   Math.random() * 0.2 + 0.8
     // )}`;
+    this.classList.add('ast-node');
   }
   
   updateStyle() {
@@ -313,10 +317,26 @@ ${this.furtherStyles()}
   get astNode() { return this._node; }
   set astNode(value) { return this._node = value; }
 
+  addNodeStylingInfo(path) {
+    var depth = 0;
+    path.find(p => {
+      if (p.parentPath && p.scope !== p.parentPath.scope) {
+        return true;
+        
+      } else {
+        (depth++);
+        return false;
+      }
+    });
+    this.setAttribute('ast-node-scope', SCOPE_MAP.getOrCreate(path.scope, () => NEXT_SCOPE_ID++ % 20));
+    this.setAttribute('ast-node-depth', depth);
+  }
+
   async setPath(path) {
     this.path = path;
     this.node = path.node;
-    
+
+    this.addNodeStylingInfo(path);
     await this.setNode(path.node);
   }
   
@@ -410,7 +430,7 @@ ${this.furtherStyles()}
   livelyUpdate() {
     this.updateFromTemplate();
     this.updateStyleSheet();
-    lively.success("WRONG");
+    // lively.success("WRONG");
   }
   updateFromTemplate() {
     // #Paper #WebComponents #ObjectMigration
