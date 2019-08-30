@@ -9,8 +9,6 @@ export default class AstNodeExportNamedDeclaration extends AbstractAstNode {
   }
   
   async updateProjection() {
-    this.classList.toggle('the-class', Math.random() > 0.5)
-    
     await this.createSubElementForPath(this.path.get('declaration'), 'declaration');
     await this.createSubElementForPaths(this.path.get('specifiers'), 'specifiers');
     this.classList.toggle('no-source', !this.node.source);

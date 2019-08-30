@@ -498,12 +498,6 @@ export default class PenEditor extends Morph {
   /*MD ## Styles MD*/
   styleDefault() {
     return `
-ast-node-directive::before {
-  content: "default style";
-} 
-.the-class::part(this-is-a-test) {
-  color: red;
-}
 `;
   }
 
@@ -531,12 +525,7 @@ ast-node-directive::before {
   font-weight: bold;
 }`);
     });
-    return `
-ast-node-directive::before {
-  content: "colorize variables";
-}
-${identifierStyles.join('\n\r')}
-`;
+    return `${identifierStyles.join('\n\r')}`;
   }
 
   styleColorizeScopes() {
@@ -548,54 +537,47 @@ ${identifierStyles.join('\n\r')}
           color = d3.hsl(
             Math.random() * 360,
             0.5,
-            0.7
+            0.4
           );
         } else {
-          color = color.brighter(0.1);
+          color = color.brighter(0.3);
         }
+        
+        const preferredTextColor = color.l < 0.5 ? 'white' : 'black';
         scopeStyles.push(`.ast-node[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
-      background-color: ${color};
-      border: 1px solid ${color};
-    }`);
+  background-color: ${color};
+  border: 1px solid ${color};
+}
+ast-node-identifier[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+/* #TODO: need to correctly colorize other ast nodes as well */
+ast-node-numeric-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+ast-node-string-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+ast-node-directive-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
+  color: ${preferredTextColor};
+}
+`);
       });
     });
 
     return `
-ast-node-directive::before {
-  content: "colorize scopes";
-} 
-.the-class::part(this-is-a-test) {
-  color: red;
-}
-ast-node-identifier {
-/* border: 3px solid red; */
-}
-::part(input-field) {
-
-}
-ast-node-identifier::part(prim) {
-  border: 3px solid yellow;
-}
 ast-node-identifier::part(input-field) {
   font-weight: bold;
-
-/*
-  color: red;
-  border: 3px solid blue;
-  font-style: underline;
-*/
-}
-.ast-node {
-  background-color: #cfeea7;
-}
-.ast-node {
-/*  border: 1px solid goldenrod; */
 }
 ${scopeStyles.join('\n\r')}
 `;
   }
 
-  /*MD ## Handle Styling MD*/
+  /*MD
+  ---
+  ## Handle Styling 
+  ---
+  MD*/
 
   get styleId() { return 'pen-editor-style'; }
   get styleSelector() { return `#${this.styleId}`; }
@@ -629,16 +611,17 @@ ${scopeStyles.join('\n\r')}
   }
 
   async openStyleContextMenu(evt) {
+    function fa(name) { return `<i class="fa fa-${name}"></i>`; }
     const updateStyleTo = type => {
       menu.remove();
       this.initStyle({ type, force: true });
       // #TODO: re-apply focus
     };
     const menuItems = [
-      ['default', () => updateStyleTo(this.styleTypeDefault), 'plain gray-ish', '<i class="fa fa-circle"></i>'],
-      ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', '<i class="fa fa-share"></i>'],
-      ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', '<i class="fa fa-th-large"></i>'],
-      ['nesting', () => updateStyleTo('styleNesting'), 'borders for ast node nesting', '<i class="fa fa-th-large"></i>'],
+      ['default', () => updateStyleTo(this.styleTypeDefault), 'plain gray-ish', fa('circle')],
+      ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', fa('share')],
+      ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', fa('th-large')],
+      ['nesting', () => updateStyleTo('styleNesting'), 'borders for ast node nesting', fa('th-large')],
       
     ];
     
