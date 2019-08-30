@@ -126,7 +126,7 @@
       cursor: pointer
     }
 
-    .subitem.cursor  {
+    #details:focus .subitem.cursor  {
       border: 1px inset black;
       cursor: pointer
     }
@@ -154,12 +154,29 @@
       overscroll-behavior: contain; 
     }
     
+   
+    .filtered-out {
+        opacity: 0.2
+    }
+    
+    #filter-hint {
+      color: gray;
+      background: rgba(255,255,255,0.8)
+      
+    }
+    #filter-container{
+      height: 0px;
+      overflow: visible;
+    }
     
   </style>
   <div id="dragHint">
     <span id="dragHintText">
       Drop files to this folder?
     </span>
+  </div>
+  <div id="filter-container">
+    <div id="filter-hint"></div>
   </div>
   <div id="row">
   <ul id="navbar">

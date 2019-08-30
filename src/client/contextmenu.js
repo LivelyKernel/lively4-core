@@ -46,6 +46,7 @@ export default class ContextMenu {
       if(extent) {
         lively.setExtent(comp.parentElement, extent)
       }
+      comp.focus()
       return comp
     });
   }
@@ -327,7 +328,7 @@ export default class ContextMenu {
         this.hide();
         lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
-      ["Browse/Edit", evt => {
+      ["Browse/Edit", async(evt) => {
           var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700)).then(comp => {
             if (container)

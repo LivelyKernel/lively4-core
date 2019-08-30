@@ -11,6 +11,11 @@ import FileCache from "src/client/fileindex.js"
 import Strings from "src/client/strings.js"
 
 
+const FILTER_KEY_BLACKLIST = [
+  'Control', 'Shift', 'Capslock', 'Alt',
+  ' ', 'Enter',
+  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'
+];
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
@@ -34,6 +39,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   clear(parentElement=this.get("#navbar")) {
     parentElement.innerHTML = ""
+    this.updateFilter("")
   }
   
   async dragFilesAsZip(urls, evt) {
@@ -63,7 +69,7 @@ export default class LivelyContainerNavbar extends Morph {
   resetCursor() {
     this.cursorItem = null
     this.cursorDetailsItem = null
-    this.navigateColum = "files"
+    this.navigateColumn = "files"
   }
   
   onItemDragStart(link, evt) {
@@ -301,8 +307,22 @@ export default class LivelyContainerNavbar extends Morph {
       // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
+      this.scrollToItem(this.targetItem)
+    }
+    
+    
+  }
+  
+  
+  scrollToItem(element) {
+    if (element) {
+      var list = this.get("#navbar")
+      // #ContinueHere
+      var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
+      this.get("#navbar").scrollTo(0, relativeY)
     }
   }
+  
   
   async fetchStats(targetURL) {
     
@@ -497,30 +517,48 @@ export default class LivelyContainerNavbar extends Morph {
     return item.classList.contains("selected") || selectedChild
   }
   
-  onItemClick(link, evt) {
+  async onItemClick(link, evt) {
     this.focus()
-    if (evt.shiftKey) {
+    if (evt.shiftKey && evt.code != "Enter") {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      if (this.isSelected(item)) {
+      if (this.isSelected(item) ) {
         this.currentDir = null
         item.classList.remove("selected")
         var sublist = item.querySelector("ul")
         if (sublist) sublist.remove()
       } else {
-        this.followPath(link.href);
+        if (evt.shiftKey) {
+          var container = lively.query(this, "lively-container")
+          if (container) await container.editFile();
+        } 
+        await this.followPath(link.href);
+      
       }
     }
+    this.updateFilter("")
+    this.focusFiles()
   }
   
-  onItemDblClick(link, evt) {
+  async onItemDblClick(link, evt) {
     this.clear()
-    this.followPath(link.href);
+    await this.followPath(link.href);
+    this.focusFiles()
   }
+  
+  async onDetailsItemClick(item, evt) {
+    this.cursorDetailsItem = item
+    this.navigateColumn = "details"
+    var sublist = this.get("#details").querySelector("ul")
+    this.selectSublistItem(item, sublist)
+    await this.navigateToName(item.name);
+    this.get("#details").focus()
+  }
+
   async editWithSyvis (url) {
     const editor = await components.createComponent('syvis-editor');
     await editor.loadUrl(url);
@@ -641,12 +679,11 @@ export default class LivelyContainerNavbar extends Morph {
         var element = document.createElement("li");
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
-        element.onclick = () => {
-            this.selectSublistItem(element, subList)
-            this.navigateToName(
-              `data-name="${ea.getAttribute('data-name')}"`);
-          
-        };
+        
+        element.name = `data-name="${ea.getAttribute('data-name')}"`
+        element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+        }
         subList.appendChild(element) ;
       });
   }
@@ -680,9 +717,9 @@ export default class LivelyContainerNavbar extends Morph {
           element.innerHTML = name;
           element.classList.add("link");
           element.classList.add("subitem");
-          element.onclick = () => {
-            this.selectSublistItem(element, subList)
-            this.navigateToName(navigateToName);
+          element.name = navigateToName
+          element.onclick = (evt) => {
+            this.onDetailsItemClick(element, evt)
           }
           subList.appendChild(element) ;
         }
@@ -726,11 +763,10 @@ export default class LivelyContainerNavbar extends Morph {
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
-
-      element.onclick = () => {
-        this.selectSublistItem(element, subList)
-        this.navigateToName(this.clearNameMD(item.name))
-      };
+      element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
       subList.appendChild(element);
     });
   }
@@ -827,12 +863,13 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()
     
-    if (!this.navigateColum || this.navigateColum == "files") {
-      this.navigateColum = "details"
+    this.updateFilter("")
+    if (!this.navigateColumn || this.navigateColumn == "files") {
+      this.navigateColumn = "details"
       var details = this.get("#details")
       details.focus()
       this.setCursorItem(details.querySelector("li"))
-    } else if (this.navigateColum == "details") {
+    } else if (this.navigateColumn == "details") {
     
       var container = lively.query(this, "lively-container")
       if (container) container.focus()
@@ -844,14 +881,24 @@ export default class LivelyContainerNavbar extends Morph {
   onLeftDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
+    this.updateFilter("")
     
-    if (!this.navigateColum || this.navigateColum == "details") {
-      this.navigateColum = "files"
+    if (!this.navigateColumn || this.navigateColumn == "details") {
+      this.navigateColumn = "files"
       this.get("#navbar").focus()    
     }    
   }
 
-  onUpDown(evt) {
+  async onUpDown(evt) {
+    if (evt.altKey) {
+      evt.stopPropagation()
+      evt.preventDefault()
+      var container = lively.query(this, "lively-container")
+      if (container) {
+        container.get("#container-path").focus()
+      }
+      return
+    }
     this.navigateItem("up", evt)
   }
 
@@ -859,20 +906,20 @@ export default class LivelyContainerNavbar extends Morph {
     this.navigateItem("down", evt)
   }
   
+  
   async onEnterDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
     
-    if (this.navigateColum == "details") {
+    if (this.navigateColumn == "details") {
       if (this.cursorDetailsItem) {
         if (evt.shiftKey) {
           var container = lively.query(this, "lively-container")
           if (container) {
-            debugger
             await container.editFile()
           }
         } 
-        this.cursorDetailsItem.onclick()
+        this.onDetailsItemClick(this.cursorDetailsItem, evt)
         this.get("#details").focus()  
       }
     } else if (this.cursorItem ) {
@@ -881,6 +928,30 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
+  nextValidSibling(item) {
+    if (!item) return;
+    var element = item.nextElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.nextValidSibling(element)
+    }
+  }
+  
+  prevValidSibling(item) {
+    
+    if (!item) return;
+    var element = item.previousElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.prevValidSibling(element)
+    }
+  }
+  
+  
   nextDownItem(item, doNotDecent) {
     var sublist = item.querySelector("ul")
     if (!doNotDecent && sublist) {
@@ -888,8 +959,9 @@ export default class LivelyContainerNavbar extends Morph {
       if (nextSubListItem) return nextSubListItem
     } 
     
-    if (item.nextElementSibling) {
-      return item.nextElementSibling
+    var next = this.nextValidSibling(item)
+    if (next) {
+      return next
     } else if (item.parentElement && item.parentElement.parentElement &&
                item.parentElement.localName == "ul" &&
                item.parentElement.parentElement.localName == "li") {
@@ -899,15 +971,14 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   nextUpItem(item) {
-    
-    if (item.previousElementSibling) {
-      var sublist = item.previousElementSibling.querySelector("ul")
+    var prev = this.prevValidSibling(item)
+    if (prev) {
+      var sublist = prev.querySelector("ul")
       if(sublist) {
-        var prevSubListItem =Array.from(sublist.querySelectorAll("li")).last
+        var prevSubListItem = Array.from(sublist.querySelectorAll("li")).last
         if (prevSubListItem) return prevSubListItem 
       }
-      
-      return item.previousElementSibling
+      return prev
     } else if (item.parentElement && item.parentElement.parentElement &&
         item.parentElement.localName == "ul" && 
         item.parentElement.parentElement.localName == "li") {
@@ -935,7 +1006,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.cursorItem = null
     }
     var startItem
-    if (this.navigateColum == "details") {
+    if (this.navigateColumn == "details") {
       startItem = this.cursorDetailsItem || this.get("#details").querySelector("li")
     } else {
       startItem = this.cursorItem || this.targetItem || this.get("#navbar").querySelector("li")
@@ -950,7 +1021,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
     if (nextItem) {
         nextItem.classList.add("cursor")
-        if (this.navigateColum == "details") {
+        if (this.navigateColumn == "details") {
           this.cursorDetailsItem = nextItem  
         } else {
           this.cursorItem = nextItem  
@@ -958,6 +1029,73 @@ export default class LivelyContainerNavbar extends Morph {
       }
   }
   
+  focusDetails() {
+    this.navigateColumn = "details"
+    this.get("#details").focus()
+  }
+
+  focusFiles() {
+    this.navigateColumn = "files"
+    this.get("#navbar").focus()
+  }
+  
+  /* Copied from lively-menu */
+  // lazy filter property
+  get filter() { return this._filter = this._filter || ''; }
+  set filter(value) { return this._filter = value; }
+  
+  onKeyDown(evt) {
+    if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
+
+    // lively.notify("key: " + evt.key)
+    
+    if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
+      this.filter = '';
+    } else {
+      this.filter += evt.key;
+    }
+    
+    this.updateFilter()
+  }
+  
+  updateFilter(filter=this.filter) {
+    this.filter = filter
+    this.get('#filter-hint').innerHTML = this.filter;
+    
+    // lively.warn(evt.key, this.filter)
+    
+    this.items.forEach(item => item.classList.remove('filtered-out'));
+    this.nonMatchingItems.forEach(item => item.classList.add('filtered-out'));
+    
+    if (this.filter.length > 0) {
+      this.setCursorItem(this.matchingItems.first)
+    }
+  }
+  
+  
+    
+  get items() {
+    if(this.navigateColumn == "details") {
+      return Array.from(this.get("#details").querySelectorAll("li"));
+    } else {
+      return Array.from(this.get("#navbar").querySelectorAll("li"));
+    }
+    
+  }
+  
+  matchFilter(item) {
+    if (this.filter.length == 0) return true;
+    if(!item ) { return false; }
+    return item.textContent.toLowerCase().includes(this.filter.toLowerCase());
+  }
+  
+  get matchingItems() {
+    return this.items.filter(item => this.matchFilter(item));
+  }
+  
+  get nonMatchingItems() {
+    return this.items.filter(item => !this.matchFilter(item));
+  }
   
   async livelyMigrate(other) {
     await this.show(other.url, other.sourceContentthis, other.contextURL, true)
