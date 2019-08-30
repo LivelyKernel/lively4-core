@@ -9,8 +9,8 @@ import keyInfo from 'src/client/keyinfo.js';
 import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-rewriting/utils.js';
 import d3 from 'src/external/d3.v5.js';
 
-const SCOPE_MAP = new Map();
-let NEXT_SCOPE_ID = 0;
+const VARIABLE_ID_MAP = new Map();
+let NEXT_VARIABLE_ID = 0;
 
 export default class AstNodeIdentifier extends AbstractAstNode {
   async initialize() {
@@ -35,7 +35,10 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     lively.notify('hello')
     super.addNodeStylingInfo(path);
     
-    this.setAttribute('ast-node-identifier-id', SCOPE_MAP.getOrCreate(path.node.name, () => NEXT_SCOPE_ID++ % 200));
+    if (!isVariable(path)) { return; }
+    if (!path.scope.hasBinding(path.node.name)) { return; }
+
+    this.setAttribute('ast-node-identifier-id', VARIABLE_ID_MAP.getOrCreate(path.scope.getBinding(path.node.name), () => NEXT_VARIABLE_ID++ % 200));
   }
 
 

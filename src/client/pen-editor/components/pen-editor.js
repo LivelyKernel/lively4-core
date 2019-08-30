@@ -507,6 +507,17 @@ ast-node-directive::before {
 `;
   }
 
+  styleNesting() {
+    return `
+.ast-node {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+`;
+  }
+
   styleColorizeVariables() {
     const identifierStyles = [];
     _.range(200).forEach(identifierId => {
@@ -515,14 +526,14 @@ ast-node-directive::before {
         0.6,
         0.5
       );
-      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) { color: ${color}; }`);
+      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) {
+  color: ${color};
+  font-weight: bold;
+}`);
     });
     return `
 ast-node-directive::before {
   content: "colorize variables";
-}
-ast-node-identifier::part(input-field) {
-  font-weight: bold;
 }
 ${identifierStyles.join('\n\r')}
 `;
@@ -536,11 +547,9 @@ ${identifierStyles.join('\n\r')}
         if (depth === 0) {
           color = d3.hsl(
             Math.random() * 360,
-            0.3,
+            0.5,
             0.7
           );
-        // } else if (depth >= 8) {
-        //   color = d3.hsl(0,0,0);
         } else {
           color = color.brighter(0.1);
         }
@@ -629,6 +638,8 @@ ${scopeStyles.join('\n\r')}
       ['default', () => updateStyleTo(this.styleTypeDefault), 'plain gray-ish', '<i class="fa fa-circle"></i>'],
       ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', '<i class="fa fa-share"></i>'],
       ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', '<i class="fa fa-th-large"></i>'],
+      ['nesting', () => updateStyleTo('styleNesting'), 'borders for ast node nesting', '<i class="fa fa-th-large"></i>'],
+      
     ];
     
     const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
