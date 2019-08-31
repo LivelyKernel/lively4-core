@@ -311,7 +311,6 @@ export default class LivelyContainerNavbar extends Morph {
   scrollToItem(element) {
     if (element) {
       var list = this.get("#navbar")
-      // #ContinueHere
       var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
       this.get("#navbar").scrollTo(0, relativeY)
     }
