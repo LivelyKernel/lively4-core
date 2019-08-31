@@ -8,13 +8,13 @@ import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import Favorites from 'src/client/favorites.js';
 
 import files from "src/client/files.js"
-
+import Strings from "src/client/strings.js"
 
 //import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
-import Clipboard from "src/client/clipboard.js";
-import { debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils";
+import Clipboard from "src/client/clipboard.js"
+import {debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
@@ -39,8 +39,8 @@ export default class Container extends Morph {
     }
 
     this.contentChangedDelay = (() => {
-        this.checkForContentChanges()
-      })::debounce(1000);
+      this.checkForContentChanges()
+    })::debounce(1000)
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     
@@ -73,10 +73,14 @@ export default class Container extends Morph {
     
     // #TODO very ugly... I want to hide that level of JavaScript and just connect "onEnter" of the input field with my code
     var input = this.get("#container-path");
-    input.addEventListener("keyup", event => {
-      if (event.keyCode == 13) { // ENTER
+    input.addEventListener("keyup", evt => {
+      if (evt.code == "Enter") { 
         this.onPathEntered(input.value);
       }
+      if (evt.altKey && evt.code == "ArrowDown") {
+        this.get("lively-container-navbar").focusFiles()
+      }
+      lively.notify("code: " + evt.code)
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
 
@@ -95,6 +99,11 @@ export default class Container extends Morph {
       this.get("#container-leftpane").style.flex = value)
     this.withAttributeDo("rightpane-flex", value =>
       this.get("#container-rightpane").style.flex = value)
+    
+    this.addEventListener("editorbacknavigation", (evt) => {
+      this.onEditorBackNavigation(evt)
+    })
+    
   }
   
   viewOrEditPath(path, edit) {
@@ -268,9 +277,10 @@ export default class Container extends Morph {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       console.group("run test: " + this.getPath());
-      testRunner.clearTests();
-      await this.reloadModule(url.toString())
-      testRunner.runTests();
+      await testRunner.clearTests();
+      await lively.reloadModule(url.toString())
+      await System.import(url.toString());
+      await testRunner.runTests();
     } else {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
@@ -370,9 +380,9 @@ export default class Container extends Morph {
     this.editFile();
   }
 
-  onCancel() {
+  async onCancel() {
     if (this.unsavedChanges()) {
-      if (!confirm("There are unsaved changes. Discard them?")) {
+      if (!await lively.confirm("There are unsaved changes. Discard them?")) {
         return;
       }
     }
@@ -457,6 +467,10 @@ export default class Container extends Morph {
       tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
     })
   }
+  
+  onEditorBackNavigation() {
+    this.get("lively-container-navbar").focusDetails()
+  }
 
   async onSaveAs() {
     var newPath = await lively.prompt("Save as..", this.getPath())
@@ -492,6 +506,7 @@ export default class Container extends Morph {
     return editor.currentEditor().getValue()
   }
 
+  
   async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
@@ -548,7 +563,7 @@ export default class Container extends Morph {
         lively.notify("ignore module " + moduleName)
       }
     }
-    this.showNavbar();
+    // this.showNavbar();
     
     // something async... 
     lively.sleep(5000).then(() => {
@@ -654,7 +669,8 @@ export default class Container extends Morph {
     }
     if (!urls) urls = [url]
     var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
-    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+    if (await lively.confirm("<b>Delete " + urls.length + " files:</b><br>" +
+        "<ol>" + names.map( ea => "<li>" + ea + "</li>" ).join("") + "</ol>")) {
       for(let url of urls) {
         var result = await fetch(url, {method: 'DELETE'})
           .then(r => {
@@ -833,7 +849,7 @@ export default class Container extends Morph {
       if (!element) { 
         
         // search for the text nodes because they are the smallest entities and go to a nearby entity..
-        var node = lively.allTextNodes(root).find(ea => ea.textContent.match(name))
+        var node = lively.allTextNodes(root).find(ea => ea.textContent.match(Strings.escapeRegExp(name)))
         // going one level up will go to far... in most cases
         // so we cannot do: element = node.parentElement 
         if (node) element = node.previousElementSibling // instead we go sideways
@@ -1536,10 +1552,11 @@ export default class Container extends Morph {
     // lively.notify("navigate to " + name);
     var editor = this.getLivelyCodeMirror()
     if (editor) {
+      debugger
       editor.find(name);
     } else {      
       var baseURL = this.getURL().toString().replace(/\#.*/,"")
-      var anchor = "#" + name.replace(/# ?/g,"")
+      var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
       var nextURL = baseURL + anchor
       this.setPathAttributeAndInput(nextURL)
       this.history().push(nextURL);
@@ -1946,7 +1963,11 @@ export default class Container extends Morph {
 
   focus() {
     const livelyCodeMirror = this.getLivelyCodeMirror();
-    if (livelyCodeMirror) { livelyCodeMirror.focus(); }
+    if (livelyCodeMirror) { 
+      livelyCodeMirror.focus(); 
+    } else {
+      this.get("lively-container-navbar").focus()  
+    }
   }
 
   createLink(base, name, href) {

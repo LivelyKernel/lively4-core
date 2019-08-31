@@ -4,11 +4,16 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import AbstractAstNode from './abstract-ast-node.js';
+import d3 from 'src/external/d3.v5.js';
 
 import { uuid, shake } from 'utils';
 import { nodeEqual } from './utils.js';
 
 import keyInfo from 'src/client/keyinfo.js';
+
+import ContextMenu from 'src/client/contextmenu.js';
+
+import focalStorage from 'src/external/focalStorage.js';
 
 // https://github.com/babel/babel/blob/8ee24fdfc04870dade1f7318b29bb27b59fdec79/packages/babel-types/src/definitions/core.js
 // validator https://github.com/babel/babel/blob/eac4c5bc17133c2857f2c94c1a6a8643e3b547a7/scripts/generators/utils.js
@@ -375,27 +380,58 @@ class Navigation {
     });
   }
 
+  goToOutermostScopeNode(element, evt) {
+    cancelEvent(evt);
+    
+    this.transformSelection(selectedElement => {
+      const path = selectedElement.path;
+
+      // we are already at Program level
+      if (!path.parentPath) {
+        lively.notify('no parent path! We are a ' + path.node.type);
+        return selectedElement;
+      }
+      
+      const newPath = path.findParent(p => {
+        if (p.isProgram()) { return true; }
+        return p.parentPath && p.scope !== p.parentPath.scope;
+      });
+      
+      if (!newPath) {
+        lively.warn('no new parent found for ' + newPath.node.type);
+        return selectedElement;
+      }
+      
+      return this.getElementForNode(newPath.node);
+    });
+  }
+
   handleKeydown(element, evt) {
     const info = keyInfo(evt);
     const { ctrl } = info;
 
-    if (!ctrl && info.up) {
+    if (ctrl) { return false; }
+
+    if (info.up) {
       this.up(element, evt);
       return true;
-    } else if (!ctrl && info.left) {
+    } else if (info.left) {
       this.left(element, evt);
       return true;
-    } else if (!ctrl && info.right) {
+    } else if (info.right) {
       this.right(element, evt);
       return true;
-    } else if (!ctrl && info.down) {
+    } else if (info.down) {
       this.down(element, evt);
       return true;
-    } else if (!ctrl && info.escape) {
+    } else if (info.escape) {
       this.clear(element, evt);
       return true;
-    } else if (!ctrl && info.tab) {
+    } else if (info.tab) {
       this.nextEquivalentIdentifier(element, evt, info.shift);
+      return true;
+    } else if (info.pageup) {
+      this.goToOutermostScopeNode(element, evt);
       return true;
     }
 
@@ -447,11 +483,156 @@ export default class PenEditor extends Morph {
 
     this.initToggleButtons();
     this.initLCM();
+    this.initStyle();
   }
   
-  initFileInput() {
-    PenEditor.defaultFile
+  /*MD ## Options MD*/
+  _asPersistenceKey(key) { return 'pen-editor-' + key; }
+  async getOption(key, defaultValue) {
+    const persistedValue = await focalStorage.getItem(this._asPersistenceKey(key));
+    return persistedValue || defaultValue;
+  }
+  async setOption(key, value) {
+    return focalStorage.setItem(this._asPersistenceKey(key), value);
+  }
+  /*MD ## Styles MD*/
+  styleDefault() {
+    return `
+`;
+  }
 
+  styleNesting() {
+    return `
+.ast-node {
+  margin: 1px;
+/*   padding: 1px; */
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+`;
+  }
+
+  styleColorizeVariables() {
+    const identifierStyles = [];
+    _.range(200).forEach(identifierId => {
+      let color = d3.hsl(
+        Math.random() * 360,
+        Math.random() * 0.2 + 0.4,
+        Math.random() * 0.2 + 0.4
+      );
+      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) {
+  color: ${color};
+  font-weight: bold;
+}`);
+    });
+    return `${identifierStyles.join('\n\r')}`;
+  }
+
+  styleColorizeScopes() {
+    const scopeStyles = [];
+    _.range(20).forEach(scopeId => {
+      let color;
+      _.range(20).forEach(depth => {
+        if (depth === 0) {
+          color = d3.hsl(
+            Math.random() * 360,
+            0.5,
+            0.4
+          );
+        } else {
+          color = color.brighter(0.3);
+        }
+        
+        const preferredTextColor = color.l < 0.5 ? 'white' : 'black';
+        scopeStyles.push(`.ast-node[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
+  background-color: ${color};
+  border: 1px solid ${color};
+}
+ast-node-identifier[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+/* #TODO: need to correctly colorize other ast nodes as well */
+ast-node-numeric-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+ast-node-string-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
+  color: ${preferredTextColor};
+}
+ast-node-directive-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
+  color: ${preferredTextColor};
+}
+`);
+      });
+    });
+
+    return `
+ast-node-identifier::part(input-field) {
+  font-weight: bold;
+}
+${scopeStyles.join('\n\r')}
+`;
+  }
+
+  /*MD
+  ---
+  ## Handle Styling 
+  ---
+  MD*/
+
+  get styleId() { return 'pen-editor-style'; }
+  get styleSelector() { return `#${this.styleId}`; }
+  get stylePersistKey() { return 'style-type'; }
+  get styleTypeDefault() { return 'styleDefault'; }
+
+  async initStyle({
+    force = false,
+    type
+  } = {}) {
+    if (type) {
+      this.setOption(this.stylePersistKey, type);
+    } else {
+      type = await this.getOption(this.stylePersistKey, this.styleTypeDefault);
+    }
+
+    const oldStyle = document.body.querySelector(this.styleSelector);
+    
+    // replace style
+    if (force || !oldStyle || oldStyle.getAttribute('data-style-type') !== type) {
+      this.replaceStyle(type);
+    }
+  }
+
+  replaceStyle(type) {
+    document.body.querySelectorAll(this.styleSelector).forEach(style => style.remove());
+
+    const css = this[type]();
+    const style = <style id={this.styleId} data-style-type={type} type="text/css">{css}</style>;
+    document.body.appendChild(style);
+  }
+
+  async openStyleContextMenu(evt) {
+    function fa(name) { return `<i class="fa fa-${name}"></i>`; }
+    const updateStyleTo = type => {
+      menu.remove();
+      this.initStyle({ type, force: true });
+      // #TODO: re-apply focus
+    };
+    const menuItems = [
+      ['default', () => updateStyleTo(this.styleTypeDefault), 'plain gray-ish', fa('circle')],
+      ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', fa('share')],
+      ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', fa('th-large')],
+      ['nesting', () => updateStyleTo('styleNesting'), 'borders for ast node nesting', fa('th-large')],
+      
+    ];
+    
+    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  
+  /*MD ## Misc. MD*/
+  
+  initFileInput() {
     this.fileName.value = PenEditor.defaultFile;
     
     this.fileName.addEventListener('keydown', async evt => {
@@ -530,6 +711,8 @@ export default class PenEditor extends Morph {
         this.project(this.history.current());
       }
       return;
+    } else if (alt && info.char === "S") {
+      this.openStyleContextMenu(evt);
     }
     
     info.notify();
@@ -665,7 +848,7 @@ export default class PenEditor extends Morph {
   
   async buildProjection(ast) {
     const path = this.getProgramPath(ast);
-    AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
+    await AbstractAstNode.prototype.createSubElementForPath.call(this, path, 'ast');
   }
 
   async buildTransformation(ast) {
@@ -718,6 +901,7 @@ export default class PenEditor extends Morph {
   livelyUpdate() {
     this.xxx = this.xxx || Math.random();
     lively.notify(this.xxx)
+    this.initStyle({ force: true });
   }
   
 }

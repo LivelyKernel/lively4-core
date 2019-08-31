@@ -6,6 +6,11 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import keyInfo from 'src/client/keyinfo.js';
+import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-rewriting/utils.js';
+import d3 from 'src/external/d3.v5.js';
+
+const VARIABLE_ID_MAP = new Map();
+let NEXT_VARIABLE_ID = 0;
 
 export default class AstNodeIdentifier extends AbstractAstNode {
   async initialize() {
@@ -13,6 +18,17 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     this.windowTitle = "AstNodeIdentifier";
   }
 
+  addNodeStylingInfo(path) {
+    super.addNodeStylingInfo(path);
+    
+    if (!isVariable(path)) { return; }
+    if (!path.scope.hasBinding(path.node.name)) { return; }
+
+    // #TODO: this is a simple error-afflicted method to discover binding
+    // first, learn more about the actual use case, before optimizing too far
+    this.setAttribute('ast-node-identifier-id', VARIABLE_ID_MAP.getOrCreate(path.scope.getBinding(path.node.name), () => NEXT_VARIABLE_ID++ % 200));
+  }
+  
   get name() { return this.get('#name'); }
 
   async updateProjection() {

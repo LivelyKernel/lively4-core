@@ -58,10 +58,17 @@ export default function fake(editor, originalCode, modifiers)
     code = code || prettyCodeNames[originalCode] || originalCode;
     if (typeof code === "string")
         code = code.charCodeAt(0);
-    if (fakeCMKeyEvent(editor, "keydown", code, modifiers, charCode))
+  
+    // simple character strokes like "r" should always be input?
+    // workaround: "r" bug that invoked search instead of beeing input
+    if (!(originalCode.length == 1 && modifiers.length ==0)) {
+      if (fakeCMKeyEvent(editor, "keydown", code, modifiers, charCode)) {
+        return 
+      }  
+      if (fakeCMKeyEvent(editor, "keypress", code, modifiers, charCode)) {
         return;
-    if (fakeCMKeyEvent(editor, "keypress", code, modifiers, charCode))
-        return;
+      }      
+    } 
     fakeCMInput(editor, originalCode);
     fakeCMKeyEvent(editor, "keyup", code, modifiers, charCode);
 }

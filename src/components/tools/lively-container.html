@@ -29,6 +29,7 @@
         flex: 80;
         position: relative;
  	      border-top: 1px solid #d5d5d5;
+/*         border: 1px solid blue; */
  	      /*
  	      background-image: url("https://github.com/subtlepatterns/SubtlePatterns/raw/gh-pages/light_wool.png");
  	      */
@@ -72,11 +73,9 @@
     	}
     	
       #container-leftpane {
-        flex: 20;
         margin: 0;
-        overflow: auto;
-        overflow-x: hidden;
-        overscroll-behavior: contain; 
+        width: 350px;
+/*         border: 1px solid red; */
       }
 
       #container-path {
@@ -204,6 +203,8 @@
       border: steelblue 1px dashed;
     }
     
+    lively-separator {
+    }    
     </style>
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>

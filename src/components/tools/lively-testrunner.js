@@ -15,6 +15,7 @@ export default class TestRunner extends Morph {
   get testDir() { return this.get('#testDir'); }
 
   initialize() {
+    
     this.windowTitle = "Test Runner"
     this.registerButtons();
     // lively.html.registerInputs(this)
@@ -47,7 +48,12 @@ export default class TestRunner extends Morph {
   }
 
   async findTestFilesInDir(dir) {
-    const files = await lively.files.walkDir(lively4url + dir);
+    try {
+      var files = await lively.files.walkDir(lively4url + dir);
+    } catch(e) {
+      console.error(e)
+      files = []
+    }
     return files
       .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/));
   }
@@ -55,7 +61,7 @@ export default class TestRunner extends Morph {
   async findTestFiles() {
     var files = []
     var list = this.testDir.value.split(",")
-    console.log("list: " + list)
+    console.log("[testrunner] findTestFiles: " + list)
 
     // await Promise.all(list.map((dir) => {
     //   console.log("find test file in dir: " + dir)
@@ -84,23 +90,30 @@ export default class TestRunner extends Morph {
     this.querySelector("#mocha").innerHTML= "";
   }
 
+  async loadTestsInOrder() {
+    
+    var testFiles = await this.findTestFiles()
+    for(var url of testFiles) {
+      var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
+      // lively.notify("loadTest: " + name)
+      await lively.reloadModule(url);
+      await System.import(url);
+    }
+  }
+
+  
   async loadTests() {
-    return Promise.all(
-      (await this.findTestFiles()).map(url => {
-        var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
-
-        // the code in the module has to be reexecuted!
-        // var module = lively.modules.module(url)
-        // if (module) module.reload()
-
-        lively.reloadModule(url);
-
-        return System.import(url);
-        // mocha.addFile(url.replace(/.*\//,"").replace(/\..*/,""))
-      })).then(() => lively.warn("LOAD TESTS"));
+    var testFiles = await this.findTestFiles()
+    return Promise.all(testFiles.map(async url => {
+      var name = url.replace(/.*\//,"").replace(/\/\.[^\.]*/,"");
+      await lively.reloadModule(url);
+      await System.import(url);
+      this.get("#log").textContent += "loaded Test: " + name + "\n"
+    }))
   }
 
   runTests() {
+    this.get("#log").textContent = ""
     var self = this;
     mocha.run(failures => {
       if (self.prevState) {
@@ -113,6 +126,7 @@ export default class TestRunner extends Morph {
 
   async onRunButton() {
     this.clearTests();
+    
     await this.loadTests();
     this.runTests();
   }

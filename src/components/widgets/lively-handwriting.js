@@ -28,14 +28,24 @@ export default class LivelyHandwriting extends Morph {
     // lively.addEventListener("livelyhandwriting", this, "pointerdown", evt => this.onMouseDown(evt))
     this.addEventListener("pointerdown", evt => this.onMouseDown(evt), true)
     
-	
+    this.extent = lively.pt(400,200)
     this.recording = false;
     this.points = []
     this.text = ''
-	
-    lively.setExtent(this, lively.pt(400,200))
+
+    // this.debugMode = true
+    
     this.changed()
    // instanceVariableNames: 'points recording text'
+  }
+
+  set extent(extent) {
+    lively.setExtent(this, extent)
+    lively.setExtent(this.get("#content"), extent)
+  }
+
+  get extent() {
+    return lively.getExtent(this)
   }
 
   get height() {
@@ -68,11 +78,16 @@ export default class LivelyHandwriting extends Morph {
   
 
 
-  characterFromStrokes(aCollection, aPointCollection) {
+  characterFromStrokes(aCollection, strokesWithDiagonals,  aPointCollection) {
      
     let seq = aCollection.map(ea => ea[0]).join(""); 
+    let diag = strokesWithDiagonals.map(ea => ea[0]).join(""); 
     
-    this.get("#log").textContent = "seq=" +seq
+    this.get("#log").textContent = "seq=" +seq + " diag=" + diag
+    
+    if(diag.match(/^C$/)) {return "\n"}
+    if(diag.match(/^A$/)) {return "leftArrow"}
+    if(diag.match(/^B$/)) {return "rightArrow"}
     
     if(seq.match(/^r$/)) {return " "}
     if(seq.match(/^l$/)) {return "\b"}
@@ -139,24 +154,97 @@ export default class LivelyHandwriting extends Morph {
     return undefined
   }
   
-  directionFromTo(aPoint, anotherPoint) {
+//   directionFromTo(aPoint, anotherPoint) {
+//     if (!aPoint || !anotherPoint) return
+    
+//     let sub = (aPoint.subPt(anotherPoint))
+//     let delta = pt(Math.abs(sub.x), Math.abs(sub.y))
+//     if (delta.x > delta.y) {
+//       return (aPoint.x > anotherPoint.x) ? "left" : "right"
+//     } else {
+//       return (aPoint.y > anotherPoint.y) ? "up" : "down"
+//     }
+//   }
+  
+  
+  directionFromTo(aPoint, anotherPoint, directions) {
+    if (!directions) directions = ["left", "up", "right", "down"]
+    
     if (!aPoint || !anotherPoint) return
     
+    var directionAngle = 360 / directions.length
     let sub = (aPoint.subPt(anotherPoint))
-    let delta = pt(Math.abs(sub.x), Math.abs(sub.y))
-    if (delta.x > delta.y) {
-      return (aPoint.x > anotherPoint.x) ? "left" : "right"
-    } else {
-      return (aPoint.y > anotherPoint.y) ? "up" : "down"
-    }
+    var angle = sub.theta() / (2*Math.PI) * 360
+    if (angle < 0) angle = angle + 360
+    
+    var index = Math.round(angle / directionAngle)
+    if ((index >= directions.length) || (index < 0)) index = 0
+    var result = directions[index]
+    
+    return result
   }
 
   get alphaNumberSpaceRatio() {
     return 0.7
   }
    
-  changed() {
-    var fontHeight = this.fontHeight;
+  drawOn(canvas, scale=1) {
+    var extent = lively.getExtent(this)
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = "lightgray"
+    ctx.fillRect(0, 0, scale * extent.x, scale * extent.y)
+
+    ctx.fillStyle = "black"
+    ctx.font = this.fontHeight + 'px arial';
+    ctx.fillText(this.text, 0, this.fontHeight);
+    
+    var cursorStart = pt(ctx.measureText(this.text).width, 0)
+
+    ctx.strokeStyle = "gray"
+    ctx.lineWidth = "1px"
+    ctx.beginPath();
+    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, scale * 0);
+    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, scale * 10);
+
+    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, scale * this.height);
+    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, scale * this.height - 10);
+
+    ctx.stroke();
+    
+    ctx.strokeStyle = "red"
+    ctx.lineWidth = "2px"
+    ctx.beginPath();
+    ctx.moveTo(cursorStart.x,  cursorStart.y);
+    ctx.lineTo( cursorStart.x,  (cursorStart.y + this.fontHeight));
+    ctx.stroke();
+    
+    
+    for(let i=0; i < this.points.length - 1; i++) {
+      let start = this.points[i]
+      let end = this.points[i+1]
+      let direction = this.directionFromTo(start,  end)
+      
+      ctx.fillStyle = "red"
+      ctx.fillRect(scale * start.x - 1, scale * start.y - 1, 2, 2)
+      
+      ctx.lineWidth = "1px"
+      ctx.strokeStyle = ({
+          left: "red",
+          right: "green",
+          up: "blue",
+          down: "gray"
+      })[direction]
+    
+    ctx.beginPath();
+    ctx.moveTo(scale * start.x, scale * start.y);
+    ctx.lineTo(scale * end.x, scale *end.y);
+    ctx.stroke();
+    } 
+  } 
+  
+  
+  async changed() {
     
     if (this.shiftDown) {
       this.get("#mode").innerHTML = `<i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i>`
@@ -173,58 +261,45 @@ export default class LivelyHandwriting extends Morph {
 
     canvas.style.width =  extent.x + "px"
     canvas.style.height =  extent.y + "px"
+    this.drawOn(canvas)
     
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = "lightgray"
-    ctx.fillRect(0, 0,extent.x, extent.y)
-
-    ctx.fillStyle = "black"
-    ctx.font = fontHeight + 'px arial';
-    ctx.fillText(this.text, 0, fontHeight);
-    
-    var cursorStart = pt(ctx.measureText(this.text).width, 0)
-
-    ctx.strokeStyle = "gray"
-    ctx.lineWidth = "1px"
-    ctx.beginPath();
-    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, 0);
-    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, 10);
-
-    ctx.moveTo(this.width * this.alphaNumberSpaceRatio, this.height);
-    ctx.lineTo(this.width * this.alphaNumberSpaceRatio, this.height - 10);
-
-    ctx.stroke();
-    
-    ctx.strokeStyle = "red"
-    ctx.lineWidth = "2px"
-    ctx.beginPath();
-    ctx.moveTo(cursorStart.x, cursorStart.y);
-    ctx.lineTo(cursorStart.x, cursorStart.y + fontHeight);
-    ctx.stroke();
-    
-    
-    for(let i=0; i < this.points.length - 1; i++) {
-      let start = this.points[i]
-      let end = this.points[i+1]
-      let direction = this.directionFromTo(start,  end)
+    if (this.debugMode) {
       
-      ctx.fillStyle = "red"
-      ctx.fillRect(start.x - 3, start.y - 3, 6, 6)
+      var debugCanvas = document.body.querySelector("#HandwritingDebug") 
+      if (!debugCanvas) {
+        debugCanvas = <canvas id="HandwritingDebug"></canvas>
+        document.body.appendChild(debugCanvas)
+      }
       
-      ctx.lineWidth = "2px"
-      ctx.strokeStyle = ({
-          left: "red",
-          right: "green",
-          up: "blue",
-          down: "gray"
-      })[direction]
+      var debugLog = document.body.querySelector("#HandwritingDebugLog") 
+      if (!debugLog) {
+        debugLog = await lively.openWorkspace()
+        debugLog.parentElement.setAttribute("title", "Handwriting DebugLog")
+        debugLog.id = "HandwritingDebugLog"
+      }
+      this._debugLog = debugLog
+
+      const ctx = debugCanvas.getContext('2d');
+        
+      var scale = 3
+     
+      debugCanvas.width =  scale * extent.x 
+      debugCanvas.height = scale * extent.y 
+      debugCanvas.style.width =  scale * extent.x + "px"
+      debugCanvas.style.height =   scale * extent.y + "px"
+      
+      this.drawOn(debugCanvas, scale)
+      
+      
+    }
     
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
-    }  
+    
+     
+  }
+  
+  debugLog(s) {
+    if (!this._debugLog) return;
+    this._debugLog.value += s + "\n"
   }
 
   onMouseDown(evt) {
@@ -254,7 +329,93 @@ export default class LivelyHandwriting extends Morph {
 
   }
 
+  isolateDirections(directions) {
+   let strokes = []
+    let currentDirection
+    for(let i=0; i < this.points.length - 1; i++) {
+      let from = this.points[i]
+      let to = this.points[i+1]
+      let direction = this.directionFromTo(from,  to, directions)
+      if (direction != currentDirection) {
+        strokes.push(direction)
+        currentDirection = direction
+      }
+    }   
+    return strokes
+  }
+  
+  smoothingThresholdSquared() {
+    var a = 20
+    return a * a
+  } 
 
+//   angleThreshold() {
+//     return 20
+//   } 
+
+//   thetaDEG(pointA, pointB) {
+//     var thetaDiff =  (pointA.subPt(pointB)).theta() / (2 * Math.PI) * 360
+//     return (thetaDiff + 180) % 360 - 180
+//   }
+  
+  // #TOOD a more intelligent point thining seems not to be better
+//   thinPoints(points) {
+//     // #TODO maybe use inject?
+//     let newPoints = []
+//     let currentPoint = points[0]  
+//     let smoothPoint = points[0]
+//     newPoints.push(currentPoint) 
+//     let lastTheta = 0 
+//     for(let i=1; i < points.length - 1; i++) {
+//       let point = points[i]
+//       let theta =  this.thetaDEG(point, smoothPoint) 
+//       let thetaDiff = (lastTheta - theta) 
+            
+//       // use angle and distance to thin point list
+//       // ignore point
+      
+      
+//       if (Math.abs(thetaDiff) > this.angleThreshold())  {
+
+        
+//         currentPoint = points[i-1]
+//         lastTheta = this.thetaDEG(point, currentPoint) 
+//         newPoints.push(currentPoint)   
+        
+//       } 
+      
+//       if ((currentPoint.distSquared(point) < this.smoothingThresholdSquared())) {
+        
+//         smoothPoint = point
+//       }
+//       console.log("theta ", theta,lastTheta,  thetaDiff )
+//     }
+//     newPoints.push(points.last)
+//     return  newPoints
+//   }
+
+  thinPoints(points) {
+    let newPoints = []
+    let currentPoint = points[0]  
+    newPoints.push(currentPoint) 
+    let lastTheta
+    for(let i=1; i < points.length; i++) {
+      let point = points[i]
+      let theta = (currentPoint.subPt(point)).theta
+      // use angle and distance to thin point list
+      if (currentPoint.distSquared(point) < this.smoothingThresholdSquared()) {
+        // ignore point
+      } else {
+        currentPoint = point
+        lastTheta = theta
+        newPoints.push(currentPoint)
+      }
+
+    }
+    return  newPoints
+  }
+
+  
   onMouseUp(evt) {
     evt.stopPropagation()
     evt.preventDefault()
@@ -267,36 +428,15 @@ export default class LivelyHandwriting extends Morph {
       this.text = ''
       this.changed()
       return
-    } 
-      
-    " thin "
-    // #TODO maybe use inject?
-    let newPoints = []
-    let currentPoint = this.points[0]  
-    newPoints.push(currentPoint)    
-    for(let i=1; i < this.points.length; i++) {
-      let point = this.points[i]
-      if (currentPoint.distSquared(point) > this.smoothingThresholdSquared()) {
-        currentPoint = point
-        newPoints.push(currentPoint)
-      }
     }
-    this.points = newPoints
-          
-    " isolate directions "
-    let strokes = []
-    let currentDirection
-    for(let i=0; i < this.points.length - 1; i++) {
-      let from = this.points[i]
-      let to = this.points[i+1]
-      let direction = this.directionFromTo(from,  to)
-      if (direction != currentDirection) {
-        strokes.push(direction)
-        currentDirection = direction
-      }
-    }   
-
-    let character = this.characterFromStrokes(strokes, this.points)
+      
+    var originalPoints = this.points
+    this.points = this.thinPoints(this.points)
+  
+    let strokes = this.isolateDirections()
+    let strokesWithDiagonals = this.isolateDirections(["left", "A", "up", "B", "right", "D", "down", "C"])
+    
+    let character = this.characterFromStrokes(strokes, strokesWithDiagonals, this.points)
     if (character) {
       
       if (character.length > 1) { // control symbols
@@ -327,35 +467,29 @@ export default class LivelyHandwriting extends Morph {
         }  else {
           this.text += character
         }        
-        this.applyCharacter(character)  
       }
+      this.applyCharacter(character)  
       this.lastCharacter = character
     }
     this.changed()
+    if (this.debugMode) {
+      this.debugLog(JSON.stringify({
+        character: character,
+        points: this.points,
+        rawPoints: originalPoints,
+        strokes: strokes,
+        strokesWithDiagonals: strokesWithDiagonals
+      }, undefined, 0))
+    }
   }
   
   applyCharacter(char) {
-    var activeElement = this.target || lively.activeElement(document, "lively-code-mirror")
+    var activeElement = this.target //  || lively.activeElement(document, "lively-code-mirror")
     if (activeElement && activeElement.localName == "lively-code-mirror") {
       activeElement.fake(char)
     }
   }
 
-/*
-point: aPoint inLeft: aNumber of: aCollection
-
-	| rangeX refX |
-	rangeX := aCollection inject: (9e8 to: 0) into: [:interval :point | | ret |
-		ret := interval.
-		point x < ret start ifTrue: [ret := point x to: ret stop].
-		point x > ret stop ifTrue: [ret := ret start to: point x].
-		ret].
-	
-	refX := aPoint x - rangeX start.
-	^ (refX / rangeX extent) < aNumber! !
-
-*/
-  
   inTextArea(aPointCollection) {
     return aPointCollection.last.x < (this.width * this.alphaNumberSpaceRatio)
   }  
@@ -385,7 +519,5 @@ point: aPoint inLeft: aNumber of: aCollection
     return (refY / Math.abs(start - stop)) < aNumber
   }
 
-  smoothingThresholdSquared() {
-    return 200
-  } 
+  
 }

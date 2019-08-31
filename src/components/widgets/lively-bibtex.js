@@ -2,6 +2,14 @@ import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
+/*MD
+# Lively Bibtex
+
+![](lively-bibtex.png){style="width:350px"}
+
+MD*/
+
+
 export default class LivelyBibtex extends Morph {
   async initialize() {
     

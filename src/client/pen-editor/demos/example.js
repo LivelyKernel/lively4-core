@@ -5,6 +5,16 @@
  * Block comment
  */
 
+label: stmt;
+
+function fff() {
+  const x = () => {
+    {
+      x;
+    }
+  };
+}
+
 export { foo, bar };
 export { foo23 } from "mod";
 export var foo12 = 1;
@@ -108,6 +118,10 @@ class Being {
 class Person extends Being {
   static async new(name) {
     return new Person(name);
+  }
+
+  get element() {
+    return this.get('#id');
   }
 
   constructor() {}

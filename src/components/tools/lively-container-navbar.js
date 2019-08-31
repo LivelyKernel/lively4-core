@@ -8,10 +8,20 @@ import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js"; 
 import FileCache from "src/client/fileindex.js"
+import Strings from "src/client/strings.js"
 
+
+const FILTER_KEY_BLACKLIST = [
+  'Control', 'Shift', 'Capslock', 'Alt',
+  ' ', 'Enter',
+  'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'
+];
 
 export default class LivelyContainerNavbar extends Morph {
   async initialize() {
+    lively.html.registerKeys(this);
+    lively.html.registerKeys(this.get("#navbar"));
+    lively.html.registerKeys(this.get("#details"));
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragOver);
     // this.addEventListener("dragenter", this.onDragEnter)
@@ -29,6 +39,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   clear(parentElement=this.get("#navbar")) {
     parentElement.innerHTML = ""
+    this.updateFilter("")
   }
   
   async dragFilesAsZip(urls, evt) {
@@ -55,7 +66,15 @@ export default class LivelyContainerNavbar extends Morph {
     lively.files.saveFile(url, await zip.generateAsync({type:"blob"})) 
   }
 
+  resetCursor() {
+    this.cursorItem = null
+    this.cursorDetailsItem = null
+    this.navigateColumn = "files"
+  }
+  
   onItemDragStart(link, evt) {
+    this.resetCursor()
+    
     let urls = this.getSelection();
     if (urls.length > 1) {
       this.dragFilesAsZip(urls, evt)
@@ -246,23 +265,19 @@ export default class LivelyContainerNavbar extends Morph {
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
-    this.sourceContent = sourceContent;
+    this.sourceContent = sourceContent
     
-    this.contextURL = contextURL;
+    this.contextURL = contextURL
     var lastDir = this.currentDir
-    this.currentDir = this.getRoot(targetURL);
+    this.currentDir = this.getRoot(targetURL)
 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
-    
     if (this.url.match(/microsoft:\/\//)) {
       urlWithoutIndex = urlWithoutIndex.replace(/\/contents/,"")
     }
     
-    
     this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
-    
     var parentURL = this.url.replace(/[^/]*$/,"")   
-    
     this.targetParentItem = this.findItem(parentURL)
 
     if (this.targetItem || this.targetParentItem ) {
@@ -279,16 +294,29 @@ export default class LivelyContainerNavbar extends Morph {
       } else if (lastURL !== this.url) {
         this.showSublist()
       } else if (lastContent != this.sourceContent) {
-        this.showSublisContent(true)
+        this.showSublistContent(true)
       }        
       
       return         
     } else {
+      this.resetCursor()
       // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
+      this.scrollToItem(this.targetItem)
+    }  
+  }
+  
+  
+  scrollToItem(element) {
+    if (element) {
+      var list = this.get("#navbar")
+      // #ContinueHere
+      var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
+      this.get("#navbar").scrollTo(0, relativeY)
     }
   }
+  
   
   async fetchStats(targetURL) {
     
@@ -368,79 +396,114 @@ export default class LivelyContainerNavbar extends Morph {
     
     parentElement.url = targetURL
    
+    this.lastTitle = ""
     files.forEach((ea) => {
 
-      var element = document.createElement("li");
-      var link = document.createElement("a");
-      
-      
+      var element = this.createItem(ea)
       if (ea.name == filename) {
         this.targetItem = element;
       }
-      
       if (this.targetItem) this.targetItem.classList.add("selected");
-      
-      var name = ea.name;
-      var icon;
-      if (ea.name.match(/\.l4d$/) || ea.name.match(/\.md$/)) {
-        icon = '<i class="fa fa-file"></i>';
-        // some directories in lively are considered bundles and should behave like documents
-        if (ea.type == "directory") {
-          element.classList.add("directory")
-        } else {
-          element.classList.add("file")
-        }
-      } else if (ea.type == "directory") {
-        name += "/";
-        icon = '<i class="fa fa-folder"></i>';
-        element.classList.add("directory")
-      } else if (ea.type == "link") {
-        icon = '<i class="fa fa-arrow-circle-o-right"></i>';
-        element.classList.add("link")
-      } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
-        icon = '<i class="fa fa-check-square-o"></i>'
-        element.classList.add("test")
-      } else {
-        icon = '<i class="fa fa-file"></i>';
-        element.classList.add("file")
-      }
-      var title = ea.title || name
-      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      link.innerHTML =  icon + title;
-      var href = ea.href || ea.name;
-      if (ea.type == "directory" && !href.endsWith("/")) {
-        href += "/"
-      }
-      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
-      link.href = ea.url || otherUrl;
-      element.url = link.href
-      if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
-        element.classList.add("selected")
-      }
-      
-      link.onclick = (evt) => { 
-        this.onItemClick(link, evt); 
-        return false
-      };
-      link.ondblclick = (evt) => { 
-        this.onItemDblClick(link, evt); 
-        return false
-      };
 
-      link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
-      link.addEventListener('contextmenu', (evt) => {
-          if (!evt.shiftKey) {
-            this.onContextMenu(evt, otherUrl)
-            evt.stopPropagation();
-            evt.preventDefault();
-            return true;
-          }
-      }, false);
-      element.appendChild(link);
+      
       parentElement.appendChild(element);
     });
+    delete this.lastTitle
+    
     // this.clearSublists()
   }
+  
+  createItem(ea) {
+    var element = document.createElement("li");
+    var link = document.createElement("a");
+
+    var name = ea.name;
+    var icon;
+    if (ea.name.match(/\.md$/)) {
+      icon = '<i class="fa fa-file-text-o"></i>';
+      // some directories in lively are considered bundles and should behave like documents
+      if (ea.type == "directory") {
+        element.classList.add("directory")
+      } else {
+        element.classList.add("file")
+      }
+    } else if (ea.type == "directory") {
+      name += "/";
+      icon = '<i class="fa fa-folder"></i>';
+      element.classList.add("directory")
+    } else if (ea.type == "link") {
+      icon = '<i class="fa fa-arrow-circle-o-right"></i>';
+      element.classList.add("link")
+    } else if (/\.html$/i.test(name)) {
+      icon = '<i class="fa fa-html5"></i>'
+      element.classList.add("test")
+    } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
+      icon = '<i class="fa fa-check-square-o"></i>'
+      element.classList.add("test")
+    } else if (/\.js$/i.test(name)) {
+      icon = '<i class="fa fa-file-code-o"></i>';
+      element.classList.add("file");
+    } else if (/\.css$/i.test(name)) {
+      icon = '<i class="fa fa-css3"></i>';
+      element.classList.add("file");
+    } else if (/\.(png|jpg)$/i.test(name)) {
+      icon = '<i class="fa fa-file-image-o"></i>';
+      element.classList.add("file");
+    } else if (/\.(pdf)$/i.test(name)) {
+      icon = '<i class="fa fa-file-pdf-o"></i>';
+      element.classList.add("file");
+    } else {
+      icon = '<i class="fa fa-file-o"></i>';
+      element.classList.add("file");
+    }
+    var title = ea.title || name
+
+    // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
+
+    var prefix = this.lastTitle ? Strings.longestCommonPrefix([title, this.lastTitle]) : ""
+    prefix = prefix.replace(/-([a-zA-Z0-9])*$/,"-")
+    if (prefix.length < 4) {
+      prefix = ""
+    }      
+    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>");
+    this.lastTitle = title
+
+    var href = ea.href || ea.name;
+    if (ea.type == "directory" && !href.endsWith("/")) {
+      href += "/"
+    }
+    var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
+    link.href = ea.url || otherUrl;
+    element.url = link.href
+
+   
+    
+    if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
+      element.classList.add("selected")
+    }
+
+    link.onclick = (evt) => { 
+      this.onItemClick(link, evt); 
+      return false
+    };
+    link.ondblclick = (evt) => { 
+      this.onItemDblClick(link, evt); 
+      return false
+    };
+
+    link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
+    link.addEventListener('contextmenu', (evt) => {
+        if (!evt.shiftKey) {
+          this.onContextMenu(evt, otherUrl)
+          evt.stopPropagation();
+          evt.preventDefault();
+          return true;
+        }
+    }, false);
+    element.appendChild(link);
+    return element
+  }
+  
   
   getLink(item) {
     return item.querySelector(":scope > a")
@@ -458,29 +521,48 @@ export default class LivelyContainerNavbar extends Morph {
     return item.classList.contains("selected") || selectedChild
   }
   
-  onItemClick(link, evt) {
-    if (evt.shiftKey) {
+  async onItemClick(link, evt) {
+    this.focus()
+    if (evt.shiftKey && evt.code != "Enter") {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
     } else {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      if (this.isSelected(item)) {
+      if (this.isSelected(item) ) {
         this.currentDir = null
         item.classList.remove("selected")
         var sublist = item.querySelector("ul")
         if (sublist) sublist.remove()
       } else {
-        this.followPath(link.href);
+        if (evt.shiftKey) {
+          var container = lively.query(this, "lively-container")
+          if (container) await container.editFile();
+        } 
+        await this.followPath(link.href);
+      
       }
     }
+    this.updateFilter("")
+    this.focusFiles()
   }
   
-  onItemDblClick(link, evt) {
+  async onItemDblClick(link, evt) {
     this.clear()
-    this.followPath(link.href);
+    await this.followPath(link.href);
+    this.focusFiles()
   }
+  
+  async onDetailsItemClick(item, evt) {
+    this.cursorDetailsItem = item
+    this.navigateColumn = "details"
+    var sublist = this.get("#details").querySelector("ul")
+    this.selectSublistItem(item, sublist)
+    await this.navigateToName(item.name);
+    this.get("#details").focus()
+  }
+
   async editWithSyvis (url) {
     const editor = await components.createComponent('syvis-editor');
     await editor.loadUrl(url);
@@ -562,8 +644,16 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify(`please implement navigateToName(${url})`)
   }
 
-  followPath(url, lastPath) {
-    this.show(new URL(url), "", this.contextURL)
+  async followPath(url, lastPath) {
+    var resp = await fetch(url)
+    var content = ""
+    var contentType = resp.headers.get("content-type")
+    if (contentType.match(/text\//)) {
+      content = await resp.text()
+    } else {
+      // lively.notify("content type not suppored: " + contentType)
+    }
+    this.show(new URL(url), content, this.contextURL)
   }
 
   async convertFileToBundle(url) {
@@ -593,11 +683,11 @@ export default class LivelyContainerNavbar extends Morph {
         var element = document.createElement("li");
         element.innerHTML = ea.getAttribute('data-name');
         element.classList.add("subitem");
-        element.onclick = () => {
-            this.navigateToName(
-              `data-name="${ea.getAttribute('data-name')}"`);
-          
-        };
+        
+        element.name = `data-name="${ea.getAttribute('data-name')}"`
+        element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+        }
         subList.appendChild(element) ;
       });
   }
@@ -622,7 +712,7 @@ export default class LivelyContainerNavbar extends Morph {
       if (m) {
         var theMatch = m[2] ||
                       (m[3] && "class " + m[3]) ||
-                      (m[4] && "function " + m[4]) ||
+                      (m[4] && "ƒ " + m[4]) ||
                        m[5];
         if(!theMatch.match(/^(if|switch|for|catch|function)$/)) {
           let name = (line.replace(/[A-Za-z].*/g,"")).replace(/\s/g, "&nbsp;") + theMatch,
@@ -631,11 +721,31 @@ export default class LivelyContainerNavbar extends Morph {
           element.innerHTML = name;
           element.classList.add("link");
           element.classList.add("subitem");
-          element.onclick = () => this.navigateToName(navigateToName);
+          element.name = navigateToName
+          element.onclick = (evt) => {
+            this.onDetailsItemClick(element, evt)
+          }
           subList.appendChild(element) ;
         }
       }
     });
+  }
+  
+  selectSublistItem(element, subList) {
+    for(var ea of subList.querySelectorAll(".selected")) {
+      ea.classList.remove("selected")
+    }
+    element.classList.add("selected")
+  }
+  
+  clearNameMD(name) {
+    return name
+      .replace(/<.*?>/g, "")
+      .replace(/\{.*/g, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/[\[\]]/g, "")
+      .replace(/\n/g, "")
+      .replace(/([ ,])#/g, "$1")
   }
   
   showSublistMD(subList) {
@@ -653,14 +763,14 @@ export default class LivelyContainerNavbar extends Morph {
     _.keys(links).forEach( name => {
       var item = links[name];
       var element = document.createElement("li");
-      element.textContent = name.replace(/<.*?>/g,"");
+      element.textContent = this.clearNameMD(name)
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
-
-      element.onclick = () => {
-        this.navigateToName(item.name);
-      };
+      element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
       subList.appendChild(element);
     });
   }
@@ -680,6 +790,7 @@ export default class LivelyContainerNavbar extends Morph {
           class="link subitem" title={ea.name}>{ea.name}</li>
       subList.appendChild(element);
       element.onclick = () => {
+        this.selectSublistItem(element, subList)
         if (ea.href) {
           this.followPath(ea.href);
         } else {
@@ -714,15 +825,23 @@ export default class LivelyContainerNavbar extends Morph {
       var optionsWasHandles = true
       await this.showDirectory(this.url, subList)
     }
-    this.showSublisContent(optionsWasHandles)
+    this.showSublistContent(optionsWasHandles)
   } 
   
   
-  async showSublisContent(optionsWasHandles) {
-    // show console.log("show sublist content " + this.url)
-     
+  async showSublistContent(optionsWasHandles) {
+    // show console.log("show sublist content " + this.url) 
     if (!this.targetItem) return 
+    
+    var details = this.get("#details")
     var subList = this.targetItem.querySelector("ul")
+    
+    if (details) {
+      details.innerHTML = ""
+      subList = <ul></ul>
+      details.appendChild(subList)
+    }
+    
     if (!subList) return // we are a sublist item?
     
     // keep expanded trees open... or not
@@ -741,23 +860,360 @@ export default class LivelyContainerNavbar extends Morph {
         this.showSublistOptions(subList)
       }
     }
-  } 
+  }
+
+
+  onRightDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    this.updateFilter("")
+    if (!this.navigateColumn || this.navigateColumn == "files") {
+      this.navigateColumn = "details"
+      var details = this.get("#details")
+      details.focus()
+      this.setCursorItem(details.querySelector("li"))
+    } else if (this.navigateColumn == "details") {
+    
+      var container = lively.query(this, "lively-container")
+      if (container) container.focus()
+    
+      
+    }   
+  }
+  
+  onLeftDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.updateFilter("")
+    
+    if (!this.navigateColumn || this.navigateColumn == "details") {
+      this.navigateColumn = "files"
+      this.get("#navbar").focus()    
+    }    
+  }
+
+  async onUpDown(evt) {
+    if (evt.altKey) {
+      evt.stopPropagation()
+      evt.preventDefault()
+      var container = lively.query(this, "lively-container")
+      if (container) {
+        container.get("#container-path").focus()
+      }
+      return
+    }
+    this.navigateItem("up", evt)
+  }
+
+  onDownDown(evt) {
+    this.navigateItem("down", evt)
+  }
+  
+  
+  async onEnterDown(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    
+    if (this.navigateColumn == "details") {
+      if (this.cursorDetailsItem) {
+        if (evt.shiftKey) {
+          var container = lively.query(this, "lively-container")
+          if (container) {
+            await container.editFile()
+          }
+        } 
+        this.onDetailsItemClick(this.cursorDetailsItem, evt)
+        this.get("#details").focus()  
+      }
+    } else if (this.cursorItem ) {
+      var nextLink = this.cursorItem.querySelector("a")
+      this.onItemClick(nextLink, evt) 
+    }
+  }
+  
+  nextValidSibling(item) {
+    if (!item) return;
+    var element = item.nextElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.nextValidSibling(element)
+    }
+  }
+  
+  prevValidSibling(item) {
+    
+    if (!item) return;
+    var element = item.previousElementSibling
+    if (!element) return;
+    if (!element.classList.contains("filtered-out")) {
+      return element
+    } else {
+      return this.prevValidSibling(element)
+    }
+  }
+  
+  
+  nextDownItem(item, doNotDecent) {
+    var sublist = item.querySelector("ul")
+    if (!doNotDecent && sublist) {
+      var nextSubListItem = sublist.querySelector("li")
+      if (nextSubListItem) return nextSubListItem
+    } 
+    
+    var next = this.nextValidSibling(item)
+    if (next) {
+      return next
+    } else if (item.parentElement && item.parentElement.parentElement &&
+               item.parentElement.localName == "ul" &&
+               item.parentElement.parentElement.localName == "li") {
+      return this.nextDownItem(item.parentElement.parentElement, true)
+    }
+    
+  }
+
+  nextUpItem(item) {
+    var prev = this.prevValidSibling(item)
+    if (prev) {
+      var sublist = prev.querySelector("ul")
+      if(sublist) {
+        var prevSubListItem = Array.from(sublist.querySelectorAll("li")).last
+        if (prevSubListItem) return prevSubListItem 
+      }
+      return prev
+    } else if (item.parentElement && item.parentElement.parentElement &&
+        item.parentElement.localName == "ul" && 
+        item.parentElement.parentElement.localName == "li") {
+      
+      return this.nextUpItem(item.parentElement.parentElement)
+    }
+  }
+
+  navigateItem(direction, evt) {
+    evt.stopPropagation()
+    evt.preventDefault()    
+    var startItem = this.getCursorItem()
+
+    if (!startItem) return
+    if (direction == "down") {
+      var nextItem = this.nextDownItem(startItem)
+    } else {
+      nextItem = this.nextUpItem(startItem)
+    }
+    this.setCursorItem(nextItem)
+  }
+  
+  getCursorItem() {
+    if (this.cursorItem && !this.cursorItem.parentElement) {
+      this.cursorItem = null
+    }
+    var startItem
+    if (this.navigateColumn == "details") {
+      startItem = this.cursorDetailsItem || this.get("#details").querySelector("li")
+    } else {
+      startItem = this.cursorItem || this.targetItem || this.get("#navbar").querySelector("li")
+    }
+    return startItem
+  }
+  
+  setCursorItem(nextItem) {
+    var startItem = this.getCursorItem()
+    if (startItem) {
+      startItem.classList.remove("cursor")
+    }
+    if (nextItem) {
+        nextItem.classList.add("cursor")
+        if (this.navigateColumn == "details") {
+          this.cursorDetailsItem = nextItem  
+        } else {
+          this.cursorItem = nextItem  
+        }
+      }
+  }
+  
+  focusDetails() {
+    this.navigateColumn = "details"
+    this.get("#details").focus()
+  }
+
+  focusFiles() {
+    this.navigateColumn = "files"
+    this.get("#navbar").focus()
+  }
+  
+  /* Copied from lively-menu */
+  // lazy filter property
+  get filter() { return this._filter = this._filter || ''; }
+  set filter(value) { return this._filter = value; }
+  
+  onKeyDown(evt) {
+    if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
+
+    // lively.notify("key: " + evt.key)
+    
+    if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
+      this.filter = '';
+    } else {
+      this.filter += evt.key;
+    }
+    
+    this.updateFilter()
+  }
+  
+  updateFilter(filter=this.filter) {
+    this.filter = filter
+    this.get('#filter-hint').innerHTML = this.filter;
+    
+    // lively.warn(evt.key, this.filter)
+    
+    this.items.forEach(item => item.classList.remove('filtered-out'));
+    this.nonMatchingItems.forEach(item => item.classList.add('filtered-out'));
+    
+    if (this.filter.length > 0) {
+      this.setCursorItem(this.matchingItems.first)
+    }
+  }
+
+  get items() {
+    if(this.navigateColumn == "details") {
+      return Array.from(this.get("#details").querySelectorAll("li"));
+    } else {
+      return Array.from(this.get("#navbar").querySelectorAll("li"));
+    }
+    
+  }
+  
+  matchFilter(item) {
+    if (this.filter.length == 0) return true;
+    if(!item ) { return false; }
+    return item.textContent.toLowerCase().includes(this.filter.toLowerCase());
+  }
+  
+  get matchingItems() {
+    return this.items.filter(item => this.matchFilter(item));
+  }
+  
+  get nonMatchingItems() {
+    return this.items.filter(item => !this.matchFilter(item));
+  }
+  
   async livelyMigrate(other) {
     await this.show(other.url, other.sourceContentthis, other.contextURL, true)
   }
 
   livelyUpdate() {
-    
-
     this.clear()
     this.show(this.url,this.sourceContent, this.contextURL, true)
   }
   
+  hightlightElement(element) {
+    var text = element.querySelector("a") || element
+    text.style.color = getComputedStyle(text).color || "black"
+    text.animate([
+      { color: text.style.color }, 
+      { color: 'green' }, 
+      { color:  text.style.color }, 
+    ], { 
+      duration: 2000,
+    });
+  }
+  
+  getElementByURL(url) {
+    return this.items.find(ea => ea.url == url && ea.textContent !== "../")
+  }
+  
+  
+  sortIntoAfter(sibling, element) {
+    
+    if (!sibling) return
+    if (sibling.classList.contains("file") && element.textContent < sibling.textContent) {
+      sibling.parentElement.insertBefore(element, sibling) 
+      return true
+    } else {
+      if (sibling.nextElementSibling) {
+        return this.sortIntoAfter(sibling.nextElementSibling, element)
+      } 
+    }
+    
+  }
+  
+  async onObserveURLChange(url, method) {
+    try {
+      if (url.startsWith(this.currentDir)) {
+        var element = this.getElementByURL(url)
+        if (element) {
+          if (method == "PUT") {
+            this.hightlightElement(element)
+          } else if(method == "DELETE") {
+            element.remove()
+          }
+        } else {
+          if (method == "PUT") {
+            // maybe we should create an item for the element?
+            var parentURL = url.replace(/\/[^/]+$/,"/")
+            console.log("parentrURL " + parentURL)
+            var parentElement = this.getElementByURL(parentURL)
+            if (!parentElement) parentElement = this.get("#row")
+            if (parentElement) {
+              var stats = await fetch(url, {method: "OPTIONS"}).then(r => r.json())
+              stats.name = stats.name.replace(/.*\//,"")
+              var element = this.createItem(stats)
+              var parentElementList = parentElement.querySelector(":scope > ul") 
+
+              if (parentElementList) {
+                var firstSibling = parentElementList.querySelector(":scope > li")
+                if (!this.sortIntoAfter(firstSibling, element)) {
+                  parentElementList.appendChild(element) 
+                }
+                this.hightlightElement(element)            
+              }
+            } 
+          }
+        }
+      }      
+    } catch(e) {
+      console.error(e)
+    }
+  }
+
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
-    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/"
+    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
   }
+}
+
+
+if (self.lively4fetchHandlers) {  
+  // remove old instances of me
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isNavbarHandler);
+  self.lively4fetchHandlers.unshift({
+    isNavbarHandler: true,
+    handle(request, options) {
+      // do nothing
+    },
+    finsihed(request, options) {
+      var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      if (method == "PUT" || method == "DELETE") {
+        try {
+          for(var container of document.querySelectorAll("lively-container")) {
+            var navbar = container.get("lively-container-navbar")
+            if (navbar && navbar.onObserveURLChange) {
+
+              navbar.onObserveURLChange(url, method)
+            }
+          }        
+        } catch(e) {
+          console.error(e)
+        }
+      }
+    }
+  })
+  
 }

@@ -6,6 +6,8 @@ import keyInfo from 'src/client/keyinfo.js';
 import d3 from 'src/external/d3.v5.js';
 import { nodeEqual } from './utils.js';
 
+import ComponentLoader from "src/client/morphic/component-loader.js";
+
 async function prepareElementForPath(path, slotName, oldElement) {
   const [element, isNew] = await getAppropriateElement(path, oldElement);
 
@@ -52,6 +54,23 @@ function matchesCallFunctionShorthand(path) {
     path.get('params')[0].node.name === path.get('body.callee.object').node.name;
 }
 
+function matchesSubmorphGetter(path) {
+  return path.isClassMethod() &&
+    path.node.kind === "get" &&
+    path.get('key').isIdentifier() &&
+    path.get('body').isBlockStatement() &&
+    path.get('body.body').length === 1 &&
+    path.get('body.body.0').isReturnStatement() &&
+    path.get('body.body.0.argument').isCallExpression() &&
+    path.get('body.body.0.argument.callee').isMemberExpression() &&
+    path.get('body.body.0.argument.callee.object').isThisExpression() &&
+    path.get('body.body.0.argument.callee.property').isIdentifier() &&
+    path.get('body.body.0.argument.callee.property').node.name === 'get' &&
+    !path.get('body.body.0.argument.callee').node.computed &&
+    path.get('body.body.0.argument.arguments').length === 1 &&
+    path.get('body.body.0.argument.arguments.0').isStringLiteral();
+}
+
 function getAppropriateElementTagName(path) {
 
   if (!path) {
@@ -64,6 +83,11 @@ function getAppropriateElementTagName(path) {
   if (matchesCallFunctionShorthand(path)) {
     return 'compound-node-call-function-shorthand';
   }
+  
+  if (matchesSubmorphGetter(path)) {
+    return 'compound-node-submorph-getter';
+  }
+  
   
   if (path.node.type === 'Identifier') { return 'ast-node-identifier'; }
   if (path.node.type === 'Program') { return 'ast-node-program'; }
@@ -154,6 +178,9 @@ function getAppropriateElementTagName(path) {
   return 'generic-ast-node';
 }
 
+const SCOPE_MAP = new WeakMap();
+let NEXT_SCOPE_ID = 0;
+
 export default class AbstractAstNode extends Morph {
 
   get isAstNode() { return true; }
@@ -184,8 +211,9 @@ export default class AbstractAstNode extends Morph {
     //   Math.random() * 0.2 + 0.4,
     //   Math.random() * 0.2 + 0.8
     // )}`;
+    this.classList.add('ast-node');
   }
-  
+
   initHover() {
     this.addEventListener('mouseover', evt => this.onMouseOver(evt));
     this.addEventListener('mouseout', evt => this.onMouseOut(evt));
@@ -260,10 +288,26 @@ export default class AbstractAstNode extends Morph {
   get astNode() { return this._node; }
   set astNode(value) { return this._node = value; }
 
+  addNodeStylingInfo(path) {
+    var depth = 0;
+    path.find(p => {
+      if (p.parentPath && p.scope !== p.parentPath.scope) {
+        return true;
+        
+      } else {
+        (depth++);
+        return false;
+      }
+    });
+    this.setAttribute('ast-node-scope', SCOPE_MAP.getOrCreate(path.scope, () => NEXT_SCOPE_ID++ % 20));
+    this.setAttribute('ast-node-depth', depth);
+  }
+
   async setPath(path) {
     this.path = path;
     this.node = path.node;
-    
+
+    this.addNodeStylingInfo(path);
     await this.setNode(path.node);
   }
   
@@ -335,23 +379,38 @@ export default class AbstractAstNode extends Morph {
     });
   }
   
+  removeSubElementInSlot(slotName) {
+    const subElement = this.get(`:scope > [slot=${slotName}]`)
+    if (subElement) {
+      subElement.remove();
+    }
+  }
+  
   get editor() {
     return this._editor = this._editor || lively.allParents(this, [], true).find(ele => ele.localName === 'pen-editor');
   }
 
   /* Lively-specific API */
   livelyPreMigrate() {}
-  livelyMigrate(other) {
-    lively.error("WRONG")
-    this.setPath(other.path);
-  }
+  livelyMigrate(other) { throw new Error('livelyMigrate should not be called'); }
   livelyInspect(contentNode, inspector) {}
   livelyPrepareSave() {}
   async livelyExample() {}
 
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
-        lively.success("WRONG")
-
+    this.updateFromTemplate();
+    // lively.success("WRONG");
+  }
+  updateFromTemplate() {
+    // #Paper #WebComponents #ObjectMigration
+    // object migration strategy:
+    // - keep identity
+    // - but replace internal state
+    // #TODO: was about external children
+    // #TODO: reuse part of old state in more fine-grained manner
+    // #GOAL: keep as much object identity as possible alive, due to potentially exposed references to internal state
+    this.shadowRoot.innerHTML = "";
+    ComponentLoader.applyTemplate(this, this.localName);
   }
 }

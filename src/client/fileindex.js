@@ -510,8 +510,9 @@ export default class FileIndex {
       method: "OPTIONS"
     }).then(r => r.clone().json())
     
-    
-    this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+    if (!stats.error) {
+      this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+    }
   } 
     
   async addFile(url, name, type, size, modified) {    

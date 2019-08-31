@@ -15,10 +15,7 @@ export default class AstNodeExportSpecifier extends AbstractAstNode {
     if (aliased) {
       await this.createSubElementForPath(this.path.get('exported'), 'exported');
     } else {
-      const exported = this.get(':scope > [slot=exported]');
-      if (exported) {
-        exported.remove();
-      }
+      this.removeSubElementInSlot('exported');
     }
   }
   

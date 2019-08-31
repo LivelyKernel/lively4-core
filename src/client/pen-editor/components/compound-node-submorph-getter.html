@@ -1,4 +1,4 @@
-<template id="ast-node-string-literal" >
+<template id="compound-node-submorph-getter" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
@@ -11,16 +11,17 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
+#get {
+  margin-right: 3px;
+}
+#get, #key, #arrow, #selector {
   align-self: center;
 }
-  :host(*) {
-    color: green;
-  }
 </style>
-  "
-  <primitive-string id="value"></primitive-string>
-  "
+  <span id="get" class="keyword">get</span>
+  <slot id="key" name="key"></slot>
+  <span id="arrow"><i class="fa fa-long-arrow-right" aria-hidden="true"></i></span>
+  <slot id="selector" name="selector"></slot>
 </template>
 
 

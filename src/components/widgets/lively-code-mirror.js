@@ -5,23 +5,17 @@ import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
-import {pt, rect} from 'src/client/graphics.js';
+import {pt} from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
-
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
-
 import {isSet} from 'utils'
-
 import fake from "./lively-code-mirror-fake.js"
-
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
 self.CodeMirror = CodeMirror // for modules
-
 let loadPromise = undefined;
-
 import { loc, range } from 'utils';
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
@@ -97,8 +91,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/search/searchcursor.js")
       await this.loadModule("addon/search/search.js")
       await this.loadModule("addon/search/jump-to-line.js")
- 			await this.loadModule("addon/search/matchesonscrollbar.js")
- 			await this.loadModule("addon/search/match-highlighter.js")
+      await this.loadModule("addon/search/matchesonscrollbar.js")
+      await this.loadModule("addon/search/match-highlighter.js")
       await this.loadModule("addon/scroll/annotatescrollbar.js")
       await this.loadModule("addon/comment/comment.js")
       await this.loadModule("addon/dialog/dialog.js")
@@ -154,8 +148,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   initialize() {
-  	this._attrObserver = new MutationObserver(mutations => {
-	    mutations.forEach(mutation => {
+    this._attrObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
         if(mutation.type == "attributes") {
           // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
           this.attributeChangedCallback(
@@ -187,14 +181,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else {
       value = this.value || "";
     }
-  	this.editView(value)
+    this.editView(value)
     this.isLoading = false
     // console.log("[editor] #dispatch editor-loaded")
     var event = new CustomEvent("editor-loaded")
     // event.stopPropagation();
     this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
-  };
+  }
 
   async editorLoaded() {
     if(!this["editor-loaded"]) {
@@ -350,14 +344,18 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-Up": cm => {
           this.expandSelection(cm)
         },
-        // #KeyboardShortcut Alt-Down show references using tern
+        // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
         },
-        // #KeyboardShortcut Alt-Right show references using tern
+        // #KeyboardShortcut Alt-Right 
         "Alt-Right": cm => {
         },
-        // #KeyboardShortcut Alt-Left show references using tern
+        // #KeyboardShortcut Alt-Left Leave Editor and got to Navigation
         "Alt-Left": cm => {
+          this.singalEditorbackNavigation()
+        },
+        "shift-Alt-Left": cm => {
+          this.singalEditorbackNavigation(true)
         },
         // #KeyboardShortcut Alt-F fold (inverse code folding)
         "Alt-F": cm => {
@@ -373,10 +371,33 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.autoFoldMax()
         },
         
+        // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
+        "alt-Backspace": async cm => {
+          this.singalEditorbackNavigation()
+        },
+        // #KeyboardShortcut Alt-Backspace Leave and Close Editor and got to Navigation
+        "shift-alt-Backspace": async cm => {
+          this.singalEditorbackNavigation(true)
+        },
         
       }
     }
     return this.extraKeys
+  }
+  
+  async singalEditorbackNavigation(closeEditor) {
+    var container = lively.query(this, "lively-container")
+    if (container) {
+      if (closeEditor) await container.onCancel()
+      await lively.sleep(10)
+      // it seems not to bubble acros shadow root boundaries #Bug ?
+      // so we do it manually, but keep it an event
+      container.dispatchEvent(new CustomEvent("editorbacknavigation", {
+        bubbles: true,
+        cancelable: true,
+      }))
+
+    }
   }
   
   /*MD ### AST-aware Navigation MD*/
@@ -676,7 +697,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //     break;
       case "wrapmode":
         this.setOption("lineWrapping", newVal)
-      	break;
+        break;
     }
   }
 
@@ -1063,14 +1084,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       lively.removeEventListener("Migrate", this, "editor-loaded") // make sure we migrate only once
       this.value = other.value;
       if (other.lastScrollInfo) {
-      	this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
+        this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top)
       }
     })
   }
 
   fixHintsPosition() {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"),
-      pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
+  pt(-document.scrollingElement.scrollLeft,-document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)))
   }
 
 
@@ -1376,21 +1397,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     // #TODO this is horrible... Why is there not a standard method for this?
 	if (!this.editor) return;
     var found = false;
-  	this.value.split("\n").forEach((ea, index) => {
+    this.value.split("\n").forEach((ea, index) => {
       var startPos = ea.indexOf(str)
       if (!found && (startPos != -1)) {
 	    this.editor.setCursor(index + 20, 10000);// line end ;-)
         this.editor.focus()
         this.editor.setSelection({line: index, ch: startPos }, {line: index, ch: startPos + str.length})
         found = ea;
-  	  }
+      }
     })
   }
 
   unsavedChanges() {
     if (this.editor.getValue() === "") return false
     return  true // workspaces should be treated carefully
-  }
+   }
 
 
 }
