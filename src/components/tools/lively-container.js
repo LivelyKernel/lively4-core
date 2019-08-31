@@ -13,8 +13,8 @@ import Strings from "src/client/strings.js"
 //import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 
-import Clipboard from "src/client/clipboard.js";
-import { debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils";
+import Clipboard from "src/client/clipboard.js"
+import {debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 
 export default class Container extends Morph {
@@ -39,8 +39,8 @@ export default class Container extends Morph {
     }
 
     this.contentChangedDelay = (() => {
-        this.checkForContentChanges()
-      })::debounce(1000);
+      this.checkForContentChanges()
+    })::debounce(1000)
 
     lively.addEventListener("Container", this, "mousedown", evt => this.onMouseDown(evt));
     
@@ -563,7 +563,7 @@ export default class Container extends Morph {
         lively.notify("ignore module " + moduleName)
       }
     }
-    this.showNavbar();
+    // this.showNavbar();
     
     // something async... 
     lively.sleep(5000).then(() => {
@@ -669,7 +669,8 @@ export default class Container extends Morph {
     }
     if (!urls) urls = [url]
     var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
-    if (await lively.confirm("delete " + urls.length + " files: " + names + "?")) {
+    if (await lively.confirm("<b>Delete " + urls.length + " files:</b><br>" +
+        "<ol>" + names.map( ea => "<li>" + ea + "</li>" ).join("") + "</ol>")) {
       for(let url of urls) {
         var result = await fetch(url, {method: 'DELETE'})
           .then(r => {

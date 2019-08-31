@@ -265,23 +265,19 @@ export default class LivelyContainerNavbar extends Morph {
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
-    this.sourceContent = sourceContent;
+    this.sourceContent = sourceContent
     
-    this.contextURL = contextURL;
+    this.contextURL = contextURL
     var lastDir = this.currentDir
-    this.currentDir = this.getRoot(targetURL);
+    this.currentDir = this.getRoot(targetURL)
 
     let urlWithoutIndex = this.url.replace(/(README.md)|(index\.((html)|(md)))$/,"")
-    
     if (this.url.match(/microsoft:\/\//)) {
       urlWithoutIndex = urlWithoutIndex.replace(/\/contents/,"")
     }
     
-    
     this.targetItem = this.findItem(this.url) || this.findItem(urlWithoutIndex)
-    
     var parentURL = this.url.replace(/[^/]*$/,"")   
-    
     this.targetParentItem = this.findItem(parentURL)
 
     if (this.targetItem || this.targetParentItem ) {
@@ -308,9 +304,7 @@ export default class LivelyContainerNavbar extends Morph {
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showSublist()    
       this.scrollToItem(this.targetItem)
-    }
-    
-    
+    }  
   }
   
   
@@ -402,104 +396,114 @@ export default class LivelyContainerNavbar extends Morph {
     
     parentElement.url = targetURL
    
-    var lastTitle = ""
+    this.lastTitle = ""
     files.forEach((ea) => {
 
-      var element = document.createElement("li");
-      var link = document.createElement("a");
-      
-      
+      var element = this.createItem(ea)
       if (ea.name == filename) {
         this.targetItem = element;
       }
-      
       if (this.targetItem) this.targetItem.classList.add("selected");
-      
-      var name = ea.name;
-      var icon;
-      if (ea.name.match(/\.md$/)) {
-        icon = '<i class="fa fa-file-text-o"></i>';
-        // some directories in lively are considered bundles and should behave like documents
-        if (ea.type == "directory") {
-          element.classList.add("directory")
-        } else {
-          element.classList.add("file")
-        }
-      } else if (ea.type == "directory") {
-        name += "/";
-        icon = '<i class="fa fa-folder"></i>';
-        element.classList.add("directory")
-      } else if (ea.type == "link") {
-        icon = '<i class="fa fa-arrow-circle-o-right"></i>';
-        element.classList.add("link")
-      } else if (/\.html$/i.test(name)) {
-        icon = '<i class="fa fa-html5"></i>'
-        element.classList.add("test")
-      } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
-        icon = '<i class="fa fa-check-square-o"></i>'
-        element.classList.add("test")
-      } else if (/\.js$/i.test(name)) {
-        icon = '<i class="fa fa-file-code-o"></i>';
-        element.classList.add("file");
-      } else if (/\.css$/i.test(name)) {
-        icon = '<i class="fa fa-css3"></i>';
-        element.classList.add("file");
-      } else if (/\.(png|jpg)$/i.test(name)) {
-        icon = '<i class="fa fa-file-image-o"></i>';
-        element.classList.add("file");
-      } else if (/\.(pdf)$/i.test(name)) {
-        icon = '<i class="fa fa-file-pdf-o"></i>';
-        element.classList.add("file");
-      } else {
-        icon = '<i class="fa fa-file-o"></i>';
-        element.classList.add("file");
-      }
-      var title = ea.title || name
-      
-      // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
-      
-      var prefix = Strings.longestCommonPrefix([title, lastTitle])
-      prefix = prefix.replace(/-([a-zA-Z0-9])*$/,"-")
-      if (prefix.length < 4) {
-        prefix = ""
-      }      
-      link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>");
-      lastTitle = title
-      
-      var href = ea.href || ea.name;
-      if (ea.type == "directory" && !href.endsWith("/")) {
-        href += "/"
-      }
-      var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
-      link.href = ea.url || otherUrl;
-      element.url = link.href
-      if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
-        element.classList.add("selected")
-      }
-      
-      link.onclick = (evt) => { 
-        this.onItemClick(link, evt); 
-        return false
-      };
-      link.ondblclick = (evt) => { 
-        this.onItemDblClick(link, evt); 
-        return false
-      };
 
-      link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
-      link.addEventListener('contextmenu', (evt) => {
-          if (!evt.shiftKey) {
-            this.onContextMenu(evt, otherUrl)
-            evt.stopPropagation();
-            evt.preventDefault();
-            return true;
-          }
-      }, false);
-      element.appendChild(link);
+      
       parentElement.appendChild(element);
     });
+    delete this.lastTitle
+    
     // this.clearSublists()
   }
+  
+  createItem(ea) {
+    var element = document.createElement("li");
+    var link = document.createElement("a");
+
+    var name = ea.name;
+    var icon;
+    if (ea.name.match(/\.md$/)) {
+      icon = '<i class="fa fa-file-text-o"></i>';
+      // some directories in lively are considered bundles and should behave like documents
+      if (ea.type == "directory") {
+        element.classList.add("directory")
+      } else {
+        element.classList.add("file")
+      }
+    } else if (ea.type == "directory") {
+      name += "/";
+      icon = '<i class="fa fa-folder"></i>';
+      element.classList.add("directory")
+    } else if (ea.type == "link") {
+      icon = '<i class="fa fa-arrow-circle-o-right"></i>';
+      element.classList.add("link")
+    } else if (/\.html$/i.test(name)) {
+      icon = '<i class="fa fa-html5"></i>'
+      element.classList.add("test")
+    } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
+      icon = '<i class="fa fa-check-square-o"></i>'
+      element.classList.add("test")
+    } else if (/\.js$/i.test(name)) {
+      icon = '<i class="fa fa-file-code-o"></i>';
+      element.classList.add("file");
+    } else if (/\.css$/i.test(name)) {
+      icon = '<i class="fa fa-css3"></i>';
+      element.classList.add("file");
+    } else if (/\.(png|jpg)$/i.test(name)) {
+      icon = '<i class="fa fa-file-image-o"></i>';
+      element.classList.add("file");
+    } else if (/\.(pdf)$/i.test(name)) {
+      icon = '<i class="fa fa-file-pdf-o"></i>';
+      element.classList.add("file");
+    } else {
+      icon = '<i class="fa fa-file-o"></i>';
+      element.classList.add("file");
+    }
+    var title = ea.title || name
+
+    // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
+
+    var prefix = this.lastTitle ? Strings.longestCommonPrefix([title, this.lastTitle]) : ""
+    prefix = prefix.replace(/-([a-zA-Z0-9])*$/,"-")
+    if (prefix.length < 4) {
+      prefix = ""
+    }      
+    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>");
+    this.lastTitle = title
+
+    var href = ea.href || ea.name;
+    if (ea.type == "directory" && !href.endsWith("/")) {
+      href += "/"
+    }
+    var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
+    link.href = ea.url || otherUrl;
+    element.url = link.href
+
+   
+    
+    if (this.lastSelection && this.lastSelection.includes(otherUrl)) {
+      element.classList.add("selected")
+    }
+
+    link.onclick = (evt) => { 
+      this.onItemClick(link, evt); 
+      return false
+    };
+    link.ondblclick = (evt) => { 
+      this.onItemDblClick(link, evt); 
+      return false
+    };
+
+    link.addEventListener('dragstart', evt => this.onItemDragStart(link, evt))
+    link.addEventListener('contextmenu', (evt) => {
+        if (!evt.shiftKey) {
+          this.onContextMenu(evt, otherUrl)
+          evt.stopPropagation();
+          evt.preventDefault();
+          return true;
+        }
+    }, false);
+    element.appendChild(link);
+    return element
+  }
+  
   
   getLink(item) {
     return item.querySelector(":scope > a")
@@ -1071,9 +1075,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.setCursorItem(this.matchingItems.first)
     }
   }
-  
-  
-    
+
   get items() {
     if(this.navigateColumn == "details") {
       return Array.from(this.get("#details").querySelectorAll("li"));
@@ -1106,6 +1108,76 @@ export default class LivelyContainerNavbar extends Morph {
     this.show(this.url,this.sourceContent, this.contextURL, true)
   }
   
+  hightlightElement(element) {
+    var text = element.querySelector("a") || element
+    text.style.color = getComputedStyle(text).color || "black"
+    text.animate([
+      { color: text.style.color }, 
+      { color: 'green' }, 
+      { color:  text.style.color }, 
+    ], { 
+      duration: 2000,
+    });
+  }
+  
+  getElementByURL(url) {
+    return this.items.find(ea => ea.url == url && ea.textContent !== "../")
+  }
+  
+  
+  sortIntoAfter(sibling, element) {
+    
+    if (!sibling) return
+    if (sibling.classList.contains("file") && element.textContent < sibling.textContent) {
+      sibling.parentElement.insertBefore(element, sibling) 
+      return true
+    } else {
+      if (sibling.nextElementSibling) {
+        return this.sortIntoAfter(sibling.nextElementSibling, element)
+      } 
+    }
+    
+  }
+  
+  async onObserveURLChange(url, method) {
+    try {
+      if (url.startsWith(this.currentDir)) {
+        var element = this.getElementByURL(url)
+        if (element) {
+          if (method == "PUT") {
+            this.hightlightElement(element)
+          } else if(method == "DELETE") {
+            element.remove()
+          }
+        } else {
+          if (method == "PUT") {
+            // maybe we should create an item for the element?
+            var parentURL = url.replace(/\/[^/]+$/,"/")
+            console.log("parentrURL " + parentURL)
+            var parentElement = this.getElementByURL(parentURL)
+            if (!parentElement) parentElement = this.get("#row")
+            if (parentElement) {
+              var stats = await fetch(url, {method: "OPTIONS"}).then(r => r.json())
+              stats.name = stats.name.replace(/.*\//,"")
+              var element = this.createItem(stats)
+              var parentElementList = parentElement.querySelector(":scope > ul") 
+
+              if (parentElementList) {
+                var firstSibling = parentElementList.querySelector(":scope > li")
+                if (!this.sortIntoAfter(firstSibling, element)) {
+                  parentElementList.appendChild(element) 
+                }
+                this.hightlightElement(element)            
+              }
+            } 
+          }
+        }
+      }      
+    } catch(e) {
+      console.error(e)
+    }
+  }
+
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
@@ -1113,4 +1185,35 @@ export default class LivelyContainerNavbar extends Morph {
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
   }
+}
+
+
+if (self.lively4fetchHandlers) {  
+  // remove old instances of me
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isNavbarHandler);
+  self.lively4fetchHandlers.unshift({
+    isNavbarHandler: true,
+    handle(request, options) {
+      // do nothing
+    },
+    finsihed(request, options) {
+      var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      if (method == "PUT" || method == "DELETE") {
+        try {
+          for(var container of document.querySelectorAll("lively-container")) {
+            var navbar = container.get("lively-container-navbar")
+            if (navbar && navbar.onObserveURLChange) {
+
+              navbar.onObserveURLChange(url, method)
+            }
+          }        
+        } catch(e) {
+          console.error(e)
+        }
+      }
+    }
+  })
+  
 }
