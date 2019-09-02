@@ -496,13 +496,53 @@ export default class PenEditor extends Morph {
     return focalStorage.setItem(this._asPersistenceKey(key), value);
   }
   /*MD ## Styles MD*/
+
+  stylesShared() {
+    return `
+/*MD #### basic focus and hover MD*/
+.ast-node.node-selected,
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  background-color: #fafbcb;
+  outline: orange 2px solid;
+}
+
+.ast-node {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+  transform: translate(0px, 0px) scale(1.0);
+  box-shadow: 0em 0em 0em transparent;
+}
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  box-shadow: 0em 0.5em 0.4em darkgray;
+  transform: translate(0px, -2px) scale(1.1);
+}
+
+.ast-node.node-hover {
+  outline: green inset 2px;
+}
+.ast-node::part(keyword) {
+  color: black;
+}
+.ast-node::part(notation) {
+  color: black;
+}
+`;
+  }
   styleDefault() {
     return `
+${this.stylesShared()}
 `;
   }
 
   styleNesting() {
     return `
+${this.stylesShared()}
 .ast-node {
   margin: 1px;
 /*   padding: 1px; */
@@ -525,7 +565,10 @@ export default class PenEditor extends Morph {
   font-weight: bold;
 }`);
     });
-    return `${identifierStyles.join('\n\r')}`;
+    return `
+${this.stylesShared()}
+${identifierStyles.join('\n\r')}
+`;
   }
 
   styleColorizeScopes() {
@@ -566,6 +609,7 @@ ast-node-directive-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}
     });
 
     return `
+${this.stylesShared()}
 ast-node-identifier::part(input-field) {
   font-weight: bold;
 }
@@ -727,7 +771,7 @@ ${scopeStyles.join('\n\r')}
     this.addToHistory(ast);
     this.project(ast);
   }
-  
+
   assignUUIDsForAllNodes(ast) {
     ast.traverseAsAST({
       enter: path => this.ensureUUID(path.node)
@@ -811,6 +855,36 @@ ${scopeStyles.join('\n\r')}
     });
     
     this.setAST(ast);
+  }
+  
+  commandExtractExpressionIntoLocalVariable(element, value) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    var found = false;
+    
+    ast = ast.transformAsAST(({types: t}) => ({
+      visitor: {
+        Expression(path) {
+          if (nodeEqual(path, element.node) && !found) {
+            found = true;
+            const decl = t.VariableDeclaration('const', [
+              t.VariableDeclarator(t.Identifier(value), path.node)
+            ]);
+            
+            path.replaceWith(t.Identifier(value));
+            path.getStatementParent().insertBefore(decl);
+          }
+        }
+      }
+    })).ast;
+    
+    if (!found) {
+      lively.warn('node was not an expression.')
+      return;
+    }
+
+    this.setAST(ast.cloneDeep());
   }
   
   onResetHistory() {
