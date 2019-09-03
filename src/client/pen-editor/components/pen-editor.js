@@ -223,6 +223,16 @@ class Navigation {
   getElementForNode(node) {
     return this.editor.getElementForNode(node);
   }
+  selectNodes(nodes, primaryNode) {
+    debugger;
+    lively.success("SELECT " + nodes && nodes.length, primaryNode)
+    const elementsToSelect = nodes
+      .map(node => this.getElementForNode(node))
+      .filter(node => node);
+    const primaryElement = this.getElementForNode(primaryNode);
+    
+    this.setSelection(elementsToSelect, primaryElement)
+  }
   transformSelection(getNextSelection) {
     const selectedElements = this.getSelection();
     const primarySelection = this.getPrimarySelection();
@@ -669,7 +679,8 @@ ${scopeStyles.join('\n\r')}
       
     ];
     
-    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
+    const {x,y} = lively.getGlobalCenter(evt.target);
+    const menu = await ContextMenu.openIn(document.body, { clientX: x, clientY: y }, undefined, document.body,  menuItems);
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -769,7 +780,7 @@ ${scopeStyles.join('\n\r')}
   async setAST(ast) {
     this.assignUUIDsForAllNodes(ast);
     this.addToHistory(ast);
-    this.project(ast);
+    await this.project(ast);
   }
 
   assignUUIDsForAllNodes(ast) {
@@ -857,22 +868,26 @@ ${scopeStyles.join('\n\r')}
     this.setAST(ast);
   }
   
-  commandExtractExpressionIntoLocalVariable(element, value) {
+  async commandExtractExpressionIntoLocalVariable(element, value) {
     const current = this.history.current();
     let ast = current.cloneDeep();
 
     var found = false;
+    let referree;
     
-    ast = ast.transformAsAST(({types: t}) => ({
+    ast = ast.transformAsAST(({types: t, template}) => ({
       visitor: {
         Expression(path) {
           if (nodeEqual(path, element.node) && !found) {
             found = true;
-            const decl = t.VariableDeclaration('const', [
-              t.VariableDeclarator(t.Identifier(value), path.node)
-            ]);
             
-            path.replaceWith(t.Identifier(value));
+            const decl = template('const ID = INIT;')({
+              ID: t.Identifier(value),
+              INIT: path.node
+            })
+            
+            referree = t.Identifier(value)
+            path.replaceWith(referree);
             path.getStatementParent().insertBefore(decl);
           }
         }
@@ -884,7 +899,8 @@ ${scopeStyles.join('\n\r')}
       return;
     }
 
-    this.setAST(ast.cloneDeep());
+    await this.setAST(ast);
+    this.navigation.selectNodes([referree], referree)
   }
   
   onResetHistory() {
@@ -899,9 +915,9 @@ ${scopeStyles.join('\n\r')}
     this.project(ast2);
   }
   
-  project(ast) {
+  async project(ast) {
     this.inspectAST(ast);
-    this.buildProjection(ast);
+    await this.buildProjection(ast);
     this.buildTransformation(ast);
   }
   
@@ -933,9 +949,6 @@ ${scopeStyles.join('\n\r')}
   buildPathInfo() {
     const selection = this.navigation.getSelection();
 
-    function joinElements(elements, builder) {
-      
-    }
     this.pathInfo.innerHTML = selection
       .map(element => {
         const list = [];
@@ -973,8 +986,6 @@ ${scopeStyles.join('\n\r')}
   
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
-    this.xxx = this.xxx || Math.random();
-    lively.notify(this.xxx)
     this.initStyle({ force: true });
   }
   
