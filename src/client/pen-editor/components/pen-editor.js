@@ -223,6 +223,16 @@ class Navigation {
   getElementForNode(node) {
     return this.editor.getElementForNode(node);
   }
+  selectNodes(nodes, primaryNode) {
+    debugger;
+    lively.success("SELECT " + nodes && nodes.length, primaryNode)
+    const elementsToSelect = nodes
+      .map(node => this.getElementForNode(node))
+      .filter(node => node);
+    const primaryElement = this.getElementForNode(primaryNode);
+    
+    this.setSelection(elementsToSelect, primaryElement)
+  }
   transformSelection(getNextSelection) {
     const selectedElements = this.getSelection();
     const primarySelection = this.getPrimarySelection();
@@ -496,13 +506,53 @@ export default class PenEditor extends Morph {
     return focalStorage.setItem(this._asPersistenceKey(key), value);
   }
   /*MD ## Styles MD*/
+
+  stylesShared() {
+    return `
+/*MD #### basic focus and hover MD*/
+.ast-node.node-selected,
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  background-color: #fafbcb;
+  outline: orange 2px solid;
+}
+
+.ast-node {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+  transform: translate(0px, 0px) scale(1.0);
+  box-shadow: 0em 0em 0em transparent;
+}
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  box-shadow: 0em 0.5em 0.4em darkgray;
+  transform: translate(0px, -2px) scale(1.1);
+}
+
+.ast-node.node-hover {
+  outline: green inset 2px;
+}
+.ast-node::part(keyword) {
+  color: black;
+}
+.ast-node::part(notation) {
+  color: black;
+}
+`;
+  }
   styleDefault() {
     return `
+${this.stylesShared()}
 `;
   }
 
   styleNesting() {
     return `
+${this.stylesShared()}
 .ast-node {
   margin: 1px;
 /*   padding: 1px; */
@@ -525,7 +575,10 @@ export default class PenEditor extends Morph {
   font-weight: bold;
 }`);
     });
-    return `${identifierStyles.join('\n\r')}`;
+    return `
+${this.stylesShared()}
+${identifierStyles.join('\n\r')}
+`;
   }
 
   styleColorizeScopes() {
@@ -566,6 +619,7 @@ ast-node-directive-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}
     });
 
     return `
+${this.stylesShared()}
 ast-node-identifier::part(input-field) {
   font-weight: bold;
 }
@@ -625,7 +679,8 @@ ${scopeStyles.join('\n\r')}
       
     ];
     
-    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
+    const {x,y} = lively.getGlobalCenter(evt.target);
+    const menu = await ContextMenu.openIn(document.body, { clientX: x, clientY: y }, undefined, document.body,  menuItems);
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -725,9 +780,9 @@ ${scopeStyles.join('\n\r')}
   async setAST(ast) {
     this.assignUUIDsForAllNodes(ast);
     this.addToHistory(ast);
-    this.project(ast);
+    await this.project(ast);
   }
-  
+
   assignUUIDsForAllNodes(ast) {
     ast.traverseAsAST({
       enter: path => this.ensureUUID(path.node)
@@ -813,6 +868,41 @@ ${scopeStyles.join('\n\r')}
     this.setAST(ast);
   }
   
+  async commandExtractExpressionIntoLocalVariable(element, value) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    var found = false;
+    let referree;
+    
+    ast = ast.transformAsAST(({types: t, template}) => ({
+      visitor: {
+        Expression(path) {
+          if (nodeEqual(path, element.node) && !found) {
+            found = true;
+            
+            const decl = template('const ID = INIT;')({
+              ID: t.Identifier(value),
+              INIT: path.node
+            })
+            
+            referree = t.Identifier(value)
+            path.replaceWith(referree);
+            path.getStatementParent().insertBefore(decl);
+          }
+        }
+      }
+    })).ast;
+    
+    if (!found) {
+      lively.warn('node was not an expression.')
+      return;
+    }
+
+    await this.setAST(ast);
+    this.navigation.selectNodes([referree], referree)
+  }
+  
   onResetHistory() {
     this.history.clear();
   }
@@ -825,9 +915,9 @@ ${scopeStyles.join('\n\r')}
     this.project(ast2);
   }
   
-  project(ast) {
+  async project(ast) {
     this.inspectAST(ast);
-    this.buildProjection(ast);
+    await this.buildProjection(ast);
     this.buildTransformation(ast);
   }
   
@@ -859,9 +949,6 @@ ${scopeStyles.join('\n\r')}
   buildPathInfo() {
     const selection = this.navigation.getSelection();
 
-    function joinElements(elements, builder) {
-      
-    }
     this.pathInfo.innerHTML = selection
       .map(element => {
         const list = [];
@@ -899,8 +986,6 @@ ${scopeStyles.join('\n\r')}
   
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
-    this.xxx = this.xxx || Math.random();
-    lively.notify(this.xxx)
     this.initStyle({ force: true });
   }
   

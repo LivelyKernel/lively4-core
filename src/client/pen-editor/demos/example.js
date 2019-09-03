@@ -5,6 +5,32 @@
  * Block comment
  */
 
+class Being {
+  set [hello + 2](value) {}
+}
+class Person extends Being {
+  static async new(name) {
+    return new Person(name);
+  }
+
+  get name() {
+    return this.firstName + ' ' + this.lastName;
+  }
+
+  get element() {
+    return this.get('#id');
+  }
+
+  constructor(firstName, lastName) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+  }
+  *sfcd() {}
+  get sfcd() {
+    super.sfcd();
+  }
+}
+
 label: stmt;
 
 function fff() {
@@ -111,25 +137,6 @@ function* yieldAll(...arr) {
 let fn = async function (a, b) {
   return a + b;
 };
-
-class Being {
-  set [hello + 2](value) {}
-}
-class Person extends Being {
-  static async new(name) {
-    return new Person(name);
-  }
-
-  get element() {
-    return this.get('#id');
-  }
-
-  constructor() {}
-  *sfcd() {}
-  get sfcd() {
-    super.sfcd();
-  }
-}
 
 foo;
 bar;

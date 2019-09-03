@@ -12,8 +12,8 @@ export default class AstNodeProgram extends AbstractAstNode {
   }
   
   async updateProjection(babelASTNode) {
-    this.createSubElementForPaths(this.path.get('directives'), 'directives');
-    this.createSubElementForPaths(this.path.get('body'), 'body');
+    await this.createSubElementForPaths(this.path.get('directives'), 'directives');
+    await this.createSubElementForPaths(this.path.get('body'), 'body');
   }
 
 }
