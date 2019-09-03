@@ -433,19 +433,18 @@ export default class Lively {
   }
   
 
+  // #Deprecated who does/dir use this code and what for
   static asUL(anyList){
     var ul = document.createElement("ul")
     ul.style.minWidth = "50px"
     ul.style.minHeight = "50px"
     ul.style.backgroundColor = "gray"
-
     anyList.forEach(ea => {
       var item = document.createElement("li")
       item.textContent = ea
       item.value = ea
       ul.appendChild(item)
     })
-
     return ul
   }
 
