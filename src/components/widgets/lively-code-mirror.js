@@ -350,12 +350,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-Right 
         "Alt-Right": cm => {
         },
-        // #KeyboardShortcut Alt-Left Leave Editor and got to Navigation
+        // #KeyboardShortcut Alt-Left 
         "Alt-Left": cm => {
-          this.singalEditorbackNavigation()
-        },
-        "shift-Alt-Left": cm => {
-          this.singalEditorbackNavigation(true)
+
         },
         // #KeyboardShortcut Alt-F fold (inverse code folding)
         "Alt-F": cm => {
