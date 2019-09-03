@@ -67,7 +67,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   resetCursor() {
-    this.cursorItem = null
+    this.setCursorItem(null)
     this.cursorDetailsItem = null
     this.navigateColumn = "files"
   }
@@ -545,6 +545,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
     this.updateFilter("")
     this.focusFiles()
+    this.setCursorItem(null)
   }
   
   async onItemDblClick(link, evt) {
@@ -1023,13 +1024,13 @@ export default class LivelyContainerNavbar extends Morph {
       startItem.classList.remove("cursor")
     }
     if (nextItem) {
-        nextItem.classList.add("cursor")
-        if (this.navigateColumn == "details") {
-          this.cursorDetailsItem = nextItem  
-        } else {
-          this.cursorItem = nextItem  
-        }
-      }
+      nextItem.classList.add("cursor")
+    }
+    if (this.navigateColumn == "details") {
+      this.cursorDetailsItem = nextItem  
+    } else {
+      this.cursorItem = nextItem  
+    }
   }
   
   focusDetails() {
