@@ -531,7 +531,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      if (this.isSelected(item) ) {
+      if (this.isSelected(item)) {
         this.currentDir = null
         item.classList.remove("selected")
         var sublist = item.querySelector("ul")
@@ -557,6 +557,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async onDetailsItemClick(item, evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
     this.cursorDetailsItem = item
     this.navigateColumn = "details"
     var sublist = this.get("#details").querySelector("ul")
@@ -1046,6 +1048,19 @@ export default class LivelyContainerNavbar extends Morph {
       nextItem = this.nextUpItem(startItem)
     }
     this.setCursorItem(nextItem)
+    if(nextItem) {
+      if (nextItem.classList.contains("directory")) {
+        // just navigate
+      } else {
+        if (this.navigateColumn == "details") {
+          this.onDetailsItemClick(nextItem, evt)
+        } else {
+          
+          // var nextLink = this.cursorItem.querySelector("a")      
+          // this.onItemClick(nextLink, evt)
+        }
+      }      
+    }
   }
   
   getCursorItem() {
