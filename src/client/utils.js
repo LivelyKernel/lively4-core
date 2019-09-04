@@ -443,6 +443,10 @@ class Location {
     this._cmCharacter = l.ch;
   }
   
+  isEqual(l) {
+    const other = loc(l)
+    return this._cmLine === other._cmLine && this._cmCharacter === other._cmCharacter;
+  }
   isBefore(l) {
     const other = loc(l)
     return this._cmLine < other._cmLine ||

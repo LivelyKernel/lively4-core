@@ -342,17 +342,18 @@ export default class LivelyCodeMirror extends HTMLElement {
         
         // #KeyboardShortcut Alt-Up expand selection in ast-aware manner
         "Alt-Up": cm => {
-          this.expandSelection(cm)
-        },
-        // #KeyboardShortcut Alt-Down 
-        "Alt-Down": cm => {
-        },
-        // #KeyboardShortcut Alt-Right 
-        "Alt-Right": cm => {
+          this.expandSelection(cm);
         },
         // #KeyboardShortcut Alt-Left 
         "Alt-Left": cm => {
-
+          this.selectNextASTNode(cm, true);
+        },
+        // #KeyboardShortcut Alt-Right 
+        "Alt-Right": cm => {
+          this.selectNextASTNode(cm, false);
+        },
+        // #KeyboardShortcut Alt-Down 
+        "Alt-Down": cm => {
         },
         // #KeyboardShortcut Alt-F fold (inverse code folding)
         "Alt-F": cm => {
@@ -475,6 +476,68 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     this.selectPaths(maxPaths);
   }
+  forwardList(parentPath) {
+    const linearizedPathList = [];
+    parentPath.traverse({
+      exit(path) { linearizedPathList.push(path); }
+    });
+    return linearizedPathList;
+  }
+  backwardList(parentPath) {
+    const linearizedPathList = [];
+    parentPath.traverse({
+      enter(path) { linearizedPathList.push(path); }
+    });
+    return linearizedPathList.reverse();
+  }
+  selectNextASTNode(cm, reversed) {
+    const programPath = this.programPath;
+    const pathList = reversed ? this.backwardList(programPath) : this.forwardList(programPath);
+
+    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+
+      // go down to minimal selected node
+      const nextPathContainingCursor = (startingPath, {anchor, head}) => {
+        return this.nextPath(startingPath, path => {
+          const location = range(path.node.loc);
+          return location.contains(anchor) && location.contains(head);
+        });
+      }
+      let currentPath = this.getInnermostPath(programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+
+      let selectionStart = loc(anchor);
+      let selectionEnd = loc(head);
+      const pathLocation = currentPath.node.loc;
+      const pathStart = loc(pathLocation.start);
+      const pathEnd = loc(pathLocation.end);
+
+      // do we fully select the current path?
+      if (selectionStart.isEqual(pathStart) && selectionEnd.isEqual(pathEnd)) {
+        
+        // check if parents have the same selection range
+        currentPath.findParent(path => {
+          const pathLocation = path.node.loc;
+          const pathStart = loc(pathLocation.start);
+          const pathEnd = loc(pathLocation.end);
+
+          if (pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd)) {
+            currentPath = path;
+          }
+
+          return false;
+        });
+
+        const currentPathInList = pathList.find(path => path.node === currentPath.node);
+        const currentIndex = pathList.indexOf(currentPathInList);
+        const newPath = pathList[Math.min(currentIndex + 1, pathList.length -1)];
+        return newPath;
+      } else {
+        return currentPath;
+      }
+    });
+
+    this.selectPaths(maxPaths);
+  }
   
   selectPaths(paths) {
     const ranges = paths.map(path => {
@@ -584,6 +647,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.editor.refresh();
     });
   }
+  /*MD ### END of AST-aware Navigation MD*/
   createWrapper(from, to) {
     const divStyle = {
       width: "2px",
