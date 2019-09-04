@@ -190,7 +190,6 @@ export default class ContextMenu {
       target.localName == "lively-file" ?
         [ "become content", async () => {
             if (target.url && target.name.match(/\.png$/)) {
-              debugger
               var element = await (<img id={target.name}></img>)
               element.src = target.url
               target.parentElement.appendChild(element)
@@ -689,7 +688,6 @@ export default class ContextMenu {
   }
   
   static openIn(container, evt, target, worldContext, optItems) {
-    debugger
     this.hide();
     this.firstEvent = evt
 

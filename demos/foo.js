@@ -8,4 +8,54 @@ export default function foo(a) {
 
 
 
+
+class Foo {
+  
+  bar () {
+    
+  }
+  
+  m5() {
+    
+  }
+   
+  m8() {
+    
+  }
+  
+  xasdsad() {
+    
+  }
+
+  
+}
+
+
+class Foo2 {
+  
+  bar () {
+    
+  }
+  
+  m5() {
+    
+  }
+   
+  m8() {
+    
+  }
+  
+  xasdsad() {
+    
+  }
+
+  
+}
+
+
+
+
+
 console.log("LOADED foo.js - " + me)
+
+

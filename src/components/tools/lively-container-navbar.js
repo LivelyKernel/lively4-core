@@ -673,7 +673,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.followPath(newURL);
   }
 
-  showSublistHTML(subList) {
+  showSublistHTML(sublist) {
     if (!this.sourceContent) return;
     var template =  lively.html.parseHTML(this.sourceContent).find(ea => ea.localName == "template");
       if (!template) {
@@ -690,11 +690,11 @@ export default class LivelyContainerNavbar extends Morph {
         element.onclick = (evt) => {
           this.onDetailsItemClick(element, evt)
         }
-        subList.appendChild(element) ;
+        sublist.appendChild(element) ;
       });
   }
   
-  showSublistJS_OLD(subList) {
+  showSublistJS_OLD(sublist) {
     if (!this.sourceContent || !this.sourceContent.split) {
       // undefined or Blob
       return;
@@ -727,7 +727,7 @@ export default class LivelyContainerNavbar extends Morph {
           element.onclick = (evt) => {
             this.onDetailsItemClick(element, evt)
           }
-          subList.appendChild(element) ;
+          sublist.appendChild(element) ;
         }
       }
     });
@@ -742,8 +742,7 @@ export default class LivelyContainerNavbar extends Morph {
     return item
   }
    
-  async showSublistJS(subList) {
-    
+  async showSublistJS(sublist) {
     var classInfos = [];
     
     await FileIndex.current().db.classes.where("url").equals(this.url).each(aClassInfo => {
@@ -762,12 +761,12 @@ export default class LivelyContainerNavbar extends Morph {
         methodItem.classList.add("subitem");
         methodList.appendChild(methodItem)
       }) 
-      subList.appendChild(item)
+      sublist.appendChild(item)
     })
   }
 
-  selectSublistItem(element, subList) {
-    for(var ea of subList.querySelectorAll(".selected")) {
+  selectSublistItem(element, sublist) {
+    for(var ea of sublist.querySelectorAll(".selected")) {
       ea.classList.remove("selected")
     }
     element.classList.add("selected")
@@ -783,7 +782,7 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/([ ,])#/g, "$1")
   }
   
-  showSublistMD(subList) {
+  showSublistMD(sublist) {
     // console.log("sublist md " + this.sourceContent.length)
     if (!this.sourceContent) return;
     let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
@@ -806,11 +805,11 @@ export default class LivelyContainerNavbar extends Morph {
       element.onclick = (evt) => {
           this.onDetailsItemClick(element, evt)
       }
-      subList.appendChild(element);
+      sublist.appendChild(element);
     });
   }
 
-  async showSublistOptions(subList, url) {
+  async showSublistOptions(sublist, url) {
     url = url || this.url
     try {
       var options = await fetch(url, {method: "OPTIONS"})
@@ -823,9 +822,9 @@ export default class LivelyContainerNavbar extends Morph {
     for(let ea of options.contents) { // #Bug for(var ea) vs for(let)
       let element = <li 
           class="link subitem" title={ea.name}>{ea.name}</li>
-      subList.appendChild(element);
+      sublist.appendChild(element);
       element.onclick = () => {
-        this.selectSublistItem(element, subList)
+        this.selectSublistItem(element, sublist)
         if (ea.href) {
           this.followPath(ea.href);
         } else {
@@ -848,51 +847,60 @@ export default class LivelyContainerNavbar extends Morph {
 
   }
   
-  async showSublist() {
-    // console.log("show sublist " + this.url)
+  async showSublist(force) {
+    console.log("show sublist " + this.url)
      
     if (!this.targetItem) return 
-    if (this.targetItem.querySelector("ul")) return // has sublist
+    var sublist = this.targetItem.querySelector("ul")
+    if (!force && sublist) {
+      return 
+    } else {
+      if (!sublist) {
+        sublist = document.createElement("ul");
+        this.targetItem.appendChild(sublist);
+      } else {
+        sublist.innerHTML = ""
+      }
+    }
     
-    var subList = document.createElement("ul");
-    this.targetItem.appendChild(subList);
     if (this.url !== this.contextURL && this.targetItem.classList.contains("directory")) {
       var optionsWasHandles = true
-      await this.showDirectory(this.url, subList)
+      await this.showDirectory(this.url, sublist)
     }
     this.showSublistContent(optionsWasHandles)
   } 
   
   
   async showSublistContent(optionsWasHandles) {
+    
     // show console.log("show sublist content " + this.url) 
     if (!this.targetItem) return 
     
     var details = this.get("#details")
-    var subList = this.targetItem.querySelector("ul")
+    var sublist = this.targetItem.querySelector("ul")
     
     if (details) {
       details.innerHTML = ""
-      subList = <ul></ul>
-      details.appendChild(subList)
+      sublist = <ul></ul>
+      details.appendChild(sublist)
     }
     
-    if (!subList) return // we are a sublist item?
+    if (!sublist) return // we are a sublist item?
     
     // keep expanded trees open... or not
     // this.clearSublists()
     
     if (this.url.match(/templates\/.*html$/)) {
-      this.showSublistHTML(subList)
+      this.showSublistHTML(sublist)
     } else if (this.url.match(/\.js$/)) {
-      this.showSublistJS(subList)
+      this.showSublistJS(sublist)
     } else if (this.url.match(/\.md$/)) {
       // console.log("show sublist md" + this.url)
 
-      this.showSublistMD(subList)
+      this.showSublistMD(sublist)
     } else {
       if (!optionsWasHandles) {
-        this.showSublistOptions(subList)
+        this.showSublistOptions(sublist)
       }
     }
   }
@@ -1177,10 +1185,14 @@ export default class LivelyContainerNavbar extends Morph {
   async onObserveURLChange(url, method) {
     try {
       if (url.startsWith(this.currentDir)) {
+        console.log("[navbar] onObserveURLChange " + url)
         var element = this.getElementByURL(url)
         if (element) {
           if (method == "PUT") {
             this.hightlightElement(element)
+            if (this.url == url) {
+              await this.showSublist(true) 
+            }
           } else if(method == "DELETE") {
             element.remove()
           }
@@ -1188,7 +1200,6 @@ export default class LivelyContainerNavbar extends Morph {
           if (method == "PUT") {
             // maybe we should create an item for the element?
             var parentURL = url.replace(/\/[^/]+$/,"/")
-            console.log("parentrURL " + parentURL)
             var parentElement = this.getElementByURL(parentURL)
             if (!parentElement) parentElement = this.get("#row")
             if (parentElement) {
@@ -1226,12 +1237,12 @@ export default class LivelyContainerNavbar extends Morph {
 if (self.lively4fetchHandlers) {  
   // remove old instances of me
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isNavbarHandler);
-  self.lively4fetchHandlers.unshift({
+  self.lively4fetchHandlers.push({
     isNavbarHandler: true,
     handle(request, options) {
       // do nothing
     },
-    finsihed(request, options) {
+    async finsihed(request, options) {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
@@ -1241,7 +1252,7 @@ if (self.lively4fetchHandlers) {
             var navbar = container.get("lively-container-navbar")
             if (navbar && navbar.onObserveURLChange) {
 
-              navbar.onObserveURLChange(url, method)
+              await navbar.onObserveURLChange(url, method)
             }
           }        
         } catch(e) {
