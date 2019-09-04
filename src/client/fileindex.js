@@ -129,17 +129,27 @@ export default class FileIndex {
       return
     }
     
-    for (var clazz of semantics.classes) {
-      if (clazz.superClassName && !clazz.superClassUrl) {
-        let superClass = semantics.classes.find(item => item.name == clazz.superClassName)
-        clazz.superClassName = (superClass) ? superClass.superClassName : ''
-        clazz.superClassUrl = (superClass) ? file.url : ''
-      } else if (clazz.superClassName && clazz.superClassUrl) {
-        clazz.superClassUrl = await System.resolve(clazz.superClassUrl, file.url)
+    var classNames = []
+    for (var eaClass of semantics.classes) {
+      if (eaClass.superClassName && !eaClass.superClassUrl) {
+        let superClass = semantics.classes.find(item => item.name == eaClass.superClassName)
+        eaClass.superClassName = (superClass) ? superClass.superClassName : ''
+        eaClass.superClassUrl = (superClass) ? file.url : ''
+      } else if (eaClass.superClassName && eaClass.superClassUrl) {
+        eaClass.superClassUrl = await System.resolve(eaClass.superClassUrl, file.url)
       }
-      clazz.url = file.url
-      clazz.nom = clazz.methods ? clazz.methods.length : 0
-      await this.addClass(clazz)
+      eaClass.url = file.url
+      eaClass.nom = eaClass.methods ? eaClass.methods.length : 0
+      classNames.push(eaClass.name)
+      await this.addClass(eaClass)
+    }
+    
+    var allClasses = await this.db.classes.where({url: eaClass.url}).toArray()
+    
+    // deleted obsolete classes
+    var obsoleteClasses = allClasses.filter(ea => !classNames.includes(ea.name))
+    for(let eaClass of obsoleteClasses) {
+     await this.db.classes.where({name: eaClass.name, url: eaClass.url}).delete() 
     }
   } 
   

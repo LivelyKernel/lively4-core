@@ -7,9 +7,9 @@ export default function foo(a) {
 }
 
 
-class Foo5 {
+class Foo {
   
-  bar2 () {
+  bar () {
     
   }
   
@@ -17,7 +17,7 @@ class Foo5 {
     
   }
    
-  m10() {
+  m11() {
     
   }
   
