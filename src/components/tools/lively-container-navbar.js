@@ -310,11 +310,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   
-  scrollToItem(element) {
+  scrollToItem(element, list = this.get("#navbar")) {
     if (element) {
-      var list = this.get("#navbar")
       var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
-      this.get("#navbar").scrollTo(0, relativeY)
+      list.scrollTo(0, relativeY)
     }
   }
   
@@ -757,10 +756,12 @@ export default class LivelyContainerNavbar extends Morph {
       var item = this.createDetailsItem(name)
       var methodList = <ul></ul>
       item.appendChild(methodList)
+      item.data = classInfo
       classInfo.methods.forEach(eaMethodInfo => {
         var methodItem = this.createDetailsItem(eaMethodInfo.name)
         
         methodItem.classList.add("subitem");
+        methodItem.data = eaMethodInfo
         methodList.appendChild(methodItem)
       }) 
       sublist.appendChild(item)
@@ -1040,7 +1041,7 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()    
     var startItem = this.getCursorItem()
-
+    
     if (!startItem) return
     if (direction == "down") {
       var nextItem = this.nextDownItem(startItem)
@@ -1134,11 +1135,20 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
 
+  
+  get detailItems() {
+    return Array.from(this.get("#details").querySelectorAll("li"));
+  }
+  
+  get fileItems() {
+    return Array.from(this.get("#navbar").querySelectorAll("li"));
+  }
+  
   get items() {
     if(this.navigateColumn == "details") {
-      return Array.from(this.get("#details").querySelectorAll("li"));
+      return this.detailItems
     } else {
-      return Array.from(this.get("#navbar").querySelectorAll("li"));
+      return this.fileItems
     }
     
   }
@@ -1239,6 +1249,54 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
 
+  onDetailsContentCursorActivity(editor, start, end) {
+    
+    
+    if (lively.activeElement() == this.get("#details")) return
+    
+    var startIndex = editor.indexFromPos(start)
+    var endIndex = editor.indexFromPos(end)
+    
+    
+    
+    this.resetCursor()
+    this.detailItems.forEach(ea => ea.classList.remove("selected"))
+    
+    var selectedDetails = []
+    
+    /* Example
+        1
+        2   
+        3 M1
+        4 M1
+        5 M2
+        6 M2 S start
+        7 M3 S
+        8 M3 S
+        9    S end
+    */
+    
+    
+    this.detailItems.forEach(ea => {
+      if( !ea.data ) return;
+      if (ea.data.start < startIndex && startIndex < ea.data.end ) {
+        this.cursorDetailsItem  = ea
+        this.scrollToItem(ea, this.get("#details"))
+        selectedDetails.push(ea)
+      }
+      
+      if (ea.data.end < startIndex) return;
+      if (ea.data.start > endIndex) return;
+        selectedDetails.push(ea)
+      
+    })
+    
+    selectedDetails.forEach(ea => ea.classList.add("selected"))
+    
+    // lively.notify("start" + startIndex)
+    
+  }
+  
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"

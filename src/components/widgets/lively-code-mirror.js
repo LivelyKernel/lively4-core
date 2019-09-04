@@ -226,6 +226,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
     editor.on("change", (() => this.checkSyntax()).debounce(500))
 
+    
+    editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
+    
 		// apply attributes
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));
 
@@ -1474,6 +1477,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     return  true // workspaces should be treated carefully
    }
 
+  onCursorActivity() {
+    var container = lively.query(this, "lively-container")
+    if (!container) return;
+    var navbar = lively.query(this, "lively-container-navbar")
+    if (!navbar) return;
+      navbar.onDetailsContentCursorActivity(this.editor, 
+        this.editor.getCursor("start"), this.editor.getCursor("end"))
+    }
 
 }
 
