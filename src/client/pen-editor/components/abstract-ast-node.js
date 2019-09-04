@@ -301,15 +301,10 @@ export default class AbstractAstNode extends Morph {
   set astNode(value) { return this._node = value; }
 
   addNodeStylingInfo(path) {
-    var depth = 0;
+    let depth = -1;
     path.find(p => {
-      if (p.parentPath && p.scope !== p.parentPath.scope) {
-        return true;
-        
-      } else {
-        (depth++);
-        return false;
-      }
+      depth++;
+      return p.parentPath && p.scope !== p.parentPath.scope;
     });
     this.setAttribute('ast-node-scope', SCOPE_MAP.getOrCreate(path.scope, () => NEXT_SCOPE_ID++ % 20));
     this.setAttribute('ast-node-depth', depth);
