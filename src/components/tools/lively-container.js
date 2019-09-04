@@ -1552,7 +1552,6 @@ export default class Container extends Morph {
     // lively.notify("navigate to " + name);
     var editor = this.getLivelyCodeMirror()
     if (editor) {
-      debugger
       editor.find(name);
     } else {      
       var baseURL = this.getURL().toString().replace(/\#.*/,"")

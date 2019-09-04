@@ -178,7 +178,7 @@ function instrumentFetch() {
     if (self.lively4fetchHandlers) {
       // anybody insterested when it finished
       for(var handler of self.lively4fetchHandlers) {
-        handler.finsihed && handler.finsihed(request, options)
+        handler.finsihed && await handler.finsihed(request, options)
       }
     }
     return result
