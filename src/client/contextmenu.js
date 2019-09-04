@@ -689,6 +689,7 @@ export default class ContextMenu {
   }
   
   static openIn(container, evt, target, worldContext, optItems) {
+    debugger
     this.hide();
     this.firstEvent = evt
 

@@ -10,6 +10,8 @@ import moment from "src/external/moment.js";
 import FileCache from "src/client/fileindex.js"
 import Strings from "src/client/strings.js"
 
+import FileIndex from "src/client/fileindex.js"
+
 
 const FILTER_KEY_BLACKLIST = [
   'Control', 'Shift', 'Capslock', 'Alt',
@@ -67,7 +69,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   resetCursor() {
-    this.cursorItem = null
+    this.setCursorItem(null)
     this.cursorDetailsItem = null
     this.navigateColumn = "files"
   }
@@ -545,6 +547,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
     this.updateFilter("")
     this.focusFiles()
+    this.setCursorItem(null)
   }
   
   async onItemDblClick(link, evt) {
@@ -691,7 +694,7 @@ export default class LivelyContainerNavbar extends Morph {
       });
   }
   
-  showSublistJS(subList) {
+  showSublistJS_OLD(subList) {
     if (!this.sourceContent || !this.sourceContent.split) {
       // undefined or Blob
       return;
@@ -730,6 +733,39 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
   
+  createDetailsItem(name) {
+    var item = <li class="link">{name}</li>
+    item.name = name
+    item.onclick = (evt) => {
+      this.onDetailsItemClick(item, evt)
+    }
+    return item
+  }
+   
+  async showSublistJS(subList) {
+    
+    var classInfos = [];
+    
+    await FileIndex.current().db.classes.where("url").equals(this.url).each(aClassInfo => {
+        classInfos.push(aClassInfo)
+    })
+   
+    
+    classInfos.forEach((classInfo) => {
+      let name = classInfo.name;
+      var item = this.createDetailsItem(name)
+      var methodList = <ul></ul>
+      item.appendChild(methodList)
+      classInfo.methods.forEach(eaMethodInfo => {
+        var methodItem = this.createDetailsItem(eaMethodInfo.name)
+        
+        methodItem.classList.add("subitem");
+        methodList.appendChild(methodItem)
+      }) 
+      subList.appendChild(item)
+    })
+  }
+
   selectSublistItem(element, subList) {
     for(var ea of subList.querySelectorAll(".selected")) {
       ea.classList.remove("selected")
@@ -1023,13 +1059,13 @@ export default class LivelyContainerNavbar extends Morph {
       startItem.classList.remove("cursor")
     }
     if (nextItem) {
-        nextItem.classList.add("cursor")
-        if (this.navigateColumn == "details") {
-          this.cursorDetailsItem = nextItem  
-        } else {
-          this.cursorItem = nextItem  
-        }
-      }
+      nextItem.classList.add("cursor")
+    }
+    if (this.navigateColumn == "details") {
+      this.cursorDetailsItem = nextItem  
+    } else {
+      this.cursorItem = nextItem  
+    }
   }
   
   focusDetails() {
