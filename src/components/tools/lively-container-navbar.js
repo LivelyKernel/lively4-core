@@ -522,8 +522,6 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async onItemClick(link, evt) {
-    this.focus()
-    
     if (evt.type == "click") {
       this.updateFilter("")
     }
@@ -546,8 +544,9 @@ export default class LivelyContainerNavbar extends Morph {
           if (container) await container.editFile();
         } 
         await this.followPath(link.href);
-      
       }
+      
+      
     }
     this.updateFilter("")
     this.focusFiles()
@@ -1055,8 +1054,8 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       nextItem = this.nextUpItem(startItem)
     }
-    this.setCursorItem(nextItem)
     if(nextItem) {
+      this.setCursorItem(nextItem)
       if (nextItem.classList.contains("directory")) {
         // just navigate
       } else {
@@ -1067,9 +1066,26 @@ export default class LivelyContainerNavbar extends Morph {
           // var nextLink = this.cursorItem.querySelector("a")      
           // this.onItemClick(nextLink, evt)
         }
-      }      
+      } 
+      this.scrollToItem(nextItem)
     }
   }
+  
+  scrollToItem(item) {
+    if (!item) return
+    var scroll = this.rootList()
+    var y = item.offsetTop
+    var h = item.offsetHeight
+    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
+    if (y + h > (scroll.scrollTop + scroll.offsetHeight)) {
+      // scroll down
+      scroll.scrollTop = y - scroll.offsetHeight + h
+    } else if (y < (scroll.scrollTop)) {
+      // scroll up
+      scroll.scrollTop = y
+    }    
+  }
+  
   
   getCursorItem() {
     if (this.cursorItem && !this.cursorItem.parentElement) {
