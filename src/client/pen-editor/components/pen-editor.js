@@ -576,10 +576,16 @@ ${identifierStyles.join('\n\r')}`;
       _.range(20).forEach(depth => {
         if (depth === 0) {
           color = d3.hsl(
-            Math.random() * 360,
-            Math.random() * saturationDiff + saturationMin,
-            Math.random() * lightingDiff + lightingMin
+           Math.random() * 360,
+           Math.random() * saturationDiff + saturationMin,
+           Math.random() * lightingDiff + lightingMin
           );
+          // #TODO: use hcl (https://github.com/d3/d3-color)
+          // color = d3.hcl(
+          //  Math.random() * 360, // [0,360]
+          //  20, // [0,230]
+          //  90 // [0,100]
+          // );
         } else {
           color = color.brighter(brighter);
         }
