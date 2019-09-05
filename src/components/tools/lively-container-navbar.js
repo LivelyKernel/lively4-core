@@ -150,7 +150,7 @@ export default class LivelyContainerNavbar extends Morph {
     })
     this.update()
     this.updateOtherNavbars(this.getRoot(newurl))
-    console.log("dropped " + newurl)
+    // console.log("dropped " + newurl)
   }
   
   async copyFromURL(data) {
@@ -226,7 +226,7 @@ export default class LivelyContainerNavbar extends Morph {
     var content = this.sourceContent
     
     for(let ea of urls) {
-      console.log("show " + ea)
+      // console.log("show " + ea)
       await this.show(ea, "", urls[0])  
       
       await lively.sleep(50)
@@ -263,7 +263,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async show(targetURL, sourceContent, contextURL, force=false) {
-    console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
@@ -309,13 +309,7 @@ export default class LivelyContainerNavbar extends Morph {
     }  
   }
   
-  
-  scrollToItem(element, list = this.get("#navbar")) {
-    if (element) {
-      var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
-      list.scrollTo(0, relativeY)
-    }
-  }
+
   
   
   async fetchStats(targetURL) {
@@ -533,10 +527,10 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      if (this.isSelected(item)) {
+      var sublist = item.querySelector("ul")
+      if (this.isSelected(item) || (sublist && evt.code == "Enter")) {
         this.currentDir = null
         item.classList.remove("selected")
-        var sublist = item.querySelector("ul")
         if (sublist) sublist.remove()
       } else {
         if (evt.shiftKey) {
@@ -856,7 +850,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async showSublist(force) {
-    console.log("show sublist " + this.url)
+    // console.log("show sublist " + this.url)
      
     if (!this.targetItem) return 
     var sublist = this.targetItem.querySelector("ul")
@@ -966,6 +960,7 @@ export default class LivelyContainerNavbar extends Morph {
     evt.stopPropagation()
     evt.preventDefault()
     
+    var item = this.cursorItem || this.targetItem
     if (this.navigateColumn == "details") {
       if (this.cursorDetailsItem) {
         if (evt.shiftKey) {
@@ -975,33 +970,44 @@ export default class LivelyContainerNavbar extends Morph {
           }
         } 
         await this.onDetailsItemClick(this.cursorDetailsItem, evt)
-        // this.get("#details").focus() 
-        debugger
         this.onRightDown(evt)
       }
-    } else if (this.cursorItem ) {
-      var nextLink = this.cursorItem.querySelector("a")
-      this.onItemClick(nextLink, evt) 
+    } else if (item) {
+      var nextLink = item.querySelector("a")
+      await this.onItemClick(nextLink, evt) 
+      
+      this.setCursorItem(item)
+      
+//       if (this.cursorItem) { // check again
+//         if (this.cursorItem.classList.contains("directory")) {
+        
+//         } else {
+//           this.onRightDown(evt)
+//         }
+//       }
     }
+  }
+  isValidItem(element) {
+    return !element.classList.contains("filtered-out")
   }
   
   nextValidSibling(item) {
     if (!item) return;
     var element = item.nextElementSibling
     if (!element) return;
-    if (!element.classList.contains("filtered-out")) {
+    if (this.isValidItem(element)) {
       return element
     } else {
       return this.nextValidSibling(element)
     }
   }
-  
+
   prevValidSibling(item) {
     
     if (!item) return;
     var element = item.previousElementSibling
     if (!element) return;
-    if (!element.classList.contains("filtered-out")) {
+    if (this.isValidItem(element)) {
       return element
     } else {
       return this.prevValidSibling(element)
@@ -1039,8 +1045,11 @@ export default class LivelyContainerNavbar extends Morph {
     } else if (item.parentElement && item.parentElement.parentElement &&
         item.parentElement.localName == "ul" && 
         item.parentElement.parentElement.localName == "li") {
-      
-      return this.nextUpItem(item.parentElement.parentElement)
+      var parentItem = item.parentElement.parentElement
+      if (this.isValidItem(parentItem)) 
+        return parentItem
+      else
+        return this.nextUpItem(parentItem)
     } 
   }
 
@@ -1071,16 +1080,35 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-  scrollToItem(item) {
+    
+  // scrollToItem(element, list = this.get("#navbar")) {
+  //   if (element) {
+  //     var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
+  //     list.scrollTo(0, relativeY)
+  //   }
+  // }
+  
+  relativeOffset(item, anyParent) {
+    return item.offsetTop - anyParent.offsetTop
+    // var nextParent = item.parentElement
+    // if (anyParent === nextParent) {
+    //   return item.offsetTop
+    // } else {
+    //   return item.offsetTop + this.relativeOffset(nextParent, anyParent) 
+    // }
+    
+  }
+  
+  
+  scrollToItem(item, scroll = this.rootList()) {
     if (!item) return
-    var scroll = this.rootList()
-    var y = item.offsetTop
+    var y = this.relativeOffset(item, scroll)
     var h = item.offsetHeight
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
     if (y + h > (scroll.scrollTop + scroll.offsetHeight)) {
       // scroll down
       scroll.scrollTop = y - scroll.offsetHeight + h
-    } else if (y < (scroll.scrollTop)) {
+    } else if ( (y ) < (scroll.scrollTop)) {
       // scroll up
       scroll.scrollTop = y
     }    
@@ -1138,16 +1166,24 @@ export default class LivelyContainerNavbar extends Morph {
   get filter() { return this._filter = this._filter || ''; }
   set filter(value) { return this._filter = value; }
   
+  
   onKeyDown(evt) {
     if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
 
+    if(evt.key == "PageUp" || evt.key == "PageDown") {
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+    
     
     // lively.notify("key: " + evt.key)
     
     if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
       this.filter = '';
     } else {
-      this.filter += evt.key;
+      if (evt.key.length == 1) {
+        this.filter += evt.key;
+      }
     }
     
     this.updateFilter()
@@ -1223,10 +1259,14 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
   
-  getElementByURL(url) {
-    return this.items.find(ea => ea.url == url && ea.textContent !== "../")
+  baseURL(url) {
+    return url.replace(/[#?].*/,"")
   }
   
+  getElementByURL(url) {
+    url = this.baseURL(url)
+    return this.items.find(ea =>  this.baseURL(ea.url)== url && ea.textContent !== "../")
+  }
   
   sortIntoAfter(sibling, element) {
     
@@ -1244,13 +1284,14 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onObserveURLChange(url, method) {
     try {
+      url = this.baseURL(url)
       if (url.startsWith(this.currentDir)) {
-        console.log("[navbar] onObserveURLChange " + url)
+        // console.log("[navbar] onObserveURLChange " + url)
         var element = this.getElementByURL(url)
         if (element) {
           if (method == "PUT") {
             this.hightlightElement(element)
-            if (this.url == url) {
+            if (this.baseURL(this.url) == url) {
               await this.showSublist(true) 
             }
           } else if(method == "DELETE") {
@@ -1292,9 +1333,7 @@ export default class LivelyContainerNavbar extends Morph {
     var startIndex = editor.indexFromPos(start)
     var endIndex = editor.indexFromPos(end)
     
-    
-    
-    this.resetCursor()
+    this.cursorDetailsItem = null
     this.detailItems.forEach(ea => ea.classList.remove("selected"))
     
     var selectedDetails = []

@@ -27,6 +27,10 @@ const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, bab
 const FETCH_TIMEOUT = 5000
 
 
+function getBaseURL(url) {
+  return url.replace(/[#?].*/,"")
+}
+
 export default class FileIndex {
 
   static current() {
@@ -514,7 +518,9 @@ export default class FileIndex {
     }
   }
 
+  
   async updateFile(url) {
+    url = getBaseURL(url)
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS"
