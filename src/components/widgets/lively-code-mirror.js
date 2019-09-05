@@ -1471,6 +1471,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
     })
   }
+  
+  scrollToLine(line) { 
+    this.editor.scrollTo(null, this.editor.heightAtLine(line - 1, "local"));
+  }
 
   unsavedChanges() {
     if (this.editor.getValue() === "") return false

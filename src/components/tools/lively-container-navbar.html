@@ -153,20 +153,26 @@
       overflow-x: hidden;
       overscroll-behavior: contain; 
     }
+
     
-   
     .filtered-out {
-        opacity: 0.2
+      height: 0px;
+    }
+    .filtered-out > a {
+        color: rgba(0,0,0,0.2); 
+        font-size: 0pt;
+
     }
     
     #filter-hint {
-      color: gray;
-      background: rgba(255,255,255,0.8)
-      
+      color: black;
+      background: rgba(255,255,255,0.9);
     }
     #filter-container{
       height: 0px;
+      left: 20px;
       overflow: visible;
+      z-index: 100000000;
     }
     
   </style>
@@ -179,12 +185,8 @@
     <div id="filter-hint"></div>
   </div>
   <div id="row">
-  <ul id="navbar">
-  </ul>
-  <!--
-    <lively-separator></lively-separator>
-  -->
-  <div id="details"></div>
+    <ul id="navbar"></ul>
+    <div id="details"></div>
   </div>
   <slot></slot>
 </template>

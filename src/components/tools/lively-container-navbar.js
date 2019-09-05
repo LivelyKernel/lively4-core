@@ -416,8 +416,8 @@ export default class LivelyContainerNavbar extends Morph {
   createItem(ea) {
     var element = document.createElement("li");
     var link = document.createElement("a");
-
     var name = ea.name;
+    element.name = ea.name
     var icon;
     if (ea.name.match(/\.md$/)) {
       icon = '<i class="fa fa-file-text-o"></i>';
@@ -523,6 +523,11 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onItemClick(link, evt) {
     this.focus()
+    
+    if (evt.type == "click") {
+      this.updateFilter("")
+    }
+    
     if (evt.shiftKey && evt.code != "Enter") {
       link.parentElement.classList.toggle("selected")
       this.lastSelection = this.getSelection()     
@@ -558,11 +563,17 @@ export default class LivelyContainerNavbar extends Morph {
   async onDetailsItemClick(item, evt) {
     evt.stopPropagation()
     evt.preventDefault()
+    
+    if (evt.type == "click") {
+      this.updateFilter("")
+    }
+    
+    
     this.cursorDetailsItem = item
     this.navigateColumn = "details"
     var sublist = this.get("#details").querySelector("ul")
     this.selectSublistItem(item, sublist)
-    await this.navigateToName(item.name);
+    await this.navigateToName(item.name, item.data);
     this.get("#details").focus()
   }
 
@@ -643,7 +654,7 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify("please implement newfile()")
   }
   
-  navigateToName(url) {
+  navigateToName(url, data) {
     lively.notify(`please implement navigateToName(${url})`)
   }
 
@@ -683,8 +694,7 @@ export default class LivelyContainerNavbar extends Morph {
       }
       // fill navbar with list of script
       Array.from(template.content.querySelectorAll("script")).forEach(ea => {
-        var element = document.createElement("li");
-        element.innerHTML = ea.getAttribute('data-name');
+        var element = this.createDetailsItem(ea.getAttribute('data-name'));
         element.classList.add("subitem");
         
         element.name = `data-name="${ea.getAttribute('data-name')}"`
@@ -735,11 +745,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   createDetailsItem(name) {
-    var item = <li class="link">{name}</li>
+    var item = <li class="link"><a click={evt => this.onDetailsItemClick(item, evt)}>{name}</a></li>
     item.name = name
-    item.onclick = (evt) => {
-      this.onDetailsItemClick(item, evt)
-    }
     return item
   }
    
@@ -799,8 +806,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
     _.keys(links).forEach( name => {
       var item = links[name];
-      var element = document.createElement("li");
-      element.textContent = this.clearNameMD(name)
+      var element = this.createDetailsItem(this.clearNameMD(name));;
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
@@ -969,8 +975,10 @@ export default class LivelyContainerNavbar extends Morph {
             await container.editFile()
           }
         } 
-        this.onDetailsItemClick(this.cursorDetailsItem, evt)
-        this.get("#details").focus()  
+        await this.onDetailsItemClick(this.cursorDetailsItem, evt)
+        // this.get("#details").focus() 
+        debugger
+        this.onRightDown(evt)
       }
     } else if (this.cursorItem ) {
       var nextLink = this.cursorItem.querySelector("a")
@@ -1034,14 +1042,13 @@ export default class LivelyContainerNavbar extends Morph {
         item.parentElement.parentElement.localName == "li") {
       
       return this.nextUpItem(item.parentElement.parentElement)
-    }
+    } 
   }
 
   navigateItem(direction, evt) {
     evt.stopPropagation()
     evt.preventDefault()    
     var startItem = this.getCursorItem()
-    
     if (!startItem) return
     if (direction == "down") {
       var nextItem = this.nextDownItem(startItem)
@@ -1102,6 +1109,14 @@ export default class LivelyContainerNavbar extends Morph {
     this.get("#navbar").focus()
   }
   
+  rootList() {
+    if (this.navigateColumn == "details") {
+      return this.get("#details")
+    } else {
+      return this.get("#navbar")
+    }
+  }
+
   /* Copied from lively-menu */
   // lazy filter property
   get filter() { return this._filter = this._filter || ''; }
@@ -1110,6 +1125,7 @@ export default class LivelyContainerNavbar extends Morph {
   onKeyDown(evt) {
     if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
 
+    
     // lively.notify("key: " + evt.key)
     
     if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
@@ -1123,7 +1139,10 @@ export default class LivelyContainerNavbar extends Morph {
   
   updateFilter(filter=this.filter) {
     this.filter = filter
+    
     this.get('#filter-hint').innerHTML = this.filter;
+    lively.setGlobalPosition(this.get('#filter-hint'), lively.getGlobalPosition(this.rootList()))
+    
     
     // lively.warn(evt.key, this.filter)
     
@@ -1155,8 +1174,8 @@ export default class LivelyContainerNavbar extends Morph {
   
   matchFilter(item) {
     if (this.filter.length == 0) return true;
-    if(!item ) { return false; }
-    return item.textContent.toLowerCase().includes(this.filter.toLowerCase());
+    if(!item || !item.name ) { return false; }
+    return (item.name + "").toLowerCase().includes(this.filter.toLowerCase());
   }
   
   get matchingItems() {
@@ -1314,7 +1333,7 @@ if (self.lively4fetchHandlers) {
     isNavbarHandler: true,
     handle(request, options) {
       // do nothing
-    },
+    }, 
     async finsihed(request, options) {
       var url = (request.url || request).toString()
       var method = "GET"
