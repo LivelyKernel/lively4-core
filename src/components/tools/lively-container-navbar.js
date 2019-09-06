@@ -668,7 +668,6 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async followPath(url, lastPath) {
-    debugger
     var resp = await fetch(url)
     var content = ""
     var contentType = resp.headers.get("content-type")
@@ -976,8 +975,10 @@ export default class LivelyContainerNavbar extends Morph {
       evt.preventDefault()
     }
     
-    
-    // lively.notify("key: " + evt.key)
+    if (evt.altKey && evt.key == "Backspace") {
+      return this.onLeftDown(evt)
+    }
+     
     
     if(['Backspace', 'Delete', 'Escape'].includes(evt.key)) {
       this.filter = '';
@@ -989,7 +990,7 @@ export default class LivelyContainerNavbar extends Morph {
     
     this.updateFilter()
   }
-  
+      
   isValidItem(element) {
     return !element.classList.contains("filtered-out")
   }
@@ -1247,7 +1248,9 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   baseURL(url) {
-    return url.replace(/[#?].*/,"")
+    if (url) {
+      return url.replace(/[#?].*/,"")
+    }
   }
   
   getElementByURL(url) {
