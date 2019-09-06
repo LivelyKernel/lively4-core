@@ -13,6 +13,13 @@ class Foo5 {
     
   }
   
+  get blue() {
+    
+  }
+  
+  set blue(b) {
+    
+  }
   /*MD
   # Here come methods
   
@@ -32,8 +39,13 @@ class Foo5 {
   
   
   MD*/
+  // #private
+  dosomthing() {
+    
+  }
   
-  m2() {
+  
+  static m2() {
     
   }
   

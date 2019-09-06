@@ -45,8 +45,17 @@ describe('saveAsPNG', () => {
   })
 ```
 
-## Navbar now support Mardown in JS Details
+## #Navbar now support Markdown in JS Details
+
+Some foobar test file:
 
 ![](markdown_in_js_details.png)
+
+And the emerging structure of the navbar component js file itself.
+
+![](lively_contrainer_details.png)
+
+It is Friday 20:40, Jazz is playing, I had much fun, but I should go home now!
+
 
 

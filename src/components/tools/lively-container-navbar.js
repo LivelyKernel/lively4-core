@@ -20,6 +20,10 @@ const FILTER_KEY_BLACKLIST = [
 ];
 
 export default class LivelyContainerNavbar extends Morph {
+  
+  /* # Base Component */
+  
+  // #important
   async initialize() {
     lively.html.registerKeys(this);
     lively.html.registerKeys(this.get("#navbar"));
@@ -39,11 +43,37 @@ export default class LivelyContainerNavbar extends Morph {
     }, false);
   }
   
+  // #important 
+  async update() {
+    
+    var urls = this.targetItem ? _.uniq(lively.allParents(this.targetItem)
+      .reverse()
+      .map(ea => ea.url)
+      .filter(ea => ea)) : []
+    var url = this.url
+    var content = this.sourceContent
+    
+    for(let ea of urls) {
+      // console.log("show " + ea)
+      await this.show(ea, "", urls[0])  
+      
+      await lively.sleep(50)
+    }
+    // await lively.sleep(1000)
+
+    await this.show(url, content, urls[0])  
+
+  }
+  
+  
   clear(parentElement=this.get("#navbar")) {
     parentElement.innerHTML = ""
     this.updateFilter("")
   }
   
+  /*MD # #DragAndDrop #Files  MD*/
+  
+  // #private
   async dragFilesAsZip(urls, evt) {
     // working around issue https://bugs.chromium.org/p/chromium/issues/detail?id=438479
     // to achieve https://html.spec.whatwg.org/multipage/dnd.html#dom-datatransferitemlist-add
@@ -149,7 +179,6 @@ export default class LivelyContainerNavbar extends Morph {
       body: data
     })
     this.update()
-    this.updateOtherNavbars(this.getRoot(newurl))
     // console.log("dropped " + newurl)
   }
   
@@ -186,9 +215,6 @@ export default class LivelyContainerNavbar extends Morph {
             method: "PUT",
             body: content
           })
-          this.updateOtherNavbars(this.getRoot(fromurl))
-          this.updateOtherNavbars(this.getRoot(newurl))
-
           lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
         }
         this.show(newurl, content)
@@ -196,13 +222,7 @@ export default class LivelyContainerNavbar extends Morph {
     }  
   }
   
-  updateOtherNavbars(url) {  
-    lively.queryAll(document.body, "lively-container-navbar").forEach( ea => {
-      if (ea.getRoot() == url) {
-        ea.update()
-      }
-    })
-  }
+  /*MD # Getters/Setters MD*/
   
   getRoot(url) {
     url = url || this.url;
@@ -215,28 +235,7 @@ export default class LivelyContainerNavbar extends Morph {
     return url.replace(/.*\//,"")
     // return url.replace(/\.l4d\/(index\.md)?$/,".l4d").replace(/.*\//,"")
   }
-  
-  async update() {
-    
-    var urls = this.targetItem ? _.uniq(lively.allParents(this.targetItem)
-      .reverse()
-      .map(ea => ea.url)
-      .filter(ea => ea)) : []
-    var url = this.url
-    var content = this.sourceContent
-    
-    for(let ea of urls) {
-      // console.log("show " + ea)
-      await this.show(ea, "", urls[0])  
-      
-      await lively.sleep(50)
-    }
-    // await lively.sleep(1000)
 
-    await this.show(url, content, urls[0])  
-
-  }
-  
   getSelectedItems() {
     return this.shadowRoot.querySelectorAll(".selected")
   }
@@ -245,14 +244,17 @@ export default class LivelyContainerNavbar extends Morph {
     return _.map(this.shadowRoot.querySelectorAll(".selected a"), ea => ea.href)
   }
   
+  getRootElement() {
+    return this.get("#navbar")
+  }
+  
+  /*MD # API MD*/
+  
   selectItem(item) {
     this.get("#navbar").querySelectorAll(".selected").forEach(ea => ea.classList.remove("selected"))
     item.classList.add("selected");      
   }
   
-  getRootElement() {
-    return this.get("#navbar")
-  }
   
   findItem(url) {
     return _.find(this.getRootElement().querySelectorAll("li"), ea => {
@@ -262,6 +264,7 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
 
+  // #important #public 
   async show(targetURL, sourceContent, contextURL, force=false) {
     // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
@@ -503,6 +506,8 @@ export default class LivelyContainerNavbar extends Morph {
     return item.querySelector(":scope > a")
   }
   
+  /*MD # Testing MD*/
+  
   isDirectory(item) {
     if (!item) return false
     var link = this.getLink(item)
@@ -521,7 +526,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   /*MD # Selection Events MD*/
-
+  // #important
   async onItemClick(link, evt) {
     if (link.localName == "li") {
       link = link.querySelector("a") // if someone passed the item and not the link
@@ -565,6 +570,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.focusFiles()
   }
   
+  // #important
   async onDetailsItemClick(item, evt) {
     evt.stopPropagation()
     evt.preventDefault()
@@ -572,8 +578,6 @@ export default class LivelyContainerNavbar extends Morph {
     if (evt.type == "click") {
       this.updateFilter("")
     }
-    
-    
     this.cursorDetailsItem = item
     this.navigateColumn = "details"
     var sublist = this.get("#details").querySelector("ul")
@@ -582,12 +586,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.get("#details").focus()
   }
 
-  async editWithSyvis (url) {
-    const editor = await components.createComponent('syvis-editor');
-    await editor.loadUrl(url);
-    await components.openInWindow(editor);
-  }
-
+  // #important
   onContextMenu(evt, otherUrl=this.getRoot()) {
     lively.notify("other" + otherUrl)
     
@@ -642,8 +641,25 @@ export default class LivelyContainerNavbar extends Morph {
     menu.openIn(document.body, evt, this)
   }
   
+  // #private
+  async convertFileToBundle(url) {
+    // var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/2018-08-17.md"
+    if (!await lively.files.isFile(url)) {
+      lively.notify("Converion failed: " + url + " is no file!")
+      return
+    }
+    var contents = await fetch(url).then(r => r.text());
+    await fetch(url, {method: 'DELETE'})
+    
+    await fetch(url + "/", {method: 'MKCOL'});
+    var newURL = url + "/" + "index.md"
+    await fetch(newURL, {method: 'PUT', body: contents});
+    this.followPath(newURL);
+  }
+  
+  
   /*
-   * add url to local file index rember to search there  
+   * #private add url to local file index rember to search there  
    */
   addSearchRoot(url) {
     var roots = lively.preferences.get("ExtraSearchRoots")
@@ -652,6 +668,13 @@ export default class LivelyContainerNavbar extends Morph {
     lively.preferences.set("ExtraSearchRoots", roots)
     lively.notify("Current Search Roots:", roots)
   }
+  
+  /*MD 
+  # Abstract Public Interface 
+  
+  Please override/implement the following methods ... in `lively-container`
+  
+  MD*/
   
   deleteFile(url, selectedURLs) {
     lively.notify("please implement deleteFile()")
@@ -681,28 +704,33 @@ export default class LivelyContainerNavbar extends Morph {
     this.show(new URL(url), content, this.contextURL)
   }
 
-  async convertFileToBundle(url) {
-    // var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/2018-08-17.md"
-    if (!await lively.files.isFile(url)) {
-      lively.notify("Converion failed: " + url + " is no file!")
-      return
-    }
-    var contents = await fetch(url).then(r => r.text());
-    await fetch(url, {method: 'DELETE'})
-    
-    await fetch(url + "/", {method: 'MKCOL'});
-    var newURL = url + "/" + "index.md"
-    await fetch(newURL, {method: 'PUT', body: contents});
-    this.followPath(newURL);
-  }
+  
 
+  
+  /*MD # Details 
+  
+  - #TODO refactor "sublist" -> "details"
+  - maybe extract / separate `Files` and `Details`
+  
+  MD*/
+  
   createDetailsItem(name) {
     var item = <li class="link" click={evt => this.onDetailsItemClick(item, evt)}><a>{name}</a></li>
     item.name = name
+    
+    item.addEventListener('contextmenu', (evt) => {
+        if (!evt.shiftKey) {
+          this.onDetailsContextMenu(evt, item)
+          evt.stopPropagation();
+          evt.preventDefault();
+          return true;
+        }
+    }, false);
+    
     return item
   }
    
-  
+  // #private
   selectSublistItem(element, sublist) {
     for(var ea of sublist.querySelectorAll(".selected")) {
       ea.classList.remove("selected")
@@ -710,6 +738,7 @@ export default class LivelyContainerNavbar extends Morph {
     element.classList.add("selected")
   }
   
+  // #private
   clearNameMD(name) {
     return name
       .replace(/<.*?>/g, "")
@@ -719,10 +748,6 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/\n/g, "")
       .replace(/([ ,])#/g, "$1")
   }
-  /*MD
-  # Sublist
-  
-  MD*/
   async showSublist(force) {
     // console.log("show sublist " + this.url)
      
@@ -823,6 +848,7 @@ export default class LivelyContainerNavbar extends Morph {
     return links
   }
   
+  // #important
   showSublistMD(sublist) {
     // console.log("sublist md " + this.sourceContent.length)
     var links = this.simpleParseMD(this.sourceContent)
@@ -840,6 +866,7 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
   
+  // #JavaScript #important
   async showSublistJS(sublist) {
     var classInfos = [];
     
@@ -858,13 +885,16 @@ export default class LivelyContainerNavbar extends Morph {
       classItem.appendChild(methodList)
       classItem.data = classInfo
       classInfo.methods.forEach(eaMethodInfo => {
-        var methodItem = this.createDetailsItem(eaMethodInfo.name)
+        var name = eaMethodInfo.name
+        if (eaMethodInfo.static) {
+          name = `<span class="mod">static</span>` + name
+        }
+        var methodItem = this.createDetailsItem(name)
         var comments = eaMethodInfo.leadingComments || []
         comments.forEach(eaComment => {
           // special markdown tag
           var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
           if (m) {
-            debugger
             var markdownLinks = this.simpleParseMD(m[1])
             var key = _.keys(markdownLinks).first
             var item =  markdownLinks[key]
@@ -874,11 +904,14 @@ export default class LivelyContainerNavbar extends Morph {
               commentItem.classList.add("comment")
               commentItem.classList.add("subitem")
               commentItem.classList.add("level" + item.level);
-
               methodList.appendChild(commentItem)
             }
           } else {
             var tagItem = <span class="tag">{eaComment.value}</span>
+                
+            Strings.matchAllDo(/#([A-Za-z0-9]+)/g, eaComment.value, (hashTagMatch) => {
+              methodItem.classList.add(hashTagMatch) // #TODO, #Refactor, etc.. just for CSS 
+            })
             methodItem.appendChild(tagItem)
           }
            
@@ -919,6 +952,8 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
+  
+  /*MD ## Keyboard Navigation MD*/
   async onRightDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
@@ -1019,33 +1054,8 @@ export default class LivelyContainerNavbar extends Morph {
     
     this.updateFilter()
   }
-      
-  isValidItem(element) {
-    return !element.classList.contains("filtered-out")
-  }
   
-  nextValidSibling(item) {
-    if (!item) return;
-    var element = item.nextElementSibling
-    if (!element) return;
-    if (this.isValidItem(element)) {
-      return element
-    } else {
-      return this.nextValidSibling(element)
-    }
-  }
-
-  prevValidSibling(item) {
-    
-    if (!item) return;
-    var element = item.previousElementSibling
-    if (!element) return;
-    if (this.isValidItem(element)) {
-      return element
-    } else {
-      return this.prevValidSibling(element)
-    }
-  }
+  /*MD # Focus and Scrolling MD*/
   
   navigateItem(direction, evt) {
     evt.stopPropagation()
@@ -1073,6 +1083,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
 
+  // #private
   relativeOffset(item, anyParent) {
     return item.offsetTop - anyParent.offsetTop
     // var nextParent = item.parentElement
@@ -1083,7 +1094,6 @@ export default class LivelyContainerNavbar extends Morph {
     // }
     
   }
-  
   
   scrollToItem(item, scroll = this.rootList()) {
     if (!item) return
@@ -1243,17 +1253,44 @@ export default class LivelyContainerNavbar extends Morph {
     });
   }
   
+  
+  
+  /*MD ## Context Menu MD*/
+  
+  // #TODO do something useful here
+  onDetailsContextMenu(evt, item) {    
+    const menuElements = []
+    menuElements.push(...[
+      [`do nothing`, () => {lively.notify("I said nothing! really!")}],
+    ])
+    
+    if (item.data) {
+      menuElements.push([`inspect`, () => {lively.openInspector(item.data)}])
+    }
+    
+    const menu = new ContextMenu(this, menuElements)
+    menu.openIn(document.body, evt, this)
+  }
+  
+  /*MD
+  # Change Observer
+  
+  MD*/
+  
+  // #private
   baseURL(url) {
     if (url) {
       return url.replace(/[#?].*/,"")
     }
   }
   
+  // #private
   getElementByURL(url) {
     url = this.baseURL(url)
     return this.items.find(ea =>  this.baseURL(ea.url)== url && ea.textContent !== "../")
   }
   
+  // #private
   sortIntoAfter(sibling, element) {
     
     if (!sibling) return
@@ -1268,10 +1305,6 @@ export default class LivelyContainerNavbar extends Morph {
     
   }
   
-  /*MD
-  # Change Observer
-  
-  MD*/
   async onObserveURLChange(url, method) {
     try {
       url = this.baseURL(url)
