@@ -519,6 +519,8 @@ export default class LivelyContainerNavbar extends Morph {
     var sublist = item.querySelector("ul")
     return sublist && sublist.querySelector("li")
   }
+  
+  /*MD # Selection Events MD*/
 
   async onItemClick(link, evt) {
     if (link.localName == "li") {
@@ -786,7 +788,7 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-  
+  // #HTML
   showSublistHTML(sublist) {
     if (!this.sourceContent) return;
     var template =  lively.html.parseHTML(this.sourceContent).find(ea => ea.localName == "template");
@@ -807,6 +809,7 @@ export default class LivelyContainerNavbar extends Morph {
       });
   }
   
+  // #Markdown #private #Refactor 
   simpleParseMD(source) {
     if (!source) return {};
     let defRegEx = /(?:^|\n)( *(#+) ?(.*))/g;
@@ -863,9 +866,10 @@ export default class LivelyContainerNavbar extends Morph {
           if (m) {
             debugger
             var markdownLinks = this.simpleParseMD(m[1])
-            var item =  markdownLinks[_.keys(markdownLinks).first]
+            var key = _.keys(markdownLinks).first
+            var item =  markdownLinks[key]
             if (item) {
-              var commentItem = this.createDetailsItem(this.clearNameMD(item.name))  
+              var commentItem = this.createDetailsItem(this.clearNameMD(key))  
               commentItem.data = eaComment
               commentItem.classList.add("comment")
               commentItem.classList.add("subitem")
@@ -915,11 +919,6 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-  
-  
-  
-
-
   async onRightDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
@@ -1167,7 +1166,9 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
 
-  /* Copied from lively-menu */
+  /*MD # Filter 
+  Copied from lively-menu 
+  MD*/
   // lazy filter property
   get filter() { return this._filter = this._filter || ''; }
   set filter(value) { return this._filter = value; }
@@ -1267,6 +1268,10 @@ export default class LivelyContainerNavbar extends Morph {
     
   }
   
+  /*MD
+  # Change Observer
+  
+  MD*/
   async onObserveURLChange(url, method) {
     try {
       url = this.baseURL(url)
