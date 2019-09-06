@@ -1043,15 +1043,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.scrollToItem(nextItem)
     }
   }
-  
-    
-  // scrollToItem(element, list = this.get("#navbar")) {
-  //   if (element) {
-  //     var relativeY = lively.getGlobalPosition(element).y - lively.getGlobalPosition(list).y
-  //     list.scrollTo(0, relativeY)
-  //   }
-  // }
-  
+
   relativeOffset(item, anyParent) {
     return item.offsetTop - anyParent.offsetTop
     // var nextParent = item.parentElement
@@ -1066,9 +1058,22 @@ export default class LivelyContainerNavbar extends Morph {
   
   scrollToItem(item, scroll = this.rootList()) {
     if (!item) return
+    
+    var t = scroll.scrollTop 
     var y = this.relativeOffset(item, scroll)
     var h = item.offsetHeight
+    var b = scroll.scrollTop + scroll.offsetHeight
+    
+    // #Debug #Visualization
+    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, t - scroll.scrollTop))).style.backgroundColor = "blue" 
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
+    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, b - scroll.scrollTop))).style.backgroundColor = "green"
+    // console.log(`t: ${t} y: ${y} b: ${b}`)
+    
+    if (t < y && y < b) {
+      return // no need to scroll
+    }
+    
     if (y + h > (scroll.scrollTop + scroll.offsetHeight)) {
       // scroll down
       scroll.scrollTop = y - scroll.offsetHeight + h
@@ -1287,25 +1292,11 @@ export default class LivelyContainerNavbar extends Morph {
     this.detailItems.forEach(ea => ea.classList.remove("selected"))
     
     var selectedDetails = []
-    
-    /* Example
-        1
-        2   
-        3 M1
-        4 M1
-        5 M2
-        6 M2 S start
-        7 M3 S
-        8 M3 S
-        9    S end
-    */
-    
-    
+  
     this.detailItems.forEach(ea => {
       if( !ea.data ) return;
-      if (ea.data.start < startIndex && startIndex < ea.data.end ) {
+      if (ea.data.start <= startIndex && startIndex < ea.data.end ) {
         this.cursorDetailsItem  = ea
-        this.scrollToItem(ea, this.get("#details"))
         selectedDetails.push(ea)
       }
       
@@ -1315,7 +1306,10 @@ export default class LivelyContainerNavbar extends Morph {
       
     })
     
+    
+    
     selectedDetails.forEach(ea => ea.classList.add("selected"))
+    this.scrollToItem(this.cursorDetailsItem, this.get("#details")) // scroll only to the last selected cursor... 
     
     // lively.notify("start" + startIndex)
     
