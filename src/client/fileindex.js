@@ -132,7 +132,6 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
-    
     var classNames = []
     for (var eaClass of semantics.classes) {
       if (eaClass.superClassName && !eaClass.superClassUrl) {
@@ -462,6 +461,7 @@ export default class FileIndex {
           superClassName = (path.node.superClass) ? path.node.superClass.name : ''
           superClassUrl = importDeclarations.get(superClassName)
           let methods = []
+          
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
               if(item.type === "ClassMethod") {
@@ -472,9 +472,12 @@ export default class FileIndex {
                   kind: item.kind,
                   static: item.static,
                   end: item.end,
+                  leadingComments: item.leadingComments
                 }
                 methods.push(method)
               }
+              
+              
             })
           }
           clazz.methods = methods

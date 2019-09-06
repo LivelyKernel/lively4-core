@@ -807,20 +807,22 @@ export default class LivelyContainerNavbar extends Morph {
       });
   }
   
-  
-  
-  showSublistMD(sublist) {
-    // console.log("sublist md " + this.sourceContent.length)
-    if (!this.sourceContent) return;
-    let defRegEx = /(?:^|\n)((#+) ?(.*))/g;
+  simpleParseMD(source) {
+    if (!source) return {};
+    let defRegEx = /(?:^|\n)( *(#+) ?(.*))/g;
     let m;
     let links = {};
     let i=0;
-    while (m = defRegEx.exec(this.sourceContent)) {
+    while (m = defRegEx.exec(source)) {
       if (i++ > 1000) throw new Error("Error while showingNavbar " + this.url);
-
       links[m[3]] = {name: m[0], level: m[2].length};
     }
+    return links
+  }
+  
+  showSublistMD(sublist) {
+    // console.log("sublist md " + this.sourceContent.length)
+    var links = this.simpleParseMD(this.sourceContent)
     _.keys(links).forEach( name => {
       var item = links[name];
       var element = this.createDetailsItem(this.clearNameMD(name));;
@@ -844,18 +846,46 @@ export default class LivelyContainerNavbar extends Morph {
        
     classInfos.forEach((classInfo) => {
       let name = classInfo.name;
-      var item = this.createDetailsItem(name)
+      var classItem = this.createDetailsItem(name)
+      classItem.classList.add("class")
+      
+      classItem.classList.add("subitem");
+      classItem.classList.add("level1");
       var methodList = <ul></ul>
-      item.appendChild(methodList)
-      item.data = classInfo
+      classItem.appendChild(methodList)
+      classItem.data = classInfo
       classInfo.methods.forEach(eaMethodInfo => {
         var methodItem = this.createDetailsItem(eaMethodInfo.name)
-        
+        var comments = eaMethodInfo.leadingComments || []
+        comments.forEach(eaComment => {
+          // special markdown tag
+          var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
+          if (m) {
+            debugger
+            var markdownLinks = this.simpleParseMD(m[1])
+            var item =  markdownLinks[_.keys(markdownLinks).first]
+            if (item) {
+              var commentItem = this.createDetailsItem(this.clearNameMD(item.name))  
+              commentItem.data = eaComment
+              commentItem.classList.add("comment")
+              commentItem.classList.add("subitem")
+              commentItem.classList.add("level" + item.level);
+
+              methodList.appendChild(commentItem)
+            }
+          } else {
+            var tagItem = <span class="tag">{eaComment.value}</span>
+            methodItem.appendChild(tagItem)
+          }
+           
+        })
         methodItem.classList.add("subitem");
+        methodItem.classList.add("method")
+        methodItem.classList.add("level2");
         methodItem.data = eaMethodInfo
         methodList.appendChild(methodItem)
       }) 
-      sublist.appendChild(item)
+      sublist.appendChild(classItem)
     })
   }
 

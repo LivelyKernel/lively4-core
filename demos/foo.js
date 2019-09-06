@@ -13,11 +13,27 @@ class Foo5 {
     
   }
   
+  /*MD
+  # Here come methods
+  
+  
+  MD*/
   m5() {
     
   }
    
+  // #TagMe
   m11() {
+    
+  }
+  
+  /*MD
+  ## and other
+  
+  
+  MD*/
+  
+  m2() {
     
   }
   

@@ -45,4 +45,8 @@ describe('saveAsPNG', () => {
   })
 ```
 
+## Navbar now support Mardown in JS Details
+
+![](markdown_in_js_details.png)
+
 

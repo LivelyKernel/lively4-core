@@ -80,19 +80,19 @@
       color: gray;
     }
     
-    ul li.subitem.level1 {
+    ul li.subitem.level1 > a {
       padding-left: 15px;
       color: rgb(0, 78, 151);
       font-weight: bold;
       
     }
     
-    ul li.subitem.level2 {
+    ul li.subitem.level2 > a {
       padding-left: 25px;
       color: gray;
     }
     
-    ul li.subitem.level3 {
+    ul li.subitem.level3 > a {
       padding-left: 35px;
       color: lightgray
     }
@@ -103,6 +103,21 @@
       cursor: pointer
     }
 
+    ul li.class > a {
+      color: rgb(0, 78, 151); 
+    }
+        
+    
+    ul li.method .tag {
+      color: lightgray;
+      font-size: 8pt;
+    }
+    
+    ul li.comment  {
+       font-style: italic;
+    }
+
+    
     
     ul li .fa-folder {
       color: #e99a01;
@@ -126,8 +141,6 @@
       cursor: pointer
     }
 
-   
-    
     #row {
       display: flex;
       height: 100%;
