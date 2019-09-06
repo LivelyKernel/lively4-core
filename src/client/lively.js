@@ -849,6 +849,7 @@ export default class Lively {
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
     
+    this.addEventListener('lively', doc, 'keyup', function(evt){lively.keys.onKeyUp(evt)}, false);
     events.installHooks()
   }
 
