@@ -694,11 +694,8 @@ export default class LivelyContainerNavbar extends Morph {
     this.followPath(newURL);
   }
 
-  
-  
-  
   createDetailsItem(name) {
-    var item = <li class="link"><a click={evt => this.onDetailsItemClick(item, evt)}>{name}</a></li>
+    var item = <li class="link" click={evt => this.onDetailsItemClick(item, evt)}><a>{name}</a></li>
     item.name = name
     return item
   }
@@ -720,7 +717,10 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/\n/g, "")
       .replace(/([ ,])#/g, "$1")
   }
+  /*MD
+  # Sublist
   
+  MD*/
   async showSublist(force) {
     // console.log("show sublist " + this.url)
      
