@@ -521,6 +521,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async onItemClick(link, evt) {
+    if (link.localName == "li") {
+      link = link.querySelector("a") // if someone passed the item and not the link
+    }
+    
     if (evt.type == "click") {
       this.updateFilter("")
     }
@@ -916,12 +920,17 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
 
-  onRightDown(evt) {
+  async onRightDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
     
     this.updateFilter("")
     if (!this.navigateColumn || this.navigateColumn == "files") {
+      
+      if(this.cursorItem && this.targetItem !== this.cursorItem) {
+        await this.onItemClick(this.cursorItem,  evt)
+      }
+      
       this.navigateColumn = "details"
       var details = this.get("#details")
       details.focus()
