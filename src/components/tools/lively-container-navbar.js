@@ -69,9 +69,9 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   resetCursor() {
-    this.setCursorItem(null)
-    this.cursorDetailsItem = null
+    this.setCursorDetailsItem(null)
     this.navigateColumn = "files"
+    this.setCursorItem(null)
   }
   
   onItemDragStart(link, evt) {
@@ -515,6 +515,11 @@ export default class LivelyContainerNavbar extends Morph {
     return item.classList.contains("selected") || selectedChild
   }
   
+  hasSublist(item) {
+    var sublist = item.querySelector("ul")
+    return sublist && sublist.querySelector("li")
+  }
+
   async onItemClick(link, evt) {
     if (evt.type == "click") {
       this.updateFilter("")
@@ -527,10 +532,11 @@ export default class LivelyContainerNavbar extends Morph {
       this.lastSelection = []
       // collapse previousely expanded tree
       var item = link.parentElement
-      var sublist = item.querySelector("ul")
-      if (this.isSelected(item) || (sublist && evt.code == "Enter")) {
+      
+      if (this.isSelected(item) || this.hasSublist(item) && item== "Enter") { 
         this.currentDir = null
         item.classList.remove("selected")
+        var sublist = item.querySelector("ul")
         if (sublist) sublist.remove()
       } else {
         if (evt.shiftKey) {
@@ -652,6 +658,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   async followPath(url, lastPath) {
+    debugger
     var resp = await fetch(url)
     var content = ""
     var contentType = resp.headers.get("content-type")
@@ -854,17 +861,12 @@ export default class LivelyContainerNavbar extends Morph {
      
     if (!this.targetItem) return 
     var sublist = this.targetItem.querySelector("ul")
-    if (!force && sublist) {
-      return 
+    if (!sublist) {
+      sublist = document.createElement("ul");
+      this.targetItem.appendChild(sublist);
     } else {
-      if (!sublist) {
-        sublist = document.createElement("ul");
-        this.targetItem.appendChild(sublist);
-      } else {
-        sublist.innerHTML = ""
-      }
+      sublist.innerHTML = ""
     }
-    
     if (this.url !== this.contextURL && this.targetItem.classList.contains("directory")) {
       var optionsWasHandles = true
       await this.showDirectory(this.url, sublist)
@@ -1143,6 +1145,13 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
+  setCursorDetailsItem(item) {
+    if (this.cursorDetailsItem) {
+      this.cursorDetailsItem.classList.remove("cursor")
+    }
+    this.cursorDetailsItem = null
+  }
+  
   focusDetails() {
     this.navigateColumn = "details"
     this.get("#details").focus()
@@ -1324,16 +1333,18 @@ export default class LivelyContainerNavbar extends Morph {
       console.error(e)
     }
   }
+  
+  
 
   onDetailsContentCursorActivity(editor, start, end) {
-    
-    
+
     if (lively.activeElement() == this.get("#details")) return
     
     var startIndex = editor.indexFromPos(start)
     var endIndex = editor.indexFromPos(end)
     
-    this.cursorDetailsItem = null
+    this.setCursorDetailsItem(null)
+    
     this.detailItems.forEach(ea => ea.classList.remove("selected"))
     
     var selectedDetails = []
