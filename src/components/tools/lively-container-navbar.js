@@ -1018,66 +1018,26 @@ export default class LivelyContainerNavbar extends Morph {
     }
   }
   
-  
-  nextDownItem(item, doNotDecent) {
-    var sublist = item.querySelector("ul")
-    if (!doNotDecent && sublist) {
-      var nextSubListItem = sublist.querySelector("li")
-      if (nextSubListItem) return nextSubListItem
-    } 
-    
-    var next = this.nextValidSibling(item)
-    if (next) {
-      return next
-    } else if (item.parentElement && item.parentElement.parentElement &&
-               item.parentElement.localName == "ul" &&
-               item.parentElement.parentElement.localName == "li") {
-      return this.nextDownItem(item.parentElement.parentElement, true)
-    }
-    
-  }
-
-  nextUpItem(item) {
-    var prev = this.prevValidSibling(item)
-    if (prev) {
-      var sublist = prev.querySelector("ul")
-      if(sublist) {
-        var prevSubListItem = Array.from(sublist.querySelectorAll("li")).last
-        if (prevSubListItem) return prevSubListItem 
-      }
-      return prev
-    } else if (item.parentElement && item.parentElement.parentElement &&
-        item.parentElement.localName == "ul" && 
-        item.parentElement.parentElement.localName == "li") {
-      var parentItem = item.parentElement.parentElement
-      if (this.isValidItem(parentItem)) 
-        return parentItem
-      else
-        return this.nextUpItem(parentItem)
-    } 
-  }
-
   navigateItem(direction, evt) {
     evt.stopPropagation()
     evt.preventDefault()    
+    var items = this.matchingItems
     var startItem = this.getCursorItem()
     if (!startItem) return
-    if (direction == "down") {
-      var nextItem = this.nextDownItem(startItem)
-    } else {
-      nextItem = this.nextUpItem(startItem)
-    }
+    var index = items.indexOf(startItem)
+    
+    var nextItem = items[index + (direction == "down" ? 1 : -1) ] 
+   
     if(nextItem) {
       this.setCursorItem(nextItem)
       if (nextItem.classList.contains("directory")) {
         // just navigate
       } else {
         if (this.navigateColumn == "details") {
+          // preview details while navigating
           this.onDetailsItemClick(nextItem, evt)
         } else {
-          
-          // var nextLink = this.cursorItem.querySelector("a")      
-          // this.onItemClick(nextLink, evt)
+          // don't preview while browsing files, because it is to slow
         }
       } 
       this.scrollToItem(nextItem)
