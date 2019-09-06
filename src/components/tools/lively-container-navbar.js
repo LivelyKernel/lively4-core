@@ -583,12 +583,18 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   onContextMenu(evt, otherUrl=this.getRoot()) {
+    lively.notify("other" + otherUrl)
+    
     var isDir = otherUrl.match(/\/$/,"")
     var file = otherUrl.replace(/\/$/,"").replace(/.*\//,"");
     
     const menuElements = []
     
     var selection =  this.getSelection()
+    if (selection.length == 1) {
+      selection = [otherUrl] // user means probably the thing pointed to
+    }
+    
     
     if (selection.length > 0) {
       menuElements.push(...[
