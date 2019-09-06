@@ -244,6 +244,8 @@ export default class Container extends Morph {
     }
   }
 
+
+  
   async switchBetweenJSAndHTML() {
     const ending = this.getPath()::fileEnding();
     if(ending === 'js' || ending === 'html') {
@@ -1442,8 +1444,7 @@ export default class Container extends Morph {
       else return;
     } 
     
-    
-    
+  
     var headers = {}
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
@@ -1554,15 +1555,27 @@ export default class Container extends Morph {
     if (editor) {
       if (data && data.start) { // we have more information
         var cm = editor.editor
-        var pos = cm.posFromIndex(data.start)
-        cm.setCursor(pos)
-        editor.scrollToLine(pos.line)
+        var start = cm.posFromIndex(data.start)
+        var end = cm.posFromIndex(data.end)
+        
+        cm.setSelection(start, end)
+        
+        // scroll only if necessary
+        var rect = cm.getWrapperElement().getBoundingClientRect();
+        var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
+        var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
+        
+        if (start.line < topVisibleLine) {
+          editor.scrollToLine(start.line )
+        } 
+        if (end.line > bottomVisibleLine) {
+          var visibleLines = (bottomVisibleLine - topVisibleLine)
+          editor.scrollToLine(end.line - visibleLines)
+        }
+        
       } else {
         editor.find(name);
       }
-      
-      
-      
     } else {      
       var baseURL = this.getURL().toString().replace(/\#.*/,"")
       var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
