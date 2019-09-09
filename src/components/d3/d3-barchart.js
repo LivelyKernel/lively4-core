@@ -4,9 +4,13 @@ import d3 from "src/external/d3.v5.js"
 import { debounce } from "utils";
 import "src/external/d3-selection-multi.v1.js"
 
-/*
- *
- */
+
+/*MD # D3 Barchart 
+
+![](d3-barchart.png){height=300px}
+
+MD*/
+
 export default class D3BarChart extends D3Component {
 
   async initialize() {
