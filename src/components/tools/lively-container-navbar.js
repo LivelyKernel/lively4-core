@@ -886,10 +886,10 @@ export default class LivelyContainerNavbar extends Morph {
       classItem.data = classInfo
       classInfo.methods.forEach(eaMethodInfo => {
         var name = eaMethodInfo.name
-        if (eaMethodInfo.static) {
-          name = `<span class="mod">static</span>` + name
-        }
         var methodItem = this.createDetailsItem(name)
+        if (eaMethodInfo.static) {
+          methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
+        }
         var comments = eaMethodInfo.leadingComments || []
         comments.forEach(eaComment => {
           // special markdown tag
