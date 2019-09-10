@@ -885,6 +885,8 @@ export default class LivelyContainerNavbar extends Morph {
       classItem.appendChild(methodList)
       classItem.data = classInfo
       classInfo.methods.forEach(eaMethodInfo => {
+        eaMethodInfo.url = this.url
+        eaMethodInfo.class = classInfo.name // for later use
         var name = eaMethodInfo.name
         var methodItem = this.createDetailsItem(name)
         if (eaMethodInfo.static) {
@@ -1274,12 +1276,27 @@ export default class LivelyContainerNavbar extends Morph {
     
     if (item.data) {
       menuElements.push([`inspect`, () => {lively.openInspector(item.data)}])
+      menuElements.push([`versions`, () => {this.browseMethodVersions(item.data)}])
     }
     
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)
   }
   
+  /*MD ## Helper MD*/
+  
+  // #Refactor move away
+  async browseMethodVersions(methodData) {
+    var fileIndex = FileIndex.current()
+    debugger
+    var versions = await fileIndex.db.versions.where({
+      url: methodData.url,
+      class: methodData.class,                               
+      method: methodData.name }).toArray()
+    
+    // #Vivide #UseCase
+    lively.openInspector(versions)
+  }
   /*MD
   # Change Observer
   
