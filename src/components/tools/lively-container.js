@@ -80,7 +80,7 @@ export default class Container extends Morph {
       if (evt.altKey && evt.code == "ArrowDown") {
         this.get("lively-container-navbar").focusFiles()
       }
-      lively.notify("code: " + evt.code)
+      // lively.notify("code: " + evt.code)
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
 
