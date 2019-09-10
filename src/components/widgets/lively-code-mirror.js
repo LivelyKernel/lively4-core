@@ -139,6 +139,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.ternIsLoaded = true;
   }
   
+  astCapabilities(cm) {
+    return System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
+      .then(m => new m.default(this, cm));
+  }
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
       .then(m => {
@@ -342,34 +346,34 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-.": cm => {
           this.ternWrapper.then(tw => tw.showReferences(cm, this));
         },
-        
+
+        // #AST-Navigation
         // #KeyboardShortcut Alt-Up expand selection in ast-aware manner
         "Alt-Up": cm => {
-          this.expandSelection(cm);
+          this.astCapabilities(cm).then(ac => ac.expandSelection(cm));
         },
         // #KeyboardShortcut Alt-Left 
         "Alt-Left": cm => {
-          this.selectNextASTNode(cm, true);
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
         },
         // #KeyboardShortcut Alt-Right 
         "Alt-Right": cm => {
-          this.selectNextASTNode(cm, false);
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
         },
         // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
         },
         // #KeyboardShortcut Alt-F fold (inverse code folding)
         "Alt-F": cm => {
-          this.fold(cm);
+          this.astCapabilities(cm).then(ac => ac.fold(cm));
         },
         // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
         "Shift-Alt-F": cm => {
-          this.unfold(cm);
+          this.astCapabilities(cm).then(ac => ac.unfold(cm));
         },
-        
         // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
         "Ctrl-Shift-Alt-F": cm => {
-          this.autoFoldMax()
+          this.astCapabilities(cm).then(ac => ac.autoFoldMax())
         },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
@@ -572,17 +576,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   get markerWrappers() { return this._markerWrappers = this._markerWrappers || []; }
   set markerWrappers(value) { return this._markerWrappers = value; }
 
-  unfold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
-
-    const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No previous folding level found");
-    }
-  }
   isValidFoldPath(path) {
     return true;
     return path.isProgram() ||
@@ -600,26 +593,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       return this.isValidFoldPath(path);
     });
-  }
-  fold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
-    
-    const pathToShow = this.nextFoldingPath(prevPath);
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No next folding level found");
-    }
-  }
-  autoFoldMax() {
-    const pathToShow = this.getInnermostPath(this.programPath, prevPath => this.nextFoldingPath(prevPath));
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No folding level for automatic fold found");
-    }
   }
   getRouteForPath(path) {
     const route = [];

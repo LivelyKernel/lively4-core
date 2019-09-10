@@ -254,6 +254,7 @@ class Navigation {
   }
 
   /*MD ### Navigation Handler MD*/
+  // #FOO
   up(element, evt) {
     cancelEvent(evt);
 
@@ -458,6 +459,7 @@ class Navigation {
 }
 
 /*MD # PenEditor MD*/
+/*MD # PenEditor2 MD*/
 export default class PenEditor extends Morph {
 
   static get defaultFile() { return lively4url + '/src/client/pen-editor/demos/example.js'; }

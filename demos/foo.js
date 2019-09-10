@@ -14,10 +14,12 @@ class Foo5 {
     
   }
   
+  // #FOO2
   get blue() {
     
   }
   
+  // #TAG
   set blue(b) {
     
   }
@@ -31,6 +33,7 @@ class Foo5 {
     
   }
    
+  // #3
   // #TagMe
   m11() {
     
@@ -45,7 +48,7 @@ class Foo5 {
   
   
   MD*/
-  // #private
+  // #p
   dosomthing() {
     
   }
