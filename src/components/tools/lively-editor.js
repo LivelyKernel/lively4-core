@@ -588,18 +588,18 @@ export default class Editor extends Morph {
         
           if (mode == "MD") {
             await widget.setContent(m[2])    
-             var container = lively.query(this, "lively-container")
-             
+            let container = lively.query(this, "lively-container")
             if (container) {
-              lively.html.fixLinks(widget.shadowRoot.querySelectorAll("img, a"), 
+              debugger
+              lively.html.fixLinks(widget.shadowRoot.querySelectorAll("[href],[src]"), 
                                     this.getURL().toString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
           } else {
             widget.innerHTML = m[2]
-            var container = lively.query(this, "lively-container")
+            let container = lively.query(this, "lively-container")
             if (container) {
-              lively.html.fixLinks(widget.querySelectorAll("img, a"), 
+              lively.html.fixLinks(widget.querySelectorAll("[href],[src]"), 
                                     this.getURL().toString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }

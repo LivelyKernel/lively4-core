@@ -1,3 +1,13 @@
+/*MD # Lively Container 
+
+![](lively-container.png){height=400px}
+
+
+<lively-drawio src="lively-container.drawio"></lively-drawio>
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
@@ -12,12 +22,6 @@ let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack o
 import Clipboard from "src/client/clipboard.js"
 import {debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
-
-/*MD # Lively Container 
-
-![](lively-container.png){height=400px}
-
-MD*/
 
 
 export default class Container extends Morph {
@@ -85,7 +89,6 @@ export default class Container extends Morph {
       if (evt.altKey && evt.code == "ArrowDown") {
         this.get("lively-container-navbar").focusFiles()
       }
-      // lively.notify("code: " + evt.code)
     });
     this.get("#fullscreenInline").onclick = (e) => this.onFullscreen(e);
 
@@ -163,36 +166,6 @@ export default class Container extends Morph {
     this.viewOrEditPath(path, edit) 
   }
   
-  onContextMenu(evt) {
-    // fall back to system context menu if shift pressed
-    if (!evt.shiftKey) {
-      evt.preventDefault();
-      var worldContext = document.body; // default to opening context menu content globally
-      // opening in the content makes only save if that content could be persisted and is displayed
-      if (this.contentIsEditable() && !this.isEditing()) {
-        worldContext = this
-      }
-	    lively.openContextMenu(document.body, evt, undefined, worldContext);
-	    return false;
-    }
-  }
-
-  onFullscreen(evt) {
-    this.toggleControls();
-    if (!this.parentElement.isMaximized) return;
-    if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
-       (!this.isFullscreen() && this.parentElement.isMaximized()))  {
-      this.parentElement.toggleMaximize();
-      if ( this.parentElement.isMaximized()) {
-        this.parentElement.get(".window-titlebar").style.display = "none"
-        this.parentElement.style.zIndex = 0
-      } else {
-        this.parentElement.style.zIndex = 1000
-        this.parentElement.get(".window-titlebar").style.display = ""
-      }
-    }
-  }
-
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
   }
@@ -232,22 +205,7 @@ export default class Container extends Morph {
     return this._forwardHistory;
   }
 
-  onKeyDown(evt) {
-    var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
-      if (evt.shiftKey) {
-        this.onAccept();
-      } else {
-        this.onSave();
-      }
-      evt.preventDefault();
-      evt.stopPropagation();
-    } else if(evt.keyCode === 118) {
-      this.switchBetweenJSAndHTML();
-      evt.stopPropagation();
-      evt.preventDefault();
-    }
-  }
+ 
 
 
   
@@ -265,7 +223,27 @@ export default class Container extends Morph {
           .then(browser => browser.focus());
       }
     }
+  }  
+
+  getSourceCode() {
+    var editor = this.get("#editor")
+    if (!editor) return ""
+    return editor.currentEditor().getValue()
   }
+  
+  getBaseURL() {
+    return this.getURL().toString().replace(/[#?].*/,"")
+  }
+  
+  /*MD # Helper  / Testing MD*/
+  
+  async isTemplate(url) {
+    var filename = url.replace(/[#?].*/,"").toString().replace(/.*\//,"") // #Idea #Refactor Extract getFilename, add "filename" to URL class 
+    var foundTemplate = await lively.components.searchTemplateFilename(filename)
+    return url == foundTemplate
+  }
+  
+  /*MD ## Modules MD*/
 
   reloadModule(url) {
     console.log("reloadModule " + url)
@@ -279,6 +257,8 @@ export default class Container extends Morph {
         this.loadingFailed(url.toString().replace(/.*\//,""), error);
       });
   }
+
+  
 
   async loadTestModule(url) {
     var testRunner = document.body.querySelector("lively-testrunner");
@@ -357,8 +337,109 @@ export default class Container extends Morph {
     this.followPath(url)
   }
   
-  /*MD ## Button Events  MD*/
+  /*MD # Events MD*/
   
+  onKeyDown(evt) {
+    var char = String.fromCharCode(evt.keyCode || evt.charCode);
+    if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
+      if (evt.shiftKey) {
+        this.onAccept();
+      } else {
+        this.onSave();
+      }
+      evt.preventDefault();
+      evt.stopPropagation();
+    } else if(evt.keyCode === 118) {
+      this.switchBetweenJSAndHTML();
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
+  }
+  
+  onContextMenu(evt) {
+    // fall back to system context menu if shift pressed
+    if (!evt.shiftKey) {
+      evt.preventDefault();
+      var worldContext = document.body; // default to opening context menu content globally
+      // opening in the content makes only save if that content could be persisted and is displayed
+      if (this.contentIsEditable() && !this.isEditing()) {
+        worldContext = this
+      }
+	    lively.openContextMenu(document.body, evt, undefined, worldContext);
+	    return false;
+    }
+  }
+
+  onFullscreen(evt) {
+    this.toggleControls();
+    if (!this.parentElement.isMaximized) return;
+    if ((this.isFullscreen() && !this.parentElement.isMaximized()) ||
+       (!this.isFullscreen() && this.parentElement.isMaximized()))  {
+      this.parentElement.toggleMaximize();
+      if ( this.parentElement.isMaximized()) {
+        this.parentElement.get(".window-titlebar").style.display = "none"
+        this.parentElement.style.zIndex = 0
+      } else {
+        this.parentElement.style.zIndex = 1000
+        this.parentElement.get(".window-titlebar").style.display = ""
+      }
+    }
+  }
+  
+  async onToggleOptions() {
+    if (this.classList.contains('show-options')) {
+      this.classList.remove('show-options');
+    } else {
+      this.classList.add('show-options');
+    }
+  }
+  
+  async onFavorite() {
+    await Favorites.toggle(this.getPath());
+    this.updateFavInfo()
+  }
+  
+  async onBeautify() {
+    const ending = this.getPath()::fileEnding();
+    if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
+      return;
+    }
+    
+    const editor = this.get("lively-editor");
+    const text = editor.lastText;
+    let beautifulText;
+    const options = {
+      'end_with_newline': true,
+      'max_preserve_newlines': 3,
+      'js': {
+        'brace_style': ['collapse', 'preserve-inline'],
+        'indent_size': 2,
+        'wrap_line_length': 120,
+      },
+      'indent_size': 2,
+    }
+    
+    
+    // load the beatify code async... because they are big
+    if (ending === 'js') {
+      await System.import( "src/client/js-beautify/beautify.js")        
+      beautifulText = global.js_beautify(text, options);
+    } else if (ending === 'css') {
+      await System.import( "src/client/js-beautify/beautify-css.js")
+      beautifulText = global.css_beautify(text, options);
+    } else if (ending === 'html') {
+      await System.import("src/client/js-beautify/beautify-html.js")
+      beautifulText = global.html_beautify(text, options);
+    }
+    editor.setText(beautifulText, true);      
+  }
+
+  onDelete() {
+    var url = this.getURL() +"";
+    this.deleteFile(url)
+  }
+
+  /*MD ## Button Events MD*/
   async onApply() {
     var url = this.getBaseURL();
     var filename = url.replace(/.*\//,"")
@@ -507,21 +588,6 @@ export default class Container extends Morph {
       && sourceCode.match(/<template/)
   }
 
-  async urlInTemplate(url) {
-    var filename = url.toString().replace(/.*\//,"")
-    var foundTemplate = await lively.components.searchTemplateFilename(filename)
-    return url == foundTemplate
-  }
-
-  getSourceCode() {
-    var editor = this.get("#editor")
-    if (!editor) return ""
-    return editor.currentEditor().getValue()
-  }
-  
-  getBaseURL() {
-    return this.getURL().toString().replace(/[#?].*/,"")
-  }
   
   async onSave(doNotQuit) {
     if (!this.isEditing()) {
@@ -542,7 +608,7 @@ export default class Container extends Morph {
     url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     // lively.notify("!!!saved " + url)
     window.LastURL = url
-    if (await this.urlInTemplate(url)) {
+    if (await this.isTemplate(url)) {
       lively.notify("update template")
       if (url.toString().match(/\.html/)) {
         // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
@@ -627,56 +693,7 @@ export default class Container extends Morph {
     }
   }
   
-  async onToggleOptions() {
-    if (this.classList.contains('show-options')) {
-      this.classList.remove('show-options');
-    } else {
-      this.classList.add('show-options');
-    }
-  }
-  async onFavorite() {
-    await Favorites.toggle(this.getPath());
-    this.updateFavInfo()
-  }
-  async onBeautify() {
-    const ending = this.getPath()::fileEnding();
-    if (ending !== 'js' && ending !== 'css' && ending !== 'html') {
-      return;
-    }
-    
-    const editor = this.get("lively-editor");
-    const text = editor.lastText;
-    let beautifulText;
-    const options = {
-      'end_with_newline': true,
-      'max_preserve_newlines': 3,
-      'js': {
-        'brace_style': ['collapse', 'preserve-inline'],
-        'indent_size': 2,
-        'wrap_line_length': 120,
-      },
-      'indent_size': 2,
-    }
-    
-    
-    // load the beatify code async... because they are big
-    if (ending === 'js') {
-      await System.import( "src/client/js-beautify/beautify.js")        
-      beautifulText = global.js_beautify(text, options);
-    } else if (ending === 'css') {
-      await System.import( "src/client/js-beautify/beautify-css.js")
-      beautifulText = global.css_beautify(text, options);
-    } else if (ending === 'html') {
-      await System.import("src/client/js-beautify/beautify-html.js")
-      beautifulText = global.html_beautify(text, options);
-    }
-    editor.setText(beautifulText, true);      
-  }
-
-  onDelete() {
-    var url = this.getURL() +"";
-    this.deleteFile(url)
-  }
+  
 
   async deleteFile(url, urls) {
     lively.notify("delelteFile " + url)

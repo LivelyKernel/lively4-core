@@ -43,7 +43,26 @@ export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
-    this.update()  
+    this._attrObserver = new MutationObserver((mutations) => {
+    this.update()
+      
+    // Install Attribute Observer
+    mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") {
+          // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName))
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+  }
+  
+  
+  attributeChangedCallback(attr, oldVal, newVal) {
+    this.update()
   }
   
   async updateGithubInfo() {

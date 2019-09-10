@@ -9,6 +9,7 @@ export default function foo(a) {
 
 class Foo5 {
   
+  // #important
   bar2 () {
     
   }
@@ -25,6 +26,7 @@ class Foo5 {
   
   
   MD*/
+  // #private
   m5() {
     
   }

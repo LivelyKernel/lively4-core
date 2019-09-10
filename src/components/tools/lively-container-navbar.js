@@ -1317,7 +1317,7 @@ export default class LivelyContainerNavbar extends Morph {
     try {
       url = this.baseURL(url)
       if (url.startsWith(this.currentDir)) {
-        // console.log("[navbar] onObserveURLChange " + url)
+        console.log("[navbar] onObserveURLChange " + url)
         var element = this.getElementByURL(url)
         if (element) {
           if (method == "PUT") {
