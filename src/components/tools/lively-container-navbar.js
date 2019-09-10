@@ -1113,6 +1113,10 @@ export default class LivelyContainerNavbar extends Morph {
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, b - scroll.scrollTop))).style.backgroundColor = "green"
     // console.log(`t: ${t} y: ${y} b: ${b}`)
     
+    if (h > scroll.offsetHeight) {
+      return // don't scroll to items that are to big... #DoesItWork?
+    }
+    
     if (t < y && y < b) {
       return // no need to scroll
     }

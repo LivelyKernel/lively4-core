@@ -24,6 +24,8 @@ export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
 
+  
+  /*MD # Setup MD*/
   initialize() {
     
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
@@ -335,7 +337,27 @@ export default class Container extends Morph {
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
   
-
+  /*MD ## Navigation Hisotry MD*/
+  
+  unwindAndFollowHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.history().pop();
+      this.forwardHistory().push(url);
+    }
+    this.followPath(url)
+  }
+  
+  unwindAndFollowForwardHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.forwardHistory().pop();
+      this.history().push(url);
+    }
+    this.followPath(url)
+  }
+  
+  /*MD ## Button Events  MD*/
   
   async onApply() {
     var url = this.getBaseURL();
@@ -408,23 +430,7 @@ export default class Container extends Morph {
       this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
   
-  unwindAndFollowHistoryUntil(urlInHistory) {
-    var url = "nourl"
-    while(url && url !== urlInHistory ) {
-      url= this.history().pop();
-      this.forwardHistory().push(url);
-    }
-    this.followPath(url)
-  }
-  
-  unwindAndFollowForwardHistoryUntil(urlInHistory) {
-    var url = "nourl"
-    while(url && url !== urlInHistory ) {
-      url= this.forwardHistory().pop();
-      this.history().push(url);
-    }
-    this.followPath(url)
-  }
+
 
   onBack() {
     if (this.history().length < 2) {
