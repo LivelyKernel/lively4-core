@@ -633,8 +633,8 @@ export default class LivelyContainerNavbar extends Morph {
     
     menuElements.push(...[
       ["new", [
-        [`text file`, () => this.newfile(otherUrl)],
-        ["drawio figure", () => this.newfile(otherUrl, "drawio")],
+        [`text file`, () => this.newFile(otherUrl)],
+        ["drawio figure", () => this.newFile(otherUrl, "drawio")],
       ], "", ''],  
     ])
     const menu = new ContextMenu(this, menuElements)
@@ -684,7 +684,7 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify("please implement renameFile()")
   }
 
-  newfile(path, type) {
+  newFile(path, type) {
     lively.notify("please implement newfile()")
   }
   

@@ -108,7 +108,6 @@
       color: lightgray
     }
     
-
     ul li.subitem.selected > a {
       background-color: rgba(215,215,215);
       cursor: pointer
@@ -116,24 +115,24 @@
 
     ul li.class > a {
       color: rgb(0, 78, 151); 
-    }
-        
+    }       
     
     ul li.method .tag {
       color: lightgray;
       font-size: 8pt;
     }
     
-    ul li.method.private {
-      color: lightgray;
-      padding-left: 10px;
-      font-size: 8pt;
+    ul li.method.private a {
+      color: gray;
       font-style: italic;
     }
     
-    
-    ul li.method.important {
+    ul li.method.important a {
       font-weight: bold;
+    }
+       
+    ul li.method.deprecated a, ul li.method.Refactor a, ul li.method.TODO, ul li.method.HACK a {
+      color: darkred;
     }
 
     ul li.method > span.mod {
@@ -141,13 +140,10 @@
       font-size: 8pt;
     }
 
-    
     ul li.comment  {
        font-style: italic;
     }
 
-    
-    
     ul li .fa-folder {
       color: #e99a01;
     }
@@ -193,11 +189,11 @@
       overscroll-behavior: contain; 
     }
 
-    
     #filter-hint {
       color: black;
       background: rgba(255,255,255,0.9);
     }
+    
     #filter-container{
       height: 0px;
       left: 20px;

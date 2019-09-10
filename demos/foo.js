@@ -36,7 +36,10 @@ class Foo5 {
     
   }
   
- 
+ // #deprecated
+  hello() {
+    
+  }
   /*MD
   ## and other
   

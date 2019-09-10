@@ -590,7 +590,6 @@ export default class Editor extends Morph {
             await widget.setContent(m[2])    
             let container = lively.query(this, "lively-container")
             if (container) {
-              debugger
               lively.html.fixLinks(widget.shadowRoot.querySelectorAll("[href],[src]"), 
                                     this.getURL().toString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
