@@ -1293,9 +1293,9 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   // #private
-  getElementByURL(url) {
+  getFileElementByURL(url) {
     url = this.baseURL(url)
-    return this.items.find(ea =>  this.baseURL(ea.url)== url && ea.textContent !== "../")
+    return this.fileItems.find(ea =>  this.baseURL(ea.url)== url && ea.textContent !== "../")
   }
   
   // #private
@@ -1313,13 +1313,15 @@ export default class LivelyContainerNavbar extends Morph {
     
   }
   
+  // #important
   async onObserveURLChange(url, method) {
     try {
       url = this.baseURL(url)
       if (url.startsWith(this.currentDir)) {
         console.log("[navbar] onObserveURLChange " + url)
-        var element = this.getElementByURL(url)
+        var element = this.getFileElementByURL(url)
         if (element) {
+          // File Element does Exists
           if (method == "PUT") {
             this.hightlightElement(element)
             if (this.baseURL(this.url) == url) {
@@ -1329,15 +1331,15 @@ export default class LivelyContainerNavbar extends Morph {
             element.remove()
           }
         } else {
+          // File Element does not Exists
           if (method == "PUT") {
-            // maybe we should create an item for the element?
             var parentURL = url.replace(/\/[^/]+$/,"/")
-            var parentElement = this.getElementByURL(parentURL)
+            var parentElement = this.getFileElementByURL(parentURL)
             if (!parentElement) parentElement = this.get("#row")
             if (parentElement) {
               var stats = await fetch(url, {method: "OPTIONS"}).then(r => r.json())
               stats.name = stats.name.replace(/.*\//,"")
-              var element = this.createItem(stats)
+              element = this.createItem(stats)
               var parentElementList = parentElement.querySelector(":scope > ul") 
 
               if (parentElementList) {
@@ -1381,7 +1383,6 @@ export default class LivelyContainerNavbar extends Morph {
         selectedDetails.push(ea)
       
     })
-    
     
     
     selectedDetails.forEach(ea => ea.classList.add("selected"))

@@ -2,9 +2,6 @@
 
 ![](lively-container.png){height=400px}
 
-
-<lively-drawio src="lively-container.drawio"></lively-drawio>
-
 MD*/
 
 
@@ -24,12 +21,17 @@ import {debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 
 
+/*MD
+<lively-drawio src="lively-container.drawio"></lively-drawio>
+
+MD*/
+
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
 
   
-  /*MD # Setup MD*/
+  /*MD ## Setup MD*/
   initialize() {
     
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
@@ -224,6 +226,9 @@ export default class Container extends Morph {
       }
     }
   }  
+  
+  
+  /*MD ## Getter / Setter MD*/
 
   getSourceCode() {
     var editor = this.get("#editor")
@@ -235,13 +240,19 @@ export default class Container extends Morph {
     return this.getURL().toString().replace(/[#?].*/,"")
   }
   
-  /*MD # Helper  / Testing MD*/
+  /*MD ## Helper  / Testing MD*/
   
   async isTemplate(url) {
     var filename = url.replace(/[#?].*/,"").toString().replace(/.*\//,"") // #Idea #Refactor Extract getFilename, add "filename" to URL class 
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
     return url == foundTemplate
   }
+  
+  contentIsTemplate(sourceCode) {
+    return this.getPath().match(/.*html/)
+      && sourceCode.match(/<template/)
+  }
+
   
   /*MD ## Modules MD*/
 
@@ -257,8 +268,6 @@ export default class Container extends Morph {
         this.loadingFailed(url.toString().replace(/.*\//,""), error);
       });
   }
-
-  
 
   async loadTestModule(url) {
     var testRunner = document.body.querySelector("lively-testrunner");
@@ -510,8 +519,6 @@ export default class Container extends Morph {
     else
       this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
-  
-
 
   onBack() {
     if (this.history().length < 2) {
@@ -583,10 +590,6 @@ export default class Container extends Morph {
     lively.notify("Save as... in EditMode not implemented yet");
   }
 
-  contentIsTemplate(sourceCode) {
-    return this.getPath().match(/.*html/)
-      && sourceCode.match(/<template/)
-  }
 
   
   async onSave(doNotQuit) {
@@ -2036,6 +2039,8 @@ export default class Container extends Morph {
     return link
   }
 
+  /*MD ## Lively Hooks MD*/
+  
   livelyAllowsSelection(evt) {
     if (!this.contentIsEditable() || this.isEditing()) return false
 
@@ -2048,7 +2053,6 @@ export default class Container extends Morph {
   livelyAcceptsDrop() {
     return this.contentIsEditable() && !this.isEditing()
   }
-
 
   livelyPrepareSave() {
     this.setAttribute("leftpane-flex", this.get("#container-leftpane").style.flex)

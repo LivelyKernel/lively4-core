@@ -539,7 +539,7 @@ export default class FileIndex {
       // console.log("FileIndex ignore  " + url)
       return
     }    
-    console.log("FileIndex addFile " + url)
+    console.log("[fileindex]  addFile " + url)
 
     if (type == "file") {
       var json = (await this.loadVersions(url))
@@ -584,7 +584,8 @@ export default class FileIndex {
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
       await this.addVersions(file)
-    }      
+    }
+    console.log("[fileindex] addFile FINISHED")
   }
 
   async dropFile(url) {
