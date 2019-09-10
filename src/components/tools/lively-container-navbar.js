@@ -295,11 +295,11 @@ export default class LivelyContainerNavbar extends Morph {
       
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
-        this.showSublist()
+        this.showDetails()
       } else if (lastURL !== this.url) {
-        this.showSublist()
+        this.showDetails()
       } else if (lastContent != this.sourceContent) {
-        this.showSublistContent(true)
+        this.showDetailsContent(true)
       }        
       
       return         
@@ -307,7 +307,7 @@ export default class LivelyContainerNavbar extends Morph {
       this.resetCursor()
       // lively.notify("RESET DIR")
       await this.showDirectory(targetURL, this.get("#navbar"))
-      await this.showSublist()    
+      await this.showDetails()    
       this.scrollToItem(this.targetItem)
     }  
   }
@@ -407,7 +407,7 @@ export default class LivelyContainerNavbar extends Morph {
     });
     delete this.lastTitle
     
-    // this.clearSublists()
+    // this.clearDetails()
   }
   
   createItem(ea) {
@@ -520,7 +520,7 @@ export default class LivelyContainerNavbar extends Morph {
     return item.classList.contains("selected") || selectedChild
   }
   
-  hasSublist(item) {
+  hasDetails(item) {
     var sublist = item.querySelector("ul")
     return sublist && sublist.querySelector("li")
   }
@@ -544,7 +544,7 @@ export default class LivelyContainerNavbar extends Morph {
       // collapse previousely expanded tree
       var item = link.parentElement
       
-      if (this.isSelected(item) || this.hasSublist(item) && item== "Enter") { 
+      if (this.isSelected(item) || this.hasDetails(item) && item== "Enter") { 
         this.currentDir = null
         item.classList.remove("selected")
         var sublist = item.querySelector("ul")
@@ -581,7 +581,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.cursorDetailsItem = item
     this.navigateColumn = "details"
     var sublist = this.get("#details").querySelector("ul")
-    this.selectSublistItem(item, sublist)
+    this.selectDetailsItem(item, sublist)
     await this.navigateToName(item.name, item.data);
     this.get("#details").focus()
   }
@@ -731,7 +731,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
    
   // #private
-  selectSublistItem(element, sublist) {
+  selectDetailsItem(element, sublist) {
     for(var ea of sublist.querySelectorAll(".selected")) {
       ea.classList.remove("selected")
     }
@@ -748,7 +748,7 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/\n/g, "")
       .replace(/([ ,])#/g, "$1")
   }
-  async showSublist(force) {
+  async showDetails(force) {
     // console.log("show sublist " + this.url)
      
     if (!this.targetItem) return 
@@ -763,10 +763,10 @@ export default class LivelyContainerNavbar extends Morph {
       var optionsWasHandles = true
       await this.showDirectory(this.url, sublist)
     }
-    this.showSublistContent(optionsWasHandles)
+    this.showDetailsContent(optionsWasHandles)
   } 
   
-  clearSublists() {
+  clearDetails() {
     // console.log("clear sublists")
     var parents = this.targetItem ? lively.allParents(this.targetItem) : [];
     // remove all sublists... but my own tree
@@ -779,7 +779,7 @@ export default class LivelyContainerNavbar extends Morph {
 
   }
   
-  async showSublistContent(optionsWasHandles) {
+  async showDetailsContent(optionsWasHandles) {
     
     // show console.log("show sublist content " + this.url) 
     if (!this.targetItem) return 
@@ -796,25 +796,25 @@ export default class LivelyContainerNavbar extends Morph {
     if (!sublist) return // we are a sublist item?
     
     // keep expanded trees open... or not
-    // this.clearSublists()
+    // this.clearDetails()
     
     if (this.url.match(/templates\/.*html$/)) {
-      this.showSublistHTML(sublist)
+      this.showDetailsHTML(sublist)
     } else if (this.url.match(/\.js$/)) {
-      this.showSublistJS(sublist)
+      this.showDetailsJS(sublist)
     } else if (this.url.match(/\.md$/)) {
       // console.log("show sublist md" + this.url)
 
-      this.showSublistMD(sublist)
+      this.showDetailsMD(sublist)
     } else {
       if (!optionsWasHandles) {
-        this.showSublistOptions(sublist)
+        this.showDetailsOptions(sublist)
       }
     }
   }
   
   // #HTML
-  showSublistHTML(sublist) {
+  showDetailsHTML(sublist) {
     if (!this.sourceContent) return;
     var template =  lively.html.parseHTML(this.sourceContent).find(ea => ea.localName == "template");
       if (!template) {
@@ -849,7 +849,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   // #important
-  showSublistMD(sublist) {
+  showDetailsMD(sublist) {
     // console.log("sublist md " + this.sourceContent.length)
     var links = this.simpleParseMD(this.sourceContent)
     _.keys(links).forEach( name => {
@@ -867,7 +867,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   // #JavaScript #important
-  async showSublistJS(sublist) {
+  async showDetailsJS(sublist) {
     var classInfos = [];
     
     await FileIndex.current().db.classes.where("url").equals(this.url).each(aClassInfo => {
@@ -889,6 +889,10 @@ export default class LivelyContainerNavbar extends Morph {
         var methodItem = this.createDetailsItem(name)
         if (eaMethodInfo.static) {
           methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
+        }
+        
+        if (eaMethodInfo.kind != "method") {
+          methodItem.insertBefore(<span class="mod">{eaMethodInfo.kind}</span>, methodItem.querySelector("a"))
         }
         var comments = eaMethodInfo.leadingComments || []
         comments.forEach(eaComment => {
@@ -927,7 +931,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
 
-  async showSublistOptions(sublist, url) {
+  async showDetailsOptions(sublist, url) {
     url = url || this.url
     try {
       var options = await fetch(url, {method: "OPTIONS"})
@@ -942,7 +946,7 @@ export default class LivelyContainerNavbar extends Morph {
           class="link subitem" title={ea.name}>{ea.name}</li>
       sublist.appendChild(element);
       element.onclick = () => {
-        this.selectSublistItem(element, sublist)
+        this.selectDetailsItem(element, sublist)
         if (ea.href) {
           this.followPath(ea.href);
         } else {
@@ -1315,7 +1319,7 @@ export default class LivelyContainerNavbar extends Morph {
           if (method == "PUT") {
             this.hightlightElement(element)
             if (this.baseURL(this.url) == url) {
-              await this.showSublist(true) 
+              await this.showDetails(true) 
             }
           } else if(method == "DELETE") {
             element.remove()
