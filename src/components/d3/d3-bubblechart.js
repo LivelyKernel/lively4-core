@@ -1,6 +1,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from 'src/external/d3.v5.js';
 
+/*MD # D3 Bubblechart 
+
+![](d3-bubblechart.png){height=300px}
+
+MD*/
+
 export default class D3Bubblechart extends Morph {
   getData() {
     if (!this.data) {

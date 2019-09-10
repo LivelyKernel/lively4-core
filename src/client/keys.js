@@ -120,6 +120,14 @@ export default class Keys {
       console.log("Error in handleKeyEvent" +  err);
     }
   }
+  
+  static onKeyUp(evt) {
+    if (evt.key == "Alt") {
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+    
+  }
 }
 /*
 lively.keys = Keys

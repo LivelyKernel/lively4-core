@@ -6,21 +6,26 @@ import SyntaxChecker from 'src/client/syntax.js';
 import components from "src/client/morphic/component-loader.js";
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import Favorites from 'src/client/favorites.js';
-
 import files from "src/client/files.js"
 import Strings from "src/client/strings.js"
-
-//import ScopedScripts from "src/client/scoped-scripts.js";
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
-
 import Clipboard from "src/client/clipboard.js"
 import {debounce, fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
+
+/*MD # Lively Container 
+
+![](lively-container.png){height=400px}
+
+MD*/
+
 
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
 
+  
+  /*MD # Setup MD*/
   initialize() {
     
     // this.shadowRoot.querySelector("livelyStyle").innerHTML = '{color: red}'
@@ -331,9 +336,31 @@ export default class Container extends Morph {
       var comp = await lively.openComponentInWindow(name);
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
-
+  
+  /*MD ## Navigation Hisotry MD*/
+  
+  unwindAndFollowHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.history().pop();
+      this.forwardHistory().push(url);
+    }
+    this.followPath(url)
+  }
+  
+  unwindAndFollowForwardHistoryUntil(urlInHistory) {
+    var url = "nourl"
+    while(url && url !== urlInHistory ) {
+      url= this.forwardHistory().pop();
+      this.history().push(url);
+    }
+    this.followPath(url)
+  }
+  
+  /*MD ## Button Events  MD*/
+  
   async onApply() {
-    var url = this.getURL().toString();
+    var url = this.getBaseURL();
     var filename = url.replace(/.*\//,"")
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
     if (url == foundTemplate) {
@@ -403,23 +430,7 @@ export default class Container extends Morph {
       this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
   }
   
-  unwindAndFollowHistoryUntil(urlInHistory) {
-    var url = "nourl"
-    while(url && url !== urlInHistory ) {
-      url= this.history().pop();
-      this.forwardHistory().push(url);
-    }
-    this.followPath(url)
-  }
-  
-  unwindAndFollowForwardHistoryUntil(urlInHistory) {
-    var url = "nourl"
-    while(url && url !== urlInHistory ) {
-      url= this.forwardHistory().pop();
-      this.history().push(url);
-    }
-    this.followPath(url)
-  }
+
 
   onBack() {
     if (this.history().length < 2) {
@@ -507,7 +518,10 @@ export default class Container extends Morph {
     if (!editor) return ""
     return editor.currentEditor().getValue()
   }
-
+  
+  getBaseURL() {
+    return this.getURL().toString().replace(/[#?].*/,"")
+  }
   
   async onSave(doNotQuit) {
     if (!this.isEditing()) {

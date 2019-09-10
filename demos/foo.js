@@ -13,11 +13,39 @@ class Foo5 {
     
   }
   
+  get blue() {
+    
+  }
+  
+  set blue(b) {
+    
+  }
+  /*MD
+  # Here come methods
+  
+  
+  MD*/
   m5() {
     
   }
    
+  // #TagMe
   m11() {
+    
+  }
+  
+  /*MD
+  ## and other
+  
+  
+  MD*/
+  // #private
+  dosomthing() {
+    
+  }
+  
+  
+  static m2() {
     
   }
   

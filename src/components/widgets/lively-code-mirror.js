@@ -380,7 +380,17 @@ export default class LivelyCodeMirror extends HTMLElement {
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },
-        
+        // #Async #Workspace #Snippet #Workaround missing global async/await support in JavaScript / our Workspaces
+        "Ctrl-Alt-A": cm => {
+          var selection = this.editor.getSelection()
+          // #TODO how can we have custom snippets?
+          this.editor.replaceSelection(`var value;
+(async () => {
+  value = ${selection}
+})()`)
+          this.editor.execCommand(`goWordLeft`)
+          this.editor.execCommand(`goCharLeft`)
+        }
       }
     }
     return this.extraKeys

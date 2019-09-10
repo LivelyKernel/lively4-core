@@ -1,4 +1,14 @@
 
+/*MD
+# CrayonColors
+
+<script>
+import Crayon from "src/client/crayoncolors.js"
+Crayon.colorTableView()
+</script>
+MD*/
+
+
 export default class CrayonColors {
 
   static color(r,g,b) {
@@ -24,10 +34,10 @@ export default class CrayonColors {
 
 	static colorNames() {
 		return this.colorTableNames().join(' ').split(' ');
-	}
-	
-	static show() {
-    var t = <table>{... this.colorTableNames().map(eaLine => 
+  }
+ 
+  static colorTableView() {
+		return <table>{... this.colorTableNames().map(eaLine => 
       <tr>{...
         eaLine.split(" ").map(ea => { 
           var span = <td>{ea}</td>
@@ -39,6 +49,11 @@ export default class CrayonColors {
         })}
       </tr>
     )}</table>
+	}
+  
+	
+	static show() {
+    var t = this.colorTableView()
     lively.components.openInWindow(t)
 
 	}
@@ -51,7 +66,8 @@ export default class CrayonColors {
     }
     return foreground[name]
   }
-  
+
+  /*MD #Colors MD*/
   static get aluminum() { return this.color(0.662, 0.662, 0.662)}
   static get aqua() { return this.color(0.0, 0.556, 1.0)}
   static get asparagus() { return this.color(0.564, 0.584, 0.0)}

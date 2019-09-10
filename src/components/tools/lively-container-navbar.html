@@ -42,6 +42,11 @@
       padding: 2px;
     }
     
+    li.subitem > a {
+      display: inline-block;
+      padding-bottom: 1px;
+    }
+    
     
     ul li a:hover {
       min-width: 200px;
@@ -55,7 +60,7 @@
       padding-left: 10px;
     }
     
-    ul li ul li.subitem:hover{
+    ul li ul li.subitem:hover > a{
       background-color: gray;
       color: white;
       cursor: pointer
@@ -70,39 +75,78 @@
     ul li {
       margin: 0px;
       padding: 0px;
-      font-size: 11pt;
+      font-size: 10pt;
     }
     
     ul li.subitem {
       margin: 0px;
       padding: 0px 0px 0px 5px;
-      font-size: 11pt;
-      color: gray;
+      font-size: 10pt;
+      
     }
     
-    ul li.subitem.level1 {
-      padding-left: 15px;
+    ul li.subitem.level1 > a {
+      font-size: 12pt;
+      padding-left: 0px;
       color: rgb(0, 78, 151);
       font-weight: bold;
       
     }
     
-    ul li.subitem.level2 {
-      padding-left: 25px;
-      color: gray;
+    ul li.subitem.level2 > a {
+      font-size: 10pt;
+      padding-left: 5px;
+    }
+    ul li.subitem.level2.comment > a {
+      font-size: 12pt;
+      padding-left: 0px;
+      color: rgb(0, 78, 151);
     }
     
-    ul li.subitem.level3 {
-      padding-left: 35px;
+    ul li.subitem.level3 > a {
+      padding-left: 10px;
       color: lightgray
     }
     
 
-    ul li.subitem.selected a {
+    ul li.subitem.selected > a {
       background-color: rgba(215,215,215);
       cursor: pointer
     }
 
+    ul li.class > a {
+      color: rgb(0, 78, 151); 
+    }
+        
+    
+    ul li.method .tag {
+      color: lightgray;
+      font-size: 8pt;
+    }
+    
+    ul li.method.private {
+      color: lightgray;
+      padding-left: 10px;
+      font-size: 8pt;
+      font-style: italic;
+    }
+    
+    
+    ul li.method.important {
+      font-weight: bold;
+    }
+
+    ul li.method > span.mod {
+      color: gray;
+      font-size: 8pt;
+    }
+
+    
+    ul li.comment  {
+       font-style: italic;
+    }
+
+    
     
     ul li .fa-folder {
       color: #e99a01;
@@ -126,8 +170,6 @@
       cursor: pointer
     }
 
-   
-    
     #row {
       display: flex;
       height: 100%;
@@ -136,11 +178,11 @@
     
     #details {
       background-color: rgb(250, 250, 250);       
-      flex: 35%;
+      flex: 45%;
     }
-
+  
     #navbar {
-      flex: 65%
+      flex: 55%
     }
     
     #details, #navbar {
@@ -151,15 +193,6 @@
       overscroll-behavior: contain; 
     }
 
-    
-    .filtered-out {
-      height: 0px;
-    }
-    .filtered-out > a {
-        color: rgba(0,0,0,0.2); 
-        font-size: 0pt;
-
-    }
     
     #filter-hint {
       color: black;
@@ -172,6 +205,15 @@
       z-index: 100000000;
     }
     
+    .filtered-out {
+      height: 0px;
+    }
+    
+    .filtered-out > a, .filtered-out > span {
+        color: rgba(0,0,0,0.2);
+        font-size: 0pt !important;
+        height: 0px !important;
+    }
   </style>
   <div id="dragHint">
     <span id="dragHintText">

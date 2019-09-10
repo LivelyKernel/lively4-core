@@ -849,6 +849,7 @@ export default class Lively {
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
     
+    this.addEventListener('lively', doc, 'keyup', function(evt){lively.keys.onKeyUp(evt)}, false);
     events.installHooks()
   }
 
@@ -1167,18 +1168,20 @@ export default class Lively {
 
   static async showSource(object, evt) {
     if (object instanceof HTMLElement) {
-        var comp  = document.createElement("lively-container");
-        components.openInWindow(comp, lively.getPosition(evt)).then((async (container) => {
-          comp.editFile(await this.components.searchTemplateFilename(object.localName + ".html"));
-        }));
+      if (!object.localName.match(/-/)) {
+        return lively.notify("Could not show source for native element");  
+      }
+      lively.openBrowser(await this.components.searchTemplateFilename(object.localName + ".html"), true)
     } else {
       lively.notify("Could not show source for: " + object);
     }
   }
 
   static async showClassSource(object, evt) {
-    // object = that
-    if (object instanceof HTMLElement) {  
+    if (object instanceof HTMLElement) {
+      if (!object.localName.match(/-/)) {
+        return lively.notify("Could not show source for native element");  
+      }
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),

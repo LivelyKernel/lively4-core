@@ -83,7 +83,14 @@ export default class Editor extends Morph {
     editor.registerExtraKeys({
       "Alt-P": cm => {
         this.toggleWidgets();
+      },
+      
+      "Ctrl-Alt-P": cm => {
+        // #TODO how can we have custom snippets?
+        this.currentEditor().replaceSelection(`\/*MD MD*\/`)
+        this.currentEditor().execCommand(`goWordLeft`)
       }
+
     })
   }
   
