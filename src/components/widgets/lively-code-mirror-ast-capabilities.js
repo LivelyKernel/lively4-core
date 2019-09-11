@@ -1,24 +1,5 @@
-import { promisedEvent, through, uuid as generateUUID } from 'utils';
-import boundEval from 'src/client/bound-eval.js';
-import Morph from "src/components/widgets/lively-morph.js"
-import diff from 'src/external/diff-match-patch.js';
-import SyntaxChecker from 'src/client/syntax.js';
-import { debounce } from "utils";
-import Preferences from 'src/client/preferences.js';
-import {pt} from 'src/client/graphics.js';
-import 'src/client/stablefocus.js';
-import Strings from 'src/client/strings.js';
-import { letsScript } from 'src/client/vivide/vivide.js';
-import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
-import * as spellCheck from "src/external/codemirror-spellcheck.js"
-import {isSet} from 'utils'
-import fake from "./lively-code-mirror-fake.js"
-import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
-self.CodeMirror = CodeMirror // for modules
-let loadPromise = undefined;
 import { loc, range } from 'utils';
 
-/*MD ### AST-aware Navigation MD*/
 export default class ASTCapabilities {
   
   constructor(lcm, cm) {
@@ -76,8 +57,8 @@ export default class ASTCapabilities {
 
     return pathToShow;
   }
-  expandSelection(cm) {
-    
+  expandSelection() {
+    lively.notify("HOW?")
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
       // go down to minimal selected node
@@ -274,7 +255,6 @@ export default class ASTCapabilities {
       this.editor.refresh();
     });
   }
-  /*MD ### END of AST-aware Navigation MD*/
   createWrapper(from, to) {
     const divStyle = {
       width: "2px",
@@ -296,5 +276,8 @@ export default class ASTCapabilities {
     this.lcm.markerWrappers.length = 0;
   }
   
-  /*MD ### /AST-aware Navigation MD*/
+  openMenu() {
+    lively.success('open Menu')
+  }
+  
 }
