@@ -379,42 +379,54 @@ export default class Inspector extends Morph {
   }
 
   findParentNode(obj) {
-    return obj.parentNode || obj.host;
+    try {
+      return obj.parentNode || obj.host;
+      
+    } catch(e) {
+      // we might be in a prototype ... where we should not dare to ask...
+    }
   }
     
   displayNode(obj, expanded, parent) {
-    var node;
-    var parentNode = this.findParentNode(obj);
-    if (!parent && parentNode) {
-      var tmpParent = {
-        tagName: "...",
-        textContent: "",
-        childNodes: [obj],
-        livelyIsParentPlaceholder: true
-      };
-      node = this.displayNode(tmpParent, true, tmpParent);
-      var tagNode = node.querySelector("#tagname");
-      if (tagNode) tagNode.onclick = evt => {
-        this.inspect(parentNode);
-      };
+    try {
+      var node;
+      var parentNode = this.findParentNode(obj);
+      if (!parent && parentNode) {
+        var tmpParent = {
+          tagName: "...",
+          textContent: "",
+          childNodes: [obj],
+          livelyIsParentPlaceholder: true
+        };
+        node = this.displayNode(tmpParent, true, tmpParent);
+        var tagNode = node.querySelector("#tagname");
+        if (tagNode) tagNode.onclick = evt => {
+          this.inspect(parentNode);
+        };
+        return node;
+      } else if (obj.tagName) {
+        node = <div class="element tag"></div>;
+      } else if (obj instanceof ShadowRoot) {
+        node = <div class="element shadowroot"></div>;
+      } else if (obj instanceof Comment) {
+        node = <div class="element comment"></div>;
+      } else if (obj instanceof Node) {
+        node = <div class="element"></div>;
+      } else {
+        // Fallback... 
+        node = <span class="element"></span>;
+      }
+      this.render(node, obj, expanded); 
       return node;
-    } else if (obj.tagName) {
-      node = <div class="element tag"></div>;
-    } else if (obj instanceof ShadowRoot) {
-      node = <div class="element shadowroot"></div>;
-    } else if (obj instanceof Comment) {
-      node = <div class="element comment"></div>;
-    } else if (obj instanceof Node) {
-      node = <div class="element"></div>;
-    } else {
-      // Fallback... 
-      node = <span class="element"></span>;
+    } catch(e) {
+      debugger
+      // dont't show red notification... because errors are expected sometimes
+      console.error(e)
     }
-    this.render(node, obj, expanded); 
-    return node;
   }
   
   isNode(obj) {
+    if (obj.constructor === HTMLElement) return obj instanceof HTMLElement; // How to deal with META objects...?
     return obj instanceof Node || (obj instanceof Object && obj.livelyIsParentPlaceholder);
   }
   
