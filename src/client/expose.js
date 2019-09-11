@@ -112,12 +112,12 @@ export default class Expose {
       // lively.setPosition(win, pt(100,100))
       // lively.showPoint(pos)
       
-      win.addEventListener('mouseenter', Expose.windowMouseEnter);
-      win.addEventListener('mouseleave', Expose.windowMouseLeave);
-      win.addEventListener('click', Expose.windowClick);
+      win.addEventListener('mouseenter', Expose.onWindowMouseEnter);
+      win.addEventListener('mouseleave', Expose.onWindowMouseLeave);
+      win.addEventListener('click', Expose.onWindowClick);
     }
 
-    Expose.windowMouseEnter.call(Expose.selectedWin);
+    Expose.onWindowMouseEnter.call(Expose.selectedWin);
   }
 
   static setScaleTransform(scale, win, ext) {
@@ -139,9 +139,9 @@ export default class Expose {
     windows.forEach((win) => {
       Expose.restoreWindowStyles(win);
 
-      win.removeEventListener('mouseenter', Expose.windowMouseEnter);
-      win.removeEventListener('mouseleave', Expose.windowMouseLeave);
-      win.removeEventListener('click', Expose.windowClick);
+      win.removeEventListener('mouseenter', Expose.onWindowMouseEnter);
+      win.removeEventListener('mouseleave', Expose.onWindowMouseLeave);
+      win.removeEventListener('click', Expose.onWindowClick);
       
       delete win.tempScaledExtent
       delete win.tempScale
@@ -227,14 +227,20 @@ export default class Expose {
     Expose.selectedWin = w;
   }
 
-  static windowMouseEnter(e) {
+  static onWindowMouseEnter(evt) {
     Expose.setSelectedWindow(this);
   }
 
-  static windowMouseLeave(e) {
+  static onWindowMouseLeave(evt) {
     Expose.windowRemoveHighlight(this);
   }
 
+  static onWindowClick(evt) {
+    let win = this;
+    setTimeout(() => lively.gotoWindow(win, false), 1000);
+    Expose.close();
+  }
+  
   /* Highlights */
   static windowHighlight(w) {
     this.setScaleTransform(w.tempScale + 0.05, w, w.tempScaledExtent)
@@ -242,16 +248,11 @@ export default class Expose {
   }
 
   static windowRemoveHighlight(w) {
+    if (w) return;
     w.style.border =""
     this.setScaleTransform(w.tempScale, w, w.tempScaledExtent)
   }
 
-  static windowClick(e) {
-    let win = this;
-    //lively.focusAndScroll(win)
-    setTimeout(() => lively.gotoWindow(win), 10);
-    Expose.close();
-  }
 
   // Single Global Event
   static onKeyDown(evt) {
@@ -286,7 +287,7 @@ export default class Expose {
   }
   
   onEnterDown(evt) {
-    Expose.windowClick.call(Expose.selectedWin, evt);
+    Expose.onWindowClick.call(Expose.selectedWin, evt);
   }
 
   onEscDown(evt) {

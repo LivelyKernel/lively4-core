@@ -30,7 +30,6 @@ export default class Preferences {
     }
   }
   
-  
   static load() {
     console.info('Load preferences')
   }

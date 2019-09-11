@@ -508,8 +508,9 @@ export default class Lively {
   static pt(x,y) {
     return pt(x,y)
   }
-
-  static setPosition(obj, point, mode) {
+  
+  // #important
+  static setPosition(obj, point, mode, animateDuration) {
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
         // get the position of an svg element
@@ -523,17 +524,29 @@ export default class Lively {
         throw new Error("path has no transformation")
       }
     } else {
+      var old = lively.getPosition(obj)
       // normal DOM Element
       obj.style.position = mode || "absolute";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
       obj.dispatchEvent(new CustomEvent("position-changed"))
+      
+      if (animateDuration) {
+        obj.animate([
+          {left: old.x + "px", top: old.y + "px"},
+          {left: point.x + "px", top: point.y+ "px"}
+        ],{ 
+          duration: animateDuration,
+        })
+      }
+      
     }
   }
 
 
   // Example: lively.getPosition(that)
 
+  // #important
   static getPosition(obj) {
     
     var pos;
@@ -631,8 +644,8 @@ export default class Lively {
     this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)))
   }
 
-  static moveBy(node, delta) {
-    this.setPosition(node, this.getPosition(node).addPt(delta))
+  static moveBy(node, delta, animateDuration) {
+    this.setPosition(node, this.getPosition(node).addPt(delta), undefined, animateDuration)
   }
 
   static  getBounds(node) {
@@ -1769,14 +1782,22 @@ export default class Lively {
     return Array.from(all)
   }
 
+  
   static gotoWindow(element, justFocuWhenInBounds) {
     element.focus()
 
     if (!justFocuWhenInBounds) {
-      document.scrollingElement.scrollTop = 0
-      document.scrollingElement.scrollLeft = 0
-      var pos = lively.getPosition(element).subPt(pt(0,0))
-      lively.setPosition(document.body, pos.scaleBy(-1))
+      var elementBounds = lively.getGlobalBounds(element) 
+      var windowBounds = rect(0,0, window.innerWidth, window.innerHeight)
+      if (!windowBounds.containsRect(elementBounds)) {
+        // only do somthing if we are not visible
+        document.scrollingElement.scrollTop = 0
+        document.scrollingElement.scrollLeft = 0
+        var offset = pt(window.innerWidth, window.innerHeight).subPt(lively.getExtent(element))
+        
+        var pos = lively.getPosition(element).subPt(offset.scaleBy(0.5))
+        lively.setPosition(document.body, pos.scaleBy(-1), undefined, 1000)        
+      }
     }
   }
 
