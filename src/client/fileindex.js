@@ -146,8 +146,7 @@ export default class FileIndex {
       classNames.push(eaClass.name)
       await this.addClass(eaClass)
     }
-    
-    var allClasses = await this.db.classes.where({url: eaClass.url}).toArray()
+    var allClasses = await this.db.classes.where({url: file.url}).toArray()
     
     // deleted obsolete classes
     var obsoleteClasses = allClasses.filter(ea => !classNames.includes(ea.name))
