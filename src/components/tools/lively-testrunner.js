@@ -85,7 +85,8 @@ export default class TestRunner extends Morph {
 
   clearTests() {
     if (mocha.suite) {
-      mocha.suite.suites.length = 0; // hihi #Holzhammer
+      mocha.suite.tests.length = 0; 
+      mocha.suite.suites.length = 0; 
     }
     this.querySelector("#mocha").innerHTML= "";
   }

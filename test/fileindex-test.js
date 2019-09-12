@@ -4,6 +4,7 @@ import {expect} from 'src/external/chai.js';
 import FileIndex from "src/client/fileindex.js"
 import Paths from "src/client/paths.js"
 
+
 describe('FileIndex', () => {
   
   var sut = new FileIndex("fileindex_test")
