@@ -3,7 +3,7 @@ import { loc, range } from 'utils';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import sourcemap from 'src/external/source-map.min.js'
+import ContextMenu from 'src/client/contextmenu.js';
 
 export default class ASTCapabilities {
   
@@ -287,9 +287,17 @@ export default class ASTCapabilities {
     this.lcm.markerWrappers.length = 0;
   }
   
-  openMenu() {
-    lively.success('open Menu')
-    this.extractExpressionIntoLocalVariable();
+  async openMenu() {
+    function fa(name) { return `<i class="fa fa-${name}"></i>`; }
+    
+    const menuItems = [
+      ['selection to local variable', () => {
+        menu.remove();
+        this.extractExpressionIntoLocalVariable()
+      }, '→', fa('arrow-up')],
+    ];
+    
+    const menu = await ContextMenu.openIn(document.body, { /*clientX: x, clientY: y*/ }, undefined, document.body,  menuItems);
   }
   
   async extractExpressionIntoLocalVariable() {
@@ -298,6 +306,10 @@ export default class ASTCapabilities {
     const selectionEnd = loc(head);
     let done = false;
     const pathLocationsToSelect = [];
+    
+    var cm = this.codeMirror;
+    const scrollInfo = cm.getScrollInfo();
+    
     const res = this.lcm.value.transformAsAST({
       Expression(path) {
         const pathLocation = path.node.loc;
@@ -312,9 +324,6 @@ export default class ASTCapabilities {
             path.traverse({
               Identifier(p) {
                 value += '-'+p.node.name
-              },
-              ThisExpression(p) {
-                value += '-this';
               }
             });
             if (value.length > 0) {
@@ -365,7 +374,15 @@ export default class ASTCapabilities {
         });
       }
     });
+
     this.selectPaths(pathsToSelect);
+    this.lcm.focus();
+    cm.scrollIntoView({
+      left: scrollInfo.left,
+      top: scrollInfo.top,
+      right: scrollInfo.left + scrollInfo.width,
+      bottom: scrollInfo.top + scrollInfo.height
+    });
   }
 
   
