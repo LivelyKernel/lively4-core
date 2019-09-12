@@ -1350,7 +1350,7 @@ export default class LivelyContainerNavbar extends Morph {
         } else {
           // File Element does not Exists
           if (method == "PUT") {
-            var parentURL = url.replace(/\/[^/]+$/,"/")
+            var parentURL = url.replace(/\/+[^/]+$/,"/")
             var parentElement = this.getFileElementByURL(parentURL)
             if (!parentElement) parentElement = this.get("#row")
             if (parentElement) {
