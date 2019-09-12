@@ -8,7 +8,7 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import DragBehavior from 'src/client/morphic/dragbehavior.js'
 import svg from 'src/client/svg.js'
 
-/* globals $, Halo, that, HaloService */
+/* globals Halo, that, HaloService */
 
 let svgStrategy = {
   match(target) {
