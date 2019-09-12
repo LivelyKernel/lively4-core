@@ -1,5 +1,10 @@
 import { loc, range } from 'utils';
 
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
+
+import sourcemap from 'src/external/source-map.min.js'
+
 export default class ASTCapabilities {
   
   constructor(lcm, cm) {
@@ -58,7 +63,6 @@ export default class ASTCapabilities {
     return pathToShow;
   }
   expandSelection() {
-    lively.notify("HOW?")
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
       // go down to minimal selected node
@@ -147,6 +151,13 @@ export default class ASTCapabilities {
     this.selectPaths(maxPaths);
   }
   
+  selectNodes(nodes) {
+    const ranges = nodes.map(node => {
+      const [anchor, head] = range(node.loc).asCM();
+      return { anchor, head };
+    });
+    this.editor.setSelections(ranges);
+  }
   selectPaths(paths) {
     const ranges = paths.map(path => {
       const [anchor, head] = range(path.node.loc).asCM();
@@ -278,6 +289,84 @@ export default class ASTCapabilities {
   
   openMenu() {
     lively.success('open Menu')
+    this.extractExpressionIntoLocalVariable();
   }
+  
+  async extractExpressionIntoLocalVariable() {
+    const { anchor, head } = this.editor.listSelections()[0];
+    const selectionStart = loc(anchor);
+    const selectionEnd = loc(head);
+    let done = false;
+    const pathLocationsToSelect = [];
+    const res = this.lcm.value.transformAsAST({
+      Expression(path) {
+        const pathLocation = path.node.loc;
+        if (!done && pathLocation) {
+          const pathStart = loc(pathLocation.start);
+          const pathEnd = loc(pathLocation.end);
+
+          const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+          if (isSelectedPath) {
+            const t = babel.types;
+            let value = '';
+            path.traverse({
+              Identifier(p) {
+                value += '-'+p.node.name
+              },
+              ThisExpression(p) {
+                value += '-this';
+              }
+            });
+            if (value.length > 0) {
+              value = value.camelCase();
+            } else {
+              value = path.scope.generateUidIdentifier('temp').name;
+            }
+            const identifier = t.Identifier(value);
+            const decl = babel.template('const ID = INIT;')({
+              ID: identifier,
+              INIT: path.node
+            })
+            let referree = t.Identifier(value);
+            path.replaceWith(referree);
+            const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0]
+            const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id')
+            
+            pathLocationsToSelect.push(insertedDeclarationIdentifier.getPathLocation());
+            pathLocationsToSelect.push(path.getPathLocation())
+            
+            done = true;
+          }
+        }
+      }
+    });
+    this.lcm.value=res.code;
+    
+    const pathsToSelect = [];
+    this.lcm.value.traverseAsAST({
+      Program(path) {
+        pathLocationsToSelect.forEach(location => {
+          let p = path;
+          const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
+          let result;
+          while((result = reg.exec(location)) !== null) {
+            let part = result[0]
+            if (part.startsWith('.')) {
+              part = part.replace('.', '')
+              p = p.get(part);
+            } else {
+              part = part.replace(/\[|\]/ig, '')
+              part = parseInt(part)
+              p = p[part];
+            }    
+          }
+
+          pathsToSelect.push(p)
+        });
+      }
+    });
+    this.selectPaths(pathsToSelect);
+  }
+
   
 }
