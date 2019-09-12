@@ -347,6 +347,8 @@ export default class Container extends Morph {
       headers: headers
     }).then( resp => {
     
+      this.clear(); // could already be filled again...
+      
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
       if (this.contentType.match("image"))  {
