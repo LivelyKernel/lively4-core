@@ -1,3 +1,6 @@
+
+
+
 /*MD # Lively Container 
 
 ![](lively-container.png){height=400px}
@@ -261,8 +264,7 @@ export default class Container extends Morph {
     } else {
       this.anchor = null
     }
-    
-    
+        
     this.clear();
     container.style.overflow = "auto";
 
@@ -273,14 +275,11 @@ export default class Container extends Morph {
     } else {
       resolvedURL = url
     }
-      
     
     this.content = ""
-    
-    
+  
     this.showNavbar();
-    
-    
+  
     // console.log("set url: " + url);
     this.sourceContent = "NOT EDITABLE";
     var render = !donotrender;
@@ -438,7 +437,6 @@ export default class Container extends Morph {
     });
   }
   
-  
   useBrowserHistory() {
     return this.getAttribute("load") == "auto";
   }
@@ -452,11 +450,6 @@ export default class Container extends Morph {
     if (!this._forwardHistory) this._forwardHistory = [];
     return this._forwardHistory;
   }
-  
-
-  
-  
-  
   /*MD ## Getter / Setter MD*/
 
   getSourceCode() {
@@ -1320,6 +1313,26 @@ export default class Container extends Morph {
             for(var block of ea.querySelectorAll("pre code")) {
               highlight.highlightBlock(block);
             }
+            // now we can use the structural information we got from the highlighter
+            for(var comment of ea.querySelectorAll(".hljs-comment")) {
+              var markdownMatch = comment.textContent.match(/^\/\*MD((.|\n)*)MD\*\/$/)
+              if (markdownMatch) {
+                  //source.startsWidth("/*MD") && source.endsWidth("MD*/")
+                var markdown = await (<lively-markdown>{markdownMatch[1]}</lively-markdown>)
+                comment.innerHTML = ""
+                comment.appendChild(markdown)
+                await markdown.updateView()
+                markdown.style.whiteSpace = "normal" // revert effect of outside `pre` tag 
+                markdown.style.display = "inline-block"
+                // markdown.style.border = "2px solid blue"
+                // markdown.style.backgroundColor = "lightgray"
+                
+                lively.html.fixLinks(markdown.shadowRoot.querySelectorAll("[href],[src]"), 
+                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    url => this.followPath(url))
+              }
+            }
+            
           }
         }
       }
