@@ -1721,9 +1721,17 @@ export default class Container extends Morph {
     }
   }
   
-   navigateToName(name, data) {
+  navigateToName(name, data) {
     // lively.notify("navigate to " + name);
+    var baseURL = this.getURL().toString().replace(/\#.*/,"")
+    var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
+    var nextURL = baseURL + anchor
     var editor = this.getLivelyCodeMirror()
+    
+    this.setPathAttributeAndInput(nextURL)
+    this.history().push(nextURL);
+      
+    
     if (editor) {
       if (data && data.start) { // we have more information
         var cm = editor.editor
@@ -1749,11 +1757,7 @@ export default class Container extends Morph {
         editor.find(name);
       }
     } else {      
-      var baseURL = this.getURL().toString().replace(/\#.*/,"")
-      var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
-      var nextURL = baseURL + anchor
-      this.setPathAttributeAndInput(nextURL)
-      this.history().push(nextURL);
+      
       this.scrollToAnchor(anchor)
     }
   }
@@ -1872,6 +1876,7 @@ export default class Container extends Morph {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
         var codeMirror = await (await this.asyncGet("#editor")).get('#editor');
+        var details = await (await this.asyncGet("#navbar")).get('#details');
         codeMirror.find(name)
         return
       }
