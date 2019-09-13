@@ -6,6 +6,7 @@ export default function foo(a) {
   return  21 + a + foobar()
 }
 
+/*MD # Hello World MD*/
 
 class Foo5 {
   

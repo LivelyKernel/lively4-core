@@ -641,11 +641,11 @@ export default class ContextMenu {
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
-        ["Issues", (evt) => {
-           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-            comp.followPath(lively4url + "/doc/stories.md");
-          });
-          // window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+        ["Issues", (evt) => { 
+          window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+        },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
+        ["Project Board", (evt) => {
+           window.open("https://github.com/LivelyKernel/lively4-core/projects/1") ;
         },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
         ["Module Info", () => {
           Info.showModuleInfo()
