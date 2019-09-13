@@ -1757,6 +1757,20 @@ export default class Lively {
    return result
   }
   
+  static waitOnQuerySelector(element, selector, maxtime) {
+    maxtime = maxtime || 10000;
+    var startTime = Date.now();
+    return new Promise((resolve, reject) => {
+      var check = () => {
+        var found = element.querySelector(selector);
+        if (found) resolve(found);
+        else if (Date.now() - startTime > maxtime) reject();
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+  }
+  
   static elementToCSSName(element) {
     try {
       return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")      

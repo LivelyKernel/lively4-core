@@ -189,7 +189,6 @@ export default class Container extends Morph {
     }
   }
   
-  
   getPath() {
     return encodeURI(this.shadowRoot.querySelector("#container-path").value);
   }
@@ -1875,9 +1874,14 @@ export default class Container extends Morph {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
-        var codeMirror = await (await this.asyncGet("#editor")).get('#editor');
-        var details = await (await this.asyncGet("#navbar")).get('#details');
-        codeMirror.find(name)
+        // use Navbar and it's structural knowledge to find the right name
+        var codeMirror = (await this.asyncGet("#editor")).get('#editor');
+        var navbar = await this.asyncGet("lively-container-navbar")
+        await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
+        var item = navbar.detailItems.find(ea => ea.name == name)
+        if (item) {
+          navbar.onDetailsItemClick(item, new CustomEvent("nothing"))
+        }
         return
       }
       
