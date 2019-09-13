@@ -327,6 +327,7 @@ export default class ASTCapabilities {
               }
             });
             if (value.length > 0) {
+              // #TODO: ensure unique identifier
               value = value.camelCase();
             } else {
               value = path.scope.generateUidIdentifier('temp').name;
@@ -336,7 +337,58 @@ export default class ASTCapabilities {
               ID: identifier,
               INIT: path.node
             })
+                            // lively.notify("HERE0");
+
             let referree = t.Identifier(value);
+            
+            // #TODO: ensure block to insert to
+//             path.find(p => {
+//               const parentPath = p.parentPath;
+//               if (!parentPath) { return false; }
+
+//               function ensureBlock(body) {
+//                 if (!body.node) return null;
+
+//                 if (body.isBlockStatement()) {
+//                   return body.node;
+//                 }
+
+//                 const statements = [];
+//                 if (body.isStatement()) {
+//                   statements.push(body.node);
+//                 } else if (body.parentPath.isArrowFunctionExpression() && body.isExpression()) {
+//                   statements.push(t.returnStatement(body.node));
+//                 } else {
+//                   throw new Error("I never thought this was even possible.");
+//                 }
+
+//                 const blockNode = t.blockStatement(statements);
+//                 body.replaceWith(blockNode);
+//                 return blockNode;
+//               }
+
+//               if (
+//                 p.parentKey === 'body' &&
+//                 (
+//                   parentPath.isFunction() ||
+//                   parentPath.isFor() ||
+//                   parentPath.isWhile()
+//                 )
+//               ) {
+//                 ensureBlock(p);
+//                 return true;
+//               }
+//               if (
+//                 parentPath.isIfStatement() &&
+//                 (p.parentKey === 'consequent' || p.parentKey === 'alternate')
+//               ) {
+//                 ensureBlock(p);
+//                 return true;
+//               }
+//             });
+
+            // lively.notify("HERE1");
+
             path.replaceWith(referree);
             const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0]
             const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id')
@@ -350,7 +402,8 @@ export default class ASTCapabilities {
       }
     });
     this.lcm.value=res.code;
-    
+                // lively.notify("HERE2");
+
     const pathsToSelect = [];
     this.lcm.value.traverseAsAST({
       Program(path) {
@@ -374,6 +427,7 @@ export default class ASTCapabilities {
         });
       }
     });
+            // lively.notify("HERE3");
 
     this.selectPaths(pathsToSelect);
     this.lcm.focus();
