@@ -309,7 +309,10 @@ export default class ASTCapabilities {
     const menuItems = [['selection to local variable', () => {
       menu.remove();
       this.extractExpressionIntoLocalVariable();
-    }, '→', fa('arrow-up')]];
+    }, '→', '<i class="fa fa-share-alt fa-rotate-90"></i>'], ['selection test', () => {
+      menu.remove();
+      this.extractExpressionIntoLocalVariable();
+    }, '→', '<i class="fa fa-share-alt fa-rotate-90"></i>']];
 
     const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
   }
@@ -323,99 +326,85 @@ export default class ASTCapabilities {
 
     const scrollInfo = this.scrollInfo;
 
-    // #TODO: ensure block:
-    // 1. find path and pathLocation we want to modify
-    // 2. (extract modification): extract pathLocation and use to re-identify for extract expression
-    // 3. insert block statement and update paths/pathLocations for next step (= extract modification)
-    let theTarget;
-    let theTargetPath;
-    const res = this.sourceCode.transformAsAST(({
-      Expression(path) {
-        var t = babel.types;
-        const pathLocation = path.node.loc;
-        if (!done && pathLocation) {
-          const pathStart = loc(pathLocation.start);
-          const pathEnd = loc(pathLocation.end);
+    let pathLocationToBeExtracted;
+    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+      visitor: {
+        Expression(path) {
+          const pathLocation = path.node.loc;
+          if (!done && pathLocation) {
+            const pathStart = loc(pathLocation.start);
+            const pathEnd = loc(pathLocation.end);
 
-          const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
-          if (isSelectedPath) {
-            theTarget = path;
-            theTargetPath = path.getPathLocation();
+            const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+            if (isSelectedPath) {
+              pathLocationToBeExtracted = path.getPathLocation();
 
-            path.find(p => {
-              const parentPath = p.parentPath;
-              if (!parentPath) { return false; }
-
-              function ensureBlock(body) {
-                if (!body.node) return false;
-
-                if (body.isBlockStatement()) {
+              path.find(p => {
+                const parentPath = p.parentPath;
+                if (!parentPath) {
                   return false;
                 }
 
-                const statements = [];
-                if (body.isStatement()) {
-                  statements.push(body.node);
-                  const blockNode = t.blockStatement(statements);
-                  body.replaceWith(blockNode);
+                function ensureBlock(body) {
+                  if (!body.node) return false;
+
+                  if (body.isBlockStatement()) {
+                    return false;
+                  }
+
+                  const statements = [];
+                  if (body.isStatement()) {
+                    statements.push(body.node);
+                    const blockNode = t.blockStatement(statements);
+                    body.replaceWith(blockNode);
+                    return true;
+                  } else if (body.parentPath.isArrowFunctionExpression() && body.isExpression()) {
+                    statements.push(t.returnStatement(body.node));
+                    const blockNode = t.blockStatement(statements);
+                    body.replaceWith(blockNode);
+                    return true;
+                  } else {
+                    throw new Error("I never thought this was even possible.");
+                  }
+                }
+
+                const targetLocation = path.getPathLocation();
+                const blockLocation = p.getPathLocation();
+                if (p.parentKey === 'body' && (parentPath.isFor() || parentPath.isWhile())) {
+                  const becameABlock = ensureBlock(p);
+                  if (becameABlock) {
+                    pathLocationToBeExtracted = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '');
+                  }
                   return true;
-                } else if (body.parentPath.isArrowFunctionExpression() && body.isExpression()) {
-                  statements.push(t.returnStatement(body.node));
-                  const blockNode = t.blockStatement(statements);
-                  body.replaceWith(blockNode);
+                }
+                if (p.parentKey === 'body' && parentPath.isFunction()) {
+                  const becameABlock = ensureBlock(p);
+                  if (becameABlock) {
+                    pathLocationToBeExtracted = blockLocation + '.body[0].argument' + targetLocation.replace(blockLocation, '');
+                  }
                   return true;
-                } else {
-                  throw new Error("I never thought this was even possible.");
                 }
-              }
+                if ((p.parentKey === 'consequent' || p.parentKey === 'alternate') && parentPath.isIfStatement()) {
+                  const becameABlock = ensureBlock(p);
+                  if (becameABlock) {
+                    pathLocationToBeExtracted = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '');
+                  }
+                  return true;
+                }
+              });
 
-              const targetLocation = path.getPathLocation();
-              const blockLocation = p.getPathLocation();
-              if (
-                p.parentKey === 'body' &&
-                (
-                  parentPath.isFor() ||
-                  parentPath.isWhile()
-                )
-              ) {
-                const becameABlock = ensureBlock(p);
-                if (becameABlock) {
-                  theTargetPath = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '')
-                }
-                return true;
-              }
-              if (p.parentKey === 'body' && parentPath.isFunction()) {
-                const becameABlock = ensureBlock(p);
-                if (becameABlock) {
-                  theTargetPath = blockLocation + '.body[0].argument' + targetLocation.replace(blockLocation, '')
-                }
-                return true;
-              }
-              if (
-                parentPath.isIfStatement() &&
-                (p.parentKey === 'consequent' || p.parentKey === 'alternate')
-              ) {
-                const becameABlock = ensureBlock(p);
-                if (becameABlock) {
-                  theTargetPath = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '')
-                }
-                return true;
-              }
-            });
-
-            // lively.notify("HERE1");
-
-            done = true;
+              done = true;
+            }
           }
         }
       }
     }));
 
-    if (!theTarget) {
+    if (!pathLocationToBeExtracted) {
       lively.warn('No Expression to extract found.');
       return;
     }
-    
+
     function pathByLocationFromProgram(programPath, location) {
       let path = programPath;
       const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
@@ -435,41 +424,41 @@ export default class ASTCapabilities {
       return path;
     }
 
-    const res2 = res.code.transformAsAST({
-      Program(programPath) {
-        let path = pathByLocationFromProgram(programPath, theTargetPath);
-        theTarget = path;
-        theTargetPath = path.getPathLocation();
-        const t = babel.types;
-        let value = '';
-        path.traverse({
-          Identifier(p) {
-            value += '-' + p.node.name;
+    const resultExtracted = res.code.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program(programPath) {
+          let path = pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
+          pathLocationToBeExtracted = path.getPathLocation();
+          let value = '';
+          path.traverse({
+            Identifier(p) {
+              value += '-' + p.node.name;
+            }
+          });
+          if (value.length > 0) {
+            // #TODO: ensure unique identifier
+            value = value.camelCase();
+          } else {
+            value = path.scope.generateUidIdentifier('temp').name;
           }
-        });
-        if (value.length > 0) {
-          // #TODO: ensure unique identifier
-          value = value.camelCase();
-        } else {
-          value = path.scope.generateUidIdentifier('temp').name;
+          const identifier = t.Identifier(value);
+          const decl = template('const ID = INIT;')({
+            ID: identifier,
+            INIT: path.node
+          });
+
+          let referree = t.Identifier(value);
+
+          path.replaceWith(referree);
+          const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0];
+          const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id');
+
+          pathLocationsToSelect.push(insertedDeclarationIdentifier.getPathLocation());
+          pathLocationsToSelect.push(path.getPathLocation());
         }
-        const identifier = t.Identifier(value);
-        const decl = babel.template('const ID = INIT;')({
-          ID: identifier,
-          INIT: path.node
-        });
-
-        let referree = t.Identifier(value);
-
-        path.replaceWith(referree);
-        const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0];
-        const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id');
-
-        pathLocationsToSelect.push(insertedDeclarationIdentifier.getPathLocation());
-        pathLocationsToSelect.push(path.getPathLocation());
       }
-    });
-    this.sourceCode = res2.code;
+    }));
+    this.sourceCode = resultExtracted.code;
 
     const pathsToSelect = [];
     this.sourceCode.traverseAsAST({
@@ -481,6 +470,7 @@ export default class ASTCapabilities {
       }
     });
 
+    // #TODO: include primary selection
     this.selectPaths(pathsToSelect);
     this.focusEditor();
     this.scrollTo(scrollInfo);
