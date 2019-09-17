@@ -6,18 +6,20 @@ const babel = babelDefault.babel;
 import ContextMenu from 'src/client/contextmenu.js';
 
 export default class ASTCapabilities {
-  
+
   constructor(lcm, cm) {
     this.lcm = lcm;
     this.codeMirror = cm;
   }
-  get editor() { return this.lcm.editor; }
+  get editor() {
+    return this.lcm.editor;
+  }
   get selectionRanges() {
     return this.editor.listSelections().map(range);
   }
   get programPath() {
     let programPath;
-    this.lcm.value.traverseAsAST({
+    this.sourceCode.traverseAsAST({
       Program(path) {
         programPath = path;
       }
@@ -26,14 +28,14 @@ export default class ASTCapabilities {
   }
   getPathForRoute(route) {
     let path = this.programPath;
-    if(!path) {
+    if (!path) {
       lively.warn('No programPath found');
     }
-    
+
     route.forEach(routePoint => {
       path = path.get(routePoint.inList ? routePoint.listKey + '.' + routePoint.key : routePoint.key);
     });
-    
+
     return path;
   }
   nextPath(startingPath, isValid) {
@@ -41,7 +43,7 @@ export default class ASTCapabilities {
 
     startingPath.traverse({
       enter(path) {
-        if(!pathToShow && isValid(path)) {
+        if (!pathToShow && isValid(path)) {
           pathToShow = path;
         }
       }
@@ -51,9 +53,9 @@ export default class ASTCapabilities {
   }
   getInnermostPath(startingPath, nextPathCallback) {
     let pathToShow = startingPath;
-    while(true) {
+    while (true) {
       let nextPath = nextPathCallback(pathToShow);
-      if(nextPath) {
+      if (nextPath) {
         pathToShow = nextPath;
       } else {
         break;
@@ -66,12 +68,12 @@ export default class ASTCapabilities {
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
       // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, {anchor, head}) => {
+      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
         return this.nextPath(startingPath, path => {
           const location = range(path.node.loc);
           return location.contains(anchor) && location.contains(head);
         });
-      }
+      };
       const pathToShow = this.getInnermostPath(this.programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
 
       // go up again
@@ -82,7 +84,7 @@ export default class ASTCapabilities {
         const pathStart = loc(pathLocation.start);
         const pathEnd = loc(pathLocation.end);
 
-        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd)
+        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd);
       }) || pathToShow;
     });
 
@@ -91,14 +93,18 @@ export default class ASTCapabilities {
   forwardList(parentPath) {
     const linearizedPathList = [];
     parentPath.traverse({
-      exit(path) { linearizedPathList.push(path); }
+      exit(path) {
+        linearizedPathList.push(path);
+      }
     });
     return linearizedPathList;
   }
   backwardList(parentPath) {
     const linearizedPathList = [];
     parentPath.traverse({
-      enter(path) { linearizedPathList.push(path); }
+      enter(path) {
+        linearizedPathList.push(path);
+      }
     });
     return linearizedPathList.reverse();
   }
@@ -109,12 +115,12 @@ export default class ASTCapabilities {
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
       // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, {anchor, head}) => {
+      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
         return this.nextPath(startingPath, path => {
           const location = range(path.node.loc);
           return location.contains(anchor) && location.contains(head);
         });
-      }
+      };
       let currentPath = this.getInnermostPath(programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
 
       let selectionStart = loc(anchor);
@@ -125,7 +131,7 @@ export default class ASTCapabilities {
 
       // do we fully select the current path?
       if (selectionStart.isEqual(pathStart) && selectionEnd.isEqual(pathEnd)) {
-        
+
         // check if parents have the same selection range
         currentPath.findParent(path => {
           const pathLocation = path.node.loc;
@@ -141,7 +147,7 @@ export default class ASTCapabilities {
 
         const currentPathInList = pathList.find(path => path.node === currentPath.node);
         const currentIndex = pathList.indexOf(currentPathInList);
-        const newPath = pathList[Math.min(currentIndex + 1, pathList.length -1)];
+        const newPath = pathList[Math.min(currentIndex + 1, pathList.length - 1)];
         return newPath;
       } else {
         return currentPath;
@@ -150,7 +156,7 @@ export default class ASTCapabilities {
 
     this.selectPaths(maxPaths);
   }
-  
+
   selectNodes(nodes) {
     const ranges = nodes.map(node => {
       const [anchor, head] = range(node.loc).asCM();
@@ -171,19 +177,26 @@ export default class ASTCapabilities {
   isCursorIn(location, cursorStart) {
     return range(location).contains(this.editor.getCursor(cursorStart));
   }
-  
-  
-  get routeToShownPath() { return this._routeToShownPath = this._routeToShownPath || []; }
-  set routeToShownPath(value) { return this._routeToShownPath = value; }
-  get markerWrappers() { return this._markerWrappers = this._markerWrappers || []; }
-  set markerWrappers(value) { return this._markerWrappers = value; }
+
+  get routeToShownPath() {
+    return this._routeToShownPath = this._routeToShownPath || [];
+  }
+  set routeToShownPath(value) {
+    return this._routeToShownPath = value;
+  }
+  get markerWrappers() {
+    return this._markerWrappers = this._markerWrappers || [];
+  }
+  set markerWrappers(value) {
+    return this._markerWrappers = value;
+  }
 
   unfold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
+    const prevPath = this.getPathForRoute(this.routeToShownPath);
 
     const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
-    
-    if(pathToShow) {
+
+    if (pathToShow) {
       this.foldPath(pathToShow);
     } else {
       lively.warn("No previous folding level found");
@@ -191,28 +204,27 @@ export default class ASTCapabilities {
   }
   isValidFoldPath(path) {
     return true;
-    return path.isProgram() ||
-      path.isForOfStatement() ||
-      path.isFunctionExpression() ||
-      path.isForAwaitStatement() ||
-      (path.parentPath && path.parentPath.isYieldExpression()) ||
-      path.isArrowFunctionExpression();
+    return path.isProgram() || path.isForOfStatement() || path.isFunctionExpression() || path.isForAwaitStatement() || path.parentPath && path.parentPath.isYieldExpression() || path.isArrowFunctionExpression();
   }
   nextFoldingPath(startingPath) {
     return this.nextPath(startingPath, path => {
       const location = path.node.loc;
-      if(!this.isCursorIn(location, 'anchor')) { return false; }
-      if(!this.isCursorIn(location, 'head')) { return false; }
+      if (!this.isCursorIn(location, 'anchor')) {
+        return false;
+      }
+      if (!this.isCursorIn(location, 'head')) {
+        return false;
+      }
 
       return this.isValidFoldPath(path);
     });
   }
   fold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
-    
+    const prevPath = this.getPathForRoute(this.routeToShownPath);
+
     const pathToShow = this.nextFoldingPath(prevPath);
-    
-    if(pathToShow) {
+
+    if (pathToShow) {
       this.foldPath(pathToShow);
     } else {
       lively.warn("No next folding level found");
@@ -220,8 +232,8 @@ export default class ASTCapabilities {
   }
   autoFoldMax() {
     const pathToShow = this.getInnermostPath(this.programPath, prevPath => this.nextFoldingPath(prevPath));
-    
-    if(pathToShow) {
+
+    if (pathToShow) {
       this.foldPath(pathToShow);
     } else {
       lively.warn("No folding level for automatic fold found");
@@ -229,19 +241,21 @@ export default class ASTCapabilities {
   }
   getRouteForPath(path) {
     const route = [];
-    
+
     path.find(path => {
-      if(path.isProgram()) { return false; } // we expect to start at a Program node
+      if (path.isProgram()) {
+        return false;
+      } // we expect to start at a Program node
 
       route.unshift({
         inList: path.inList,
         listKey: path.listKey,
         key: path.key
       });
-      
+
       return false;
-    })
-    
+    });
+
     return route;
   }
   foldPath(path) {
@@ -286,32 +300,38 @@ export default class ASTCapabilities {
     this.lcm.markerWrappers.forEach(wrapper => wrapper.marker.clear());
     this.lcm.markerWrappers.length = 0;
   }
-  
+
   async openMenu() {
-    function fa(name) { return `<i class="fa fa-${name}"></i>`; }
-    
-    const menuItems = [
-      ['selection to local variable', () => {
-        menu.remove();
-        this.extractExpressionIntoLocalVariable()
-      }, '→', fa('arrow-up')],
-    ];
-    
-    const menu = await ContextMenu.openIn(document.body, { /*clientX: x, clientY: y*/ }, undefined, document.body,  menuItems);
+    function fa(name) {
+      return `<i class="fa fa-${name}"></i>`;
+    }
+
+    const menuItems = [['selection to local variable', () => {
+      menu.remove();
+      this.extractExpressionIntoLocalVariable();
+    }, '→', fa('arrow-up')]];
+
+    const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
   }
-  
+
   async extractExpressionIntoLocalVariable() {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectionStart = loc(anchor);
     const selectionEnd = loc(head);
     let done = false;
     const pathLocationsToSelect = [];
-    
-    var cm = this.codeMirror;
-    const scrollInfo = cm.getScrollInfo();
-    
-    const res = this.lcm.value.transformAsAST({
+
+    const scrollInfo = this.scrollInfo;
+
+    // #TODO: ensure block:
+    // 1. find path and pathLocation we want to modify
+    // 2. (extract modification): extract pathLocation and use to re-identify for extract expression
+    // 3. insert block statement and update paths/pathLocations for next step (= extract modification)
+    let theTarget;
+    let theTargetPath;
+    const res = this.sourceCode.transformAsAST(({
       Expression(path) {
+        var t = babel.types;
         const pathLocation = path.node.loc;
         if (!done && pathLocation) {
           const pathStart = loc(pathLocation.start);
@@ -319,125 +339,173 @@ export default class ASTCapabilities {
 
           const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
           if (isSelectedPath) {
-            const t = babel.types;
-            let value = '';
-            path.traverse({
-              Identifier(p) {
-                value += '-'+p.node.name
+            theTarget = path;
+            theTargetPath = path.getPathLocation();
+
+            path.find(p => {
+              const parentPath = p.parentPath;
+              if (!parentPath) { return false; }
+
+              function ensureBlock(body) {
+                if (!body.node) return false;
+
+                if (body.isBlockStatement()) {
+                  return false;
+                }
+
+                const statements = [];
+                if (body.isStatement()) {
+                  statements.push(body.node);
+                  const blockNode = t.blockStatement(statements);
+                  body.replaceWith(blockNode);
+                  return true;
+                } else if (body.parentPath.isArrowFunctionExpression() && body.isExpression()) {
+                  statements.push(t.returnStatement(body.node));
+                  const blockNode = t.blockStatement(statements);
+                  body.replaceWith(blockNode);
+                  return true;
+                } else {
+                  throw new Error("I never thought this was even possible.");
+                }
+              }
+
+              const targetLocation = path.getPathLocation();
+              const blockLocation = p.getPathLocation();
+              if (
+                p.parentKey === 'body' &&
+                (
+                  parentPath.isFor() ||
+                  parentPath.isWhile()
+                )
+              ) {
+                const becameABlock = ensureBlock(p);
+                if (becameABlock) {
+                  theTargetPath = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '')
+                }
+                return true;
+              }
+              if (p.parentKey === 'body' && parentPath.isFunction()) {
+                const becameABlock = ensureBlock(p);
+                if (becameABlock) {
+                  theTargetPath = blockLocation + '.body[0].argument' + targetLocation.replace(blockLocation, '')
+                }
+                return true;
+              }
+              if (
+                parentPath.isIfStatement() &&
+                (p.parentKey === 'consequent' || p.parentKey === 'alternate')
+              ) {
+                const becameABlock = ensureBlock(p);
+                if (becameABlock) {
+                  theTargetPath = blockLocation + '.body[0]' + targetLocation.replace(blockLocation, '')
+                }
+                return true;
               }
             });
-            if (value.length > 0) {
-              // #TODO: ensure unique identifier
-              value = value.camelCase();
-            } else {
-              value = path.scope.generateUidIdentifier('temp').name;
-            }
-            const identifier = t.Identifier(value);
-            const decl = babel.template('const ID = INIT;')({
-              ID: identifier,
-              INIT: path.node
-            })
-                            // lively.notify("HERE0");
-
-            let referree = t.Identifier(value);
-            
-            // #TODO: ensure block to insert to
-//             path.find(p => {
-//               const parentPath = p.parentPath;
-//               if (!parentPath) { return false; }
-
-//               function ensureBlock(body) {
-//                 if (!body.node) return null;
-
-//                 if (body.isBlockStatement()) {
-//                   return body.node;
-//                 }
-
-//                 const statements = [];
-//                 if (body.isStatement()) {
-//                   statements.push(body.node);
-//                 } else if (body.parentPath.isArrowFunctionExpression() && body.isExpression()) {
-//                   statements.push(t.returnStatement(body.node));
-//                 } else {
-//                   throw new Error("I never thought this was even possible.");
-//                 }
-
-//                 const blockNode = t.blockStatement(statements);
-//                 body.replaceWith(blockNode);
-//                 return blockNode;
-//               }
-
-//               if (
-//                 p.parentKey === 'body' &&
-//                 (
-//                   parentPath.isFunction() ||
-//                   parentPath.isFor() ||
-//                   parentPath.isWhile()
-//                 )
-//               ) {
-//                 ensureBlock(p);
-//                 return true;
-//               }
-//               if (
-//                 parentPath.isIfStatement() &&
-//                 (p.parentKey === 'consequent' || p.parentKey === 'alternate')
-//               ) {
-//                 ensureBlock(p);
-//                 return true;
-//               }
-//             });
 
             // lively.notify("HERE1");
 
-            path.replaceWith(referree);
-            const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0]
-            const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id')
-            
-            pathLocationsToSelect.push(insertedDeclarationIdentifier.getPathLocation());
-            pathLocationsToSelect.push(path.getPathLocation())
-            
             done = true;
           }
         }
       }
+    }));
+
+    if (!theTarget) {
+      lively.warn('No Expression to extract found.');
+      return;
+    }
+    
+    function pathByLocationFromProgram(programPath, location) {
+      let path = programPath;
+      const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
+      let result;
+      while ((result = reg.exec(location)) !== null) {
+        let part = result[0];
+        if (part.startsWith('.')) {
+          part = part.replace('.', '');
+          path = path.get(part);
+        } else {
+          part = part.replace(/\[|\]/ig, '');
+          part = parseInt(part);
+          path = path[part];
+        }
+      }
+
+      return path;
+    }
+
+    const res2 = res.code.transformAsAST({
+      Program(programPath) {
+        let path = pathByLocationFromProgram(programPath, theTargetPath);
+        theTarget = path;
+        theTargetPath = path.getPathLocation();
+        const t = babel.types;
+        let value = '';
+        path.traverse({
+          Identifier(p) {
+            value += '-' + p.node.name;
+          }
+        });
+        if (value.length > 0) {
+          // #TODO: ensure unique identifier
+          value = value.camelCase();
+        } else {
+          value = path.scope.generateUidIdentifier('temp').name;
+        }
+        const identifier = t.Identifier(value);
+        const decl = babel.template('const ID = INIT;')({
+          ID: identifier,
+          INIT: path.node
+        });
+
+        let referree = t.Identifier(value);
+
+        path.replaceWith(referree);
+        const insertedDeclaration = path.getStatementParent().insertBefore(decl)[0];
+        const insertedDeclarationIdentifier = insertedDeclaration.get('declarations')[0].get('id');
+
+        pathLocationsToSelect.push(insertedDeclarationIdentifier.getPathLocation());
+        pathLocationsToSelect.push(path.getPathLocation());
+      }
     });
-    this.lcm.value=res.code;
-                // lively.notify("HERE2");
+    this.sourceCode = res2.code;
 
     const pathsToSelect = [];
-    this.lcm.value.traverseAsAST({
+    this.sourceCode.traverseAsAST({
       Program(path) {
         pathLocationsToSelect.forEach(location => {
-          let p = path;
-          const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
-          let result;
-          while((result = reg.exec(location)) !== null) {
-            let part = result[0]
-            if (part.startsWith('.')) {
-              part = part.replace('.', '')
-              p = p.get(part);
-            } else {
-              part = part.replace(/\[|\]/ig, '')
-              part = parseInt(part)
-              p = p[part];
-            }    
-          }
-
-          pathsToSelect.push(p)
+          const p = pathByLocationFromProgram(path, location);
+          pathsToSelect.push(p);
         });
       }
     });
-            // lively.notify("HERE3");
 
     this.selectPaths(pathsToSelect);
+    this.focusEditor();
+    this.scrollTo(scrollInfo);
+  }
+
+  get sourceCode() {
+    return this.lcm.value;
+  }
+  set sourceCode(text) {
+    return this.lcm.value = text;
+  }
+
+  focusEditor() {
     this.lcm.focus();
-    cm.scrollIntoView({
+  }
+
+  get scrollInfo() {
+    return this.codeMirror.getScrollInfo();
+  }
+  scrollTo(scrollInfo) {
+    this.codeMirror.scrollIntoView({
       left: scrollInfo.left,
       top: scrollInfo.top,
       right: scrollInfo.left + scrollInfo.width,
       bottom: scrollInfo.top + scrollInfo.height
     });
   }
-
-  
 }
