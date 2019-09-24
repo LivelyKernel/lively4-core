@@ -19,7 +19,7 @@ export default class LivelyBibtexEntry extends Morph {
     if (evt.ctrlKey) {
       evt.dataTransfer.setData("text/plain", this.innerHTML);
     } else {
-      evt.dataTransfer.setData("text/plain", "[@" + this.key + "]");
+      evt.dataTransfer.setData("text/plain", `[@${this.key}]`);
     }
   }
 
