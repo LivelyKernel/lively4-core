@@ -375,6 +375,18 @@ export default class ContextMenu {
 
           this.hide();
         }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
+        ["Slider", async evt => {
+          var morph  = document.createElement("input");
+          morph.setAttribute('type', 'range')
+
+          worldContext.appendChild(morph);
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          this.hide();
+        }, "", '<i class="fa fa-sliders" aria-hidden="true"></i>'],
          ["Drawing", async evt => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
