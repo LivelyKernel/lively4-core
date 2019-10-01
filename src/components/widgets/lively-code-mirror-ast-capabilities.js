@@ -12,7 +12,7 @@ export default class ASTCapabilities {
     this.codeMirror = cm;
   }
   get editor() {
-    return this.lcm.editor;
+    return this.codeMirror;
   }
   get selectionRanges() {
     return this.editor.listSelections().map(range);
@@ -306,17 +306,23 @@ export default class ASTCapabilities {
       return `<i class="fa fa-${name}"></i>`;
     }
 
-    const menuItems = [['selection to local variable', () => {
-      menu.remove();
-      this.extractExpressionIntoLocalVariable();
-    }, '→', '<i class="fa fa-share-alt fa-rotate-90"></i>'], ['selection test', () => {
-      menu.remove();
-      this.extractExpressionIntoLocalVariable();
-    }, '→', '<i class="fa fa-share-alt fa-rotate-90"></i>']];
+    const faAST = '<i class="fa fa-share-alt fa-rotate-90"></i>';
+
+    const menuItems = [
+      ['selection to local variable', () => {
+        menu.remove();
+        this.extractExpressionIntoLocalVariable();
+      }, '→', '<i class="fa fa-share-square-o fa-flip-horizontal"></i>'],
+      ['wrap into active expression', () => {
+        menu.remove();
+        this.wrapExpressionIntoActiveExpression();
+      }, '→', '<i class="fa fa-suitcase"></i>']
+    ];
 
     const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
   }
 
+  /*MD ## Transformations MD*/
   async extractExpressionIntoLocalVariable() {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectionStart = loc(anchor);
@@ -405,29 +411,10 @@ export default class ASTCapabilities {
       return;
     }
 
-    function pathByLocationFromProgram(programPath, location) {
-      let path = programPath;
-      const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
-      let result;
-      while ((result = reg.exec(location)) !== null) {
-        let part = result[0];
-        if (part.startsWith('.')) {
-          part = part.replace('.', '');
-          path = path.get(part);
-        } else {
-          part = part.replace(/\[|\]/ig, '');
-          part = parseInt(part);
-          path = path[part];
-        }
-      }
-
-      return path;
-    }
-
     const resultExtracted = res.code.transformAsAST(({ types: t, template }) => ({
       visitor: {
-        Program(programPath) {
-          let path = pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
+        Program: programPath => {
+          let path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
           pathLocationToBeExtracted = path.getPathLocation();
           let value = '';
           path.traverse({
@@ -462,9 +449,9 @@ export default class ASTCapabilities {
 
     const pathsToSelect = [];
     this.sourceCode.traverseAsAST({
-      Program(path) {
+      Program: path => {
         pathLocationsToSelect.forEach(location => {
-          const p = pathByLocationFromProgram(path, location);
+          const p = this.pathByLocationFromProgram(path, location);
           pathsToSelect.push(p);
         });
       }
@@ -475,6 +462,74 @@ export default class ASTCapabilities {
     this.focusEditor();
     this.scrollTo(scrollInfo);
   }
+
+  async wrapExpressionIntoActiveExpression() {
+    const { anchor, head } = this.editor.listSelections()[0];
+    const selectionStart = loc(anchor);
+    const selectionEnd = loc(head);
+    let done = false;
+    const pathLocationsToSelect = [];
+
+    const scrollInfo = this.scrollInfo;
+
+    let pathLocationToBeExtracted;
+    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+      visitor: {
+        Expression(path) {
+          const pathLocation = path.node.loc;
+          if (!done && pathLocation) {
+            const pathStart = loc(pathLocation.start);
+            const pathEnd = loc(pathLocation.end);
+
+            const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+            if (isSelectedPath) {
+              pathLocationToBeExtracted = path.getPathLocation();
+              done = true;
+            }
+          }
+        }
+      }
+    }));
+
+    if (!pathLocationToBeExtracted) {
+      lively.warn('No `Expression` to wrap found.');
+      return;
+    }
+
+    const resultExtracted = res.code.transformAsAST(({ template }) => ({
+      visitor: {
+        Program: programPath => {
+          let path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
+          pathLocationToBeExtracted = path.getPathLocation();
+          const ae = template('aexpr(() => EXPR)')({
+            EXPR: path.node
+          }).expression;
+
+          path.replaceWith(ae);
+
+          pathLocationsToSelect.push(path.getPathLocation());
+        }
+      }
+    }));
+    this.sourceCode = resultExtracted.code;
+
+    const pathsToSelect = [];
+    this.sourceCode.traverseAsAST({
+      Program: path => {
+        pathLocationsToSelect.forEach(location => {
+          const p = this.pathByLocationFromProgram(path, location);
+          pathsToSelect.push(p);
+        });
+      }
+    });
+
+    // #TODO: include primary selection
+    this.selectPaths(pathsToSelect);
+    this.focusEditor();
+    this.scrollTo(scrollInfo);
+  }
+
+  /*MD ## Utilities & Accessors MD*/
 
   get sourceCode() {
     return this.lcm.value;
@@ -498,4 +553,24 @@ export default class ASTCapabilities {
       bottom: scrollInfo.top + scrollInfo.height
     });
   }
+
+  pathByLocationFromProgram(programPath, location) {
+    let path = programPath;
+    const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
+    let result;
+    while ((result = reg.exec(location)) !== null) {
+      let part = result[0];
+      if (part.startsWith('.')) {
+        part = part.replace('.', '');
+        path = path.get(part);
+      } else {
+        part = part.replace(/\[|\]/ig, '');
+        part = parseInt(part);
+        path = path[part];
+      }
+    }
+
+    return path;
+  }
+
 }
