@@ -44,7 +44,6 @@ export default class LivelyDrawio extends Morph {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
     this._attrObserver = new MutationObserver((mutations) => {
-    this.update()
       
     // Install Attribute Observer
     mutations.forEach((mutation) => {  
@@ -58,6 +57,8 @@ export default class LivelyDrawio extends Morph {
       });
     });
     this._attrObserver.observe(this, { attributes: true });
+    
+    this.update()
   }
   
   
@@ -182,7 +183,11 @@ export default class LivelyDrawio extends Morph {
     if (!self.GraphViewer) {
       console.warn("draw.io view not loaded")
     } else {
-      GraphViewer.createViewerForElement(this.get(".mxgraph"));
+      try {
+        GraphViewer.createViewerForElement(this.get(".mxgraph"));
+      } catch(e) {
+        console.log("DrawIO Error", e)
+      }
     }
   }
   
