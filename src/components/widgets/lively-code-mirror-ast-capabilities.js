@@ -17,6 +17,8 @@ export default class ASTCapabilities {
   get selectionRanges() {
     return this.editor.listSelections().map(range);
   }
+
+  /*MD ## Navigation MD*/
   get programPath() {
     let programPath;
     this.sourceCode.traverseAsAST({
@@ -169,6 +171,7 @@ export default class ASTCapabilities {
       const [anchor, head] = range(path.node.loc).asCM();
       return { anchor, head };
     });
+    // #TODO: include primary selection
     this.editor.setSelections(ranges);
   }
   selectPath(path) {
@@ -302,46 +305,42 @@ export default class ASTCapabilities {
   }
 
   async openMenu() {
-    function fa(name) {
-      return `<i class="fa fa-${name}"></i>`;
+    function fa(name, ...modifiers) {
+      return `<i class="fa fa-${name} ${modifiers.join(' ')}"></i>`;
     }
-
-    const faAST = '<i class="fa fa-share-alt fa-rotate-90"></i>';
 
     const menuItems = [
       ['selection to local variable', () => {
         menu.remove();
         this.extractExpressionIntoLocalVariable();
-      }, '→', '<i class="fa fa-share-square-o fa-flip-horizontal"></i>'],
+      }, '→', fa('share-square-o', 'fa-flip-horizontal')],
       ['wrap into active expression', () => {
         menu.remove();
         this.wrapExpressionIntoActiveExpression();
-      }, '→', '<i class="fa fa-suitcase"></i>']
+      }, '→', fa('suitcase')],
+      ['test', () => {
+        menu.remove();
+        this.wrapExpressionIntoActiveExpression();
+      }, '→', fa('share-alt', 'fa-rotate-90')]
     ];
 
     const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
   }
 
   /*MD ## Transformations MD*/
+
   async extractExpressionIntoLocalVariable() {
-    const { anchor, head } = this.editor.listSelections()[0];
-    const selectionStart = loc(anchor);
-    const selectionEnd = loc(head);
+    const selection = this.getFirstSelection();
     let done = false;
-    const pathLocationsToSelect = [];
 
     const scrollInfo = this.scrollInfo;
 
     let pathLocationToBeExtracted;
     const res = this.sourceCode.transformAsAST(({ types: t }) => ({
       visitor: {
-        Expression(path) {
-          const pathLocation = path.node.loc;
-          if (!done && pathLocation) {
-            const pathStart = loc(pathLocation.start);
-            const pathEnd = loc(pathLocation.end);
-
-            const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+        Expression: path => {
+          if (!done) {
+            const isSelectedPath = this.isPathExactlySelected(path, selection);
             if (isSelectedPath) {
               pathLocationToBeExtracted = path.getPathLocation();
 
@@ -411,11 +410,11 @@ export default class ASTCapabilities {
       return;
     }
 
+    const pathLocationsToSelect = [];
     const resultExtracted = res.code.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          let path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
-          pathLocationToBeExtracted = path.getPathLocation();
+          const path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
           let value = '';
           path.traverse({
             Identifier(p) {
@@ -447,41 +446,25 @@ export default class ASTCapabilities {
     }));
     this.sourceCode = resultExtracted.code;
 
-    const pathsToSelect = [];
-    this.sourceCode.traverseAsAST({
-      Program: path => {
-        pathLocationsToSelect.forEach(location => {
-          const p = this.pathByLocationFromProgram(path, location);
-          pathsToSelect.push(p);
-        });
-      }
-    });
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
-    // #TODO: include primary selection
     this.selectPaths(pathsToSelect);
     this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
   async wrapExpressionIntoActiveExpression() {
-    const { anchor, head } = this.editor.listSelections()[0];
-    const selectionStart = loc(anchor);
-    const selectionEnd = loc(head);
+    const selection = this.getFirstSelection();
     let done = false;
-    const pathLocationsToSelect = [];
 
     const scrollInfo = this.scrollInfo;
 
     let pathLocationToBeExtracted;
-    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+    const res = this.sourceCode.transformAsAST(() => ({
       visitor: {
-        Expression(path) {
-          const pathLocation = path.node.loc;
-          if (!done && pathLocation) {
-            const pathStart = loc(pathLocation.start);
-            const pathEnd = loc(pathLocation.end);
-
-            const isSelectedPath = pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+        Expression: path => {
+          if (!done) {
+            const isSelectedPath = this.isPathExactlySelected(path, selection);
             if (isSelectedPath) {
               pathLocationToBeExtracted = path.getPathLocation();
               done = true;
@@ -496,11 +479,11 @@ export default class ASTCapabilities {
       return;
     }
 
+    const pathLocationsToSelect = [];
     const resultExtracted = res.code.transformAsAST(({ template }) => ({
       visitor: {
         Program: programPath => {
-          let path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
-          pathLocationToBeExtracted = path.getPathLocation();
+          const path = this.pathByLocationFromProgram(programPath, pathLocationToBeExtracted);
           const ae = template('aexpr(() => EXPR)')({
             EXPR: path.node
           }).expression;
@@ -513,23 +496,14 @@ export default class ASTCapabilities {
     }));
     this.sourceCode = resultExtracted.code;
 
-    const pathsToSelect = [];
-    this.sourceCode.traverseAsAST({
-      Program: path => {
-        pathLocationsToSelect.forEach(location => {
-          const p = this.pathByLocationFromProgram(path, location);
-          pathsToSelect.push(p);
-        });
-      }
-    });
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
-    // #TODO: include primary selection
     this.selectPaths(pathsToSelect);
     this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
-  /*MD ## Utilities & Accessors MD*/
+  /*MD ## Accessors MD*/
 
   get sourceCode() {
     return this.lcm.value;
@@ -554,6 +528,24 @@ export default class ASTCapabilities {
     });
   }
 
+  /*MD ## Utilities MD*/
+
+  getFirstSelection() {
+    const { anchor, head } = this.editor.listSelections()[0];
+    const selectionStart = loc(anchor);
+    const selectionEnd = loc(head);
+    return { selectionStart, selectionEnd };
+  }
+
+  isPathExactlySelected(path, { selectionStart, selectionEnd }) {
+    const pathLocation = path.node.loc;
+    if (!pathLocation) { return; }
+    
+    const pathStart = loc(pathLocation.start);
+    const pathEnd = loc(pathLocation.end);
+    return pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+  }
+
   pathByLocationFromProgram(programPath, location) {
     let path = programPath;
     const reg = /(\.[A-Za-z0-9]+|(\[[0-9]+\]))/ig;
@@ -571,6 +563,20 @@ export default class ASTCapabilities {
     }
 
     return path;
+  }
+
+  pathLocationsToPathes(pathLocations) {
+    const paths = [];
+
+    this.sourceCode.traverseAsAST({
+      Program: path => {
+        pathLocations.forEach(location => {
+          paths.push(this.pathByLocationFromProgram(path, location));
+        });
+      }
+    });
+
+    return paths;
   }
 
 }
