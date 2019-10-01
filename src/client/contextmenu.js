@@ -190,7 +190,6 @@ export default class ContextMenu {
       target.localName == "lively-file" ?
         [ "become content", async () => {
             if (target.url && target.name.match(/\.png$/)) {
-              debugger
               var element = await (<img id={target.name}></img>)
               element.src = target.url
               target.parentElement.appendChild(element)
@@ -376,6 +375,18 @@ export default class ContextMenu {
 
           this.hide();
         }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
+        ["Slider", async evt => {
+          var morph  = document.createElement("input");
+          morph.setAttribute('type', 'range')
+
+          worldContext.appendChild(morph);
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          this.hide();
+        }, "", '<i class="fa fa-sliders" aria-hidden="true"></i>'],
          ["Drawing", async evt => {
           var morph  = document.createElement("lively-drawboard");
           morph.setAttribute("width", "400px");
@@ -642,11 +653,11 @@ export default class ContextMenu {
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
-        ["Issues", (evt) => {
-           this.openComponentInWindow("lively-container", evt, worldContext).then(comp => {
-            comp.followPath(lively4url + "/doc/stories.md");
-          });
-          // window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+        ["Issues", (evt) => { 
+          window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
+        },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
+        ["Project Board", (evt) => {
+           window.open("https://github.com/LivelyKernel/lively4-core/projects/1") ;
         },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
         ["Module Info", () => {
           Info.showModuleInfo()

@@ -160,7 +160,7 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  async openOn(items, openEvt, optPos) {
+  async openOn(items, optEvt, optPos) {
     var menu = this.get(".container");
     menu.innerHTML = "" // clear
     // create a radio button for each tool
@@ -192,7 +192,7 @@ export default class LivelyMenu extends Morph {
         }
       })
       menu.appendChild(item);
-    };
+    }
     if (optPos) lively.setPosition(this, optPos);
     this.moveInsideWindow();
     

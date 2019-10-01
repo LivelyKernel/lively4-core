@@ -11,6 +11,14 @@
 
 MD*/
 
+/*MD
+## Further Helpers
+
+[Bidirectional Multi Map](src/client/reactive/active-expression-rewriting/bidirectional-multi-map.js)
+[Composite Key](src/client/reactive/active-expression-rewriting/composite-key.js)
+[Injective Map](src/client/reactive/active-expression-rewriting/injective-map.js)
+MD*/
+
 export class GroupMap  {
     
     constructor(array) {

@@ -3,6 +3,12 @@ import { uuid, getTempKeyFor, fileName, hintForLabel, asDragImageFor } from 'uti
 import d3 from 'src/external/d3.v3.js';
 import './d3-box.js';
 
+/*MD # D3 Boxplot 
+
+![](d3-boxplot.png){height=300px}
+
+MD*/
+
 export default class D3Boxplot extends Morph {
   get svgParent() { return this.get("#charts"); }
   

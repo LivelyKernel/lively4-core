@@ -14,31 +14,31 @@ describe('HTML', () => {
   })
   
   describe('saveAsPNG', () => {
-    it('should save a png ', async (done) => {
-      try {
-        var url = await lively.html.saveAsPNG(lively4url + "/test/sample-a.html")
-        expect(url).to.match(/png$/)
-        await fetch(url, {
-          method: "DELETE"
-        })
-        done()        
-      } catch(e) {
-        done(e)
-      }
-    });
+//     it('should save a png ', async (done) => {
+//       try {
+//         var url = await lively.html.saveAsPNG(lively4url + "/test/sample-a.html")
+//         expect(url).to.match(/png$/)
+//         await fetch(url, {
+//           method: "DELETE"
+//         })
+//         done()        
+//       } catch(e) {
+//         done(e)
+//       }
+//     });
 
-    it('should save html with svg to a png ', async (done) => {
-      try {
-        var url = await lively.html.saveAsPNG(lively4url + "/test/sample-b.html")
-        expect(url).to.match(/png$/)
-        await fetch(url, {
-          method: "DELETE"
-        })
-        done()        
-      } catch(e) {
-        done(e)
-      }
-    }).timeout(30000);
+//     it('should save html with svg to a png ', async (done) => {
+//       try {
+//         var url = await lively.html.saveAsPNG(lively4url + "/test/sample-b.html")
+//         expect(url).to.match(/png$/)
+//         await fetch(url, {
+//           method: "DELETE"
+//         })
+//         done()        
+//       } catch(e) {
+//         done(e)
+//       }
+//     }).timeout(30000);
 
     
   })

@@ -1,7 +1,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import d3 from 'src/external/d3.v5.js';
-
 import * as cop from 'src/client/ContextJS/src/contextjs.js'
+
+/*MD # D3 Bundleview 
+
+![](d3-bundleview.png){height=400px}
+
+MD*/
 
 
 export function isLeaf(d) { return !d.children || d.children.length === 0; }

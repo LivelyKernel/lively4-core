@@ -27,6 +27,10 @@ const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, bab
 const FETCH_TIMEOUT = 5000
 
 
+function getBaseURL(url) {
+  return url.replace(/[#?].*/,"")
+}
+
 export default class FileIndex {
 
   static current() {
@@ -99,7 +103,7 @@ export default class FileIndex {
   }
   
   async updateAllModuleSemantics() {
-    this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
+    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addModuleSemantics(file)
       })
@@ -128,18 +132,26 @@ export default class FileIndex {
     if (!semantics || !semantics.classes) {
       return
     }
-    
-    for (var clazz of semantics.classes) {
-      if (clazz.superClassName && !clazz.superClassUrl) {
-        let superClass = semantics.classes.find(item => item.name == clazz.superClassName)
-        clazz.superClassName = (superClass) ? superClass.superClassName : ''
-        clazz.superClassUrl = (superClass) ? file.url : ''
-      } else if (clazz.superClassName && clazz.superClassUrl) {
-        clazz.superClassUrl = await System.resolve(clazz.superClassUrl, file.url)
+    var classNames = []
+    for (var eaClass of semantics.classes) {
+      if (eaClass.superClassName && !eaClass.superClassUrl) {
+        let superClass = semantics.classes.find(item => item.name == eaClass.superClassName)
+        eaClass.superClassName = (superClass) ? superClass.superClassName : ''
+        eaClass.superClassUrl = (superClass) ? file.url : ''
+      } else if (eaClass.superClassName && eaClass.superClassUrl) {
+        eaClass.superClassUrl = await System.resolve(eaClass.superClassUrl, file.url)
       }
-      clazz.url = file.url
-      clazz.nom = clazz.methods ? clazz.methods.length : 0
-      await this.addClass(clazz)
+      eaClass.url = file.url
+      eaClass.nom = eaClass.methods ? eaClass.methods.length : 0
+      classNames.push(eaClass.name)
+      await this.addClass(eaClass)
+    }
+    var allClasses = await this.db.classes.where({url: file.url}).toArray()
+    
+    // deleted obsolete classes
+    var obsoleteClasses = allClasses.filter(ea => !classNames.includes(ea.name))
+    for(let eaClass of obsoleteClasses) {
+     await this.db.classes.where({name: eaClass.name, url: eaClass.url}).delete() 
     }
   } 
   
@@ -448,6 +460,7 @@ export default class FileIndex {
           superClassName = (path.node.superClass) ? path.node.superClass.name : ''
           superClassUrl = importDeclarations.get(superClassName)
           let methods = []
+          
           if (path.node.body.body) {
             path.node.body.body.forEach(function(item) {
               if(item.type === "ClassMethod") {
@@ -458,9 +471,12 @@ export default class FileIndex {
                   kind: item.kind,
                   static: item.static,
                   end: item.end,
+                  leadingComments: item.leadingComments
                 }
                 methods.push(method)
               }
+              
+              
             })
           }
           clazz.methods = methods
@@ -504,14 +520,16 @@ export default class FileIndex {
     }
   }
 
+  
   async updateFile(url) {
+    url = getBaseURL(url)
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS"
     }).then(r => r.clone().json())
     
     if (!stats.error) {
-      this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+      await this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
     }
   } 
     
@@ -520,7 +538,7 @@ export default class FileIndex {
       // console.log("FileIndex ignore  " + url)
       return
     }    
-    console.log("FileIndex addFile " + url)
+    console.log("[fileindex]  addFile " + url)
 
     if (type == "file") {
       var json = (await this.loadVersions(url))
@@ -563,9 +581,10 @@ export default class FileIndex {
     })
 
     if (file.name.match(/\.js$/)) {
-      this.addModuleSemantics(file)
-      this.addVersions(file)
-    }      
+      await this.addModuleSemantics(file)
+      await this.addVersions(file)
+    }
+    console.log("[fileindex] addFile FINISHED")
   }
 
   async dropFile(url) {
@@ -794,7 +813,7 @@ if (self.lively4fetchHandlers) {
     handle(request, options) {
       // do nothing
     },
-    finsihed(request, options) {
+    async finsihed(request, options) {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
@@ -803,11 +822,11 @@ if (self.lively4fetchHandlers) {
       if (url.match(serverURL)) {
         if (method == "PUT") {
          //  
-          FileIndex.current().updateFile(url)
+          await FileIndex.current().updateFile(url)
         }
         if (method == "DELETE") {
           //
-          FileIndex.current().dropFile(url)   
+          await FileIndex.current().dropFile(url)   
         }
       }
     }

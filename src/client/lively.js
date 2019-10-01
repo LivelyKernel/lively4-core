@@ -433,19 +433,18 @@ export default class Lively {
   }
   
 
+  // #Deprecated who does/dir use this code and what for
   static asUL(anyList){
     var ul = document.createElement("ul")
     ul.style.minWidth = "50px"
     ul.style.minHeight = "50px"
     ul.style.backgroundColor = "gray"
-
     anyList.forEach(ea => {
       var item = document.createElement("li")
       item.textContent = ea
       item.value = ea
       ul.appendChild(item)
     })
-
     return ul
   }
 
@@ -509,8 +508,9 @@ export default class Lively {
   static pt(x,y) {
     return pt(x,y)
   }
-
-  static setPosition(obj, point, mode) {
+  
+  // #important
+  static setPosition(obj, point, mode, animateDuration) {
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
         // get the position of an svg element
@@ -524,17 +524,29 @@ export default class Lively {
         throw new Error("path has no transformation")
       }
     } else {
+      var old = lively.getPosition(obj)
       // normal DOM Element
       obj.style.position = mode || "absolute";
       obj.style.left = ""+  point.x + "px";
       obj.style.top = "" +  point.y + "px";
       obj.dispatchEvent(new CustomEvent("position-changed"))
+      
+      if (animateDuration) {
+        obj.animate([
+          {left: old.x + "px", top: old.y + "px"},
+          {left: point.x + "px", top: point.y+ "px"}
+        ],{ 
+          duration: animateDuration,
+        })
+      }
+      
     }
   }
 
 
   // Example: lively.getPosition(that)
 
+  // #important
   static getPosition(obj) {
     
     var pos;
@@ -632,8 +644,8 @@ export default class Lively {
     this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)))
   }
 
-  static moveBy(node, delta) {
-    this.setPosition(node, this.getPosition(node).addPt(delta))
+  static moveBy(node, delta, animateDuration) {
+    this.setPosition(node, this.getPosition(node).addPt(delta), undefined, animateDuration)
   }
 
   static  getBounds(node) {
@@ -850,6 +862,7 @@ export default class Lively {
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
     
+    this.addEventListener('lively', doc, 'keyup', function(evt){lively.keys.onKeyUp(evt)}, false);
     events.installHooks()
   }
 
@@ -1168,18 +1181,20 @@ export default class Lively {
 
   static async showSource(object, evt) {
     if (object instanceof HTMLElement) {
-        var comp  = document.createElement("lively-container");
-        components.openInWindow(comp, lively.getPosition(evt)).then((async (container) => {
-          comp.editFile(await this.components.searchTemplateFilename(object.localName + ".html"));
-        }));
+      if (!object.localName.match(/-/)) {
+        return lively.notify("Could not show source for native element");  
+      }
+      lively.openBrowser(await this.components.searchTemplateFilename(object.localName + ".html"), true)
     } else {
       lively.notify("Could not show source for: " + object);
     }
   }
 
   static async showClassSource(object, evt) {
-    // object = that
-    if (object instanceof HTMLElement) {  
+    if (object instanceof HTMLElement) {
+      if (!object.localName.match(/-/)) {
+        return lively.notify("Could not show source for native element");  
+      }
       let templateFile =await this.components.searchTemplateFilename(object.localName + ".html"),
         source = await fetch(templateFile).then( r => r.text()),
         template = lively.html.parseHTML(source).find( ea => ea.tagName == "TEMPLATE"),
@@ -1439,8 +1454,8 @@ export default class Lively {
     return containerPromise.then(comp => {
       livelyContainer = comp;
       livelyContainer.hideNavbar()
-      comp.parentElement.style.width = "750px";
-      comp.parentElement.style.height = "600px";
+      comp.parentElement.style.width = "950px";
+      comp.parentElement.style.height = "800px";
 
       if (lastWindow) {
         lively.setPosition(comp.parentElement,
@@ -1742,6 +1757,20 @@ export default class Lively {
    return result
   }
   
+  static waitOnQuerySelector(element, selector, maxtime) {
+    maxtime = maxtime || 10000;
+    var startTime = Date.now();
+    return new Promise((resolve, reject) => {
+      var check = () => {
+        var found = element.querySelector(selector);
+        if (found) resolve(found);
+        else if (Date.now() - startTime > maxtime) reject();
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+  }
+  
   static elementToCSSName(element) {
     try {
       return element.localName + (element.id  ? "#" + element.id : "")  + (element.classList && element.classList.length > 0   ? "." + Array.from(element.classList).join(".") : "")      
@@ -1767,14 +1796,22 @@ export default class Lively {
     return Array.from(all)
   }
 
+  
   static gotoWindow(element, justFocuWhenInBounds) {
     element.focus()
 
     if (!justFocuWhenInBounds) {
-      document.scrollingElement.scrollTop = 0
-      document.scrollingElement.scrollLeft = 0
-      var pos = lively.getPosition(element).subPt(pt(0,0))
-      lively.setPosition(document.body, pos.scaleBy(-1))
+      var elementBounds = lively.getGlobalBounds(element) 
+      var windowBounds = rect(0,0, window.innerWidth, window.innerHeight)
+      if (!windowBounds.containsRect(elementBounds)) {
+        // only do somthing if we are not visible
+        document.scrollingElement.scrollTop = 0
+        document.scrollingElement.scrollLeft = 0
+        var offset = pt(window.innerWidth, window.innerHeight).subPt(lively.getExtent(element))
+        
+        var pos = lively.getPosition(element).subPt(offset.scaleBy(0.5))
+        lively.setPosition(document.body, pos.scaleBy(-1), undefined, 1000)        
+      }
     }
   }
 

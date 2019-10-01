@@ -1,10 +1,8 @@
 
 /* Little Window Layout Helper */
 
-
 import {pt, rect} from "src/client/graphics.js"
 import Windows from "src/components/widgets/lively-window.js"
-
 
 export class Intersection {
   

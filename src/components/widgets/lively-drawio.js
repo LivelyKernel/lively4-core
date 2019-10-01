@@ -43,7 +43,27 @@ export default class LivelyDrawio extends Morph {
   async initialize() {
     await lively.loadJavaScriptThroughDOM("drawio", "https://www.draw.io/js/viewer.min.js")
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
-    this.update()  
+    this._attrObserver = new MutationObserver((mutations) => {
+      
+    // Install Attribute Observer
+    mutations.forEach((mutation) => {  
+        if(mutation.type == "attributes") {
+          // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
+          this.attributeChangedCallback(
+            mutation.attributeName,
+            mutation.oldValue,
+            mutation.target.getAttribute(mutation.attributeName))
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+    
+    this.update()
+  }
+  
+  
+  attributeChangedCallback(attr, oldVal, newVal) {
+    this.update()
   }
   
   async updateGithubInfo() {
@@ -163,7 +183,11 @@ export default class LivelyDrawio extends Morph {
     if (!self.GraphViewer) {
       console.warn("draw.io view not loaded")
     } else {
-      GraphViewer.createViewerForElement(this.get(".mxgraph"));
+      try {
+        GraphViewer.createViewerForElement(this.get(".mxgraph"));
+      } catch(e) {
+        console.log("DrawIO Error", e)
+      }
     }
   }
   

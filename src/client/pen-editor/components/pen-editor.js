@@ -223,6 +223,14 @@ class Navigation {
   getElementForNode(node) {
     return this.editor.getElementForNode(node);
   }
+  selectNodes(nodes, primaryNode) {
+    const elementsToSelect = nodes
+      .map(node => this.getElementForNode(node))
+      .filter(node => node);
+    const primaryElement = this.getElementForNode(primaryNode);
+    
+    this.setSelection(elementsToSelect, primaryElement)
+  }
   transformSelection(getNextSelection) {
     const selectedElements = this.getSelection();
     const primarySelection = this.getPrimarySelection();
@@ -246,6 +254,7 @@ class Navigation {
   }
 
   /*MD ### Navigation Handler MD*/
+  // #FOO
   up(element, evt) {
     cancelEvent(evt);
 
@@ -450,6 +459,7 @@ class Navigation {
 }
 
 /*MD # PenEditor MD*/
+/*MD # PenEditor2 MD*/
 export default class PenEditor extends Morph {
 
   static get defaultFile() { return lively4url + '/src/client/pen-editor/demos/example.js'; }
@@ -496,13 +506,125 @@ export default class PenEditor extends Morph {
     return focalStorage.setItem(this._asPersistenceKey(key), value);
   }
   /*MD ## Styles MD*/
+  /*MD ### Styles Basic Components MD*/
+  _styles_shared() {
+    return `
+.ast-node.node-selected,
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  background-color: #fafbcb;
+  outline: orange 2px solid;
+}
+
+.ast-node {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+  transform: translate(0px, 0px) scale(1.0);
+  box-shadow: 0em 0em 0em transparent;
+}
+.ast-node:focus,
+ast-node-identifier:focus-within,
+ast-node-numeric-literal:focus-within,
+ast-node-string-literal:focus-within {
+  box-shadow: 0em 0.5em 0.4em darkgray;
+  transform: translate(0px, -2px) scale(1.1);
+}
+
+.ast-node.node-hover {
+  outline: green inset 2px;
+}
+.ast-node::part(keyword) {
+}
+.ast-node::part(notation) {
+}
+`;
+  }
+
+  _styles_variable_colors() {
+    const identifierStyles = [];
+    _.range(200).forEach(identifierId => {
+      let color = d3.hsl(
+        Math.random() * 360,
+        Math.random() * 0.2 + 0.4,
+        Math.random() * 0.2 + 0.4
+      );
+      /* #HACK: we need the additional `.ast-node` in selector to have enough selector parts to overwrite scope definitions */
+      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"].ast-node::part(input-field) {
+  color: ${color};
+}`);
+    });
+    return `
+ast-node-identifier::part(input-field) {
+  font-weight: bold;
+}
+${identifierStyles.join('\n\r')}`;
+  }
+  
+  _styles_scopes({
+    saturation: [saturationMin, saturationMax] = [0.5, 0.6],
+    lighting: [lightingMin, lightingMax] = [0.5, 0.6],
+    brighter = 0.3,
+    borderDarker = brighter,
+    scopeDarker = borderDarker,
+  } = {}) {
+    const saturationDiff = saturationMax - saturationMin;
+    const lightingDiff = lightingMax - lightingMin;
+
+    const scopeStyles = [];
+    _.range(20).forEach(scopeId => {
+      let color;
+      _.range(20).forEach(depth => {
+        if (depth === 0) {
+          color = d3.hsl(
+           Math.random() * 360,
+           Math.random() * saturationDiff + saturationMin,
+           Math.random() * lightingDiff + lightingMin
+          );
+          // #TODO: use hcl (https://github.com/d3/d3-color)
+          // color = d3.hcl(
+          //  Math.random() * 360, // [0,360]
+          //  20, // [0,230]
+          //  90 // [0,100]
+          // );
+        } else {
+          color = color.brighter(brighter);
+        }
+        
+        /* #TODO: need to correctly colorize other ast nodes as well */
+        const preferredTextColor = color.l < 0.5 ? 'white' : 'black';
+        const scopeAndDepth = `[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]`;
+        scopeStyles.push(`.ast-node${scopeAndDepth} {
+  background-color: ${color};
+  border: 1px solid ${depth === 0 ? color.darker(scopeDarker) : color.darker(borderDarker)};
+}
+.ast-node${scopeAndDepth}::part(notation), .ast-node${scopeAndDepth}::part(keyword) {
+  color: ${preferredTextColor};
+}
+ast-node-identifier${scopeAndDepth}::part(input-field),
+ast-node-numeric-literal${scopeAndDepth}::part(input-field),
+ast-node-string-literal${scopeAndDepth}::part(input-field),
+ast-node-directive-literal${scopeAndDepth} {
+  color: ${preferredTextColor};
+}
+`);
+      });
+    });
+
+    return scopeStyles.join('\n\r');
+  }
+
+  /*MD ### Style Options MD*/
   styleDefault() {
     return `
+${this._styles_shared()}
 `;
   }
 
   styleNesting() {
     return `
+${this._styles_shared()}
 .ast-node {
   margin: 1px;
 /*   padding: 1px; */
@@ -513,63 +635,37 @@ export default class PenEditor extends Morph {
   }
 
   styleColorizeVariables() {
-    const identifierStyles = [];
-    _.range(200).forEach(identifierId => {
-      let color = d3.hsl(
-        Math.random() * 360,
-        Math.random() * 0.2 + 0.4,
-        Math.random() * 0.2 + 0.4
-      );
-      identifierStyles.push(`ast-node-identifier[ast-node-identifier-id="${identifierId}"]::part(input-field) {
-  color: ${color};
-  font-weight: bold;
-}`);
-    });
-    return `${identifierStyles.join('\n\r')}`;
-  }
-
-  styleColorizeScopes() {
-    const scopeStyles = [];
-    _.range(20).forEach(scopeId => {
-      let color;
-      _.range(20).forEach(depth => {
-        if (depth === 0) {
-          color = d3.hsl(
-            Math.random() * 360,
-            0.5,
-            0.4
-          );
-        } else {
-          color = color.brighter(0.3);
-        }
-        
-        const preferredTextColor = color.l < 0.5 ? 'white' : 'black';
-        scopeStyles.push(`.ast-node[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
-  background-color: ${color};
-  border: 1px solid ${color};
-}
-ast-node-identifier[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
-  color: ${preferredTextColor};
-}
-/* #TODO: need to correctly colorize other ast nodes as well */
-ast-node-numeric-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
-  color: ${preferredTextColor};
-}
-ast-node-string-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"]::part(input-field) {
-  color: ${preferredTextColor};
-}
-ast-node-directive-literal[ast-node-scope="${scopeId}"][ast-node-depth="${depth}"] {
-  color: ${preferredTextColor};
-}
-`);
-      });
-    });
-
     return `
+${this._styles_shared()}
+${this._styles_variable_colors()}
+`;
+  }
+  
+  styleColorizeScopes() {
+    return `
+${this._styles_shared()}
 ast-node-identifier::part(input-field) {
   font-weight: bold;
 }
-${scopeStyles.join('\n\r')}
+${this._styles_scopes({
+      saturation: [0.5, 0.6],
+      lighting: [0.4, 0.6],
+      brighter: 0.2,
+      scopeDarker: -1
+    })}
+`;
+  }
+
+  styleColorizeScopesAndVariables() {
+    return `
+${this._styles_shared()}
+${this._styles_scopes({
+      saturation: [0.5, 0.8],
+      lighting: [0.9, 0.9],
+      brighter: -0.1,
+      scopeDarker: 2
+    })}
+${this._styles_variable_colors()}
 `;
   }
 
@@ -622,10 +718,11 @@ ${scopeStyles.join('\n\r')}
       ['variable', () => updateStyleTo('styleColorizeVariables'), 'font-color for variables', fa('share')],
       ['scopes', () => updateStyleTo('styleColorizeScopes'), 'background-color for scopes', fa('th-large')],
       ['nesting', () => updateStyleTo('styleNesting'), 'borders for ast node nesting', fa('th-large')],
-      
+      ['scope and variables', () => updateStyleTo('styleColorizeScopesAndVariables'), '', fa('th-large')],
     ];
     
-    const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body,  menuItems);
+    const {x,y} = lively.getGlobalCenter(evt.target);
+    const menu = await ContextMenu.openIn(document.body, { clientX: x, clientY: y }, undefined, document.body,  menuItems);
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -725,9 +822,9 @@ ${scopeStyles.join('\n\r')}
   async setAST(ast) {
     this.assignUUIDsForAllNodes(ast);
     this.addToHistory(ast);
-    this.project(ast);
+    await this.project(ast);
   }
-  
+
   assignUUIDsForAllNodes(ast) {
     ast.traverseAsAST({
       enter: path => this.ensureUUID(path.node)
@@ -813,6 +910,41 @@ ${scopeStyles.join('\n\r')}
     this.setAST(ast);
   }
   
+  async commandExtractExpressionIntoLocalVariable(element, value) {
+    const current = this.history.current();
+    let ast = current.cloneDeep();
+
+    var found = false;
+    let referree;
+    
+    ast = ast.transformAsAST(({types: t, template}) => ({
+      visitor: {
+        Expression(path) {
+          if (nodeEqual(path, element.node) && !found) {
+            found = true;
+            
+            const decl = template('const ID = INIT;')({
+              ID: t.Identifier(value),
+              INIT: path.node
+            })
+            
+            referree = t.Identifier(value)
+            path.replaceWith(referree);
+            path.getStatementParent().insertBefore(decl);
+          }
+        }
+      }
+    })).ast;
+    
+    if (!found) {
+      lively.warn('node was not an expression.')
+      return;
+    }
+
+    await this.setAST(ast);
+    this.navigation.selectNodes([referree], referree)
+  }
+  
   onResetHistory() {
     this.history.clear();
   }
@@ -825,9 +957,9 @@ ${scopeStyles.join('\n\r')}
     this.project(ast2);
   }
   
-  project(ast) {
+  async project(ast) {
     this.inspectAST(ast);
-    this.buildProjection(ast);
+    await this.buildProjection(ast);
     this.buildTransformation(ast);
   }
   
@@ -859,9 +991,6 @@ ${scopeStyles.join('\n\r')}
   buildPathInfo() {
     const selection = this.navigation.getSelection();
 
-    function joinElements(elements, builder) {
-      
-    }
     this.pathInfo.innerHTML = selection
       .map(element => {
         const list = [];
@@ -899,8 +1028,6 @@ ${scopeStyles.join('\n\r')}
   
   get livelyUpdateStrategy() { return 'inplace'; }
   livelyUpdate() {
-    this.xxx = this.xxx || Math.random();
-    lively.notify(this.xxx)
     this.initStyle({ force: true });
   }
   

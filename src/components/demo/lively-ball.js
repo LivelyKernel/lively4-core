@@ -3,6 +3,7 @@ import {pt}  from 'src/client/graphics.js'
 
 
 export default class LivelyBall extends Morph {
+  
   async initialize() {
     this.a = this.a || -1
     this.v = this.b || 0

@@ -139,6 +139,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.ternIsLoaded = true;
   }
   
+  astCapabilities(cm) {
+    return System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
+      .then(m => new m.default(this, cm));
+  }
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
       .then(m => {
@@ -226,6 +230,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
     editor.on("change", (() => this.checkSyntax()).debounce(500))
 
+    
+    editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
+    
 		// apply attributes
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));
 
@@ -339,37 +346,35 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-.": cm => {
           this.ternWrapper.then(tw => tw.showReferences(cm, this));
         },
-        
+
+        // #AST-Navigation
         // #KeyboardShortcut Alt-Up expand selection in ast-aware manner
         "Alt-Up": cm => {
-          this.expandSelection(cm)
+          this.astCapabilities(cm).then(ac => ac.expandSelection(cm));
+        },
+        // #KeyboardShortcut Alt-Left 
+        "Alt-Left": cm => {
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
+        },
+        // #KeyboardShortcut Alt-Right 
+        "Alt-Right": cm => {
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
         },
         // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
         },
-        // #KeyboardShortcut Alt-Right 
-        "Alt-Right": cm => {
-        },
-        // #KeyboardShortcut Alt-Left Leave Editor and got to Navigation
-        "Alt-Left": cm => {
-          this.singalEditorbackNavigation()
-        },
-        "shift-Alt-Left": cm => {
-          this.singalEditorbackNavigation(true)
-        },
-        // #KeyboardShortcut Alt-F fold (inverse code folding)
-        "Alt-F": cm => {
-          this.fold(cm);
-        },
-        // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
-        "Shift-Alt-F": cm => {
-          this.unfold(cm);
+        
+        // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
+        "Alt-Enter": cm => {
+          this.astCapabilities(cm).then(ac => ac.openMenu());
         },
         
+        // #KeyboardShortcut Alt-F fold (inverse code folding)
+        "Alt-F": cm => this.astCapabilities(cm).then(ac => ac.fold(cm)),
         // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
-        "Ctrl-Shift-Alt-F": cm => {
-          this.autoFoldMax()
-        },
+        "Shift-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.unfold(cm)),
+        // #KeyboardShortcut Shift-Alt-F fold to maximum (inverse code folding)
+        "Ctrl-Shift-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.autoFoldMax()),
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
@@ -379,7 +384,17 @@ export default class LivelyCodeMirror extends HTMLElement {
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },
-        
+        // #Async #Workspace #Snippet #Workaround missing global async/await support in JavaScript / our Workspaces
+        "Ctrl-Alt-A": cm => {
+          var selection = this.editor.getSelection()
+          // #TODO how can we have custom snippets?
+          this.editor.replaceSelection(`var value;
+(async () => {
+  value = ${selection}
+})()`)
+          this.editor.execCommand(`goWordLeft`)
+          this.editor.execCommand(`goCharLeft`)
+        }
       }
     }
     return this.extraKeys
@@ -399,216 +414,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     }
   }
-  
-  /*MD ### AST-aware Navigation MD*/
-  get selectionRanges() {
-    return this.editor.listSelections().map(range);
-  }
-  get programPath() {
-    let programPath;
-    this.value.traverseAsAST({
-      Program(path) {
-        programPath = path;
-      }
-    });
-    return programPath;
-  }
-  getPathForRoute(route) {
-    let path = this.programPath;
-    if(!path) {
-      lively.warn('No programPath found');
-    }
-    
-    route.forEach(routePoint => {
-      path = path.get(routePoint.inList ? routePoint.listKey + '.' + routePoint.key : routePoint.key);
-    });
-    
-    return path;
-  }
-  nextPath(startingPath, isValid) {
-    let pathToShow;
-
-    startingPath.traverse({
-      enter(path) {
-        if(!pathToShow && isValid(path)) {
-          pathToShow = path;
-        }
-      }
-    });
-
-    return pathToShow;
-  }
-  getInnermostPath(startingPath, nextPathCallback) {
-    let pathToShow = startingPath;
-    while(true) {
-      let nextPath = nextPathCallback(pathToShow);
-      if(nextPath) {
-        pathToShow = nextPath;
-      } else {
-        break;
-      }
-    }
-
-    return pathToShow;
-  }
-  expandSelection(cm) {
-    
-    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
-
-      // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, {anchor, head}) => {
-        return this.nextPath(startingPath, path => {
-          const location = range(path.node.loc);
-          return location.contains(anchor) && location.contains(head);
-        });
-      }
-      const pathToShow = this.getInnermostPath(this.programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
-
-      // go up again
-      let selectionStart = loc(anchor);
-      let selectionEnd = loc(head);
-      return pathToShow.find(path => {
-        const pathLocation = path.node.loc;
-        const pathStart = loc(pathLocation.start);
-        const pathEnd = loc(pathLocation.end);
-
-        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd)
-      }) || pathToShow;
-    });
-
-    this.selectPaths(maxPaths);
-  }
-  
-  selectPaths(paths) {
-    const ranges = paths.map(path => {
-      const [anchor, head] = range(path.node.loc).asCM();
-      return { anchor, head };
-    });
-    this.editor.setSelections(ranges);
-  }
-  selectPath(path) {
-    range(path.node.loc).selectInCM(this.editor);
-  }
-  isCursorIn(location, cursorStart) {
-    return range(location).contains(this.editor.getCursor(cursorStart));
-  }
-  
-  
-  get routeToShownPath() { return this._routeToShownPath = this._routeToShownPath || []; }
-  set routeToShownPath(value) { return this._routeToShownPath = value; }
-  get markerWrappers() { return this._markerWrappers = this._markerWrappers || []; }
-  set markerWrappers(value) { return this._markerWrappers = value; }
-
-  unfold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
-
-    const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No previous folding level found");
-    }
-  }
-  isValidFoldPath(path) {
-    return true;
-    return path.isProgram() ||
-      path.isForOfStatement() ||
-      path.isFunctionExpression() ||
-      path.isForAwaitStatement() ||
-      (path.parentPath && path.parentPath.isYieldExpression()) ||
-      path.isArrowFunctionExpression();
-  }
-  nextFoldingPath(startingPath) {
-    return this.nextPath(startingPath, path => {
-      const location = path.node.loc;
-      if(!this.isCursorIn(location, 'anchor')) { return false; }
-      if(!this.isCursorIn(location, 'head')) { return false; }
-
-      return this.isValidFoldPath(path);
-    });
-  }
-  fold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath)
-    
-    const pathToShow = this.nextFoldingPath(prevPath);
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No next folding level found");
-    }
-  }
-  autoFoldMax() {
-    const pathToShow = this.getInnermostPath(this.programPath, prevPath => this.nextFoldingPath(prevPath));
-    
-    if(pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No folding level for automatic fold found");
-    }
-  }
-  getRouteForPath(path) {
-    const route = [];
-    
-    path.find(path => {
-      if(path.isProgram()) { return false; } // we expect to start at a Program node
-
-      route.unshift({
-        inList: path.inList,
-        listKey: path.listKey,
-        key: path.key
-      });
-      
-      return false;
-    })
-    
-    return route;
-  }
-  foldPath(path) {
-    this.removeFolding();
-
-    this.routeToShownPath = this.getRouteForPath(path);
-
-    const location = path.node.loc;
-
-    this.createWrapper({
-      line: 0, ch: 0
-    }, {
-      line: location.start.line - 1, ch: location.start.column
-    });
-    this.createWrapper({
-      line: location.end.line - 1, ch: location.end.column
-    }, {
-      line: this.editor.lineCount(), ch: 0
-    });
-
-    requestAnimationFrame(() => {
-      this.editor.refresh();
-    });
-  }
-  createWrapper(from, to) {
-    const divStyle = {
-      width: "2px",
-      height: "1px",
-      minWidth: "2px",
-      minHeight: "1px",
-      borderRadius: "1px",
-      backgroundColor: "green"
-    };
-
-    return this.wrapWidget('div', from, to).then(div => {
-      // div.innerHTML='<i class="fa fa-plus"></i>xx'
-      Object.assign(div.style, divStyle);
-      this.markerWrappers.push(div);
-    });
-  }
-  removeFolding() {
-    this.markerWrappers.forEach(wrapper => wrapper.marker.clear());
-    this.markerWrappers.length = 0;
-  }
-  
-  /*MD ### /AST-aware Navigation MD*/
   
   registerExtraKeys(options) {
     if (options) this.addKeys(options)
@@ -1407,12 +1212,24 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
     })
   }
+  
+  scrollToLine(line) { 
+    this.editor.scrollTo(null, this.editor.heightAtLine(line - 1, "local"));
+  }
 
   unsavedChanges() {
     if (this.editor.getValue() === "") return false
     return  true // workspaces should be treated carefully
    }
 
+  onCursorActivity() {
+    var container = lively.query(this, "lively-container")
+    if (!container) return;
+    var navbar = lively.query(this, "lively-container-navbar")
+    if (!navbar) return;
+      navbar.onDetailsContentCursorActivity(this.editor, 
+        this.editor.getCursor("start"), this.editor.getCursor("end"))
+    }
 
 }
 

@@ -11,15 +11,12 @@
   border: 1px solid goldenrod;
   background-color: #eeeeee;
 }
-#left, #operator, #right {
-  align-self: center;
+:host(*) {
+  color: green;
 }
-  :host(*) {
-    color: green;
-  }
 </style>
   "
-  <primitive-string id="value"></primitive-string>
+  <primitive-string id="value" exportparts="input-field"></primitive-string>
   "
 </template>
 

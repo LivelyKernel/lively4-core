@@ -253,6 +253,11 @@ export default class AbstractAstNode extends Morph {
       return;
     }
 
+    if (ctrl && char === 'E') {
+      this.extractExpressionIntoLocalVariable(evt);
+      return;
+    }
+
     info.notify();
     
     return false;
@@ -277,6 +282,13 @@ export default class AbstractAstNode extends Morph {
     return getAppropriateElement(path);
   }
   
+  extractExpressionIntoLocalVariable(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    const localName = window.prompt('name of local variable', 'temp');
+    this.editor.commandExtractExpressionIntoLocalVariable(this, localName);
+  }
   copyNodeToClipboard(evt) {
       lively.warn('should COPY')
     
@@ -289,15 +301,10 @@ export default class AbstractAstNode extends Morph {
   set astNode(value) { return this._node = value; }
 
   addNodeStylingInfo(path) {
-    var depth = 0;
+    let depth = -1;
     path.find(p => {
-      if (p.parentPath && p.scope !== p.parentPath.scope) {
-        return true;
-        
-      } else {
-        (depth++);
-        return false;
-      }
+      depth++;
+      return p.parentPath && p.scope !== p.parentPath.scope;
     });
     this.setAttribute('ast-node-scope', SCOPE_MAP.getOrCreate(path.scope, () => NEXT_SCOPE_ID++ % 20));
     this.setAttribute('ast-node-depth', depth);

@@ -19,20 +19,21 @@ async function extractShortCuts(url){
   }</table>;
 }
 
+function listShortCuts(title, path) {
+  return <div>
+    <h2>{title}</h2>
+    {extractShortCuts(lively4url + path)}
+  </div>;
+}
+
 const result = <div>
-  <h2>Global Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/client/keys.js")}
-  <h2>Code Mirror Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/components/widgets/lively-code-mirror.js")}
-  <h2>Module Specific Shortcuts</h2>
-  <h2>Vivide Step Editor Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/client/vivide/components/vivide-step-editor.js")}
-  <h2>Vivide Text Widget Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/client/vivide/components/vivide-text-widget.js")}
-  <h2>Expose Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/client/expose.js")}
-  <h2>Graffle Shortcuts</h2>
-  {extractShortCuts(lively4url + "/src/client/graffle.js")}
+  {listShortCuts('Global Shortcuts', '/src/client/keys.js')}
+  {listShortCuts('Code Mirror Shortcuts', '/src/components/widgets/lively-code-mirror.js')}
+  <h1>Module Specific Shortcuts</h1>
+  {listShortCuts('Vivide Step Editor Shortcuts', '/src/client/vivide/components/vivide-step-editor.js')}
+  {listShortCuts('Vivide Text Widget Shortcuts', '/src/client/vivide/components/vivide-text-widget.js')}
+  {listShortCuts('Expose Shortcuts', '/src/client/expose.js')}
+  {listShortCuts('Graffle Shortcuts', '/src/client/graffle.js')}
 </div>;
 
 result

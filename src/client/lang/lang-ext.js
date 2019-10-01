@@ -1,11 +1,10 @@
 import 'lang';
 import { extend } from './utils.js';
 
-
 /*MD
 ## OBJECT
 MD*/
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -14,12 +13,7 @@ import jsx from 'babel-plugin-syntax-jsx';
 import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
-const SYNTAX_PLUGINS = [
-  jsx,
-  doExpressions,
-  functionBind,
-  asyncGenerators
-];
+const SYNTAX_PLUGINS = [jsx, doExpressions, functionBind, asyncGenerators];
 
 const filename = "tempfile.js";
 const BABEL_CONFIG_DEFAULT = {
@@ -42,26 +36,23 @@ extend(Object.prototype, {
 
   dependentAExprs() {
     return AExprRegistry.allAsArray().filter(ae => {
-      if(!ae.supportsDependencies()) { return false; }
-      
+      if (!ae.supportsDependencies()) {
+        return false;
+      }
+
       const dependencies = ae.dependencies().all();
       return dependencies.find(dep => {
         const desc = dep.getAsDependencyDescription();
-        return desc.object === this ||
-          desc.value === this ||
-          desc.scope === this;
+        return desc.object === this || desc.value === this || desc.scope === this;
       });
     });
   },
-  
+
   transformAsAST(fullPluginOrVisitor) {
-    let iteratorPlugin;
-    if(fullPluginOrVisitor instanceof Function) {
-      iteratorPlugin = fullPluginOrVisitor;
-    } else {
+    const iteratorPlugin = fullPluginOrVisitor instanceof Function ?
+      fullPluginOrVisitor :
       // only got the visitor: need to bridge to a plugin function as expected by babel
-      iteratorPlugin = babel => ({ visitor: fullPluginOrVisitor });
-    }
+      () => ({ visitor: fullPluginOrVisitor });
 
     const babelConfig = Object.assign({}, BABEL_CONFIG_DEFAULT, {
       plugins: [...SYNTAX_PLUGINS, iteratorPlugin]
@@ -72,11 +63,10 @@ extend(Object.prototype, {
 
   // using `babel.traverse` also allows for wild cards to match AST nodes
   traverseAsAST(visitor) {
-    return babel.traverse(this, visitor)
+    return babel.traverse(this, visitor);
   }
 
 });
-
 
 /*MD
 ## STRING
@@ -89,7 +79,7 @@ extend(String.prototype, {
   toAST() {
     return babel.transform(this, BABEL_CONFIG_DEFAULT).ast;
   },
-  
+
   /**
    * @example providing a visitor object
    * var ids = [];
@@ -114,7 +104,7 @@ extend(String.prototype, {
   transformAsAST(fullPluginOrVisitor) {
     return this.toAST().transformAsAST(fullPluginOrVisitor);
   },
-  
+
   /*
    * @example printing all node types found in source code
    * `var a = 42, b = 423; lively::foo`.traverseAsAST({
@@ -127,7 +117,6 @@ extend(String.prototype, {
     return this.toAST().traverseAsAST(visitor);
   },
 
-
   async boundEval(thisReference, targetModule) {
     const result = await boundEval(this, thisReference, targetModule);
     if (result.isError) {
@@ -138,7 +127,6 @@ extend(String.prototype, {
   }
 
 });
-
 
 /*MD
 ## FUNCTION
@@ -152,18 +140,17 @@ extend(Function.prototype, {
   asAExpr() {
     return aexprByFunction.getOrCreate(this, () => aexpr(this));
   },
-  
+
   onChange(callback) {
     return this.asAExpr().onChange(callback);
   },
-  
+
   onBecomeTrue(callback) {
     return this.asAExpr().onBecomeTrue(callback);
   },
-  
+
   onBecomeFalse(callback) {
     return this.asAExpr().onBecomeFalse(callback);
   }
 
 });
-
