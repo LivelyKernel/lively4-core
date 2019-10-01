@@ -20,6 +20,12 @@ describe('Error in Expression analysis', () => {
     expect(spy).to.have.been.calledOnce;
   });
 
+  xit('silent is default mode ', () => {
+  });
+
+  xit('explicit error handlers are called', () => {
+  });
+
 });
 describe('Error in storage routine', () => {
 
