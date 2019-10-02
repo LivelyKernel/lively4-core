@@ -20,6 +20,7 @@ import { loc, range } from 'utils';
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
+
 export default class LivelyCodeMirror extends HTMLElement {
 
   fake(...args) {
