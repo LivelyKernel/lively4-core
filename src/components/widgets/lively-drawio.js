@@ -18,11 +18,6 @@ import pako from "https://jgraph.github.io/drawio-tools/tools/deflate/pako.min.j
 
 import XML from "src/client/xml.js"
 
-export function /*example:*/foo/*{"id":"8ea3_3c2d_b3f6","name":{"mode":"input","value":"foo"},"color":"hsl(70, 30%, 70%)","values":{"a":{"mode":"input","value":"5"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(a) {
-  /*probe:*/return/*{}*/ a + 1
-}
-
-
 function stringToBytes(str) {
     var arr = new Array(str.length);
     for (var i = 0; i < str.length; i++){
@@ -89,6 +84,7 @@ export default class LivelyDrawio extends Morph {
   }
 
   async onWebhook(change) {
+    if (!change || change.commits) return
     if (change.commits.find(ea => 
           ea.modified.find(path => path == this.githubInfo.path))) {
       this.updateFromDrawIO(change.after)
@@ -251,6 +247,7 @@ export default class LivelyDrawio extends Morph {
   }
 
   async editAtDrawIO(parent) {
+    debugger
     if (!this.src) throw new Error("src attribute not set");
 
     await this.updateGithubInfo()
@@ -269,7 +266,16 @@ export default class LivelyDrawio extends Morph {
       await gh.setFile(githubInfo.path, DrawioBranch, content)
       var githubPath = userAndRepository + "/" +  DrawioBranch + "/" +githubInfo.path
       drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
+    } else {
+      lively.notify("Please login to GitHub!",  "", undefined, () => {
+        
+        lively.files.withSynctoolDo(comp => {
+          comp.login()
+        }, lively4url)
+      })
+      return
     }
+    
     
     var githubPrefix = "https://raw.githubusercontent.com/"    
     if (this.src.match(githubPrefix)) {
