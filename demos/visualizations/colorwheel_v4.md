@@ -41,7 +41,9 @@ var selected_data= [
  {h: 330, s: 90, v:75, 	rgb: "#f986bf"},
  {h: 330, s: 90, v:85, 	rgb: "#fbb6d9"}]
 
-var used_v = _.uniq(selected_data.map( ea => ea.v))
+var used_v = _.uniq(selected_data.map( ea => ea.v)).sort().reverse()
+
+
 
 var data = []
 var delta_h = 10

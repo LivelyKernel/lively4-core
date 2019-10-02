@@ -20,6 +20,7 @@ import { loc, range } from 'utils';
 
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
+
 export default class LivelyCodeMirror extends HTMLElement {
 
   fake(...args) {
@@ -363,18 +364,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
         },
-        
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
           this.astCapabilities(cm).then(ac => ac.openMenu());
         },
-        
-        // #KeyboardShortcut Alt-F fold (inverse code folding)
-        "Alt-F": cm => this.astCapabilities(cm).then(ac => ac.fold(cm)),
-        // #KeyboardShortcut Shift-Alt-F unfold (inverse code folding)
-        "Shift-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.unfold(cm)),
-        // #KeyboardShortcut Shift-Alt-F fold to maximum (inverse code folding)
-        "Ctrl-Shift-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.autoFoldMax()),
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
