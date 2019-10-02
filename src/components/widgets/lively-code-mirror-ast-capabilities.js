@@ -1,8 +1,5 @@
 import { loc, range } from 'utils';
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
-
 import ContextMenu from 'src/client/contextmenu.js';
 
 export default class ASTCapabilities {
@@ -27,18 +24,6 @@ export default class ASTCapabilities {
       }
     });
     return programPath;
-  }
-  getPathForRoute(route) {
-    let path = this.programPath;
-    if (!path) {
-      lively.warn('No programPath found');
-    }
-
-    route.forEach(routePoint => {
-      path = path.get(routePoint.inList ? routePoint.listKey + '.' + routePoint.key : routePoint.key);
-    });
-
-    return path;
   }
   nextPath(startingPath, isValid) {
     let pathToShow;
@@ -159,13 +144,6 @@ export default class ASTCapabilities {
     this.selectPaths(maxPaths);
   }
 
-  selectNodes(nodes) {
-    const ranges = nodes.map(node => {
-      const [anchor, head] = range(node.loc).asCM();
-      return { anchor, head };
-    });
-    this.editor.setSelections(ranges);
-  }
   selectPaths(paths) {
     const ranges = paths.map(path => {
       const [anchor, head] = range(path.node.loc).asCM();
@@ -174,146 +152,19 @@ export default class ASTCapabilities {
     // #TODO: include primary selection
     this.editor.setSelections(ranges);
   }
-  selectPath(path) {
-    range(path.node.loc).selectInCM(this.editor);
-  }
-  isCursorIn(location, cursorStart) {
-    return range(location).contains(this.editor.getCursor(cursorStart));
-  }
 
-  get routeToShownPath() {
-    return this._routeToShownPath = this._routeToShownPath || [];
-  }
-  set routeToShownPath(value) {
-    return this._routeToShownPath = value;
-  }
-  get markerWrappers() {
-    return this._markerWrappers = this._markerWrappers || [];
-  }
-  set markerWrappers(value) {
-    return this._markerWrappers = value;
-  }
-
-  unfold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath);
-
-    const pathToShow = prevPath.findParent(path => this.isValidFoldPath(path));
-
-    if (pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No previous folding level found");
-    }
-  }
-  isValidFoldPath(path) {
-    return true;
-    return path.isProgram() || path.isForOfStatement() || path.isFunctionExpression() || path.isForAwaitStatement() || path.parentPath && path.parentPath.isYieldExpression() || path.isArrowFunctionExpression();
-  }
-  nextFoldingPath(startingPath) {
-    return this.nextPath(startingPath, path => {
-      const location = path.node.loc;
-      if (!this.isCursorIn(location, 'anchor')) {
-        return false;
-      }
-      if (!this.isCursorIn(location, 'head')) {
-        return false;
-      }
-
-      return this.isValidFoldPath(path);
-    });
-  }
-  fold() {
-    const prevPath = this.getPathForRoute(this.routeToShownPath);
-
-    const pathToShow = this.nextFoldingPath(prevPath);
-
-    if (pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No next folding level found");
-    }
-  }
-  autoFoldMax() {
-    const pathToShow = this.getInnermostPath(this.programPath, prevPath => this.nextFoldingPath(prevPath));
-
-    if (pathToShow) {
-      this.foldPath(pathToShow);
-    } else {
-      lively.warn("No folding level for automatic fold found");
-    }
-  }
-  getRouteForPath(path) {
-    const route = [];
-
-    path.find(path => {
-      if (path.isProgram()) {
-        return false;
-      } // we expect to start at a Program node
-
-      route.unshift({
-        inList: path.inList,
-        listKey: path.listKey,
-        key: path.key
-      });
-
-      return false;
-    });
-
-    return route;
-  }
-  foldPath(path) {
-    this.removeFolding();
-
-    this.routeToShownPath = this.getRouteForPath(path);
-
-    const location = path.node.loc;
-
-    this.createWrapper({
-      line: 0, ch: 0
-    }, {
-      line: location.start.line - 1, ch: location.start.column
-    });
-    this.createWrapper({
-      line: location.end.line - 1, ch: location.end.column
-    }, {
-      line: this.editor.lineCount(), ch: 0
-    });
-
-    requestAnimationFrame(() => {
-      this.editor.refresh();
-    });
-  }
-  createWrapper(from, to) {
-    const divStyle = {
-      width: "2px",
-      height: "1px",
-      minWidth: "2px",
-      minHeight: "1px",
-      borderRadius: "1px",
-      backgroundColor: "green"
-    };
-
-    return this.lcm.wrapWidget('div', from, to).then(div => {
-      // div.innerHTML='<i class="fa fa-plus"></i>xx'
-      Object.assign(div.style, divStyle);
-      this.lcm.markerWrappers.push(div);
-    });
-  }
-  removeFolding() {
-    this.lcm.markerWrappers.forEach(wrapper => wrapper.marker.clear());
-    this.lcm.markerWrappers.length = 0;
-  }
+  /*MD ## Factoring Menu MD*/
 
   async openMenu() {
     function fa(name, ...modifiers) {
-      return `<i class="fa fa-${name} ${modifiers.join(' ')}"></i>`;
+      return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
 
     const menuItems = [
       ['selection to local variable', () => {
         menu.remove();
         this.extractExpressionIntoLocalVariable();
-      }, '→', fa('share-square-o', 'fa-flip-horizontal')],
+      }, '→', fa('share-square-o', 'flip-horizontal')],
       ['wrap into active expression', () => {
         menu.remove();
         this.wrapExpressionIntoActiveExpression();
@@ -321,7 +172,7 @@ export default class ASTCapabilities {
       ['test', () => {
         menu.remove();
         this.wrapExpressionIntoActiveExpression();
-      }, '→', fa('share-alt', 'fa-rotate-90')]
+      }, '→', fa('share-alt', 'rotate-90')]
     ];
 
     const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
