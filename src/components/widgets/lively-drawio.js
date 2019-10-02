@@ -247,6 +247,7 @@ export default class LivelyDrawio extends Morph {
   }
 
   async editAtDrawIO(parent) {
+    debugger
     if (!this.src) throw new Error("src attribute not set");
 
     await this.updateGithubInfo()
@@ -265,7 +266,16 @@ export default class LivelyDrawio extends Morph {
       await gh.setFile(githubInfo.path, DrawioBranch, content)
       var githubPath = userAndRepository + "/" +  DrawioBranch + "/" +githubInfo.path
       drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
+    } else {
+      lively.notify("Please login to GitHub!",  "", undefined, () => {
+        
+        lively.files.withSynctoolDo(comp => {
+          comp.login()
+        }, lively4url)
+      })
+      return
     }
+    
     
     var githubPrefix = "https://raw.githubusercontent.com/"    
     if (this.src.match(githubPrefix)) {
