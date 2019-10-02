@@ -2,7 +2,7 @@ import Annotations from '../utils/annotations.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
-// TODO: this is use to keep SystemJS from messing up scoping
+// #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
@@ -29,10 +29,6 @@ export const AExprRegistry = {
     return Array.from(this._aexprs);
   }
 };
-
-function resolveValue(value, func) {
-  func(value);
-}
 
 class DefaultMatcher {
   static compare(lastResult, newResult) {
@@ -124,7 +120,9 @@ const MATCHER_MAP = new Map([
   ['identity', IdentityMatcher],
   ['shallow', ShallowMatcher],
   ['deep', DeepMatcher]
-])
+]);
+
+const NO_VALUE_YET = Symbol('No value yet');
 
 export class BaseActiveExpression {
 
@@ -133,15 +131,14 @@ export class BaseActiveExpression {
    * @param func (Function) the expression to be observed
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [], match } = {}) {
+  constructor(func, { params = [], match, errorMode = 'silent' } = {}) {
     this.func = func;
     this.params = params;
-    let currentValue = this.getCurrentValue();
+    this.errorMode = errorMode;
     this.setupMatcher(match);
-    resolveValue(currentValue, (value) => {
-      this.storeResult(value);
-    })
+    this._initLastValue();
     this.callbacks = [];
+    // this.allCallbacks = new Map();
     this._isDisposed = false;
     this._shouldDisposeOnLastCallbackDetached = false;
 
@@ -149,6 +146,27 @@ export class BaseActiveExpression {
 
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();
+    }
+  }
+  
+//   addEventListener(type, callback) {
+    
+//   }
+  
+//   removeEventListener(type, callback) {
+    
+//   }
+  
+//   dispatchEvent() {
+    
+//   }
+  
+  _initLastValue() {
+    const { value, isError } = this.evaluateToCurrentValue();
+    if (!isError) {
+      this.storeResult(value);
+    } else {
+      this.lastValue = NO_VALUE_YET;
     }
   }
 
@@ -164,6 +182,20 @@ export class BaseActiveExpression {
    */
   getCurrentValue() {
     return this.func(...this.params);
+  }
+
+  /**
+   * Safely executes the encapsulated expression with the given parameters.
+   * @public
+   * @returns {{ value: *, isError: Boolean}} the current value of the expression, or the thrown error if any
+   */
+  evaluateToCurrentValue() {
+    try {
+      const result = this.getCurrentValue();
+      return { value: result, isError: false };
+    } catch (e) {
+      return { value: e, isError: true };
+    }
   }
 
   /**
@@ -183,7 +215,7 @@ export class BaseActiveExpression {
    */
   // #TODO: should this remove all occurences of the callback?
   offChange(callback) {
-    var index = this.callbacks.indexOf(callback);
+    const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
     }
@@ -200,12 +232,12 @@ export class BaseActiveExpression {
    * @public
    */
   checkAndNotify() {
-    const currentValue = this.getCurrentValue();
-    if(this.compareResults(this.lastValue, currentValue)) { return; }
+    const { value, isError } = this.evaluateToCurrentValue();
+    if(isError || this.compareResults(this.lastValue, value)) { return; }
     const lastValue = this.lastValue;
-    this.storeResult(currentValue);
+    this.storeResult(value);
 
-    this.notify(currentValue, {
+    this.notify(value, {
       lastValue,
       expr: this.func ,
       aexpr: this
@@ -276,8 +308,8 @@ export class BaseActiveExpression {
     });
 
     // check initial state
-    const value = this.getCurrentValue();
-    if(value) { callback(); }
+    const { value, isError } = this.evaluateToCurrentValue();
+    if (!isError && value) { callback(); }
 
     return this;
   }
@@ -291,8 +323,8 @@ export class BaseActiveExpression {
     });
 
     // check initial state
-    const value = this.getCurrentValue();
-    if(!value) { callback(); }
+    const { value, isError } = this.evaluateToCurrentValue();
+    if(!isError && !value) { callback(); }
 
     return this;
   }
@@ -303,9 +335,10 @@ export class BaseActiveExpression {
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
-    const value = this.getCurrentValue();
-    // #BUG: use callback(value, {}) instead; test
-    this.notify(value, {});
+    const { value, isError } = this.evaluateToCurrentValue();
+    if (!isError) {
+      callback(value, {});
+    }
 
     return this;
   }

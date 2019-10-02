@@ -26,6 +26,7 @@ import ViewNav from "src/client/viewnav.js"
 
 MD*/
 
+
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
@@ -735,7 +736,7 @@ export default class Container extends Morph {
     var content = "here we go...."
     var ending = type
     if (type == "drawio") {
-      ending = "xml"
+      ending = "drawio"
       content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
     }
     
@@ -1434,7 +1435,7 @@ export default class Container extends Morph {
     // implement hooks
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
-    navbar.newfile = (url, type) => { this.newFile(url, type) }
+    navbar.newFile = (url, type) => { this.newFile(url, type) }
     navbar.followPath = (path, lastPath) => { 
       this.contextURL = lastPath
       this.followPath(path) 
@@ -1645,21 +1646,7 @@ export default class Container extends Morph {
     var editor = this.get("#editor");
     if (!editor) return this.contentChanged;
     return  editor.textChanged;
-  }
-
-
-
-  
-
-  
-
-  
-  
-
-  
-
-
-  
+  }  
   /*MD ## ContentChange MD*/
 
   checkForContentChanges() {
