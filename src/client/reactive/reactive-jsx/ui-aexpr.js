@@ -4,19 +4,20 @@ const REMOVE_LISTENER_BY_CHECK_FUNCTION = new Map(); // nodeDetachedFromDOM -> r
 
 function removeObsoleteListeners() {
   Array.from(REMOVE_LISTENER_BY_CHECK_FUNCTION).forEach(([nodeDetachedFromDOM, removeListener]) => {
-    if(nodeDetachedFromDOM()) {
+    if (nodeDetachedFromDOM()) {
       removeListener();
       REMOVE_LISTENER_BY_CHECK_FUNCTION.delete(nodeDetachedFromDOM);
     }
   });
-  if(REMOVE_LISTENER_BY_CHECK_FUNCTION.size === 0) {
+  if (REMOVE_LISTENER_BY_CHECK_FUNCTION.size === 0) {
     removeLoop.pause();
   }
 }
 
 // `this` is an ActiveExpression 
 export function toDOMNode(builder = x => x) {
-  let currentNode = builder(this.getCurrentValue());
+  const { value } = this.evaluateToCurrentValue();
+  let currentNode = builder(value.value);
 
   function updateDOMNode(val) {
     // lively.notify("change aexpr result", val)
@@ -24,18 +25,18 @@ export function toDOMNode(builder = x => x) {
     currentNode.replaceWith(newNode);
     currentNode = newNode;
   };
-  
+
   function nodeDetachedFromDOM() {
-    return currentNode.getRootNode({composed:true}) !== document;
+    return currentNode.getRootNode({ composed: true }) !== document;
   }
-  
+
   const removeListener = () => this.offChange(updateDOMNode);
-  
+
   this.onChange(updateDOMNode);
-  
+
   REMOVE_LISTENER_BY_CHECK_FUNCTION.set(nodeDetachedFromDOM, removeListener);
   removeLoop.ensureRunning();
-  
+
   return currentNode;
 }
 

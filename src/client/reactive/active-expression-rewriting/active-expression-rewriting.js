@@ -53,9 +53,14 @@ class ExpressionAnalysis {
   }
   
   static check(aexpr) {
+    let value, isError;
     using([analysisModeManager], () => {
       // Do the function execution in ExpressionAnalysisMode
-      aexprStack.withElement(aexpr, () => aexpr.getCurrentValue());
+      aexprStack.withElement(aexpr, () => {
+        const result = aexpr.evaluateToCurrentValue();
+        value = result.value
+        isError = result.isError
+      });
     });
   }
 

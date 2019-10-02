@@ -8,19 +8,35 @@ chai.use(sinonChai);
 
 describe('Error in Expression analysis', () => {
 
-  xit('throwing an error does not update ', () => {
-    let value = 17
+  it('throwing an error does not update ', () => {
+    let value = 17;
+    let throwError = false;
+
     const spy = sinon.spy();
     const ae = aexpr(() => {
-      return value;
-    }).onChange(spy)
+      if (throwError) {
+        throw new Error('wups');
+      } else {
+        return value;
+      }
+    }).onChange(spy);
 
-    value = 42;
+    throwError = true;
 
-    expect(spy).to.have.been.calledOnce;
+    expect(spy).not.to.have.been.called;
+  });
+
+  it('initial error does not propagate', () => {
+    aexpr(() => {
+      throw new Error('wups');
+    });
   });
 
   xit('silent is default mode ', () => {
+  });
+
+  // #TODO: maybe by generic .on function
+  xit('onError callback', () => {
   });
 
   xit('explicit error handlers are called', () => {

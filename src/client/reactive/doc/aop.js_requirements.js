@@ -58,7 +58,7 @@ describe('Signal Logic', function() {
         let s = aexpr(() => a)
         	.onChange(aa => s = aa)
             .onChange(function(aa) {s = aa})
-            .getCurrentValue();
+            .evaluateToCurrentValue().value;
 
         expect(s).to.equal(0);
 
