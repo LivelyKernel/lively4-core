@@ -70,11 +70,12 @@ export default class IndexSearch extends Morph {
       let url = ea.url;
       let item = document.createElement("tr");
       let filename = ea.file.replace(/.*\//,"")
+      let path = ea.url.replace(this.serverURL(),"")
       let lineAndColumn = {
         line: ea.line, 
         column: ea.column,
         selection: ea.selection }
-      item.innerHTML = `<td class="filename"><a>${filename}</a></td>
+      item.innerHTML = `<td class="filename"><a>${path}</a></td>
         <td class="line">${ea.line + 1}:</td>
         <td><span ="pattern">${
         pattern.replace(/</g,"&lt;")}</span></td>`;
@@ -138,13 +139,18 @@ export default class IndexSearch extends Morph {
     this.onSearchResults(list);
   }
 
+  serverURL() {
+     return lively4url.replace(/[^/]*$/,"")
+  }
+  
+  
   /*
    * find all root directories/repositories that should be search by looking, what browsers/editors the user has opened
    */ 
   findRootsInBrowsers() {
     var browsers = document.body.querySelectorAll("lively-container")
     var urls = browsers.map(ea => ea.getPath())
-    var serverURL =  lively4url.replace(/[^/]*$/,"")
+    var serverURL =  this.serverURL()
     var rootURLs = urls.filter(ea => ea.match(serverURL)).map(ea => {
       var m = ea.match(new RegExp("(" + serverURL + "[^/]*/).*"))
       return m[1]
