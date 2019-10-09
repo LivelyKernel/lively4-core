@@ -1,3 +1,9 @@
+/*MD 
+# Files API
+
+MD*/
+
+
 import { uuid as generateUuid } from 'utils';
 import sourcemap from 'src/external/source-map.min.js';
 
@@ -530,6 +536,14 @@ export default class Files {
     return path.replace(/\?.*/,"").replace(/.*\./,"");
   }
   
+  
+  static async setURLAsBackground(url) {
+    document.querySelectorAll("lively-background").forEach(ea => ea.remove())
+
+    var back = await (<lively-background class="lively-content" ></lively-background>) 
+    document.body.appendChild(back)
+    back.url = url
+  }
 }
 
 
