@@ -1,8 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
-// import lively from 'src/client/lively.js';
-
 import FileIndex from "src/client/fileindex.js"
+import _ from 'src/external/lodash/lodash.js'
 
 export default class IndexSearch extends Morph {
   initialize() {
@@ -115,15 +113,6 @@ export default class IndexSearch extends Morph {
       this.setAttribute("replace", "true")
     }
   }
-  
-  getSearchURL() {
-    // return "https://lively-kernel.org/lively4S2/_search/files" // #DEV
-    if (document.location.host == "livelykernel.github.io")
-      return "https://lively-kernel.org/lively4/_search/files";
-    else
-      return lively4url + "/../_search/files";
-  }
-  
 
   async searchFile(text) {
     this.clearLog()
@@ -149,6 +138,20 @@ export default class IndexSearch extends Morph {
     this.onSearchResults(list);
   }
 
+  /*
+   * find all root directories/repositories that should be search by looking, what browsers/editors the user has opened
+   */ 
+  findRootsInBrowsers() {
+    var browsers = document.body.querySelectorAll("lively-container")
+    var urls = browsers.map(ea => ea.getPath())
+    var serverURL =  lively4url.replace(/[^/]*$/,"")
+    var rootURLs = urls.filter(ea => ea.match(serverURL)).map(ea => {
+      var m = ea.match(new RegExp("(" + serverURL + "[^/]*/).*"))
+      return m[1]
+    })
+    return _.uniq(rootURLs)
+  }
+  
   async searchFilesList(pattern) {
     this.searchInProgres = true;
     
@@ -156,7 +159,7 @@ export default class IndexSearch extends Morph {
     var result = []
     var searchTime = await lively.time(async () => {
       var root = lively4url; // there are other files in our cache... too 
-      var roots = [root].concat(lively.preferences.get("ExtraSearchRoots"))
+      var roots = [root].concat(lively.preferences.get("ExtraSearchRoots")).concat(this.findRootsInBrowsers())
       return FileIndex.current().db.files.each(file => {
         if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content) {
           var m = file.content.match(search)
