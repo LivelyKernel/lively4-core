@@ -1,10 +1,9 @@
-/**
- * boot.js -- loads lively in any page that inserts through a script tag
- *
- **/
+/*MD
+# boot 
+loads lively in any page that inserts through a script tag
+MD*/
 
 /* eslint no-console: off */
-
 
 /*
  * HELPER
