@@ -1,3 +1,9 @@
+/*MD # Lively File 
+
+![](lively-file.png){height=100px}
+
+MD*/
+
 import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js'
 import Mimetypes from 'src/client/mimetypes.js'
@@ -80,17 +86,28 @@ export default class File extends Morph {
     lively.files.saveFile(url, contents)
   }
   
+  async setAsBackground() {
+    lively.files.setURLAsBackground(
+          `https://lively4/scheme/livelyfile//${encodeURIComponent(this.name)}`)
+  }
+
   onContextMenu(evt) {
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
-      var menu = new ContextMenu(this, [
+      var items = [
           ...(["browse", "edit"].map(ea => [ea, async () => {
             var comp = await lively.openBrowser("livelyfile://#" + this.name, ea == "edit")
             comp.hideNavbar() 
-          }])),
-          ["foo"]
-      ]);
+          }]))
+      ]
+      if (lively.files.isPicture(this.name)) {
+        items.push(["set as background", () => this.setAsBackground()])
+      }
+      var menu = new ContextMenu(this, items);
+      
+      
+      
       menu.openIn(document.body, evt, this);
       return true;
     }

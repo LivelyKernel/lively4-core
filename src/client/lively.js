@@ -1,7 +1,12 @@
-/* Lively4 core module
- * #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
- *
- */
+/*MD 
+![](../../media/lively4_logo_smooth_200.png)
+
+# Lively4 core module
+
+ #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
+
+
+MD*/
 
 
 import './patches.js'; // monkey patch the meta sytem....
@@ -851,6 +856,11 @@ export default class Lively {
     // return selection
   }
 
+  /*MD 
+  # Inititialization 
+  
+  MD*/
+  
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document
@@ -904,6 +914,7 @@ export default class Lively {
 
     await lively.ensureHand();
     
+    
     // lively.selection;
     
     // #Hack... just to be on the save side #ACM
@@ -953,7 +964,9 @@ export default class Lively {
       persistence.current.start()
     }, 2000)
   }
-
+  
+  
+  
   static async showMainContainer() {
     var container = document.querySelector('main-content')
     if (!container) {
@@ -1946,6 +1959,11 @@ export default class Lively {
     parents.push(element.parentElement)
     this.allParents(element.parentElement, parents, deep)
     return parents
+  }
+  
+  /* test if element is in DOM */
+  static isInBody(element) {
+    return this.allParents(element, undefined, true).includes(document.body)
   }
 
   static showHalo(element) {

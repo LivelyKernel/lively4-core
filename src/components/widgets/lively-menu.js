@@ -1,3 +1,11 @@
+/*MD # Lively Menu
+
+![](lively-menu.png){height=200}
+
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import { pt } from 'src/client/graphics.js';
 import html from  'src/client/html.js'
@@ -211,6 +219,7 @@ export default class LivelyMenu extends Morph {
     var menu = this.get(".container");
     if (this.submenu) this.submenu.remove()
     var sub = ea[1]
+    if (!sub) return
     if (sub.then) sub = await sub; // resolve Promise
     if (sub instanceof Array) {
       var subitems = sub;

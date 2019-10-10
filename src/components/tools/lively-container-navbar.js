@@ -630,6 +630,13 @@ export default class LivelyContainerNavbar extends Morph {
         [`add search root`, () => this.addSearchRoot(otherUrl)],
       ])
     }
+
+    if (lively.files.isPicture(otherUrl)) {
+      menuElements.push(...[
+        [`set as background`, () => lively.files.setURLAsBackground(otherUrl)],
+      ])
+    }
+
     
     menuElements.push(...[
       ["new", [

@@ -197,7 +197,34 @@ describe('getTotalGlobalBounds', function() {
     this.sut && this.sut.remove()
   });
 })
- 
+
+
+describe('isInBody', function() {
+  
+  it('should return false when not open', () => {
+    var element = document.createElement("div");
+    
+    this.sut = element;
+
+    expect(lively.isInBody(this.sut)).to.be.false 
+  })
+  
+  it('should return true when open', () => {
+    var element = document.createElement("div");
+    
+    this.sut = element;
+    document.body.appendChild(this.sut);
+
+    expect(lively.isInBody(this.sut)).to.be.true 
+  })
+    
+  after("cleanup", () => {
+    this.sut && this.sut.remove()
+  });
+})
+
+
+
 
 
   

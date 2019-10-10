@@ -1,4 +1,4 @@
-![](https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_200.png){style="float: left"}
+![](media/lively4_logo_smooth_200.png){style="float: left"}
 
 # An Explorative, Self-supporting, <br> Web-based Development Environment
 
