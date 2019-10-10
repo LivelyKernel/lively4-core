@@ -1960,6 +1960,11 @@ export default class Lively {
     this.allParents(element.parentElement, parents, deep)
     return parents
   }
+  
+  /* test if element is in DOM */
+  static isInBody(element) {
+    return this.allParents(element, undefined, true).includes(document.body)
+  }
 
   static showHalo(element) {
     window.that = element
