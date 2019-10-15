@@ -135,9 +135,17 @@ export default class Editor extends Morph {
   onCloseVersionsButton() {
     this.toggleVersions()
   }
-
+  
+  getVersionWidget() {
+    var myWindow = lively.findWindow(this)
+    if (myWindow) {
+      var versionControl = myWindow.querySelector("#versionControl")
+    }
+    return versionControl.get("#versions")  
+  }
+  
   currentVersion() {
-    var selection = this.get("#versions").selection;
+    var selection = this.getVersionWidget().selection;
     if (selection) return selection.version;
   }
   
