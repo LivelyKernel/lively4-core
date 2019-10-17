@@ -10,24 +10,22 @@ import select, { View } from 'active-group';
 import { wait } from 'utils';
 
 async function createWidget() {
-  const widget = await lively.openComponentInWindow('matches-in-shadow');
-  const livelyWindow = widget.parentElement;
-  
-  return { widget, livelyWindow };
+  const widget = await lively.create('matches-in-shadow', document.body);
+  // document.body.appendChild(widget);
+  return widget;
 }
 
 describe("Morph.select('css selector')", async () => {
   describe("matches-in-shadow", async () => {
     let widget;
-    let livelyWindow;
-    beforeEach(async () => {
-      ({ widget, livelyWindow } = await createWidget());
+    beforeEach(async function() {
+      this.timeout(10000);
+      widget = await createWidget();
     });
     afterEach(() => {
       widget.remove();
-      livelyWindow.remove();
     });
-    
+
     it("respondsTo select", async () => {
       expect(widget).itself.to.respondTo('select');
     });
@@ -41,10 +39,10 @@ describe("Morph.select('css selector')", async () => {
         const checkedCheckbox = shadow.appendChild(<input type="checkbox" checked></input>);
         shadow.appendChild(<input type="radio"></input>);
         const checkedRadio = shadow.appendChild(<input type="radio" checked></input>);
-        
+
         const selection = widget.select('input:checked');
         await wait(100);
-        
+
         expect(selection.now()).to.have.lengthOf(2);
         expect(selection.now()).to.include(checkedCheckbox);
         expect(selection.now()).to.include(checkedRadio);
@@ -59,7 +57,7 @@ describe("Morph.select('css selector')", async () => {
         const checkedRadio = shadow.appendChild(<input type="radio" checked></input>);
 
         await wait(100);
-        
+
         expect(selection.now()).to.have.lengthOf(2);
         expect(selection.now()).to.include(checkedCheckbox);
         expect(selection.now()).to.include(checkedRadio);
@@ -73,7 +71,7 @@ describe("Morph.select('css selector')", async () => {
 
         await wait(100);
         expect(selection.now()).not.to.include(uncheckedCheckbox);
-        
+
         uncheckedCheckbox.checked = true;
 
         await wait(100);
@@ -87,7 +85,7 @@ describe("Morph.select('css selector')", async () => {
 
         await wait(100);
         expect(selection.now()).to.include(checkedCheckbox);
-        
+
         checkedCheckbox.checked = null;
 
         await wait(100);
@@ -101,7 +99,7 @@ describe("Morph.select('css selector')", async () => {
 
         await wait(100);
         expect(selection.now()).to.include(checkedCheckbox);
-        
+
         checkedCheckbox.remove();
 
         await wait(100);
@@ -123,7 +121,7 @@ describe("Morph.select('css selector')", async () => {
           const resetSpies = () => {
             [checkboxEnterSpy, checkboxExitSpy, radioEnterSpy, radioExitSpy].forEach(spy => spy.reset());
           };
-          
+
           const shadow = widget.shadowRoot;
           const uncheckedCheckbox = shadow.appendChild(<input type="checkbox"></input>);
           const checkedCheckbox = shadow.appendChild(<input type="checkbox" checked></input>);
@@ -174,7 +172,7 @@ describe("Morph.select('css selector')", async () => {
           expect(radioEnterSpy).not.to.be.called;
           expect(radioExitSpy).not.to.be.called;
           resetSpies();
-          
+
           // re-add a previously removed element
           checkedCheckbox.checked = true;
           await wait(100);
@@ -190,15 +188,14 @@ describe("Morph.select('css selector')", async () => {
 
       describe('multiple Morphs', () => {
         let secondWidget;
-        let secondLivelyWindow;
-        beforeEach(async () => {
-          ({ widget: secondWidget, livelyWindow: secondLivelyWindow } = await createWidget());
+        beforeEach(async function() {
+          this.timeout(10000);
+          secondWidget = await createWidget();
         });
         afterEach(() => {
           secondWidget.remove();
-          secondLivelyWindow.remove();
         });
-        
+
         it("multiple Morphs do not conflict with each other", async () => {
           const selection = widget.select('input:checked[type=checkbox]');
           const enterSpy = sinon.spy();
@@ -211,12 +208,9 @@ describe("Morph.select('css selector')", async () => {
           const secondExitSpy = sinon.spy();
           secondSelection.exit(secondExitSpy);
           const resetSpies = () => {
-            [
-              enterSpy, exitSpy,
-              secondEnterSpy, secondExitSpy
-            ].forEach(spy => spy.reset());
+            [enterSpy, exitSpy, secondEnterSpy, secondExitSpy].forEach(spy => spy.reset());
           };
-          
+
           const shadow = widget.shadowRoot;
           const secondShadow = secondWidget.shadowRoot;
           const uncheckedCheckbox = shadow.appendChild(<input type="checkbox"></input>);
@@ -231,7 +225,7 @@ describe("Morph.select('css selector')", async () => {
           expect(selection.now()).not.to.include(secondCheckedCheckbox);
           expect(enterSpy).to.be.calledOnce;
           expect(exitSpy).not.to.be.called;
-          var secondSel = secondSelection.now()
+          var secondSel = secondSelection.now();
           expect(secondSel).not.to.include(uncheckedCheckbox);
           expect(secondSel).not.to.include(checkedCheckbox);
           expect(secondSel).not.to.include(secondUncheckedCheckbox);
@@ -272,7 +266,7 @@ describe("Morph.select('css selector')", async () => {
           expect(secondEnterSpy).not.to.be.called;
           expect(secondExitSpy).not.to.be.called;
           resetSpies();
-          
+
           // re-add a previously removed element
           checkedCheckbox.checked = true;
           await wait(100);
@@ -284,18 +278,14 @@ describe("Morph.select('css selector')", async () => {
           expect(secondExitSpy).not.to.be.called;
           resetSpies();
         }).timeout(5000);
-      })
-      xit("removing the Morph from DOM stops checking for new matching elements", async () => {
       });
-      xit("re-adding the removed Morph restarts checking for new matching elements", async () => {
-      });
-      xit("disposing a View removes its listeners", async () => {
-      });
-    })
+      xit("removing the Morph from DOM stops checking for new matching elements", async () => {});
+      xit("re-adding the removed Morph restarts checking for new matching elements", async () => {});
+      xit("disposing a View removes its listeners", async () => {});
+    });
     describe('select child elements', () => {
       // TODO: basically the same as with shadow root
-    })
-    describe('combined select child elements and elements in shadow root', () => {
-    })
+    });
+    describe('combined select child elements and elements in shadow root', () => {});
   });
 });
