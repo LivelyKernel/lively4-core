@@ -109,7 +109,7 @@ export default class LivelyMarkdown extends Morph {
     // var htmlSource = md.render(enhancedMarkdown);
     var htmlSource = md.render(content);
     htmlSource = htmlSource
-      .replace(/<script>/g,"<lively-script><script>")
+      .replace(/<script(.*)>/g,"<lively-script$1><script>")
       .replace(/<\/script>/g,"</script></lively-script>")
     
     var tmpDiv = document.createElement("div")
