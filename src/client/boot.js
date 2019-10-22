@@ -350,7 +350,7 @@ async function intializeLively() {
 
     groupedMessage('Setup fetch proxy');
       await System.import(lively4url + "/src/client/fetch.js").then(mod => {
-        return mod.installProxyFetch()                                                   
+        return mod.installFetchHandlers()                                                   
       })
     groupedMessageEnd();
 

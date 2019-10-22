@@ -1,3 +1,17 @@
+async function proxyRequest(url, options={}) {
+  console.log("PROXY reqest: " + options.method + " " + url)
+  return self.originalFetch(url, {
+      mode: options.mode,
+      cache: options.cache,
+      method: options.method,
+      headers: options.headers,
+      redirect: options.redirect,
+      referrer: options.referrer,
+      credentials: options.credentials,
+      body: options.body && await options.body
+    })
+}
+
 export async function installProxyFetch() {
   var focalStorage = (await System.import("src/external/focalStorage.js")).default
   
@@ -6,20 +20,6 @@ export async function installProxyFetch() {
   if (!mounts) return 
   
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isProxyFetch);
-  
-  async function proxyRequest(url, options={}) {
-    console.log("PROXY reqest: " + options.method + " " + url)
-    return self.originalFetch(url, {
-        mode: options.mode,
-        cache: options.cache,
-        method: options.method,
-        headers: options.headers,
-        redirect: options.redirect,
-        referrer: options.referrer,
-        credentials: options.credentials,
-        body: options.body && await options.body
-      })
-  }
   
   self.lively4fetchHandlers.push({
     isProxyFetch: true,
@@ -87,9 +87,68 @@ export async function installProxyFetch() {
   })
 }
 
+
+export async function installAuthorizedFetch() {
+//   var focalStorage = (await System.import("src/external/focalStorage.js")).default
+  
+//   var mounts = await focalStorage.getItem("lively4mounts")
+  
+//   if (!mounts) return 
+  
+  var gh;
+  
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isAuthFetch);
+  
+  self.lively4fetchHandlers.push({
+    isAuthFetch: true,
+    handle(request, options) {
+      var url = (request.url || request).toString()
+      var method = "GET"
+      if (options && options.method) method = options.method;
+      var m = url.match(/^https?:\/\/lively-kernel.org\/lively4S2\//)
+      if (m) {
+        return {
+            result: (async () => {
+              console.log("AuthorizedFetch: " + url)
+            
+              if (!gh) {
+                console.log("Ensure Github Credentials: " + url)
+                var GitHub = await System.import("src/client/github.js").then( m => m.default)
+                gh = new GitHub();
+                await gh.loadCredentials()
+              } 
+              
+              if (!options) options = {};
+              if (!options.headers) options.headers = {};
+              options.headers = new Headers(options.headers) // ensure headers
+
+              // inject authentification tokens into request
+              if (!options.headers.get("gitusername")) {
+                  options.headers.set("gitusername",  gh.username)
+              }
+              if (!options.headers.get("gitpassword")) {
+                  options.headers.set("gitpassword", gh.token)
+              }
+          
+              return proxyRequest(url, options)
+            })()
+        }  
+    
+               
+      }
+    }
+  })
+}
+
+export async function installFetchHandlers() {
+  await installProxyFetch()
+  await installAuthorizedFetch()
+} 
+
+
 if (self.lively) {
   // dev time
-  installProxyFetch()
+ installFetchHandlers()
 }
 
 // installProxyFetch()
