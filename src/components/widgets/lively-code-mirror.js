@@ -254,10 +254,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.extraKeys = {
         // #KeyboardShortcut Ctrl-H search and replace
         "Insert": (cm) => {
-          // do nothing... ther INSERT mode is so often actived by accident 
+          // do nothing... the INSERT mode is so often activated by accident 
         },
         "Ctrl-Insert": (cm) => {
-          // do nothing... ther INSERT mode is so often actived by accident 
+          // INSERT mode is so often activated by accident, require CTRL now 
           cm.toggleOverwrite()
         },
         "Ctrl-H": (cm) => {
@@ -276,7 +276,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.fixHintsPosition()
           cm.execCommand("autocomplete")
         },
-        // #KeyboardShortcut Ctrl-P eval and print selelection or line
+        // #KeyboardShortcut Ctrl-P eval and print selection or line
         "Ctrl-P": (cm) => {
             let text = this.getSelectionOrLine()
             this.tryBoundEval(text, true);
@@ -286,7 +286,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           let text = this.getSelectionOrLine()
           this.inspectIt(text)
         },
-        // #KeyboardShortcut Ctrl-I eval selection or line (do it)
+        // #KeyboardShortcut Ctrl-D eval selection or line (do it)
         "Ctrl-D": (cm, b, c) => {
             let text = this.getSelectionOrLine();
             this.tryBoundEval(text, false);
@@ -308,9 +308,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
         "Ctrl-Alt-Left": "undoSelection",
 
-        // #KeyboardShortcut Ctrl-/ indent slelection
+        // #KeyboardShortcut Ctrl-/ indent selection
         "Ctrl-/": "toggleCommentIndented",
-        // #KeyboardShortcut Ctrl-# indent slelection
+        // #KeyboardShortcut Ctrl-# indent selection
         "Ctrl-#": "toggleCommentIndented",
         // #KeyboardShortcut Tab insert tab or soft indent
         'Tab': (cm) => {
