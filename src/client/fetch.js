@@ -105,7 +105,8 @@ export async function installAuthorizedFetch() {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
-      var m = url.match(/^https?:\/\/lively-kernel.org\/lively4S2\//)
+      var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices"]
+      var m = baseUrlsAuthNeeded.find( ea => url.startsWith(ea))
       if (m) {
         return {
             result: (async () => {
