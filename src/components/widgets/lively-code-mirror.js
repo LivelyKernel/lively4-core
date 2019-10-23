@@ -1,3 +1,12 @@
+/*MD 
+# CodeMirror
+
+Workspace / main source code editing component. 
+
+![](lively-code-mirror.png){height=200}
+
+MD*/
+
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js"
