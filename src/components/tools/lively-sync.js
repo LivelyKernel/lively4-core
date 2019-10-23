@@ -124,6 +124,7 @@ export default class Sync extends Morph {
     this.storeValue("githubUsername", null)
     this.storeValue("githubEmail", null)
     this.updateLoginStatus()
+    window.lively4github = null // used by #Fetch proxy
     this.log("")
   }
 
