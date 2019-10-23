@@ -1,5 +1,7 @@
 ## 2019-10-21 GitHub User Info
 
+Author: @jenslincke
+
 Finding Github users in a team works, at least in the client...
 
 Happy Case: 
