@@ -4,9 +4,9 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 export default class ASTCapabilities {
 
-  constructor(lcm, cm) {
-    this.lcm = lcm;
-    this.codeMirror = cm;
+  constructor(livelyCodeMirror, codeMirror) {
+    this.livelyCodeMirror = livelyCodeMirror;
+    this.codeMirror = codeMirror;
   }
   get editor() {
     return this.codeMirror;
@@ -52,6 +52,33 @@ export default class ASTCapabilities {
     return pathToShow;
   }
   expandSelection() {
+    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+
+      // go down to minimal selected node
+      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
+        return this.nextPath(startingPath, path => {
+          const location = range(path.node.loc);
+          return location.contains(anchor) && location.contains(head);
+        });
+      };
+      const pathToShow = this.getInnermostPath(this.programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+
+      return pathToShow.parent;
+      // go up again
+      let selectionStart = loc(anchor);
+      let selectionEnd = loc(head);
+      return pathToShow.find(path => {
+        const pathLocation = path.node.loc;
+        const pathStart = loc(pathLocation.start);
+        const pathEnd = loc(pathLocation.end);
+
+        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd);
+      }) || pathToShow;
+    });
+
+    this.selectPaths(maxPaths);
+  }
+  reduceSelection() {
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
       // go down to minimal selected node
@@ -357,14 +384,14 @@ export default class ASTCapabilities {
   /*MD ## Accessors MD*/
 
   get sourceCode() {
-    return this.lcm.value;
+    return this.livelyCodeMirror.value;
   }
   set sourceCode(text) {
-    return this.lcm.value = text;
+    return this.livelyCodeMirror.value = text;
   }
 
   focusEditor() {
-    this.lcm.focus();
+    this.livelyCodeMirror.focus();
   }
 
   get scrollInfo() {
