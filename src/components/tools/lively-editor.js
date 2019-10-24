@@ -1,11 +1,11 @@
-/*
- * Lively 4 Text Editor
- * - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
- * - updates change indicator while when editting,loading, and saving
- */
+/*MD
+# Lively 4 Text Editor
+ - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
+ - updates change indicator while when editting,loading, and saving
+ 
+## EDITOR ... 
 
-/* 
-## EDITOR ... we have to many objects called "editor", because the wrap around and FACADE each other...
+We have to many objects called "editor", because they wrap around and FACADE each other.
 
 - (babylonian-programming-editor)
  - lively-editor
@@ -13,7 +13,7 @@
      - cm CodeMirror object
  
 
-*/
+MD*/
 
 import Strings from "src/client/strings.js"
 
@@ -27,8 +27,6 @@ import {pt} from "src/client/graphics.js"
 
 import {getObjectFor, updateEditors} from "utils";
 import files from "src/client/files.js"
-
-
 
 export default class Editor extends Morph {
 
@@ -628,8 +626,6 @@ export default class Editor extends Morph {
   toggleWidgets() {
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
-    
-    
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
