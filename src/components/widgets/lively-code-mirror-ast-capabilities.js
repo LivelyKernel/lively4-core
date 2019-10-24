@@ -126,14 +126,7 @@ export default class ASTCapabilities {
 
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
-      // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
-        return this.nextPath(startingPath, path => {
-          const location = range(path.node.loc);
-          return location.contains(anchor) && location.contains(head);
-        });
-      };
-      let currentPath = this.getInnermostPath(programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+      const currentPath = this.getInnermostPathContainingSelection(programPath, anchor, head);
 
       let selectionStart = loc(anchor);
       let selectionEnd = loc(head);
