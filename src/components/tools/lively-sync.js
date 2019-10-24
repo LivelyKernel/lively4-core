@@ -228,6 +228,7 @@ export default class Sync extends Morph {
 
 
   async onLoginButton() {
+    window.lively4github = null // fetch will getg new auth info
     this.clearLog()
     if (await this.loadValue("githubToken")) { 
       this.logout() 
