@@ -363,6 +363,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Alt-Down 
         "Alt-Down": cm => {
+          this.astCapabilities(cm).then(ac => ac.reduceSelection(cm));
         },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
