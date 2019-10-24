@@ -156,6 +156,34 @@
   }
   */
   
+    
+  .window-unmin {
+    display: none
+  }
+    
+  :host(.minimized)  .window-unmin {
+    display: block
+  }
+    
+    
+  :host(.minimized) .window-menu, :host(.minimized) .window-close, :host(.minimized) .window-min, :host(.minimized) .window-max {
+      display: none
+  }
+    
+    
+  :host(.minimized) .window-titlebar{
+    background: #badbbd;
+  }
+
+    
+  :host(.minimized) .window  {
+    border: 2px solid #81b385;
+    color: gray;
+    box-shadow: none;
+  }
+   
+    
+    
   </style>
   <div class="window">
     <div class="window-titlebar">
@@ -166,6 +194,7 @@
       	<!--
         <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
         -->
+        <span class="window-button window-unmin" title="collapse"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
         <span class="window-button window-min" title="collapse"><i class="fa fa-window-minimize " aria-hidden="true"></i></span>
         <span class="window-button window-max" title="maximize"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
         <span class="window-button window-close" title="close"><i class="fa fa-close" aria-hidden="true"></i></span>

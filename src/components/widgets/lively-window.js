@@ -89,6 +89,8 @@ export default class Window extends Morph {
       this.addEventListener('mousedown', (evt) => lively.focusWithoutScroll(this), true);
       this.get('.window-menu').addEventListener('click', evt => { this.onMenuButtonClicked(evt); });
       this.get('.window-min').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
+      this.get('.window-unmin').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
+
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
@@ -297,9 +299,23 @@ export default class Window extends Morph {
       this.positionBeforeMinimize = null
 
       // this.classList.removed("minimized")
-      this.style.transformOrigin = ""
-      this.style.transform = ""
+      // this.style.transformOrigin = ""
+      // this.style.transform = ""
+      
+      
+      var w = this.getAttribute("prev-width")
+      var h = this.getAttribute("prev-height")
+      if (w && h) {
+        lively.setExtent(this, pt(
+          parseFloat(w), 
+          parseFloat(h)))        
+      }
+      this.classList.remove("minimized")
 
+      this.setAttribute("title", this.getAttribute("prev-title"))
+
+      this.target.style.display = ""
+      
       content.style.pointerEvents = ""
 
     } else {
@@ -321,9 +337,34 @@ export default class Window extends Morph {
       // this.style.right = this.minimizedWindowPadding + "px";
       // lively.setGlobalPosition()
 
-      this.style.transformOrigin = "0 0"
-      this.style.transform = "scale(0.4)"
+      // this.style.transformOrigin = "0 0"
+      // this.style.transform = "scale(0.4)"
 
+      var extent = lively.getExtent(this)
+      this.setAttribute("prev-height", extent.y)
+      this.setAttribute("prev-width", extent.x)
+      this.setAttribute("prev-title", this.getAttribute("title"))
+
+      
+      var minTitle = this.getAttribute("title") + " (minimized)"
+      
+      if (this.target.livelyMinimizedTitle) {
+        minTitle = this.target.livelyMinimizedTitle()
+      }
+      
+      this.setAttribute("title",  minTitle )
+
+      
+      var titleExtent = lively.getExtent(this.get(".window-titlebar"))
+      
+      
+      lively.setExtent(this, pt(400, titleExtent.y + 4))
+      this.classList.add("minimized")
+      
+      this.target.style.display = "none"
+      
+      
+      
       content.style.pointerEvents = "none"
 
       this.displayResizeHandle(false)

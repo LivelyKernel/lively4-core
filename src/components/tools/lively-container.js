@@ -1049,6 +1049,7 @@ export default class Container extends Morph {
     this.get("#editor").setURL(this.getURL());
     await this.get("#editor").saveFile()
     this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
+    this.parentElement.__ignoreUpdates = true
     var sourceCode = this.getSourceCode();
     var url = this.getURL()
     url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
@@ -1096,6 +1097,7 @@ export default class Container extends Morph {
     // something async... 
     lively.sleep(5000).then(() => {
       this.__ignoreUpdates = false
+      this.parentElement.__ignoreUpdates = false
     })
   }
   
@@ -2187,4 +2189,5 @@ export default class Container extends Morph {
       this.isMigrating = false;
     }
   }
+  
 }

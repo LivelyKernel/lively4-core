@@ -1233,6 +1233,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.editor.getCursor("start"), this.editor.getCursor("end"))
     }
 
+    livelyMinimizedTitle() {
+      return this.value.slice(0,80)
+    }
+  
+  
 }
 
 // LivelyCodeMirror.loadModules()
