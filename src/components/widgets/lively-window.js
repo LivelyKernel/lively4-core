@@ -246,8 +246,7 @@ export default class Window extends Morph {
 
   
   /*MD ## Maximize/Minimize MD*/
-  
-  
+
   // #important
   toggleMaximize() {
     var content = this.get('#window-content');
@@ -299,6 +298,7 @@ export default class Window extends Morph {
     setPointToAttribute(this, "prev-left", "prev-top", lively.getPosition(this))
     setPointToAttribute(this, "prev-width", "prev-height", lively.getExtent(this))
   }
+  
 
   restoreExtentAndPosition() {
     lively.setPosition(this, getPointFromAttribute(this, "prev-left", "prev-top"))
@@ -310,10 +310,13 @@ export default class Window extends Morph {
 
     var content = this.get('#window-content');
     if (this.classList.contains("minimized")) {
-      this.minimizedPosition = lively.getPosition(this)
+      
+      // min -> normal
       
       this.displayResizeHandle(true)
       
+      debugger
+      setPointToAttribute(this, "prev-min-left", "prev-min-top", lively.getPosition(this))
       this.restoreExtentAndPosition()
       
       this.classList.remove("minimized")
@@ -330,7 +333,10 @@ export default class Window extends Morph {
         return this.toggleMaximize()
       }
       
+      // normal -> min
+      
       this.storeExtentAndPosition()
+      lively.setPosition(this, getPointFromAttribute(this, "prev-min-left", "prev-min-top"))
       
       this.setAttribute("prev-title", this.getAttribute("title"))
 
