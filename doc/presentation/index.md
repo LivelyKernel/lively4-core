@@ -107,7 +107,7 @@ list
 # Tools
 ##  Standard Tools
 
-- [Workspace](browse://doc/presentation/workspace.html) <br> ![](workspace.png){style="width:300px"}
+- [Workspace](browse://doc/presentation/workspace.html) <br> ![](media/workspace.png){style="width:300px"}
 - Inspector
 - Browser
 - Search
@@ -207,13 +207,13 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ## Text Editing:
 
 ### [LivelyCodeMirror](open://lively-code-mirror)
-![](lively-codemirror.png){style="width:300px; float: right; margin-left: 50px"} {style="list-style-type: none;"} 
+![](media/lively-codemirror.png){style="width:300px; float: right; margin-left: 50px"} {style="list-style-type: none;"} 
   - powerfull editor of a text buffer
   - syntax highlighting and code completion
   - custom widgets and editor UI enhancements
 
 ### [LivelyEditor](open://lively-editor) 
-![](lively-editor.png){style="width:200px; float: right; margin-left: 100px"} {style="list-style-type: none;"} 
+![](media/lively-editor.png){style="width:200px; float: right; margin-left: 100px"} {style="list-style-type: none;"} 
   - can edit files (urls)
   - can resolve conflicts with server and other editors
   - threewaymerge 
@@ -221,35 +221,35 @@ Even though we experimented with using our own Console and Debugger, we struggle
   
 ---
 ## Lively Content:
-- #LivelyMarkdown ![](lively-motivation.png){style="width:200px"} {.box}
-- #LivelyPresentation ![](lively-presentation.png){style="width:200px"} {.box}
+- #LivelyMarkdown ![](media/lively-motivation.png){style="width:200px"} {.box}
+- #LivelyPresentation ![](media/lively-presentation.png){style="width:200px"} {.box}
 - #LivelyEssay {.box}
-- #PDF [seminar](https://lively-kernel.org/lively4/lively4-seminars/WebDev2017/project_3/index.md)<br>![](lively-pdf.png){style="width:200px"} {.box}
-- #Table ![](lively-table.png){style="width:200px"} {.box} 
+- #PDF [seminar](https://lively-kernel.org/lively4/lively4-seminars/WebDev2017/project_3/index.md)<br>![](media/lively-pdf.png){style="width:200px"} {.box}
+- #Table ![](media/lively-table.png){style="width:200px"} {.box} 
 - #LivelyDrawboard ![](../../src/components/widgets/lively-drawboard.png){style="width:200px"} {.box} 
 ---
 ## UI Components
 
-- #LivelyError <br> ![](lively-error.png)  {.box}
-- #LivelyNotification <br> ![](lively-notifications.png)  {.box}
-- #LivelyProgress <br> ![](lively-progress.png)  {.box}
-- #LivelyPrompt <br> ![](lively-prompt.png) {.box}
-- #LivelyConfirm <br> ![](lively-confirm.png) {.box}
+- #LivelyError <br> ![](media/lively-error.png)  {.box}
+- #LivelyNotification <br> ![](media/lively-notifications.png)  {.box}
+- #LivelyProgress <br> ![](media/lively-progress.png)  {.box}
+- #LivelyPrompt <br> ![](media/lively-prompt.png) {.box}
+- #LivelyConfirm <br> ![](media/lively-confirm.png) {.box}
 
 ---
 ## #D3 Visualizations
   
-- #D3TreeMap <br> [![](treemap_filesize.png){style="width:300px"}](../../demos/visualizations/treemap_size.md) {.box}
+- #D3TreeMap <br> [![](media/treemap_filesize.png){style="width:300px"}](../../demos/visualizations/treemap_size.md) {.box}
 - #D3RadialTree <br> ![](../../src/components/d3/d3-radialtree.png){style="width:300px"} {.box} 
 - #D3Barchart <br> ![](../../src/components/d3/d3-barchart.png){style="width:300px"} {.box} 
 - #D3Boxplot <br> ![](../../src/components/d3/d3-boxplot.png){style="width:300px"} {.box}
-- #D3BundleView <br> [![](bundleview_modules_contextjs.png){style="width:300px"}](../../demos/visualizations/bundleview.md) {.box}
-- #D3PolymetricView <br> [![](d3_polymetricview.png){style="width:300px"}](../../demos/visualizations/polymetricview.md) {.box}
+- #D3BundleView <br> [![](media/bundleview_modules_contextjs.png){style="width:300px"}](../../demos/visualizations/bundleview.md) {.box}
+- #D3PolymetricView <br> [![](media/d3_polymetricview.png){style="width:300px"}](../../demos/visualizations/polymetricview.md) {.box}
 
 ---
 ## #Graphviz (with D3)
 
-- Interactive Object Graph <br> [![](graphviz_objectgraph.png){style="width:300px"}](../../demos/visualizations/object_graph.md)
+- Interactive Object Graph <br> [![](media/graphviz_objectgraph.png){style="width:300px"}](../../demos/visualizations/object_graph.md)
 
 
 ---
@@ -307,12 +307,12 @@ Even though we experimented with using our own Console and Debugger, we struggle
 ---
 ## Essay
 
-- [ContextJS Paper Draft / Implementation](https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md) <br> ![](lively-essay.png){style="width:500px"}
+- [ContextJS Paper Draft / Implementation](https://lively-kernel.org/lively4/overleaf-cop18-promises/content/implementation.md) <br> ![](media/lively-essay.png){style="width:500px"}
 
 ---
 ## Paper Writing
 
-- writing markdown (directly include in LaTeX)<br> ![](paperwriting.png){style="width:500px"}
+- writing markdown (directly include in LaTeX)<br> ![](media/paperwriting.png){style="width:500px"}
 
 ---
 # Features
@@ -325,7 +325,7 @@ Even though we experimented with using our own Console and Debugger, we struggle
 
 ## UI
 
-- Expose <br> ![](expose.png){style="width:300px"}
+- Expose <br> ![](media/expose.png){style="width:300px"}
 
 ---
 # Documentation

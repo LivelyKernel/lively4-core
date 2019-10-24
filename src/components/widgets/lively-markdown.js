@@ -114,13 +114,15 @@ export default class LivelyMarkdown extends Morph {
     
     var tmpDiv = document.createElement("div")
     tmpDiv.innerHTML = htmlSource // so we still have some control over it
+    
+    await this.replaceImageTagsWithSpecificTags(tmpDiv)
+    
     var dir = this.getDir()
     if (dir) {
       lively.html.fixLinks([tmpDiv], this.getDir(), path => this.followPath(path));
     }
     
     this.beatifyInplaceHashtagNavigation(tmpDiv)
-    this.replaceImageTagsWithSpecificTags(tmpDiv)
     
     var root = this.get("#content")
     root.innerHTML = "";
@@ -155,8 +157,9 @@ export default class LivelyMarkdown extends Morph {
 
   async replaceImageTagsWithSpecificTags(tmpDiv) {
     
-    tmpDiv.querySelectorAll("img").forEach(async (imgTag) => {
-      if (!imgTag.src.match(/\.[A-Za-z0-9]+$/)) {
+    for(let imgTag of tmpDiv.querySelectorAll("img")) {
+      var noFileEnding = !imgTag.src.match(/\.[A-Za-z0-9]+$/) 
+      if (noFileEnding || imgTag.src.match(/\.drawio$/) ) {
         // we have to guess or look what img could have been meant
         // (a) lets see if is a drawio figuure
         // #TODO check if there is actually an pdf
@@ -164,15 +167,19 @@ export default class LivelyMarkdown extends Morph {
         
         for(var attr of imgTag.attributes) {
           if (attr.name == "src") {
-            figure.src = imgTag.src  + ".xml"
+            // use attributes to retain RAW data
+            var src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
+            console.log("REPLACE DRAWIO: " + src)
+            figure.setAttribute("src",  src)
           } else {
             figure.setAttribute(attr.name, attr.value)
           }
         }
+        figure.update() 
         imgTag.parentElement.insertBefore(figure, imgTag)
         imgTag.remove()
       }
-    })
+    }
   }
   
   beatifyInplaceHashtagNavigation(tmpDiv) {
@@ -353,6 +360,8 @@ This is a #Hashtag and
 
 It goes on an on!
 
+![](https://lively-kernel.org/lively4/lively4-jens/demos/sample.drawio)
+
 `)
   }
   
@@ -368,6 +377,7 @@ It goes on an on!
 
 - list item 1 [a link]("markdown.md")
 - list item 2
+
 
 `)
   }

@@ -1346,6 +1346,7 @@ export default class Lively {
       this.openComponentInWindow("lively-index-search").then( comp => {
         var pattern = text.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&")
         comp.searchFile(pattern);
+        lively.setExtent(comp.parentElement, pt(1000,700))
         comp.focus()
       });
     } else {
