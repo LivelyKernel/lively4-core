@@ -758,6 +758,16 @@ export default class LivelyContainerNavbar extends Morph {
   async showDetails(force) {
     // console.log("show sublist " + this.url)
      
+    
+    if (this.url == this.lastDetailsURL) {
+      this.lastScrollTop = this.get("#details").scrollTop  // preserve scroll, when just refreshing...
+    } else {
+      this.lastScrollTop = 0 
+    }
+    this.lastDetailsURL = this.url
+    
+    
+    
     if (!this.targetItem) return 
     var sublist = this.targetItem.querySelector("ul")
     if (!sublist) {
@@ -794,6 +804,7 @@ export default class LivelyContainerNavbar extends Morph {
     var details = this.get("#details")
     var sublist = this.targetItem.querySelector("ul")
     
+
     if (details) {
       details.innerHTML = ""
       sublist = <ul></ul>
@@ -808,7 +819,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (this.url.match(/templates\/.*html$/)) {
       this.showDetailsHTML(sublist)
     } else if (this.url.match(/\.js$/)) {
-      this.showDetailsJS(sublist)
+      await this.showDetailsJS(sublist)
     } else if (this.url.match(/\.md$/)) {
       // console.log("show sublist md" + this.url)
 
@@ -818,6 +829,9 @@ export default class LivelyContainerNavbar extends Morph {
         this.showDetailsOptions(sublist)
       }
     }
+    
+     details.scrollTop  = this.lastScrollTop
+    
   }
   
   // #HTML
@@ -1425,6 +1439,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
 }
 
+/*MD # Fetch Hook MD*/
 
 if (self.lively4fetchHandlers) {  
   // remove old instances of me

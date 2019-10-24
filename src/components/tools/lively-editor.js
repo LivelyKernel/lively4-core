@@ -3,8 +3,9 @@
  - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  - updates change indicator while when editting,loading, and saving
  
-## EDITOR ... 
-
+![](lively-editor.png){height=200} 
+ 
+ 
 We have to many objects called "editor", because they wrap around and FACADE each other.
 
 - (babylonian-programming-editor)
@@ -17,20 +18,18 @@ We have to many objects called "editor", because they wrap around and FACADE eac
 MD*/
 
 import Strings from "src/client/strings.js"
-
-import Morph from 'src/components/widgets/lively-morph.js';
-import moment from "src/external/moment.js";
-import diff from 'src/external/diff-match-patch.js';
-import preferences from 'src/client/preferences.js';
-import components from "src/client/morphic/component-loader.js";
-
+import Morph from 'src/components/widgets/lively-morph.js'
+import moment from "src/external/moment.js"
+import diff from 'src/external/diff-match-patch.js'
+import components from "src/client/morphic/component-loader.js"
 import {pt} from "src/client/graphics.js"
-
 import {getObjectFor, updateEditors} from "utils";
 import files from "src/client/files.js"
 
 export default class Editor extends Morph {
 
+  /*MD ## Setup MD*/
+  
   async initialize() {
     var container = this.get(".container");
 		this.versionControl = this.shadowRoot.querySelector("#versionControl");
@@ -41,9 +40,7 @@ export default class Editor extends Morph {
     editor.setAttribute("overscroll", "contain")
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
-        
-    
-    
+
     editor.doSave = text => {
       this.saveFile(); // CTRL+S does not come through...    
     };
@@ -57,7 +54,6 @@ export default class Editor extends Morph {
 
     this.registerButtons();
     var input = this.get("#filename");
-    
     
     input.addEventListener("keyup", event => {
       if (event.keyCode == 13) { // ENTER
@@ -93,10 +89,6 @@ export default class Editor extends Morph {
 
     })
   }
-  
-  onTextChanged() {
-    this.updateChangeIndicator();
-  }
 
   updateChangeIndicator() {
     if (!this.lastText) return;
@@ -114,6 +106,20 @@ export default class Editor extends Morph {
     console.warn('updateEditors')
     const url = this.getURL().toString();
     updateEditors(url, [this]);
+  }
+  
+  updateEditorMode() {
+    var url = this.getURL();
+    var editorComp = this.get("#editor");
+    if (editorComp && editorComp.changeModeForFile) {
+      editorComp.changeModeForFile(url.pathname);
+    }
+  }  
+  
+  /*MD ## Event Handlers MD*/
+  
+  onTextChanged() {
+    this.updateChangeIndicator();
   }
 
   onSaveButton() {
@@ -135,6 +141,28 @@ export default class Editor extends Morph {
   onCloseVersionsButton() {
     this.toggleVersions()
   }
+  
+  
+  onPaste(evt) {
+    if(this.insertDataTransfer(evt.clipboardData, undefined, true)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
+  }
+  
+  async onBrowse() {
+    lively.openBrowser(this.getURLString())
+  }
+  
+  async onDrop(evt) {
+    
+    if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
+      evt.stopPropagation()
+      evt.preventDefault();
+    }
+  }
+  
+  /*MD ## Getters/Setters MD*/
   
   getVersionWidget() {
     var myWindow = lively.findWindow(this)
@@ -217,13 +245,60 @@ export default class Editor extends Morph {
     return text
   }
   
-  updateEditorMode() {
-    var url = this.getURL();
-    var editorComp = this.get("#editor");
-    if (editorComp && editorComp.changeModeForFile) {
-      editorComp.changeModeForFile(url.pathname);
-    }
+  getScrollInfo() {
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.getScrollInfo())
   }
+  
+  setScrollInfo(info) {
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.scrollTo(info.left, info.top))
+  }
+  
+  getCursor() {
+    if (!this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.getCursor())
+  }
+  
+  setCursor(cur) {
+    if (!cur || !this.isCodeMirror()) return 
+    return this.withEditorObjectDo(editor => editor.setCursor(cur))
+  }  
+  
+  isCodeMirror() {
+    return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
+  }
+  
+  /*MD ## Get UI Elements MD*/
+  
+  livelyEditor() {
+    return this  
+  }
+  
+  livelyCodeMirror() {
+    return this.get('#editor')
+  }
+  
+  // #deprecated
+  withEditorObjectDo(func) {
+    var editor = this.currentEditor()
+    if (editor) {
+      return func(editor)
+    }    
+  }
+
+  // #refactor #generalize?
+  async awaitEditor() {
+    while(!editor) {
+      var editor = this.currentEditor()
+      if (!editor) {
+        await lively.sleep(10) // busy wait
+      }
+    }
+    return editor
+  }
+
+  /*MD ## Files MD*/
   
   async loadFile(version) {
     var url = this.getURL();
@@ -260,8 +335,7 @@ export default class Editor extends Morph {
     if (this.preSaveFile) {
       data = await this.preSaveFile(data)
     }
-    
-    
+  
     var urlString = url.toString();
     if (urlString.match(/\/$/)) {
       return fetch(urlString, {method: 'MKCOL'});
@@ -302,6 +376,8 @@ export default class Editor extends Morph {
       }); // don't catch here... so we can get the error later as needed...
     }
   }
+  
+  /*MD ## Merging MD*/
   
   threeWayMerge(a,b,c) {
     var dmp = new diff.diff_match_patch();
@@ -344,6 +420,8 @@ export default class Editor extends Morph {
       this.solvingConflict = false
     }
   }
+  
+  /*MD ## Editor MD*/
 
   showToolbar() {
     this.getSubmorph("#toolbar").style.display = "";
@@ -383,51 +461,9 @@ export default class Editor extends Morph {
     }
   }
 
-  withEditorObjectDo(func) {
-    var editor = this.currentEditor()
-    if (editor) {
-      return func(editor)
-    }    
-  }
+
   
-  
-  livelyEditor() {
-    return this  
-  }
-  
-  livelyCodeMirror() {
-    return this.get('#editor')
-  }
-  
-  async awaitEditor() {
-    while(!editor) {
-      var editor = this.currentEditor()
-      if (!editor) {
-        await lively.sleep(10) // busy wait
-      }
-    }
-    return editor
-  }
-  
-  getScrollInfo() {
-    if (!this.isCodeMirror()) return 
-    return this.withEditorObjectDo(editor => editor.getScrollInfo())
-  }
-  
-  setScrollInfo(info) {
-    if (!this.isCodeMirror()) return 
-    return this.withEditorObjectDo(editor => editor.scrollTo(info.left, info.top))
-  }
-  
-  getCursor() {
-    if (!this.isCodeMirror()) return 
-    return this.withEditorObjectDo(editor => editor.getCursor())
-  }
-  
-  setCursor(cur) {
-    if (!cur || !this.isCodeMirror()) return 
-    return this.withEditorObjectDo(editor => editor.setCursor(cur))
-  }
+
   
   find(pattern) {
     var editor = this.get('#editor')
@@ -436,9 +472,8 @@ export default class Editor extends Morph {
     }
   }
   
-  isCodeMirror() {
-    return this.get("#editor").tagName == "LIVELY-CODE-MIRROR"
-  }
+  /*MD ## Copy and Paste MD*/
+
   
   insertDataTransfer(dataTransfer, evt, generateName) {
     // #CopyAndPaste mild code duplication with #Clipboard 
@@ -470,9 +505,7 @@ export default class Editor extends Morph {
       }
     }
   }
-  
-  
-  
+
   async pasteFile(fileItem, evt, generateName) {
     var editor = this.currentEditor()
     if (!editor) return;
@@ -490,7 +523,6 @@ export default class Editor extends Morph {
       
     }
     if (!filename) return
-    
     
     var newurl = this.getURLString().replace(/[^/]*$/,"") + filename 
     
@@ -527,8 +559,7 @@ export default class Editor extends Morph {
       editor.replaceSelection(text, "around")
       
     })
-    
-    
+
     lively.notify("uploaded " + newurl)
     
     var navbar = lively.query(this, "lively-container-navbar")
@@ -536,24 +567,7 @@ export default class Editor extends Morph {
     
   }
   
-  onPaste(evt) {
-    if(this.insertDataTransfer(evt.clipboardData, undefined, true)) {
-      evt.stopPropagation()
-      evt.preventDefault();
-    }
-  }
-  
-  async onBrowse() {
-    lively.openBrowser(this.getURLString())
-  }
-  
-  async onDrop(evt) {
-    
-    if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
-      evt.stopPropagation()
-      evt.preventDefault();
-    }
-  }
+  /*MD ## Widgets MD*/
   
   async showEmbeddedWidgets() {
     var type = files.getEnding(this.getURL())
@@ -637,6 +651,7 @@ export default class Editor extends Morph {
     }
   }
   
+  /*MD ## Hooks MD*/
 
   livelyExample() {
     this.setURL(lively4url + "/README.md");
