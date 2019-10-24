@@ -1,6 +1,6 @@
-<mxfile modified="2019-10-24T14:07:59.242Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="QF7N7dFzCuAaoaCG_OGz" version="12.1.4" type="github" pages="1">
+<mxfile modified="2019-10-24T14:10:46.529Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="DwTsA4CHStnMeuRr9nIp" version="12.1.4" type="github" pages="1">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="677" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="400" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="988" dy="697" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="400" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -120,16 +120,16 @@
             <mxPoint x="636.5" y="310" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lUxXpUzoLw0f5v7gHDcz-77" value="LivelyContainer" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="lUxXpUzoLw0f5v7gHDcz-77" value="LivelyContainer" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#808080;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="530" y="122.5" width="240" height="187.5" as="geometry"/>
         </mxCell>
-        <mxCell id="lUxXpUzoLw0f5v7gHDcz-78" value="&lt;span style=&quot;color: rgb(0 , 0 , 0) ; font-size: 12px ; white-space: normal&quot;&gt;LivelyEditor&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="lUxXpUzoLw0f5v7gHDcz-78" value="LivelyEditor" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#808080;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="540" y="160" width="220" height="137.5" as="geometry"/>
         </mxCell>
-        <mxCell id="lUxXpUzoLw0f5v7gHDcz-79" value="&lt;span style=&quot;color: rgb(0 , 0 , 0) ; font-size: 12px ; white-space: normal&quot;&gt;LivelyCodeMirror&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="lUxXpUzoLw0f5v7gHDcz-79" value="LivelyCodeMirror" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#808080;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="550" y="197.5" width="200" height="87.5" as="geometry"/>
         </mxCell>
-        <mxCell id="lUxXpUzoLw0f5v7gHDcz-80" value="CodeMirror" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
+        <mxCell id="lUxXpUzoLw0f5v7gHDcz-80" value="CodeMirror" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#808080;fillColor=#ffffff;fontSize=10;fontColor=#808080;align=left;verticalAlign=top;" vertex="1" parent="1">
           <mxGeometry x="560" y="228.74999999999997" width="180" height="43.75" as="geometry"/>
         </mxCell>
       </root>
