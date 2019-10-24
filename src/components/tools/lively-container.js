@@ -21,6 +21,7 @@ let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack o
 import Clipboard from "src/client/clipboard.js"
 import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
+
 /*MD
 <lively-drawio src="lively-container.drawio"></lively-drawio>
 
@@ -199,6 +200,7 @@ export default class Container extends Morph {
   
   // #important
   async setPath(path, donotrender) {
+    
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
 
@@ -341,16 +343,20 @@ export default class Container extends Morph {
       headers["forediting"] = true
     }
   
+    
+    
     return fetch(url, {
       method: "GET",
       headers: headers
     }).then( resp => {
     
+      
       this.clear(); // could already be filled again...
       
+          
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
-      if (this.contentType.match("image"))  {
+      if (this.contentType && this.contentType.match("image"))  {
         this.appendHtml("<img style='max-width:100%; max-height:100%' src='" + resolvedURL +"'>", renderTimeStamp);
         return  
       }   
@@ -362,14 +368,33 @@ export default class Container extends Morph {
       
 
       // console.log("[container] lastVersion " +  this.lastVersion)
-
+      
       // Handle cache error when offline
-      if(resp.status == 503) {
+      if(resp.status == 503 || resp.status == 403) {
         format = 'error'
+        
+        
+        // print error early...
+        this.getContentRoot().appendChild(
+          <div>
+            <h2>
+              <span style="color: darkred">{resp.status} {resp.statusText} </span>
+            </h2>
+            <a href="" click={async evt => {
+                evt.preventDefault()
+                var GitHub = await System.import("src/client/github.js").then(m => m.default)
+                var gh = new GitHub()
+                await gh.loadCredentials()
+                window.lively4github =  gh
+              }}>maybe loginto github?</a>
+          </div>);
+        
       }
-
+      
+      
       return resp.text();
     }).then((content) => {
+
       console.log("setPath content " + url)
       
       this.content = content
@@ -391,6 +416,7 @@ export default class Container extends Morph {
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) {
+          this.clear(); 
           return this.appendHtml(`
             <h2>
               <span style="color: darkred">Error: </span>${content}
@@ -1023,6 +1049,7 @@ export default class Container extends Morph {
     this.get("#editor").setURL(this.getURL());
     await this.get("#editor").saveFile()
     this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
+    this.parentElement.__ignoreUpdates = true
     var sourceCode = this.getSourceCode();
     var url = this.getURL()
     url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
@@ -1070,6 +1097,7 @@ export default class Container extends Morph {
     // something async... 
     lively.sleep(5000).then(() => {
       this.__ignoreUpdates = false
+      this.parentElement.__ignoreUpdates = false
     })
   }
   
@@ -1800,11 +1828,11 @@ export default class Container extends Morph {
   }
   
   async switchBetweenJSAndHTML() {
-    const ending = this.getPath()::fileEnding();
+    const ending = this.getPath().replace(/[#?].*/,"")::fileEnding();
     if(ending === 'js' || ending === 'html') {
       const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
       const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
-        .find(container => container.getPath() === targetURLString);
+        .find(container => container.getPath().match(targetURLString));
       if(existingContainer) {
         lively.gotoWindow(existingContainer.parentElement, true);
         existingContainer.focus();
@@ -2161,4 +2189,5 @@ export default class Container extends Morph {
       this.isMigrating = false;
     }
   }
+  
 }

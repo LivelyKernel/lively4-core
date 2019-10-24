@@ -1,3 +1,15 @@
+
+
+/*MD 
+# Background
+
+Can be set in browser, or by dragging pictures from desktop into Lively and using the context menu of the file. 
+
+![](lively-background.png){height=200}
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyBackground extends Morph {

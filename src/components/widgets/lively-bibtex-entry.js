@@ -1,3 +1,10 @@
+
+/*MD 
+# Bibtex Entry
+![](lively-bibtex-entry.png){height=50}
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'src/external/bibtexParse.js';
 import latexconv from "src/external/latex-to-unicode-converter.js";

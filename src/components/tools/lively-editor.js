@@ -82,6 +82,7 @@ export default class Editor extends Morph {
     await  editor.editorLoaded()
     editor.registerExtraKeys({
       "Alt-P": cm => {
+        // lively.notify("toggle widgets")
         this.toggleWidgets();
       },
       
@@ -556,7 +557,7 @@ export default class Editor extends Morph {
   }
   
   async showEmbeddedWidgets() {
-    var type = files.getEnding(this.getURL().toString())
+    var type = files.getEnding(this.getURL())
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
 
