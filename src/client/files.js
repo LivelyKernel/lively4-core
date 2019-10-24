@@ -533,7 +533,7 @@ export default class Files {
   }
   
   static getEnding(path) {
-    return path.replace(/\?.*/,"").replace(/.*\./,"");
+    return path.toString().replace(/[#?].*/,"").replace(/.*\./,"");
   }
   
   
