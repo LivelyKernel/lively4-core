@@ -1,3 +1,7 @@
+var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices"]
+var baseUrlsAuthNeededForWriting = [ "https://lively-kernel.org/lively4"]
+
+
 async function proxyRequest(url, options={}) {
   console.log("PROXY reqest: " + options.method + " " + url)
   return self.originalFetch(url, {
@@ -95,7 +99,7 @@ export async function installAuthorizedFetch() {
   
 //   if (!mounts) return 
   
-  var gh;
+  var gh = window.lively4github
   
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isAuthFetch);
   
@@ -105,41 +109,72 @@ export async function installAuthorizedFetch() {
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;
-      var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices"]
-      var m = baseUrlsAuthNeeded.find( ea => url.startsWith(ea))
-      if (m) {
+      
+      
+
+      var isWriting = method != "OPTIONS" && method != "GET" && method != "HEAD"
+      
+      async function ensureGithubLogin() {
+        if (!gh && window.lively) {
+          console.log("Ensure Github Credentials: " + url)
+          var GitHub = await System.import("src/client/github.js").then( m => m.default)
+          window.lively4github =  new GitHub();
+          gh = window.lively4github
+          await gh.loadCredentials()
+        }
+      }
+      
+      
+      function addUserNameAndPassword(options, username="anonymous", password="xxx") {
+        if (!options) options = {};
+        if (!options.headers) options.headers = {};
+        options.headers = new Headers(options.headers) // ensure headers
+
+        // inject authentification tokens into request
+        if (!options.headers.get("gitusername")) {
+            options.headers.set("gitusername",  username)
+        }
+        if (!options.headers.get("gitpassword")) {
+            options.headers.set("gitpassword", password)
+        }
+        return options
+      }
+      
+      
+      if (baseUrlsAuthNeeded.find( ea => url.startsWith(ea))) {
         return {
             result: (async () => {
               console.log("AuthorizedFetch: " + url)
             
-              if (!gh) {
-                console.log("Ensure Github Credentials: " + url)
-                var GitHub = await System.import("src/client/github.js").then( m => m.default)
-                gh = new GitHub();
-                await gh.loadCredentials()
-              } 
-              
-              if (!options) options = {};
-              if (!options.headers) options.headers = {};
-              options.headers = new Headers(options.headers) // ensure headers
-
-              // inject authentification tokens into request
-              if (!options.headers.get("gitusername")) {
-                  options.headers.set("gitusername",  gh.username)
-              }
-              if (!options.headers.get("gitpassword")) {
-                  options.headers.set("gitpassword", gh.token)
-              }
+              await ensureGithubLogin() 
+              options =  addUserNameAndPassword(options, gh.username,   await gh.token)
+             
           
               return proxyRequest(url, options)
             })()
-        }  
-    
-               
+        }          
+      }
+      
+      if  (isWriting && baseUrlsAuthNeededForWriting.find(ea => url.startsWith(ea))) {
+        return {
+            result: (async () => {
+              console.log("AuthorizedFetch Write: " + url)
+            
+              ensureGithubLogin() // but don't wait... we want to avoid deadlocks... or if there is no login..
+              
+              if (gh) {
+                options = addUserNameAndPassword(options, gh.username,  gh.token)
+              } else {
+                options = addUserNameAndPassword(options)
+              }
+              return proxyRequest(url, options)
+            })()
+        }
       }
     }
   })
 }
+
 
 export async function installFetchHandlers() {
   await installProxyFetch()

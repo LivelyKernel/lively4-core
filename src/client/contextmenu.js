@@ -340,7 +340,7 @@ export default class ContextMenu {
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 
-        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(850, 660)),
+        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(950, 660)),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", evt => {

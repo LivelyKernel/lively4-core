@@ -5,7 +5,10 @@
  [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 
 
+
+
 ## Getting Started {style="clear:both"}
+
 
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-core/doc/_navigation.html"></lively-import>
