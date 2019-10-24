@@ -1,1 +1,1 @@
-foo(3 + 4)
+::this.aspectRatio
