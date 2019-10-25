@@ -25,13 +25,14 @@ export default class LivelyContainerNavbar extends Morph {
   
   // #important
   async initialize() {
-    lively.html.registerKeys(this);
-    lively.html.registerKeys(this.get("#navbar"));
-    lively.html.registerKeys(this.get("#details"));
-    this.addEventListener("drop", this.onDrop);
-    this.addEventListener("dragover", this.onDragOver);
-    // this.addEventListener("dragenter", this.onDragEnter)
+    lively.html.registerKeys(this)
+    lively.html.registerKeys(this.get("#navbar"))
+    lively.html.registerKeys(this.get("#details"))
+    this.addEventListener("drop", evt => this.onDrop(evt))
+    this.addEventListener("dragover", evt => this.onDragOver(evt))
+    
     this::applyDragCSSClass();
+    
     this.lastSelection = [];
     this.addEventListener('contextmenu', (evt) => {
         if (!evt.shiftKey) {
@@ -130,12 +131,14 @@ export default class LivelyContainerNavbar extends Morph {
     evt.preventDefault()    
   }
 
-  async onDrop(evt) {
+  async onDrop(evt, url=this.url) {
     evt.preventDefault();
     evt.stopPropagation();
+    
+    this.classList.remove("drag")
         
     const files = evt.dataTransfer.files;
-    let dir = lively.files.directory(this.url);
+    let dir = lively.files.directory(url);
     if(files.length > 0 &&
       await lively.confirm(`Copy ${files.length} file(s) into directory ${dir}?`)
     ) {
@@ -158,20 +161,37 @@ export default class LivelyContainerNavbar extends Morph {
     var data = evt.dataTransfer.getData("text");   
     var htmlData = evt.dataTransfer.getData("text/html");    
     if (data.match("^https?://") || data.match(/^data\:image\/png;/)) {
-      this.copyFromURL(data);        
+      this.copyFromURL(data, url);        
     } else if (htmlData) {
       data = evt.dataTransfer.getData();
-      this.dropHTMLAsURL(htmlData)
+      this.dropHTMLAsURL(htmlData, url)
     } else {
       console.log('ignore data ' + data);
     }
   }
+  
+  async onDirectoryDrop(evt) {
+    if (evt.target && evt.target.href) {
+      return this.onDrop(evt, evt.target.href)
+    }
+    var a = evt.target.querySelector("a")
+    if (a) {
+      return this.onDrop(evt, a.href)
+    }
+    
+  }
+  
+  async onDirectoryDragOver(evt) {
+    return this.onDragOver(evt)
+  }
+  
+  
   /* 
    *  Upload the dragged contents into a file.. and make up a name. 
    *  #Idea, instead of using a timestamp should be able to store a name in the data?
    */
-  async dropHTMLAsURL(data) {
-    var targetDir = lively.files.directory(this.url)
+  async dropHTMLAsURL(data,url=this.url) {
+    var targetDir = lively.files.directory(url)
     var name = "dropped_" + moment(new Date()).format("YYMMDD_hhmmss")
     var newurl = targetDir + "/" + name + ".html"
     await fetch(newurl, {
@@ -182,9 +202,9 @@ export default class LivelyContainerNavbar extends Morph {
     // console.log("dropped " + newurl)
   }
   
-  async copyFromURL(data) {
+  async copyFromURL(data, url=this.url) {
     var urls = data.split("\n")
-    var targetDir = lively.files.directory(this.url)
+    var targetDir = lively.files.directory(url)
     if (await lively.confirm(`${this.transferMode} ${urls.length} files to ${targetDir}?`)) {
       for(var fromurl of urls) {
         var filename = fromurl::fileName();
@@ -200,7 +220,7 @@ export default class LivelyContainerNavbar extends Morph {
           isDataURI = false
         }
 
-        var newurl = this.url.replace(/[^/]*$/, filename)
+        var newurl = url.replace(/[^/]*$/, filename)
         var content = await fetch(fromurl).then(r => r.blob());
         await fetch(newurl, {
           method: "PUT",
@@ -455,6 +475,15 @@ export default class LivelyContainerNavbar extends Morph {
     }
     var title = ea.title || name
 
+    if (ea.type == "directory") {
+       
+        element.addEventListener("drop", evt => this.onDirectoryDrop(evt))
+        element.addEventListener("dragover",evt => this.onDirectoryDragOver(evt))
+        
+        element::applyDragCSSClass();
+    }
+    
+    
     // name.replace(/\.(lively)?md/,"").replace(/\.(x)?html/,"")
 
     var prefix = this.lastTitle ? Strings.longestCommonPrefix([title, this.lastTitle]) : ""
@@ -758,6 +787,16 @@ export default class LivelyContainerNavbar extends Morph {
   async showDetails(force) {
     // console.log("show sublist " + this.url)
      
+    
+    if (this.url == this.lastDetailsURL) {
+      this.lastScrollTop = this.get("#details").scrollTop  // preserve scroll, when just refreshing...
+    } else {
+      this.lastScrollTop = 0 
+    }
+    this.lastDetailsURL = this.url
+    
+    
+    
     if (!this.targetItem) return 
     var sublist = this.targetItem.querySelector("ul")
     if (!sublist) {
@@ -794,6 +833,7 @@ export default class LivelyContainerNavbar extends Morph {
     var details = this.get("#details")
     var sublist = this.targetItem.querySelector("ul")
     
+
     if (details) {
       details.innerHTML = ""
       sublist = <ul></ul>
@@ -808,7 +848,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (this.url.match(/templates\/.*html$/)) {
       this.showDetailsHTML(sublist)
     } else if (this.url.match(/\.js$/)) {
-      this.showDetailsJS(sublist)
+      await this.showDetailsJS(sublist)
     } else if (this.url.match(/\.md$/)) {
       // console.log("show sublist md" + this.url)
 
@@ -818,6 +858,9 @@ export default class LivelyContainerNavbar extends Morph {
         this.showDetailsOptions(sublist)
       }
     }
+    
+     details.scrollTop  = this.lastScrollTop
+    
   }
   
   // #HTML
@@ -1419,12 +1462,13 @@ export default class LivelyContainerNavbar extends Morph {
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
-    var url = "https://lively-kernel.org/lively4/lively4-jens/doc/"
+    var url = "https://lively-kernel.org/lively4/testdir/"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content)
   }
 }
 
+/*MD # Fetch Hook MD*/
 
 if (self.lively4fetchHandlers) {  
   // remove old instances of me

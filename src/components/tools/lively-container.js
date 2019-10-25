@@ -1,6 +1,3 @@
-
-
-
 /*MD # Lively Container 
 
 ![](lively-container.png){height=400px}
@@ -23,7 +20,8 @@ import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 
 /*MD
-<lively-drawio src="lively-container.drawio"></lively-drawio>
+
+![](lively-container.drawio)
 
 MD*/
 
