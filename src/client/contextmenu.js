@@ -626,7 +626,7 @@ export default class ContextMenu {
           }, 
           "", '<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Devdocs.io", (evt) => {
-            this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
+            this.openComponentInWindow("lively-help",  evt, worldContext);
           }, 
           "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Docs", (evt) => {

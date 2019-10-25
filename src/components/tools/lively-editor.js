@@ -13,7 +13,7 @@ We have to many objects called "editor", because they wrap around and FACADE eac
    - lively-code-mirror
      - cm CodeMirror object
  
-![](../../../doc/editors.drawio)
+![](../../../doc/figures/editors.drawio)
 
 MD*/
 
