@@ -64,3 +64,33 @@ bar
 `.replace(/<script(.*)>((:?\n|.)*)<\/script>/gm, (original, args, content) =>          
           args.match(`type=`) ? original : `<lively-script${args}><script>${content}</script></lively-script>`)
 ```
+
+
+### (C) New Problem: Two Scripts
+
+
+Solution: make it not eager. (sprinkle some "?" into the pattern)
+
+```javascript
+
+`
+foo
+
+<script id="bla">
+xxx
+</script>
+
+aaa
+
+<script id="bla2">
+yyy
+</script>
+
+bar
+`.replace(/<script(.*?)>((:?\n|.)*?)<\/script>/gm, (original, args, content) =>          
+          args.match(`type=`) ? original : `<lively-script${args}><script>${content}</script></lively-script>`)
+
+
+```
+
+
