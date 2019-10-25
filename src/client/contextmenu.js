@@ -520,7 +520,7 @@ export default class ContextMenu {
         "Favorites",
           Favorites.get().then(urls => {
             return urls.map(url => [
-              url.replace(/.*\//i, ''), // only files names
+              url.replace(/\/index.md$/i, '').replace(/.*\//i, ''), // only files names
               async evt => {
                 const comp = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600));
                 return comp.editFile(url);
