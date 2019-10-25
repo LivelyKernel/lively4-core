@@ -107,7 +107,6 @@ export default class LivelyContainerNavbar extends Morph {
   
   onItemDragStart(link, evt) {
     this.resetCursor()
-    
     let urls = this.getSelection();
     if (urls.length > 1) {
       this.dragFilesAsZip(urls, evt)
@@ -116,6 +115,8 @@ export default class LivelyContainerNavbar extends Morph {
         name = lively.files.name(url)
       var mimetype = Mimetypes.mimetype(lively.files.extension(name)) || "text/plain";
       evt.dataTransfer.setData("DownloadURL", `${mimetype}:${name}:${url}`);  
+      
+      urls = [url] // don't use selection, because the user meant to drag the link
     }
     evt.dataTransfer.setData("text/plain", urls.join("\n"));
   }
