@@ -1,4 +1,4 @@
-<mxfile modified="2019-10-28T11:45:44.745Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="c_cIM7fygzz3kZ_ZlfOs" version="12.1.7" type="github" pages="1">
+<mxfile modified="2019-10-28T11:46:06.574Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="-7B-rVV5XbXHZo3vsmdd" version="12.1.7" type="github" pages="1">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="1693" dy="1073" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" background="#ffffff" math="0" shadow="0">
       <root>
@@ -45,9 +45,6 @@
         </mxCell>
         <mxCell id="FYQZYDOE3uRFgw08JtyF-83" value="Generating Live Feedback in a complex Environment" style="whiteSpace=wrap;html=1;fontSize=14;fontColor=#004C99;align=left;strokeColor=none;fillColor=none;gradientColor=none;labelBorderColor=none;" parent="1" vertex="1">
           <mxGeometry x="1358" y="770" width="140" height="55" as="geometry"/>
-        </mxCell>
-        <mxCell id="087B-pmSpLDm4xT3_IaR-47" value="&amp;nbsp;FileIndex (IndexDB)" style="text;html=1;fontSize=14;fontColor=#004C99;verticalAlign=middle;" parent="1" vertex="1">
-          <mxGeometry x="67.5" y="1025" width="140" height="20" as="geometry"/>
         </mxCell>
         <mxCell id="087B-pmSpLDm4xT3_IaR-154" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;shadow=0;endArrow=none;strokeColor=#CCCCCC;strokeWidth=1;fontSize=14;fontColor=#004C99;" parent="1" source="087B-pmSpLDm4xT3_IaR-143" target="087B-pmSpLDm4xT3_IaR-144" edge="1">
           <mxGeometry relative="1" as="geometry"/>
@@ -116,9 +113,6 @@
               <mxPoint x="819.5" y="376"/>
             </Array>
           </mxGeometry>
-        </mxCell>
-        <mxCell id="087B-pmSpLDm4xT3_IaR-273" value="Workflows" style="text;html=1;fontSize=30;fontColor=#004C99;fontStyle=1;verticalAlign=middle;" parent="1" vertex="1">
-          <mxGeometry x="1305" y="130.5" width="150" height="40" as="geometry"/>
         </mxCell>
         <mxCell id="087B-pmSpLDm4xT3_IaR-307" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;shadow=0;endArrow=none;strokeColor=#CCCCCC;strokeWidth=1;fontSize=14;fontColor=#004C99;" parent="1" source="087B-pmSpLDm4xT3_IaR-304" target="FYQZYDOE3uRFgw08JtyF-5" edge="1">
           <mxGeometry relative="1" as="geometry">
