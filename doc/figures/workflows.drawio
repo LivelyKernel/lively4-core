@@ -1,6 +1,6 @@
-<mxfile modified="2019-10-28T12:17:38.332Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="MQxnQtlc3A9pwDFGDZRy" version="12.1.7" type="github" pages="1">
+<mxfile modified="2019-10-28T12:18:32.333Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="MWHkzxmgrRT-x-UdSWBP" version="12.1.7" type="github" pages="1">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1147" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="700" pageHeight="400" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1966" dy="1086" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="700" pageHeight="400" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -20,7 +20,7 @@
           <mxGeometry x="420" y="282.5" width="110" height="19" as="geometry"/>
         </mxCell>
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-36" value="Halos" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="530" y="334.5" width="60" height="19" as="geometry"/>
+          <mxGeometry x="510" y="360.5" width="60" height="19" as="geometry"/>
         </mxCell>
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-44" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#B3B3B3;strokeWidth=1;fontSize=14;fontColor=#004C99;" edge="1" parent="1" source="0TSWJhDB3ERVW5bUqQgN-3" target="0TSWJhDB3ERVW5bUqQgN-43">
           <mxGeometry relative="1" as="geometry"/>
@@ -140,6 +140,12 @@
         </mxCell>
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-62" value="GitHub Sync" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#004C99;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="575" y="19" width="90" height="19" as="geometry"/>
+        </mxCell>
+        <mxCell id="0TSWJhDB3ERVW5bUqQgN-68" value="&lt;font color=&quot;#a9c4eb&quot;&gt;Ob ject Editor&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=0;strokeOpacity=80;fillOpacity=80;" vertex="1" parent="1">
+          <mxGeometry x="560" y="220" width="110" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="0TSWJhDB3ERVW5bUqQgN-69" value="XRay" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="353.5" width="60" height="19" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
