@@ -1,6 +1,6 @@
-<mxfile modified="2019-10-28T13:01:18.221Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="0FGdKMPOnJZTCqpPBnvX" version="12.1.7" type="github" pages="1">
+<mxfile modified="2019-10-28T13:06:03.356Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36" etag="9IhSu5rcSMnuzcesCdQ_" version="12.1.7" type="github" pages="1">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="700" dy="576" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="700" pageHeight="400" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="400" dy="329" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="700" pageHeight="400" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -10,7 +10,7 @@
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-22" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#B3B3B3;strokeWidth=2;fontSize=18;fontColor=#808080;" parent="1" source="0TSWJhDB3ERVW5bUqQgN-1" target="0TSWJhDB3ERVW5bUqQgN-16" edge="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <UserObject label="Lively4 Workflows" link="../workflows/index.md" id="0TSWJhDB3ERVW5bUqQgN-1">
+        <UserObject label="&lt;a href=&quot;../workflows/index.md&quot;&gt;&lt;font color=&quot;#004c99&quot;&gt;Lively4 Workflows&lt;/font&gt;&lt;/a&gt;" id="0TSWJhDB3ERVW5bUqQgN-1">
           <mxCell style="text;html=1;fontSize=28;fontColor=#004C99;fontStyle=1;verticalAlign=middle;" parent="1" vertex="1">
             <mxGeometry x="170" y="189.5" width="250" height="30" as="geometry"/>
           </mxCell>
@@ -56,9 +56,9 @@
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-31" style="edgeStyle=none;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeColor=#B3B3B3;strokeWidth=1;fontSize=18;fontColor=#808080;" parent="1" source="0TSWJhDB3ERVW5bUqQgN-16" target="0TSWJhDB3ERVW5bUqQgN-27" edge="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <UserObject label="&lt;b&gt;Developing&lt;/b&gt;" link="../workflows/developing.md" id="0TSWJhDB3ERVW5bUqQgN-16">
-          <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;" parent="1" vertex="1">
-            <mxGeometry x="410" y="94.5" width="130" height="19" as="geometry"/>
+        <UserObject label="&lt;b&gt;&lt;a href=&quot;../workflows/developing.md&quot;&gt;Developing&lt;/a&gt;&lt;/b&gt;" id="0TSWJhDB3ERVW5bUqQgN-16">
+          <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" parent="1" vertex="1">
+            <mxGeometry x="430" y="94.5" width="90" height="19" as="geometry"/>
           </mxCell>
         </UserObject>
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-17" value="Markdown" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;" parent="1" vertex="1">
@@ -106,7 +106,7 @@
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-38" value="Inspector" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" parent="1" vertex="1">
           <mxGeometry x="610" y="316.5" width="60" height="19" as="geometry"/>
         </mxCell>
-        <mxCell id="0TSWJhDB3ERVW5bUqQgN-40" value="Container" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" parent="1" vertex="1">
+        <mxCell id="0TSWJhDB3ERVW5bUqQgN-40" value="&lt;a href=&quot;../tools/container.md&quot;&gt;&lt;font color=&quot;#004c99&quot;&gt;Container&lt;/font&gt;&lt;/a&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" parent="1" vertex="1">
           <mxGeometry x="230" y="38" width="90" height="19" as="geometry"/>
         </mxCell>
         <mxCell id="0TSWJhDB3ERVW5bUqQgN-41" value="&lt;font style=&quot;font-size: 10px ; font-weight: normal&quot;&gt;Navbar&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontColor=#004C99;fontStyle=1;" parent="1" vertex="1">
