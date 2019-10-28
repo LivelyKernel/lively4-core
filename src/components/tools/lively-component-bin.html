@@ -1,58 +1,78 @@
-<style data-src="/templates/livelystyle.css"></style>
+<template id="lively-component-bin">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
 
-<template id="lively-component-bin" >
-<style>
-.container {
-  background-color: white;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.tile-pane {
+  #top {
+    height: 100%;
+    width: 100%;
+     overflow: auto;
+  }
+  
+  .container {
+    margin: 0px;
+    background-color: white;
+   
+  }
+ 
+  .tile-pane {
     list-style-type: none;
     background-color: white;
     padding: 2px;
     margin: 0px;
-    height: 100%;
+  }
+  .tile {
+    margin-top: 3px;
+    margin-bottom: 3px;
+    width: 100px;
+    height: 100px;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  #search-field {
+    width: 70%;
+    max-width: 500px;
+    margin: 5px;
+  }
+
+  #options {
+    margin: 5px;
+    display: none;
+  }
+  
+  #layout-pane {
+    display: flex;
     overflow: auto;
-}
-.tile {
-  margin-top: 3px;
-  margin-bottom: 3px;
-  width: 100px;
-  height: 100px;
-  background-repeat: no-repeat;
-  background-size: contain;
-}
-
-#search-field {
-  width: 70%;
-  max-width: 500px;
-  margin: 5px;
-}
-
-#options {
-  margin: 5px;
-}
-
+    flex: 1;
+  }
+  
+  #categories li {
+      list-style-type: none;
+      margin-left: -20px;
+      white-space: nowrap;
+  }
+  
+  #categories li.selected {
+     background-color: lightgray
+  }
+  
+  
+  
 </style>
-<div class="container">
-  <input type="text" id="search-field" placeholder="search ..." autofocus/>
-  <ul class="tile-pane" title="Components"></ul>
-  <div id="options">
-    <label  for="open-in-checkbox">
-      open in window
-      <input type="checkbox" id="open-in-checkbox" checked="true">
-    </label>
+  <div id="top">
+
+    <div class="container">
+      <div id="options">
+        <label for="open-in-checkbox">
+          open in window
+          <input type="checkbox" id="open-in-checkbox" checked="true">
+        </label>
+      </div>
+      <input type="text" id="search-field" placeholder="search ..." autofocus />
+      <div id="layout-pane">
+        <ul id="categories" title="Categories"></ul>
+        <ul id="tiles" class="tile-pane" title="Components"></ul>
+      </div>
+    </div>
   </div>
-  <!--
-  <lively-tab-view>
-    <div title="Shapes">Hello</div>
-  </lively-tab-view>
-</div>
--->
 </template>
-
-
-

@@ -1,7 +1,6 @@
 # Figures
 
 
-![](text_contenteditable_xray.png)
+![](media/text_contenteditable_xray.png)
 
-
-![](css_tweaking_xray.png)
+![](media/css_tweaking_xray.png)

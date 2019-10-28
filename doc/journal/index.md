@@ -38,6 +38,10 @@ button.innerHTML = "new"
 button
 </script>
 
+## Interesting
+- [2019-06-07.md drawio (source code editor)](2019-06-07.md/index.md)
+
+## Entries
 <script>
 import FileCache from "src/client/fileindex.js"
 (async () => {

@@ -1,6 +1,6 @@
 ## 2019-06-07 A lot of #drawio
 
- - [Figure 1](../../figures/figure1.xml)
+ - [Figure 1](../../figures/figure1.drawio)
 
 ## Some Simple DrawIO Text Editor
 

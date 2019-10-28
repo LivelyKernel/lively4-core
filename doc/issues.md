@@ -1,8 +1,8 @@
-<h1>Lively4-core Issues</h1>
+# Lively4-core Issues<
 
 <lively-import src="_navigation.html"></lively-import>
 
-<lively-script><script>
+<script>
 import github from "src/client/github.js"
 new Promise(async (resolve) => {
   var issues = await github.current().issues(true)  
@@ -38,4 +38,4 @@ new Promise(async (resolve) => {
   })
   resolve(list)
 })
-</script></lively-script>
+</script>

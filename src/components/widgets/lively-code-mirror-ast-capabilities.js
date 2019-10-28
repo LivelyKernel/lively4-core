@@ -4,9 +4,9 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 export default class ASTCapabilities {
 
-  constructor(lcm, cm) {
-    this.lcm = lcm;
-    this.codeMirror = cm;
+  constructor(livelyCodeMirror, codeMirror) {
+    this.livelyCodeMirror = livelyCodeMirror;
+    this.codeMirror = codeMirror;
   }
   get editor() {
     return this.codeMirror;
@@ -51,17 +51,33 @@ export default class ASTCapabilities {
 
     return pathToShow;
   }
-  expandSelection() {
-    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
-
-      // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
-        return this.nextPath(startingPath, path => {
+  getFirstChildOrSelf(startingPath) {
+    let child;
+    startingPath.traverse({
+      enter(path) {
+        if(!child) {
+          child = path;
+        }
+      }
+    });
+    return child || startingPath;
+  }
+  
+  getInnermostPathContainingSelection(startingPath, anchor, head) {
+     // go down to minimal selected node
+      const nextPathContainingCursor = (newStartingPath, { anchor, head }) => {
+        return this.nextPath(newStartingPath, path => {
           const location = range(path.node.loc);
           return location.contains(anchor) && location.contains(head);
         });
       };
-      const pathToShow = this.getInnermostPath(this.programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+      return this.getInnermostPath(startingPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+  }
+  
+  expandSelection() {
+    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+      
+      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
       // go up again
       let selectionStart = loc(anchor);
@@ -73,6 +89,15 @@ export default class ASTCapabilities {
 
         return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd);
       }) || pathToShow;
+    });
+
+    this.selectPaths(maxPaths);
+  }
+  reduceSelection() {
+    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+      
+      return this.getFirstChildOrSelf(pathToShow);      
     });
 
     this.selectPaths(maxPaths);
@@ -101,14 +126,7 @@ export default class ASTCapabilities {
 
     const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
 
-      // go down to minimal selected node
-      const nextPathContainingCursor = (startingPath, { anchor, head }) => {
-        return this.nextPath(startingPath, path => {
-          const location = range(path.node.loc);
-          return location.contains(anchor) && location.contains(head);
-        });
-      };
-      let currentPath = this.getInnermostPath(programPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+      const currentPath = this.getInnermostPathContainingSelection(programPath, anchor, head);
 
       let selectionStart = loc(anchor);
       let selectionEnd = loc(head);
@@ -357,14 +375,14 @@ export default class ASTCapabilities {
   /*MD ## Accessors MD*/
 
   get sourceCode() {
-    return this.lcm.value;
+    return this.livelyCodeMirror.value;
   }
   set sourceCode(text) {
-    return this.lcm.value = text;
+    return this.livelyCodeMirror.value = text;
   }
 
   focusEditor() {
-    this.lcm.focus();
+    this.livelyCodeMirror.focus();
   }
 
   get scrollInfo() {

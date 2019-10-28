@@ -29,3 +29,16 @@
 - they have names and can reference each other
 - this depencies are automatically reevaluated when the references cells changes
 - code and text is unified, since text fields are just code fields that return HTML or markdown code / objects #Contribution
+
+
+## Other Fields
+
+
+###  Wood / Metal Workshop
+
+- [How to make these Alternative Dovetail Joints](https://www.youtube.com/watch?v=cQyOa6RSIWM)
+  - tool materials: metal, wood
+  - target material: wood
+  - tools get build/evolved in a self-supporting manner #S3
+  - ![source:https://www.youtube.com/watch?v=cQyOa6RSIWM](media/Paskmakes_2019_HowToMakeTheseAlternativeDovetailJoints.png){height=200}
+  

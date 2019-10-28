@@ -1,3 +1,12 @@
+/*MD 
+# CodeMirror
+
+Workspace / main source code editing component. 
+
+![](lively-code-mirror.png){height=200}
+
+MD*/
+
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js"
@@ -254,10 +263,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.extraKeys = {
         // #KeyboardShortcut Ctrl-H search and replace
         "Insert": (cm) => {
-          // do nothing... ther INSERT mode is so often actived by accident 
+          // do nothing... the INSERT mode is so often activated by accident 
         },
         "Ctrl-Insert": (cm) => {
-          // do nothing... ther INSERT mode is so often actived by accident 
+          // INSERT mode is so often activated by accident, require CTRL now 
           cm.toggleOverwrite()
         },
         "Ctrl-H": (cm) => {
@@ -276,7 +285,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.fixHintsPosition()
           cm.execCommand("autocomplete")
         },
-        // #KeyboardShortcut Ctrl-P eval and print selelection or line
+        // #KeyboardShortcut Ctrl-P eval and print selection or line
         "Ctrl-P": (cm) => {
             let text = this.getSelectionOrLine()
             this.tryBoundEval(text, true);
@@ -286,7 +295,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           let text = this.getSelectionOrLine()
           this.inspectIt(text)
         },
-        // #KeyboardShortcut Ctrl-I eval selection or line (do it)
+        // #KeyboardShortcut Ctrl-D eval selection or line (do it)
         "Ctrl-D": (cm, b, c) => {
             let text = this.getSelectionOrLine();
             this.tryBoundEval(text, false);
@@ -308,9 +317,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
         "Ctrl-Alt-Left": "undoSelection",
 
-        // #KeyboardShortcut Ctrl-/ indent slelection
+        // #KeyboardShortcut Ctrl-/ indent selection
         "Ctrl-/": "toggleCommentIndented",
-        // #KeyboardShortcut Ctrl-# indent slelection
+        // #KeyboardShortcut Ctrl-# indent selection
         "Ctrl-#": "toggleCommentIndented",
         // #KeyboardShortcut Tab insert tab or soft indent
         'Tab': (cm) => {
@@ -349,20 +358,21 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
 
         // #AST-Navigation
-        // #KeyboardShortcut Alt-Up expand selection in ast-aware manner
+        // #KeyboardShortcut Alt-Up Expand selection in ast-aware manner
         "Alt-Up": cm => {
           this.astCapabilities(cm).then(ac => ac.expandSelection(cm));
         },
-        // #KeyboardShortcut Alt-Left 
+        // #KeyboardShortcut Alt-Down Reduce selection in ast-aware manner
+        "Alt-Down": cm => {
+          this.astCapabilities(cm).then(ac => ac.reduceSelection(cm));
+        },
+        // #KeyboardShortcut Alt-Left Select next element in ast-aware manner
         "Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
         },
-        // #KeyboardShortcut Alt-Right 
+        // #KeyboardShortcut Alt-Right Select previous element in ast-aware manner
         "Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
-        },
-        // #KeyboardShortcut Alt-Down 
-        "Alt-Down": cm => {
         },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
@@ -1224,6 +1234,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.editor.getCursor("start"), this.editor.getCursor("end"))
     }
 
+    livelyMinimizedTitle() {
+      return this.value.slice(0,80)
+    }
+  
+  
 }
 
 // LivelyCodeMirror.loadModules()

@@ -340,7 +340,7 @@ export default class ContextMenu {
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 
-        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(850, 660)),
+        this.openComponentInWindow("lively-component-bin", evt, worldContext,  pt(950, 660)),
        "CMD+O", '<i class="fa fa-th" aria-hidden="true"></i>'],
       ["Insert", [
         ["Text", evt => {
@@ -520,7 +520,7 @@ export default class ContextMenu {
         "Favorites",
           Favorites.get().then(urls => {
             return urls.map(url => [
-              url.replace(/.*\//i, ''), // only files names
+              url.replace(/\/index.md$/i, '').replace(/.*\//i, ''), // only files names
               async evt => {
                 const comp = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600));
                 return comp.editFile(url);
@@ -626,7 +626,7 @@ export default class ContextMenu {
           }, 
           "", '<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Devdocs.io", (evt) => {
-            this.openComponentInWindow("lively-help",  pt(evt.pageX, evt.pageY), worldContext);
+            this.openComponentInWindow("lively-help",  evt, worldContext);
           }, 
           "CMD+H", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Docs", (evt) => {

@@ -160,6 +160,7 @@ export default class HTML {
   }
 
   static fixLinks(nodes, dir, followPath) {
+    console.log("fix links " + dir)
     if (! followPath) {
       throw new Error("argument followPath missing");
     }
@@ -170,7 +171,7 @@ export default class HTML {
         
         var href = node.getAttribute("href")
         if (href) {
-          // console.log("FIX LINK ", href)
+          console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
           var anchor;
@@ -237,6 +238,7 @@ export default class HTML {
           } else if (src.match(/^\//)) {
             path = src; // ABSOLTUE paths
           } else {
+            console.log("FIX SRC ", node.localName,  swAwareBasePath +  dir, "src:" + src)
             path = swAwareBasePath + dir + src // that leaves us RELATIVE paths
           }
           if (path) {

@@ -1,5 +1,3 @@
-"enable examples";
-
 import Rasterize from "src/client/rasterize.js"
 /* globals GraphViewer */
 
@@ -181,6 +179,13 @@ export default class LivelyDrawio extends Morph {
     } else {
       try {
         GraphViewer.createViewerForElement(this.get(".mxgraph"));
+        
+          var container =   lively.query(this, "lively-container");
+          if (container) {
+            var base = url.replace(/[^/]*$/, "");
+            var links = this.get("#drawio").querySelectorAll("a")
+            lively.html.fixLinks(links, base, link => container.followPath(link))
+          }
       } catch(e) {
         console.log("DrawIO Error", e)
       }
@@ -247,7 +252,6 @@ export default class LivelyDrawio extends Morph {
   }
 
   async editAtDrawIO(parent) {
-    debugger
     if (!this.src) throw new Error("src attribute not set");
 
     await this.updateGithubInfo()
@@ -354,4 +358,4 @@ export default class LivelyDrawio extends Morph {
     // this.edit = "https://www.draw.io/#HJensLincke%2Fdrawio-figures%2Fmaster%2Fcontextjs_promises_01.xml"
   }
   
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
+}

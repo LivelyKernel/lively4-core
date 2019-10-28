@@ -413,8 +413,15 @@ export default class Files {
   
   static async generateMarkdownFileListing(root) { 
     var anchors = Array.from(root.querySelectorAll("a"))
-    var links = anchors.map(ea => ea.getAttribute("href")).filter(ea => !ea.match(/search:/))
-
+    var imgs = Array.from(root.querySelectorAll("[src]"))
+    
+    debugger
+    
+    var links = anchors.map(ea => ea.getAttribute("href")).filter(ea => !ea.match(/search:/)).concat(
+          imgs.map(ea => ea.getAttribute("src")))
+    
+    
+    
     var result = document.createElement("div")
 
     var source = "" // the generated markdown source that should be added
@@ -533,7 +540,7 @@ export default class Files {
   }
   
   static getEnding(path) {
-    return path.replace(/\?.*/,"").replace(/.*\./,"");
+    return path.toString().replace(/[#?].*/,"").replace(/.*\./,"");
   }
   
   

@@ -100,7 +100,7 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
     this.loaded = this.loadCredentials()
   }
 
-  async token() {
+  async getToken() {
     if (!this.token ) {
       this.loaded = this.loadCredentials()
       await this.loaded
