@@ -924,6 +924,9 @@ export default class LivelyContainerNavbar extends Morph {
     await FileIndex.current().db.classes.where("url").equals(this.url).each(aClassInfo => {
         classInfos.push(aClassInfo)
     })
+    
+    classInfos = classInfos.sortBy(ea => ea.start) 
+    
        
     classInfos.forEach((classInfo) => {
       let name = classInfo.name;
