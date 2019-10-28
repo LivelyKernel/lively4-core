@@ -366,6 +366,14 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-Down": cm => {
           this.astCapabilities(cm).then(ac => ac.reduceSelection(cm));
         },
+        // #KeyboardShortcut Alt-Shift-Up Select previous like this
+        "Shift-Alt-Up": cm => {
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(true));
+        },
+        // #KeyboardShortcut Alt-Shift-Down Select next like this
+        "Shift-Alt-Down": cm => {
+          this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(false));
+        },
         // #KeyboardShortcut Alt-Left Select next element in ast-aware manner
         "Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
