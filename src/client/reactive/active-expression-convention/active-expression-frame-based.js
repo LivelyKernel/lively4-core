@@ -27,7 +27,7 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
   offChange(...args) {
     super.offChange(...args);
 
-    if(this.callbacks.length === 0) {
+    if(!this.hasCallbacks()) {
       this.revoke();
     }
   }
