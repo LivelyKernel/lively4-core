@@ -490,3 +490,26 @@ extend(URL.prototype, {
   }
 
 });
+
+
+/*MD ## Hacks MD*/
+
+// #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
+if (!window.originalGetComputedStyle) {
+  window.originalGetComputedStyle = window.getComputedStyle  
+}
+
+// #Hack #drawio 
+// drawio tries to get the style of the shadow root... which fails
+window.getComputedStyle = function(...args) {
+  var element = args[0]
+  if (element && !(element instanceof HTMLElement)) {
+    // console.log("ERROR on getComputedStyle ON ", element)
+    
+    // silent fail...
+    return undefined
+  }
+  return window.originalGetComputedStyle(...args)
+}
+
+
