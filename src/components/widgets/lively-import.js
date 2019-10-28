@@ -9,6 +9,7 @@ export default class LivelyImport extends Morph {
     var container = lively.query(this, "lively-container")
     if (container) {
       var dir = url.replace(/[^/]*$/,"")
+      lively.notify("IMPORT DIR " + dir)
       lively.html.fixLinks(this.shadowRoot.childNodes, dir, 
         (path) => container.followPath(path))
     }
