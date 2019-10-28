@@ -1,4 +1,3 @@
-# Workflows
 
 
 ![](../figures/workflows.drawio)

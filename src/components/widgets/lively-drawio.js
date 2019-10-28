@@ -147,29 +147,50 @@ export default class LivelyDrawio extends Morph {
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
-      var menu = new ContextMenu(this, [
-            // Is ugly, because we do it ourselfs... and we don't need it any more
-            // ["save es png", () => {
-            //     this.saveAsPng()   
-            // },"", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'],
-            ["edit @ drawio", () => {
-                this.editAtDrawIO()   
-            },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
-            ["update from drawio", () => {
-                this.updateFromDrawIO()   
-            },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+      
+      let link = evt.composedPath().find(ea => ea.localName == "a")
+      let menu;        
+      
+      if(link) {
+        menu = new ContextMenu(this, [
+              ["open", () => {
+                  link.click()   
+              },"", ''],
+          
+              ["open in new browser", () => {
+                // first try our fixed link
+                lively.openBrowser(link.getAttribute("data-href") || link.getAttribute("href"))  
+              },"", ''],
+          
+              
+          ]);
+      } else {
+        menu = new ContextMenu(this, [
+              // Is ugly, because we do it ourselfs... and we don't need it any more
+              // ["save es png", () => {
+              //     this.saveAsPng()   
+              // },"", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'],
+              ["edit @ drawio", () => {
+                  this.editAtDrawIO()   
+              },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+              ["update from drawio", () => {
+                  this.updateFromDrawIO()   
+              },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
+
+              ["export as pdf", () => {
+                  this.exportAsPDF()   
+              }, "", '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'],
+          ]);
         
-            ["export as pdf", () => {
-                this.exportAsPDF()   
-            }, "", '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'],
-        ]);
+      }
+      
       menu.openIn(document.body, evt, this);
       return 
     }
   }
   
   
-  update() {
+  async update() {
     if (!this.src) return
     var url = this.src
     this.get("#drawio").innerHTML = `<div class="mxgraph" style="border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;target&quot;:&quot;blank&quot;,&quot;lightbox&quot;:false,&quot;nav&quot;:true,&quot;zoom&quot;:1,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;false&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;url&quot;:&quot;${url}&quot;}"></div>`
@@ -180,12 +201,64 @@ export default class LivelyDrawio extends Morph {
       try {
         GraphViewer.createViewerForElement(this.get(".mxgraph"));
         
-          var container =   lively.query(this, "lively-container");
-          if (container) {
-            var base = url.replace(/[^/]*$/, "");
-            var links = this.get("#drawio").querySelectorAll("a")
-            lively.html.fixLinks(links, base, link => container.followPath(link))
+        
+        
+        await lively.sleep(100)
+        
+        // Custom fixLinks... 
+        var container =   lively.query(this, "lively-container");
+        if (container) {
+          var containerBase = container.getURL().toString().replace(/[^/]*$/, "")
+          
+          var base = url.replace(/[^/]*$/, "");
+          
+          if (!base.match(/^[A-Za-z0-9]+\:/)) {
+            base = containerBase + base // my base is relative...
           }
+          
+
+          var wrongBase = window.location.toString().replace(/[^/]*$/, "");
+          var links = this.get("#drawio").querySelectorAll("a")
+          for(let a of links) {
+            let href= a.getAttribute("href")
+            
+            if (!href) continue;
+            href = href.replace(wrongBase,"")
+
+            
+            // #Hardcore full replace link #Hack... because there seems to be event handlers... I want to get rid of
+            // var tmp = <div></div>
+            // tmp.innerHTML = a.outerHTML
+            // var b = tmp.childNodes[0]
+            console.log("[drawio] I guess this is better: " + a.getAttribute("href") + " --> " + href)
+            
+            
+            let absoluteLink = href.match(/^[A-Za-z0-9]+\:/)
+            a.removeAttribute("href") // #Hack, I don't know why we can't prevent this navigation.... last resort: remove the href
+            let fixedRef
+            if (absoluteLink) {
+               fixedRef = href
+            } else {
+                fixedRef = base + href
+            }
+            a.setAttribute("data-href", fixedRef) // we fixed it
+            // a.style.border = "1px solid red" // for DEV
+            
+            a.style.textDecoration = "underline"
+            lively.addEventListener("drawio", a, "click", evt => {
+              // link => 
+              evt.stopPropagation()
+              evt.preventDefault()
+              container.followPath(fixedRef)
+              return false
+            })
+            
+            // a.parentElement.appendChild(b, a)
+            // a.remove()
+          }
+        } else {
+          console.log("[drawio] no container found ")
+        }
       } catch(e) {
         console.log("DrawIO Error", e)
       }

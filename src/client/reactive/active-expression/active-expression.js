@@ -173,6 +173,10 @@ export class BaseActiveExpression {
   addToRegistry() {
     AExprRegistry.addAExpr(this);
   }
+  
+  hasCallbacks() {
+    return this.callbacks.length !== 0;
+  }
 
   /**
    * Executes the encapsulated expression with the given parameters.
