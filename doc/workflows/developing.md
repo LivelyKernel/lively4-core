@@ -1,5 +1,18 @@
 # Developing
 
+## Basic Lively4 development workflow(s):
+
+- Go to <https://lively-kernel.org/lively4/lively4-core/start.html>
+- **(A) local content**: 
+  - Play around with objects and in workspace
+  - Ctrl-Left/Right Click for Halo and context menu
+  - Content is locally persisted
+- **(B) repository**: 
+  - Browse and edit markdown files, modules and HTML templates
+  - Open Sync tool and log with github account
+  - Press sync to update your instance and commit changes
+
+
 ## Repositories
 
 Lively4 can [clone](../tools/sync.md) Git repositories from [GitHub](https://github.com).
