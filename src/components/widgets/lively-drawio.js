@@ -202,12 +202,15 @@ export default class LivelyDrawio extends Morph {
         var root = this.get(".mxgraph")
         
         try {
-          GraphViewer.createViewerForElement(root);
+          await new Promise(resolve => {
+              GraphViewer.createViewerForElement(root, resolve);
+          })
         } catch(e) {
           console.log("[draw.io] ERROR", e)
-        }
+        }          
   
-        await lively.sleepUntil(() => this.get("svg"), 2000, 10) 
+        // not needed, because we found the "callback"
+        // await lively.sleepUntil(() => this.get("svg"), 2000, 10) 
         
         // Custom fixLinks... 
         var container =   lively.query(this, "lively-container");

@@ -4,12 +4,6 @@
 - (CTRL+)RightClick opens context menu with various tools...
 - Select any code then CTRL+P will print it and CTRL+D do it
 
----
-
-## Halo
-
-![](../figures/halo.drawio)
-
 ----
 
 ## Tools
