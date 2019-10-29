@@ -8,19 +8,13 @@
 
 ## Halo
 
-<lively-import src="halo.html"></lively-import>
-
-----
-
-## Context Menus
-
-<lively-import src="contextmenu.html"></lively-import>
+![](../figures/halo.drawio)
 
 ----
 
 ## Tools
 
-<lively-import src="tools.html"></lively-import>
+<lively-import src="doc/manual/tools.html"></lively-import>
 
 ---
 
