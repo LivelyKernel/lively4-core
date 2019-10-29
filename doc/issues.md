@@ -1,4 +1,4 @@
-# Lively4-core Issues<
+# Lively4-core Issues
 
 <lively-import src="_navigation.html"></lively-import>
 
