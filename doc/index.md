@@ -1,6 +1,7 @@
 # Lively Documentation
 
-<lively-import src="_navigation.html"></lively-import>
+<lively-import src="doc/_navigation.html"></lively-import>
+
 
 Lively4 is a self-supporting collaborative development environment. It runs in the browser on the client side and uses DOM elements and JavaScript as its building blocks. We use web-components and babels client side JavaScript source code transformation. It can be used and three ways:
 
@@ -9,6 +10,10 @@ Lively4 is a self-supporting collaborative development environment. It runs in t
 3. We can load lively through a chrome extension on any third party page. Currently we loose some functionality such as the unified service worker file system that way. 
 
 Lively4 is currently build using two materials: JavaScript modules and HTML templates. 
+
+
+![](figures/workflows.drawio)
+
 
 # Lively4 
 

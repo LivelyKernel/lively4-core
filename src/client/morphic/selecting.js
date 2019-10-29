@@ -1,11 +1,10 @@
-import Preferences from "./../preferences.js";
-// import... HaloService from /templates/classes/Halo.js
 
 export default class Selecting {
 
   static shouldHandle(e) {
     return e.altKey && !HaloService.isDragging;
   }
+  
   static load() {
      if (!window.lively) {
       return setTimeout(() => {Selecting.load()}, 100) // defere

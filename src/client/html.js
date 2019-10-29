@@ -171,7 +171,7 @@ export default class HTML {
         
         var href = node.getAttribute("href")
         if (href) {
-          // console.log("FIX LINK ", href)
+          console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
           var anchor;

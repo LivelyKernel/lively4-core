@@ -1,6 +1,6 @@
 # Ideas
 
-<lively-import src="https://lively-kernel.org/lively4/lively4-jens/doc/_navigation.html"></lively-import>
+<lively-import src="_navigation.html"></lively-import>
 
 ## Hash-tag Navigation #DONE
 
