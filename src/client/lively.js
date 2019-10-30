@@ -1901,8 +1901,22 @@ export default class Lively {
     }, time);
   }
 
-  static sleep(time=1000) {
+  static async sleep(time=1000) {
     return wait(time);
+  }
+  
+  // check something, and sleep and check again... stop after found or timeout
+  // "when in doubt let it tick"
+  static async sleepUntil(cb, time=5000, step=50) {
+      var timeout;
+        lively.sleep(time).then(() => {
+          timeout = true})
+      var result  
+      while(!result && !timeout) {
+        result = cb()
+        await lively.sleep(step)
+      }
+      return result
   }
 
   static async time(func) {

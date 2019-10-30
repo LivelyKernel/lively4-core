@@ -11,7 +11,8 @@ li.component {
 
 The Halo and it's Halo items are the primary tool for direct object manipulation in Lively Kernel.
 
-![](lively-halo.png)
+
+![](../../../doc/figures/halo.drawio)
 
 <script>
     import ComponentCreator from "src/client/morphic/component-creator.js"

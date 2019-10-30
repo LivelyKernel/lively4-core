@@ -8,6 +8,7 @@ const HACK = {};
 
 window.__compareAExprResults__ = false;
 
+/*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
 
   _aexprs: new Set(),
@@ -30,6 +31,7 @@ export const AExprRegistry = {
   }
 };
 
+/*MD # Equality Matchers MD*/
 class DefaultMatcher {
   static compare(lastResult, newResult) {
     // array
@@ -124,11 +126,13 @@ const MATCHER_MAP = new Map([
 
 const NO_VALUE_YET = Symbol('No value yet');
 
+/*MD # ACTIVE EXPRESSIONS MD*/
 export class BaseActiveExpression {
 
   /**
    *
    * @param func (Function) the expression to be observed
+   * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
   constructor(func, { params = [], match, errorMode = 'silent' } = {}) {
@@ -148,18 +152,6 @@ export class BaseActiveExpression {
       this.addToRegistry();
     }
   }
-  
-//   addEventListener(type, callback) {
-    
-//   }
-  
-//   removeEventListener(type, callback) {
-    
-//   }
-  
-//   dispatchEvent() {
-    
-//   }
   
   _initLastValue() {
     const { value, isError } = this.evaluateToCurrentValue();
@@ -200,6 +192,23 @@ export class BaseActiveExpression {
     } catch (e) {
       return { value: e, isError: true };
     }
+  }
+
+  /*MD ### EventTarget Interface MD*/
+  addEventListener(type, callback, ...params) {
+    
+  }
+
+  removeEventListener(type, callback) {
+    
+  }
+
+  dispatchEvent(event) {
+    
+  }
+
+  getEventListener(type) {
+    
   }
 
   /**
@@ -368,10 +377,7 @@ export class BaseActiveExpression {
     return this;
   }
 
-  /**
-   * Reflection information
-   */
-
+  /*MD ### Reflection Information MD*/
   name(...args) {
     if(args.length > 0) {
       this._annotations.add({ name: args[0] });
