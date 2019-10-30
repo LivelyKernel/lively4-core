@@ -1,1 +1,3 @@
-::this.aspectRatio
+() => {
+  class Foo {}
+}
