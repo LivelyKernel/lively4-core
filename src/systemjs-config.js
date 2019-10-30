@@ -141,6 +141,9 @@ const aexprViaDirective = {
       ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true,
         executedIn: 'file'
+      }],
+      ['babel-plugin-active-expression-proxies', {
+        executedIn: 'file'
       }]
     ]
   },
@@ -208,6 +211,9 @@ SystemJS.config({
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
           ['babel-plugin-active-expression-rewriting', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-active-expression-proxies', {
             executedIn: 'workspace'
           }]
         ]

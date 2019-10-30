@@ -1,5 +1,12 @@
-<div>hello2</div>;
-<div></div>;
-() => {
-  class Foo {}
-};
+var x = {};
+aexpr(() => x).onChange(v => lively.notify(v))
+
+
+
+
+x = 18
+
+
+
+
+
