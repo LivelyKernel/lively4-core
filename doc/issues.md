@@ -8,10 +8,8 @@ import Crayon from "src/client/crayoncolors.js"
 
 (async (resolve) => {
 
-  // if (!window.lively4githubIssues) {
-    window.lively4githubIssues = await github.current().issues(true)  
-  // }
-  let issues = window.lively4githubIssues
+  var forceLoadLatestIssues = true
+  let issues = await github.current().issues(forceLoadLatestIssues)  
 
   function sort(sortColumn=1, numerical) {
     Array.from(list.querySelectorAll("tr.issue")).forEach(ea => ea.remove())
@@ -172,10 +170,14 @@ import Crayon from "src/client/crayoncolors.js"
     let issue = <tr class="issue">
       <td><span class='number'>#{ea.number}</span></td>
       <td>
-        <a class='title' href={ea.html_url } click={evt => {
+        <a class='title' href={ea.html_url } click={async (evt) => {
           evt.stopPropagation()
           evt.preventDefault()
-          window.open(ea.html_url)
+          
+          var comp = await lively.openComponentInWindow("github-issue")
+          comp.issue = ea
+          comp.update()
+          //window.open(ea.html_url)
         }}>{ea.title}</a>
       </td>
       <td>{...labelsSpan(ea.labels.filter(ea => ea.name.match(/^type:/)))}</td>
