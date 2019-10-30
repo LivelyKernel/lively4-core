@@ -132,6 +132,7 @@ export class BaseActiveExpression {
   /**
    *
    * @param func (Function) the expression to be observed
+   * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
   constructor(func, { params = [], match, errorMode = 'silent' } = {}) {
