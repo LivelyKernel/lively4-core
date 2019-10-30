@@ -604,12 +604,12 @@ export default class Container extends Morph {
   }
   
   contentIsTemplate(sourceCode) {
-    return this.getPath().match(/.*html/)
+    return this.getURL().pathname.match(/.*html/)
       && sourceCode.match(/<template/)
   }
   
   contentIsEditable() {
-    return this.getPath().match(/\.html$/) || this.getPath().match(/\.md$/)
+    return this.getURL().pathname.match(/\.html$/) || this.getURL().pathname.match(/\.md$/)
   }
   
   /*MD ## Modules MD*/
@@ -919,7 +919,7 @@ export default class Container extends Morph {
     var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
     comp.setServerURL(serverURL);
     console.log("server url: " + serverURL);
-    if (!this.getPath().match(serverURL)) {
+    if (!this.getURL().pathname.match(serverURL)) {
       return lively.notify("can only sync on our repositories");
     }
     var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
@@ -1033,13 +1033,14 @@ export default class Container extends Morph {
 
 
   
+  // #important
   async onSave(doNotQuit) {
     if (!this.isEditing()) {
       this.saveEditsInView();
       return;
     }
 
-    if (this.getPath().match(/\/$/)) {
+    if (this.getURL().pathname.match(/\/$/)) {
       files.saveFile(this.getURL(),"");
 
       return;
@@ -1063,7 +1064,7 @@ export default class Container extends Morph {
 
       }
     }
-    if (this.getPath().match(/.*css/)) {
+    if (this.getURL().pathname.match(/.*css/)) {
       this.updateCSS();
     }
     this.updateOtherContainers();
@@ -1076,7 +1077,7 @@ export default class Container extends Morph {
       if (this.lastLoadingFailed) {
         console.log("last loading failed... reload")
         await this.reloadModule(url); // use our own mechanism...
-      } else if (this.getPath().match(testRegexp)) {
+      } else if (this.getURL().pathname.match(testRegexp)) {
         await this.loadTestModule(url);
       } else if (this.get("#live").checked) {
         // lively.notify("load module " + moduleName)
@@ -1291,7 +1292,7 @@ export default class Container extends Morph {
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
 
-    if (content.match("<template") && this.getPath().match("html$")) {
+    if (content.match("<template") && this.getURL().pathname.match("html$")) {
 
       content = "<pre><code> " + content.replace(/</g,"&lt;") +"</code></pre>"
     }
@@ -1683,7 +1684,7 @@ export default class Container extends Morph {
     }
     
     // don't know how to check for edits here... 
-    if (!this.isEditing() && this.getPath().match(/\.md$/)) {
+    if (!this.isEditing() && this.getURL().pathname.match(/\.md$/)) {
       this.contentChanged = false
       return
     }
@@ -1830,7 +1831,7 @@ export default class Container extends Morph {
     if(ending === 'js' || ending === 'html') {
       const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
       const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
-        .find(container => container.getPath().match(targetURLString));
+        .find(container => container.getURL().pathname.match(targetURLString));
       if(existingContainer) {
         lively.gotoWindow(existingContainer.parentElement, true);
         existingContainer.focus();
