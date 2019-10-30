@@ -54,17 +54,17 @@ SystemJS.config({
     // aexpr support
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
+    'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
-
     'babel-plugin-jsx-lively': lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js',
-    'babel-plugin-rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
-
     'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
+    'babel-plugin-rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
     'rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/rp19-jsx.js',
 
     // stage 0 support
@@ -139,7 +139,8 @@ const aexprViaDirective = {
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
       ['babel-plugin-active-expression-rewriting', {
-        enableViaDirective: true
+        enableViaDirective: true,
+        executedIn: 'file'
       }]
     ]
   },
@@ -206,7 +207,9 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          'babel-plugin-active-expression-rewriting'
+          ['babel-plugin-active-expression-rewriting', {
+            executedIn: 'workspace'
+          }]
         ]
       },
       loader: 'workspace-loader'
