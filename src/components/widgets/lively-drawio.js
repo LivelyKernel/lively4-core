@@ -199,11 +199,18 @@ export default class LivelyDrawio extends Morph {
       console.warn("draw.io view not loaded")
     } else {
       try {
-        GraphViewer.createViewerForElement(this.get(".mxgraph"));
+        var root = this.get(".mxgraph")
         
-        
-        
-        await lively.sleep(100)
+        try {
+          await new Promise(resolve => {
+              GraphViewer.createViewerForElement(root, resolve);
+          })
+        } catch(e) {
+          console.log("[draw.io] ERROR", e)
+        }          
+  
+        // not needed, because we found the "callback"
+        // await lively.sleepUntil(() => this.get("svg"), 2000, 10) 
         
         // Custom fixLinks... 
         var container =   lively.query(this, "lively-container");
@@ -225,14 +232,8 @@ export default class LivelyDrawio extends Morph {
             if (!href) continue;
             href = href.replace(wrongBase,"")
 
-            
-            // #Hardcore full replace link #Hack... because there seems to be event handlers... I want to get rid of
-            // var tmp = <div></div>
-            // tmp.innerHTML = a.outerHTML
-            // var b = tmp.childNodes[0]
-            console.log("[drawio] I guess this is better: " + a.getAttribute("href") + " --> " + href)
-            
-            
+            // console.log("[drawio] I guess this is better: " + a.getAttribute("href") + " --> " + href)
+                        
             let absoluteLink = href.match(/^[A-Za-z0-9]+\:/)
             a.removeAttribute("href") // #Hack, I don't know why we can't prevent this navigation.... last resort: remove the href
             let fixedRef
@@ -242,7 +243,9 @@ export default class LivelyDrawio extends Morph {
                 fixedRef = base + href
             }
             a.setAttribute("data-href", fixedRef) // we fixed it
-            // a.style.border = "1px solid red" // for DEV
+            
+            
+            // a.style.border = "1px solid blue" // for DEV
             
             a.style.textDecoration = "underline"
             lively.addEventListener("drawio", a, "click", evt => {

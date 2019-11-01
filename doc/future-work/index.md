@@ -1,6 +1,8 @@
-# Ideas
+# Future Work
 
-<lively-import src="_navigation.html"></lively-import>
+- Workflow of live object based editing of components
+- Cutting out any HTML objects as templates on the Web and reusing them later (in mashups)?
+
 
 ## Hash-tag Navigation #DONE
 

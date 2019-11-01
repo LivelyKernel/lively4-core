@@ -1,9 +1,6 @@
-import components from './morphic/component-loader.js';
-
 /*
  * Stores page-specific preferences in the body, so it gets saved/loaded with other content
  */
-
 export default class Preferences {
   
   static get defaults() {
@@ -15,7 +12,9 @@ export default class Preferences {
       ShowFixedBrowser: {default: true, short: "show fixed browser"},
       InteractiveLayer: {default: false, short: "dev methods"},
       ShowDocumentGrid: {default: true, short: "show grid"},
+      UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
+      UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
@@ -90,7 +89,7 @@ export default class Preferences {
       node = document.createElement('div'); // we cannot use custom comps they are async
       node.classList.add("lively-preferences")
       node.classList.add("lively-content")
-      components.openInBody(node)
+      document.body.insertBefore(node, document.body.firstChild);
     }
     return node
   }

@@ -4,23 +4,11 @@
 - (CTRL+)RightClick opens context menu with various tools...
 - Select any code then CTRL+P will print it and CTRL+D do it
 
----
-
-## Halo
-
-<lively-import src="halo.html"></lively-import>
-
-----
-
-## Context Menus
-
-<lively-import src="contextmenu.html"></lively-import>
-
 ----
 
 ## Tools
 
-<lively-import src="tools.html"></lively-import>
+<lively-import src="doc/manual/tools.html"></lively-import>
 
 ---
 

@@ -536,7 +536,7 @@ export default class Editor extends Morph {
     await files.saveFile(newurl, blob)
     
     this.withEditorObjectDo(editor => {
-      var text = encodeURIComponent(filename)
+      var text = encodeURIComponent(filename).replace(/\%2F/g,"/")
       if (this.getURLString().match(/\.md/)) {
         if (files.isVideo(filename)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
