@@ -1,16 +1,66 @@
 <template id="lively-ast-inspector" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  
-}
-#content {
-  background-color: gray;
-}
-</style>
-<div id="content">
-	<slot></slot>
-</div>
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      white-space: normal;
+    }
+
+    #top {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    #container {
+      flex: 0.66;
+      margin: 0px;
+      overflow: auto;
+/*       overscroll-behavior: contain; */
+    }
+    
+    #more:hover {
+      background: lightgray;
+    }
+
+    #tagname:hover {
+      background: lightgray;
+    }
+
+    div.element {
+      margin-left: 20px;
+      font-family: Monaco, monospace;
+      font-size: 9pt;
+    }
+
+    div.selected {
+      background: rgb(240,240,240);
+    }
+
+
+    div.tag > .tagname{
+      color: purple ;
+    }
+
+    div.comment {
+      color: green ;
+    }
+    
+    span.attrName {
+      color: brown ;
+    }
+    span.attrValue {
+      color: blue ;
+    }
+    span.syntax {
+      color: gray ;
+    }
+    
+  </style>
+
+  <div id="top">
+    <div id="container"></div>
+  </div>
 </template>
 
