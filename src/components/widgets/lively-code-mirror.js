@@ -382,9 +382,13 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
         },
-        // #KeyboardShortcut Alt-J ast refactoring/autocomplete menu
+        // #KeyboardShortcut Alt-J Jump to declaration of this identifier
         "Alt-J": cm => {
           this.astCapabilities(cm).then(ac => ac.selectDeclaration());
+        },
+        // #KeyboardShortcut Alt-R Rename this identifier
+        "Alt-R": cm => {
+          this.astCapabilities(cm).then(ac => ac.selectBindings());
         },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {

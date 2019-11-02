@@ -194,6 +194,14 @@ export default class ASTCapabilities {
     }
   }
 
+  getBindings(startPath) {
+    var identifier = this.getFirstSelectedIdentifier(startPath);
+    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
+      const binding = identifier.scope.getBinding(identifier.node.name);
+      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...(binding.constantViolations.map(this.getFirstSelectedIdentifier))];
+    }
+  }
+
   getNextASTNodeInListWith(condition, pathList, path) {
     const currentPathInList = pathList.find(pathInList => pathInList.node === path.node);
     const currentIndex = pathList.indexOf(currentPathInList);
@@ -263,8 +271,19 @@ export default class ASTCapabilities {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
     const declaration = this.getDeclaration(selectedPath);
-    if(declaration) {
+    if (declaration) {
       this.selectPaths([declaration]);
+    }
+  }
+
+  selectBindings() {
+    const { anchor, head } = this.editor.listSelections()[0];
+
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+
+    const bindings = this.getBindings(selectedPath);
+    if (bindings) {
+      this.selectPaths(bindings);
     }
   }
 
