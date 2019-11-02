@@ -305,7 +305,9 @@ export default class ASTCapabilities {
       this.wrapExpressionIntoActiveExpression();
     }, '→', fa('share-alt', 'rotate-90')]];
 
-    const menu = await ContextMenu.openIn(document.body, {/*clientX: x, clientY: y*/}, undefined, document.body, menuItems);
+    var menuPosition = this.codeMirror.cursorCoords(false, "window");
+    
+    const menu = await ContextMenu.openIn(document.body, {clientX: menuPosition.left, clientY: menuPosition.bottom}, undefined, document.body, menuItems);
   }
 
   /*MD ## Transformations MD*/
