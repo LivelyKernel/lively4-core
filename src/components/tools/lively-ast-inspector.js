@@ -14,6 +14,11 @@ export default class AstInspector extends Morph {
   
   get container() { return this.get("#container"); }
   
+  get hideLocationData() { return true; }
+  get hideTypeProperty() { return true; }
+  get hideMethods() { return true; }
+  get hideEmptyProperties() { return true; }
+  
   inspect(obj) {
     if (!obj) return;
     
@@ -24,7 +29,7 @@ export default class AstInspector extends Morph {
     this.targetObject = obj;
     this.container.innerHTML = "";
     
-    const content = this.display(obj, true, null, null);
+    const content = this.display(obj, true, null);
     this.container.appendChild(content);
     this.updatePatterns(this.container.childNodes[0])
     
@@ -33,14 +38,10 @@ export default class AstInspector extends Morph {
     }
     return content;
   }
-  
-  isAstMode() {
-    return true;
-  }
+
 /*MD # Displaying MD*/
   
-  display(obj, expanded, name, parent) {
-    console.log({obj: obj, expanded: expanded, name: name, parent: parent});
+  display(obj, expanded, name) {
     if (obj instanceof Text) {
       return this.displayText(obj, expanded);
     } else if (typeof obj == "object" || typeof obj == "function") {
@@ -127,9 +128,7 @@ export default class AstInspector extends Morph {
     node.isExpanded = expand;
 
     var className = obj.constructor.name;
-    if (this.isAstMode() && obj.type) {
-      className = obj.type
-    }
+    if (obj.type) className = obj.type;
     
     node.innerHTML = '';
     node.appendChild(this.expandTemplate(node));
@@ -149,6 +148,18 @@ export default class AstInspector extends Morph {
     this.renderExpandedProperties(node, obj);
   }
   
+  isLocationProperty(str) {
+    return str === "loc"
+            || str === "start"
+            || str === "end";
+  }
+  
+  isEmptyProperty(obj) {
+    if (Array.isArray(obj)) return obj.length == 0;
+    if (typeof obj === "undefined") return true;
+    return false;
+  }
+  
   renderExpandedProperties(node, obj) {
     if (!node.isExpanded) return;
         
@@ -160,24 +171,34 @@ export default class AstInspector extends Morph {
     }
     
     contentNode.innerHTML = "";
-    this.allKeys(obj).sort(sortAlphaNum).forEach( ea => {
+    this.allKeys(obj).forEach( ea => {
+      if (this.hideTypeProperty && ea === "type") return;
+      if (this.hideLocationData && this.isLocationProperty(ea)) return;
+      
       try {
         var value = obj[ea];
       } catch(e) {
         console.log("[inspector] could not display " + ea + " of " + obj);
         return;
       }
-      if (value == null) return;  
-      var childNode = this.display(value, false, ea, obj);
+      
+      if (value == null) return;
+      if (this.hideMethods && typeof value === "function") return;
+      if (this.hideEmptyProperties && this.isEmptyProperty(value)) return;
+      
+      var childNode = this.display(value, false, ea);
       if (childNode) contentNode.appendChild(childNode);
     });
   }
   
   allKeys(obj) {
-    if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
+    if (obj === null ||
+        !(typeof obj === 'object' || typeof obj === 'function')) {
+      return [];
+    }
     
-    var keys = Object.getOwnPropertySymbols(obj).concat(Object.getOwnPropertyNames(obj))
-    return keys.sort();
+    const keys = Object.getOwnPropertyNames(obj);
+    return keys.sort(sortAlphaNum);
   }
   
   renderIterable(contentNode, obj) {
@@ -207,7 +228,7 @@ export default class AstInspector extends Morph {
     return <span id='content'><a id='more' class='more'>{content ? content : "..."}</a></span>;
   }
   
-  /*MD # Handlers MD*/
+/*MD # Handlers MD*/
   
   attachHandlers(node, obj, name, renderCall = "render") {
     node.target = obj;
@@ -250,6 +271,7 @@ export default class AstInspector extends Morph {
       return false;
     }
   }
+
 /*MD # View State MD*/
   
   getViewState() {
