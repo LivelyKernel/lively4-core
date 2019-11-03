@@ -1,15 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import { sortAlphaNum } from 'src/client/sort.js';
-import { getTempKeyFor } from 'utils';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
-
-function truncateString(s = '', length = 30, truncation = '...') {
-  return s.length > length
-          ? s.slice(0, length - truncation.length) + truncation
-          : String(s);
-}
 
 export default class AstInspector extends Morph {
   
@@ -48,9 +40,9 @@ export default class AstInspector extends Morph {
 /*MD # Displaying MD*/
   
   display(obj, expanded, name, parent) {
-    // #TODO: Differentiation between object and value?
+    console.log({obj: obj, expanded: expanded, name: name, parent: parent});
     if (obj instanceof Text) {
-      return this.displayText(obj, expanded, parent);
+      return this.displayText(obj, expanded);
     } else if (typeof obj == "object" || typeof obj == "function") {
       return this.displayObject(obj, expanded, name);
     } else {
@@ -64,19 +56,19 @@ export default class AstInspector extends Morph {
     return node;
   }
   
-  displayObject(obj, expand, name) {
+  displayObject(obj, expanded, name) {
     if (!(obj instanceof Object)) {
-      return this.displayValue(obj, expand, name);
+      return this.displayValue(obj, expanded, name);
     }
     
     var node = <div class="element"></div>;
     node.pattern = "NAME " + (name || '').toString()
     node.name = name
-    this.renderObject(node, obj, expand, name);
+    this.renderObject(node, obj, expanded, name);
     return node;
   }
   
-  displayValue(value, expand, name) {
+  displayValue(value, expanded, name) {
     if (name) {
       let attrValue;
       if (value && typeof value === 'symbol') {
@@ -185,7 +177,7 @@ export default class AstInspector extends Morph {
     if(obj === null || !(typeof obj === 'object' || typeof obj === 'function')) { return []; }
     
     var keys = Object.getOwnPropertySymbols(obj).concat(Object.getOwnPropertyNames(obj))
-    return _.sortBy(keys)
+    return keys.sort();
   }
   
   renderIterable(contentNode, obj) {
@@ -248,8 +240,6 @@ export default class AstInspector extends Morph {
   
     this.selection = obj;
     lively.showElement(obj);
-    window.that = obj; // #Experimental
-    this.get("#editor").doitContext = obj;
     this.dispatchEvent(new CustomEvent("select-object", {detail: {node: node, object: obj}}));
   }
   
@@ -276,8 +266,9 @@ export default class AstInspector extends Morph {
     this.expandNode(node)
     var content = node.querySelector("#content")
     if (content) {
-      var children = _.filter(content.childNodes, 
-        ea => ea.classList.contains("element"))
+      var children = content.childNodes.filter(ea =>
+        ea.classList.contains("element"));
+      
       state.children.forEach( ea => {
         var child = children.find( c => c.pattern == ea.pattern)
         if (child) this.applyViewState(child, ea) 
@@ -291,19 +282,23 @@ export default class AstInspector extends Morph {
   }
   
   captureViewState(node) {
-    var result =  { 
+    const result = {
       pattern: node.pattern,
-      children: []}
+      children: [],
+    }
       
     if (!node.querySelector) return result; // text node
 
-    var content = node.querySelector("#content")
+    const content = node.querySelector("#content")
     if (content) {
-      _.filter(content.childNodes, ea => ea.isExpanded).forEach(ea => {
-        result.children.push(this.captureViewState(ea))        
-      })
+      content
+        .childNodes
+        .filter(ea => ea.isExpanded)
+        .forEach(ea => {
+          result.children.push(this.captureViewState(ea))        
+        });
     }
-    return result
+    return result;
   }
   
   updatePatterns(node) {
@@ -341,5 +336,10 @@ export default class AstInspector extends Morph {
     }).ast;
     
     this.inspect(ast);
+  }
+  
+  async livelyMigrate(other) {
+    this.inspect(other.targetObject);
+    this.setViewState(other.getViewState());
   }
 }
