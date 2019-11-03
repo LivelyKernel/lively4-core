@@ -264,6 +264,22 @@ export default class ASTCapabilities {
   selectNextASTNodeLikeThis(reversed) {
     return this.selectNextASTNodeWith((currentNode, nextNode) => currentNode.type == nextNode.type, reversed);
   }
+  
+  selectNextReference(reversed) {
+    const { anchor, head } = this.editor.listSelections()[0];
+
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+
+    const bindings = this.getBindings(selectedPath);
+    //debugger;
+    if (bindings) {
+      let sortedBindings = [...bindings].sort((a,b) => a.node.start - b.node.start);
+      let index = sortedBindings.indexOf(selectedPath);
+      index += reversed? -1 : 1;
+      index = (index + sortedBindings.length) % sortedBindings.length;
+      this.selectPaths([sortedBindings[index]]);
+    }
+  }
 
   selectDeclaration() {
     const { anchor, head } = this.editor.listSelections()[0];

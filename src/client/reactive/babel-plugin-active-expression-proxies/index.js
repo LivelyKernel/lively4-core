@@ -20,7 +20,6 @@ export default function({ types: t, template, traverse }) {
     visitor: {
       Program: {
         enter(path, state) {
-          debugger
           function hasDirective(path, name) {
             let foundDirective = false;
             path.traverse({
