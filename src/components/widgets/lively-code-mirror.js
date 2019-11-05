@@ -314,7 +314,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         
         // #KeyboardShortcut Ctrl-Alt-Right multiselect next
         "Ctrl-Alt-Right": "selectNextOccurrence",
-        // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
+        // #KeyboardShortcut Ctrl-Alt-Left undo multiselect
         "Ctrl-Alt-Left": "undoSelection",
 
         // #KeyboardShortcut Ctrl-/ indent selection
@@ -412,7 +412,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "alt-Backspace": async cm => {
           this.singalEditorbackNavigation()
         },
-        // #KeyboardShortcut Alt-Backspace Leave and Close Editor and got to Navigation
+        // #KeyboardShortcut Shift-Alt-Backspace Leave and Close Editor and got to Navigation
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },

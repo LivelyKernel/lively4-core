@@ -316,14 +316,17 @@ export default class ASTCapabilities {
     }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
       menu.remove();
       this.wrapExpressionIntoActiveExpression();
-    }, '→', fa('suitcase')], ['test', () => {
+    }, '→', fa('suitcase')], ['Rename', () => {
       menu.remove();
-      this.wrapExpressionIntoActiveExpression();
-    }, '→', fa('share-alt', 'rotate-90')]];
+      this.selectBindings();
+    }, 'Alt+R', fa('suitcase')]];
 
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
     
     const menu = await ContextMenu.openIn(document.body, {clientX: menuPosition.left, clientY: menuPosition.bottom}, undefined, document.body, menuItems);
+    menu.addEventListener("DOMNodeRemoved", () => {
+      this.focusEditor();
+    });
   }
 
   /*MD ## Transformations MD*/
