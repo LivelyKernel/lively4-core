@@ -63,14 +63,19 @@ export function createHTML(htmlString) {
 }
 
 // #TODO extract this to lively.components
-export function loadComponent(name) {
+export async function loadComponent(name) {
 
   var world = testWorld();
   var component = lively.components.createComponent(name);
   component.isInTesting = true;
 
-  return lively.components.openIn(world, component);
-    
+  try {
+    return await lively.components.openIn(world, component);
+  } catch(e) {
+    console.log("[test load component] ERRIR" +  e.stack )
+    throw new Error("LoadComponentError: " + name)
+  }
+  
     // window.LastRegistered = component; // I don't understand this #TODO #Jens why does it work when this line is in?
     // component.addEventListener("created", function (evt) {
     //   console.log("[TEST LOAD ] " + name + " LOADED " + evt.path[0].tagName)
