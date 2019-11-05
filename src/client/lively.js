@@ -667,6 +667,9 @@ export default class Lively {
 
   static  getGlobalBounds(node) {
     var bounds = node.getBoundingClientRect()
+    if (!bounds) {
+      return rect(0,0,0,0)
+    } 
     return rect(bounds.left, bounds.top, bounds.width, bounds.height)
   }
 
