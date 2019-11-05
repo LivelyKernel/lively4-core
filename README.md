@@ -33,3 +33,6 @@ The Livel4 server and GitHub sync tools can check out arbitrary projects, such a
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 - [Imprint](imprint.md)
+
+[.](
+https://lively-kernel.org/lively4/lively4-seminars/PX2019/project_1/index.md)
