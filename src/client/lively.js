@@ -597,6 +597,9 @@ export default class Lively {
     }
     // using the getBoundingClientRect produces the wrong extent
     var style = getComputedStyle(node);
+    if (!style) {
+      return pt(0,0)
+    }
     return pt(parseFloat(style.width), parseFloat(style.height))
   }
 
