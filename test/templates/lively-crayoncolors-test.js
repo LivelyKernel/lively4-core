@@ -11,9 +11,9 @@ describe("LivelyCrayoncolorsTest",  function() {
     loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
   });
 
-  it("should load", function(done) {
-    done();
-  });
+  // it("should load", function(done) {
+  //   done();
+  // });
 
   after("cleanup", function() {
     testWorld().innerHTML = "";
