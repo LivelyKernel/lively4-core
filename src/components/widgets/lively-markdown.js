@@ -165,10 +165,10 @@ export default class LivelyMarkdown extends Morph {
         // #TODO check if there is actually an pdf
         var figure = await lively.create("lively-drawio", tmpDiv)
         
-        for(var attr of imgTag.attributes) {
+        for(let attr of imgTag.attributes) {
           if (attr.name == "src") {
             // use attributes to retain RAW data
-            var src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
+            let src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
             console.log("REPLACE DRAWIO: " + src)
             figure.setAttribute("src",  src)
           } else {
@@ -178,7 +178,20 @@ export default class LivelyMarkdown extends Morph {
         figure.update() 
         imgTag.parentElement.insertBefore(figure, imgTag)
         imgTag.remove()
+      } else if (noFileEnding || imgTag.src.match(/\.html$/) ) {
+        var importElement = await lively.create("lively-import", tmpDiv)
+        for(let attr of imgTag.attributes) {
+          if (attr.name == "src") {
+            let src = imgTag.getAttribute("src")
+            importElement.setAttribute("src",  src)
+          } else {
+            importElement.setAttribute(attr.name, attr.value)
+          }
+        }
+        imgTag.parentElement.insertBefore(importElement, imgTag)
+        imgTag.remove()
       }
+      
     }
   }
   
