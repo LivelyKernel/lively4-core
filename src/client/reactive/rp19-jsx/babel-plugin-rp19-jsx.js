@@ -1,5 +1,49 @@
 import jsx from "babel-plugin-syntax-jsx";
-import Preferences from 'src/client/preferences.js';
+
+function detectUnsupportedNodes(path, filename) {
+  function gainPrintableFullPath(path) {
+    let fullPath = [];
+    
+    while(path) {
+      fullPath.unshift(path.node.type);
+      path = path.parentPath;
+    }
+    
+    return fullPath.map((nodeType, index) => '  '.repeat(index) + nodeType).join('\n');
+  }
+  
+  path.traverse({
+    /**
+     * No support for JSXMemberExpression yet. #TODO: what are the semantics outside of react for this?
+     * 
+     * <foo.bar></foo.bar>
+     */
+    JSXMemberExpression(path, state) {
+      throw new SyntaxError(`JSXMemberExpression not yet supported.
+${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
+    },
+    /**
+     * No support for JSXEmptyExpression yet. #TODO: where is this feature even useful?
+     * 
+     * <div id={}></div>
+     * or
+     * <div>{}</div>
+     */
+    JSXEmptyExpression(path, state) {
+      throw new SyntaxError(`JSXEmptyExpression not yet supported.
+${gainPrintableFullPath(path)}`, filename);
+    },
+    /**
+     * No support for jSXNamespacedName yet.
+     * 
+     * <div ns:attr="val" />;
+     */
+    JSXNamespacedName(path, state) {
+      throw new SyntaxError(`jSXNamespacedName not yet supported.
+${gainPrintableFullPath(path)}`, filename, path.node.loc.start.line);
+    }
+  });
+}
 
 /**
  * Resources for JSX Syntax
@@ -16,58 +60,128 @@ export default function ({ types: t, template, traverse }) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("rp19-jsx", name, name);
+    let identifier = file.declarations[name] = file.addImport("reactive-jsx", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     return identifier;
   }
 
+  
   return {
     inherits: jsx,
     visitor: {
       Program(path, state) {
-        function hasDirective(path, name) {
-          let foundDirective = false;
-          path.traverse({
-            Directive(path) {
-              if(path.get("value").node.value === name) {
-                foundDirective = true;
-              }
+        detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
+        
+        const fileName = (state && state.file && state.file.log && state.file.log.filename) || 'no_file_given';
+        const sourceLocation = template(`({
+        file: '${fileName}',
+        end: {
+          column: END_COLUMN,
+          line: END_LINE
+        },
+        start: {
+          column: START_COLUMN,
+          line: START_LINE
+        }
+      })`);
+        function buildSourceLocation(node) {
+          return sourceLocation({
+            END_COLUMN: t.numericLiteral(node.loc.end.column),
+            END_LINE: t.numericLiteral(node.loc.end.line),
+            START_COLUMN: t.numericLiteral(node.loc.start.column),
+            START_LINE: t.numericLiteral(node.loc.start.line)
+          }).expression;
+        }
+
+        function transformPath(path, programState) {
+          function jSXAttributeToBuilder(path) {
+
+            function getCallExpressionFor(functionName, ...additionalParameters) {
+              return t.callExpression(
+                addCustomTemplate(programState.file, functionName), // builder function
+                [
+                  t.stringLiteral(path.get("name").node.name), // key
+                  ...additionalParameters
+                ]
+              );
             }
-          });
-          return foundDirective;
+            
+            let attributeValue = path.get("value");
+            if(path.isJSXSpreadAttribute()) {
+              return t.callExpression(
+                addCustomTemplate(programState.file, "attributeSpread"),
+                [ path.get("argument").node ]
+              );
+            } else if(!path.node.value) {
+              return getCallExpressionFor("attributeEmpty");
+            } else if(attributeValue.isStringLiteral()) {
+              return getCallExpressionFor("attributeStringLiteral", attributeValue.node);
+            } else if(attributeValue.isJSXExpressionContainer()) {
+              return getCallExpressionFor("attributeExpression", attributeValue.node.expression);
+            } else if(attributeValue.isJSXElement()) {
+              // #TODO: what would that even mean?
+              throw new SyntaxError(`JSXElement as property value of JSXAttribute not yet supported.`);
+            }
+
+            throw new Error('unknown node type in JSXAttribute value ' + attributeValue.node.type);
+          }
+          
+          function jSXChildrenToBuilder(child) {
+            function getCallExpressionFor(functionName, childSpec) {
+              return t.callExpression(
+                addCustomTemplate(programState.file, functionName), // builder function
+                [
+                  childSpec
+                ]
+              );
+            }
+
+            if(child.isJSXText()) {
+              return getCallExpressionFor("childText", t.stringLiteral(child.node.value));
+            }
+            if(child.isJSXElement()) {
+              return getCallExpressionFor("childElement", child.node);
+            }
+            if(child.isJSXExpressionContainer()) {
+              return getCallExpressionFor("childExpression", child.get("expression").node);
+            }
+            if(child.isJSXSpreadChild()) {
+              return getCallExpressionFor("childSpread", child.get("expression").node);
+              //throw new SyntaxError(`JSXSpreadChild as child of JSXElement not yet supported.`);
+            }
+            throw new Error('unknown node type in children of JSXElement ' + child.node.type);
+          }
+          
+          
+          path.traverse({
+            JSXElement(path, state) {
+              const jSXAttributes = path.get("openingElement").get("attributes");
+              const jSXChildren = path.get("children");
+
+              let newNode = t.callExpression(
+                addCustomTemplate(programState.file, "element"),
+                [
+                  t.stringLiteral(path.get("openingElement").get("name").node.name),
+                  t.callExpression(
+                    addCustomTemplate(programState.file, "attributes"),
+                    jSXAttributes.map(jSXAttributeToBuilder)
+                  ),
+                  t.callExpression(
+                    addCustomTemplate(programState.file, "children"),
+                    jSXChildren.map(jSXChildrenToBuilder)
+                  ),
+                  buildSourceLocation(path.node)
+                ]
+              );
+
+              path.replaceWith(newNode);
+            }
+          })
+          
+          return path;
         }
 
-        function shouldTransform() {
-          const rp19Directive = hasDirective(path, 'use rp19-jsx');
-          const rp19Preference = Preferences.get('UseRP19JSX');
-          const inWorkspace = state.opts.executedIn === 'workspace';
-          const inFile = state.opts.executedIn === 'file';
-
-          if (inWorkspace) {
-            return rp19Preference;
-          } else if (inFile) {
-            return rp19Directive;
-          }
-          return true;
-          throw new Error('This should not be possible');
-        }
-
-        if (!shouldTransform()) { return; }
-
-        // the transformation itself
-        path.traverse({
-          JSXElement(path) {
-            const tagName = t.stringLiteral(path
-                                            .get("openingElement")
-                                            .get("name").node.name)
-            const newNode = t.callExpression(
-              addCustomTemplate(state.file, "element"),
-              [tagName]
-            );
-
-            path.replaceWith(newNode);
-          }
-        });
+        transformPath(path, state);
       }
     }
   };

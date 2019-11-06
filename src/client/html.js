@@ -353,12 +353,12 @@ export default class HTML {
           console.log('mutation ' + mutation.attributeName )
           var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
           if (obj[methodName]) {
-            // console.log("found " + methodName)
+            console.log("found " + methodName)
             obj[methodName](
               mutation.target.getAttribute(mutation.attributeName),
               mutation.oldValue)
           } else {
-             console.log("[AttributeObservers] NOT found: " + methodName, obj)
+             console.log("NOT found: " + methodName)
           }
         }
       });

@@ -1,10 +1,10 @@
 "enable aexpr";
 
-import VivideWidget from 'src/client/vivide/components/vivide-widget.js';import Morph from 'src/components/widgets/lively-morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';
 
-export default class VivideInspectorWidget extends VivideWidget {
+export default class DebuggingTable extends Morph {
   async initialize() {
-    this.windowTitle = "VivideInspectorWidget";
+    this.windowTitle = "DebuggingTable";
     this.registerButtons()
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
@@ -21,10 +21,6 @@ export default class VivideInspectorWidget extends VivideWidget {
     // replaced during development
     
      this.get("#textField").value = this.getAttribute("data-mydata") || 0
-  }
-  
-  display(forest, config) {
-    this.innerHTML = forest.toString();
   }
   
   onDblClick() {

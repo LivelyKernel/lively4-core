@@ -389,54 +389,8 @@ describe('Reflection API', () => {
           return count;
         }
         
-        describe('change events', () => {
-
-          it('respondTo on and off', () => {
-            expect(AExprRegistry).to.respondTo('on');
-            expect(AExprRegistry).to.respondTo('off');
-          });
-
-          it('emits events on add/remove', () => {
-            const addSpy = sinon.spy();
-            const removeSpy = sinon.spy();
-            
-            AExprRegistry.on('add', addSpy);
-            AExprRegistry.on('remove', removeSpy);
-
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).not.to.be.called;
-
-            const ae = aexpr(() => {});
-            
-            expect(addSpy).to.be.calledOnce;
-            expect(addSpy).to.be.calledWith(ae);
-            addSpy.reset();
-            expect(removeSpy).not.to.be.called;
-
-            const ae2 = aexpr(() => {});
-            
-            expect(addSpy).to.be.calledOnce;
-            expect(addSpy).to.be.calledWith(ae2);
-            addSpy.reset();
-            expect(removeSpy).not.to.be.called;
-
-            ae2.dispose();
-            
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).to.be.calledOnce;
-            expect(removeSpy).to.be.calledWith(ae2);
-            removeSpy.reset();
-
-            ae2.dispose();
-            
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).not.to.be.called;
-          });
-
-        });
-
         it('get all aexprs `allAsArray`', () => {
-          expect(AExprRegistry).to.respondTo('allAsArray');
+          expect(AExprRegistry).to.have.property('allAsArray');
         });
 
         it('should contain a **base** aexpr once', () => {

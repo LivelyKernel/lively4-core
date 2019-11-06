@@ -2,6 +2,8 @@ import HaloItem from 'src/components/halo/lively-halo-item.js';
 import * as nodes from 'src/client/morphic/node-helpers.js'
 import * as events from 'src/client/morphic/event-helpers.js'
 import {pt} from 'src/client/graphics.js';
+import Preferences from 'src/client/preferences.js';
+import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 import SVG from "src/client/svg.js"

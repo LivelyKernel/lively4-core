@@ -1,9 +1,9 @@
-# Tests
-
-<a href="../../templates/">templates</a> | <a href="../../src/client/">src</a>
+<html>
+  <h1>Tests</h1>
+  <a href="../../templates/">templates</a> | <a href="../../src/client/">src</a>
   
   
-<script>
+<lively-script><script>
 import moment from "src/external/moment.js";
 import Strings from "src/client/strings.js"
 
@@ -54,12 +54,12 @@ async function createUI(container) {
 }
 
 createUI(this.parentElement)
-</script>
+</script></lively-script>
 
   
-<script>
+<lively-script><script>
 (async () => {
-  var container = lively.query(this, "lively-container")
+ var container = this.parentElement
   var path = "" + container.getPath();
   var dir = path.replace(/[^/]*$/,"")
   var opts = JSON.parse(await lively.files.statFile(dir))
@@ -119,11 +119,7 @@ createUI(this.parentElement)
 
 
 <lively-script><script>
-(async () => { 
-  var container =  lively.query(this, "lively-container")
-  if (!container) {
-    debugger
-  }
+(async (container) => { 
   var button = document.createElement("button");
   button.addEventListener("click", () => {
     lively.openComponentInWindow("lively-testrunner")
@@ -131,5 +127,7 @@ createUI(this.parentElement)
   button.innerHTML = "run tests";
   return button;
 })(this.parentElement)
-</script>
+</script></lively-script>
+  
+</html>
 

@@ -54,9 +54,7 @@ SystemJS.config({
     // aexpr support
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
-    'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
-    'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
@@ -64,8 +62,6 @@ SystemJS.config({
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
     'babel-plugin-jsx-lively': lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js',
     'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
-    'babel-plugin-rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
-    'rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/rp19-jsx.js',
 
     // stage 0 support
     'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
@@ -107,12 +103,7 @@ const liveES7 = {
     stage2: false,
     stage3: false,
     plugins: [
-      ['babel-plugin-jsx-lively', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-rp19-jsx', {
-        executedIn: 'file'
-      }],
+      'babel-plugin-jsx-lively',
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
@@ -128,22 +119,13 @@ const aexprViaDirective = {
     stage2: false,
     stage3: false,
     plugins: [
-      ['babel-plugin-jsx-lively', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-rp19-jsx', {
-        executedIn: 'file'
-      }],
+      'babel-plugin-jsx-lively',
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
       ['babel-plugin-active-expression-rewriting', {
-        enableViaDirective: true,
-        executedIn: 'file'
-      }],
-      ['babel-plugin-active-expression-proxies', {
-        executedIn: 'file'
+        enableViaDirective: true
       }]
     ]
   },
@@ -158,7 +140,6 @@ SystemJS.config({
     // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
-    [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
 
     [lively4url + '/demos/*.js']: aexprViaDirective,
     [lively4url + '/templates/*.js']: aexprViaDirective,
@@ -174,8 +155,8 @@ SystemJS.config({
     
     // blacklist all projects included for active expressions
     [lively4url + "/src/client/reactive/*.js"]: liveES7,
-    [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: moduleOptionsNon,
-    [lively4url + "/src/client/reactive/rp19-jsx/*.js"]: moduleOptionsNon,
+    [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: liveES7,
+    [lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/components/basic/*.js']: liveES7,
     [lively4url + '/src/client/reactive/components/rewritten/*.js']: aexprViaDirective,
@@ -197,12 +178,7 @@ SystemJS.config({
         stage3: false,
         plugins: [
           // lively4url + '/demos/swe/debugging-plugin.js',
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
+          'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
@@ -210,12 +186,7 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
-          ['babel-plugin-active-expression-rewriting', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-active-expression-proxies', {
-            executedIn: 'workspace'
-          }]
+          'babel-plugin-active-expression-rewriting'
         ]
       },
       loader: 'workspace-loader'
@@ -226,12 +197,8 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
+          // lively4url + '/demos/swe/debugging-plugin.js',
+          'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
@@ -249,12 +216,8 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
+          // lively4url + '/demos/swe/debugging-plugin.js',
+          'babel-plugin-jsx-lively',
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',

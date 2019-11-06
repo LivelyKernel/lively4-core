@@ -6,65 +6,101 @@ import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
 describe('Active Expressions as Event Targets', () => {
-
   it("supported", () => {
     const ae = aexpr(() => {});
 
-    expect(ae).to.respondTo('on');
-    expect(ae).to.respondTo('off');
-    expect(ae).to.respondTo('emit');
-    expect(ae).to.respondTo('getEventListeners');
+    expect(ae).to.respondTo('addEventListener');
+    expect(ae).to.respondTo('removeEventListener');
+    expect(ae).to.respondTo('dispatchEvent');
+    expect(ae).to.respondTo('getEventListener');
   });
 
-  it('dispose event', () => {
-    const spy = sinon.spy();
-    const ae = aexpr(() => {}).on('dispose', spy);
+  xit("flank up", () => {
+    let obj = {a: 2},
+        spy = sinon.spy();
 
-    ae.dispose();
-    expect(spy).to.be.calledOnce;
-    expect(spy).to.be.calledWith();
-    spy.reset();
-
-    ae.dispose();
+    let axp = aexpr(() => obj.a > 5);
+    axp.onBecomeTrue(spy);
     expect(spy).not.to.be.called;
+
+    obj.a = 10;
+    expect(spy).to.be.calledOnce;
+
+    obj.a = 0;
+    expect(spy).to.be.calledOnce;
+
+    obj.a = 10;
+    expect(spy).to.be.calledTwice;
   });
 
-  it('remove listeners', () => {
-    const spy1 = sinon.spy();
-    const spy2 = sinon.spy();
-    const spy3 = sinon.spy();
-    const ae = aexpr(() => {})
-      .on('dispose', spy1)
-      .off('dispose', spy1)
-      .on('dispose', spy2)
-      .on('dispose', spy3)
-      .off('dispose', spy3)
-      .on('dispose', spy3)
+  xit("immediately triggers onBecomeTrue", () => {
+    let obj = {a: 7},
+        spy = sinon.spy();
 
-    ae.dispose();
+    let axp = aexpr(() => obj.a > 5);
+    axp.onBecomeTrue(spy);
+    expect(spy).to.be.calledOnce;
 
-    expect(spy1).not.to.be.called;
-    expect(spy2).to.be.calledOnce;
-    expect(spy3).to.be.calledOnce;
+    obj.a = 0;
+    expect(spy).to.be.calledOnce;
+
+    obj.a = 10;
+    expect(spy).to.be.calledTwice;
   });
 
-  it('get listeners', () => {
-    const callback1 = () => {};
-    const callback2 = () => {};
-    const ae = aexpr(() => {})
-      .on('dispose', callback1)
+  xit("flank down", () => {
+    let obj = {a: 2},
+        spy = sinon.spy();
 
-    const listeners = ae.getEventListeners('dispose');
+    let axp = aexpr(() => obj.a > 0);
+    axp.onBecomeFalse(spy);
+    expect(spy).not.to.be.called;
 
-    expect(listeners).to.include(callback1);
-    expect(listeners).not.to.include(callback2);
+    obj.a = -2;
+    expect(spy).to.be.calledOnce;
 
-    ae.on('dispose', callback2);
-    const listeners2 = ae.getEventListeners('dispose');
+    obj.a = 2;
+    expect(spy).to.be.calledOnce;
 
-    expect(listeners2).to.include(callback1);
-    expect(listeners2).to.include(callback2);
-
+    obj.a = -2;
+    expect(spy).to.be.calledTwice;
   });
 
+  xit("immediately triggers onBecomeFalse", () => {
+    let obj = {a: -2},
+        spy = sinon.spy();
+
+    let axp = aexpr(() => obj.a > 0);
+    axp.onBecomeFalse(spy);
+    expect(spy).to.be.calledOnce;
+
+    obj.a = 2;
+    expect(spy).to.be.calledOnce;
+
+    obj.a = -2;
+    expect(spy).to.be.calledTwice;
+  });
+
+  describe('dataflow', () => {
+    xit("dataflow is chainable", () => {
+      let expectedAxp = aexpr(() => {});
+      let actualAxp = expectedAxp.dataflow(() => {});
+      expect(actualAxp).to.equal(expectedAxp);
+    });
+
+    xit("dataflow invokes callback immediately", () => {
+    let obj = {a: -2},
+        spy = sinon.spy();
+
+      let axp = aexpr(() => obj.a)
+        .dataflow(spy);
+
+      expect(spy).to.be.calledOnce;
+      expect(spy).to.be.calledWithMatch(-2);
+      
+      obj.a = 42;
+      expect(spy).to.be.calledTwice;
+      expect(spy).to.be.calledWithMatch(42);
+    });
+  });
 });

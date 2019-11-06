@@ -1,5 +1,4 @@
 import Annotations from '../utils/annotations.js';
-import EventTarget from '../utils/event-target.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
@@ -12,7 +11,6 @@ window.__compareAExprResults__ = false;
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
 
-  _eventTarget: new EventTarget(),
   _aexprs: new Set(),
 
   /**
@@ -20,20 +18,9 @@ export const AExprRegistry = {
    */
   addAExpr(aexpr) {
     this._aexprs.add(aexpr);
-    this._eventTarget.dispatchEvent('add', aexpr)
   },
   removeAExpr(aexpr) {
-    const deleted = this._aexprs.delete(aexpr);
-    if (deleted) {
-      this._eventTarget.dispatchEvent('remove', aexpr);
-    }
-  },
-  
-  on(type, callback) {
-    return this._eventTarget.addEventListener(type, callback);
-  },
-  off(type, callback) {
-    return this._eventTarget.removeEventListener(type, callback);
+    this._aexprs.delete(aexpr);
   },
 
   /**
@@ -145,11 +132,9 @@ export class BaseActiveExpression {
   /**
    *
    * @param func (Function) the expression to be observed
-   * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
   constructor(func, { params = [], match, errorMode = 'silent' } = {}) {
-    this._eventTarget = new EventTarget(),
     this.func = func;
     this.params = params;
     this.errorMode = errorMode;
@@ -187,7 +172,7 @@ export class BaseActiveExpression {
   /**
    * Executes the encapsulated expression with the given parameters.
    * aliases with 'now' (#TODO: caution, consider ambigous terminology: 'now' as in 'give me the value' or as in 'dataflow'?)
-   * @private
+   * @public
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
@@ -208,26 +193,23 @@ export class BaseActiveExpression {
     }
   }
 
-  /*MD ## EventTarget Interface MD*/
-  on(type, callback) {
-    this._eventTarget.addEventListener(type, callback);
-    return this;
+  /*MD ### EventTarget Interface MD*/
+  addEventListener(type, callback, ...params) {
+    
   }
 
-  off(type, callback) {
-    this._eventTarget.removeEventListener(type, callback);
-    return this;
+  removeEventListener(type, callback) {
+    
   }
 
-  emit(type, ...params) {
-    this._eventTarget.dispatchEvent(type, ...params);
+  dispatchEvent(event) {
+    
   }
 
-  getEventListeners(type) {
-    return this._eventTarget.getEventListeners(type);
+  getEventListener(type) {
+    
   }
 
-  /*MD ## --- MD*/
   /**
    * @public
    * @param callback
@@ -320,6 +302,15 @@ export class BaseActiveExpression {
     this.callbacks.forEach(callback => callback(...args));
   }
 
+  /**
+   * TODO
+   * like a bind for AExpr
+   * @param items
+   */
+  applyOn(...items) {
+    throw new Error('Not yet implemented');
+  }
+
   onBecomeTrue(callback) {
     // setup dependency
     this.onChange(bool => {
@@ -364,13 +355,9 @@ export class BaseActiveExpression {
     return this;
   }
 
-  /*MD ## Disposing MD*/
   dispose() {
-    if (!this._isDisposed) {
-      this._isDisposed = true;
-      AExprRegistry.removeAExpr(this);
-      this.emit('dispose');
-    }
+    this._isDisposed = true;
+    AExprRegistry.removeAExpr(this);
   }
 
   isDisposed() {
@@ -389,7 +376,7 @@ export class BaseActiveExpression {
     return this;
   }
 
-  /*MD ## Reflection Information MD*/
+  /*MD ### Reflection Information MD*/
   name(...args) {
     if(args.length > 0) {
       this._annotations.add({ name: args[0] });

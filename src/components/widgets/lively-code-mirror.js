@@ -314,7 +314,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         
         // #KeyboardShortcut Ctrl-Alt-Right multiselect next
         "Ctrl-Alt-Right": "selectNextOccurrence",
-        // #KeyboardShortcut Ctrl-Alt-Left undo multiselect
+        // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
         "Ctrl-Alt-Left": "undoSelection",
 
         // #KeyboardShortcut Ctrl-/ indent selection
@@ -339,7 +339,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           let result = await this.tryBoundEval(text, false);
           letsScript(result);
         },
-        // #KeyboardShortcut Ctrl-Alt-I show type using tern
+        // #KeyboardShortcut Ctrl-Alt-C show type using tern
         "Ctrl-Alt-I": cm => {
           this.ternWrapper.then(tw => tw.showType(cm, this));
         },
@@ -374,34 +374,13 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Down": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(false));
         },
-        // #KeyboardShortcut Alt-Left Select previous element in ast-aware manner
+        // #KeyboardShortcut Alt-Left Select next element in ast-aware manner
         "Alt-Left": cm => {
-          //lol I was here
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
         },
-        // #KeyboardShortcut Alt-Right Select next element in ast-aware manner
+        // #KeyboardShortcut Alt-Right Select previous element in ast-aware manner
         "Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
-        },
-        
-        // #KeyboardShortcut Alt-Shift-Left Select previous reference
-        // #todo find unused keybinding, Alt-Shift-Left is already used by the editor 
-        "Shift-Alt-Left": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
-        },
-        // #KeyboardShortcut Alt-Shift-Right Select previous reference
-        // #todo find unused keybinding, Alt-Shift-Right is already used by the editor 
-        "Shift-Alt-Right": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
-        },
-        
-        // #KeyboardShortcut Alt-J Jump to declaration of this identifier
-        "Alt-J": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectDeclaration());
-        },
-        // #KeyboardShortcut Alt-R Rename this identifier
-        "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectBindings());
         },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
@@ -412,7 +391,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "alt-Backspace": async cm => {
           this.singalEditorbackNavigation()
         },
-        // #KeyboardShortcut Shift-Alt-Backspace Leave and Close Editor and got to Navigation
+        // #KeyboardShortcut Alt-Backspace Leave and Close Editor and got to Navigation
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },

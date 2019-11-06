@@ -39,15 +39,13 @@ describe('Error in Expression analysis', () => {
 
   xit('explicit error handlers are called', () => {});
 });
-
-describe('Error in comparison and storage', () => {
+describe('Error in storage routine', () => {
 
   xit('read 0', () => {
     expect(0).to.equal(0);
   });
 });
-
-describe('Error in Callbacks', () => {
+describe('Error in callbacks', () => {
 
   it('errors bubble to callee', () => {
     let value = 1;
@@ -119,17 +117,6 @@ describe('has callbacks', () => {
     expect(ae.hasCallbacks()).to.be.true;
     ae.offChange(callback);
     expect(ae.hasCallbacks()).to.be.false;
-  });
-
-});
-
-describe('Errors in Non-onChange Callbacks', () => {
-
-  // #TODO: should this be visible?
-  xit('error in on("dispose")', () => {
-    const ae = aexpr(() => {}).on('dispose', () => {
-      throw new Error('expected');
-    });
   });
 
 });

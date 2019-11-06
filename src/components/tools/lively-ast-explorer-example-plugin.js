@@ -47,6 +47,7 @@ export default function (babel) {
 
           if (p.parentKey === 'body' && (parentPath.isFunction() || parentPath.isFor() || parentPath.isWhile())) {
             console.warn(p.parentKey === 'body', parentPath.isFunction(), parentPath.isFor(), parentPath.isWhile())
+        debugger;
             ensureBlock(p);
             return true;
           }

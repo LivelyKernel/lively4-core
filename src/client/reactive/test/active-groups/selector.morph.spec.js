@@ -19,7 +19,7 @@ describe("Morph.select('css selector')", async () => {
   describe("matches-in-shadow", async () => {
     let widget;
     beforeEach(async function() {
-      this.timeout(30000);
+      this.timeout(10000);
       widget = await createWidget();
     });
     afterEach(() => {
