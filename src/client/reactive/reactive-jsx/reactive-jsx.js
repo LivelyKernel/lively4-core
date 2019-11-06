@@ -9,7 +9,7 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  */
 
 function addMetaData(element, data = {}) {
-  return element.jsxMetaData = Object.assign(element.jsxMetaData || {}, data);
+  return element.elementMetaData = Object.assign(element.elementMetaData || {}, data);
 }
 
 function basicCreateElement(tagName) {
