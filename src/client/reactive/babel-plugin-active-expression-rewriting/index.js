@@ -1,4 +1,5 @@
 import { isVariable } from './utils.js';
+import Preferences from 'src/client/preferences.js';
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 
@@ -187,22 +188,39 @@ export default function({ types: t, template, traverse }) {
     visitor: {
       Program: {
         enter(path, state) {
-          //console.log("file", path, state);
-          // console.log("AEXPR", state && state.file && state.file.log && state.file.log.filename);
-          //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
-          let shouldTransform = true;
-          if(state.opts.enableViaDirective) {
-            shouldTransform = false;
+          function hasDirective(path, name) {
+            let foundDirective = false;
             path.traverse({
               Directive(path) {
-                if(path.get("value").node.value === "enable aexpr") {
-                  shouldTransform = true;
+                if(path.get("value").node.value === name) {
+                  foundDirective = true;
                 }
               }
             });
+            return foundDirective;
           }
-          
-          if (!shouldTransform) {
+
+          function shouldTransform() {
+            const proxyDirective = hasDirective(path, 'use proxies for aexprs');
+            const proxyPreference = Preferences.get('UseProxiesForAExprs');
+            const inWorkspace = state.opts.executedIn === 'workspace';
+            const inFile = state.opts.executedIn === 'file';
+
+            if (inWorkspace) {
+              return !proxyPreference;
+            } else if (inFile) {
+              return !proxyDirective;
+            }
+            return true;
+            throw new Error('This should not be possible');
+          }
+
+          if (!shouldTransform()) { return; }
+
+          //console.log("file", path, state);
+          // console.log("AEXPR", state && state.file && state.file.log && state.file.log.filename);
+          //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
+          if(state.opts.enableViaDirective && !hasDirective(path, "enable aexpr")) {
             return;
           }
 
