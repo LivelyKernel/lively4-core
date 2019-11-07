@@ -204,7 +204,11 @@ export default class JsxRay extends Morph {
     }
 
     if (subject.elementMetaData) {
-      mirrorElement.classList.add('jsx-element');
+      mirrorElement.classList.add('element-meta-data');
+
+      if (subject.elementMetaData.jsx) {
+        mirrorElement.classList.add('jsx');
+      }
 
       if (subject.elementMetaData.aexpr) {
         mirrorElement.classList.add('renders-active-expression');

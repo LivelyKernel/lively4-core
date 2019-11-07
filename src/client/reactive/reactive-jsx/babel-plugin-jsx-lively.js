@@ -4,15 +4,15 @@ import Preferences from 'src/client/preferences.js';
 function detectUnsupportedNodes(path, filename) {
   function gainPrintableFullPath(path) {
     let fullPath = [];
-    
-    while(path) {
+
+    while (path) {
       fullPath.unshift(path.node.type);
       path = path.parentPath;
     }
-    
+
     return fullPath.map((nodeType, index) => '  '.repeat(index) + nodeType).join('\n');
   }
-  
+
   path.traverse({
     /**
      * No support for JSXMemberExpression yet. #TODO: what are the semantics outside of react for this?
@@ -66,7 +66,6 @@ export default function ({ types: t, template, traverse }) {
     return identifier;
   }
 
-  
   return {
     inherits: jsx,
     visitor: {
@@ -75,7 +74,7 @@ export default function ({ types: t, template, traverse }) {
           let foundDirective = false;
           path.traverse({
             Directive(path) {
-              if(path.get("value").node.value === name) {
+              if (path.get("value").node.value === name) {
                 foundDirective = true;
               }
             }
@@ -98,11 +97,13 @@ export default function ({ types: t, template, traverse }) {
           return true;
         }
 
-        if (!shouldTransform()) { return; }
-        
+        if (!shouldTransform()) {
+          return;
+        }
+
         detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
-        
-        const fileName = (state && state.file && state.file.log && state.file.log.filename) || 'no_file_given';
+
+        const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
         const sourceLocation = template(`({
         file: '${fileName}',
         end: {
@@ -127,87 +128,92 @@ export default function ({ types: t, template, traverse }) {
           function jSXAttributeToBuilder(path) {
 
             function getCallExpressionFor(functionName, ...additionalParameters) {
-              return t.callExpression(
-                addCustomTemplate(programState.file, functionName), // builder function
-                [
-                  t.stringLiteral(path.get("name").node.name), // key
-                  ...additionalParameters
-                ]
-              );
+              return t.callExpression(addCustomTemplate(programState.file, functionName), // builder function
+              [t.stringLiteral(path.get("name").node.name), // key
+              ...additionalParameters]);
             }
-            
+
             let attributeValue = path.get("value");
-            if(path.isJSXSpreadAttribute()) {
-              return t.callExpression(
-                addCustomTemplate(programState.file, "attributeSpread"),
-                [ path.get("argument").node ]
-              );
-            } else if(!path.node.value) {
+            if (path.isJSXSpreadAttribute()) {
+              return t.callExpression(addCustomTemplate(programState.file, "attributeSpread"), [path.get("argument").node]);
+            } else if (!path.node.value) {
               return getCallExpressionFor("attributeEmpty");
-            } else if(attributeValue.isStringLiteral()) {
+            } else if (attributeValue.isStringLiteral()) {
               return getCallExpressionFor("attributeStringLiteral", attributeValue.node);
-            } else if(attributeValue.isJSXExpressionContainer()) {
+            } else if (attributeValue.isJSXExpressionContainer()) {
               return getCallExpressionFor("attributeExpression", attributeValue.node.expression);
-            } else if(attributeValue.isJSXElement()) {
+            } else if (attributeValue.isJSXElement()) {
               // #TODO: what would that even mean?
               throw new SyntaxError(`JSXElement as property value of JSXAttribute not yet supported.`);
             }
 
             throw new Error('unknown node type in JSXAttribute value ' + attributeValue.node.type);
           }
-          
+
           function jSXChildrenToBuilder(child) {
             function getCallExpressionFor(functionName, childSpec) {
-              return t.callExpression(
-                addCustomTemplate(programState.file, functionName), // builder function
-                [
-                  childSpec
-                ]
-              );
+              return t.callExpression(addCustomTemplate(programState.file, functionName), // builder function
+              [childSpec]);
             }
 
-            if(child.isJSXText()) {
+            if (child.isJSXText()) {
               return getCallExpressionFor("childText", t.stringLiteral(child.node.value));
             }
-            if(child.isJSXElement()) {
+            if (child.isJSXElement()) {
               return getCallExpressionFor("childElement", child.node);
             }
-            if(child.isJSXExpressionContainer()) {
+            if (child.isJSXExpressionContainer()) {
               return getCallExpressionFor("childExpression", child.get("expression").node);
             }
-            if(child.isJSXSpreadChild()) {
+            if (child.isJSXSpreadChild()) {
               return getCallExpressionFor("childSpread", child.get("expression").node);
               //throw new SyntaxError(`JSXSpreadChild as child of JSXElement not yet supported.`);
             }
             throw new Error('unknown node type in children of JSXElement ' + child.node.type);
           }
-          
-          
+
           path.traverse({
             JSXElement(path, state) {
               const jSXAttributes = path.get("openingElement").get("attributes");
               const jSXChildren = path.get("children");
 
-              let newNode = t.callExpression(
-                addCustomTemplate(programState.file, "element"),
-                [
-                  t.stringLiteral(path.get("openingElement").get("name").node.name),
-                  t.callExpression(
-                    addCustomTemplate(programState.file, "attributes"),
-                    jSXAttributes.map(jSXAttributeToBuilder)
-                  ),
-                  t.callExpression(
-                    addCustomTemplate(programState.file, "children"),
-                    jSXChildren.map(jSXChildrenToBuilder)
-                  ),
-                  buildSourceLocation(path.node)
-                ]
-              );
+              let newNode = t.callExpression(addCustomTemplate(programState.file, "element"), [t.stringLiteral(path.get("openingElement").get("name").node.name), t.callExpression(addCustomTemplate(programState.file, "attributes"), jSXAttributes.map(jSXAttributeToBuilder)), t.callExpression(addCustomTemplate(programState.file, "children"), jSXChildren.map(jSXChildrenToBuilder)), buildSourceLocation(path.node)]);
 
               path.replaceWith(newNode);
+            },
+            CallExpression(path) {
+              if (path.node.__wrappedInMetaInformation__) {
+                return;
+              }
+              path.node.__wrappedInMetaInformation__ = true;
+
+              function isDomCreatingCall(path) {
+                const callee = path.get('callee');
+                if (!callee.isMemberExpression() || callee.node.computed) {
+                  return false;
+                }
+
+                const object = callee.get('object');
+                const property = callee.get('property');
+
+                if (!object.isIdentifier()) {
+                  return false;
+                }
+                if (!property.isIdentifier()) {
+                  return false;
+                }
+
+                const livelyCreate = object.node.name === 'lively' && property.node.name === 'create';
+                const documentCreateElement = object.node.name === 'document' && property.node.name === 'createElement';
+                return livelyCreate || documentCreateElement;
+              }
+
+              if (isDomCreatingCall(path)) {
+                path.replaceWith(t.callExpression(addCustomTemplate(programState.file, "addSourceLocation"), [path.node, buildSourceLocation(path.node)]));
+              }
             }
-          })
-          
+          });
+
           return path;
         }
 
