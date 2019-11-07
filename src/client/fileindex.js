@@ -536,7 +536,7 @@ export default class FileIndex {
     }
   } 
     
-  async addFile(url, name, type, size, modified) {
+  async addFile(url, name="", type, size, modified) {
     var start = performance.now()
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
