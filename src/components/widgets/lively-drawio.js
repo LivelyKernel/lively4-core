@@ -376,7 +376,7 @@ export default class LivelyDrawio extends Morph {
 
   
   async exportAsPDF() {
-    var targetURL = this.src.replace(/xml$/,"pdf") // #Warning override without asking... yeah we need sharp tools!
+    var targetURL = this.src.replace(/\.[^.]+$/,"") + ".pdf" // #Warning override without asking... yeah we need sharp tools!
     if (await lively.confirm("save as " + targetURL)) {
       var dataURL = await this.getPDFDataURL()
       // or maybe we should ask ...
