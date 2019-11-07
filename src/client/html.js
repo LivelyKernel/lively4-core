@@ -160,7 +160,7 @@ export default class HTML {
   }
 
   static fixLinks(nodes, dir, followPath) {
-    console.log("fix links " + dir)
+    // console.log("fix links " + dir)
     if (! followPath) {
       throw new Error("argument followPath missing");
     }
@@ -171,7 +171,7 @@ export default class HTML {
         
         var href = node.getAttribute("href")
         if (href) {
-          console.log("FIX LINK ", href)
+          // console.log("FIX LINK ", href)
           // #TODO load inplace....
           var path;
           var anchor;

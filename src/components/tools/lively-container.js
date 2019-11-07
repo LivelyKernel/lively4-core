@@ -1750,7 +1750,7 @@ export default class Container extends Morph {
   navigateToName(name, data) {
     // lively.notify("navigate to " + name);
     var baseURL = this.getURL().toString().replace(/\#.*/,"")
-    var anchor = "#" + name.replace(/# ?/g,"").replace(/\*/g,"")
+    var anchor = "#" + encodeURIComponent(name.replace(/# ?/g,"").replace(/\*/g,""))
     var nextURL = baseURL + anchor
     var editor = this.getLivelyCodeMirror()
     
@@ -1930,7 +1930,8 @@ export default class Container extends Morph {
       // Special Case:
       
       // 1. search for exactly matching anchors
-      var element = root.querySelector(`a[name="${name}"]`)
+      
+      var element = root.querySelector(`a[name="${name.replace(/"/g,"%22")}"]`)
       // 2. brute force search for headings with the text
       if (!element) {
         element = _.find(root.querySelectorAll("h1,h2,h3,h4"), ea => ea.textContent == name)

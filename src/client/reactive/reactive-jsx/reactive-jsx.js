@@ -9,7 +9,7 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  */
 
 function addMetaData(element, data = {}) {
-  return element.jsxMetaData = Object.assign(element.jsxMetaData || {}, data);
+  return element.elementMetaData = Object.assign(element.elementMetaData || {}, data);
 }
 
 function basicCreateElement(tagName) {
@@ -90,7 +90,8 @@ function composeElement(tagElement, attributes, children) {
   const roqsByReferenceNode = new WeakMap();
   function handleActiveGroup(nodeOrActiveGroup) {
     if(isActiveGroup(nodeOrActiveGroup)) {
-      const referenceNode = <unused style="position: absotule"></unused>;
+      const referenceNode = document.createElement('unused');
+      referenceNode.style.position = "absolute";
       roqsByReferenceNode.set(referenceNode, nodeOrActiveGroup);
       return referenceNode; // use to insert elements of the ActiveGroup in the corresponding place
     } else {

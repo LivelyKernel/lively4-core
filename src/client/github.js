@@ -1,4 +1,3 @@
-"enable examples";
 
 import authGithub from "src/client/auth-github.js"
 import Strings from "src/client/strings.js"
@@ -39,7 +38,7 @@ export class Comment extends Issue {
 
 
 
-export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":"input","value":"dummy"},"values":{"user":{"mode":"input","value":"\"LivelyKernel\""},"repo":{"mode":"input","value":"\"lively4-dummy\""}}}*/ {
+export default class GitHub {
   
   static current(force) {
     if (!this._current || force) {
@@ -52,17 +51,13 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
     return "LivelySync_"
   }
   
-  /*example:*/hello/*{"id":"7cd7_e348_a121","name":{"mode":"input","value":""},"color":"hsl(280, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
-    /*probe:*/return/*{}*/ Promise.resolve(3)
-  }
   
-  
-  async /*example:*/storeValue/*{"id":"f98c_ae45_820c","name":{"mode":"input","value":""},"color":"hsl(160, 30%, 70%)","values":{"key":{"mode":"input","value":"\"foo\""},"value":{"mode":"input","value":"\"bar\""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(key, value) {
+  async storeValue(key, value) {
     return  lively.focalStorage.setItem(this.storagePrefix + key, value)
   }
   
-  async /*example:*/loadValue/*{"id":"168b_a1d5_6793","name":{"mode":"input","value":"me"},"color":"hsl(190, 30%, 70%)","values":{"key":{"mode":"input","value":"\"foo\""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(key) {
-    /*probe:*/return/*{}*/ lively.focalStorage.getItem(this.storagePrefix + key)
+  async loadValue(key) {
+    return lively.focalStorage.getItem(this.storagePrefix + key)
   }
   
   githubApi(path, token) {
@@ -147,9 +142,9 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
     return this.apiFetch(`/git/refs/heads/${name}`)
   }
 
-  async /*example:*/getFile/*{"id":"31df_87f4_e96e","name":{"mode":"input","value":""},"color":"hsl(150, 30%, 70%)","values":{"path":{"mode":"input","value":"\"README.md\""},"branch":{"mode":"input","value":""}},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/(path, branch) {
+  async getFile(path, branch) {
     await this.loaded
-    var /*probe:*/result/*{}*/ = await fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}` 
+    var result = await fetch(`https://api.github.com/repos/${this.user}/${this.repo}/contents/${path}` 
                  + (branch  ? `?ref=${branch}` : ""), {
       headers: {
        Authorization: "token " + this.token 
@@ -158,13 +153,14 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
     return result
   }
   
-  async /*example:*/listWebhooks/*{"id":"2031_068d_1eee","name":{"mode":"input","value":""},"color":"hsl(290, 30%, 70%)","values":{},"instanceId":{"mode":"select","value":"c524_c29c_d855"},"prescript":"","postscript":""}*/() {
-    var /*probe:*/hooks/*{}*/ = await this.apiFetch(`/hooks`)
+  async listWebhooks() {
+    var hooks = await this.apiFetch(`/hooks`)
     return hooks
   }  
 
   async ensureWebhook(url=LivelyWebhookService) {
     var hooks = await this.listWebhooks()
+    if (!hooks || !hooks.find) return
     var found = hooks.find(ea => ea.config.url == url)
     if (found) {
       return found
@@ -586,4 +582,4 @@ export default class /*instance:*/GitHub/*{"id":"c524_c29c_d855","name":{"mode":
     var updateContent = this.stringifyMarkdownStories(stories)
     return lively.files.saveFile(url, updateContent)
   }
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
+}

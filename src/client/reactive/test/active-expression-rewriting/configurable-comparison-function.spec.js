@@ -22,7 +22,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => arr).onChange(spy);
 
       arr.push(42);
-      expr.checkAndNotify();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(arr);
@@ -67,7 +66,6 @@ describe('Configurable Comparison Function', () => {
         const expr = aexpr(() => arr, { match: 'shallow' }).onChange(spy);
 
         arr.push(42);
-        expr.checkAndNotify();
   
         expect(spy).to.be.calledOnce;
         expect(spy.getCall(0).args[0]).to.equal(arr);
@@ -155,6 +153,7 @@ describe('Configurable Comparison Function', () => {
         expect(spy).not.to.be.called;
       });
       
+      // #TODO: this test failing when removing the explicit checkAndNotify means we do not detect dependencies in matcher or store functions!
       it('changing second property triggers callbacks', () => {
         const spy = sinon.spy();
         const arr = [1, 2];
@@ -184,7 +183,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => set).onChange(spy);
 
       set.add(42);
-      expr.checkAndNotify();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
@@ -195,7 +193,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => set, { match: 'shallow' }).onChange(spy);
 
       set.add(42);
-      expr.checkAndNotify();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(set);
@@ -226,7 +223,6 @@ describe('Configurable Comparison Function', () => {
       const expr = aexpr(() => map).onChange(spy);
 
       map.set(42, {});
-      expr.checkAndNotify();
 
       expect(spy).to.be.calledOnce;
       expect(spy.getCall(0).args[0]).to.equal(map);

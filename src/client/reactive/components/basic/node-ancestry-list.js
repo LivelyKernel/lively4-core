@@ -23,8 +23,8 @@ export default class NodeAncestryList extends Morph {
   get sourceEditor() { return this.get('#sourceEditor'); }
 
   openBrowserForElementOrigin(ele) {
-    if (ele.jsxMetaData && ele.jsxMetaData.sourceLocation) {
-      const srcRange = ele.jsxMetaData.sourceLocation;
+    if (ele.elementMetaData && ele.elementMetaData.sourceLocation) {
+      const srcRange = ele.elementMetaData.sourceLocation;
       lively.success('open!!');
       lively.openBrowser(srcRange, true, srcRange);
     } else {
@@ -58,14 +58,14 @@ export default class NodeAncestryList extends Morph {
         }
 
         let jsxCSSClass = '';
-        if (ele.jsxMetaData) {
+        if (ele.elementMetaData) {
           jsxCSSClass = 'jsx-element';
 
-          if (ele.jsxMetaData.aexpr) {
+          if (ele.elementMetaData.aexpr) {
             jsxCSSClass += ' active-expression';
           }
 
-          if (ele.jsxMetaData.activeGroup) {
+          if (ele.elementMetaData.activeGroup) {
             jsxCSSClass += ' active-group-item';
           }
         }
@@ -120,8 +120,8 @@ export default class NodeAncestryList extends Morph {
   }
   
   async buildEditorFor(element) {
-    if (element.jsxMetaData) {
-      const location = element.jsxMetaData.sourceLocation;
+    if (element.elementMetaData) {
+      const location = element.elementMetaData.sourceLocation;
       
       if (location.file !== this.sourceEditor.getURLString()) {
         this.sourceEditor.setURL(location.file);
