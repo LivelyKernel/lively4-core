@@ -755,8 +755,7 @@ export default class Container extends Morph {
     }
   }
   
-  async newFile(path="", type="md") {
-    
+  async newFile(path="", type="md") {  
     var content = "here we go...."
     var ending = type
     if (type == "drawio") {
@@ -783,10 +782,19 @@ export default class Container extends Morph {
     this.showCancelAndSave();
 
     await this.followPath(fileName);
-    
-    
-    
+      
     this.focus()
+  }
+  
+  async newDirectory(path="") {
+    var fileName = window.prompt('Please enter the name of the directory', path);
+      if (!fileName) {
+        lively.notify("no file created");
+        return;
+      }
+      await fetch(fileName, {method: 'MKCOL'});
+      lively.notify("created " + fileName);
+      this.followPath(fileName);
   }
   
   /*MD ## Events MD*/
@@ -1105,15 +1113,10 @@ export default class Container extends Morph {
   }
 
   async onNewdirectory() {
-    var fileName = window.prompt('Please enter the name of the directory', this.getPath());
-    if (!fileName) {
-      lively.notify("no file created");
-      return;
-    }
-    await fetch(fileName, {method: 'MKCOL'});
-    lively.notify("created " + fileName);
-    this.followPath(fileName);
+    this.newDirectory(this.getPath())
   }
+  
+
 
 
   onVersions() {
@@ -1425,16 +1428,6 @@ export default class Container extends Morph {
   }
 
   
-
-
-  
-  
-
-
-  
-
- 
-  
   /*MD ## Navbar MD*/
 
   clearNavbar() {
@@ -1463,6 +1456,7 @@ export default class Container extends Morph {
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newFile = (url, type) => { this.newFile(url, type) }
+    navbar.newDirectory = (url, type) => { this.newDirectory(url, type) }
     navbar.followPath = (path, lastPath) => { 
       this.contextURL = lastPath
       this.followPath(path) 
