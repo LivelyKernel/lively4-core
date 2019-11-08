@@ -3,24 +3,30 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class JumpingCubes extends Morph {
+  get field() { return this.get('#field'); }
+
   async initialize() {
     this.windowTitle = "JumpingCubes";
-    this.registerButtons()
 
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+    const colorMap = new Map([
+      ['red', 'rgba(255, 126, 126, 1.0)'],
+      ['green', 'rgba(126, 255, 126, 1.0)'],
+      ['gray', 'rgba(176, 176, 176, 1.0)']
+    ]);
+
+    this.field.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const div = <div></div>;
+      for (let j = 0; j < 10; j++) {
+        let cube = { value: 2, color: 'gray' };
+        const button = <button click={evt => cube.value++}>un-init</button>;
+        aexpr(() => cube.value).dataflow(value => button.innerHTML = value);
+        aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value));
+        div.appendChild(button);
+      }
+      this.field.appendChild(div);
+    }
     
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-    
-     this.get("#textField").value = this.getAttribute("data-mydata") || 0
   }
   
   onDblClick() {
@@ -30,7 +36,7 @@ export default class JumpingCubes extends Morph {
       {backgroundColor: "lightgray"},
     ], {
       duration: 1000
-    })
+    }).whenFinished()
   }
   
   // this method is autmatically registered through the ``registerKeys`` method

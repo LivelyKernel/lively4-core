@@ -491,7 +491,33 @@ extend(URL.prototype, {
 
 });
 
+/*MD
+## Animation
+MD*/
 
+extend(Animation.prototype, {
+
+  /**
+   * React to the finish of the animation using a Promise.
+   * @param callback (Function) a callback invoked at the end of the animation.
+   * @returns {Promise} a Promise resolving when the animation finishes.
+   */
+  whenFinished(callback = () => {}) {
+    return new Promise(resolve => {
+      const onFinished = () => {
+        callback();
+        resolve();
+      }
+
+      if (this.playState === "finished") {
+        onFinished();
+      } else {
+        this.addEventListener('finish', onFinished);
+      }
+    });
+  },
+
+});
 /*MD ## Hacks MD*/
 
 // #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
