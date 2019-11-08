@@ -22,7 +22,6 @@ export function onmessage(evt) {
   } else {
     console.log("FileIndex message not understood", msg)
   }
-
 }
 
 

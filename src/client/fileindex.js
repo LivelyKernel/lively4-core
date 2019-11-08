@@ -4,6 +4,7 @@
  * #TODO How do we get this a) into a web worker and b) trigger this for changed files
  *
  */
+
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
 import babelDefault from 'systemjs-babel-build';
@@ -25,6 +26,8 @@ const dmp = new diff.diff_match_patch();
 const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
 
 const FETCH_TIMEOUT = 5000
+
+import { wait } from 'utils';
 
 
 function getBaseURL(url) {
@@ -533,12 +536,13 @@ export default class FileIndex {
     }
   } 
     
-  async addFile(url, name, type, size, modified) {    
+  async addFile(url, name="", type, size, modified) {
+    var start = performance.now()
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
       return
     }    
-    console.log("[fileindex]  addFile " + url)
+    console.log("[fileindex] addFile " + url)
 
     if (type == "file") {
       var json = (await this.loadVersions(url))
@@ -584,7 +588,7 @@ export default class FileIndex {
       await this.addModuleSemantics(file)
       await this.addVersions(file)
     }
-    console.log("[fileindex] addFile FINISHED")
+    console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
   }
 
   async dropFile(url) {
@@ -630,6 +634,8 @@ export default class FileIndex {
       for(let ea of json.contents) {
           if (showProgress) progress.value = i++ / total;
 
+          await wait(1000) // slow down the indexing
+        
           let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
           let name = eaURL.replace(/.*\//,"")
           if (lastModified.get(eaURL) !== ea.modified) {

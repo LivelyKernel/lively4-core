@@ -203,14 +203,18 @@ export default class JsxRay extends Morph {
       mirrorElement.appendChild(<div class="element-label">{subject.localName}</div>);
     }
 
-    if (subject.jsxMetaData) {
-      mirrorElement.classList.add('jsx-element');
+    if (subject.elementMetaData) {
+      mirrorElement.classList.add('element-meta-data');
 
-      if (subject.jsxMetaData.aexpr) {
+      if (subject.elementMetaData.jsx) {
+        mirrorElement.classList.add('jsx');
+      }
+
+      if (subject.elementMetaData.aexpr) {
         mirrorElement.classList.add('renders-active-expression');
       }
 
-      if (subject.jsxMetaData.activeGroup) {
+      if (subject.elementMetaData.activeGroup) {
         mirrorElement.classList.add('renders-active-group-item');
       }
     }
@@ -416,7 +420,7 @@ export default class JsxRay extends Morph {
     this.cop = cop;
     this.events = events;
     
-    this.nodeFilterFunc = node => node.jsxMetaData; // ea.tagName && ea.tagName.match(/-/)
+    this.nodeFilterFunc = node => node.elementMetaData; // ea.tagName && ea.tagName.match(/-/)
     this.eventFilterFunc = (obj, type, evt) => type === 'mousedown';
 
     this.registerOnClose(this)

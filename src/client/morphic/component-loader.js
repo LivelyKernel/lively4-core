@@ -163,6 +163,7 @@ export default class ComponentLoader {
       var fragment = template.cloneNode(true)
       fragment.childNodes.forEach(ea => {
         var clone = document.importNode(ea, true)
+        // #OriginTracking: attach meta infos here
         element.shadowRoot.appendChild(clone)
       })
     }
@@ -496,6 +497,7 @@ export default class ComponentLoader {
     }
     _timeLog(name, " found module filename")
     
+    // #OriginTracking: get source code information here
     var templateURL = await this.searchTemplateFilename(name + '.html')
     _timeLog(name, " found template filename")
     

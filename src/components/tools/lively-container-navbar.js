@@ -19,6 +19,8 @@ const FILTER_KEY_BLACKLIST = [
   'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'
 ];
 
+var debugId = 0
+
 export default class LivelyContainerNavbar extends Morph {
   
   /* # Base Component */
@@ -132,7 +134,13 @@ export default class LivelyContainerNavbar extends Morph {
     evt.preventDefault()    
   }
 
-  async onDrop(evt, url=this.url) {
+  async onDrop(evt, url) {
+    
+    if (!url) {
+      var dropTarget = Array.from(evt.composedPath()).find(ea => ea.url)
+      url = dropTarget.url.toString()
+    }
+    
     evt.preventDefault();
     evt.stopPropagation();
     
@@ -327,6 +335,7 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.resetCursor()
       // lively.notify("RESET DIR")
+      this.currentRoot = targetURL.toString().replace(/[^/]*$/,"")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showDetails()    
       this.scrollToItem(this.targetItem)
@@ -431,7 +440,7 @@ export default class LivelyContainerNavbar extends Morph {
     // this.clearDetails()
   }
   
-  createItem(ea) {
+  createItem(ea, parentURL=this.currentDir) {
     var element = document.createElement("li");
     var link = document.createElement("a");
     var name = ea.name;
@@ -475,6 +484,7 @@ export default class LivelyContainerNavbar extends Morph {
       element.classList.add("file");
     }
     var title = ea.title || name
+  
 
     if (ea.type == "directory") {
        
@@ -492,14 +502,14 @@ export default class LivelyContainerNavbar extends Morph {
     if (prefix.length < 4) {
       prefix = ""
     }      
-    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>");
+    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>")
     this.lastTitle = title
 
     var href = ea.href || ea.name;
     if (ea.type == "directory" && !href.endsWith("/")) {
       href += "/"
     }
-    var otherUrl = href.match(/^[a-z]+:\/\//) ? href : this.currentDir + "" + href;
+    var otherUrl = href.match(/^[a-z]+:\/\//) ? href : parentURL + "" + href;
     link.href = ea.url || otherUrl;
     element.url = link.href
 
@@ -618,7 +628,6 @@ export default class LivelyContainerNavbar extends Morph {
 
   // #important
   onContextMenu(evt, otherUrl=this.getRoot()) {
-    lively.notify("other" + otherUrl)
     
     var isDir = otherUrl.match(/\/$/,"")
     var file = otherUrl.replace(/\/$/,"").replace(/.*\//,"");
@@ -668,10 +677,12 @@ export default class LivelyContainerNavbar extends Morph {
     }
 
     
+    var basePath = otherUrl.replace(/[^/]*$/,"")
     menuElements.push(...[
       ["new", [
-        [`text file`, () => this.newFile(otherUrl)],
-        ["drawio figure", () => this.newFile(otherUrl, "drawio")],
+        [`directory`, () => this.newDirectory( basePath+ "newdirectory/")],
+        [`text file`, () => this.newFile(basePath  + "newdfile", "md")],
+        ["drawio figure", () => this.newFile(basePath  + "newdfile", "drawio")],
       ], "", ''],  
     ])
     const menu = new ContextMenu(this, menuElements)
@@ -722,7 +733,11 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   newFile(path, type) {
-    lively.notify("please implement newfile()")
+    lively.notify("please implement newFile()")
+  }
+  
+  newDirectory(path, type) {
+    lively.notify("please implement newDirectory()")
   }
   
   navigateToName(url, data) {
@@ -1163,7 +1178,7 @@ export default class LivelyContainerNavbar extends Morph {
     var h = item.offsetHeight
     var b = scroll.scrollTop + scroll.offsetHeight
     
-    // #Debug #Visualization
+    // #Id #Visualization
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, t - scroll.scrollTop))).style.backgroundColor = "blue" 
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
     // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, b - scroll.scrollTop))).style.backgroundColor = "green"
@@ -1307,8 +1322,10 @@ export default class LivelyContainerNavbar extends Morph {
   
   hightlightElement(element) {
     var text = element.querySelector("a") || element
+    if (this.lastAnitmation) this.lastAnitmation.finish()
     text.style.color = getComputedStyle(text).color || "black"
-    text.animate([
+    
+    this.lastAnitmation = text.animate([
       { color: text.style.color }, 
       { color: 'green' }, 
       { color:  text.style.color }, 
@@ -1316,9 +1333,7 @@ export default class LivelyContainerNavbar extends Morph {
       duration: 2000,
     });
   }
-  
-  
-  
+
   /*MD ## Context Menu MD*/
   
   // #TODO do something useful here
@@ -1366,7 +1381,7 @@ export default class LivelyContainerNavbar extends Morph {
   // #private
   getFileElementByURL(url) {
     url = this.baseURL(url)
-    return this.fileItems.find(ea =>  this.baseURL(ea.url)== url && ea.textContent !== "../")
+    return this.fileItems.find(ea =>  this.baseURL(ea.url) == url && ea.textContent !== "../")
   }
   
   // #private
@@ -1386,12 +1401,14 @@ export default class LivelyContainerNavbar extends Morph {
   
   // #important
   async onObserveURLChange(url, method) {
+
     try {
       url = this.baseURL(url)
-      if (url.startsWith(this.currentDir)) {
-        console.log("[navbar] onObserveURLChange " + url)
-        var element = this.getFileElementByURL(url)
-        if (element) {
+      if (url.startsWith(this.currentRoot)) {
+        // console.log("[navbar] " + (this.debugId || "" )+" onObserveURLChange " + method + " " +  url)
+        // lively.showLog(this, method + " " + url)
+        let element = this.getFileElementByURL(url)
+        if (element) {          
           // File Element does Exists
           if (method == "PUT") {
             this.hightlightElement(element)
@@ -1399,28 +1416,38 @@ export default class LivelyContainerNavbar extends Morph {
               await this.showDetails(true) 
             }
           } else if(method == "DELETE") {
+            element.style.backgroundColor = "red"            
             element.remove()
           }
         } else {
           // File Element does not Exists
           if (method == "PUT") {
-            var parentURL = url.replace(/\/+[^/]+$/,"/")
-            var parentElement = this.getFileElementByURL(parentURL)
-            if (!parentElement) parentElement = this.get("#row")
+            
+          
+            
+            let parentURL = url.replace(/\/+[^/]+$/,"/")
+            let parentElement = this.getFileElementByURL(parentURL)
+            if (this.currentRoot == parentURL) parentElement = this.get("#row")
             if (parentElement) {
               var stats = await fetch(url, {method: "OPTIONS"}).then(r => r.json())
               stats.name = stats.name.replace(/.*\//,"")
-              element = this.createItem(stats)
+              element = this.createItem(stats, parentURL)
+                          
               var parentElementList = parentElement.querySelector(":scope > ul") 
 
               if (parentElementList) {
                 var firstSibling = parentElementList.querySelector(":scope > li")
-                if (!this.sortIntoAfter(firstSibling, element)) {
-                  parentElementList.appendChild(element) 
+                
+                if (!this.getFileElementByURL(url)) { // check again if this was not insereted yet...
+                  if (!this.sortIntoAfter(firstSibling, element)) {
+                    parentElementList.appendChild(element) 
+                  }
+                  this.hightlightElement(element)                              
                 }
-                this.hightlightElement(element)            
-              }
+              } 
             } 
+          } else {
+            console.log("[navbar] WARN could not delete " + url)
           }
         }
       }      
@@ -1483,13 +1510,13 @@ if (self.lively4fetchHandlers) {
       // do nothing
     }, 
     async finsihed(request, options) {
-      var url = (request.url || request).toString()
-      var method = "GET"
+      let url = (request.url || request).toString()
+      let method = "GET"
       if (options && options.method) method = options.method;
       if (method == "PUT" || method == "DELETE") {
         try {
           for(var container of document.querySelectorAll("lively-container")) {
-            var navbar = container.get("lively-container-navbar")
+            let navbar = container.get("lively-container-navbar")
             if (navbar && navbar.onObserveURLChange) {
 
               await navbar.onObserveURLChange(url, method)
