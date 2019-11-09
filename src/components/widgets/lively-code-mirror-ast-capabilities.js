@@ -420,11 +420,15 @@ export default class ASTCapabilities {
   }
 
   createMethod(content, parameter, returnValues, scope) {
+    var returnStatement;
     if (returnValues.length == 1) {
-      content.push(content[content.length - 1].insertAfter(t.returnStatement(returnValues[0]))[0]);
+      returnStatement = t.returnStatement(returnValues[0]);
     } else if (returnValues.length > 1) {
-      // content.push(t.returnStatement(returnValues[0]));
+      returnStatement = t.returnStatement(t.objectExpression(returnValues.map(i => t.objectProperty(i, i, false, true))));
     }
+
+    content = content.concat(content[content.length - 1].insertAfter(returnStatement));
+
     const newMethod = t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node)));
     const methodPath = scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
@@ -434,7 +438,10 @@ export default class ASTCapabilities {
     if (returnValues.length == 1) {
       methodCall = t.assignmentExpression("=", returnValues[0], t.callExpression(t.identifier("this.test"), parameter));
     } else if (returnValues.length > 1) {
-      methodCall = t.callExpression(t.identifier("this.test"), parameter);
+      const objectPattern = t.objectPattern(returnValues.map(i => t.objectProperty(i, i, false, true)));
+      const callExpression = t.callExpression(t.identifier("this.test"), parameter);
+
+      methodCall = t.variableDeclaration("const", [t.variableDeclarator(objectPattern, callExpression)]);
     } else {
       methodCall = t.callExpression(t.identifier("this.test"), parameter);
     }
