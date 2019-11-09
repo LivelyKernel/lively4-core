@@ -1,6 +1,7 @@
 import { loc, range } from 'utils';
 
 import ContextMenu from 'src/client/contextmenu.js';
+import FileCache from "src/client/fileindex.js"
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -356,7 +357,14 @@ export default class ASTCapabilities {
       this.selectPaths(bindings);
     }
   }
-
+  
+  async findImports() {
+    const { anchor, head } = this.editor.listSelections()[0];
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    
+    var cache = await FileCache.current();
+  }
+  
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
@@ -364,20 +372,32 @@ export default class ASTCapabilities {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
 
-    const menuItems = [['selection to local variable', () => {
-      menu.remove();
-      this.extractExpressionIntoLocalVariable();
-    }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
-      menu.remove();
-      this.wrapExpressionIntoActiveExpression();
-    }, '→', fa('suitcase')], ['Rename', () => {
-      menu.remove();
-      this.selectBindings();
-    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
-      menu.remove();
-      this.extractMethod();
-    }, 'Alt+M', fa('suitcase')]];
-
+    const menuItems = [
+      ['selection to local variable', () => {
+        menu.remove();
+        this.extractExpressionIntoLocalVariable();
+      }, '→', fa('share-square-o', 'flip-horizontal')],
+      ['wrap into active expression', () => {
+        menu.remove();
+        this.wrapExpressionIntoActiveExpression();
+      }, '→', fa('suitcase')],
+      ['Rename', () => {
+        menu.remove();
+        this.selectBindings();
+      }, 'Alt+R', fa('suitcase')], 
+      ['Extract Method', () => {
+        menu.remove();
+        this.extractMethod();
+      }, 'Alt+M', fa('suitcase')],
+      ['Generate', [
+        ['Testcase', () => {
+          menu.remove();
+          this.generateTestcase();
+        }, '→', fa('suitcase')]]],
+      ['Import', () => {
+        menu.remove();
+        this.findImports();
+      }, '→', fa('suitcase')]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -386,6 +406,23 @@ export default class ASTCapabilities {
     });
   }
 
+  /*MD ## Generations MD*/
+
+  /*MD ### Generate Testcase MD*/
+  generateTestcase() {
+    const selection = this.getFirstSelection();
+    
+    this.compileTestCaseString();
+  }
+  
+  compileTestCaseString() {
+    let explanationText = prompt("Enter description");
+    let testcase = `    it('${explanationText}', () => {
+        let put = 'code here';
+    })`;
+    debugger;
+  }
+  
   /*MD ## Transformations MD*/
 
   /*MD ### Extract Method MD*/
@@ -478,7 +515,6 @@ export default class ASTCapabilities {
   }
 
   /*MD ### Extract Variable MD*/
-
   async extractExpressionIntoLocalVariable() {
     const selection = this.getFirstSelection();
     let done = false;

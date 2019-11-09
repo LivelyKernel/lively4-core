@@ -389,7 +389,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
         },
-        // #KeyboardShortcut Alt-Shift-Right Select previous reference
+        // #KeyboardShortcut Alt-Shift-Right Select next reference
         // #todo find unused keybinding, Alt-Shift-Right is already used by the editor 
         "Shift-Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
