@@ -262,15 +262,22 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Select the text corresponding to the given paths in the editor
+   * Select the text corresponding to the given nodes in the editor
    */
-  selectPaths(paths) {
-    const ranges = paths.map(path => {
-      const [anchor, head] = range(path.node.loc).asCM();
+  selectNodes(nodes) {
+    const ranges = nodes.map(node => {
+      const [anchor, head] = range(node.loc).asCM();
       return { anchor, head };
     });
     // #TODO: include primary selection
     this.editor.setSelections(ranges);
+  }
+
+  /** 
+   * Select the text corresponding to the given paths in the editor
+   */
+  selectPaths(paths) {
+    this.selectNodes(paths.map(path => path.node));
   }
 
   /*MD ### Shortcuts MD*/
@@ -381,33 +388,62 @@ export default class ASTCapabilities {
 
   /*MD ## Transformations MD*/
 
-  isSelected(path, selections = null) {
-    if (!selections) {
-      selections = this.editor.listSelections();
-    }
-    const pathLocation = path.node.loc;
-    const pathStart = loc(pathLocation.start);
-    const pathEnd = loc(pathLocation.end);
-    for (const range of selections) {
-      const selectionStart = loc(range.anchor);
-      const selectionEnd = loc(range.head);
-      if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
-        return true;
-      }
-    }
-    return false;
+  /*MD ### Extract Method MD*/
+  findParameters(identifiers, surroundingMethod, actualSelections) {
+    return identifiers.filter(identifier => {
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+    }).map(identifier => {
+      return identifier.scope.getBinding(identifier.node.name).path;
+    }).filter(bindingPath => {
+      return !this.isSelected(bindingPath, actualSelections);
+    }).map(identifierDeclaration => {
+      return this.getFirstSelectedIdentifier(identifierDeclaration).node;
+    });
   }
 
-  async createMethod(content, parameter, scope) {
+  findReturnValues(identifiers, surroundingMethod, actualSelections) {
+    const bindings = [...new Set(identifiers.filter(identifier => {
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+    }).map(identifier => {
+      return identifier.scope.getBinding(identifier.node.name);
+    }))];
 
-    scope.insertAfter(t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node))));
+    return bindings.filter(binding => {
+      const declarationInSelection = this.isSelected(binding.path, actualSelections);
+      const constantViolationInSelection = binding.constantViolations.some(constantViolation => this.isSelected(constantViolation, actualSelections));
+      const referenceOutsideSelection = binding.referencePaths.some(reference => !this.isSelected(reference, actualSelections));
+
+      return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
+    }).map(binding => {
+      return this.getFirstSelectedIdentifier(binding.path).node;
+    });
+  }
+
+  createMethod(content, parameter, returnValues, scope) {
+    if (returnValues.length == 1) {
+      content.push(content[content.length - 1].insertAfter(t.returnStatement(returnValues[0]))[0]);
+    } else if (returnValues.length > 1) {
+      // content.push(t.returnStatement(returnValues[0]));
+    }
+    const newMethod = t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node)));
+    const methodPath = scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
-    content[content.length - 1].replaceWith(t.callExpression(t.identifier("this.text"), parameter));
+    var methodCall;
+    if (returnValues.length == 1) {
+      methodCall = t.assignmentExpression("=", returnValues[0], t.callExpression(t.identifier("this.test"), parameter));
+    } else if (returnValues.length > 1) {
+      methodCall = t.callExpression(t.identifier("this.test"), parameter);
+    } else {
+      methodCall = t.callExpression(t.identifier("this.test"), parameter);
+    }
+    content[content.length - 1].replaceWith(methodCall);
+    return methodPath;
   }
 
   async extractMethod() {
+    var newMethod;
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
@@ -418,30 +454,23 @@ export default class ASTCapabilities {
             return { anchor, head };
           });
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
-          
+
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
-          const identifierLeavingScope = identifiers.filter(identifier => {
-            //todo: filter identifiers that are defined in the parent scope
-            return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
-          }).map(identifier => {
-            return identifier.scope.getBinding(identifier.node.name).path;
-          }).filter(bindingPath => {
-            return !this.isSelected(bindingPath, actualSelections);
-          }).map(identifierDeclaration => {
-            return this.getFirstSelectedIdentifier(identifierDeclaration).node;
-          });
-          this.createMethod(selectedPaths, [... new Set(identifierLeavingScope)], surroundingMethod);
+          const parameteres = this.findParameters(identifiers, surroundingMethod, actualSelections);
+          const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
+
+          newMethod = this.createMethod(selectedPaths, [...new Set(parameteres)], returnValues, surroundingMethod);
         }
       }
     })).code;
 
-    const foo = 3;
-    const bar = foo + 4;
+    // this.selectPaths([newMethod]); <- currently not possible, because we replaced the sourceCode
     this.scrollTo(scrollInfo);
-    //this.selectPaths(identifierLeavingScope);
   }
+
+  /*MD ### Extract Variable MD*/
 
   async extractExpressionIntoLocalVariable() {
     const selection = this.getFirstSelection();
@@ -643,6 +672,23 @@ export default class ASTCapabilities {
   }
 
   /*MD ## Utilities MD*/
+
+  isSelected(path, selections = null) {
+    if (!selections) {
+      selections = this.editor.listSelections();
+    }
+    const pathLocation = path.node.loc;
+    const pathStart = loc(pathLocation.start);
+    const pathEnd = loc(pathLocation.end);
+    for (const range of selections) {
+      const selectionStart = loc(range.anchor);
+      const selectionEnd = loc(range.head);
+      if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   getFirstSelection() {
     const { anchor, head } = this.editor.listSelections()[0];
