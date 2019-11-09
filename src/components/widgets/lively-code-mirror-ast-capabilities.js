@@ -404,7 +404,6 @@ export default class ASTCapabilities {
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
-    //content[content.length - 1].replaceWithSourceString("this.test(" + parameter[0].name + ")");
     content[content.length - 1].replaceWith(t.callExpression(t.identifier("this.text"), parameter));
   }
 
@@ -433,7 +432,7 @@ export default class ASTCapabilities {
           }).map(identifierDeclaration => {
             return this.getFirstSelectedIdentifier(identifierDeclaration).node;
           });
-          this.createMethod(selectedPaths, identifierLeavingScope, surroundingMethod);
+          this.createMethod(selectedPaths, [... new Set(identifierLeavingScope)], surroundingMethod);
         }
       }
     })).code;
