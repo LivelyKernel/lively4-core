@@ -1,7 +1,7 @@
 import { loc, range } from 'utils';
 
 import ContextMenu from 'src/client/contextmenu.js';
-import FileCache from "src/client/fileindex.js"
+import FileCache from "src/client/fileindex.js";
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -83,6 +83,26 @@ export default class ASTCapabilities {
       }
     });
     return child || startingPath;
+  }
+  
+   /**
+   * Returns the nearest path before the cursor location
+   */
+  getPathBeforeCursor(startingPath, anchor) {
+    const selectionStart = loc(anchor);
+    let foundPath;
+    startingPath.traverse({
+      exit(path) {
+        const pathLocation = path.node.loc;
+        const pathEnd = loc(pathLocation.end);
+        if(selectionStart.isBefore(pathEnd)){
+          path.stop();
+          return;
+        }
+        foundPath = path;
+      }
+    });
+    return foundPath;
   }
 
   /**
@@ -357,14 +377,14 @@ export default class ASTCapabilities {
       this.selectPaths(bindings);
     }
   }
-  
+
   async findImports() {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
-    
+
     var cache = await FileCache.current();
   }
-  
+
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
@@ -372,32 +392,25 @@ export default class ASTCapabilities {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
 
-    const menuItems = [
-      ['selection to local variable', () => {
-        menu.remove();
-        this.extractExpressionIntoLocalVariable();
-      }, '→', fa('share-square-o', 'flip-horizontal')],
-      ['wrap into active expression', () => {
-        menu.remove();
-        this.wrapExpressionIntoActiveExpression();
-      }, '→', fa('suitcase')],
-      ['Rename', () => {
-        menu.remove();
-        this.selectBindings();
-      }, 'Alt+R', fa('suitcase')], 
-      ['Extract Method', () => {
-        menu.remove();
-        this.extractMethod();
-      }, 'Alt+M', fa('suitcase')],
-      ['Generate', [
-        ['Testcase', () => {
-          menu.remove();
-          this.generateTestcase();
-        }, '→', fa('suitcase')]]],
-      ['Import', () => {
-        menu.remove();
-        this.findImports();
-      }, '→', fa('suitcase')]];
+    const menuItems = [['selection to local variable', () => {
+      menu.remove();
+      this.extractExpressionIntoLocalVariable();
+    }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
+      menu.remove();
+      this.wrapExpressionIntoActiveExpression();
+    }, '→', fa('suitcase')], ['Rename', () => {
+      menu.remove();
+      this.selectBindings();
+    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
+      menu.remove();
+      this.extractMethod();
+    }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
+      menu.remove();
+      this.generateTestcase();
+    }, '→', fa('suitcase')]]], ['Import', () => {
+      menu.remove();
+      this.findImports();
+    }, '→', fa('suitcase')]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -411,18 +424,27 @@ export default class ASTCapabilities {
   /*MD ### Generate Testcase MD*/
   generateTestcase() {
     const selection = this.getFirstSelection();
-    
-    this.compileTestCaseString();
+    const scrollInfo = this.scrollInfo;
+
+    let testcase;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          testcase = this.compileTestCaseString();
+          this.getPathBeforeCursor(programPath, selection.selectionStart).insertAfter(testcase);
+        }
+      }
+    })).code;
+    this.scrollTo(scrollInfo);
   }
-  
-  compileTestCaseString() {
-    let explanationText = prompt("Enter description");
-    let testcase = `    it('${explanationText}', () => {
-        let put = 'code here';
-    })`;
-    debugger;
+
+  compileTestCaseString(templateEngine) {
+    let explanationText = prompt("Enter test case explanation") || "explanation";
+    return template("it(EXP, () => {\n" + "let put = 'code here';" + "})")({
+      EXP: t.stringLiteral(explanationText)
+    });
   }
-  
+
   /*MD ## Transformations MD*/
 
   /*MD ### Extract Method MD*/
@@ -502,10 +524,10 @@ export default class ASTCapabilities {
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
-          const parameteres = this.findParameters(identifiers, surroundingMethod, actualSelections);
+          const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
 
-          newMethod = this.createMethod(selectedPaths, [...new Set(parameteres)], returnValues, surroundingMethod);
+          newMethod = this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
         }
       }
     })).code;
