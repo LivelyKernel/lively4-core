@@ -403,6 +403,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.selectBindings());
         },
+        // #KeyboardShortcut Alt-M Extract method
+        "Alt-M": cm => {
+          this.astCapabilities(cm).then(ac => ac.extractMethod());
+        },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
           this.astCapabilities(cm).then(ac => ac.openMenu());

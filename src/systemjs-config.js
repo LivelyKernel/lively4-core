@@ -28,7 +28,7 @@ const moduleOptionsNon = {
 
 System.trace = true; // does not work in config
 
-// config for loading babal plugins
+// config for loading babel plugins
 SystemJS.config({
   baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
   babelOptions: {
@@ -40,6 +40,7 @@ SystemJS.config({
     //presets: [
     //    ["es2015", { "loose": true, "modules": false }]
     //],
+    
     plugins: []
   },
   meta: {

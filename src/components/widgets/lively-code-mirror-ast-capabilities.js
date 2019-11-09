@@ -2,6 +2,12 @@ import { loc, range } from 'utils';
 
 import ContextMenu from 'src/client/contextmenu.js';
 
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
+
+const t = babel.types;
+const template = babel.template;
+
 export default class ASTCapabilities {
 
   constructor(livelyCodeMirror, codeMirror) {
@@ -92,6 +98,34 @@ export default class ASTCapabilities {
     return this.getLastPath(startingPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
   }
 
+  getSelectedPaths(programPath) {
+    return this.editor.listSelections().map(({ anchor, head }) => {
+      const selectionStart = loc(anchor);
+      const selectionEnd = loc(head);
+      const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, anchor, head);
+
+      //path already matches the selection
+      if (this.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
+        return pathContainingWholeSelection;
+      }
+
+      //find children that match the selection
+      let selectedPaths = [];
+      pathContainingWholeSelection.traverse({
+        enter(path) {
+          const pathLocation = path.node.loc;
+          const pathStart = loc(pathLocation.start);
+          const pathEnd = loc(pathLocation.end);
+          if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+            selectedPaths.push(path);
+          }
+          path.skip();
+        }
+      });
+      return selectedPaths;
+    }).flat();
+  }
+
   /** 
    * Takes the outermost node whose corresponding selection range is minimal for containing the selected text.
    * a      foo = bar
@@ -173,7 +207,7 @@ export default class ASTCapabilities {
   }
 
   getFirstSelectedIdentifier(startPath) {
-    if (startPath.node.type == "Identifier") {
+    if (t.isIdentifier(startPath.node)) {
       return startPath;
     }
     var first;
@@ -181,10 +215,24 @@ export default class ASTCapabilities {
       Identifier(path) {
         if (!first) {
           first = path;
+          path.stop();
         }
       }
     });
     return first;
+  }
+
+  getAllIdentifiers(startPath) {
+    var identifiers = [];
+    /*if (startPath.node.type == "Identifier") {
+      identifiers.push(startPath);
+    }*/
+    startPath.traverse({
+      Identifier(path) {
+        identifiers.push(path);
+      }
+    });
+    return identifiers;
   }
 
   getDeclaration(startPath) {
@@ -198,7 +246,7 @@ export default class ASTCapabilities {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...(binding.constantViolations.map(this.getFirstSelectedIdentifier))];
+      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...binding.constantViolations.map(this.getFirstSelectedIdentifier)];
     }
   }
 
@@ -264,18 +312,17 @@ export default class ASTCapabilities {
   selectNextASTNodeLikeThis(reversed) {
     return this.selectNextASTNodeWith((currentNode, nextNode) => currentNode.type == nextNode.type, reversed);
   }
-  
+
   selectNextReference(reversed) {
     const { anchor, head } = this.editor.listSelections()[0];
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
     const bindings = this.getBindings(selectedPath);
-    //debugger;
     if (bindings) {
-      let sortedBindings = [...bindings].sort((a,b) => a.node.start - b.node.start);
+      let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
       let index = sortedBindings.indexOf(selectedPath);
-      index += reversed? -1 : 1;
+      index += reversed ? -1 : 1;
       index = (index + sortedBindings.length) % sortedBindings.length;
       this.selectPaths([sortedBindings[index]]);
     }
@@ -319,17 +366,83 @@ export default class ASTCapabilities {
     }, '→', fa('suitcase')], ['Rename', () => {
       menu.remove();
       this.selectBindings();
-    }, 'Alt+R', fa('suitcase')]];
+    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
+      menu.remove();
+      this.extractMethod();
+    }, 'Alt+M', fa('suitcase')]];
 
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
-    
-    const menu = await ContextMenu.openIn(document.body, {clientX: menuPosition.left, clientY: menuPosition.bottom}, undefined, document.body, menuItems);
+
+    const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
       this.focusEditor();
     });
   }
 
   /*MD ## Transformations MD*/
+
+  isSelected(path, selections = null) {
+    if (!selections) {
+      selections = this.editor.listSelections();
+    }
+    const pathLocation = path.node.loc;
+    const pathStart = loc(pathLocation.start);
+    const pathEnd = loc(pathLocation.end);
+    for (const range of selections) {
+      const selectionStart = loc(range.anchor);
+      const selectionEnd = loc(range.head);
+      if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async createMethod(content, parameter, scope) {
+
+    scope.insertAfter(t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node))));
+    for (let i = 0; i < content.length - 1; i++) {
+      content[i].remove();
+    }
+    //content[content.length - 1].replaceWithSourceString("this.test(" + parameter[0].name + ")");
+    content[content.length - 1].replaceWith(t.callExpression(t.identifier("this.text"), parameter));
+  }
+
+  async extractMethod() {
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+          const selectedPaths = this.getSelectedPaths(programPath);
+          const actualSelections = selectedPaths.map(path => {
+            const [anchor, head] = range(path.node.loc).asCM();
+            return { anchor, head };
+          });
+          const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
+          
+          const surroundingMethod = selectedPaths[0].find(parent => {
+            return parent.node.type == "ClassMethod";
+          });
+          const identifierLeavingScope = identifiers.filter(identifier => {
+            //todo: filter identifiers that are defined in the parent scope
+            return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+          }).map(identifier => {
+            return identifier.scope.getBinding(identifier.node.name).path;
+          }).filter(bindingPath => {
+            return !this.isSelected(bindingPath, actualSelections);
+          }).map(identifierDeclaration => {
+            return this.getFirstSelectedIdentifier(identifierDeclaration).node;
+          });
+          this.createMethod(selectedPaths, identifierLeavingScope, surroundingMethod);
+        }
+      }
+    })).code;
+
+    const foo = 3;
+    const bar = foo + 4;
+    this.scrollTo(scrollInfo);
+    //this.selectPaths(identifierLeavingScope);
+  }
 
   async extractExpressionIntoLocalVariable() {
     const selection = this.getFirstSelection();
