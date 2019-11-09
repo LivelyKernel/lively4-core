@@ -9,7 +9,7 @@ import { BaseActiveExpression as ActiveExpression } from 'active-expression';
  */
 
 function addMetaData(element, data = {}) {
-  return element.jsxMetaData = Object.assign(element.jsxMetaData || {}, data);
+  return element.elementMetaData = Object.assign(element.elementMetaData || {}, data);
 }
 
 function basicCreateElement(tagName) {
@@ -128,10 +128,22 @@ function composeElement(tagElement, attributes, children) {
 
 export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
 
-function addSourceLocation(element, sourceLocation) {
-  if (sourceLocation) {
-    addMetaData(element, { sourceLocation });
+export function addSourceLocation(element, sourceLocation) {
+  if (element) {
+    if (element instanceof Promise) {
+      element.then(e => addSourceLocation(e, sourceLocation));
+    } else {
+      if (sourceLocation) {
+        addMetaData(element, { sourceLocation });
+      }
+    }
   }
+  return element;
+}
+
+function addJSXSourceLocation(element, sourceLocation) {
+  addSourceLocation(element, sourceLocation);
+  addMetaData(element, { jsx: true });
 }
 
 export function element(tagName, attributes, children, sourceLocation) {
@@ -146,7 +158,7 @@ export function element(tagName, attributes, children, sourceLocation) {
                                basicCreateElement(tagName))
       .then(element => {
         resolvedTag = element;
-        addSourceLocation(resolvedTag, sourceLocation);
+        addJSXSourceLocation(resolvedTag, sourceLocation);
         return Promise.all(children.map(c => Promise.resolve(c)));
       })
       .then(resolvedChildren => composeElement(resolvedTag, attributes, resolvedChildren));
@@ -154,7 +166,7 @@ export function element(tagName, attributes, children, sourceLocation) {
     return returnPromise;
   } else {
     const tag = basicCreateElement(tagName);
-    addSourceLocation(tag, sourceLocation);
+    addJSXSourceLocation(tag, sourceLocation);
     return composeElement(tag, attributes, children);
   }
 }

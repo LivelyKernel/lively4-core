@@ -48,7 +48,8 @@ export default class CodemirrorPlayground extends Morph {
     const aexprRanges = [];
     this.lcm.value.traverseAsAST({
       Identifier(path) {
-        if (path.node.name === 'aexpr') {
+        if (path.node.name === 'aexpr' ) {
+          
           aexprRanges.push(range(path.node.loc));
         }
       }
@@ -67,6 +68,7 @@ export default class CodemirrorPlayground extends Morph {
     this.lcm.ternWrapper.then(tw => {
       
     });
+    console.log(this.lcm);
     this.$.showHint({
       hint(...args) {
         lively.warn(args)
@@ -76,7 +78,7 @@ export default class CodemirrorPlayground extends Morph {
             displayText: 'shows gfoo',
             className: 'cssClass',
             render(Element, self, data) {
-              return Element.appendChild(<span><span style="color: blue">hello: </span><span style="color: orange">Foo</span></span>);
+              return Element.appendChild(<span><span style="color: green">hello: </span><span style="color: orange">Foo</span></span>);
             },
             hint(CodeMirror, self, data) {
               lively.success('selected', data.text)
