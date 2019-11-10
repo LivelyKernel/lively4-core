@@ -84,10 +84,10 @@ export default class ASTCapabilities {
     });
     return child || startingPath;
   }
-  
-   /**
-   * Returns the nearest path before the cursor location
-   */
+
+  /**
+  * Returns the nearest path before the cursor location
+  */
   getPathBeforeCursor(startingPath, anchor) {
     const selectionStart = loc(anchor);
     let foundPath;
@@ -95,7 +95,7 @@ export default class ASTCapabilities {
       exit(path) {
         const pathLocation = path.node.loc;
         const pathEnd = loc(pathLocation.end);
-        if(selectionStart.isBefore(pathEnd)){
+        if (selectionStart.isBefore(pathEnd)) {
           path.stop();
           return;
         }
@@ -256,24 +256,9 @@ export default class ASTCapabilities {
     return identifiers;
   }
 
-  async getDeclaration(startPath) {
-    var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier) {
-      let identifierName = identifier.node.name;
-      if (identifier.scope.hasBinding(identifierName)) {
-        return identifier.scope.getBinding(identifierName).path;
-      } else {
-        let index = await FileIndex.current();
-        let locations = index.db.classes.filter(cl => { return cl.methods.some(me => me.name == identifierName)});
-        let locationsArray = await locations.filter(ea => ea.url.match(lively4url)).toArray(); //filter local files
-        let classPath = this.getClassPath(this.programPath);
-        if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
-          return this.getMethodPath(classPath, identifierName);
-        } else {
-          locationsArray.forEach(cl => lively.openBrowser(cl.url,true," " + identifierName));
-          return startPath;
-        }
-      }
+  getDeclaration(identifier) {
+    if (identifier.scope.hasBinding(identifier.node.name)) {
+      return identifier.scope.getBinding(identifier.node.name).path;
     }
   }
 
@@ -318,7 +303,7 @@ export default class ASTCapabilities {
   selectPaths(paths) {
     this.selectNodes(paths.map(path => path.node));
   }
-  
+
   /** 
    * Get the path for the first method with the given name
    */
@@ -334,10 +319,10 @@ export default class ASTCapabilities {
     });
     return methodPath;
   }
-  
+
   /** 
    * Get the path of the first file
-   */  
+   */
   getClassPath(programPath) {
     let classPath;
     programPath.traverse({
@@ -409,10 +394,23 @@ export default class ASTCapabilities {
     const { anchor, head } = this.editor.listSelections()[0];
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const identifier = this.getFirstSelectedIdentifier(selectedPath);
+    const identName = identifier.node.name;
+    if(!identifier) {
+      return;
+    }
 
-    const declaration = await this.getDeclaration(selectedPath);
+    const declaration = await this.getDeclaration(identifier);
     if (declaration) {
       this.selectPaths([declaration]);
+    } else {
+      let locationsArray = await this.getCorrespondingClasses(identName);
+      let classPath = this.getClassPath(this.programPath);
+      if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
+        this.selectPaths([this.getMethodPath(classPath, identName)]);
+      } else {
+        locationsArray.forEach(cl => lively.openBrowser(cl.url, true, " " + identName));
+      }
     }
   }
 
@@ -855,4 +853,10 @@ export default class ASTCapabilities {
     return paths;
   }
 
+  async getCorrespondingClasses(className) {
+    let index = await FileIndex.current();
+    let locations = index.db.classes.filter(cl => {return cl.methods.some(me => me.name == className);});
+    locations.filter(ea => ea.url.match(lively4url)) //filter local files
+    return await locations.toArray();
+  }
 }
