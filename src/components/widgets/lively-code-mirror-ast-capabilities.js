@@ -1,7 +1,7 @@
 import { loc, range } from 'utils';
 
 import ContextMenu from 'src/client/contextmenu.js';
-import FileCache from "src/client/fileindex.js";
+import FileIndex from "src/client/fileindex.js";
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -256,10 +256,24 @@ export default class ASTCapabilities {
     return identifiers;
   }
 
-  getDeclaration(startPath) {
+  async getDeclaration(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
-      return identifier.scope.getBinding(identifier.node.name).path;
+    if (identifier) {
+      let identifierName = identifier.node.name;
+      if (identifier.scope.hasBinding(identifierName)) {
+        return identifier.scope.getBinding(identifierName).path;
+      } else {
+        let index = await FileIndex.current();
+        let locations = index.db.classes.filter(cl => { return cl.methods.some(me => me.name == identifierName)});
+        let locationsArray = await locations.filter(ea => ea.url.match(lively4url)).toArray(); //filter local files
+        let classPath = this.getClassPath(this.programPath);
+        if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
+          return this.getMethodPath(this.programPath, identifierName);
+        } else {
+          locationsArray.forEach(cl => lively.openBrowser(cl.url,true));
+          return startPath;
+        }
+      }
     }
   }
 
@@ -291,7 +305,11 @@ export default class ASTCapabilities {
       return { anchor, head };
     });
     // #TODO: include primary selection
-    this.editor.setSelections(ranges);
+    if (ranges.length == 1) {
+      this.editor.setSelection(ranges[0].head, ranges[0].anchor);
+    } else {
+      this.editor.setSelections(ranges);
+    }
   }
 
   /** 
@@ -299,6 +317,37 @@ export default class ASTCapabilities {
    */
   selectPaths(paths) {
     this.selectNodes(paths.map(path => path.node));
+  }
+  
+  /** 
+   * Get the path for the first method with the given name
+   */
+  getMethodPath(programPath, name) {
+    let methodPath;
+    programPath.traverse({
+      ClassMethod(path) {
+        //debugger;
+        if (!methodPath && path.node.key.name == name) {
+          methodPath = path;
+        }
+      }
+    });
+    return methodPath;
+  }
+  
+  /** 
+   * Get the path of the first file
+   */  
+  getClassPath(programPath) {
+    let classPath;
+    programPath.traverse({
+      ClassDeclaration(path) {
+        if (!classPath) {
+          classPath = path;
+        }
+      }
+    });
+    return classPath;
   }
 
   /*MD ### Shortcuts MD*/
@@ -356,12 +405,12 @@ export default class ASTCapabilities {
     }
   }
 
-  selectDeclaration() {
+  async selectDeclaration() {
     const { anchor, head } = this.editor.listSelections()[0];
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
-    const declaration = this.getDeclaration(selectedPath);
+    const declaration = await this.getDeclaration(selectedPath);
     if (declaration) {
       this.selectPaths([declaration]);
     }
@@ -382,7 +431,7 @@ export default class ASTCapabilities {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
-    var cache = await FileCache.current();
+    debugger;
   }
 
   /*MD ## Factoring Menu MD*/
