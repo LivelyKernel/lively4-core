@@ -268,9 +268,9 @@ export default class ASTCapabilities {
         let locationsArray = await locations.filter(ea => ea.url.match(lively4url)).toArray(); //filter local files
         let classPath = this.getClassPath(this.programPath);
         if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
-          return this.getMethodPath(this.programPath, identifierName);
+          return this.getMethodPath(classPath, identifierName);
         } else {
-          locationsArray.forEach(cl => lively.openBrowser(cl.url,true));
+          locationsArray.forEach(cl => lively.openBrowser(cl.url,true," " + identifierName));
           return startPath;
         }
       }
@@ -322,9 +322,9 @@ export default class ASTCapabilities {
   /** 
    * Get the path for the first method with the given name
    */
-  getMethodPath(programPath, name) {
+  getMethodPath(classPath, name) {
     let methodPath;
-    programPath.traverse({
+    classPath.traverse({
       ClassMethod(path) {
         //debugger;
         if (!methodPath && path.node.key.name == name) {
