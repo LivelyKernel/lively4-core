@@ -1,6 +1,13 @@
 import { loc, range } from 'utils';
 
 import ContextMenu from 'src/client/contextmenu.js';
+import FileIndex from "src/client/fileindex.js";
+
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
+
+const t = babel.types;
+const template = babel.template;
 
 export default class ASTCapabilities {
 
@@ -79,6 +86,26 @@ export default class ASTCapabilities {
   }
 
   /**
+  * Returns the nearest path before the cursor location
+  */
+  getPathBeforeCursor(startingPath, anchor) {
+    const selectionStart = loc(anchor);
+    let foundPath;
+    startingPath.traverse({
+      exit(path) {
+        const pathLocation = path.node.loc;
+        const pathEnd = loc(pathLocation.end);
+        if (selectionStart.isBefore(pathEnd)) {
+          path.stop();
+          return;
+        }
+        foundPath = path;
+      }
+    });
+    return foundPath;
+  }
+
+  /**
    * Returns the innermost node, that contains the selected text.
    */
   getInnermostPathContainingSelection(startingPath, anchor, head) {
@@ -90,6 +117,34 @@ export default class ASTCapabilities {
       });
     };
     return this.getLastPath(startingPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+  }
+
+  getSelectedPaths(programPath) {
+    return this.editor.listSelections().map(({ anchor, head }) => {
+      const selectionStart = loc(anchor);
+      const selectionEnd = loc(head);
+      const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, anchor, head);
+
+      //path already matches the selection
+      if (this.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
+        return pathContainingWholeSelection;
+      }
+
+      //find children that match the selection
+      let selectedPaths = [];
+      pathContainingWholeSelection.traverse({
+        enter(path) {
+          const pathLocation = path.node.loc;
+          const pathStart = loc(pathLocation.start);
+          const pathEnd = loc(pathLocation.end);
+          if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+            selectedPaths.push(path);
+          }
+          path.skip();
+        }
+      });
+      return selectedPaths;
+    }).flat();
   }
 
   /** 
@@ -173,7 +228,7 @@ export default class ASTCapabilities {
   }
 
   getFirstSelectedIdentifier(startPath) {
-    if (startPath.node.type == "Identifier") {
+    if (t.isIdentifier(startPath.node)) {
       return startPath;
     }
     var first;
@@ -181,15 +236,28 @@ export default class ASTCapabilities {
       Identifier(path) {
         if (!first) {
           first = path;
+          path.stop();
         }
       }
     });
     return first;
   }
 
-  getDeclaration(startPath) {
-    var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
+  getAllIdentifiers(startPath) {
+    var identifiers = [];
+    /*if (startPath.node.type == "Identifier") {
+      identifiers.push(startPath);
+    }*/
+    startPath.traverse({
+      Identifier(path) {
+        identifiers.push(path);
+      }
+    });
+    return identifiers;
+  }
+
+  getDeclaration(identifier) {
+    if (identifier.scope.hasBinding(identifier.node.name)) {
       return identifier.scope.getBinding(identifier.node.name).path;
     }
   }
@@ -198,7 +266,7 @@ export default class ASTCapabilities {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...(binding.constantViolations.map(this.getFirstSelectedIdentifier))];
+      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...binding.constantViolations.map(this.getFirstSelectedIdentifier)];
     }
   }
 
@@ -214,15 +282,57 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Select the text corresponding to the given paths in the editor
+   * Select the text corresponding to the given nodes in the editor
    */
-  selectPaths(paths) {
-    const ranges = paths.map(path => {
-      const [anchor, head] = range(path.node.loc).asCM();
+  selectNodes(nodes) {
+    const ranges = nodes.map(node => {
+      const [anchor, head] = range(node.loc).asCM();
       return { anchor, head };
     });
     // #TODO: include primary selection
-    this.editor.setSelections(ranges);
+    if (ranges.length == 1) {
+      this.editor.setSelection(ranges[0].head, ranges[0].anchor);
+    } else {
+      this.editor.setSelections(ranges);
+    }
+  }
+
+  /** 
+   * Select the text corresponding to the given paths in the editor
+   */
+  selectPaths(paths) {
+    this.selectNodes(paths.map(path => path.node));
+  }
+
+  /** 
+   * Get the path for the first method with the given name
+   */
+  getMethodPath(classPath, name) {
+    let methodPath;
+    classPath.traverse({
+      ClassMethod(path) {
+        //debugger;
+        if (!methodPath && path.node.key.name == name) {
+          methodPath = path;
+        }
+      }
+    });
+    return methodPath;
+  }
+
+  /** 
+   * Get the path of the first file
+   */
+  getClassPath(programPath) {
+    let classPath;
+    programPath.traverse({
+      ClassDeclaration(path) {
+        if (!classPath) {
+          classPath = path;
+        }
+      }
+    });
+    return classPath;
   }
 
   /*MD ### Shortcuts MD*/
@@ -264,31 +374,43 @@ export default class ASTCapabilities {
   selectNextASTNodeLikeThis(reversed) {
     return this.selectNextASTNodeWith((currentNode, nextNode) => currentNode.type == nextNode.type, reversed);
   }
-  
+
   selectNextReference(reversed) {
     const { anchor, head } = this.editor.listSelections()[0];
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
 
     const bindings = this.getBindings(selectedPath);
-    //debugger;
     if (bindings) {
-      let sortedBindings = [...bindings].sort((a,b) => a.node.start - b.node.start);
+      let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
       let index = sortedBindings.indexOf(selectedPath);
-      index += reversed? -1 : 1;
+      index += reversed ? -1 : 1;
       index = (index + sortedBindings.length) % sortedBindings.length;
       this.selectPaths([sortedBindings[index]]);
     }
   }
 
-  selectDeclaration() {
+  async selectDeclaration() {
     const { anchor, head } = this.editor.listSelections()[0];
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const identifier = this.getFirstSelectedIdentifier(selectedPath);
+    const identName = identifier.node.name;
+    if(!identifier) {
+      return;
+    }
 
-    const declaration = this.getDeclaration(selectedPath);
+    const declaration = await this.getDeclaration(identifier);
     if (declaration) {
       this.selectPaths([declaration]);
+    } else {
+      let locationsArray = await this.getCorrespondingClasses(identName);
+      let classPath = this.getClassPath(this.programPath);
+      if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
+        this.selectPaths([this.getMethodPath(classPath, identName)]);
+      } else {
+        locationsArray.forEach(cl => lively.openBrowser(cl.url, true, " " + identName));
+      }
     }
   }
 
@@ -301,6 +423,13 @@ export default class ASTCapabilities {
     if (bindings) {
       this.selectPaths(bindings);
     }
+  }
+
+  async findImports() {
+    const { anchor, head } = this.editor.listSelections()[0];
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+
+    debugger;
   }
 
   /*MD ## Factoring Menu MD*/
@@ -319,18 +448,154 @@ export default class ASTCapabilities {
     }, '→', fa('suitcase')], ['Rename', () => {
       menu.remove();
       this.selectBindings();
-    }, 'Alt+R', fa('suitcase')]];
-
+    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
+      menu.remove();
+      this.extractMethod();
+    }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
+      menu.remove();
+      this.generateTestcase();
+    }, '→', fa('suitcase')]]], ['Import', () => {
+      menu.remove();
+      this.findImports();
+    }, '→', fa('suitcase')]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
-    
-    const menu = await ContextMenu.openIn(document.body, {clientX: menuPosition.left, clientY: menuPosition.bottom}, undefined, document.body, menuItems);
+
+    const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
       this.focusEditor();
     });
   }
 
+  /*MD ## Generations MD*/
+
+  /*MD ### Generate Testcase MD*/
+  generateTestcase() {
+    const selection = this.getFirstSelection();
+    const scrollInfo = this.scrollInfo;
+
+    let testcase;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          testcase = this.compileTestCaseString();
+          this.getPathBeforeCursor(programPath, selection.selectionStart).insertAfter(testcase);
+        }
+      }
+    })).code;
+    this.scrollTo(scrollInfo);
+  }
+
+  compileTestCaseString(templateEngine) {
+    let explanationText = prompt("Enter test case explanation") || "explanation";
+    return template("it(EXP, () => {\n" + "let put = 'code here';" + "})")({
+      EXP: t.stringLiteral(explanationText)
+    });
+  }
+
   /*MD ## Transformations MD*/
 
+  /*MD ### Extract Method MD*/
+  findParameters(identifiers, surroundingMethod, actualSelections) {
+    return identifiers.filter(identifier => {
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+    }).map(identifier => {
+      return identifier.scope.getBinding(identifier.node.name).path;
+    }).filter(bindingPath => {
+      return !this.isSelected(bindingPath, actualSelections);
+    }).map(identifierDeclaration => {
+      return this.getFirstSelectedIdentifier(identifierDeclaration).node;
+    });
+  }
+
+  findReturnValues(identifiers, surroundingMethod, actualSelections) {
+    const bindings = [...new Set(identifiers.filter(identifier => {
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+    }).map(identifier => {
+      return identifier.scope.getBinding(identifier.node.name);
+    }))];
+
+    return bindings.filter(binding => {
+      const declarationInSelection = this.isSelected(binding.path, actualSelections);
+      const constantViolationInSelection = binding.constantViolations.some(constantViolation => this.isSelected(constantViolation, actualSelections));
+      const referenceOutsideSelection = binding.referencePaths.some(reference => !this.isSelected(reference, actualSelections));
+
+      return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
+    }).map(binding => {
+      const constantViolationOutsideSelection = binding.constantViolations.some(constantViolation => !this.isSelected(constantViolation, actualSelections));
+      return { node: this.getFirstSelectedIdentifier(binding.path).node, declaredInExtractedCode: this.isSelected(binding.path, actualSelections), constantViolationOutsideSelection };
+    });
+  }
+
+  createMethod(content, parameter, returnValues, scope) {
+    var returnStatement;
+    returnValues.forEach(returnValue => returnValue.returnIdentifier = returnValue.declaredInExtractedCode ? returnValue.node : t.identifier(returnValue.node.name + "_return"));
+    if (returnValues.length == 1) {
+      returnStatement = t.returnStatement(returnValues[0].node);
+    } else if (returnValues.length > 1) {
+      returnStatement = t.returnStatement(t.objectExpression(returnValues.map(i => t.objectProperty(i.returnIdentifier, i.node, false, true))));
+    }
+
+    if (returnStatement) {
+      content = content.concat(content[content.length - 1].insertAfter(returnStatement));
+    }
+    const newMethod = t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node)));
+    const methodPath = scope.insertAfter(newMethod)[0];
+    for (let i = 0; i < content.length - 1; i++) {
+      content[i].remove();
+    }
+    var methodCall;
+    const callExpression = t.callExpression(t.identifier("this.test"), parameter);
+    if (returnValues.length == 1) {
+      if (returnValues[0].declaredInExtractedCode) {
+        const variableType = returnValues[0].constantViolationOutsideSelection ? "var" : "const";
+        methodCall = [t.variableDeclaration(variableType, [t.variableDeclarator(returnValues[0].node, callExpression)])];
+      } else {
+        methodCall = [t.expressionStatement(t.assignmentExpression("=", returnValues[0].node, callExpression))];
+      }
+    } else if (returnValues.length > 1) {
+      const objectPattern = t.objectPattern(returnValues.map(i => t.objectProperty(i.returnIdentifier, i.returnIdentifier, false, true)));
+      methodCall = [t.variableDeclaration("const", [t.variableDeclarator(objectPattern, callExpression)])];
+      returnValues.forEach(returnStatement => {
+        if (returnStatement.node != returnStatement.returnIdentifier) {
+          methodCall.push(t.expressionStatement(t.assignmentExpression("=", returnStatement.node, returnStatement.returnIdentifier)));
+        }
+      });
+    } else {
+      methodCall = [callExpression];
+    }
+    content[content.length - 1].replaceWithMultiple(methodCall);
+    return methodPath;
+  }
+
+  async extractMethod() {
+    var newMethod;
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+          const selectedPaths = this.getSelectedPaths(programPath);
+          const actualSelections = selectedPaths.map(path => {
+            const [anchor, head] = range(path.node.loc).asCM();
+            return { anchor, head };
+          });
+          const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
+
+          const surroundingMethod = selectedPaths[0].find(parent => {
+            return parent.node.type == "ClassMethod";
+          });
+          const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
+          const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
+
+          newMethod = this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
+        }
+      }
+    })).code;
+
+    // this.selectPaths([newMethod]); <- currently not possible, because we replaced the sourceCode
+    this.scrollTo(scrollInfo);
+  }
+
+  /*MD ### Extract Variable MD*/
   async extractExpressionIntoLocalVariable() {
     const selection = this.getFirstSelection();
     let done = false;
@@ -532,6 +797,23 @@ export default class ASTCapabilities {
 
   /*MD ## Utilities MD*/
 
+  isSelected(path, selections = null) {
+    if (!selections) {
+      selections = this.editor.listSelections();
+    }
+    const pathLocation = path.node.loc;
+    const pathStart = loc(pathLocation.start);
+    const pathEnd = loc(pathLocation.end);
+    for (const range of selections) {
+      const selectionStart = loc(range.anchor);
+      const selectionEnd = loc(range.head);
+      if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   getFirstSelection() {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectionStart = loc(anchor);
@@ -583,4 +865,10 @@ export default class ASTCapabilities {
     return paths;
   }
 
+  async getCorrespondingClasses(className) {
+    let index = await FileIndex.current();
+    let locations = index.db.classes.filter(cl => {return cl.methods.some(me => me.name == className);});
+    locations.filter(ea => ea.url.match(lively4url)) //filter local files
+    return await locations.toArray();
+  }
 }

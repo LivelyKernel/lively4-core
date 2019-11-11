@@ -1357,7 +1357,6 @@ export default class LivelyContainerNavbar extends Morph {
   // #Refactor move away
   async browseMethodVersions(methodData) {
     var fileIndex = FileIndex.current()
-    debugger
     var versions = await fileIndex.db.versions.where({
       url: methodData.url,
       class: methodData.class,                               
