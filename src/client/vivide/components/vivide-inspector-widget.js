@@ -1,11 +1,11 @@
 "enable aexpr";
 
-import VivideWidget from 'src/client/vivide/components/vivide-widget.js';import Morph from 'src/components/widgets/lively-morph.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 
 export default class VivideInspectorWidget extends VivideWidget {
   async initialize() {
     this.windowTitle = "VivideInspectorWidget";
-    this.registerButtons()
+    this.registerButtons();
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
@@ -18,13 +18,13 @@ export default class VivideInspectorWidget extends VivideWidget {
     // #Note 1
     // registering a closure instead of the function allows the class to make 
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-    
-     this.get("#textField").value = this.getAttribute("data-mydata") || 0
+    // replaced during developmentthis.get("#textField").value = this.getAttribute("data-mydata") || 0
   }
+  get inspector() { return this.get('#inspector')}
   
-  display(forest, config) {
-    this.innerHTML = forest.toString();
+  display(forest, config){
+    super.display(forest, config);
+    this.inspector.appendChild(<div>{JSON.stringify(forest)}</div>);
   }
   
   onDblClick() {
