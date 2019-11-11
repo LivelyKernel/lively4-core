@@ -46,6 +46,7 @@ export default class ASTCapabilities {
       enter(path) {
         if (!pathToShow && isValid(path)) {
           pathToShow = path;
+          path.stop();
         }
       }
     });
@@ -243,6 +244,22 @@ export default class ASTCapabilities {
     return first;
   }
 
+  getFirstSelectedIdentifierWithName(startPath, name) {
+    if (t.isIdentifier(startPath.node, { name: name })) {
+      return startPath;
+    }
+    var first;
+    startPath.traverse({
+      Identifier(path) {
+        if (!first && t.isIdentifier(path.node, { name: name })) {
+          first = path;
+          path.stop();
+        }
+      }
+    });
+    return first;
+  }
+
   getAllIdentifiers(startPath) {
     var identifiers = [];
     /*if (startPath.node.type == "Identifier") {
@@ -261,12 +278,16 @@ export default class ASTCapabilities {
       return identifier.scope.getBinding(identifier.node.name).path;
     }
   }
+  
+  getBindingDeclarationIdentifierPath(binding) {
+    return this.getFirstSelectedIdentifierWithName(binding.path, binding.identifier.name);
+  }
 
   getBindings(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [this.getFirstSelectedIdentifier(binding.path), ...binding.referencePaths, ...binding.constantViolations.map(this.getFirstSelectedIdentifier)];
+      return [this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map((cv) => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))];
     }
   }
 
@@ -498,12 +519,11 @@ export default class ASTCapabilities {
   findParameters(identifiers, surroundingMethod, actualSelections) {
     return identifiers.filter(identifier => {
       return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
-    }).map(identifier => {
-      return identifier.scope.getBinding(identifier.node.name).path;
-    }).filter(bindingPath => {
+    }).filter(identifier => {
+      const bindingPath = identifier.scope.getBinding(identifier.node.name).path;
       return !this.isSelected(bindingPath, actualSelections);
-    }).map(identifierDeclaration => {
-      return this.getFirstSelectedIdentifier(identifierDeclaration).node;
+    }).map(identifier => {
+      return this.getBindingDeclarationIdentifierPath(identifier.scope.getBinding(identifier.node.name)).node;
     });
   }
 
@@ -522,7 +542,7 @@ export default class ASTCapabilities {
       return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
     }).map(binding => {
       const constantViolationOutsideSelection = binding.constantViolations.some(constantViolation => !this.isSelected(constantViolation, actualSelections));
-      return { node: this.getFirstSelectedIdentifier(binding.path).node, declaredInExtractedCode: this.isSelected(binding.path, actualSelections), constantViolationOutsideSelection };
+      return { node: this.getBindingDeclarationIdentifierPath(binding).node, declaredInExtractedCode: this.isSelected(binding.path, actualSelections), constantViolationOutsideSelection };
     });
   }
 
@@ -538,13 +558,13 @@ export default class ASTCapabilities {
     if (returnStatement) {
       content = content.concat(content[content.length - 1].insertAfter(returnStatement));
     }
-    const newMethod = t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node)));
-    const methodPath = scope.insertAfter(newMethod)[0];
+    const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(content.map(p => p.node)));
+    scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
     var methodCall;
-    const callExpression = t.callExpression(t.identifier("this.test"), parameter);
+    const callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
     if (returnValues.length == 1) {
       if (returnValues[0].declaredInExtractedCode) {
         const variableType = returnValues[0].constantViolationOutsideSelection ? "var" : "const";
@@ -564,13 +584,11 @@ export default class ASTCapabilities {
       methodCall = [callExpression];
     }
     content[content.length - 1].replaceWithMultiple(methodCall);
-    return methodPath;
   }
 
   async extractMethod() {
-    var newMethod;
     const scrollInfo = this.scrollInfo;
-    this.sourceCode = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+    const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
           const selectedPaths = this.getSelectedPaths(programPath);
@@ -586,13 +604,25 @@ export default class ASTCapabilities {
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
 
-          newMethod = this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
         }
       }
-    })).code;
+    }));
+    this.sourceCode = transformed.code;    
 
-    // this.selectPaths([newMethod]); <- currently not possible, because we replaced the sourceCode
     this.scrollTo(scrollInfo);
+    
+    const pathsToSelect = [];
+    this.programPath.traverse({
+      Identifier(path) {
+        if(path.node.name == "HopefullyNobodyEverUsesThisMethodName") {
+          pathsToSelect.push(path);
+        }
+      }
+    })
+    
+
+    this.selectPaths(pathsToSelect);
   }
 
   /*MD ### Extract Variable MD*/
