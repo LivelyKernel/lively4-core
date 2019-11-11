@@ -49,7 +49,7 @@ export default class CodemirrorPlayground extends Morph {
     this.lcm.value.traverseAsAST({
       Identifier(path) {
         if (path.node.name === 'aexpr' ) {
-          
+          console.log(path.scope)
           aexprRanges.push(range(path.node.loc));
         }
       }
