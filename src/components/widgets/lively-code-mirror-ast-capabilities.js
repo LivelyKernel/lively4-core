@@ -446,11 +446,12 @@ export default class ASTCapabilities {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
     
-    async function generateImportSubmenu(editor) {
-      let classes = await editor.findImports();
+    const myself = this;
+    async function generateImportSubmenu() {
+      let classes = await myself.findImports();
       let submenu = [];
       classes.forEach(cl => submenu.push([cl.name + ", " + cl.url, 
-                            () => {menu.remove();editor.addImport(cl.name, cl.url);}, 
+                            () => {menu.remove();myself.addImport(cl.name, cl.url);}, 
                             '-', fa('share-square-o')]));
       return submenu;
     }
@@ -505,25 +506,24 @@ export default class ASTCapabilities {
     });
   }
   
+  /*MD ### Generate Import MD*/
   addImport(className, url) {
+    const selection = this.getFirstSelection();
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
           let importStatement = t.importDeclaration(
             [t.importSpecifier(t.identifier(className), t.identifier(className))], t.stringLiteral(url));
+          
+          let selectedPath = this.getInnermostPathContainingSelection(programPath, selection.selectionStart, selection.selectionEnd);
+          debugger;
           this.getImportLocationInAST(programPath).insertBefore(importStatement);
+          selectedPath.replaceWith(t.memberExpression(t.identifier(className),t.identifier(selectedPath.node.name)));
         }
       }
     })).code;
     this.scrollTo(scrollInfo);
-  }
-  
-  //deprecated?
-  compileImportStatement(className, url) {
-    return template(
-      `import CLASS_NAME from '${url}';\n`, {sourceType: "module"}
-    )({CLASS_NAME: t.identifier(className)});
   }
 
   /*MD ## Transformations MD*/
@@ -849,6 +849,9 @@ export default class ASTCapabilities {
   }
 
   getFirstSelection() {
+    if (this.editor.listSelections().length == 0) {
+      return {selectionStart: this.editor.getCursor(), selectionEnd: this.editor.getCursor()};
+    }
     const { anchor, head } = this.editor.listSelections()[0];
     const selectionStart = loc(anchor);
     const selectionEnd = loc(head);
