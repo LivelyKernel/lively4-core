@@ -395,10 +395,10 @@ export default class ASTCapabilities {
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
-    const identName = identifier.node.name;
     if(!identifier) {
       return;
     }
+    const identName = identifier.node.name;
 
     const declaration = await this.getDeclaration(identifier);
     if (declaration) {
@@ -428,15 +428,31 @@ export default class ASTCapabilities {
   async findImports() {
     const { anchor, head } = this.editor.listSelections()[0];
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
-
-    debugger;
+    const identifier = this.getFirstSelectedIdentifier(selectedPath);
+    if(!identifier) {
+      return;
+    }
+    const identName = identifier.node.name;
+    return this.getCorrespondingClasses(identName);
   }
-
+  
+  getImportLocationInAST(programPath) {
+    return this.nextPath(programPath, (path) => t.isImportDeclaration(path.node));
+  }
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
     function fa(name, ...modifiers) {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
+    }
+    
+    async function generateImportSubmenu(editor) {
+      let classes = await editor.findImports();
+      let submenu = [];
+      classes.forEach(cl => submenu.push([cl.name + ", " + cl.url, 
+                            () => {menu.remove();editor.addImport(cl.name, cl.url);}, 
+                            '-', fa('share-square-o')]));
+      return submenu;
     }
 
     const menuItems = [['selection to local variable', () => {
@@ -454,10 +470,7 @@ export default class ASTCapabilities {
     }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
       menu.remove();
       this.generateTestcase();
-    }, '→', fa('suitcase')]]], ['Import', () => {
-      menu.remove();
-      this.findImports();
-    }, '→', fa('suitcase')]];
+    }, '→', fa('suitcase')]]], ['Import', generateImportSubmenu(this)]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -490,6 +503,27 @@ export default class ASTCapabilities {
     return template("it(EXP, () => {\n" + "let put = 'code here';" + "})")({
       EXP: t.stringLiteral(explanationText)
     });
+  }
+  
+  addImport(className, url) {
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          let importStatement = t.importDeclaration(
+            [t.importSpecifier(t.identifier(className), t.identifier(className))], t.stringLiteral(url));
+          this.getImportLocationInAST(programPath).insertBefore(importStatement);
+        }
+      }
+    })).code;
+    this.scrollTo(scrollInfo);
+  }
+  
+  //deprecated?
+  compileImportStatement(className, url) {
+    return template(
+      `import CLASS_NAME from '${url}';\n`, {sourceType: "module"}
+    )({CLASS_NAME: t.identifier(className)});
   }
 
   /*MD ## Transformations MD*/
@@ -853,10 +887,10 @@ export default class ASTCapabilities {
     return paths;
   }
 
-  async getCorrespondingClasses(className) {
+  async getCorrespondingClasses(methodName) {
     let index = await FileIndex.current();
-    let locations = index.db.classes.filter(cl => {return cl.methods.some(me => me.name == className);});
-    locations.filter(ea => ea.url.match(lively4url)) //filter local files
-    return await locations.toArray();
+    let locations = await index.db.classes.filter(cl => {return cl.methods.some(me => me.name == methodName);}).toArray();
+    locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
+    return locations;
   }
 }
