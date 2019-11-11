@@ -24,7 +24,44 @@ export default class VivideInspectorWidget extends VivideWidget {
   
   display(forest, config){
     super.display(forest, config);
-    this.inspector.appendChild(<div>{JSON.stringify(forest)}</div>);
+    this.inspector.appendChild(this.displayInspector(forest));
+  }
+  
+  displayInspector(value, name){
+    if(Array.isArray(value)){
+      const html = value.map(a => {
+        return this.displayInspector(a.data);
+      });
+      return <div>{...html}</div>
+    }
+    if(typeof value.data === 'object'){
+      return <span>Object</span>
+    }
+    return this.displayValue(value, name);
+  }
+  
+  expandTemplate(node) {
+    return <span class='syntax'><a class='expand'>{node.isExpanded ? 
+      <span style='font-size:9pt'>&#9660;</span> : 
+      <span style='font-size:7pt'>&#9654;</span>
+    }</a></span>;
+  }
+  
+  displayValue(value, name){
+    if (name) {
+      let attrValue;
+      if (value && typeof value === 'symbol') {
+        attrValue = value.toString();
+      } else {
+        attrValue = JSON.stringify(value).replace(/</g,"<");
+      }
+      return <div class="element">
+        <span class='attrName'>{name}:</span>
+        <span class='attrValue'>{attrValue}</span>
+      </div>;
+    } else {
+      return <pre>{JSON.stringify(value)}</pre>;
+    }
   }
   
   onDblClick() {
@@ -42,15 +79,6 @@ export default class VivideInspectorWidget extends VivideWidget {
     lively.notify("Key Down!" + evt.charCode)
   }
   
-  // this method is automatically registered as handler through ``registerButtons``
-  onPlusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
-  }
-  
-  onMinusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
-  }
-
   /* Lively-specific API */
 
   // store something that would be lost
