@@ -1,11 +1,11 @@
 "enable aexpr";
 
-import VivideWidget from 'src/client/vivide/components/vivide-widget.js';import Morph from 'src/components/widgets/lively-morph.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 
 export default class VivideInspectorWidget extends VivideWidget {
   async initialize() {
     this.windowTitle = "VivideInspectorWidget";
-    this.registerButtons()
+    this.registerButtons();
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
@@ -18,13 +18,50 @@ export default class VivideInspectorWidget extends VivideWidget {
     // #Note 1
     // registering a closure instead of the function allows the class to make 
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-    
-     this.get("#textField").value = this.getAttribute("data-mydata") || 0
+    // replaced during developmentthis.get("#textField").value = this.getAttribute("data-mydata") || 0
+  }
+  get inspector() { return this.get('#inspector')}
+  
+  display(forest, config){
+    super.display(forest, config);
+    this.inspector.appendChild(this.displayInspector(forest));
   }
   
-  display(forest, config) {
-    this.innerHTML = forest.toString();
+  displayInspector(value, name){
+    if(Array.isArray(value)){
+      const html = value.map(a => {
+        return this.displayInspector(a.data);
+      });
+      return <div>{...html}</div>
+    }
+    if(typeof value.data === 'object'){
+      return <span>Object</span>
+    }
+    return this.displayValue(value, name);
+  }
+  
+  expandTemplate(node) {
+    return <span class='syntax'><a class='expand'>{node.isExpanded ? 
+      <span style='font-size:9pt'>&#9660;</span> : 
+      <span style='font-size:7pt'>&#9654;</span>
+    }</a></span>;
+  }
+  
+  displayValue(value, name){
+    if (name) {
+      let attrValue;
+      if (value && typeof value === 'symbol') {
+        attrValue = value.toString();
+      } else {
+        attrValue = JSON.stringify(value).replace(/</g,"<");
+      }
+      return <div class="element">
+        <span class='attrName'>{name}:</span>
+        <span class='attrValue'>{attrValue}</span>
+      </div>;
+    } else {
+      return <pre>{JSON.stringify(value)}</pre>;
+    }
   }
   
   onDblClick() {
@@ -42,15 +79,6 @@ export default class VivideInspectorWidget extends VivideWidget {
     lively.notify("Key Down!" + evt.charCode)
   }
   
-  // this method is automatically registered as handler through ``registerButtons``
-  onPlusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
-  }
-  
-  onMinusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
-  }
-
   /* Lively-specific API */
 
   // store something that would be lost

@@ -555,37 +555,49 @@ export default class ASTCapabilities {
 
       return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
     }).map(binding => {
-      return this.getFirstSelectedIdentifier(binding.path).node;
+      const constantViolationOutsideSelection = binding.constantViolations.some(constantViolation => !this.isSelected(constantViolation, actualSelections));
+      return { node: this.getFirstSelectedIdentifier(binding.path).node, declaredInExtractedCode: this.isSelected(binding.path, actualSelections), constantViolationOutsideSelection };
     });
   }
 
   createMethod(content, parameter, returnValues, scope) {
     var returnStatement;
+    returnValues.forEach(returnValue => returnValue.returnIdentifier = returnValue.declaredInExtractedCode ? returnValue.node : t.identifier(returnValue.node.name + "_return"));
     if (returnValues.length == 1) {
-      returnStatement = t.returnStatement(returnValues[0]);
+      returnStatement = t.returnStatement(returnValues[0].node);
     } else if (returnValues.length > 1) {
-      returnStatement = t.returnStatement(t.objectExpression(returnValues.map(i => t.objectProperty(i, i, false, true))));
+      returnStatement = t.returnStatement(t.objectExpression(returnValues.map(i => t.objectProperty(i.returnIdentifier, i.node, false, true))));
     }
 
-    content = content.concat(content[content.length - 1].insertAfter(returnStatement));
-
+    if (returnStatement) {
+      content = content.concat(content[content.length - 1].insertAfter(returnStatement));
+    }
     const newMethod = t.classMethod("method", t.identifier("test"), parameter, t.blockStatement(content.map(p => p.node)));
     const methodPath = scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
     var methodCall;
+    const callExpression = t.callExpression(t.identifier("this.test"), parameter);
     if (returnValues.length == 1) {
-      methodCall = t.assignmentExpression("=", returnValues[0], t.callExpression(t.identifier("this.test"), parameter));
+      if (returnValues[0].declaredInExtractedCode) {
+        const variableType = returnValues[0].constantViolationOutsideSelection ? "var" : "const";
+        methodCall = [t.variableDeclaration(variableType, [t.variableDeclarator(returnValues[0].node, callExpression)])];
+      } else {
+        methodCall = [t.expressionStatement(t.assignmentExpression("=", returnValues[0].node, callExpression))];
+      }
     } else if (returnValues.length > 1) {
-      const objectPattern = t.objectPattern(returnValues.map(i => t.objectProperty(i, i, false, true)));
-      const callExpression = t.callExpression(t.identifier("this.test"), parameter);
-
-      methodCall = t.variableDeclaration("const", [t.variableDeclarator(objectPattern, callExpression)]);
+      const objectPattern = t.objectPattern(returnValues.map(i => t.objectProperty(i.returnIdentifier, i.returnIdentifier, false, true)));
+      methodCall = [t.variableDeclaration("const", [t.variableDeclarator(objectPattern, callExpression)])];
+      returnValues.forEach(returnStatement => {
+        if (returnStatement.node != returnStatement.returnIdentifier) {
+          methodCall.push(t.expressionStatement(t.assignmentExpression("=", returnStatement.node, returnStatement.returnIdentifier)));
+        }
+      });
     } else {
-      methodCall = t.callExpression(t.identifier("this.test"), parameter);
+      methodCall = [callExpression];
     }
-    content[content.length - 1].replaceWith(methodCall);
+    content[content.length - 1].replaceWithMultiple(methodCall);
     return methodPath;
   }
 
