@@ -130,7 +130,6 @@ export default class ASTCapabilities {
       if (ASTCapabilities.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
         return pathContainingWholeSelection;
       }
-
       //find children that match the selection
       let selectedPaths = [];
       pathContainingWholeSelection.traverse({
@@ -549,9 +548,9 @@ export default class ASTCapabilities {
   /*MD ## Transformations MD*/
 
   /*MD ### Extract Method MD*/
-  findParameters(identifiers, surroundingMethod, actualSelections) {
+  findParameters(identifiers, extractedScope, actualSelections) {
     return identifiers.filter(identifier => {
-      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+      return identifier.scope.hasBinding(identifier.node.name) && !extractedScope.scope.hasBinding(identifier.node.name);
     }).filter(identifier => {
       const bindingPath = identifier.scope.getBinding(identifier.node.name).path;
       return !this.isSelected(bindingPath, actualSelections);
@@ -560,9 +559,9 @@ export default class ASTCapabilities {
     });
   }
 
-  findReturnValues(identifiers, surroundingMethod, actualSelections) {
+  findReturnValues(identifiers, extractedScope, actualSelections) {
     const bindings = [...new Set(identifiers.filter(identifier => {
-      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
+      return identifier.scope.hasBinding(identifier.node.name) && !extractedScope.scope.hasBinding(identifier.node.name);
     }).map(identifier => {
       return identifier.scope.getBinding(identifier.node.name);
     }))];
@@ -579,7 +578,7 @@ export default class ASTCapabilities {
     });
   }
 
-  createMethod(content, parameter, returnValues, scope) {
+  createMethod(content, parameter, returnValues, scope, asClassMethod = true) {
     var returnStatement;
     returnValues.forEach(returnValue => returnValue.returnIdentifier = returnValue.declaredInExtractedCode ? returnValue.node : t.identifier(returnValue.node.name + "_return"));
     if (returnValues.length == 1) {
@@ -591,7 +590,12 @@ export default class ASTCapabilities {
     if (returnStatement) {
       content = content.concat(content[content.length - 1].insertAfter(returnStatement));
     }
-    const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(content.map(p => p.node)), false, scope.node.static);
+    var newMethod;
+    if(asClassMethod) {
+      newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(content.map(p => p.node)), false, scope.node.static);
+    } else {
+      newMethod = t.variableDeclaration("const", [t.variableDeclarator(t.identifier("HopefullyNobodyEverUsesThisMethodName"), t.arrowFunctionExpression(parameter, t.blockStatement(content.map(p => p.node))))]);
+    }
     scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
@@ -624,7 +628,9 @@ export default class ASTCapabilities {
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
+          const pathList = this.backwardList(programPath);
           const selectedPaths = this.getSelectedPaths(programPath);
+          //make sure these are statements!
           const actualSelections = selectedPaths.map(path => {
             const [anchor, head] = range(path.node.loc).asCM();
             return { anchor, head };
@@ -634,10 +640,19 @@ export default class ASTCapabilities {
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
-          const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
-          const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
+          var extractedScope;
+          var pathToInsertAfter;
+          if(surroundingMethod) {
+            pathToInsertAfter = surroundingMethod;
+            extractedScope = surroundingMethod.parentPath;
+          } else {
+            pathToInsertAfter = this.getNextASTNodeInListWith(() => true, pathList, selectedPaths[0]);
+            extractedScope = selectedPaths[0].parentPath;
+          }
+          const parameters = this.findParameters(identifiers, extractedScope, actualSelections);
+          const returnValues = this.findReturnValues(identifiers, extractedScope, actualSelections);
 
-          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, pathToInsertAfter, surroundingMethod);
         }
       }
     }));
