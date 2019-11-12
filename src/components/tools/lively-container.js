@@ -765,7 +765,15 @@ export default class Container extends Morph {
     
     path = path.replace(/[^/]*$/,"") + "newfile." + ending 
     
-    var fileName = window.prompt('Please enter the name of the file', path);
+    var fileName = await lively.prompt('Please enter the name of the file', path, async dialog => {
+      // select the filename in the path...
+      await lively.sleep(100) // wait for the new file
+      var input = dialog.get("input")
+      var s = input.value
+      var m = s.match(/([^/.]*)([^/]*)$/)
+      input.select()
+      input.setSelectionRange(m.index,m.index + m[1].length)      
+    })
     if (!fileName) {
       lively.notify("no file created");
       return;
@@ -787,7 +795,7 @@ export default class Container extends Morph {
   }
   
   async newDirectory(path="") {
-    var fileName = window.prompt('Please enter the name of the directory', path);
+    var fileName = await lively.prompt('Please enter the name of the directory', path);
       if (!fileName) {
         lively.notify("no file created");
         return;

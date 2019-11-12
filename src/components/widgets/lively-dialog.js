@@ -38,7 +38,7 @@ export default class Dialog extends Morph {
     })
   }
 
-  static async dialog() {
+  static async dialog(customizeCB) {
     var w  = lively.findWindow(document.activeElement) 
     if (w && !w.getAddOnRoot) w = null; // we did not find a window...
     
@@ -62,13 +62,13 @@ export default class Dialog extends Morph {
            ext.y / 2 - bounds.height / 2))
 
     }
-    
+    if (customizeCB) customizeCB(dialog)
     
     return dialog
   }
   
-  static async prompt(msg, value) {
-    var dialog = await this.dialog()
+  static async prompt(msg, value, customizeCB) {
+    var dialog = await this.dialog(customizeCB)
     if (value !== undefined)
       dialog.get("#prompt").value = value
     
