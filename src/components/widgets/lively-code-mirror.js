@@ -314,7 +314,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         
         // #KeyboardShortcut Ctrl-Alt-Right multiselect next
         "Ctrl-Alt-Right": "selectNextOccurrence",
-        // #KeyboardShortcut Ctrl-Alt-Right undo multiselect
+        // #KeyboardShortcut Ctrl-Alt-Left undo multiselect
         "Ctrl-Alt-Left": "undoSelection",
 
         // #KeyboardShortcut Ctrl-/ indent selection
@@ -389,7 +389,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
         },
-        // #KeyboardShortcut Alt-Shift-Right Select previous reference
+        // #KeyboardShortcut Alt-Shift-Right Select next reference
         // #todo find unused keybinding, Alt-Shift-Right is already used by the editor 
         "Shift-Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
@@ -403,6 +403,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.selectBindings());
         },
+        // #KeyboardShortcut Alt-M Extract method
+        "Alt-M": cm => {
+          this.astCapabilities(cm).then(ac => ac.extractMethod());
+        },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
           this.astCapabilities(cm).then(ac => ac.openMenu());
@@ -412,7 +416,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "alt-Backspace": async cm => {
           this.singalEditorbackNavigation()
         },
-        // #KeyboardShortcut Alt-Backspace Leave and Close Editor and got to Navigation
+        // #KeyboardShortcut Shift-Alt-Backspace Leave and Close Editor and got to Navigation
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },

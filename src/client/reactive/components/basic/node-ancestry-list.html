@@ -27,20 +27,21 @@
   #parentElements > div {
     border: 0.5px solid rgba(0, 0, 0, 0.0);
   }
-  #parentElements > div.jsx-element {
-    background: rgba(100, 176, 80, 0.2); /* green */
-  }
-  #parentElements > div.jsx-element.active-expression {
+  #parentElements > div.element-meta-data {
     background-color: rgba(255, 165, 0, 0.2); /* orange */
   }
-  #parentElements > div.jsx-element.active-group-item {
+  #parentElements > div.element-meta-data.jsx {
+    background: rgba(100, 176, 80, 0.2); /* green */
+  }
+  #parentElements > div.element-meta-data.active-expression {
+    background-color: rgba(255, 0, 0, 0.2); /* red */
+  }
+  #parentElements > div.element-meta-data.active-group-item {
     background-color: rgba(0, 0, 255, 0.2); /* blue-ish */
   }
-  #parentElements > div:hover,
-  #parentElements > div.jsx-element:hover,
-  #parentElements > div.jsx-element.active-expression:hover,
-  #parentElements > div.jsx-element.active-group-item:hover {
-    background-color: rgba(100, 100, 100, 0.5);
+  /* we double the hover to overwrite the priority given by adding multiple classes */
+  #parentElements > div:hover:hover {
+    background-color: rgba(100, 100, 100, 0.3);
   }
   #parentElements > div.selected-node {
     border: 0.5px solid blue;

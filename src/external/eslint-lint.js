@@ -297,6 +297,7 @@
   }
   
   function validator(text, options) {
+    // console.log("[eslint] validator xxx " + text.length) // Here we go!!!
     var result = [], config = defaultConfig;
     var errors = new eslint().verify(text, config);
     for (var i = 0; i < errors.length; i++) {

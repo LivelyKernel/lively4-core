@@ -83,6 +83,8 @@ export default class Preferences {
   
   static get prefsNode() {
     // #BUG: reloading Preferences causes dataset to be not defined anymore
+    if (!window.document) return null;
+    
     let node = document.body.querySelector('.lively-preferences');
     if (!node) {
       console.log("Create prefereces")
