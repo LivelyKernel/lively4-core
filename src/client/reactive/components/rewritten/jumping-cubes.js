@@ -75,11 +75,7 @@ export default class JumpingCubes extends Morph {
   }
   
   async livelyExample() {
-    // this customizes a default instance to a pretty example
-    // this is used by the 
     this.style.backgroundColor = "lightgray"
-    this.someJavaScriptProperty = 42
-    this.appendChild(<div>This is my content</div>)
   }
   
   

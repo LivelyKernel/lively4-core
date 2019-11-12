@@ -1560,8 +1560,8 @@ export default class Lively {
     return Dialog.confirm(msg)
   }
 
-  static prompt(msg, value) {
-    return Dialog.prompt(msg, value)
+  static prompt(msg, value, customizeCB) {
+    return Dialog.prompt(msg, value, customizeCB)
   }
 
   static findWorldContext(element) {

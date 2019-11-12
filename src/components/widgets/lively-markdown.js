@@ -22,11 +22,13 @@ export default class LivelyMarkdown extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMarkdown";
     this.registerButtons();
-    await this.updateView();
-
-    if (this.getAttribute("mode") == "presentation") {
-      this.startPresentation()
-    }
+    
+    
+    this.updateView().then(() => {
+      if (this.getAttribute("mode") == "presentation") {
+        this.startPresentation()
+      }
+    })
     this._attrObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") {
@@ -38,8 +40,7 @@ export default class LivelyMarkdown extends Morph {
         }
       });
     });
-    this._attrObserver.observe(this, { attributes: true });
-    
+    this._attrObserver.observe(this, { attributes: true });      
   }
   attributeChangedCallback(attr, oldVal, newVal) {
     var method = "on" + Strings.toUpperCaseFirst(attr) + "Changed"
@@ -163,13 +164,13 @@ export default class LivelyMarkdown extends Morph {
         // we have to guess or look what img could have been meant
         // (a) lets see if is a drawio figuure
         // #TODO check if there is actually an pdf
-        var figure = await lively.create("lively-drawio", tmpDiv)
+        var figure = await (<lively-drawio></lively-drawio>)
         
         for(let attr of imgTag.attributes) {
           if (attr.name == "src") {
             // use attributes to retain RAW data
             let src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
-            console.log("REPLACE DRAWIO: " + src)
+            // console.log("REPLACE DRAWIO: " + src)
             figure.setAttribute("src",  src)
           } else {
             figure.setAttribute(attr.name, attr.value)
@@ -179,7 +180,8 @@ export default class LivelyMarkdown extends Morph {
         imgTag.parentElement.insertBefore(figure, imgTag)
         imgTag.remove()
       } else if (noFileEnding || imgTag.src.match(/\.html$/) ) {
-        var importElement = await lively.create("lively-import", tmpDiv)
+        // console.log("[lively-markdown] create lively-import")
+        var importElement = await (<lively-import></lively-import>)
         for(let attr of imgTag.attributes) {
           if (attr.name == "src") {
             let src = imgTag.getAttribute("src")
