@@ -12,7 +12,8 @@ import GitHub from "src/client/github.js"
 const DrawioBranch = "drawio"
 import Webhook from "src/client/webhook.js"
 
-import pako from "https://jgraph.github.io/drawio-tools/tools/deflate/pako.min.js"
+// import pako from "https://jgraph.github.io/drawio-tools/tools/deflate/pako.min.js"
+import pako from "src/external/drawio-pako.min.js"
 
 import XML from "src/client/xml.js"
 

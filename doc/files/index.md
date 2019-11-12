@@ -68,7 +68,7 @@
 <script>
   var container = lively.query(this, "lively-container");
   (async () => {
-    var table = await lively.create("lively-table", this)
+    var table = await lively.create("lively-table")
     var files = (await FileCache.current().db.files.toArray());
     
     var button = document.createElement("button");
