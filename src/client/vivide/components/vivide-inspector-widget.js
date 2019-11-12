@@ -35,16 +35,12 @@ export default class VivideInspectorWidget extends VivideWidget {
       return <div>{...html}</div>
     }
     if(typeof value.data === 'object'){
-      return <span>Object</span>
+      return  (<div class="element">
+        {name && <span class='attrName'>{name}:</span>}
+        <span class='attrValue'>Object</span>
+      </div>)
     }
     return this.displayValue(value, name);
-  }
-  
-  expandTemplate(node) {
-    return <span class='syntax'><a class='expand'>{node.isExpanded ? 
-      <span style='font-size:9pt'>&#9660;</span> : 
-      <span style='font-size:7pt'>&#9654;</span>
-    }</a></span>;
   }
   
   displayValue(value, name){
