@@ -14,11 +14,6 @@ export default class AstInspector extends Morph {
   
   get container() { return this.get("#container"); }
   
-  get hideLocationData() { return true; }
-  get hideTypeProperty() { return true; }
-  get hideMethods() { return true; }
-  get hideEmptyProperties() { return true; }
-  
   inspect(obj) {
     if (!obj) return;
     
@@ -38,6 +33,17 @@ export default class AstInspector extends Morph {
     }
     return content;
   }
+
+/*MD # Configuration MD*/
+  
+  get configuration() {
+    return this.configuration || lively.preferences.get("AstInspectorConfig");
+  }
+  
+  get hideLocationData() { return true; }
+  get hideTypeProperty() { return true; }
+  get hideMethods() { return true; }
+  get hideEmptyProperties() { return true; }
 
 /*MD # Displaying MD*/
   
