@@ -348,7 +348,7 @@ export default class AstInspector extends Morph {
     const src = await fetch(url).then(r => r.text());
     const ast = src.toAST();
     
-    this.inspect(ast);
+    this.inspect(ast.program);
   }
   
   async livelyMigrate(other) {
