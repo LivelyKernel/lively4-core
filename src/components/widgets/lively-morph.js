@@ -85,6 +85,20 @@ export default class Morph extends HTMLElement {
     });
   }
   
+  registerForms() { 
+    Array.from(this.shadowRoot.querySelectorAll('form')).forEach(node => {
+      var name = node.id;
+      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      node.addEventListener("submit", evt => {
+        if (this[funcName] instanceof Function) {
+          this[funcName](evt);
+        } else {
+          alert('No callback: ' +  funcName);
+        }
+      });
+    });
+  }
+  
   toString() {
     return "[" + this.constructor.name + "]"
   }
