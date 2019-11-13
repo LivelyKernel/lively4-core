@@ -4,6 +4,7 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
+import {isAExpr} from 'src/client/ast-utils.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -41,21 +42,25 @@ export default class CodemirrorPlayground extends Morph {
         this.snapToNextAEXpr()
       },
     });
-
   }
   
-  snapToNextAEXpr() {
-    const aexprRanges = [];
+  collectAExpr() {
+    const allAExpr = [];
+    
     this.lcm.value.traverseAsAST({
-      Identifier(path) {
-        if (path.node.name === 'aexpr' ) {
-          console.log(path.scope)
-          aexprRanges.push(range(path.node.loc));
+      CallExpression(path) {
+        if (isAExpr(path) ) {
+          allAExpr.push(path.node);
         }
       }
-    });
-    
-    if (aexprRanges.length === 0) { return; }
+    });    
+    return allAExpr;    
+  }
+  
+  // TODO delete lel
+  snapToNextAEXpr() {
+    let aexprRanges = this.aexprs.map((node)=>range(node.loc));    
+    if (!aexprRanges.length) { return; }
     
     const cursor = this.$.getCursor()
     const rangeToSelect = aexprRanges.find(r => r.contains(cursor)) ||
@@ -64,6 +69,8 @@ export default class CodemirrorPlayground extends Morph {
     
     rangeToSelect.selectInCM(this.$);
   }
+  
+  
   async showAExprInfo() {
     this.lcm.ternWrapper.then(tw => {
       
@@ -103,6 +110,7 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   instantUpdate() {
+    this.aexprs = this.collectAExpr();
     lively.warn('instant update');
   }
 
