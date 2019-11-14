@@ -267,3 +267,122 @@ for our transformations.
 
 ![](astexploreridea.png)
 
+## But on a Module level we still have problems
+
+```javascript
+(function(System, SystemJS) {System.register(["./foobar.js"], function (_export, _context) {
+  "use strict";
+
+  var foobar, me;
+  function foo(a) {
+    return 11 + a + _recorder_._demos_foo_js.foobar();
+  }
+
+  _export("default", foo);
+
+  return {
+    setters: [function (_foobarJs) {
+      foobar = _foobarJs.default; // THIS LINE GETS EXECUTED BY SYSTEMJS ON UPDATE
+    }],
+    execute: function () {
+      _recorder_._demos_foo_js = _recorder_._demos_foo_js || {};
+      Object.defineProperty(_recorder_._demos_foo_js, "foo", {
+        get() {
+          return foo;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          _export("default", foo = thisIsVererySecretVariableName);
+
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      Object.defineProperty(_recorder_._demos_foo_js, "foobar", {
+        get() {
+          return foobar;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          foobar = thisIsVererySecretVariableName;
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      "(var...)";
+      Object.defineProperty(_recorder_._demos_foo_js, "me", {
+        get() {
+          return me;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          me = thisIsVererySecretVariableName;
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      _recorder_._demos_foo_js.me = 4 + Math.random();
+      /*MD # Hello World MD*/
+
+      class Foo5 {
+
+        // #important
+        bar2() {}
+
+        // #FOO2
+        get blue() {}
+
+        // #TAG
+        set blue(b) {}
+        /*MD
+        # Here come methods
+        
+        
+        MD*/
+        // #private
+        m5() {}
+
+        // #3
+        // #TagMe
+        m11() {}
+
+        // #deprecated
+        hello() {}
+        /*MD
+        ## and other
+        
+        
+        MD*/
+        // #p
+        dosomthing() {}
+
+        static m2() {}
+
+      }
+
+      Object.defineProperty(_recorder_._demos_foo_js, "Foo5", {
+        get() {
+          return Foo5;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          Foo5 = thisIsVererySecretVariableName;
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      console.log("LOADED foo.js - " + _recorder_._demos_foo_js.me);
+    }
+  };
+});
+})(System, System);
+
+```

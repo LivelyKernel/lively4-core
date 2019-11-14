@@ -97,8 +97,14 @@ export default class Lively {
   static findDirectDependentModules(path) {
      var mod = System.normalizeSync(path);
      return Object.values(System.loads)
-      .filter( ea =>
-        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
+      .filter( ea => {
+       if (ea.key.match("unnamed_module"))  {
+         
+         return false
+       }
+        
+        return ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod)
+      })        
       .map( ea => ea.key)
   }
 
@@ -840,6 +846,7 @@ export default class Lively {
   }
 
   static error(title, text, timeout, cb) {
+    debugger
     this.notify(title, text, timeout, cb, 'red');
   }
 

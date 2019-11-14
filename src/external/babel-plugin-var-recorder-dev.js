@@ -123,13 +123,17 @@ export default function({ types: t, template, traverse, }) {
           state.var_recorder_info.VAR_RECORDER_NAME = VAR_RECORDER_NAME;
           state.var_recorder_info.MODULE_IDENTIFIER = MODULE_IDENTIFIER;
           
-          // if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
+          // 
           const varToRecordTemplate = template(`
+if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
   Object.defineProperty(${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}, referenceString , { 
   get() { return reference; }, 
   set(thisIsVererySecretVariableName) {reference = thisIsVererySecretVariableName; return true }, 
   enumerable: true, 
   configurable: true})
+} else {
+  ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference = reference
+}
 `),
                 recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
                 referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);

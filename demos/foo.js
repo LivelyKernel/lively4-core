@@ -3,9 +3,8 @@ import foobar from "./foobar.js"
 var me = 4 + Math.random()
 
 export default function foo(a) {
-  return  4 + a + foobar()
+  return  12 + a + foobar()
 }
-
 
 
 /*MD # Hello World MD*/
