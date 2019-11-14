@@ -1,7 +1,4 @@
-var a = 42, b = a + 3;
-
-
-a = a + 1;
-
-
-
+var foo = 3;
+function g() {
+  var t = foo
+}

@@ -89,7 +89,7 @@ a = a + 1;
 
 1. we should split up variable declarations into a declaration and assignment.
 2. the declaration should only happen if not already declared
-  - the declaration should be changed to to kind "var" (let, var, const -> var)
+   - the declaration should be changed to to kind "var" (let, var, const -> var)
 3. the var-recorder-property for our variable should only be declared once
 4. after this the assignment can happen
 
@@ -157,4 +157,113 @@ a // reference error
 
 let a = 42
 ```
+
+## New Issue:
+
+```
+
+
+if (true) {
+  var a = 4
+}
+
+a = 3;
+
+a // -> 4
+```
+
+Gets now rewritten to:
+
+
+```javascript
+_recorder_.tempfile_js = _recorder_.tempfile_js || {};
+
+if (true) {
+  var a = 4;
+
+  if (!_recorder_.tempfile_js.hasOwnProperty("a")) {
+    Object.defineProperty(_recorder_.tempfile_js, "a", {
+      get() {
+        return a;
+      },
+
+      set(thisIsVererySecretVariableName) {
+        a = thisIsVererySecretVariableName;
+        return true;
+      },
+
+      enumerable: true,
+      configurable: true
+    });
+  }
+}
+
+_recorder_.tempfile_js.a = 3;
+
+_recorder_.tempfile_js.a;
+```
+
+This first time it works, but the second time it breaks... ok `var a = 4` is not rewritten yet.
+
+
+
+## Order of Execution
+
+```javascript
+var foo=42, bar=foo +1
+bar
+```
+and it gets mixed up, because we use "insertAfter"
+
+
+```javascript
+_recorder_.tempfile_js = _recorder_.tempfile_js || {};
+var foo;
+var bar;
+"(var...)";
+Object.defineProperty(_recorder_.tempfile_js, "bar", {
+  get() {
+    return bar;
+  },
+
+  set(thisIsVererySecretVariableName) {
+    bar = thisIsVererySecretVariableName;
+    return true;
+  },
+
+  enumerable: true,
+  configurable: true
+});
+Object.defineProperty(_recorder_.tempfile_js, "foo", {
+  get() {
+    return foo;
+  },
+
+  set(thisIsVererySecretVariableName) {
+    foo = thisIsVererySecretVariableName;
+    return true;
+  },
+
+  enumerable: true,
+  configurable: true
+});
+_recorder_.tempfile_js.bar = _recorder_.tempfile_js.foo + 1;
+_recorder_.tempfile_js.foo = 42;
+
+
+_recorder_.tempfile_js.bar;
+```
+
+
+
+## Idea: Generate TestCase in AST Exploerer?
+
+There is a button and UI missing that generates and conitiuesly executes "TestCases"
+for our transformations.
+
+- Input: Source + Expected Evaluation Result
+- Run: check if it evaluates....
+- example source should be replace by a per plugin set of examples with expected results...
+
+![](astexploreridea.png)
 

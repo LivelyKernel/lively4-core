@@ -123,13 +123,14 @@ export default function({ types: t, template, traverse, }) {
           state.var_recorder_info.VAR_RECORDER_NAME = VAR_RECORDER_NAME;
           state.var_recorder_info.MODULE_IDENTIFIER = MODULE_IDENTIFIER;
           
-          const varToRecordTemplate = template(`if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
+          // if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
+          const varToRecordTemplate = template(`
   Object.defineProperty(${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}, referenceString , { 
   get() { return reference; }, 
   set(thisIsVererySecretVariableName) {reference = thisIsVererySecretVariableName; return true }, 
   enumerable: true, 
   configurable: true})
-}`),
+`),
                 recordToVarTemplate = template(`reference = ${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`),
                 referenceTemplate = template(`${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.reference`);
           function replaceReference(ref) {
@@ -143,9 +144,36 @@ export default function({ types: t, template, traverse, }) {
           let moduleBoundGlobals = Object.keys(window[VAR_RECORDER_NAME][MODULE_IDENTIFIER]);
           // console.log('bound names:', ...moduleBoundGlobals);
 
-
+          // SPLIT UP VARIABLE DECLARATIONS
+          let topLevelVariableDeclarations = new Set()
+          for (let binding of Object.values(program.scope.getAllBindings())) {
+            var declarationPath = binding.path.parentPath
+            if (declarationPath.node.declarations && declarationPath.node.declarations.length > 0) {
+              topLevelVariableDeclarations.add(declarationPath) // we need to split them up
+            }
+          }
+          for(let declarationPath of Array.from(topLevelVariableDeclarations)) {
+            declarationPath.node.declarations.forEach(declaration => {
+              // if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
+              declarationPath.insertBefore(template(`var name`)({ 
+                name: declaration.id, referenceString: t.stringLiteral(declaration.id.name) }))
+              
+              
+            })
+            // insertAfter... will flip the order... so, we do it reverse and then the order will be fine ... fingers crossed! ;-)
+            declarationPath.node.declarations.reverse().forEach(declaration => {
+              if (declaration.init) {
+                declarationPath.insertAfter(template(`name = init`)({ name: declaration.id, init: declaration.init }))
+              }
+            })
+            
+            declarationPath.replaceWith(t.expressionStatement(t.stringLiteral("(var...)")))
+          }
+          
+          
+          
+         
           let bindings = program.scope.getAllBindings();
-
           // iterate all module wide bindings
           Object.values(bindings).forEach(binding => {
 
@@ -173,20 +201,13 @@ export default function({ types: t, template, traverse, }) {
               // console.warn(binding)
               binding.__ignoreRecorder__ = true;
               return;
-
             } else {
               // console.error("not matching", binding.identifier.name)
               // console.warn(binding)
             }
-debugger
-
 
             binding.referencePaths
               .filter(ref => {
-              
-                
-              
-              
                 // ExportNamedDeclarations should not be rewritten as reference
                 // they are already rewritten as binding
 
