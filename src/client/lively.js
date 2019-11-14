@@ -33,6 +33,8 @@ import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 import SystemjsWorker from "src/worker/systemjs-worker.js"
 
+
+
 /* expose external modules */
 // import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
@@ -42,6 +44,9 @@ import windows from "src/components/widgets/lively-window.js"
 import events from "src/client/morphic/events.js"
 
 let $ = window.$; // known global variables.
+
+
+var debugLogHightlights = new WeakMap()
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -1253,6 +1258,23 @@ export default class Lively {
     setTimeout( () => comp.remove(), timeout || 3000);
     return comp;
   }
+  
+  
+  // highlight and show log info on element
+  static showLog(elem, log="", timeout) {
+     
+    var lastDebugLayer = debugLogHightlights.get(elem)
+    if (!lastDebugLayer || !lastDebugLayer.parentElement) {
+      var debugText = ""
+    } else {
+      debugText = lastDebugLayer.querySelector("pre").textContent 
+    }
+    var debugLayer = lively.showElement(elem, timeout)
+    debugLogHightlights.set(elem, debugLayer)
+    debugLayer.querySelector("pre").textContent = debugText + "\n" + log
+    
+  }
+  
 
   static async showProgress(label) {
     var progressContainer  = document.querySelector("#progressContainer")
@@ -1538,8 +1560,8 @@ export default class Lively {
     return Dialog.confirm(msg)
   }
 
-  static prompt(msg, value) {
-    return Dialog.prompt(msg, value)
+  static prompt(msg, value, customizeCB) {
+    return Dialog.prompt(msg, value, customizeCB)
   }
 
   static findWorldContext(element) {

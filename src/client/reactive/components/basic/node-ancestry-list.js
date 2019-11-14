@@ -59,14 +59,18 @@ export default class NodeAncestryList extends Morph {
 
         let jsxCSSClass = '';
         if (ele.elementMetaData) {
-          jsxCSSClass = 'jsx-element';
+          jsxCSSClass = 'element-meta-data ';
+
+          if (ele.elementMetaData.jsx) {
+            jsxCSSClass += 'jsx ';
+          }
 
           if (ele.elementMetaData.aexpr) {
-            jsxCSSClass += ' active-expression';
+            jsxCSSClass += 'active-expression ';
           }
 
           if (ele.elementMetaData.activeGroup) {
-            jsxCSSClass += ' active-group-item';
+            jsxCSSClass += 'active-group-item ';
           }
         }
       

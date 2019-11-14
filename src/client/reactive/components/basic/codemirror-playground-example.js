@@ -9,8 +9,11 @@ let xbar;
   let x = 6;
 }
 x = 76;
-
+{
+  let a = 4;
 let ae = aexpr(() => x+y);
+  
+}
 ae.onChange(lively.notify);
 
 

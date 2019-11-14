@@ -4,6 +4,7 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
+import {isAExpr} from 'src/client/ast-utils.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -27,10 +28,13 @@ export default class CodemirrorPlayground extends Morph {
     // Inject styling into CodeMirror
     const livelyEditorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/lively-code-editor-inject-styles.css`}></link>;
     const codeMirrorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/codemirror-inject-styles.css`}></link>;
-    this.editor.shadowRoot.prepend(livelyEditorStyle);
-    this.lcm.shadowRoot.prepend(codeMirrorStyle);
     
+    this.editor.shadowRoot.prepend(livelyEditorStyle);    
+    this.lcm.shadowRoot.prepend(codeMirrorStyle);
     await this.lcm.editorLoaded();
+    
+    this.addExtragutter();
+    
     this.$.addKeyMap({
       // #KeyboardShortcut Alt-A show additional info of this Active Expression
       "Alt-A": cm => {
@@ -41,20 +45,25 @@ export default class CodemirrorPlayground extends Morph {
         this.snapToNextAEXpr()
       },
     });
-
   }
   
-  snapToNextAEXpr() {
-    const aexprRanges = [];
+  collectAExpr() {
+    const allAExpr = [];
+    
     this.lcm.value.traverseAsAST({
-      Identifier(path) {
-        if (path.node.name === 'aexpr') {
-          aexprRanges.push(range(path.node.loc));
+      CallExpression(path) {
+        if (isAExpr(path) ) {
+          allAExpr.push(path);
         }
       }
-    });
-    
-    if (aexprRanges.length === 0) { return; }
+    });    
+    return allAExpr;    
+  }
+  
+  // TODO delete lel
+  snapToNextAEXpr() {
+    let aexprRanges = this.aexprs.map((path)=>range(path.node.loc));    
+    if (!aexprRanges.length) { return; }
     
     const cursor = this.$.getCursor()
     const rangeToSelect = aexprRanges.find(r => r.contains(cursor)) ||
@@ -63,10 +72,13 @@ export default class CodemirrorPlayground extends Morph {
     
     rangeToSelect.selectInCM(this.$);
   }
+  
+  
   async showAExprInfo() {
     this.lcm.ternWrapper.then(tw => {
       
     });
+    console.log(this.lcm);
     this.$.showHint({
       hint(...args) {
         lively.warn(args)
@@ -76,7 +88,7 @@ export default class CodemirrorPlayground extends Morph {
             displayText: 'shows gfoo',
             className: 'cssClass',
             render(Element, self, data) {
-              return Element.appendChild(<span><span style="color: blue">hello: </span><span style="color: orange">Foo</span></span>);
+              return Element.appendChild(<span><span style="color: green">hello: </span><span style="color: orange">Foo</span></span>);
             },
             hint(CodeMirror, self, data) {
               lively.success('selected', data.text)
@@ -101,6 +113,7 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   instantUpdate() {
+    this.aexprs = this.collectAExpr();
     lively.warn('instant update');
   }
 
@@ -119,8 +132,8 @@ export default class CodemirrorPlayground extends Morph {
     this.highlightText();
     this.setBookMark();
     
-    this.addExtragutter();
-    this.extragutterMarker()
+    this.showAExprMarker();
+    
     
     this.identifierToRightGutter();
     
@@ -203,25 +216,19 @@ export default class CodemirrorPlayground extends Morph {
       this.lcm.setOption('gutters', gutters)
     }
   }
-
-  extragutterMarker() {
-    this.lcm.value.traverseAsAST({
-      Identifier: path => {
-        if (path.node.name === 'aexpr') {
-          this._extragutterMarker(path.node.loc.start.line-1, <div class="extragutter-marker" click={e => lively.notify('extra gutter marker')}><span>{path.node.name}</span></div>)
-          
-        }
-      }
-    });
+  
+  showAExprMarker(){
+    this.collectAExpr().forEach((path)=>{
+      console.log(path);
+      this.$.doc.setGutterMarker(
+        path.node.loc.start.line-1,
+        'extragutter',
+        <div class="extragutter-marker" click={e => lively.notify('extra gutter marker clicked')}>0</div>// TODO render this without the "0"
+      )
+    })
+    
   }
 
-  _extragutterMarker(line, element) {
-    this.$.doc.setGutterMarker(
-      line, // line: integer|LineHandle,
-      'extragutter', // gutterID: string,
-      element, // value: Element
-    )
-  }
 
   /*MD #### Right Gutter MD*/
   identifierToRightGutter() {

@@ -28,7 +28,7 @@ const moduleOptionsNon = {
 
 System.trace = true; // does not work in config
 
-// config for loading babal plugins
+// config for loading babel plugins
 SystemJS.config({
   baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
   babelOptions: {
@@ -40,6 +40,7 @@ SystemJS.config({
     //presets: [
     //    ["es2015", { "loose": true, "modules": false }]
     //],
+    
     plugins: []
   },
   meta: {
@@ -63,6 +64,7 @@ SystemJS.config({
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
     'babel-plugin-jsx-lively': lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js',
+    'babel-plugin-rp-jsx': lively4url + '/src/client/reactive/rp-jsx/babel-plugin-rp-jsx.js',
     'reactive-jsx': lively4url + '/src/client/reactive/reactive-jsx/reactive-jsx.js',
     'babel-plugin-rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
     'rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/rp19-jsx.js',

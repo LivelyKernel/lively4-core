@@ -6,10 +6,15 @@ import {uniq} from "utils"
 
 // _.uniq(that.value.split("\n")).join("\n")
 export async function updateCachedFilesList() {
+  
+  var oldlist = (await fetch(lively4url + "/.lively4bootfilelist")
+                  .then(r => r.text())).split("\n")
+  
   var list = self.lively4fetchLog.filter(ea => ea.method == "GET")
               .filter(ea => ea.url.match(lively4url))
               .filter(ea => !ea.url.match("lively4bundle.zip")) 
               .map(ea => ea.url.replace(lively4url + "/",""))
+              .concat(oldlist)
               ::uniq().sort()
  
   await fetch(lively4url + "/.lively4bootfilelist", {

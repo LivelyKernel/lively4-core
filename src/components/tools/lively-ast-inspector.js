@@ -14,11 +14,6 @@ export default class AstInspector extends Morph {
   
   get container() { return this.get("#container"); }
   
-  get hideLocationData() { return true; }
-  get hideTypeProperty() { return true; }
-  get hideMethods() { return true; }
-  get hideEmptyProperties() { return true; }
-  
   inspect(obj) {
     if (!obj) return;
     
@@ -38,6 +33,17 @@ export default class AstInspector extends Morph {
     }
     return content;
   }
+
+/*MD # Configuration MD*/
+  
+  get configuration() {
+    return this.configuration || lively.preferences.get("AstInspectorConfig");
+  }
+  
+  get hideLocationData() { return true; }
+  get hideTypeProperty() { return true; }
+  get hideMethods() { return true; }
+  get hideEmptyProperties() { return true; }
 
 /*MD # Displaying MD*/
   
@@ -338,26 +344,11 @@ export default class AstInspector extends Morph {
 /*MD # Lively Integration MD*/
   
   async livelyExample() {
-    const syntaxPlugins = (await Promise.all([
-        'babel-plugin-syntax-jsx',
-        'babel-plugin-syntax-do-expressions',
-        'babel-plugin-syntax-function-bind',
-        'babel-plugin-syntax-async-generators'
-      ]
-        .map(syntaxPlugin => System.import(syntaxPlugin))))
-        .map(m => m.default);
-    
     const url = lively4url + "/src/components/tools/lively-ast-inspector.js";
     const src = await fetch(url).then(r => r.text());
-    const ast = babel.transform(src, {
-        babelrc: false,
-        code: false,
-        comments: true,
-        compact: false,
-        plugins: syntaxPlugins,
-    }).ast;
+    const ast = src.toAST();
     
-    this.inspect(ast);
+    this.inspect(ast.program);
   }
   
   async livelyMigrate(other) {

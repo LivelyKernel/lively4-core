@@ -415,12 +415,8 @@ export default class Files {
     var anchors = Array.from(root.querySelectorAll("a"))
     var imgs = Array.from(root.querySelectorAll("[src]"))
     
-    debugger
-    
     var links = anchors.map(ea => ea.getAttribute("href")).filter(ea => !ea.match(/search:/)).concat(
           imgs.map(ea => ea.getAttribute("src")))
-    
-    
     
     var result = document.createElement("div")
 

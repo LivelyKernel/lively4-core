@@ -1,56 +1,31 @@
 "enable aexpr";
 
-import VivideWidget from 'src/client/vivide/components/vivide-widget.js';import Morph from 'src/components/widgets/lively-morph.js';
+import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 
 export default class VivideInspectorWidget extends VivideWidget {
   async initialize() {
     this.windowTitle = "VivideInspectorWidget";
-    this.registerButtons()
+    this.registerButtons();
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-    
-     this.get("#textField").value = this.getAttribute("data-mydata") || 0
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
   
-  display(forest, config) {
-    this.innerHTML = forest.toString();
-  }
   
-  onDblClick() {
-    this.animate([
-      {backgroundColor: "lightgray"},
-      {backgroundColor: "red"},
-      {backgroundColor: "lightgray"},
-    ], {
-      duration: 1000
+  display(forest, config){
+    super.display(forest, config);
+    this.innerHTML ='';
+    forest.forEach(async f => {
+      const inspector = await lively.create('lively-inspector');
+      inspector.inspect(f.data);
+      inspector.hideWorkspace();
+      this.appendChild(inspector);
     })
   }
   
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
+   
   
-  // this method is automatically registered as handler through ``registerButtons``
-  onPlusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
-  }
-  
-  onMinusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
-  }
-
   /* Lively-specific API */
 
   // store something that would be lost
