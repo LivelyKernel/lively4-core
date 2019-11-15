@@ -83,6 +83,7 @@ SystemJS.config({
     'babel-plugin-doit-async': lively4url + '/src/external/babel-plugin-doit-async.js',
     'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
     'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
+    'babel-plugin-var-recorder-dev': lively4url + '/src/external/babel-plugin-var-recorder-dev.js',
     'workspace-loader': lively4url + '/src/client/workspace-loader.js',
 
     // utils
@@ -120,6 +121,28 @@ const liveES7 = {
       'babel-plugin-syntax-async-generators',
       'babel-plugin-locals', // #TODO: remove this plugin from here
       'babel-plugin-var-recorder'
+    ]
+  }
+};
+
+
+const liveES7varRecorderDev = {
+  babelOptions: {
+    es2015: false,
+    stage2: false,
+    stage3: false,
+    plugins: [
+      ['babel-plugin-jsx-lively', {
+        executedIn: 'file'
+      }],
+      ['babel-plugin-rp19-jsx', {
+        executedIn: 'file'
+      }],
+      'babel-plugin-transform-do-expressions',
+      'babel-plugin-transform-function-bind',
+      'babel-plugin-syntax-async-generators',
+      'babel-plugin-locals', // #TODO: remove this plugin from here
+      'babel-plugin-var-recorder-dev'
     ]
   }
 };
@@ -183,7 +206,10 @@ SystemJS.config({
     [lively4url + '/src/client/reactive/components/rewritten/*.js']: aexprViaDirective,
     // ... except for the tests
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
-
+    
+    
+    [lively4url + '/demos/var-recorder/*.js']: liveES7varRecorderDev,
+    
     // [lively4url + '/demos/*.js']: liveES7,
     // [lively4url + '/doc/*.js']: liveES7,
     // [lively4url + '/media/*.js']: liveES7,

@@ -1,1 +1,2 @@
-import foo from "demos/foo.js"
+export var c = 3
+

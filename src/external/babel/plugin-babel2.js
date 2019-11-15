@@ -149,7 +149,9 @@ exports.translate = async function(load, traceOpts) {
         .then(function(normalized) {
           return pluginLoader.load(normalized)
             .then(function() {
-              return pluginLoader.get(normalized)['default'];
+              var result = pluginLoader.get(normalized)['default'];
+              result.livelyLocation = normalized // #Hack #Lively4  rember the URL so, we can use it in AST Explorer
+              return result
             });
         })
       );
@@ -270,8 +272,7 @@ exports.translate = async function(load, traceOpts) {
     }
     
     debugLog(`[plugin-babel] update needed: ` + cacheKey);
-
-    var output = babel.transform(load.source, {
+    var config = {
       babelrc: false,
       plugins: plugins,
       presets: presets,
@@ -305,7 +306,11 @@ exports.translate = async function(load, traceOpts) {
         }
         return m;
       }
-    });
+    }
+    
+    window.lively4lastSystemJSBabelConfig = Object.assign({}, config) // for debugging and AST Explorer
+    
+    var output = babel.transform(load.source, config);
 
     var cache = {
         input:load.source, 
