@@ -1,6 +1,6 @@
 export var c = 3
 
-c = 8 
+c = 9 
 
 
 console.log("foo c: " + c)

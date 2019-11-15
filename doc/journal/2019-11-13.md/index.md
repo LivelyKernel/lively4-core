@@ -603,4 +603,112 @@ c // undefined..
 
 Good luck to ourselves... figuring this out.
 
+### Are we there yet?
+
+Rewriting
+
+```javascript
+export var c = 3
+```
+
+Without the conditional accessor seems to solve the problem. 
+
+```javascript
+_recorder_.tempfile_js = _recorder_.tempfile_js || {};
+export var c = undefined;
+Object.defineProperty(_recorder_.tempfile_js, "c", {
+  get() {
+    return c;
+  },
+
+  set(thisIsVererySecretVariableName) {
+    c = thisIsVererySecretVariableName;
+    return true;
+  },
+
+  enumerable: true,
+  configurable: true
+});
+_recorder_.tempfile_js.c = 3;
+```
+
+Because **SystemJS** does not care about the variable declaration, as we expected, **but** it only cares that the `_export` is called in **(A)** !
+On *saving*, a new `_export` function is handed in and bound into the *setter* closure. 
+
+
+```javascript
+System.register([], function (_export, _context) {
+  "use strict";
+
+  var c;
+  return {
+    setters: [],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+
+      _export("c", c = undefined);
+
+      _export("c", c);
+
+      Object.defineProperty(_recorder_.tempfile_js, "c", {
+        get() {
+          return c;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          _export("c", c = thisIsVererySecretVariableName); // (A)
+
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      _recorder_.tempfile_js.c = 3;
+    }
+  };
+});
+```
+
+And the importing side 
+
+```javascript
+import {c} from "demos/foo.js"
+
+```
+
+binding gets updated through the module level setter **(B)**:
+
+```javascript
+System.register(["demos/foo.js"], function (_export, _context) {
+  "use strict";
+
+  var c;
+  return {
+    setters: [function (_demosFooJs) {
+      c = _demosFooJs.c; // (B)
+    }],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+      Object.defineProperty(_recorder_.tempfile_js, "c", {
+        get() {
+          return c;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          c = thisIsVererySecretVariableName;
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+    }
+  };
+});
+```
+
+
+
+
 
