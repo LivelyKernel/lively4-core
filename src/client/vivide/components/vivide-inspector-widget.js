@@ -3,24 +3,41 @@
 import VivideWidget from 'src/client/vivide/components/vivide-widget.js';
 
 export default class VivideInspectorWidget extends VivideWidget {
+  get multiSelectionConfig() {
+    return [this, {
+      selector: 'lively-inspector',
+      onSelectionChanged: selection => this.selectionChanged(selection)
+    }];
+  }
+  
+  getObjectForSelectedNode(selectedNode) {
+    // return this.data.get(selectedNode).data = this.selection.get(selectedNode);
+    return this.data.get(selectedNode);
+  }
+  
   async initialize() {
     this.windowTitle = "VivideInspectorWidget";
-    this.registerButtons();
-
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-    
-    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
   }
   
   
   display(forest, config){
     super.display(forest, config);
     this.innerHTML ='';
+    this.data = new Map();
+    this.selection = new Map();
     forest.forEach(async f => {
       const inspector = await lively.create('lively-inspector');
       inspector.inspect(f.data);
       inspector.hideWorkspace();
+      inspector.addVivideSelection(v => {
+        const s = this.selection.get(inspector);
+        const value = s.includes(v) ? s.filter(t => t!==v) : [...s, v];
+        this.selection.set(inspector, value);
+      });
       this.appendChild(inspector);
+      this.multiSelection.addItem(inspector);
+      this.data.set(inspector, f.object);
+      this.selection.set(inspector, []);
     })
   }
   
