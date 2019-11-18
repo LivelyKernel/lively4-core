@@ -1,1 +1,1 @@
-import {c} from "demos/foo.js"
+export let foo = 5

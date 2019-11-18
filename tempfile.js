@@ -1,26 +1,31 @@
-System.register(["demos/foo.js"], function (_export, _context) {
+System.register([], function (_export, _context) {
   "use strict";
 
-  var c;
+  var foo;
   return {
-    setters: [function (_demosFooJs) {
-      c = _demosFooJs.c;
-    }],
+    setters: [],
     execute: function () {
       _recorder_.tempfile_js = _recorder_.tempfile_js || {};
-      Object.defineProperty(_recorder_.tempfile_js, "c", {
+
+      _export("foo", foo = undefined);
+
+      _export("foo", foo);
+
+      Object.defineProperty(_recorder_.tempfile_js, "foo", {
         get() {
-          return c;
+          return foo;
         },
 
         set(thisIsVererySecretVariableName) {
-          c = thisIsVererySecretVariableName;
+          _export("foo", foo = thisIsVererySecretVariableName);
+
           return true;
         },
 
         enumerable: true,
         configurable: true
       });
+      _recorder_.tempfile_js.foo = 5;
     }
   };
 });
