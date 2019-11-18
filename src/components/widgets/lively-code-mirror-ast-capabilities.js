@@ -127,9 +127,10 @@ export default class ASTCapabilities {
       const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, anchor, head);
 
       //path already matches the selection
-      if (ASTCapabilities.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
+      if (this.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
         return pathContainingWholeSelection;
       }
+
       //find children that match the selection
       let selectedPaths = [];
       pathContainingWholeSelection.traverse({
@@ -490,8 +491,17 @@ export default class ASTCapabilities {
       this.extractMethod();
     }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
       menu.remove();
-      this.generateTestcase();
-    }, '→', fa('suitcase')]]], ['Import', generateImportSubmenu(this)]];
+      this.generateTestCase();
+    }, '→', fa('suitcase')], ['Class', () => {
+      menu.remove();
+      this.generateClass();
+    }, '→', fa('suitcase')], ['Getter', () => {
+      menu.remove();
+      this.generateGetter();
+    }, '→', fa('suitcase')], ['Setter', () => {
+      menu.remove();
+      this.generateSetter();
+    }, '→', fa('suitcase')]]], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -503,30 +513,74 @@ export default class ASTCapabilities {
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase MD*/
-  generateTestcase() {
+
+  generateTestCase() {
+    this.getUserInput("Enter test case explanation", "should work properly")
+      .then(input => this.generateCodeFragment(this.compileTestCase(input)));
+  }
+
+  generateGetter() {
+    this.getUserInput("Enter property name", "myCoolProperty")
+      .then(input => this.generateCodeFragment(this.compileGetter(input)));
+  }
+
+  generateSetter() {
+    this.getUserInput("Enter property name", "myCoolProperty")
+      .then(input =>this.generateCodeFragment(this.compileSetter(input)));
+  }
+  
+  generateClass() {
+    this.getUserInput("Enter class name", "Foo")
+      .then(input =>this.generateCodeFragment(this.compileClass(input)));
+  }
+  
+  async generateCodeFragment(replacement) {
     const selection = this.getFirstSelection();
     const scrollInfo = this.scrollInfo;
 
-    let testcase;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          testcase = this.compileTestCaseString();
-          this.getPathBeforeCursor(programPath, selection.selectionStart).insertAfter(testcase);
+          this.getPathBeforeCursor(programPath, selection.selectionStart).insertAfter(replacement);
         }
       }
     })).code;
     this.scrollTo(scrollInfo);
+    this.focusEditor();
   }
 
-  compileTestCaseString(templateEngine) {
-    let explanationText = prompt("Enter test case explanation") || "explanation";
+  compileTestCase(explanation) {
     return template("it(EXP, () => {\n" + "let put = 'code here';" + "})")({
-      EXP: t.stringLiteral(explanationText)
+      EXP: t.stringLiteral(explanation)
+    });
+  }
+
+  //TODO: nice identifier
+  compileGetter(propertyName) {
+    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
+  }
+
+  compileSetter(propertyName) {
+    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
+  }
+  
+  compileClass(propertyName) {
+    return t.classDeclaration(propertyName);
+  }
+
+  async getUserInput(description, defaultValue) {
+    let input = await lively.prompt(description, defaultValue);
+    return new Promise((resolve, reject) => {
+      if (input) {
+        resolve(input);
+      } else {
+        reject("No input given!");
+      }
     });
   }
 
   /*MD ### Generate Import MD*/
+
   addImport(className, url) {
     const selection = this.getFirstSelection();
     const scrollInfo = this.scrollInfo;
@@ -534,10 +588,8 @@ export default class ASTCapabilities {
       visitor: {
         Program: programPath => {
           let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(className), t.identifier(className))], t.stringLiteral(url));
-
           let selectedPath = this.getInnermostPathContainingSelection(programPath, selection.selectionStart, selection.selectionEnd);
-          debugger;
-          this.getImportLocationInAST(programPath).insertBefore(importStatement);
+          programPath.node.body.unshift(importStatement);
           selectedPath.replaceWith(t.memberExpression(t.identifier(className), t.identifier(selectedPath.node.name)));
         }
       }
@@ -548,9 +600,9 @@ export default class ASTCapabilities {
   /*MD ## Transformations MD*/
 
   /*MD ### Extract Method MD*/
-  findParameters(identifiers, extractedScope, actualSelections) {
+  findParameters(identifiers, surroundingMethod, actualSelections) {
     return identifiers.filter(identifier => {
-      return identifier.scope.hasBinding(identifier.node.name) && !extractedScope.scope.hasBinding(identifier.node.name);
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
     }).filter(identifier => {
       const bindingPath = identifier.scope.getBinding(identifier.node.name).path;
       return !this.isSelected(bindingPath, actualSelections);
@@ -559,9 +611,9 @@ export default class ASTCapabilities {
     });
   }
 
-  findReturnValues(identifiers, extractedScope, actualSelections) {
+  findReturnValues(identifiers, surroundingMethod, actualSelections) {
     const bindings = [...new Set(identifiers.filter(identifier => {
-      return identifier.scope.hasBinding(identifier.node.name) && !extractedScope.scope.hasBinding(identifier.node.name);
+      return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
     }).map(identifier => {
       return identifier.scope.getBinding(identifier.node.name);
     }))];
@@ -578,7 +630,7 @@ export default class ASTCapabilities {
     });
   }
 
-  createMethod(content, parameter, returnValues, scope, asClassMethod = true) {
+  createMethod(content, parameter, returnValues, scope) {
     var returnStatement;
     returnValues.forEach(returnValue => returnValue.returnIdentifier = returnValue.declaredInExtractedCode ? returnValue.node : t.identifier(returnValue.node.name + "_return"));
     if (returnValues.length == 1) {
@@ -590,12 +642,7 @@ export default class ASTCapabilities {
     if (returnStatement) {
       content = content.concat(content[content.length - 1].insertAfter(returnStatement));
     }
-    var newMethod;
-    if(asClassMethod) {
-      newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(content.map(p => p.node)), false, scope.node.static);
-    } else {
-      newMethod = t.variableDeclaration("const", [t.variableDeclarator(t.identifier("HopefullyNobodyEverUsesThisMethodName"), t.arrowFunctionExpression(parameter, t.blockStatement(content.map(p => p.node))))]);
-    }
+    const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(content.map(p => p.node)));
     scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
@@ -628,9 +675,7 @@ export default class ASTCapabilities {
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          const pathList = this.backwardList(programPath);
           const selectedPaths = this.getSelectedPaths(programPath);
-          //make sure these are statements!
           const actualSelections = selectedPaths.map(path => {
             const [anchor, head] = range(path.node.loc).asCM();
             return { anchor, head };
@@ -640,19 +685,10 @@ export default class ASTCapabilities {
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
-          var extractedScope;
-          var pathToInsertAfter;
-          if(surroundingMethod) {
-            pathToInsertAfter = surroundingMethod;
-            extractedScope = surroundingMethod.parentPath;
-          } else {
-            pathToInsertAfter = this.getNextASTNodeInListWith(() => true, pathList, selectedPaths[0]);
-            extractedScope = selectedPaths[0].parentPath;
-          }
-          const parameters = this.findParameters(identifiers, extractedScope, actualSelections);
-          const returnValues = this.findReturnValues(identifiers, extractedScope, actualSelections);
+          const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
+          const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
 
-          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, pathToInsertAfter, surroundingMethod);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod);
         }
       }
     }));
@@ -684,7 +720,7 @@ export default class ASTCapabilities {
       visitor: {
         Expression: path => {
           if (!done) {
-            const isSelectedPath = ASTCapabilities.isPathExactlySelected(path, selection);
+            const isSelectedPath = this.isPathExactlySelected(path, selection);
             if (isSelectedPath) {
               pathLocationToBeExtracted = path.getPathLocation();
 
@@ -808,7 +844,7 @@ export default class ASTCapabilities {
       visitor: {
         Expression: path => {
           if (!done) {
-            const isSelectedPath = ASTCapabilities.isPathExactlySelected(path, selection);
+            const isSelectedPath = this.isPathExactlySelected(path, selection);
             if (isSelectedPath) {
               pathLocationToBeExtracted = path.getPathLocation();
               done = true;
@@ -901,27 +937,15 @@ export default class ASTCapabilities {
     return { selectionStart, selectionEnd };
   }
 
-  static isPathExactlySelected(path, { selectionStart, selectionEnd }) {
+  isPathExactlySelected(path, { selectionStart, selectionEnd }) {
     const pathLocation = path.node.loc;
     if (!pathLocation) {
       return;
     }
 
-    const {
-      pathStart,
-      pathEnd
-    } = this.HopefullyNobodyEverUsesThisMethodName(pathLocation);
-
-
-    return pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
-  }
-
-  static HopefullyNobodyEverUsesThisMethodName(pathLocation) {
     const pathStart = loc(pathLocation.start);
-    const pathEnd = loc(pathLocation.end);return {
-      pathStart,
-      pathEnd
-    };
+    const pathEnd = loc(pathLocation.end);
+    return pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
   }
 
   pathByLocationFromProgram(programPath, location) {
