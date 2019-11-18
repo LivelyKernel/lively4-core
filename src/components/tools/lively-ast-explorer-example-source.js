@@ -1,3 +1,10 @@
-import {c} from "demos/foo2.js"
 
-c.d
+
+var a = [1,2,3];
+
+
+{
+  
+
+  let b = a
+}
