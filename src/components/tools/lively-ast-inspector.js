@@ -348,6 +348,9 @@ export default class AstInspector extends Morph {
     const src = await fetch(url).then(r => r.text());
     const ast = src.toAST();
     
+    
+    console.log("hello3")
+   
     this.inspect(ast.program);
   }
   
