@@ -13,19 +13,19 @@ export function executeAllTestRunners() {
 
 export function promisedEvent(eventTarget, type) {
   if (!type || !eventTarget) throw new Error("arguments missing");
-  return new Promise(resolve => eventTarget.addEventListener(type, resolve))
+  return new Promise(resolve => eventTarget.addEventListener(type, resolve));
 }
 
 // #TODO: make this more robust to urlStrings that do not contain a filename, e.g.
 // "https://goole.com"::fileName() should not "goole.com"
 export function fileName() {
-  return this.replace(/.*\//,"");
+  return this.replace(/.*\//, "");
 }
 
 // Example usage: "path/to/a.json"::fileEnding() returns "json"
 // #TODO: make this more robust to strings that do not contain a file ending
 export function fileEnding() {
-  return this.replace(/.*\./,"");
+  return this.replace(/.*\./, "");
 }
 
 // Example usage: "path/to/a.json"::replaceFileEndingWith("xml") returns "path/to/a.xml"
@@ -40,17 +40,17 @@ export class PausableLoop {
     this.cancelID;
     this.running = false;
   }
-  
+
   ensureRunning() {
-    if(!this.running) {
+    if (!this.running) {
       this.running = true;
 
       const loopBody = () => {
         this.func();
-        if(this.running) {
+        if (this.running) {
           this.cancelID = requestAnimationFrame(loopBody);
         }
-      }
+      };
 
       this.cancelID = requestAnimationFrame(loopBody);
     }
@@ -63,26 +63,16 @@ export class PausableLoop {
 }
 
 export function hintForLabel(label) {
-  return <div style="
-    margin: 0.5px 0px;
-    font-size: x-small;
-    background-color: lightgray;
-    border: 1px solid gray;
-    border-radius: 2px;
-    max-width: fit-content;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  ">
+  return <div style="\n    margin: 0.5px 0px;\n    font-size: x-small;\n    background-color: lightgray;\n    border: 1px solid gray;\n    border-radius: 2px;\n    max-width: fit-content;\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n  ">
     {label}
-  </div>
+  </div>;
 }
 
 // #TODO: chrome does not support dataTransfer.addElement :(
 // e.g. dt.addElement(<h1>drop me</h1>);
 // Therefore, we have to perform this hack stolen from:
 // https://stackoverflow.com/questions/12766103/html5-drag-and-drop-events-and-setdragimage-browser-support
-export function asDragImageFor(evt, offsetX=0, offsetY=0) {
+export function asDragImageFor(evt, offsetX = 0, offsetY = 0) {
   const clone = this.cloneNode(true);
   document.body.appendChild(clone);
   clone.style["z-index"] = "10000000";
@@ -96,14 +86,12 @@ export function asDragImageFor(evt, offsetX=0, offsetY=0) {
 }
 
 export function listAsDragImage(labels, evt, offsetX, offsetY) {
-  const hints = labels
-    .map(textualRepresentation)
-    .map(hintForLabel);
+  const hints = labels.map(textualRepresentation).map(hintForLabel);
   const hintLength = hints.length;
   const maxLength = 5;
-  if(hints.length > maxLength) {
+  if (hints.length > maxLength) {
     hints.length = maxLength;
-    hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`))
+    hints.push(hintForLabel(`+ ${hintLength - maxLength} more.`));
   }
   const dragInfo = <div style="width: 151px;">
     {...hints}
@@ -115,7 +103,7 @@ const TEMP_OBJECT_STORAGE = new Map();
 export function getTempKeyFor(obj) {
   const tempKey = uuid();
   TEMP_OBJECT_STORAGE.set(tempKey, obj);
-  
+
   // safety net: remove the key in 10 minutes
   setTimeout(() => removeTempKey(tempKey), 10 * 60 * 1000);
 
@@ -129,10 +117,11 @@ export function removeTempKey(tempKey) {
 }
 
 export function uuid() {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-		var r = crypto.getRandomValues(new Uint8Array(1))[0]%16|0, v = c == 'x' ? r : (r&0x3|0x8);
-		return v.toString(16);
-	});	
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    var r = crypto.getRandomValues(new Uint8Array(1))[0] % 16 | 0,
+        v = c == 'x' ? r : r & 0x3 | 0x8;
+    return v.toString(16);
+  });
 }
 
 /**
@@ -177,7 +166,7 @@ export function copyTextToClipboard(text) {
     boxShadow: 'none',
 
     // Avoid flash of white box if rendered for any reason.
-    background: 'transparent',
+    background: 'transparent'
   });
 
   textArea.value = text;
@@ -193,7 +182,7 @@ export function copyTextToClipboard(text) {
     lively.warn('Copy to clipboard not supported.', err);
     supported = false;
   }
-  if(supported) {
+  if (supported) {
     let enabled;
     try {
       enabled = document.queryCommandEnabled('copy');
@@ -201,9 +190,9 @@ export function copyTextToClipboard(text) {
       lively.warn('Copy to clipboard not enabled.', err);
       enabled = false;
     }
-    if(enabled) {
+    if (enabled) {
       try {
-        if(!document.execCommand('copy')) {
+        if (!document.execCommand('copy')) {
           lively.warn('Copying not successful.');
         }
       } catch (err) {
@@ -216,13 +205,15 @@ export function copyTextToClipboard(text) {
 }
 
 export function functionMetaInfo(functionToCheck) {
-  if(functionToCheck === undefined) { return {
-    isFunction: false,
-    isAsync: false,
-    isGenerator: false
-  }; }
-  
-  const description = ({}).toString.call(functionToCheck)
+  if (functionToCheck === undefined) {
+    return {
+      isFunction: false,
+      isAsync: false,
+      isGenerator: false
+    };
+  }
+
+  const description = {}.toString.call(functionToCheck);
   return {
     isFunction: !!description.match(/\[object (Async)?(Generator)?Function\]/),
     isAsync: !!description.match(/\[object Async(Generator)?Function\]/),
@@ -231,9 +222,11 @@ export function functionMetaInfo(functionToCheck) {
 }
 // taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
 export function isFunction(functionToCheck) {
-  if(functionToCheck === undefined) { return false; }
-  let isFunc = ({}).toString.call(functionToCheck) === '[object Function]';
-  let isAsyncFunc = ({}).toString.call(functionToCheck) === '[object AsyncFunction]';
+  if (functionToCheck === undefined) {
+    return false;
+  }
+  let isFunc = {}.toString.call(functionToCheck) === '[object Function]';
+  let isAsyncFunc = {}.toString.call(functionToCheck) === '[object AsyncFunction]';
   return isFunc || isAsyncFunc;
 }
 
@@ -244,76 +237,75 @@ export function cancelEvent(evt) {
 
 export function textualRepresentation(thing) {
   // primitive falsy value?
-  if(!thing) { return '' + thing}
-  
+  if (!thing) {
+    return '' + thing;
+  }
+
   // toString method different from Object?
-  if(thing.toString && thing.toString !== Object.prototype.toString) {
+  if (thing.toString && thing.toString !== Object.prototype.toString) {
     return thing.toString();
   }
-  
+
   // instance of a named class?
-  if(thing.constructor && thing.constructor.name) {
+  if (thing.constructor && thing.constructor.name) {
     return 'a ' + thing.constructor.name;
   }
-  
+
   return 'unprintable object';
 }
 
-
 export function getDeepProperty(obj, pathString) {
-  var path = pathString.split(".")
-  var next
-  var result = obj
-  while(next = path.shift()) {
-    var nextResult = result[next] 
-    if (!nextResult) return // could not resolve path
-    result = nextResult
+  var path = pathString.split(".");
+  var next;
+  var result = obj;
+  while (next = path.shift()) {
+    var nextResult = result[next];
+    if (!nextResult) return; // could not resolve path
+    result = nextResult;
   }
-  return result
+  return result;
 }
 
 /*
  * waits for the deep construction of a data structure // object
  * 
  */
-export async function waitForDeepProperty(obj, pathString, timeout=60000 /* one minuete */, step=10) {
-  var path = pathString.split(".")
-  var next
-  var result = obj
-  var nextResult
-  while(next = path.shift()) {
-    nextResult  = result[next]
-    while(!nextResult) {
-      await wait(step) // busy waiting...
-      nextResult  = result[next]
+export async function waitForDeepProperty(obj, pathString, timeout = 60000 /* one minuete */, step = 10) {
+  var path = pathString.split(".");
+  var next;
+  var result = obj;
+  var nextResult;
+  while (next = path.shift()) {
+    nextResult = result[next];
+    while (!nextResult) {
+      await wait(step // busy waiting...
+      );nextResult = result[next];
     }
     // if (!nextResult) return // could not resolve path
-    result = nextResult
+    result = nextResult;
     // console.log("next result " + next + " = " + result )
-    
   }
-  return result
+  return result;
 }
-
 
 // https://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
 export function parseQuery(queryString) {
-    var query = {};
-    var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
-    for (var i = 0; i < pairs.length; i++) {
-        var pair = pairs[i].split('=');
-        query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
-    }
-    return query;
+  var query = {};
+  var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var pair = pairs[i].split('=');
+    query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+  }
+  return query;
 }
 
 export function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export class CallableObject {
-  // #TODO: implement this
-}
+export class CallableObject {}
+// #TODO: implement this
+
 
 /**
  * Executes the given function considering the given context objects.
@@ -347,16 +339,16 @@ export function using(contextManagerIterable, callback) {
   let result;
   let error;
   const contextManagers = Array.from(contextManagerIterable);
-  
+
   contextManagers.forEach(cm => cm.__enter__());
   try {
     result = callback();
-  } catch(e) {
+  } catch (e) {
     error = e;
   } finally {
     contextManagers.reverse().forEach(cm => cm.__exit__(error));
   }
-  if(error !== undefined) {
+  if (error !== undefined) {
     throw error;
   }
   return result;
@@ -367,9 +359,9 @@ export function using(contextManagerIterable, callback) {
  */
 export function onStyleChange(target, callback) {
   const styleObserver = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {  
-      if(mutation.type == "attributes" && mutation.attributeName == "style") {
-          callback();
+    mutations.forEach(mutation => {
+      if (mutation.type == "attributes" && mutation.attributeName == "style") {
+        callback();
       }
     });
   });
@@ -382,41 +374,26 @@ export function onStyleChange(target, callback) {
  * shakes given element using css transformations
  */
 export function shake(target) {
-  target.animate([
-    { transform: 'translate(1px, 1px) rotate(0deg)' },
-    { transform: 'translate(-1px, -2px) rotate(-1deg)' },
-    { transform: 'translate(-3px, 0px) rotate(1deg)' },
-    { transform: 'translate(3px, 2px) rotate(0deg)' },
-    { transform: 'translate(1px, -1px) rotate(1deg)' },
-    { transform: 'translate(-1px, 2px) rotate(-1deg)' },
-    { transform: 'translate(-3px, 1px) rotate(0deg)' },
-    { transform: 'translate(3px, 1px) rotate(-1deg)' },
-    { transform: 'translate(-1px, -1px) rotate(1deg)' },
-    { transform: 'translate(1px, 2px) rotate(0deg)' },
-    { transform: 'translate(1px, -2px) rotate(-1deg)' },
-  ], { 
+  target.animate([{ transform: 'translate(1px, 1px) rotate(0deg)' }, { transform: 'translate(-1px, -2px) rotate(-1deg)' }, { transform: 'translate(-3px, 0px) rotate(1deg)' }, { transform: 'translate(3px, 2px) rotate(0deg)' }, { transform: 'translate(1px, -1px) rotate(1deg)' }, { transform: 'translate(-1px, 2px) rotate(-1deg)' }, { transform: 'translate(-3px, 1px) rotate(0deg)' }, { transform: 'translate(3px, 1px) rotate(-1deg)' }, { transform: 'translate(-1px, -1px) rotate(1deg)' }, { transform: 'translate(1px, 2px) rotate(0deg)' }, { transform: 'translate(1px, -2px) rotate(-1deg)' }], {
     // timing options
     duration: 100,
-    iterations: 1,
+    iterations: 1
     // easing: 'cubic-bezier(0.42, 0, 0.58, 1)'
   });
 }
 
-
 export function updateEditors(url, excludedEditors = []) {
-  
-  
-  
-  const editors = lively.findAllElements(ea => ea.localName == "lively-editor", true)
-     
+
+  const editors = lively.findAllElements(ea => ea.localName == "lively-editor", true
+
   // DEPRECATED
   // Array.from(document.querySelectorAll("lively-index-search::shadow lively-editor, lively-container::shadow lively-editor, lively-editor"));
 
-  const editorsToUpdate = editors.filter( ea => ea.getURLString() === url && !ea.textChanged && !excludedEditors.includes(ea));
+  );const editorsToUpdate = editors.filter(ea => ea.getURLString() === url && !ea.textChanged && !excludedEditors.includes(ea));
 
-  editorsToUpdate.forEach( ea => {
+  editorsToUpdate.forEach(ea => {
     // lively.showElement(ea);
-    ea.loadFile()
+    ea.loadFile();
   });
 }
 
@@ -436,28 +413,28 @@ function cmToBabel(cmPosition) {
 }
 
 class Location {
-  get isLocation() { return true; }
-  
+  get isLocation() {
+    return true;
+  }
+
   constructor(l) {
     this._cmLine = l.line;
     this._cmCharacter = l.ch;
   }
-  
+
   isEqual(l) {
-    const other = loc(l)
+    const other = loc(l);
     return this._cmLine === other._cmLine && this._cmCharacter === other._cmCharacter;
   }
   isBefore(l) {
-    const other = loc(l)
-    return this._cmLine < other._cmLine ||
-      (this._cmLine === other._cmLine && this._cmCharacter <= other._cmCharacter);
+    const other = loc(l);
+    return this._cmLine < other._cmLine || this._cmLine === other._cmLine && this._cmCharacter <= other._cmCharacter;
   }
   isStrictBefore(l) {
-    const other = loc(l)
-    return this._cmLine < other._cmLine ||
-      (this._cmLine === other._cmLine && this._cmCharacter < other._cmCharacter);
+    const other = loc(l);
+    return this._cmLine < other._cmLine || this._cmLine === other._cmLine && this._cmCharacter < other._cmCharacter;
   }
-  
+
   asBabel() {
     return cmToBabel(this.asCM());
   }
@@ -467,7 +444,7 @@ class Location {
       ch: this._cmCharacter
     };
   }
-  
+
   innerToString() {
     return `${this._cmLine}:${this._cmCharacter}`;
   }
@@ -478,49 +455,93 @@ class Location {
 
 export function loc(l) {
   if (l.isLocation) {
-    return l
+    return l;
   }
   // cm style
   if (l.ch !== undefined) {
-    return new Location(l)
+    return new Location(l);
   }
   // babel style
   if (l.column !== undefined) {
-    return new Location(babelToCM(l))
+    return new Location(babelToCM(l));
   }
   throw new Error(`Location value ${l} not recognized.`);
 }
 
 class Range {
-  get isRange() { return true; }
+  get isRange() {
+    return true;
+  }
 
   constructor(start, end) {
-    this._start = loc(start);
-    this._end = loc(end);
+    this.setRange(start, end);
   }
-  
+
+  setRange(start, end) {
+    debugger;
+    if (loc(end).isStrictBefore(loc(start))) {
+      this.setRange(end, start);
+      return;
+    }
+    this.start = loc(start);
+    this.end = loc(end);
+  }
+
   asBabel() {
     throw new Error('asBabel not yet implemented.');
   }
+
   asCM() {
     // from, to
-    return [this._start.asCM(), this._end.asCM()]
+    return [this.start.asCM(), this.end.asCM()];
   }
 
-  contains(l) {
-    const ll = loc(l);
-    return this._start.isBefore(ll) && ll.isBefore(this._end);
+  contains(location) {
+    if (location.isRange) {
+      return containsRange(location);
+    }
+    const ll = loc(location);
+    return this.start.isBefore(ll) && ll.isBefore(this.end);
   }
+
+  strictlyContains(location) {
+    if (location.isRange) {
+      return strictlyContainsRange(location);
+    }
+    const ll = loc(location);
+    return this.start.isStrictBefore(ll) && ll.isStrictBefore(this.end);
+  }
+
+  containsRange(range) {
+    return this.contains(range.start) && this.contains(range.end);
+  }
+
+  strictlyContainsRange(range) {
+    return this.strictlyContains(range.start) || this.strictlyContains(range.end);
+  }
+
+  containsPartsOfRange(range) {
+    return this.contains(range.start) || this.contains(range.end);
+  }
+
+  isEqual(range) {
+    return this.start.isEqual(range.start) && this.end.isEqual(range.end);
+  }
+
   isBehind(l) {
-    return loc(l).isBefore(this._start)
+    return loc(l).isBefore(this.start);
   }
-  
+
+  isBefore(l) {
+    return this.end.isBefore(loc(l));
+  }
+
   selectInCM(cm) {
-    cm.setSelection(...this.asCM())
+    cm.setSelection(...this.asCM());
   }
-  
+
   toString() {
-    return `range(${this._start.innerToString()}, ${this._end.innerToString()})`
+    return `range(${this.start.innerToString()}, ${this.end.innerToString()})`;
   }
 }
 
@@ -530,12 +551,14 @@ export function range(r) {
   }
   // cm style
   if (Array.isArray(r)) {
-    return new Range(r.first, r.second)
+    return new Range(r.first, r.second);
+  }
+  if (r.anchor && r.head) {
+    return new Range(r.anchor, r.head);
   }
   // babel style
   if (r.start && r.end) {
-    return new Range(r.start, r.end)
+    return new Range(r.start, r.end);
   }
   throw new Error(`Range value ${r} not recognized.`);
 }
-
