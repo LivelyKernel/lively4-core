@@ -70,6 +70,7 @@ export default class LivelyBibtexEntry extends Morph {
   livelyMigrate(other) {
     this.value = other.value;
   }
+    
   updateView() {
     if (!this.value || !this.value.entryTags) return;
     this.get("#key").textContent = this.key;

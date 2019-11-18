@@ -1051,23 +1051,23 @@ export default class Container extends Morph {
   
   // #important
   async onSave(doNotQuit) {
+    var url = this.getURL()
+    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     if (!this.isEditing()) {
       this.saveEditsInView();
       return;
     }
 
     if (this.getURL().pathname.match(/\/$/)) {
-      files.saveFile(this.getURL(),"");
+      files.saveFile(url,"");
 
       return;
     }
-    this.get("#editor").setURL(this.getURL());
+    this.get("#editor").setURL(url);
     await this.get("#editor").saveFile()
     this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
     this.parentElement.__ignoreUpdates = true
     var sourceCode = this.getSourceCode();
-    var url = this.getURL()
-    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     // lively.notify("!!!saved " + url)
     window.LastURL = url
     if (await this.isTemplate(url)) {
