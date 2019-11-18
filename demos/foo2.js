@@ -1,5 +1,5 @@
 export var c = 3;
-c = 4;
+c = 7;
 
 export function foo() {
   c++

@@ -1,1 +1,3 @@
-export let foo = 5
+import {c} from "demos/foo2.js"
+
+c.d
