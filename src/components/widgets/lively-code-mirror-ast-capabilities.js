@@ -515,25 +515,21 @@ export default class ASTCapabilities {
   /*MD ### Generate Testcase MD*/
 
   generateTestCase() {
-    this.getUserInput("Enter test case explanation", "should work properly")
-      .then(input => this.generateCodeFragment(this.compileTestCase(input)));
+    this.getUserInput("Enter test case explanation", "should work properly").then(input => this.generateCodeFragment(this.compileTestCase(input)));
   }
 
   generateGetter() {
-    this.getUserInput("Enter property name", "myCoolProperty")
-      .then(input => this.generateCodeFragment(this.compileGetter(input)));
+    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileGetter(input)));
   }
 
   generateSetter() {
-    this.getUserInput("Enter property name", "myCoolProperty")
-      .then(input =>this.generateCodeFragment(this.compileSetter(input)));
+    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileSetter(input)));
   }
-  
+
   generateClass() {
-    this.getUserInput("Enter class name", "Foo")
-      .then(input =>this.generateCodeFragment(this.compileClass(input)));
+    this.getUserInput("Enter class name", "Foo").then(input => this.generateCodeFragment(this.compileClass(input)));
   }
-  
+
   async generateCodeFragment(replacement) {
     const selection = this.getFirstSelection();
     const scrollInfo = this.scrollInfo;
@@ -557,15 +553,22 @@ export default class ASTCapabilities {
 
   //TODO: nice identifier
   compileGetter(propertyName) {
-    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
+    return t.classMethod("get", t.identifier(propertyName), [],
+                         t.blockStatement([t.returnStatement(
+                           t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
   }
 
   compileSetter(propertyName) {
-    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
+    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], 
+                         t.blockStatement([t.expressionStatement(
+                           t.assignmentExpression("=", t.memberExpression(
+                             t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
   }
-  
-  compileClass(propertyName) {
-    return t.classDeclaration(propertyName);
+
+  compileClass(className) {
+    return t.classDeclaration(t.identifier(className), null,
+                              t.classBody([t.classMethod("constructor", t.Identifier("constructor"),
+                                                         [], t.blockStatement([]))]), []);
   }
 
   async getUserInput(description, defaultValue) {
