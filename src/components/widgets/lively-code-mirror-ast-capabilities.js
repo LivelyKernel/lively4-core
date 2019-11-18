@@ -456,10 +456,6 @@ export default class ASTCapabilities {
     const identName = identifier.node.name;
     return this.getCorrespondingClasses(identName);
   }
-
-  getImportLocationInAST(programPath) {
-    return this.nextPath(programPath, path => t.isImportDeclaration(path.node));
-  }
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
