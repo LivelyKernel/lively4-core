@@ -19,7 +19,21 @@ export default class ASTCapabilities {
     return this.codeMirror;
   }
   get selectionRanges() {
+    if (this.editor.listSelections().length == 0) {
+      return this.firstSelection;
+    }
     return this.editor.listSelections().map(range);
+  }
+
+  get firstSelection() {
+    return range(this._getFirstSelectionOrCursorPosition());
+  }
+
+  _getFirstSelectionOrCursorPosition() {
+    if (this.editor.listSelections().length == 0) {
+      return { anchor: this.editor.getCursor(), head: this.editor.getCursor() };
+    }
+    return this.editor.listSelections()[0];
   }
 
   /*MD ## Navigation MD*/
@@ -109,25 +123,23 @@ export default class ASTCapabilities {
   /**
    * Returns the innermost node, that contains the selected text.
    */
-  getInnermostPathContainingSelection(startingPath, anchor, head) {
+  getInnermostPathContainingSelection(startingPath, selection) {
     // go down to minimal selected node
-    const nextPathContainingCursor = (newStartingPath, { anchor, head }) => {
+    const nextPathContainingCursor = (newStartingPath, selection) => {
       return this.nextPath(newStartingPath, path => {
-        const location = range(path.node.loc);
-        return location.contains(anchor) && location.contains(head);
+        return range(path.node.loc).containsRange(selection);
       });
     };
-    return this.getLastPath(startingPath, prevPath => nextPathContainingCursor(prevPath, { anchor, head }));
+    return this.getLastPath(startingPath, prevPath => nextPathContainingCursor(prevPath, selection));
   }
 
   getSelectedPaths(programPath) {
-    return this.editor.listSelections().map(({ anchor, head }) => {
-      const selectionStart = loc(anchor);
-      const selectionEnd = loc(head);
-      const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, anchor, head);
+    return this.selectionRanges.map(selection => {
+      debugger;
+      const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, selection);
 
       //path already matches the selection
-      if (this.isPathExactlySelected(pathContainingWholeSelection, { selectionStart, selectionEnd })) {
+      if (this.isPathExactlySelected(pathContainingWholeSelection, selection)) {
         return pathContainingWholeSelection;
       }
 
@@ -135,10 +147,7 @@ export default class ASTCapabilities {
       let selectedPaths = [];
       pathContainingWholeSelection.traverse({
         enter(path) {
-          const pathLocation = path.node.loc;
-          const pathStart = loc(pathLocation.start);
-          const pathEnd = loc(pathLocation.end);
-          if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+          if (selection.containsPartsOfRange(range(path.node.loc))) {
             selectedPaths.push(path);
           }
           path.skip();
@@ -157,19 +166,12 @@ export default class ASTCapabilities {
    * In this example, when 'foo' is selected, b will be returned, since it is the outermost node that contains the
    * entire selection, but nothing more.
    */
-  getOutermostPathContainingSelectionWithMinimalSelectionRange(startingPath, anchor, head) {
-    const selectionStart = loc(anchor);
-    const selectionEnd = loc(head);
-    var currentPath = this.getInnermostPathContainingSelection(startingPath, anchor, head);
+  getOutermostPathContainingSelectionWithMinimalSelectionRange(startingPath, selection) {
+    var currentPath = this.getInnermostPathContainingSelection(startingPath, selection);
     currentPath.findParent(path => {
-      const pathLocation = path.node.loc;
-      const pathStart = loc(pathLocation.start);
-      const pathEnd = loc(pathLocation.end);
-
-      if (pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd)) {
+      if (selection.isEqual(range(path.node.loc))) {
         currentPath = path;
       }
-
       return false;
     });
     return currentPath;
@@ -207,18 +209,12 @@ export default class ASTCapabilities {
     const programPath = this.programPath;
     const pathList = reversed ? this.backwardList(programPath) : this.forwardList(programPath);
 
-    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
+    const maxPaths = this.selectionRanges.map(selection => {
 
-      const currentPath = this.getInnermostPathContainingSelection(programPath, anchor, head);
-
-      let selectionStart = loc(anchor);
-      let selectionEnd = loc(head);
-      const pathLocation = currentPath.node.loc;
-      const pathStart = loc(pathLocation.start);
-      const pathEnd = loc(pathLocation.end);
+      const currentPath = this.getInnermostPathContainingSelection(programPath, selection);
 
       // do we fully select the current path?
-      if (selectionStart.isEqual(pathStart) && selectionEnd.isEqual(pathEnd)) {
+      if (selection.isEqual(range(currentPath.node.loc))) {
         return this.getNextASTNodeInListWith(condition, pathList, currentPath);
       } else {
         return currentPath;
@@ -359,19 +355,12 @@ export default class ASTCapabilities {
   /*MD ### Shortcuts MD*/
 
   expandSelection() {
-    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
-
-      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const maxPaths = this.selectionRanges.map(selection => {
+      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, selection);
 
       // go up again
-      let selectionStart = loc(anchor);
-      let selectionEnd = loc(head);
       return pathToShow.find(path => {
-        const pathLocation = path.node.loc;
-        const pathStart = loc(pathLocation.start);
-        const pathEnd = loc(pathLocation.end);
-
-        return pathStart.isStrictBefore(selectionStart) || selectionEnd.isStrictBefore(pathEnd);
+        return range(path.node.loc).strictlyContainsRange(selection);
       }) || pathToShow;
     });
 
@@ -379,8 +368,8 @@ export default class ASTCapabilities {
   }
 
   reduceSelection() {
-    const maxPaths = this.editor.listSelections().map(({ anchor, head }) => {
-      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const maxPaths = this.selectionRanges.map(selection => {
+      const pathToShow = this.getInnermostPathContainingSelection(this.programPath, selection);
 
       return this.getFirstChildOrSelf(pathToShow);
     });
@@ -397,9 +386,8 @@ export default class ASTCapabilities {
   }
 
   selectNextReference(reversed) {
-    const { anchor, head } = this.editor.listSelections()[0];
 
-    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
     const bindings = this.getBindings(selectedPath);
     if (bindings) {
@@ -412,9 +400,7 @@ export default class ASTCapabilities {
   }
 
   async selectDeclaration() {
-    const { anchor, head } = this.editor.listSelections()[0];
-
-    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
     if (!identifier) {
       return;
@@ -436,9 +422,7 @@ export default class ASTCapabilities {
   }
 
   selectBindings() {
-    const { anchor, head } = this.editor.listSelections()[0];
-
-    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
     const bindings = this.getBindings(selectedPath);
     if (bindings) {
@@ -447,8 +431,7 @@ export default class ASTCapabilities {
   }
 
   async findImports() {
-    const { anchor, head } = this.editor.listSelections()[0];
-    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, anchor, head);
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
     if (!identifier) {
       return;
@@ -531,13 +514,13 @@ export default class ASTCapabilities {
   }
 
   async generateCodeFragment(replacement) {
-    const selection = this.getFirstSelection();
+    const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
 
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          this.getPathBeforeCursor(programPath, selection.selectionStart).insertAfter(replacement);
+          this.getPathBeforeCursor(programPath, selection.start).insertAfter(replacement);
         }
       }
     })).code;
@@ -553,22 +536,15 @@ export default class ASTCapabilities {
 
   //TODO: nice identifier
   compileGetter(propertyName) {
-    return t.classMethod("get", t.identifier(propertyName), [],
-                         t.blockStatement([t.returnStatement(
-                           t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
+    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
   }
 
   compileSetter(propertyName) {
-    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], 
-                         t.blockStatement([t.expressionStatement(
-                           t.assignmentExpression("=", t.memberExpression(
-                             t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
+    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
   }
 
   compileClass(className) {
-    return t.classDeclaration(t.identifier(className), null,
-                              t.classBody([t.classMethod("constructor", t.Identifier("constructor"),
-                                                         [], t.blockStatement([]))]), []);
+    return t.classDeclaration(t.identifier(className), null, t.classBody([t.classMethod("constructor", t.Identifier("constructor"), [], t.blockStatement([]))]), []);
   }
 
   async getUserInput(description, defaultValue) {
@@ -585,13 +561,14 @@ export default class ASTCapabilities {
   /*MD ### Generate Import MD*/
 
   addImport(className, url) {
-    const selection = this.getFirstSelection();
+    const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
           let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(className), t.identifier(className))], t.stringLiteral(url));
-          let selectedPath = this.getInnermostPathContainingSelection(programPath, selection.selectionStart, selection.selectionEnd);
+
+          let selectedPath = this.getInnermostPathContainingSelection(programPath, selection);
           programPath.node.body.unshift(importStatement);
           selectedPath.replaceWith(t.memberExpression(t.identifier(className), t.identifier(selectedPath.node.name)));
         }
@@ -680,8 +657,7 @@ export default class ASTCapabilities {
         Program: programPath => {
           const selectedPaths = this.getSelectedPaths(programPath);
           const actualSelections = selectedPaths.map(path => {
-            const [anchor, head] = range(path.node.loc).asCM();
-            return { anchor, head };
+            return range(path.node.loc);
           });
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
 
@@ -713,7 +689,7 @@ export default class ASTCapabilities {
 
   /*MD ### Extract Variable MD*/
   async extractExpressionIntoLocalVariable() {
-    const selection = this.getFirstSelection();
+    const selection = this.firstSelection;
     let done = false;
 
     const scrollInfo = this.scrollInfo;
@@ -837,7 +813,7 @@ export default class ASTCapabilities {
   }
 
   async wrapExpressionIntoActiveExpression() {
-    const selection = this.getFirstSelection();
+    const selection = this.firstSelection;
     let done = false;
 
     const scrollInfo = this.scrollInfo;
@@ -915,40 +891,19 @@ export default class ASTCapabilities {
 
   isSelected(path, selections = null) {
     if (!selections) {
-      selections = this.editor.listSelections();
+      selections = this.selectionRanges;
     }
-    const pathLocation = path.node.loc;
-    const pathStart = loc(pathLocation.start);
-    const pathEnd = loc(pathLocation.end);
-    for (const range of selections) {
-      const selectionStart = loc(range.anchor);
-      const selectionEnd = loc(range.head);
-      if (!(pathEnd.isBefore(selectionStart) || selectionEnd.isBefore(pathStart))) {
+    const pathRange = range(path.node.loc);
+    for (const selection of selections) {
+      if (selection.containsRange(pathRange)) {
         return true;
       }
     }
     return false;
   }
 
-  getFirstSelection() {
-    if (this.editor.listSelections().length == 0) {
-      return { selectionStart: this.editor.getCursor(), selectionEnd: this.editor.getCursor() };
-    }
-    const { anchor, head } = this.editor.listSelections()[0];
-    const selectionStart = loc(anchor);
-    const selectionEnd = loc(head);
-    return { selectionStart, selectionEnd };
-  }
-
-  isPathExactlySelected(path, { selectionStart, selectionEnd }) {
-    const pathLocation = path.node.loc;
-    if (!pathLocation) {
-      return;
-    }
-
-    const pathStart = loc(pathLocation.start);
-    const pathEnd = loc(pathLocation.end);
-    return pathStart.isEqual(selectionStart) && selectionEnd.isEqual(pathEnd);
+  static isPathExactlySelected(path, selection) {
+    return selection.isEqual(range(path.node.loc));
   }
 
   pathByLocationFromProgram(programPath, location) {
