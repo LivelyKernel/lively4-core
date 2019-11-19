@@ -74,6 +74,17 @@ export default class FileIndex {
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
         classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user'
+    }).upgrade(function () {
+    })
+    
+    db.version(2).stores({
+        files: 'url,name,type,version,modified,options,title,tags,versions',
+        history: '[url+version],url,name,type,version,modified,options,title,tags',
+        commits: 'hash,message,date',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
         exports: 'url,*functions,*classes'
     }).upgrade(function () {

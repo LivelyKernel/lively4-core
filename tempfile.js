@@ -24,6 +24,7 @@ System.register([], function (_export, _context) {
 
 
       {
+        f(_recorder_.tempfile_js.a);
 
         let b = _recorder_.tempfile_js.a;
       }

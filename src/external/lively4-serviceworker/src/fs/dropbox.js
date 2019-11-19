@@ -224,6 +224,3 @@ export default class Filesystem extends Base {
   }
   
 }
-
-console.log("dropbox loaded!")
-

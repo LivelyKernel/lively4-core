@@ -31,13 +31,13 @@ export default class MatchesInShadow extends Morph {
       evt => this.onDblClick(evt))
   }
   attachedCallback() {
-    lively.warn('ADDED')
+    // lively.warn('ADDED')
   }
   detachedCallback() {
-    lively.warn('REMOVED')
+    // lively.warn('REMOVED')
   }
   attributeChangedCallback(attrName, oldVal, newVal) {
-    lively.warn('CHANGED ' + attrName, oldVal + ' -> ' + newVal);
+    // lively.warn('CHANGED ' + attrName, oldVal + ' -> ' + newVal);
   }
   keyframeHack(event) {
     lively.notify(event.animationName, event.selector);

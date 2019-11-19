@@ -11,8 +11,6 @@ export class FooClass {
   }
 }
 
-lively.notify('LOADED A')
-
 // var bar = 1000
 
 
