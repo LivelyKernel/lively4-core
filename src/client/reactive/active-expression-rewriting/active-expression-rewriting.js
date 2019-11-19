@@ -379,10 +379,10 @@ class DataStructureHook extends Hook {
                 hook.notifyDependencies();
               });
             } else {
-              console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+              // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
             }
           } else {
-            console.warn(`Property ${addDescriptor.key} has no value.`)
+            // console.warn(`Property ${addDescriptor.key} has no value.`)
           }
         });
     }
