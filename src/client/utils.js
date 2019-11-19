@@ -478,7 +478,6 @@ class Range {
   }
 
   setRange(start, end) {
-    debugger;
     if (loc(end).isStrictBefore(loc(start))) {
       this.setRange(end, start);
       return;

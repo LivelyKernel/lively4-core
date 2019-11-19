@@ -27,6 +27,8 @@ const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, bab
 
 const FETCH_TIMEOUT = 5000
 
+const t = babel.types;
+
 import { wait } from 'utils';
 
 
@@ -72,7 +74,8 @@ export default class FileIndex {
         links: '[link+url], link, url, location, status',
         modules: 'url, *dependencies',
         classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
-        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user'
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
+        exports: 'url,*functions,*classes'
     }).upgrade(function () {
     })
    
@@ -118,6 +121,7 @@ export default class FileIndex {
       var result = this.extractModuleSemantics(file)
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
+      this.updateExportEntry(file.url, result)
     }
   }
   
@@ -161,6 +165,25 @@ export default class FileIndex {
   async addClass(clazz) {
     await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
     this.db.classes.put(clazz)
+  }
+  
+  async updateExportEntry(url, semantics) {
+    if (!semantics || (!semantics.functionExports && !semantics.classExports)) {
+      return
+    }
+    if (semantics.functionExports.length > 0 || semantics.classExports.length > 0) {
+      let exportEntry = {
+        url: url,
+        functions: semantics.functionExports,
+        classes: semantics.classExports
+      }
+      await this.addExportEntry(exportEntry)
+    }
+  }
+  
+  async addExportEntry(exportEntry) {
+    await this.db.exports.where({url: exportEntry.url}).delete()
+    this.db.exports.put(exportEntry)
   }
 
   async updateModule(fileUrl, semantics) {
@@ -427,6 +450,8 @@ export default class FileIndex {
     let classes = []
     let dependencies = []
     let importDeclarations = new Map()
+    let functionExports = []
+    let classExports = []
     babel.traverse(ast,{
       ImportDeclaration(path) {
         if (path.node.source && path.node.source.value) {
@@ -477,9 +502,7 @@ export default class FileIndex {
                   leadingComments: item.leadingComments
                 }
                 methods.push(method)
-              }
-              
-              
+              }              
             })
           }
           clazz.methods = methods
@@ -487,9 +510,17 @@ export default class FileIndex {
           clazz.superClassUrl = superClassUrl
           classes.push(clazz)
         } 
+      },
+      ExportNamedDeclaration(path) {
+        if(t.isFunctionDeclaration(path.node.declaration)) {
+          functionExports.push(path.node.declaration.id.name)
+        }
+        if(t.isClassDeclaration(path.node.declaration)) {
+          classExports.push(path.node.declaration.id.name)
+        }
       }
     })
-    return {classes, dependencies}
+    return {classes, dependencies, functionExports, classExports}
   }
   
   // ********************************************************

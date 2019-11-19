@@ -135,7 +135,6 @@ export default class ASTCapabilities {
 
   getSelectedPaths(programPath) {
     return this.selectionRanges.map(selection => {
-      debugger;
       const pathContainingWholeSelection = this.getInnermostPathContainingSelection(programPath, selection);
 
       //path already matches the selection
@@ -437,7 +436,9 @@ export default class ASTCapabilities {
       return;
     }
     const identName = identifier.node.name;
-    return this.getCorrespondingClasses(identName);
+    let functions = await this.getFunctionExportURLs(identName);
+    let classes = await this.getCorrespondingClasses(identName);
+    return {identName, functions, classes};
   }
   /*MD ## Factoring Menu MD*/
 
@@ -448,11 +449,12 @@ export default class ASTCapabilities {
 
     const myself = this;
     async function generateImportSubmenu() {
-      let classes = await myself.findImports();
+      let {identName, functions, classes} = await myself.findImports();
       let submenu = [];
-      classes.forEach(cl => submenu.push([cl.name + ", " + cl.url, () => {
-        menu.remove();myself.addImport(cl.name, cl.url);
-      }, '-', fa('share-square-o')]));
+      functions.forEach(url => submenu.push([url.replace(lively4url,''), () => {
+        menu.remove();myself.addImport(url, identName, true);}, '-', fa('share-square-o')]));
+      classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url,''), () => {
+        menu.remove();myself.addImport(cl.url, cl.name, false);}, '-', fa('share-square-o')]));
       return submenu;
     }
 
@@ -555,18 +557,18 @@ export default class ASTCapabilities {
   }
 
   /*MD ### Generate Import MD*/
-
-  addImport(className, url) {
+  addImport(url, importName, isFunction) {
     const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(className), t.identifier(className))], t.stringLiteral(url));
-
+          let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(importName), t.identifier(importName))], t.stringLiteral(url));
           let selectedPath = this.getInnermostPathContainingSelection(programPath, selection);
           programPath.node.body.unshift(importStatement);
-          selectedPath.replaceWith(t.memberExpression(t.identifier(className), t.identifier(selectedPath.node.name)));
+          if (!isFunction) {
+            selectedPath.replaceWith(t.memberExpression(t.identifier(importName), t.identifier(selectedPath.node.name)));
+          }
         }
       }
     })).code;
@@ -937,10 +939,18 @@ export default class ASTCapabilities {
 
   async getCorrespondingClasses(methodName) {
     let index = await FileIndex.current();
+    //debugger
     let locations = await index.db.classes.filter(cl => {
-      return cl.methods.some(me => me.name == methodName);
-    }).toArray();
+      return cl.methods.some(me => me.name == methodName);}).toArray(); //.filter(cl => {index.db.exports.where({url: cl.url}).and({classes: cl.name}).count((count) => {return count}).then(num => num > 0)})
     locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
     return locations;
+  }
+  
+  async getFunctionExportURLs(methodName) {
+    let index = await FileIndex.current();
+    let locations = await index.db.exports.filter(exp => {
+      return exp.functions.some(me => me == methodName);
+    }).toArray();
+    return locations//.map(loc => loc.url.replace(lively4url,''))
   }
 }
