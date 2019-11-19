@@ -213,6 +213,13 @@ export default class Files {
     if (cachedInfo) {
       return cachedInfo.exists
     }
+    
+    // karma / travis cannot handle option requests
+    if (window.__karma__) { 
+      return fetch(urlString, { 
+          method: 'HEAD' 
+        }).then(resp => resp.status == 200); 
+    }  
   
     var resp = (await fetch(urlString, {method: "OPTIONS"}))
     if (resp.status != 200) return false
