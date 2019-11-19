@@ -951,6 +951,6 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    return locations//.map(loc => loc.url.replace(lively4url,''))
+    return locations.map(loc => loc.url)//.replace(lively4url,''))
   }
 }
