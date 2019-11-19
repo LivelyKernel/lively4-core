@@ -15,5 +15,5 @@ var c = 3
 
 bar3
 
-lively.notify('LOADED B')
+// lively.notify('LOADED B')
 
