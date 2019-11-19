@@ -120,9 +120,7 @@ export default class LivelyMenu extends Morph {
       this.selectItem(this.items[0]);
     } else {
       var matchingItems = this.matchingItems;
-      var targetIndex = matchingItems.indexOf(this.currentItem) + offset;
-      targetIndex = Math.max(targetIndex, 0);
-      targetIndex = Math.min(targetIndex, matchingItems.length - 1);
+      var targetIndex = (matchingItems.indexOf(this.currentItem) + offset + matchingItems.length) % matchingItems.length; //cycling through menu items
       this.selectItem(matchingItems[targetIndex]);
     }
   }
