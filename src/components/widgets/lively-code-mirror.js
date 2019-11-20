@@ -720,6 +720,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     return s
   }
+  
+  stripErrorString(s) {
+    return s
+      .replace(/\n {2}Evaluating workspace:.*/,"")
+      .replace(/\n {2}Loading workspace:.*/,"")
+  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -728,7 +734,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       console.error(e);
       if (printResult) {
         window.LastError = e;
-        this.printResult("" + e);
+        this.printResult(this.stripErrorString("" + e));
       } else {
         lively.handleError(e);
       }
