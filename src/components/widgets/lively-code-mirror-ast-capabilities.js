@@ -483,7 +483,7 @@ export default class ASTCapabilities {
     const identName = identifier.node.name;
     let functions = await this.getFunctionExportURLs(identName);
     let classes = await this.getCorrespondingClasses(identName);
-    return {identName, functions, classes};
+    return { identName, functions, classes };
   }
   /*MD ## Factoring Menu MD*/
 
@@ -611,10 +611,16 @@ export default class ASTCapabilities {
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(importName), t.identifier(importName))], t.stringLiteral(url));
-
+          let existingImportStatement = this.nextPath(programPath, path => {
+            return t.isImportDeclaration(path) && path.node.source.value == url;
+          });
           let selectedPath = this.getInnermostPathContainingSelection(programPath, selection);
-          programPath.node.body.unshift(importStatement);
+          if (!existingImportStatement) {
+            let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(importName), t.identifier(importName))], t.stringLiteral(url));
+            programPath.node.body.unshift(importStatement);
+          } else if (!existingImportStatement.node.specifiers.some(spec => spec.imported.name == importName)) {
+            existingImportStatement.node.specifiers.push(t.identifier(importName));
+          }
           if (!isFunction) {
             selectedPath.replaceWith(t.memberExpression(t.identifier(importName), t.identifier(selectedPath.node.name)));
           }
@@ -1032,6 +1038,7 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    return locations.map(loc => loc.url)//.replace(lively4url,''))
+    return locations.map(loc => loc.url //.replace(lively4url,''))
+    );
   }
 }
