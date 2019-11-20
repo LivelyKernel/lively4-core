@@ -452,7 +452,8 @@ export default class ASTCapabilities {
     const identName = identifier.node.name;
 
     const declaration = await this.getDeclaration(identifier);
-    if (declaration) {
+    //needs smarter selection of source
+    if (declaration && !t.isImportSpecifier(declaration)) {
       this.selectPaths([declaration]);
     } else {
       let classPath = this.getClassPath(this.programPath);
@@ -461,7 +462,15 @@ export default class ASTCapabilities {
       if (methodPath) {
         this.selectPaths([methodPath]);
       } else {
-        locationsArray.forEach(cl => lively.openBrowser(cl.url, true, " " + identName));
+        locationsArray.forEach(cl => lively.openBrowser(cl.url, true).then(container => {
+          container.asyncGet("#editor").then(async livelyEditor => {
+            let newCodeMirror = livelyEditor.livelyCodeMirror();
+            var cm = await livelyEditor.awaitEditor()
+            newCodeMirror.astCapabilities(cm).then(ac => {
+              ac.selectPaths([ac.getMethodPath(ac.programPath, identName)]);
+            })
+          })
+        }));
       }
     }
   }
