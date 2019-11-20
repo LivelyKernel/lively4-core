@@ -100,11 +100,11 @@ export default class LivelyMenu extends Morph {
   }
 
   onUpDown(evt) {
-    this.sellectUpOrDown(evt, -1);
+    this.selectUpOrDown(evt, -1);
   }
 
   onDownDown(evt) {
-    this.sellectUpOrDown(evt, 1);
+    this.selectUpOrDown(evt, 1);
   }
   
   onEscDown(evt) {
@@ -115,7 +115,7 @@ export default class LivelyMenu extends Morph {
     this.remove();
   }
   
-  sellectUpOrDown(evt, offset = 0) {
+  selectUpOrDown(evt, offset = 0) {
     if (!this.currentItem) {
       this.selectItem(this.items[0]);
     } else {
@@ -128,7 +128,7 @@ export default class LivelyMenu extends Morph {
   onLeftDown(evt) {
     if (this.parentMenu) {
       lively.focusWithoutScroll(this.parentMenu)
-      this.parentMenu.sellectUpOrDown(evt)
+      this.parentMenu.selectUpOrDown(evt)
     }
   }
   
@@ -152,10 +152,11 @@ export default class LivelyMenu extends Morph {
   
   enterSubmenu(evt) {
     lively.focusWithoutScroll(this.submenu);
-    this.submenu.sellectUpOrDown(evt);
+    this.submenu.selectUpOrDown(evt);
   }
+  
 
-  onEnterDown(evt) {
+  onEnterUp(evt) {
     if (!this.currentItem) return
 
     var entry = this.currentItem.entry

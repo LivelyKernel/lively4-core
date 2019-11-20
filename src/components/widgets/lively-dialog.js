@@ -6,15 +6,8 @@ export default class Dialog extends Morph {
 
   initialize() {
     this.registerButtons();
-    this.get("#prompt").addEventListener("keydown", (evt) => {
-      if (evt.keyCode == 13) { // ENTER
-        this.enterdown = true;
-        console.log("down");
-      }
-    })
     this.get("#prompt").addEventListener("keyup", (evt) => {
-      console.log("up");
-      if (evt.keyCode == 13 && this.enterdown === true) { // ENTER
+      if (evt.keyCode == 13) { // ENTER
         this.onPromptEntered(evt);
       }
     })
