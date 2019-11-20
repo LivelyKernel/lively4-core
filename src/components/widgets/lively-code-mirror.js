@@ -725,6 +725,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     return s
       .replace(/\n {2}Evaluating workspace:.*/,"")
       .replace(/\n {2}Loading workspace:.*/,"")
+      .replace(/\n {2}Instantiating workspace:.*/,"")
   }
 
   async tryBoundEval(str, printResult) {
@@ -753,7 +754,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           .catch( error => {
             console.error(error);
             // window.LastError = error;
-            this.printResult("Error in Promise: \n" +error)
+            this.printResult(this.stripErrorString("Error in Promise: \n" +error))
           })
       } else {
         this.printResult(" " + this.ensuredPrintString(result), result)
