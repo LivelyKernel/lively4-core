@@ -455,10 +455,11 @@ export default class ASTCapabilities {
     if (declaration) {
       this.selectPaths([declaration]);
     } else {
-      let locationsArray = await this.getCorrespondingClasses(identName);
       let classPath = this.getClassPath(this.programPath);
-      if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
-        this.selectPaths([this.getMethodPath(classPath, identName)]);
+      let methodPath = this.getMethodPath(classPath, identName);
+      let locationsArray = await this.getCorrespondingClasses(identName);
+      if (methodPath) {
+        this.selectPaths([methodPath]);
       } else {
         locationsArray.forEach(cl => lively.openBrowser(cl.url, true, " " + identName));
       }
@@ -505,6 +506,43 @@ export default class ASTCapabilities {
       return submenu;
     }
 
+    //next: create getInnermostDescribePath
+    function isInDescribe(path) {
+
+      while (path !== null) {
+        if (path.node.type === "CallExpression" && path.node.callee.name === "describe") {
+          return true;
+        }
+        path = path.parentPath;
+      }
+      return false;
+    }
+
+    async function generateGenerationSubmenu() {
+
+      let submenu = [['Testcase', () => {
+        menu.remove();
+        myself.generateTestCase();
+      }, '→', fa('suitcase')], ['Class', () => {
+        menu.remove();
+        myself.generateClass();
+      }, '→', fa('suitcase')], ['Getter', () => {
+        menu.remove();
+        myself.generateGetter();
+      }, '→', fa('suitcase')], ['Setter', () => {
+        menu.remove();
+        myself.generateSetter();
+      }, '→', fa('suitcase')]];
+
+      //remove testcase if not in describe
+      const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
+      if (!isInDescribe(selectedPath)) {
+        submenu.shift();
+      }
+
+      return submenu;
+    }
+
     const menuItems = [['selection to local variable', () => {
       menu.remove();
       this.extractExpressionIntoLocalVariable();
@@ -517,19 +555,7 @@ export default class ASTCapabilities {
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
-    }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
-      menu.remove();
-      this.generateTestCase();
-    }, '→', fa('suitcase')], ['Class', () => {
-      menu.remove();
-      this.generateClass();
-    }, '→', fa('suitcase')], ['Getter', () => {
-      menu.remove();
-      this.generateGetter();
-    }, '→', fa('suitcase')], ['Setter', () => {
-      menu.remove();
-      this.generateSetter();
-    }, '→', fa('suitcase')]]], ['Import', generateImportSubmenu()]];
+    }, 'Alt+M', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -1025,10 +1051,19 @@ export default class ASTCapabilities {
 
   async getCorrespondingClasses(methodName) {
     let index = await FileIndex.current();
-    //debugger
-    let locations = await index.db.classes.filter(cl => {
+
+    //find classes that contain the method
+    let possibleClasses = await index.db.classes.filter(cl => {
       return cl.methods.some(me => me.name == methodName);
-    }).toArray(); //.filter(cl => {index.db.exports.where({url: cl.url}).and({classes: cl.name}).count((count) => {return count}).then(num => num > 0)})
+    }).toArray();
+
+    //find files that export things with the urls from the found classes
+    let possibleExports = await index.db.exports.where('url').anyOf(possibleClasses.map(cl => cl.url)).toArray();
+
+    //reduce the found classes with the found possible exports
+    let locations = possibleClasses.filter(cl => {
+      return possibleExports.some(e => e.url == cl.url && e.classes.some(eCl => eCl == cl.name));
+    });
     locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
     return locations;
   }
@@ -1038,7 +1073,6 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    return locations.map(loc => loc.url //.replace(lively4url,''))
-    );
+    return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
 }
