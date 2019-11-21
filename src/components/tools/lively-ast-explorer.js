@@ -206,13 +206,15 @@ export default class AstExplorer extends Morph {
         var outputSource = this.outputEditor.editor.getValue()
         if (this.get("#systemjs").checked) {
           // use systemjs to load it's module without any further transformation
-          var url = lively4url + "/" + filename // replace this with local TMP 
-          await lively.unloadModule(url)
+          var url = "tmp://" + filename // replace this with local TMP 
+          
+          var modURL = lively.swxURL(url)
+          await lively.unloadModule(modURL)
           await fetch(url, {
             method: "PUT",
             body: outputSource 
           })
-          await System.import(url)
+          await System.import(modURL)
         } else {
           var result ='' + (await this.outputEditor.boundEval(outputSource)).value;
         }

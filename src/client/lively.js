@@ -445,6 +445,9 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    await System.import("src/client/protocols/wikipedia.js") 
+    await System.import("src/client/protocols/tmp.js") 
+    
     await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me
