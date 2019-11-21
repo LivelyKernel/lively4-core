@@ -144,7 +144,7 @@ export default class Inspector extends Morph {
       }
       if (value == null) return;  
       var childNode = this.display(value, false, ea, obj)
-      if (childNode) contentNode.appendChild(childNode); // force object display        
+      if (childNode) contentNode.appendChild(childNode); // force object display 
     });
   }
   
@@ -161,6 +161,15 @@ export default class Inspector extends Morph {
     node.name = name
     this.renderObject(node, obj, expand, name);
     return node;
+  }
+  
+  addVivideSelection(cb, node){
+    const root = node ? node : this.container;
+    const atts = root.querySelectorAll('.attrValue');
+    for(let i = 0; i < atts.length; i++){
+      const value = atts.item(i).innerHTML;
+      atts.item(i).addEventListener('click', () => cb(value.startsWith('"') ? value.slice(1, -1) : value));
+    }
   }
   
   changeAttributeValue(obj, attrName, attrValue) {

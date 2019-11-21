@@ -1,3 +1,5 @@
+() => {
+  class Bar {}
+}
 
-
-<div></div>
+var a = 3

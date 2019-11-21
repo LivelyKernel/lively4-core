@@ -33,6 +33,8 @@ import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 import SystemjsWorker from "src/worker/systemjs-worker.js"
 
+
+
 /* expose external modules */
 // import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
@@ -42,6 +44,9 @@ import windows from "src/components/widgets/lively-window.js"
 import events from "src/client/morphic/events.js"
 
 let $ = window.$; // known global variables.
+
+
+var debugLogHightlights = new WeakMap()
 
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
@@ -92,8 +97,14 @@ export default class Lively {
   static findDirectDependentModules(path) {
      var mod = System.normalizeSync(path);
      return Object.values(System.loads)
-      .filter( ea =>
-        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
+      .filter( ea => {
+       if (ea.key.match("unnamed_module"))  {
+         
+         return false
+       }
+        
+        return ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod)
+      })        
       .map( ea => ea.key)
   }
 
@@ -347,17 +358,19 @@ export default class Lively {
       if (document.querySelector("lively-console")) {
         console.log(error)
       } else {
-        console.error('#########################################', error, error.stack);
-        await lively.notify("Error: ", error, 10, () => {
-        		lively.openComponentInWindow("lively-error").then( comp => {
-              comp.stack =  error.stack
-              comp.parentElement.setAttribute("title",  "" + error.message)
-              comp.style.height = "max-content"
-              var bounds = comp.getBoundingClientRect()
-              comp.parentElement.style.height = (bounds.height + 20)+ "px"
-              comp.parentElement.style.width = bounds.width + "px"
-            })
-          }, "red");
+        console.error('[error] ', error, error.stack);
+        if (!window.__karma__) {
+          await lively.notify("Error: ", error, 10, () => {
+              lively.openComponentInWindow("lively-error").then( comp => {
+                comp.stack =  error.stack
+                comp.parentElement.setAttribute("title",  "" + error.message)
+                comp.style.height = "max-content"
+                var bounds = comp.getBoundingClientRect()
+                comp.parentElement.style.height = (bounds.height + 20)+ "px"
+                comp.parentElement.style.width = bounds.width + "px"
+              })
+            }, "red");
+        }
       }
     } catch(e) {
       console.log("An error happend while handling and error: " + e)
@@ -432,6 +445,9 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    await System.import("src/client/protocols/wikipedia.js") 
+    await System.import("src/client/protocols/tmp.js") 
+    
     await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me
@@ -835,6 +851,7 @@ export default class Lively {
   }
 
   static error(title, text, timeout, cb) {
+    debugger
     this.notify(title, text, timeout, cb, 'red');
   }
 
@@ -1253,6 +1270,23 @@ export default class Lively {
     setTimeout( () => comp.remove(), timeout || 3000);
     return comp;
   }
+  
+  
+  // highlight and show log info on element
+  static showLog(elem, log="", timeout) {
+     
+    var lastDebugLayer = debugLogHightlights.get(elem)
+    if (!lastDebugLayer || !lastDebugLayer.parentElement) {
+      var debugText = ""
+    } else {
+      debugText = lastDebugLayer.querySelector("pre").textContent 
+    }
+    var debugLayer = lively.showElement(elem, timeout)
+    debugLogHightlights.set(elem, debugLayer)
+    debugLayer.querySelector("pre").textContent = debugText + "\n" + log
+    
+  }
+  
 
   static async showProgress(label) {
     var progressContainer  = document.querySelector("#progressContainer")
@@ -1538,8 +1572,8 @@ export default class Lively {
     return Dialog.confirm(msg)
   }
 
-  static prompt(msg, value) {
-    return Dialog.prompt(msg, value)
+  static prompt(msg, value, customizeCB) {
+    return Dialog.prompt(msg, value, customizeCB)
   }
 
   static findWorldContext(element) {

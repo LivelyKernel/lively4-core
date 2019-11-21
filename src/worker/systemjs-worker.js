@@ -17,7 +17,7 @@ export default class SystemjsWorker {
         var msg = evt.data
         console.log("bootstrap onmessage", msg)
         if (msg.message == "error") {
-          lively.error(msg.error)
+          lively.error("[systemjs-worker]", msg.error || msg.value)
         }
         if (msg.message == "loaded") {
           console.log("worker loaded", url)

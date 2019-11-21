@@ -389,7 +389,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
         },
-        // #KeyboardShortcut Alt-Shift-Right Select previous reference
+        // #KeyboardShortcut Alt-Shift-Right Select next reference
         // #todo find unused keybinding, Alt-Shift-Right is already used by the editor 
         "Shift-Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
@@ -402,6 +402,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-R Rename this identifier
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.selectBindings());
+        },
+        // #KeyboardShortcut Alt-M Extract method
+        "Alt-M": cm => {
+          this.astCapabilities(cm).then(ac => ac.extractMethod());
         },
         // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
         "Alt-Enter": cm => {
@@ -716,6 +720,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     return s
   }
+  
+  stripErrorString(s) {
+    return s
+      .replace(/\n {2}Evaluating workspace:.*/,"")
+      .replace(/\n {2}Loading workspace:.*/,"")
+      .replace(/\n {2}Instantiating workspace:.*/,"")
+  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -724,7 +735,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       console.error(e);
       if (printResult) {
         window.LastError = e;
-        this.printResult("" + e);
+        this.printResult(this.stripErrorString("" + e));
       } else {
         lively.handleError(e);
       }
@@ -743,7 +754,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           .catch( error => {
             console.error(error);
             // window.LastError = error;
-            this.printResult("Error in Promise: \n" +error)
+            this.printResult(this.stripErrorString("Error in Promise: \n" +error))
           })
       } else {
         this.printResult(" " + this.ensuredPrintString(result), result)

@@ -1,6 +1,7 @@
 /*
  * Stores page-specific preferences in the body, so it gets saved/loaded with other content
  */
+
 export default class Preferences {
   
   static get defaults() {

@@ -755,8 +755,7 @@ export default class Container extends Morph {
     }
   }
   
-  async newFile(path="", type="md") {
-    
+  async newFile(path="", type="md") {  
     var content = "here we go...."
     var ending = type
     if (type == "drawio") {
@@ -766,7 +765,15 @@ export default class Container extends Morph {
     
     path = path.replace(/[^/]*$/,"") + "newfile." + ending 
     
-    var fileName = window.prompt('Please enter the name of the file', path);
+    var fileName = await lively.prompt('Please enter the name of the file', path, async dialog => {
+      // select the filename in the path...
+      await lively.sleep(100) // wait for the new file
+      var input = dialog.get("input")
+      var s = input.value
+      var m = s.match(/([^/.]*)([^/]*)$/)
+      input.select()
+      input.setSelectionRange(m.index,m.index + m[1].length)      
+    })
     if (!fileName) {
       lively.notify("no file created");
       return;
@@ -783,10 +790,19 @@ export default class Container extends Morph {
     this.showCancelAndSave();
 
     await this.followPath(fileName);
-    
-    
-    
+      
     this.focus()
+  }
+  
+  async newDirectory(path="") {
+    var fileName = await lively.prompt('Please enter the name of the directory', path);
+      if (!fileName) {
+        lively.notify("no file created");
+        return;
+      }
+      await fetch(fileName, {method: 'MKCOL'});
+      lively.notify("created " + fileName);
+      this.followPath(fileName);
   }
   
   /*MD ## Events MD*/
@@ -1035,23 +1051,23 @@ export default class Container extends Morph {
   
   // #important
   async onSave(doNotQuit) {
+    var url = this.getURL()
+    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     if (!this.isEditing()) {
       this.saveEditsInView();
       return;
     }
 
     if (this.getURL().pathname.match(/\/$/)) {
-      files.saveFile(this.getURL(),"");
+      files.saveFile(url,"");
 
       return;
     }
-    this.get("#editor").setURL(this.getURL());
+    this.get("#editor").setURL(url);
     await this.get("#editor").saveFile()
     this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
     this.parentElement.__ignoreUpdates = true
     var sourceCode = this.getSourceCode();
-    var url = this.getURL()
-    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     // lively.notify("!!!saved " + url)
     window.LastURL = url
     if (await this.isTemplate(url)) {
@@ -1105,15 +1121,10 @@ export default class Container extends Morph {
   }
 
   async onNewdirectory() {
-    var fileName = window.prompt('Please enter the name of the directory', this.getPath());
-    if (!fileName) {
-      lively.notify("no file created");
-      return;
-    }
-    await fetch(fileName, {method: 'MKCOL'});
-    lively.notify("created " + fileName);
-    this.followPath(fileName);
+    this.newDirectory(this.getPath())
   }
+  
+
 
 
   onVersions() {
@@ -1425,16 +1436,6 @@ export default class Container extends Morph {
   }
 
   
-
-
-  
-  
-
-
-  
-
- 
-  
   /*MD ## Navbar MD*/
 
   clearNavbar() {
@@ -1463,6 +1464,7 @@ export default class Container extends Morph {
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
     navbar.newFile = (url, type) => { this.newFile(url, type) }
+    navbar.newDirectory = (url, type) => { this.newDirectory(url, type) }
     navbar.followPath = (path, lastPath) => { 
       this.contextURL = lastPath
       this.followPath(path) 

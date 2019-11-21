@@ -213,6 +213,13 @@ export default class Files {
     if (cachedInfo) {
       return cachedInfo.exists
     }
+    
+    // karma / travis cannot handle option requests
+    if (window.__karma__) { 
+      return fetch(urlString, { 
+          method: 'HEAD' 
+        }).then(resp => resp.status == 200); 
+    }  
   
     var resp = (await fetch(urlString, {method: "OPTIONS"}))
     if (resp.status != 200) return false
@@ -415,12 +422,8 @@ export default class Files {
     var anchors = Array.from(root.querySelectorAll("a"))
     var imgs = Array.from(root.querySelectorAll("[src]"))
     
-    debugger
-    
     var links = anchors.map(ea => ea.getAttribute("href")).filter(ea => !ea.match(/search:/)).concat(
           imgs.map(ea => ea.getAttribute("src")))
-    
-    
     
     var result = document.createElement("div")
 

@@ -284,10 +284,12 @@ async function intializeLively() {
   var lastMessage
 
   var estimatedSteps = 10;
-  var stepCounter = 1;
+  var stepCounter = 0;
 
-  function groupedMessage( message) {
-    var part = stepCounter++
+  function groupedMessage( message, inc=true) {
+    if (inc) stepCounter++;
+    var part = stepCounter
+    
     var numberOfSteps = estimatedSteps
     lastMessage =  {part, message, begin: performance.now()}
 
@@ -391,8 +393,14 @@ async function intializeLively() {
     // wait on all components to intialize their content.... e.g. the container loading a file
     var componentWithContent = Array.from(lively.allElements(document.body))
         .filter(ea => ea.livelyContentLoaded && ea.livelyContentLoaded.then)  
-    groupedMessage(`Wait on ${componentWithContent.length} components with content`);          
-      await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    window.lively4debugBootComponentWithContent = componentWithContent
+    
+    
+    groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
+                   componentWithContent.map(ea => `${ea.localName}`).join(", "));
+    
+    
+    await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
     groupedMessageEnd();
 
     console.log("Finally loaded!");
