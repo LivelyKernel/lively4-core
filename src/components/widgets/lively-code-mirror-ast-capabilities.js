@@ -491,14 +491,14 @@ export default class ASTCapabilities {
   }
 
   async findImports() {
+    let functions, classes, identName
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
-    if (!identifier) {
-      return;
+    if (identifier) {
+      identName = identifier.node.name;
+      functions = await this.getFunctionExportURLs(identName);
+      classes = await this.getCorrespondingClasses(identName);
     }
-    const identName = identifier.node.name;
-    let functions = await this.getFunctionExportURLs(identName);
-    let classes = await this.getCorrespondingClasses(identName);
     return { identName, functions, classes };
   }
   /*MD ## Factoring Menu MD*/
@@ -509,17 +509,6 @@ export default class ASTCapabilities {
     }
 
     const myself = this;
-    async function generateImportSubmenu() {
-      let { identName, functions, classes } = await myself.findImports();
-      let submenu = [];
-      functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
-        menu.remove();myself.addImport(url, identName, true);
-      }, '-', fa('share-square-o')]));
-      classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
-        menu.remove();myself.addImport(cl.url, cl.name, false);
-      }, '-', fa('share-square-o')]));
-      return submenu;
-    }
 
     //next: create getInnermostDescribePath
     function isInDescribe(path) {
@@ -532,6 +521,8 @@ export default class ASTCapabilities {
       }
       return false;
     }
+    
+  /*MD ### Generate Submenus MD*/
 
     async function generateGenerationSubmenu() {
 
@@ -557,6 +548,26 @@ export default class ASTCapabilities {
 
       return submenu;
     }
+    
+    async function generateImportSubmenu() {
+      let { identName, functions, classes } = await myself.findImports();
+      let submenu = [];
+      if(!identName || functions.length == 0 && classes.length == 0) {
+        submenu.push(['none', () => {menu.remove()}, '', '']);
+      } else {
+        functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
+          menu.remove();
+          myself.addImport(url, identName, true);
+        }, '-', fa('share-square-o')]));
+        classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
+          menu.remove();
+          myself.addImport(cl.url, cl.name, false);
+        }, '-', fa('share-square-o')]));
+      }
+      return submenu;
+    }
+    
+  /*MD ### Generate Factoring Menu MD*/
 
     const menuItems = [['selection to local variable', () => {
       menu.remove();
