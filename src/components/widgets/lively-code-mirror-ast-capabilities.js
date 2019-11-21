@@ -368,12 +368,16 @@ export default class ASTCapabilities {
   /** 
    * Get the path for the first method with the given name
    */
-  getMethodPath(classPath, name) {
+  getMethodPath(programPath, name) {
     let methodPath;
-    classPath.traverse({
+    programPath.traverse({
       ClassMethod(path) {
-        //debugger;
         if (!methodPath && path.node.key.name == name) {
+          methodPath = path;
+        }
+      },
+      FunctionDeclaration(path) {
+        if (!methodPath && path.node.id.name == name) {
           methodPath = path;
         }
       }
@@ -458,18 +462,20 @@ export default class ASTCapabilities {
     } else {
       let classPath = this.getClassPath(this.programPath);
       let methodPath = this.getMethodPath(classPath, identName);
-      let locationsArray = await this.getCorrespondingClasses(identName);
+      const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
+      const functionUrls = await this.getFunctionExportURLs(identName);
+      const urls = classUrls.concat(functionUrls);
       if (methodPath) {
         this.selectPaths([methodPath]);
       } else {
-        locationsArray.forEach(cl => lively.openBrowser(cl.url, true).then(container => {
+        urls.forEach(url => lively.openBrowser(url, true).then(container => {
           container.asyncGet("#editor").then(async livelyEditor => {
             let newCodeMirror = livelyEditor.livelyCodeMirror();
-            var cm = await livelyEditor.awaitEditor()
+            var cm = await livelyEditor.awaitEditor();
             newCodeMirror.astCapabilities(cm).then(ac => {
               ac.selectPaths([ac.getMethodPath(ac.programPath, identName)]);
-            })
-          })
+            });
+          });
         }));
       }
     }
