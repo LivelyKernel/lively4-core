@@ -294,12 +294,14 @@ export default class LivelyContainerNavbar extends Morph {
   }
 
   // #important #public 
-  async show(targetURL, sourceContent, contextURL, force=false) {
+  async show(targetURL, sourceContent, contextURL, force=false, contentType) {
+    
     // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
     this.sourceContent = sourceContent
+    this.contentType = contentType
     
     this.contextURL = contextURL
     var lastDir = this.currentDir
@@ -347,7 +349,17 @@ export default class LivelyContainerNavbar extends Morph {
   
   async fetchStats(targetURL) {
     
-    var root = this.getRoot(targetURL)
+    var myStats = await fetch(targetURL, {
+      method: "OPTIONS",
+    }).then(r => r.status == 200 ? r.json() : {})
+    
+    if (myStats.parent) {
+      var root = myStats.parent
+      
+    } else {
+      root = this.getRoot(targetURL)
+    }
+    
     
     try {
       var stats = await fetch(root, {
@@ -811,19 +823,18 @@ export default class LivelyContainerNavbar extends Morph {
     }
     this.lastDetailsURL = this.url
     
-    
-    
-    if (!this.targetItem) return 
-    var sublist = this.targetItem.querySelector("ul")
-    if (!sublist) {
-      sublist = document.createElement("ul");
-      this.targetItem.appendChild(sublist);
-    } else {
-      sublist.innerHTML = ""
-    }
-    if (this.url !== this.contextURL && this.targetItem.classList.contains("directory")) {
-      var optionsWasHandles = true
-      await this.showDirectory(this.url, sublist)
+    if (this.targetItem) {
+      var sublist = this.targetItem.querySelector("ul")
+      if (!sublist) {
+        sublist = document.createElement("ul");
+        this.targetItem.appendChild(sublist);
+      } else {
+        sublist.innerHTML = ""
+      }
+      if (this.url !== this.contextURL && this.targetItem.classList.contains("directory")) {
+        var optionsWasHandles = true
+        await this.showDirectory(this.url, sublist)
+      }      
     }
     this.showDetailsContent(optionsWasHandles)
   } 
@@ -843,25 +854,21 @@ export default class LivelyContainerNavbar extends Morph {
   
   async showDetailsContent(optionsWasHandles) {
     
-    // show console.log("show sublist content " + this.url) 
-    if (!this.targetItem) return 
+    if (this.url.match("wikipedia")) {debugger}
     
     var details = this.get("#details")
-    var sublist = this.targetItem.querySelector("ul")
+    details.innerHTML = ""
+    var sublist = <ul></ul>
+    details.appendChild(sublist)
     
-
-    if (details) {
-      details.innerHTML = ""
-      sublist = <ul></ul>
-      details.appendChild(sublist)
-    }
     
-    if (!sublist) return // we are a sublist item?
+    
     
     // keep expanded trees open... or not
     // this.clearDetails()
     
-    if (this.url.match(/templates\/.*html$/)) {
+    
+    if (this.url.match(/.*html$/) || this.contentType == "text/html") {
       this.showDetailsHTML(sublist)
     } else if (this.url.match(/\.js$/)) {
       await this.showDetailsJS(sublist)
@@ -881,23 +888,48 @@ export default class LivelyContainerNavbar extends Morph {
   
   // #HTML
   showDetailsHTML(sublist) {
+    
+
     if (!this.sourceContent) return;
-    var template =  lively.html.parseHTML(this.sourceContent).find(ea => ea.localName == "template");
+    var roots = lively.html.parseHTML(this.sourceContent)
+    var template =  roots.find(ea => ea.localName == "template");
       if (!template) {
-        console.log("showNavbar: no template found");
-        return;
-      }
-      // fill navbar with list of script
-      Array.from(template.content.querySelectorAll("script")).forEach(ea => {
-        var element = this.createDetailsItem(ea.getAttribute('data-name'));
-        element.classList.add("subitem");
         
-        element.name = `data-name="${ea.getAttribute('data-name')}"`
-        element.onclick = (evt) => {
-          this.onDetailsItemClick(element, evt)
-        }
-        sublist.appendChild(element) ;
-      });
+        lively.html.findHeaders(roots).forEach(ea => {
+          
+          
+          var element = this.createDetailsItem(ea.textContent);
+          element.classList.add("subitem");
+
+          var id = ea.getAttribute('id')
+          if (id) {
+            element.name = id
+          } else {
+            element.name = ea.textContent
+          }
+          
+          element.onclick = (evt) => {
+            this.onDetailsItemClick(element, evt)
+          }
+          sublist.appendChild(element) ;
+        });
+        
+      } else {
+        // fill navbar with list of script
+        Array.from(template.content.querySelectorAll("script")).forEach(ea => {
+          var element = this.createDetailsItem(ea.getAttribute('data-name'));
+          element.classList.add("subitem");
+
+          
+          element.name = ea.getAttribute('data-name')
+          
+          
+          element.onclick = (evt) => {
+            this.onDetailsItemClick(element, evt)
+          }
+          sublist.appendChild(element) ;
+        });        
+      }
   }
   
   // #Markdown #private #Refactor 
@@ -1317,7 +1349,7 @@ export default class LivelyContainerNavbar extends Morph {
 
   livelyUpdate() {
     this.clear()
-    this.show(this.url,this.sourceContent, this.contextURL, true)
+    this.show(this.url,this.sourceContent, this.contextURL, true, this.contentType)
   }
   
   hightlightElement(element) {
@@ -1489,12 +1521,20 @@ export default class LivelyContainerNavbar extends Morph {
     
   }
   
+  
+  async livelyMigrate(other) {
+    this.url = other.url
+    this.contentType = other.contentType
+    this.sourceContent = other.sourceContent
+  }
+  
   async livelyExample() {
     // var url = lively4url + "/README.md"
     // var url = "innerhtml://"
-    var url = "https://lively-kernel.org/lively4/testdir/"
+    // var url = "https://lively-kernel.org/lively4/testdir/"
+    var url = "wikipedia://en/Bourne_shell"
     var content = await fetch(url).then(r => r.text())
-    await this.show(url, content)
+    await this.show(url, content, undefined, undefined, "text/html" )
   }
 }
 
