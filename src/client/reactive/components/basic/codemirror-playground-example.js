@@ -2,23 +2,15 @@
 
 // Alt-A to show hints!
 
-let x = 0;
-let y = 42;
-let xbar;
+let x = 1;
+let y = 2;
+y = 42;
+
 {
-  let x = 6;
+  let x = 4;
+  aexpr(() => x + y);
+  x = 42;
 }
-x = 76;
-{
-  let a = 4;
-let ae = aexpr(() => x+y);
-  
-}
-ae.onChange(lively.notify);
 
-
-let ae2 = aexpr(() => x+y+y), ae3 = aexpr(() => x+y);
-
-dsadw
-foo + bar
-that.prepend(<span>dkljwldjw</span>)
+x = 42;
+y = 13;
