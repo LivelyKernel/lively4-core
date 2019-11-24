@@ -126,7 +126,7 @@ export default class AstExplorer extends Morph {
     
     try {
       console.group("PLUGIN TRANSFORMATION");
-      this.result = babel.transform(src, {
+      var config = {
         babelrc: false,
         plugins: [...syntaxPlugins, plugin],
         presets: [],
@@ -140,7 +140,26 @@ export default class AstExplorer extends Morph {
         code: true,
         ast: true,
         resolveModuleSource: undefined
-      });
+      }
+      
+      if (this.get("#systemjs").checked) {
+        // use SystemJS config do do a full transform
+        if (!self.lively4lastSystemJSBabelConfig) {
+          lively.error("lively4lastSystemJSBabelConfig missing")
+          return
+        }
+        var myconfig = config;
+        config = Object.assign({}, self.lively4lastSystemJSBabelConfig)
+        var originalPluginURL = url.replace(/-dev/,"") // name of the original plugin .... the one without -dev
+        // replace the original plugin with the one under development.... e.g. -dev
+        config.plugins = config.plugins.filter(ea => !ea.livelyLocation || !(ea.livelyLocation == originalPluginURL))
+                          .concat([plugin])
+        config.filename = filename
+        config.sourceFileName = filename
+        config.moduleIds = false
+        
+      }
+      this.result = babel.transform(src, config);
     } catch(err) {
       console.error(err);
       this.outputEditor.editor.setValue("Error transforming code: " + err);
@@ -184,7 +203,22 @@ export default class AstExplorer extends Morph {
           logNode.textContent += fragments.join(', ') + "\n"
         }
         // #TODO active expressions...
-        var result ='' + (await this.outputEditor.boundEval(this.outputEditor.editor.getValue())).value;
+        var outputSource = this.outputEditor.editor.getValue()
+        if (this.get("#systemjs").checked) {
+          // use systemjs to load it's module without any further transformation
+          var url = "tmp://" + filename // replace this with local TMP 
+          
+          var modURL = lively.swxURL(url)
+          await lively.unloadModule(modURL)
+          await fetch(url, {
+            method: "PUT",
+            body: outputSource 
+          })
+          await System.import(modURL)
+        } else {
+          var result ='' + (await this.outputEditor.boundEval(outputSource)).value;
+        }
+        
         // var result ='' + eval(this.outputEditor.editor.getValue());
         this.get("#result").textContent += "-> " + result;       
       } catch(e) {

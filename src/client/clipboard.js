@@ -173,6 +173,7 @@ export default class Clipboard {
     div.innerHTML = data
     div.classList.add("lively-content")
     container.appendChild(div)
+    lively.components.loadUnresolved(div, true, "pasteHTMLDataInto", true)
     lively.setGlobalPosition(div, this.lastClickPos)
   }
   

@@ -6,6 +6,11 @@ export default function foo(a) {
   return  12 + a + foobar()
 }
 
+export var a=3, b=4;
+
+export var c = 3
+c = 5
+
 
 /*MD # Hello World MD*/
 

@@ -386,3 +386,329 @@ for our transformations.
 })(System, System);
 
 ```
+
+## And export makes problems
+
+Currently module `foo.js` exports the variable `c` and with it's current value
+
+```javascript
+export var c = 3
+c = 4
+```
+
+
+
+```javascript
+import {c} from "demos/foo.js"
+
+c // 3 but expected 4 (browser native behavior)
+```
+
+See <demos/main.html>
+
+
+### How SystemJS  does "export"
+
+```javascript
+export var c = 3;
+c = 4;
+
+export function foo() {
+  c++
+}
+```
+
+As we can see, whenever somebody writes into `c` the `_export` function is called....
+
+```javascript
+(function(System, SystemJS) {System.register([], function (_export, _context) {
+  "use strict";
+
+  var c;
+  function foo() {
+    _export("c", c + 1), c++;
+  }
+
+  _export("foo", foo);
+
+  return {
+    setters: [],
+    execute: function () {
+      _export("c", c = 3);
+
+      _export("c", c);
+
+      _export("c", c = 4);
+```
+
+But our old Var-Recorder produced this:
+
+```javascript
+(function(System, SystemJS) {System.register([], function (_export, _context) {
+  "use strict";
+
+  var c;
+  function foo() {
+    _recorder_._demos_foo2_js.c++;
+  }
+
+  _export("foo", foo);
+
+  return {
+    setters: [],
+    execute: function () {
+      _recorder_._demos_foo2_js = _recorder_._demos_foo2_js || {};
+      _recorder_._demos_foo2_js.foo = foo;
+
+      _export("c", c = 3);
+
+      _export("c", c);
+
+      _recorder_._demos_foo2_js.c = c;
+
+      _recorder_._demos_foo2_js.c = 4;
+```
+
+## And our new recoder works better in this regard  (but still has other problems)
+
+### export
+
+```javascript
+export var c = 3
+c = 4
+```
+
+becomes:
+
+```javascript
+System.register([], function (_export, _context) {
+  "use strict";
+
+  return {
+    setters: [],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+      var c = undefined;
+
+      _export("c", c);
+
+      if (!_recorder_.tempfile_js.hasOwnProperty("c")) {
+        Object.defineProperty(_recorder_.tempfile_js, "c", {
+          get() {
+            return c;
+          },
+
+          set(thisIsVererySecretVariableName) {
+            _export("c", c = thisIsVererySecretVariableName);
+
+            return true;
+          },
+
+          enumerable: true,
+          configurable: true
+        });
+      } else {
+        _recorder_.tempfile_js.c = c;
+      }
+
+      _recorder_.tempfile_js.c = 3;
+
+      const __result__ = _recorder_.tempfile_js.c = 4;
+
+      _export("__result__", __result__);
+    }
+  };
+});
+```
+
+### import
+
+```javascript
+import foo from "demos/foo.js"
+```
+
+
+```javascript
+System.register(["demos/foo.js"], function (_export, _context) {
+  "use strict";
+
+  var foo;
+  return {
+    setters: [function (_demosFooJs) {
+      foo = _demosFooJs.default; 
+    }],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+
+      if (!_recorder_.tempfile_js.hasOwnProperty("foo")) {
+        Object.defineProperty(_recorder_.tempfile_js, "foo", {
+          get() {
+            return foo;
+          },
+
+          set(thisIsVererySecretVariableName) {
+            foo = thisIsVererySecretVariableName;
+            return true;
+          },
+
+          enumerable: true,
+          configurable: true
+        });
+      } else {
+        _recorder_.tempfile_js.foo = foo;
+      }
+    }
+  };
+});
+```
+
+
+## Doit through shared bindings works...
+
+*foo.js:*
+```javascript
+export var c = 3
+```
+
+*main.js:*
+```javascript
+import {c} from "./foo.js"
+
+c // this is 3
+```
+
+but after a doit:
+
+*foo.js:*
+```javascript
+c = 8 // DoIt
+```
+
+*main.js:*
+```javascript
+c // it becomes 8
+```
+
+**BUT**: after a full "SAVE"
+*foo.js:*
+```javascript
+export var c = 3
+```
+it becomes.... #Bug #TODO
+
+*main.js:*
+```javascript
+c // undefined..
+```
+
+Good luck to ourselves... figuring this out.
+
+### Are we there yet?
+
+Rewriting
+
+```javascript
+export var c = 3
+```
+
+Without the conditional accessor seems to solve the problem. 
+
+```javascript
+_recorder_.tempfile_js = _recorder_.tempfile_js || {};
+export var c = undefined;
+Object.defineProperty(_recorder_.tempfile_js, "c", {
+  get() {
+    return c;
+  },
+
+  set(thisIsVererySecretVariableName) {
+    c = thisIsVererySecretVariableName;
+    return true;
+  },
+
+  enumerable: true,
+  configurable: true
+});
+_recorder_.tempfile_js.c = 3;
+```
+
+Because **SystemJS** does not care about the variable declaration, as we expected, **but** it only cares that the `_export` is called in **(A)** !
+On *saving*, a new `_export` function is handed in and bound into the *setter* closure. 
+
+
+```javascript
+System.register([], function (_export, _context) {
+  "use strict";
+
+  var c;
+  return {
+    setters: [],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+
+      _export("c", c = undefined);
+
+      _export("c", c);
+
+      Object.defineProperty(_recorder_.tempfile_js, "c", {
+        get() {
+          return c;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          _export("c", c = thisIsVererySecretVariableName); // (A)
+
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+      _recorder_.tempfile_js.c = 3;
+    }
+  };
+});
+```
+
+And the importing side 
+
+```javascript
+import {c} from "demos/foo.js"
+
+```
+
+binding gets updated through the module level setter **(B)**:
+
+```javascript
+System.register(["demos/foo.js"], function (_export, _context) {
+  "use strict";
+
+  var c;
+  return {
+    setters: [function (_demosFooJs) {
+      c = _demosFooJs.c; // (B)
+    }],
+    execute: function () {
+      _recorder_.tempfile_js = _recorder_.tempfile_js || {};
+      Object.defineProperty(_recorder_.tempfile_js, "c", {
+        get() {
+          return c;
+        },
+
+        set(thisIsVererySecretVariableName) {
+          c = thisIsVererySecretVariableName;
+          return true;
+        },
+
+        enumerable: true,
+        configurable: true
+      });
+    }
+  };
+});
+```
+
+
+
+
+

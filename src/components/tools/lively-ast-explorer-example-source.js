@@ -1,1 +1,5 @@
-import foo from "demos/foo.js"
+() => {
+  class Bar {}
+}
+
+var a = 3
