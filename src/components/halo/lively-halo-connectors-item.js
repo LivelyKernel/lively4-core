@@ -37,7 +37,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       'New Connection',
         [['On custom...', () => this.startCreatingConnectionCustom(evt)],
           ['On value', () => this.startCreatingConnectionFor(evt, 'value')],
-         ['On other thing', () => this.startCreatingConnectionFor(evt, 'other')]],
+         ['On other thing', () => this.startCreatingConnectionFor(evt, 'other')],
+         ['Click', () => this.clickExample()]],
       'Creates a new connection',
       '<i class="fa fa-image" aria-hidden="true"></i>'
     ]];
@@ -121,4 +122,15 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.expressions.push(ae);
   }
   
+  clickExample(){
+    this.source.addEventListener('click', event => lively.notify('la' + event))
+  }
+  
+  
+  //TODO DELETE
+  /*
+  let foo = '"width"'
+  var code = `1+3`
+  code.boundEval()
+  */
 }

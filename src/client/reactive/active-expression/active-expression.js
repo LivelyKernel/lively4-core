@@ -28,12 +28,23 @@ export const AExprRegistry = {
       this._eventTarget.dispatchEvent('remove', aexpr);
     }
   },
+  updateAExpr(aexpr) {
+      this._eventTarget.dispatchEvent('update', aexpr);
+  },
   
   on(type, callback) {
     return this._eventTarget.addEventListener(type, callback);
   },
   off(type, callback) {
     return this._eventTarget.removeEventListener(type, callback);
+  },
+  /**
+   * For Development purpose if the registry gets into inconsistent state
+   */
+  purge() {
+    for(let each of this._aexprs)each._isDisposed = true;
+    this._eventTarget.callbacks.clear();
+    this._aexprs.clear();
   },
 
   /**
@@ -318,6 +329,7 @@ export class BaseActiveExpression {
 
   notify(...args) {
     this.callbacks.forEach(callback => callback(...args));
+    AExprRegistry.updateAExpr(this);
   }
 
   onBecomeTrue(callback) {

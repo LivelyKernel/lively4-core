@@ -723,9 +723,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   stripErrorString(s) {
     return s
-      .replace(/\n {2}Evaluating workspace:.*/,"")
-      .replace(/\n {2}Loading workspace:.*/,"")
-      .replace(/\n {2}Instantiating workspace:.*/,"")
+      .replace(/\n {2}Evaluating workspace(js)?:.*/,"")
+      .replace(/\n {2}Loading workspace(js)?:.*/,"")
+      .replace(/\n {2}Instantiating workspace(js)?:.*/,"")
   }
 
   async tryBoundEval(str, printResult) {

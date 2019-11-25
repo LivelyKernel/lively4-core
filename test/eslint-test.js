@@ -5,12 +5,14 @@ import {expect} from 'src/external/chai.js';
 
 describe('ESLint', () => {
   describe('test specific javascript features', () => {
-    it('parses binding operator correctly',  () => {
+    
+    // META: only comment them back in when you expect them to run (@JensLincke)
+    xit('parses binding operator correctly',  () => {
      var config = null;
      var errors = new eslint().verify("var a = 3;", config);
       expect(errors.length).eql(0);
     });
-    it('parses basic js correctly',  () => {
+    xit('parses basic js correctly',  () => {
      var config = null;
      var errors = new eslint().verify("var a = 3; function plus(x){return this + x;}; a::plus(4);", config);
       expect(errors.length).eql(0);

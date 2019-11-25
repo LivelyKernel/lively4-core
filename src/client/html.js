@@ -563,7 +563,31 @@ export default class HTML {
   }
   
   
+  static findHeaders(roots) {
+    var headers = []
+    roots.forEach(eaRoot => {
+      if (eaRoot.localName && eaRoot.localName.match(/^h[1-3]$/)) {
+        headers.push(eaRoot)
+      }
+      if (eaRoot.querySelectorAll) {
+        eaRoot.querySelectorAll("h1,h2,h3").forEach(ea => headers.push(ea))
+      }
+    })
+    return headers
+  } 
   
+  static allQuerySelectorAll(roots,query) {
+    var result = []
+    roots.forEach(eaRoot => {
+      // if (eaRoot.localName && eaRoot.localName.match(/^h[1-3]$/)) {
+      //   result.push(eaRoot)
+      // }
+      if (eaRoot.querySelectorAll) {
+        result.push(...eaRoot.querySelectorAll(query))
+      }
+    })
+    return result
+  } 
 }
 
 // #LiveProgramming #Hack #CircularDependency #TODO
