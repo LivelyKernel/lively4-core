@@ -13,7 +13,7 @@ export default class LivelyImport extends Morph {
   async update() {
     let url = this.getAttribute("src")
     if (!url) return;
-    let src = await fetch(url).then(r => r.text())
+    let src = await fetch("cached:" + url).then(r => r.text())
     
     if (url !== this.getAttribute("src")) return; // check if we are still on the same url...
     this.shadowRoot.innerHTML = "" + src 
