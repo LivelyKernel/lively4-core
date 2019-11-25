@@ -1051,23 +1051,23 @@ export default class Container extends Morph {
   
   // #important
   async onSave(doNotQuit) {
+    var url = this.getURL()
+    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     if (!this.isEditing()) {
       this.saveEditsInView();
       return;
     }
 
     if (this.getURL().pathname.match(/\/$/)) {
-      files.saveFile(this.getURL(),"");
+      files.saveFile(url,"");
 
       return;
     }
-    this.get("#editor").setURL(this.getURL());
+    this.get("#editor").setURL(url);
     await this.get("#editor").saveFile()
     this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
     this.parentElement.__ignoreUpdates = true
     var sourceCode = this.getSourceCode();
-    var url = this.getURL()
-    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
     // lively.notify("!!!saved " + url)
     window.LastURL = url
     if (await this.isTemplate(url)) {
@@ -1471,7 +1471,7 @@ export default class Container extends Morph {
     }
     navbar.navigateToName = (name, data) => { this.navigateToName(name, data) }
 
-    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL)
+    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
 
   /*MD ## Controls MD*/
@@ -1931,15 +1931,18 @@ export default class Container extends Morph {
       
       // Special Case:
       
-      // 1. search for exactly matching anchors
-      
-      var element = root.querySelector(`a[name="${name.replace(/"/g,"%22")}"]`)
-      // 2. brute force search for headings with the text
+      // 1. search by id
+      var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+      // 2. search for exactly matching anchors
+      if (!element) {
+        element = root.querySelector(`a[name="${name.replace(/"/g,"%22")}"]`)
+      }
+      // 3. brute force search for headings with the text
       if (!element) {
         element = _.find(root.querySelectorAll("h1,h2,h3,h4"), ea => ea.textContent == name)
       }
             
-      // 3. ok, try fulltext search
+      // 4. ok, try fulltext search
       if (!element) { 
         
         // search for the text nodes because they are the smallest entities and go to a nearby entity..

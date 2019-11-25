@@ -97,8 +97,14 @@ export default class Lively {
   static findDirectDependentModules(path) {
      var mod = System.normalizeSync(path);
      return Object.values(System.loads)
-      .filter( ea =>
-        ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod))
+      .filter( ea => {
+       if (ea.key.match("unnamed_module"))  {
+         
+         return false
+       }
+        
+        return ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod)
+      })        
       .map( ea => ea.key)
   }
 
@@ -352,17 +358,19 @@ export default class Lively {
       if (document.querySelector("lively-console")) {
         console.log(error)
       } else {
-        console.error('#########################################', error, error.stack);
-        await lively.notify("Error: ", error, 10, () => {
-        		lively.openComponentInWindow("lively-error").then( comp => {
-              comp.stack =  error.stack
-              comp.parentElement.setAttribute("title",  "" + error.message)
-              comp.style.height = "max-content"
-              var bounds = comp.getBoundingClientRect()
-              comp.parentElement.style.height = (bounds.height + 20)+ "px"
-              comp.parentElement.style.width = bounds.width + "px"
-            })
-          }, "red");
+        console.error('[error] ', error, error.stack);
+        if (!window.__karma__) {
+          await lively.notify("Error: ", error, 10, () => {
+              lively.openComponentInWindow("lively-error").then( comp => {
+                comp.stack =  error.stack
+                comp.parentElement.setAttribute("title",  "" + error.message)
+                comp.style.height = "max-content"
+                var bounds = comp.getBoundingClientRect()
+                comp.parentElement.style.height = (bounds.height + 20)+ "px"
+                comp.parentElement.style.width = bounds.width + "px"
+              })
+            }, "red");
+        }
       }
     } catch(e) {
       console.log("An error happend while handling and error: " + e)
@@ -437,6 +445,9 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    await System.import("src/client/protocols/wikipedia.js") 
+    await System.import("src/client/protocols/tmp.js") 
+    
     await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me
@@ -840,6 +851,7 @@ export default class Lively {
   }
 
   static error(title, text, timeout, cb) {
+    debugger
     this.notify(title, text, timeout, cb, 'red');
   }
 

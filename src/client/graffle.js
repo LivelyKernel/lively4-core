@@ -394,6 +394,8 @@ export default class Graffle {
 
       var bounds = SVG.childBounds(svg)
       var p1 = lively.getGlobalPosition(this.currentFreehand)
+      if (!bounds) return;
+      
       var p2 = pt(bounds.x, bounds.y)
       var delta = p2.subPt(p1)
 

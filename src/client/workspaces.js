@@ -9,8 +9,6 @@ if (!self.lively4workspaceURLs) {
 }
 const workspaceURLs = self.lively4workspaceURLs
 
-
-
 // const workspaces = new Map();
 // const workspaceURLs = new Map();
 

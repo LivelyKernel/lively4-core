@@ -19,19 +19,19 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     if (TEST_CLIENT_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
-      console.log('Test to load: ' + normalizedTestModule);
+      // console.log('Test to load: ' + normalizedTestModule);
     }
 
     if (TEST_REACTIVE_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
-      console.log('Reactive Test to load: ' + normalizedTestModule);
+      // console.log('Reactive Test to load: ' + normalizedTestModule);
     }
 
     if (TEST_SW_REGEXP.test(file)) {
       let normalizedTestModule = file;
       allSWTestFiles.push(normalizedTestModule);
-      console.log('SW Test to load: ' + normalizedTestModule);
+      // console.log('SW Test to load: ' + normalizedTestModule);
     }
   });
 
@@ -39,7 +39,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
 
   var runTests = ()=> {
      Promise.all(allClientTestFiles.map(function (file) {
-        console.log('Load Test File: ' + file);
+        // console.log('Load Test File: ' + file);
         return System.import(/*'base/' + */file + '.js');
       }))
         // .then(loadTestEnvironment)
@@ -50,9 +50,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
           window.__karma__.start();
         })
         .catch(error => {
-          console.error(error);
-          console.error(error.stack);
-          console.error(error.toString());
+          console.error(error.toString(), error, error.stack);
           throw(error);
         });
   }
