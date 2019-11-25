@@ -504,6 +504,7 @@ export default class ASTCapabilities {
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
+    
     function fa(name, ...modifiers) {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
@@ -522,28 +523,40 @@ export default class ASTCapabilities {
       return false;
     }
     
+    function directlyIn(type, path) {
+      if(type instanceof Array) {
+        return type.map(elem => directlyIn(elem, path))
+          .reduce((accu,elem) => accu || elem, false);
+      }
+      return path.node && path.node.type === type;
+    }
   /*MD ### Generate Submenus MD*/
 
     async function generateGenerationSubmenu() {
 
-      let submenu = [['Testcase', () => {
-        menu.remove();
-        myself.generateTestCase();
-      }, '→', fa('suitcase')], ['Class', () => {
+      let submenu = [['Class', () => {
         menu.remove();
         myself.generateClass();
-      }, '→', fa('suitcase')], ['Getter', () => {
-        menu.remove();
-        myself.generateGetter();
-      }, '→', fa('suitcase')], ['Setter', () => {
-        menu.remove();
-        myself.generateSetter();
       }, '→', fa('suitcase')]];
 
-      //remove testcase if not in describe
       const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
-      if (!isInDescribe(selectedPath)) {
-        submenu.shift();
+      
+      //add testcase if in describe
+      if (isInDescribe(selectedPath)) {
+        submenu.unshift(['Testcase', () => {
+        menu.remove();
+        myself.generateTestCase();
+      }, '→', fa('suitcase')]);
+      }
+      
+      if(directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
+        submenu.push(['Getter', () => {
+          menu.remove();
+          myself.generateGetter();
+        }, '→', fa('suitcase')], ['Setter', () => {
+          menu.remove();
+          myself.generateSetter();
+        }, '→', fa('suitcase')]);
       }
 
       return submenu;
@@ -581,7 +594,9 @@ export default class ASTCapabilities {
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
-    }, 'Alt+M', fa('suitcase'), () => this.selectPaths(this.selectMethodExtraction(this.programPath).selectedPaths)], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+    }, 'Alt+M', fa('suitcase'), () => {
+      this.selectPaths(this.selectMethodExtraction(this.programPath).selectedPaths)
+    }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
