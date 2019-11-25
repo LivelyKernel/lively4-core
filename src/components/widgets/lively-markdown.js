@@ -152,6 +152,11 @@ export default class LivelyMarkdown extends Morph {
     //  highlight.highlightBlock(block);
     //});
     
+    var container = lively.query(this, "lively-container")
+    root.hidden = true
+    await lively.fillTemplateStyles(root, "", container && container.getDir())
+    root.hidden = false
+    
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
   }

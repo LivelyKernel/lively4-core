@@ -487,13 +487,24 @@ class CachedRequest extends Scheme {
     return true
   }  
   
-  async GET(options) {
-    
-    if (!this.promisedCache) {
-      this.promisedCache = self.caches.open("PoidCachesScheme")
+  get cacheURL() {
+    return this.asCacheURL(this.realURL) 
+  }
+  
+  asCacheURL(url) {
+    return "https://" + url // Hack, to convice the CACHE API 
+  }
+  
+  get promisedCache() {
+    if (!this._promisedCache) {
+      this._promisedCache = self.caches.open("PoidCachesScheme")
     }
+    return this._promisedCache
+  }
+  
+  async GET(options) {
     var cache = await this.promisedCache;
-    var request = "https://" + this.realURL // Hack, to convice the CACHE API 
+    var request = this.cacheURL  
     var result = await cache.match(request)
     if (!result) {
       result = await fetch(this.realURL)
@@ -505,13 +516,50 @@ class CachedRequest extends Scheme {
     return result
   }
 
-  PUT(options) {
+  async PUT(options) {
+    var cache = await this.promisedCache;
+    cache.delete(this.cacheURL)
     return fetch(this.realURL, options)
   }
-    
-  OPTIONS(options) {
+
+  async DELETE(options) {
+    var cache = await this.promisedCache;
+    cache.delete(this.cacheURL)
     return fetch(this.realURL, options)
   }
+
+  static async invalidateCache(url) {
+    try {
+      debugger
+      var me = new CachedRequest()
+      var cache = await me.promisedCache;
+      cache.delete(me.asCacheURL(url))      
+    } catch(e) {
+      console.log("CachePoindError: ", e)
+    }
+  }
+  
+  async OPTIONS(options) {
+    return fetch(this.realURL, options)
+  }
+}
+
+
+if (self.lively4fetchHandlers) {
+  
+  // get rid of old mes?
+  self.lively4fetchHandlers = self.lively4fetchHandlers
+    .filter(ea => !ea.isPolymorphicIdentifierCacheHandler)
+  
+  self.lively4fetchHandlers.push({
+    isPolymorphicIdentifierCacheHandler: true,
+    finsihed(url, options={}) {
+      if (options.method == "PUT", options.method == "DELETE") {
+        CachedRequest.invalidateCache(url) 
+      }
+      
+    }
+  })  
 }
 
 
@@ -816,6 +864,7 @@ if (self.lively4fetchHandlers) {
     .filter(ea => !ea.isPolymorphicIdentifierHandler)
   
   self.lively4fetchHandlers.push(PolymorphicIdentifier)  
+
 }
 
 // if (!window.originalFetch) window.originalFetch = window.fetch
