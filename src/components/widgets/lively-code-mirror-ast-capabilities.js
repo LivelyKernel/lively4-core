@@ -499,7 +499,7 @@ export default class ASTCapabilities {
       functions = await this.getFunctionExportURLs(identName);
       classes = await this.getCorrespondingClasses(identName);
     }
-    return { identName, functions, classes };
+    return {  identName, functions, classes  };
   }
   /*MD ## Factoring Menu MD*/
 
@@ -581,7 +581,7 @@ export default class ASTCapabilities {
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
-    }, 'Alt+M', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+    }, 'Alt+M', fa('suitcase'), () => this.selectPaths(this.selectMethodExtraction(this.programPath).selectedPaths)], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -781,25 +781,13 @@ export default class ASTCapabilities {
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          var selectedPaths = this.getSelectedStatements(programPath);
-          var extractingExpression = false;
-          if (selectedPaths.length == 0) {
-            var expressions = this.getSelectedExpressions(programPath);
-            if (expressions.length > 1) {
-              lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
-              return;
-            } else if (expressions.length == 0) {
-              lively.warn('Select statements or an expression to extract!');
-              return;
-            } else {
-              selectedPaths = expressions;
-              extractingExpression = true;
-            }
-          }
           /*var selectedPaths = this.getSelectedPaths(programPath);*/
-          const actualSelections = selectedPaths.map(path => {
-            return range(path.node.loc);
-          });
+          const {
+            selectedPaths,
+            extractingExpression,
+            actualSelections
+          } = this.selectMethodExtraction(programPath);
+
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
@@ -824,6 +812,35 @@ export default class ASTCapabilities {
   }
 
   /*MD ### Extract Variable MD*/
+
+  selectMethodExtraction(programPath) {
+    var selectedPaths = this.getSelectedStatements(programPath);
+    var extractingExpression = false;
+
+    if (selectedPaths.length == 0) {
+      var expressions = this.getSelectedExpressions(programPath);
+      if (expressions.length > 1) {
+        lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+        return;
+      } else if (expressions.length == 0) {
+        lively.warn('Select statements or an expression to extract!');
+        return;
+      } else {
+        selectedPaths = expressions;
+        extractingExpression = true;
+      }
+    }
+
+    const actualSelections = selectedPaths.map(path => {
+      return range(path.node.loc);
+    });
+    return {
+      selectedPaths,
+      extractingExpression,
+      actualSelections
+    };
+  }
+
   async extractExpressionIntoLocalVariable() {
     const selection = this.firstSelection;
     let done = false;
