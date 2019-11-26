@@ -266,7 +266,9 @@ export default class Container extends Morph {
       this.anchor = null
     }
         
-    this.clear();
+    // this.clear(); // don't clear here yet... makes browsing more stable
+    
+    
     container.style.overflow = "auto";
 
     url = this.getURL();
@@ -348,6 +350,7 @@ export default class Container extends Morph {
       headers: headers
     }).then( resp => {
     
+      
       
       this.clear(); // could already be filled again...
       
@@ -1790,10 +1793,12 @@ export default class Container extends Morph {
     }
   }
   
-  
+
   /*MD ## UI MD*/
-  
+
+
   clear() {
+    
     this.getContentRoot().innerHTML = '';
     Array.from(this.get('#container-content').childNodes)
       .filter( ea => ea.id !== "container-root")
