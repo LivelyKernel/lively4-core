@@ -18,7 +18,7 @@ export default class JumpingCubes extends Morph {
     for (let i = 0; i < 10; i++) {
       const div = <div></div>;
       for (let j = 0; j < 10; j++) {
-        let cube = { value: 2, color: 'gray' };
+        const cube = { value: 2, color: 'gray' };
         const button = <button click={evt => cube.value++}>un-init</button>;
         aexpr(() => cube.value).dataflow(value => button.innerHTML = value);
         aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value));

@@ -192,6 +192,10 @@ export default class LivelyMenu extends Morph {
         let func = ea[1];
         item.addEventListener("click", evt => func(evt, item));
       }
+      
+      if(ea[4]) {
+        item.selectListener = ea[4];
+      }
 
       item.addEventListener("mouseenter", async evt => {
         if(this.matchingItems.includes(item)) {
@@ -217,6 +221,9 @@ export default class LivelyMenu extends Morph {
     var ea = item.entry
     var menu = this.get(".container");
     if (this.submenu) this.submenu.remove()
+    if(item.selectListener) {
+      item.selectListener();
+    }
     var sub = ea[1]
     if (!sub) return
     if (sub.then) sub = await sub; // resolve Promise

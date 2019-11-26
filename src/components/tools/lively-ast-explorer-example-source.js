@@ -1,5 +1,3 @@
-() => {
-  class Bar {}
-}
+var a = 42;
 
-var a = 3
+a = 4;
