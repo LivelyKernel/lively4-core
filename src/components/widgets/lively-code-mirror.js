@@ -720,6 +720,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     return s
   }
+  
+  stripErrorString(s) {
+    return s
+      .replace(/\n {2}Evaluating workspace(js)?:.*/,"")
+      .replace(/\n {2}Loading workspace(js)?:.*/,"")
+      .replace(/\n {2}Instantiating workspace(js)?:.*/,"")
+  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -728,7 +735,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       console.error(e);
       if (printResult) {
         window.LastError = e;
-        this.printResult("" + e);
+        this.printResult(this.stripErrorString("" + e));
       } else {
         lively.handleError(e);
       }
@@ -747,7 +754,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           .catch( error => {
             console.error(error);
             // window.LastError = error;
-            this.printResult("Error in Promise: \n" +error)
+            this.printResult(this.stripErrorString("Error in Promise: \n" +error))
           })
       } else {
         this.printResult(" " + this.ensuredPrintString(result), result)

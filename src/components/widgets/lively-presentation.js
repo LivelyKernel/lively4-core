@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {pt}  from 'src/client/graphics.js'
 
 export default class LivelyPresentation extends Morph {
+  
   async initialize() {
     this.registerButtons();
     lively.html.registerKeys(this);
@@ -49,14 +50,12 @@ export default class LivelyPresentation extends Morph {
   onGotoButton() {
 //    lively.notify("goto")
   }
-
   
   onFullscreenButton() {
     this.toggleFullscreen()
   }
 
   async toggleFullscreen() {
-    debugger
     var container = lively.query(this, "lively-container")
     var presentation = this;
     var slide = this.slide
@@ -116,7 +115,6 @@ export default class LivelyPresentation extends Morph {
     }
   }
   
-  
   newSlide() {
     this.slide = document.createElement("div")
     this.slide.classList.add("lively-slide")
@@ -137,6 +135,7 @@ export default class LivelyPresentation extends Morph {
         this.slide.appendChild(ea)
       }
     })
+    this.loaded
   }
 
   gotoSlideAt(n) {
@@ -150,8 +149,6 @@ export default class LivelyPresentation extends Morph {
   currentSlideNumber() {
     return this.slides().indexOf(this.slide)
   }
-  
-  
   
   updateContainerURLForSlideNumber(nextSlideNumber) {
     var container = lively.query(this, "lively-container")
@@ -191,11 +188,10 @@ export default class LivelyPresentation extends Morph {
     }
     this.slide = slide
     if (this.slide) {
-      this.slide.querySelectorAll("lively-drawio").forEach(ea => ea.update()) // #Hack, #TODO move it into drawio
+      // #Hack, #TODO move it into drawio
+      this.slide.querySelectorAll("lively-drawio").forEach(ea => ea.update()) 
       this.updatePageNumber()
-      
     }
-    
   }
   
   showAllSlides() {
@@ -207,56 +203,80 @@ export default class LivelyPresentation extends Morph {
       if (pageNumber) pageNumber.textContent = i++
     })
   }
-  
-  async exportPrint() {
-    this.showAllSlides()
-    var printurl = lively.query(this, "lively-container").getURL().toString().replace(/\.md/,"_print.html")
-    await fetch(
-      printurl,
-      {
-      method: "PUT",
-      body: this.innerHTML
-    })
-    if (await lively.confirm("visit " + printurl)) {
-      window.open(printurl)
-    }
-  }  
-
+    
   async print() {
     var currentSlideNumber = this.currentSlideNumber() 
     this.showAllSlides()
 
     window.oldBody = Array.from(document.body.childNodes)
-
-
-    document.body.innerHTML = this.innerHTML
     var bodyCSS = document.body.style.cssText
-    document.body.style = ""
-    
-    await lively.sleep(1000)
 
-    window.print()
+    try {
+      // give lively-scripts id's so, we can rescue the content...
+      var printId = 0
+      var originals = new Map()
+      this.querySelectorAll("lively-script").forEach(ea => {
+        var id = "" + printId++
+        originals.set(id, ea)
+        ea.setAttribute("print-id", id)
+      })
 
-    // await lively.sleep(1000)
+      document.body.innerHTML = this.innerHTML
+        .replace(/<lively-script/g,"<lively-no-script")
+        .replace(/<\/lively-script/g,"</lively-no-script")
+      
+      Array.from(document.body.querySelectorAll("lively-no-script")).forEach(ea => {
+        var id = ea.getAttribute("print-id")
+        var original = originals.get(id, ea)
+        if (original) {
+          var replacement = <div>hello</div>
+          replacement.attachShadow({mode: 'open'})
+          replacement.shadowRoot.innerHTML = original.get("#result").innerHTML
+          ea.parentElement.replaceChild(replacement, ea)
+        }
+      })
 
-    // await lively.confirm("finished printing?")
+      document.body.style = ""
 
-    
-    
-    // I'll be back
-    document.body.innerHTML = "" // tabula raza
-    document.body.style = bodyCSS
-    window.oldBody.forEach(ea => document.body.appendChild(ea))
-    this.gotoSlideAt(currentSlideNumber)
-    
+      await lively.sleep(1000)
+
+      window.print()
+
+      // await lively.sleep(1000)    
+      // await lively.confirm("finished printing?")
+    } finally {
+      // I'll be back
+      document.body.innerHTML = "" // tabula raza
+      document.body.style = bodyCSS
+      window.oldBody.forEach(ea => document.body.appendChild(ea))
+      this.gotoSlideAt(currentSlideNumber)  
+    }
   }  
-  
   
   updatePageNumber() {
     if (!this.slide) return;
     var pageNumber = this.slide.querySelector(".page-number")
     if (pageNumber) pageNumber.textContent = this.currentSlideNumber()
-  }  
+  }
   
-  
+  static async config(ctx, config={}) {
+    await lively.sleep(500)
+    var presentation = lively.query(ctx, "lively-presentation")
+    if (presentation && presentation.slides) {
+      presentation.slides().forEach(ea => {
+        if(config.logo) {
+          var img = document.createElement("img")
+          img.classList.add("logo")
+          img.src=config.logo 
+          img.setAttribute("width", "50px")
+          ea.appendChild(img)          
+        }
+        if (config.pageNumbers) {
+          var div = document.createElement("div")
+          div.classList.add("page-number")
+          ea.appendChild(div)          
+        }
+      });
+    }
+  }
 }
