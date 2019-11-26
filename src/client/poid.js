@@ -476,6 +476,19 @@ export class LivelyEdit extends LivelyBrowse {
 
 /*MD ## Cache Scheme
 
+Explicit caching API of requests through the browser cache API on some 
+
+The cache fill be cleared:
+
+1. when PUT/DELETE through cache API
+2. when PUT/DELETE through any other fetch request
+3. when calling invalidate caches
+
+### Open Issues:
+
+- we should clear them on reload/boot any way.... #TODO 
+- or be more clever an ask the server if they changed....? #TODO
+
 <style>
   pre {
     margin: 10px;
