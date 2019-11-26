@@ -474,9 +474,44 @@ export class LivelyEdit extends LivelyBrowse {
 
 }
 
+/*MD ## Cache Scheme
+
+<style>
+  pre {
+    margin: 10px;
+    padding: 10px;
+    background-color: lightgray  
+  }
+</style>
 
 
-class CachedRequest extends Scheme {
+```javascript
+fetch("cached:https://lively-kernel.org/lively4/lively4-dummy/foo.js").then(r => r.text())
+
+
+fetch("cached:https://lively-kernel.org/lively4/lively4-dummy/foo.js", {
+  method: "PUT",
+  body: `
+export function bar() {
+  return 9
+}`
+}).then(r => r.text())
+
+
+fetch("https://lively-kernel.org/lively4/lively4-dummy/foo.js", {
+  method: "PUT",
+  body: `
+export function bar() {
+  return 8
+}`
+}).then(r => r.text())
+```
+
+MD*/
+
+
+
+export class CachedRequest extends Scheme {
   
   get scheme() {
     return "cached"
@@ -530,7 +565,6 @@ class CachedRequest extends Scheme {
 
   static async invalidateCache(url) {
     try {
-      debugger
       var me = new CachedRequest()
       var cache = await me.promisedCache;
       cache.delete(me.asCacheURL(url))      
@@ -554,7 +588,7 @@ if (self.lively4fetchHandlers) {
   self.lively4fetchHandlers.push({
     isPolymorphicIdentifierCacheHandler: true,
     finsihed(url, options={}) {
-      if (options.method == "PUT", options.method == "DELETE") {
+      if (options.method == "PUT" || options.method == "DELETE") {
         CachedRequest.invalidateCache(url) 
       }
       
