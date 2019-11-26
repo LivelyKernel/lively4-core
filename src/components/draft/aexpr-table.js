@@ -5,13 +5,16 @@ import {AExprRegistry} from 'src/client/reactive/active-expression/active-expres
 
 const attributes = {
   function : ae => ae.func,
-  lastValue : ae => ae.lastValue,
-  currentValue : ae => ae.getCurrentValue(),
+  lastValue : ae => ""+ae.lastValue,
+  currentValue : ae => ""+ae.getCurrentValue(),
   callbacks : ae => ae.callbacks,
   dependencies : ae => ae.dependencies().all()
     .map(dependencyString)
     .join('\n'),
-  inspect : ae => <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
+  actions : ae => <div>
+    <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
+    <button click={() => ae.dispose()}>dispose</button>
+  </div>
 }
   
 function dependencyString(dependency) {

@@ -246,7 +246,7 @@ export class BaseActiveExpression {
    */
   onChange(callback) {
     this.callbacks.push(callback);
-
+    AExprRegistry.updateAExpr(this);
     return this;
   }
   /**
@@ -259,6 +259,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
+      AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
       this.dispose();
