@@ -515,13 +515,13 @@ export default class Container extends Morph {
       return new URL("https://lively4/" + path);
     }
   }
+  
 
   async getEditor(editorType) {
     editorType = editorType || this.currentEditorType || "lively-editor"
     this.currentEditorType = editorType
     
     var container = this.get('#container-editor');
-    
     
     var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor");
     
@@ -552,7 +552,7 @@ export default class Container extends Morph {
       }
 
       livelyCodeMirror.enableAutocompletion();
-      livelyCodeMirror.getDoitContext = () => window.that;
+      livelyCodeMirror.getDoitContext = () => this.getDoitContext();
 
       livelyCodeMirror.doSave = text => {
         if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
@@ -561,6 +561,23 @@ export default class Container extends Morph {
       }      
     }
     return livelyEditor;
+  }
+  
+  getDoitContext() {
+    if(this.getURL().pathname.match(/.*\.md/)) {
+      var url = this.getURL()
+      debugger
+      var otherContainer = document.body.querySelectorAll("lively-container").find(ea => {
+        var otherURL = ea.getURL()
+        return !ea.isEditing() && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+      })
+      var markdown = otherContainer && otherContainer.get("lively-markdown")
+      var script = markdown && markdown.get("lively-script")
+      
+      return script
+    }
+    
+    return window.that
   }
 
   getLivelyCodeMirror() {
