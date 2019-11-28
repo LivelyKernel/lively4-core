@@ -1877,14 +1877,22 @@ export default class Container extends Morph {
   
   updateCSS() {
     var url = "" + this.getURL()
-    Array.from(lively.allElements(true))
-      .filter(ea => ea.localName == "link")
+    var all = Array.from(lively.allElements(true))
+    
+    all.filter(ea => ea.localName == "link")
       .filter(ea => ea.href == url)
       .forEach(ea => {
         var parent = ea.parentElement
         ea.remove()
         parent.appendChild(ea)
         lively.notify("update css",  ea.href)
+      })
+    
+    all.filter(ea => ea.localName == "style")
+      .filter(ea => ea.url == url)
+      .forEach(ea => {
+        lively.fillTemplateStyle(ea, url)
+        lively.notify("upodate css", url)
       })
   }
 
@@ -1896,6 +1904,7 @@ export default class Container extends Morph {
         && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
         console.log("update container content: " + ea);
         ea.setPath(ea.getURL() + "");
+        
       }
     });
     
