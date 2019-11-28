@@ -29,8 +29,6 @@ MD*/
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
-
-  
   /*MD ## Setup MD*/
   initialize() {
     
@@ -43,7 +41,7 @@ export default class Container extends Morph {
     if (!this.getAttribute("mode")) {
       this.setAttribute("mode", "show")
     }
-    
+
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
