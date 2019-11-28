@@ -558,19 +558,30 @@ export default class Container extends Morph {
         if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
           this.onSave(); // CTRL+S does not come through...
         }
-      }      
+      }  
+      
+      livelyCodeMirror.editor.on("cursorActivity", cm => {
+        this.onEditorCursorActivity(cm)
+      });
+      
     }
     return livelyEditor;
   }
+  
+  getOtherContainers() {
+    var url = this.getURL()
+    return document.body.querySelectorAll("lively-container").filter(ea => {
+      var otherURL = ea.getURL()
+      return !ea.isEditing() && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+    })
+  }
+  
   
   getDoitContext() {
     if(this.getURL().pathname.match(/.*\.md/)) {
       var url = this.getURL()
       debugger
-      var otherContainer = document.body.querySelectorAll("lively-container").find(ea => {
-        var otherURL = ea.getURL()
-        return !ea.isEditing() && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
-      })
+      var otherContainer = this.getOtherContainers()[0]
       var markdown = otherContainer && otherContainer.get("lively-markdown")
       var script = markdown && markdown.get("lively-script")
       
@@ -701,9 +712,7 @@ export default class Container extends Morph {
       var comp = await lively.openComponentInWindow(name);
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
-  
   /*MD ## Navigation Hisotry MD*/
-  
   unwindAndFollowHistoryUntil(urlInHistory) {
     var url = "nourl"
     while(url && url !== urlInHistory ) {
@@ -721,7 +730,6 @@ export default class Container extends Morph {
     }
     this.followPath(url)
   }
-  
   /*MD ## File Operations MD*/
 
   async deleteFile(url, urls) {
@@ -822,7 +830,6 @@ export default class Container extends Morph {
       lively.notify("created " + fileName);
       this.followPath(fileName);
   }
-  
   /*MD ## Events MD*/
   
   onKeyDown(evt) {
@@ -1215,6 +1222,28 @@ export default class Container extends Morph {
     })
   }
 
+  onEditorCursorActivity(cm) {
+     if(this.getURL().pathname.match(/.*\.md/)) {
+      var url = this.getURL()
+      var otherContainer = this.getOtherContainers()[0]
+      var markdown = otherContainer && otherContainer.get("lively-markdown")
+      
+      if (markdown) {
+        var line = cm.getCursor().line + 1
+        var root = markdown.get("#content")
+        
+        var element = root.querySelector(`[data-source-line="${line}"]`)
+        if (element) {
+          if (this.lastEditCursorHighlight ) this.lastEditCursorHighlight.remove()
+          this.lastEditCursorHighlight = lively.showElement(element)
+          this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
+          this.lastEditCursorHighlight.innerHTML = ""
+        }
+      }
+    }
+     
+  }
+  
   /*MD ## Render Content MD*/
 
   async appendMarkdown(content, renderTimeStamp) {
