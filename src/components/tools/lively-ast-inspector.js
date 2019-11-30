@@ -85,7 +85,7 @@ export default class AstInspector extends Morph {
       this.expansionIndicatorTemplate(element),
       this.keyTemplate(element.key),
       this.labelTemplate(element.target.type),
-      this.summaryTemplate(`{${this.propertyPreview(element.target)}}`),
+      this.summaryTemplate(' '), //`{${this.propertyPreview(element.target)}}`
     ].forEach((child) => {
       if (child) element.appendChild(child);
     });
@@ -243,7 +243,6 @@ export default class AstInspector extends Morph {
     }
     element.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = evt => {
-        console.log("click");
         this.render(element, !element.isExpanded);
       }
     });

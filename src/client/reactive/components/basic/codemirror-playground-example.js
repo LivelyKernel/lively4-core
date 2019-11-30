@@ -5,7 +5,7 @@
 let x = 1;
 let y = 2;
 y = 42;
-
+x = 3;
 {
   let x = 4;
   aexpr(() => x + y);
