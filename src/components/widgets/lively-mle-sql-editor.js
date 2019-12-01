@@ -3,10 +3,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import SocketIO from 'src/external/socketio.js';
 
-export default class LivelyMleCodeEditor extends Morph {
+export default class LivelyMleSqlEditor extends Morph {
   async initialize() {
-    this.successCount = 0;
-    this.windowTitle = "MLE Code Editor";
+    this.windowTitle = "Lively MLE SQL Editor";
     this.registerButtons()
     this.innerHTML = '';
     this.socket = SocketIO("http://132.145.55.192");
@@ -15,23 +14,19 @@ export default class LivelyMleCodeEditor extends Morph {
       socket.on('busy', () => lively.warn('Resource currently busy'));
       socket.on('failure', err => lively.error('Resource failed processing', err));
       socket.on('success', () => {
-        this.succesCount++;
-        if(this.successCount < 2){
-          socket.emit('deploy');
-        } else {
-          this.successCount = 0;
-          lively.success('Resource successfully processed');
-        }
+        lively.success('Resource successfully processed');
       });
+      socket.on('result', r => {result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected});
     });
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-    this.editor = <lively-code-mirror></lively-code-mirror>;
-    const deploy = <button id='deploy' click={() => {
-      this.editor.then(e => this.socket.emit('save', {
-        file: e.editor.getValue()
-      }));     
-    }}>Deploy</button>;
-    const surrounding = <div>{deploy}{this.editor}</div>;
+    const sql = <lively-code-mirror></lively-code-mirror>;
+    const exec = <button id='execute' click={() => {
+      sql.then(e => {
+        this.socket.emit('executeSQL', {
+          sql: e.editor.getValue()
+        });
+    })}}>Execute</button>;
+    const result = <textarea disabled></textarea>;
+    const surrounding = <div>{sql}{exec}{result}</div>;
     this.appendChild(surrounding);
   }
   

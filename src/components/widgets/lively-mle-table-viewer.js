@@ -3,11 +3,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import SocketIO from 'src/external/socketio.js';
 
-export default class LivelyMleCodeEditor extends Morph {
+export default class LivelyMleTableViewer extends Morph {
   async initialize() {
-    this.successCount = 0;
-    this.windowTitle = "MLE Code Editor";
+    this.windowTitle = "LivelyMleTableViewer";
     this.registerButtons()
+
+    lively.html.registerKeys(this); // automatically installs handler for some methods
     this.innerHTML = '';
     this.socket = SocketIO("http://132.145.55.192");
     this.socket.on('connection', socket => {
@@ -15,26 +16,31 @@ export default class LivelyMleCodeEditor extends Morph {
       socket.on('busy', () => lively.warn('Resource currently busy'));
       socket.on('failure', err => lively.error('Resource failed processing', err));
       socket.on('success', () => {
-        this.succesCount++;
-        if(this.successCount < 2){
-          socket.emit('deploy');
-        } else {
-          this.successCount = 0;
-          lively.success('Resource successfully processed');
-        }
+        lively.success('Resource successfully processed');
+      });
+      socket.on('result', r => {
+        result.innerHTML ='';
+        const header = <thead><tr></tr></thead>;
+        const body = <tbody></tbody>;
+        Object.keys(r.rows[1]).forEach(k => header.firstChild.appendChild(<th>{k}</th>))
+        r.rows.forEach(r => {
+          const row = <tr></tr>;
+          Object.values(r).forEach(v => row.appendChild(<td>{v}</td>));
+          body.appendChild(row);
+        })
+        result.appendChild(header);
+        result.appendChild(body);
       });
     });
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-    this.editor = <lively-code-mirror></lively-code-mirror>;
-    const deploy = <button id='deploy' click={() => {
-      this.editor.then(e => this.socket.emit('save', {
-        file: e.editor.getValue()
-      }));     
-    }}>Deploy</button>;
-    const surrounding = <div>{deploy}{this.editor}</div>;
+    const selector = <input type="text" placeholder="Table Name"/>;
+    const execute = <button id="execute" click={() => this.socket.emit('getTable', {
+      table: selector.value          
+    })}>View Table</button>
+    const result = <table></table>;
+    const surrounding = <div><p>{selector}{execute}</p>{result}</div>;
     this.appendChild(surrounding);
   }
-  
+
   /* Lively-specific API */
 
   // store something that would be lost
