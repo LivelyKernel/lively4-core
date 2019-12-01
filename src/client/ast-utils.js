@@ -17,6 +17,21 @@ export function nodeForLoc(loc) {
 
 /*MD # Traversal Helpers MD*/
 
+export function leakingBindings(path) {
+  const bindings = new Set;
+  path.traverse({
+    ReferencedIdentifier(id) {
+      const outerBinding = path.scope.getBinding(id.node.name);
+      if (!outerBinding) return;
+      const actualBinding = id.scope.getBinding(id.node.name);
+      if (outerBinding === actualBinding) {
+        bindings.add(actualBinding);
+      }
+    }
+  });
+  return [...bindings];
+}
+
 export function isVariableAccess(identifier) {
   if (!t.isIdentifier(identifier)) return false;
   const badKeys = ['left', 'key', 'id', 'label', 'param', 'local', 'exported', 'imported', 'meta', 'property'];

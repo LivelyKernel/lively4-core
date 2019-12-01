@@ -75,6 +75,9 @@ async function invalidateFileCaches()  {
     lively.fileIndexWorker.postMessage({message: "updateDirectory", url})
   }
   
+  // we cannot guarantee anything... so we have to purge our caches...
+  self.caches.delete("PoidCachesScheme") // #COP #Scattering belongs to #CachedRequest
+  
   const FilesCaches = await System.import("src/client/files-caches.js")
   console.log("[boot] invalidateFileCaches:\n" + FilesCaches.invalidateTranspiledFiles())
   

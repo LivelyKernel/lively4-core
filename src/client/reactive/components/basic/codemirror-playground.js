@@ -4,7 +4,7 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
-import {isAExpr} from 'src/client/ast-utils.js';
+import { isAExpr, leakingBindings } from 'src/client/ast-utils.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -15,15 +15,20 @@ export default class CodemirrorPlayground extends Morph {
   get editor() { return this.get('#editor'); }
   get lcm() { return this.editor.get("lively-code-mirror"); }
   get $() { return this.lcm.editor; }
+  
+  get aexprs() {
+    return this._aexprs || (this._aexprs = this.collectAExpr());
+  }
+  
+  set aexprs(arr) {
+    this._aexprs = arr;
+  }
+  
+  get textMarkers() { return this._textMarkers = this._textMarkers || [] }
 
   async initialize() {
     this.windowTitle = "CodemirrorPlayground";
 
-    const delayedUpdate = ((...args) => this.delayedUpdate(...args)).debounce(1000)
-    this.lcm.addEventListener('change', () => {
-      this.instantUpdate();
-      delayedUpdate();
-    })
     
     // Inject styling into CodeMirror
     const livelyEditorStyle = <link rel="stylesheet" href={`${COMPONENT_URL}/lively-code-editor-inject-styles.css`}></link>;
@@ -34,6 +39,15 @@ export default class CodemirrorPlayground extends Morph {
     await this.lcm.editorLoaded();
     
     this.addExtragutter();
+    
+    const delayedUpdate = ((...args) => this.delayedUpdate(...args)).debounce(1000)
+    this.lcm.addEventListener('change', () => {
+      this.instantUpdate();
+      delayedUpdate();
+    });
+    this.$.on('cursorActivity', () => {
+      
+    });
     
     this.$.addKeyMap({
       // #KeyboardShortcut Alt-A show additional info of this Active Expression
@@ -60,6 +74,13 @@ export default class CodemirrorPlayground extends Morph {
     return allAExpr;    
   }
   
+  selectedAExpr() {
+    const cursor = this.$.getCursor();
+    return this.aexprs.find((path) => {
+      return range(path.node.loc).contains(cursor);
+    });
+  }
+  
   // TODO delete lel
   snapToNextAEXpr() {
     let aexprRanges = this.aexprs.map((path)=>range(path.node.loc));    
@@ -73,47 +94,37 @@ export default class CodemirrorPlayground extends Morph {
     rangeToSelect.selectInCM(this.$);
   }
   
+  resetTextMarkers() {
+    while (this.textMarkers.length) {
+      this.textMarkers.pop().clear();
+    }
+  }
   
-  async showAExprInfo() {
-    this.lcm.ternWrapper.then(tw => {
-      
-    });
-    console.log(this.lcm);
-    this.$.showHint({
-      hint(...args) {
-        lively.warn(args)
-        return {
-          list: [{
-            text: 'gfoo',
-            displayText: 'shows gfoo',
-            className: 'cssClass',
-            render(Element, self, data) {
-              return Element.appendChild(<span><span style="color: green">hello: </span><span style="color: orange">Foo</span></span>);
-            },
-            hint(CodeMirror, self, data) {
-              lively.success('selected', data.text)
-            },
-            from: {line:3, ch:5},
-            to: {line:3, ch:10},
-          }, 'bar'],
-          from: {line:1, ch:5},
-          to: {line:1, ch:10},
-          selectedHint: 1
-        };
-      },
-      completeSingle: false,
-      alignWithWord: true,
-      closeCharacters: /[\s()\[\]{};:>,]/,
-      closeOnUnfocus: true,
-      completeOnSingleClick: true,
-      container: null,
-      customKeys: null,
-      extraKeys: null
+  
+  showAExprInfo() {
+    this.resetTextMarkers();
+    
+    const aexpr = this.selectedAExpr();
+    if (!aexpr) return;
+    
+    range(aexpr.node.loc).selectInCM(this.$);
+    
+    const variableDeps = leakingBindings(aexpr);
+    variableDeps.forEach((binding) => {
+      binding.constantViolations.forEach((path) => {
+        if (aexpr.willIMaybeExecuteBefore(path)) {
+          const r = range(path.node.loc).asCM();
+          this.textMarkers.push(this.$.markText(r[0], r[1], {
+            css: "background-color: orange",
+          }))
+        }
+      });
     });
   }
   
   instantUpdate() {
-    this.aexprs = this.collectAExpr();
+    this.aexprs = null;
+    this.resetTextMarkers();
     lively.warn('instant update');
   }
 
@@ -218,8 +229,7 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   showAExprMarker(){
-    this.collectAExpr().forEach((path)=>{
-      console.log(path);
+    this.aexprs.forEach((path)=>{
       this.$.doc.setGutterMarker(
         path.node.loc.start.line-1,
         'extragutter',
@@ -267,6 +277,7 @@ export default class CodemirrorPlayground extends Morph {
   
   /*MD ## Line Widget MD*/
   lineWidget() {
+    /*
     this.lcm.value.traverseAsAST({
       CallExpression: path => {
         const callee = path.get('callee');
@@ -302,6 +313,7 @@ export default class CodemirrorPlayground extends Morph {
         }
       }
     });
+    */
   }
   
   _lineWidget(location, element) {

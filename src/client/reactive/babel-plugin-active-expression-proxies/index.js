@@ -1,5 +1,6 @@
 import Preferences from 'src/client/preferences.js';
 
+const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
 
 export default function({ types: t, template, traverse }) {
@@ -44,7 +45,7 @@ export default function({ types: t, template, traverse }) {
               return proxyDirective;
             }
             return true;
-            throw new Error('This should not be possible');
+            // throw new Error('This should not be possible');
           }
 
           if (!shouldTransform()) { return; }
@@ -59,6 +60,26 @@ export default function({ types: t, template, traverse }) {
                 addCustomTemplate(state.file, 'wrap'), [path.node]
               );
               path.replaceWith(wrapped);
+            },
+
+            Identifier(path) {
+              console.log(path.node.name);
+              if (path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) {
+                return;
+              }
+
+              // Check for a call to undeclared aexpr:
+              if (
+                t.isCallExpression(path.parent) &&
+                path.node.name === AEXPR_IDENTIFIER_NAME &&
+                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
+              ) {
+                //logIdentifier("call to aexpr", path);
+                path.replaceWith(
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                );
+                return;
+              }
             }
           })
         }

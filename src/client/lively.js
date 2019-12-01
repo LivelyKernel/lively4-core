@@ -320,9 +320,14 @@ export default class Lively {
       document.head.appendChild(link);
     });
   }
-
-
-  static async fillTemplateStyles(root, debugInfo) {
+  static async fillTemplateStyle(element, url) {
+    return fetch("cached:" + url).then(r => r.text()).then(css => {
+      // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+      element.innerHTML = css;
+    })
+  }
+  
+  static async fillTemplateStyles(root, debugInfo, baseURL=lively4url) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     
     // var start = performance.now()
@@ -331,12 +336,14 @@ export default class Lively {
     root.querySelectorAll("style").forEach(ea => {
       var src = ea.getAttribute("data-src");
       if (src) {
-        var cssURL = lively4url + src
+        
+        var cssURL = src
+        if (!cssURL.match(/^[a-zA-Z0-9]+:/)) {
+          cssURL = baseURL.replace(/\/?$/, "/") + cssURL
+        }
         allSrc.push(src)
-        promises.push(fetch(cssURL).then(r => r.text()).then(css => {
-          // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
-          ea.innerHTML = css;
-        }));
+        ea.url = lively.paths.normalizeURL(cssURL)
+        promises.push(this.fillTemplateStyle(ea, cssURL));
       }
     });
     await Promise.all(promises)    
@@ -445,6 +452,9 @@ export default class Lively {
     // #TODO should we load fetch protocols lazy?
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
+    await System.import("src/client/protocols/wikipedia.js") 
+    await System.import("src/client/protocols/tmp.js") 
+    
     await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me

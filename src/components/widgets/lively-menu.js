@@ -100,11 +100,11 @@ export default class LivelyMenu extends Morph {
   }
 
   onUpDown(evt) {
-    this.sellectUpOrDown(evt, -1);
+    this.selectUpOrDown(evt, -1);
   }
 
   onDownDown(evt) {
-    this.sellectUpOrDown(evt, 1);
+    this.selectUpOrDown(evt, 1);
   }
   
   onEscDown(evt) {
@@ -115,14 +115,12 @@ export default class LivelyMenu extends Morph {
     this.remove();
   }
   
-  sellectUpOrDown(evt, offset = 0) {
+  selectUpOrDown(evt, offset = 0) {
     if (!this.currentItem) {
       this.selectItem(this.items[0]);
     } else {
       var matchingItems = this.matchingItems;
-      var targetIndex = matchingItems.indexOf(this.currentItem) + offset;
-      targetIndex = Math.max(targetIndex, 0);
-      targetIndex = Math.min(targetIndex, matchingItems.length - 1);
+      var targetIndex = (matchingItems.indexOf(this.currentItem) + offset + matchingItems.length) % matchingItems.length; //cycling through menu items
       this.selectItem(matchingItems[targetIndex]);
     }
   }
@@ -130,7 +128,7 @@ export default class LivelyMenu extends Morph {
   onLeftDown(evt) {
     if (this.parentMenu) {
       lively.focusWithoutScroll(this.parentMenu)
-      this.parentMenu.sellectUpOrDown(evt)
+      this.parentMenu.selectUpOrDown(evt)
     }
   }
   
@@ -154,10 +152,11 @@ export default class LivelyMenu extends Morph {
   
   enterSubmenu(evt) {
     lively.focusWithoutScroll(this.submenu);
-    this.submenu.sellectUpOrDown(evt);
+    this.submenu.selectUpOrDown(evt);
   }
+  
 
-  onEnterDown(evt) {
+  onEnterUp(evt) {
     if (!this.currentItem) return
 
     var entry = this.currentItem.entry
@@ -193,6 +192,10 @@ export default class LivelyMenu extends Morph {
         let func = ea[1];
         item.addEventListener("click", evt => func(evt, item));
       }
+      
+      if(ea[4]) {
+        item.selectListener = ea[4];
+      }
 
       item.addEventListener("mouseenter", async evt => {
         if(this.matchingItems.includes(item)) {
@@ -218,6 +221,9 @@ export default class LivelyMenu extends Morph {
     var ea = item.entry
     var menu = this.get(".container");
     if (this.submenu) this.submenu.remove()
+    if(item.selectListener) {
+      item.selectListener();
+    }
     var sub = ea[1]
     if (!sub) return
     if (sub.then) sub = await sub; // resolve Promise
