@@ -549,15 +549,13 @@ export default class Editor extends Morph {
         });
         editor.setSelection(coords)        
       }
-      editor.replaceSelection(text, "around")
-      
+      editor.replaceSelection(text, "around")      
     })
 
     lively.notify("uploaded " + newurl)
     
     var navbar = lively.query(this, "lively-container-navbar")
     if (navbar) navbar.update() 
-    
   }
   
   /*MD ## Widgets MD*/
