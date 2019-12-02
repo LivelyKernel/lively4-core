@@ -597,9 +597,16 @@ export default class ASTCapabilities {
       this.extractMethod();
     }, 'Alt+M', fa('suitcase'), () => {
       const selection = this.selectMethodExtraction(this.programPath, true);
-      if(selection) this.selectPaths(selection.selectedPaths);
+      if(selection) {
+        this.changedSelectionInMenu = true;
+        this.selectPaths(selection.selectedPaths);
+      } else {        
+        this.changedSelectionInMenu = false;
+      }
     }, () => {
-      this.editor.undoSelection();
+      if(this.changedSelectionInMenu) {
+          this.editor.undoSelection();
+      }
     }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
@@ -608,7 +615,6 @@ export default class ASTCapabilities {
       this.focusEditor();
     });
   }
-
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase MD*/
