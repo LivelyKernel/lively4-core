@@ -11,25 +11,7 @@ import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
-/*HTML 
-<div style='border: 1px dashed orange'>
-<editor-widget-location-info></editor-widget-location-info>
-</div>
-HTML*/
-/*HTML
-<div style='border: 1px dashed orange'>
-<codemirror-playground></codemirror-playground>
-</div>
-HTML*/
-
-/*HTML
-<div style='border: 1px dashed orange'>
-<span style="color: red">hello</span>
-</div>
-HTML*/
-
 import { using, isFunction } from 'utils';
-/*HTML <div style="background-color: green">hoo</div> HTML*/
 /*MD # Dependency Analysis MD*/
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;

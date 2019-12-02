@@ -13,7 +13,7 @@ describe("LivelyMarkdownTest",  function() {
 
   it("should set content", async function(done) {
     await that.setContent("# hello")
-    expect(that.shadowRoot.querySelector("#content").innerHTML).to.match(/<h1>/)
+    expect(that.shadowRoot.querySelector("#content").innerHTML).to.match(/<h1/)
     done();
   });
   

@@ -20,7 +20,7 @@ img {
 p {
   font-size: 18pt
 }
-  
+
 
 .title, .subtitle, .authors, .credentials, .conference {
   margin-top: 30px;
@@ -29,7 +29,7 @@ p {
 
 .title {
   margin-top: 150px;
-  font-size: 26pt;
+  font-size: 30pt;
   color: #1C6BA0;
   font-weight: bold;
 }

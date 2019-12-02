@@ -320,8 +320,13 @@ export default class Lively {
       document.head.appendChild(link);
     });
   }
-
-
+  static async fillTemplateStyle(element, url) {
+    return fetch("cached:" + url).then(r => r.text()).then(css => {
+      // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+      element.innerHTML = css;
+    })
+  }
+  
   static async fillTemplateStyles(root, debugInfo, baseURL=lively4url) {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     
@@ -335,13 +340,10 @@ export default class Lively {
         var cssURL = src
         if (!cssURL.match(/^[a-zA-Z0-9]+:/)) {
           cssURL = baseURL.replace(/\/?$/, "/") + cssURL
-        }   
-            
+        }
         allSrc.push(src)
-        promises.push(fetch("cached:" + cssURL).then(r => r.text()).then(css => {
-          // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
-          ea.innerHTML = css;
-        }));
+        ea.url = lively.paths.normalizeURL(cssURL)
+        promises.push(this.fillTemplateStyle(ea, cssURL));
       }
     });
     await Promise.all(promises)    
