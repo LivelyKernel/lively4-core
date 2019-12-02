@@ -6,16 +6,25 @@ import SocketIO from 'src/external/socketio.js';
 export default class LivelyMleCodeEditor extends Morph {
   async initialize() {
     this.successCount = 0;
+    this.initialized = false;
     this.windowTitle = "MLE Code Editor";
     this.registerButtons()
     this.innerHTML = '';
     this.socket = SocketIO("http://132.145.55.192");
     this.socket.on('connection', socket => {
-      socket.emit('options', );
+      socket.emit('options', {
+        connectString: 'localhost:1521/MLEEDITOR',
+        user: 'system',
+        password: 'MY_PASSWORD_123'
+      })
       socket.on('busy', () => lively.warn('Resource currently busy'));
       socket.on('failure', err => lively.error('Resource failed processing', err));
       socket.on('success', () => {
-        this.succesCount++;
+        if(!this.initialized){
+          this.initialized = true;
+          lively.notify('Connected');
+        }
+        this.successCount++;
         if(this.successCount < 2){
           socket.emit('deploy');
         } else {
