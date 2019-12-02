@@ -598,6 +598,8 @@ export default class ASTCapabilities {
     }, 'Alt+M', fa('suitcase'), () => {
       const selection = this.selectMethodExtraction(this.programPath, true);
       if(selection) this.selectPaths(selection.selectedPaths);
+    }, () => {
+      this.editor.undoSelection();
     }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
