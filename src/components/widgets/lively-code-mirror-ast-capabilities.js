@@ -436,7 +436,7 @@ export default class ASTCapabilities {
   selectNextReference(reversed) {
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
-    
+
     const bindings = this.getBindings(selectedPath);
     if (bindings) {
       let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
@@ -491,7 +491,7 @@ export default class ASTCapabilities {
   }
 
   async findImports() {
-    let functions, classes, identName
+    let functions, classes, identName;
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
     if (identifier) {
@@ -499,12 +499,12 @@ export default class ASTCapabilities {
       functions = await this.getFunctionExportURLs(identName);
       classes = await this.getCorrespondingClasses(identName);
     }
-    return {  identName, functions, classes  };
+    return { identName, functions, classes };
   }
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
-    
+
     function fa(name, ...modifiers) {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
@@ -522,15 +522,14 @@ export default class ASTCapabilities {
       }
       return false;
     }
-    
+
     function directlyIn(type, path) {
-      if(type instanceof Array) {
-        return type.map(elem => directlyIn(elem, path))
-          .reduce((accu,elem) => accu || elem, false);
+      if (type instanceof Array) {
+        return type.map(elem => directlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
       }
       return path.node && path.node.type === type;
     }
-  /*MD ### Generate Submenus MD*/
+    /*MD ### Generate Submenus MD*/
 
     async function generateGenerationSubmenu() {
 
@@ -540,16 +539,16 @@ export default class ASTCapabilities {
       }, '→', fa('suitcase')]];
 
       const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
-      
+
       //add testcase if in describe
       if (isInDescribe(selectedPath)) {
         submenu.unshift(['Testcase', () => {
-        menu.remove();
-        myself.generateTestCase();
-      }, '→', fa('suitcase')]);
+          menu.remove();
+          myself.generateTestCase();
+        }, '→', fa('suitcase')]);
       }
-      
-      if(directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
+
+      if (directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
         submenu.push(['Getter', () => {
           menu.remove();
           myself.generateGetter();
@@ -561,12 +560,14 @@ export default class ASTCapabilities {
 
       return submenu;
     }
-    
+
     async function generateImportSubmenu() {
       let { identName, functions, classes } = await myself.findImports();
       let submenu = [];
-      if(!identName || functions.length == 0 && classes.length == 0) {
-        submenu.push(['none', () => {menu.remove()}, '', '']);
+      if (!identName || functions.length == 0 && classes.length == 0) {
+        submenu.push(['none', () => {
+          menu.remove();
+        }, '', '']);
       } else {
         functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
           menu.remove();
@@ -579,8 +580,8 @@ export default class ASTCapabilities {
       }
       return submenu;
     }
-    
-  /*MD ### Generate Factoring Menu MD*/
+
+    /*MD ### Generate Factoring Menu MD*/
 
     const menuItems = [['selection to local variable', () => {
       menu.remove();
@@ -595,7 +596,8 @@ export default class ASTCapabilities {
       menu.remove();
       this.extractMethod();
     }, 'Alt+M', fa('suitcase'), () => {
-      this.selectPaths(this.selectMethodExtraction(this.programPath).selectedPaths)
+      const selection = this.selectMethodExtraction(this.programPath, true);
+      if(selection) this.selectPaths(selection.selectedPaths);
     }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
@@ -633,7 +635,7 @@ export default class ASTCapabilities {
       visitor: {
         Program: programPath => {
           let path = this.getPathBeforeCursor(programPath, selection.start);
-          if(path === undefined) {
+          if (path === undefined) {
             programPath.pushContainer('body', replacement);
           } else {
             path.insertAfter(replacement);
@@ -834,17 +836,17 @@ export default class ASTCapabilities {
 
   /*MD ### Extract Variable MD*/
 
-  selectMethodExtraction(programPath) {
+  selectMethodExtraction(programPath, silent = false) {
     var selectedPaths = this.getSelectedStatements(programPath);
     var extractingExpression = false;
 
     if (selectedPaths.length == 0) {
       var expressions = this.getSelectedExpressions(programPath);
       if (expressions.length > 1) {
-        lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+        if (!silent) lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
         return;
       } else if (expressions.length == 0) {
-        lively.warn('Select statements or an expression to extract!');
+        if (!silent) lively.warn('Select statements or an expression to extract!');
         return;
       } else {
         selectedPaths = expressions;
