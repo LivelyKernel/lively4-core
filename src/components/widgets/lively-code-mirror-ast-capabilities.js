@@ -327,7 +327,7 @@ export default class ASTCapabilities {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))];
+      return [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
     }
   }
 
@@ -436,7 +436,7 @@ export default class ASTCapabilities {
   selectNextReference(reversed) {
 
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
-
+    
     const bindings = this.getBindings(selectedPath);
     if (bindings) {
       let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
@@ -632,12 +632,18 @@ export default class ASTCapabilities {
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          this.getPathBeforeCursor(programPath, selection.start).insertAfter(replacement);
+          let path = this.getPathBeforeCursor(programPath, selection.start);
+          if(path === undefined) {
+            programPath.pushContainer('body', replacement);
+          } else {
+            path.insertAfter(replacement);
+          }
         }
       }
     })).code;
     this.scrollTo(scrollInfo);
     this.focusEditor();
+    this.editor.setSelection(selection.asCM()[0]);
   }
 
   compileTestCase(explanation) {
