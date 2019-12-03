@@ -15,7 +15,7 @@ export default class LivelyMleCodeEditor extends Morph {
       connectString: 'localhost:1521/MLE',
       user: 'system',
       password: 'MY_PASSWORD_123'
-    })
+    });
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', () => {
