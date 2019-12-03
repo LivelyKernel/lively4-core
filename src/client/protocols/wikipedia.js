@@ -13,21 +13,34 @@ export class WikipediaScheme extends Scheme {
   
   resolve() {
     return true
-  }  
+  } 
   
-  async GET(options) {
+  
+  async getContent() {
     let urlObj = new URL(this.url)
-    debugger
     var entry = urlObj.pathname.replace(/^\/*/,"")
-    lively.notify("visit: " + entry)
     // window.open("https://www.wikiwand.com/" + entry)
     
-    var lang = entry.split("/")[0]
+    this.lang = entry.split("/")[0]
     var query = entry.split("/")[1]
     
-    var mode = "html" 
+    this.mode = "html" 
+    var content = await fetch(`https://${this.lang}.wikipedia.org/api/rest_v1/page/${this.mode}/${query}`).then(r => r.text())
+    return content
+      .replace(/rel="mw:WikiLink" href="\.\//g, `rel="mw:WikiLink" href="wikipedia://${this.lang}/`)
+  }
+  
+  async GET(options) {
+
+   
+    var content = (await this.getContent())
     
-    return fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/${mode}/${query}`)
+    return new Response(content, {
+      status: 200,
+      headers: {
+        'content-type': "text/html"
+      }
+    })
     // var content = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/${mode}/${query}`).then(r => r.text())
     /// return new Response(content, {status: 200})
   }
@@ -35,7 +48,35 @@ export class WikipediaScheme extends Scheme {
   
   async OPTIONS(options) {
     let urlObj = new URL(this.url)
-    return new Response(JSON.stringify({name: urlObj.pathname}), {status: 200})
+    var content = await this.getContent()
+    var roots = lively.html.parseHTML(content)
+    
+    
+    var children = [
+      {
+        name: urlObj.pathname.replace(/.*\//,""),
+        href: this.url,
+        type: "file",
+      }, 
+    ]
+    
+    debugger
+    var navboxes = lively.html.allQuerySelectorAll(roots, ".navbox")
+    var links = lively.html.allQuerySelectorAll(navboxes, "a")
+    links.forEach(ea => {
+      children.push({
+        name: ea.textContent,
+        href: ea.getAttribute("href")
+      })
+    })
+    
+    
+    return new Response(JSON.stringify({
+      name: urlObj.pathname,
+      parent: this.url, // I am my own parent
+      type: "file",
+      contents: children
+    }), {status: 200})
   }
   
 }

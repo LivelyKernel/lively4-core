@@ -327,7 +327,7 @@ export default class ASTCapabilities {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))];
+      return [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
     }
   }
 
@@ -368,12 +368,16 @@ export default class ASTCapabilities {
   /** 
    * Get the path for the first method with the given name
    */
-  getMethodPath(classPath, name) {
+  getMethodPath(programPath, name) {
     let methodPath;
-    classPath.traverse({
+    programPath.traverse({
       ClassMethod(path) {
-        //debugger;
         if (!methodPath && path.node.key.name == name) {
+          methodPath = path;
+        }
+      },
+      FunctionDeclaration(path) {
+        if (!methodPath && path.node.id.name == name) {
           methodPath = path;
         }
       }
@@ -452,15 +456,27 @@ export default class ASTCapabilities {
     const identName = identifier.node.name;
 
     const declaration = await this.getDeclaration(identifier);
-    if (declaration) {
+    //needs smarter selection of source
+    if (declaration && !t.isImportSpecifier(declaration)) {
       this.selectPaths([declaration]);
     } else {
-      let locationsArray = await this.getCorrespondingClasses(identName);
       let classPath = this.getClassPath(this.programPath);
-      if (locationsArray.some(cl => cl.name == classPath.node.id.name)) {
-        this.selectPaths([this.getMethodPath(classPath, identName)]);
+      let methodPath = this.getMethodPath(classPath, identName);
+      const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
+      const functionUrls = await this.getFunctionExportURLs(identName);
+      const urls = classUrls.concat(functionUrls);
+      if (methodPath) {
+        this.selectPaths([methodPath]);
       } else {
-        locationsArray.forEach(cl => lively.openBrowser(cl.url, true, " " + identName));
+        urls.forEach(url => lively.openBrowser(url, true).then(container => {
+          container.asyncGet("#editor").then(async livelyEditor => {
+            let newCodeMirror = livelyEditor.livelyCodeMirror();
+            var cm = await livelyEditor.awaitEditor();
+            newCodeMirror.astCapabilities(cm).then(ac => {
+              ac.selectPaths([ac.getMethodPath(ac.programPath, identName)]);
+            });
+          });
+        }));
       }
     }
   }
@@ -475,35 +491,97 @@ export default class ASTCapabilities {
   }
 
   async findImports() {
+    let functions, classes, identName;
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     const identifier = this.getFirstSelectedIdentifier(selectedPath);
-    if (!identifier) {
-      return;
+    if (identifier) {
+      identName = identifier.node.name;
+      functions = await this.getFunctionExportURLs(identName);
+      classes = await this.getCorrespondingClasses(identName);
     }
-    const identName = identifier.node.name;
-    let functions = await this.getFunctionExportURLs(identName);
-    let classes = await this.getCorrespondingClasses(identName);
-    return {identName, functions, classes};
+    return { identName, functions, classes };
   }
   /*MD ## Factoring Menu MD*/
 
   async openMenu() {
+
     function fa(name, ...modifiers) {
       return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
     }
 
     const myself = this;
+
+    //next: create getInnermostDescribePath
+    function isInDescribe(path) {
+
+      while (path !== null) {
+        if (path.node.type === "CallExpression" && path.node.callee.name === "describe") {
+          return true;
+        }
+        path = path.parentPath;
+      }
+      return false;
+    }
+
+    function directlyIn(type, path) {
+      if (type instanceof Array) {
+        return type.map(elem => directlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
+      }
+      return path.node && path.node.type === type;
+    }
+    /*MD ### Generate Submenus MD*/
+
+    async function generateGenerationSubmenu() {
+
+      let submenu = [['Class', () => {
+        menu.remove();
+        myself.generateClass();
+      }, '→', fa('suitcase')]];
+
+      const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
+
+      //add testcase if in describe
+      if (isInDescribe(selectedPath)) {
+        submenu.unshift(['Testcase', () => {
+          menu.remove();
+          myself.generateTestCase();
+        }, '→', fa('suitcase')]);
+      }
+
+      if (directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
+        submenu.push(['Getter', () => {
+          menu.remove();
+          myself.generateGetter();
+        }, '→', fa('suitcase')], ['Setter', () => {
+          menu.remove();
+          myself.generateSetter();
+        }, '→', fa('suitcase')]);
+      }
+
+      return submenu;
+    }
+
     async function generateImportSubmenu() {
       let { identName, functions, classes } = await myself.findImports();
       let submenu = [];
-      functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
-        menu.remove();myself.addImport(url, identName, true);
-      }, '-', fa('share-square-o')]));
-      classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
-        menu.remove();myself.addImport(cl.url, cl.name, false);
-      }, '-', fa('share-square-o')]));
+      if (!identName || functions.length == 0 && classes.length == 0) {
+        submenu.push(['none', () => {
+          menu.remove();
+        }, '', '']);
+      } else {
+        functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
+          menu.remove();
+          myself.addImport(url, identName, true);
+        }, '-', fa('share-square-o')]));
+        classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
+          menu.remove();
+          myself.addImport(cl.url, cl.name, false);
+        }, '-', fa('share-square-o')]));
+      }
       return submenu;
     }
+
+    /*MD ### Generate Factoring Menu MD*/
 
     const menuItems = [['selection to local variable', () => {
       menu.remove();
@@ -517,19 +595,19 @@ export default class ASTCapabilities {
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
-    }, 'Alt+M', fa('suitcase')], ['Generate', [['Testcase', () => {
-      menu.remove();
-      this.generateTestCase();
-    }, '→', fa('suitcase')], ['Class', () => {
-      menu.remove();
-      this.generateClass();
-    }, '→', fa('suitcase')], ['Getter', () => {
-      menu.remove();
-      this.generateGetter();
-    }, '→', fa('suitcase')], ['Setter', () => {
-      menu.remove();
-      this.generateSetter();
-    }, '→', fa('suitcase')]]], ['Import', generateImportSubmenu()]];
+    }, 'Alt+M', fa('suitcase'), () => {
+      const selection = this.selectMethodExtraction(this.programPath, true);
+      if(selection) {
+        this.changedSelectionInMenu = true;
+        this.selectPaths(selection.selectedPaths);
+      } else {        
+        this.changedSelectionInMenu = false;
+      }
+    }, () => {
+      if(this.changedSelectionInMenu) {
+          this.editor.undoSelection();
+      }
+    }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -537,7 +615,6 @@ export default class ASTCapabilities {
       this.focusEditor();
     });
   }
-
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase MD*/
@@ -565,12 +642,18 @@ export default class ASTCapabilities {
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          this.getPathBeforeCursor(programPath, selection.start).insertAfter(replacement);
+          let path = this.getPathBeforeCursor(programPath, selection.start);
+          if (path === undefined) {
+            programPath.pushContainer('body', replacement);
+          } else {
+            path.insertAfter(replacement);
+          }
         }
       }
     })).code;
     this.scrollTo(scrollInfo);
     this.focusEditor();
+    this.editor.setSelection(selection.asCM()[0]);
   }
 
   compileTestCase(explanation) {
@@ -611,10 +694,16 @@ export default class ASTCapabilities {
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(importName), t.identifier(importName))], t.stringLiteral(url));
-
+          let existingImportStatement = this.nextPath(programPath, path => {
+            return t.isImportDeclaration(path) && path.node.source.value == url;
+          });
           let selectedPath = this.getInnermostPathContainingSelection(programPath, selection);
-          programPath.node.body.unshift(importStatement);
+          if (!existingImportStatement) {
+            let importStatement = t.importDeclaration([t.importSpecifier(t.identifier(importName), t.identifier(importName))], t.stringLiteral(url));
+            programPath.node.body.unshift(importStatement);
+          } else if (!existingImportStatement.node.specifiers.some(spec => spec.imported.name == importName)) {
+            existingImportStatement.node.specifiers.push(t.identifier(importName));
+          }
           if (!isFunction) {
             selectedPath.replaceWith(t.memberExpression(t.identifier(importName), t.identifier(selectedPath.node.name)));
           }
@@ -723,25 +812,13 @@ export default class ASTCapabilities {
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          var selectedPaths = this.getSelectedStatements(programPath);
-          var extractingExpression = false;
-          if (selectedPaths.length == 0) {
-            var expressions = this.getSelectedExpressions(programPath);
-            if (expressions.length > 1) {
-              lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
-              return;
-            } else if (expressions.length == 0) {
-              lively.warn('Select statements or an expression to extract!');
-              return;
-            } else {
-              selectedPaths = expressions;
-              extractingExpression = true;
-            }
-          }
           /*var selectedPaths = this.getSelectedPaths(programPath);*/
-          const actualSelections = selectedPaths.map(path => {
-            return range(path.node.loc);
-          });
+          const {
+            selectedPaths,
+            extractingExpression,
+            actualSelections
+          } = this.selectMethodExtraction(programPath);
+
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
           const surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
@@ -766,6 +843,35 @@ export default class ASTCapabilities {
   }
 
   /*MD ### Extract Variable MD*/
+
+  selectMethodExtraction(programPath, silent = false) {
+    var selectedPaths = this.getSelectedStatements(programPath);
+    var extractingExpression = false;
+
+    if (selectedPaths.length == 0) {
+      var expressions = this.getSelectedExpressions(programPath);
+      if (expressions.length > 1) {
+        if (!silent) lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+        return;
+      } else if (expressions.length == 0) {
+        if (!silent) lively.warn('Select statements or an expression to extract!');
+        return;
+      } else {
+        selectedPaths = expressions;
+        extractingExpression = true;
+      }
+    }
+
+    const actualSelections = selectedPaths.map(path => {
+      return range(path.node.loc);
+    });
+    return {
+      selectedPaths,
+      extractingExpression,
+      actualSelections
+    };
+  }
+
   async extractExpressionIntoLocalVariable() {
     const selection = this.firstSelection;
     let done = false;
@@ -1019,10 +1125,19 @@ export default class ASTCapabilities {
 
   async getCorrespondingClasses(methodName) {
     let index = await FileIndex.current();
-    //debugger
-    let locations = await index.db.classes.filter(cl => {
+
+    //find classes that contain the method
+    let possibleClasses = await index.db.classes.filter(cl => {
       return cl.methods.some(me => me.name == methodName);
-    }).toArray(); //.filter(cl => {index.db.exports.where({url: cl.url}).and({classes: cl.name}).count((count) => {return count}).then(num => num > 0)})
+    }).toArray();
+
+    //find files that export things with the urls from the found classes
+    let possibleExports = await index.db.exports.where('url').anyOf(possibleClasses.map(cl => cl.url)).toArray();
+
+    //reduce the found classes with the found possible exports
+    let locations = possibleClasses.filter(cl => {
+      return possibleExports.some(e => e.url == cl.url && e.classes.some(eCl => eCl == cl.name));
+    });
     locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
     return locations;
   }
@@ -1032,6 +1147,6 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    return locations.map(loc => loc.url)//.replace(lively4url,''))
+    return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
 }

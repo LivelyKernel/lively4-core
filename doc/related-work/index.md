@@ -30,6 +30,10 @@
 - this depencies are automatically reevaluated when the references cells changes
 - code and text is unified, since text fields are just code fields that return HTML or markdown code / objects #Contribution
 
+### Rich Markdown
+
+- https://npm.taobao.org/package/markdown-it-vue
+
 
 ## Other Fields
 

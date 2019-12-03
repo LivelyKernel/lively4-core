@@ -4,6 +4,7 @@ import MarkdownIt from "src/external/markdown-it.js"
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import MarkdownItTasks from "src/external/markdown-it-tasks.js"
 import MarkdownItAttrs from "src/external/markdown-it-attrs.js"
+import MarkdownItSourcemap from "src/external/markdown-it-sourcemap.js"
 
 // import MarkdownItContainer from "src/external/markdown-it-container.js"
 // see https://www.npmjs.com/package/markdown-it-container
@@ -82,6 +83,7 @@ export default class LivelyMarkdown extends Morph {
     md.use(MarkdownItHashtag)
     md.use(MarkdownItTasks)
     md.use(MarkdownItAttrs)
+    md.use(MarkdownItSourcemap)
     
     // md.use(MarkdownItContainer)
     
@@ -151,6 +153,11 @@ export default class LivelyMarkdown extends Morph {
     //root.querySelectorAll("pre code").forEach( block => {
     //  highlight.highlightBlock(block);
     //});
+    
+    var container = lively.query(this, "lively-container")
+    root.hidden = true
+    await lively.fillTemplateStyles(root, "", container && container.getDir())
+    root.hidden = false
     
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)

@@ -1,10 +1,8 @@
 <!-- markdown-config presentation=true -->
 
-<!-- #TODO make style links in container content relative to url -->
-<!-- <link rel="stylesheet" type="text/css" href="style.css" /> -->
-<link rel="stylesheet" type="text/css" href="./style.css"  />
-<link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
-<link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
+<style data-src="./style.css"></style>
+<style data-src="../../src/client/lively.css"></style>
+<style data-src="../../templates/livelystyle.css"></style>
 
 <style>
   li.box {
@@ -25,11 +23,6 @@
     float:left; 
     width:400px;
   }
-</style>
-<style>
-
-
-
 </style>
 
 <!--
