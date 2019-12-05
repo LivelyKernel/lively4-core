@@ -29,8 +29,6 @@ MD*/
 export default class Container extends Morph {
   
   get target() { return this.childNodes[0] }
-
-  
   /*MD ## Setup MD*/
   initialize() {
     
@@ -43,7 +41,7 @@ export default class Container extends Morph {
     if (!this.getAttribute("mode")) {
       this.setAttribute("mode", "show")
     }
-    
+
     this.windowTitle = "Browser";
     if (this.isSearchBrowser) {
       this.windowTitle = "Search Browser";
@@ -93,6 +91,7 @@ export default class Container extends Morph {
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
     this.setAttribute("tabindex", 0);
+    this.addEventListener('click',   evt => this.onClick(evt));
     this.hideCancelAndSave();
 
     if(this.getAttribute("controls") =="hidden") {
@@ -517,13 +516,13 @@ export default class Container extends Morph {
       return new URL("https://lively4/" + path);
     }
   }
+  
 
   async getEditor(editorType) {
     editorType = editorType || this.currentEditorType || "lively-editor"
     this.currentEditorType = editorType
     
     var container = this.get('#container-editor');
-    
     
     var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor");
     
@@ -554,15 +553,43 @@ export default class Container extends Morph {
       }
 
       livelyCodeMirror.enableAutocompletion();
-      livelyCodeMirror.getDoitContext = () => window.that;
+      livelyCodeMirror.getDoitContext = () => this.getDoitContext();
 
       livelyCodeMirror.doSave = text => {
         if (livelyCodeMirror.tagName !== "LIVELY-CODE-MIRROR") {
           this.onSave(); // CTRL+S does not come through...
         }
-      }      
+      }  
+      
+      livelyCodeMirror.editor.on("cursorActivity", cm => {
+        this.onEditorCursorActivity(cm)
+      });
+      
     }
     return livelyEditor;
+  }
+  
+  getOtherContainers(editing=false) {
+    var url = this.getURL()
+    return document.body.querySelectorAll("lively-container").filter(ea => {
+      var otherURL = ea.getURL()
+      return ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+    })
+  }
+  
+  
+  getDoitContext() {
+    if(this.getURL().pathname.match(/.*\.md/)) {
+      var url = this.getURL()
+      debugger
+      var otherContainer = this.getOtherContainers()[0]
+      var markdown = otherContainer && otherContainer.get("lively-markdown")
+      var script = markdown && markdown.get("lively-script")
+      
+      return script
+    }
+    
+    return window.that
   }
 
   getLivelyCodeMirror() {
@@ -686,9 +713,7 @@ export default class Container extends Morph {
       var comp = await lively.openComponentInWindow(name);
       if (comp.livelyExample) comp.livelyExample(); // fill in with example content
   }
-  
   /*MD ## Navigation Hisotry MD*/
-  
   unwindAndFollowHistoryUntil(urlInHistory) {
     var url = "nourl"
     while(url && url !== urlInHistory ) {
@@ -706,7 +731,6 @@ export default class Container extends Morph {
     }
     this.followPath(url)
   }
-  
   /*MD ## File Operations MD*/
 
   async deleteFile(url, urls) {
@@ -807,7 +831,6 @@ export default class Container extends Morph {
       lively.notify("created " + fileName);
       this.followPath(fileName);
   }
-  
   /*MD ## Events MD*/
   
   onKeyDown(evt) {
@@ -841,6 +864,34 @@ export default class Container extends Morph {
     }
   }
 
+  onClick(evt) {
+    // lively.showPoint(lively.getPosition(evt))
+
+    if(evt.shiftKey && !this.isEditing() && this.getURL().pathname.match(/.*\.md/)) {
+      
+      var markdownElements = evt.composedPath().filter(ea => ea && ea.getAttribute && ea.getAttribute("data-source-line"))
+      if (markdownElements.length == 0) return;
+      var last = markdownElements.last
+      
+      var url = this.getURL()
+      var otherContainer = this.getOtherContainers(true)[0]
+      var livleyEditor = otherContainer.get('#editor')
+      var livleyCodeMirror = livleyEditor && livleyEditor.get('#editor')
+      var cm = livleyCodeMirror && livleyCodeMirror.editor
+      
+      debugger
+      if (cm) {
+        var line = last.getAttribute("data-source-line")
+        // cm.setCursor({line: line - 1, ch: 0}) 
+        cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0})         
+        otherContainer.parentElement.focus()
+        otherContainer.focus()
+      }
+    }
+    
+    
+  }
+  
   onFullscreen(evt) {
     this.toggleControls();
     if (!this.parentElement.isMaximized) return;
@@ -1200,6 +1251,28 @@ export default class Container extends Morph {
     })
   }
 
+  onEditorCursorActivity(cm) {
+     if(this.getURL().pathname.match(/.*\.md/)) {
+      var url = this.getURL()
+      var otherContainer = this.getOtherContainers()[0]
+      var markdown = otherContainer && otherContainer.get("lively-markdown")
+      
+      if (markdown) {
+        var line = cm.getCursor().line + 1
+        var root = markdown.get("#content")
+        
+        var element = root.querySelector(`[data-source-line="${line}"]`)
+        if (element) {
+          if (this.lastEditCursorHighlight ) this.lastEditCursorHighlight.remove()
+          this.lastEditCursorHighlight = lively.showElement(element)
+          this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
+          this.lastEditCursorHighlight.innerHTML = ""
+        }
+      }
+    }
+     
+  }
+  
   /*MD ## Render Content MD*/
 
   async appendMarkdown(content, renderTimeStamp) {

@@ -25,7 +25,7 @@ export default async function boundEval(source, thisReference, targetModule) {
       self.__pluginDoitThisRefs__ = {};
     } 
     self.__pluginDoitThisRefs__[codeId] = thisReference;
-    
+    window.__global_this__ = thisReference // #Hack... #TODO why is this still used?
     
     if (!self.__topLevelVarRecorder_ModuleNames__) {
       self.__topLevelVarRecorder_ModuleNames__ = {};

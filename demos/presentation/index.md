@@ -35,7 +35,6 @@ Presentation.config(this, {
 
 
 <script>
-
 (async () => {
   await lively.sleep(1000) 
   return <div>this is dynamic content: <br /> {new Date()}</div>
