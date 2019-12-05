@@ -4,17 +4,24 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {AExprRegistry} from 'src/client/reactive/active-expression/active-expression.js';
 
 const attributes = {
+  id : ae => ae.meta().get('id'),
   function : ae => ae.func,
-  lastValue : ae => ""+ae.lastValue,
-  currentValue : ae => ""+ae.getCurrentValue(),
+  //lastValue : ae => ""+ae.lastValue,
+  currentValue : getValueTag,
   callbacks : ae => ae.callbacks,
-  dependencies : ae => ae.dependencies().all()
+  dependencies : ae => ae.supportsDependencies() ? ae.dependencies().all()
     .map(dependencyString)
-    .join('\n'),
+    .joinElements(()=><br/>) : <font color="red">{"no dependecy api available"}</font>,
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
   </div>
+}
+                  
+
+function getValueTag(ae) {
+  let {value, isError} = ae.evaluateToCurrentValue();
+  return <font color={isError ? "red" : "blue"}>{""+value}</font>;
 }
   
 function dependencyString(dependency) {
@@ -132,7 +139,7 @@ export default class AexprTable extends Morph {
     }
     for(let attribute in attributes){
       let value = attributes[attribute](aexpr);
-      row.appendChild(<td>{value}</td>);
+      row.appendChild(<td>{...value}</td>);
     }
   }
   
