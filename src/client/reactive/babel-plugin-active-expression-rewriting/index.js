@@ -222,7 +222,7 @@ export default function({ types: t, template, traverse }) {
           //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
           if(state.opts.enableViaDirective && !hasDirective(path, "enable aexpr")) {
             return;
-          }
+          }   
 
           function getIdentifierForExplicitScopeObject(parentWithScope) {
             let bindings = parentWithScope.scope.bindings;
@@ -424,10 +424,50 @@ export default function({ types: t, template, traverse }) {
                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
               ) {
+                const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+                const sourceLocation = template(`({
+                  file: '${fileName}',
+                  end: {
+                    column: END_COLUMN,
+                    line: END_LINE
+                  },
+                  start: {
+                    column: START_COLUMN,
+                    line: START_LINE
+                  }
+                })`);
+                function buildSourceLocation(node) {
+                  return sourceLocation({
+                    END_COLUMN: t.numericLiteral(node.loc.end.column),
+                    END_LINE: t.numericLiteral(node.loc.end.line),
+                    START_COLUMN: t.numericLiteral(node.loc.start.column),
+                    START_LINE: t.numericLiteral(node.loc.start.line)
+                  }).expression;
+                }
+                
+                let location = buildSourceLocation(path.node);
                 //logIdentifier("call to aexpr", path);
                 path.replaceWith(
                   addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                 );
+                if(path.parentPath.get('arguments').some(any => any.isSpreadElement())){return}
+                if(path.parentPath.get('arguments').length > 1) {
+                  let argument = path.parentPath.get('arguments')[1];
+                  if(argument.isObjectExpression()){
+                    argument.pushContainer('properties', t.objectProperty(t.identifier('location'), location));
+                  } else {
+                    let assignment = template(`Object.assign({location : LOCATION}, EXPR || {})`);
+                    let a = assignment({LOCATION : location, EXPR : argument}).expression;
+                    argument.replaceWith(a);
+                  }
+                  // path.parentPath.pushContainer('arguments', t.objectExpression([
+                  //   t.objectProperty(t.identifier('location'), location)
+                  // ]));
+                } else {
+                  path.parentPath.pushContainer('arguments', t.objectExpression([
+                    t.objectProperty(t.identifier('location'), location)
+                  ]));
+                }
                 return;
               }
 
