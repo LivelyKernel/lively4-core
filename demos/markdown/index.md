@@ -3,9 +3,12 @@
 This is a demo page:
 
 - here are bullet points
+  - foo
 - second 
+  - bla
 - third
-
+- foo
+- bar
 
 ## Subsection
 
@@ -21,9 +24,11 @@ function foo(a) {
 And here a lively script
 
 <script>
+
   var a = 3 + 4
   "a =" + a
 </script>
+
 
 
 ## Foobar

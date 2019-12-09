@@ -882,17 +882,11 @@ export default class Container extends Morph {
       debugger
       if (cm) {
         var line = last.getAttribute("data-source-line")
-        lively.notify("line " + line)
-        
         // cm.setCursor({line: line - 1, ch: 0}) 
-        
-        cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0}) 
-        
+        cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0})         
         otherContainer.parentElement.focus()
         otherContainer.focus()
       }
-      // var element = root.querySelector(`[data-source-line="${line}"]`)
-      
     }
     
     
