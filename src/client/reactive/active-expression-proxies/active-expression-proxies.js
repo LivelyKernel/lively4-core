@@ -1,9 +1,7 @@
 import { BaseActiveExpression } from 'active-expression';
 
-// if the mode is on, proxies register new active expression
 window.__expressionAnalysisMode__ = false;
 
-// any way to handle this more elegantly than in global state?
 window.__currentActiveExpression__ = false;
 
 export function wrap(what) {
@@ -18,12 +16,6 @@ export function wrap(what) {
     },
 
     set: (target, property, value) => {
-      // reflect here as well?
-      //if (!target[property]){
-      //  return false
-      //}
-      
-      // target[property] = value;
       Reflect.set(target, property, value);
       
       target.dependentActiveExpressions.forEach(
@@ -65,6 +57,4 @@ export class ProxiesActiveExpression extends BaseActiveExpression {
     window.__expressionAnalysisMode__ = false;
   }
 }
-
-
 
