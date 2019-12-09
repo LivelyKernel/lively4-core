@@ -91,6 +91,7 @@ export default class Container extends Morph {
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     this.addEventListener('keydown',   evt => this.onKeyDown(evt));
     this.setAttribute("tabindex", 0);
+    this.addEventListener('click',   evt => this.onClick(evt));
     this.hideCancelAndSave();
 
     if(this.getAttribute("controls") =="hidden") {
@@ -568,11 +569,11 @@ export default class Container extends Morph {
     return livelyEditor;
   }
   
-  getOtherContainers() {
+  getOtherContainers(editing=false) {
     var url = this.getURL()
     return document.body.querySelectorAll("lively-container").filter(ea => {
       var otherURL = ea.getURL()
-      return !ea.isEditing() && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+      return ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
     })
   }
   
@@ -863,6 +864,34 @@ export default class Container extends Morph {
     }
   }
 
+  onClick(evt) {
+    // lively.showPoint(lively.getPosition(evt))
+
+    if(evt.shiftKey && !this.isEditing() && this.getURL().pathname.match(/.*\.md/)) {
+      
+      var markdownElements = evt.composedPath().filter(ea => ea && ea.getAttribute && ea.getAttribute("data-source-line"))
+      if (markdownElements.length == 0) return;
+      var last = markdownElements.last
+      
+      var url = this.getURL()
+      var otherContainer = this.getOtherContainers(true)[0]
+      var livleyEditor = otherContainer.get('#editor')
+      var livleyCodeMirror = livleyEditor && livleyEditor.get('#editor')
+      var cm = livleyCodeMirror && livleyCodeMirror.editor
+      
+      debugger
+      if (cm) {
+        var line = last.getAttribute("data-source-line")
+        // cm.setCursor({line: line - 1, ch: 0}) 
+        cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0})         
+        otherContainer.parentElement.focus()
+        otherContainer.focus()
+      }
+    }
+    
+    
+  }
+  
   onFullscreen(evt) {
     this.toggleControls();
     if (!this.parentElement.isMaximized) return;

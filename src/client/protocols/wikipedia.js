@@ -4,7 +4,6 @@ import focalStorage from "src/external/focalStorage.js"
 import {parseQuery, getDeepProperty} from 'utils'
 
 
-
 export class WikipediaScheme extends Scheme {
   
   get scheme() {
