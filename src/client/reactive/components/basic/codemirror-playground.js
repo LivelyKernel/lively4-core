@@ -4,7 +4,7 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
-import { isAExpr, leakingBindings } from 'src/client/ast-utils.js';
+import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 

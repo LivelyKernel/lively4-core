@@ -10,9 +10,10 @@ export default class AstExplorer extends Morph {
   static get defaultSourceURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-source.js"; }
   static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
 
-  get pluginEditor() { return this.get("#plugin"); }
   get sourceEditor() { return this.get("#source"); }
-  get outputEditor() { return this.get("#output"); }
+  get sourceAstInspector() { return this.get("#sourceAst") }
+  get pluginEditor() { return this.get("#plugin"); }
+  get transformedSourceEditor() { return this.get("#transformedSource"); }
   get sourceURL() { return this.sourceEditor.getURLString(); }
   get pluginURL() { return this.pluginEditor.getURLString(); }
   
@@ -63,7 +64,7 @@ export default class AstExplorer extends Morph {
       // promisedEvent(this.pluginEditor.get('#editor'), "editor-loaded"),
       this.sourceEditor.awaitEditor(),
       // promisedEvent(this.sourceEditor.get('#editor'), "editor-loaded"),
-      this.outputEditor.editorLoaded() // check property, fallback to event; #TODO: which is better? Both have a problem: the component class has to be loaded first
+      this.transformedSourceEditor.editorLoaded() // check property, fallback to event; #TODO: which is better? Both have a problem: the component class has to be loaded first
       //promisedEvent(this.outputEditor, "editor-loaded"),
     ]);
     
@@ -74,7 +75,7 @@ export default class AstExplorer extends Morph {
     enableSyntaxCheckForEditor(this.pluginEditor.get('#editor'));
     
   	this.sourceEditor.get('#editor').editor.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
-    this.outputEditor.editor.on("beforeSelectionChange", evt => this.onOutputSelectionChanged(evt));
+    this.transformedSourceEditor.editor.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
    
     this.dispatchEvent(new CustomEvent("initialize"));
   }
@@ -111,7 +112,7 @@ export default class AstExplorer extends Morph {
         ast: true,
         resolveModuleSource: undefined
     }).ast;
-    this.get("#astInspector").inspect(this.ast);
+    this.sourceAstInspector.inspect(this.ast);
 
     
     // #TODO refactor
@@ -162,7 +163,7 @@ export default class AstExplorer extends Morph {
       this.result = babel.transform(src, config);
     } catch(err) {
       console.error(err);
-      this.outputEditor.editor.setValue("Error transforming code: " + err);
+      this.transformedSourceEditor.editor.setValue("Error transforming code: " + err);
    
       // #TODO refactor
       // #Feature Show Syntax errors in editor... should be generic
@@ -184,7 +185,7 @@ export default class AstExplorer extends Morph {
       console.groupEnd();
     }
     
-    this.outputEditor.editor.setValue(this.result.code);
+    this.transformedSourceEditor.editor.setValue(this.result.code);
     
     let logNode = this.get("#result");
     logNode.innerHTML = "";
@@ -203,7 +204,7 @@ export default class AstExplorer extends Morph {
           logNode.textContent += fragments.join(', ') + "\n"
         }
         // #TODO active expressions...
-        var outputSource = this.outputEditor.editor.getValue()
+        var transformedSource = this.transformedSourceEditor.editor.getValue()
         if (this.get("#systemjs").checked) {
           // use systemjs to load it's module without any further transformation
           var url = "tmp://" + filename // replace this with local TMP 
@@ -212,11 +213,11 @@ export default class AstExplorer extends Morph {
           await lively.unloadModule(modURL)
           await fetch(url, {
             method: "PUT",
-            body: outputSource 
+            body: transformedSource 
           })
           await System.import(modURL)
         } else {
-          var result ='' + (await this.outputEditor.boundEval(outputSource)).value;
+          var result ='' + (await this.transformedSourceEditor.boundEval(transformedSource)).value;
         }
         
         // var result ='' + eval(this.outputEditor.editor.getValue());
@@ -244,7 +245,7 @@ export default class AstExplorer extends Morph {
   livelyMigrate(other) {
     // #TODO: do we still need this?
     this.addEventListener("initialize", () => {
-      this.outputEditor.editor.setValue(other.outputEditor.editor.getValue()); 
+      this.transformedSourceEditor.editor.setValue(other.transformedSourceEditor.editor.getValue()); 
       this.result = other.result;
       this.runTests = other.runTests;
       this.updateAST();
@@ -290,15 +291,15 @@ export default class AstExplorer extends Morph {
     setTimeout(() => {
       if(this.sourceEditor.get('#editor').isFocused()) {
         this.mapEditorsFromToPosition(
-          this.sourceEditor.get('#editor').editor, this.outputEditor.editor, false)
+          this.sourceEditor.get('#editor').editor, this.transformedSourceEditor.editor, false)
       }
     }, 0);
   }
-  onOutputSelectionChanged(evt) {
+  onTransformedSourceSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.outputEditor.isFocused()) {
+      if(this.transformedSourceEditor.isFocused()) {
         this.mapEditorsFromToPosition(
-          this.outputEditor.editor, this.sourceEditor.get('#editor').editor, true)
+          this.transformedSourceEditor.editor, this.sourceEditor.get('#editor').editor, true)
       }
     }, 0);
   }
