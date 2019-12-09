@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class Bp2019Workspace extends Morph {
   async initialize() {
+    this.get("#editor").value = this.getAttribute("content")
     this.windowTitle = "Bp2019Workspace";
     
     // delete this.get("#editor").boundEval
@@ -17,5 +18,8 @@ export default class Bp2019Workspace extends Morph {
       
     // return {value: "haha " + s}
     }
+  }
+  livelyPrepareSave() {
+    this.setAttribute("content", this.get("#editor").value)
   }
 }
