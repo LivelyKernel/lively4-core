@@ -425,8 +425,14 @@ export default class ASTCapabilities {
     this.selectPaths(maxPaths);
   }
 
-  selectNextASTNode(reversed) {
-    return this.selectNextASTNodeWith(() => true, reversed);
+  selectNextASTChild(reversed) {
+    return this.selectNextASTNodeWith((currentNode, nextNode) => {
+      return t.isIdentifier(nextNode) ||
+        t.isLiteral(nextNode) ||
+        t.isThisExpression(nextNode) || 
+        t.isSuper(nextNode) || 
+        t.isDebuggerStatement(nextNode);
+    }, reversed);
   }
 
   selectNextASTNodeLikeThis(reversed) {
@@ -434,7 +440,6 @@ export default class ASTCapabilities {
   }
 
   selectNextReference(reversed) {
-
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
     const bindings = this.getBindings(selectedPath);
