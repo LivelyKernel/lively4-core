@@ -50,13 +50,13 @@ export default function({ types: t, template, traverse }) {
 
           if (!shouldTransform()) { return; }
 
-          function replaceNode(path) {
+          function replaceNode(path, wrapType) {
             // do not wrap the same object twice
             if (path.node.__already_transformed__) { return; }
             path.node.__already_transformed__ = true;
 
             const wrapped = t.callExpression(
-              addCustomTemplate(state.file, 'wrap'), [path.node]
+              addCustomTemplate(state.file, 'wrap' + wrapType), [path.node]
             );
             path.replaceWith(wrapped);   
           }
@@ -72,15 +72,16 @@ export default function({ types: t, template, traverse }) {
                 // Once we can use the new ecma script2020 syntax this try-catch can be replaced by optional chaining
                 // https://iolap.com/2019/09/27/whats-next-for-javascript-top-5-new-features-for-2020/
               }
-              replaceNode(path)
+              replaceNode(path, 'Object')
             },
 
             NewExpression(path) {
-              replaceNode(path)
+             replaceNode(path, 'Object')
+
             },
 
             ArrayExpression(path) {
-              replaceNode(path)
+              replaceNode(path, 'Array')
             },
             
             Identifier(path) {

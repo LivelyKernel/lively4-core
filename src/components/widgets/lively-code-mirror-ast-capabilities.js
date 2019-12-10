@@ -615,6 +615,7 @@ export default class ASTCapabilities {
       this.focusEditor();
     });
   }
+  
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase MD*/
