@@ -6,23 +6,30 @@ import SocketIO from 'src/external/socketio.js';
 export default class LivelyMleCodeEditor extends Morph {
   async initialize() {
     this.successCount = 0;
+    this.initialized = false;
     this.windowTitle = "MLE Code Editor";
     this.registerButtons()
     this.innerHTML = '';
-    this.socket = SocketIO("http://132.145.55.192");
-    this.socket.on('connection', socket => {
-      socket.emit('options', );
-      socket.on('busy', () => lively.warn('Resource currently busy'));
-      socket.on('failure', err => lively.error('Resource failed processing', err));
-      socket.on('success', () => {
-        this.succesCount++;
-        if(this.successCount < 2){
-          socket.emit('deploy');
-        } else {
-          this.successCount = 0;
-          lively.success('Resource successfully processed');
-        }
-      });
+    this.socket = SocketIO("http://132.145.55.192:8080");
+    this.socket.emit('options', {
+      connectString: 'localhost:1521/MLE',
+      user: 'system',
+      password: 'MY_PASSWORD_123'
+    });
+    this.socket.on('busy', () => lively.warn('Resource currently busy'));
+    this.socket.on('failure', err => lively.error('Resource failed processing', err));
+    this.socket.on('success', () => {
+      if(!this.initialized){
+        this.initialized = true;
+        lively.notify('Connected');
+      }
+      this.successCount++;
+      if(this.successCount < 2){
+        this.socket.emit('deploy');
+      } else {
+        this.successCount = 0;
+        lively.success('Resource successfully processed');
+      }
     });
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.editor = <lively-code-mirror></lively-code-mirror>;

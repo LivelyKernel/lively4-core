@@ -1,8 +1,9 @@
-import {Scheme}  from "src/client/poid.js"
+import RestScheme  from "./rest.js"
 import PolymorphicIdentifier  from "src/client/poid.js"
 import {parseQuery, getDeepProperty} from 'utils'
+  
 
-import OAuth2 from "https://lively-kernel.org/lively4/lively4-jens/src/client/oauth2.js"
+import OAuth2 from "src/client/oauth2.js"
 
 /*MD
 
@@ -18,10 +19,9 @@ import OAuth2 from "https://lively-kernel.org/lively4/lively4-jens/src/client/oa
   - or use the [Microsoft Graph JavaScript Client](https://github.com/microsoftgraph/msgraph-sdk-javascript)
 - #TODO support PUT, PATCH, POST, needed for [writing data](https://docs.microsoft.com/en-us/graph/api/range-update?view=graph-rest-1.0&tabs=http)
 ```
-
 MD*/
 
-export class MicrosoftScheme extends Scheme {
+export default class MicrosoftScheme extends RestScheme {
   
   get scheme() {
     return "microsoft"
@@ -29,94 +29,10 @@ export class MicrosoftScheme extends Scheme {
   
   get baseURL() {
     return "https://graph.microsoft.com/v1.0/"
-  }
-  
-  resolve() {
-    return true
   }  
-  
   auth() {
      return new OAuth2("microsoft")
   }
-  
-  async getBearerToken() { 
-    return `Bearer ${await this.auth().ensureToken()}`
-  }
-  
-  async getDefaultHeaders(headers) {
-    headers = new Headers(headers);
-    headers.append('Authorization', await this.getBearerToken());
-    // headers.append('content-type', "application/json");
-    
-    return headers;
-  }
-    
-  async api(method="GET", path, options={}) {
-    var headers = await this.getDefaultHeaders(options.headers)
-    var resp = await fetch(this.baseURL + path, {
-      method: method,
-      headers: headers,
-      body: options.body
-    })
-    if (resp.status == 401) {
-      await this.auth().logout()
-      // try again once with new authorization... token might have beeen expired
-      resp = await fetch(this.baseURL + path, {
-        method: method,
-        headers: headers
-      })
-    }
-    
-    
-    if (resp.headers.get("content-type").match("application/json")) {
-      var text = await resp.text()
-      try {
-        return new Response(JSON.stringify(JSON.parse(text), undefined, 2))
-      } catch(e) {
-        return new Response( "Could not parse: " + text, {status: 400} )
-      }
-    }
-    return resp
-  }
-  
-  async apiJSON(method, path) {
-    return await this. api(method, path).then(r => r.json())
-  }
-  
-  
-  get path() {
-    let urlObj = new URL(this.url)
-    return urlObj.pathname.replace(/^\/*/,"")
-  }
-  
-  
-  
-  async GET(options) {
-    if (this.path == "logout") {
-      var auth = new OAuth2("microsoft")
-      auth.logout()
-      return new Response("logged out")
-    }
-    let urlObj = new URL(this.url)
-    return await this.api("GET", this.path + urlObj.search, options)
-  }
-  
-  async PATCH(options) {
-    return await this.api("PATCH", this.path, options)
-  }
-  
-  async PUT(options) {
-    return await this.api("PUT", this.path, options)
-  }
-  
-  async POST(options) {
-    return await this.api("POST", this.path, options)
-  }
-
-  async DELETE(options) {
-    return await this.api("DELETE", this.path, options)
-  }
-
   
   async getMetaData() {
     if (!window.lively4MicrosoftCachedMetadata) {
@@ -234,7 +150,7 @@ export class MicrosoftScheme extends Scheme {
             name: ea.name || ea.displayName || ea.title || ea.createdDateTime || "",
             type: "directory"
         }
-        debugger
+        
         if (ea.url && ea.url.match(/^[a-zA-Z0-9/]+$/)) {
           child.href =  "microsoft://" + ea.url                                                                  
         } else if (ea.sectionsUrl) { // #OneNote
@@ -243,7 +159,7 @@ export class MicrosoftScheme extends Scheme {
         } else if (ea.pagesUrl) { // #OneNote pages
           child.href =  "microsoft://" + ea.pagesUrl.replace("https://graph.microsoft.com/v1.0/","")                                                       
         } else if (ea.self && ea.self.startsWith("https://graph.microsoft.com/v1.0")) { 
-          debugger
+          
           child.href =  "microsoft://" + ea.self.replace("https://graph.microsoft.com/v1.0/","") 
           child.type = "file"
           if (ea.self.match(/\/onenote\/pages\//)) {
