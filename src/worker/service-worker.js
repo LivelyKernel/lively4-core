@@ -1,12 +1,15 @@
 console.log("NEW SERVICE Worker")
 
-/* ## Workflow to edit / run this service worker
+/*MD ## Workflow to edit / run this service worker
 
 1. edit file in lively
 2. check "Update on reload" in ![](chrome_debugger_tools.png)
 3. goto/open the "[...]/src/worker/service-worker.js" in a browser and press "F5"/reload 
 
-*/
+MD*/
+
+importScripts('src/external/focalStorage-swx.js');
+/*globals focalStorage */
 
 async function sendMessage(client, data) {
   return new Promise((resolve, reject) => {
@@ -50,6 +53,39 @@ self.addEventListener('fetch', (evt) => {
         }))
   }
 
+  
+  m =url.match("https://lively-kernel.org/voices")
+  if (m) {
+     if (!evt.request.headers.get("gitusername")) {
+       evt.respondWith(
+         (async () => {
+         var storagePrefix = "LivelySync_"
+         var token = await focalStorage.getItem(storagePrefix + "githubToken")
+         var username = await focalStorage.getItem(storagePrefix + "githubUsername")
+         var email = await focalStorage.getItem(storagePrefix + "githubEmail")
+
+          console.log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          // return new Response(evt.data.content)               
+          var headers = new Headers(evt.request.headers || {})
+          
+          
+          // inject authentification tokens into request
+          /*MD ### see also [fetch](edit://src/client/fetch.js) MD*/
+          if (!headers.get("gitusername")) {
+              headers.set("gitusername",  username)
+          }
+          if (!headers.get("gitpassword")) {
+              headers.set("gitpassword", token)
+          }
+          debugger
+          return fetch(new Request(evt.request, {
+            headers: headers
+          }))
+       })()
+       )   
+    }
+  }
+  
   // event.respondWith(promise);
   
 })
