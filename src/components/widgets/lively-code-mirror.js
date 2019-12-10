@@ -377,11 +377,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-Left Select previous element in ast-aware manner
         "Alt-Left": cm => {
           //lol I was here
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
+          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(true));
         },
         // #KeyboardShortcut Alt-Right Select next element in ast-aware manner
         "Alt-Right": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
+          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(false));
         },
         
         // #KeyboardShortcut Alt-Shift-Left Select previous reference
