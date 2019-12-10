@@ -872,6 +872,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "javascript"
     } else if (filename.match(/\.js$/)) {
       mode = "text/jsx"
+    } else if (filename.match(/\.mjs$/)) {
+      mode = "text/jsx"
     } else if (filename.match(/\.py$/)) {
       mode = "text/x-python"
     } else if (filename.match(/\.c$/)) {

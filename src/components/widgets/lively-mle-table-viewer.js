@@ -7,30 +7,36 @@ export default class LivelyMleTableViewer extends Morph {
   async initialize() {
     this.windowTitle = "LivelyMleTableViewer";
     this.registerButtons()
-
+    this.initialized = false;
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.innerHTML = '';
-    this.socket = SocketIO("http://132.145.55.192");
-    this.socket.on('connection', socket => {
-      socket.emit('options', );
-      socket.on('busy', () => lively.warn('Resource currently busy'));
-      socket.on('failure', err => lively.error('Resource failed processing', err));
-      socket.on('success', () => {
-        lively.success('Resource successfully processed');
-      });
-      socket.on('result', r => {
-        result.innerHTML ='';
-        const header = <thead><tr></tr></thead>;
-        const body = <tbody></tbody>;
-        Object.keys(r.rows[1]).forEach(k => header.firstChild.appendChild(<th>{k}</th>))
-        r.rows.forEach(r => {
-          const row = <tr></tr>;
-          Object.values(r).forEach(v => row.appendChild(<td>{v}</td>));
-          body.appendChild(row);
-        })
-        result.appendChild(header);
-        result.appendChild(body);
-      });
+    this.socket = SocketIO("http://132.145.55.192:8080");
+    this.socket.emit('options',  {
+      connectString: 'localhost:1521/MLE',
+      user: 'system',
+      password: 'MY_PASSWORD_123'
+    });
+    this.socket.on('busy', () => lively.warn('Resource currently busy'));
+    this.socket.on('failure', err => lively.error('Resource failed processing', err));
+    this.socket.on('success', () => {
+      if(!this.initialized){
+        this.initialized = true;
+        lively.notify('Connected');
+      }
+      lively.success('Resource successfully processed');
+    });
+    this.socket.on('result', r => {
+      result.innerHTML ='';
+      const header = <thead><tr></tr></thead>;
+      const body = <tbody></tbody>;
+      Object.keys(r.rows[1]).forEach(k => header.firstChild.appendChild(<th>{k}</th>))
+      r.rows.forEach(r => {
+        const row = <tr></tr>;
+        Object.values(r).forEach(v => row.appendChild(<td>{v}</td>));
+        body.appendChild(row);
+      })
+      result.appendChild(header);
+      result.appendChild(body);
     });
     const selector = <input type="text" placeholder="Table Name"/>;
     const execute = <button id="execute" click={() => this.socket.emit('getTable', {
