@@ -58,29 +58,32 @@ self.addEventListener('fetch', (evt) => {
   if (m) {
      if (!evt.request.headers.get("gitusername")) {
        evt.respondWith(
-         (async () => {
-         var storagePrefix = "LivelySync_"
-         var token = await focalStorage.getItem(storagePrefix + "githubToken")
-         var username = await focalStorage.getItem(storagePrefix + "githubUsername")
-         var email = await focalStorage.getItem(storagePrefix + "githubEmail")
+          (async () => {
+          var storagePrefix = "LivelySync_"
+          var token = await focalStorage.getItem(storagePrefix + "githubToken")
+          var username = await focalStorage.getItem(storagePrefix + "githubUsername")
+          // var email = await focalStorage.getItem(storagePrefix + "githubEmail")
 
-          console.log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          // console.log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
           // return new Response(evt.data.content)               
           var headers = new Headers(evt.request.headers || {})
-          
           
           // inject authentification tokens into request
           /*MD ### see also [fetch](edit://src/client/fetch.js) MD*/
           if (!headers.get("gitusername")) {
               headers.set("gitusername",  username)
-          }
+          } 
           if (!headers.get("gitpassword")) {
               headers.set("gitpassword", token)
           }
-          debugger
-          return fetch(new Request(evt.request, {
-            headers: headers
-          }))
+          var resp = await fetch(evt.request.url, {
+            method: evt.request.method,
+            headers: {
+              gitusername: username,
+              gitpassword: token
+            }
+          })
+          return resp
        })()
        )   
     }
