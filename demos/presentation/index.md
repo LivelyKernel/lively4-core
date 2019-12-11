@@ -41,6 +41,16 @@ Presentation.config(this, {
 
 
 ---
+
+whatever
+
+---
+
+- cool
+- absolute
+
+
+---
 # A Slide
 
 - Top Level Bullet Points
@@ -51,7 +61,7 @@ Presentation.config(this, {
 And ordered:
 
 1. Foo
-1. Bar
+2. Bar
    - With Subs
    - Bla
 

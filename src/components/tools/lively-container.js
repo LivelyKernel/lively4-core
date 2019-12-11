@@ -870,7 +870,7 @@ export default class Container extends Morph {
       
       var markdownElements = evt.composedPath().filter(ea => ea && ea.getAttribute && ea.getAttribute("data-source-line"))
       if (markdownElements.length == 0) return;
-      var last = markdownElements.last
+      var last = markdownElements.first
       
       var url = this.getURL()
       var otherContainer = this.getOtherContainers(true)[0]
@@ -1259,9 +1259,16 @@ export default class Container extends Morph {
       if (markdown) {
         var line = cm.getCursor().line + 1
         var root = markdown.get("#content")
-        
-        var element = root.querySelector(`[data-source-line="${line}"]`)
-        if (element) {
+        var elements = root.querySelectorAll(`[data-source-line="${line}"]`)
+        if (elements.length > 0) {
+          var element = Array.from(elements).last
+          var slide = lively.allParents(element).find(ea => ea.classList.contains("lively-slide"))
+          
+          if (slide) {
+            var presentation = lively.allParents(element).find(ea => ea.localName == "lively-presentation")
+            if (presentation) presentation.setSlide(slide)  
+          }
+          
           if (this.lastEditCursorHighlight ) this.lastEditCursorHighlight.remove()
           this.lastEditCursorHighlight = lively.showElement(element)
           this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
