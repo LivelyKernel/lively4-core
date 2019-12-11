@@ -2020,7 +2020,11 @@ export default class Container extends Morph {
       // Special Case:
       
       // 1. search by id
-      var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+      try {
+        var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+      } catch(e) {
+        // ignore
+      }
       // 2. search for exactly matching anchors
       if (!element) {
         element = root.querySelector(`a[name="${name.replace(/"/g,"%22")}"]`)
