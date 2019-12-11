@@ -416,7 +416,6 @@ export default class Container extends Morph {
       } else if (format == "error") {
         this.sourceCountent = content;
         if (render) {
-          this.clear(); 
           return this.appendHtml(`
             <h2>
               <span style="color: darkred">Error: </span>${content}
@@ -1379,6 +1378,8 @@ export default class Container extends Morph {
     // content = content.replace(/\<\!-- BEGIN SYSTEM\.JS(.|\n)*\<\!-- END SYSTEM.JS--\>/,"");
     // content = content.replace(/\<\!-- BEGIN LIVELY BOOT(.|\n)*\<\!-- END LIVELY BOOT --\>/,"");
 
+    this.clear(); 
+    
     if (content.match("<template") && this.getURL().pathname.match("html$")) {
 
       content = "<pre><code> " + content.replace(/</g,"&lt;") +"</code></pre>"
@@ -2019,7 +2020,11 @@ export default class Container extends Morph {
       // Special Case:
       
       // 1. search by id
-      var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+      try {
+        var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+      } catch(e) {
+        // ignore
+      }
       // 2. search for exactly matching anchors
       if (!element) {
         element = root.querySelector(`a[name="${name.replace(/"/g,"%22")}"]`)

@@ -4,7 +4,6 @@ import {parseQuery, getDeepProperty} from 'utils'
   
 import OAuth2 from "src/client/oauth2.js"
 
-
 export default class GmailScheme extends RestScheme {
   
   get scheme() {
@@ -13,7 +12,7 @@ export default class GmailScheme extends RestScheme {
   
   get baseURL() {
     return "https://www.googleapis.com/gmail/v1/users/"
-  }
+  }  
 
   auth() {
      return new OAuth2("gmail")

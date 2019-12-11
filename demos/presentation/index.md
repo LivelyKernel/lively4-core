@@ -1,10 +1,7 @@
 <!-- markdown-config presentation=true -->
 
-<link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
+<style data-src="../../doc/presentation/style.css"></style>
 
-
-<!-- markdown-config presentation=true -->
-<link rel="stylesheet" type="text/css" href="./style.css"  />
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
@@ -41,3 +38,29 @@ Presentation.config(this, {
 })()
 
 </script>
+
+
+---
+# A Slide
+
+- Top Level Bullet Points
+- More 
+  - And here some 
+  - Subs
+
+And ordered:
+
+1. Foo
+1. Bar
+   - With Subs
+   - Bla
+
+And **tasks**:
+
+- [ ] check boxes
+- [x] done
+- [ ] not done
+   - [ ] sub task
+   - [X] xxx
+
+

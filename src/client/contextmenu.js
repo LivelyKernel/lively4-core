@@ -489,6 +489,10 @@ export default class ContextMenu {
           // morph.style.right= "0px"
           this.hide();
         }],
+        ["BP2019 Workspace", async evt => {
+          const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
+        },
+          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {
