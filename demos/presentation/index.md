@@ -1,10 +1,7 @@
 <!-- markdown-config presentation=true -->
 
-<link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
+<style data-src="../../doc/presentation/style.css"></style>
 
-
-<!-- markdown-config presentation=true -->
-<link rel="stylesheet" type="text/css" href="./style.css"  />
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
@@ -35,10 +32,45 @@ Presentation.config(this, {
 
 
 <script>
-
 (async () => {
   await lively.sleep(1000) 
   return <div>this is dynamic content: <br /> {new Date()}</div>
 })()
 
 </script>
+
+
+---
+
+whatever
+
+---
+
+- cool
+- absolute
+
+
+---
+# A Slide
+
+- Top Level Bullet Points
+- More 
+  - And here some 
+  - Subs
+
+And ordered:
+
+1. Foo
+2. Bar
+   - With Subs
+   - Bla
+
+And **tasks**:
+
+- [ ] check boxes
+- [x] done
+- [ ] not done
+   - [ ] sub task
+   - [X] xxx
+
+

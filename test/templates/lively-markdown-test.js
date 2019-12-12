@@ -11,30 +11,20 @@ describe("LivelyMarkdownTest",  function() {
     loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
   });
 
-  it("should set content", async function(done) {
+  it("should set content", async () => {
     await that.setContent("# hello")
-    expect(that.shadowRoot.querySelector("#content").innerHTML).to.match(/<h1>/)
-    done();
+    expect(that.shadowRoot.querySelector("#content").innerHTML).to.match(/<h1/)
   });
   
-// #TODO make them work in travis
-
-//   it("should run scritpts", async function(done) {
-//     window.livelyMarkdownTestScriptDone = done
-//     await that.setContent(
-//     `# a script
-// <script>
-// window.livelyMarkdownTestScriptDone()
-// </script>`
-// )
-//   });
-
-  // it("should set src", async function(done) {
-  //   await that.setSrc(lively4url + "/README.md")
-  //   expect(that.shadowRoot.querySelector("#content").innerHTML).to.match(/<h1>/)
-  //   done();
-  // });
-
+  
+  it("should support github taks lists ", async () => {
+    await that.setContent(`
+- [ ] todo
+- [x] done
+`)
+    expect(that.shadowRoot.querySelectorAll("input").length).to.equal(2)
+  });
+  
   after("cleanup", function() {
     testWorld().innerHTML = "";
   });

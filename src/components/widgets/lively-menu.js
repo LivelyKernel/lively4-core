@@ -196,6 +196,10 @@ export default class LivelyMenu extends Morph {
       if(ea[4]) {
         item.selectListener = ea[4];
       }
+      
+      if(ea[5]) {
+        item.deselectListener = ea[5];
+      }
 
       item.addEventListener("mouseenter", async evt => {
         if(this.matchingItems.includes(item)) {
@@ -211,8 +215,12 @@ export default class LivelyMenu extends Morph {
   }
   
   async selectItem(item) {
-    if (this.currentItem)
-      this.currentItem.classList.remove("current")
+    if (this.currentItem) {
+      this.currentItem.classList.remove("current")    
+      if(this.currentItem.deselectListener) {
+        this.currentItem.deselectListener();
+      }
+    }
     if (!item) return
     
     item.classList.add("current")

@@ -83,7 +83,7 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
-        this.currentEditor().replaceSelection(`\/*MD MD*\/`)
+        this.currentEditor().replaceSelection(`\/\*MD MD\*\/`)
         this.currentEditor().execCommand(`goWordLeft`)
       }
 
@@ -114,8 +114,7 @@ export default class Editor extends Morph {
     if (editorComp && editorComp.changeModeForFile) {
       editorComp.changeModeForFile(url.pathname);
     }
-  }  
-  
+  }
   /*MD ## Event Handlers MD*/
   
   onTextChanged() {
@@ -460,10 +459,6 @@ export default class Editor extends Morph {
 
     }
   }
-
-
-  
-
   
   find(pattern) {
     var editor = this.get('#editor')
@@ -471,9 +466,7 @@ export default class Editor extends Morph {
       editor.find(pattern)
     }
   }
-  
   /*MD ## Copy and Paste MD*/
-
   
   insertDataTransfer(dataTransfer, evt, generateName) {
     // #CopyAndPaste mild code duplication with #Clipboard 
@@ -556,15 +549,13 @@ export default class Editor extends Morph {
         });
         editor.setSelection(coords)        
       }
-      editor.replaceSelection(text, "around")
-      
+      editor.replaceSelection(text, "around")      
     })
 
     lively.notify("uploaded " + newurl)
     
     var navbar = lively.query(this, "lively-container-navbar")
     if (navbar) navbar.update() 
-    
   }
   
   /*MD ## Widgets MD*/

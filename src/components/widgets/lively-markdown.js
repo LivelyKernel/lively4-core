@@ -1,14 +1,16 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
+
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import MarkdownItTasks from "src/external/markdown-it-tasks.js"
 import MarkdownItAttrs from "src/external/markdown-it-attrs.js"
+import MarkdownItSourcemap from "src/external/markdown-it-sourcemap.js"
 
 // import MarkdownItContainer from "src/external/markdown-it-container.js"
 // see https://www.npmjs.com/package/markdown-it-container
 
-import highlight from 'src/external/highlight.js';
+import 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
 import Upndown from 'src/external/upndown.js';
@@ -82,6 +84,7 @@ export default class LivelyMarkdown extends Morph {
     md.use(MarkdownItHashtag)
     md.use(MarkdownItTasks)
     md.use(MarkdownItAttrs)
+    md.use(MarkdownItSourcemap)
     
     // md.use(MarkdownItContainer)
     

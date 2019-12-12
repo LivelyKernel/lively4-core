@@ -377,11 +377,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-Left Select previous element in ast-aware manner
         "Alt-Left": cm => {
           //lol I was here
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(true));
+          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(true));
         },
         // #KeyboardShortcut Alt-Right Select next element in ast-aware manner
         "Alt-Right": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNode(false));
+          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(false));
         },
         
         // #KeyboardShortcut Alt-Shift-Left Select previous reference
@@ -407,10 +407,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-M": cm => {
           this.astCapabilities(cm).then(ac => ac.extractMethod());
         },
-        // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
-        "Alt-Enter": cm => {
-          this.astCapabilities(cm).then(ac => ac.openMenu());
-        },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
@@ -432,6 +428,15 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.editor.execCommand(`goCharLeft`)
         }
       }
+      // Alt-Enter has to react on key up, so we make an extra rule here
+      // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
+      this.editor.on("keyup", (cm, event) => {
+        if(event.altKey && event.keyCode == 13) {
+          this.astCapabilities(cm).then(ac => ac.openMenu());
+        }
+      })
+      
+      
     }
     return this.extraKeys
   }
@@ -866,6 +871,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else if (filename.match(/\.json$/)) {
       mode = "javascript"
     } else if (filename.match(/\.js$/)) {
+      mode = "text/jsx"
+    } else if (filename.match(/\.mjs$/)) {
       mode = "text/jsx"
     } else if (filename.match(/\.py$/)) {
       mode = "text/x-python"

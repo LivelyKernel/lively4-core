@@ -1,5 +1,6 @@
 import Preferences from 'src/client/preferences.js';
 
+const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
 
 export default function({ types: t, template, traverse }) {
@@ -44,21 +45,63 @@ export default function({ types: t, template, traverse }) {
               return proxyDirective;
             }
             return true;
-            throw new Error('This should not be possible');
+            // throw new Error('This should not be possible');
           }
 
           if (!shouldTransform()) { return; }
 
+          function replaceNode(path, wrapType) {
+            // do not wrap the same object twice
+            if (path.node.__already_transformed__) { return; }
+            path.node.__already_transformed__ = true;
+
+            const wrapped = t.callExpression(
+              addCustomTemplate(state.file, 'wrap' + wrapType), [path.node]
+            );
+            path.replaceWith(wrapped);   
+          }
+          
           path.traverse({
             ObjectExpression(path) {
-              // do not wrap the same object twice
-              if (path.node.__already_transformed__) { return; }
-              path.node.__already_transformed__ = true;
+              // do not replace objects in calls to Object.defineProperty
+              try {
+                if(path.parent.callee.property.name === "defineProperty") { 
+                  return;
+                }
+              } catch(e) {
+                // Once we can use the new ecma script2020 syntax this try-catch can be replaced by optional chaining
+                // https://iolap.com/2019/09/27/whats-next-for-javascript-top-5-new-features-for-2020/
+              }
+              replaceNode(path, 'Object')
+            },
 
-              const wrapped = t.callExpression(
-                addCustomTemplate(state.file, 'wrap'), [path.node]
-              );
-              path.replaceWith(wrapped);
+            NewExpression(path) {
+             replaceNode(path, 'Object')
+
+            },
+
+            ArrayExpression(path) {
+              replaceNode(path, 'Array')
+            },
+            
+            Identifier(path) {
+              console.log(path.node.name);
+              if (path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) {
+                return;
+              }
+
+              // Check for a call to undeclared aexpr:
+              if (
+                t.isCallExpression(path.parent) &&
+                path.node.name === AEXPR_IDENTIFIER_NAME &&
+                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
+              ) {
+                //logIdentifier("call to aexpr", path);
+                path.replaceWith(
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                );
+                return;
+              }
             }
           })
         }

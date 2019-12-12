@@ -20,7 +20,7 @@ img {
 p {
   font-size: 18pt
 }
-  
+
 
 .title, .subtitle, .authors, .credentials, .conference {
   margin-top: 30px;
@@ -29,7 +29,7 @@ p {
 
 .title {
   margin-top: 150px;
-  font-size: 26pt;
+  font-size: 30pt;
   color: #1C6BA0;
   font-weight: bold;
 }
@@ -120,7 +120,7 @@ ul {
 }
 
 
-ul  li::before{
+ul li::before {
   content: "■"; /* □ */ 
   color: rgb(255, 142, 0);
   display: inline-block; 
@@ -130,8 +130,8 @@ ul  li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-  
-ul  li li::before{
+
+ul li li::before, ol li li::before {
   content: "□"; 
   color: rgb(255, 142, 0);
   display: inline-block; 

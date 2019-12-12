@@ -112,7 +112,6 @@ a.tag {
 - [ContextJS/](ContextJS/)
 - [lang/](lang/)
 - [poid.js](poid.js) #PolymorphicIdendifier
-  - [*scheme@service worker*](../../src/external/lively4-serviceworker/src/fs/scheme.js)
   - [protocols/](protocols/)
 - [patches.js](patches.js) #MonkeyPatch 
 - [reactive/](reactive/)

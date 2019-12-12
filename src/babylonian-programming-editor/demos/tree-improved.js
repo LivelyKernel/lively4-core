@@ -45,7 +45,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"093a_a0fc_333a","name":{"mode"
       this.timeProps.sunSize,
       0,
       Math.PI*2
-    );
+    /*probe:*//*{}*/);
     /*probe:*/this.ctx/*{}*/.fill();
   }
 
@@ -55,7 +55,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"093a_a0fc_333a","name":{"mode"
     this.drawMountain(50, this.timeProps.mountainColors[1]);
   }
 
-  /*slider:*/drawMountain/*{}*/ (offset, fillStyle) {
+  drawMountain (offset, fillStyle) {
     var x = 0;
     var y = this.canvasHeight - offset;
 
@@ -72,8 +72,8 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"093a_a0fc_333a","name":{"mode"
     this.ctx.lineTo(0, this.canvasHeight);
     this.ctx.closePath();
 
-    this.ctx.fillStyle = fillStyle;
-    /*probe:*/this.ctx/*{}*/.fill();
+    /*probe:*/this.ctx/*{}*/.fillStyle = fillStyle;
+    this.ctx.fill();
   }
 
   // Tree
