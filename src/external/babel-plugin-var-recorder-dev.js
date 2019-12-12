@@ -206,22 +206,50 @@ export default function({ types: t, template, traverse, }) {
 
           // Rewrite gloabl variable declarations
           for (let declarationPath of Array.from(topLevelVariableDeclarations)) {
-            declarationPath.node.declarations.forEach(declaration => {
-              // if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
-              declarationPath.insertBefore(template(`var name`)({
-                name: declaration.id,
-                referenceString: t.stringLiteral(declaration.id.name)
-              }))
-
-
-            })
-            // insertAfter... will flip the order... so, we do it reverse and then the order will be fine ... fingers crossed! ;-)
-            declarationPath.node.declarations.reverse().forEach(declaration => {
-              if (declaration.init) {
-                declarationPath.insertAfter(template(`name = init`)({ name: declaration.id, init: declaration.init }))
+            declarationPath.get("declarations").forEach(declarator => {
+              if (declarator.get("id").isIdentifier()) {                
+                declarationPath.insertBefore(template(`var name`)({
+                  name: declarator.node.id
+                }))
+              } else {
+                declarator.get("id").traverse({
+                  Identifier(path) {                    
+                    if (path.parentPath.isObjectProperty() && path.parentKey == "key") return;
+                    declarationPath.insertBefore(template(`var name`)({
+                      name: path.node
+                    }))  
+                  }
+                })
               }
             })
 
+            // insertAfter... will flip the order... so, we do it reverse and then the order will be fine ... fingers crossed! ;-)
+            
+            declarationPath.get("declarations").reverse().forEach(declarator => {
+              if (declarator.get("id").isIdentifier()) {
+                if (declarator.node.init) {
+                  declarationPath.insertAfter(template(`name = init`)({ name: declarator.node.id, init: declarator.node.init }))
+                }
+              } else {
+                if (declarator.node.init) {
+                  var references = []
+                  declarator.get("id").traverse({
+                    Identifier(path) {                    
+                      if (path.parentPath.isObjectProperty() && path.parentKey == "key") return;
+                      references.push(path.node.name)
+                    }
+                  })
+                  var refString = references.map(ea => `${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.${ea} = ${ea}`).join("; ")
+                                                       
+                  declarationPath.insertAfter(template(`{let pattern = init; ${refString}}`)({ 
+                    pattern: declarator.get("id").node, 
+                    init: declarator.node.init 
+                  }))
+                }
+              }
+            })
+            
+          
             declarationPath.replaceWith(t.expressionStatement(t.stringLiteral("(var...)"))) // .remove() does not work
           }
 
