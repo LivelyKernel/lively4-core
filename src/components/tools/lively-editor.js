@@ -41,8 +41,8 @@ export default class Editor extends Morph {
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
 
-    editor.doSave = text => {
-      this.saveFile(); // CTRL+S does not come through...    
+    editor.doSave = async (text) => {
+      await this.saveFile(); // CTRL+S does not come through...    
     };
     
     

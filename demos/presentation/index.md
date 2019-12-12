@@ -28,7 +28,7 @@ Presentation.config(this, {
 
 ---
 
-# A presentation in Lively
+# A presentation in Lively!
 
 
 <script>
