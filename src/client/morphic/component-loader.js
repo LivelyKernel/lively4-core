@@ -8,16 +8,6 @@ if (!self.lively4loadingPromises) {
 }
 export var loadingPromises = self.lively4loadingPromises;
 
-// #MetaNote #UserCase this is an example for preserving module internal state while reloading a module
-var _templates;
-var _prototypes;
-var _proxies;
-
-var _templatePaths;
-var _templatePathsCache;
-var _templatePathsCacheTime;
-var _templateFirstLoadTimes = {}
-
 var _loggingEnabled = false
 var _log = function(...args) {
   if (_loggingEnabled) {
@@ -28,10 +18,9 @@ var _log = function(...args) {
 var _timeEnabled = false
 var _timeLog = function(name, msg, ...args) {
   if (_timeEnabled) {
-    console.log("[component] " + name + " " + Math.round(performance.now() - _templateFirstLoadTimes[name]) +"ms "+ msg, ...args)
+    console.log("[component] " + name + " " + Math.round(performance.now() - ComponentLoader.templateFirstLoadTimes[name]) +"ms "+ msg, ...args)
   }
 }
-
 
 // for compatibility
 export function register(componentName, template, prototype) {
@@ -52,21 +41,39 @@ synthese) if modules and classes are also objects that can have run-time-specifi
 */
 
 
+
 export default class ComponentLoader {
 
-  static get templates() {
-    if (!_templates) _templates = {};
-    return _templates;
+  static load() {
+    this._def("templates", {});
+    this._def("prototypes", {});
+    this._def("proxies", {});
+    this._def("templatePaths");
+    this._def("templatePathsCache", {});
+    this._def("templatePathsCacheTime", {});
+    this._def("templateFirstLoadTimes", {}); 
   }
-
-  static get prototypes() {
-    if (!_prototypes) _prototypes = {};
-    return _prototypes;
+  
+  static globalObject() {
+    window.lively4components = window.lively4components || {}
+    return window.lively4components
   }
-
-  static get proxies() {
-     if (!_proxies) _proxies = {};
-    return _proxies;
+  
+  static _def(name, init) {
+      Object.defineProperty(this, name, {
+        get() {
+          // Since, we want to keep state accross module reloading.... #PreserveState
+          var obj = this.globalObject()
+          if (!obj[name]) obj[name] = init;
+          return obj[name];
+        },
+        set(value) {
+          var obj = this.globalObject()
+          if (!obj[name]) obj[name] = value;
+        },
+        enumerable: true,
+        configurable: true
+      });
   }
 
   static updatePrototype(aClass, moduleName) {    
@@ -109,9 +116,9 @@ export default class ComponentLoader {
         _log("Identitity: " + (window.LastRegistered === object))
         
       // })
-      if (_templateFirstLoadTimes[componentName]) {
-        _log('Component first load time: ' + ((performance.now() - _templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
-        _templateFirstLoadTimes[componentName] = null;
+      if (this.templateFirstLoadTimes[componentName]) {
+        _log('Component first load time: ' + ((performance.now() - this.templateFirstLoadTimes[componentName]) / 1000).toFixed(3) + "s " + componentName + " ")
+        this.templateFirstLoadTimes[componentName] = null;
       }
       _log("[component loader] fire created " + componentName)
       object._lively4created = Date.now()
@@ -382,28 +389,25 @@ export default class ComponentLoader {
   
   
   static resetTemplatePathCache() {
-    _templatePathsCache = undefined
-    _templatePathsCacheTime = undefined
+    this.templatePathsCache = undefined
+    this.templatePathsCacheTime = undefined
   }
 
   static async getTemplatePathContent(path) {
     
-    if (!_templatePathsCache) {
-      _templatePathsCache = {}
-      _templatePathsCacheTime = {}
-    }
+   
     
     let cacheInvalidationTime = 60 * 5 * 1000;
-    let cached = _templatePathsCache[path]
-    let time = _templatePathsCacheTime[path]
+    let cached = this.templatePathsCache[path]
+    let time = this.templatePathsCacheTime[path]
     if (cached && ((Date.now() - time) < cacheInvalidationTime)) return cached
     
     let resultPromise =  fetch(path, { method: 'OPTIONS' }).then(resp => {
       if (resp.status !== 200) return undefined
       return resp.json()
     });
-    _templatePathsCacheTime[path] = Date.now()
-    _templatePathsCache[path] = new Promise(async (resolve, reject) => {
+    this.templatePathsCacheTime[path] = Date.now()
+    this.templatePathsCache[path] = new Promise(async (resolve, reject) => {
       let result = await resultPromise;
       if (result) {
           resolve({contents: result.contents});
@@ -414,8 +418,8 @@ export default class ComponentLoader {
   }
   
   static getTemplatePaths() {
-    if (!_templatePaths) {
-      _templatePaths = [
+    if (!this.templatePaths) {
+      this.templatePaths = [
         lively4url + '/templates/',
         lively4url + '/src/components/',
         lively4url + '/src/components/widgets/',
@@ -434,7 +438,7 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
       ]; // default
     } 
-    return _templatePaths
+    return this.templatePaths
   }
 
   static addTemplatePath(path) {
@@ -490,7 +494,7 @@ export default class ComponentLoader {
   static async loadByName(name) {
     _log("[component loader] loadByName " + name)
     
-    _templateFirstLoadTimes[name] = performance.now()
+    this.templateFirstLoadTimes[name] = performance.now()
     var modUrl = await this.searchTemplateFilename(name + '.js')
     if (!modUrl) {
       throw new Error("Could not find template for " + name)
@@ -624,8 +628,8 @@ export default class ComponentLoader {
   }
   
 }
+ComponentLoader.load()
 
 
-
-_templatePathsCache = null
+ComponentLoader.templatePathsCache = null
 
