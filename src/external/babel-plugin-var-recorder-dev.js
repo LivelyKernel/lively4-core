@@ -1,6 +1,4 @@
 const moduleNameToVarRecorderName = new Map();
-
-
 console.log("VAR RECORDER DEV")
 
 export function getScopeIdForModule(moduleName) {
@@ -9,7 +7,6 @@ export function getScopeIdForModule(moduleName) {
     moduleNameToVarRecorderName.set(moduleName,
       (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g, "_"));
   }
-
   return moduleNameToVarRecorderName.get(moduleName);
 }
 
@@ -79,6 +76,10 @@ export default function({ types: t, template, traverse, }) {
     console.log(pre + `${binding.identifier.name}`);
   }
 
+  function simpleExportDeclaration(name) {
+    return  t.ExportNamedDeclaration(template(`var name`)({ name: name }), [], null)
+  } 
+  
   return {
     name: "top-level-var-recorder",
     pre(...args) {
@@ -105,6 +106,7 @@ export default function({ types: t, template, traverse, }) {
           const MODULE_MATCHER = /.js$/;
 
           let filename = file.log.filename;
+          let toBeRemoved = new Set()
           // console.log('visitor!', program, filename);
 
           const VAR_RECORDER_NAME = '_recorder_' || '__varRecorder__';
@@ -182,11 +184,22 @@ export default function({ types: t, template, traverse, }) {
           // Rewrite export variable declarations
           for (let declarationPath of Array.from(topLevelVariableExportDeclarations)) {
             var exportDeclaration = declarationPath.parentPath
-            declarationPath.node.declarations.forEach(declaration => {
-              //               // if(!${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.hasOwnProperty(referenceString)) {
-              //               exportDeclaration.insertBefore(template(`export var name`)({ 
-              //                 name: declaration.id, referenceString: t.stringLiteral(declaration.id.name) }))
-
+            declarationPath.get("declarations").forEach(declarator => {
+              if (declarator.get("id").isIdentifier()) {
+                
+                exportDeclaration.insertBefore(simpleExportDeclaration( declarator.node.id))
+              } else {
+              
+                declarator.get("id").traverse({
+                  Identifier(path) {                    
+                    if (path.parentPath.isObjectProperty() && path.parentKey == "key") return;
+                    exportDeclaration.insertBefore(simpleExportDeclaration( path.node))
+                      
+                  }
+                })
+              }
+              
+              
 
             })
             // insertAfter... will flip the order... so, we do it reverse and then the order will be fine ... fingers crossed! ;-)
@@ -200,7 +213,9 @@ export default function({ types: t, template, traverse, }) {
             })
             declarationPath.node.kind = "var" // asignments in const are a problem... 
 
-            // exportDeclaration.replaceWith(t.expressionStatement(t.stringLiteral("(var...)"))) // .remove() does not work
+            
+           toBeRemoved.add(exportDeclaration)
+           // exportDeclaration.replaceWith(t.expressionStatement(t.stringLiteral("(var...)"))) // .remove() does not work
           }
 
 
@@ -239,8 +254,8 @@ export default function({ types: t, template, traverse, }) {
                       references.push(path.node.name)
                     }
                   })
-                  var refString = references.map(ea => `${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.${ea} = ${ea}`).join("; ")
-                                                       
+                  // since templates don't support loops, we generate a string here...
+                  var refString = references.map(ea => `${VAR_RECORDER_NAME}.${MODULE_IDENTIFIER}.${ea} = ${ea}`).join("; ")                                                       
                   declarationPath.insertAfter(template(`{let pattern = init; ${refString}}`)({ 
                     pattern: declarator.get("id").node, 
                     init: declarator.node.init 
@@ -380,6 +395,13 @@ export default function({ types: t, template, traverse, }) {
               }
             }
           });
+          
+          toBeRemoved.forEach(ea => {
+            // ea.replaceWith(t.expressionStatement(t.stringLiteral("(var...)"))) // .remove() does not work 
+            ea.remove()
+          })
+           
+          
         }
       },
     }
