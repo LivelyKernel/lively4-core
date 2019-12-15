@@ -532,18 +532,19 @@ export default class ASTCapabilities {
     // returns innermostDescribePath 
     function isInDescribe(path) {
       let possiblePath = isIn("CallExpression", path, "describe");
+      
       while(possiblePath !== null) {
         if(possiblePath.node && possiblePath.node.callee.name === "describe") {
-          return possiblePath;
+          break;
         }
         possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
       }
-      return null;
+      return possiblePath;
     }
     
     function isIn(type, path) {
       while(path !== null) {
-        if(path.node && path.node.type === type) {
+        if(directlyIn(type, path)) {
           return path;
         }
         path = path.parentPath; 
@@ -667,7 +668,6 @@ export default class ASTCapabilities {
   async generateCodeFragment(identifier, replacementGenerator) {
     const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
-
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
