@@ -394,7 +394,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
         },
-        
+        // #KeyboardShortcut Alt-C Update color picker locations
+        "Alt-C": cm => {
+          this.astCapabilities(cm).then(ac => ac.updateColorPicker());
+        },
         // #KeyboardShortcut Alt-J Jump to declaration of this identifier
         "Alt-J": cm => {
           this.astCapabilities(cm).then(ac => ac.selectDeclaration());

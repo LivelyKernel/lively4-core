@@ -399,6 +399,19 @@ export default class ASTCapabilities {
     });
     return classPath;
   }
+  
+  getColorLiterals(programPath) {
+    let colorPaths = [];
+    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}/g;
+    programPath.traverse({
+      StringLiteral(path) {
+        if (path.node.value.match(colorRegex)) {
+          colorPaths.push(path);
+        }
+      }
+    });
+    return colorPaths;
+  }
 
   /*MD ### Shortcuts MD*/
 
@@ -511,16 +524,26 @@ export default class ASTCapabilities {
 
     const myself = this;
 
-    //next: create getInnermostDescribePath
+    // returns innermostDescribePath 
     function isInDescribe(path) {
-
-      while (path !== null) {
-        if (path.node.type === "CallExpression" && path.node.callee.name === "describe") {
-          return true;
+      let possiblePath = isIn("CallExpression", path, "describe");
+      while(possiblePath !== null) {
+        if(possiblePath.node && possiblePath.node.callee.name === "describe") {
+          return possiblePath;
         }
-        path = path.parentPath;
+        possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
       }
-      return false;
+      return null;
+    }
+    
+    function isIn(type, path) {
+      while(path !== null) {
+        if(path.node && path.node.type === type) {
+          return path;
+        }
+        path = path.parentPath; 
+      }
+      return null;     
     }
 
     function directlyIn(type, path) {
@@ -618,25 +641,25 @@ export default class ASTCapabilities {
   
   /*MD ## Generations MD*/
 
-  /*MD ### Generate Testcase MD*/
+  /*MD ### Generate Testcase / Class / get / set MD*/
 
   generateTestCase() {
-    this.getUserInput("Enter test case explanation", "should work properly").then(input => this.generateCodeFragment(this.compileTestCase(input)));
+    this.generateCodeFragment("should work properly", (id) => this.compileTestCase(id));
   }
 
   generateGetter() {
-    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileGetter(input)));
+    this.generateCodeFragment("myCoolProperty", (id) => this.compileGetter(id));
   }
 
   generateSetter() {
-    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileSetter(input)));
+    this.generateCodeFragment("myCoolProperty", (id) => this.compileSetter(id));
   }
 
   generateClass() {
-    this.getUserInput("Enter class name", "Foo").then(input => this.generateCodeFragment(this.compileClass(input)));
+    this.generateCodeFragment("Foo", (id) => this.compileClass(id));
   }
 
-  async generateCodeFragment(replacement) {
+  async generateCodeFragment(identifier, replacementGenerator) {
     const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
 
@@ -644,10 +667,15 @@ export default class ASTCapabilities {
       visitor: {
         Program: programPath => {
           let path = this.getPathBeforeCursor(programPath, selection.start);
+          //const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
           if (path === undefined) {
-            programPath.pushContainer('body', replacement);
+            programPath.pushContainer('body', replacementGenerator(identifier));
           } else {
-            path.insertAfter(replacement);
+            let uniqueIdentifier = identifier;
+            //if(path.scope.hasBinding(identifier)) {
+            //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
+            //}
+            path.insertAfter(replacementGenerator(uniqueIdentifier));
           }
         }
       }
@@ -665,11 +693,11 @@ export default class ASTCapabilities {
 
   //TODO: nice identifier
   compileGetter(propertyName) {
-    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
+    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier("internalPropertyName")))]));
   }
 
   compileSetter(propertyName) {
-    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
+    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier("internalPropertyName")), t.identifier("newValue")))]));
   }
 
   compileClass(className) {
@@ -1150,4 +1178,44 @@ export default class ASTCapabilities {
     }).toArray();
     return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
+  
+  /*MD ## Color Picker MD*/
+  
+  updateColorPicker() {
+    const old = this.editor.getAllMarks();
+    old.forEach(marker => {
+      if (marker.type === "bookmark") {
+        marker.clear();
+      }
+    })
+    const colorLiterals = this.getColorLiterals(this.programPath);
+    colorLiterals.forEach(path => {
+      const location = {line: path.node.loc.end.line-1, column: path.node.loc.end.column};
+      var picker = document.createElement("input");
+      picker.type = "color";
+      picker.value = path.node.value;
+      const bookmark = this.editor.setBookmark(location, picker);
+      picker.addEventListener('change', (event) => {
+        const currentLocation = bookmark.find();
+        this.updateColor(currentLocation, event.target.value);
+      });
+    })
+  }
+  
+  updateColor(currentLocation, color) {
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          const path = this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isVariableDeclarator(path.node)) {
+            path.node.init.value=color;
+          }
+        }
+      }
+    })).code;
+    this.scrollTo(scrollInfo);
+    this.updateColorPicker();
+  }
+  
 }
