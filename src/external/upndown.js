@@ -200,7 +200,10 @@ export default class upndown {
 
     gen_attribs(attribs) {
       var keys = Object.keys(attribs)
-      if (!attribs || keys.length == 0) return ""
+      if (!attribs) return ""
+      keys = keys.filter(ea => ea != "data-source-line") // #Meta attribute... used by sourcemap
+      
+      if (keys.length == 0) return ""
       var result = keys.map(ea => {
         if (ea == "class") {
           if (attribs[ea].length == 0) return ""

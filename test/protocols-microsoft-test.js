@@ -1,9 +1,8 @@
 
 import {expect} from 'src/external/chai.js';
 
-import {MicrosoftScheme} from "src/client/protocols/microsoft.js"
-
-
+import MicrosoftScheme from "src/client/protocols/microsoft.js"
+        
 describe('MicrosoftScheme', async () => {
 
   var microsoftScheme = new MicrosoftScheme() 
