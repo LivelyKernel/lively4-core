@@ -41,15 +41,23 @@ export default class ASTCapabilities {
    * Get the root path
   */
   get programPath() {
-    let programPath;
-    this.sourceCode.traverseAsAST({
-      Program(path) {
-        programPath = path;
-      }
-    });
-    return programPath;
+    var myself = this;
+    if(!this.myProgramPath) {
+      this.sourceCode.traverseAsAST({
+        Program(path) {
+          lively.warn("lol")
+          myself.myProgramPath = path;
+        }
+      });
+    }
+    
+    return this.myProgramPath;
   }
 
+  codeChanged() {
+    this.myProgramPath = undefined;
+  }
+  
   /** 
    * Return first child in depth first search that satisfies a condition
    */

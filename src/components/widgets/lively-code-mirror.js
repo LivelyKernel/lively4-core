@@ -150,9 +150,17 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   astCapabilities(cm) {
-    return System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
-      .then(m => new m.default(this, cm));
+    if(!this.myASTCapabilities) {
+      this.myASTCapabilities = System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
+        .then(m => {
+          var capabilities = new m.default(this, cm);
+          cm.on("change", () => {capabilities.codeChanged()})
+          return capabilities;
+        });
+    }
+    return this.myASTCapabilities;
   }
+  
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js')
       .then(m => {
@@ -331,6 +339,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Ctrl-S save content
         "Ctrl-S": (cm) => {
+          this.myASTCapabilities = undefined; // Reload our ASTCapabilities to improve workflow when changing code there
           this.doSave(cm.getValue());
         },
         // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
