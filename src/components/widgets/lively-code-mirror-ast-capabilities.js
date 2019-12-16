@@ -45,7 +45,6 @@ export default class ASTCapabilities {
     if(!this.myProgramPath) {
       this.sourceCode.traverseAsAST({
         Program(path) {
-          lively.warn("lol")
           myself.myProgramPath = path;
         }
       });
@@ -849,12 +848,10 @@ export default class ASTCapabilities {
   }
 
   async extractMethod() {
-
     const scrollInfo = this.scrollInfo;
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          /*var selectedPaths = this.getSelectedPaths(programPath);*/
           const {
             selectedPaths,
             extractingExpression,
