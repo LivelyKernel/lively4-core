@@ -1,14 +1,24 @@
 var a = 3
 var b = 4
 
-function foo(a,b) {
-  var c = (a + b) / 2 
-  return c
+/*MD 
+   # Hello
+   Example: 
+   
+   ```javascript {.example1}
+   import {foo} from  "https://lively-kernel.org/lively4/lively4-jens/demos/javascript/hello.js"
+   foo(3)
+   ```
+   
+   <script>
+     import boundEval from "src/client/bound-eval.js";
+     boundEval(lively.query(this, ".example1").textContent).then(r => r.value)
+     
+   </script>
+MD*/
+export function foo(a) {
+  return a + 5  
 }
 
-var avg = foo(a,b)
 
-var sum = 0
-for(var i=0; i < 5; i++) {
-  sum += i
-}
+
