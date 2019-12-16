@@ -859,9 +859,12 @@ export default class ASTCapabilities {
           } = this.selectMethodExtraction(programPath);
 
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
-          const surroundingMethod = selectedPaths[0].find(parent => {
+          let surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
+          if(!surroundingMethod) {
+            surroundingMethod = selectedPaths[selectedPaths.length - 1];
+          }
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
           this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression);
