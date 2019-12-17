@@ -35,9 +35,10 @@ class VarRecorder {
 
     this.initTemplates()
     this.splitUpVariableDeclarations()
-    this.rewriteExportVariableDeclarations()
-
-    this.rewriteGloablVariableDeclarations()
+    
+    // this.rewriteExportVariableDeclarations()
+    // this.rewriteGloablVariableDeclarations()
+    
     this.rewriteBindings()
 
     this.removeTrashNodes()
@@ -49,6 +50,7 @@ class VarRecorder {
       `${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER} = ${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER} || {}`);
     const lazyInitializeModuleScope = lazyInitializeModuleScopeTemplate();
     path.unshiftContainer('body', lazyInitializeModuleScope);
+    path.unshiftContainer('body', template("const __SystemJSRewritingHack = {};")());
   }
 
   /*MD ## Implementation MD*/
@@ -100,10 +102,6 @@ class VarRecorder {
     return rec[this.MODULE_IDENTIFIER] = rec[this.MODULE_IDENTIFIER] || {};
   }
   
-  
-  
-  
-
   initTemplates() {
     this.varToRecordTemplate = template(`
         Object.defineProperty(${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}, referenceString , { 
@@ -282,7 +280,7 @@ class VarRecorder {
         }
         return true;
       })
-      .forEach(ea => this.replaceReference(ea));
+      // .forEach(ea => this.replaceReference(ea)); 
 
     // dealing with the declaration of the binding
     let varToRecord = this.varToRecordTemplate({ reference: t.identifier(binding.identifier.name),
@@ -337,7 +335,43 @@ class VarRecorder {
     // - throw error at others
   }
 
-  rewriteIdentifiers(path) {
+   rewriteIdentifiers(path) {
+    if (isMarked(path.node)) return;
+    if (!this.isVariable(path)) return;
+
+    // special case of assigning to a reference
+    let pattern = this.bubbleThroughPattern(path);
+    if (pattern.parentPath.isAssignmentExpression() && pattern.parentKey === 'left') {
+      let par = path.find(parent => parent.scope.hasOwnBinding(path.node.name));
+      // is our binding scope the module-wide scope?
+      if (par && par.scope === this.program.scope) {
+
+        // is it part of a for in declaration
+        const binding = par.scope.getOwnBinding(path.node.name)
+        if (binding && binding.__ignoreRecorder__) { return; }
+
+        if (!path.find(p => p.node.markedAsMeta)) {
+          this.replaceReference(path);
+        }
+
+        return path.skip();
+      }
+    }
+
+    // Distinguish between module-bound variables and real globals
+    if (
+      path.scope.hasGlobal(path.node.name) &&
+      this.moduleBoundGlobals.includes(path.node.name)
+    ) {
+      this.replaceReference(path);
+      return path.skip();
+    }
+  }
+
+  
+  
+  
+  rewriteAllIdentifiers(path) {
     if (isMarked(path.node)) return;
     if (!this.isVariable(path)) return;
 
@@ -394,6 +428,7 @@ class VarRecorder {
   }
 
   removeTrashNodes() {
+    if (!this.toBeRemoved) return;
     this.toBeRemoved.forEach(ea => {
       ea.remove()
     })

@@ -359,7 +359,7 @@ export default class Editor extends Morph {
         var conflictVersion = response.headers.get("conflictversion");
         // lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
         if (conflictVersion) {
-          return this.solveConflic(conflictVersion);
+          return this.solveConflic(conflictVersion, newVersion);
         }
         if (newVersion) {
           // lively.notify("new version " + newVersion);
@@ -394,13 +394,14 @@ export default class Editor extends Morph {
    * solveConflict
    * use three-way-merge
    */ 
-  async solveConflic(otherVersion) {
+  async solveConflic(otherVersion , newVersion) {
+    var conflictId =  `conflic-${otherVersion}-${newVersion}` 
     if (this.solvingConflict) {
-      lively.notify("Sovling conflict stopped, due to recursion1")
+      lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict)
       return 
     }
     
-    lively.notify("Solve Conflict: " + otherVersion);
+    lively.notify("Solve Conflict between: " + otherVersion +`and ` + newVersion);
     var parentText = this.lastText; // 
     var myText = this.currentEditor().getValue(); // data
     // load from conflict version
@@ -412,8 +413,9 @@ export default class Editor extends Morph {
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
     this.setText(mergedText, true);
     this.lastVersion = otherVersion;
-    this.solvingConflict = true // here it can come to infinite recursion....
+    this.solvingConflict = conflictId
     try {
+      // here it can come to infinite recursion....
       await this.saveFile(); 
     } finally {
       this.solvingConflict = false
