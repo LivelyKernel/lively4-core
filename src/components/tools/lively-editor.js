@@ -396,18 +396,22 @@ export default class Editor extends Morph {
    */ 
   async solveConflic(otherVersion , newVersion) {
     var conflictId =  `conflic-${otherVersion}-${newVersion}` 
-    if (this.solvingConflict) {
+    if (this.solvingConflict == conflictId) {
       lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict)
+      return 
+    }
+    if (this.solvingConflic) {
+      lively.warn("Recursive Solving Conflict", "" + this.solvingConflict + " and now: " + conflictId)
       return 
     }
     
     lively.notify("Solve Conflict between: " + otherVersion +`and ` + newVersion);
     var parentText = this.lastText; // 
-    var myText = this.currentEditor().getValue(); // data
     // load from conflict version
     var otherText = await fetch(this.getURL(), {
         headers: {fileversion: otherVersion}
       }).then( r => r.text()); 
+    var myText = this.currentEditor().getValue(); // data
 
     // #TODO do something when actual conflicts occure?
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
