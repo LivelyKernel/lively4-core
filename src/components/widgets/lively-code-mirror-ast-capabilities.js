@@ -45,7 +45,6 @@ export default class ASTCapabilities {
     if(!this.myProgramPath) {
       this.sourceCode.traverseAsAST({
         Program(path) {
-          lively.warn("lol")
           myself.myProgramPath = path;
         }
       });
@@ -768,6 +767,20 @@ export default class ASTCapabilities {
       return this.getBindingDeclarationIdentifierPath(identifier.scope.getBinding(identifier.node.name)).node;
     });
   }
+  
+  shouldBeAsync(content) {
+    let hasAwait = false;
+    content.forEach((startPath) => {
+      startPath.traverse({
+        AwaitExpression(path) {
+          hasAwait = true;
+          path.stop();
+        }
+      });
+    })
+    
+    return hasAwait;
+  }
 
   needsToBeParameter(identifier, surroundingMethod) {
     return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
@@ -796,7 +809,7 @@ export default class ASTCapabilities {
     return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
   }
 
-  createMethod(content, parameter, returnValues, scope, extractingExpression) {
+  createMethod(content, parameter, returnValues, scope, extractingExpression, shouldBeAsync) {
     if (extractingExpression && returnValues.length > 0) {
       lively.warn("Unable to extract an expression, that assigns something to variables used outside the expression.");
     }
@@ -821,6 +834,7 @@ export default class ASTCapabilities {
       methodContent = [t.returnStatement(content[0].node)];
     }
     const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(methodContent));
+    newMethod.async = shouldBeAsync;
     scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
@@ -849,12 +863,10 @@ export default class ASTCapabilities {
   }
 
   async extractMethod() {
-
     const scrollInfo = this.scrollInfo;
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          /*var selectedPaths = this.getSelectedPaths(programPath);*/
           const {
             selectedPaths,
             extractingExpression,
@@ -862,12 +874,16 @@ export default class ASTCapabilities {
           } = this.selectMethodExtraction(programPath);
 
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
-          const surroundingMethod = selectedPaths[0].find(parent => {
+          let surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
+          if(!surroundingMethod) {
+            surroundingMethod = selectedPaths[selectedPaths.length - 1];
+          }
+          const shouldBeAsync = this.shouldBeAsync(selectedPaths);
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
-          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync);
         }
       }
     }));
