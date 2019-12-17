@@ -781,6 +781,20 @@ export default class ASTCapabilities {
     
     return hasAwait;
   }
+  
+  shouldBeStatic(content) {
+    let hasThis = false;
+    content.forEach((startPath) => {
+      startPath.traverse({
+        ThisExpression(path) {
+          hasThis = true;
+          path.stop();
+        }
+      });
+    })
+    
+    return !hasThis;
+  }
 
   needsToBeParameter(identifier, surroundingMethod) {
     return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
@@ -809,7 +823,7 @@ export default class ASTCapabilities {
     return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
   }
 
-  createMethod(content, parameter, returnValues, scope, extractingExpression, shouldBeAsync) {
+  createMethod(content, parameter, returnValues, scope, extractingExpression, shouldBeAsync, shouldBeStatic) {
     if (extractingExpression && returnValues.length > 0) {
       lively.warn("Unable to extract an expression, that assigns something to variables used outside the expression.");
     }
@@ -835,6 +849,7 @@ export default class ASTCapabilities {
     }
     const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(methodContent));
     newMethod.async = shouldBeAsync;
+    newMethod.static = shouldBeStatic;
     scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
@@ -881,9 +896,10 @@ export default class ASTCapabilities {
             surroundingMethod = selectedPaths[selectedPaths.length - 1];
           }
           const shouldBeAsync = this.shouldBeAsync(selectedPaths);
+          const shouldBeStatic = this.shouldBeStatic(selectedPaths);
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
-          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync, shouldBeStatic);
         }
       }
     }));
