@@ -2,11 +2,14 @@
 
 This is a demo page:
 
-- here are bullet points
-- second 
+
+## Hello
+- second
+  - bla
+  - foo
 - third
-
-
+- foo
+- bar
 ## Subsection
 
 Here comes some static `code`
@@ -21,9 +24,11 @@ function foo(a) {
 And here a lively script
 
 <script>
+
   var a = 3 + 4
   "a =" + a
 </script>
+
 
 
 ## Foobar

@@ -25,9 +25,6 @@ export default class Files {
   
   static cachedFileMap() {
     
-    
-    
-    
     if (!self.lively4cacheFiles) {
       self.lively4cacheFiles = new Map()  // indexDB or dexie are to slow (60ms for simple checking if it is there #TODO)
     } 

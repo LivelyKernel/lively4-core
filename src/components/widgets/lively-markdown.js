@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
+
 import MarkdownItHashtag from "src/external/markdown-it-hashtag.js"
 import MarkdownItTasks from "src/external/markdown-it-tasks.js"
 import MarkdownItAttrs from "src/external/markdown-it-attrs.js"
@@ -9,7 +10,7 @@ import MarkdownItSourcemap from "src/external/markdown-it-sourcemap.js"
 // import MarkdownItContainer from "src/external/markdown-it-container.js"
 // see https://www.npmjs.com/package/markdown-it-container
 
-import highlight from 'src/external/highlight.js';
+import 'src/external/highlight.js';
 import persistence from 'src/client/persistence.js';
 import Strings from 'src/client/strings.js';
 import Upndown from 'src/external/upndown.js';
@@ -52,7 +53,7 @@ export default class LivelyMarkdown extends Morph {
     this.get("#content").setAttribute("contenteditable", value)
   }
   
-  async updateView() {
+  async renderMarkdown(root, content) {
     var md = new MarkdownIt({
       html:         true,        // Enable HTML tags in source
       xhtmlOut:     false,        // Use '/' to close single tags (<br />).
@@ -96,7 +97,6 @@ export default class LivelyMarkdown extends Morph {
         return `<a href="javascript:lively.openIssue('${tagName}')" class="issue">`;
 
     }
-    var content = await this.getContent()
     if (!content) return;
     if (content.match(/markdown-config .*presentation=true/)) {
       var configPresentation = true 
@@ -127,7 +127,6 @@ export default class LivelyMarkdown extends Morph {
     
     this.beatifyInplaceHashtagNavigation(tmpDiv)
     
-    var root = this.get("#content")
     root.innerHTML = "";
     tmpDiv.childNodes.forEach(ea => {
       root.appendChild(ea)
@@ -161,6 +160,10 @@ export default class LivelyMarkdown extends Morph {
     
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
+  }
+  
+  async updateView() {
+    return this.renderMarkdown(this.get("#content"), await this.getContent())
   }
 
   async replaceImageTagsWithSpecificTags(tmpDiv) {

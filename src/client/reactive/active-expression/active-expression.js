@@ -14,13 +14,15 @@ export const AExprRegistry = {
 
   _eventTarget: new EventTarget(),
   _aexprs: new Set(),
+  _idCounters: new Map(),
 
   /**
    * Handling membership
    */
   addAExpr(aexpr) {
     this._aexprs.add(aexpr);
-    this._eventTarget.dispatchEvent('add', aexpr)
+    this.buildIdFor(aexpr);
+    this._eventTarget.dispatchEvent('add', aexpr);
   },
   removeAExpr(aexpr) {
     const deleted = this._aexprs.delete(aexpr);
@@ -38,6 +40,20 @@ export const AExprRegistry = {
   off(type, callback) {
     return this._eventTarget.removeEventListener(type, callback);
   },
+  
+  buildIdFor(ae) {
+    let locationId;
+    if(ae.meta().has('location')){
+      let location = ae.meta().get('location');
+      let file = location.file.replace(lively4url+'/', '');
+      locationId = file+'@'+location.start.line+':'+location.start.column;
+    } else {
+      locationId = 'unknown_location';
+    }
+    this._idCounters.set(locationId, this._idCounters.get(locationId) + 1 || 0);
+    ae.meta({id : locationId+'#'+this._idCounters.get(locationId)});       
+  },
+  
   /**
    * For Development purpose if the registry gets into inconsistent state
    */
@@ -45,6 +61,7 @@ export const AExprRegistry = {
     for(let each of this._aexprs)each._isDisposed = true;
     this._eventTarget.callbacks.clear();
     this._aexprs.clear();
+    this._idCounters.clear();
   },
 
   /**
@@ -159,7 +176,7 @@ export class BaseActiveExpression {
    * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [], match, errorMode = 'silent' } = {}) {
+  constructor(func, { params = [], match, errorMode = 'silent', location } = {}) {
     this._eventTarget = new EventTarget(),
     this.func = func;
     this.params = params;
@@ -172,6 +189,7 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
+    if(location){this.meta({location})}
 
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();

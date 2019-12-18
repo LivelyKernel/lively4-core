@@ -120,7 +120,7 @@ ul {
 }
 
 
-ul  li::before{
+ul li::before {
   content: "■"; /* □ */ 
   color: rgb(255, 142, 0);
   display: inline-block; 
@@ -130,8 +130,8 @@ ul  li::before{
   font-size: 12pt;
   margin-left: -1.2em;
 }
-  
-ul  li li::before{
+
+ul li li::before, ol li li::before {
   content: "□"; 
   color: rgb(255, 142, 0);
   display: inline-block; 

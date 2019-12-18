@@ -516,6 +516,7 @@ class Range {
   }
 
   strictlyContainsRange(range) {
+    if(range.start.isEqual(range.end)) return this.containsRange(range);
     return this.strictlyContains(range.start) || this.strictlyContains(range.end);
   }
 
