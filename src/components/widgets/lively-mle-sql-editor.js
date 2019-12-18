@@ -15,6 +15,7 @@ export default class LivelyMleSqlEditor extends Morph {
       user: 'system',
       password: 'MY_PASSWORD_123'
     });
+    lively.notify('Connected');
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', () => {
@@ -27,6 +28,7 @@ export default class LivelyMleSqlEditor extends Morph {
     this.socket.on('result', r => {result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected});
     const sql = <lively-code-mirror></lively-code-mirror>;
     const exec = <button id='execute' click={() => {
+      lively.success('Resource successfully processed');
       sql.then(e => {
         this.socket.emit('executeSQL', {
           sql: e.editor.getValue()

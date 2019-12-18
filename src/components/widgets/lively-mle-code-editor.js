@@ -16,6 +16,7 @@ export default class LivelyMleCodeEditor extends Morph {
       user: 'system',
       password: 'MY_PASSWORD_123'
     });
+    lively.notify('Connected');
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', () => {
@@ -34,9 +35,12 @@ export default class LivelyMleCodeEditor extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.editor = <lively-code-mirror></lively-code-mirror>;
     const deploy = <button id='deploy' click={() => {
-      this.editor.then(e => this.socket.emit('save', {
-        file: e.editor.getValue()
-      }));     
+      this.editor.then(e => {
+        lively.success('Resource succesfully processed');
+        this.socket.emit('save', {
+          file: e.editor.getValue()
+      });
+    });     
     }}>Deploy</button>;
     const surrounding = <div>{deploy}{this.editor}</div>;
     this.appendChild(surrounding);
