@@ -218,7 +218,8 @@ export default class VivideView extends Morph {
       if (scriptJSON) {
         this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
       } else {
-        await this.initDefaultScript();
+        //This got commented because it is not reliable. It will often overwrite or take longer to setup and overwrite later on
+        // await this.initDefaultScript();
       }
 
       var dataJSON = this.getAttribute("vivide-data")
@@ -311,10 +312,15 @@ export default class VivideView extends Morph {
   }
   
   get myCurrentScript() { return this._myCurrentScript; }
-  set myCurrentScript(script) { return this._myCurrentScript = script; }
-
+  set myCurrentScript(script) {
+    this._myCurrentScript = script;
+    this.setAttribute(VivideView.scriptAttribute, script.toJSON());
+  }
+  
   async initDefaultScript() {
-    this.myCurrentScript = await Script.createDefaultScript(this);
+    const script = await Script.createDefaultScript(this);
+    this.myCurrentScript = script;
+    return script;
     // this.setJSONAttribute(VivideView.scriptAttribute, this.myCurrentScript.toJSON());
   }
   
@@ -369,17 +375,15 @@ export default class VivideView extends Morph {
     const pos = lively.getGlobalBounds(reference).topRight();
 
     const scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
-
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
-    scriptEditor.setScript(this.myCurrentScript);
-
+    await scriptEditor.setScript(this.myCurrentScript);
     return scriptEditor;
   }
   
   livelyPrepareSave() {
-    this.setAttribute("vivide-script", this.myCurrentScript.toJSON())
-    
+    console.log(this.myCurrentScript);
+    this.setAttribute("vivide-script", this.myCurrentScript.toJSON());
     try {
       var json = JSON.stringify(this.getInputData())
       this.setAttribute("vivide-data", json)

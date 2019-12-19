@@ -18,9 +18,11 @@ export default class LivelyHaloVivideSaveScriptItem extends HaloItem {
     input targets
     output targets
     */
-    const stringToSave = saveTarget.myCurrentScript.toJSON();
+    const script = saveTarget.myCurrentScript.toJSON();
     const url = `${lively4url}/${basePath}${this.name}.json`;
     const exists = await lively.files.exists(url);
+    console.log();
+    const stringToSave = JSON.stringify({script, widget: saveTarget.widget.tagName.toLowerCase()});
     if(exists){   
       const confirm = await lively.confirm(`Are you sure you want to overwrite ${this.name}?`);
       if(confirm){
