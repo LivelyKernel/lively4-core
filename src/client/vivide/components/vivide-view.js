@@ -382,7 +382,6 @@ export default class VivideView extends Morph {
   }
   
   livelyPrepareSave() {
-    console.log(this.myCurrentScript);
     this.setAttribute("vivide-script", this.myCurrentScript.toJSON());
     try {
       var json = JSON.stringify(this.getInputData())

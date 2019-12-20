@@ -8,7 +8,6 @@ export default class HaloVivideOpenScriptEditorItem extends HaloItem {
     this.hideHalo();
     const scriptEditor = await inspectTarget.createScriptEditor();
     scriptEditor.initialFocus();
-    console.log(inspectTarget.getAttribute('vivide-script'));
   }
   
   updateTarget(view) {
