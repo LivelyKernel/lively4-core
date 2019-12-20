@@ -7,9 +7,7 @@ const basePath = "src/client/vivide/scripts/application/";
 
 export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
   async onClick(evt){
-    if(!this.name){
-      this.name = lively.prompt("Please attach a name", "vivide-application-name");
-    }
+    this.name = await lively.prompt("Please attach a name", "vivide-application-name");
     const saveTarget = window.that;
     this.storedViews = [];
     /*
@@ -20,18 +18,17 @@ export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
     input targets
     output targets
     */
-    // const url = `${lively4url}/${basePath}${this.name}.json`;
-    // const exists = await lively.files.exists(url);
-    // const stringToSave = this.createJSON(saveTarget);
-    // if(exists){   
-    //   const confirm = await lively.confirm(`Are you sure you want to overwrite ${this.name}?`);
-    //   if(confirm){
-    //     this.saveFile(url, stringToSave);
-    //   }
-    // } else {
-    //   this.saveFile(url, stringToSave);
-    // }
-   console.log(this.createJSON(saveTarget))
+    const url = `${lively4url}/${basePath}${this.name}.json`;
+    const exists = await lively.files.exists(url);
+    const stringToSave = JSON.stringify(this.createJSON(saveTarget));
+    if(exists){   
+      const confirm = await lively.confirm(`Are you sure you want to overwrite ${this.name}?`);
+      if(confirm){
+        this.saveFile(url, stringToSave);
+      }
+    } else {
+      this.saveFile(url, stringToSave);
+    }
   }
   
   createJSON(saveTarget){
