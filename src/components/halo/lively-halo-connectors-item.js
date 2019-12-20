@@ -126,7 +126,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     }
     
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
-    connection.activateConnection();
+    connection.activate();
     connection.drawConnectionLine();
   } 
   
