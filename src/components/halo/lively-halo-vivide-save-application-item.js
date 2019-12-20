@@ -2,12 +2,13 @@
 
 import HaloItem from 'src/components/halo/lively-halo-item.js';
 
-const basePath = "src/client/vivide/scripts/application/";
+const basePath = "src/client/vivide/scripts/applications/";
 
 
 export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
   async onClick(evt){
     this.name = await lively.prompt("Please attach a name", "vivide-application-name");
+    if(this.name===undefined) return;
     const saveTarget = window.that;
     this.storedViews = [];
     /*
@@ -44,7 +45,8 @@ export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
       .map(v => {
         return this.createJSON(v);
       });
-    const stringToSave = {script, outputs, inputSources, widget: saveTarget.widget.tagName.toLowerCase()};
+    const inputs = saveTarget.input;
+    const stringToSave = {script, outputs, inputSources, inputs, widget: saveTarget.widget.tagName.toLowerCase()};
     this.storedViews = [];
     return stringToSave;
   }

@@ -26,6 +26,9 @@ async function createView(content, createEditor = false, createDependents = fals
     inputs.forEach(i => i.connectTo(componentWindow));
     const outputs = await Promise.all(content.outputs.map(o => createView(o)));
     outputs.forEach(o => componentWindow.connectTo(o));
+    if(content.inputs && content.inputs && content.inputs.length !== 0){
+      componentWindow.newDataFromUpstream(content.inputs);
+    }
   }
   return componentWindow;
 }
@@ -50,7 +53,7 @@ async function createView(content, createEditor = false, createDependents = fals
       let delResponse = await fetch(urlString, { method: 'DELETE' });
       if (delResponse.status === 200) {
         lively.success(`deleted file ${urlString::fileName()}`);
-        button.remove();
+        file.remove();
         deleteFunctions = deleteFunctions.filter(df => df !== del);
       } else {
         lively.notify("could not properly delete " + urlString, (await delResponse.text()));
@@ -68,7 +71,8 @@ async function createView(content, createEditor = false, createDependents = fals
       <span style="color: blue; font-weight: bold;">Open</span>
     </button>;
 
-    return <div>{urlString.split('/')[urlString.split('/').length-1]} {delbutton} {openbutton}</div>;
+    let file = <div>{urlString.split('/')[urlString.split('/').length-1]} {delbutton} {openbutton}</div>;
+    return file;
   })}</div>);
   
   let deleteAllScriptsButton = <button click={async evt => {

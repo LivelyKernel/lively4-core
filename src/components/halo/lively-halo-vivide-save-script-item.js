@@ -6,9 +6,8 @@ const basePath = "src/client/vivide/scripts/scripts/";
 
 export default class LivelyHaloVivideSaveScriptItem extends HaloItem {
   async onClick(evt){
-    if(!this.name){
-      this.name = await lively.prompt("Please attach a name", "vivide-script-name");
-    }
+    this.name = await lively.prompt("Please attach a name", "vivide-script-name");
+    if(this.name === undefined) return;
     const saveTarget = window.that;
     /*
     We have to save a multitude of things:
