@@ -17,7 +17,7 @@ class /*instance:*//*instance:*/TreeScene/*{"id":"041d_a6df_bfab","name":{"mode"
   // Scene
   /*example:*//*example:*/drawTo/*{"id":"c6e1_19d7_d93f","name":{"mode":"input","value":"Day scene"},"color":"hsl(120, 30%, 70%)","values":{"canvas":{"mode":"select","value":"90ad_13f3_ab24"}},"instanceId":{"mode":"select","value":"041d_a6df_bfab"},"prescript":"","postscript":""}*//*{"id":"adae_12ea_92df","name":{"mode":"input","value":"Night scene"},"color":"hsl(100, 30%, 70%)","values":{"canvas":{"mode":"select","value":"90ad_13f3_ab24"}},"instanceId":{"mode":"select","value":"8f4d_e4fa_d9c8"},"prescript":"","postscript":""}*/(canvas) {
     this.ctx = canvas.getContext('2d');
-    
+
     this.canvasWidth = canvas.width;
     this.canvasHeight = canvas.height;
 
@@ -132,4 +132,4 @@ Object.keys(TreeScene.timeProps).forEach(addStaticProp);
 // Tools
 function random(low, high) {
 	return Math.random() * (high - low) + low;
-} /* Context: {"context":{"prescript":"// BEFORE\nMath.seed = 2;\nMath._random = Math.random;\nvar newRandom = function() {\n  var x = Math.sin(Math.seed++) * 1000;\n  return x - Math.floor(x);\n};\n//Math.random = newRandom;","postscript":"// AFTER\nMath.random = Math._random"},"customInstances":[{"id":"90ad_13f3_ab24","name":"A 2D Canvas","code":"return document.createElement('canvas');"},{"id":"b525_a1b7_4b80","name":"foo","code":"return {hello: 7};"}]} */
+} /* Context: {"context":{"prescript":"// BEFORE\nMath.seed = 2;\nMath._random = Math.random;\nvar newRandom = function() {\n  var x = Math.sin(Math.seed++) * 1000;\n  return x - Math.floor(x);\n};\n//Math.random = newRandom;","postscript":"// AFTER\nMath.random = Math._random"},"customInstances":[{"id":"90ad_13f3_ab24","name":"A 2D Canvas","code":"const canvas = document.createElement('canvas');\ncanvas.style.height = '700px';\ncanvas.style.width = '700px';\nreturn canvas;"},{"id":"b525_a1b7_4b80","name":"foo","code":"return {hello: 7};"}]} */

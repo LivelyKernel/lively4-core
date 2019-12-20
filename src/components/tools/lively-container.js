@@ -18,6 +18,7 @@ let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack o
 import Clipboard from "src/client/clipboard.js"
 import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
+import Upndown from 'src/external/upndown.js'
 
 /*MD
 
@@ -570,6 +571,7 @@ export default class Container extends Morph {
   
   getOtherContainers(editing=false) {
     var url = this.getURL()
+    if (!url) return
     return document.body.querySelectorAll("lively-container").filter(ea => {
       var otherURL = ea.getURL()
       return ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
@@ -638,7 +640,8 @@ export default class Container extends Morph {
   }
   
   contentIsEditable() {
-    return this.getURL().pathname.match(/\.html$/) || this.getURL().pathname.match(/\.md$/)
+    var url = this.getURL()
+    return url && url.pathname && url.pathname.match(/\.html$/) || this.getURL().pathname.match(/\.md$/)
   }
   
   /*MD ## Modules MD*/
@@ -853,6 +856,18 @@ export default class Container extends Morph {
     // fall back to system context menu if shift pressed
     if (!evt.shiftKey) {
       evt.preventDefault();
+      evt.stopPropagation();
+      
+      var path = evt.composedPath()
+      var markdown = path.find(ea => ea.localName == "lively-markdown") 
+      if (markdown) {
+        var elements = path.filter(ea => ea.getAttribute &&  ea.getAttribute("data-source-line"))
+        if (elements.length > 0) {
+          this.onMarkdownContextMenu(evt, markdown, elements)
+          return false
+        }
+      }
+      
       var worldContext = document.body; // default to opening context menu content globally
       // opening in the content makes only save if that content could be persisted and is displayed
       if (this.contentIsEditable() && !this.isEditing()) {
@@ -862,34 +877,16 @@ export default class Container extends Morph {
 	    return false;
     }
   }
+  
+ 
 
   onClick(evt) {
-    // lively.showPoint(lively.getPosition(evt))
-
     if(evt.shiftKey && !this.isEditing() && this.getURL().pathname.match(/.*\.md/)) {
-      
-      var markdownElements = evt.composedPath().filter(ea => ea && ea.getAttribute && ea.getAttribute("data-source-line"))
-      if (markdownElements.length == 0) return;
-      var last = markdownElements.first
-      
-      var url = this.getURL()
-      var otherContainer = this.getOtherContainers(true)[0]
-      var livleyEditor = otherContainer.get('#editor')
-      var livleyCodeMirror = livleyEditor && livleyEditor.get('#editor')
-      var cm = livleyCodeMirror && livleyCodeMirror.editor
-      
-      debugger
-      if (cm) {
-        var line = last.getAttribute("data-source-line")
-        // cm.setCursor({line: line - 1, ch: 0}) 
-        cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0})         
-        otherContainer.parentElement.focus()
-        otherContainer.focus()
-      }
-    }
-    
-    
+      this.onMarkdownClick(evt)  
+    } 
   }
+  
+  
   
   onFullscreen(evt) {
     this.toggleControls();
@@ -1255,29 +1252,13 @@ export default class Container extends Morph {
       var url = this.getURL()
       var otherContainer = this.getOtherContainers()[0]
       var markdown = otherContainer && otherContainer.get("lively-markdown")
-      
       if (markdown) {
-        var line = cm.getCursor().line + 1
-        var root = markdown.get("#content")
-        var elements = root.querySelectorAll(`[data-source-line="${line}"]`)
-        if (elements.length > 0) {
-          var element = Array.from(elements).last
-          var slide = lively.allParents(element).find(ea => ea.classList.contains("lively-slide"))
-          
-          if (slide) {
-            var presentation = lively.allParents(element).find(ea => ea.localName == "lively-presentation")
-            if (presentation) presentation.setSlide(slide)  
-          }
-          
-          if (this.lastEditCursorHighlight ) this.lastEditCursorHighlight.remove()
-          this.lastEditCursorHighlight = lively.showElement(element)
-          this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
-          this.lastEditCursorHighlight.innerHTML = ""
-        }
+        this.onMarkdownEditorCursorActivity(cm, markdown)
       }
     }
      
   }
+  
   
   /*MD ## Render Content MD*/
 
@@ -2197,6 +2178,173 @@ export default class Container extends Morph {
     url.pathname = lively.paths.normalize(url.pathname);
     return  "" + url;
   }
+  
+  /*MD ## Markdown Source Mapping 
+  
+  ![](../../../doc/figures/markdown-mapping.drawio)
+  
+  MD*/
+  
+  async onMarkdownContextMenu(evt, markdown, elements) {
+    let menuItems = [
+      ['edit source', () => this.showMarkdownElement(elements[0]), '', ``],
+      ['edit', () => this.editMarkdownElement(elements.last, markdown), '', ``],
+    ];
+    let menu = await ContextMenu.openIn(document.body, evt, undefined, document.body,  menuItems);
+    
+    return false
+  }
+  
+  getMarkdownRange(element) {
+    var sourceLine = element.getAttribute("data-source-line")
+    return sourceLine && sourceLine.split("-").map(n => parseFloat(n))
+  }
+  
+  setMarkdownRange(element, range) {
+    element.setAttribute("data-source-line", range[0] + "-" +  range[1])
+  }
+  
+  
+  onMarkdownEditorCursorActivity(cm, markdown) {
+    var line = cm.getCursor().line + 1
+    var root = markdown.get("#content")
+    var elements = root.querySelectorAll(`[data-source-line]`).filter(ea => {
+      var range = this.getMarkdownRange(ea)
+      return (range[0] == line) // && (line < range[1])
+    })
+    if (elements.length > 0) {
+      var element = Array.from(elements).last
+      var slide = lively.allParents(element).find(ea => ea.classList.contains("lively-slide"))
+
+      if (slide) {
+        var presentation = lively.allParents(element).find(ea => ea.localName == "lively-presentation")
+        if (presentation) presentation.setSlide(slide)  
+      }
+
+      if (this.lastEditCursorHighlight ) this.lastEditCursorHighlight.remove()
+      this.lastEditCursorHighlight = lively.showElement(element)
+      this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
+      this.lastEditCursorHighlight.innerHTML = ""
+    }
+  }
+  
+  onMarkdownClick(evt) {
+    var markdownElements = evt.composedPath().filter(ea => ea && ea.getAttribute && ea.getAttribute("data-source-line"))
+    if (markdownElements.length == 0) return;
+    var last = markdownElements.first
+
+    var otherContainer = this.getOtherContainers(true)[0]
+    if (otherContainer) {
+      this.containerShowMarkdownElement(otherContainer, last)
+    }
+  }
+  
+  async showMarkdownElement(element) {
+    var otherContainer = this.getOtherContainers(true)[0]
+    if (!otherContainer) {
+      otherContainer = await lively.openBrowser(this.getURL().toString(), true)
+    }
+    this.containerShowMarkdownElement(otherContainer, element)
+    
+  }
+
+  async editMarkdownElement(element, markdown) {
+    var markdownConverter = new Upndown()
+    markdownConverter.tabindent = "  "
+    markdownConverter.bullet = "- "
+    var source = await markdownConverter.convert(element.outerHTML, {keepHtml: true})
+    var range = this.getMarkdownRange(element)
+    var rangeOffset = range[0] - 1
+    
+    if (this.lastMarkdownWorkspace) {
+      if (this.lastMarkdownWorkspace.targetElement) {
+        this.lastMarkdownWorkspace.targetElement.style.display = ""
+      }
+      this.lastMarkdownWorkspace.remove()
+    }
+    
+    
+    var workspace = await (<lively-code-mirror mode="gfm"></lively-code-mirror>)
+    workspace.targetElement = element
+    
+    this.lastMarkdownWorkspace = workspace
+
+    
+    element.parentElement.insertBefore(workspace, element)
+    element.style.display = "none"
+    await  workspace.editorLoaded()    
+    workspace.value = source
+    workspace.focus()
+    workspace.registerExtraKeys({
+      Enter: async () => {
+        await workspace.doSave()
+        element.style.display = ""
+
+
+        var root = <div></div>
+            
+        // Just a preview... since we have to reload later .... #TODO make the real thing?
+        await markdown.renderMarkdown(root, workspace.value)
+        Array.from(root.childNodes).forEach(ea  => {
+          workspace.parentElement.insertBefore(ea, workspace)
+
+          var tmpRange =  this.getMarkdownRange(ea)
+          tmpRange[0] += rangeOffset
+          tmpRange[0] += rangeOffset
+          this.setMarkdownRange(element, range)
+          
+          
+          // lively.showElement(ea)
+        })
+        
+        // #TODO fix data-source-line ... in elements after this element! or give up and reload!
+        this.followPath(this.getURL()) // #GiveUp
+        
+        element.remove()
+        workspace.remove()
+      }
+    })
+
+    // prevent slide navigation etc....
+    workspace.addEventListener("keydown", async (evt) => {
+      evt.stopPropagation();
+    })
+    
+    workspace.doSave = async () => {
+      lively.notify("save range " + range[0] + "-" + range[1])
+      var editor = await lively.create("lively-editor");
+      editor.setURL(this.getURL())
+      await editor.loadFile()
+      var cm = editor.currentEditor()
+      cm.setSelection({line: range[0] - 1, ch:0 }, {line: range[1] - 1, ch:0 })
+      
+            
+      cm.replaceSelection(workspace.value + "\n")
+      
+      // update element...
+      var newRangeHeight = workspace.value.split("\n").length
+      range[1] = range[0] + newRangeHeight
+      editor.saveFile()      
+    }
+    
+  }
+  
+  containerShowMarkdownElement(otherContainer, element) {
+    var livleyEditor = otherContainer.get('#editor')
+    var livleyCodeMirror = livleyEditor && livleyEditor.get('#editor')
+    var cm = livleyCodeMirror && livleyCodeMirror.editor
+
+    if (cm) {
+      var line = element.getAttribute("data-source-line").split("-")[0]
+      // cm.setCursor({line: line - 1, ch: 0}) 
+      cm.setSelection({line: line - 1, ch: 0}, {line: line , ch: 0})         
+      otherContainer.parentElement.focus()
+      otherContainer.focus()
+    }
+  }
+  
+
+  
   
   /*MD ## Lively Hooks MD*/
   

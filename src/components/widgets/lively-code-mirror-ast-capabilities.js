@@ -41,15 +41,22 @@ export default class ASTCapabilities {
    * Get the root path
   */
   get programPath() {
-    let programPath;
-    this.sourceCode.traverseAsAST({
-      Program(path) {
-        programPath = path;
-      }
-    });
-    return programPath;
+    var myself = this;
+    if(!this.myProgramPath) {
+      this.sourceCode.traverseAsAST({
+        Program(path) {
+          myself.myProgramPath = path;
+        }
+      });
+    }
+    
+    return this.myProgramPath;
   }
 
+  codeChanged() {
+    this.myProgramPath = undefined;
+  }
+  
   /** 
    * Return first child in depth first search that satisfies a condition
    */
@@ -399,6 +406,19 @@ export default class ASTCapabilities {
     });
     return classPath;
   }
+  
+  getColorLiterals(programPath) {
+    let colorPaths = [];
+    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}/g;
+    programPath.traverse({
+      StringLiteral(path) {
+        if (path.node.value.match(colorRegex)) {
+          colorPaths.push(path);
+        }
+      }
+    });
+    return colorPaths;
+  }
 
   /*MD ### Shortcuts MD*/
 
@@ -516,16 +536,27 @@ export default class ASTCapabilities {
 
     const myself = this;
 
-    //next: create getInnermostDescribePath
+    // returns innermostDescribePath 
     function isInDescribe(path) {
-
-      while (path !== null) {
-        if (path.node.type === "CallExpression" && path.node.callee.name === "describe") {
-          return true;
+      let possiblePath = isIn("CallExpression", path, "describe");
+      
+      while(possiblePath !== null) {
+        if(possiblePath.node && possiblePath.node.callee.name === "describe") {
+          break;
         }
-        path = path.parentPath;
+        possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
       }
-      return false;
+      return possiblePath;
+    }
+    
+    function isIn(type, path) {
+      while(path !== null) {
+        if(directlyIn(type, path)) {
+          return path;
+        }
+        path = path.parentPath; 
+      }
+      return null;     
     }
 
     function directlyIn(type, path) {
@@ -623,36 +654,40 @@ export default class ASTCapabilities {
   
   /*MD ## Generations MD*/
 
-  /*MD ### Generate Testcase MD*/
+  /*MD ### Generate Testcase / Class / get / set MD*/
 
   generateTestCase() {
-    this.getUserInput("Enter test case explanation", "should work properly").then(input => this.generateCodeFragment(this.compileTestCase(input)));
+    this.generateCodeFragment("should work properly", (id) => this.compileTestCase(id));
   }
 
   generateGetter() {
-    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileGetter(input)));
+    this.generateCodeFragment("myCoolProperty", (id) => this.compileGetter(id));
   }
 
   generateSetter() {
-    this.getUserInput("Enter property name", "myCoolProperty").then(input => this.generateCodeFragment(this.compileSetter(input)));
+    this.generateCodeFragment("myCoolProperty", (id) => this.compileSetter(id));
   }
 
   generateClass() {
-    this.getUserInput("Enter class name", "Foo").then(input => this.generateCodeFragment(this.compileClass(input)));
+    this.generateCodeFragment("Foo", (id) => this.compileClass(id));
   }
 
-  async generateCodeFragment(replacement) {
+  async generateCodeFragment(identifier, replacementGenerator) {
     const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
-
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
           let path = this.getPathBeforeCursor(programPath, selection.start);
+          //const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
           if (path === undefined) {
-            programPath.pushContainer('body', replacement);
+            programPath.pushContainer('body', replacementGenerator(identifier));
           } else {
-            path.insertAfter(replacement);
+            let uniqueIdentifier = identifier;
+            //if(path.scope.hasBinding(identifier)) {
+            //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
+            //}
+            path.insertAfter(replacementGenerator(uniqueIdentifier));
           }
         }
       }
@@ -670,11 +705,11 @@ export default class ASTCapabilities {
 
   //TODO: nice identifier
   compileGetter(propertyName) {
-    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier(propertyName)))]));
+    return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier("internalPropertyName")))]));
   }
 
   compileSetter(propertyName) {
-    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier(propertyName)), t.identifier("newValue")))]));
+    return t.classMethod("set", t.identifier(propertyName), [t.Identifier("newValue")], t.blockStatement([t.expressionStatement(t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier("internalPropertyName")), t.identifier("newValue")))]));
   }
 
   compileClass(className) {
@@ -732,6 +767,34 @@ export default class ASTCapabilities {
       return this.getBindingDeclarationIdentifierPath(identifier.scope.getBinding(identifier.node.name)).node;
     });
   }
+  
+  shouldBeAsync(content) {
+    let hasAwait = false;
+    content.forEach((startPath) => {
+      startPath.traverse({
+        AwaitExpression(path) {
+          hasAwait = true;
+          path.stop();
+        }
+      });
+    })
+    
+    return hasAwait;
+  }
+  
+  shouldBeStatic(content) {
+    let hasThis = false;
+    content.forEach((startPath) => {
+      startPath.traverse({
+        ThisExpression(path) {
+          hasThis = true;
+          path.stop();
+        }
+      });
+    })
+    
+    return !hasThis;
+  }
 
   needsToBeParameter(identifier, surroundingMethod) {
     return identifier.scope.hasBinding(identifier.node.name) && !surroundingMethod.parentPath.scope.hasBinding(identifier.node.name);
@@ -760,7 +823,7 @@ export default class ASTCapabilities {
     return !declarationInSelection && constantViolationInSelection || (constantViolationInSelection || declarationInSelection) && referenceOutsideSelection;
   }
 
-  createMethod(content, parameter, returnValues, scope, extractingExpression) {
+  createMethod(content, parameter, returnValues, scope, extractingExpression, shouldBeAsync, shouldBeStatic) {
     if (extractingExpression && returnValues.length > 0) {
       lively.warn("Unable to extract an expression, that assigns something to variables used outside the expression.");
     }
@@ -785,6 +848,8 @@ export default class ASTCapabilities {
       methodContent = [t.returnStatement(content[0].node)];
     }
     const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(methodContent));
+    newMethod.async = shouldBeAsync;
+    newMethod.static = shouldBeStatic;
     scope.insertAfter(newMethod)[0];
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
@@ -813,12 +878,10 @@ export default class ASTCapabilities {
   }
 
   async extractMethod() {
-
     const scrollInfo = this.scrollInfo;
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
-          /*var selectedPaths = this.getSelectedPaths(programPath);*/
           const {
             selectedPaths,
             extractingExpression,
@@ -826,12 +889,17 @@ export default class ASTCapabilities {
           } = this.selectMethodExtraction(programPath);
 
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
-          const surroundingMethod = selectedPaths[0].find(parent => {
+          let surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
+          if(!surroundingMethod) {
+            surroundingMethod = selectedPaths[selectedPaths.length - 1];
+          }
+          const shouldBeAsync = this.shouldBeAsync(selectedPaths);
+          const shouldBeStatic = this.shouldBeStatic(selectedPaths);
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
-          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression);
+          this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync, shouldBeStatic);
         }
       }
     }));
@@ -1155,4 +1223,44 @@ export default class ASTCapabilities {
     }).toArray();
     return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
+  
+  /*MD ## Color Picker MD*/
+  
+  updateColorPicker() {
+    const old = this.editor.getAllMarks();
+    old.forEach(marker => {
+      if (marker.type === "bookmark") {
+        marker.clear();
+      }
+    })
+    const colorLiterals = this.getColorLiterals(this.programPath);
+    colorLiterals.forEach(path => {
+      const location = {line: path.node.loc.end.line-1, column: path.node.loc.end.column};
+      var picker = document.createElement("input");
+      picker.type = "color";
+      picker.value = path.node.value;
+      const bookmark = this.editor.setBookmark(location, picker);
+      picker.addEventListener('change', (event) => {
+        const currentLocation = bookmark.find();
+        this.updateColor(currentLocation, event.target.value);
+      });
+    })
+  }
+  
+  updateColor(currentLocation, color) {
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          const path = this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isVariableDeclarator(path.node)) {
+            path.node.init.value=color;
+          }
+        }
+      }
+    })).code;
+    this.scrollTo(scrollInfo);
+    this.updateColorPicker();
+  }
+  
 }

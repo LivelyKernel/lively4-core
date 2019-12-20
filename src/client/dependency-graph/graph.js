@@ -1,72 +1,118 @@
+import babelDefault from 'systemjs-babel-build';
+import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
+import { range } from 'utils';
+const { types: t } = babelDefault.babel;
+
 /*Dependency Graph*/
 
-class DependencyGraph {
+export class DependencyGraph {
 
   get inner() { this._inner }
 
-  constructor(ast) {
-    this._inner = DependencyNode.from(ast);
+  constructor(code) {
+    this._inner = code.toAST();
+    this.enrich();
   }
 
-  dependencies() {
-    return this._inner.deps;
-  }
-}
+  enrich() {
+    this._inner.traverseAsAST({
+      enter(path) {
+        path.node.extra = {
+          // this in necessary due to possible circles
+          // this collects the correct dependencies
+          visited: 2
+        };
+      }
+    });
 
 
-class DependencyNode {
+    this._inner.traverseAsAST({
+      Scope(path) {
+        Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
+          binding.referencePaths.forEach(path => {
+            path.node.extra.binding = binding;
+          })
+        })
+      }
+    });
 
-  get node() { return this.path.node }
-  get deps() { return this._deps || (this._deps = this.getDependencies()) }
+    this._inner.traverseAsAST({
+      Function(path) {
+        path.node.extra.leakingBindings = leakingBindings(path);
+        path.node.extra.callExpressions = [];
+        path.traverse({
+          CallExpression(call) {
+            path.node.extra.callExpressions.push(call)
+          }
+        })
+      },
+      CallExpression(path) {
+        const callee = path.get("callee");
+        if (t.isIdentifier(callee)) {
+          const binding = callee.node.extra.binding;
+          if (!binding) {
+            return;
+          }
+          path.node.extra.resolvedCallees = [binding.path, ...binding.constantViolations];
 
-  constructor(path) {
-    this.path = path;
-    this.children = this.getChildren();
-    this.dependencies = null;
-  }
-
-  getChildren() {
-    return [];
-  }
-
-  getDependencies() {
-    return this.children.forEach((c) => c.getDependencies()).flat();
-  }
-
-  static from(path) {
-    let nodeClass = DependencyNode.getType(path);
-    return new nodeClass(path)
-  }
-
-  static getType(path) {
-    switch (path.node.type) {
-      case "Identifier": return IdentifierDependencyNode
-      case "CallExpression": return CallExpressionDependencyNode
-      default: console.error("not yet implemented", path)
+        } else {
+          if (t.isMemberExpression(callee)) {
+            // #TODO: resolve member expressions
+          }
+          path.node.extra.resolvedCallees = [];
+        }
+      }
     }
+    );
   }
 
+  resolveDependencies(location) {
 
+    let node;
+    let dep;
+    let dependencyGraph = this;
+    this._inner.traverseAsAST({
+      CallExpression(path) {
+        if (isAExpr(path) && range(path.node.loc).contains(location)) {
+          if (path.node.dependencies != null) {
+            dep = path.node.dependencies;
+            console.log("dependencies already collected: ", dep);
+            return;
+          }
+          path.node.extra.dependencies = dependencyGraph._resolveDependencies(path.get("arguments")[0]);
+          node = path.node;
+        }
+      }
+    });
 
-}
+    if (dep) {
+      return dep
+    }
+    return node.extra.dependencies;
+  }
 
+  _resolveDependencies(path) {
+    if ((path.node.extra.visited -= 1) <= 0) {
+      return path.node.extra.dependencies || new Set();
+    }
+    
+    console.log("function:" , path);
+    if (path.node.extra.dependencies) {
+      // the dependencies were already collected... just return them
+      return path.node.extra.dependencies
+    }
+    
+    
 
-// TODO check if its reference or not
-// TODO is it executed?
-class IdentifierDependencyNode extends DependencyNode {
-
-  getDependencies() {
-    // if its a function identifier, unwrap the state
-    let binding = this.path.scope.getBinding(this.node.name);
-    return binding.constViolations
+    let dependencies = new Set(path.node.extra.leakingBindings);
+    path.node.extra.callExpressions.forEach(callExpression => {
+        callExpression.node.extra.resolvedCallees.forEach(callee =>{
+          if (t.isFunction(callee)) {
+            this._resolveDependencies(callee).forEach(dep => dependencies.add(dep))
+        }})
+      
+    })
+    path.node.extra.dependencies = dependencies;
+    return dependencies;
   }
 }
-
-
-class CallExpressionDependencyNode extends DependencyNode {
-
-  getChildren() {
-    return [this.path.get("callee")];
-  }
-}
-

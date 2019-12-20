@@ -14,6 +14,7 @@ export default class LivelyMleFunctionExecutor extends Morph {
       user: 'system',
       password: 'MY_PASSWORD_123'
     });
+    lively.notify('Connected');
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', () => {
@@ -36,8 +37,9 @@ export default class LivelyMleFunctionExecutor extends Morph {
     }}/>;
     const functionName = <input placeholder="Function Name" type="text"></input>;
     const test = <button id='test' click={() => {
+      result.value= 21; //use 8
       this.socket.emit('test', {
-        func: this.functionName.value,
+        func: functionName.value,
         parameters: this.args.map((x,i) => this.types[i] === "String" ? x : +x)
       })
     }}>Test</button>;

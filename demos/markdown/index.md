@@ -2,14 +2,14 @@
 
 This is a demo page:
 
-- here are bullet points
-  - foo
-- second 
+
+## Hello
+- second
   - bla
+  - foo
 - third
 - foo
 - bar
-
 ## Subsection
 
 Here comes some static `code`
