@@ -4,7 +4,8 @@ import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
-import { isAExpr, leakingBindings } from 'src/client/ast-utils.js';
+import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
+import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -83,10 +84,11 @@ export default class CodemirrorPlayground extends Morph {
   
   // TODO delete lel
   snapToNextAEXpr() {
+
+    const cursor = this.$.getCursor();
     let aexprRanges = this.aexprs.map((path)=>range(path.node.loc));    
     if (!aexprRanges.length) { return; }
-    
-    const cursor = this.$.getCursor()
+
     const rangeToSelect = aexprRanges.find(r => r.contains(cursor)) ||
       aexprRanges.find(r => r.isBehind(cursor)) ||
       aexprRanges.last;
@@ -109,16 +111,17 @@ export default class CodemirrorPlayground extends Morph {
     
     range(aexpr.node.loc).selectInCM(this.$);
     
-    const variableDeps = leakingBindings(aexpr);
-    variableDeps.forEach((binding) => {
-      binding.constantViolations.forEach((path) => {
-        if (aexpr.willIMaybeExecuteBefore(path)) {
-          const r = range(path.node.loc).asCM();
-          this.textMarkers.push(this.$.markText(r[0], r[1], {
-            css: "background-color: orange",
-          }))
-        }
-      });
+    const cursor = this.$.getCursor();
+    const code = this.lcm.value;
+    let dep = new DependencyGraph(code);
+    let deps = dep.resolveDependencies(cursor);
+    //let occurences = [...deps].map(binding => [binding.path, ... binding.constantViolations]).flatten();    
+    let occurences = [...deps].map(binding => [... binding.constantViolations]).flatten();
+    occurences.forEach((path) => {
+      const r = range(path.node.loc).asCM();
+      this.textMarkers.push(this.$.markText(r[0], r[1], {
+        css: "background-color: orange",
+      }))
     });
   }
   

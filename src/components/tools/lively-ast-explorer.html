@@ -1,118 +1,106 @@
 <template id="lively-ast-explorer" >
-<style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
   <style>
-  :host {
-    width: 50px;
-    height: 25px;
-    
-    display: flex;
-    flex-direction: column;
-  }
- 
-  .layout-column {
-    display: flex;
-    flex-direction: column;
-  }
-  .layout-row {
-    display: flex;
-    flex-direction: row;
-    overflow-y: auto;
-  }
+    :host {
+      width: 50px;
+      height: 25px;
+      
+      display: flex;
+      flex-direction: column;
+    }
+  
+    .layout-column {
+      display: flex;
+      flex-direction: column;
+    }
 
-  #outputPane, #astPane, #resultPane {
-     border-left: 2px gray solid;
-  }
-  
-  #firstRow, #secondRow {
-    border: 1px gray solid;
-    flex: 0.5;
-  }
-  
-  #sourcePane {
-    flex: 0.33;
-/*     overflow-y: auto; */
-  }
-  
-  #outputPane {
-    flex: 0.33;
-/* 		overflow-y: auto */
-  }
-  
-  #astPane {
-    flex: 0.33;
-  }
-  
-  #pluginPane {
-    flex: 0.66;
-/*     overflow-y: auto; */
-  }
-  
-  #resultPane {
-    flex: 0.33;
-  }
+    .layout-row {
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
 
-  lively-code-mirror {
-    flex: 1;
-/*     height: fill-available; */
-  }
+    #firstRow, #secondRow {
+      border: 1px gray solid;
+      flex: 0.5;
+    }
+
+    #result {
+      margin-left: 15px
+    }
+
+    #source, #sourceAst, #transformedSource, #plugin, #result {
+      flex: 1;
+    }
+
+    #sourcePane, #sourceAstPane, #transformedSourcePane {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #resultPane {
+      flex: 1;
+      overflow: scroll;
+    }
+
+    #pluginPane {
+      flex: 2;
+      overflow: hidden;
+    }
+
+    #transformedSourcePane, #sourceAstPane, #resultPane {
+      border-left: 2px gray solid;
+    }
+
     
-  lively-editor {
-    flex: 1;
-  }
-  
-  lively-ast-inspector {
-    flex: 1;
-    height: 100%;
-    width: 100%;
-  }
-  
-  #resultPane pre {
-    flex: 1;
-    margin-left: 15px
-  }
-  #resultPane {
-    overflow: auto;
-  }
+    #transformedSourcePane {
+      overflow: scroll;
+    }
     
-  #plugin, #source, #output {
-    width: 100%;
-    height: calc(100% - 30px);
-  }
-  #plugin-url, #source-url {
-    width: -webkit-fill-available;
-  }
   </style>
-<div id="firstRow" class="layout-row">
-  <div id="sourcePane">
-    <lively-editor id="source"></lively-editor>
+
+  <div id="firstRow" class="layout-row">
+    <div id="sourcePane">
+      <lively-editor id="source"></lively-editor>
+    </div>
+
+    <lively-separator></lively-separator>
+
+    <div id="sourceAstPane">
+      <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
+    </div>
+    
+    <lively-separator></lively-separator>
+
+    <div id="transformedSourcePane" class="layout-column">
+      <span id="eval">
+        <b>Transformed Source</b>
+        <input type="checkbox" id="live" title="continous eval" checked/>
+        <label for="live">Run On Save</label>
+        <input type="checkbox" id="run-tests" title="run tests after successful transpilation" checked/>
+        <label for="run-tests">Run Tests</label>
+      </span>
+      <lively-code-mirror id="transformedSource"></lively-code-mirror>
+    </div> 
   </div>
+
   <lively-separator></lively-separator>
-  <div id="astPane" class="layout-column">
-    <lively-ast-inspector id="astInspector"></lively-ast-inspector>
+
+  <div id="secondRow" class="layout-row">
+    <div id="pluginPane">
+      <div>
+        <b>Plugin</b>
+        <input type="checkbox" id="systemjs">
+        <label for="systemjs">SystemJS</label>
+      </div>
+      <lively-editor id="plugin"></lively-editor>
+    </div>
+
+    <lively-separator ></lively-separator>
+
+    <div id="resultPane" class="layout-column">
+      <b>Result</b>
+      <pre id="result"></pre>
+    </div>
   </div>
-  
-  <lively-separator></lively-separator>
-  <div id="outputPane" class="layout-column">
-    <span  id="eval">
-      Output
-      <input type="checkbox" id="live" title="continous eval" checked/>
-      <label for="live">run program</label>
-      <input type="checkbox" id="run-tests" title="run tests after successful transpilation" checked/>
-      <label for="run-tests">run tests</label>
-    </span>
-    <lively-code-mirror id="output"></lively-code-mirror>
-  </div>   
-</div>
-<lively-separator></lively-separator>
-<div id="secondRow" class="layout-row">
-  <div id="pluginPane">
-    <div><b>Plugin</b> <input type="checkbox" id="systemjs"><label for="systemjs">SystemJS</label> </div>
-    <lively-editor id="plugin"></lively-editor>
-  </div>
-  <lively-separator ></lively-separator>
-  <div id="resultPane" class="layout-column">
-    <div>Result</div>
-    <pre id="result"></pre>
-  </div>
-</div>
 </template>

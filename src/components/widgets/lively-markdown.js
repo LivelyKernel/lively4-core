@@ -53,7 +53,7 @@ export default class LivelyMarkdown extends Morph {
     this.get("#content").setAttribute("contenteditable", value)
   }
   
-  async updateView() {
+  async renderMarkdown(root, content) {
     var md = new MarkdownIt({
       html:         true,        // Enable HTML tags in source
       xhtmlOut:     false,        // Use '/' to close single tags (<br />).
@@ -97,7 +97,6 @@ export default class LivelyMarkdown extends Morph {
         return `<a href="javascript:lively.openIssue('${tagName}')" class="issue">`;
 
     }
-    var content = await this.getContent()
     if (!content) return;
     if (content.match(/markdown-config .*presentation=true/)) {
       var configPresentation = true 
@@ -128,7 +127,6 @@ export default class LivelyMarkdown extends Morph {
     
     this.beatifyInplaceHashtagNavigation(tmpDiv)
     
-    var root = this.get("#content")
     root.innerHTML = "";
     tmpDiv.childNodes.forEach(ea => {
       root.appendChild(ea)
@@ -163,6 +161,10 @@ export default class LivelyMarkdown extends Morph {
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
   }
+  
+  async updateView() {
+    return this.renderMarkdown(this.get("#content"), await this.getContent())
+  }
 
   async replaceImageTagsWithSpecificTags(tmpDiv) {
     
@@ -177,7 +179,7 @@ export default class LivelyMarkdown extends Morph {
         for(let attr of imgTag.attributes) {
           if (attr.name == "src") {
             // use attributes to retain RAW data
-            let src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
+            let src = imgTag.getAttribute("src")  + (noFileEnding ? ".drawio" : "")
             // console.log("REPLACE DRAWIO: " + src)
             figure.setAttribute("src",  src)
           } else {

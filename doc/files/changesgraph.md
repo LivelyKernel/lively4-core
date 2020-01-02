@@ -30,26 +30,19 @@ limit <input id="limit">
     
     static async create(ctx) {
       this.ctx = ctx
-  
       var dmp = new diff.diff_match_patch();
-
       var baseUrl = lively4url + "/"
-
       var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/auth-dropbox.js"
 
       this.query("input#url").value = url
-
       var limitElement = this.query("input#limit")
       
       limitElement.value = 200
       
       var urlElement = this.query("input#url")
-
       var container = this.query("lively-container");
-    
       var graphviz = await (<graphviz-dot></graphviz-dot>)
       var livelySync = await (<lively-sync></lively-sync>)
-
       livelySync.setRepository(lively4url.replace(/.*\//,""))
 
 

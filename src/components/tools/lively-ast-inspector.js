@@ -18,13 +18,14 @@ export default class AstInspector extends Morph {
     if (!obj) return;
     
     if (this.targetObject) {
-      var oldViewState = this.getViewState()
+      var oldViewState = this.getViewState();
     }
     
     this.targetObject = obj;
     this.container.innerHTML = "";
     
     const content = this.display(obj, true, null);
+    this.root = content;
     this.container.appendChild(content);
     this.updatePatterns(this.container.childNodes[0])
     
@@ -32,6 +33,31 @@ export default class AstInspector extends Morph {
       this.setViewState(oldViewState)
     }
     return content;
+  }
+  
+  selectPath(keyPath) {
+    if (this.selection) {
+      this.selection.classList.remove("selected");
+    }
+    
+    
+
+    this.selection = element;
+    this.selection.classList.add("selected");
+  }
+
+  expandPath(keyPath) {
+    let node = this.root;
+    for (const key of keyPath) {
+      this.expandElement(node);
+      node = this.getChild(node, key);
+      if (!node) return;
+    }
+    this.expandElement(node);
+  }
+
+  getChild(element, key) {
+    return this.getChildren(element).find(child => child.key === key);
   }
 
 /*MD # Configuration MD*/

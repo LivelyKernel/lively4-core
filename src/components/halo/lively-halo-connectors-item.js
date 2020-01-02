@@ -11,8 +11,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.windowTitle = "LivelyHaloConnectorsItem";
 
     this.registerEvent('click', 'onClick');
-    
-    this.connections = [];
   }
    
   onClick(evt) {
@@ -29,9 +27,15 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   async showStartingConnectorsMenuFor(evt) {  
     
+    let connections = []
+    Connection.allConnections.forEach(connection => {
+      connections.push(connection)
+    })
+    let existingConnectionsMenu = connections.map(connection => [connection.connectionString(), () => this.openConnectionEditor(connection)]);
+    
     const menuItems = [[
       'Connections',
-      () => this.showConnections(),
+      existingConnectionsMenu,
       'Opens all created connections',
       '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
       ], [
@@ -90,8 +94,9 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.showFinishingConnectorsMenuFor(evt, morph);
   }
   
-   showConnections(){
-    lively.openInspector(this.connections);
+   async openConnectionEditor(connection){
+    let editor = await lively.openComponentInWindow('lively-connection-editor')
+    editor.setConnection(connection)
   }
   
   async startCreatingConnectionCustom(evt){
@@ -121,9 +126,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     }
     
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
-    connection.activateConnection();
-    //connection.drawConnectionLine();
-    this.connections.push(connection);
+    connection.activate();
+    connection.drawConnectionLine();
   } 
   
   clickExample(target){

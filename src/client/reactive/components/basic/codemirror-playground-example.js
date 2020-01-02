@@ -1,17 +1,10 @@
 "enable aexpr";
 
-// Alt-A to show hints!
-
 let x = 1;
-let y = 2;
-y = 42;
-x = 3;
-{
-  let x = 4;
-  y = 4;
-  aexpr(() => x + y);
-  x = 42;
-}
+let v = 1;
 
-x = 42;
-y = 13;
+function foo(){
+  return x
+}
+aexpr(() => foo());
+x = 2;

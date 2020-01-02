@@ -1,7 +1,7 @@
 
 // Simple Apps that are created inside a script tag in a MarkDown file
 // a) Reason: Code reuse?
-// b) #FutureWork wow does it relate to Components, Objects, HTML and MarkdDown files
+// b) #FutureWork How does it relate to Components, Objects, HTML and MarkdDown files
 
 // #ResearchQuestion "What is the unit of a Program/Tool/Application in Lively4?"  -> Object, MarkdownFile, Component ?
 
@@ -11,7 +11,6 @@ import Strings from 'src/client/strings.js'
 import Colors from "src/external/tinycolor.js"
 import d3 from "src/external/d3.v5.js"
   
-
 export default class ScriptApp {
   
   static getEngine() {

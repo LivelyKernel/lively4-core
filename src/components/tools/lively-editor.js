@@ -41,8 +41,8 @@ export default class Editor extends Morph {
     editor.setAttribute("wrapmode", true)
     editor.setAttribute("tabsize", 2)
 
-    editor.doSave = text => {
-      this.saveFile(); // CTRL+S does not come through...    
+    editor.doSave = async (text) => {
+      await this.saveFile(); // CTRL+S does not come through...    
     };
     
     
@@ -359,7 +359,7 @@ export default class Editor extends Morph {
         var conflictVersion = response.headers.get("conflictversion");
         // lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
         if (conflictVersion) {
-          return this.solveConflic(conflictVersion);
+          return this.solveConflic(conflictVersion, newVersion);
         }
         if (newVersion) {
           // lively.notify("new version " + newVersion);
@@ -390,33 +390,84 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
+    highlightChanges(otherText) {
+    var editor = this.currentEditor();
+    var myText = editor.getValue(); // data
+    var dmp = new diff.diff_match_patch();
+    var d = dmp.diff_main(otherText, myText);
+    var index = 0;
+    for (var ea of d) {
+      var change = ea[0];
+      var text = ea[1];
+      index = this.highlightChange(change, editor, text, index);
+    }
+  }  
+
+  highlightChange(change, editor, text, index) {
+    if (change != 0) {
+      var cm = editor;
+      var toPos;
+      var backgroundColor;
+      let marker;
+      let widget = <span>{text}</span>;
+      let targetColor = "black";
+      if (change == 1) {
+        // Added 
+        toPos = cm.posFromIndex(index + text.length);
+        backgroundColor = "green";
+        marker = cm.markText(cm.posFromIndex(index), toPos, { replacedWith: widget });
+      } else {
+        backgroundColor = "red";
+        targetColor = "transparent";
+        marker = cm.setBookmark(cm.posFromIndex(index), { widget: widget });
+      }
+      var animation = widget.animate([{ background: backgroundColor, color: "black" }, { background: "transparent", color: targetColor }], {
+        duration: 3000
+      });
+      animation.onfinish = () => marker.clear();
+    } else {
+
+      index += text.length;
+    }
+
+    return index;
+  }
+
+  
   /*
    * solveConflict
    * use three-way-merge
-   */ 
-  async solveConflic(otherVersion) {
-    if (this.solvingConflict) {
-      lively.notify("Sovling conflict stopped, due to recursion1")
-      return 
+   */
+  async solveConflic(otherVersion, newVersion) {
+    var conflictId = `conflic-${otherVersion}-${newVersion}`;
+    if (this.solvingConflict == conflictId) {
+      lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict);
+      return;
     }
-    
-    lively.notify("Solve Conflict: " + otherVersion);
+    if (this.solvingConflic) {
+      lively.warn("Recursive Solving Conflict", "" + this.solvingConflict + " and now: " + conflictId);
+      return;
+    }
+
+    lively.notify("Solve Conflict between: " + otherVersion + `and ` + newVersion);
     var parentText = this.lastText; // 
-    var myText = this.currentEditor().getValue(); // data
     // load from conflict version
     var otherText = await fetch(this.getURL(), {
-        headers: {fileversion: otherVersion}
-      }).then( r => r.text()); 
+      headers: { fileversion: otherVersion }
+    }).then(r => r.text());
+    var myText = this.currentEditor().getValue(); // data
 
     // #TODO do something when actual conflicts occure?
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
     this.setText(mergedText, true);
+    this.highlightChanges(myText);
     this.lastVersion = otherVersion;
-    this.solvingConflict = true // here it can come to infinite recursion....
+    this.solvingConflict = conflictId;
     try {
-      await this.saveFile(); 
+      // here it can come to infinite recursion....
+      await this.saveFile();
     } finally {
-      this.solvingConflict = false
+      this.solvingConflict = false;
     }
   }
   

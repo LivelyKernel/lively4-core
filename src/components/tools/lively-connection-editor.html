@@ -1,0 +1,26 @@
+<template id="lively-connection-editor" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  background-color: gray;
+}
+</style>
+  <div id = connectionLabel>Con</div>
+  <div id = sourceLabel>Sou</div>
+  <div id = sourcePicture>SouP</div>
+  <div id = targetLabel>Tar</div>
+  <div id = targetPicture>TarP</div>
+  <input id="textField" value=0><input>
+<div id="content">
+	<slot></slot>
+</div>
+  <button id="destroyButton">Destroy</button>
+  <button id="saveButton">Save</button>
+  <input id="activityCheckbox" name="activityCheckbox" type="checkbox"><input>
+  <label for="activityCheckbox">Connection is active</label>
+</template>
+

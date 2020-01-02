@@ -37,7 +37,7 @@ export class TodoistScheme extends Scheme {
   }  
  
   async fetchData() {
-    return await fetch(`https://todoist.com/api/v7/sync`+
+    return await fetch(`https://todoist.com/api/v8/sync`+
       `?token=${await this.todoistToken()}`+
       `&sync_token=*`+
       `&resource_types=${encodeURI(JSON.stringify(["all"]))}`, {  
