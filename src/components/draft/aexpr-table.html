@@ -8,15 +8,22 @@
     #content {
       background-color: gray;
     }
-    div {
+    .scroller {
       overflow: scroll;
       width: 100%;
       height: 100%;
     }
   </style>
-  <div>
-    <table id="table">
-    </table>  
+  <div style = "width: 100%; height: 100%">
+    <div style = "background-color: #FAFAFA">
+      Filter: <input id="filter" type="search" name="filter">
+      <span style="color:#BBBBBB">(Provided arguments: each)</span>
+      <span id="filter-info" style="color:#BBBBBB"></span>
+    </div>
+    <div class="scroller">
+      <table id="table">
+      </table>  
+    </div>
   </div>
   
 </template>

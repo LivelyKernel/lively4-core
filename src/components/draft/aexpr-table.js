@@ -40,17 +40,16 @@ function colorForHeat(heat) {
 
 function coolDown(element) {
   let currentcount = parseFloat(element.getAttribute("heat"));
+  if(currentcount <= 0)return;
   let step = 0.1;
   currentcount = currentcount - step;
   element.setAttribute("heat", Math.max(currentcount, 0));
   let newColor = colorForHeat(currentcount+1);
   element.setAttribute("bgcolor", newColor);
-  if(currentcount > 0){
-    setTimeout(() => {coolDown(element)}, 100);
-  } else {
+  if(currentcount <= 0) {
+    element.setAttribute('heat', 0);
     element.setAttribute("bgcolor", "#FFFFFF");
   }
-
 }
 
 export default class AexprTable extends Morph {
@@ -60,6 +59,11 @@ export default class AexprTable extends Morph {
     this.initializeHeader();
     this.value = new Array();
     this.repopulate();
+    this.events = new Map();
+    this.coolDown();
+    //this.filter.onchange = (x,y,z) => lively.notify(x+" -- "+y+" -- "+z);
+    this.filterElement.addEventListener('change', () => this.filterChanged());
+    this.filterChanged();
   }
   
   initializeCallbacks(){
@@ -69,9 +73,14 @@ export default class AexprTable extends Morph {
   }
   
   initializeHeader(){
-    let header = <tr></tr>;
+    let header = <tr class='header'></tr>;
     for(let col in attributes)header.appendChild(<td>{col}</td>)
     this.table.appendChild(header);
+  }
+  
+  coolDown() {
+    this.rows().forEach(coolDown);
+    setTimeout(() => {this.coolDown()}, 100);
   }
   
   get value() {
@@ -86,6 +95,11 @@ export default class AexprTable extends Morph {
   get table() {
     return this.get("#table");
   }
+  
+    
+  get filterElement() {
+    return this.get("#filter");
+  }
 
   
   repopulate() {  
@@ -93,12 +107,12 @@ export default class AexprTable extends Morph {
     let removed = this.value.difference(AExprRegistry.allAsArray());
     for(let each of removed)this.removeAexpr(each);
     for(let each of added)this.addAexpr(each);
-  }
+  } 
   
   addAexpr(aexpr){
-      let row = this.createRow(aexpr);
-      this.table.appendChild(row);
-      this.value.push(aexpr);
+    let row = this.createRow(aexpr);
+    this.table.appendChild(row);
+    this.value.push(aexpr);
   }
   
   removeAexpr(aexpr){
@@ -109,6 +123,7 @@ export default class AexprTable extends Morph {
   
   updateAexpr(aexpr){
     let row = this.rowOf(aexpr);
+    if(!row)return;
     this.setRow(row, aexpr);
     this.igniteRow(row);
   }
@@ -116,24 +131,30 @@ export default class AexprTable extends Morph {
   igniteRow(row){
     let currentHeat = parseFloat(row.getAttribute("heat"));
     row.setAttribute("heat", currentHeat+1);
-    let newColor = colorForHeat(currentHeat+1);
+    let newColor = colorForHeat(Math.min(currentHeat+1, 30));
     row.setAttribute("bgcolor", newColor);
-    if(currentHeat == 0)coolDown(row);
+  }
+  
+  rows() {
+    return this.table.childNodes
+      .filter(each => each.tagName == 'TR')
+      .filter(each => each.getAttribute('class') == 'aeRow');
   }
   
   rowOf(aexpr){
     let index = this.value.indexOf(aexpr);
-    return this.table.childNodes.filter(each => each.tagName == 'TR')[index+1];
+    return this.rows()[index];
   }
   
   createRow(aexpr){
-    let htmlRow = <tr></tr>;
+    let htmlRow = <tr class='aeRow'></tr>;
     htmlRow.setAttribute("heat", 0);
     this.setRow(htmlRow, aexpr);
-    return htmlRow;
+    return htmlRow; 
   }
   
   setRow(row, aexpr){
+    row.aexpr = aexpr;
     while(row.firstChild) {
       row.removeChild(row.firstChild);
     }
@@ -145,6 +166,30 @@ export default class AexprTable extends Morph {
   
   clearTable() {
     while (this.table.firstChild)this.table.firstChild.remove();
+  }
+  
+  filterChanged() {
+    let code = this.filterElement.value;
+    let numResults = 0;
+    let numErrored = 0;
+    try {
+      if(!code || code == '')code = 'true';
+      this.filter = new Function("each", "return "+code);
+      this.rows().forEach(each => {
+        let filterIn = false;
+        try {
+          filterIn = this.filter(each.aexpr);
+        } catch(e) {
+          filterIn = false;
+          numErrored++;
+        };
+        if(filterIn)numResults++;
+        each.style.display = filterIn ? 'table-row' : 'none';
+        this.get('#filter-info').textContent = "results/errored/total = "+numResults+"/"+numErrored+"/"+this.rows().length;
+      });
+    } catch(e) {
+      lively.notify('Error parsing '+code+': '+e);
+    }
   }
   
   livelyMigrate(other) {

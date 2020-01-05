@@ -179,7 +179,7 @@ export default class LivelyMarkdown extends Morph {
         for(let attr of imgTag.attributes) {
           if (attr.name == "src") {
             // use attributes to retain RAW data
-            let src = imgTag.getAttribute("src")  + (noFileEnding ? ".xml" : "")
+            let src = imgTag.getAttribute("src")  + (noFileEnding ? ".drawio" : "")
             // console.log("REPLACE DRAWIO: " + src)
             figure.setAttribute("src",  src)
           } else {
