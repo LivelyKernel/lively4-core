@@ -444,7 +444,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
       this.editor.on("keyup", (cm, event) => {
         if(event.altKey && event.keyCode == 13) {
-          this.astCapabilities(cm).then(ac => ac.openMenu());
+          if(this.isJavaScript){
+            this.astCapabilities(cm).then(ac => ac.openMenu());
+          } else {
+            lively.warn("Context Menu doesn't work outside of js files for now!");
+          }
         }
       })
       
@@ -458,7 +462,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (container) {
       if (closeEditor) await container.onCancel()
       await lively.sleep(10)
-      // it seems not to bubble acros shadow root boundaries #Bug ?
+      // it seems not to bubble across shadow root boundaries #Bug ?
       // so we do it manually, but keep it an event
       container.dispatchEvent(new CustomEvent("editorbacknavigation", {
         bubbles: true,
