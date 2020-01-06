@@ -40,8 +40,9 @@ export default class AstInspector extends Morph {
       this.selection.classList.remove("selected");
     }
     
+    const element = this.expandPath(keyPath);
+    if (!element) return;
     
-
     this.selection = element;
     this.selection.classList.add("selected");
   }
@@ -54,6 +55,7 @@ export default class AstInspector extends Morph {
       if (!node) return;
     }
     this.expandElement(node);
+    return node;
   }
 
   getChild(element, key) {
