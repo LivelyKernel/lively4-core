@@ -72,7 +72,8 @@ Object.defineProperty(_recorder_.tempfile_js, "MyClass", {
 });
 export default function myClass(evt) {
   return new MyClass(evt);
-}```
+}
+```
 
 
 
