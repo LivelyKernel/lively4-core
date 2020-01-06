@@ -6,5 +6,5 @@ let v = 1;
 function foo(){
   return x
 }
-aexpr(() => foo());
+aexpr(() => {return foo()});
 x = 2;
