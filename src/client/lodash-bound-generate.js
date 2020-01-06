@@ -203,7 +203,6 @@ const functionNames = `
   pullAllWith
   pullAt
   random
-  range
   rangeRight
   rearg
   reduce
@@ -303,6 +302,7 @@ const functionNames = `
   zipObjectDeep
   zipWith
 `.trim().split(/\s+/);
+//range
 
 export default function generate() {
   let lodashImportPath = 'src/external/lodash/lodash.js';
