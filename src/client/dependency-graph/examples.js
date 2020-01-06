@@ -2,90 +2,125 @@
 "enable aexpr"
 
 /*MD ### Binding MD*/
-var x = 0; // <--
+{
+  let x = 0;
 
-aexpr(() => x);
+  aexpr(() => x);
 
-/*MD ### Function result indirection MD*/
-var x = 0; // <--
-function foo() {
-  return x;
+  x = 1; // <--
 }
+/*MD ### Function result indirection MD*/
+{
+  let x = 0;
+  
+  function foo() {
+    return x;
+  }
 
-aexpr(() => foo());
+  aexpr(() => foo());
+  
+  x = 1; // <--
+}
 
 
 /*MD ### Function result indirection 2 MD*/
-var x = 0; // <--
+{
+  let x = 0;
 
-function bar() {
-  return x;
+  function bar() {
+    return x;
+  }
+
+  function foo() {
+    return bar();
+  }
+
+  aexpr(() => foo());
+  
+  x = 1; // <--
 }
-
-function foo() {
-  return bar();
-}
-
-aexpr(() => foo());
 
 
 /*MD ### Function result indirection 3 MD*/
-var x = 0; // <--
+{
+  let x = 0;
 
-function baz() {
-  return x;
+  function baz() {
+    return x;
+  }
+
+  function bar() {
+    return baz();
+  }
+
+  function foo() {
+    return bar();
+  }
+
+  aexpr(() => foo());
+
+  x = 1; // <--
 }
 
-function bar() {
-  return baz();
+/*MD ### Circular function calls MD*/
+{
+  let shouldBeOdd = false;
+
+  function parityHelper(x) {
+    if (x === 0) return !shouldBeOdd;
+    if (x === 1) return shouldBeOdd;
+    return checkParity(x - 1);
+  }
+
+  function checkParity(x) {
+    return parityHelper(x - 1);
+  }
+
+  aexpr(() => checkParity(10));
+  
+  shouldBeOdd = true; // <--
 }
 
-function foo() {
-  return bar();
+/*MD ### Variables referencing functions (uncalled) MD*/
+{
+  let x = 0;
+  let y = () => x * x;
+
+  aexpr(() => y);
+  
+  x = 1;
+  y = 1; // <--
 }
 
-aexpr(() => foo());
+/*MD ### Variables referencing functions (called) MD*/
+{
+  let x = 0;
+  let y = () => x * x;
 
-
-/*MD ### Function result indirection 4 MD*/
-var shouldBeOdd = false; // <--
-
-function parityHelper(x) {
-  if (x === 0) return !shouldBeOdd;
-  if (x === 1) return shouldBeOdd;
-  return checkParity(x - 1);
+  aexpr(() => y());
+  
+  x = 1; // <--
+  y = () => x * x * x; // <--
 }
 
-function checkParity(x) {
-  return parityHelper(x - 1);
+/*MD ### Irrelevance to expression result MD*/
+{
+  let x = 0;
+  let y = 0;
+
+  function bar() {
+    return y;
+  }
+
+  function foo() {
+    bar(y);
+    return x;
+  }
+
+  aexpr(() => foo());
+  
+  x = 1; // <--
+  y = 1;
 }
-shouldBeOdd = true
-
-aexpr(() => checkParity(10));
 
 
-/*MD ### Unreturned function result MD*/
-var x = 0; // <--
-var y = 0;
-
-function bar() {
-  return y;
-}
-
-function foo() {
-  bar(y);
-  return x;
-}
-
-aexpr(() => foo());
-
-
-/*MD ### Variable reference MD*/
-var x = function(x) { return x * x }; // <--
-
-aexpr(() => x);
-
-/*MD Call MD*/
-var x = function(x) { return x * x };
-
-aexpr(() => x());

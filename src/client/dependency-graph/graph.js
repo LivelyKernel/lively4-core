@@ -1,5 +1,5 @@
 import babelDefault from 'systemjs-babel-build';
-import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
+import { isAExpr, leakingBindings ,isSlimArrowfunctionExpression} from 'src/client/dependency-graph/ast-utils.js';
 import { range } from 'utils';
 const { types: t } = babelDefault.babel;
 
@@ -15,6 +15,8 @@ export class DependencyGraph {
   }
 
   enrich() {
+    const self = this;
+
     this._inner.traverseAsAST({
       enter(path) {
         path.node.extra = {
@@ -38,32 +40,61 @@ export class DependencyGraph {
 
     this._inner.traverseAsAST({
       Function(path) {
-        path.node.extra.leakingBindings = leakingBindings(path);
+        path.node.extra.leakingBindings = new Set();
         path.node.extra.callExpressions = [];
-        path.traverse({
-          CallExpression(call) {
-            path.node.extra.callExpressions.push(call)
-          }
-        })
+        
+        if (isSlimArrowfunctionExpression(path)) {
+          path.node.extra.leakingBindings = leakingBindings(path);
+          path.traverse({
+            CallExpression(call) {
+              path.node.extra.callExpressions.push(call)
+            }
+          })
+        } else {
+          path.traverse({
+            ReturnStatement(returnPath) {
+              leakingBindings(returnPath).forEach((elem) => {
+                path.node.extra.leakingBindings.add(elem);                
+              });
+              returnPath.traverse({
+                CallExpression(call) {
+                  path.node.extra.callExpressions.push(call)
+                }
+              })
+            }
+          })
+        }
       },
+      
       CallExpression(path) {
         const callee = path.get("callee");
+        const extra = path.node.extra;
         if (t.isIdentifier(callee)) {
           const binding = callee.node.extra.binding;
-          if (!binding) {
-            return;
-          }
-          path.node.extra.resolvedCallees = [binding.path, ...binding.constantViolations];
-
+          if (!binding) return;
+          extra.resolvedCallees = [binding.path, ...binding.constantViolations]
+            .map(assignment => self.assignedValue(assignment))
+            .filter(x => x);
         } else {
           if (t.isMemberExpression(callee)) {
             // #TODO: resolve member expressions
           }
-          path.node.extra.resolvedCallees = [];
+          extra.resolvedCallees = [];
         }
       }
     }
     );
+  }
+
+  assignedValue(path) {
+    if (path.isFunctionDeclaration()) return path;
+    if (path.isAssignmentExpression()) return path.get("right");
+    if (path.isVariableDeclarator()) {
+      const id = path.get("id");
+      if (id.isPattern()) return; // TODO
+      return path.get("init");
+    }
+    return;
   }
 
   resolveDependencies(location) {
@@ -95,22 +126,21 @@ export class DependencyGraph {
     if ((path.node.extra.visited -= 1) <= 0) {
       return path.node.extra.dependencies || new Set();
     }
-    
-    console.log("function:" , path);
+
+    console.log("function:", path);
     if (path.node.extra.dependencies) {
       // the dependencies were already collected... just return them
       return path.node.extra.dependencies
     }
-    
-    
 
     let dependencies = new Set(path.node.extra.leakingBindings);
     path.node.extra.callExpressions.forEach(callExpression => {
-        callExpression.node.extra.resolvedCallees.forEach(callee =>{
-          if (t.isFunction(callee)) {
-            this._resolveDependencies(callee).forEach(dep => dependencies.add(dep))
-        }})
-      
+      callExpression.node.extra.resolvedCallees.forEach(callee => {
+        if (t.isFunction(callee)) {
+          this._resolveDependencies(callee).forEach(dep => dependencies.add(dep))
+        }
+      })
+
     })
     path.node.extra.dependencies = dependencies;
     return dependencies;
