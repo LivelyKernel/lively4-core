@@ -49,3 +49,12 @@ export function isAExpr(path) {
           && path.node.callee.name === AEXPR_IDENTIFIER_NAME
           && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME, true);
 }
+
+export function isSlimArrowfunctionExpression(path) {
+  if (!t.isArrowFunctionExpression(path)) {
+    return false;
+  }
+  
+  return !path.get("body").isBlockStatement();
+  
+}
