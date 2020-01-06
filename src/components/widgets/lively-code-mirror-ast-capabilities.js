@@ -782,7 +782,7 @@ export default class ASTCapabilities {
     return hasAwait;
   }
   
-  shouldBeStatic(content) {
+  couldBeStatic(content) {
     let hasThis = false;
     content.forEach((startPath) => {
       startPath.traverse({
@@ -892,11 +892,13 @@ export default class ASTCapabilities {
           let surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
+          var shouldBeStatic = this.couldBeStatic(selectedPaths);
           if(!surroundingMethod) {
             surroundingMethod = selectedPaths[selectedPaths.length - 1];
+          } else {
+            shouldBeStatic = surroundingMethod.node.static;
           }
           const shouldBeAsync = this.shouldBeAsync(selectedPaths);
-          const shouldBeStatic = this.shouldBeStatic(selectedPaths);
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
           this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync, shouldBeStatic);
