@@ -865,6 +865,7 @@ export default class ASTCapabilities {
     var methodCall;
     var callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
     if(shouldBeAsync) {
+      lively.warn("Extracting async method. This could change the control flow.")
       callExpression = t.awaitExpression(callExpression);
     }
     if (returnValues.length == 1) {
