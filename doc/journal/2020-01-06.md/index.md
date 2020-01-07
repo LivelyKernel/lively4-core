@@ -1,6 +1,5 @@
 ## 2020-01-06 #MetaProgramming #Eval
-
-Author: @jenslincke
+*Author: @JensLincke*
 
 ### How to capture any binding and expose it?
 

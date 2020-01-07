@@ -68,9 +68,7 @@ And ordered:
 And **tasks**:
 
 - [ ] check boxes
-- [x] done
-- [ ] not done
-   - [ ] sub task
-   - [X] xxx
-
-
+- [ ] done
+- [ ] not done 
+  - [ ] sub task
+  - [x] xxx
