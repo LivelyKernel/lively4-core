@@ -314,6 +314,7 @@ export default class VivideView extends Morph {
   
   get myCurrentScript() { return this._myCurrentScript; }
   set myCurrentScript(script) {
+    debugger
     this._myCurrentScript = script;
     this.setAttribute(VivideView.scriptAttribute, script.toJSON());
   }
