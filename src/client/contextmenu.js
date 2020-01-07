@@ -645,7 +645,7 @@ export default class ContextMenu {
             comp.followPath(lively4url + "/src/client/vivide/cheatsheet.md");
           });
         },undefined, '<i class="fa fa-inbox" aria-hidden="true"></i>'],
-        ["Vivide Scripts", () => lively.notify("Selected"), /* shortcut info */undefined, "<i class='fa fa-wrench' aria-hidden='true'></i>"],
+        ["Vivide Scripts", evt => this.openComponentInWindow("lively-container", evt, worldContext).then(comp => comp.followPath(lively4url+"/src/client/vivide/scripts/index.md")), /* shortcut info */undefined, "<i class='fa fa-wrench' aria-hidden='true'></i>"],
         ["Journal", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
             comp.followPath(lively4url + "/doc/journal/index.md");
