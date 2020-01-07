@@ -9,6 +9,8 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
+import {fileEnding, replaceFileEndingWith} from "utils"
+
 export default class ASTCapabilities {
 
   constructor(livelyCodeMirror, codeMirror) {
@@ -643,7 +645,10 @@ export default class ASTCapabilities {
       if(this.changedSelectionInMenu) {
           this.editor.undoSelection();
       }
-    }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+    }], ['Generate HTML Accessors', () => {
+      menu.remove();
+      this.generateHTMLAccessors();
+    }, 'Alt+H', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -654,8 +659,33 @@ export default class ASTCapabilities {
   
   /*MD ## Generations MD*/
 
-  /*MD ### Generate Testcase / Class / get / set MD*/
+  /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
+  async generateHTMLAccessors() {
+    var lol = lively.allParents(this.livelyCodeMirror, undefined, true) 
+      .find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
+    var jsURI = encodeURI(lol.shadowRoot.querySelector("#filename").value);
+    
+    const htmlURI = jsURI::replaceFileEndingWith('html');
+      
+    var html = await htmlURI.fetchText();
+    
+    if(html === "File not found!\n") {
+      lively.warn("There is no HTML associated with this file.");
+      return;
+    }
+
+    var tmp = <div></div>;
+    tmp.innerHTML = html;
+    var ids = tmp.querySelectorAll("[id]").map(ea => ea.id);
+    
+    ids.forEach((id) => {
+      this.generateCodeFragment(id, (name) => this.compileHTMLGetter(name));
+    })
+    
+    //get fileName() { return this.get('input#fileName'); }
+  }
+  
   generateTestCase() {
     this.generateCodeFragment("should work properly", (id) => this.compileTestCase(id));
   }
@@ -718,6 +748,13 @@ export default class ASTCapabilities {
 
   compileClass(className) {
     return t.classDeclaration(t.identifier(className), null, t.classBody([t.classMethod("constructor", t.Identifier("constructor"), [], t.blockStatement([]))]), []);
+  }
+
+  compileHTMLGetter(propertyName) {    
+    var methodName = propertyName.substring(propertyName.lastIndexOf("#"), propertyName.length);
+    methodName = methodName.replace(new RegExp("-", 'g'), "_");
+    debugger;
+    return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral(propertyName)]))]));
   }
 
   async getUserInput(description, defaultValue) {
