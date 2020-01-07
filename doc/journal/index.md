@@ -1,9 +1,13 @@
 # Lively4 Development Journal
 
 <script>
-import moment from "src/external/moment.js";
+import moment from "src/external/moment.js"
+import github from "src/client/github.js"
+
 // #TODO how to do instance-specific behabior here?
 var createEntry = async () => {
+  await github.current().loadCredentials()
+  var username = github.current().username
   var container = lively.query(this, "lively-container");
   if (!container) return "no container found"
   var path = "" + container.getPath();
@@ -19,7 +23,7 @@ var createEntry = async () => {
   if (await lively.files.existFile(dirURL)) {
     lively.notify("Could not create " + dirURL + ", because it already exists!")
   } else {
-    var src = "## " + dateStr + "\n\n"
+    var src = "## " + dateStr + "\n" + "*Author: @" + username + "*\n\n"
     
     await lively.files.saveFile(dirURL, src)
     await lively.files.saveFile(url, src)
