@@ -687,7 +687,11 @@ export default class ASTCapabilities {
             //if(path.scope.hasBinding(identifier)) {
             //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
             //}
-            path.insertAfter(replacementGenerator(uniqueIdentifier));
+            if(path.parentKey === "body"){
+              path.insertAfter(replacementGenerator(uniqueIdentifier));
+            } else {
+              path.parentPath.get('body').unshiftContainer('body', replacementGenerator(uniqueIdentifier));
+            }
           }
         }
       }
@@ -854,7 +858,7 @@ export default class ASTCapabilities {
     const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(methodContent));
     newMethod.async = shouldBeAsync;
     newMethod.static = shouldBeStatic;
-    scope.insertAfter(newMethod)[0];
+    scope.insertAfter(newMethod);
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
