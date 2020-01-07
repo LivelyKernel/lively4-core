@@ -775,12 +775,16 @@ export default class ASTCapabilities {
   shouldBeAsync(content) {
     let hasAwait = false;
     content.forEach((startPath) => {
-      startPath.traverse({
-        AwaitExpression(path) {
-          hasAwait = true;
-          path.stop();
-        }
-      });
+      if(t.isAwaitExpression(startPath.node)) {
+        hasAwait = true;
+      } else {
+        startPath.traverse({
+          AwaitExpression(path) {
+            hasAwait = true;
+            path.stop();
+          }
+        });
+      }      
     })
     
     return hasAwait;
@@ -859,7 +863,11 @@ export default class ASTCapabilities {
       content[i].remove();
     }
     var methodCall;
-    const callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
+    var callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
+    if(shouldBeAsync) {
+      lively.warn("Extracting async method. This could change the control flow.")
+      callExpression = t.awaitExpression(callExpression);
+    }
     if (returnValues.length == 1) {
       if (returnValues[0].declaredInExtractedCode) {
         const variableType = returnValues[0].constantViolationOutsideSelection ? "var" : "const";
