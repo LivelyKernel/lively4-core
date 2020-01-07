@@ -1,5 +1,7 @@
 ## 2020-01-07 #LivelyServer
 
+*Author: @JensLincke*
+
 New stub for server based file renaming...
 
 ```javascript
@@ -21,3 +23,9 @@ fetch("https://lively-kernel.org/lively4/_meta/exit", {
   }
 }).then(r => r.text())
 ```
+
+
+
+
+
+
