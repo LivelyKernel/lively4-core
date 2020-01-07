@@ -42,6 +42,7 @@ export default class LivelyCodeMirrorWidgetImport extends Morph {
     }
   }
   
+  
   static createWidgetContainer() {
     var widget = document.createElement("span")
     Object.assign(widget.style, {

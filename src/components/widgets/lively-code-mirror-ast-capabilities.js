@@ -9,7 +9,7 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
-import {fileEnding, replaceFileEndingWith} from "utils"
+import { fileEnding, replaceFileEndingWith } from "utils";
 
 export default class ASTCapabilities {
 
@@ -44,21 +44,21 @@ export default class ASTCapabilities {
   */
   get programPath() {
     var myself = this;
-    if(!this.myProgramPath) {
+    if (!this.myProgramPath) {
       this.sourceCode.traverseAsAST({
         Program(path) {
           myself.myProgramPath = path;
         }
       });
     }
-    
+
     return this.myProgramPath;
   }
 
   codeChanged() {
     this.myProgramPath = undefined;
   }
-  
+
   /** 
    * Return first child in depth first search that satisfies a condition
    */
@@ -408,7 +408,7 @@ export default class ASTCapabilities {
     });
     return classPath;
   }
-  
+
   getColorLiterals(programPath) {
     let colorPaths = [];
     const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}/g;
@@ -449,11 +449,7 @@ export default class ASTCapabilities {
 
   selectNextASTChild(reversed) {
     return this.selectNextASTNodeWith((currentNode, nextNode) => {
-      return t.isIdentifier(nextNode) ||
-        t.isLiteral(nextNode) ||
-        t.isThisExpression(nextNode) || 
-        t.isSuper(nextNode) || 
-        t.isDebuggerStatement(nextNode);
+      return t.isIdentifier(nextNode) || t.isLiteral(nextNode) || t.isThisExpression(nextNode) || t.isSuper(nextNode) || t.isDebuggerStatement(nextNode);
     }, reversed);
   }
 
@@ -541,24 +537,24 @@ export default class ASTCapabilities {
     // returns innermostDescribePath 
     function isInDescribe(path) {
       let possiblePath = isIn("CallExpression", path, "describe");
-      
-      while(possiblePath !== null) {
-        if(possiblePath.node && possiblePath.node.callee.name === "describe") {
+
+      while (possiblePath !== null) {
+        if (possiblePath.node && possiblePath.node.callee.name === "describe") {
           break;
         }
         possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
       }
       return possiblePath;
     }
-    
+
     function isIn(type, path) {
-      while(path !== null) {
-        if(directlyIn(type, path)) {
+      while (path !== null) {
+        if (directlyIn(type, path)) {
           return path;
         }
-        path = path.parentPath; 
+        path = path.parentPath;
       }
-      return null;     
+      return null;
     }
 
     function directlyIn(type, path) {
@@ -635,15 +631,15 @@ export default class ASTCapabilities {
       this.extractMethod();
     }, 'Alt+M', fa('suitcase'), () => {
       const selection = this.selectMethodExtraction(this.programPath, true);
-      if(selection) {
+      if (selection) {
         this.changedSelectionInMenu = true;
         this.selectPaths(selection.selectedPaths);
-      } else {        
+      } else {
         this.changedSelectionInMenu = false;
       }
     }, () => {
-      if(this.changedSelectionInMenu) {
-          this.editor.undoSelection();
+      if (this.changedSelectionInMenu) {
+        this.editor.undoSelection();
       }
     }], ['Generate HTML Accessors', () => {
       menu.remove();
@@ -656,79 +652,93 @@ export default class ASTCapabilities {
       this.focusEditor();
     });
   }
-  
+
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
   async generateHTMLAccessors() {
-    var lol = lively.allParents(this.livelyCodeMirror, undefined, true) 
-      .find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
+    var lol = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
     var jsURI = encodeURI(lol.shadowRoot.querySelector("#filename").value);
-    
+
     const htmlURI = jsURI::replaceFileEndingWith('html');
-      
+
     var html = await htmlURI.fetchText();
-    
-    if(html === "File not found!\n") {
+
+    if (html === "File not found!\n") {
       lively.warn("There is no HTML associated with this file.");
       return;
     }
 
     var tmp = <div></div>;
     tmp.innerHTML = html;
-    var ids = tmp.querySelectorAll("[id]").map(ea => ea.id);
-    
-    ids.forEach((id) => {
-      this.generateCodeFragment(id, (name) => this.compileHTMLGetter(name));
-    })
-    
+    var ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
+
+    ids.forEach(id => {
+      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+    });
+
     //get fileName() { return this.get('input#fileName'); }
   }
-  
+
   generateTestCase() {
-    this.generateCodeFragment("should work properly", (id) => this.compileTestCase(id));
+    this.generateCodeFragment("should work properly", id => this.compileTestCase(id.identifier));
   }
 
   generateGetter() {
-    this.generateCodeFragment("myCoolProperty", (id) => this.compileGetter(id));
+    this.generateCodeFragment("myCoolProperty", id => this.compileGetter(id.identifier));
   }
 
   generateSetter() {
-    this.generateCodeFragment("myCoolProperty", (id) => this.compileSetter(id));
+    this.generateCodeFragment("myCoolProperty", id => this.compileSetter(id.identifier));
   }
 
   generateClass() {
-    this.generateCodeFragment("Foo", (id) => this.compileClass(id));
+    this.generateCodeFragment("Foo", id => this.compileClass(id.identifier));
   }
 
   async generateCodeFragment(identifier, replacementGenerator) {
-    const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
+    const selection = this.firstSelection;
+
+    var identifierObject = { identifier };
+
+    var generatedCode;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
           let path = this.getPathBeforeCursor(programPath, selection.start);
           //const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+          generatedCode = replacementGenerator(identifierObject);
           if (path === undefined) {
-            programPath.pushContainer('body', replacementGenerator(identifier));
+            programPath.pushContainer('body', generatedCode);
           } else {
-            let uniqueIdentifier = identifier;
             //if(path.scope.hasBinding(identifier)) {
             //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
             //}
-            if(path.parentKey === "body"){
-              path.insertAfter(replacementGenerator(uniqueIdentifier));
+            if (path.parentKey === "body") {
+              path.insertAfter(generatedCode);
             } else {
-              path.parentPath.get('body').unshiftContainer('body', replacementGenerator(uniqueIdentifier));
+              path.parentPath.get('body').unshiftContainer('body', generatedCode);
             }
           }
         }
       }
     })).code;
+
+    var pathToSelect;
+    this.programPath.traverse({
+      Identifier(path) {
+        if (path.parent.type == generatedCode.type && path.node.name == identifierObject.identifier) {
+          pathToSelect = path;
+          path.stop();
+        }
+      }
+    });
+    this.selectPaths([pathToSelect]);
+
     this.scrollTo(scrollInfo);
     this.focusEditor();
-    this.editor.setSelection(selection.asCM()[0]);
   }
 
   compileTestCase(explanation) {
@@ -750,10 +760,11 @@ export default class ASTCapabilities {
     return t.classDeclaration(t.identifier(className), null, t.classBody([t.classMethod("constructor", t.Identifier("constructor"), [], t.blockStatement([]))]), []);
   }
 
-  compileHTMLGetter(propertyName) {    
+  compileHTMLGetter(property) {
+    var propertyName = property.identifier;
     var methodName = propertyName.substring(propertyName.lastIndexOf("#"), propertyName.length);
     methodName = methodName.replace(new RegExp("-", 'g'), "_");
-    debugger;
+    property.identifier = methodName;
     return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral(propertyName)]))]));
   }
 
@@ -808,11 +819,11 @@ export default class ASTCapabilities {
       return this.getBindingDeclarationIdentifierPath(identifier.scope.getBinding(identifier.node.name)).node;
     });
   }
-  
+
   shouldBeAsync(content) {
     let hasAwait = false;
-    content.forEach((startPath) => {
-      if(t.isAwaitExpression(startPath.node)) {
+    content.forEach(startPath => {
+      if (t.isAwaitExpression(startPath.node)) {
         hasAwait = true;
       } else {
         startPath.traverse({
@@ -821,23 +832,23 @@ export default class ASTCapabilities {
             path.stop();
           }
         });
-      }      
-    })
-    
+      }
+    });
+
     return hasAwait;
   }
-  
+
   couldBeStatic(content) {
     let hasThis = false;
-    content.forEach((startPath) => {
+    content.forEach(startPath => {
       startPath.traverse({
         ThisExpression(path) {
           hasThis = true;
           path.stop();
         }
       });
-    })
-    
+    });
+
     return !hasThis;
   }
 
@@ -901,8 +912,8 @@ export default class ASTCapabilities {
     }
     var methodCall;
     var callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
-    if(shouldBeAsync) {
-      lively.warn("Extracting async method. This could change the control flow.")
+    if (shouldBeAsync) {
+      lively.warn("Extracting async method. This could change the control flow.");
       callExpression = t.awaitExpression(callExpression);
     }
     if (returnValues.length == 1) {
@@ -942,7 +953,7 @@ export default class ASTCapabilities {
             return parent.node.type == "ClassMethod";
           });
           var shouldBeStatic = this.couldBeStatic(selectedPaths);
-          if(!surroundingMethod) {
+          if (!surroundingMethod) {
             surroundingMethod = selectedPaths[selectedPaths.length - 1];
           } else {
             shouldBeStatic = surroundingMethod.node.static;
@@ -1274,30 +1285,30 @@ export default class ASTCapabilities {
     }).toArray();
     return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
-  
+
   /*MD ## Color Picker MD*/
-  
+
   updateColorPicker() {
     const old = this.editor.getAllMarks();
     old.forEach(marker => {
       if (marker.type === "bookmark") {
         marker.clear();
       }
-    })
+    });
     const colorLiterals = this.getColorLiterals(this.programPath);
     colorLiterals.forEach(path => {
-      const location = {line: path.node.loc.end.line-1, column: path.node.loc.end.column};
+      const location = { line: path.node.loc.end.line - 1, column: path.node.loc.end.column };
       var picker = document.createElement("input");
       picker.type = "color";
       picker.value = path.node.value;
       const bookmark = this.editor.setBookmark(location, picker);
-      picker.addEventListener('change', (event) => {
+      picker.addEventListener('change', event => {
         const currentLocation = bookmark.find();
         this.updateColor(currentLocation, event.target.value);
       });
-    })
+    });
   }
-  
+
   updateColor(currentLocation, color) {
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
@@ -1305,7 +1316,7 @@ export default class ASTCapabilities {
         Program: programPath => {
           const path = this.getPathBeforeCursor(programPath, currentLocation);
           if (t.isVariableDeclarator(path.node)) {
-            path.node.init.value=color;
+            path.node.init.value = color;
           }
         }
       }
@@ -1313,5 +1324,5 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
     this.updateColorPicker();
   }
-  
+
 }
