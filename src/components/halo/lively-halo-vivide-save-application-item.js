@@ -11,6 +11,7 @@ export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
     if(this.name===undefined) return;
     const saveTarget = window.that;
     this.storedViews = [];
+    // set the name on the saveTarget
     /*
     We have to save a multitude of things:
     inputData
