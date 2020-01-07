@@ -16,6 +16,9 @@ export default class CodemirrorPlayground extends Morph {
   get editor() { return this.get('#editor'); }
   get lcm() { return this.editor.get("lively-code-mirror"); }
   get $() { return this.lcm.editor; }
+  get dependencyGraph(){
+    return this._deps || (this._deps =  new DependencyGraph(this.lcm.value));
+  }
   
   get aexprs() {
     return this._aexprs || (this._aexprs = this.collectAExpr());
@@ -26,6 +29,10 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   get textMarkers() { return this._textMarkers = this._textMarkers || [] }
+  
+  invalidateAST(){
+    delete this._deps;
+  }
 
   async initialize() {
     this.windowTitle = "CodemirrorPlayground";
@@ -59,13 +66,18 @@ export default class CodemirrorPlayground extends Morph {
       "Alt-S": cm => {
         this.snapToNextAEXpr()
       },
+      
+      // #KeyboardShortcut Alt-I invalidate AST
+      "Alt-I": cm => {
+        this.invalidateAST()
+      },
     });
   }
   
   collectAExpr() {
     const allAExpr = [];
-    
-    this.lcm.value.traverseAsAST({
+    console.log(this.dependencyGraph);
+    this.dependencyGraph.inner.traverseAsAST({
       CallExpression(path) {
         if (isAExpr(path) ) {
           allAExpr.push(path);
@@ -84,6 +96,8 @@ export default class CodemirrorPlayground extends Morph {
   
   // TODO delete lel
   snapToNextAEXpr() {
+    
+    this.showAExprMarker()
 
     const cursor = this.$.getCursor();
     let aexprRanges = this.aexprs.map((path)=>range(path.node.loc));    
@@ -105,6 +119,7 @@ export default class CodemirrorPlayground extends Morph {
   
   showAExprInfo() {
     this.resetTextMarkers();
+    console.log
     
     const aexpr = this.selectedAExpr();
     if (!aexpr) return;
@@ -114,7 +129,7 @@ export default class CodemirrorPlayground extends Morph {
     const cursor = this.$.getCursor();
     const code = this.lcm.value;
     let dep = new DependencyGraph(code);
-    let deps = dep.resolveDependencies(cursor);
+    let deps = this.dependencyGraph.resolveDependencies(cursor);
     //let occurences = [...deps].map(binding => [binding.path, ... binding.constantViolations]).flatten();    
     let occurences = [...deps].map(binding => [... binding.constantViolations]).flatten();
     occurences.forEach((path) => {
@@ -123,6 +138,51 @@ export default class CodemirrorPlayground extends Morph {
         css: "background-color: orange",
       }))
     });
+  }
+  
+  
+  showAExprMarker(){
+    let dict = new Map();
+    let lines = [];    
+    
+    this.aexprs.forEach((path)=> {
+      let dependencies = this.dependencyGraph._resolveDependencies(path.get("arguments")[0]);
+      let occurences = [...dependencies].map(binding => [... binding.constantViolations]).flatten();
+      occurences.map(statement => {
+        if (!dict.get(statement)) {
+          dict.set(statement, []);
+        }
+        //for now store the aExpr directly as dep of the line.
+        let tmp = dict.get(statement);
+        tmp.push(path);
+        dict.set(statement, tmp);
+      });
+    })
+    
+    dict.forEach((aExprs,statement) => {
+        let line = statement.node.loc.start.line - 1; 
+        if (!lines[line]) {
+          lines[line] = [];
+        }
+        for (let aExpr of aExprs ){
+          lines[line].push(aExpr);
+        }
+      });
+
+    console.log(lines);
+    lines.forEach((deps, line) => {
+      this.drawAExprGutter(line, deps);
+    })    
+  }
+  
+  drawAExprGutter(line, dependencies) {
+    let clickMethod = e => lively.openInspector(dependencies);
+    
+    this.$.doc.setGutterMarker(
+      line,
+      'extragutter',
+      <div class="extragutter-marker" click={clickMethod}>{dependencies.length}</div>// TODO render this without the "0"
+      )
   }
   
   instantUpdate() {
@@ -145,8 +205,6 @@ export default class CodemirrorPlayground extends Morph {
   async augment() {
     this.highlightText();
     this.setBookMark();
-    
-    this.showAExprMarker();
     
     
     this.identifierToRightGutter();
@@ -229,17 +287,6 @@ export default class CodemirrorPlayground extends Morph {
       gutters.splice(gutters.indexOf('CodeMirror-linenumbers') + 1 || 0, 0, 'extragutter');
       this.lcm.setOption('gutters', gutters)
     }
-  }
-  
-  showAExprMarker(){
-    this.aexprs.forEach((path)=>{
-      this.$.doc.setGutterMarker(
-        path.node.loc.start.line-1,
-        'extragutter',
-        <div class="extragutter-marker" click={e => lively.notify('extra gutter marker clicked')}>0</div>// TODO render this without the "0"
-      )
-    })
-    
   }
 
 
