@@ -214,6 +214,7 @@ export default class VivideView extends Morph {
     
     // not migrating, but initializing from source
     if (!this.myCurrentScript) {
+      debugger
       var scriptJSON = this.getAttribute("vivide-script")
       if (scriptJSON) {
         this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
