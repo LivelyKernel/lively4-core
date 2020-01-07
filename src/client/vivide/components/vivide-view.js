@@ -220,7 +220,7 @@ export default class VivideView extends Morph {
         this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
       } else {
         //This got commented because it is not reliable. It will often overwrite or take longer to setup and overwrite later on
-        await this.initDefaultScript();
+        // await this.initDefaultScript();
       }
 
       var dataJSON = this.getAttribute("vivide-data")
