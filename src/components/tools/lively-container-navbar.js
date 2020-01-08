@@ -196,8 +196,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onMouseDown(evt) {
-    evt.stopPropagation()
-    evt.preventDefault()
+    // evt.stopPropagation()
+    // evt.preventDefault()
   }
   
   
