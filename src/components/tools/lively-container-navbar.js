@@ -32,6 +32,7 @@ export default class LivelyContainerNavbar extends Morph {
     lively.html.registerKeys(this.get("#details"))
     this.addEventListener("drop", evt => this.onDrop(evt))
     this.addEventListener("dragover", evt => this.onDragOver(evt))
+    this.addEventListener("mousedown", evt => this.onMouseDown(evt))
     
     this::applyDragCSSClass();
     
@@ -192,6 +193,11 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onDirectoryDragOver(evt) {
     return this.onDragOver(evt)
+  }
+  
+  onMouseDown(evt) {
+    // evt.stopPropagation()
+    // evt.preventDefault()
   }
   
   
