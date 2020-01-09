@@ -93,10 +93,21 @@
   y = 1; // <--
 }
 
-/*MD ### Variables referencing functions (called) MD*/
+/*MD ### Variables referencing functions (called) 1 MD*/
 {
   let x = 0;
   let y = () => x * x;
+
+  aexpr(() => y());
+  
+  x = 1; // <--
+  y = () => x * x * x; // <--
+}
+
+/*MD ### Variables referencing functions (called) 2 MD*/
+{
+  let x = 0;
+  let y = function foo() {return x}
 
   aexpr(() => y());
   
