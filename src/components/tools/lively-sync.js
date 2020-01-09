@@ -1,6 +1,15 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js"
 
+
+/*MD # Github Sync Tool
+![](lively-sync.png){width=500px}
+
+MD*/
+
+
+
+
 export default class Sync extends Morph {
   
   
