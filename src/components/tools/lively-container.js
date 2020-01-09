@@ -1,5 +1,7 @@
 /*MD # Lively Container 
 
+[doc](browse://doc/tools/container.md)
+
 ![](lively-container.png){height=400px}
 
 MD*/
