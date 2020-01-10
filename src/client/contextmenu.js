@@ -1,8 +1,13 @@
-/*
- * Lively4 ContextMenu
- * - creates the "world menu" for Lively4
- */ 
-  
+/*MD # Lively4 ContextMenu 
+
+creates the "world menu" for Lively4
+
+- [worldMenuItems](#worldMenuItems)
+- [targetMenuItems](#targetMenuItems)
+
+
+MD*/
+
 import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
@@ -15,7 +20,6 @@ import Rasterize from 'src/client/rasterize.js'
 import Favorites from "src/client/favorites.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
-
 
 export default class ContextMenu {
   
@@ -85,7 +89,7 @@ export default class ContextMenu {
   }
 
   
-  
+  // #important
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
@@ -321,6 +325,7 @@ export default class ContextMenu {
     ]
   }
   
+  // #important
   static worldMenuItems(worldContext) {
     var items =  [
       ["Workspace", evt => {
@@ -487,6 +492,10 @@ export default class ContextMenu {
           // lively.setPosition(morph, lively.pt(0,0), "fixed")
           // morph.style.bottom = "0px"
           // morph.style.right= "0px"
+          this.hide();
+        }],
+        ["Change Graph", async evt => {
+          lively.openBrowser(lively4url + "/doc/files/changesgraph.md")
           this.hide();
         }],
         ["BP2019 Workspace", async evt => {

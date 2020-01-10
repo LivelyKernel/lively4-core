@@ -1,5 +1,7 @@
 # Figures
 
+<lively-import src="../_navigation.html"></lively-import>
+
 <style>
   .thumb {
     width: 300px;

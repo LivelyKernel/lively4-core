@@ -1,5 +1,7 @@
 # Tools 
+<lively-import src="../_navigation.html"></lively-import>
 
+![tools](media/tools.drawio)
 
 ## File based
 
@@ -17,5 +19,3 @@
   - work in progress -> for scripting and inspecting live objects
 - [Component Bin](component-bin.md)
   - [parts](parts) #experimental
-
-![tools](media/tools.drawio)
