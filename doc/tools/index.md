@@ -1,5 +1,6 @@
 # Tools 
 
+
 ## File based
 
 - [Lively Container (Browser)](container.md)
@@ -16,3 +17,5 @@
   - work in progress -> for scripting and inspecting live objects
 - [Component Bin](component-bin.md)
   - [parts](parts) #experimental
+
+![tools](media/tools.drawio)

@@ -1,8 +1,14 @@
-'use strict';
-
 import * as cop from "src/client/ContextJS/src/contextjs.js"
 import Morph from 'src/components/widgets/lively-morph.js';
 
+
+/*MD # Testrunner 
+
+[doc](browse://doc/tools/test-runner.md)
+
+![](../../../doc/tools/media/test-runner.png){width=400px}
+
+MD*/
 
 //     Mocha.utils.parseQuery()
 
