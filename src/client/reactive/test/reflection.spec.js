@@ -28,15 +28,19 @@ describe('Reflection API', () => {
       expect(expr.meta().get('info')).to.equal(expectedName);
     });
 
-    it('set and read an aexpr`s name', () => {
+    it('aexpr`s name is not supported anymore', () => {
       const expr = baseAExpr(() => {});
 
-      expect(expr.name()).to.be.undefined;
+      expect(expr).not.to.respondTo('name');
+    });
+
+    it('setting a property is chainable', () => {
+      const expr = baseAExpr(() => {});
 
       const expectedName = 'my test AExpr';
-      const returnValue = expr.name(expectedName);
+      const returnValue = expr.meta({ name: expectedName });
 
-      expect(expr.name()).to.equal(expectedName);
+      expect(expr.meta().get('name')).to.equal(expectedName);
       expect(returnValue).to.equal(expr); // chainability
     });
 
