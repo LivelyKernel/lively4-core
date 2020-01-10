@@ -1,4 +1,6 @@
-/* Polymorphic Identifier */
+/*MD # Polymorphic Identifier 
+[architecture](browse://doc/architecture/polymorphic-identifiers.md)
+MD*/
 
 import FileIndex from 'src/client/fileindex.js'
 var FileCache = FileIndex;
