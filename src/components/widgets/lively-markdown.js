@@ -1,3 +1,9 @@
+/*MD # Markdown 
+
+[architecture](browse://doc/architecture/markdown.md)
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
