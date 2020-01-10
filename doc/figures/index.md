@@ -9,6 +9,7 @@
     float: left;
     list-style-type: none;
     padding: 5px;
+    overflow: hidden;
   }
 </style>
 

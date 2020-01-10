@@ -92,7 +92,7 @@ export default class HTML {
   }
   
   static registerButtons(parent) {
-    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
       var name = node.id
       var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())

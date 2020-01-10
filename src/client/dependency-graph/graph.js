@@ -7,7 +7,7 @@ const { types: t } = babelDefault.babel;
 
 export class DependencyGraph {
 
-  get inner() {return this._inner }
+  get inner() { return this._inner }
 
   constructor(code) {
     this._inner = code.toAST();
@@ -37,7 +37,7 @@ export class DependencyGraph {
     });
 
     this._inner.traverseAsAST({
-      Function(path) {
+      'Function|ArrowFunctionExpression'(path) {
         path.node.extra.leakingBindings = leakingBindings(path);
         path.node.extra.callExpressions = [];
         path.traverse({
@@ -107,7 +107,6 @@ export class DependencyGraph {
       return path.node.extra.dependencies || new Set();
     }
 
-    console.log("function:", path);
     if (path.node.extra.dependencies) {
       // the dependencies were already collected... just return them
       return path.node.extra.dependencies
@@ -115,11 +114,25 @@ export class DependencyGraph {
 
     let dependencies = new Set(path.node.extra.leakingBindings);
     path.node.extra.callExpressions.forEach(callExpression => {
-        callExpression.node.extra.resolvedCallees.forEach(callee =>{
-          if (t.isFunction(callee)) {
-            this._resolveDependencies(callee).forEach(dep => dependencies.add(dep))
-        }})
-      
+      callExpression.node.extra.resolvedCallees.forEach(callee => {
+        if (t.isFunction(callee)) {
+          this._resolveDependencies(callee).forEach(dep => dependencies.add(dep));
+        }
+
+        console.error(callee);
+        if (t.isAssignmentExpression(callee)) {
+          const value = this.assignedValue(callee);
+          if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
+            this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
+          }
+        }
+
+        if (t.isVariableDeclarator(callee)) {
+          //???
+        }
+
+      })
+
     })
     path.node.extra.dependencies = dependencies;
     return dependencies;
