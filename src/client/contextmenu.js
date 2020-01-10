@@ -660,12 +660,6 @@ export default class ContextMenu {
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
-        ["Tools and Workflows", (evt) => {
-          this.openComponentInWindow("lively-container", evt, worldContext, pt(1250,700)).then(comp => {
-            comp.followPath(lively4url + "/doc/presentation/index.md");
-          });
-        },
-          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Issues", (evt) => { 
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
         },undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],

@@ -1,6 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<style data-src="../../doc/presentation/style.css"></style>
+<style data-src="./style.css"></style>
 
 
 <script>
