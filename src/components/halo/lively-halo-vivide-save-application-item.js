@@ -7,9 +7,9 @@ const basePath = "src/client/vivide/scripts/applications/";
 
 export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
   async onClick(evt){
-    this.name = await lively.prompt("Please attach a name", "vivide-application-name");
-    if(this.name===undefined) return;
     const saveTarget = window.that;
+    const name = await this.addingName(saveTarget);
+    if(name===undefined) return;
     this.storedViews = [];
     // set the name on the saveTarget
     /*
@@ -20,35 +20,50 @@ export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
     input targets
     output targets
     */
-    const url = `${lively4url}/${basePath}${this.name}.json`;
+    const stringToSave = JSON.stringify(this.createJSON(saveTarget, name));
+    this.storedViews = [];
+    this.saveFile(`${lively4url}/${basePath}${name}.json`, stringToSave);
+  }
+  
+  async addingName(saveTarget, noNameProvided){
+    let name;
+    if(noNameProvided || !saveTarget.applicationName){
+      name = await lively.prompt("Please attach a name", "vivide-application-name");
+    } else {
+      name = saveTarget.applicationName;
+    }
+    saveTarget.applicationName = name;
+    if (name === undefined) return name;
+    const url = `${lively4url}/${basePath}${name}.json`;
     const exists = await lively.files.exists(url);
-    const stringToSave = JSON.stringify(this.createJSON(saveTarget));
     if(exists){   
-      const confirm = await lively.confirm(`Are you sure you want to overwrite ${this.name}?`);
+      const confirm = await lively.confirm(`Are you sure you want to overwrite ${name}?`);
       if(confirm){
-        this.saveFile(url, stringToSave);
+        return name;
+      } else {
+        this.adddingName(saveTarget, true);
       }
     } else {
-      this.saveFile(url, stringToSave);
+      return name;
     }
   }
   
-  createJSON(saveTarget){
+  createJSON(saveTarget, name){
     this.storedViews.push(saveTarget.id);
+    saveTarget.applicationName = name;
     const script = saveTarget.myCurrentScript.toJSON();
     const inputSources = saveTarget.inportSources
       .filter(i => !this.storedViews.includes(i.id))
       .map(v => {
-        return this.createJSON(v);
+        return this.createJSON(v, name);
       });
     const outputs = saveTarget.outportTargets
-      .filter(i => !this.storedViews.includes(i))
+      .filter(i => !this.storedViews.includes(i.id))
       .map(v => {
-        return this.createJSON(v);
+        return this.createJSON(v, name);
       });
     const inputs = saveTarget.input;
-    const stringToSave = {script, outputs, inputSources, inputs, widget: saveTarget.widget.tagName.toLowerCase()};
-    this.storedViews = [];
+    const stringToSave = {script, outputs, inputSources, inputs, widget: saveTarget.widget.tagName.toLowerCase(), id: saveTarget.id};
     return stringToSave;
   }
   

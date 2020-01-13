@@ -9,9 +9,9 @@ import Script from 'src/client/vivide/vividescript.js';
 import View from 'src/client/vivide/components/vivide-view.js';
 import { fileName, flatten } from 'utils';
 
-async function createView(content, createEditor = false, createDependents = false){
+async function createView(content, createEditor = false, createDependents = false, name){
   const componentWindow = await lively.openComponentInWindow('vivide-view');
-  componentWindow.input = JSON.parse(content.inputs);
+  if (!createDependents) componentWindow.input = JSON.parse(content.inputs);
   const script = await Script.fromJSON(content.script,componentWindow);
   componentWindow.myCurrentScript = script;
   const widget = document.createElement(content.widget);
@@ -23,9 +23,10 @@ async function createView(content, createEditor = false, createDependents = fals
     await scriptEditor.setScript(script);
   }
   if(createDependents){
-    const inputs = await Promise.all(content.inputSources.map(i => createView(i)));
+    componentWindow.applicationName = name;
+    const inputs = await Promise.all(content.inputSources.map(i => createView(i, false, true, name)));
     inputs.forEach(i => i.connectTo(componentWindow));
-    const outputs = await Promise.all(content.outputs.map(o => createView(o)));
+    const outputs = await Promise.all(content.outputs.map(o => createView(o, false, true, name)));
     outputs.forEach(o => componentWindow.connectTo(o));
     if(content.inputs && content.inputs && content.inputs.length !== 0){
       componentWindow.newDataFromUpstream(content.inputs);
@@ -66,8 +67,10 @@ async function createView(content, createEditor = false, createDependents = fals
     </button>;
     
     let openbutton = <button click={async () => {
+      const filepath = urlString.split('/');
       const content = JSON.parse(await lively.files.loadFile(urlString));
-      await createView(content, i === 0, i === 2);
+      const name = filepath[filepath.length-1].split('.')[0];
+      await createView(content, i === 0, i === 2, name);
     }}>
       <span style="color: blue; font-weight: bold;">Open</span>
     </button>;
