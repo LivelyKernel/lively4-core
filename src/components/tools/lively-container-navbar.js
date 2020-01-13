@@ -93,7 +93,7 @@ export default class LivelyContainerNavbar extends Morph {
     
     
     // Oh, my god! Now we are getting crazy!
-    // first fownload the files, then zip them, then upload then again, so that they can be dropped...?
+    // first download the files, then zip them, then upload then again, so that they can be dropped...?
     // Yeah! :-)
     var zip = new JSZip();
     for(var ea of urls) {
