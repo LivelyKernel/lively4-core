@@ -1,3 +1,10 @@
+/*MD # Drawboad 
+
+![](lively-drawboard.png){width=400px}
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import CommandHistory  from "src/client/command-history.js";

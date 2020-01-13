@@ -430,15 +430,6 @@ export class BaseActiveExpression {
   }
 
   /*MD ## Reflection Information MD*/
-  name(...args) {
-    if(args.length > 0) {
-      this._annotations.add({ name: args[0] });
-      return this;
-    } else {
-      return this._annotations.get('name');
-    }
-  }
-
   meta(annotation) {
     if(annotation) {
       this._annotations.add(annotation);

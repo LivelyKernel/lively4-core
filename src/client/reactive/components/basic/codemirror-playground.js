@@ -32,6 +32,7 @@ export default class CodemirrorPlayground extends Morph {
   
   invalidateAST(){
     delete this._deps;
+    delete this._aexprs;
   }
 
   async initialize() {
@@ -169,7 +170,7 @@ export default class CodemirrorPlayground extends Morph {
         }
       });
 
-    console.log(lines);
+    this.$.doc.clearGutter('extragutter');
     lines.forEach((deps, line) => {
       this.drawAExprGutter(line, deps);
     })    
@@ -186,7 +187,13 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   instantUpdate() {
-    this.aexprs = null;
+    this.invalidateAST();
+    try{
+      this.showAExprMarker();
+    } catch (e) {
+      // NOP
+      // current AST is invalid
+    }
     this.resetTextMarkers();
     lively.warn('instant update');
   }
@@ -203,9 +210,9 @@ export default class CodemirrorPlayground extends Morph {
   }
 
   async augment() {
+    this.invalidateAST();
     this.highlightText();
     this.setBookMark();
-    
     
     this.identifierToRightGutter();
     

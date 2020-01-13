@@ -1,5 +1,7 @@
 # Figures
 
+<lively-import src="../_navigation.html"></lively-import>
+
 <style>
   .thumb {
     width: 300px;
@@ -9,6 +11,7 @@
     float: left;
     list-style-type: none;
     padding: 5px;
+    overflow: hidden;
   }
 </style>
 

@@ -12,6 +12,12 @@ import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
 
+/*MD # Navbar
+
+![](lively-container-navbar.png){width=300px}
+
+MD*/
+
 
 const FILTER_KEY_BLACKLIST = [
   'Control', 'Shift', 'Capslock', 'Alt',
@@ -196,8 +202,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onMouseDown(evt) {
-    evt.stopPropagation()
-    evt.preventDefault()
+    // evt.stopPropagation()
+    // evt.preventDefault()
   }
   
   
@@ -1536,10 +1542,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async livelyExample() {
-    // var url = lively4url + "/README.md"
+    var url = lively4url + "/README.md"
     // var url = "innerhtml://"
     // var url = "https://lively-kernel.org/lively4/testdir/"
-    var url = "wikipedia://en/Bourne_shell"
+    // var url = "wikipedia://en/Bourne_shell"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content, undefined, undefined, "text/html" )
   }

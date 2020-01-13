@@ -1,5 +1,7 @@
 # Hashtags
 
+Keywords: [referencing](referencing.md)
+
 We use #Hashtags a lot for annotation and (search-based) navigation. 
 
 
