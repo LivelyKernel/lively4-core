@@ -11,6 +11,7 @@ import { fileName, flatten } from 'utils';
 
 async function createView(content, createEditor = false, createDependents = false){
   const componentWindow = await lively.openComponentInWindow('vivide-view');
+  componentWindow.input = JSON.parse(content.inputs);
   const script = await Script.fromJSON(content.script,componentWindow);
   componentWindow.myCurrentScript = script;
   const widget = document.createElement(content.widget);
