@@ -13,6 +13,8 @@ import Info from "src/client/info.js"
 import * as _ from 'src/external/lodash/lodash.js'
 import Rasterize from 'src/client/rasterize.js'
 import Favorites from "src/client/favorites.js"
+import { applicationFolder } from 'src/client/vivide/utils.js';
+import { createView } from 'src/client/vivide/scripts/loading.js';
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -553,7 +555,16 @@ export default class ContextMenu {
                 lively.hand.startGrabbing(morph, evt)
                 morph.classList.add("lively-content")
                 this.hide();
-              }]})), undefined, '<i class="fa fa-th-large" aria-hidden="true"></i>'
+              }]}).concat([[
+            "Vivide Applications",
+            lively.files.statFile(applicationFolder).then(r => JSON.parse(r).contents
+              .filter(({ type }) => type=== 'file')
+              .map(({ name }) => [name.split('.')[0], async () => {
+                const content = JSON.parse(await lively.files.loadFile(applicationFolder+name));
+                const n = name.split('.')[0];
+                await createView(content, false, true, n);}
+              ]))
+          ]])), undefined, '<i class="fa fa-th-large" aria-hidden="true"></i>'
       ],
       [
         "Windows", 
