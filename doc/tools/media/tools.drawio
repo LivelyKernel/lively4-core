@@ -1,0 +1,60 @@
+<mxfile modified="2020-01-10T11:00:42.696Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36" etag="nlLn8MqaI6FbeQAJFujG" version="12.5.1" type="github">
+  <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
+    <mxGraphModel dx="700" dy="576" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="500" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <UserObject label="" id="lcEnlKudX72qXeoctP-Z-1">
+          <mxCell style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/container.png;" parent="1" vertex="1">
+            <mxGeometry x="30" y="70" width="165.58" height="121" as="geometry"/>
+          </mxCell>
+        </UserObject>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-3" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/container-edit.png;" parent="1" vertex="1">
+          <mxGeometry x="160" y="132.5" width="156.97" height="113.5" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-6" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/drawboard.png;" parent="1" vertex="1">
+          <mxGeometry x="40" y="310" width="110.25" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-13" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/test-runner.png;" parent="1" vertex="1">
+          <mxGeometry x="390" y="10" width="207.6" height="129.75" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-16" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/workspace.png;" parent="1" vertex="1">
+          <mxGeometry x="272.22" y="210" width="167.74" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-17" value="&lt;a href=&quot;../container.md&quot;&gt;browse content&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="30" y="191.5" width="110" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-18" value="&lt;a href=&quot;../container.md&quot;&gt;.. and edit source code&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="150.25" y="246" width="120" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-21" value="&lt;a href=&quot;../codemirror.md&quot;&gt;experiment with &lt;br&gt;code snippets&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="272.22" y="297" width="190" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-7" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/inspector.png;" parent="1" vertex="1">
+          <mxGeometry x="400.4" y="234" width="249.6" height="156" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-22" value="&lt;a href=&quot;../inspector.md&quot;&gt;explore objects&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="400.4" y="386" width="110" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-11" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/sync.png;" parent="1" vertex="1">
+          <mxGeometry x="519.42" y="310" width="230.58" height="145" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-23" value="&lt;a href=&quot;../sync.md&quot;&gt;collaborate on github&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="523" y="449" width="140" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-24" value="&lt;a href=&quot;../test-runner.md&quot;&gt;run tests&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="392.22" y="132.5" width="70" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-9" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://lively-kernel.org/lively4/lively4-jens/doc/tools/media/search.png;" parent="1" vertex="1">
+          <mxGeometry x="510.4" y="68.5" width="230.22" height="143" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-25" value="&lt;a href=&quot;../search.md&quot;&gt;search in project&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="510.4" y="204" width="110" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="lcEnlKudX72qXeoctP-Z-26" value="&lt;a href=&quot;../drawboard.md&quot;&gt;draw sketches&lt;/a&gt;" style="text;html=1;fontColor=#FF8000;" parent="1" vertex="1">
+          <mxGeometry x="45.13" y="425.00000000000006" width="100" height="30" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
