@@ -62,6 +62,7 @@ export default class AexprTable extends Morph {
     this.events = new Map();
     this.coolDown();
     //this.filter.onchange = (x,y,z) => lively.notify(x+" -- "+y+" -- "+z);
+    this.buttonShowEvents.addEventListener('click', () => this.openEventDrops());
     this.filterElement.addEventListener('change', () => this.filterChanged());
     this.filterChanged();
   }
@@ -99,6 +100,10 @@ export default class AexprTable extends Morph {
     
   get filterElement() {
     return this.get("#filter");
+  }
+  
+  get buttonShowEvents() {
+    return this.get("#buttonShowEvents");
   }
 
   
@@ -190,6 +195,15 @@ export default class AexprTable extends Morph {
     } catch(e) {
       lively.notify('Error parsing '+code+': '+e);
     }
+  }
+  
+  async openEventDrops() {
+    let eventDrops = await lively.openComponentInWindow('event-drops');
+    eventDrops.dataFromSource = this.rows()
+      .map(each => each.aexpr)
+      .filter(each => this.filter(each));
+    eventDrops.groupingFunction = each => each.meta().get('id');
+    eventDrops.update();
   }
   
   livelyMigrate(other) {
