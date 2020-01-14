@@ -339,10 +339,55 @@ export default class ASTCapabilities {
 
   getBindings(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
+    if (!identifier) return;
+    if (identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+      const identifierPaths = [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+      if(identifierPaths.includes(identifier)) {
+        return identifierPaths;
+      }
     }
+
+    return this.getClassBindings(identifier);
+  }
+
+  getClassBindings(identifier) {
+    if (t.isMemberExpression(identifier.parent)) {
+      if (t.isThisExpression(identifier.parent.object)) {
+        let classPath = this.getClassPath(this.programPath);
+        let methodPath = this.getMethodPath(classPath, identifier.node.name);
+        if (methodPath) {
+          return this.getClassMethodBindings(methodPath);
+        } else {
+          return this.getMemberBindings(identifier);
+        }
+      }
+    } else if (t.isClassMethod(identifier.parent)) {
+      return this.getClassMethodBindings(identifier.parentPath);
+    }
+  }
+
+  getClassMethodBindings(classMethod) {
+    var methodIdentifier;
+    classMethod.traverse({
+      Identifier(path) {
+        path.stop();
+        methodIdentifier = path;
+      }
+    });
+    return [methodIdentifier, ...this.getMemberBindings(methodIdentifier)];
+  }
+
+  getMemberBindings(identifier) {
+    var members = [];
+    this.programPath.traverse({
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent) && t.isThisExpression(path.parent.object) && path.node.name === identifier.node.name) {
+          members.push(path);
+        }
+      }
+    });
+    return members;
   }
 
   getNextASTNodeInListWith(condition, pathList, path) {
@@ -374,7 +419,7 @@ export default class ASTCapabilities {
     } else {
       this.editor.setSelections(ranges);
     }
-    this.codeMirror.scrollIntoView({from: ranges[0].head, to: ranges[0].anchor}, 120);
+    this.codeMirror.scrollIntoView({ from: ranges[0].head, to: ranges[0].anchor }, 120);
   }
 
   /** 
@@ -496,11 +541,12 @@ export default class ASTCapabilities {
       let classPath = this.getClassPath(this.programPath);
       let methodPath = this.getMethodPath(classPath, identName);
       if (methodPath) {
-        this.selectNodes([methodPath.node.key]);  } else {        
+        this.selectNodes([methodPath.node.key]);
+      } else {
         const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
         const functionUrls = await this.getFunctionExportURLs(identName);
         const urls = classUrls.concat(functionUrls);
-        
+
         urls.forEach(url => lively.openBrowser(url, true).then(container => {
           container.asyncGet("#editor").then(async livelyEditor => {
             let newCodeMirror = livelyEditor.livelyCodeMirror();
