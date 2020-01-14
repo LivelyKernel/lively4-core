@@ -1,6 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<link rel="stylesheet" type="text/css" href="../../../doc/presentation/style.css"  />
+<link rel="stylesheet" type="text/css" href="../../../demos/tools-and-workflows/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../../templates/livelystyle.css"  />
 

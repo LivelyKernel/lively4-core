@@ -1,5 +1,7 @@
 # Example Scripts
 
+<lively-import src="../_navigation.html"></lively-import>
+
 Useful scripts and examples to put into a Markdown file.
 
 

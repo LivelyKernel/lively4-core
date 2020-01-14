@@ -1,10 +1,9 @@
 "enable aexpr";
 
-let x = 1;
-let v = 1;
+  let x = 0;
+  let y = () => x * x;
 
-function foo(){
-  return x
-}
-aexpr(() => {return foo()});
-x = 2;
+  aexpr(() => y());
+  
+  x = 1; // <--
+  y = () => x * x * x; // <--
