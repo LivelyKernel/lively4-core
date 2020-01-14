@@ -762,10 +762,9 @@ export default class ASTCapabilities {
 
   compileHTMLGetter(property) {
     var propertyName = property.identifier;
-    var methodName = propertyName.substring(propertyName.lastIndexOf("#"), propertyName.length);
-    methodName = methodName.replace(new RegExp("-", 'g'), "_");
+    var methodName = propertyName.camelCase();
     property.identifier = methodName;
-    return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral(propertyName)]))]));
+    return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral("#" + propertyName)]))]));
   }
 
   async getUserInput(description, defaultValue) {
