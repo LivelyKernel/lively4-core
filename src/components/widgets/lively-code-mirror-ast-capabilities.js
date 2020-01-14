@@ -365,6 +365,7 @@ export default class ASTCapabilities {
     } else {
       this.editor.setSelections(ranges);
     }
+    this.codeMirror.scrollIntoView({from: ranges[0].head, to: ranges[0].anchor}, 120);
   }
 
   /** 
@@ -485,12 +486,12 @@ export default class ASTCapabilities {
     } else {
       let classPath = this.getClassPath(this.programPath);
       let methodPath = this.getMethodPath(classPath, identName);
-      const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
-      const functionUrls = await this.getFunctionExportURLs(identName);
-      const urls = classUrls.concat(functionUrls);
       if (methodPath) {
-        this.selectPaths([methodPath]);
-      } else {
+        this.selectNodes([methodPath.node.key]);  } else {        
+        const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
+        const functionUrls = await this.getFunctionExportURLs(identName);
+        const urls = classUrls.concat(functionUrls);
+        
         urls.forEach(url => lively.openBrowser(url, true).then(container => {
           container.asyncGet("#editor").then(async livelyEditor => {
             let newCodeMirror = livelyEditor.livelyCodeMirror();
@@ -1203,7 +1204,7 @@ export default class ASTCapabilities {
       top: scrollInfo.top,
       right: scrollInfo.left + scrollInfo.width,
       bottom: scrollInfo.top + scrollInfo.height
-    });
+    }, 120);
   }
 
   /*MD ## Utilities MD*/
