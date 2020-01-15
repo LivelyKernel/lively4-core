@@ -4,6 +4,9 @@
 
 MD*/
 
+
+import Markdown from "src/client/markdown.js"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from "src/client/morphic/component-loader.js";
 import MarkdownIt from "src/external/markdown-it.js"
@@ -163,6 +166,9 @@ export default class LivelyMarkdown extends Morph {
     root.hidden = true
     await lively.fillTemplateStyles(root, "", container && container.getDir())
     root.hidden = false
+    
+    // custom lively modifications... second round of parsing content in the DOM
+    Markdown.parseAndReplaceLatex(root)
     
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)

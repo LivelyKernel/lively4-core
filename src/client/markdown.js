@@ -56,8 +56,7 @@ export default class Markdown {
           if (m) {
             var link = <a click={evt => {
               evt.preventDefault(); 
-              lively.notify("#TODO implement looking up reference: " + link.getAttribute("href"))
-              // lively.openBrowser(link.getAttribute("href"))
+              lively.openBrowser(link.href)
             }} href={"bib://" +m[1]}>{m[1]}</a>
             var replacement =  <span>{s.slice(0, m.index )}[{link}]{s.slice(m.index + m[0].length, s.length)}</span>
             ea.replaceChild(replacement, eaChild)
