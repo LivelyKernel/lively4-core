@@ -740,15 +740,15 @@ export default class ASTCapabilities {
   }
 
   generateTestCase() {
-    this.generateCodeFragment("should work properly", id => this.compileTestCase(id.identifier));
+    this.generateCodeFragment("ExplainWhatIsTested", id => this.compileTestCase(id.identifier));
   }
 
   generateGetter() {
-    this.generateCodeFragment("myCoolProperty", id => this.compileGetter(id.identifier));
+    this.generateCodeFragment("NameThisGetter", id => this.compileGetter(id.identifier));
   }
 
   generateSetter() {
-    this.generateCodeFragment("myCoolProperty", id => this.compileSetter(id.identifier));
+    this.generateCodeFragment("NameThisSetter", id => this.compileSetter(id.identifier));
   }
 
   generateClass() {
