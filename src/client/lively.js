@@ -3,6 +3,8 @@
 
 # Lively4 core module
 
+[architecture](browse://doc/architecture/lively.md)
+
  #Lively4 #Singleton #KitchenSink #CyclicDependecies #RefactoringNeeded
 
 

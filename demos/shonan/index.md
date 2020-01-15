@@ -6,7 +6,7 @@ There are so many stories to tell... so many angles to approach... which one sho
 
 --->
 
-<link rel="stylesheet" type="text/css" href="../../doc/presentation/style.css"  />
+<link rel="stylesheet" type="text/css" href="../../demos/tools-and-workflows/style.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
@@ -189,7 +189,7 @@ button
 ---
 ## Applications
 - Markdown Wiki with scripts and components
-- see [Lively 4 Tools and Workflows](../../doc/presentation/index.md#)
+- see [Lively 4 Tools and Workflows](../../demos/tools-and-workflows/index.md#)
 
 ---
 ## Ideas in Lively4

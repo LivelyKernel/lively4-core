@@ -1,5 +1,7 @@
 # Lively4 Development Journal
 
+<lively-import src="../_navigation.html"></lively-import>
+
 <script>
 import moment from "src/external/moment.js"
 import github from "src/client/github.js"

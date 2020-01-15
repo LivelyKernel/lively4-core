@@ -16,6 +16,10 @@ export default class LivelyImport extends Morph {
     let src = await fetch("cached:" + url).then(r => r.text())
     
     if (url !== this.getAttribute("src")) return; // check if we are still on the same url...
+    
+    /*MD ## #TODO support markdown beside HTML    
+see [appendMarkdown](edit://src/components/tools/lively-container.js#appendMarkdown)
+    MD*/
     this.shadowRoot.innerHTML = "" + src 
     let container = lively.query(this, "lively-container")
     if (container) {

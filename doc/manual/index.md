@@ -1,4 +1,6 @@
-# Quick Manual for Lively4
+# Quick Manual for Lively4 #Deprecated 
+
+<lively-import src="../_navigation.html"></lively-import>
 
 - CTRL+Click opens Halo to drag, copy, edit all DOM elements directly on a web page
 - (CTRL+)RightClick opens context menu with various tools...

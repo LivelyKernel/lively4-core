@@ -1,6 +1,6 @@
 # Visualizations
 
-[demos](../../demos/visualizations/index.md)
+[demos](../../demos/visualizations/index.md) | [architecture](../architecture/visualizations.md)
 
 Lively provides various ways to create visualizations. They are usually embedded as `script` content in markdown pages. There the author can make use of more or less ready to use components that just need some configuration and filling with data, or the authors have to do everything themselves.
 

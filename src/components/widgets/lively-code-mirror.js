@@ -228,6 +228,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
     }));
+    
+    //load astCapabilities
+    this.astCapabilities(this.editor);
   }
 
   setEditor(editor) {
