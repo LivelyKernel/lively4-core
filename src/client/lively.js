@@ -455,7 +455,8 @@ export default class Lively {
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
     await System.import("src/client/protocols/wikipedia.js") 
-    await System.import("src/client/protocols/tmp.js") 
+    await System.import("src/client/protocols/tmp.js")
+    await System.import("src/client/protocols/bib.js")
     
     await System.import("src/client/protocols/microsoft.js") 
     

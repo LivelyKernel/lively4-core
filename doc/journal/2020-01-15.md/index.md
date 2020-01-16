@@ -17,3 +17,6 @@ import FileIndex from "src/client/fileindex.js"
 
 FileIndex.current().db.files.where("bibkey").equals("Bainomugisha2011BSP").toArray()
 ```
+
+
+And we can use fetch and browse it it <bib://Bainomugisha2011BSP>

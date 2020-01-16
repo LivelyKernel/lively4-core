@@ -19,7 +19,7 @@ import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
 import Bibliography from 'src/client/bibliography.js'
-
+import BibtexParser from 'src/external/bibtexParse.js'
 
 // import moment from "src/external/moment.js";  
 import diff from 'src/external/diff-match-patch.js';
@@ -117,7 +117,20 @@ export default class FileIndex {
         exports: 'url,*functions,*classes'
     }).upgrade(function () {
     })
-    
+
+    db.version(5).stores({
+        files: 'url,name,type,version,modified,options,title,*tags,*versions,bibkey',
+        bibref: '[url+key], key, url, type, title, author, year, *references, organization',
+        history: '[url+version],url,name,type,version,modified,options,title,*tags',
+        commits: 'hash,message,date',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
+        exports: 'url,*functions,*classes'
+    }).upgrade(function () {
+    })
+
     return db 
   }
 
@@ -160,6 +173,43 @@ export default class FileIndex {
     })
     return result
   }
+
+  
+  addBibrefs(file) {
+    if (file.url.match(/\.bib$/) && file.content) {    
+      console.log('[fileindex] addBibrefs')
+      var bib = BibtexParser.toJSON(file.content)
+      bib.forEach(entry => {
+        var refentry = {
+              key: entry.citationKey  || "undefined",
+              url: file.url,
+              source: BibtexParser.toBibtex([entry], false),
+              type: entry.entryType,
+              references: []
+         }
+        
+          if (entry.entryTags) {
+              refentry.authors = Bibliography.splitAuthors(entry.entryTags.author)
+              refentry.title = Bibliography.cleanTitle(entry.entryTags.title)
+              refentry.year = entry.entryTags.year
+              refentry.organization = entry.entryTags.organization
+          }
+         this.db.bibref.put(refentry)
+      })
+    }
+  }
+  
+  async updateAllBibrefs() {
+    var result = []
+    await this.db.transaction('rw', this.db.files, this.db.bibref, () => {
+      this.db.files.where("type").equals("file").each((file) => {
+        this.addBibrefs(file)
+      })
+    })
+    return result
+  }
+
+  
   
   async updateAllModuleSemantics() {
     await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
@@ -606,7 +656,6 @@ export default class FileIndex {
       return undefined
     }
   }
-
   
   async updateFile(url) {
     url = getBaseURL(url)
@@ -645,8 +694,8 @@ export default class FileIndex {
       modified: modified,
       versions: versions
     }
-    
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
+  
+    if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
       if (size < 100000) {
         let response = await fetch(url)
         file.version = response.clone().headers.get("fileversion")
@@ -669,9 +718,17 @@ export default class FileIndex {
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
+    
+    
     await this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
     })
+    
+    if (file.name.match(/\.bib$/)) {
+      await this.db.transaction("rw", this.db.bibref, () => { 
+        this.addBibrefs(file)
+      })
+    }
 
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
@@ -914,8 +971,13 @@ if (self.lively4fetchHandlers) {
       var method = "GET"
       if (options && options.method) method = options.method;
       
+      var extraSearchRoots = []    
+      if (window.lively && lively.preferences) {
+        extraSearchRoots = lively.preferences.get("ExtraSearchRoots")  
+      }
+    
       var serverURL = lively4url.replace(/\/[^/]*$/,"")
-      if (url.match(serverURL)) {
+      if (url.match(serverURL) || extraSearchRoots.find(ea => url.match(ea))) {
         if (method == "PUT") {
          //  
           await FileIndex.current().updateFile(url)
