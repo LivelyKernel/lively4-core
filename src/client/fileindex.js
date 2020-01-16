@@ -1,8 +1,6 @@
 /*
  * File Index for Static Analys and Searching
  *
- * #TODO How do we get this a) into a web worker and b) trigger this for changed files
- *
  */
 
 import Dexie from "src/external/dexie.js"
@@ -20,6 +18,7 @@ import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
 import Bibliography from 'src/client/bibliography.js'
 import BibtexParser from 'src/external/bibtexParse.js'
+import Markdown from "src/client/markdown.js"
 
 // import moment from "src/external/moment.js";  
 import diff from 'src/external/diff-match-patch.js';
@@ -118,8 +117,9 @@ export default class FileIndex {
     }).upgrade(function () {
     })
 
+    
     db.version(5).stores({
-        files: 'url,name,type,version,modified,options,title,*tags,*versions,bibkey',
+        files: 'url,name,type,version,modified,options,title,*tags,*versions,bibkey',  // references
         bibref: '[url+key], key, url, type, title, author, year, *references, organization',
         history: '[url+version],url,name,type,version,modified,options,title,*tags',
         commits: 'hash,message,date',
@@ -128,9 +128,30 @@ export default class FileIndex {
         classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
         versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
         exports: 'url,*functions,*classes'
-    }).upgrade(function () {
-    })
-
+    }).upgrade(function () {    })
+    
+    db.version(6).stores({
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references"
+    }).upgrade(function () {    })
+    
+    db.version(7).stores( {
+      bibref: '[url+key], key, url, type, title, *authors, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(8).stores({
+      
+    }).upgrade(function () {    })
+    db.version(9).stores({
+      bibliography: null
+    }).upgrade(function () {    })
+    db.version(10).stores({
+      bibref: null,
+    }).upgrade(function () {    })
+    db.version(11).stores({
+      bibliography: '[url+key], key, url, type, title, *authors, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(12).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -189,19 +210,21 @@ export default class FileIndex {
          }
         
           if (entry.entryTags) {
-              refentry.authors = Bibliography.splitAuthors(entry.entryTags.author)
-              refentry.title = Bibliography.cleanTitle(entry.entryTags.title)
-              refentry.year = entry.entryTags.year
-              refentry.organization = entry.entryTags.organization
+              refentry.authors = Bibliography.splitAuthors(entry.entryTags.author || entry.entryTags.Author)
+              refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
+              refentry.year = entry.entryTags.year || entry.entryTags.Year
+              refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
+              refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
+              
           }
-         this.db.bibref.put(refentry)
+         this.db.bibliography.put(refentry)
       })
     }
   }
   
   async updateAllBibrefs() {
     var result = []
-    await this.db.transaction('rw', this.db.files, this.db.bibref, () => {
+    await this.db.transaction('rw', this.db.files, this.db.bibliography, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addBibrefs(file)
       })
@@ -712,6 +735,9 @@ export default class FileIndex {
     if (file.content) {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
+      if (file.name.match(/\.md$/)) {
+        file.references = Markdown.extractReferences(file.content)
+      }
     }
     
     if (file.name.match(/\.pdf$/)) {
@@ -720,12 +746,13 @@ export default class FileIndex {
     
     
     
+    
     await this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
     })
     
     if (file.name.match(/\.bib$/)) {
-      await this.db.transaction("rw", this.db.bibref, () => { 
+      await this.db.transaction("rw", this.db.bibliography, () => { 
         this.addBibrefs(file)
       })
     }

@@ -11,6 +11,7 @@ MD*/
   title={Efficiency of projectional editing: A controlled experiment},
   author={Berger, Thorsten and V{\"o}lter, Markus and Jensen, Hans Peter and Dangprasert, Taweesap and Siegmund, Janet},
   booktitle={Proceedings of the 2016 24th ACM SIGSOFT International Symposium on Foundations of Software Engineering},
+  Keywords = {Foo, Bar},
   pages={763--774},
   year={2016},
   organization={ACM}
