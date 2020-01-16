@@ -11,7 +11,9 @@ export default class LivelyConnectionEditor extends Morph {
     this.activityCheckbox.addEventListener("click", () => this.activeChanged());
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
-    this.get("#textField").value = this.getAttribute("data-mydata") || 0;
+    this.get("#sourcePropertyField").value = this.getAttribute("data-mydata1") || 0;
+    this.get("#targetPropertyField").value = this.getAttribute("data-mydata2") || 0;
+    this.get("#modifyingCodeField").value = this.getAttribute("data-mydata3") || 0;
   }
 
   setConnection(connection) {
@@ -20,9 +22,11 @@ export default class LivelyConnectionEditor extends Morph {
     this.get("#sourceLabel").innerHTML = 'Source' + this.connection.getSource().toString();
     this.get("#targetLabel").innerHTML = 'Target' + this.connection.getTarget().toString();
     this.activityCheckbox.checked = this.connection.isActive;
-    this.addPictureForElement(this.connection.getSource(), this.sourcePicture)
-    this.addPictureForElement(this.connection.getTarget(), this.targetPicture)
-    this.get("#textField").value = this.connection.getModifyingCodeString()
+    this.addPictureForElement(this.connection.getSource(), this.sourcePicture);
+    this.addPictureForElement(this.connection.getTarget(), this.targetPicture);
+    this.get("#sourcePropertyField").value = this.connection.  getSourceProperty();
+    this.get("#targetPropertyField").value = this.connection.getTargetProperty();
+    this.get("#modifyingCodeField").value = this.connection.getModifyingCodeString();
   }
 
   addPictureForElement(element, container) {
@@ -62,7 +66,9 @@ export default class LivelyConnectionEditor extends Morph {
 
   onSaveButton() {
     //lively.openInspector(this.get("#textField").value);
-    this.connection.changeModifyingCode(this.get("#textField").value);
+    this.connection.setSourceProperty(this.get("#sourcePropertyField").value);
+    this.connection.setTargetProperty(this.get("#targetPropertyField").value);
+    this.connection.setModifyingCodeString(this.get("#modifyingCodeField").value);
   }
 
   startDrawingArrowToSource(from, to){
@@ -74,9 +80,11 @@ export default class LivelyConnectionEditor extends Morph {
 
   // store something that would be lost
   livelyPrepareSave() {
-    this.setAttribute("data-mydata", this.get("#textField").value
+    this.setAttribute("data-mydata1", this.get("#sourcePropertyField").value
     //How to do that with connection?
     );
+    this.setAttribute("data-mydata2", this.get("#targetPropertyField").value);
+    this.setAttribute("data-mydata3", this.get("#modifyingCodeField").value);
   }
 
   livelyPreMigrate() {

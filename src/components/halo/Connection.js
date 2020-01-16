@@ -91,8 +91,30 @@ export default class Connection {
     return this.ae
   }
   
+  getSourceProperty(){
+    return this.sourceProperty
+  }
+  
+  setSourceProperty(newProperty){
+    this.sourceProperty = newProperty;
+    this.activate();
+  }
+  
+  getTargetProperty(){
+    return this.targetProperty
+  }
+  
+  setTargetProperty(newProperty){
+    this.targetProperty = newProperty;
+    this.activate();
+  }
+  
   getModifyingCodeString(){
     return this.valueModifyingCode
+  }
+  
+  setModifyingCodeString(newCode){
+    this.valueModifyingCode = newCode
   }
   
   static get allConnections(){
@@ -103,9 +125,6 @@ export default class Connection {
     return 'Connection ' + this.id
   }
   
-  changeModifyingCode(newCode){
-    this.valueModifyingCode = newCode
-  }
 }
 
 // #UPDATE_INSTANCES
