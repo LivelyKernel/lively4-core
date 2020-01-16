@@ -22,6 +22,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.activityCheckbox.checked = this.connection.isActive;
     this.addPictureForElement(this.connection.getSource(), this.sourcePicture)
     this.addPictureForElement(this.connection.getTarget(), this.targetPicture)
+    this.get("#textField").value = this.connection.getModifyingCodeString()
   }
 
   addPictureForElement(element, container) {
@@ -60,7 +61,8 @@ export default class LivelyConnectionEditor extends Morph {
   }
 
   onSaveButton() {
-    lively.openInspector(this.get("#textField").value);
+    //lively.openInspector(this.get("#textField").value);
+    this.connection.changeModifyingCode(this.get("#textField").value);
   }
 
   startDrawingArrowToSource(from, to){

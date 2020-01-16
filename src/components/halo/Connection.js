@@ -21,6 +21,7 @@ export default class Connection {
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
     this.isActive = false
+    this.valueModifyingCode = '+"pt"'
   }
   
   activate(){
@@ -44,7 +45,14 @@ export default class Connection {
   
   activateAexpr(){
     this.ae = aexpr(() => this.source[this.sourceProperty]);
-    this.ae.onChange(svalue => this.target.style[this.targetProperty]= svalue + "pt");
+    this.ae.onChange(svalue => this.connectionFunction(svalue));
+  }
+  
+  async connectionFunction(sourceValue){
+    let code = sourceValue + this.valueModifyingCode
+    let result = await code.boundEval()
+    
+    this.target.style[this.targetProperty] = result
   }
   
   drawConnectionLine(){
@@ -83,12 +91,20 @@ export default class Connection {
     return this.ae
   }
   
+  getModifyingCodeString(){
+    return this.valueModifyingCode
+  }
+  
   static get allConnections(){
     return window.allConnections
   }
   
   connectionString(){
     return 'Connection ' + this.id
+  }
+  
+  changeModifyingCode(newCode){
+    this.valueModifyingCode = newCode
   }
 }
 
