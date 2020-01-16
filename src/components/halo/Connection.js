@@ -49,10 +49,13 @@ export default class Connection {
   }
   
   async connectionFunction(sourceValue){
-    let code = sourceValue + this.valueModifyingCode
+    /*let code = sourceValue + this.valueModifyingCode
     let result = await code.boundEval()
+    this.target.style[this.targetProperty] = result*/
     
-    this.target.style[this.targetProperty] = result
+    let code = "(target, sourceValue) => {target.style.height = sourceValue*1 + 'pt'}"
+    let myFunction = await code.boundEval()
+    myFunction(this.target, sourceValue)
   }
   
   drawConnectionLine(){

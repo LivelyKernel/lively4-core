@@ -14,6 +14,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.get("#sourcePropertyField").value = this.getAttribute("data-mydata1") || 0;
     this.get("#targetPropertyField").value = this.getAttribute("data-mydata2") || 0;
     this.get("#modifyingCodeField").value = this.getAttribute("data-mydata3") || 0;
+    this.get("#blah").editorLoaded().then(() => lively.notify('editor loaded', 1+this.get('#blah').value))
   }
 
   setConnection(connection) {
