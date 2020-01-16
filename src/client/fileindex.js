@@ -18,6 +18,9 @@ import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
 import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
+import Bibliography from 'src/client/bibliography.js'
+
+
 // import moment from "src/external/moment.js";  
 import diff from 'src/external/diff-match-patch.js';
 
@@ -89,7 +92,32 @@ export default class FileIndex {
         exports: 'url,*functions,*classes'
     }).upgrade(function () {
     })
+     db.version(3).stores({
+        files: 'url,name,type,version,modified,options,title,tags,versions',
+        bibliography: 'key, type, title, author, year, references, organization',
+        history: '[url+version],url,name,type,version,modified,options,title,tags',
+        commits: 'hash,message,date',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
+        exports: 'url,*functions,*classes'
+    }).upgrade(function () {
+    })
    
+    db.version(4).stores({
+        files: 'url,name,type,version,modified,options,title,tags,versions,bibkey',
+        bibliography: 'key, type, title, author, year, references, organization',
+        history: '[url+version],url,name,type,version,modified,options,title,tags',
+        commits: 'hash,message,date',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
+        exports: 'url,*functions,*classes'
+    }).upgrade(function () {
+    })
+    
     return db 
   }
 
@@ -117,6 +145,20 @@ export default class FileIndex {
     file.title = file.content.split("\n")[0].replace(/## /,"")
     file.tags = Strings.matchAll('(?: )(#[A-Za-z0-9]+)(?=[ \n])(?! ?{)', file.content)
       .map(ea => ea[1])
+  }
+  
+  async updateAllBibkeys() {
+    var result = []
+    await this.db.transaction('rw', this.db.files, () => {
+      this.db.files.where("type").equals("file").each((file) => {
+        if (file.url.match(/\.pdf$/)) {
+          file.bibkey = Bibliography.urlToKey(file.url)
+          this.db.files.put(file)
+          result.push(file)
+        }
+      })
+    })
+    return result
   }
   
   async updateAllModuleSemantics() {
@@ -622,6 +664,11 @@ export default class FileIndex {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
     }
+    
+    if (file.name.match(/\.pdf$/)) {
+      file.bibkey = Bibliography.urlToKey(file.url)
+    }
+    
     await this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
     })
@@ -630,6 +677,7 @@ export default class FileIndex {
       await this.addModuleSemantics(file)
       await this.addVersions(file)
     }
+    
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
   }
 

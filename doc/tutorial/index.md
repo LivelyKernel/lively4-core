@@ -1,6 +1,6 @@
 # Onboarding
 
-<lively-import src="https://lively-kernel.org/lively4/aexpr/doc/_navigation.html"></lively-import>
+<lively-import src="../_navigation.html"></lively-import>
 
 
 ## Guides

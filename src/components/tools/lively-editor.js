@@ -1,5 +1,8 @@
 /*MD
 # Lively 4 Text Editor
+
+[doc](../../../doc/tools/editor.md)
+
  - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  - updates change indicator while when editting,loading, and saving
  
@@ -680,17 +683,26 @@ export default class Editor extends Morph {
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
   }
   
-  toggleWidgets() {
+  async toggleWidgets() {
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
+    
+    var cm = codeMirrorComponent.editor
+    var cursorPos = cm.getCursor()
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
     if (allWidgets.length == 0) {
-      this.showEmbeddedWidgets()
+      await this.showEmbeddedWidgets()
     } else {
-      this.hideEmbeddedWidgets()
+      await this.hideEmbeddedWidgets()
     }
+    
+    // scroll back into view...
+    // #TODO make it stable...
+    // await lively.sleep(1000)
+    // cm.setCursor(cursorPos)
+    // cm.scrollTo(null, cm.charCoords(cursorPos).top)
   }
   
   /*MD ## Hooks MD*/

@@ -1,6 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<style data-src="../../doc/presentation/style.css"></style>
+<style data-src="./style.css"></style>
 
 
 <script>
@@ -68,9 +68,7 @@ And ordered:
 And **tasks**:
 
 - [ ] check boxes
-- [x] done
-- [ ] not done
-   - [ ] sub task
-   - [X] xxx
-
-
+- [ ] done
+- [ ] not done 
+  - [ ] sub task
+  - [x] xxx
