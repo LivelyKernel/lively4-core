@@ -19,7 +19,7 @@ export class BibScheme extends Scheme {
     var key = this.url.replace(/bib\:\/\//,"")
     
     
-    var entries = await FileIndex.current().db.bibref.where("key").equals(key).toArray()
+    var entries = await FileIndex.current().db.bibliography.where("key").equals(key).toArray()
     var entry = entries[0] || {} 
     
     var content = `<h2>[${key}]<br/>${entry.authors || ""}.  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
