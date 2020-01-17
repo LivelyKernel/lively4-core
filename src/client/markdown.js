@@ -22,6 +22,8 @@ Markdown.parseAndReplaceLatex(this.parentElement)
 </script>
 
 MD*/
+import Strings from "src/client/strings.js"
+
 
 export default class Markdown {
 
@@ -56,8 +58,7 @@ export default class Markdown {
           if (m) {
             var link = <a click={evt => {
               evt.preventDefault(); 
-              lively.notify("#TODO implement looking up reference: " + link.getAttribute("href"))
-              // lively.openBrowser(link.getAttribute("href"))
+              lively.openBrowser(link.href)
             }} href={"bib://" +m[1]}>{m[1]}</a>
             var replacement =  <span>{s.slice(0, m.index )}[{link}]{s.slice(m.index + m[0].length, s.length)}</span>
             ea.replaceChild(replacement, eaChild)
@@ -94,7 +95,23 @@ export default class Markdown {
     }
 
   }
-
+  
+    
+      /*MD
+<style>* {background-color:lightgray}</style>
+```javascript
+Markdown.extractReferences(`Hello @Foo1981HHC World\nggg @Bar2019X`)
+```
+<script>
+  import Markdown from 'src/client/markdown.js';
+  <pre>{eval(this.parentElement.querySelector("code").textContent)}</pre>
+</script>
+  MD*/
+  
+  static extractReferences(source) {
+     return Strings.matchAll(/@([A-Z][a-z]+[0-9][0-9][0-9][0-9][A-Z])/, source).map(ea => ea[1])
+  }
+  
   static parseAndReplaceLatex(element) {
     this.parseAndReplaceFigureRefs(element)
     this.parseAndReplaceBibrefs(element)
