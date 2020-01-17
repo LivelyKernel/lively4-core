@@ -1007,11 +1007,19 @@ if (self.lively4fetchHandlers) {
       if (url.match(serverURL) || extraSearchRoots.find(ea => url.match(ea))) {
         if (method == "PUT") {
          //  
-          await FileIndex.current().updateFile(url)
+          // #TODO #PerformanceBug move this to worker and do it async....
+          // await FileIndex.current().updateFile(url)
+          if (lively.fileIndexWorker) {
+            lively.fileIndexWorker.postMessage({message: "updateFile", url: url})
+          }
+          
         }
         if (method == "DELETE") {
           //
-          await FileIndex.current().dropFile(url)   
+          // await FileIndex.current().dropFile(url)   
+          if (lively.fileIndexWorker) {
+            lively.fileIndexWorker.postMessage({message: "dropFile", url: url})
+          }
         }
       }
     }

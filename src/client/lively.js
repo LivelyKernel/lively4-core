@@ -2077,11 +2077,10 @@ if (!window.lively || window.lively.name != "Lively") {
 } else {
   var oldLively = window.lively
   Lively.previous = oldLively
+  Lively.fileIndexWorker = oldLively.fileIndexWorker
   window.lively = Lively;
 }
 var modulesExported = Lively.exportModules();
-
-
 
 
 console.log(window.lively4stamp, "loaded lively");

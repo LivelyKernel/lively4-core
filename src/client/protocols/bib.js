@@ -13,7 +13,7 @@ export class BibScheme extends Scheme {
   
   resolve() {
     return true
-  }  
+  }    
   
   async GET(options) {
     var key = this.url.replace(/bib\:\/\//,"")
