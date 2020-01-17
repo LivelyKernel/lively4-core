@@ -27,68 +27,67 @@ import Strings from "src/client/strings.js"
 
 export default class Markdown {
 
+  
+  
+  // #helper 
+  static parseAndReplaceTextNode(ea, eaChild,  regex, func) {
+    var s = eaChild.textContent
+    var m = s.match(regex) 
+    if (m) {
+      ea.insertBefore(new Text(s.slice(0, m.index )), eaChild)
+      var replacement = func(m)
+      ea.insertBefore(replacement, eaChild)
+      var rest = new Text(s.slice(m.index + m[0].length, s.length))
+      ea.insertBefore(rest, eaChild)
+      eaChild.remove()
+      this.parseAndReplaceTextNode(ea, rest,  regex, func) // go on with the rest...
+    }
+  }
+  
+  
+  // #helper 
+  static parseAndReplace(element, regex, func) {
+    element.querySelectorAll("*").forEach(ea => {
+      ea.childNodes.forEach(eaChild => {
+        if (eaChild instanceof Text) {
+          this.parseAndReplaceTextNode(ea, eaChild, regex, func)
+        }
+      })
+    })
+  }
+
+  static parseAndReplaceBibrefs(element) {
+    this.parseAndReplace(element, /\@([A-Za-z0-9]+)/, (m) => {
+      var link = <a click={evt => {
+        evt.preventDefault(); 
+        lively.openBrowser(link.href)
+      }} href={"bib://" +m[1]}>{m[1]}</a>
+      return link 
+    })
+  }
+  
+  
   static parseAndReplaceFigureRefs(element) {
     element.querySelectorAll("lively-drawio").forEach(ea => {
       var title = <div class="figuretitle"><a id={ea.getAttribute("alt")}></a><b>Figure {ea.getAttribute("alt")}. </b>{ea.getAttribute("title")}</div>
       ea.parentElement.appendChild(title)
     })
+    
     // late parse and convert latex figure references
-    element.querySelectorAll("*").forEach(ea => {
-      ea.childNodes.forEach(eaChild => {
-        if (eaChild instanceof Text) {
-          var s = eaChild.textContent
-          var m = s.match(/@fig:([A-Za-z0-9]+)/)
-          if (m) {
-            var replacement =  <span>{s.slice(0, m.index )}<a href={"#" +m[1]}>{m[1]}</a>{s.slice(m.index + m[0].length, s.length)}</span>
-            ea.replaceChild(replacement, eaChild)
-
-          }
-        }
-      })
-
-    })
+    this.parseAndReplace(element, /@fig:([A-Za-z0-9]+)/, (m) => <a href={"#" +m[1]}>{m[1]}</a>)
   }
-
-  static parseAndReplaceBibrefs(element) {
-    element.querySelectorAll("*").forEach(ea => {
-      ea.childNodes.forEach(eaChild => {
-        if (eaChild instanceof Text) {
-          var s = eaChild.textContent
-          var m = s.match(/\@([A-Za-z0-9]+)/) // #TODO more... 
-          if (m) {
-            var link = <a click={evt => {
-              evt.preventDefault(); 
-              lively.openBrowser(link.href)
-            }} href={"bib://" +m[1]}>{m[1]}</a>
-            var replacement =  <span>{s.slice(0, m.index )}{link}{s.slice(m.index + m[0].length, s.length)}</span>
-            ea.replaceChild(replacement, eaChild) // replace with 3 elements
-          }
-        }
-      })
-    })
-  }
+    
   static parseAndReplaceFootenotes(element) {
     var count = 1
     var footnotes = []
-    element.querySelectorAll("*").forEach(ea => {
-      ea.childNodes.forEach(eaChild => {
-        if (eaChild instanceof Text) {
-          var s = eaChild.textContent
-          var m = s.match(/(\^\[([^\]]*?)\])/) // 
-          if (m) {
-            lively.notify("M " + m)
-            var footnote = {index: count++, content: m[2], id() {  return "footnote_" + this.index} }
-            var link = <a href={"#" + footnote.id()}>{footnote.index}</a>
-
-            var replacement =  <span>{s.slice(0, m.index )}<sup>{link}</sup>{s.slice(m.index + m[0].length, s.length)}</span>
-            ea.replaceChild(replacement, eaChild)
-
-            footnotes.push(footnote)
-          }
-        }
-      })
+    // #TODO what about markup in that markup?: ^[*Exposé* shows an overview ]
+    this.parseAndReplace(element, /(\^\[([^\]]*?)\])/, (m) => {
+      var footnote = {index: count++, content: m[2], id() {  return "footnote_" + this.index} }
+      footnotes.push(footnote)
+      var link = <sup><a href={"#" + footnote.id()}>{footnote.index}</a></sup>
+      return link
     })
-
+    
     if (footnotes.length > 0) {
       var footnotesDiv = <div><h3>Footnotes</h3><ol>{...footnotes.map(ea => <li><a id={ea.id()}></a>{ea.content}</li>)}</ol></div>
       element.appendChild(footnotesDiv)
