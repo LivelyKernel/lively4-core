@@ -1,2 +1,10 @@
 /* included by all ast-nodes, with access to their shadow elements */
 
+.keyword {
+  border: var(--my-border, 2px green solid);
+}
+
+.notation {
+  border: var(--my-border, 2px green solid);
+}
+
