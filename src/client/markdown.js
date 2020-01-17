@@ -54,14 +54,14 @@ export default class Markdown {
       ea.childNodes.forEach(eaChild => {
         if (eaChild instanceof Text) {
           var s = eaChild.textContent
-          var m = s.match(/\[\@([A-Za-z0-9]+)\]/)
+          var m = s.match(/\@([A-Za-z0-9]+)/) // #TODO more... 
           if (m) {
             var link = <a click={evt => {
               evt.preventDefault(); 
               lively.openBrowser(link.href)
             }} href={"bib://" +m[1]}>{m[1]}</a>
-            var replacement =  <span>{s.slice(0, m.index )}[{link}]{s.slice(m.index + m[0].length, s.length)}</span>
-            ea.replaceChild(replacement, eaChild)
+            var replacement =  <span>{s.slice(0, m.index )}{link}{s.slice(m.index + m[0].length, s.length)}</span>
+            ea.replaceChild(replacement, eaChild) // replace with 3 elements
           }
         }
       })
