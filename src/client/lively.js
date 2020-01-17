@@ -323,6 +323,7 @@ export default class Lively {
     });
   }
   static async fillTemplateStyle(element, url) {
+    // #TODO bug, sometimes the cache invalidation... does not work #BUG
     return fetch("cached:" + url).then(r => r.text()).then(css => {
       // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
       element.innerHTML = css;
