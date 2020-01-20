@@ -24,6 +24,7 @@ export default class RestScheme extends Scheme {
     return headers;
   }
     
+
   async api(method="GET", path, options={}) {
     var headers = await this.getDefaultHeaders(options.headers)
     var resp = await fetch(this.baseURL + path, {

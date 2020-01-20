@@ -11,6 +11,7 @@ MD*/
   title={Efficiency of projectional editing: A controlled experiment},
   author={Berger, Thorsten and V{\"o}lter, Markus and Jensen, Hans Peter and Dangprasert, Taweesap and Siegmund, Janet},
   booktitle={Proceedings of the 2016 24th ACM SIGSOFT International Symposium on Foundations of Software Engineering},
+  Keywords = {Foo, Bar},
   pages={763--774},
   year={2016},
   organization={ACM}
@@ -45,6 +46,63 @@ import FileIndex from 'src/client/fileindex.js'
 
 
 export default class Bibliography {
+
+  
+      /*MD
+<style>* {background-color:lightgray}</style>
+```javascript
+[Bibliography.splitAuthors("Abi Bulbus and Deus, Curus "),
+Bibliography.splitAuthors(`Dan Ingalls and Marko R\\"{o}der`)]
+```
+
+<script>
+  // #TODO refactor and hide tooling code
+  import Bibliography from 'src/client/bibliography.js';
+  var start = performance.now();
+  var result =   eval(this.parentElement.querySelector("code").textContent);
+  var time = performance.now() - start;
+  <div>{result} <i>({time} ms)</i></div>
+</script>
+  MD*/
+
+  
+  
+  static splitAuthors(authorString="") {
+     return authorString.split(" and ").map(ea => {
+       var m = ea.match(/(.*),(.*)/)
+       if (m) {
+         return m[2] + " " + m[1] // take care of comma separated author
+       } else {
+         return ea
+       }
+     }).map(ea => ea.replace(/[{}]/g,"")
+            .replace(/\\"a/g,"ä").replace(/\\"A/g,"Ä") // take care of some umlauts
+            .replace(/\\"o/g,"ö").replace(/\\"O/g,"Ö")
+            .replace(/\\"u/g,"ü").replace(/\\"U/g,"Ü")
+            .replace(/^ */,"").replace(/ *$/,"").replace(/ +/g," ")) // unify whitespace...
+  }
+  
+  
+  
+    /*MD
+<style>* {background-color:lightgray}</style>
+```javascript
+Bibliography.cleanTitle("{{This is my Title}")
+```
+
+<script>
+  // #TODO refactor and hide tooling code
+  import Bibliography from 'src/client/bibliography.js';
+  var start = performance.now();
+  var result =   eval(this.parentElement.querySelector("code").textContent);
+  var time = performance.now() - start;
+  <div>{result} <i>({time} ms)</i></div>
+</script>
+  MD*/
+  
+  static cleanTitle(titleString="") {
+     return titleString.replace(/[{}]/g,"")
+  }
   
   
   // #TODO this method obviously will need a lot of tweaking...

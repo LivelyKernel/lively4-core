@@ -4,86 +4,89 @@ window.__expressionAnalysisMode__ = false;
 
 window.__currentActiveExpression__ = false;
 
-// maps from target ids to active expressions
-window.__activeExpressionsMap__ = new Map();
+export function reset() {
+  // maps from target ids to active expressions
+  window.__proxyIdToActiveExpressionsMap__ = new Map();
 
-const basicHandlerFactory = id =>
-  ({
-    get: (target, property) => {
-      if (window.__expressionAnalysisMode__) {
-        let dependencies = window.__activeExpressionsMap__.get(id);
-        
-        dependencies.add(window.__currentActiveExpression__);
-        window.__activeExpressionsMap__.set(id, dependencies);
-      }
-      return Reflect.get(target, property);
-    },
-
-    set: (target, property, value) => {
-      Reflect.set(target, property, value);
-
-      window.__activeExpressionsMap__.get(id).forEach(
-        (dependentActiveExpression) => dependentActiveExpression.notifyOfUpdate()
-      )
-      return true;
-    }
-  });
-
-
-export function wrapObject(what) {
-  const id = window.__activeExpressionsMap__.size;
-  const basicHandler = basicHandlerFactory(id);
-
-  window.__activeExpressionsMap__.set(id, new Set());
-  const proxy = new Proxy(what, basicHandler);
-  return proxy;
+  // maps from proxy to target
+  window.__proxyToTargetMap__ = new WeakMap();
 }
 
-export function wrapArray(what) {
-  
-  const id = window.__activeExpressionsMap__.size;
-  const basicHandler = basicHandlerFactory(id);
+reset();
 
-  const functionHandler = {
-    apply: (target, thisArg, argumentsList) => {
-      target.bind(thisArg)(...argumentsList);
-      window.__activeExpressionsMap__.get(id).forEach(
-        (dependentActiveExpression) => dependentActiveExpression.notifyOfUpdate()
-      )
+const basicHandlerFactory = id => ({
+  get: (target, property) => {
+    if (window.__expressionAnalysisMode__) {
+      let dependencies = window.__proxyIdToActiveExpressionsMap__.get(id);
+
+      dependencies.add(window.__currentActiveExpression__);
+      window.__proxyIdToActiveExpressionsMap__.set(id, dependencies);
     }
-  }
-  
+    if (typeof target[property] === 'function') {
+      return Reflect.get(target, property).bind(target);
+    }
+    return Reflect.get(target, property);
+  },
 
+  set: (target, property, value) => {
+    Reflect.set(target, property, value);
 
-  const arrayMethods = Object.getOwnPropertyNames(Array.prototype).filter(propName => typeof what[propName] === 'function');
-  arrayMethods.forEach(arrayMethod => what[arrayMethod] = new Proxy(what[arrayMethod], functionHandler))
-  
-  window.__activeExpressionsMap__.set(id, new Set());
-  const proxy = new Proxy(what, basicHandler);
-  return proxy;
+    window.__proxyIdToActiveExpressionsMap__
+      .get(id)
+      .forEach(dependentActiveExpression =>
+        dependentActiveExpression.notifyOfUpdate()
+      );
+    return true;
+  },
+});
+
+const functionHandlerFactory = id => ({
+  apply: (target, thisArg, argumentsList) => {
+    thisArg = window.__proxyToTargetMap__.get(thisArg) || thisArg;
+
+    if (window.__expressionAnalysisMode__) {
+      return target.bind(thisArg)(...argumentsList);
+    }
+    const result = target.bind(thisArg)(...argumentsList);
+    window.__proxyIdToActiveExpressionsMap__
+      .get(id)
+      .forEach(dependentActiveExpression =>
+        dependentActiveExpression.notifyOfUpdate()
+      );
+    return result;
+  },
+});
+
+export function unwrap(proxy) {
+  return window.__proxyToTargetMap__.get(proxy) || proxy;
 }
 
-
-export function wrapSet(what) {
-  
-  const id = window.__activeExpressionsMap__.size;
+export function wrap(typeOfWhat, what) {
+  if (window.__proxyToTargetMap__.has(what)) return what;
+  const id = window.__proxyIdToActiveExpressionsMap__.size;
   const basicHandler = basicHandlerFactory(id);
 
-  const functionHandler = {
-    apply: (target, thisArg, argumentsList) => {
-      target.bind(thisArg)(...argumentsList);
-      window.__activeExpressionsMap__.get(id).forEach(
-        (dependentActiveExpression) => dependentActiveExpression.notifyOfUpdate()
-      )
+  if (typeOfWhat !== 'Object') {
+    
+    const prototypes = {
+      "Set": Set.prototype,
+      "Map": Map.prototype,
+      "Array": Array.prototype
     }
+    
+    const functionHandler = functionHandlerFactory(id);
+    const methods = Object.getOwnPropertyNames(prototypes[typeOfWhat]).filter(
+      propName => typeof what[propName] === 'function'
+    );
+    methods.forEach(
+      method => (what[method] = new Proxy(what[method], functionHandler))
+    );
   }
-  
 
-  const setMethods = Object.getOwnPropertyNames(Set.prototype).filter(propName => typeof what[propName] === 'function');
-  setMethods.forEach(setMethod => what[setMethod] = new Proxy(what[setMethod], functionHandler))
-  
-  window.__activeExpressionsMap__.set(id, new Set());
+  window.__proxyIdToActiveExpressionsMap__.set(id, new Set());
   const proxy = new Proxy(what, basicHandler);
+  window.__proxyToTargetMap__.set(proxy, what);
+
   return proxy;
 }
 
@@ -95,21 +98,16 @@ export function aexpr(func, ...arg) {
 export class ProxiesActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
     super(func, ...args);
-    this.updateDependencies();
+    this.notifyOfUpdate();
   }
 
   notifyOfUpdate() {
-    this.updateDependencies();
-    this.checkAndNotify();
-  }
-
-  updateDependencies() {
     window.__expressionAnalysisMode__ = true;
-
     window.__currentActiveExpression__ = this;
 
     this.func();
-  window.__expressionAnalysisMode__ = false;
+    this.checkAndNotify();
+
+    window.__expressionAnalysisMode__ = false;
   }
 }
-

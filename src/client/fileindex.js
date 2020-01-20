@@ -1,8 +1,6 @@
 /*
  * File Index for Static Analys and Searching
  *
- * #TODO How do we get this a) into a web worker and b) trigger this for changed files
- *
  */
 
 import Dexie from "src/external/dexie.js"
@@ -19,7 +17,8 @@ import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
 import Bibliography from 'src/client/bibliography.js'
-
+import BibtexParser from 'src/external/bibtexParse.js'
+import Markdown from "src/client/markdown.js"
 
 // import moment from "src/external/moment.js";  
 import diff from 'src/external/diff-match-patch.js';
@@ -117,7 +116,42 @@ export default class FileIndex {
         exports: 'url,*functions,*classes'
     }).upgrade(function () {
     })
+
     
+    db.version(5).stores({
+        files: 'url,name,type,version,modified,options,title,*tags,*versions,bibkey',  // references
+        bibref: '[url+key], key, url, type, title, author, year, *references, organization',
+        history: '[url+version],url,name,type,version,modified,options,title,*tags',
+        commits: 'hash,message,date',
+        links: '[link+url], link, url, location, status',
+        modules: 'url, *dependencies',
+        classes: '[name+url], name, url, loc, start, end, superClassName, superClassUrl, [superClassName+superClassUrl], *methods', 
+        versions: '[class+url+method+commitId+date], [class+method], [class+url+action], [class+url+method], class, url, method, commitId, date, action, user',
+        exports: 'url,*functions,*classes'
+    }).upgrade(function () {    })
+    
+    db.version(6).stores({
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references"
+    }).upgrade(function () {    })
+    
+    db.version(7).stores( {
+      bibref: '[url+key], key, url, type, title, *authors, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(8).stores({
+      
+    }).upgrade(function () {    })
+    db.version(9).stores({
+      bibliography: null
+    }).upgrade(function () {    })
+    db.version(10).stores({
+      bibref: null,
+    }).upgrade(function () {    })
+    db.version(11).stores({
+      bibliography: '[url+key], key, url, type, title, *authors, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(12).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -160,6 +194,45 @@ export default class FileIndex {
     })
     return result
   }
+
+  
+  addBibrefs(file) {
+    if (file.url.match(/\.bib$/) && file.content) {    
+      console.log('[fileindex] addBibrefs')
+      var bib = BibtexParser.toJSON(file.content)
+      bib.forEach(entry => {
+        var refentry = {
+              key: entry.citationKey  || "undefined",
+              url: file.url,
+              source: BibtexParser.toBibtex([entry], false),
+              type: entry.entryType,
+              references: []
+         }
+        
+          if (entry.entryTags) {
+              refentry.authors = Bibliography.splitAuthors(entry.entryTags.author || entry.entryTags.Author)
+              refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
+              refentry.year = entry.entryTags.year || entry.entryTags.Year
+              refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
+              refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
+              
+          }
+         this.db.bibliography.put(refentry)
+      })
+    }
+  }
+  
+  async updateAllBibrefs() {
+    var result = []
+    await this.db.transaction('rw', this.db.files, this.db.bibliography, () => {
+      this.db.files.where("type").equals("file").each((file) => {
+        this.addBibrefs(file)
+      })
+    })
+    return result
+  }
+
+  
   
   async updateAllModuleSemantics() {
     await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
@@ -606,7 +679,6 @@ export default class FileIndex {
       return undefined
     }
   }
-
   
   async updateFile(url) {
     url = getBaseURL(url)
@@ -645,8 +717,8 @@ export default class FileIndex {
       modified: modified,
       versions: versions
     }
-    
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(x?html))$/)) {
+  
+    if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
       if (size < 100000) {
         let response = await fetch(url)
         file.version = response.clone().headers.get("fileversion")
@@ -663,15 +735,27 @@ export default class FileIndex {
     if (file.content) {
       this.extractTitleAndTags(file) 
       this.addLinks(file)
+      if (file.name.match(/\.md$/)) {
+        file.references = Markdown.extractReferences(file.content)
+      }
     }
     
     if (file.name.match(/\.pdf$/)) {
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
+    
+    
+    
     await this.db.transaction("rw", this.db.files, () => { 
       this.db.files.put(file) 
     })
+    
+    if (file.name.match(/\.bib$/)) {
+      await this.db.transaction("rw", this.db.bibliography, () => { 
+        this.addBibrefs(file)
+      })
+    }
 
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
@@ -914,15 +998,28 @@ if (self.lively4fetchHandlers) {
       var method = "GET"
       if (options && options.method) method = options.method;
       
+      var extraSearchRoots = []    
+      if (window.lively && lively.preferences) {
+        extraSearchRoots = lively.preferences.get("ExtraSearchRoots")  
+      }
+    
       var serverURL = lively4url.replace(/\/[^/]*$/,"")
-      if (url.match(serverURL)) {
+      if (url.match(serverURL) || extraSearchRoots.find(ea => url.match(ea))) {
         if (method == "PUT") {
          //  
-          await FileIndex.current().updateFile(url)
+          // #TODO #PerformanceBug move this to worker and do it async....
+          // await FileIndex.current().updateFile(url)
+          if (lively.fileIndexWorker) {
+            lively.fileIndexWorker.postMessage({message: "updateFile", url: url})
+          }
+          
         }
         if (method == "DELETE") {
           //
-          await FileIndex.current().dropFile(url)   
+          // await FileIndex.current().dropFile(url)   
+          if (lively.fileIndexWorker) {
+            lively.fileIndexWorker.postMessage({message: "dropFile", url: url})
+          }
         }
       }
     }

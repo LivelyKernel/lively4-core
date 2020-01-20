@@ -323,6 +323,7 @@ export default class Lively {
     });
   }
   static async fillTemplateStyle(element, url) {
+    // #TODO bug, sometimes the cache invalidation... does not work #BUG
     return fetch("cached:" + url).then(r => r.text()).then(css => {
       // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
       element.innerHTML = css;
@@ -455,7 +456,8 @@ export default class Lively {
     await System.import("demos/plex/plex-scheme.js") // depends on me
     await System.import("src/client/protocols/todoist.js") 
     await System.import("src/client/protocols/wikipedia.js") 
-    await System.import("src/client/protocols/tmp.js") 
+    await System.import("src/client/protocols/tmp.js")
+    await System.import("src/client/protocols/bib.js")
     
     await System.import("src/client/protocols/microsoft.js") 
     
@@ -2075,11 +2077,10 @@ if (!window.lively || window.lively.name != "Lively") {
 } else {
   var oldLively = window.lively
   Lively.previous = oldLively
+  Lively.fileIndexWorker = oldLively.fileIndexWorker
   window.lively = Lively;
 }
 var modulesExported = Lively.exportModules();
-
-
 
 
 console.log(window.lively4stamp, "loaded lively");
