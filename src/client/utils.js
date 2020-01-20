@@ -390,7 +390,11 @@ export function updateEditors(url, excludedEditors = []) {
   const editorsToUpdate = editors.filter(ea => ea.getURLString().replace(/[#?].*/,"") === url && !ea.textChanged && !excludedEditors.includes(ea))
 
   editorsToUpdate.forEach(ea => {
+    var codeMirror = ea.get("lively-code-mirror")
+    var scrollInfo = codeMirror.editor.getScrollInfo()
     ea.loadFile()
+    // preserve scroll position during updating
+    codeMirror.editor.scrollTo(null, scrollInfo.top)
   })
 }
 

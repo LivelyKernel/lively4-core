@@ -45,11 +45,15 @@ export default class ASTCapabilities {
   get programPath() {
     var myself = this;
     if (!this.myProgramPath) {
-      this.sourceCode.traverseAsAST({
-        Program(path) {
-          myself.myProgramPath = path;
-        }
-      });
+      try {
+        this.sourceCode.traverseAsAST({
+          Program(path) {
+            myself.myProgramPath = path;
+          }
+        });
+      } catch (err) {
+        return null;
+      }
     }
 
     return this.myProgramPath;
@@ -57,6 +61,7 @@ export default class ASTCapabilities {
 
   codeChanged() {
     this.myProgramPath = undefined;
+    this.updateColorPicker();
   }
 
   /** 
@@ -334,10 +339,55 @@ export default class ASTCapabilities {
 
   getBindings(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
+    if (!identifier) return;
+    if (identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
-      return [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+      const identifierPaths = [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+      if (identifierPaths.includes(identifier)) {
+        return identifierPaths;
+      }
     }
+
+    return this.getClassBindings(identifier);
+  }
+
+  getClassBindings(identifier) {
+    if (t.isMemberExpression(identifier.parent)) {
+      if (t.isThisExpression(identifier.parent.object)) {
+        let classPath = this.getClassPath(this.programPath);
+        let methodPath = this.getMethodPath(classPath, identifier.node.name);
+        if (methodPath) {
+          return this.getClassMethodBindings(methodPath);
+        } else {
+          return this.getMemberBindings(identifier);
+        }
+      }
+    } else if (t.isClassMethod(identifier.parent)) {
+      return this.getClassMethodBindings(identifier.parentPath);
+    }
+  }
+
+  getClassMethodBindings(classMethod) {
+    var methodIdentifier;
+    classMethod.traverse({
+      Identifier(path) {
+        path.stop();
+        methodIdentifier = path;
+      }
+    });
+    return [methodIdentifier, ...this.getMemberBindings(methodIdentifier)];
+  }
+
+  getMemberBindings(identifier) {
+    var members = [];
+    this.programPath.traverse({
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent) && t.isThisExpression(path.parent.object) && path.node.name === identifier.node.name) {
+          members.push(path);
+        }
+      }
+    });
+    return members;
   }
 
   getNextASTNodeInListWith(condition, pathList, path) {
@@ -354,9 +404,13 @@ export default class ASTCapabilities {
   /** 
    * Select the text corresponding to the given nodes in the editor
    */
-  selectNodes(nodes) {
+  selectNodes(nodes, selectStringContentsOnly = false) {
     const ranges = nodes.map(node => {
       const [anchor, head] = range(node.loc).asCM();
+      if (selectStringContentsOnly && t.isStringLiteral(node)) {
+        anchor.ch++;
+        head.ch--;
+      }
       return { anchor, head };
     });
     // #TODO: include primary selection
@@ -365,13 +419,14 @@ export default class ASTCapabilities {
     } else {
       this.editor.setSelections(ranges);
     }
+    this.codeMirror.scrollIntoView({ from: ranges[0].head, to: ranges[0].anchor }, 120);
   }
 
   /** 
    * Select the text corresponding to the given paths in the editor
    */
-  selectPaths(paths) {
-    this.selectNodes(paths.map(path => path.node));
+  selectPaths(paths, selectStringContentsOnly = false) {
+    this.selectNodes(paths.map(path => path.node), selectStringContentsOnly);
   }
 
   /** 
@@ -411,7 +466,7 @@ export default class ASTCapabilities {
 
   getColorLiterals(programPath) {
     let colorPaths = [];
-    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}/g;
+    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}$/g;
     programPath.traverse({
       StringLiteral(path) {
         if (path.node.value.match(colorRegex)) {
@@ -485,12 +540,13 @@ export default class ASTCapabilities {
     } else {
       let classPath = this.getClassPath(this.programPath);
       let methodPath = this.getMethodPath(classPath, identName);
-      const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
-      const functionUrls = await this.getFunctionExportURLs(identName);
-      const urls = classUrls.concat(functionUrls);
       if (methodPath) {
-        this.selectPaths([methodPath]);
+        this.selectNodes([methodPath.node.key]);
       } else {
+        const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
+        const functionUrls = await this.getFunctionExportURLs(identName);
+        const urls = classUrls.concat(functionUrls);
+
         urls.forEach(url => lively.openBrowser(url, true).then(container => {
           container.asyncGet("#editor").then(async livelyEditor => {
             let newCodeMirror = livelyEditor.livelyCodeMirror();
@@ -526,6 +582,38 @@ export default class ASTCapabilities {
   }
   /*MD ## Factoring Menu MD*/
 
+  /*MD ### Factoring Menu Helper Methods MD*/
+
+  // returns innermostDescribePath 
+  isInDescribe(path) {
+    let possiblePath = this.isIn("CallExpression", path, "describe");
+
+    while (possiblePath !== null) {
+      if (possiblePath.node && possiblePath.node.callee.name === "describe") {
+        break;
+      }
+      possiblePath = this.isIn("CallExpression", possiblePath.parentPath, "describe");
+    }
+    return possiblePath;
+  }
+
+  isIn(type, path) {
+    while (path !== null) {
+      if (this.isDirectlyIn(type, path)) {
+        return path;
+      }
+      path = path.parentPath;
+    }
+    return null;
+  }
+
+  isDirectlyIn(type, path) {
+    if (type instanceof Array) {
+      return type.map(elem => this.isDirectlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
+    }
+    return path.node && path.node.type === type;
+  }
+
   async openMenu() {
 
     function fa(name, ...modifiers) {
@@ -533,36 +621,6 @@ export default class ASTCapabilities {
     }
 
     const myself = this;
-
-    // returns innermostDescribePath 
-    function isInDescribe(path) {
-      let possiblePath = isIn("CallExpression", path, "describe");
-
-      while (possiblePath !== null) {
-        if (possiblePath.node && possiblePath.node.callee.name === "describe") {
-          break;
-        }
-        possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
-      }
-      return possiblePath;
-    }
-
-    function isIn(type, path) {
-      while (path !== null) {
-        if (directlyIn(type, path)) {
-          return path;
-        }
-        path = path.parentPath;
-      }
-      return null;
-    }
-
-    function directlyIn(type, path) {
-      if (type instanceof Array) {
-        return type.map(elem => directlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
-      }
-      return path.node && path.node.type === type;
-    }
     /*MD ### Generate Submenus MD*/
 
     async function generateGenerationSubmenu() {
@@ -575,14 +633,14 @@ export default class ASTCapabilities {
       const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
 
       //add testcase if in describe
-      if (isInDescribe(selectedPath)) {
+      if (myself.isInDescribe(selectedPath)) {
         submenu.unshift(['Testcase', () => {
           menu.remove();
           myself.generateTestCase();
         }, '→', fa('suitcase')]);
       }
 
-      if (directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
+      if (myself.isDirectlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
         submenu.push(['Getter', () => {
           menu.remove();
           myself.generateGetter();
@@ -682,19 +740,19 @@ export default class ASTCapabilities {
   }
 
   generateTestCase() {
-    this.generateCodeFragment("should work properly", id => this.compileTestCase(id.identifier));
+    this.generateCodeFragment("ExplainWhatIsTested", id => this.compileTestCase(id.identifier));
   }
 
   generateGetter() {
-    this.generateCodeFragment("myCoolProperty", id => this.compileGetter(id.identifier));
+    this.generateCodeFragment("NameThisGetter", id => this.compileGetter(id.identifier));
   }
 
   generateSetter() {
-    this.generateCodeFragment("myCoolProperty", id => this.compileSetter(id.identifier));
+    this.generateCodeFragment("NameThisSetter", id => this.compileSetter(id.identifier));
   }
 
   generateClass() {
-    this.generateCodeFragment("Foo", id => this.compileClass(id.identifier));
+    this.generateCodeFragment("SetClassName", id => this.compileClass(id.identifier));
   }
 
   async generateCodeFragment(identifier, replacementGenerator) {
@@ -707,20 +765,16 @@ export default class ASTCapabilities {
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          let path = this.getPathBeforeCursor(programPath, selection.start);
-          //const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+          let pathBefore = this.getPathBeforeCursor(programPath, selection.start);
+          let pathWithin = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+          // we're on top of the program
           generatedCode = replacementGenerator(identifierObject);
-          if (path === undefined) {
-            programPath.pushContainer('body', generatedCode);
+          if (pathBefore === undefined) {
+            pathWithin.unshiftContainer('body', generatedCode);
+          } else if (this.isDirectlyIn(pathWithin.type, pathBefore.parentPath)) {
+            pathBefore.insertAfter(generatedCode);
           } else {
-            //if(path.scope.hasBinding(identifier)) {
-            //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
-            //}
-            if (path.parentKey === "body") {
-              path.insertAfter(generatedCode);
-            } else {
-              path.parentPath.get('body').unshiftContainer('body', generatedCode);
-            }
+            pathWithin.unshiftContainer('body', generatedCode);
           }
         }
       }
@@ -728,14 +782,19 @@ export default class ASTCapabilities {
 
     var pathToSelect;
     this.programPath.traverse({
+      StringLiteral(path) {
+        if (!pathToSelect && path.node.value == identifierObject.identifier) {
+          pathToSelect = path;
+        }
+      },
       Identifier(path) {
-        if (path.parent.type == generatedCode.type && path.node.name == identifierObject.identifier) {
+        if (path.node.name == identifierObject.identifier) {
           pathToSelect = path;
           path.stop();
         }
       }
     });
-    this.selectPaths([pathToSelect]);
+    this.selectPaths([pathToSelect], true);
 
     this.scrollTo(scrollInfo);
     this.focusEditor();
@@ -1203,7 +1262,7 @@ export default class ASTCapabilities {
       top: scrollInfo.top,
       right: scrollInfo.left + scrollInfo.width,
       bottom: scrollInfo.top + scrollInfo.height
-    });
+    }, 120);
   }
 
   /*MD ## Utilities MD*/
@@ -1282,24 +1341,31 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
+    debugger;
     return locations.map(loc => loc.url); //.replace(lively4url,''));
   }
 
   /*MD ## Color Picker MD*/
 
   updateColorPicker() {
+    const pPath = this.programPath;
+    if (!pPath) {
+      return;
+    }
     const old = this.editor.getAllMarks();
     old.forEach(marker => {
       if (marker.type === "bookmark") {
         marker.clear();
       }
     });
-    const colorLiterals = this.getColorLiterals(this.programPath);
+    const colorLiterals = this.getColorLiterals(pPath);
     colorLiterals.forEach(path => {
-      const location = { line: path.node.loc.end.line - 1, column: path.node.loc.end.column };
+      const location = { line: path.node.loc.end.line - 1, ch: path.node.loc.end.column };
       var picker = document.createElement("input");
       picker.type = "color";
       picker.value = path.node.value;
+      picker.height = "15";
+      picker.width = "15";
       const bookmark = this.editor.setBookmark(location, picker);
       picker.addEventListener('change', event => {
         const currentLocation = bookmark.find();
@@ -1309,13 +1375,14 @@ export default class ASTCapabilities {
   }
 
   updateColor(currentLocation, color) {
+    var location = { anchor: currentLocation, head: currentLocation };
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          const path = this.getPathBeforeCursor(programPath, currentLocation);
-          if (t.isVariableDeclarator(path.node)) {
-            path.node.init.value = color;
+          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isStringLiteral(path.node)) {
+            path.node.value = color;
           }
         }
       }
