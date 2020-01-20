@@ -580,7 +580,6 @@ export class CachedRequest extends Scheme {
 
   static async invalidateCache(url) {
     try {
-      debugger
       var me = new CachedRequest()
       var cache = await me.promisedCache;
       cache.delete(me.asCacheURL(url))      
