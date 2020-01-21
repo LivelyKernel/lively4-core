@@ -715,28 +715,36 @@ export default class ASTCapabilities {
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
+  async openHTMLAccessorsMenu(ids) {
+    let comp = await lively.openComponentInWindow("lively-code-mirror-html-accessor-menu");
+    comp.focus();
+    return comp.selectHTMLIds(ids);
+  }
+
   async generateHTMLAccessors() {
-    var lol = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
-    var jsURI = encodeURI(lol.shadowRoot.querySelector("#filename").value);
+    const ids = await this.compileListOfIDs();
+    const selectedIDs = await this.openHTMLAccessorsMenu(ids);
 
+    selectedIDs.forEach(id => {
+      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+    });
+  }
+
+  async compileListOfIDs() {
+    let editor = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
+    let jsURI = encodeURI(editor.shadowRoot.querySelector("#filename").value);
     const htmlURI = jsURI::replaceFileEndingWith('html');
-
-    var html = await htmlURI.fetchText();
+    let html = await htmlURI.fetchText();
 
     if (html === "File not found!\n") {
       lively.warn("There is no HTML associated with this file.");
       return;
     }
 
-    var tmp = <div></div>;
+    let tmp = <div></div>;
     tmp.innerHTML = html;
-    var ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
-
-    ids.forEach(id => {
-      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
-    });
-
-    //get fileName() { return this.get('input#fileName'); }
+    let ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
+    return ids;
   }
 
   generateTestCase() {
@@ -1332,8 +1340,7 @@ export default class ASTCapabilities {
     let locations = possibleClasses.filter(cl => {
       return possibleExports.some(e => e.url == cl.url && e.classes.some(eCl => eCl == cl.name));
     });
-    locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
-    return locations;
+    return locations.filter(ea => ea.url.match(lively4url)); //filter local files
   }
 
   async getFunctionExportURLs(methodName) {
@@ -1341,8 +1348,7 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    debugger;
-    return locations.map(loc => loc.url); //.replace(lively4url,''));
+    return locations.map(loc => loc.url).filter(url => url.match(lively4url)); //.replace(lively4url,''));
   }
 
   /*MD ## Color Picker MD*/

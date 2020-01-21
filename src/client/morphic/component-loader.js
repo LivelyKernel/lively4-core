@@ -459,7 +459,6 @@ export default class ComponentLoader {
     // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
     // this method avoids the 404 in the console.log
     
-    
     // the OPTIONS request seems to break karma... waits to long..
     if (!window.__karma__) { 
       for(templateDir of templatePaths) {
