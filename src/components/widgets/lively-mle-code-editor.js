@@ -10,33 +10,34 @@ export default class LivelyMleCodeEditor extends Morph {
     this.windowTitle = "MLE Code Editor";
     this.registerButtons()
     this.innerHTML = '';
-    this.socket = SocketIO("http://132.145.55.192:8080");
+    this.socket = SocketIO("http://localhost:8080");
     this.socket.emit('options', {
-      connectString: 'localhost:1521/MLE',
+      connectString: 'localhost:1521/MLEEDITOR',
       user: 'system',
       password: 'MY_PASSWORD_123'
     });
-    lively.notify('Connected');
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', () => {
-      if(!this.initialized){
-        this.initialized = true;
+    this.socket.on('success', status => {
+      if(status === "connected"){
         lively.notify('Connected');
       }
-      this.successCount++;
-      if(this.successCount < 2){
-        this.socket.emit('deploy');
-      } else {
-        this.successCount = 0;
-        lively.success('Resource successfully processed');
+      if(status === "saved"){
+        lively.success('Resource successfully saved');
+        this.socket.emit('deploy',{
+      connectionString: 'localhost:1521/MLEEDITOR',
+      user: 'system',
+      password: 'MY_PASSWORD_123'
+    });
+      }
+      if(status ==="deployed"){
+        lively.success('Resource successfully deployed');
       }
     });
-    lively.html.registerKeys(this); // automatically installs handler for some methods
     this.editor = <lively-code-mirror></lively-code-mirror>;
     const deploy = <button id='deploy' click={() => {
       this.editor.then(e => {
-        lively.success('Resource succesfully processed');
+        lively.notify('Now deploying');
         this.socket.emit('save', {
           file: e.editor.getValue()
       });
