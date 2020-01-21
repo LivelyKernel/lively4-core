@@ -350,7 +350,7 @@ export default class HTML {
     obj._attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") { 
-          console.log('mutation ' + mutation.attributeName )
+          // console.log('mutation ' + mutation.attributeName )
           var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
           if (obj[methodName]) {
             // console.log("found " + methodName)

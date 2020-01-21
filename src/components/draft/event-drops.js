@@ -137,8 +137,8 @@ export default class EventDrops extends Morph {
       max = new Date(max.getTime() + difference*0.1);
       newDomain = [min, max];
     }
+    this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);  
-    //this.chart.scale().domain(newDomain);
     this.updateCommitsInformation(this.chart);
   }
   

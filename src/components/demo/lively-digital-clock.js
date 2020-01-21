@@ -12,7 +12,6 @@ export default class DigitalClock extends Morph {
     this.setup();
   }
   
-
   attributeChangedCallback(attrName, oldValue, newValue) {
     switch (attrName) {
       //case 'attribute':
