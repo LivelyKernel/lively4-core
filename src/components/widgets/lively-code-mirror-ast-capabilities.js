@@ -603,7 +603,6 @@ export default class ASTCapabilities {
   async printAllBindings() {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     
-    debugger;
     //const bindings = this.getBindings(selectedPath);
     var identifier = this.getFirstSelectedIdentifier(selectedPath);
     
@@ -614,18 +613,26 @@ export default class ASTCapabilities {
       if(!file.unboundIdentifiers) return false;
       return file.unboundIdentifiers.some(id => id.name == identifier.name);
     }).toArray();
-    const bindingsWithName = [];
+    const bindingItems = [];
     for(const id of ids) {
       const code = await fetch(id.url).then(r => r.text())
       const program = this.programPathFor(code);
-      debugger;
       for(const reference of this.getMemberBindings(identifier, true, program)) {
-        bindingsWithName.push(id.url + ": " + reference.node.loc.start.line + " " + reference.node.name);
+        const line = reference.node.loc.start.line - 1;
+        const ch = reference.node.loc.start.column;
+        bindingItems.push({id: id.url.substring(id.url.lastIndexOf("/") + 1) + ": " + line, url:id.url, line, ch});
       }
     }   
-    
-    bindingsWithName.forEach(name => lively.warn(name)); 
+    this.openReferencesMenu(bindingItems, identifier.node.name);
   }
+  
+   async openReferencesMenu(ids, identifierName) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("References of " + identifierName);
+    return comp.selectItems(ids);
+  }
+  
   async findImports() {
     let functions, classes, identName;
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
@@ -779,7 +786,7 @@ export default class ASTCapabilities {
     let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
     comp.setTitle("HTML Accessor Menu");
-    return comp.selectHTMLIds(ids);
+    return comp.selectItems(ids);
   }
 
   async generateHTMLAccessors() {

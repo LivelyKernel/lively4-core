@@ -5,10 +5,8 @@ import _ from 'src/external/lodash/lodash.js';
 export default class HTMLAccessorMenu extends Morph {
   initialize() {
     this.registerButtons();
-    
-    //this.get("lively-separator").toggleCollapse();
   }
-  
+
   setTitle(title) {
     this.windowTitle = title;
   }
@@ -19,61 +17,50 @@ export default class HTMLAccessorMenu extends Morph {
   clearLog(s) {
     this.htmlAccessorList.innerHTML = "";
   }
-  
-  
 
-  async selectHTMLIds(items) {
+  async selectItems(items) {
     this.items = items;
-    for (let {id} of items) {
+    for (let { id } of items) {
       let item = document.createElement("tr");
       /*let lineAndColumn = {
         line: ea.line, 
         column: ea.column,
         selection: ea.selection }
       */
-      item.innerHTML = 
-        `<td class="accesssorName">
+      item.innerHTML = `<td class="accesssorName">
           <input type="checkbox" value="${id}">
           ${id}
         </td>`;
-      item.addEventListener("click", (event) => {
+      item.addEventListener("click", event => {
         this.selectItem(event.target);
-      })
+      });
       this.htmlAccessorList.appendChild(item);
     }
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
     });
-  }  
-  
+  }
+
   async showSearchResult(url, lineAndColumn) {
-    var editor =  this.get("#editor");    
-    
+    var editor = this.get("#editor");
+
     editor.setURL(url);
     await editor.loadFile();
-    
+
     var codeMirror = await editor.awaitEditor();
-    codeMirror.setSelection(
-      {line: lineAndColumn.line, ch: lineAndColumn.column},
-      {line: lineAndColumn.line, ch: lineAndColumn.column + 
-        (lineAndColumn.selection ? + lineAndColumn.selection.length : 0)});
+    codeMirror.setSelection({ line: lineAndColumn.line, ch: lineAndColumn.column }, { line: lineAndColumn.line, ch: lineAndColumn.column + (lineAndColumn.selection ? +lineAndColumn.selection.length : 0) });
     codeMirror.focus();
     codeMirror.scrollIntoView(codeMirror.getCursor(), 250);
-    
-    // unhide editor, when it is needed
-    if (editor.style.flexGrow < 0.1) { // #Hack
-      //this.get("lively-separator").toggleCollapse();
-    }
   }
-  
+
   selectItem(item) {
-    const selectedElement = item.children[0].value;
-    const selectedItem = this.items.find(item => item.id === selectedElement)
-    this.showSearchResult(selectedItem.url, {line: selectedItem.line, column: selectedItem.ch});
+    const selectedElement = item.value || item.children[0].value;
+    const selectedItem = this.items.find(item => item.id === selectedElement);
+    this.showSearchResult(selectedItem.url, { line: selectedItem.line, column: selectedItem.ch });
   }
   
   gatherCheckedIds() {
-    return this.htmlAccessorList.querySelectorAll("input").filter(element => element.checked).map(element => element.value);
+    return this.htmlAccessorList.querySelectorAll("input").filter(element => element.checked).map(element => this.items.find(item => item.id === element.value));
   }
 
   get htmlAccessorList() {
