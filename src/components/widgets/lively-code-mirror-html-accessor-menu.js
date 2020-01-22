@@ -12,7 +12,7 @@ export default class HTMLAccessorMenu extends Morph {
     //this.get("#searchInput").focus();
   }
   clearLog(s) {
-    this.get("#HTMLAccessorList").innerHTML = "";
+    this.htmlAccessorList.innerHTML = "";
   }
 
   async selectHTMLIds(ids) {
@@ -26,7 +26,7 @@ export default class HTMLAccessorMenu extends Morph {
       */
       item.innerHTML = `<td class="accesssorName"><input type="checkbox" value="${id}">
   ${id}</td>`;
-      this.get("#HTMLAccessorList").appendChild(item);
+      this.htmlAccessorList.appendChild(item);
     }
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
@@ -34,20 +34,25 @@ export default class HTMLAccessorMenu extends Morph {
   }
 
   gatherCheckedIds() {
-    let accessor = this.get("#HTMLAccessorList");
-    return accessor.querySelectorAll("input").filter(element => element.checked).map(element => element.value);
+    return this.htmlAccessorList.querySelectorAll("input").filter(element => element.checked).map(element => element.value);
+  }
+
+  get htmlAccessorList() {
+    return this.get("#HTMLAccessorList");
   }
 
   onOkButton() {
-    lively.warn("ok");
-    this.resolve(this.gatherCheckedIds());
-    this.remove();
+    let selectedIds = this.gatherCheckedIds();
+    this.resolve(selectedIds);
+    //TODO localization here
+    lively.warn(`${selectedIds.length} Accessors generated`);
+    this.parentElement.remove();
   }
 
   onCancelButton() {
-    lively.warn("cancel");
+    lively.warn("No Accessors generated");
     this.resolve([]);
-    this.remove();
+    this.parentElement.remove();
   }
 
   async showSearchResult(url, lineAndColumn) {
@@ -83,7 +88,7 @@ export default class HTMLAccessorMenu extends Morph {
       let dirAndFilename = ea.url.replace(/.*\/([^/]+\/[^/]+$)/, "$1");
       let prefix = url.replace(dirAndFilename, "");
       if (lastPrefix != prefix) {
-        this.get("#HTMLAccessorList").appendChild(<tr class="prefix"><td colspan="3">{prefix}</td></tr>);
+        this.htmlAccessorList.appendChild(<tr class="prefix"><td colspan="3">{prefix}</td></tr>);
       }
       lastPrefix = prefix;
       let path = ea.url.replace(this.serverURL(), "");
@@ -108,7 +113,7 @@ export default class HTMLAccessorMenu extends Morph {
         }
         return false;
       };
-      this.get("#HTMLAccessorList").appendChild(item);
+      this.htmlAccessorList.appendChild(item);
     }
   }
 }

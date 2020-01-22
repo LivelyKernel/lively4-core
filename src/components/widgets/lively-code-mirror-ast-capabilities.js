@@ -723,10 +723,16 @@ export default class ASTCapabilities {
 
   async generateHTMLAccessors() {
     const ids = await this.compileListOfIDs();
+    if(ids.length == 0){
+      return;
+    }
     const selectedIDs = await this.openHTMLAccessorsMenu(ids);
 
     selectedIDs.forEach(id => {
       this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+      const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+      let line = selectedPath.parent.loc.end.line + 1;
+      this.editor.setSelection({line,ch:0});    
     });
   }
 
@@ -738,7 +744,7 @@ export default class ASTCapabilities {
 
     if (html === "File not found!\n") {
       lively.warn("There is no HTML associated with this file.");
-      return;
+      return [];
     }
 
     let tmp = <div></div>;
@@ -1254,7 +1260,9 @@ export default class ASTCapabilities {
     return this.livelyCodeMirror.value;
   }
   set sourceCode(text) {
-    return this.livelyCodeMirror.value = text;
+    this.livelyCodeMirror.value = text;
+    this.codeChanged();
+    return this.livelyCodeMirror.value;
   }
 
   focusEditor() {
