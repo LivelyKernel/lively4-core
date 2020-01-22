@@ -58,6 +58,7 @@ export default class FileIndex {
     this.db.links.clear()
     this.db.classes.clear()
     this.db.versions.clear()
+    this.db.exports.clear()
     // this.db.delete() 
   }
 
@@ -151,6 +152,9 @@ export default class FileIndex {
     }).upgrade(function () {    })
     db.version(12).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(13).stores({
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers"
     }).upgrade(function () {    })
     return db 
   }
@@ -248,6 +252,7 @@ export default class FileIndex {
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
       this.updateExportEntry(file.url, result)
+      this.updateUnboundIdentifiers(file, result)
     }
   }
   
@@ -310,6 +315,17 @@ export default class FileIndex {
   async addExportEntry(exportEntry) {
     await this.db.exports.where({url: exportEntry.url}).delete()
     this.db.exports.put(exportEntry)
+  }
+  
+  async updateUnboundIdentifiers(file, semantics) {
+    if (!semantics || (!semantics.unboundIdentifiers)) {
+      return
+    }
+    if (semantics.unboundIdentifiers.length > 0) {
+      file.unboundIdentifiers = semantics.unboundIdentifiers
+        .filter((value, index, self) => self.indexOf(value) === index);
+      this.db.files.put(file);
+    }
   }
 
   async updateModule(fileUrl, semantics) {
@@ -573,11 +589,12 @@ export default class FileIndex {
   }
   
   parseModuleSemantics(ast) {
-    let classes = []
-    let dependencies = []
-    let importDeclarations = new Map()
-    let functionExports = []
-    let classExports = []
+    let classes = [];
+    let dependencies = [];
+    let importDeclarations = new Map();
+    let functionExports = [];
+    let classExports = [];
+    let unboundIdentifiers = [];
     babel.traverse(ast,{
       ImportDeclaration(path) {
         if (path.node.source && path.node.source.value) {
@@ -644,9 +661,16 @@ export default class FileIndex {
         if(t.isClassDeclaration(path.node.declaration)) {
           classExports.push(path.node.declaration.id.name)
         }
+      },
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent)) {
+          if(!t.isThisExpression(path.parent.object)) {
+            unboundIdentifiers.push(path.node.name);
+          }
+        }
       }
     })
-    return {classes, dependencies, functionExports, classExports}
+    return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
   }
   
   // ********************************************************
@@ -744,7 +768,7 @@ export default class FileIndex {
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
-    
+    file.unboundIdentifiers = []
     
     
     await this.db.transaction("rw", this.db.files, () => { 
