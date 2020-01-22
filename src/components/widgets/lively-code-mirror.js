@@ -424,6 +424,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-M": cm => {
           this.astCapabilities(cm).then(ac => ac.extractMethod());
         },
+        // #KeyboardShortcut Alt-H Generate accessors for tags with id in corresponding .html file
+        "Alt-H": cm => {
+          this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
+        },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
