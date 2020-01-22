@@ -776,8 +776,9 @@ export default class ASTCapabilities {
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
   async openHTMLAccessorsMenu(ids) {
-    let comp = await lively.openComponentInWindow("lively-code-mirror-html-accessor-menu");
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
+    comp.setTitle("HTML Accessor Menu");
     return comp.selectHTMLIds(ids);
   }
 
@@ -786,10 +787,14 @@ export default class ASTCapabilities {
     if(ids.length == 0){
       return;
     }
-    const selectedIDs = await this.openHTMLAccessorsMenu(ids);
+    const selectedItems = await this.openHTMLAccessorsMenu(ids);
+    if(selectedItems.length === 0) {
+      return;
+    }
+    lively.warn(`${selectedItems.length} Accessors generated`);
 
-    selectedIDs.forEach(id => {
-      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+    selectedItems.forEach(item => {
+      this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
       const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
       let line = selectedPath.parent.loc.end.line + 1;
       this.editor.setSelection({line,ch:0});    
@@ -810,7 +815,20 @@ export default class ASTCapabilities {
     let tmp = <div></div>;
     tmp.innerHTML = html;
     let ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
-    return ids;
+    
+    const htmlLines = html.split("\n" );
+
+    const idsWithLocation = [];
+    for(const id of ids) {
+      for(const line of htmlLines) {
+        const indexOfId = line.indexOf("id=\"" + id + "\"");
+        if(indexOfId !== -1) {
+          idsWithLocation.push({id, url: htmlURI, line: htmlLines.indexOf(line), ch: indexOfId + 4});
+          break;
+        }
+      }
+    }
+    return idsWithLocation;
   }
 
   generateTestCase() {

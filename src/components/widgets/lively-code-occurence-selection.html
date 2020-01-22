@@ -1,4 +1,4 @@
-<template id="lively-code-mirror-html-accessor-menu" >
+<template id="lively-code-occurence-selection" >
   <style data-src="/templates/livelystyle.css"></style>
     <style>
     .container {
@@ -49,6 +49,9 @@
       width: 40px;
     }
     
+    tr:hover {
+      background-color: #aaaaaa
+    }
     
     input.checkbox {
       width: 14px;
@@ -57,8 +60,13 @@
       padding: 0px;
     }
     
+    #editor {
+      height: 100%;
+      overflow: scroll;
+    }
+    
     #searchContainer {
-      flex: 1;
+      /*flex: 0.5;*/
       overflow: auto; 
     }
     
@@ -103,14 +111,14 @@
     }
     </style>
   <div class="container">
-    <div>
-          outerLol
+    <div id="ListContainer">
+          <table id="CodeOccurencesList"></table>  
     </div>
-    <div id="HTMLContainer">
-          <table id="HTMLAccessorList"></table>  
-    </div>
-  <button id="okButton">ok</button>
-  <button id="cancelButton">cancel</button> 
+    <lively-separator reverse="true"></lively-separator>
+    <lively-editor id="editor"></lively-editor>
+
+    <button id="okButton">ok</button>
+    <button id="cancelButton">cancel</button> 
   </div>
 
 </template>
