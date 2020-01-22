@@ -15,11 +15,16 @@ export default class HTMLAccessorMenu extends Morph {
     //this.get("#searchInput").focus();
   }
   clearLog(s) {
-    this.htmlAccessorList.innerHTML = "";
+    this.codeOccurencesList.innerHTML = "";
   }
 
-  async selectItems(items) {
+  async selectItems(items, initialSelectionState) {
     this.items = items;
+    if (!initialSelectionState) {
+      initialSelectionState = items.map(elem => false);
+    }
+    initialSelectionState = initialSelectionState.map(elem => elem ? " checked disabled" : "");
+    let index = 0;
     for (let { id } of items) {
       let item = document.createElement("tr");
       /*let lineAndColumn = {
@@ -28,13 +33,13 @@ export default class HTMLAccessorMenu extends Morph {
         selection: ea.selection }
       */
       item.innerHTML = `<td class="accesssorName">
-          <input type="checkbox" value="${id}">
+          <input type="checkbox" value="${id}"${initialSelectionState[index++]}>
           ${id}
         </td>`;
       item.addEventListener("click", event => {
         this.selectItem(event.target);
       });
-      this.htmlAccessorList.appendChild(item);
+      this.codeOccurencesList.appendChild(item);
     }
     return new Promise((resolve, reject) => {
       this.resolve = resolve;
@@ -58,13 +63,13 @@ export default class HTMLAccessorMenu extends Morph {
     const selectedItem = this.items.find(item => item.id === selectedElement);
     this.showSearchResult(selectedItem.url, { line: selectedItem.line, column: selectedItem.ch });
   }
-  
-  gatherCheckedIds() {
-    return this.htmlAccessorList.querySelectorAll("input").filter(element => element.checked).map(element => this.items.find(item => item.id === element.value));
+
+  get codeOccurencesList() {
+    return this.get("#CodeOccurencesList");
   }
 
-  get htmlAccessorList() {
-    return this.get("#CodeOccurencesList");
+  gatherCheckedIds() {
+    return this.codeOccurencesList.querySelectorAll("input").filter(element => element.checked && !element.disabled).map(element => this.items.find(item => item.id === element.value));
   }
 
   onOkButton() {

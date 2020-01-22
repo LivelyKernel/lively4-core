@@ -782,11 +782,24 @@ export default class ASTCapabilities {
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
-  async openHTMLAccessorsMenu(ids) {
+  async openHTMLAccessorsMenu(ids, initialSelectionState) {
     let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
     comp.setTitle("HTML Accessor Menu");
-    return comp.selectItems(ids);
+    return comp.selectItems(ids, initialSelectionState);
+  }
+  
+  getExistingAccessors() {
+    let classMethodIdentifier;
+    this.programPath.traverse({
+      ExportDefaultDeclaration(path) {
+        if(path && path.node.declaration && path.node.declaration.type == "ClassDeclaration"){
+          classMethodIdentifier = path.node.declaration.body.body.map(elem => elem.key.name);
+          path.stop();
+        }
+      }
+    });
+    return classMethodIdentifier || [];
   }
 
   async generateHTMLAccessors() {
@@ -794,7 +807,11 @@ export default class ASTCapabilities {
     if(ids.length == 0){
       return;
     }
-    const selectedItems = await this.openHTMLAccessorsMenu(ids);
+
+    let existingMethods = this.getExistingAccessors();
+    let initialSelectionState = ids.map(elem => existingMethods.includes(this.generateMethodNameFromProperty(elem.id)));
+    const selectedItems = await this.openHTMLAccessorsMenu(ids, initialSelectionState);
+
     if(selectedItems.length === 0) {
       return;
     }
@@ -920,9 +937,13 @@ export default class ASTCapabilities {
 
   compileHTMLGetter(property) {
     var propertyName = property.identifier;
-    var methodName = propertyName.camelCase();
+    var methodName = this.generateMethodNameFromProperty(propertyName);
     property.identifier = methodName;
     return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral("#" + propertyName)]))]));
+  }
+
+  generateMethodNameFromProperty(name) {
+    return name.camelCase();
   }
 
   async getUserInput(description, defaultValue) {
