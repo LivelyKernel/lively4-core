@@ -1,8 +1,13 @@
-/*
- * Lively4 ContextMenu
- * - creates the "world menu" for Lively4
- */ 
-  
+/*MD # Lively4 ContextMenu 
+
+creates the "world menu" for Lively4
+
+- [worldMenuItems](#worldMenuItems)
+- [targetMenuItems](#targetMenuItems)
+
+
+MD*/
+
 import html from './html.js';
 import {pt} from './graphics.js';
 import ViewNav from 'src/client/viewnav.js'
@@ -15,7 +20,6 @@ import Rasterize from 'src/client/rasterize.js'
 import Favorites from "src/client/favorites.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
-
 
 export default class ContextMenu {
   
@@ -85,7 +89,7 @@ export default class ContextMenu {
   }
 
   
-  
+  // #important
   static targetMenuItems(target) {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
@@ -321,6 +325,7 @@ export default class ContextMenu {
     ]
   }
   
+  // #important
   static worldMenuItems(worldContext) {
     var items =  [
       ["Workspace", evt => {
@@ -489,6 +494,10 @@ export default class ContextMenu {
           // morph.style.right= "0px"
           this.hide();
         }],
+        ["Change Graph", async evt => {
+          lively.openBrowser(lively4url + "/doc/files/changesgraph.md")
+          this.hide();
+        }],
         ["BP2019 Workspace", async evt => {
           const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
         },
@@ -648,12 +657,6 @@ export default class ContextMenu {
         ["Journal", (evt) => {
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600)).then(comp => {
             comp.followPath(lively4url + "/doc/journal/index.md");
-          });
-        },
-          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
-        ["Tools and Workflows", (evt) => {
-          this.openComponentInWindow("lively-container", evt, worldContext, pt(1250,700)).then(comp => {
-            comp.followPath(lively4url + "/doc/presentation/index.md");
           });
         },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],

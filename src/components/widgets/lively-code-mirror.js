@@ -154,10 +154,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.myASTCapabilities = System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
         .then(m => {
           var capabilities = new m.default(this, cm);
-          cm.on("change", () => {capabilities.codeChanged()})
+          cm.on("change", (() => {capabilities.codeChanged()}).debounce(200))
           return capabilities;
         });
     }
+    
+    
     return this.myASTCapabilities;
   }
   
@@ -228,6 +230,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
     }));
+    
+    //load astCapabilities
+    this.astCapabilities(this.editor);
   }
 
   setEditor(editor) {
@@ -418,6 +423,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-M Extract method
         "Alt-M": cm => {
           this.astCapabilities(cm).then(ac => ac.extractMethod());
+        },
+        // #KeyboardShortcut Alt-H Generate accessors for tags with id in corresponding .html file
+        "Alt-H": cm => {
+          this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
         },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation

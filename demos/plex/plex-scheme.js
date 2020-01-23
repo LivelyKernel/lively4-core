@@ -6,6 +6,9 @@ import {parseQuery, getDeepProperty} from 'utils'
 var lastTokenPromted
 
 
+// focalStorage.getItem("plex-token")
+// focalStorage.setItem("plex-token", undefined)
+
 export class PlexScheme extends Scheme {
   
   get scheme() {

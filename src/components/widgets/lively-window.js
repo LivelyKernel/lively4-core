@@ -315,7 +315,6 @@ export default class Window extends Morph {
       
       this.displayResizeHandle(true)
       
-      debugger
       setPointToAttribute(this, "prev-min-left", "prev-min-top", lively.getPosition(this))
       this.restoreExtentAndPosition()
       

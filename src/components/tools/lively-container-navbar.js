@@ -12,6 +12,12 @@ import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
 
+/*MD # Navbar
+
+![](lively-container-navbar.png){width=300px}
+
+MD*/
+
 
 const FILTER_KEY_BLACKLIST = [
   'Control', 'Shift', 'Capslock', 'Alt',
@@ -93,7 +99,7 @@ export default class LivelyContainerNavbar extends Morph {
     
     
     // Oh, my god! Now we are getting crazy!
-    // first fownload the files, then zip them, then upload then again, so that they can be dropped...?
+    // first download the files, then zip them, then upload then again, so that they can be dropped...?
     // Yeah! :-)
     var zip = new JSZip();
     for(var ea of urls) {
@@ -1536,10 +1542,10 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async livelyExample() {
-    // var url = lively4url + "/README.md"
+    var url = lively4url + "/README.md"
     // var url = "innerhtml://"
     // var url = "https://lively-kernel.org/lively4/testdir/"
-    var url = "wikipedia://en/Bourne_shell"
+    // var url = "wikipedia://en/Bourne_shell"
     var content = await fetch(url).then(r => r.text())
     await this.show(url, content, undefined, undefined, "text/html" )
   }

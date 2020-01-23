@@ -2,26 +2,36 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import eventDrops from 'https://unpkg.com/event-drops';
+import eventDrops from 'src/external/event-drops.js';
+//import eventDrops from 'https://unpkg.com/event-drops@1.3.0/dist/index.js';
 import d3 from 'src/external/d3.v5.js';
 import repositoriesData from 'src/components/draft/event-drops-data.js'
-
 
 import {AExprRegistry} from 'src/client/reactive/active-expression/active-expression.js'
 
 export default class EventDrops extends Morph {
   async initialize() {
     this.windowTitle = "EventDrops";
-    
-    
-    this.chart = eventDrops({
+    this.config = {
       d3,
+      range : this.chart ? this.chart.range : void 0,
       zoom: {
+          onZoom: () => {this.zoomedTo = this.chart.scale().domain()},
           onZoomEnd: () => this.updateCommitsInformation(this.chart),
       },
       drop: {
           date: event => event.timestamp,
-          color: event => event.value == 13 ? "red" : "green", //'#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
+          color: event => {
+            switch(event.message) {
+              case 'created': return 'green';
+              case 'disposed': return 'red';
+              case 'changed value': return 'blue';
+              default : return 'black';
+            }
+          }, //'#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
+          onClick : data => {
+            lively.notify(JSON.stringify(data));
+          },
           onMouseOver: event => {
             // this.tooltip
             //     //.transition()
@@ -56,13 +66,14 @@ export default class EventDrops extends Morph {
             //     .style('pointer-events', 'none');
         }
       },
-    });
+    };
+    this.chart = eventDrops(this.config);
 
     //let repositoriesData = require('event-drops-data.json');
     
     repositoriesData = repositoriesData.map(repository => ({name: repository.name, data: repository.commits}));
     
-    this.numberCommitsContainer = this.get('#numberCommits');
+    this.numberEventsContainer = this.get('#numberEvents');
     this.zoomStart = this.get('#zoomStart');
     this.zoomEnd = this.get('#zoomEnd');
     this.tooltip = undefined;
@@ -83,39 +94,64 @@ export default class EventDrops extends Morph {
       // .style('background-color', 'blue')
       // .style('pointer-events', 'auto');
 
+    this.d3 = d3;
+
+    // this.chart.setDomain = (domain) => {
+    //   this.chart.scale().domain(domain);
+    //   let svg = d3.select(this.get('.event-drop-chart'));
+    //   svg.call(this.chart.draw(_.merge(defaultConfig, this.config), this.chart.scale()));
+    // }
     this.update();
    
   }
   
+
+  getDataFromSource() {
+    let dataFromSource = this.dataFromSource || (() => AExprRegistry.allAsArray());
+    if(_.isFunction(dataFromSource))return dataFromSource();
+    else return dataFromSource;
+  }
+
+  getGroupingFunction() {
+    let deIndex = string => string.substring(0, string.lastIndexOf("#"));
+    return this.groupingFunction || (each => deIndex(each.meta().get('id')))
+  }
+  
   update() {
-    this.setAexprs(AExprRegistry.allAsArray());
-    //setTimeout(() => {this.update()}, 1000);
+    this.setAexprs(this.getDataFromSource());
+    if(this.isStillInWorld())setTimeout(() => {this.update()}, 1000);
   }
   
   setAexprs(aexprs) {
-    let deIndex = string => string.substring(0, string.lastIndexOf("#"));
-    let groups = aexprs.groupBy(each => {
-      lively.notify(each.meta().get('id')+" "+deIndex(each.meta().get('id')));
-      return deIndex(each.meta().get('id')
-     )});
+    if(aexprs.length == 0)return;
+    let groups = aexprs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({name : each, data: groups[each].flatMap(ae => ae.meta().get('events'))}));
     this.setData(groups);
+    let newDomain = this.zoomedTo;
+    if(!newDomain) {
+      let allEvents = groups.flatMap(each => each.data);
+      let min = _.minBy(allEvents, each => each.timestamp).timestamp;
+      let max = _.maxBy(allEvents, each => each.timestamp).timestamp;
+      let difference = max.getTime() - min.getTime();
+      min = new Date(min.getTime() - difference*0.1);
+      max = new Date(max.getTime() + difference*0.1);
+      newDomain = [min, max];
+    }
+    this.chart.scale().domain(newDomain);
+    this.chart.zoomToDomain(newDomain);  
+    this.updateCommitsInformation(this.chart);
   }
   
   setData(data) {
     d3
       .select(this.get('#eventdrops-demo'))
       .data([data])
-      .call(this.chart);
+      .call(this.chart);;
   }
   
-  
   updateCommitsInformation(chart) {
-    const filteredData = chart
-        .filteredData()
-        .reduce((total, repo) => total.concat(repo.data), []);
-
-    this.numberCommitsContainer.textContent = filteredData.length;
+    const numEvents = _.sumBy(chart.filteredData(), each => each.data.length);
+    this.numberEventsContainer.textContent = numEvents;
     this.zoomStart.textContent = this.humanizeDate(chart.scale().domain()[0]);
     this.zoomEnd.textContent = this.humanizeDate(chart.scale().domain()[1]);
   }
@@ -138,8 +174,101 @@ export default class EventDrops extends Morph {
 
     return `
         ${monthNames[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}
-        ${date.getHours()}:${date.getMinutes()}
+        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}
     `;
   }
+
+  isStillInWorld() {
+    return this.parentElement && this.parentElement.parentElement != undefined;
+  }
+
+  livelyMigrate(other) {
+    this.zoomedTo = other.zoomedTo;
+  }
   
+}
+
+const defaultConfig = {
+    locale: {
+      "dateTime": "%x, %X",
+      "date": "%-m/%-d/%Y",
+      "time": "%-I:%M:%S %p",
+      "periods": ["AM", "PM"],
+      "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      "shortDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    },
+    metaballs: {
+        blurDeviation: 10,
+        colorMatrix: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 50 -10',
+    },
+    bound: {
+        format: d3.timeFormat('%d %B %Y'),
+    },
+    axis: {
+        formats: {
+            milliseconds: '%L',
+            seconds: ':%S',
+            minutes: '%I:%M',
+            hours: '%I %p',
+            days: '%a %d',
+            weeks: '%b %d',
+            months: '%B',
+            year: '%Y',
+        },
+        verticalGrid: false,
+        tickPadding: 6,
+    },
+    drops: row => row.data,
+    drop: {
+        color: null,
+        radius: 5,
+        date: d => new Date(d),
+        onClick: () => {},
+        onMouseOver: () => {},
+        onMouseOut: () => {},
+    },
+    label: {
+        padding: 20,
+        text: d => `${d.name} (${d.data.length})`,
+        width: 200,
+    },
+    indicator: {
+        previousText: '◀',
+        nextText: '▶',
+    },
+    line: {
+        color: (_, index) => d3.schemeCategory10[index],
+        height: 40,
+    },
+    margin: {
+        top: 20,
+        right: 10,
+        bottom: 20,
+        left: 10,
+    },
+    range: {
+        start: new Date(new Date().getTime() - 3600000 * 24 * 365), // one year ago
+        end: new Date(),
+    },
+    zoom: {
+        onZoomStart: null,
+        onZoom: null,
+        onZoomEnd: null,
+        minimumScale: 0,
+        maximumScale: Infinity,
+    },
+    numberDisplayedTicks: {
+        small: 3,
+        medium: 5,
+        large: 7,
+        extra: 12,
+    },
+    breakpoints: {
+        small: 576,
+        medium: 768,
+        large: 992,
+        extra: 1200,
+    },
 }

@@ -1,5 +1,7 @@
 /*MD # Lively Container 
 
+[doc](browse://doc/tools/container.md)
+
 ![](lively-container.png){height=400px}
 
 MD*/
@@ -1913,7 +1915,7 @@ export default class Container extends Morph {
     if(ending === 'js' || ending === 'html') {
       const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
       const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
-        .find(container => container.getURL().pathname.match(targetURLString));
+        .find(container => container.getPath().match(targetURLString));
       if(existingContainer) {
         lively.gotoWindow(existingContainer.parentElement, true);
         existingContainer.focus();
