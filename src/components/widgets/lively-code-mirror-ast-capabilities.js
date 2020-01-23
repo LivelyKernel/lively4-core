@@ -603,7 +603,6 @@ export default class ASTCapabilities {
   async printAllBindings() {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
     
-    debugger;
     //const bindings = this.getBindings(selectedPath);
     var identifier = this.getFirstSelectedIdentifier(selectedPath);
     
@@ -614,18 +613,26 @@ export default class ASTCapabilities {
       if(!file.unboundIdentifiers) return false;
       return file.unboundIdentifiers.some(id => id.name == identifier.name);
     }).toArray();
-    const bindingsWithName = [];
+    const bindingItems = [];
     for(const id of ids) {
       const code = await fetch(id.url).then(r => r.text())
       const program = this.programPathFor(code);
-      debugger;
       for(const reference of this.getMemberBindings(identifier, true, program)) {
-        bindingsWithName.push(id.url + ": " + reference.node.loc.start.line + " " + reference.node.name);
+        const line = reference.node.loc.start.line - 1;
+        const ch = reference.node.loc.start.column;
+        bindingItems.push({id: id.url.substring(id.url.lastIndexOf("/") + 1) + ": " + line, url:id.url, line, ch});
       }
     }   
-    
-    bindingsWithName.forEach(name => lively.warn(name)); 
+    this.openReferencesMenu(bindingItems, identifier.node.name);
   }
+  
+   async openReferencesMenu(ids, identifierName) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("References of " + identifierName);
+    return comp.selectItems(ids);
+  }
+  
   async findImports() {
     let functions, classes, identName;
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
@@ -775,10 +782,24 @@ export default class ASTCapabilities {
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
-  async openHTMLAccessorsMenu(ids) {
-    let comp = await lively.openComponentInWindow("lively-code-mirror-html-accessor-menu");
+  async openHTMLAccessorsMenu(ids, initialSelectionState) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
-    return comp.selectHTMLIds(ids);
+    comp.setTitle("HTML Accessor Menu");
+    return comp.selectItems(ids, initialSelectionState);
+  }
+  
+  getExistingAccessors() {
+    let classMethodIdentifier;
+    this.programPath.traverse({
+      ExportDefaultDeclaration(path) {
+        if(path && path.node.declaration && path.node.declaration.type == "ClassDeclaration"){
+          classMethodIdentifier = path.node.declaration.body.body.map(elem => elem.key.name);
+          path.stop();
+        }
+      }
+    });
+    return classMethodIdentifier || [];
   }
 
   async generateHTMLAccessors() {
@@ -786,10 +807,18 @@ export default class ASTCapabilities {
     if(ids.length == 0){
       return;
     }
-    const selectedIDs = await this.openHTMLAccessorsMenu(ids);
 
-    selectedIDs.forEach(id => {
-      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+    let existingMethods = this.getExistingAccessors();
+    let initialSelectionState = ids.map(elem => existingMethods.includes(this.generateMethodNameFromProperty(elem.id)));
+    const selectedItems = await this.openHTMLAccessorsMenu(ids, initialSelectionState);
+
+    if(selectedItems.length === 0) {
+      return;
+    }
+    lively.warn(`${selectedItems.length} Accessors generated`);
+
+    selectedItems.forEach(item => {
+      this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
       const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
       let line = selectedPath.parent.loc.end.line + 1;
       this.editor.setSelection({line,ch:0});    
@@ -810,7 +839,20 @@ export default class ASTCapabilities {
     let tmp = <div></div>;
     tmp.innerHTML = html;
     let ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
-    return ids;
+    
+    const htmlLines = html.split("\n" );
+
+    const idsWithLocation = [];
+    for(const id of ids) {
+      for(const line of htmlLines) {
+        const indexOfId = line.indexOf("id=\"" + id + "\"");
+        if(indexOfId !== -1) {
+          idsWithLocation.push({id, url: htmlURI, line: htmlLines.indexOf(line), ch: indexOfId + 4});
+          break;
+        }
+      }
+    }
+    return idsWithLocation;
   }
 
   generateTestCase() {
@@ -895,9 +937,13 @@ export default class ASTCapabilities {
 
   compileHTMLGetter(property) {
     var propertyName = property.identifier;
-    var methodName = propertyName.camelCase();
+    var methodName = this.generateMethodNameFromProperty(propertyName);
     property.identifier = methodName;
     return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral("#" + propertyName)]))]));
+  }
+
+  generateMethodNameFromProperty(name) {
+    return name.camelCase();
   }
 
   async getUserInput(description, defaultValue) {
