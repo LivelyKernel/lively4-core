@@ -494,19 +494,21 @@ class EventBasedHook extends Hook {
 
 class FrameBasedHook extends Hook {
   static get instance() {
-    return this._instance = this._instance || new FrameBasedHook();
+    if(!this._instance) {
+      this._instance = new FrameBasedHook();
+      //Initialization is split to avoid endless recursion
+      this._instance.initializeAe();
+    }
+    return this._instance;
   }
   
-  constructor() {
-    super();
-    
+  initializeAe() {
     let x = 0;
     // #TODO: caution, we currently use a side-effect function! How can we mitigate this? E.g. using `Date.now()` as expression
     let ae = frameBasedAExpr.aexpr(() => x++)
     ae.onChange(() => {
       this.changeHappened();
     })
-
   }
   
   changeHappened() {
