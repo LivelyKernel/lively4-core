@@ -17,7 +17,7 @@ export default class EventDrops extends Morph {
       range : this.chart ? this.chart.range : void 0,
       zoom: {
           onZoom: () => {this.zoomedTo = this.chart.scale().domain()},
-          onZoomEnd: () => this.updateCommitsInformation(this.chart),
+          onZoomEnd: () => this.updateMetaInformation(),
       },
       drop: {
           date: event => event.timestamp,
@@ -133,13 +133,14 @@ export default class EventDrops extends Morph {
       let min = _.minBy(allEvents, each => each.timestamp).timestamp;
       let max = _.maxBy(allEvents, each => each.timestamp).timestamp;
       let difference = max.getTime() - min.getTime();
+      if(difference == 0)difference = 100;
       min = new Date(min.getTime() - difference*0.1);
       max = new Date(max.getTime() + difference*0.1);
       newDomain = [min, max];
     }
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);  
-    this.updateCommitsInformation(this.chart);
+    this.updateMetaInformation();
   }
   
   setData(data) {
@@ -149,11 +150,11 @@ export default class EventDrops extends Morph {
       .call(this.chart);;
   }
   
-  updateCommitsInformation(chart) {
-    const numEvents = _.sumBy(chart.filteredData(), each => each.data.length);
+  updateMetaInformation() {
+    const numEvents = _.sumBy(this.chart.filteredData(), each => each.data.length);
     this.numberEventsContainer.textContent = numEvents;
-    this.zoomStart.textContent = this.humanizeDate(chart.scale().domain()[0]);
-    this.zoomEnd.textContent = this.humanizeDate(chart.scale().domain()[1]);
+    this.zoomStart.textContent = this.humanizeDate(this.chart.scale().domain()[0]);
+    this.zoomEnd.textContent = this.humanizeDate(this.chart.scale().domain()[1]);
   }
   
   humanizeDate(date) {
@@ -186,89 +187,4 @@ export default class EventDrops extends Morph {
     this.zoomedTo = other.zoomedTo;
   }
   
-}
-
-const defaultConfig = {
-    locale: {
-      "dateTime": "%x, %X",
-      "date": "%-m/%-d/%Y",
-      "time": "%-I:%M:%S %p",
-      "periods": ["AM", "PM"],
-      "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-      "shortDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-      "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    },
-    metaballs: {
-        blurDeviation: 10,
-        colorMatrix: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 50 -10',
-    },
-    bound: {
-        format: d3.timeFormat('%d %B %Y'),
-    },
-    axis: {
-        formats: {
-            milliseconds: '%L',
-            seconds: ':%S',
-            minutes: '%I:%M',
-            hours: '%I %p',
-            days: '%a %d',
-            weeks: '%b %d',
-            months: '%B',
-            year: '%Y',
-        },
-        verticalGrid: false,
-        tickPadding: 6,
-    },
-    drops: row => row.data,
-    drop: {
-        color: null,
-        radius: 5,
-        date: d => new Date(d),
-        onClick: () => {},
-        onMouseOver: () => {},
-        onMouseOut: () => {},
-    },
-    label: {
-        padding: 20,
-        text: d => `${d.name} (${d.data.length})`,
-        width: 200,
-    },
-    indicator: {
-        previousText: '◀',
-        nextText: '▶',
-    },
-    line: {
-        color: (_, index) => d3.schemeCategory10[index],
-        height: 40,
-    },
-    margin: {
-        top: 20,
-        right: 10,
-        bottom: 20,
-        left: 10,
-    },
-    range: {
-        start: new Date(new Date().getTime() - 3600000 * 24 * 365), // one year ago
-        end: new Date(),
-    },
-    zoom: {
-        onZoomStart: null,
-        onZoom: null,
-        onZoomEnd: null,
-        minimumScale: 0,
-        maximumScale: Infinity,
-    },
-    numberDisplayedTicks: {
-        small: 3,
-        medium: 5,
-        large: 7,
-        extra: 12,
-    },
-    breakpoints: {
-        small: 576,
-        medium: 768,
-        large: 992,
-        extra: 1200,
-    },
 }

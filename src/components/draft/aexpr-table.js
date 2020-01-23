@@ -11,7 +11,7 @@ const attributes = {
   callbacks : ae => ae.callbacks,
   dependencies : ae => ae.supportsDependencies() ? ae.dependencies().all()
     .map(dependencyString)
-    .joinElements(()=><br/>) : <font color="red">{"no dependecy api available"}</font>,
+    .joinElements(()=><br/>) : <font color="#FF00FF">{"no dependecy api available"}</font>,
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
@@ -108,6 +108,7 @@ export default class AexprTable extends Morph {
 
   
   repopulate() {  
+    this._rows = undefined;
     let added = AExprRegistry.allAsArray().difference(this.value);
     let removed = this.value.difference(AExprRegistry.allAsArray());
     for(let each of removed)this.removeAexpr(each);
@@ -118,12 +119,21 @@ export default class AexprTable extends Morph {
     let row = this.createRow(aexpr);
     this.table.appendChild(row);
     this.value.push(aexpr);
+    this.rows().push(row);
+    this.filterChanged();
   }
   
   removeAexpr(aexpr){
-    this.table.removeChild(this.rowOf(aexpr));
+    let row = this.rowOf(aexpr);
+    if(row) {
+      let rowIndex = this.rows().indexOf(row);
+      this.rows().splice(rowIndex, 1);
+      this.table.removeChild(row);
+    }
+  
     let index = this.value.indexOf(aexpr);
     this.value.splice(index, 1);
+    this.filterChanged();
   }
   
   updateAexpr(aexpr){
@@ -141,19 +151,22 @@ export default class AexprTable extends Morph {
   }
   
   rows() {
-    return this.table.childNodes
-      .filter(each => each.tagName == 'TR')
-      .filter(each => each.getAttribute('class') == 'aeRow');
+    if(!this._rows) {
+      this._rows = this.table.childNodes
+        .filter(each => each.tagName == 'TR')
+        .filter(each => each.getAttribute('class') == 'aeRow');
+    }
+    return this._rows;
   }
   
   rowOf(aexpr){
-    let index = this.value.indexOf(aexpr);
-    return this.rows()[index];
+    return this.rows().filter(each => each.aexpr === aexpr)[0];
   }
   
   createRow(aexpr){
     let htmlRow = <tr class='aeRow'></tr>;
     htmlRow.setAttribute("heat", 0);
+    //htmlRow.cells = {};
     this.setRow(htmlRow, aexpr);
     return htmlRow; 
   }
@@ -165,7 +178,14 @@ export default class AexprTable extends Morph {
     }
     for(let attribute in attributes){
       let value = attributes[attribute](aexpr);
-      row.appendChild(<td>{...value}</td>);
+      let cell = row.cells[attribute];
+      if(!cell) {
+        cell = <td>{...value}</td>;
+        row.appendChild(cell);
+        //row.cells[attribute] = cell;
+      } else {
+        //cell.textContent = {...value};
+      }
     }
   }
   
