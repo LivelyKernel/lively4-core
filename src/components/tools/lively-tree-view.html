@@ -1,21 +1,16 @@
-<template id="lively-ast-inspector" >
+<template id="lively-tree-view" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
       white-space: nowrap;
-      width: 100%;
-      height: 100%;
-    }
-
-    #container {
       overscroll-behavior: contain;
       margin: 0px;
       width: 100%;
       height: 100%;
       overflow: scroll;
     }
-    
+
     #more:hover {
       background: lightgray;
     }
@@ -24,21 +19,21 @@
       background: lightgray;
     }
 
-    div.element {
+    lively-tree-view-node {
       margin-left: 20px;
       font-family: Monaco, monospace;
       font-size: 9pt;
     }
 
     .selected {
-      background-color: #fe3;
+      background: rgb(240,240,240);
     }
 
-    div.tag > .tagname{
+    .tag > .tagname{
       color: purple ;
     }
 
-    div.comment {
+    .comment {
       color: green ;
     }
     
@@ -58,7 +53,5 @@
     }
     
   </style>
-
-  <div id="container"></div>
+  <slot></slot>
 </template>
-

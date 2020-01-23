@@ -44,6 +44,7 @@ export default class PluginExplorer extends Morph {
       };
     });
     this.sourceEditor.awaitEditor().then(() => {
+      this.sourceAstInspector.connectEditor(this.sourceEditor);
       this.sourceEditor.get('#editor').doSave = async () => {
         await this.sourceEditor.saveFile();
         this.updateAST();
