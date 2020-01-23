@@ -1,6 +1,5 @@
-var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices"]
+var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices","https://lively-kernel.org/research"] // #TODO how to detect this?
 var baseUrlsAuthNeededForWriting = [ "https://lively-kernel.org/lively4"]
-
 
 async function proxyRequest(url, options={}) {
   console.log("PROXY reqest: " + options.method + " " + url)
