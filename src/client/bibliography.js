@@ -107,6 +107,7 @@ Bibliography.cleanTitle("{{This is my Title}")
   
   // #TODO this method obviously will need a lot of tweaking...
   static generateCitationKey(entry) {
+    if (!entry || !entry.entryTags) return undefined
     var firstAuthor = entry.entryTags.author.split("and")[0]
     if (firstAuthor.match(",")) {
       firstAuthor = firstAuthor.replace(/,.*/,"")
