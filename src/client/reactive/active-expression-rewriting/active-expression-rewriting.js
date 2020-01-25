@@ -101,7 +101,7 @@ class Dependency {
     /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
       // #HACK #TODO: for now, ignore Knotview if unused for Mutations -> need to better separate those hooks, e.g. do not recursively check ALL attribute change, etc.
-      if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel'))) {
+      if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel')) && !context.tagName.endsWith('-rp19')) {
         // TODO: the member also influences what kind of observer we want to use!
         const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
         HooksToDependencies.associate(mutationObserverHook, this);
@@ -476,7 +476,7 @@ class EventBasedHook extends Hook {
     this._element = element;
 
     // #TODO: when the type of an input element changes, 'value' or 'checked' become unavailable
-    if (this._element.tagName === 'INPUT') {
+    if (this._element.tagName === 'INPUT' || this._element.tagName === 'TEXTAREA') {
       this._element.addEventListener('input', () => {
         this.changeHappened();
       });
