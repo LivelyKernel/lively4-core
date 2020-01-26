@@ -144,7 +144,6 @@ export default class ViewNav {
       var zoom = Number(getComputedStyle(this.target).zoom) + (evt.wheelDelta / 1000 / 10)
       this.target.style.zoom= zoom
 
-
       // // zoom using CSS Transform
       // var scale = this.target._scale || 1
       // scale = scale + (evt.wheelDelta / 1000 / 5)
