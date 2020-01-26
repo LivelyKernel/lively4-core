@@ -1,181 +1,283 @@
-import { toDOMNode } from "./../reactive-jsx/ui-aexpr.js";
-import { BaseActiveExpression as ActiveExpression } from 'active-expression';
-toDOMNode;
-/**
- * Resources for JSX Semantics
- * Web components in react: https://facebook.github.io/react/docs/web-components.html
- * Child lists and keys: https://facebook.github.io/react/docs/lists-and-keys.html
- * JSX babel transform helpers: https://github.com/babel/babel/blob/7.0/packages/babel-helper-builder-react-jsx/src/index.js
- */
+import _ from 'src/external/lodash/lodash.js'
 
-function addMetaData(element, data = {}) {
-  return element.jsxMetaData = Object.assign(element.jsxMetaData || {}, data);
+/* Generic */
+
+const isExtending = (classDeclarationPath, superClassIdentifierName) =>
+  classDeclarationPath.node.superClass &&
+  classDeclarationPath.node.superClass.name === superClassIdentifierName;
+
+const getClassMethodByName = (path, name) =>
+  _(path.get('body').get('body'))
+    .filter(possibleClassMethod => possibleClassMethod.isClassMethod())
+    .find(classMethod => classMethod.get('key').isIdentifier({ name }));
+
+/* Bind Input Fields */
+
+const addBindInputFieldsMethodCall = (t, path) => {
+  const attachedCallback = getClassMethodByName(path, 'attachedCallback');
+  const superCall = getSuperAttachedCallback(attachedCallback);
+  const bindMethodCall = createBindMethodCall(t);
+  if (superCall)
+    superCall.replaceWith(bindMethodCall);
+  else
+    attachedCallback.get('body').unshiftContainer('body', bindMethodCall);
 }
 
-function basicCreateElement(tagName) {
-  const element = document.createElement(tagName);
+const createBindMethodCall = t =>
+  t.expressionStatement(
+    t.callExpression(
+      t.memberExpression(
+        t.callExpression(
+          t.memberExpression(
+            t.super(),
+            t.identifier('attachedCallback')
+          ),
+          []
+        ),
+        t.identifier('then')
+      ),
+      [
+        t.arrowFunctionExpression(
+          [],
+          t.blockStatement(
+            [
+              t.ifStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    t.thisExpression(),
+                    t.identifier('isDummy')
+                  ),
+                  []
+                ),
+                t.returnStatement()
+              ),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    t.thisExpression(),
+                    t.identifier('bindInputFields')
+                  ),
+                  []
+                )
+              )
+            ]
+          )
+        ) 
+      ]
+    )
+  );
 
-  addMetaData(element, { timeOffset: performance.now() });
-
-  return element;
+const getSuperAttachedCallback = path => {
+  let found = undefined;
+  path.traverse({
+    Super(path) {
+      const parent = path.parentPath;
+      found = found || 
+        parent.isMemberExpression() && 
+        parent.parentPath.isCallExpression() &&
+        parent.get('property').node.name === 'attachedCallback' 
+      && parent.parentPath;
+    }
+  });
+  return found;
 }
 
-// cannot use JSX elements in implementation of JSX elements :(
-function getPendingNode() {
-  const icon = basicCreateElement("i");
-  icon.classList.add("fa", "fa-spinner", "fa-pulse", "fa-fw");
-  const span = document.createElement("span");
-  span.style.color = "yellow";
-  span.appendChild(icon);
-  span.appendChild(document.createTextNode("pending"));
-  return span;
-}
+const bindInputFields = (t, path) => {
+  const inputFields = findInputFieldsInRenderReturn(t, path);
+  const bindingMethod = createBindingMethod(t, inputFields);
+  path.get('body').pushContainer('body', bindingMethod);
+};
 
-function getErrorNode(e) {
-  const icon = basicCreateElement("i");
-  icon.classList.add("fa", "fa-exclamation-triangle");
-  const span = document.createElement("span");
-  span.style.color = "red";
-  span.appendChild(icon);
-  span.appendChild(document.createTextNode(e));
-  return span;
-}
-
-function getExpressionNode(expression) {
-  if (expression instanceof Promise) {
-    let promNode = getPendingNode();
-    expression.then(val => promNode.replaceWith(getExpressionNode(val))).catch(e => promNode.replaceWith(getErrorNode(e)));
-    return promNode;
+const findInputFieldsInRenderReturn = (t, path) => {
+  const inputFields = [];
+  const renderMethod = getClassMethodByName(path, 'render');
+  if (renderMethod) {
+    const returnStatement = _(renderMethod.get('body').get('body')).find(element =>
+                                                                         element.isReturnStatement());
+    if (returnStatement)
+      returnStatement.traverse(inputFieldFetchVisitor(), { inputFields });
   }
-  if (expression instanceof ActiveExpression) {
-    return toDOMNode.call(expression, value => {
-      const node = getExpressionNode(value);
-      // TODO: jsx-ray does not work on TextNodes, yet
-      addMetaData(element, { aexpr: expression });
-      return node;
+  return inputFields;
+};
+
+const inputFieldFetchVisitor = () => ({
+  JSXElement(path) {
+    const openingElement = path.get('openingElement');    
+    if (!openingElement || 
+        !openingElement.get('name').isJSXIdentifier({ name: 'input' }) &&
+        !openingElement.get('name').isJSXIdentifier({ name: 'textarea' }))
+      return;
+    const idAttribute = _(openingElement.get('attributes'))
+      .find(jsxAttribute => jsxAttribute.get('name').isJSXIdentifier({ name: 'id' }));
+    const valueAttribute = _(openingElement.get('attributes'))
+      .find(jsxAttribute => jsxAttribute.get('name').isJSXIdentifier({ name: 'value' }));
+    const formOpeningElement = findFormParent(path).get('openingElement');
+    const formIdAttribute = _(formOpeningElement.get('attributes'))
+      .find(jsxAttribute => jsxAttribute.get('name').isJSXIdentifier({ name: 'id' }));
+    if (!idAttribute || !formIdAttribute || !(valueAttribute && valueAttribute.get('value').isJSXExpressionContainer())) return;
+    const valueExpression = valueAttribute.get('value').get('expression').node;
+    this.inputFields.push({ 
+      id: idAttribute.get('value').node, 
+      valueExpression, 
+      formId: formIdAttribute.get('value').node,
     });
   }
-  return ensureDOMNode(expression);
-}
+});
 
-function ensureDOMNode(nodeOrObject) {
-  if (nodeOrObject instanceof Node) {
-    return nodeOrObject;
-  }
+const findFormParent = path =>
+  path.findParent((path) => 
+    path.isJSXElement() &&
+    path.get('openingElement') &&
+    path.get('openingElement').get('name').isJSXIdentifier({ name: 'form' }));
 
-  // Symbols needexplicitly need to be converted to strings
-  if (typeof nodeOrObject === 'symbol') {
-    return document.createTextNode(nodeOrObject.toString());
-  }
+const createBindingMethod = (t, inputFields) =>
+  t.classMethod(
+    'method',
+    t.identifier('bindInputFields'),
+    [],
+    t.blockStatement(
+      _(inputFields).map(({ id, valueExpression, formId, type }) =>
+        t.expressionStatement(
+          t.callExpression(
+            t.memberExpression(
+              t.thisExpression(),
+              t.identifier('addAExpr')
+            ),
+            [t.callExpression(
+              t.memberExpression(
+                t.callExpression(
+                  t.Identifier('aexpr'),
+                  [t.arrowFunctionExpression(
+                    [],
+                    t.memberExpression(
+                      t.callExpression(
+                        t.memberExpression(
+                          t.thisExpression(),
+                          t.identifier('get')
+                        ),
+                        [t.templateLiteral(
+                          [
+                            t.templateElement({ raw: '#', cooked: '#' }),
+                            t.templateElement({ raw: ' #', cooked: ' #' }),
+                            t.templateElement({ raw: '', cooked: '' })
+                          ],[
+                            formId,
+                            id
+                          ]
+                        )]
+                      ),
+                      t.identifier('value')
+                    )
+                  )]
+                ),
+                t.identifier('onChange')
+              ),
+              [t.arrowFunctionExpression(
+                [t.identifier('value')],
+                t.assignmentExpression(
+                  '=',
+                  valueExpression,
+                  t.identifier('value')
+                )
+              )]
+            ),
+            t.stringLiteral('inputFields')]
+          )
+        )
+      ).value()
+    )
+  );
 
-  return document.createTextNode(nodeOrObject);
-}
+/* Ensure attached callback existance */
+const createAttachedCallback = t =>
+  t.classMethod(
+    'method',
+    t.identifier('attachedCallback'),
+    [],
+    t.blockStatement([
+      t.expressionStatement(
+        t.callExpression(
+          t.memberExpression(
+            t.super(),
+            t.identifier('attachedCallback')
+          ),
+          []
+        )
+      )
+    ]),
+  );
 
-function isActiveGroup(obj) {
-  return obj && obj.isActiveGroup;
-}
-
-function composeElement(tagElement, attributes, children) {
-  for (let [key, value] of Object.entries(attributes)) {
-    if (value instanceof Function) {
-      // functions provided as attributes are used to create event listeners
-      tagElement.addEventListener(key, value);
-    } else {
-      tagElement.setAttribute(key, value.toString());
-    }
-  }
-
-  const roqsByReferenceNode = new WeakMap();
-  function handleActiveGroup(nodeOrActiveGroup) {
-    if (isActiveGroup(nodeOrActiveGroup)) {
-      const referenceNode = document.createElement('unused');
-      referenceNode.style.position = 'absolute';
-      roqsByReferenceNode.set(referenceNode, nodeOrActiveGroup);
-      return referenceNode; // use to insert elements of the ActiveGroup in the corresponding place
-    } else {
-      return nodeOrActiveGroup;
-    }
-  }
-  function initActiveGroup(referenceNode) {
-    if (roqsByReferenceNode.has(referenceNode)) {
-      const activeGroup = roqsByReferenceNode.get(referenceNode);
-
-      activeGroup.map(item => {
-        const node = getExpressionNode(item);
-        addMetaData(node, { item, activeGroup });
-        return node;
-      }).enter(node => {
-        referenceNode.parentNode.insertBefore(node, referenceNode);
-      }).exit(node => node.remove());
-    }
-  }
-
-  children.map(handleActiveGroup).map(ensureDOMNode).forEach(child => {
-    tagElement.appendChild(child);
-    initActiveGroup(child);
-  });
-
-  return tagElement;
-}
-
-export const isPromiseForJSXElement = Symbol('isPromiseForJSXElement');
-
-function addSourceLocation(element, sourceLocation) {
-  if (sourceLocation) {
-    addMetaData(element, { sourceLocation });
-  }
-}
-
-export function element() {
-  return document.createElement('span');
-}
-
-export function attributes(...attrs) {
-  return Object.assign({}, ...attrs);
-}
-
-export function attributeStringLiteral(key, value) {
-  return { [key]: value };
-}
-
-export function attributeEmpty(key) {
-  return { [key]: key };
-}
-
-export function attributeExpression(key, value) {
-  return { [key]: value };
-}
-
-export function attributeSpread(obj) {
-  return obj;
-}
-
-export function children(...children) {
-  return [].concat(...children);
-}
-
-export function childText(text) {
-  return [ensureDOMNode(text)];
-}
-
-export function childElement(jSXElement) {
-  return [jSXElement];
-}
-
-// can take:
-// - a DOM node
-// - a JavaScript object or primitive
-// - a Promise
-// - an Active Expression
-export function childExpression(expression) {
-  return [getExpressionNode(expression)];
-}
-
-export function childSpread(array) {
-  // #TODO: <ul>{active-group}</ul> also gets the reactive behavior, do we want this?
-  if (isActiveGroup(array)) {
-    return [array];
-  } else {
-    return array;
+const ensureAttachedCallbackExistance = (t, path) => {
+  if (!getClassMethodByName(path, 'attachedCallback')) {
+    path.get('body').unshiftContainer('body', createAttachedCallback(t));
   }
 }
+
+/* Console log for tracing all render calls */
+const addRenderConsoleLog = (t, path) => {
+  const renderMethod = getClassMethodByName(path, 'render');
+  if (!renderMethod) return;
+  renderMethod.get('body').unshiftContainer('body', logRenderToConsole(t));
+}
+
+const logRenderToConsole = t => 
+  t.expressionStatement(
+    t.callExpression(
+      t.memberExpression(
+        t.identifier('console'),
+        t.identifier('log')
+      ),
+      [t.templateLiteral(
+        [
+          t.templateElement({ raw: 'render ', cooked: 'render ' }),
+          t.templateElement({ raw: '', cooked: '' })
+        ],[
+          t.memberExpression(
+            t.thisExpression(),
+            t.identifier('localName')
+          )
+        ]
+      )]
+    )
+  );
+
+/* Console log for tracing all detached calls */
+const addDetachedConsoleLog = (t, path) => {
+  const detachedCallbackMethod = getClassMethodByName(path, 'detachedCallback');
+  if (!detachedCallbackMethod) return;
+  detachedCallbackMethod.get('body').unshiftContainer('body', logDetachedToConsole(t));
+}
+
+const logDetachedToConsole = t => 
+  t.expressionStatement(
+    t.callExpression(
+      t.memberExpression(
+        t.identifier('console'),
+        t.identifier('log')
+      ),
+      [t.templateLiteral(
+        [
+          t.templateElement({ raw: 'detached ', cooked: 'detached ' }),
+          t.templateElement({ raw: '', cooked: '' })
+        ],[
+          t.memberExpression(
+            t.thisExpression(),
+            t.identifier('localName')
+          )
+        ]
+      )]
+    )
+  );
+
+/* Reactive Morph */
+
+export const reactiveMorphVisitor = t => ({
+  ClassDeclaration(path) {
+    if (!isExtending(path, 'ReactiveMorph')) return;
+    ensureAttachedCallbackExistance(t, path);
+    bindInputFields(t, path);
+    addBindInputFieldsMethodCall(t, path);
+    // addRenderConsoleLog(t, path);
+    // addDetachedConsoleLog(t, path);
+  },
+});

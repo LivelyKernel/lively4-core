@@ -11,7 +11,7 @@ import {AExprRegistry} from 'src/client/reactive/active-expression/active-expres
 
 export default class EventDrops extends Morph {
   async initialize() {
-    this.windowTitle = "EventDrops";
+    this.windowTitle = "Active Expression Event Timeline";
     this.config = {
       d3,
       range : this.chart ? this.chart.range : void 0,
