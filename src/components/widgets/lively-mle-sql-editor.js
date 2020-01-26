@@ -15,7 +15,8 @@ export default class LivelyMleSqlEditor extends Morph {
     this.socket.on('success', status => {
       if(status === "connected"){
         lively.notify('Connected');
-      } else {
+      }
+      if(status=== "executed"){
         lively.success('Resource successfully processed');
       }
     });

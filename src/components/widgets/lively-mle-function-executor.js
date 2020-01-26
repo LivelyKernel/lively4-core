@@ -1,7 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import SocketIO from 'src/external/socketio.js';
+import {SocketSingleton} from 'src/components/mle/socket.js';
 
 export default class LivelyMleFunctionExecutor extends Morph {
   async initialize() {
@@ -9,24 +9,18 @@ export default class LivelyMleFunctionExecutor extends Morph {
     this.initialized = false;
     this.windowTitle = "MLE Function Executor";
     this.registerButtons()
-    this.socket = SocketIO("http://localhost:8080");
-    this.socket.emit('options',  {
-      connectString: 'localhost:1521/MLEEDITOR',
-      user: 'system',
-      password: 'MY_PASSWORD_123'
-    });
-    lively.notify('Connected');
+    this.socket = await SocketSingleton.get();
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', status => {
       if(status === "connected"){
         lively.notify('Connected');
-      } else {
+      }
+      if (status === "tested") {
         lively.success('Resource successfully processed');
       }
     });
     this.socket.on('result', r => {result.value = r.rows[0][0]});
-    lively.html.registerKeys(this); // automatically installs handler for some methods
     this.innerHTML = '';
     this.types = [];
     this.args= [];
@@ -39,7 +33,7 @@ export default class LivelyMleFunctionExecutor extends Morph {
     const test = <button id='test' click={() => {
       this.socket.emit('test', {
         func: functionName.value,
-        parameters: this.args.map((x,i) => this.types[i] === "String" ? x : +x)
+        parameters: this.args.filter((_, i) => i<this.amount).map((x,i) => this.types[i] === "String" ? x : +x)
       })
     }}>Test</button>;
     const result = <input disabled type="text" />;

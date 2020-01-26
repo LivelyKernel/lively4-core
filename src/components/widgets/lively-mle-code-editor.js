@@ -1,7 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import SocketIO from 'src/external/socketio.js';
+import {SocketSingleton} from 'src/components/mle/socket.js';
 
 export default class LivelyMleCodeEditor extends Morph {
   async initialize() {
@@ -10,12 +10,7 @@ export default class LivelyMleCodeEditor extends Morph {
     this.windowTitle = "MLE Code Editor";
     this.registerButtons()
     this.innerHTML = '';
-    this.socket = SocketIO("http://localhost:8080");
-    this.socket.emit('options', {
-      connectString: 'localhost:1521/MLEEDITOR',
-      user: 'system',
-      password: 'MY_PASSWORD_123'
-    });
+    this.socket = await SocketSingleton.get();
     this.socket.on('busy', () => lively.warn('Resource currently busy'));
     this.socket.on('failure', err => lively.error('Resource failed processing', err));
     this.socket.on('success', status => {
@@ -25,10 +20,10 @@ export default class LivelyMleCodeEditor extends Morph {
       if(status === "saved"){
         lively.success('Resource successfully saved');
         this.socket.emit('deploy',{
-      connectionString: 'localhost:1521/MLEEDITOR',
-      user: 'system',
-      password: 'MY_PASSWORD_123'
-    });
+          connectionString: '132.145.55.192:1521/MLEEDITOR',
+          user: 'system',
+          password: 'MY_PASSWORD_123'
+        });
       }
       if(status ==="deployed"){
         lively.success('Resource successfully deployed');
