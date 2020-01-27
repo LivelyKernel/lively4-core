@@ -1017,11 +1017,11 @@ import { random as _random } from "src/external/lodash/lodash.js";
 export function random() {
   return _random.apply(undefined, [this].concat(Array.prototype.slice.apply(arguments)));
 };
-
+/*
 import { range as _range } from "src/external/lodash/lodash.js";
 export function range() {
   return _range.apply(undefined, [this].concat(Array.prototype.slice.apply(arguments)));
-};
+};*/
 
 import { rangeRight as _rangeRight } from "src/external/lodash/lodash.js";
 export function rangeRight() {

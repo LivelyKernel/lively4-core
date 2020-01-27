@@ -70,26 +70,12 @@ export default class Morph extends HTMLElement {
   }
 
   registerButtons() {
-    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.from(this.shadowRoot.querySelectorAll('button')).forEach(node => {
       var name = node.id;
       var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
       // console.log('register button ' + name)
       node.addEventListener("click", evt => {
-        if (this[funcName] instanceof Function) {
-          this[funcName](evt);
-        } else {
-          alert('No callback: ' +  funcName);
-        }
-      });
-    });
-  }
-  
-  registerForms() { 
-    Array.from(this.shadowRoot.querySelectorAll('form')).forEach(node => {
-      var name = node.id;
-      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
-      node.addEventListener("submit", evt => {
         if (this[funcName] instanceof Function) {
           this[funcName](evt);
         } else {

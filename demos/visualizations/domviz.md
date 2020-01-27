@@ -1,10 +1,9 @@
 <div style="position:absolute; top: 20px; left: 30px; z-index: 1">
-<h1>HTML DOM Viz (myself)</h1>
-limit <input id="limit">
+<h1>HTML DOM Viz</h1>
+
 </div>
 
 <script>
-
   // see https://www.graphviz.org/about/
   const GraphvizEngine = "dot" // "dot" , "neato", "fdp", "osage" 
 
@@ -16,10 +15,11 @@ limit <input id="limit">
   import _ from 'src/external/lodash/lodash.js'
   import {GroupMap} from "src/client/collections.js"
   import ScriptApp from "./scriptapp.js"
-    
-  class GraphVizData {
   
-    constructor() {
+  class DomVizGraph {
+  
+    constructor(data) {
+      this.data = data
       this.nodes = new Map()
       this.dataById = new Map()
       this.edges = new Set()
@@ -34,11 +34,6 @@ limit <input id="limit">
       
       this.maxNodes = 1500
     }
-  
-    updateData() {
-        
-    }
-    
     
     key(data) {
       var id = this.idMap.get(data)
@@ -90,14 +85,14 @@ limit <input id="limit">
       var contents = data && data.outerHTML
       if (!contents) return 1
       
-      var mySize =  Math.sqrt(contents.length)
+      var mySize =  contents.length
       var childrenSize = 0
       this.dataEdges(data).forEach(ea => {
         if (ea.outerHTML) {
           childrenSize += ea.outerHTML.length
         }
       })      
-      return (mySize - childrenSize) / 20
+      return Math.sqrt(mySize - childrenSize) / 20
     }
     
     dataStyle(data, unfinished) {
@@ -111,7 +106,7 @@ limit <input id="limit">
       style = `style="${unfinished ? "" : "filled"}" color="${color}" fixedsize="true" width="${size}" height="${size}"  label="${label}"`  // style="filled" 
       
       return "[" + style + "]"
-  }
+    }
   
     async addNode(data) {
       var nodeId = this.key(data)
@@ -142,8 +137,7 @@ limit <input id="limit">
       return nodeId
     }
 
-    getSource() {
-      
+    getSource() {  
       var groupParents = new Map()
       var groups = _.groupBy(Array.from(this.nodes.keys()), key => {
         var data = this.dataById.get(key)
@@ -152,7 +146,6 @@ limit <input id="limit">
         return clusterNodeId
       })
       var roots = Object.keys(groups).filter(ea => !groupParents.get(ea))
-      
       
       var getCluster = (groupId) => {
         var group = groups[groupId]
@@ -167,8 +160,6 @@ limit <input id="limit">
       }
       
       var cluster = roots.map(ea => getCluster(ea))
-    
-      
     
       var source =  `digraph {
           rankdir=LR;
@@ -187,41 +178,156 @@ limit <input id="limit">
     }
   }  
   
-  class GraphApp extends ScriptApp {
-    
-    static async create(ctx) {    
-      await super.create(ctx)
-      
-      
-      this.graph = new GraphVizData()
-  
+ 
+  class GraphVizApp  {
+    constructor(ctx, graph) {
       this.ctx = ctx
-      this.data = Array.from(document.body.childNodes)
-      
-      this.setEngine(GraphvizEngine)
-      await this.updateViz()
-      
-      return this.result
+      this.container = this.get("lively-container");
+      this.containerContent = this.container.get("#container-content")
+      this.graph = graph
     }
     
-    static async updateViz() {
+    get data() {
+      return this.graph.data
+    }
+    
+    get(query) {
+      return lively.query(this.ctx, query)
+    } 
+    
+    async setup() {
+      var div = document.createElement("div")
+      div.id = "root"
+      this.result = div
+      this.graphviz = await (<graphviz-dot engine={this.getEngine()} server="true" ></graphviz-dot>) // 
 
-        var start = performance.now()
-        for(var ea of this.data) {
-          // if (i > limitElement.value) break; 
-          await this.graph.addNode(ea)
+      this.updateExtent()
+
+      lively.removeEventListener("graphvizContent", this.container)
+      lively.addEventListener("graphvizContent", this.container, "extent-changed", () => {
+        this.updateExtent()
+      });
+
+      var style = document.createElement("style")
+      style.textContent = `
+        td.comment {
+          max-width: 300px
         }
-        console.log("[GraphApp]  " + Math.round(performance.now() - start) + "ms")
-        var source = this.graph.getSource()
-          
-        this.graphviz.innerHTML = `<` +`script type="graphviz">`+source+ `<` + `/script>}`
+        div#root {
+          overflow: visible;
+        }
+
+        #graphviz {
+          position: absolute;
+          top: 0px
+          left: 0px;
+
+        }`
         
-        var start = performance.now()
-        await this.graphviz.updateViz()
-        console.log("[GraphApp] layouted  in " + Math.round(performance.now() - start) + "ms" )
+      div.appendChild(style)
+      div.appendChild(<div>
+        <button click={() => this.updateViz()}>update</button>
+      </div>)
+      div.appendChild(this.graphviz)
+
+      this.setEngine(GraphvizEngine)
+    }
+    
+    
+    getEngine() {
+      return this.engine || "dot"
+    }
+
+    setEngine(engine) {
+      this.engine = engine
+      if (this.graphviz) {
+        this.graphviz.setAttribute("engine", engine);
+      }
+      return engine
+    }
+
+
+    
+    updateSVG() {
+      var svg = this.graphviz.get("svg")
+      if (!svg) {
+        lively.warn("no svg found") // should we wait?
+        return
+      }
+
+      var zoomElement = document.createElementNS("http://www.w3.org/2000/svg", "g")  
+      var zoomG = d3.select(zoomElement)
+
+      var svgOuter = d3.select(svg)
+      var svgGraph = d3.select(this.graphviz.get("#graph0"))
+
+      svgOuter
+        .style("pointer-events", "all")        
+        .call(d3.zoom()
+            .scaleExtent([1 / 30, 30])
+            .on("zoom", () => {
+              var trans = d3.event.transform
+              zoomG.attr("transform", trans);
+            }));        
+      svg.appendChild(zoomElement)
+      zoomElement.appendChild(this.graphviz.get("#graph0"))
+
+
+      this.graphviz.shadowRoot.querySelectorAll("g.node").forEach(ea => {
+        d3.select(ea).style("pointer-events", "all")
+        ea.addEventListener("click", async (evt) => {
+          // lively.showElement(ea)
+          var key = ea.querySelector('title').textContent
+          var data = this.graph.dataById.get(key)
+
+          if (evt.shiftKey) {
+            lively.openInspector({
+              element: ea,
+              key: key,
+              data: data
+            })
+            return
+          }
+          var data = this.graph.dataById.get(key)
+          if (data) {
+            this.graph.dataClick(data, ea)
+          }
+
+          this.lastSelectedNode = this.selectedNode
+          this.selectedNode = ea
+        })
+      })
+    }
+
+    updateExtent() {
+      var extent = lively.getExtent(this.containerContent)
+      this.graphviz.width = extent.x - 40
+      this.graphviz.height = extent.y - 40
+    }
         
-        this.updateSVG()
-      } 
+    async updateViz() {
+      var start = performance.now()
+      for(var ea of this.data) {
+        await this.graph.addNode(ea)
+      }
+      console.log("[GraphApp]  " + Math.round(performance.now() - start) + "ms")
+      var source = this.graph.getSource()
+
+      this.graphviz.innerHTML = `<` +`script type="graphviz">`+source+ `<` + `/script>}`
+
+      var start = performance.now()
+      await this.graphviz.updateViz()
+      console.log("[GraphApp] layouted  in " + Math.round(performance.now() - start) + "ms" )
+
+      this.updateSVG()
+    } 
+      
+    static async create(ctx, graph) {
+      var app = new GraphVizApp(ctx, graph)
+      await app.setup()    
+      await app.updateViz()
+      return app.result
+    }
   }
-  GraphApp.create(this)
+  GraphVizApp.create(this, new DomVizGraph(Array.from([that || document.bodies])))
 </script>

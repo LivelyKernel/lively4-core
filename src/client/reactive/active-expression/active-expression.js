@@ -190,6 +190,8 @@ export class BaseActiveExpression {
 
     this._annotations = new Annotations();
     if(location){this.meta({location})}
+    this.meta({events : new Array()});
+    this.meta().get('events').push({timestamp: new Date(), message: 'created'});
 
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -296,6 +298,12 @@ export class BaseActiveExpression {
     if(isError || this.compareResults(this.lastValue, value)) { return; }
     const lastValue = this.lastValue;
     this.storeResult(value);
+    
+    this.meta().get('events').push({
+      timestamp: new Date(), 
+      message: 'changed value',
+      value: value
+    });
 
     this.notify(value, {
       lastValue,
@@ -401,6 +409,7 @@ export class BaseActiveExpression {
       this._isDisposed = true;
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
+      this.meta().get('events').push({timestamp: new Date(), message: 'disposed'});
     }
   }
 
@@ -421,15 +430,6 @@ export class BaseActiveExpression {
   }
 
   /*MD ## Reflection Information MD*/
-  name(...args) {
-    if(args.length > 0) {
-      this._annotations.add({ name: args[0] });
-      return this;
-    } else {
-      return this._annotations.get('name');
-    }
-  }
-
   meta(annotation) {
     if(annotation) {
       this._annotations.add(annotation);
@@ -441,6 +441,10 @@ export class BaseActiveExpression {
 
   supportsDependencies() {
     return false;
+  }
+  
+  logEvent(event) {
+    //TODO
   }
 }
 

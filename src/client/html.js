@@ -92,7 +92,7 @@ export default class HTML {
   }
   
   static registerButtons(parent) {
-    // Just an experiment for having to write lesser code.... which ended up in having more code here ;-) #Jens
+    // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
       var name = node.id
       var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
@@ -350,7 +350,7 @@ export default class HTML {
     obj._attrObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {  
         if(mutation.type == "attributes") { 
-          console.log('mutation ' + mutation.attributeName )
+          // console.log('mutation ' + mutation.attributeName )
           var methodName = "on" + Strings.toUpperCaseFirst(mutation.attributeName) + "Changed"
           if (obj[methodName]) {
             // console.log("found " + methodName)

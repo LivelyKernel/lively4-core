@@ -1,7 +1,11 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import { debounce } from "utils";
 
-/* Plain GraphiViz Dot Wrapper Component */
+/*MD # Plain GraphiViz Dot Wrapper Component 
+
+![](graphviz-dot.png){width=200px}
+
+MD*/
 
 
 export default class GraphvizDot extends Morph {

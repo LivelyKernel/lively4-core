@@ -1,5 +1,6 @@
 import { loc, range } from 'utils';
 
+import boundEval from 'src/client/bound-eval.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import FileIndex from "src/client/fileindex.js";
 
@@ -8,6 +9,8 @@ const babel = babelDefault.babel;
 
 const t = babel.types;
 const template = babel.template;
+
+import { fileEnding, replaceFileEndingWith } from "utils";
 
 export default class ASTCapabilities {
 
@@ -41,22 +44,32 @@ export default class ASTCapabilities {
    * Get the root path
   */
   get programPath() {
-    var myself = this;
-    if(!this.myProgramPath) {
-      this.sourceCode.traverseAsAST({
+    if (!this.myProgramPath) {
+      this.myProgramPath = this.programPathFor(this.sourceCode);
+    }
+    return this.myProgramPath;
+  }
+
+  programPathFor(code) {
+    var programPath = null;
+    try {
+      code.traverseAsAST({
         Program(path) {
-          myself.myProgramPath = path;
+          programPath = path;
         }
       });
+    } catch (err) {
+      return null;
     }
-    
-    return this.myProgramPath;
+
+    return programPath;
   }
 
   codeChanged() {
     this.myProgramPath = undefined;
+    this.updateColorPicker();
   }
-  
+
   /** 
    * Return first child in depth first search that satisfies a condition
    */
@@ -330,12 +343,87 @@ export default class ASTCapabilities {
     return this.getFirstSelectedIdentifierWithName(binding.path, binding.identifier.name);
   }
 
-  getBindings(startPath) {
+  getBindingsInFile(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (identifier && identifier.scope.hasBinding(identifier.node.name)) {
-      const binding = identifier.scope.getBinding(identifier.node.name);
-      return [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+    if (!identifier) return [];
+    const astBindings = this.getASTBinding(identifier)
+
+    if(astBindings) {
+      return astBindings;
     }
+
+    return this.getClassBindings(identifier);
+  }
+
+  getASTBinding(identifier) {
+    if (identifier.scope.hasBinding(identifier.node.name)) {
+      const binding = identifier.scope.getBinding(identifier.node.name);
+      const identifierPaths = [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+      if (identifierPaths.includes(identifier)) {
+        return identifierPaths;
+      }
+    }
+    return undefined;
+  }
+
+  getClassBindings(identifier) {
+    if (t.isMemberExpression(identifier.parent)) {
+      if (t.isThisExpression(identifier.parent.object)) {
+        let classPath = this.getClassPath(this.programPath);
+        let methodPath = this.getMethodPath(classPath, identifier.node.name);
+        if (methodPath) {
+          return this.getClassMethodBindings(methodPath);
+        } else {
+          return this.getMemberBindings(identifier);
+        }
+      }
+    } else if (t.isClassMethod(identifier.parent)) {
+      return this.getClassMethodBindings(identifier.parentPath);
+    }
+  }
+
+  getClassMethodBindings(classMethod) {
+    var methodIdentifier;
+    classMethod.traverse({
+      Identifier(path) {
+        path.stop();
+        methodIdentifier = path;
+      }
+    });
+    return [methodIdentifier, ...this.getMemberBindings(methodIdentifier)];
+  }
+
+  /**
+   * if getUnbound is set to true, instead of getting all member Expressions with this (= that are bound) we only get those, that are unbound
+   */
+  getMemberBindings(identifier, getUnbound = false, startPath = this.programPath) {
+    var members = [];
+    startPath.traverse({
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent) && path.node.name === identifier.node.name) {
+          if (t.isThisExpression(path.parent.object) && !getUnbound) {
+            members.push(path);
+          } else if (getUnbound) {
+            members.push(path);
+          }
+        }
+      }
+    });
+    return members;
+  }
+
+  getAllUnboundIdentifierNames(startPath = this.programPath) {
+    var unboundIdentifiers = [];
+    startPath.traverse({
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent)) {
+          if (!t.isThisExpression(path.parent.object)) {
+            unboundIdentifiers.push(path);
+          }
+        }
+      }
+    });
+    return unboundIdentifiers.map(binding => binding.node.name).filter((value, index, self) => self.indexOf(value) === index);
   }
 
   getNextASTNodeInListWith(condition, pathList, path) {
@@ -352,9 +440,13 @@ export default class ASTCapabilities {
   /** 
    * Select the text corresponding to the given nodes in the editor
    */
-  selectNodes(nodes) {
+  selectNodes(nodes, selectStringContentsOnly = false) {
     const ranges = nodes.map(node => {
       const [anchor, head] = range(node.loc).asCM();
+      if (selectStringContentsOnly && t.isStringLiteral(node)) {
+        anchor.ch++;
+        head.ch--;
+      }
       return { anchor, head };
     });
     // #TODO: include primary selection
@@ -363,13 +455,14 @@ export default class ASTCapabilities {
     } else {
       this.editor.setSelections(ranges);
     }
+    this.codeMirror.scrollIntoView({ from: ranges[0].head, to: ranges[0].anchor }, 120);
   }
 
   /** 
    * Select the text corresponding to the given paths in the editor
    */
-  selectPaths(paths) {
-    this.selectNodes(paths.map(path => path.node));
+  selectPaths(paths, selectStringContentsOnly = false) {
+    this.selectNodes(paths.map(path => path.node), selectStringContentsOnly);
   }
 
   /** 
@@ -406,10 +499,10 @@ export default class ASTCapabilities {
     });
     return classPath;
   }
-  
+
   getColorLiterals(programPath) {
     let colorPaths = [];
-    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}/g;
+    const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}$/g;
     programPath.traverse({
       StringLiteral(path) {
         if (path.node.value.match(colorRegex)) {
@@ -447,11 +540,7 @@ export default class ASTCapabilities {
 
   selectNextASTChild(reversed) {
     return this.selectNextASTNodeWith((currentNode, nextNode) => {
-      return t.isIdentifier(nextNode) ||
-        t.isLiteral(nextNode) ||
-        t.isThisExpression(nextNode) || 
-        t.isSuper(nextNode) || 
-        t.isDebuggerStatement(nextNode);
+      return t.isIdentifier(nextNode) || t.isLiteral(nextNode) || t.isThisExpression(nextNode) || t.isSuper(nextNode) || t.isDebuggerStatement(nextNode);
     }, reversed);
   }
 
@@ -462,8 +551,7 @@ export default class ASTCapabilities {
   selectNextReference(reversed) {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
-    const bindings = this.getBindings(selectedPath);
-    if (bindings) {
+    const bindings = this.getBindingsInFile(selectedPath);if (bindings) {
       let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
       let index = sortedBindings.indexOf(selectedPath);
       index += reversed ? -1 : 1;
@@ -487,12 +575,13 @@ export default class ASTCapabilities {
     } else {
       let classPath = this.getClassPath(this.programPath);
       let methodPath = this.getMethodPath(classPath, identName);
-      const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
-      const functionUrls = await this.getFunctionExportURLs(identName);
-      const urls = classUrls.concat(functionUrls);
       if (methodPath) {
-        this.selectPaths([methodPath]);
+        this.selectNodes([methodPath.node.key]);
       } else {
+        const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
+        const functionUrls = await this.getFunctionExportURLs(identName);
+        const urls = classUrls.concat(functionUrls);
+
         urls.forEach(url => lively.openBrowser(url, true).then(container => {
           container.asyncGet("#editor").then(async livelyEditor => {
             let newCodeMirror = livelyEditor.livelyCodeMirror();
@@ -504,15 +593,100 @@ export default class ASTCapabilities {
         }));
       }
     }
+    /**
+      TODO: if our dependencies don't have the method, we can search all classes    
+      Also: do not only search for methods, but for members too (even though they are technically not bindings?)
+    */
+  }
+
+  async rename() {
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+
+    var identifier = this.getFirstSelectedIdentifier(selectedPath);
+    if (!identifier) return;
+    const astBindings = this.getASTBinding(identifier)
+
+    if(astBindings) {
+      this.selectPaths(astBindings);
+      return;
+    }
+    
+    const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
+
+    
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setAdditionalInput("Name", "enter new name");
+    comp.setTitle("Rename " + identifier.node.name);
+    const references = await comp.selectItems(bindingItems);
+    
+    const newName = comp.getAdditionalInput().camelCase();
+    if(newName === "") return;
+    
+    for(const reference of references) {
+      const code = await fetch(reference.url).then(r => r.text());
+      
+      const codeLines = code.split("\n");
+      
+      String.prototype.replaceBetween = function(start, end, what) {
+        return this.substring(0, start) + what + this.substring(end);
+      };
+      codeLines[reference.line] = codeLines[reference.line].replaceBetween(reference.ch, reference.ch + identifier.node.name.length, newName);
+      
+      const newCode = codeLines.join("\n");
+      await lively.files.saveFile(reference.url, newCode);
+      await lively.reloadModule(reference.url)
+      await System.import(reference.url);
+    }
   }
 
   selectBindings() {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
-    const bindings = this.getBindings(selectedPath);
+    const bindings = this.getBindingsInFile(selectedPath);
     if (bindings) {
       this.selectPaths(bindings);
     }
+  }
+
+  async printAllBindings() {
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+
+    //const bindings = this.getBindings(selectedPath);
+    var identifier = this.getFirstSelectedIdentifier(selectedPath);
+
+    //find classes that contain the method
+    const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
+
+    this.openReferencesMenu(bindingItems, identifier.node.name);
+  }
+
+  async getPossibleBindingsAcrossFiles(identifier) {
+    let index = await FileIndex.current();
+    let ids = await index.db.files.filter(file => {
+      if (!file.unboundIdentifiers) return false;
+      return file.unboundIdentifiers.some(id => id.name == identifier.name);
+    }).toArray();
+    const bindingItems = [];
+
+    for (const id of ids) {
+      const code = await fetch(id.url).then(r => r.text());
+      const program = this.programPathFor(code);
+      for (const reference of this.getMemberBindings(identifier, true, program)) {
+        const line = reference.node.loc.start.line - 1;
+        const ch = reference.node.loc.start.column;
+        bindingItems.push({ id: id.url.substring(id.url.lastIndexOf("/") + 1) + ": " + line, url: id.url, line, ch });
+      }
+    }
+
+    return bindingItems;
+  }
+
+  async openReferencesMenu(ids, identifierName) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("References of " + identifierName);
+    return comp.selectItems(ids);
   }
 
   async findImports() {
@@ -528,6 +702,38 @@ export default class ASTCapabilities {
   }
   /*MD ## Factoring Menu MD*/
 
+  /*MD ### Factoring Menu Helper Methods MD*/
+
+  // returns innermostDescribePath 
+  isInDescribe(path) {
+    let possiblePath = this.isIn("CallExpression", path, "describe");
+
+    while (possiblePath !== null) {
+      if (possiblePath.node && possiblePath.node.callee.name === "describe") {
+        break;
+      }
+      possiblePath = this.isIn("CallExpression", possiblePath.parentPath, "describe");
+    }
+    return possiblePath;
+  }
+
+  isIn(type, path) {
+    while (path !== null) {
+      if (this.isDirectlyIn(type, path)) {
+        return path;
+      }
+      path = path.parentPath;
+    }
+    return null;
+  }
+
+  isDirectlyIn(type, path) {
+    if (type instanceof Array) {
+      return type.map(elem => this.isDirectlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
+    }
+    return path.node && path.node.type === type;
+  }
+
   async openMenu() {
 
     function fa(name, ...modifiers) {
@@ -535,36 +741,6 @@ export default class ASTCapabilities {
     }
 
     const myself = this;
-
-    // returns innermostDescribePath 
-    function isInDescribe(path) {
-      let possiblePath = isIn("CallExpression", path, "describe");
-      
-      while(possiblePath !== null) {
-        if(possiblePath.node && possiblePath.node.callee.name === "describe") {
-          break;
-        }
-        possiblePath = isIn("CallExpression", possiblePath.parentPath, "describe");
-      }
-      return possiblePath;
-    }
-    
-    function isIn(type, path) {
-      while(path !== null) {
-        if(directlyIn(type, path)) {
-          return path;
-        }
-        path = path.parentPath; 
-      }
-      return null;     
-    }
-
-    function directlyIn(type, path) {
-      if (type instanceof Array) {
-        return type.map(elem => directlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
-      }
-      return path.node && path.node.type === type;
-    }
     /*MD ### Generate Submenus MD*/
 
     async function generateGenerationSubmenu() {
@@ -577,14 +753,14 @@ export default class ASTCapabilities {
       const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
 
       //add testcase if in describe
-      if (isInDescribe(selectedPath)) {
+      if (myself.isInDescribe(selectedPath)) {
         submenu.unshift(['Testcase', () => {
           menu.remove();
           myself.generateTestCase();
         }, '→', fa('suitcase')]);
       }
 
-      if (directlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
+      if (myself.isDirectlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
         submenu.push(['Getter', () => {
           menu.remove();
           myself.generateGetter();
@@ -627,23 +803,29 @@ export default class ASTCapabilities {
       this.wrapExpressionIntoActiveExpression();
     }, '→', fa('suitcase')], ['Rename', () => {
       menu.remove();
-      this.selectBindings();
+      this.rename();
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
     }, 'Alt+M', fa('suitcase'), () => {
       const selection = this.selectMethodExtraction(this.programPath, true);
-      if(selection) {
+      if (selection) {
         this.changedSelectionInMenu = true;
         this.selectPaths(selection.selectedPaths);
-      } else {        
+      } else {
         this.changedSelectionInMenu = false;
       }
     }, () => {
-      if(this.changedSelectionInMenu) {
-          this.editor.undoSelection();
+      if (this.changedSelectionInMenu) {
+        this.editor.undoSelection();
       }
-    }], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+    }], ['Generate HTML Accessors', () => {
+      menu.remove();
+      this.generateHTMLAccessors();
+    }, 'Alt+H', fa('suitcase')], ['Print References', () => {
+      this.printAllBindings();
+      menu.remove();
+    }, 'Alt+I', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -651,50 +833,143 @@ export default class ASTCapabilities {
       this.focusEditor();
     });
   }
-  
+
   /*MD ## Generations MD*/
 
-  /*MD ### Generate Testcase / Class / get / set MD*/
+  /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
+
+  async openHTMLAccessorsMenu(ids, initialSelectionState) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("HTML Accessor Menu");
+    return comp.selectItems(ids, initialSelectionState);
+  }
+
+  getExistingAccessors() {
+    let classMethodIdentifier;
+    this.programPath.traverse({
+      ExportDefaultDeclaration(path) {
+        if (path && path.node.declaration && path.node.declaration.type == "ClassDeclaration") {
+          classMethodIdentifier = path.node.declaration.body.body.map(elem => elem.key.name);
+          path.stop();
+        }
+      }
+    });
+    return classMethodIdentifier || [];
+  }
+
+  async generateHTMLAccessors() {
+    const ids = await this.compileListOfIDs();
+    if (ids.length == 0) {
+      return;
+    }
+
+    let existingMethods = this.getExistingAccessors();
+    let initialSelectionState = ids.map(elem => existingMethods.includes(this.generateMethodNameFromProperty(elem.id)));
+    const selectedItems = await this.openHTMLAccessorsMenu(ids, initialSelectionState);
+
+    if (selectedItems.length === 0) {
+      return;
+    }
+    lively.warn(`${selectedItems.length} Accessors generated`);
+
+    selectedItems.forEach(item => {
+      this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
+      const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+      let line = selectedPath.parent.loc.end.line + 1;
+      this.editor.setSelection({ line, ch: 0 });
+    });
+  }
+
+  async compileListOfIDs() {
+    let editor = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
+    let jsURI = encodeURI(editor.shadowRoot.querySelector("#filename").value);
+    const htmlURI = jsURI::replaceFileEndingWith('html');
+    let html = await htmlURI.fetchText();
+
+    if (html === "File not found!\n") {
+      lively.warn("There is no HTML associated with this file.");
+      return [];
+    }
+
+    let tmp = <div></div>;
+    tmp.innerHTML = html;
+    let ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
+
+    const htmlLines = html.split("\n");
+
+    const idsWithLocation = [];
+    for (const id of ids) {
+      for (const line of htmlLines) {
+        const indexOfId = line.indexOf("id=\"" + id + "\"");
+        if (indexOfId !== -1) {
+          idsWithLocation.push({ id, url: htmlURI, line: htmlLines.indexOf(line), ch: indexOfId + 4 });
+          break;
+        }
+      }
+    }
+    return idsWithLocation;
+  }
 
   generateTestCase() {
-    this.generateCodeFragment("should work properly", (id) => this.compileTestCase(id));
+    this.generateCodeFragment("ExplainWhatIsTested", id => this.compileTestCase(id.identifier));
   }
 
   generateGetter() {
-    this.generateCodeFragment("myCoolProperty", (id) => this.compileGetter(id));
+    this.generateCodeFragment("NameThisGetter", id => this.compileGetter(id.identifier));
   }
 
   generateSetter() {
-    this.generateCodeFragment("myCoolProperty", (id) => this.compileSetter(id));
+    this.generateCodeFragment("NameThisSetter", id => this.compileSetter(id.identifier));
   }
 
   generateClass() {
-    this.generateCodeFragment("Foo", (id) => this.compileClass(id));
+    this.generateCodeFragment("SetClassName", id => this.compileClass(id.identifier));
   }
 
   async generateCodeFragment(identifier, replacementGenerator) {
-    const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
+    const selection = this.firstSelection;
+
+    var identifierObject = { identifier };
+
+    var generatedCode;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          let path = this.getPathBeforeCursor(programPath, selection.start);
-          //const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
-          if (path === undefined) {
-            programPath.pushContainer('body', replacementGenerator(identifier));
+          let pathBefore = this.getPathBeforeCursor(programPath, selection.start);
+          let pathWithin = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+          // we're on top of the program
+          generatedCode = replacementGenerator(identifierObject);
+          if (pathBefore === undefined) {
+            pathWithin.unshiftContainer('body', generatedCode);
+          } else if (this.isDirectlyIn(pathWithin.type, pathBefore.parentPath)) {
+            pathBefore.insertAfter(generatedCode);
           } else {
-            let uniqueIdentifier = identifier;
-            //if(path.scope.hasBinding(identifier)) {
-            //  uniqueIdentifier = path.scope.generateUidIdentifier(identifier).name;
-            //}
-            path.insertAfter(replacementGenerator(uniqueIdentifier));
+            pathWithin.unshiftContainer('body', generatedCode);
           }
         }
       }
     })).code;
+
+    var pathToSelect;
+    this.programPath.traverse({
+      StringLiteral(path) {
+        if (!pathToSelect && path.node.value == identifierObject.identifier) {
+          pathToSelect = path;
+        }
+      },
+      Identifier(path) {
+        if (path.node.name == identifierObject.identifier) {
+          pathToSelect = path;
+          path.stop();
+        }
+      }
+    });
+    this.selectPaths([pathToSelect], true);
+
     this.scrollTo(scrollInfo);
     this.focusEditor();
-    this.editor.setSelection(selection.asCM()[0]);
   }
 
   compileTestCase(explanation) {
@@ -714,6 +989,17 @@ export default class ASTCapabilities {
 
   compileClass(className) {
     return t.classDeclaration(t.identifier(className), null, t.classBody([t.classMethod("constructor", t.Identifier("constructor"), [], t.blockStatement([]))]), []);
+  }
+
+  compileHTMLGetter(property) {
+    var propertyName = property.identifier;
+    var methodName = this.generateMethodNameFromProperty(propertyName);
+    property.identifier = methodName;
+    return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral("#" + propertyName)]))]));
+  }
+
+  generateMethodNameFromProperty(name) {
+    return name.camelCase();
   }
 
   async getUserInput(description, defaultValue) {
@@ -767,32 +1053,36 @@ export default class ASTCapabilities {
       return this.getBindingDeclarationIdentifierPath(identifier.scope.getBinding(identifier.node.name)).node;
     });
   }
-  
+
   shouldBeAsync(content) {
     let hasAwait = false;
-    content.forEach((startPath) => {
-      startPath.traverse({
-        AwaitExpression(path) {
-          hasAwait = true;
-          path.stop();
-        }
-      });
-    })
-    
+    content.forEach(startPath => {
+      if (t.isAwaitExpression(startPath.node)) {
+        hasAwait = true;
+      } else {
+        startPath.traverse({
+          AwaitExpression(path) {
+            hasAwait = true;
+            path.stop();
+          }
+        });
+      }
+    });
+
     return hasAwait;
   }
-  
-  shouldBeStatic(content) {
+
+  couldBeStatic(content) {
     let hasThis = false;
-    content.forEach((startPath) => {
+    content.forEach(startPath => {
       startPath.traverse({
         ThisExpression(path) {
           hasThis = true;
           path.stop();
         }
       });
-    })
-    
+    });
+
     return !hasThis;
   }
 
@@ -850,12 +1140,16 @@ export default class ASTCapabilities {
     const newMethod = t.classMethod("method", t.identifier("HopefullyNobodyEverUsesThisMethodName"), parameter, t.blockStatement(methodContent));
     newMethod.async = shouldBeAsync;
     newMethod.static = shouldBeStatic;
-    scope.insertAfter(newMethod)[0];
+    scope.insertAfter(newMethod);
     for (let i = 0; i < content.length - 1; i++) {
       content[i].remove();
     }
     var methodCall;
-    const callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
+    var callExpression = t.callExpression(t.identifier("this.HopefullyNobodyEverUsesThisMethodName"), parameter);
+    if (shouldBeAsync) {
+      lively.warn("Extracting async method. This could change the control flow.");
+      callExpression = t.awaitExpression(callExpression);
+    }
     if (returnValues.length == 1) {
       if (returnValues[0].declaredInExtractedCode) {
         const variableType = returnValues[0].constantViolationOutsideSelection ? "var" : "const";
@@ -892,11 +1186,13 @@ export default class ASTCapabilities {
           let surroundingMethod = selectedPaths[0].find(parent => {
             return parent.node.type == "ClassMethod";
           });
-          if(!surroundingMethod) {
+          var shouldBeStatic = this.couldBeStatic(selectedPaths);
+          if (!surroundingMethod) {
             surroundingMethod = selectedPaths[selectedPaths.length - 1];
+          } else {
+            shouldBeStatic = surroundingMethod.node.static;
           }
           const shouldBeAsync = this.shouldBeAsync(selectedPaths);
-          const shouldBeStatic = this.shouldBeStatic(selectedPaths);
           const parameters = this.findParameters(identifiers, surroundingMethod, actualSelections);
           const returnValues = this.findReturnValues(identifiers, surroundingMethod, actualSelections);
           this.createMethod(selectedPaths, [...new Set(parameters)], returnValues, surroundingMethod, extractingExpression, shouldBeAsync, shouldBeStatic);
@@ -1126,7 +1422,9 @@ export default class ASTCapabilities {
     return this.livelyCodeMirror.value;
   }
   set sourceCode(text) {
-    return this.livelyCodeMirror.value = text;
+    this.livelyCodeMirror.value = text;
+    this.codeChanged();
+    return this.livelyCodeMirror.value;
   }
 
   focusEditor() {
@@ -1142,7 +1440,7 @@ export default class ASTCapabilities {
       top: scrollInfo.top,
       right: scrollInfo.left + scrollInfo.width,
       bottom: scrollInfo.top + scrollInfo.height
-    });
+    }, 120);
   }
 
   /*MD ## Utilities MD*/
@@ -1212,8 +1510,7 @@ export default class ASTCapabilities {
     let locations = possibleClasses.filter(cl => {
       return possibleExports.some(e => e.url == cl.url && e.classes.some(eCl => eCl == cl.name));
     });
-    locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
-    return locations;
+    return locations.filter(ea => ea.url.match(lively4url)); //filter local files
   }
 
   async getFunctionExportURLs(methodName) {
@@ -1221,40 +1518,47 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    return locations.map(loc => loc.url); //.replace(lively4url,''));
+    return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
-  
+
   /*MD ## Color Picker MD*/
-  
+
   updateColorPicker() {
+    const pPath = this.programPath;
+    if (!pPath) {
+      return;
+    }
     const old = this.editor.getAllMarks();
     old.forEach(marker => {
       if (marker.type === "bookmark") {
         marker.clear();
       }
-    })
-    const colorLiterals = this.getColorLiterals(this.programPath);
+    });
+    const colorLiterals = this.getColorLiterals(pPath);
     colorLiterals.forEach(path => {
-      const location = {line: path.node.loc.end.line-1, column: path.node.loc.end.column};
+      const location = { line: path.node.loc.end.line - 1, ch: path.node.loc.end.column };
       var picker = document.createElement("input");
       picker.type = "color";
       picker.value = path.node.value;
+      picker.height = "15";
+      picker.width = "15";
       const bookmark = this.editor.setBookmark(location, picker);
-      picker.addEventListener('change', (event) => {
+      picker.addEventListener('change', event => {
         const currentLocation = bookmark.find();
         this.updateColor(currentLocation, event.target.value);
       });
-    })
+    });
   }
-  
+
   updateColor(currentLocation, color) {
+    var location = { anchor: currentLocation, head: currentLocation };
     const scrollInfo = this.scrollInfo;
     this.sourceCode = this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          const path = this.getPathBeforeCursor(programPath, currentLocation);
-          if (t.isVariableDeclarator(path.node)) {
-            path.node.init.value=color;
+          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isStringLiteral(path.node)) {
+            path.node.value = color;
           }
         }
       }
@@ -1262,5 +1566,5 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
     this.updateColorPicker();
   }
-  
+
 }
