@@ -203,7 +203,6 @@ export default class AstInspector extends Morph {
   }
   
   astNodeSummary(astNode, isExpanded) {
-    console.log(astNode.type, astNode);
     if (t.isIdentifier(astNode)) {
       return `"${astNode.name}"`;
     } else if (t.isStringLiteral(astNode)) {
@@ -370,11 +369,12 @@ export default class AstInspector extends Morph {
 /*MD # Handlers MD*/
   
   attachHandlers(element) {
-    element.onmouseenter = evt => {
-      this.onHoverStart(element);
+    element.onmouseover = evt => {
+      this.onStartHover(element);
+      evt.stopPropagation();
     }
     element.onmouseleave = evt => {
-      this.onHoverEnd(element);
+      this.onStopHover(element);
     }
     element.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = evt => {
@@ -399,20 +399,20 @@ export default class AstInspector extends Morph {
     this.dispatchEvent(new CustomEvent("select-object", {detail: {node: element, object: obj}}));
   }
   
-  onHoverStart(element) {
+  onStartHover(element) {
     if (this.editor && element.target.loc) {
       if (this.hoverMarker) this.hoverMarker.clear();
       const cm = this.editor.currentEditor();
       const start = loc(element.target.loc.start);
       const end = loc(element.target.loc.end);
       this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
-      console.log(loc);
     }
   }
   
-  onHoverEnd(element) {
+  onStopHover(element) {
     if (this.editor && element.target.loc) {
       if (this.hoverMarker) this.hoverMarker.clear();
+      this.hoverMarker = null;
     }
   }
   
