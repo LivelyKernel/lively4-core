@@ -1,20 +1,13 @@
 'enable aexpr';
 
-import { Auth } from 'src/client/reactive/components/rewritten/agent.js'
+import agent from 'src/client/reactive/components/rewritten/conduit/src/agent.js';
 
 class UserStore {
 
-  constructor() {
-    this.currentUser;
-    this.loadingUser;
-    this.updatingUser;
-    this.updatingUserErrors;
-  }
-
   pullUser() {
     this.loadingUser = true;
-    return Auth.current()
-      .then(user => 
+    return agent.Auth.current()
+      .then(({ user }) => 
             this.currentUser = user)
       .finally(() => 
             this.loadingUser = false);
@@ -22,9 +15,12 @@ class UserStore {
 
   updateUser(newUser) {
     this.updatingUser = true;
-    return Auth.save(newUser)
+    return agent.Auth.save(newUser)
       .then(({ user }) => 
             this.currentUser = user)
+      .catch(err => {
+        this.updatingUserErrors = err.response && err.response.body && err.response.body.errors;
+      })
       .finally(() => 
             this.updatingUser = false);
   }

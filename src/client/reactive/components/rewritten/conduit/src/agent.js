@@ -1,8 +1,12 @@
 import superagentPromise from 'src/external/superagent-promise.js';
 import _superagent from 'src/external/superagent.js';
 
-import commonStore from 'src/client/reactive/components/rewritten/stores/commonStore.js';
-import authStore from 'src/client/reactive/components/rewritten/stores/authStore.js';
+let authStore;
+let commonStore;
+const setAuthStore = newAuthStore =>
+  authStore = newAuthStore;
+const setCommonStore = newCommonStore =>
+  commonStore = newCommonStore;
 
 const superagent = superagentPromise(_superagent, Promise);
 
@@ -11,7 +15,7 @@ const API_ROOT = 'https://conduit.productionready.io/api';
 const encode = encodeURIComponent;
 
 const handleErrors = err => {
-  if (err && err.response && err.response.status === 401) {
+  if (err && err.response && err.response.status === 401 && authStore) {
     authStore.logout();
   }
   return err;
@@ -20,7 +24,7 @@ const handleErrors = err => {
 const responseBody = res => res.body;
 
 const tokenPlugin = req => {
-  if (commonStore.token) {
+  if (commonStore && commonStore.token) {
     req.set('authorization', `Token ${commonStore.token}`);
   }
 };
@@ -52,7 +56,7 @@ const requests = {
       .then(responseBody),
 };
 
-export const Auth = {
+const Auth = {
   current: () =>
     requests.get('/user'),
   login: (email, password) =>
@@ -63,28 +67,28 @@ export const Auth = {
     requests.put('/user', { user })
 };
 
-export const Tags = {
+const Tags = {
   getAll: () => requests.get('/tags')
 };
 
-const limit = (count, p) => `limit=${count}&offset=${p ? p * count : 0}`;
+const limit = (count, p) => `limit=${count}&offset=${p ? (p - 1) * count : 0}`;
 const omitSlug = article => Object.assign({}, article, { slug: undefined })
 
-export const Articles = {
-  all: (page, lim = 10) =>
+const Articles = {
+  all: (page = 0, lim = 10) =>
     requests.get(`/articles?${limit(lim, page)}`),
-  byAuthor: (author, page, query) =>
-    requests.get(`/articles?author=${encode(author)}&${limit(5, page)}`),
-  byTag: (tag, page, lim = 10) =>
+  byAuthor: (author, page = 0, lim = 10) =>
+    requests.get(`/articles?author=${encode(author)}&${limit(lim, page)}`),
+  byTag: (tag, page = 0, lim = 10) =>
     requests.get(`/articles?tag=${encode(tag)}&${limit(lim, page)}`),
   del: slug =>
     requests.del(`/articles/${slug}`),
   favorite: slug =>
     requests.post(`/articles/${slug}/favorite`),
-  favoritedBy: (author, page) =>
-    requests.get(`/articles?favorited=${encode(author)}&${limit(5, page)}`),
-  feed: () =>
-    requests.get('/articles/feed?limit=10&offset=0'),
+  favoritedBy: (author, page = 0, lim = 10) =>
+    requests.get(`/articles?favorited=${encode(author)}&${limit(lim, page)}`),
+  feed: (page = 0, lim = 10) =>
+    requests.get(`/articles/feed?${limit(lim, page)}`),
   get: slug =>
     requests.get(`/articles/${slug}`),
   unfavorite: slug =>
@@ -95,7 +99,7 @@ export const Articles = {
     requests.post('/articles', { article })
 };
 
-export const Comments = {
+const Comments = {
   create: (slug, comment) =>
     requests.post(`/articles/${slug}/comments`, { comment }),
   delete: (slug, commentId) =>
@@ -104,7 +108,7 @@ export const Comments = {
     requests.get(`/articles/${slug}/comments`)
 };
 
-export const Profile = {
+const Profile = {
   follow: username =>
     requests.post(`/profiles/${username}/follow`),
   get: username =>
@@ -113,5 +117,12 @@ export const Profile = {
     requests.del(`/profiles/${username}/follow`)
 };
 
-
-
+export default {
+  setAuthStore,
+  setCommonStore,
+  Articles,
+  Auth,
+  Comments,
+  Profile,
+  Tags,
+};

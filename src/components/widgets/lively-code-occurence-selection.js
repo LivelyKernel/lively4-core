@@ -3,6 +3,18 @@ import FileIndex from "src/client/fileindex.js";
 import _ from 'src/external/lodash/lodash.js';
 
 export default class HTMLAccessorMenu extends Morph {
+  
+  setAdditionalInput(name, initialValue = "enter value") {    
+    this.get("#additionalInput").style.display = "flex";
+    this.get("#additionalInput").innerHTML = name + this.get("#additionalInput").innerHTML;
+    this.get("#additionalInputField").focus();
+    this.get("#additionalInputField").value = initialValue;
+  }
+  
+  getAdditionalInput() {
+    return this.get("#additionalInputField").value;
+  }
+  
   initialize() {
     this.registerButtons();
   }
