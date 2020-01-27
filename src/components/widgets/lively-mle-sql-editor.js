@@ -22,7 +22,7 @@ export default class LivelyMleSqlEditor extends Morph {
     });
     this.socket.on('result', r => {result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected});
     const sql = <lively-code-mirror></lively-code-mirror>;
-    const exec = <button id='execute' click={() => {
+    const exec = <button id='execute'  class="button" click={() => {
       sql.then(e => {
         this.socket.emit('executeSQL', {
           sql: e.editor.getValue()
