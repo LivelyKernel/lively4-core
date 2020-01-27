@@ -38,7 +38,7 @@ export default class LivelyMleTableViewer extends Morph {
       }
     });
     const selector = <input type="text" placeholder="Table Name"/>;
-    const execute = <button id="execute" class="button" click={() => {
+    const execute = <button id="execute" className="button" click={() => {
       this.socket.emit('getTable', {
         table: selector.value          
       });
