@@ -20,7 +20,7 @@ export default class LivelyMleFunctionExecutor extends Morph {
         lively.success('Resource successfully processed');
       }
     });
-    this.socket.on('result', r => {result.value = r.rows[0][0]});
+    this.socket.on('result', r => {if(r && r.rows) result.value = r.rows[0][0]});
     this.innerHTML = '';
     this.types = [];
     this.args= [];
