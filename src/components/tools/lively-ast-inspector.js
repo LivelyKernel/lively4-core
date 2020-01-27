@@ -141,15 +141,16 @@ export default class AstInspector extends Morph {
     element.append(this.expansionIndicatorTemplate(element.isExpanded));
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
+    const summary = this.astNodeSummary(element.target, element.isExpanded);
+    if (summary) element.append(this.summaryTemplate(summary));
     this.attachHandlers(element);
     if (element.isExpanded) {
       const content = this.contentTemplate();
       const classifications = this.astNodeKeyClassifications(target);
-      console.log(classifications);
       for (const key in classifications) {
         const classification = classifications[key];
         if (this.isVisibleAstNodeKey(classification)) {
-          content.append(this.display(target[key], false, key, { classification }))
+          content.append(this.display(target[key], this.isFoldable(key), key, { classification }))
         }
       }
       element.append(content);
@@ -199,6 +200,45 @@ export default class AstInspector extends Morph {
     element.appendChild(this.expansionIndicatorTemplate("\u2002"));
     element.append(this.keyTemplate(element));
     element.appendChild(<span class='attrValue'>{json}</span>);
+  }
+  
+  astNodeSummary(astNode, isExpanded) {
+    console.log(astNode.type, astNode);
+    if (t.isIdentifier(astNode)) {
+      return `"${astNode.name}"`;
+    } else if (t.isStringLiteral(astNode)) {
+      return `"${astNode.value}"`;
+    } else if (t.isFunction(astNode)) {
+      let name = String.fromCodePoint(119891);
+      if (!astNode.computed && astNode.key) {
+        name = astNode.key.name || astNode.key.value;
+      }
+      let params = "";
+      if (astNode.params) params = astNode.params.map(param => param.name || "?").join(',');
+      let modifiers = "";
+      if (astNode.async) modifiers += "async ";
+      if (astNode.static) modifiers += "static ";
+      return `${modifiers} ${name}(${params})`
+    } else if (t.isClassDeclaration(astNode)) {
+      return `${astNode.id.name}`;
+    } else if (t.isVariableDeclaration(astNode)) {
+      let variables = astNode.declarations
+                      .map(decl => (decl.id && decl.id.name) || "?")
+                      .join(', ');
+      return `${astNode.kind} [${variables}]`;
+    } else {
+      if (astNode.id) return astNode.id.name;
+      if (astNode.key) {
+        return astNode.key.value || astNode.key.name;
+      }
+    }
+    return null;
+  }
+  
+  isFoldable(key) {
+    return key === 'body'
+            || key === 'declarations'
+            || key === 'expression';
   }
   
   isLocationKey(str) {
