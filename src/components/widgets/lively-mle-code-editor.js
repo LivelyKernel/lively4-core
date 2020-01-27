@@ -30,7 +30,7 @@ export default class LivelyMleCodeEditor extends Morph {
       }
     });
     this.editor = <lively-code-mirror></lively-code-mirror>;
-    const deploy = <button id='deploy' className="button" click={() => {
+    const deploy = <button id='deploy' class="button" click={() => {
       this.editor.then(e => {
         lively.notify('Now deploying');
         this.socket.emit('save', {
