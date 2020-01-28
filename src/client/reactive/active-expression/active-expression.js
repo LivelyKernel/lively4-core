@@ -442,6 +442,10 @@ export class BaseActiveExpression {
   supportsDependencies() {
     return false;
   }
+  
+  logEvent(event) {
+    //TODO
+  }
 }
 
 export function aexpr(func, ...args) {

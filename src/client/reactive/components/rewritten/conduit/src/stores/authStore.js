@@ -1,6 +1,8 @@
-import { Auth } from 'src/client/reactive/components/rewritten/agent.js';
-import userStore from 'src/client/reactive/components/rewritten/stores/userStore.js';
-import commonStore from 'src/client/reactive/components/rewritten/stores/commonStore.js';
+'enable aexpr';
+
+import agent from 'src/client/reactive/components/rewritten/conduit/src/agent.js';
+import userStore from 'src/client/reactive/components/rewritten/conduit/src/stores/userStore.js';
+import commonStore from 'src/client/reactive/components/rewritten/conduit/src/stores/commonStore.js';
 
 class AuthStore {
   
@@ -22,40 +24,42 @@ class AuthStore {
     const { email, password } = this.values;
     this.inProgress = true;
     this.errors = undefined;
-    return Auth.login(email, password)
+    return agent.Auth.login(email, password)
       .then(({ user }) => 
-            commonStore.setToken(user.token))
+            commonStore.token = user.token)
       .then(() => userStore.pullUser())
       .catch(err => {
         this.errors = err.response && err.response.body && err.response.body.errors;
         throw err;
       })
       .finally(() => 
-            this.inProgress = false);
+            this.inProgress = false)
   }
   
   register() {
     const { username, email, password } = this.values;
     this.inProgress = true;
     this.errors = undefined;
-    return Auth.register(username, email, password)
+    return agent.Auth.register(username, email, password)
       .then(({ user }) => 
-            commonStore.setToken(user.token))
+            commonStore.token = user.token)
       .then(() => userStore.pullUser())
       .catch(err => {
         this.errors = err.response && err.response.body && err.response.body.errors;
         throw err;
-      })
+      })  
       .finally(() => 
-            this.inProgress = false);
+        this.inProgress = false);
   }
   
   logout() {
-    commonStore.setToken(undefined);
+    commonStore.token = undefined;
     userStore.forgetUser();
     return Promise.resolve();
   }
   
 }
 
-export default new AuthStore();
+const authStore = new AuthStore();
+agent.setAuthStore(authStore);
+export default authStore;

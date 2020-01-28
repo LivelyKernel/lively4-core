@@ -11,7 +11,7 @@ const attributes = {
   callbacks : ae => ae.callbacks,
   dependencies : ae => ae.supportsDependencies() ? ae.dependencies().all()
     .map(dependencyString)
-    .joinElements(()=><br/>) : <font color="#FF00FF">{"no dependecy api available"}</font>,
+    .joinElements(()=><br/>) : <font color="#551199">{"no dependecy api available"}</font>,
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
@@ -42,7 +42,7 @@ function coolDown(element) {
   let currentcount = parseFloat(element.getAttribute("heat"));
   if(currentcount <= 0)return;
   let step = 0.1;
-  currentcount = currentcount - step;
+  currentcount = currentcount * 0.95 - 0.01;
   element.setAttribute("heat", Math.max(currentcount, 0));
   let newColor = colorForHeat(currentcount+1);
   element.setAttribute("bgcolor", newColor);
