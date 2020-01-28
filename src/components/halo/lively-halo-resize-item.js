@@ -61,7 +61,7 @@ export default class HaloResizeItem extends HaloItem {
       this.target.haloResizeMove(evt, this)
     } else {
       var delta = pt(evt.clientX, evt.clientY).subPt(this.eventOffset)
-      console.log("this.initialExtent " + this.initialExtent)
+      // console.log("this.initialExtent " + this.initialExtent)
 
       var newextent =  this.initialExtent.addPt(delta);
       newextent = newextent.rounded()

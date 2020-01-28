@@ -8,6 +8,22 @@
         border: 20px;
         z-index: 2000;
       }
+
+      .outer-container {
+        max-height: 99vh;
+        overflow-y: auto;
+      }
+      .outer-container::-webkit-scrollbar {
+        width: 3px;
+      }
+      .outer-container::-webkit-scrollbar-track {
+        background: #eee;
+      }
+      .outer-container::-webkit-scrollbar-thumb {
+        background: gray;
+        border-radius: 10px;
+      }
+
       .container {
           width: 250px;
           padding: 5px;
@@ -71,8 +87,10 @@
       }
     </style>
    <span id="filter-hint"></span>
+   <div class="outer-container">
     <ul class="container">
     </ul>
+   </div>
 </template>
 
 

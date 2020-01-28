@@ -2,7 +2,7 @@
   font-family: titillium web, sans-serif
 }
 
-html {
+div#root {
   position: relative;
   min-height: 100vh;
   padding-bottom: 100px
@@ -12,7 +12,7 @@ html {
 * Copyright 2011-2016 Twitter, Inc.
 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)*/
 /*!normalize.css commit fe56763 | MIT License | github.com/necolas/normalize.css*/
-html {
+div#root {
   font-family: sans-serif;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%
@@ -133,12 +133,12 @@ button, select {
   text-transform: none
 }
 
-button, html input[type=button], input[type=reset], input[type=submit] {
+button, div#root input[type=button], input[type=reset], input[type=submit] {
   -webkit-appearance: button;
   cursor: pointer
 }
 
-button[disabled], html input[disabled] {
+button[disabled], div#root input[disabled] {
   cursor: default
 }
 
@@ -257,7 +257,7 @@ td, th {
   }
 }
 
-html {
+div#root {
   box-sizing: border-box
 }
 
@@ -269,13 +269,13 @@ html {
   width: device-width;
 }
 
-html {
+div#root {
   font-size: 16px;
   -ms-overflow-style: scrollbar;
   -webkit-tap-highlight-color: transparent
 }
 
-body {
+div#root {
   font-family: source sans pro, sans-serif;
   font-size: 1rem;
   line-height: 1.5;

@@ -415,8 +415,31 @@ export default class VivideStepEditor extends Morph {
         this.autoFoldMax();
       }
       
+      this.setStepStyle()
+
       requestAnimationFrame(() => this.cm.refresh());
     });
+  }
+
+  setStepStyle() {
+    const colors = new Map([
+      ['transform', 'eeffee'],
+      ['extract', 'ffffee'],
+      ['descent', 'ffeeee'],
+    ])
+     
+    this.editor.setCustomStyle(`
+.CodeMirror { background-color: #${colors.get(this.step.type)}; }
+`);
+// .CodeMirror-activeline-background {
+//     background: rgba(197, 42, 42, 0.78);
+// }
+// .CodeMirror-gutters { color: #282a36; }
+// .CodeMirror-cursor { border-left: solid thin #f8f8f0; }
+// .CodeMirror-linenumber { color: #6D8A88; }
+// .CodeMirror-selected { background: rgba(255, 255, 255, 0.10); }
+// .CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: rgba(255, 255, 255, 0.10); }
+// .CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: rgba(255, 255, 255, 0.10); }
   }
 
   async stepSaved(text) {

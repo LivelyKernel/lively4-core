@@ -167,7 +167,7 @@ export default class IndexSearch extends Morph {
     var serverURL =  this.serverURL()
     var rootURLs = urls.filter(ea => ea.match(serverURL)).map(ea => {
       var m = ea.match(new RegExp("(" + serverURL + "[^/]*/).*"))
-      return m[1]
+      return m && m[1]
     })
     return _.uniq(rootURLs)
   }

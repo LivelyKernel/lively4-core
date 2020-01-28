@@ -11,7 +11,7 @@ const attributes = {
   callbacks : ae => ae.callbacks,
   dependencies : ae => ae.supportsDependencies() ? ae.dependencies().all()
     .map(dependencyString)
-    .joinElements(()=><br/>) : <font color="red">{"no dependecy api available"}</font>,
+    .joinElements(()=><br/>) : <font color="#551199">{"no dependecy api available"}</font>,
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
@@ -42,7 +42,7 @@ function coolDown(element) {
   let currentcount = parseFloat(element.getAttribute("heat"));
   if(currentcount <= 0)return;
   let step = 0.1;
-  currentcount = currentcount - step;
+  currentcount = currentcount * 0.95 - 0.01;
   element.setAttribute("heat", Math.max(currentcount, 0));
   let newColor = colorForHeat(currentcount+1);
   element.setAttribute("bgcolor", newColor);
@@ -62,6 +62,7 @@ export default class AexprTable extends Morph {
     this.events = new Map();
     this.coolDown();
     //this.filter.onchange = (x,y,z) => lively.notify(x+" -- "+y+" -- "+z);
+    this.buttonShowEvents.addEventListener('click', () => this.openEventDrops());
     this.filterElement.addEventListener('change', () => this.filterChanged());
     this.filterChanged();
   }
@@ -100,9 +101,14 @@ export default class AexprTable extends Morph {
   get filterElement() {
     return this.get("#filter");
   }
+  
+  get buttonShowEvents() {
+    return this.get("#buttonShowEvents");
+  }
 
   
   repopulate() {  
+    this._rows = undefined;
     let added = AExprRegistry.allAsArray().difference(this.value);
     let removed = this.value.difference(AExprRegistry.allAsArray());
     for(let each of removed)this.removeAexpr(each);
@@ -113,12 +119,21 @@ export default class AexprTable extends Morph {
     let row = this.createRow(aexpr);
     this.table.appendChild(row);
     this.value.push(aexpr);
+    this.rows().push(row);
+    this.filterChanged();
   }
   
   removeAexpr(aexpr){
-    this.table.removeChild(this.rowOf(aexpr));
+    let row = this.rowOf(aexpr);
+    if(row) {
+      let rowIndex = this.rows().indexOf(row);
+      this.rows().splice(rowIndex, 1);
+      this.table.removeChild(row);
+    }
+  
     let index = this.value.indexOf(aexpr);
     this.value.splice(index, 1);
+    this.filterChanged();
   }
   
   updateAexpr(aexpr){
@@ -136,19 +151,22 @@ export default class AexprTable extends Morph {
   }
   
   rows() {
-    return this.table.childNodes
-      .filter(each => each.tagName == 'TR')
-      .filter(each => each.getAttribute('class') == 'aeRow');
+    if(!this._rows) {
+      this._rows = this.table.childNodes
+        .filter(each => each.tagName == 'TR')
+        .filter(each => each.getAttribute('class') == 'aeRow');
+    }
+    return this._rows;
   }
   
   rowOf(aexpr){
-    let index = this.value.indexOf(aexpr);
-    return this.rows()[index];
+    return this.rows().filter(each => each.aexpr === aexpr)[0];
   }
   
   createRow(aexpr){
     let htmlRow = <tr class='aeRow'></tr>;
     htmlRow.setAttribute("heat", 0);
+    //htmlRow.cells = {};
     this.setRow(htmlRow, aexpr);
     return htmlRow; 
   }
@@ -160,7 +178,14 @@ export default class AexprTable extends Morph {
     }
     for(let attribute in attributes){
       let value = attributes[attribute](aexpr);
-      row.appendChild(<td>{...value}</td>);
+      let cell = row.cells[attribute];
+      if(!cell) {
+        cell = <td>{...value}</td>;
+        row.appendChild(cell);
+        //row.cells[attribute] = cell;
+      } else {
+        //cell.textContent = {...value};
+      }
     }
   }
   
@@ -190,6 +215,15 @@ export default class AexprTable extends Morph {
     } catch(e) {
       lively.notify('Error parsing '+code+': '+e);
     }
+  }
+  
+  async openEventDrops() {
+    let eventDrops = await lively.openComponentInWindow('event-drops');
+    eventDrops.dataFromSource = this.rows()
+      .map(each => each.aexpr)
+      .filter(each => this.filter(each));
+    eventDrops.groupingFunction = each => each.meta().get('id');
+    eventDrops.update();
   }
   
   livelyMigrate(other) {

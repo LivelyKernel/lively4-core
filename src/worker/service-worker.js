@@ -54,7 +54,7 @@ self.addEventListener('fetch', (evt) => {
   }
 
   
-  m =url.match("https://lively-kernel.org/voices")
+  m =url.match("https://lively-kernel.org/(voices)|(research)") // #TODO get rid of this!!!
   if (m) {
      if (!evt.request.headers.get("gitusername")) {
        evt.respondWith(
