@@ -1,5 +1,5 @@
 import Preferences from "src/client/preferences.js"
-import _ from 'src/external/underscore.js'
+import _ from 'src/external/lodash/lodash.js'
 import Rasterize from "src/client/rasterize.js"
 import {pt} from 'src/client/graphics.js'
 import Strings from 'src/client/strings.js'

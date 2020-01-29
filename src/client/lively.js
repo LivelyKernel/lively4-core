@@ -13,7 +13,7 @@ MD*/
 
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
-import * as _ from '../external/underscore.js';
+import _ from 'src/external/lodash/lodash.js'
 import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import preferences from './preferences.js';

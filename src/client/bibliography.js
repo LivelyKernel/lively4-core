@@ -87,7 +87,7 @@ Bibliography.splitAuthors(`Dan Ingalls and Marko R\\"{o}der`)]
     /*MD
 <style>* {background-color:lightgray}</style>
 ```javascript
-Bibliography.cleanTitle("{{This is my Title}")
+Bibliography.cleanTitle("{{This is my Title}}")
 ```
 
 <script>

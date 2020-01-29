@@ -1,6 +1,8 @@
-.lively4bootfilelist
+/src/babylonian-programming-editor/babylonian-programming-editor.css
 README.md
+demos/index.md
 demos/plex/plex-scheme.js
+demos/visualizations/index.md
 doc/_navigation.html
 doc/index.md
 doc/journal/index.md
@@ -17,6 +19,8 @@ src/babylonian-programming-editor/annotations/slider.js
 src/babylonian-programming-editor/babylonian-programming-editor.css
 src/babylonian-programming-editor/babylonian-programming-editor.html
 src/babylonian-programming-editor/babylonian-programming-editor.js
+src/babylonian-programming-editor/demos/binary-search-recursive.js
+src/babylonian-programming-editor/demos/index.md
 src/babylonian-programming-editor/ui/buttons.js
 src/babylonian-programming-editor/ui/connector.js
 src/babylonian-programming-editor/ui/example-widget.js
@@ -48,6 +52,7 @@ src/client/auth-dropbox.js
 src/client/auth-github.js
 src/client/auth-googledrive.js
 src/client/auth.js
+src/client/bibliography.js
 src/client/boot.js
 src/client/bootlog.js
 src/client/bound-eval.js
@@ -80,6 +85,7 @@ src/client/lively.css
 src/client/lively.js
 src/client/load-swx.js
 src/client/lodash-bound.js
+src/client/markdown.js
 src/client/messaging.js
 src/client/mimetypes.js
 src/client/morphic/component-creator.js
@@ -224,8 +230,12 @@ src/client/persistence.js
 src/client/poid.js
 src/client/preferences.js
 src/client/preload.js
+src/client/protocols/bib.js
 src/client/protocols/microsoft.js
+src/client/protocols/rest.js
+src/client/protocols/tmp.js
 src/client/protocols/todoist.js
+src/client/protocols/wikipedia.js
 src/client/rasterize.js
 src/client/reactive/active-expression-convention/active-expression-frame-based.js
 src/client/reactive/active-expression-convention/active-expression-ticking.js
@@ -245,6 +255,7 @@ src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js
 src/client/reactive/reactive-jsx/reactive-jsx.js
 src/client/reactive/reactive-jsx/ui-aexpr.js
 src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js
+src/client/reactive/rp19-jsx/rp19-jsx.js
 src/client/reactive/utils/annotations.js
 src/client/reactive/utils/caching-fetch.js
 src/client/reactive/utils/caching-promise.js
@@ -274,6 +285,7 @@ src/client/workspaces.js
 src/client/xml.js
 src/components/
 src/components/halo/
+src/components/halo/Connection.js
 src/components/halo/index.md
 src/components/halo/lively-halo-connectors-item.html
 src/components/halo/lively-halo-connectors-item.js
@@ -348,6 +360,8 @@ src/components/widgets/
 src/components/widgets/index.md
 src/components/widgets/lively-background.html
 src/components/widgets/lively-background.js
+src/components/widgets/lively-code-mirror-ast-capabilities.html
+src/components/widgets/lively-code-mirror-ast-capabilities.js
 src/components/widgets/lively-code-mirror-fake.js
 src/components/widgets/lively-code-mirror-hint.js
 src/components/widgets/lively-code-mirror-widget-import.js
@@ -409,6 +423,7 @@ src/external/babel/systemjs-babel-browser.js
 src/external/beautify-css.js
 src/external/beautify-html.js
 src/external/beautify.js
+src/external/bibtexParse.js
 src/external/code-mirror/../eslint-lint.js
 src/external/code-mirror/../eslint.js
 src/external/code-mirror/addon/comment/comment.js
@@ -473,6 +488,7 @@ src/external/jszip.js
 src/external/lodash/lodash.js
 src/external/markdown-it-attrs.js
 src/external/markdown-it-hashtag.js
+src/external/markdown-it-sourcemap.js
 src/external/markdown-it-tasks.js
 src/external/markdown-it.js
 src/external/moment.js
