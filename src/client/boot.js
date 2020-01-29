@@ -166,9 +166,14 @@ function instrumentFetch() {
       try {
 
         if (self.lively4fetchHandlers) {
+          // FIRST go through our list of handlers... everybody can change the options... 
+          for(let handler of self.lively4fetchHandlers) {
+            let newOptions = handler.options && handler.options(request, options)
+            options = newOptions || options      
+          }
           // go through our list of handlers... the first one who handles it wins
-          for(var handler of self.lively4fetchHandlers) {
-            var handled = handler.handle && handler.handle(request, options)
+          for(let handler of self.lively4fetchHandlers) {
+            let handled = handler.handle && handler.handle(request, options)
             if (handled) return resolve(handled.result);        
           }
         }

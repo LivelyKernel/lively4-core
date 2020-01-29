@@ -6,7 +6,7 @@ There are so many stories to tell... so many angles to approach... which one sho
 
 --->
 
-<link rel="stylesheet" type="text/css" href="../../demos/tools-and-workflows/style.css"  />
+<link rel="stylesheet" type="text/css" href="../../src/client/presentation.css"  />
 <link rel="stylesheet" type="text/css" href="../../src/client/lively.css"  />
 <link rel="stylesheet" type="text/css" href="../../templates/livelystyle.css"  />
 
