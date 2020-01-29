@@ -154,10 +154,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.myASTCapabilities = System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
         .then(m => {
           var capabilities = new m.default(this, cm);
-          cm.on("change", () => {capabilities.codeChanged()})
+          cm.on("change", (() => {capabilities.codeChanged()}).debounce(200))
           return capabilities;
         });
     }
+    
+    
     return this.myASTCapabilities;
   }
   
@@ -228,6 +230,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
     }));
+    
+    //load astCapabilities
+    this.astCapabilities(this.editor);
   }
 
   setEditor(editor) {
@@ -413,11 +418,15 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Alt-R Rename this identifier
         "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectBindings());
+          this.astCapabilities(cm).then(ac => ac.rename());
         },
         // #KeyboardShortcut Alt-M Extract method
         "Alt-M": cm => {
           this.astCapabilities(cm).then(ac => ac.extractMethod());
+        },
+        // #KeyboardShortcut Alt-H Generate accessors for tags with id in corresponding .html file
+        "Alt-H": cm => {
+          this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
         },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
@@ -444,7 +453,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
       this.editor.on("keyup", (cm, event) => {
         if(event.altKey && event.keyCode == 13) {
-          this.astCapabilities(cm).then(ac => ac.openMenu());
+          if(this.isJavaScript){
+            this.astCapabilities(cm).then(ac => ac.openMenu());
+          } else {
+            lively.warn("Context Menu doesn't work outside of js files for now!");
+          }
         }
       })
       
@@ -458,7 +471,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (container) {
       if (closeEditor) await container.onCancel()
       await lively.sleep(10)
-      // it seems not to bubble acros shadow root boundaries #Bug ?
+      // it seems not to bubble across shadow root boundaries #Bug ?
       // so we do it manually, but keep it an event
       container.dispatchEvent(new CustomEvent("editorbacknavigation", {
         bubbles: true,

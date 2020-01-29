@@ -33,7 +33,7 @@ before_install:
 - sudo apt-get clean
 - sudo apt-get update
 - sudo apt-get install dpkg
-- sudo apt-get install google-chrome-stable
+- sudo apt-get install google-chrome-stable --allow-unauthenticated
 - export CHROME_BIN=google-chrome-stable
 
 # Use https (public access) instead of git for git-submodules

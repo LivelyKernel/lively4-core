@@ -1,5 +1,7 @@
 /*MD # Lively Container 
 
+[doc](browse://doc/tools/container.md)
+
 ![](lively-container.png){height=400px}
 
 MD*/
@@ -1288,8 +1290,21 @@ export default class Container extends Morph {
       delete this.preserveContentScroll
     }
     
-    await lively.sleep(500) // wait for renderer to get some positions to scroll to....
+    var contentRoot = md.get("#content")
     
+    contentRoot.querySelectorAll(`input[type="checkbox"]`).forEach(ea => {
+      
+      lively.addEventListener("input", ea, "click", async evt => {
+        ea.checked = !ea.checked
+        this.markdownCheckCheckboxAndSave(ea)
+        var highlight = lively.showElement(ea.parentElement)
+        highlight.innerHTML = `<br><span style="background:white">SAVE...</span>`
+        highlight.style.border = "1px solid green"
+        highlight.style.color = "green"
+        
+      })  
+    })
+    await lively.sleep(500) // wait for renderer to get some positions to scroll to....
     this.scrollToAnchor(this.anchor)
   }
 
@@ -1900,7 +1915,7 @@ export default class Container extends Morph {
     if(ending === 'js' || ending === 'html') {
       const targetURLString = this.getPath()::replaceFileEndingWith(ending === 'js' ? 'html' : 'js');
       const existingContainer = Array.from(document.body.querySelectorAll('lively-container'))
-        .find(container => container.getURL().pathname.match(targetURLString));
+        .find(container => container.getPath().match(targetURLString));
       if(existingContainer) {
         lively.gotoWindow(existingContainer.parentElement, true);
         existingContainer.focus();
@@ -2190,10 +2205,30 @@ export default class Container extends Morph {
       ['edit source', () => this.showMarkdownElement(elements[0]), '', ``],
       ['edit', () => this.editMarkdownElement(elements.last, markdown), '', ``],
     ];
+    var checkbox = elements[0].querySelector(`input[type="checkbox"]`)
+    if (checkbox) {
+      menuItems.push(["check", async () => { 
+        this.markdownCheckCheckboxAndSave(checkbox)
+      }])
+    }
     let menu = await ContextMenu.openIn(document.body, evt, undefined, document.body,  menuItems);
-    
     return false
   }
+  
+  async markdownCheckCheckboxAndSave(checkbox) {
+    var elements = lively.allParents(checkbox).filter(ea => ea.getAttribute("data-source-line"))
+    debugger
+    checkbox.checked = !checkbox.checked
+    if (checkbox.checked) {
+      checkbox.setAttribute("checked", undefined)
+    } else {
+      checkbox.removeAttribute("checked")
+    }
+    var source = await this.elementToMarkdown(elements.last)
+    var range = this.getMarkdownRange(elements.last)
+    this.saveRegionWithEditor(this.getURL(), range, source)   
+  }
+  
   
   getMarkdownRange(element) {
     var sourceLine = element.getAttribute("data-source-line")
@@ -2248,11 +2283,15 @@ export default class Container extends Morph {
     
   }
 
-  async editMarkdownElement(element, markdown) {
+  async elementToMarkdown(element) {
     var markdownConverter = new Upndown()
     markdownConverter.tabindent = "  "
     markdownConverter.bullet = "- "
-    var source = await markdownConverter.convert(element.outerHTML, {keepHtml: true})
+    return markdownConverter.convert(element.outerHTML, {keepHtml: true})
+  }
+  
+  async editMarkdownElement(element, markdown) {
+    var source = await this.elementToMarkdown(element)
     var range = this.getMarkdownRange(element)
     var rangeOffset = range[0] - 1
     
@@ -2312,21 +2351,32 @@ export default class Container extends Morph {
     
     workspace.doSave = async () => {
       lively.notify("save range " + range[0] + "-" + range[1])
-      var editor = await lively.create("lively-editor");
-      editor.setURL(this.getURL())
-      await editor.loadFile()
-      var cm = editor.currentEditor()
-      cm.setSelection({line: range[0] - 1, ch:0 }, {line: range[1] - 1, ch:0 })
-      
-            
-      cm.replaceSelection(workspace.value + "\n")
-      
-      // update element...
-      var newRangeHeight = workspace.value.split("\n").length
-      range[1] = range[0] + newRangeHeight
-      editor.saveFile()      
+      range = await this.saveRegionWithEditor(this.getURL(), range, workspace.value)    
     }
     
+  }
+  
+  async saveRegionWithEditor(url, range, text) {
+    var editor = await lively.create("lively-editor");
+    editor.setURL(url)
+    await editor.loadFile()
+    var cm = editor.currentEditor()
+    
+    // #Hack... realy hack: preserve trailing lines... because outerHTML and the markdown range only fit roughly 
+    var lines = cm.getValue().split("\n")
+    var lastRangeLine = range[1] - 2
+    if (lines[lastRangeLine] == "") {
+      range[1]--
+    }
+    
+    cm.setSelection({line: range[0] - 1, ch:0 }, {line: range[1] - 1, ch:0 })    
+    cm.replaceSelection(text + "\n")
+
+    // update element...
+    var newRangeHeight = text.split("\n").length
+    range[1] = range[0] + newRangeHeight
+    editor.saveFile()
+    return range
   }
   
   containerShowMarkdownElement(otherContainer, element) {

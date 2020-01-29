@@ -8,8 +8,8 @@ chai.use(sinonChai);
 describe('Dynamic type checks', function() {
   // #TODO #Question: are generators functions in this case?
   it('`isFunction` works on functions but not on non-functions', () => {
-    // expect(isFunction(function foo() {}), "function foo() {}").to.be.true;
-    // expect(isFunction(async function foo() {}), "async function foo() {}").to.be.true;
+    expect(isFunction(function foo() {}), "function foo() {}").to.be.true;
+    expect(isFunction(async function foo() {}), "async function foo() {}").to.be.true;
 
     expect(isFunction({})).to.be.false;
     expect(isFunction('')).to.be.false;

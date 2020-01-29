@@ -29,7 +29,7 @@ export function leakingBindings(path) {
       }
     }
   });
-  return [...bindings];
+  return bindings;
 }
 
 export function isVariableAccess(identifier) {

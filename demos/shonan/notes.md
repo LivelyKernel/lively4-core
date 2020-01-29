@@ -5,7 +5,7 @@
 - Vision Abstract
 - Tool Abstract
 
-- [Lively4 Tools and Workflows](../../doc/presentation/index.md)
+- [Lively4 Tools and Workflows](../../demos/tools-and-workflows/index.md)
   - Lively4 Application: Live (Literate) Markdown (with external resources from draw.io to overleaf)
     - markdown, scripts, d3, external resources
   - Lively4 Self-supporting Tools: Live Programming for Web Components

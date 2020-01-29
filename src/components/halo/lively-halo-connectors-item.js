@@ -42,13 +42,27 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       'New Connection',
         [['On custom...', () => this.startCreatingConnectionCustom(evt)],
           ['On value', () => this.startCreatingConnectionFor(evt, 'value', false)],
-         ['On other thing', () => this.startCreatingConnectionFor(evt, 'other', false)],
-         ['Click', () => this.startCreatingConnectionFor(evt, 'click', true)]],
+         ['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
+         ['Style', this.getAllStylesFor(this.source, evt)]],
       'Creates a new connection',
       '<i class="fa fa-image" aria-hidden="true"></i>'
     ]];
     
     this.showMenu(evt, menuItems);
+  }
+  
+  getAllStylesFor(object, evt){
+    let result = [];
+    let styles = window.getComputedStyle(object);
+    let stylesLength = styles.length;
+    for(let i = 0; i < stylesLength; i++){
+      result.push([styles.item(i), () => this.startCreatingConnectionFor(evt, styles.item(i), false)]);
+    }
+    return result;
+  }
+  
+  mostImportantAttributes(){
+    []
   }
   
   async showFinishingConnectorsMenuFor(evt, morph){
@@ -126,7 +140,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     }
     
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
-    connection.activateConnection();
+    connection.activate();
     connection.drawConnectionLine();
   } 
   

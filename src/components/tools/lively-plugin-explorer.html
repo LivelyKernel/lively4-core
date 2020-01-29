@@ -1,0 +1,113 @@
+<template id="lively-plugin-explorer" >
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+  
+    .layout-column {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .layout-row {
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    .pane {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #pluginPane {
+      flex: 4;
+    }
+
+    #toolPane {
+      flex: 5;
+      border-left: 2px gray solid;
+    }
+
+    #secondaryToolPane {
+      border-left: 2px gray solid;
+    }
+
+    #resultPane {
+      border-top: 2px gray solid;
+      overflow: scroll;
+    }
+
+    #transformedSourcePane {
+      border-top: 2px gray solid;
+    }
+
+
+    #source, #sourceAst, #transformedSource, #plugin, #result {
+      width: 100%;
+      height: 100%;
+    }
+
+    #result {
+      margin-left: 15px;
+    }
+
+    
+  </style>
+
+  <div id="pluginPane" class="pane layout-column">
+    <div>
+      <b>Plugin</b>
+      <input type="checkbox" id="systemjs">
+      <label for="systemjs">SystemJS</label>
+    </div>
+    <div class="pane">
+      <lively-editor id="plugin"></lively-editor>
+    </div>
+  </div>
+
+  <lively-separator reverse=true></lively-separator>
+
+  <div id="toolPane" class="pane layout-row">
+    <div id="primaryToolPane" class="pane layout-column">
+      <div id="sourcePane" class="pane">
+        <lively-editor id="source"></lively-editor>
+      </div>
+      <lively-separator></lively-separator>
+      <div id="transformedSourcePane" class="pane layout-column">
+        <span id="eval">
+          <b>Transformed Source</b>
+          <input type="checkbox" id="live" title="continous eval" checked/>
+          <label for="live">Run On Save</label>
+          <input type="checkbox" id="run-tests" title="run tests after successful transpilation" checked/>
+          <label for="run-tests">Run Tests</label>
+        </span>
+        <div class="pane">
+          <lively-code-mirror id="transformedSource"></lively-code-mirror>
+        </div>
+      </div>
+    </div>
+
+    <lively-separator reverse=true></lively-separator>
+
+    <div id="secondaryToolPane" class="pane layout-column">
+      <div id="sourceAstPane" class="pane">
+        <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
+      </div>
+      <lively-separator reverse=true></lively-separator>
+      <div id="resultPane" class="pane layout-column">
+        <b>Result</b>
+        <div class="pane">
+          <pre id="result"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+</template>

@@ -1,5 +1,8 @@
 /*MD
 # Lively 4 Text Editor
+
+[doc](../../../doc/tools/editor.md)
+
  - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  - updates change indicator while when editting,loading, and saving
  
@@ -390,39 +393,84 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
+    highlightChanges(otherText) {
+    var editor = this.currentEditor();
+    var myText = editor.getValue(); // data
+    var dmp = new diff.diff_match_patch();
+    var d = dmp.diff_main(otherText, myText);
+    var index = 0;
+    for (var ea of d) {
+      var change = ea[0];
+      var text = ea[1];
+      index = this.highlightChange(change, editor, text, index);
+    }
+  }  
+
+  highlightChange(change, editor, text, index) {
+    if (change != 0) {
+      var cm = editor;
+      var toPos;
+      var backgroundColor;
+      let marker;
+      let widget = <span>{text}</span>;
+      let targetColor = "black";
+      if (change == 1) {
+        // Added 
+        toPos = cm.posFromIndex(index + text.length);
+        backgroundColor = "green";
+        marker = cm.markText(cm.posFromIndex(index), toPos, { replacedWith: widget });
+      } else {
+        backgroundColor = "red";
+        targetColor = "transparent";
+        marker = cm.setBookmark(cm.posFromIndex(index), { widget: widget });
+      }
+      var animation = widget.animate([{ background: backgroundColor, color: "black" }, { background: "transparent", color: targetColor }], {
+        duration: 3000
+      });
+      animation.onfinish = () => marker.clear();
+    } else {
+
+      index += text.length;
+    }
+
+    return index;
+  }
+
+  
   /*
    * solveConflict
    * use three-way-merge
-   */ 
-  async solveConflic(otherVersion , newVersion) {
-    var conflictId =  `conflic-${otherVersion}-${newVersion}` 
+   */
+  async solveConflic(otherVersion, newVersion) {
+    var conflictId = `conflic-${otherVersion}-${newVersion}`;
     if (this.solvingConflict == conflictId) {
-      lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict)
-      return 
+      lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict);
+      return;
     }
     if (this.solvingConflic) {
-      lively.warn("Recursive Solving Conflict", "" + this.solvingConflict + " and now: " + conflictId)
-      return 
+      lively.warn("Recursive Solving Conflict", "" + this.solvingConflict + " and now: " + conflictId);
+      return;
     }
-    
-    lively.notify("Solve Conflict between: " + otherVersion +`and ` + newVersion);
+
+    lively.notify("Solve Conflict between: " + otherVersion + `and ` + newVersion);
     var parentText = this.lastText; // 
     // load from conflict version
     var otherText = await fetch(this.getURL(), {
-        headers: {fileversion: otherVersion}
-      }).then( r => r.text()); 
+      headers: { fileversion: otherVersion }
+    }).then(r => r.text());
     var myText = this.currentEditor().getValue(); // data
 
     // #TODO do something when actual conflicts occure?
     var mergedText = this.threeWayMerge(parentText, myText, otherText);
     this.setText(mergedText, true);
+    this.highlightChanges(myText);
     this.lastVersion = otherVersion;
-    this.solvingConflict = conflictId
+    this.solvingConflict = conflictId;
     try {
       // here it can come to infinite recursion....
-      await this.saveFile(); 
+      await this.saveFile();
     } finally {
-      this.solvingConflict = false
+      this.solvingConflict = false;
     }
   }
   
@@ -635,17 +683,26 @@ export default class Editor extends Morph {
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
   }
   
-  toggleWidgets() {
+  async toggleWidgets() {
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
+    
+    var cm = codeMirrorComponent.editor
+    var cursorPos = cm.getCursor()
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
     if (allWidgets.length == 0) {
-      this.showEmbeddedWidgets()
+      await this.showEmbeddedWidgets()
     } else {
-      this.hideEmbeddedWidgets()
+      await this.hideEmbeddedWidgets()
     }
+    
+    // scroll back into view...
+    // #TODO make it stable...
+    // await lively.sleep(1000)
+    // cm.setCursor(cursorPos)
+    // cm.scrollTo(null, cm.charCoords(cursorPos).top)
   }
   
   /*MD ## Hooks MD*/

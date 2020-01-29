@@ -78,10 +78,10 @@ createUI(this.parentElement)
       
       var a = document.createElement("a")
       a.innerHTML = "js"
-      a.href = ea.name
+      a.href = "edit://test/templates/" + ea.name
       a.onclick = (evt) => {
         evt.preventDefault()
-        container.followPath(dir + "/" + ea.name)
+        container.followPath(a.getAttribute("href"))
         return true
       }
       li.appendChild(a)
@@ -114,11 +114,9 @@ createUI(this.parentElement)
     })
   return list
 })()
-</script></lively-script>
+</script>
 
-
-
-<lively-script><script>
+<script>
 (async () => { 
   var container =  lively.query(this, "lively-container")
   if (!container) {

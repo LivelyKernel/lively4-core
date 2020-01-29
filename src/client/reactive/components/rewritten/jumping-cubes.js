@@ -14,14 +14,36 @@ export default class JumpingCubes extends Morph {
       ['gray', 'rgba(176, 176, 176, 1.0)']
     ]);
 
+    this.player = 'red';
+    this.fieldSize = 10;
     this.field.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
+    this.field.matrix = [];
+    for (let i = 0; i < this.fieldSize; i++) {
       const div = <div></div>;
-      for (let j = 0; j < 10; j++) {
-        const cube = { value: 2, color: 'gray' };
-        const button = <button click={evt => cube.value++}>un-init</button>;
-        aexpr(() => cube.value).dataflow(value => button.innerHTML = value);
-        aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value));
+      this.field.matrix[i] = [];
+      for (let j = 0; j < this.fieldSize; j++) {
+        const cube = { value: 2, color: 'gray' , bindings: []};
+        this.field.matrix[i][j] = cube;
+        const button = <button style="border-color:red" click={evt => {cube.value++; this.nextPlayer()}}>un-init</button>;
+        cube.bindings = [
+          aexpr(() => cube.value)
+            .dataflow(value => button.innerHTML = value)
+            .dataflow(value => {
+              const neighbours = this.getNeighboursOf(i, j);
+              if(value > neighbours.length) {
+                cube.color = this.player;
+                cube.value -= neighbours.length;
+                neighbours.forEach(each => {
+                  let neighbour = this.field.matrix[each.i][each.j];
+                  neighbour.color = cube.color;
+                  neighbour.value ++;
+                })
+              }
+          }),
+          aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value)),
+          aexpr(() => this.player).dataflow(value => button.style.borderColor = colorMap.get(value))
+        ];
+        cube.dispose = () => cube.bindings.forEach(each => each.dispose());
         div.appendChild(button);
       }
       this.field.appendChild(div);
@@ -29,29 +51,32 @@ export default class JumpingCubes extends Morph {
     
   }
   
-  onDblClick() {
-    this.animate([
-      {backgroundColor: "lightgray"},
-      {backgroundColor: "red"},
-      {backgroundColor: "lightgray"},
-    ], {
-      duration: 1000
-    }).whenFinished()
+  nextPlayer() {
+    if(this.player === 'red')this.player = 'green';
+    else if(this.player === 'green')this.player = 'red';
   }
   
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
+  getNeighboursOf(i, j) {
+    return [
+      {i : i - 1, j},
+      {i, j : j - 1},
+      {i : i + 1, j},
+      {i, j : j + 1},
+    ].filter(each => each.i >= 0 && each.i < this.fieldSize && each.j >= 0 && each.j < this.fieldSize)
   }
   
-  // this method is automatically registered as handler through ``registerButtons``
-  onPlusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
+  detachedCallback() {
+    this.disposeBindings();
   }
   
-  onMinusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
+  disposeBindings() {
+    this.field.matrix.forEach(row => row.forEach((each => {
+      each.dispose();
+    })));
   }
+  
+
+  
 
   /* Lively-specific API */
 
@@ -61,7 +86,7 @@ export default class JumpingCubes extends Morph {
   }
   
   livelyPreMigrate() {
-    // is called on the old object before the migration
+    this.disposeBindings();
   }
   
   livelyMigrate(other) {

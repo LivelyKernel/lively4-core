@@ -1,4 +1,5 @@
 ## 2019-12-17 #CoolBug
+*Author: @JensLincke*
 
 The issue was that sometimes when merging, typed text is lost....
 

@@ -24,7 +24,7 @@ export default class D3BarChart extends D3Component {
       resolve()
     })
     
-    this.zoom = false
+    this.zoom = true
   }
   
   async updateViz() {

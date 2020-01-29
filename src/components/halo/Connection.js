@@ -2,7 +2,7 @@
 import {pt} from 'src/client/graphics.js';
 //import {uuid} from 'utils';
 
-const allConnections = new Set()
+window.allConnections = window.allConnections || new Set()
 
 export default class Connection {
   
@@ -13,31 +13,49 @@ export default class Connection {
   
   constructor(target, targetProperty, source, sourceProperty, isEvent) {
     this.id = Connection.nextId();
-    allConnections.add(this);
+    window.allConnections.add(this);
     
     this.target = target;
     this.targetProperty = targetProperty;
     this.source = source;
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
+    this.isActive = false
+    this.valueModifyingCode = '+"pt"'
   }
   
-  activateConnection(){
+  activate(){
+    
+    if(this.isActive){
+       this.deactivate()
+    }
+    
     if(this.isEvent){
-      this.activateEventConnection()
+      this.activateEvent()
     }
     else {
-      this.activateAexprConnection()
-    }    
+      this.activateAexpr()
+    }
+    this.isActive = true
   }
   
-  activateEventConnection(){
+  activateEvent(){
     this.source.addEventListener('click', () => this.target.style.width = this.target.style.width*2+"pt")
   }
   
-  activateAexprConnection(){
+  activateAexpr(){
     this.ae = aexpr(() => this.source[this.sourceProperty]);
-    this.ae.onChange(svalue => this.target.style[this.targetProperty]= svalue + "pt");
+    this.ae.onChange(svalue => this.connectionFunction(svalue));
+  }
+  
+  async connectionFunction(sourceValue){
+    /*let code = sourceValue + this.valueModifyingCode
+    let result = await code.boundEval()
+    this.target.style[this.targetProperty] = result*/
+    
+    let code = "(target, sourceValue) => {target.style.height = sourceValue*1 + 'pt'}"
+    let myFunction = await code.boundEval()
+    myFunction(this.target, sourceValue)
   }
   
   drawConnectionLine(){
@@ -45,8 +63,23 @@ export default class Connection {
     lively.showPath(line, "rgba(80,180,80,1)", true);
   }
   
-  removeAexpr(){
-    this.ae.dispose()
+  setActive(shouldBeActive){
+    if(shouldBeActive){
+      this.activate()
+    }
+    else{
+       this.deactivate()
+    }
+  }
+  
+  deactivate(){
+    this.ae && this.ae.dispose()
+    this.isActive = false
+  }
+  
+  destroy(){
+    this.deactivate()
+    window.allConnections.delete(this)
   }
   
   getSource(){
@@ -61,19 +94,46 @@ export default class Connection {
     return this.ae
   }
   
+  getSourceProperty(){
+    return this.sourceProperty
+  }
+  
+  setSourceProperty(newProperty){
+    this.sourceProperty = newProperty;
+    this.activate();
+  }
+  
+  getTargetProperty(){
+    return this.targetProperty
+  }
+  
+  setTargetProperty(newProperty){
+    this.targetProperty = newProperty;
+    this.activate();
+  }
+  
+  getModifyingCodeString(){
+    return this.valueModifyingCode
+  }
+  
+  setModifyingCodeString(newCode){
+    this.valueModifyingCode = newCode
+  }
+  
   static get allConnections(){
-    return allConnections
+    return window.allConnections
   }
   
   connectionString(){
     return 'Connection ' + this.id
   }
+  
 }
 
 // #UPDATE_INSTANCES
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
-allConnections.forEach(connection => {
+window.allConnections.forEach(connection => {
     // evil live programming
     connection.constructor === Connection
 
