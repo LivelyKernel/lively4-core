@@ -10,17 +10,12 @@ export default class LivelyMleSqlEditor extends Morph {
     this.registerButtons()
     this.innerHTML = '';
     this.socket = await SocketSingleton.get();
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', status => {
-      if(status === "connected"){
-        lively.notify('Connected');
-      }
+    this.socket.on('result', (r, status) => {
       if(status=== "executed"){
+        result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected;
         lively.success('Resource successfully processed');
       }
     });
-    this.socket.on('result', r => {result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected});
     const sql = <lively-code-mirror></lively-code-mirror>;
     const exec = <button id='execute'  class="button" click={() => {
       sql.then(e => {

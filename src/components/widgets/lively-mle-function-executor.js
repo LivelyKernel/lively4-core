@@ -10,17 +10,11 @@ export default class LivelyMleFunctionExecutor extends Morph {
     this.windowTitle = "MLE Function Executor";
     this.registerButtons()
     this.socket = await SocketSingleton.get();
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', status => {
-      if(status === "connected"){
-        lively.notify('Connected');
-      }
-      if (status === "tested") {
+    this.socket.on('result', (r, status) => {
+      if(status === "tested") {
         lively.success('Resource successfully processed');
-      }
-    });
-    this.socket.on('result', r => {if(r && r.rows) result.value = r.rows[0][0]});
+        result.value = r.data.rows[0][0];
+    }});
     this.innerHTML = '';
     this.types = [];
     this.args= [];
@@ -32,6 +26,7 @@ export default class LivelyMleFunctionExecutor extends Morph {
     const functionName = <input placeholder="Function Name" type="text"></input>;
     const test = <button id='test' click={() => {
       this.socket.emit('test', {
+        id: "testrunner",
         func: functionName.value,
         parameters: this.args.filter((_, i) => i<this.amount).map((x,i) => this.types[i] === "String" ? x : +x)
       })

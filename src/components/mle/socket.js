@@ -13,6 +13,13 @@ export const SocketSingleton = (function() {
       user: 'system',
       password: 'MY_PASSWORD_123'
     });
+    socket.on('busy', () => lively.warn('Resource currently busy'));
+    socket.on('failure', err => lively.error('Resource failed processing', err));
+    socket.on('success', status => {
+      if(status === "connected") {
+        lively.success("Connected");  
+      }
+    });
     return socket
   }
   

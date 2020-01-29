@@ -11,12 +11,7 @@ export default class LivelyMleCodeEditor extends Morph {
     this.registerButtons()
     this.innerHTML = '';
     this.socket = await SocketSingleton.get();
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', status => {
-      if(status === "connected"){
-        lively.notify('Connected');
-      }
+    this.socket.on('result', (_, status) => {
       if(status === "saved"){
         lively.success('Resource successfully saved');
         this.socket.emit('deploy',{

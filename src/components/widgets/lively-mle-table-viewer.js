@@ -12,18 +12,8 @@ export default class LivelyMleTableViewer extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.innerHTML = '';
     this.socket = await SocketSingleton.get();
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', status => {
-      if(status === "connected"){
-        lively.notify('Connected');
-      }
-      if(status === "gotTable" ) {
-        lively.success('Resource successfully processed');
-      }
-    });
-    this.socket.on('result', r => {
-      if(r.rows !== undefined && r.metaData !== undefined){
+    this.socket.on('result', (r,status) => {
+      if(status === "gotTable"){
         result.innerHTML ='';
         const header = <thead><tr></tr></thead>;
         const body = <tbody></tbody>;
