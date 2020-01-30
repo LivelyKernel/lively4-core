@@ -31,43 +31,53 @@ export default class EventDrops extends Morph {
           }, //'#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
           onClick : data => {
             lively.notify(JSON.stringify(data));
+            lively.openInspector(data);
           },
           onMouseOver: event => {
-            // this.tooltip
-            //     //.transition()
-            //     //.duration(200)
-            //     .style('opacity', 1)
-            //     .style('pointer-events', 'auto');
-            lively.showEvent(d3.event);
-            
-            // this.tooltip
-            //     .html(
-            //         <div class="commit">
-            //           <img class="avatar" src="https://www.tierchenwelt.de/images/stories/fotos/saeugetiere/beuteltiere/quokka/quokka_happy_l.jpg" alt="${commit.author.name}" title="${commit.author.name}" />
-            //           <div class="content">
-            //               <h3 class="message">{event.message}</h3>
-            //               <p>
-            //                   <a href="https://www.github.com/${commit.author.name}" class="author">{event.author/*.name*/}</a>
-            //                   on <span class="date">{this.humanizeDate(new Date(event.date))}</span> -
-            //                   <a class="sha" href="${commit.sha}">{event/*.sha.substr(0, 10)*/}</a>
-            //               </p>
-            //           </div>
-            //         </div>)
+            this.tooltip
+                .transition()
+                .duration(200)
+                .style('opacity', 1)
+                .style('pointer-events', 'auto');
+            //lively.showEvent(d3.event);
+            //lively.openInspector(d3.event)
+            this.tooltip.html('')// = '';
+            this.tooltip.append(() =>
+                    <div class="commit">
+                      <img class="avatar" width="50" height="50" style="object-fit: cover" src="https://www.tierchenwelt.de/images/stories/fotos/saeugetiere/beuteltiere/quokka/quokka_happy_l.jpg" />
+                      <div class="content">
+                          <h3 class="message">{event.message}</h3>
+                          <p>
+                            <span>{(event.value || "").toString()}</span><br></br>
+                              at <span class="date">{this.humanizeDate(new Date(event.timestamp))}</span>
+                          </p>
+                      </div>
+                    </div>);
                 // .style('left', `${d3.event.clientX - 30}px`)
                 // .style('top', `${d3.event.clientY + 20}px`)
             //debugger;
-            lively.setGlobalPosition(this.tooltip, lively.pt(d3.event.clientX, d3.event.clientY));
+            lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX +3, d3.event.clientY+3));
+            //this.tooltip.style.display = 'inline';
+            //this.hideTooltip.cancel();
         },
         onMouseOut: () => {
-            // this.tooltip
-            //     //.transition()
-            //     //.duration(500)
-            //     //.style('opacity', 0)
-            //     .style('pointer-events', 'none');
+          //lively.notify('out')
+            //this.hideTooltip();
+            //this.tooltip.style.display = 'none';
+            //this.hideTooltip();
+            this.tooltip
+                .transition()
+                .duration(500)
+                .style('opacity', 0)
+                .style('pointer-events', 'none');
         }
       },
     };
     this.chart = eventDrops(this.config);
+
+    this.hideTooltip = _.debounce(() => {
+        this.tooltip.style.display = 'none';
+    }, 100);
 
     //let repositoriesData = require('event-drops-data.json');
     
@@ -76,12 +86,7 @@ export default class EventDrops extends Morph {
     this.numberEventsContainer = this.get('#numberEvents');
     this.zoomStart = this.get('#zoomStart');
     this.zoomEnd = this.get('#zoomEnd');
-    this.tooltip = undefined;
-    document.body.querySelectorAll('.tooltip-d3').forEach(each => each.remove());
-    if(!this.tooltip){
-      this.tooltip = <div class='tooltip-d3' style='background-color=blue; width=100px; height=100px; position=absolute;'></div>
-      document.body.appendChild(this.tooltip);
-    }
+    document.body.querySelectorAll('#event-drops-tooltip').forEach(each => each.remove());
       
       // d3
       // .select(this)
@@ -103,6 +108,22 @@ export default class EventDrops extends Morph {
     // }
     this.update();
    
+  }
+  
+  get tooltip() {
+    let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
+    
+    return existing ? d3.select(existing) : d3
+        .select('body')
+        .append('div')
+        .attr('id', 'event-drops-tooltip')
+        .classed('tooltip', true)
+        .style('opacity', 0)
+        .style('width', '200px')
+        .style('background-color', 'gray')
+        .style('z-index', 500)
+        .style('pointer-events', 'auto');
+     // || document.body.appendChild(<div id='event-drops-tooltip' class='tooltip' style='background-color:gray; display:none; width:200px; z-index: 500; position:relative'></div>);
   }
   
 
