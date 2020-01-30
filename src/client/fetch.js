@@ -1,3 +1,4 @@
+
 var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices","https://lively-kernel.org/research"] // #TODO how to detect this?
 var baseUrlsAuthNeededForWriting = [ "https://lively-kernel.org/lively4"]
 
@@ -180,6 +181,8 @@ export async function installDebugFetch() {
           var stack = lively.currentStack()
           if(!options.headers.get("debug-initiator")) {
             options.headers.set("debug-initiator", stack.split("\n")[4])
+            options.headers.set("debug-session", self.lively4session)
+             options.headers.set("debug-system", self.lively4systemid)
           }
           return options  
         } else {

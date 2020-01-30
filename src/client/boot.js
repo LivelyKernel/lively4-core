@@ -9,6 +9,17 @@ MD*/
  * HELPER
  */
 
+
+// BEGIN COPIED from 'utils'
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    var r = crypto.getRandomValues(new Uint8Array(1))[0] % 16 | 0,
+        v = c == 'x' ? r : r & 0x3 | 0x8;
+    return v.toString(16);
+  });
+}
+// END COPIED
+
 async function loadJavaScript(name, src, force) {
   var code = await fetch(src).then(r => r.text())
   eval(code)
@@ -63,7 +74,15 @@ self.lively4transpilationCache = {
   },
   cache: new Map()
 } 
- 
+
+if (self.localStorage) {
+  if (!self.localStorage["lively4systemid"]) {
+    self.localStorage["lively4systemid"] = "System" +  generateUUID()
+  }  
+  self.lively4systemid = self.localStorage["lively4systemid"]
+}
+
+self.lively4session = "Session" +  generateUUID()
 self.lively4syncCache = new Map()
 self.lively4optionsCache = new Map()
 self.lively4fetchLog = []
