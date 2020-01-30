@@ -41,7 +41,7 @@ export default class D3BarChart extends D3Component {
     var treeData = this.getData()
     if (!treeData) return; // nothing to render
 
-    var margin = { top: 20, right: 20, bottom: 20, left: 20 }
+    var margin = { top: 20, right: 20, bottom: 20, left: 40 }
     var width = bounds.width;
     var height = bounds.height;
     
@@ -172,9 +172,11 @@ export default class D3BarChart extends D3Component {
         svgContainer.style.height =  margin.top +  chartHeight + margin.bottom + "px"
       }
     
-      var yAxis = d3.axisLeft(y);
-      var yAxisGroup = svg.append("g").call(yAxis);
+      var yAxis = d3.axisLeft(y)
     
+      var yAxisGroup = svg.append("g").call(yAxis);
+      
+      
     
       if (!this.zoom) {
         this.style.height = dataHeight() + "px"
