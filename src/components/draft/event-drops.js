@@ -43,14 +43,11 @@ export default class EventDrops extends Morph {
             //lively.openInspector(d3.event)
             this.tooltip.html('')// = '';
             this.tooltip.append(() =>
-                    <div class="commit">
-                      <img class="avatar" width="50" height="50" style="object-fit: cover" src="https://www.tierchenwelt.de/images/stories/fotos/saeugetiere/beuteltiere/quokka/quokka_happy_l.jpg" />
+                    <div class="event">
                       <div class="content">
-                          <h3 class="message">{event.message}</h3>
-                          <p>
-                            <span>{(event.value || "").toString()}</span><br></br>
-                              at <span class="date">{this.humanizeDate(new Date(event.timestamp))}</span>
-                          </p>
+                        <h3 style="font-size: 1em">{event.message}</h3>
+                        <span style="font-size: 1em">{(event.value || "").toString()}</span>
+                        <p style="font-size: 1em">at {this.humanizeDate(event.timestamp)}</p>
                       </div>
                     </div>);
                 // .style('left', `${d3.event.clientX - 30}px`)
@@ -114,15 +111,17 @@ export default class EventDrops extends Morph {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
     
     return existing ? d3.select(existing) : d3
-        .select('body')
-        .append('div')
-        .attr('id', 'event-drops-tooltip')
-        .classed('tooltip', true)
-        .style('opacity', 0)
-        .style('width', '200px')
-        .style('background-color', 'gray')
-        .style('z-index', 500)
-        .style('pointer-events', 'auto');
+      .select('body')
+      .append('div')
+      .attr('id', 'event-drops-tooltip')
+      .classed('tooltip', true)
+      .style('opacity', 0)
+      .style('width', '200px')
+      .style('box-sizing', 'border-box')
+      .style('border', '10px solid transparent')
+      .style('background-color', '#EEEEEE')
+      .style('z-index', 500)
+      .style('pointer-events', 'auto');
      // || document.body.appendChild(<div id='event-drops-tooltip' class='tooltip' style='background-color:gray; display:none; width:200px; z-index: 500; position:relative'></div>);
   }
   

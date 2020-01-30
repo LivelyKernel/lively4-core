@@ -98,7 +98,7 @@ footer p {
     right: 1.65rem;
 }
 
-.tooltip .commit {
+.tooltip .event {
     position: relative;
     z-index: 2;
     display: flex;
