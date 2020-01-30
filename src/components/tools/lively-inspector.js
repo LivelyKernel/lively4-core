@@ -60,7 +60,7 @@ export default class Inspector extends Morph {
         lively.openContextMenu(document.body, evt, this.selection || this.targetObject);
         return true
       }
-	    return false;
+      return false;
     } 
   }
   
@@ -202,7 +202,7 @@ export default class Inspector extends Morph {
       moreNode.addEventListener('dragstart', evt => {
         evt.dataTransfer.setData("javascript/object", getTempKeyFor(obj));
       });
-    };
+    }
     node.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = evt => {
         this[renderCall](node, obj, !node.isExpanded, name);
