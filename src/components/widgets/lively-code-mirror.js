@@ -27,6 +27,9 @@ self.CodeMirror = CodeMirror // for modules
 let loadPromise = undefined;
 import { loc, range } from 'utils';
 
+import _ from 'src/external/lodash/lodash.js'
+
+
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 

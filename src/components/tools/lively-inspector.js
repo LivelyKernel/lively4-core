@@ -6,6 +6,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import {sortAlphaNum} from "src/client/sort.js"
 import { getTempKeyFor } from 'utils';
+import _ from 'src/external/lodash/lodash.js'
 
 /**
  * @usage: truncateString("Hello World", 8, "...")
@@ -333,7 +334,12 @@ export default class Inspector extends Morph {
       });
             
 
-      var hasProperties = this.allKeys(obj).length > 0;
+      try {
+        var hasProperties = this.allKeys(obj).length > 0;
+        
+      } catch(e) {
+        console.warn("[inspector] allKeys failed", e)
+      }
       if (hasProperties && !obj.livelyIsParentPlaceholder) {
         var props = this.displayObject(obj, false, "#Properties");
         contentNode.appendChild(props);
