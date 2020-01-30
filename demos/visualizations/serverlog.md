@@ -16,8 +16,8 @@ import moment from "src/external/moment.js";
   var requestMap = new Map()
 
   // lively4url + "/demos/data/livelyboot-serverlog.log"
-  // var url = "https://lively-kernel.org/lively4/lively4-server/server.log"
-  var url = "https://lively-kernel.org/research/lively4-server/server.log"
+  var url = "https://lively-kernel.org/lively4/lively4-server/server.log"
+  // var url = "https://lively-kernel.org/research/lively4-server/server.log"
 
 
 

@@ -246,7 +246,14 @@ export default class Sync extends Morph {
     }
   }
 
+  getProtectedRepositories() {
+    return ["lively4-jens", "lively4-core"]
+  }
+  
   onBranchButton() {
+    if (this.getProtectedRepositories().includes(this.getRepository())) {
+      return lively.warn("You are not allowed to branch on " + this.getRepository())
+    }    
     this.gitControl("branch")  
   }
 
@@ -302,6 +309,9 @@ export default class Sync extends Morph {
   }
   
   async onMergeButton() {
+    if (this.getProtectedRepositories().includes(this.getRepository())) {
+      return lively.warn("You are not allowed to merge on " + this.getRepository())
+    }  
     if (await lively.confirm("Do you want to merge "
       + this.get("#gitrepositorybranch").value 
       +" into " + this.get("#gitrepository").value 
