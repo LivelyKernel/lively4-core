@@ -72,9 +72,6 @@ export default class EventDrops extends Morph {
     };
     this.chart = eventDrops(this.config);
 
-    this.hideTooltip = _.debounce(() => {
-        this.tooltip.style.display = 'none';
-    }, 100);
 
     //let repositoriesData = require('event-drops-data.json');
     
@@ -143,6 +140,7 @@ export default class EventDrops extends Morph {
   }
   
   setAexprs(aexprs) {
+    let scrollBefore = this.get('#diagram').scrollTop;
     if(aexprs.length == 0)return;
     let groups = aexprs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({name : each, data: groups[each].flatMap(ae => ae.meta().get('events'))}));
@@ -161,11 +159,12 @@ export default class EventDrops extends Morph {
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);  
     this.updateMetaInformation();
+    this.get('#diagram').scrollTop = scrollBefore;
   }
   
   setData(data) {
     d3
-      .select(this.get('#eventdrops-demo'))
+      .select(this.get('#diagram'))
       .data([data])
       .call(this.chart);;
   }
@@ -205,6 +204,8 @@ export default class EventDrops extends Morph {
 
   livelyMigrate(other) {
     this.zoomedTo = other.zoomedTo;
+    this.groupingFunction = other.groupingFunction;
+    this.dataFromSource = other.dataFromSource;
   }
   
 }
