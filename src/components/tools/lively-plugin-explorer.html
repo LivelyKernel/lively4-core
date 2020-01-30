@@ -75,6 +75,7 @@
   <div id="toolPane" class="pane layout-row">
     <div id="primaryToolPane" class="pane layout-column">
       <div id="sourcePane" class="pane">
+        <b>Source</b>
         <lively-editor id="source"></lively-editor>
       </div>
       <lively-separator></lively-separator>
@@ -95,12 +96,13 @@
     <lively-separator reverse=true></lively-separator>
 
     <div id="secondaryToolPane" class="pane layout-column">
-      <div id="sourceAstPane" class="pane">
+      <div id="sourceAstPane" class="pane layout-column">
+        <b>Source AST</b>
         <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
       </div>
       <lively-separator reverse=true></lively-separator>
       <div id="resultPane" class="pane layout-column">
-        <b>Result</b>
+        <b>Evaluation Console</b>
         <div class="pane">
           <pre id="result"></pre>
         </div>

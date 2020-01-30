@@ -56,9 +56,27 @@ export default class AstInspector extends Morph {
     const element = this.expandPath(keyPath);
     if (!element) return;
     
-    element.scrollIntoView({behavior: "auto", block: "start", inline: "start"});
+    this.scrollIntoView(element);
+    
     this.selection = element;
     this.selection.classList.add("selected");
+  }
+  
+  scrollIntoView(element) {
+    //own implementation (instead of Element>>scrollIntoView)
+    //only scrolls container, not ALL ancestors (including lively desktop)
+    const container = this.container;
+    let inner = element.getBoundingClientRect();
+    let outer = container.getBoundingClientRect();
+    let relativeLeft = inner.left - outer.left;
+    let relativeTop = inner.top - outer.top;
+    let hDisplacement = (outer.width - inner.width) / 2;
+    let vDisplacement = (outer.height - inner.height) / 2;
+    hDisplacement = hDisplacement < 0 ? relativeLeft : relativeLeft - hDisplacement;
+    vDisplacement = vDisplacement < 0 ? relativeTop : relativeTop - vDisplacement;
+    hDisplacement -= 10;
+    vDisplacement -= 10;
+    container.scrollBy(hDisplacement, vDisplacement);
   }
 
   expandPath(keyPath) {
