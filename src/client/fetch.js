@@ -180,10 +180,12 @@ export async function installDebugFetch() {
         if (options.headers.set) {
           var stack = lively.currentStack()
           if(!options.headers.get("debug-initiator")) {
-            options.headers.set("debug-initiator", stack.split("\n")[4])
+            options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
             options.headers.set("debug-session", self.lively4session)
              options.headers.set("debug-system", self.lively4systemid)
           }
+          
+          
           return options  
         } else {
           // convert first?
