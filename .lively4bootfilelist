@@ -163,6 +163,8 @@ src/components/tools/lively-sync.html
 src/components/tools/lively-sync.js
 src/components/tools/lively-version-control.html
 src/components/tools/lively-version-control.js
+src/components/widgets/lively-background.html
+src/components/widgets/lively-background.js
 src/components/widgets/lively-code-mirror-ast-capabilities.js
 src/components/widgets/lively-code-mirror-fake.js
 src/components/widgets/lively-code-mirror-hint.js
@@ -269,6 +271,7 @@ src/external/systemjs/system.src.js
 src/external/typo.js
 src/external/upndown.js
 src/systemjs-config.js
+src/worker/service-worker.js
 src/worker/systemjs-worker.js
 templates/graph-control.js
 templates/knot-view.js
