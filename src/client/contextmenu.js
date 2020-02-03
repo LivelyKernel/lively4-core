@@ -566,7 +566,7 @@ export default class ContextMenu {
                 this.hide();
               }]}).concat([[
             "Vivide Applications",
-            lively.files.statFile(applicationFolder).then(r => JSON.parse(r).contents
+            lively.files.statFile(applicationFolder).then(r => (JSON.parse(r).contents || [])
               .filter(({ type }) => type=== 'file')
               .map(({ name }) => [name.split('.')[0], async () => {
                 const content = JSON.parse(await lively.files.loadFile(applicationFolder+name));
