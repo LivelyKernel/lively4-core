@@ -8,10 +8,12 @@ const attributes = {
   function : ae => ae.func,
   //lastValue : ae => ""+ae.lastValue,
   currentValue : getValueTag,
-  callbacks : ae => ae.callbacks,
-  dependencies : ae => ae.supportsDependencies() ? ae.dependencies().all()
-    .map(dependencyString)
-    .joinElements(()=><br/>) : <font color="#FF00FF">{"no dependecy api available"}</font>,
+  callbacks : ae => listify(ae.callbacks),
+  
+  dependencies : ae => ae.supportsDependencies() ? 
+      listify(ae.dependencies().all().map(dependencyString))
+    : <font color="#551199">{"no dependecy api available"}</font>,
+  
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
@@ -26,10 +28,9 @@ function getValueTag(ae) {
   
 function dependencyString(dependency) {
   let descriptor = dependency.getAsDependencyDescription();
-  return dependency._type +
-    Object.keys(descriptor)
-      .map(key => '\t'+key+' : '+descriptor[key])
-      .join('\n')
+  return <li>{dependency._type}
+    {listify(Object.keys(descriptor)
+      .map(key => <span>{key+' : '}{inspectorLink(descriptor[key])}</span>), true)}</li>
 }
 
 function colorForHeat(heat) {
@@ -42,7 +43,7 @@ function coolDown(element) {
   let currentcount = parseFloat(element.getAttribute("heat"));
   if(currentcount <= 0)return;
   let step = 0.1;
-  currentcount = currentcount - step;
+  currentcount = currentcount * 0.95 - 0.01;
   element.setAttribute("heat", Math.max(currentcount, 0));
   let newColor = colorForHeat(currentcount+1);
   element.setAttribute("bgcolor", newColor);
@@ -180,7 +181,7 @@ export default class AexprTable extends Morph {
       let value = attributes[attribute](aexpr);
       let cell = row.cells[attribute];
       if(!cell) {
-        cell = <td>{...value}</td>;
+        cell = <td>{value}</td>;
         row.appendChild(cell);
         //row.cells[attribute] = cell;
       } else {
@@ -234,5 +235,17 @@ export default class AexprTable extends Morph {
     
   }
   
-  
+
+}
+
+function listify(array, protect) {
+  return <ul style="display:block">{...(
+      array.map(each => <li style={protect ? "white-space: nowrap" : ""}>{each}</li>)
+    )}</ul>
+}
+
+function inspectorLink(object) {
+  let link = <a>{object.toString()}</a>;
+  link.onclick = () => lively.openInspector(object);
+  return link;
 }

@@ -15,8 +15,6 @@ export default class Bp2019Workspace extends Morph {
           body: s
        }
       ).then(r => r.json())
-      
-    // return {value: "haha " + s}
     }
   }
   livelyPrepareSave() {

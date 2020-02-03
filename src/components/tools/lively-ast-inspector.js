@@ -56,9 +56,27 @@ export default class AstInspector extends Morph {
     const element = this.expandPath(keyPath);
     if (!element) return;
     
-    element.scrollIntoView({behavior: "auto", block: "start", inline: "start"});
+    this.scrollIntoView(element);
+    
     this.selection = element;
     this.selection.classList.add("selected");
+  }
+  
+  scrollIntoView(element) {
+    //own implementation (instead of Element>>scrollIntoView)
+    //only scrolls container, not ALL ancestors (including lively desktop)
+    const container = this.container;
+    let inner = element.getBoundingClientRect();
+    let outer = container.getBoundingClientRect();
+    let relativeLeft = inner.left - outer.left;
+    let relativeTop = inner.top - outer.top;
+    let hDisplacement = (outer.width - inner.width) / 2;
+    let vDisplacement = (outer.height - inner.height) / 2;
+    hDisplacement = hDisplacement < 0 ? relativeLeft : relativeLeft - hDisplacement;
+    vDisplacement = vDisplacement < 0 ? relativeTop : relativeTop - vDisplacement;
+    hDisplacement -= 10;
+    vDisplacement -= 10;
+    container.scrollBy(hDisplacement, vDisplacement);
   }
 
   expandPath(keyPath) {
@@ -141,15 +159,16 @@ export default class AstInspector extends Morph {
     element.append(this.expansionIndicatorTemplate(element.isExpanded));
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
+    const summary = this.astNodeSummary(element.target, element.isExpanded);
+    if (summary) element.append(this.summaryTemplate(summary));
     this.attachHandlers(element);
     if (element.isExpanded) {
       const content = this.contentTemplate();
       const classifications = this.astNodeKeyClassifications(target);
-      console.log(classifications);
       for (const key in classifications) {
         const classification = classifications[key];
         if (this.isVisibleAstNodeKey(classification)) {
-          content.append(this.display(target[key], false, key, { classification }))
+          content.append(this.display(target[key], this.isFoldable(key), key, { classification }))
         }
       }
       element.append(content);
@@ -199,6 +218,44 @@ export default class AstInspector extends Morph {
     element.appendChild(this.expansionIndicatorTemplate("\u2002"));
     element.append(this.keyTemplate(element));
     element.appendChild(<span class='attrValue'>{json}</span>);
+  }
+  
+  astNodeSummary(astNode, isExpanded) {
+    if (t.isIdentifier(astNode)) {
+      return `"${astNode.name}"`;
+    } else if (t.isStringLiteral(astNode)) {
+      return `"${astNode.value}"`;
+    } else if (t.isFunction(astNode)) {
+      let name = String.fromCodePoint(119891);
+      if (!astNode.computed && astNode.key) {
+        name = astNode.key.name || astNode.key.value;
+      }
+      let params = "";
+      if (astNode.params) params = astNode.params.map(param => param.name || "?").join(',');
+      let modifiers = "";
+      if (astNode.async) modifiers += "async ";
+      if (astNode.static) modifiers += "static ";
+      return `${modifiers} ${name}(${params})`
+    } else if (t.isClassDeclaration(astNode)) {
+      return `${astNode.id.name}`;
+    } else if (t.isVariableDeclaration(astNode)) {
+      let variables = astNode.declarations
+                      .map(decl => (decl.id && decl.id.name) || "?")
+                      .join(', ');
+      return `${astNode.kind} [${variables}]`;
+    } else {
+      if (astNode.id) return astNode.id.name;
+      if (astNode.key) {
+        return astNode.key.value || astNode.key.name;
+      }
+    }
+    return null;
+  }
+  
+  isFoldable(key) {
+    return key === 'body'
+            || key === 'declarations'
+            || key === 'expression';
   }
   
   isLocationKey(str) {
@@ -330,11 +387,12 @@ export default class AstInspector extends Morph {
 /*MD # Handlers MD*/
   
   attachHandlers(element) {
-    element.onmouseenter = evt => {
-      this.onHoverStart(element);
+    element.onmouseover = evt => {
+      this.onStartHover(element);
+      evt.stopPropagation();
     }
     element.onmouseleave = evt => {
-      this.onHoverEnd(element);
+      this.onStopHover(element);
     }
     element.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = evt => {
@@ -359,20 +417,20 @@ export default class AstInspector extends Morph {
     this.dispatchEvent(new CustomEvent("select-object", {detail: {node: element, object: obj}}));
   }
   
-  onHoverStart(element) {
+  onStartHover(element) {
     if (this.editor && element.target.loc) {
       if (this.hoverMarker) this.hoverMarker.clear();
       const cm = this.editor.currentEditor();
       const start = loc(element.target.loc.start);
       const end = loc(element.target.loc.end);
       this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
-      console.log(loc);
     }
   }
   
-  onHoverEnd(element) {
+  onStopHover(element) {
     if (this.editor && element.target.loc) {
       if (this.hoverMarker) this.hoverMarker.clear();
+      this.hoverMarker = null;
     }
   }
   

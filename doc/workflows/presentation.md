@@ -19,7 +19,9 @@ Presentation.config(this, {
 
 ## Examples
 
-- [demo](../../demos/presentation/index.md) #Example
-- [lively4](../presentation/index.md) #Draft
-- [Designing a Live Development Experience for Web Components. PX.17](../PX17/index.md)
+- [Presentation Demo](../../demos/presentation/index.md) #Example
+- [Designing a Live Development Experience for Web Components. PX.17](../../demos/PX17/index.md)
+- [Lively4: An Exploratory Web-Programming Environment. Shonan. Feb 2019](../../demos/shonan/index.md)
+- [Babylonian-style Programming. ‹Programming› 2019.](../../src/babylonian-programming-editor/presentation/index.md)
 - [BP2019RH1 - Introduction](https://lively-kernel.org/lively4/BP2019RH1/demos/tools-and-workflowss/2019-11-06_project_begin.md#)
+- [Tools and Workflows. #draft](demos/tools-and-workflows/index.md)

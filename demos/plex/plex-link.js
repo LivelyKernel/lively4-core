@@ -1,10 +1,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Strings from 'src/client/strings.js'
-import _ from 'src/external/underscore.js'
+import _ from 'src/external/lodash/lodash.js'
 import {getDeepProperty} from "utils"
 import {pt} from "src/client/graphics.js"
 import html from 'src/client/html.js'
-
 
 export default class PlexLink extends Morph {
 
