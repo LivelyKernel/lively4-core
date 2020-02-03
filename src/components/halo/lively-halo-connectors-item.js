@@ -40,15 +40,23 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
       ], [
       'New Connection',
-        [['On custom...', () => this.startCreatingConnectionCustom(evt)],
-          ['On value', () => this.startCreatingConnectionFor(evt, 'value', false)],
-         ['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-         ['Style', this.getAllStylesFor(this.source, evt)]],
+        [['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
+         ['Width', () => this.startCreatingConnectionFor(evt, 'width', false)],
+         ['Height', () => this.startCreatingConnectionFor(evt, 'height', false)],
+         ['Events', this.getAllEventsFor(this.source, evt)],
+         ['Style', this.getAllStylesFor(this.source, evt)],
+         ['On custom...', () => this.startCreatingConnectionCustom(evt)]],
       'Creates a new connection',
       '<i class="fa fa-image" aria-hidden="true"></i>'
     ]];
     
     this.showMenu(evt, menuItems);
+  }
+  
+  getAllEventsFor(object, evt){
+    return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
+            //todo make mouseevents work
+           ['MouseEvent', () => this.startCreatingConnectionFor(evt, 'mouseEvent', true)]]
   }
   
   getAllStylesFor(object, evt){
@@ -66,16 +74,10 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   async showFinishingConnectorsMenuFor(evt, morph){
-    const menuItems = [[
-      'On custom...',
-      () => this.finishCreatingConnectionCustom(morph)
-    ],[
-      'On width',
-      () => this.finishCreatingConnection(morph, 'width')
-    ],[
-      'On height',
-      () => this.finishCreatingConnection(morph, 'height')
-    ]];
+    //todo refactor
+    const menuItems = [['On custom...', () => this.finishCreatingConnectionCustom(morph)],
+      ['On width', () => this.finishCreatingConnection(morph, 'width')],
+      ['On height', () => this.finishCreatingConnection(morph, 'height')]];
     
     this.showMenu(evt, menuItems);
   }
@@ -140,6 +142,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     }
     
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
+    
     connection.activate();
     connection.drawConnectionLine();
   } 
