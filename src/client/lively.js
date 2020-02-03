@@ -2113,7 +2113,8 @@ if (!window.lively || window.lively.name != "Lively") {
   window.lively = Lively;
 }
 
-lively.registerSWXFetchHandler()
+// #TODO pull this this out into boot.js #Continue
+lively.registerSWXFetchHandler() // #BUG this is to late for booting lively itself if not everthing is in the zip
 
 
 var modulesExported = Lively.exportModules();

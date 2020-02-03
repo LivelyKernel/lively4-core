@@ -1,14 +1,15 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-
+import { querySelectorAllDeep } from 'https://raw.githubusercontent.com/Georgegriff/query-selector-shadow-dom/master/src/querySelectorDeep.js';
+import d3 from "src/external/d3.v5.js";
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 window.SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
 window.SpeechRecognitionEvent = window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
 
 export default class LivelySmaug extends Morph {
   async initialize() {
-    this.windowTitle = "Smaug";
+    this.windowTitle = "🐉 Smaug";
     this.registerButtons();
 
     this.get("#textField").value = this.getAttribute("data-mydata") || 0;
@@ -79,31 +80,45 @@ export default class LivelySmaug extends Morph {
 
   // model continuous mode after: https://www.google.com/intl/en/chrome/demos/speech.html
   onresult(event) {
+    const focus = querySelectorAllDeep(':focus');
+
+    focus.forEach(f => {
+      lively.showElement(f);
+    });
+
     this.previewResult(event);
 
     const last = event.results.length - 1;
     const lastResult = event.results[last];
 
-    const line = <div>
+    const line = <div><span>{focus.length}</span>
               {event.results.length + ' ' + lastResult.length}
             <span id="transcripts"></span>
             <span style="font-size: xx-small; color: gray;">{event.results[last].isFinal ? 'final' : 'interim'}</span>
-            <span style="font-size: xx-small;">({event.interpretation ? 'interpretation found: ' + event.interpretation : 'no interpretation'})</span>
           </div>;
+    // interpretation is deprecated
+    // <span style="font-size: xx-small;">({event.interpretation ? 'interpretation found: ' + event.interpretation : 'no interpretation'})</span>
 
     const transcripts = line.querySelector('#transcripts');
+    var color = d3.scaleLinear().domain([0, 1]).range(["red", "green"]);
     for (let alternative of lastResult) {
-      const line = <span>{alternative.confidence}{alternative.transcript}, </span>;
-      // line.style.color = `red`;
-      // line.style.opacity = alternative.confidence;
+      const line = <span>{alternative.confidence.round(2)}{alternative.transcript}, </span>;
+      line.style.color = color(alternative.confidence);
       transcripts.appendChild(line);
     }
 
     setTimeout(() => line.remove(), 5000);
     this.get('#results').appendChild(line);
+
+    this.execCommand(event)
   }
 
   // this method is automatically registered as handler through ``registerButtons``
+
+  execCommand(event) {
+    const last = event.results.length - 1;
+    const lastResult = event.results[last];
+  }
 
   previewResult(event) {
     var previous_transcript = '';
