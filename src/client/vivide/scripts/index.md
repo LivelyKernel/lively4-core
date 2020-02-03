@@ -50,7 +50,7 @@ import { createView } from 'src/client/vivide/scripts/loading.js';
       <span style="color: blue; font-weight: bold;">Open</span>
     </button>;
 
-    let file = <div>{urlString.split('/')[urlString.split('/').length-1]} {delbutton} {openbutton}</div>;
+  let file = <div>{urlString.split('/')[urlString.split('/').length-1]} {delbutton} {openbutton}</div>;
     return file;
   })}</div>);
   

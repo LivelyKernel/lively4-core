@@ -1,6 +1,6 @@
 "enable aexpr";
 import {pt} from 'src/client/graphics.js';
-//import {uuid} from 'utils';
+import {uuid} from 'utils';
 
 window.allConnections = window.allConnections || new Set()
 
@@ -21,7 +21,51 @@ export default class Connection {
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
     this.isActive = false
-    this.valueModifyingCode = '+"pt"'
+    this.valueModifyingCode = "(target, sourceValue) => {target.style.height = sourceValue*1 + 'pt'}"
+    
+    this.makeSavingScript();
+  }
+  
+  makeSavingScript(){
+    this.targetId = uuid();
+    this.sourceId = uuid();
+    this.target.setAttribute('connectionId', this.targetId);
+    this.source.setAttribute('connectionId', this.sourceId);
+    //this.target.setAttribute('connectionInfo', [targetId, this.valueModifyingCode, sourceId, this.sourceProperty]);
+    //let script = <script type="lively4script" data-name="livelyload">import {uuid} from 'utils'; alert(uuid())</script>;
+    this.source.setJSONAttribute('data-connection', this.serialize());
+  }
+  
+  static reinitializeFor(target){
+    let targetId = target.getAttribute('connectionInfo')[0];
+    let code = target.getAttribute('connectionInfo')[1];
+    let sourceId = target.getAttribute('connectionInfo')[2];
+    let sProperty = target.getAttribute('connectionInfo')[3];
+    this.connectionFromExistingData(targetId, code, sourceId, sProperty);
+    
+  }
+  
+  serialize(){
+    return {
+      sourceId: this.sourceId,
+      targetId: this.targetId,
+      sourceProperty: this.sourceProperty,
+      code: this.valueModifyingCode
+    }
+  }
+  
+  static deserialize(json){
+    debugger
+    this.connectionFromExistingData(json.targetId, json.code, json.sourceId, json.sourceProperty)
+  }
+  
+  static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty){
+    let target = document.body.querySelector(`[connectionId="${targetId}"]`);
+    let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
+    let undeadConnection = new Connection(target, 'something', source, sourceProperty, false);
+    undeadConnection.setModifyingCodeString(modifyingCode);
+    undeadConnection.activate();
+    return undeadConnection;
   }
   
   activate(){
@@ -53,8 +97,7 @@ export default class Connection {
     let result = await code.boundEval()
     this.target.style[this.targetProperty] = result*/
     
-    let code = "(target, sourceValue) => {target.style.height = sourceValue*1 + 'pt'}"
-    let myFunction = await code.boundEval()
+    let myFunction = await this.valueModifyingCode.boundEval()
     myFunction(this.target, sourceValue)
   }
   

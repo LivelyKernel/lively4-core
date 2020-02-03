@@ -1,10 +1,9 @@
 <template id="lively-plugin-explorer" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
       display: flex;
-      flex-direction: row;
-      overflow: hidden;
     }
   
     .layout-column {
@@ -23,6 +22,26 @@
       flex: 1;
       overflow: hidden;
     }
+    
+    .pane.tool {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+    }
+    
+    #content {
+      margin: 1px;
+    }
+    
+    #workspace-path {
+      border: 1px solid #d5d5d5;
+      border-radius: 2px;
+    }
+    
+    input {
+      width: 40px;
+      flex: 100;
+      margin: 2px;
+    }
 
     #pluginPane {
       flex: 4;
@@ -30,86 +49,92 @@
 
     #toolPane {
       flex: 5;
-      border-left: 2px gray solid;
     }
 
-    #secondaryToolPane {
-      border-left: 2px gray solid;
-    }
-
-    #resultPane {
-      border-top: 2px gray solid;
-      overflow: scroll;
-    }
-
-    #transformedSourcePane {
-      border-top: 2px gray solid;
-    }
-
-
-    #source, #sourceAst, #transformedSource, #plugin, #result {
+    #source, #sourceAst, #transformedSource, #plugin, #executionConsole {
       width: 100%;
       height: 100%;
     }
 
-    #result {
+    #executionConsole {
       margin-left: 15px;
     }
+    
+    button.toggle {
+      color: black;
+    }
 
+    button.toggle.on {
+      color: white;
+      background: steelblue;
+    }
     
   </style>
-
-  <div id="pluginPane" class="pane layout-column">
-    <div>
-      <b>Plugin</b>
-      <input type="checkbox" id="systemjs">
-      <label for="systemjs">SystemJS</label>
+  
+  <div id="content" class="pane layout-column">
+    <div id="navigationPane" class="layout-row">
+      <input type="text" id="workspace-path" value="">
+      <button class="toggle" id="save" title="Save Workspace to file (right-click to toggle auto-mode).">
+          <i class="fa fa-floppy-o"></i>
+      </button>
+      <button class="toggle" id="update" title="Update AST and apply plugin (right-click to toggle auto-mode).">
+          <i class="fa fa-refresh fa-fw"></i>
+      </button>
+      <button class="toggle" id="execute" title="Execute transformed code (right-click to toggle auto-mode).">
+          <i class="fa fa-cog fa-fw"></i>
+      </button>
+      <button class="toggle" id="toggleRunsTests" title="Toggle: Run tests after successful transformation.">
+          <i class="fa fa-shield"></i>
+      </button>
+      <button class="toggle" id="toggleSystemJS" title="Toggle: SystemJS.">
+          <i class="fa fa-cloud"></i>
+      </button>
     </div>
-    <div class="pane">
-      <lively-editor id="plugin"></lively-editor>
-    </div>
-  </div>
 
-  <lively-separator reverse=true></lively-separator>
-
-  <div id="toolPane" class="pane layout-row">
-    <div id="primaryToolPane" class="pane layout-column">
-      <div id="sourcePane" class="pane">
-        <b>Source</b>
-        <lively-editor id="source"></lively-editor>
-      </div>
-      <lively-separator></lively-separator>
-      <div id="transformedSourcePane" class="pane layout-column">
-        <span id="eval">
-          <b>Transformed Source</b>
-          <input type="checkbox" id="live" title="continous eval" checked/>
-          <label for="live">Run On Save</label>
-          <input type="checkbox" id="run-tests" title="run tests after successful transpilation" checked/>
-          <label for="run-tests">Run Tests</label>
-        </span>
+    <div class="pane layout-row">
+      <div id="pluginPane" class="pane tool layout-column">
+        <b>Plugin</b>
         <div class="pane">
-          <lively-code-mirror id="transformedSource"></lively-code-mirror>
+          <lively-editor id="plugin"></lively-editor>
         </div>
       </div>
-    </div>
 
-    <lively-separator reverse=true></lively-separator>
-
-    <div id="secondaryToolPane" class="pane layout-column">
-      <div id="sourceAstPane" class="pane layout-column">
-        <b>Source AST</b>
-        <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
-      </div>
       <lively-separator reverse=true></lively-separator>
-      <div id="resultPane" class="pane layout-column">
-        <b>Evaluation Console</b>
-        <div class="pane">
-          <pre id="result"></pre>
+
+      <div id="toolPane" class="pane layout-row">
+        <div class="pane layout-column">
+          <div class="pane tool">
+            <span>
+              <b>Source</b>
+            </span>
+            <lively-editor id="source"></lively-editor>
+          </div>
+          <lively-separator></lively-separator>
+          <div class="pane tool layout-column">
+            <b>Transformed Source</b>
+            <div class="pane">
+              <lively-code-mirror id="transformedSource"></lively-code-mirror>
+            </div>
+          </div>
+        </div>
+
+        <lively-separator reverse=true></lively-separator>
+
+        <div class="pane layout-column">
+          <div class="pane tool layout-column">
+            <b>Source AST</b>
+            <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
+          </div>
+          <lively-separator reverse=true></lively-separator>
+          <div class="pane tool layout-column">
+            <b>Execution Console</b>
+            <div class="pane">
+              <pre id="executionConsole"></pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
-
 
 </template>
