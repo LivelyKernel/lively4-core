@@ -1,28 +1,26 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-
+import { querySelectorAllDeep } from 'https://raw.githubusercontent.com/Georgegriff/query-selector-shadow-dom/master/src/querySelectorDeep.js';
+import d3 from "src/external/d3.v5.js";
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 window.SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
 window.SpeechRecognitionEvent = window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
 
 export default class LivelySmaug extends Morph {
   async initialize() {
-    this.windowTitle = "Smaug";
+    this.windowTitle = "🐉 Smaug";
     this.registerButtons();
 
     this.get("#textField").value = this.getAttribute("data-mydata") || 0;
 
+    // speech recognition API supported
     if ('SpeechRecognition' in window) {
-      // speech recognition API supported
       if (!this.recognition) {
         lively.success('new DRagon ');
         this._initRecognition();
       } else {
-        lively.success('DRagon was there');
         this._rebindEvents();
-
-        // this.recognition.onresult = event => foundResult(event);
       }
     } else {
       // speech recognition API not supported
@@ -37,13 +35,12 @@ export default class LivelySmaug extends Morph {
     this.recognition.maxAlternatives = 1;
 
     this._rebindEvents();
+
+    this.recognition.start();
   }
 
   _rebindEvents() {
     const events = "audioend,audiostart,end,error,nomatch,result,soundend,soundstart,speechend,speechstart,start";
-
-    lively.removeEventListener('smaug');
-
     events.split(',').forEach(eventType => {
       this.recognition['on' + eventType] = evt => {
         this.logEvent(evt);
@@ -59,13 +56,115 @@ export default class LivelySmaug extends Morph {
     this.get('#eventList').appendChild(notification);
   }
 
-  onresult(event) {
-    const last = event.results.length - 1;
-    const speechToText = event.results[last][0].transcript;
-
-    lively.notify(event.interpretation + ' ' + event.results.forEach + '' + event.results[last].isFinal + ' ' + event.results.length + ' ' + event.results[0].length, speechToText);
+  onstart(evt) {
+    this.markAsRunning(true);
   }
+
+  onend(evt) {
+    this.markAsRunning(false);
+  }
+
+  get runIndicator() {
+    return this.get('#runIndicator');
+  }
+  markAsRunning(isRunning) {
+    this.isRunning = isRunning;
+    const runIndicator = this.runIndicator;
+    runIndicator.innerHTML = '';
+    if (isRunning) {
+      runIndicator.appendChild(<span style="color: green;"><i class="fa fa-play"></i> listening</span>);
+    } else {
+      runIndicator.appendChild(<span style="color: red;"><i class="fa fa-stop"></i> not listening</span>);
+    }
+  }
+
+  // model continuous mode after: https://www.google.com/intl/en/chrome/demos/speech.html
+  onresult(event) {
+    const focus = querySelectorAllDeep(':focus');
+
+    focus.forEach(f => {
+      lively.showElement(f);
+    });
+
+    this.previewResult(event);
+
+    const last = event.results.length - 1;
+    const lastResult = event.results[last];
+
+    const line = <div><span>{focus.length}</span>
+              {event.results.length + ' ' + lastResult.length}
+            <span id="transcripts"></span>
+            <span style="font-size: xx-small; color: gray;">{event.results[last].isFinal ? 'final' : 'interim'}</span>
+          </div>;
+    // interpretation is deprecated
+    // <span style="font-size: xx-small;">({event.interpretation ? 'interpretation found: ' + event.interpretation : 'no interpretation'})</span>
+
+    const transcripts = line.querySelector('#transcripts');
+    var color = d3.scaleLinear().domain([0, 1]).range(["red", "green"]);
+    for (let alternative of lastResult) {
+      const line = <span>{alternative.confidence.round(2)}{alternative.transcript}, </span>;
+      line.style.color = color(alternative.confidence);
+      transcripts.appendChild(line);
+    }
+
+    setTimeout(() => line.remove(), 5000);
+    this.get('#results').appendChild(line);
+
+    this.execCommand(event)
+  }
+
   // this method is automatically registered as handler through ``registerButtons``
+
+  execCommand(event) {
+    const last = event.results.length - 1;
+    const lastResult = event.results[last];
+  }
+
+  previewResult(event) {
+    var previous_transcript = '';
+    let final_transcript = '';
+    var interim_transcript = '';
+
+    if (typeof event.results == 'undefined') {
+      // recognition.onend = null;
+      // recognition.stop();
+      // upgrade();
+      return;
+    }
+
+    for (var i = 0; i < event.results.length; ++i) {
+      const transcript = event.results[i][0].transcript;
+      if (i < event.resultIndex) {
+        previous_transcript += transcript;
+      } else if (event.results[i].isFinal) {
+        final_transcript += transcript;
+      } else {
+        interim_transcript += transcript;
+      }
+    }
+
+    function linebreak(i) {
+      return i;
+    }
+    this.get('#previousResult').innerHTML = linebreak(previous_transcript);
+    this.get('#finalResult').innerHTML = linebreak(final_transcript);
+    this.get('#interimResult').innerHTML = linebreak(interim_transcript);
+
+    if (final_transcript || interim_transcript) {
+      // showButtons('inline-block');
+    }
+  }
+
+  _logResults(event) {
+    for (let x of event.results) {
+      const line = <div>
+              <span style="font-size: xx-small; color: blue;">{x[0].transcript}</span>
+            </div>;
+      setTimeout(() => line.remove(), 5000);
+      this.get('#results').appendChild(line);
+    }
+  }
+
   onStartButton() {
     this.recognition.start();
   }
@@ -86,7 +185,7 @@ export default class LivelySmaug extends Morph {
 
   // store something that would be lost
   livelyPrepareSave() {
-    lively.warn('livelyPrepareSave')
+    lively.warn('livelyPrepareSave');
     this.setAttribute("data-mydata", this.get("#textField").value);
   }
 
@@ -96,6 +195,12 @@ export default class LivelySmaug extends Morph {
 
   livelyMigrate(other) {
     this.recognition = other.recognition;
+    if (other.isRunning !== undefined) {
+      this.markAsRunning(other.isRunning);
+      if (this.recognition && !other.isRunning) {
+        this.recognition.start();
+      }
+    }
   }
 
   livelyInspect(contentNode, inspector) {

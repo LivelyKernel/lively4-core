@@ -27,6 +27,9 @@ self.CodeMirror = CodeMirror // for modules
 let loadPromise = undefined;
 import { loc, range } from 'utils';
 
+import _ from 'src/external/lodash/lodash.js'
+
+
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 
@@ -418,11 +421,15 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Alt-R Rename this identifier
         "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectBindings());
+          this.astCapabilities(cm).then(ac => ac.rename());
         },
         // #KeyboardShortcut Alt-M Extract method
         "Alt-M": cm => {
           this.astCapabilities(cm).then(ac => ac.extractMethod());
+        },
+        // #KeyboardShortcut Alt-H Generate accessors for tags with id in corresponding .html file
+        "Alt-H": cm => {
+          this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
         },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation

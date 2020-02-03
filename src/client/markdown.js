@@ -58,6 +58,7 @@ export default class Markdown {
   // #helper 
   static parseAndReplace(element, regex, func) {
     element.querySelectorAll("*").forEach(ea => {
+      // if (ea.localName == "code" || ea.localName == "pre") return; 
       ea.childNodes.forEach(eaChild => {
         if (eaChild instanceof Text) {
           this.parseAndReplaceTextNode(ea, eaChild, regex, func)
@@ -67,7 +68,7 @@ export default class Markdown {
   }
 
   static parseAndReplaceBibrefs(element) {
-    this.parseAndReplace(element, /\@([A-Za-z0-9]+)/, (m) => {
+    this.parseAndReplace(element, /\@([A-Za-z]+[0-9][A-Z]+)/, (m) => {
       var link = <a click={evt => {
         evt.preventDefault(); 
         lively.openBrowser(link.href)
@@ -146,16 +147,17 @@ export default class Markdown {
       /*MD
 <style>* {background-color:lightgray}</style>
 ```javascript
-Markdown.extractReferences(`Hello @Foo1981HHC World\nggg @Bar2019X`)
+// we have to "quote" the @ because we are still in markdown... and replacing those references
+Markdown.extractReferences(`Hello @`+`Foo1981HHC World\nggg @`+`Bar2019X`)
 ```
 <script>
   import Markdown from 'src/client/markdown.js';
-  <pre>{eval(this.parentElement.querySelector("code").textContent)}</pre>
+  <pre>Result:{eval(this.parentElement.querySelector("code").textContent)}</pre>
 </script>
   MD*/
   
   static extractReferences(source) {
-     return Strings.matchAll(/@([A-Z][a-z]+[0-9][0-9][0-9][0-9][A-Z])/, source).map(ea => ea[1])
+    return Strings.matchAll(/@([A-Z][a-z]+[0-9][0-9][0-9][0-9][A-Z]+)/g, source).map(ea => ea[1])
   }
   
   static parseAndReplaceLatex(element) {

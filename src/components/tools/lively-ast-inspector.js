@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { sortAlphaNum } from 'src/client/sort.js';
 import babelDefault from 'systemjs-babel-build';
 const { types: t } = babelDefault.babel;
+import { loc, range } from 'src/client/utils.js';
 
 export default class AstInspector extends Morph {
   
@@ -35,6 +36,18 @@ export default class AstInspector extends Morph {
     return content;
   }
   
+  connectEditor(editor) {
+    this.editor = editor;
+    const lcm = editor.livelyCodeMirror();
+    lcm.editor.on("cursorActivity", (cm) => {
+      lcm.astCapabilities(cm).then(ac => {
+        const node = ac.getOutermostPathContainingSelectionWithMinimalSelectionRange(ac.programPath, ac.firstSelection);
+        const pathKeys = this.getPathKeys(node);
+        this.selectPath(pathKeys);
+      });
+    })
+  }
+  
   selectPath(keyPath) {
     if (this.selection) {
       this.selection.classList.remove("selected");
@@ -43,16 +56,36 @@ export default class AstInspector extends Morph {
     const element = this.expandPath(keyPath);
     if (!element) return;
     
+    this.scrollIntoView(element);
+    
     this.selection = element;
     this.selection.classList.add("selected");
+  }
+  
+  scrollIntoView(element) {
+    //own implementation (instead of Element>>scrollIntoView)
+    //only scrolls container, not ALL ancestors (including lively desktop)
+    const container = this.container;
+    let inner = element.getBoundingClientRect();
+    let outer = container.getBoundingClientRect();
+    let relativeLeft = inner.left - outer.left;
+    let relativeTop = inner.top - outer.top;
+    let hDisplacement = (outer.width - inner.width) / 2;
+    let vDisplacement = (outer.height - inner.height) / 2;
+    hDisplacement = hDisplacement < 0 ? relativeLeft : relativeLeft - hDisplacement;
+    vDisplacement = vDisplacement < 0 ? relativeTop : relativeTop - vDisplacement;
+    hDisplacement -= 10;
+    vDisplacement -= 10;
+    container.scrollBy(hDisplacement, vDisplacement);
   }
 
   expandPath(keyPath) {
     let node = this.root;
+    if (!node) return null;
     for (const key of keyPath) {
       this.expandElement(node);
       node = this.getChild(node, key);
-      if (!node) return;
+      if (!node) return null;
     }
     this.expandElement(node);
     return node;
@@ -60,6 +93,17 @@ export default class AstInspector extends Morph {
 
   getChild(element, key) {
     return this.getChildren(element).find(child => child.key === key);
+  }
+  
+  getPathKeys(babelPath) {
+    const keys = [];
+    let path = babelPath;
+    do {
+      let key = path.key;
+      keys.unshift(key);
+      if (path.inList) keys.unshift(path.listKey);
+    } while ((path = path.parentPath));
+    return keys;
   }
 
 /*MD # Configuration MD*/
@@ -115,15 +159,16 @@ export default class AstInspector extends Morph {
     element.append(this.expansionIndicatorTemplate(element.isExpanded));
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
+    const summary = this.astNodeSummary(element.target, element.isExpanded);
+    if (summary) element.append(this.summaryTemplate(summary));
     this.attachHandlers(element);
     if (element.isExpanded) {
       const content = this.contentTemplate();
       const classifications = this.astNodeKeyClassifications(target);
-      console.log(classifications);
       for (const key in classifications) {
         const classification = classifications[key];
         if (this.isVisibleAstNodeKey(classification)) {
-          content.append(this.display(target[key], false, key, { classification }))
+          content.append(this.display(target[key], this.isFoldable(key), key, { classification }))
         }
       }
       element.append(content);
@@ -173,6 +218,44 @@ export default class AstInspector extends Morph {
     element.appendChild(this.expansionIndicatorTemplate("\u2002"));
     element.append(this.keyTemplate(element));
     element.appendChild(<span class='attrValue'>{json}</span>);
+  }
+  
+  astNodeSummary(astNode, isExpanded) {
+    if (t.isIdentifier(astNode)) {
+      return `"${astNode.name}"`;
+    } else if (t.isStringLiteral(astNode)) {
+      return `"${astNode.value}"`;
+    } else if (t.isFunction(astNode)) {
+      let name = String.fromCodePoint(119891);
+      if (!astNode.computed && astNode.key) {
+        name = astNode.key.name || astNode.key.value;
+      }
+      let params = "";
+      if (astNode.params) params = astNode.params.map(param => param.name || "?").join(',');
+      let modifiers = "";
+      if (astNode.async) modifiers += "async ";
+      if (astNode.static) modifiers += "static ";
+      return `${modifiers} ${name}(${params})`
+    } else if (t.isClassDeclaration(astNode)) {
+      return `${astNode.id.name}`;
+    } else if (t.isVariableDeclaration(astNode)) {
+      let variables = astNode.declarations
+                      .map(decl => (decl.id && decl.id.name) || "?")
+                      .join(', ');
+      return `${astNode.kind} [${variables}]`;
+    } else {
+      if (astNode.id) return astNode.id.name;
+      if (astNode.key) {
+        return astNode.key.value || astNode.key.name;
+      }
+    }
+    return null;
+  }
+  
+  isFoldable(key) {
+    return key === 'body'
+            || key === 'declarations'
+            || key === 'expression';
   }
   
   isLocationKey(str) {
@@ -304,6 +387,13 @@ export default class AstInspector extends Morph {
 /*MD # Handlers MD*/
   
   attachHandlers(element) {
+    element.onmouseover = evt => {
+      this.onStartHover(element);
+      evt.stopPropagation();
+    }
+    element.onmouseleave = evt => {
+      this.onStopHover(element);
+    }
     element.querySelectorAll(".expand").forEach(expandNode => {
       expandNode.onclick = evt => {
         this.render(element, !element.isExpanded);
@@ -325,6 +415,23 @@ export default class AstInspector extends Morph {
     this.selection = obj;
     lively.showElement(obj);
     this.dispatchEvent(new CustomEvent("select-object", {detail: {node: element, object: obj}}));
+  }
+  
+  onStartHover(element) {
+    if (this.editor && element.target.loc) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      const cm = this.editor.currentEditor();
+      const start = loc(element.target.loc.start);
+      const end = loc(element.target.loc.end);
+      this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
+    }
+  }
+  
+  onStopHover(element) {
+    if (this.editor && element.target.loc) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      this.hoverMarker = null;
+    }
   }
   
   onContextMenu(evt) {

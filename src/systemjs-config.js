@@ -110,10 +110,10 @@ const liveES7 = {
     stage2: false,
     stage3: false,
     plugins: [
-      ['babel-plugin-jsx-lively', {
+      ['babel-plugin-rp19-jsx', {
         executedIn: 'file'
       }],
-      ['babel-plugin-rp19-jsx', {
+      ['babel-plugin-jsx-lively', {
         executedIn: 'file'
       }],
       'babel-plugin-transform-do-expressions',
@@ -131,10 +131,10 @@ const aexprViaDirective = {
     stage2: false,
     stage3: false,
     plugins: [
-      ['babel-plugin-jsx-lively', {
+      ['babel-plugin-rp19-jsx', {
         executedIn: 'file'
       }],
-      ['babel-plugin-rp19-jsx', {
+      ['babel-plugin-jsx-lively', {
         executedIn: 'file'
       }],
       'babel-plugin-transform-do-expressions',
@@ -200,10 +200,10 @@ SystemJS.config({
         stage3: false,
         plugins: [
           // lively4url + '/demos/swe/debugging-plugin.js',
-          ['babel-plugin-jsx-lively', {
+          ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
-          ['babel-plugin-rp19-jsx', {
+          ['babel-plugin-jsx-lively', {
             executedIn: 'workspace'
           }],
           'babel-plugin-transform-do-expressions',
@@ -229,10 +229,10 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
-          ['babel-plugin-jsx-lively', {
+          ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
-          ['babel-plugin-rp19-jsx', {
+          ['babel-plugin-jsx-lively', {
             executedIn: 'workspace'
           }],
           'babel-plugin-transform-do-expressions',
@@ -252,10 +252,10 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
-          ['babel-plugin-jsx-lively', {
+          ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
-          ['babel-plugin-rp19-jsx', {
+          ['babel-plugin-jsx-lively', {
             executedIn: 'workspace'
           }],
           'babel-plugin-transform-do-expressions',

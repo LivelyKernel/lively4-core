@@ -144,6 +144,7 @@ export default class LivelyContainerNavbar extends Morph {
   async onDrop(evt, url) {
     
     if (!url) {
+      console.log("NO URL")
       var dropTarget = Array.from(evt.composedPath()).find(ea => ea.url)
       url = dropTarget.url.toString()
     }
@@ -187,6 +188,8 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async onDirectoryDrop(evt) {
+    console.log("in: onDirectoryDrop: ")
+    debugger;
     if (evt.target && evt.target.href) {
       return this.onDrop(evt, evt.target.href)
     }
@@ -256,8 +259,10 @@ export default class LivelyContainerNavbar extends Morph {
             method: "PUT",
             body: content
           })
-          lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size)  
         }
+        
+        lively.notify(`${this.transferMode}d to ` + newurl + ": " + content.size) 
+        
         this.show(newurl, content)
       }
     }  

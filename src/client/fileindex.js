@@ -58,6 +58,7 @@ export default class FileIndex {
     this.db.links.clear()
     this.db.classes.clear()
     this.db.versions.clear()
+    this.db.exports.clear()
     // this.db.delete() 
   }
 
@@ -151,6 +152,9 @@ export default class FileIndex {
     }).upgrade(function () {    })
     db.version(12).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization'
+    }).upgrade(function () {    })
+    db.version(13).stores({
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers"
     }).upgrade(function () {    })
     return db 
   }
@@ -248,6 +252,7 @@ export default class FileIndex {
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
       this.updateExportEntry(file.url, result)
+      this.updateUnboundIdentifiers(file, result)
     }
   }
   
@@ -310,6 +315,17 @@ export default class FileIndex {
   async addExportEntry(exportEntry) {
     await this.db.exports.where({url: exportEntry.url}).delete()
     this.db.exports.put(exportEntry)
+  }
+  
+  async updateUnboundIdentifiers(file, semantics) {
+    if (!semantics || (!semantics.unboundIdentifiers)) {
+      return
+    }
+    if (semantics.unboundIdentifiers.length > 0) {
+      file.unboundIdentifiers = semantics.unboundIdentifiers
+        .filter((value, index, self) => self.indexOf(value) === index);
+      this.db.files.put(file);
+    }
   }
 
   async updateModule(fileUrl, semantics) {
@@ -403,7 +419,8 @@ export default class FileIndex {
       let response = await await fetch(url, {
             method: "OPTIONS",
             headers: {
-              showversions: true
+              showversions: true,
+              "debug-initiator": "fileindex.js#loadVersions"
             }
           })
       let text = await response.text()
@@ -573,11 +590,12 @@ export default class FileIndex {
   }
   
   parseModuleSemantics(ast) {
-    let classes = []
-    let dependencies = []
-    let importDeclarations = new Map()
-    let functionExports = []
-    let classExports = []
+    let classes = [];
+    let dependencies = [];
+    let importDeclarations = new Map();
+    let functionExports = [];
+    let classExports = [];
+    let unboundIdentifiers = [];
     babel.traverse(ast,{
       ImportDeclaration(path) {
         if (path.node.source && path.node.source.value) {
@@ -644,9 +662,16 @@ export default class FileIndex {
         if(t.isClassDeclaration(path.node.declaration)) {
           classExports.push(path.node.declaration.id.name)
         }
+      },
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent)) {
+          if(!t.isThisExpression(path.parent.object)) {
+            unboundIdentifiers.push(path.node.name);
+          }
+        }
       }
     })
-    return {classes, dependencies, functionExports, classExports}
+    return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
   }
   
   // ********************************************************
@@ -684,7 +709,10 @@ export default class FileIndex {
     url = getBaseURL(url)
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
-      method: "OPTIONS"
+      method: "OPTIONS", 
+      headers: {
+        "debug-initiator": "fileindex.js#updateFile"
+      }
     }).then(r => r.clone().json())
     
     if (!stats.error) {
@@ -720,7 +748,12 @@ export default class FileIndex {
   
     if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
       if (size < 100000) {
-        let response = await fetch(url)
+        let response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "debug-initiator": "fileindex.js#addFile"
+          }
+        })
         file.version = response.clone().headers.get("fileversion")
         file.content = await response.clone().text()    
       }
@@ -744,7 +777,7 @@ export default class FileIndex {
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
-    
+    file.unboundIdentifiers = []
     
     
     await this.db.transaction("rw", this.db.files, () => { 
@@ -759,7 +792,7 @@ export default class FileIndex {
 
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
-      await this.addVersions(file)
+      // await this.addVersions(file) // #Disabled for now, this is expensive!
     }
     
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
@@ -776,7 +809,8 @@ export default class FileIndex {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
-        filelist  : true
+        filelist  : true,
+        "debug-initiator": "fileindex.js#updateDirectory"
       }
     }).then(r => {
       if (r.status == 200) {

@@ -1,4 +1,5 @@
-import * as _ from '../external/underscore.js';
+
+import _ from 'src/external/lodash/lodash.js'
 
 export function functionFromString(funcOrString) {
   if (typeof funcOrString === 'function') {

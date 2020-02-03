@@ -8,6 +8,7 @@ import syntaxJsx from 'babel-plugin-syntax-jsx';
 import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
+import { saveFile } from 'src/components/halo/lively-halo-vivide-save-script-item.js';
 
 import { loc, range } from 'utils';
 
@@ -106,6 +107,10 @@ export default class VivideStepEditor extends Morph {
       "Shift-Alt-L": cm => {
         this.scriptEditor && this.scriptEditor.removeLoop();
       },
+      "Shift-Alt-S": cm => {
+        const saveTarget = that;
+        saveFile(saveTarget)
+      }
     });
   }
   

@@ -70,37 +70,6 @@ export default function ({ types: t, template, traverse }) {
     inherits: jsx,
     visitor: {
       Program(path, state) {
-        function hasDirective(path, name) {
-          let foundDirective = false;
-          path.traverse({
-            Directive(path) {
-              if (path.get("value").node.value === name) {
-                foundDirective = true;
-              }
-            }
-          });
-          return foundDirective;
-        }
-
-        function shouldTransform() {
-          const rp19Directive = hasDirective(path, 'use rp19-jsx');
-          const rp19Preference = Preferences.get('UseRP19JSX');
-          const inWorkspace = state.opts.executedIn === 'workspace';
-          const inFile = state.opts.executedIn === 'file';
-
-          if (inWorkspace) {
-            return !rp19Preference;
-          } else if (inFile) {
-            return !rp19Directive;
-          }
-          // the following happens e.g. in ast-explorer!
-          return true;
-        }
-
-        if (!shouldTransform()) {
-          return;
-        }
-
         detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
 
         const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
