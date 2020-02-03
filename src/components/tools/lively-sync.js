@@ -324,6 +324,13 @@ export default class Sync extends Morph {
     this.gitControl("squash");
   }
 
+  async onResetButton(){
+    const answer = await lively.confirm("This will hard reset to the current remote working index.");
+    if(answer){
+      this.gitControl("reset")
+    }
+  }
+  
   onGitrepositoryInputChange(evt) {    
     var value = this.getRepository()
     lively.notify("input changed:" + value)

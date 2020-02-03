@@ -214,7 +214,6 @@ export default class VivideView extends Morph {
     
     // not migrating, but initializing from source
     if (!this.myCurrentScript) {
-      debugger
       var scriptJSON = this.getAttribute("vivide-script")
       if (scriptJSON) {
         this.myCurrentScript = await Script.fromJSON(scriptJSON, this)
@@ -314,11 +313,10 @@ export default class VivideView extends Morph {
   
   get myCurrentScript() { return this._myCurrentScript; }
   set myCurrentScript(script) {
-    debugger
     this._myCurrentScript = script;
     this.setAttribute(VivideView.scriptAttribute, script.toJSON());
   }
-  
+
   async initDefaultScript() {
     const script = await Script.createDefaultScript(this);
     this.myCurrentScript = script;
@@ -380,11 +378,13 @@ export default class VivideView extends Morph {
     scriptEditor.setView(this);
     // #TODO: only do setView with this as argument, the following line should not be required
     await scriptEditor.setScript(this.myCurrentScript);
+
     return scriptEditor;
   }
   
   livelyPrepareSave() {
     this.setAttribute("vivide-script", this.myCurrentScript.toJSON());
+
     try {
       var json = JSON.stringify(this.getInputData())
       this.setAttribute("vivide-data", json)
