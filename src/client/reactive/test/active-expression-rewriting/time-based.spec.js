@@ -183,13 +183,13 @@ describe('Time-based Triggers for Active Expressions', () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
 
-          // fires in 100 milliseconds
+          // fires in 300 milliseconds
           aexpr(() => Date.now() >= 100 + referenceTime).onChange(spy);
 
           await wait(50);
           expect(spy).not.to.be.called;
 
-          await wait(100);
+          await wait(300);
           expect(spy).to.be.calledOnce;
         });
 
