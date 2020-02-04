@@ -41,7 +41,7 @@ export default class LivelyHaloVivideSaveApplicationItem extends HaloItem {
       if(confirm){
         return name;
       } else {
-        this.adddingName(saveTarget, true);
+        return this.addingName(saveTarget, true);
       }
     } else {
       return name;
