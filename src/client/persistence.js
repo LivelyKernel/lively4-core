@@ -2,6 +2,7 @@ import preferences from './preferences.js';
 import focalStorage from 'src/external/focalStorage.js'
 import {debounce} from "utils"
 import scriptManager from  "src/client/script-manager.js";
+import Connection from 'src/components/halo/Connection.js'
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
@@ -110,6 +111,9 @@ export default class Persistence {
     try {
       scriptManager.findLively4Script(obj, false);
       if (obj.livelyLoad) obj.livelyLoad()
+      if (obj.hasAttribute && obj.hasAttribute('data-connection')) {
+        Connection.deserialize(obj.getJSONAttribute('data-connection'))
+      }
       if (!obj.querySelectorAll) return;
       obj.querySelectorAll("*").forEach(ea => {
         if (ea.livelyLoad) ea.livelyLoad()

@@ -12,22 +12,21 @@ export default class LivelyConnectionEditor extends Morph {
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
     this.get("#sourcePropertyField").value = this.getAttribute("data-mydata1") || 0;
-    this.get("#targetPropertyField").value = this.getAttribute("data-mydata2") || 0;
-    this.get("#modifyingCodeField").value = this.getAttribute("data-mydata3") || 0;
+    //this.get("#modifyingCodeField").value = this.getAttribute("data-mydata3") || 0;
     this.get("#blah").editorLoaded().then(() => lively.notify('editor loaded', 1+this.get('#blah').value))
   }
 
   setConnection(connection) {
     this.connection = connection;
     this.get("#connectionLabel").innerHTML = this.connection.connectionString();
-    this.get("#sourceLabel").innerHTML = 'Source' + this.connection.getSource().toString();
-    this.get("#targetLabel").innerHTML = 'Target' + this.connection.getTarget().toString();
+    this.get("#sourceLabel").innerHTML = 'Source: ' + this.getClassName(this.connection.getSource());
+    this.get("#targetLabel").innerHTML = 'Target: ' + this.getClassName(this.connection.getTarget());
     this.activityCheckbox.checked = this.connection.isActive;
     this.addPictureForElement(this.connection.getSource(), this.sourcePicture);
     this.addPictureForElement(this.connection.getTarget(), this.targetPicture);
     this.get("#sourcePropertyField").value = this.connection.  getSourceProperty();
-    this.get("#targetPropertyField").value = this.connection.getTargetProperty();
-    this.get("#modifyingCodeField").value = this.connection.getModifyingCodeString();
+    //this.get("#modifyingCodeField").value = this.connection.getModifyingCodeString();
+    this.get("#blah").editorLoaded().then(() => this.get('#blah').value = this.connection.getModifyingCodeString())
   }
 
   addPictureForElement(element, container) {
@@ -37,6 +36,8 @@ export default class LivelyConnectionEditor extends Morph {
     container.innerHTML = '';
     container.appendChild(copiedSource);
     copiedSource.style.position = 'relative';
+    copiedSource.style.top = '0px';
+    copiedSource.style.left = '0px';
   }
 
   get sourcePicture() {
@@ -47,6 +48,9 @@ export default class LivelyConnectionEditor extends Morph {
     return this.get("#targetPicture");
   }
 
+  getClassName(object){
+    return (object.constructor&&object.constructor.name) || object.toString()
+  }
   
   activeChanged() {
     this.connection.setActive(this.activityCheckbox.checked);
@@ -68,8 +72,8 @@ export default class LivelyConnectionEditor extends Morph {
   onSaveButton() {
     //lively.openInspector(this.get("#textField").value);
     this.connection.setSourceProperty(this.get("#sourcePropertyField").value);
-    this.connection.setTargetProperty(this.get("#targetPropertyField").value);
-    this.connection.setModifyingCodeString(this.get("#modifyingCodeField").value);
+    this.get("#blah").editorLoaded().then(() => this.connection.setModifyingCodeString(this.get("#blah").value))
+    //this.connection.setModifyingCodeString(this.get("#modifyingCodeField").value);
   }
 
   startDrawingArrowToSource(from, to){
