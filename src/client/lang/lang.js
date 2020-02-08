@@ -149,6 +149,19 @@ extend(asyncGeneratorPrototype, new Function(`return {
 
 };`)());
 
+HTMLElement
+extend(HTMLElement.prototype, {
+    getJSONAttribute(name) {
+    let str = this.getAttribute(name);
+    if(str) { return JSON.parse(str); }
+    return null;
+  },
+  
+  setJSONAttribute(name, json) {
+    this.setAttribute(name, JSON.stringify(json));
+    return json;
+  }
+})
 
 /*MD
 ## DATE

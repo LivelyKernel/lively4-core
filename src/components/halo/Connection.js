@@ -1,6 +1,6 @@
 "enable aexpr";
 import {pt} from 'src/client/graphics.js';
-//import {uuid} from 'utils';
+import {uuid} from 'utils';
 
 window.allConnections = window.allConnections || new Set()
 
@@ -16,12 +16,54 @@ export default class Connection {
     window.allConnections.add(this);
     
     this.target = target;
-    this.targetProperty = targetProperty;
     this.source = source;
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
     this.isActive = false
-    this.valueModifyingCode = '+"pt"'
+    let ending = '';
+    if(targetProperty.includes('style')){
+      ending = " + 'pt'"
+    }
+    if(isEvent){
+      this.valueModifyingCode = "(target, sourceValue) => {target." + targetProperty + " = 42" + ending + "}";
+    } else {
+      this.valueModifyingCode = "(target, sourceValue) => {target." + targetProperty + " = sourceValue*1" + ending + "}"
+    }
+    
+    this.makeSavingScript();
+  }
+  
+  makeSavingScript(){
+    this.targetId = uuid();
+    this.sourceId = uuid();
+    this.target.setAttribute('connectionId', this.targetId);
+    this.source.setAttribute('connectionId', this.sourceId);
+    //this.target.setAttribute('connectionInfo', [targetId, this.valueModifyingCode, sourceId, this.sourceProperty]);
+    //let script = <script type="lively4script" data-name="livelyload">import {uuid} from 'utils'; alert(uuid())</script>;
+    this.source.setJSONAttribute('data-connection', this.serialize());
+  }
+  
+  serialize(){
+    return {
+      sourceId: this.sourceId,
+      targetId: this.targetId,
+      sourceProperty: this.sourceProperty,
+      code: this.valueModifyingCode,
+      isEvent: this.isEvent
+    }
+  }
+  
+  static deserialize(json){
+    this.connectionFromExistingData(json.targetId, json.code, json.sourceId, json.sourceProperty, json.isEvent)
+  }
+  
+  static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty, isEvent){
+    let target = document.body.querySelector(`[connectionId="${targetId}"]`);
+    let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
+    let undeadConnection = new Connection(target, 'something', source, sourceProperty, isEvent);
+    undeadConnection.setModifyingCodeString(modifyingCode);
+    undeadConnection.activate();
+    return undeadConnection;
   }
   
   activate(){
@@ -40,7 +82,7 @@ export default class Connection {
   }
   
   activateEvent(){
-    this.source.addEventListener('click', () => this.target.style.width = this.target.style.width*2+"pt")
+    this.source.addEventListener(this.sourceProperty, evt => this.connectionFunction(evt))
   }
   
   activateAexpr(){
@@ -53,8 +95,7 @@ export default class Connection {
     let result = await code.boundEval()
     this.target.style[this.targetProperty] = result*/
     
-    let code = "(target, sourceValue) => {target.style.height = sourceValue*1 + 'pt'}"
-    let myFunction = await code.boundEval()
+    let myFunction = await this.valueModifyingCode.boundEval()
     myFunction(this.target, sourceValue)
   }
   
@@ -100,24 +141,18 @@ export default class Connection {
   
   setSourceProperty(newProperty){
     this.sourceProperty = newProperty;
+    this.source.setJSONAttribute('data-connection', this.serialize());
     this.activate();
   }
   
-  getTargetProperty(){
-    return this.targetProperty
-  }
-  
-  setTargetProperty(newProperty){
-    this.targetProperty = newProperty;
-    this.activate();
-  }
   
   getModifyingCodeString(){
     return this.valueModifyingCode
   }
   
   setModifyingCodeString(newCode){
-    this.valueModifyingCode = newCode
+    this.valueModifyingCode = newCode;
+    this.source.setJSONAttribute('data-connection', this.serialize());
   }
   
   static get allConnections(){
