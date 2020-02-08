@@ -85,39 +85,11 @@ export default class ASTExplorer extends Morph {
   /*MD ## Execution MD*/
 
   async update() {
-    const src = this.source;
-    
-    const filename = "tempfile.js"
-
-    // #HACK: we explicitly enable some syntax plugins for now
-    // #TODO: how to include syntax extensions for ast generation (without the plugin to develop)?
-    const syntaxPlugins = (await Promise.all([
-      'babel-plugin-syntax-jsx',
-      'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind',
-      'babel-plugin-syntax-async-generators'
-    ]
-      .map(syntaxPlugin => System.import(syntaxPlugin))))
-      .map(m => m.default);
-
-    // get pure ast
-    this.ast = babel.transform(src, {
-        babelrc: false,
-        plugins: syntaxPlugins,
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-    }).ast;
-
-    this.astInspector.inspect(this.ast);
+    try {
+      this.astInspector.inspect(this.source.toAST());
+    } catch (e) {
+      this.astInspector.inspect({Error: e.message});
+    }
   }
 
   async save() {
