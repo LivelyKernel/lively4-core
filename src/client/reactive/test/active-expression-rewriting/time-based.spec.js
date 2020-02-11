@@ -179,7 +179,7 @@ describe('Time-based Triggers for Active Expressions', () => {
         // TODO: is this useful?
     describe('Date.now()', () => {
       
-        it("300 ms timery", async () => {
+        it("200 ms timery", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
           let timeMultiplier = 1;
@@ -187,10 +187,15 @@ describe('Time-based Triggers for Active Expressions', () => {
           // fires in 300 milliseconds
           aexpr(() => Date.now() >= 300*timeMultiplier + referenceTime).onChange(spy);
 
-          await wait(150*timeMultiplier);
-          expect(spy).not.to.be.called;
+          await wait(100*timeMultiplier);
+          
+          if (Date.now() < 300*timeMultiplier + referenceTime ) { 
+            expect(spy).not.to.be.called;
+          } else {
+            // wait took to long!
+          }
 
-          await wait(300*timeMultiplier);
+          await wait(500*timeMultiplier);
           expect(spy).to.be.calledOnce;
         });
 
