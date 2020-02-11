@@ -94,27 +94,21 @@
     <div class="pane layout-row">
       <div id="pluginPane" class="pane tool layout-column">
         <b>Plugin</b>
-        <div class="pane">
-          <lively-editor id="plugin"></lively-editor>
-        </div>
+        <lively-editor class="pane" id="plugin"></lively-editor>
       </div>
 
       <lively-separator reverse=true></lively-separator>
 
       <div id="toolPane" class="pane layout-row">
         <div class="pane layout-column">
-          <div class="pane tool">
-            <span>
-              <b>Source</b>
-            </span>
-            <lively-editor id="source"></lively-editor>
+          <div class="pane tool layout-column">
+            <b>Source</b>
+            <lively-editor class="pane" id="source"></lively-editor>
           </div>
           <lively-separator></lively-separator>
           <div class="pane tool layout-column">
             <b>Transformed Source</b>
-            <div class="pane">
-              <lively-code-mirror id="transformedSource"></lively-code-mirror>
-            </div>
+            <lively-code-mirror class="pane" id="transformedSource"></lively-code-mirror>
           </div>
         </div>
 
@@ -123,7 +117,7 @@
         <div class="pane layout-column">
           <div class="pane tool layout-column">
             <b>Source AST</b>
-            <lively-ast-inspector id="sourceAst"></lively-ast-inspector>
+            <lively-ast-inspector class="pane" id="sourceAst"></lively-ast-inspector>
           </div>
           <lively-separator reverse=true></lively-separator>
           <div class="pane tool layout-column">
