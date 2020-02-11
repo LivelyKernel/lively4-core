@@ -182,7 +182,7 @@ describe('Time-based Triggers for Active Expressions', () => {
         it("300 ms timery", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
-          let timeMultiplier = 10;
+          let timeMultiplier = 1;
 
           // fires in 300 milliseconds
           aexpr(() => Date.now() >= 300*timeMultiplier + referenceTime).onChange(spy);
