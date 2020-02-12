@@ -8,13 +8,18 @@ const { types: t } = babelDefault.babel;
 export class DependencyGraph {
 
   get inner() { return this._inner }
-
+  
   constructor(code) {
     this._inner = code.toAST();
+    //properties(identifier) -> obj(binding) -> assignments
+    this.memberAssignments = new Map();
     this.enrich();
   }
 
   enrich() {
+    
+    let self = this;
+    
     this._inner.traverseAsAST({
       enter(path) {
         path.node.extra = {
@@ -25,7 +30,6 @@ export class DependencyGraph {
       }
     });
 
-
     this._inner.traverseAsAST({
       Scope(path) {
         Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
@@ -35,17 +39,59 @@ export class DependencyGraph {
         })
       }
     });
+    
+    this._inner.traverseAsAST({
+      MemberExpression(expr){
+        if (expr.node.computed) return;
+        if (!expr.parentPath.isAssignmentExpression()) return;
+
+        let obj = expr.get("object");
+        let objKey = obj.node.extra.binding || 'misc';
+        let property = expr.get("property").node.name;
+        
+        let entry = self.memberAssignments.get(property);
+        if (!entry) {          
+          self.memberAssignments.set(property, new Map([objKey, [expr.node]]));
+        } else {
+          // this is broken... fix after dinner!!!
+          entry.get(objKey).add(expr.node);
+        }               
+      }
+    });
 
     this._inner.traverseAsAST({
-      'Function|ArrowFunctionExpression'(path) {
+      //  add scopable scopable????
+      'Function|ArrowFunctionExpression|Program'(path) {
         path.node.extra.leakingBindings = leakingBindings(path);
         path.node.extra.callExpressions = [];
+        path.node.extra.objects = new Map();
+        
+        path.traverse({
+          MemberExpression(expr){
+            //todo only read expr
+            // look up parent path
+            let obj = expr.get("object");
+            let member = obj.get("property");
+
+            if ( path.node.extra.leakingBindings.has(obj.node.extra.binding)) {
+              let entry = path.node.extra.objects.get(obj.node.extra.binding);
+              if (!entry) {
+                path.node.extra.objects.set(obj.node.extra.binding, new Set([member])); 
+              } else {
+                entry.add(member);
+              }              
+            } 
+          }
+        });
+        
         path.traverse({
           CallExpression(call) {
             path.node.extra.callExpressions.push(call)
           }
         })
-      },
+      }});
+      
+    this._inner.traverseAsAST({
       CallExpression(path) {
         const callee = path.get("callee");
         if (t.isIdentifier(callee)) {
@@ -133,7 +179,14 @@ export class DependencyGraph {
 
       })
 
-    })
+    });
+    
+    if(path.node.extra.objects.size) {
+      for(const [obj, members] of path.node.extra.objects.entries()) {
+        //member
+      }
+    }
+    
     path.node.extra.dependencies = dependencies;
     return dependencies;
   }
