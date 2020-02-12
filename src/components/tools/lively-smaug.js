@@ -3,6 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { querySelectorAllDeep } from 'https://raw.githubusercontent.com/Georgegriff/query-selector-shadow-dom/master/src/querySelectorDeep.js';
 import d3 from "src/external/d3.v5.js";
+
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 window.SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
 window.SpeechRecognitionEvent = window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
@@ -11,6 +12,7 @@ export default class LivelySmaug extends Morph {
   async initialize() {
     this.windowTitle = "🐉 Smaug";
     this.registerButtons();
+    lively.html.registerInputs(this)
 
     this.get("#textField").value = this.getAttribute("data-mydata") || 0;
 
@@ -102,7 +104,7 @@ export default class LivelySmaug extends Morph {
     const transcripts = line.querySelector('#transcripts');
     var color = d3.scaleLinear().domain([0, 1]).range(["red", "green"]);
     for (let alternative of lastResult) {
-      const line = <span>{alternative.confidence.round(2)}{alternative.transcript}, </span>;
+      const line = <span>{alternative.confidence.round(2)}{alternative.transcript}</span>;
       line.style.color = color(alternative.confidence);
       transcripts.appendChild(line);
     }
@@ -110,14 +112,59 @@ export default class LivelySmaug extends Morph {
     setTimeout(() => line.remove(), 5000);
     this.get('#results').appendChild(line);
 
-    this.execCommand(event)
+    this.execCommand(event, focus[0]);
   }
 
-  // this method is automatically registered as handler through ``registerButtons``
-
-  execCommand(event) {
+  async execCommand(event, element) {
+    if (!element) {
+      lively.notify('no element to interact with in focus')
+    }
     const last = event.results.length - 1;
     const lastResult = event.results[last];
+    if (lastResult.isFinal) {
+      // lively.openInspector(lastResult)
+      const alternative = lastResult[0];
+      const text = alternative.transcript;
+      // text = 'Camel add Event listener';
+      text;
+      if (text.lowerCase().startsWith('camel')) {
+        const toBeWritten = text.lowerCase().replace('camel', '').camelCase();
+
+        lively.success(toBeWritten);
+        for (let c of toBeWritten) {
+          lively.notify(c);
+          const keyboardEvent = 
+          new KeyboardEvent('keydown', { // event type: keydown, keyup, keypress
+            ctrlKey: true,
+            charCode: 0,
+            keyCode: 37,
+            code: 'ArrowLeft',
+            key: 'ArrowLeft',
+
+            // key: 'e',
+            // code: 'KeyE',
+            location: 0,
+            
+            // ctrlKey: true,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            
+            repeat: false,
+            isComposing: false,
+
+            view: window, // should be window    
+
+            // #deprecated
+            // keyCode: 65,
+            // charCode: 65,
+            which: 65
+          });
+          element.dispatchEvent(keyboardEvent);
+          await lively.sleep(200);
+        }
+      }
+    }
   }
 
   previewResult(event) {
@@ -179,6 +226,10 @@ export default class LivelySmaug extends Morph {
 
   onMinusButton() {
     this.get("#textField").value = parseFloat(this.get("#textField").value) - 1;
+  }
+
+  onTextFieldChanged(evt) {
+    lively.openInspector(evt)
   }
 
   /* Lively-specific API */
