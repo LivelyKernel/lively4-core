@@ -12,7 +12,9 @@ export default class LivelyConnectionEditor extends Morph {
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
     this.get("#sourcePropertyField").value = this.getAttribute("data-mydata1") || 0;
-    this.get("#modifyingCodeField").editorLoaded().then(() => lively.notify('editor loaded', 1+this.get('#modifyingCodeField').value))
+    this.modifyingCodeField.editorLoaded().then(() => {this.modifyingCodeField.doSave = () => this.saveConnection()})
+    
+    
   }
 
   setConnection(connection) {
@@ -68,8 +70,16 @@ export default class LivelyConnectionEditor extends Morph {
   }
 
   onSaveButton() {
+    this.saveConnection();
+  }
+  
+  saveConnection() {
     this.connection.setSourceProperty(this.get("#sourcePropertyField").value);
-    this.get("#modifyingCodeField").editorLoaded().then(() => this.connection.setModifyingCodeString(this.get("#modifyingCodeField").value))
+    this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCodeString(this.modifyingCodeField.value))
+  }
+  
+  get modifyingCodeField(){
+    return this.get("#modifyingCodeField")
   }
   
   onCopyButton() {
