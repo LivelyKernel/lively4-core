@@ -111,12 +111,11 @@ export default class Persistence {
     try {
       scriptManager.findLively4Script(obj, false);
       if (obj.livelyLoad) obj.livelyLoad()
-      if (obj.hasAttribute && obj.hasAttribute('data-connection')) {
-        Connection.deserialize(obj.getJSONAttribute('data-connection'))
-      }
+      Connection.deserializeFromObjectIfNeeded(obj)
       if (!obj.querySelectorAll) return;
       obj.querySelectorAll("*").forEach(ea => {
         if (ea.livelyLoad) ea.livelyLoad()
+        Connection.deserializeFromObjectIfNeeded(ea)
       })       
     } catch(e) {
       lively.showError(e)
