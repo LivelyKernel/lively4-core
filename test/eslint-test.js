@@ -1,5 +1,5 @@
 import {expect} from 'src/external/chai.js';
-//import {eslint} from 'src/external/eslint-lint.js';
+import  'src/external/eslint-lint.js';
 //import {LivelyCodeMirror} from 'src/components/widgets/lively-code-mirror.js'
 
 
