@@ -55,7 +55,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   getAllEventsFor(object, evt){
     return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-            //todo make mouseevents work
            ['MouseEvent', () => this.startCreatingConnectionFor(evt, 'mouseEvent', true)]]
   }
   
@@ -88,9 +87,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
          ['Style', this.getAllStylesFor(morph, evt, true)],
          ['On custom...', () => this.finishCreatingConnection(morph)]];
           
-          /*[['On custom...', () => this.finishCreatingConnectionCustom(morph)],
-      ['On width', () => this.finishCreatingConnection(morph, 'width')],
-      ['On height', () => this.finishCreatingConnection(morph, 'height')]];*/
+          
     
     this.showMenu(evt, menuItems);
   }
@@ -101,9 +98,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   onPointerMove(evt) {
-    //lively.showPoint(pt(evt.clientX, evt.clientY))
-    //lively.notify('move')
-    
     if (this.dropIndicator) this.dropIndicator.remove()
     this.dropTarget = this.elementUnderHand(evt)
     if (this.dropTarget) {
@@ -114,7 +108,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   onPointerUp(evt) {
-    //lively.notify('up')
     lively.removeEventListener("Connectors")
     
     if (this.dropIndicator) this.dropIndicator.remove()
@@ -154,13 +147,4 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     connection.activate();
     connection.drawConnectionLine();
   } 
-    
-  //TODO DELETE
-  //let ae = aexpr(() => code.boundEval(sourceObject));
-  //ae.onChange(svalue => target.style.width= svalue+"pt");
-  /*
-  let foo = '"width"'
-  var code = `1+3`
-  code.boundEval()
-  */
 }

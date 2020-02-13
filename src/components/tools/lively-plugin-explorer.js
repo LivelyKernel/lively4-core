@@ -161,7 +161,7 @@ export default class PluginExplorer extends Morph {
         this.updateAST();
       };
       enableSyntaxCheckForEditor(this.pluginLCM);
-      this.pluginLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateTransformation()});
+      // this.pluginLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateTransformation()});
       this.transformedSourceCM.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
     });
 
@@ -251,6 +251,7 @@ export default class PluginExplorer extends Morph {
     
     try {
       console.group("PLUGIN TRANSFORMATION");
+      if (!this.ast) return;
       if (this.systemJS) {
         // use SystemJS config do do a full transform
         if (!self.lively4lastSystemJSBabelConfig) {
@@ -406,6 +407,9 @@ export default class PluginExplorer extends Morph {
   }
 }
 
+class Source {
+  
+}
 
 class BabelWorkspace {
   static deserialize(json) {

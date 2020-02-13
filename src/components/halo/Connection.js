@@ -16,6 +16,7 @@ export default class Connection {
     window.allConnections.add(this);
     
     this.target = target;
+    this.targetProperty = targetProperty;
     this.source = source;
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
@@ -38,8 +39,10 @@ export default class Connection {
     this.sourceId = uuid();
     this.target.setAttribute('connectionId', this.targetId);
     this.source.setAttribute('connectionId', this.sourceId);
-    //this.target.setAttribute('connectionInfo', [targetId, this.valueModifyingCode, sourceId, this.sourceProperty]);
-    //let script = <script type="lively4script" data-name="livelyload">import {uuid} from 'utils'; alert(uuid())</script>;
+    this.saveSerializedConnectionIntoWidget();
+  }
+  
+  saveSerializedConnectionIntoWidget(){
     this.source.setJSONAttribute('data-connection', this.serialize());
   }
   
@@ -57,13 +60,18 @@ export default class Connection {
     this.connectionFromExistingData(json.targetId, json.code, json.sourceId, json.sourceProperty, json.isEvent)
   }
   
+  static deserializeFromObjectIfNeeded(object) {
+    if (object.hasAttribute && object.hasAttribute('data-connection')) {
+      this.deserialize(object.getJSONAttribute('data-connection'))
+    }
+  }
+  
   static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty, isEvent){
     let target = document.body.querySelector(`[connectionId="${targetId}"]`);
     let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
     let undeadConnection = new Connection(target, 'something', source, sourceProperty, isEvent);
     undeadConnection.setModifyingCodeString(modifyingCode);
     undeadConnection.activate();
-    return undeadConnection;
   }
   
   activate(){
@@ -90,11 +98,7 @@ export default class Connection {
     this.ae.onChange(svalue => this.connectionFunction(svalue));
   }
   
-  async connectionFunction(sourceValue){
-    /*let code = sourceValue + this.valueModifyingCode
-    let result = await code.boundEval()
-    this.target.style[this.targetProperty] = result*/
-    
+  async connectionFunction(sourceValue){  
     let myFunction = await this.valueModifyingCode.boundEval()
     myFunction(this.target, sourceValue)
   }
@@ -111,6 +115,22 @@ export default class Connection {
     else{
        this.deactivate()
     }
+  }
+  
+  toggleDirection(){
+    this.deactivate();
+    let oldTarget = this.target;
+    this.target = this.source;
+    this.source = oldTarget;
+    this.saveSerializedConnectionIntoWidget();
+    this.activate();
+  }
+  
+  copyAndActivate(){
+    let newConnection = new Connection(this.target, this.targetProperty, this.source, this.sourceProperty, this.isEvent);
+    newConnection.setModifyingCodeString(this.valueModifyingCode);
+    newConnection.activate();
+    return newConnection;
   }
   
   deactivate(){
@@ -141,7 +161,7 @@ export default class Connection {
   
   setSourceProperty(newProperty){
     this.sourceProperty = newProperty;
-    this.source.setJSONAttribute('data-connection', this.serialize());
+    this.saveSerializedConnectionIntoWidget();
     this.activate();
   }
   
@@ -152,7 +172,7 @@ export default class Connection {
   
   setModifyingCodeString(newCode){
     this.valueModifyingCode = newCode;
-    this.source.setJSONAttribute('data-connection', this.serialize());
+    this.saveSerializedConnectionIntoWidget();
   }
   
   static get allConnections(){
@@ -165,9 +185,6 @@ export default class Connection {
   
 }
 
-// #UPDATE_INSTANCES
-// #TODO: idea: using a list of all object, we can make them become anew
-// go through all object reachable from window
 window.allConnections.forEach(connection => {
     // evil live programming
     connection.constructor === Connection

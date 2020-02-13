@@ -286,6 +286,8 @@ src/external/dexie.js
 src/external/dicts/en_US.aff
 src/external/dicts/en_US.dic
 src/external/diff-match-patch.js
+src/external/eslint/eslint-lint.js
+src/external/eslint/eslint.js
 src/external/focalStorage.js
 src/external/font-awesome/css/font-awesome.min.css
 src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
