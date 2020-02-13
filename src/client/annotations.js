@@ -1,25 +1,23 @@
 
 /*MD # Annotations
 
-```javascript
-var annotation = {
-  from: 10, // starts here...
-  to: 15  // stops before 
-}
-```
-
-`length` of annotation is "to - from"
-
 
 MD*/
+import _ from 'src/external/lodash/lodash.js'
 
-class Annotation {
+
+export class Annotation {
   constructor(config) {
+    this.from = 0, // starts here...
+    this.to =  0  // stops before 
     Object.keys(config).forEach(key => {
       this[key] = config[key]
     })
   }
-  
+  get length() {
+    return this.to - this.from
+    
+  }
 }
 
 export default class Annotations {
@@ -127,5 +125,34 @@ export default class Annotations {
   static fromJSON(json) {
     return new Annotations(JSON.parse(json));
   }
-
 }
+
+
+export class AnnotatedText {
+  
+  constructor(text, annotations) {
+    this.text = text
+    this.annotations = new Annotations()
+    if (annotations instanceof Annotations) {
+      this.annotations = annotations
+    } else if (_.isString(annotations)) {
+      annotations.split("\n").forEach(ea => {
+        try {
+          var a = JSON.parse(ea)
+          this.annotations.add(a)
+        } catch(e) {
+          console.error("Annotation could not be parsed: " + ea, e)
+        }
+      })
+    } else {
+      // JSON?
+    }
+    
+  }
+  
+  asHTML() {
+    return this.annotations.toXML(this.text)
+  }
+  
+}
+
