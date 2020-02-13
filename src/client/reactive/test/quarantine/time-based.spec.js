@@ -179,7 +179,8 @@ describe('Time-based Triggers for Active Expressions', () => {
         // TODO: is this useful?
     describe('Date.now()', () => {
         
-        it("300 ms timerx", async () => {
+      // this should not be here!
+        xit("300 ms timerx", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
           let timeMultiplier = 10;
