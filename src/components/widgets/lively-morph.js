@@ -89,17 +89,6 @@ export default class Morph extends HTMLElement {
     return "[" + this.constructor.name + "]"
   }
   
-  getJSONAttribute(name) {
-    let str = this.getAttribute(name);
-    if(str) { return JSON.parse(str); }
-    return null;
-  }
-  
-  setJSONAttribute(name, json) {
-    this.setAttribute(name, JSON.stringify(json));
-    return json;
-  }
-  
   // another option is 'inplace'
   get livelyUpdateStrategy() { return 'migrate'; }
 }

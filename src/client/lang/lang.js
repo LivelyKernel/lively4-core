@@ -149,9 +149,11 @@ extend(asyncGeneratorPrototype, new Function(`return {
 
 };`)());
 
-HTMLElement
+/*MD
+## HTMLElement
+MD*/
 extend(HTMLElement.prototype, {
-    getJSONAttribute(name) {
+  getJSONAttribute(name) {
     let str = this.getAttribute(name);
     if(str) { return JSON.parse(str); }
     return null;
