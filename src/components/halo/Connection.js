@@ -16,34 +16,45 @@ export default class Connection {
     window.allConnections.add(this);
     
     this.target = target;
-    this.targetProperty = targetProperty;
+    this._targetProperty = targetProperty;
     this.source = source;
     this.sourceProperty = sourceProperty;
     this.isEvent = isEvent;
     this.isActive = false
     let ending = '';
-    if(targetProperty.includes('style')){
+    if(this._targetProperty.includes('style')){
       ending = " + 'pt'"
     }
     if(isEvent){
-      this.valueModifyingCode = "(target, sourceValue) => {target." + targetProperty + " = 42" + ending + "}";
+      this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42" + ending + "}";
     } else {
-      this.valueModifyingCode = "(target, sourceValue) => {target." + targetProperty + " = sourceValue*1" + ending + "}"
+      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}"
     }
     
     this.makeSavingScript();
   }
   
   makeSavingScript(){
-    this.targetId = uuid();
-    this.sourceId = uuid();
-    this.target.setAttribute('connectionId', this.targetId);
-    this.source.setAttribute('connectionId', this.sourceId);
+    if(this.target.hasAttribute('connectionId')){
+      this.targetId = this.target.getAttribute('connectionId');
+    } else {
+      this.targetId = uuid();
+      this.target.setAttribute('connectionId', this.targetId);
+    }
+     if(this.source.hasAttribute('connectionId')){
+      this.sourceId = this.source.getAttribute('connectionId');
+    } else {
+      this.sourceId = uuid();
+      this.source.setAttribute('connectionId', this.sourceId);
+    }
     this.saveSerializedConnectionIntoWidget();
   }
   
   saveSerializedConnectionIntoWidget(){
-    this.source.setJSONAttribute('data-connection', this.serialize());
+    const serializedConnections = Array.from(window.allConnections)
+      .filter(connection => connection.source === this.source)
+      .map(connection => connection.serialize())
+    this.source.setJSONAttribute('data-connection', serializedConnections);
   }
   
   serialize(){
@@ -57,7 +68,9 @@ export default class Connection {
   }
   
   static deserialize(json){
-    this.connectionFromExistingData(json.targetId, json.code, json.sourceId, json.sourceProperty, json.isEvent)
+    json.forEach(connectionData => {
+      this.connectionFromExistingData(connectionData.targetId, connectionData.code, connectionData.sourceId, connectionData.sourceProperty, connectionData.isEvent)
+    })
   }
   
   static deserializeFromObjectIfNeeded(object) {
@@ -89,12 +102,18 @@ export default class Connection {
     this.isActive = true
   }
   
-  activateEvent(){
-    this.source.addEventListener(this.sourceProperty, evt => this.connectionFunction(evt))
+  activateEvent() {
+    this._eventListener = evt => this.connectionFunction(evt)
+    lively.addEventListener('Connections', this.source, this.sourceProperty, this._eventListener)
+    //this.source.addEventListener(this.sourceProperty, evt => this.connectionFunction(evt))
   }
   
-  activateAexpr(){
-    this.ae = aexpr(() => this.source[this.sourceProperty]);
+  async activateAexpr() {
+    this.trackingCode = `(source) => {
+  return source.${this.sourceProperty};
+}`
+    let myFunction = await this.trackingCode.boundEval()
+    this.ae = aexpr(() => myFunction(this.source));
     this.ae.onChange(svalue => this.connectionFunction(svalue));
   }
   
@@ -103,12 +122,12 @@ export default class Connection {
     myFunction(this.target, sourceValue)
   }
   
-  drawConnectionLine(){
+  drawConnectionLine() {
     let line = [lively.getGlobalPosition(this.source), lively.getGlobalPosition(this.target)];
     lively.showPath(line, "rgba(80,180,80,1)", true);
   }
   
-  setActive(shouldBeActive){
+  setActive(shouldBeActive) {
     if(shouldBeActive){
       this.activate()
     }
@@ -117,7 +136,7 @@ export default class Connection {
     }
   }
   
-  toggleDirection(){
+  toggleDirection() {
     this.deactivate();
     let oldTarget = this.target;
     this.target = this.source;
@@ -127,7 +146,7 @@ export default class Connection {
   }
   
   copyAndActivate(){
-    let newConnection = new Connection(this.target, this.targetProperty, this.source, this.sourceProperty, this.isEvent);
+    let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
     newConnection.setModifyingCodeString(this.valueModifyingCode);
     newConnection.activate();
     return newConnection;
@@ -135,6 +154,9 @@ export default class Connection {
   
   deactivate(){
     this.ae && this.ae.dispose()
+    if(this.isEvent){
+      lively.removeEventListener ('Connections', this.source, this.sourceProperty, this._eventListener)
+    }
     this.isActive = false
   }
   

@@ -55,7 +55,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   getAllEventsFor(object, evt){
     return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-           ['MouseEvent', () => this.startCreatingConnectionFor(evt, 'mouseEvent', true)]]
+           ['MouseMove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)]]
   }
   
   getAllStylesFor(object, evt, isFinishing = false){
