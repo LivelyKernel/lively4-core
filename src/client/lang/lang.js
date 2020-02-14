@@ -69,7 +69,16 @@ extend(Object.prototype, {
    */
   computeDiff(other) {
     return pairsDiff(this, other).map(arr => _.fromPairs(arr));
-  }
+  },
+
+  /**
+   * Migrate the instance to the given class by adapting its prototype chain.
+   * @param newClass (Object) the class to migrate to.
+   */
+  migrateTo(NewClass) {
+    this.constructor === NewClass;
+    this.__proto__ = NewClass.prototype;
+  },
 
 });
 

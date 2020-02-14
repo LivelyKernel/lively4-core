@@ -200,17 +200,11 @@ export default class Connection {
   static get allConnections(){
     return window.allConnections
   }
-  
+
   connectionString(){
     return 'Connection ' + this.id
   }
   
 }
 
-window.allConnections.forEach(connection => {
-    // evil live programming
-    connection.constructor === Connection
-
-    // we can fix this, so we can do live development again....
-    connection.__proto__ = Connection.prototype
-  });
+window.allConnections.forEach(connection => connection.migrateTo(Connection));
