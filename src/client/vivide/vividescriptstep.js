@@ -279,12 +279,9 @@ export default class ScriptStep {
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
   if(!vv.myCurrentScript) { return; }
-  
-  vv.myCurrentScript.stepsAsArray().forEach(s => {
-    // evil live programming
-    s.constructor === ScriptStep;
 
-    // we can fix this, so we can do live development again....
+  vv.myCurrentScript.stepsAsArray().forEach(s => {
+    s.migrateTo(ScriptStep);
     s.__proto__ = ScriptStep.prototype;
   });
 })

@@ -176,12 +176,7 @@ export default class Script {
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
   const script = vv.myCurrentScript;
-
   if(script) {
-    // evil live programming
-    script.constructor === Script;
-
-    // we can fix this, so we can do live development again....
-    script.__proto__ = Script.prototype;
+    script.migrateTo(Script);
   }
 });

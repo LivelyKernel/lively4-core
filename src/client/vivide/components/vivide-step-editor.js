@@ -460,11 +460,5 @@ export default class VivideStepEditor extends Morph {
 // #TODO: idea: using a list of all object, we can make them become anew
 // go through all object reachable from window
 document.querySelectorAll("vivide-script-editor").forEach(se => {
-  se.getAllSubmorphs("vivide-step-editor").forEach(stepE => {
-    // evil live programming
-    stepE.constructor === VivideStepEditor
-
-    // we can fix this, so we can do live development again....
-    stepE.__proto__ = VivideStepEditor.prototype
-  });
+  se.getAllSubmorphs("vivide-step-editor").forEach(stepE => stepE.migrateTo(VivideStepEditor));
 })
