@@ -1,6 +1,6 @@
-<mxfile modified="2020-02-17T13:21:01.682Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36" etag="HmXyt3bJc5vqSKk_hKXZ" version="12.7.0" type="github">
+<mxfile modified="2020-02-17T13:23:54.352Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36" etag="WHRhGxtLN9XCewnXBySX" version="12.7.0" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1746" dy="1068" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#ffffff" math="0" shadow="0" extFonts="Londrina Outline^https://fonts.googleapis.com/css?family=Londrina+Outline|Limelight&amp;effect=outline^https://fonts.googleapis.com/css?family=Limelight%26effect%3Doutline|Limelight Outline^https://fonts.googleapis.com/css?family=Limelight+Outline|Limelight ^https://fonts.googleapis.com/css?family=Limelight+|Futura^https://fonts.googleapis.com/css?family=Futura|Didact Gothic^https://fonts.googleapis.com/css?family=Didact+Gothic">
+    <mxGraphModel dx="848" dy="519" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#ffffff" math="0" shadow="0" extFonts="Londrina Outline^https://fonts.googleapis.com/css?family=Londrina+Outline|Limelight&amp;effect=outline^https://fonts.googleapis.com/css?family=Limelight%26effect%3Doutline|Limelight Outline^https://fonts.googleapis.com/css?family=Limelight+Outline|Limelight ^https://fonts.googleapis.com/css?family=Limelight+|Futura^https://fonts.googleapis.com/css?family=Futura|Didact Gothic^https://fonts.googleapis.com/css?family=Didact+Gothic">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -732,6 +732,48 @@
         </mxCell>
         <mxCell id="VgaAtBEswUzaiE8fNW7D-107" value="&lt;span style=&quot;font-size: 14px&quot;&gt;&lt;i&gt;append / add&amp;nbsp; two annotations together&lt;/i&gt;&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;fontFamily=Helvetica;fontSize=22;fontColor=#000000;" vertex="1" parent="1">
           <mxGeometry x="174" y="717" width="360" height="43" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-108" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="50" y="410" width="31" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-109" value="&lt;font size=&quot;1&quot; color=&quot;#006600&quot;&gt;&lt;b style=&quot;font-size: 18px&quot;&gt;A&lt;/b&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=7;strokeColor=#006600;fontColor=#004C99;fontSize=16;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-108">
+          <mxGeometry width="24" height="33" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-110" value="C12" style="ellipse;aspect=fixed;spacing=2;whiteSpace=wrap;fontSize=7;fontStyle=1;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;align=center;horizontal=1;spacingTop=-2;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-108">
+          <mxGeometry x="16" y="25" width="15" height="15" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-111" value="&lt;b&gt;=&lt;/b&gt;" style="text;html=1;fontSize=22;fontFamily=Helvetica;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="101" y="410" width="20" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-115" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="281" y="410" width="31" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-116" value="&lt;font size=&quot;1&quot; color=&quot;#006600&quot;&gt;&lt;b style=&quot;font-size: 18px&quot;&gt;A&lt;/b&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=7;strokeColor=#006600;fontColor=#004C99;fontSize=16;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-115">
+          <mxGeometry width="24" height="33" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-117" value="C1" style="ellipse;aspect=fixed;spacing=2;whiteSpace=wrap;fontSize=7;fontStyle=1;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;align=center;horizontal=1;spacingTop=-2;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-115">
+          <mxGeometry x="16" y="25" width="15" height="15" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-118" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="180" y="410" width="31" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-119" value="&lt;font size=&quot;1&quot; color=&quot;#006600&quot;&gt;&lt;b style=&quot;font-size: 18px&quot;&gt;A&lt;/b&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=7;strokeColor=#006600;fontColor=#004C99;fontSize=16;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-118">
+          <mxGeometry width="24" height="33" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-120" value="C5" style="ellipse;aspect=fixed;spacing=2;whiteSpace=wrap;fontSize=7;fontStyle=1;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;align=center;horizontal=1;spacingTop=-2;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-118">
+          <mxGeometry x="16" y="25" width="15" height="15" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-121" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="230" y="410" width="31" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-122" value="&lt;font size=&quot;1&quot; color=&quot;#006600&quot;&gt;&lt;b style=&quot;font-size: 18px&quot;&gt;A&lt;/b&gt;&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=7;strokeColor=#006600;fontColor=#004C99;fontSize=16;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-121">
+          <mxGeometry width="24" height="33" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-123" value="C8" style="ellipse;aspect=fixed;spacing=2;whiteSpace=wrap;fontSize=7;fontStyle=1;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;align=center;horizontal=1;spacingTop=-2;" vertex="1" parent="VgaAtBEswUzaiE8fNW7D-121">
+          <mxGeometry x="16" y="25" width="15" height="15" as="geometry"/>
+        </mxCell>
+        <mxCell id="VgaAtBEswUzaiE8fNW7D-125" value="merge(&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;,&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; ,&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="128.5" y="420" width="304" height="20" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
