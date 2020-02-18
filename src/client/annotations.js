@@ -36,9 +36,16 @@ export class Annotation {
 
 export default class AnnotationSet {
 
-  constructor(annotations=[]) {
+  constructor(annotationsAndVersions=[]) {
     this.list = [];
-    this.addAll(annotations)
+    this.reference;
+    for(let ea of annotationsAndVersions) {
+      if (ea.type == "Reference") {
+        this.version = ea.version // multiple text references per annotations file not (yet) supported 
+      } else {
+        this.add(ea)
+      }
+    }
   }
   
   *[Symbol.iterator] () {
@@ -269,6 +276,14 @@ export class AnnotatedText {
     
   }
   
+  static async fromURL(fileURL, annotationsURL) {
+    var resp = await fetch(fileURL)
+    var text = await resp.text()
+    var list = (await annotationsURL.fetchText()).split("\n").map(ea => JSON.parse(ea))
+    var annotations = new AnnotationSet(list)
+    return new AnnotatedText(text, annotations)
+  }
+  
   
   // set text and upate annotations
   setText(string) {
@@ -295,7 +310,10 @@ export class AnnotatedText {
         string += node.textContent
       } else {
         if (notfirst) {
-          var annotation = new Annotation({from: string.length, to: string.length + node.textContent.length, name: node.localName})
+          var annotation = new Annotation({
+            from: string.length, 
+            to: string.length + node.textContent.length, 
+            name: node.localName})
           annotations.add(annotation)
         }
         // for (let attr of node.attributes) {
