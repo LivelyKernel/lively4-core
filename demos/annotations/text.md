@@ -8,7 +8,7 @@ Showcase for [annotations](edit:/src/client/annotations.js) #WorkInProgress
 
 
 <script>
-import {AnnotatedText, Annotations} from "src/client/annotations.js"
+import {AnnotatedText, AnnotationSet} from "src/client/annotations.js"
 
 var container = lively.query(this, "lively-container");
 (async () => {

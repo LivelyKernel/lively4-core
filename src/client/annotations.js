@@ -1,8 +1,5 @@
 
-/*MD # Annotations
-
-
-MD*/
+Set
 import _ from 'src/external/lodash/lodash.js'
 
 
@@ -37,7 +34,7 @@ export class Annotation {
   }
 }
 
-export default class Annotations {
+export default class AnnotationSet {
 
   constructor(annotations=[]) {
     this.list = [];
@@ -80,17 +77,17 @@ How do we deal with "duplicates" and or overlapping "annotations" in the first p
 MD*/
 
 
-  diffAnnotations(otherAnnotations) {
+  diffAnnotationSet(otherAnnotationSet) {
     
     // var merged = this.clone()
-    // merged.addAll(otherAnnotations)
+    // merged.addAll(otherAnnotationSet)
 
-    var result = this.compare(otherAnnotations)
+    var result = this.compare(otherAnnotationSet)
     
 //     var regions = merged.regions()
 //     return regions.map(region => {
 //       var my = this.annotationsInRegion(region)
-//       var others = otherAnnotations.annotationsInRegion(region)
+//       var others = otherAnnotationSet.annotationsInRegion(region)
       
       
 //       return region
@@ -111,9 +108,9 @@ MD*/
   // private
   compare(b) {
     var a = this
-    var same = new Annotations()
-    var add = new Annotations()
-    var del = new Annotations()
+    var same = new AnnotationSet()
+    var add = new AnnotationSet()
+    var del = new AnnotationSet()
     for(let ea of a) {
       if (b.has(ea)) {
         same.add(ea)
@@ -218,11 +215,11 @@ MD*/
   }
 
   clone() {
-    return Annotations.fromJSON(this.toJSON());
+    return AnnotationSet.fromJSON(this.toJSON());
   }
 
   static fromJSON(json) {
-    return new Annotations(JSON.parse(json));
+    return new AnnotationSet(JSON.parse(json));
   }
 }
 
@@ -231,8 +228,8 @@ export class AnnotatedText {
   
   constructor(text, annotations) {
     this.text = text
-    this.annotations = new Annotations()
-    if (annotations instanceof Annotations) {
+    this.annotations = new AnnotationSet()
+    if (annotations instanceof AnnotationSet) {
       this.annotations = annotations
     } else if (_.isString(annotations)) {
       annotations.split("\n").forEach(ea => {

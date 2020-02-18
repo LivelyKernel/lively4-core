@@ -4,7 +4,7 @@
 <script>
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
-import Annotations from 'src/client/annotations.js'
+import AnnotationSet from 'src/client/annotations.js'
 
 (async() => {
 
@@ -26,13 +26,13 @@ import Annotations from 'src/client/annotations.js'
     last = ea.content
   }
   
-  let annotations = new Annotations()
+  let annotations = new AnnotationSet()
   
   // additions per version
   for(let version of versions) {
     annotations = annotations.clone()
     let pos = 0
-    let new_annotations = new Annotations()
+    let new_annotations = new AnnotationSet()
     for(let change of version.diff) {
       if (change[0] == 0)  {
         // nothing changed
@@ -108,12 +108,12 @@ import Annotations from 'src/client/annotations.js'
   `
 
   return <div>{style}
-    <h3>New Annotations</h3>
+    <h3>New AnnotationSet</h3>
     <ul>{...versions.map(ea => <li>
       <a click={() => lively.openInspector(ea)}>{ea.version}:</a> {printAnnotated(ea.content, ea.new_annotations)}
       </li>)}
     </ul>
-    <h3>All Annotations</h3>
+    <h3>All AnnotationSet</h3>
     <ul>{...versions.map(ea => <li>
       <a click={() => lively.openInspector(ea)}>{ea.version}:</a> {printAnnotated(ea.content, ea.annotations)}
       </li>)}
