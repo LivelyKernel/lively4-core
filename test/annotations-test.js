@@ -1,7 +1,25 @@
 import {expect} from 'src/external/chai.js'
+import {Annotation} from 'src/client/annotations.js'
 import Annotations from 'src/client/annotations.js'
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
+
+describe('Annotation', function() {
+  describe('equals', function() {
+    var a = new Annotation({name: "a"})
+    var b = new Annotation({name: "b"})
+    var c = new Annotation({name: "a"})
+    it('equals identitical', function() {
+      expect(a.equals(a)).to.be.true
+    });
+    it('not equals different', function() {
+      expect(a.equals(b)).to.be.false
+    });
+    it('equals same', function() {
+      expect(a.equals(c)).to.be.true
+    });
+  });
+})
 
 describe('Annotations', function() {
   describe('applyDiff', function() {
@@ -98,4 +116,53 @@ describe('Annotations', function() {
     });
   })
   
+  
+  describe('diffAnnotation', function() {
+    it('simple case', function() {
+      let annotationsBase = new Annotations()
+      annotationsBase.addAll([{name: "x", from: 3, to: 6}, {name: "i", from: 5, to: 7}])
+      let annotationsA = new Annotations(annotationsBase)
+      annotationsA.addAll([{name: "a", from: 10, to: 18}])
+      
+      
+      
+      let annotationsDiff = annotationsBase.diffAnnotations(annotationsA)
+      expect(annotationsDiff.same.size, "size").to.equal(2)
+      expect(annotationsDiff.add.size, "size").to.equal(1)
+      
+    });
+  })
+  
+  describe('has', function() {
+    let a = new Annotation({name: "a"})
+    let b = new Annotation({name: "b"})
+    let annotations = new Annotations([a])
+    it('contains a', function() {
+      expect(annotations.has(a)).to.be.true;
+    });
+    it('contains not b', function() {
+      expect(annotations.has(b)).to.be.false;
+    });
+  })
+  
+  
+  describe('compare', function() {
+    it('simple case', function() {
+      let a = new Annotation({name: "a"})
+      let b = new Annotation({name: "b"})
+      let c = new Annotation({name: "c"})
+      
+      
+      let annotations = new Annotations([a,b])
+      let {same, add, del} = annotations.compare(new Annotations([a,c])) 
+      
+      expect(same, "same").to.eql(new Annotations([a]))
+      expect(add, "add").to.eql(new Annotations([c]))
+      expect(del, "del").to.eql(new Annotations([b]))
+      
+    });
+  })
+  
 });
+
+

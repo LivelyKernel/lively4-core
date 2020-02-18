@@ -13,7 +13,24 @@ export class Annotation {
     Object.keys(config).forEach(key => {
       this[key] = config[key]
     })
+    
+    
   }
+  
+  equals(annotation) {
+    // do not check for classes.. we should also compare to structurally indentical objects?
+    // if (!(annotation instanceof Annotation)) return false;
+    
+    for(let key of Object.keys(this)) {
+      if (this[key] != annotation[key]) return false
+    }
+    // and the other way around....
+    for(let key of Object.keys(annotation)) {
+      if (this[key] != annotation[key]) return false
+    }
+    return true
+  }
+  
   get length() {
     return this.to - this.from
     
@@ -24,9 +41,7 @@ export default class Annotations {
 
   constructor(annotations=[]) {
     this.list = [];
-    annotations.forEach(ea => {
-      this.add(ea)
-    })
+    this.addAll(annotations)
   }
   
   *[Symbol.iterator] () {
@@ -48,7 +63,87 @@ export default class Annotations {
       this.add(annotation)
     }
   }
-  
+
+/*MD # Design Challenge
+
+What should a "diff" of annotations actually look like?
+
+should it be based on the Set semantics... and actually look for identical annotations, 
+e.g. same "from" and "to" and same payload..
+
+Or should we split up the text annotations in regions... and normalize the annotations through that way?
+
+How do we deal with "duplicates" and or overlapping "annotations" in the first place...
+
+
+
+MD*/
+
+
+  diffAnnotations(otherAnnotations) {
+    
+    // var merged = this.clone()
+    // merged.addAll(otherAnnotations)
+
+    var result = this.compare(otherAnnotations)
+    
+//     var regions = merged.regions()
+//     return regions.map(region => {
+//       var my = this.annotationsInRegion(region)
+//       var others = otherAnnotations.annotationsInRegion(region)
+      
+      
+//       return region
+//     })
+    
+    
+    return result
+    
+  }
+
+  has(annotation) {
+    // #TODO #Performance bug... lineas with complex equals...
+    let found =  this.list.find(ea => ea.equals(annotation)) 
+    return found ? true : false
+  }
+
+
+  // private
+  compare(b) {
+    var a = this
+    var same = new Annotations()
+    var add = new Annotations()
+    var del = new Annotations()
+    for(let ea of a) {
+      if (b.has(ea)) {
+        same.add(ea)
+      } else {
+        del.add(ea)
+      }
+    }
+    for(let ea of b) {
+      if (!same.has(ea)) {
+        add.add(ea)
+      }
+    }
+    return {same, add, del}
+  } 
+
+  annotationsInRegion(region) {
+    var result = new Set()
+    this.forEach(ea => {
+      if (this.isInRegion(region, ea)) {
+        result.add(ea)
+      }
+    });
+    return result
+  }
+
+  applyAnnotationDiff(annotationDiff) {
+    
+  }
+
+
   applyDiff(diff) {
     let pos = 0;
     for (let change of diff) {
@@ -75,6 +170,8 @@ export default class Annotations {
       }
     }
   }
+
+
 
   toJSON() {
     return JSON.stringify(this.list);
@@ -105,13 +202,15 @@ export default class Annotations {
       splitters.add(ea.from);
       splitters.add(ea.to);
     });
-    splitters.add(text.length);
+    if (text) {
+      splitters.add(text.length);
+    }
     splitters = Array.from(splitters).sort();
     var regions = [];
     var last = 0;
 
     for (var pos of splitters) {
-      regions.push({ from: last, to: pos, content: text.slice(last, pos) });
+      regions.push({ from: last, to: pos, content: text && text.slice(last, pos) });
       last = pos;
     }
 
