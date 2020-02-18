@@ -1,0 +1,2 @@
+This is pure Text.
+With lines and no kind of markup.

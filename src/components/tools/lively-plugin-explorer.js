@@ -21,12 +21,24 @@ export default class PluginExplorer extends Morph {
   get sourceEditor() { return this.get("#source"); }
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
+  get source() { return this.sourceCM.getValue(); }
 
   get sourceAstInspector() { return this.get("#sourceAst"); }
   
   get pluginEditor() { return this.get("#plugin"); }
   get pluginLCM() { return this.pluginEditor.livelyCodeMirror(); }
   get pluginCM() { return this.pluginEditor.currentEditor(); }
+  get pluginSource() { return this.pluginCM.getValue(); }
+
+  async getPlugin() {
+    const url = this.fullUrl(this.pluginURL) || "";
+    const module = await System.import(url);
+    // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
+    // assumend problem: there is a bad version of the code in either the browser or system.js cache
+    // idea: we have to find and flush it...
+    // wip: the browser does not cache it, but system.js does...
+    return module.default;
+  }
   
   get transformedSourceLCM() { return this.get("#transformedSource"); }
   get transformedSourceCM() { return this.transformedSourceLCM.editor; }
@@ -59,7 +71,7 @@ export default class PluginExplorer extends Morph {
   }
   onUpdate(evt) {
     if (evt.button === 2) this.autoUpdate = !this.autoUpdate;
-    this.update();
+    this.updateAST();
   }
 
   get runsTestsButton() { return this.get("#toggleRunsTests"); }
@@ -102,6 +114,14 @@ export default class PluginExplorer extends Morph {
 
   /*MD ## Initialization MD*/
 
+  fullUrl(urlString) {
+    try {
+      return lively.paths.normalizePath(urlString, "");
+    } catch(e) {
+      return null;
+    }
+  }
+
   async initLivelyEditorFromAttribute(editor, attributeToRead, defaultPath) {
     var filePath =  this.getAttribute(attributeToRead);
     if (!filePath) {
@@ -125,7 +145,8 @@ export default class PluginExplorer extends Morph {
       });
     });
 
-    this.debouncedUpdate = this.update::debounce(500);
+    this.debouncedUpdateAST = this.updateAST::debounce(500);
+    this.debouncedUpdateTransformation = this.updateTransformation::debounce(500);
     
     function enableSyntaxCheckForEditor(editor) {
       editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.editor))::debounce(200));
@@ -137,10 +158,10 @@ export default class PluginExplorer extends Morph {
         await this.pluginEditor.saveFile();
 
         await lively.reloadModule("" + this.pluginURL);
-        this.update();
+        this.updateAST();
       };
       enableSyntaxCheckForEditor(this.pluginLCM);
-      this.pluginLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdate()});
+      // this.pluginLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateTransformation()});
       this.transformedSourceCM.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
     });
 
@@ -149,10 +170,10 @@ export default class PluginExplorer extends Morph {
       this.sourceAstInspector.connectEditor(this.sourceEditor);
       this.sourceLCM.doSave = async () => {
         await this.sourceEditor.saveFile();
-        this.update();
+        this.updateAST();
       };
       enableSyntaxCheckForEditor(this.sourceLCM);
-      this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdate()});
+      this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateAST()});
       this.sourceCM.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
     });
 
@@ -171,7 +192,7 @@ export default class PluginExplorer extends Morph {
 
   async loadWorkspaceFile(urlString) {
     try {
-      const url = new URL(lively.paths.normalizePath(urlString, ""));
+      const url = new URL(this.fullUrl(urlString));
       const response = await fetch(url);
       const text = await response.text();
       const ws = BabelWorkspace.deserialize(text);
@@ -185,9 +206,9 @@ export default class PluginExplorer extends Morph {
   async loadWorkspace(ws) {
     console.log(ws);
     this.workspace = ws;
-    this.pluginEditor.setURL(new URL(lively.paths.normalizePath(ws.plugin, "")));
+    this.pluginEditor.setURL(new URL(this.fullUrl(ws.plugin)));
     this.pluginEditor.loadFile();
-    this.sourceEditor.setURL(new URL(lively.paths.normalizePath(ws.source, "")));
+    this.sourceEditor.setURL(new URL(this.fullUrl(ws.source)));
     this.sourceEditor.loadFile();
     this.setOptions(ws);
   }
@@ -201,7 +222,7 @@ export default class PluginExplorer extends Morph {
 
   async saveWorkspaceFile(urlString) {
     try {
-      const url = new URL(lively.paths.normalizePath(urlString, ""));
+      const url = new URL(this.fullUrl(urlString));
       const text = BabelWorkspace.serialize(this.workspace);
       await fetch(url, {
         method: 'PUT', 
@@ -214,118 +235,53 @@ export default class PluginExplorer extends Morph {
 
   /*MD ## Execution MD*/
 
-  async update() {
-    const src = this.sourceCM.getValue();
-    
-    const filename = "tempfile.js"
+  async updateAST() {
+    try {
+      this.ast = this.source.toAST();
+      this.sourceAstInspector.inspect(this.ast);
+      this.updateTransformation();
+    } catch (e) {
+      this.ast = null;
+      this.sourceAstInspector.inspect({Error: e.message});
+    }
+  }
 
-    // #HACK: we explicitly enable some syntax plugins for now
-    // #TODO: how to include syntax extensions for ast generation (without the plugin to develop)?
-    const syntaxPlugins = (await Promise.all([
-      'babel-plugin-syntax-jsx',
-      'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind',
-      'babel-plugin-syntax-async-generators'
-    ]
-      .map(syntaxPlugin => System.import(syntaxPlugin))))
-      .map(m => m.default);
-
-    // get pure ast
-    this.ast = babel.transform(src, {
-        babelrc: false,
-        plugins: syntaxPlugins,
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-    }).ast;
-    this.sourceAstInspector.inspect(this.ast);
-
-    
-    // #TODO refactor
-    // this.pluginEditor.editor.getSession().setAnnotations([]);
-
-    var url = "" + this.pluginURL;
-    // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
-    // assumend problem: there is a bad version of the code in either the browser or system.js cache
-    // idea: we have to find and flush it...
-    // wip: the browser does not cache it, but system.js does...
-    const plugin = (await System.import(url)).default;
+  async updateTransformation() {
+    const plugin = await this.getPlugin();
     
     try {
       console.group("PLUGIN TRANSFORMATION");
-      var config = {
-        babelrc: false,
-        plugins: [...syntaxPlugins, plugin],
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-      }
-      
+      if (!this.ast) return;
       if (this.systemJS) {
         // use SystemJS config do do a full transform
         if (!self.lively4lastSystemJSBabelConfig) {
-          lively.error("lively4lastSystemJSBabelConfig missing")
-          return
+          lively.error("lively4lastSystemJSBabelConfig missing");
+          return;
         }
-        config = Object.assign({}, self.lively4lastSystemJSBabelConfig)
-        var originalPluginURL = url.replace(/-dev/,"") // name of the original plugin .... the one without -dev
+        let config = Object.assign({}, self.lively4lastSystemJSBabelConfig);
+        let url = this.fullUrl(this.pluginURL) || "";
+        let originalPluginURL = url.replace(/-dev/,""); // name of the original plugin .... the one without -dev
         // replace the original plugin with the one under development.... e.g. -dev
         config.plugins = config.plugins.filter(ea => !ea.livelyLocation || !(ea.livelyLocation == originalPluginURL))
                           .concat([plugin])
+        let filename = "tempfile.js";
         config.filename = filename
         config.sourceFileName = filename
         config.moduleIds = false
-        
+        this.transformationResult = babel.transform(this.source, config);
+      } else {
+        this.transformationResult = this.ast.transformAsAST(plugin);
       }
-      this.transformationResult = babel.transform(src, config);
+      
+      this.transformedSourceCM.setValue(this.transformationResult.code);
+      
+      if (this.autoExecute) this.execute();
+      if (this.runsTests) executeAllTestRunners();
     } catch(err) {
       console.error(err);
-      this.transformedSourceCM.setValue("Error transforming code: " + err);
-   
-      // #TODO refactor
-      // #Feature Show Syntax errors in editor... should be generic
-//       this.pluginEditor.editor.getSession().setAnnotations(err.stack.split('\n')
-//         .filter(line => line.match('updateAST'))
-//         .map(line => {
-//           let [row, column] = line
-//             .replace(/.*<.*>:/, '')
-//             .replace(/\)/, '')
-//             .split(':')
-//           return {
-//             row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
-//           }
-//         }));
-      
-      lively.notify(err.name, err.message, 5, () => {}, 'red');
-      return;
+      this.transformedSourceCM.setValue("Error: " + err.message);
     } finally {
       console.groupEnd();
-    }
-    
-    this.transformedSourceCM.setValue(this.transformationResult.code);
-    
-    if (this.autoExecute) {
-      this.execute();
-    }
-    
-    if (this.runsTests) {
-      executeAllTestRunners();
     }
   }
 
@@ -451,6 +407,9 @@ export default class PluginExplorer extends Morph {
   }
 }
 
+class Source {
+  
+}
 
 class BabelWorkspace {
   static deserialize(json) {

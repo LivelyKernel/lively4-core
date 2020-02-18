@@ -1,20 +1,19 @@
-let always_one = false;
-let always_zero = false;
+function fizzbuzz(n) {
+  function divisible(x, d) {
+    return x % d === 0;
+  }
+  
+  if (divisible(n, 15))
+    return "FizzBuzz";
+  if (divisible(n, 3))
+    return "Fizz";
+  if (divisible(n, 5))
+    return "Buzz";
+  return n;
+}
 
-function mod_two(x){
-   if (x===0|always_zero){
-      return 0;
-   }else{
-      return mod_two_r_one(x)
-   }
+function test() {
+  return;
 }
-function mod_two_r_one(x){
-   if(x===1|always_one){
-      return 1;
-   } else {
-      return mod_two(x-2);
-     
-   }
-}
-let a=aexpr(()=>mod_two_r_one(2));
-always_one = true; 
+
+fizzbuzz(16);

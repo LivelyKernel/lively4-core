@@ -69,6 +69,9 @@ SystemJS.config({
     'babel-plugin-rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
     'rp19-jsx': lively4url + '/src/client/reactive/rp19-jsx/rp19-jsx.js',
 
+    // estree support
+    'babel-plugin-estree': lively4url + '/src/external/babel-plugin-estree.js',
+    
     // stage 0 support
     'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
     'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
