@@ -1,5 +1,7 @@
 import {expect} from 'src/external/chai.js'
 import {Annotation} from 'src/client/annotations.js'
+import {AnnotatedText} from 'src/client/annotations.js'
+
 import AnnotationSet from 'src/client/annotations.js'
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
@@ -21,15 +23,17 @@ describe('Annotation', function() {
   });
 })
 
+
+  
 describe('AnnotationSet', function() {
-  describe('applyDiff', function() {
+  describe('applyTextDiff', function() {
     it('moves on insert before', function() {
-      let diff = dmp.diff_main("abcdefghi", "abcXYZdefghi");
+      let textDiff = dmp.diff_main("abcdefghi", "abcXYZdefghi");
       
       let annotations = new AnnotationSet([
         {from: 3, to: 5}
       ])      
-      annotations.applyDiff(diff)
+      annotations.applyTextDiff(textDiff)
       expect(annotations.list[0].from, "from").to.equal(6)
       expect(annotations.list[0].to, "to").to.equal(8)
       
@@ -40,11 +44,36 @@ describe('AnnotationSet', function() {
       let annotations = new AnnotationSet([
         {from: 3, to: 5}
       ])      
-      annotations.applyDiff(diff)
+      annotations.applyTextDiff(diff)
       expect(annotations.list[0].from, "from").to.equal(3)
       expect(annotations.list[0].to, "to").to.equal(5)
       
     });
+  })
+  
+  describe('mergeWithTransform', function() {
+    
+  })
+  
+  describe('merge', function() {
+    var a = new Annotation({name: "a", from: 0, to: 4})  
+    var b = new Annotation({name: "b", from: 2, to: 6})  
+    var c = new Annotation({name: "c", from: 10, to: 20})
+    var d = new Annotation({name: "d", from: 10, to: 15})
+    
+    var parent = new AnnotationSet([a,b])
+    var me = parent.clone()
+    me.add(c)
+    
+    var other = parent.clone()
+    me.add(d)
+    me.remove(b)
+
+    
+    var merged = me.merge(other, parent)
+    
+    expect(merged.equals([a,c,d]))
+    
   })
 
   describe('regions', function() {
@@ -115,7 +144,7 @@ describe('AnnotationSet', function() {
   })
   
   
-  describe('diffAnnotation', function() {
+  describe('diff', function() {
     it('simple case', function() {
       let annotationsBase = new AnnotationSet()
       annotationsBase.addAll([{name: "x", from: 3, to: 6}, {name: "i", from: 5, to: 7}])
@@ -124,7 +153,7 @@ describe('AnnotationSet', function() {
       
       
       
-      let annotationsDiff = annotationsBase.diffAnnotationSet(annotationsA)
+      let annotationsDiff = annotationsBase.diff(annotationsA)
       expect(annotationsDiff.same.size, "size").to.equal(2)
       expect(annotationsDiff.add.size, "size").to.equal(1)
       
@@ -163,4 +192,32 @@ describe('AnnotationSet', function() {
   
 });
 
+describe('AnnotatedText', function() {
+
+  describe('setText', function() {
+    let text = new AnnotatedText("abc", new AnnotationSet([{from: 1,to:2, color: "red"}]))
+    it('updates annotations', function() {
+        text.setText("_abc")
+        expect(text.annotations.list[0].from).to.equal(2)
+        expect(text.annotations.list[0].to).to.equal(3)
+    })
+  })
+  
+  describe('fromHTML', function() {
+    it('extracts text and annotations', function() {
+      let text = AnnotatedText.fromHTML("a<b>b</b>c")
+      expect(text.text, "text").to.equal("abc")
+      expect(text.annotations.list[0].from, "from").to.equal(1)
+      expect(text.annotations).to.eql(new AnnotationSet([{from: 1, to: 2, name: "b"}]))
+    })
+    
+    it('extracts text and two annotations', function() {
+      let text = AnnotatedText.fromHTML("a<b>b</b><i>c</i>")
+      expect(text.text, "text").to.equal("abc")
+      expect(text.annotations).to.eql(new AnnotationSet([
+        {from: 1, to: 2, name: "b"}, 
+        {from: 2, to: 3, name: "i"}]))
+    })
+  })
+})
 

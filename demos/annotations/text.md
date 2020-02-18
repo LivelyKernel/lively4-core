@@ -23,7 +23,7 @@ var container = lively.query(this, "lively-container");
   debugger
   var annotatedText = new AnnotatedText(text, annotationSource)
   
-  var html = annotatedText.asHTML()
+  var html = annotatedText.toHTML()
 
   var textPre = document.createElement("pre")
   textPre.textContent = text

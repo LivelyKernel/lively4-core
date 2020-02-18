@@ -1,6 +1,6 @@
-
-Set
 import _ from 'src/external/lodash/lodash.js'
+import diff from 'src/external/diff-match-patch.js';
+const dmp = new diff.diff_match_patch();
 
 
 export class Annotation {
@@ -52,15 +52,32 @@ export default class AnnotationSet {
   }
   
   add(annotation) {
-    this.list.push(new Annotation(annotation))
-  }
-
-  addAll(annotations) {
-    for(let annotation of annotations) {
-      this.add(annotation)
+    if (!this.has(annotation)) {
+      this.list.push(new Annotation(annotation))
     }
   }
 
+  addAll(annotations) {
+    for(let ea of annotations) {
+      this.add(ea)
+    }
+  }
+
+  remove(annotation) {
+    this.list = this.list.filter(ea => !ea.equals(annotation))
+  }
+
+  removeAll(annotations) {
+    this.list = this.list.filter(ea => !annotations.has(ea))
+  }
+
+  equals(other) {
+    if (this.size != other.size) return false
+    for(let ea of this) {
+      if (!other.has(ea)) return false
+    }
+    return true
+  }
 /*MD # Design Challenge
 
 What should a "diff" of annotations actually look like?
@@ -76,24 +93,37 @@ How do we deal with "duplicates" and or overlapping "annotations" in the first p
 
 MD*/
 
+  
+  mergeWithTransform(mytransformDiff, other, otherTransformDiff, parent, parentTransformDiff) {
+    var transformedMe = this.applyTextDiff(mytransformDiff)
+    var transformedOther = otherTransformDiff.applyTextDiff(otherTransformDiff)
+    var transformedParent = this.applyTextDiff(parentTransformDiff)
+    return transformedMe.merge(transformedOther, transformedParent)
+  }
 
-  diffAnnotationSet(otherAnnotationSet) {
+
+  merge(other, lastCommonParent) {
+    // {from, to} of {this, other, lastCommonParent} reference same text    
+
+    var diffA = lastCommonParent.diff(this)
+    var diffB = lastCommonParent.diff(other)
+  
+    var result = lastCommonParent.clone()
+    result.removeAll(diffA.del)
+    result.removeAll(diffB.del)
+    result.addAll(diffA.add)
+    result.addAll(diffB.add)
     
-    // var merged = this.clone()
-    // merged.addAll(otherAnnotationSet)
+    return result
+  }
 
+
+  diff(otherAnnotationSet) {
     var result = this.compare(otherAnnotationSet)
     
-//     var regions = merged.regions()
-//     return regions.map(region => {
-//       var my = this.annotationsInRegion(region)
-//       var others = otherAnnotationSet.annotationsInRegion(region)
-      
-      
-//       return region
-//     })
-    
-    
+    // #TODO 
+    // compare is very basic... some of the added and deleteted might be mutatated?
+
     return result
     
   }
@@ -105,7 +135,7 @@ MD*/
   }
 
 
-  // private
+  // basic comparison... of actual annotations...
   compare(b) {
     var a = this
     var same = new AnnotationSet()
@@ -136,14 +166,9 @@ MD*/
     return result
   }
 
-  applyAnnotationDiff(annotationDiff) {
-    
-  }
-
-
-  applyDiff(diff) {
+  applyTextDiff(textDiff) {
     let pos = 0;
-    for (let change of diff) {
+    for (let change of textDiff) {
       let isAdd = change[0] == 1;
       let isDel = change[0] == -1;
       let isSame = change[0] == 0;
@@ -167,8 +192,6 @@ MD*/
       }
     }
   }
-
-
 
   toJSON() {
     return JSON.stringify(this.list);
@@ -227,7 +250,7 @@ MD*/
 export class AnnotatedText {
   
   constructor(text, annotations) {
-    this.text = text
+    this.text = text || ""
     this.annotations = new AnnotationSet()
     if (annotations instanceof AnnotationSet) {
       this.annotations = annotations
@@ -246,9 +269,49 @@ export class AnnotatedText {
     
   }
   
-  asHTML() {
+  
+  // set text and upate annotations
+  setText(string) {
+    var oldText = this.text
+    this.text = string
+    let textDiff = dmp.diff_main(oldText, this.text);
+    this.annotations.applyTextDiff(textDiff)
+  }
+  
+  toHTML() {
     return this.annotations.toXML(this.text)
   }
   
+  static fromHTML(html) {
+    
+    var annotations = new AnnotationSet();
+    
+    var string = ""
+  
+    function visit(node, notfirst) {
+      console.log("VISIT ", node)
+      if (!node || !node.childNodes) return;
+      if (node instanceof Text) {
+        string += node.textContent
+      } else {
+        if (notfirst) {
+          var annotation = new Annotation({from: string.length, to: string.length + node.textContent.length, name: node.localName})
+          annotations.add(annotation)
+        }
+        // for (let attr of node.attributes) {
+        //   //  TODO
+        // }
+      }
+      for(let ea of node.childNodes) {
+        visit(ea, true)
+      }
+    }
+    
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html,"text/html");
+    visit(doc.body)
+    var annotatedText = new AnnotatedText(string, annotations);
+    return annotatedText
+  }
 }
 
