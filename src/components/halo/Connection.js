@@ -31,6 +31,7 @@ export default class Connection {
       this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}"
     }
     
+    this.label = 'Connection ' + this.id
     this.makeSavingScript();
   }
   
@@ -61,15 +62,17 @@ export default class Connection {
     return {
       sourceId: this.sourceId,
       targetId: this.targetId,
-      sourceProperty: this.sourceProperty,
-      code: this.valueModifyingCode,
+      trackingCode: this.sourceProperty,
+      //trackingCode: this.trackingCode,
+      modifyingcode: this.valueModifyingCode,
+      label: this.label,
       isEvent: this.isEvent
     }
   }
   
   static deserialize(json){
     json.forEach(connectionData => {
-      this.connectionFromExistingData(connectionData.targetId, connectionData.code, connectionData.sourceId, connectionData.sourceProperty, connectionData.isEvent)
+      this.connectionFromExistingData(connectionData.targetId, connectionData.modifyingcode, connectionData.sourceId, connectionData.trackingCode, connectionData.label, connectionData.isEvent)
     })
   }
   
@@ -79,11 +82,12 @@ export default class Connection {
     }
   }
   
-  static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty, isEvent){
+  static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty, label, isEvent){
     let target = document.body.querySelector(`[connectionId="${targetId}"]`);
     let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
     let undeadConnection = new Connection(target, 'something', source, sourceProperty, isEvent);
-    undeadConnection.setModifyingCodeString(modifyingCode);
+    undeadConnection.setModifyingCode(modifyingCode);
+    undeadConnection.setLabel(label);
     undeadConnection.activate();
   }
   
@@ -115,6 +119,15 @@ export default class Connection {
     let myFunction = await this.trackingCode.boundEval()
     this.ae = aexpr(() => myFunction(this.source));
     this.ae.onChange(svalue => this.connectionFunction(svalue));
+  }
+  
+  getTrackingCode() {
+    return this.trackingCode
+  }
+  
+  setTrackingCode(string){
+    this.trackingCode = string;
+    this.saveSerializedConnectionIntoWidget();
   }
   
   async connectionFunction(sourceValue){  
@@ -195,13 +208,12 @@ export default class Connection {
     this.activate();
   }
   
-  
-  getModifyingCodeString() {
+  getModifyingCode() {
     return this.valueModifyingCode
   }
   
-  setModifyingCodeString(newCode) {
-    this.valueModifyingCode = newCode;
+  setModifyingCode(string) {
+    this.valueModifyingCode = string;
     this.saveSerializedConnectionIntoWidget();
   }
   
@@ -220,8 +232,12 @@ export default class Connection {
     return connections
   }
   
-  connectionString() {
-    return 'Connection ' + this.id
+  getLabel() {
+    return this.label
+  }
+  
+  setLabel(string) {
+    this.label = string
   }
   
 }
