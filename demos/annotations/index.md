@@ -1,6 +1,6 @@
 # Annotations
 
-[test](edit://test/annotations-test.js) | [code](edit://src/client/annotations.js)
+[test](edit://test/annotations-test.js) | [code](edit://src/client/annotations.js) | [ideas](ideas.md)
 
 ![](update_annotations.drawio)
 
