@@ -145,14 +145,14 @@ export default class Connection {
     this.activate();
   }
   
-  copyAndActivate(){
+  copyAndActivate() {
     let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
     newConnection.setModifyingCodeString(this.valueModifyingCode);
     newConnection.activate();
     return newConnection;
   }
   
-  deactivate(){
+  deactivate() {
     this.ae && this.ae.dispose()
     if(this.isEvent){
       lively.removeEventListener ('Connections', this.source, this.sourceProperty, this._eventListener)
@@ -160,48 +160,67 @@ export default class Connection {
     this.isActive = false
   }
   
-  destroy(){
+  destroy() {
     this.deactivate()
     window.allConnections.delete(this)
   }
   
-  getSource(){
+  getSource() {
     return this.source
   }
   
-  getTarget(){
+  getSourceId() {
+    return this.sourceId
+  }
+  
+  getTarget() {
     return this.target
   }
   
-  getAexpr(){
+  getTargetId() {
+    return this.targetId
+  }
+  
+  getAexpr() {
     return this.ae
   }
   
-  getSourceProperty(){
+  getSourceProperty() {
     return this.sourceProperty
   }
   
-  setSourceProperty(newProperty){
+  setSourceProperty(newProperty) {
     this.sourceProperty = newProperty;
     this.saveSerializedConnectionIntoWidget();
     this.activate();
   }
   
   
-  getModifyingCodeString(){
+  getModifyingCodeString() {
     return this.valueModifyingCode
   }
   
-  setModifyingCodeString(newCode){
+  setModifyingCodeString(newCode) {
     this.valueModifyingCode = newCode;
     this.saveSerializedConnectionIntoWidget();
   }
   
-  static get allConnections(){
+  static get allConnections() {
     return window.allConnections
   }
-
-  connectionString(){
+  
+  static allConnectionsFor(object) {
+    let connections = [];
+    if (object.hasAttribute && object.hasAttribute('connectionId')) {
+      let objectId = object.getAttribute('connectionId');
+      this.allConnections.forEach(connection => {
+        if((connection.getTargetId() == objectId) || (connection.getSourceId() == objectId)) {connections.push(connection)}
+      })
+    }
+    return connections
+  }
+  
+  connectionString() {
     return 'Connection ' + this.id
   }
   

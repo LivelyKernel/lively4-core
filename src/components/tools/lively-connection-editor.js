@@ -60,6 +60,10 @@ export default class LivelyConnectionEditor extends Morph {
     return this.get("#activityCheckbox");
   }
 
+  onDrawConnectionArrowButton() {
+    this.connection.drawConnectionLine();
+  }
+  
   onDestroyButton() {
     this.connection.destroy();
     if (this.parentElement && this.parentElement.localName === 'lively-window') {
