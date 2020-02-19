@@ -362,7 +362,7 @@ export default class Editor extends Morph {
         var conflictVersion = response.headers.get("conflictversion");
         // lively.notify("LAST: " + this.lastVersion + " NEW: " + newVersion + " CONFLICT:" + conflictVersion)
         if (conflictVersion) {
-          return this.solveConflic(conflictVersion, newVersion);
+          return this.solveConflict(conflictVersion, newVersion);
         }
         if (newVersion) {
           // lively.notify("new version " + newVersion);
@@ -418,11 +418,19 @@ export default class Editor extends Morph {
         // Added 
         toPos = cm.posFromIndex(index + text.length);
         backgroundColor = "green";
-        marker = cm.markText(cm.posFromIndex(index), toPos, { replacedWith: widget });
+        try {
+          marker = cm.markText(cm.posFromIndex(index), toPos, { replacedWith: widget });
+        } catch(e) {
+          console.warn("[lively-editor] Could not mark change");
+        }
       } else {
         backgroundColor = "red";
         targetColor = "transparent";
-        marker = cm.setBookmark(cm.posFromIndex(index), { widget: widget });
+        try {
+          marker = cm.setBookmark(cm.posFromIndex(index), { widget: widget });
+        } catch(e) {
+          console.warn("[lively-editor] Could not set bookmark");
+        }
       }
       var animation = widget.animate([{ background: backgroundColor, color: "black" }, { background: "transparent", color: targetColor }], {
         duration: 3000
@@ -441,13 +449,13 @@ export default class Editor extends Morph {
    * solveConflict
    * use three-way-merge
    */
-  async solveConflic(otherVersion, newVersion) {
+  async solveConflict(otherVersion, newVersion) {
     var conflictId = `conflic-${otherVersion}-${newVersion}`;
     if (this.solvingConflict == conflictId) {
       lively.error("Sovling conflict stopped", "due to recursion: " + this.solvingConflict);
       return;
     }
-    if (this.solvingConflic) {
+    if (this.solvingConflict) {
       lively.warn("Recursive Solving Conflict", "" + this.solvingConflict + " and now: " + conflictId);
       return;
     }
