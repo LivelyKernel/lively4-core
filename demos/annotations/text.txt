@@ -1,2 +1,2 @@
 This is pure Text.
-With lines and no kind of markup.
+With     lines INSERT and no kind of markup.

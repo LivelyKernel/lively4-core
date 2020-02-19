@@ -32,6 +32,13 @@ export class Annotation {
     return this.to - this.from
     
   }
+  
+  codeMirrorMark(cm) {
+    var marker = cm.markText(cm.posFromIndex(this.from), cm.posFromIndex(this.to), 
+      {css: `background-color: ${this.color ? this.color : "lightgrey" }` });
+    return marker
+  }
+  
 }
 
 export default class AnnotationSet {
@@ -204,6 +211,10 @@ MD*/
     return JSON.stringify(this.list);
   }
 
+  toJSONL() {
+    return this.list.map(ea => JSON.stringify(ea)).join("\n");    
+  }
+
   toXML(text) {
     let regions = this.regions(text);
     var xml = regions.map(ea => {
@@ -243,6 +254,9 @@ MD*/
 
     return regions;
   }
+  
+
+
 
   clone() {
     return AnnotationSet.fromJSON(this.toJSON());
@@ -282,6 +296,11 @@ export class AnnotatedText {
     var list = (await annotationsURL.fetchText()).split("\n").map(ea => JSON.parse(ea))
     var annotations = new AnnotationSet(list)
     return new AnnotatedText(text, annotations)
+  }  
+  
+  async saveToURL(fileURL, annotationsURL) {
+    await lively.files.saveFile(fileURL, this.text) 
+    await lively.files.saveFile(annotationsURL, this.annotations.toJSONL()) 
   }
   
   
@@ -304,7 +323,6 @@ export class AnnotatedText {
     var string = ""
   
     function visit(node, notfirst) {
-      console.log("VISIT ", node)
       if (!node || !node.childNodes) return;
       if (node instanceof Text) {
         string += node.textContent

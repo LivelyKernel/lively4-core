@@ -576,7 +576,7 @@ export default class Container extends Morph {
     if (!url) return
     return document.body.querySelectorAll("lively-container").filter(ea => {
       var otherURL = ea.getURL()
-      return ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+      return otherURL && ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
     })
   }
   
