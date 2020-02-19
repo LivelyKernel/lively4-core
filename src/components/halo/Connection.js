@@ -18,17 +18,22 @@ export default class Connection {
     this.target = target;
     this._targetProperty = targetProperty;
     this.source = source;
-    this.sourceProperty = sourceProperty;
+    this._sourceProperty = sourceProperty;
     this.isEvent = isEvent;
     this.isActive = false
+    this._eventListener = evt => this.connectionFunction(evt)
     let ending = '';
     if(this._targetProperty.includes('style')){
       ending = " + 'pt'"
     }
     if(isEvent){
       this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42" + ending + "}";
+      this.trackingCode = this._sourceProperty;
     } else {
-      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}"
+      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}";
+      this.trackingCode = `(source) => {
+  return source.${this._sourceProperty};
+}`
     }
     
     this.label = 'Connection ' + this.id
@@ -62,8 +67,7 @@ export default class Connection {
     return {
       sourceId: this.sourceId,
       targetId: this.targetId,
-      trackingCode: this.sourceProperty,
-      //trackingCode: this.trackingCode,
+      trackingCode: this.trackingCode,
       modifyingcode: this.valueModifyingCode,
       label: this.label,
       isEvent: this.isEvent
@@ -82,11 +86,12 @@ export default class Connection {
     }
   }
   
-  static connectionFromExistingData(targetId, modifyingCode, sourceId, sourceProperty, label, isEvent){
+  static connectionFromExistingData(targetId, modifyingCode, sourceId, trackingCode, label, isEvent){
     let target = document.body.querySelector(`[connectionId="${targetId}"]`);
     let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
-    let undeadConnection = new Connection(target, 'something', source, sourceProperty, isEvent);
+    let undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
     undeadConnection.setModifyingCode(modifyingCode);
+    undeadConnection.setTrackingCode(trackingCode);
     undeadConnection.setLabel(label);
     undeadConnection.activate();
   }
@@ -106,16 +111,12 @@ export default class Connection {
     this.isActive = true
   }
   
-  activateEvent() {
-    this._eventListener = evt => this.connectionFunction(evt)
-    lively.addEventListener('Connections', this.source, this.sourceProperty, this._eventListener)
-    //this.source.addEventListener(this.sourceProperty, evt => this.connectionFunction(evt))
+  async activateEvent() {
+    lively.notify(this.trackingCode)
+    lively.addEventListener('Connections', this.source, this.trackingCode, this._eventListener);
   }
   
   async activateAexpr() {
-    this.trackingCode = `(source) => {
-  return source.${this.sourceProperty};
-}`
     let myFunction = await this.trackingCode.boundEval()
     this.ae = aexpr(() => myFunction(this.source));
     this.ae.onChange(svalue => this.connectionFunction(svalue));
@@ -126,6 +127,7 @@ export default class Connection {
   }
   
   setTrackingCode(string){
+    if(this.isEvent){ this.deactivate()}
     this.trackingCode = string;
     this.saveSerializedConnectionIntoWidget();
   }
@@ -168,7 +170,7 @@ export default class Connection {
   deactivate() {
     this.ae && this.ae.dispose()
     if(this.isEvent){
-      lively.removeEventListener ('Connections', this.source, this.sourceProperty, this._eventListener)
+      lively.removeEventListener ('Connections', this.source, this.trackingCode, this._eventListener)
     }
     this.isActive = false
   }
