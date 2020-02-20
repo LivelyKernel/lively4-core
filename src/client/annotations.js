@@ -2,6 +2,8 @@ import _ from 'src/external/lodash/lodash.js'
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
 
+import { uuid as genUUID } from 'utils';
+
 export class Annotation {
   constructor(config) {
     this.from = 0, // starts here...
@@ -9,9 +11,11 @@ export class Annotation {
     Object.keys(config).forEach(key => {
       this[key] = config[key]
     })
-    
-    
   }
+  
+  equalsRegion(region) {
+    return this.from == region.from && this.to == region.to
+  } 
   
   equals(annotation) {
     // do not check for classes.. we should also compare to structurally indentical objects?
@@ -34,10 +38,46 @@ export class Annotation {
   
   codeMirrorMark(cm) {
     var marker = cm.markText(cm.posFromIndex(this.from), cm.posFromIndex(this.to), 
-      {css: `background-color: ${this.color ? this.color : "lightgrey" }` });
+      {
+        className: "lively-annotation",
+        attributes: {
+          "data-annotation": JSON.stringify(this)
+        },
+        css: `background-color: ${this.color ? this.color : "lightgrey" }` });
     return marker
   }
   
+  intersectRegion(region) {
+    if (this.to < region.from) return null
+    if (region.to < this.from) return null
+    return {from: Math.max(this.from, region.from), to: Math.min(this.to, region.to)}
+  }
+  
+  isInRegion(region) {
+    // could alternatively use insersectRegion ...
+    return region.from < this.to && this.to < region.to 
+      || region.from <= this.from && this.from < region.to;
+  }
+  
+  cutRegion(region) {
+    var intersection = this.intersectRegion(region)
+    if (!intersection) return this
+    if (this.equalsRegion(intersection)) return null // cut complete
+    if (intersection.from == this.from) {
+      this.from = intersection.to
+      return this
+    } else if (intersection.to == this.to) {
+      this.to = intersection.from
+      return this
+    } else {
+      // split annotation
+      var rest = this.clone()
+      this.to = intersection.from
+      rest.from = intersection.to
+      return [this, rest] // and here we #Alias, annotations should deal with this with indirection 
+                          // (e.g. ids that point to the real data if necessary)
+    }
+  }
 }
 
 export default class AnnotationSet {
@@ -83,6 +123,7 @@ export default class AnnotationSet {
   removeAll(annotations) {
     this.list = this.list.filter(ea => !annotations.has(ea))
   }
+
 
   equals(other) {
     if (this.size != other.size) return false
@@ -169,13 +210,27 @@ MD*/
     return {same, add, del}
   } 
 
-  annotationsInRegion(region) {
+  removeFromTo(from, to) {
+    var region = {from, to}
+    for(let ea of this) {
+      var intersection = ea.intersectRegion(region)
+      if (intersection) {
+        if (ea.equalsRegion(intersection)) {
+          this.remove(ea)
+        } else {
+          ea.cutRegion(intersection)
+        }
+      } 
+    }
+  }
+  
+  annotationsInRegion(region = {from: 0, to:0, content: ""}) {
     var result = new Set()
-    this.forEach(ea => {
+    for(let ea of this) {
       if (this.isInRegion(region, ea)) {
-        result.add(ea)
+        this.add(ea)       
       }
-    });
+    }
     return result
   }
 
@@ -218,19 +273,25 @@ MD*/
     let regions = this.regions(text);
     var xml = regions.map(ea => {
       var s = ea.content;
-      this.list.forEach(annotation => {
-        if (this.isInRegion(ea, annotation)) {
+      for(let annotation of this) {
+        if (annotation.isInRegion(ea)) {
           s = `<${annotation.name}>${s}</${annotation.name}>`;
         }
-      });
+      }
       return s;
     }).join("");
     return xml;
   }
 
-  isInRegion(region, annotation) {
-    return region.from < annotation.to && annotation.to < region.to 
-      || region.from <= annotation.from && annotation.from < region.to;
+  static fromJSONL(source) {
+    var list = source.split("\n").map(ea => {
+      try{ 
+        return JSON.parse(ea) 
+      } catch(e) {
+        console.warn("[annotations] could not parse linke: " + ea)
+      }
+    }).filter(ea => ea)
+    return new AnnotationSet(list)
   }
 
   regions(text) {
@@ -254,7 +315,13 @@ MD*/
     return regions;
   }
   
-
+  renderCodeMirrorMarks(cm) {
+    cm.getAllMarks().forEach(ea => ea.clear())
+    
+    for(let ea of this) {
+      ea.codeMirrorMark(cm)
+    }
+  }
 
 
   clone() {
@@ -292,9 +359,15 @@ export class AnnotatedText {
   static async fromURL(fileURL, annotationsURL) {
     var resp = await fetch(fileURL)
     var text = await resp.text()
-    var list = (await annotationsURL.fetchText()).split("\n").map(ea => JSON.parse(ea))
-    var annotations = new AnnotationSet(list)
-    return new AnnotatedText(text, annotations)
+    var response = await fetch(annotationsURL)
+    var annotations = AnnotationSet.fromJSONL((await response.text()))
+    annotations.fileURL = fileURL
+    annotations.annotationsURL = annotationsURL
+    annotations.lastVersion = response.headers.get("fileversion")
+    var annotatedText = new AnnotatedText(text, annotations)
+    
+    
+    return annotatedText 
   }  
   
   async saveToURL(fileURL, annotationsURL) {
@@ -348,5 +421,10 @@ export class AnnotatedText {
     var annotatedText = new AnnotatedText(string, annotations);
     return annotatedText
   }
+  
+  clone() {
+    return new AnnotatedText(this.text, this.annotations.clone())
+  }
+  
 }
 

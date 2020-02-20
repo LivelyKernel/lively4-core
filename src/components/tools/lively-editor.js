@@ -247,6 +247,10 @@ export default class Editor extends Morph {
     return text
   }
   
+  getText() {
+    return this.get('#editor').value 
+  }
+  
   getScrollInfo() {
     if (!this.isCodeMirror()) return 
     return this.withEditorObjectDo(editor => editor.getScrollInfo())
