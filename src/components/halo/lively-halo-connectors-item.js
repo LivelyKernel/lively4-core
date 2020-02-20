@@ -31,7 +31,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     Connection.allConnections.forEach(connection => {
       connections.push(connection)
     })
-    let existingConnectionsMenu = connections.map(connection => [connection.connectionString(), () => this.openConnectionEditor(connection)]);
+    let existingConnectionsMenu = connections.map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let myConnectionsMenu = Connection.allConnectionsFor(this.source).map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
     
     const menuItems = [
       ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
@@ -40,6 +41,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       ['Events', this.getAllEventsFor(this.source, evt)],
       ['Style', this.getAllStylesFor(this.source, evt)],
       ['On custom...', () => this.startCreatingConnectionCustom(evt)],
+      ['My Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
       ['All Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
     ];
     
