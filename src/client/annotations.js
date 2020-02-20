@@ -2,7 +2,6 @@ import _ from 'src/external/lodash/lodash.js'
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
 
-
 export class Annotation {
   constructor(config) {
     this.from = 0, // starts here...

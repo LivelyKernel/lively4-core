@@ -123,5 +123,50 @@ var container = lively.query(this, "lively-container");
 
 
 
+# With Lively Editor
+
+<script>
+
+(async () => {
+  var text = await AnnotatedText.fromURL(
+    "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt",
+    "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a")
+    
+  return text.toHTML()    
+})()
+</script>
+
+<script>
+// #META #Example of Mini-Custom Editor, like in the first days of Lively4
+(async () => {
+  let textURL = "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt"
+  let annotationURL = "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a"
+
+  var livelyEditor = await (<lively-editor style="width:800px; height:100px"></lively-editor>)
+  livelyEditor.setURL(textURL)
+  livelyEditor.loadFile()
+  
+  var cm = await livelyEditor.awaitEditor()
+  
+  let text  = await AnnotatedText.fromURL(textURL, annotationURL)
+  for(let ea of text.annotations) {
+      ea.codeMirrorMark(cm)
+  }
+  
+   
+  lively.sleep(1).then( () => cm.refresh()) // #hack... do force display?
+  return <div>
+          <div>
+            <button click={evt=> markColor("lightblue")} style="color:lightblue">mark</button>
+            <button click={evt=> markColor("yellow")} style="color:yellow">mark</button>
+          </div>
+          {livelyEditor}
+        </div>
+})()
+</script>
+
+
+
+
 
 

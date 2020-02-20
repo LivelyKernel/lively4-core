@@ -1,4 +1,7 @@
 {"from":0,"to":4,"name":"b"}
-{"from":48,"to":52,"name":"yellow"}
-{"from":56,"to":62,"name":"color","color":"lightblue"}
-{"from":34,"to":40,"name":"color","color":"yellow"}
+{"from":60,"to":64,"name":"yellow"}
+{"from":68,"to":74,"name":"color","color":"lightblue"}
+{"from":46,"to":52,"name":"color","color":"yellow"}
+{"from":31,"to":35,"name":"color","color":"lightblue"}
+{"from":18,"to":22,"name":"color","color":"lightblue"}
+{"from":23,"to":27,"name":"color","color":"yellow"}

@@ -304,29 +304,35 @@ export default class Editor extends Morph {
   
   async loadFile(version) {
     var url = this.getURL();
-    console.log("load " + url);
+    // console.log("load " + url);
     this.updateEditorMode();
 
-    var result = await fetch(url, {
-      headers: {
-        fileversion: version
-      }
-    }).then( response => {
+    try {
+      var response = await fetch(url, {
+        headers: {
+          fileversion: version
+        }
+      })
       // remember the commit hash (or similar version information) if loaded resource
       this.lastVersion = response.headers.get("fileversion");
-      // lively.notify("loaded version " + this.lastVersion);
-      return response.text();
-    }).then((text) => {
-       return this.setText(text, true); 
-    }, (err) => {
+        // lively.notify("loaded version " + this.lastVersion);
+      var text = await response.text();
+      var result =  this.setText(text, true); 
+    } catch(e) {
         lively.notify("Could not load file " + url +"\nMaybe next time you are more lucky?");
         return ""
-    });
+    }
+    this.dispatchEvent(new CustomEvent("loaded-file", {detail: {
+          "url": url,
+          "text": result,
+          "version": this.lastVersion}})); 
     if (this.postLoadFile) {
       result = await this.postLoadFile(result) // #TODO babylonian programming requires to adapt editor behavior
     }
+    
     return result
   }
+
 
   
   async saveFile() {
@@ -352,11 +358,30 @@ export default class Editor extends Morph {
         headers['Content-Type'] = 'image/svg+xml'
       }
       
-      await fetch(urlString, {
-        method: 'PUT', 
-        body: data,
-        headers: headers
-      }).then((response) => {
+      
+        /*MD ### Example 
+```javascript
+  fetch("https://lively-kernel.org/lively4/lively4-dummy/foo/hello2.txt", {
+  method: "PUT",
+  body: "hello world"
+}).then(r => r.text())
+```
+  ```
+ {
+  "type": "file",
+  "name": "foo/hello2.txt",
+  "size": 11,
+  "version": "716c0289ecba04604307d33734285314ab783235",
+  "modified": "2020-02-19 14:21:03"
+}
+  ```
+  MD*/
+      try {
+        var response = await fetch(urlString, {
+          method: 'PUT', 
+          body: data,
+          headers: headers
+        })
         // console.log("edited file " + url + " written.");
         var newVersion = response.headers.get("fileversion");
         var conflictVersion = response.headers.get("conflictversion");
@@ -372,10 +397,21 @@ export default class Editor extends Morph {
         this.lastText = data;
         this.updateChangeIndicator();
         this.updateOtherEditors();
-      }, (err) => {
-         lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?");
-         throw err;
-      }); // don't catch here... so we can get the error later as needed...
+
+        var stats = {version: newVersion}
+
+        this.dispatchEvent(new CustomEvent("saved-file", {detail: {
+          "url": urlString,
+          "text": data,
+          "version": newVersion}})); 
+        
+        return stats
+
+      } catch(e) {
+         lively.notify("Could not save file" + url +"\nMaybe next time you are more lucky?:", response);
+         throw new Error("LivelyEditor save failed:" + e);
+        // don't catch here... so we can get the error later as needed...
+      }
     }
   }
   
@@ -463,7 +499,8 @@ export default class Editor extends Morph {
     lively.notify("Solve Conflict between: " + otherVersion + `and ` + newVersion);
     var parentText = this.lastText; // 
     // load from conflict version
-    var otherText = await fetch(this.getURL(), {
+    let url = this.getURL();
+    var otherText = await fetch(url, {
       headers: { fileversion: otherVersion }
     }).then(r => r.text());
     var myText = this.currentEditor().getValue(); // data
@@ -474,12 +511,27 @@ export default class Editor extends Morph {
     this.highlightChanges(myText);
     this.lastVersion = otherVersion;
     this.solvingConflict = conflictId;
+    let stats = {}
     try {
       // here it can come to infinite recursion....
-      await this.saveFile();
+      stats = await this.saveFile();
     } finally {
       this.solvingConflict = false;
     }
+    if (stats) {
+      var mergedVersion = stats.version
+      this.dispatchEvent(new CustomEvent("solved-conflict", {detail: {
+        "url": url,
+        "other-version": otherVersion,
+        "other-text": otherText,
+        "my-version": newVersion,
+        "my-text": myText,
+        "text": mergedText,
+        "version": mergedVersion}}));      
+    } else {
+      // could not save file... :-(
+    }
+    
   }
   
   /*MD ## Editor MD*/
