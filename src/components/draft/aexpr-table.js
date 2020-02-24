@@ -28,7 +28,11 @@ function getValueTag(ae) {
   
 function dependencyString(dependency) {
   let descriptor = dependency.getAsDependencyDescription();
-  return <li>{dependency._type}
+  let type = 'unknown type';
+  if(dependency.isMemberDependency()) type = 'member';
+  if(dependency.isGlobalDependency()) type = 'global';
+  if(dependency.isLocalDependency()) type = 'local';
+  return <li>{type}
     {listify(Object.keys(descriptor)
       .map(key => <span>{key+' : '}{inspectorLink(descriptor[key])}</span>), true)}</li>
 }
@@ -245,7 +249,7 @@ function listify(array, protect) {
 }
 
 function inspectorLink(object) {
-  let link = <a>{object.toString()}</a>;
+  let link = <a>{object && object.toString()}</a>;
   link.onclick = () => lively.openInspector(object);
   return link;
 }
