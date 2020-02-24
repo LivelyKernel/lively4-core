@@ -31,32 +31,38 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     Connection.allConnections.forEach(connection => {
       connections.push(connection)
     })
-    let existingConnectionsMenu = connections.map(connection => [connection.connectionString(), () => this.openConnectionEditor(connection)]);
+    let existingConnectionsMenu = connections.map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let myConnectionsMenu = Connection.allConnectionsFor(this.source).map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
     
-    const menuItems = [[
-      'Connections',
-      existingConnectionsMenu,
-      'Opens all created connections',
-      '<i class="fa fa-arrow-right" aria-hidden="true"></i>'
-      ], [
-      'New Connection',
-        [['On custom...', () => this.startCreatingConnectionCustom(evt)],
-          ['On value', () => this.startCreatingConnectionFor(evt, 'value', false)],
-         ['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-         ['Style', this.getAllStylesFor(this.source, evt)]],
-      'Creates a new connection',
-      '<i class="fa fa-image" aria-hidden="true"></i>'
-    ]];
+    const menuItems = [
+      ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
+      ['Width', () => this.startCreatingConnectionFor(evt, 'style.width', false)],
+      ['Height', () => this.startCreatingConnectionFor(evt, 'style.height', false)],
+      ['Events', this.getAllEventsFor(this.source, evt)],
+      ['Style', this.getAllStylesFor(this.source, evt)],
+      ['On custom...', () => this.startCreatingConnectionCustom(evt)],
+      ['My Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+      ['All Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
+    ];
     
     this.showMenu(evt, menuItems);
   }
   
-  getAllStylesFor(object, evt){
+  getAllEventsFor(object, evt){
+    return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
+           ['MouseMove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)]]
+  }
+  
+  getAllStylesFor(object, evt, isFinishing = false){
     let result = [];
     let styles = window.getComputedStyle(object);
     let stylesLength = styles.length;
     for(let i = 0; i < stylesLength; i++){
-      result.push([styles.item(i), () => this.startCreatingConnectionFor(evt, styles.item(i), false)]);
+      if(isFinishing){
+        result.push([styles.item(i), event => this.finishCreatingConnection(object, 'style.' + styles.item(i), event)]);
+      } else {
+        result.push([styles.item(i), () => this.startCreatingConnectionFor(evt, 'style.' + styles.item(i), false)]); 
+      }
     }
     return result;
   }
@@ -66,17 +72,15 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   async showFinishingConnectorsMenuFor(evt, morph){
-    const menuItems = [[
-      'On custom...',
-      () => this.finishCreatingConnectionCustom(morph)
-    ],[
-      'On width',
-      () => this.finishCreatingConnection(morph, 'width')
-    ],[
-      'On height',
-      () => this.finishCreatingConnection(morph, 'height')
-    ]];
-    
+    const menuItems = [
+      ['Value', event => this.finishCreatingConnection(morph, 'value', event)],
+      ['Width', event => this.finishCreatingConnection(morph, 'style.width', event)],
+      ['Height', event => this.finishCreatingConnection(morph, 'style.height', event)],
+      ['InnerHTML', event => this.finishCreatingConnection(morph, 'innerHTML', event)],
+      // Hook for chained events
+      //['Events', this.getAllEventsFor(morph, evt, true)],
+      ['Style', this.getAllStylesFor(morph, evt, true)],
+      ['On custom...', event => this.finishCreatingConnectionCustom(morph, event)]];
     this.showMenu(evt, menuItems);
   }
   
@@ -86,9 +90,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   onPointerMove(evt) {
-    //lively.showPoint(pt(evt.clientX, evt.clientY))
-    //lively.notify('move')
-    
     if (this.dropIndicator) this.dropIndicator.remove()
     this.dropTarget = this.elementUnderHand(evt)
     if (this.dropTarget) {
@@ -99,7 +100,6 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   onPointerUp(evt) {
-    //lively.notify('up')
     lively.removeEventListener("Connectors")
     
     if (this.dropIndicator) this.dropIndicator.remove()
@@ -108,7 +108,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.showFinishingConnectorsMenuFor(evt, morph);
   }
   
-   async openConnectionEditor(connection){
+  async openConnectionEditor(connection){
     let editor = await lively.openComponentInWindow('lively-connection-editor')
     editor.setConnection(connection)
   }
@@ -128,32 +128,17 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       e => this.onPointerUp(e), { capture: true });
   }
   
-  async finishCreatingConnectionCustom(target){
+  async finishCreatingConnectionCustom(target, event){
     var userinput = await lively.prompt("Enter something", "width");
-    this.finishCreatingConnection(target, userinput);
+    this.finishCreatingConnection(target, userinput, event);
   }
   
-  finishCreatingConnection(target, targetProperty){
-    
-    if(this.isEvent){
-      return this.clickExample(target);
-    }
-    
+  finishCreatingConnection(target, targetProperty, event){
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();
+    if(event.shiftKey){
+      this.openConnectionEditor(connection);
+    }
   } 
-  
-  clickExample(target){
-    this.source.addEventListener('click', () => target.style.width = 42+"pt")
-  }
-  
-  //TODO DELETE
-  //let ae = aexpr(() => code.boundEval(sourceObject));
-  //ae.onChange(svalue => target.style.width= svalue+"pt");
-  /*
-  let foo = '"width"'
-  var code = `1+3`
-  code.boundEval()
-  */
 }

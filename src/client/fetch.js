@@ -158,17 +158,14 @@ export async function installAuthorizedFetch() {
   })
 }
 
-
-
-
 export async function installDebugFetch() {
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isDebugFetch);
   self.lively4fetchHandlers.push({
     isDebugFetch: true,
     options(request, options) {
       var url = (request.url || request).toString()
-      if (url.match("lively4S2/")) {
-        console.log("DEBUG FETCH " + url)
+      if (url.match(/lively4(S2)?\//)) {
+        // console.log("DEBUG FETCH " + url)
         if (!options) {
           options = {
             method: "GET"
@@ -178,12 +175,14 @@ export async function installDebugFetch() {
           options.headers = new Headers()
         }
         if (options.headers.set) {
-          var stack = lively.currentStack()
+          var stack = self.lively ? lively.currentStack() : "";
           if(!options.headers.get("debug-initiator")) {
-            options.headers.set("debug-initiator", stack.split("\n")[4])
+            options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
             options.headers.set("debug-session", self.lively4session)
              options.headers.set("debug-system", self.lively4systemid)
           }
+          
+          
           return options  
         } else {
           // convert first?

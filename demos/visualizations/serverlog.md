@@ -7,19 +7,13 @@ import moment from "src/external/moment.js";
 // moment("2020-01-29T13:48:38.798Z").toDate().toString()
 
 (async() => {
-
-
   var currentlogs = []
-
   var starttime = performance.now()
-
   var requestMap = new Map()
 
   // lively4url + "/demos/data/livelyboot-serverlog.log"
   var url = "https://lively-kernel.org/lively4/lively4-server/server.log"
-  // var url = "https://lively-kernel.org/research/lively4-server/server.log"
-
-
+  //var url = "https://lively-kernel.org/research/lively4-server/server.log"
 
   var openRequests = new Set()
   var logstring = await fetch(url).then(r => r.text())
@@ -31,53 +25,49 @@ import moment from "src/external/moment.js";
     
     `[2020-01-30T10:56:19.678Z] [server] REQUEST[224]  SESSION Sessiond9deecc5-a6a0-4e33-afc9-1f8d2377ff7e`
     */
-    var m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  START GET	([^ ]+)/)
-    if (m) {
+   
     
-      let timestamp = m[1]
+    var m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  ?(.*)/)
+    if (m) {  
+      let time = moment(m[1]).toDate().getTime()
       let req = m[2]
-      let url = m[3]
-      let start = moment(timestamp).toDate().getTime()
-      let offset = start
-      var openPreviousRequest = openRequests.values().first
-      if (openPreviousRequest) { offset = openPreviousRequest.offset }
-      let d = {url, req, offset, start}
-      currentlogs.push(d)
-      openRequests.add(d)
-      requestMap.set(req, d)
-    } 
-    
-    m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  SESSION ([^ ]+)/)
-    if (m) {
-     let timestamp = m[1]
-      let req = m[2]
-      let session = m[3]
-      var d = requestMap.get(req)
-      if (d) {        
-        d.session = session;
+      let message = m[3]
+      let d
+      m = message.match(/START ([A-Z]+)	([^ ]+)/)
+      if (m) { 
+        let method = m[1]
+        let url = m[2]
+        let start = time
+        let offset = start
+        var requests = Array.from(openRequests.values())
+        var openPreviousRequest = requests.first
+        if (openPreviousRequest) { offset = openPreviousRequest.offset }
+        d = {url, req, method, offset, start, messages: []}
+        d.openrequests = requests.map(ea => ea.req)
+        currentlogs.push(d)
+        openRequests.add(d)
+        requestMap.set(req, d)
+      } else {
+        d = requestMap.get(req)
       }
-    }
-    
-    m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  SYSTEM ([^ ]+)/)
-    if (m) {
-     let timestamp = m[1]
-      let req = m[2]
-      let system = m[3]
-      var d = requestMap.get(req)
-      if (d) {        
-        d.system = system;
+      if (!d) return;
+      d.messages.push({time: time, content: message});
+      
+      m = line.match(/SESSION ([^ ]+)/)
+      if (m) {
+        d.session = m[3];
       }
-    }
-    
-    m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  FINISHED GET \(([0-9]+)ms\)/)
-    if (m) {
-      let timestamp = m[1]
-      let req = m[2]
-      let time = parseInt(m[2])
-      var d = requestMap.get(req)
-      if (d) {
-        d.time = time;
-        d.finished = moment(timestamp).toDate().getTime()
+
+      m = line.match(/SYSTEM ([^ ]+)/)
+      if (m) {
+       d.system = m[1];
+      }
+
+      m = line.match(/FINISHED ([A-Z]+) \(([0-9]+)ms\)/)
+      if (m) {
+        let duration = parseInt(m[2])
+        d.time = duration;
+        d.finished = time
         openRequests.delete(d)
       }
     }
@@ -112,14 +102,16 @@ import moment from "src/external/moment.js";
       if(evt.shiftKey) {
         lively.openInspector(d)
       } else {
-        lively.openBrowser(d.log.url, true)
+      var base = lively4url.replace(/\/[^/]*$/,"")
+      lively.openBrowser(base + d.log.url, true)
       }
     },
     color(d) {
-      return color(d.log.session)
+      return color(d.log.method) // session
     },
     title(d) {
-      return d.log.url
+      return d.log.messages.map(ea => ea.content).join("\n")
+      
       // return d.log.mode + " \n" + d.log.url + "\n" + d.log.time.toFixed(2) + "ms"
     }
   })

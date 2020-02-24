@@ -576,7 +576,7 @@ export default class Container extends Morph {
     if (!url) return
     return document.body.querySelectorAll("lively-container").filter(ea => {
       var otherURL = ea.getURL()
-      return ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
+      return otherURL && ea.isEditing() == editing && (otherURL.pathname == url.pathname) && (otherURL.host == url.host)
     })
   }
   
@@ -664,18 +664,28 @@ export default class Container extends Morph {
   async loadTestModule(url) {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
-      console.group("run test: " + this.getPath());
-      await testRunner.clearTests();
-      await lively.reloadModule(url.toString())
-      await System.import(url.toString());
-      await testRunner.runTests();
+      try {
+        console.group("run test: " + this.getPath());
+        var scrollContainer = testRunner.get(".container")
+        var scrollTop = scrollContainer && scrollContainer.scrollTop  // preserve scroll during update
+        await testRunner.clearTests();
+        await testRunner.resetMocha();
+        await lively.reloadModule(url.toString(), true)
+        await System.import(url.toString());
+        console.log("RUN TESTS:")
+        await testRunner.runTests();
+        await lively.sleep(100)
+        if (scrollContainer) scrollContainer.scrollTop = scrollTop        
+      } finally {
+        console.groupEnd("run test: " + this.getPath());
+      }
     } else {
       lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
 
-  loadModule(url) {
-    lively.reloadModule("" + url, true).then(module => {
+  async loadModule(url) {
+    return lively.reloadModule("" + url, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
       this.resetLoadingFailed();
@@ -1150,11 +1160,13 @@ export default class Container extends Morph {
       } else if (this.get("#live").checked) {
         // lively.notify("load module " + moduleName)
         await this.loadModule("" + url)
+        console.log("START DEP TEST RUN")
         lively.findDependedModules("" + url).forEach(ea => {
           if (ea.match(testRegexp)) {
             this.loadTestModule(ea);
           }
         })
+        console.log("END DEP TEST RUN")
       } else {
         lively.notify("ignore module " + moduleName)
       }

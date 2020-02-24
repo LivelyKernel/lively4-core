@@ -1,13 +1,19 @@
 function fizzbuzz(n) {
-  if (n % 15 === 0)
+  function divisible(x, d) {
+    return x % d === 0;
+  }
+  
+  if (divisible(n, 15))
     return "FizzBuzz";
-  if (n % 3 === 0)
-    return "Fizz"
-  if (n % 5 === 0)
+  if (divisible(n, 3))
+    return "Fizz";
+  if (divisible(n, 5))
     return "Buzz";
   return n;
 }
 
-for (let i = 1; i <= 15; i++) {
-  console.log(fizzbuzz(i));
+function test() {
+  return;
 }
+
+fizzbuzz(16);

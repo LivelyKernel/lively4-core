@@ -10,7 +10,6 @@
 
 MD*/
 
-
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import _ from 'src/external/lodash/lodash.js'
@@ -2066,7 +2065,39 @@ export default class Lively {
 
     return result
   }
+  
+  
+  static registerSWXFetchHandler() {
+    
+    if (!navigator.serviceWorker) {
+      console.warn("[lively] registerSWXFetchHandler faile: no serviceWorker found")
+      return;
+    }
+    lively.removeEventListener("proxy", navigator.serviceWorker)
+    lively.addEventListener("proxy", navigator.serviceWorker, "message", async (evt) => {
+        try {
+          if(!evt.data.name || !evt.data.name.match('swx:proxy:')) return; // not for me
 
+          let url = evt.data.url
+          if (!evt.ports[0]) {
+            console.warn("registerSWXFetchHandler got message... but could not answer")
+            return 
+          }
+          if(evt.data.name == 'swx:proxy:GET') {
+            // console.log("[lively] registerSWXFetchHandler FETCH SWX: " + url)
+            evt.ports[0].postMessage({content: await fetch(url, {
+              method: "GET",
+              headers: Object.assign(evt.data.headers, {
+                "lively-proxied": "true"
+              })
+            }).then(r => r.blob())}); 
+          } 
+        } catch(err) {
+          evt.ports[0].postMessage({error: err});
+        }
+      });
+
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {
@@ -2080,7 +2111,15 @@ if (!window.lively || window.lively.name != "Lively") {
   Lively.fileIndexWorker = oldLively.fileIndexWorker
   window.lively = Lively;
 }
+
+// #TODO pull this this out into boot.js #Continue
+lively.registerSWXFetchHandler() // #BUG this is to late for booting lively itself if not everthing is in the zip
+
+
 var modulesExported = Lively.exportModules();
+
+
+
 
 
 console.log(window.lively4stamp, "loaded lively");
