@@ -65,11 +65,10 @@ export default class AexprTable extends Morph {
     this.value = new Array();
     this.repopulate();
     this.events = new Map();
-    this.coolDown();
     //this.filter.onchange = (x,y,z) => lively.notify(x+" -- "+y+" -- "+z);
     this.buttonShowEvents.addEventListener('click', () => this.openEventDrops());
     this.filterElement.addEventListener('change', () => this.filterChanged());
-    this.filterChanged();
+    this.update();
   }
   
   initializeCallbacks(){
@@ -84,9 +83,13 @@ export default class AexprTable extends Morph {
     this.table.appendChild(header);
   }
   
-  coolDown() {
+  update() {
     this.rows().forEach(coolDown);
-    setTimeout(() => {this.coolDown()}, 100);
+    if(this._filterDirty !== false) {
+      this.updateFilter();
+      this._filterDirty = false;
+    }
+    setTimeout(() => {this.update()}, 100);
   }
   
   get value() {
@@ -113,7 +116,7 @@ export default class AexprTable extends Morph {
 
   
   repopulate() {  
-    this._rows = undefined;
+    this._rows = [];
     let added = AExprRegistry.allAsArray().difference(this.value);
     let removed = this.value.difference(AExprRegistry.allAsArray());
     for(let each of removed)this.removeAexpr(each);
@@ -199,6 +202,10 @@ export default class AexprTable extends Morph {
   }
   
   filterChanged() {
+    this._filterDirty = true;
+  }
+  
+  updateFilter() {
     let code = this.filterElement.value;
     let numResults = 0;
     let numErrored = 0;
@@ -215,8 +222,8 @@ export default class AexprTable extends Morph {
         };
         if(filterIn)numResults++;
         each.style.display = filterIn ? 'table-row' : 'none';
-        this.get('#filter-info').textContent = "results/errored/total = "+numResults+"/"+numErrored+"/"+this.rows().length;
       });
+      this.get('#filter-info').textContent = "results/errored/total = "+numResults+"/"+numErrored+"/"+this.rows().length;
     } catch(e) {
       lively.notify('Error parsing '+code+': '+e);
     }
