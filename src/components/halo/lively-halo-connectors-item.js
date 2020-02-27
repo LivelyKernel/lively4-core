@@ -19,9 +19,9 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.showStartingConnectorsMenuFor(evt);
     
       this.hideHalo();
-    }
+  }
   
-  async showMenu(evt, menuItems){
+  async showMenu(evt, menuItems) {
     const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
   }
   
@@ -48,12 +48,20 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.showMenu(evt, menuItems);
   }
   
-  getAllEventsFor(object, evt){
+  //More events https://developer.mozilla.org/en-US/docs/Web/Events
+  getAllEventsFor(object, evt) {
     return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-           ['MouseMove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)]]
+      ['DoubleClick', () => this.startCreatingConnectionFor(evt, 'dblclick', true)],
+      ['MouseDown', () => this.startCreatingConnectionFor(evt, 'mousedown', true)],
+      ['MouseEnter', () => this.startCreatingConnectionFor(evt, 'mouseenter', true)],
+      ['MouseLeave', () => this.startCreatingConnectionFor(evt, 'mouseleave', true)],
+      ['MouseMove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)],
+      ['MouseOver', () => this.startCreatingConnectionFor(evt, 'mouseover', true)],
+      ['MouseOut', () => this.startCreatingConnectionFor(evt, 'mouseout', true)],
+      ['MouseUp', () => this.startCreatingConnectionFor(evt, 'mouseup', true)]]
   }
   
-  getAllStylesFor(object, evt, isFinishing = false){
+  getAllStylesFor(object, evt, isFinishing = false) {
     let result = [];
     let styles = window.getComputedStyle(object);
     let stylesLength = styles.length;
@@ -67,11 +75,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     return result;
   }
   
-  mostImportantAttributes(){
-    []
-  }
-  
-  async showFinishingConnectorsMenuFor(evt, morph){
+  async showFinishingConnectorsMenuFor(evt, morph) {
     const menuItems = [
       ['Value', event => this.finishCreatingConnection(morph, 'value', event)],
       ['Width', event => this.finishCreatingConnection(morph, 'style.width', event)],
@@ -108,32 +112,32 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.showFinishingConnectorsMenuFor(evt, morph);
   }
   
-  async openConnectionEditor(connection){
+  async openConnectionEditor(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
     editor.setConnection(connection)
   }
   
-  async startCreatingConnectionCustom(evt){
+  async startCreatingConnectionCustom(evt) {
     var userinput = await lively.prompt("Enter something", "value");
     this.startCreatingConnectionFor(evt, userinput, false);
   }
   
-  startCreatingConnectionFor(evt, property, isEvent){
+  startCreatingConnectionFor(evt, property, isEvent) {
     this.sourceProperty = property;
     this.isEvent = isEvent;
     
-        lively.addEventListener("Connectors", document.body.parentElement, "pointermove",
+    lively.addEventListener("Connectors", document.body.parentElement, "pointermove",
       e => this.onPointerMove(e), { capture: true });
     lively.addEventListener("Connectors", document.body.parentElement, "pointerup",
       e => this.onPointerUp(e), { capture: true });
   }
   
-  async finishCreatingConnectionCustom(target, event){
+  async finishCreatingConnectionCustom(target, event) {
     var userinput = await lively.prompt("Enter something", "width");
     this.finishCreatingConnection(target, userinput, event);
   }
   
-  finishCreatingConnection(target, targetProperty, event){
+  finishCreatingConnection(target, targetProperty, event) {
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();

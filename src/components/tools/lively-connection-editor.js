@@ -10,12 +10,12 @@ export default class LivelyConnectionEditor extends Morph {
     this.registerButtons();
     this.activityCheckbox.addEventListener("click", () => this.activeChanged());
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
+    this.sourcePicture.addEventListener("click", () => this.chooseNewElement(true));
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
-    this.get("#labelField").value = this.getAttribute("data-mydata1") || 0;
+    this.targetPicture.addEventListener("click", () => this.chooseNewElement(false));
+    this.get("#labelField").value = this.getAttribute("data-mydata-label") || 0;
     this.trackingCodeField.editorLoaded().then(() => {this.trackingCodeField.doSave = () => this.saveConnection()})
     this.modifyingCodeField.editorLoaded().then(() => {this.modifyingCodeField.doSave = () => this.saveConnection()})
-    
-    
   }
 
   setConnection(connection) {
@@ -41,11 +41,53 @@ export default class LivelyConnectionEditor extends Morph {
     copiedSource.style.left = '0px';
   }
 
+  chooseNewElement(isSource) {
+    this._toBeChangedElementIsSource = isSource;
+    
+     lively.addEventListener("Connectors", document.body.parentElement, "pointermove",
+      e => this.onPointerMove(e), { capture: true });
+    lively.addEventListener("Connectors", document.body.parentElement, "pointerup",
+      e => this.onPointerUp(e), { capture: true });
+  }
+  
+  saveNewElement(object) {
+    if(this._toBeChangedElementIsSource) {
+      this.connection.setSource(object);
+    } else {
+      this.connection.setTarget(object);
+    }
+    this.setConnection(this.connection);
+  }
+  
+  elementUnderHand(evt) {
+    var path = evt.composedPath().slice(evt.composedPath().indexOf(evt.srcElement))
+    return path[0]
+  }
+  
+  onPointerMove(evt) {
+    if (this.dropIndicator) this.dropIndicator.remove()
+    this.dropTarget = this.elementUnderHand(evt)
+    if (this.dropTarget) {
+      this.dropIndicator = lively.showElement(this.dropTarget)
+      this.dropIndicator.style.border = "3px dashed rgba(0,100,0,0.5)"
+      this.dropIndicator.innerHTML = ""
+    }
+  }
+  
+  onPointerUp(evt) {
+    lively.removeEventListener("Connectors")
+    
+    if (this.dropIndicator) this.dropIndicator.remove()
+    var morph = this.elementUnderHand(evt)
+    
+    this.saveNewElement(morph);
+  }
+  
   get sourcePicture() {
     return this.get("#sourcePicture");
   }
 
-   get targetPicture() {
+  get targetPicture() {
     return this.get("#targetPicture");
   }
 
@@ -84,11 +126,11 @@ export default class LivelyConnectionEditor extends Morph {
     this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCode(this.modifyingCodeField.value))
   }
   
-  get trackingCodeField(){
+  get trackingCodeField() {
     return this.get("#trackingCodeField")
   }
   
-  get modifyingCodeField(){
+  get modifyingCodeField() {
     return this.get("#modifyingCodeField")
   }
   
@@ -97,7 +139,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.openEditorForConnection(copiedConnection);
   }
   
-  async openEditorForConnection(connection){
+  async openEditorForConnection(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
     editor.setConnection(connection)
   }
@@ -107,7 +149,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.setConnection(this.connection);
   }
 
-  startDrawingArrowToSource(from, to){
+  startDrawingArrowToSource(from, to) {
     let line = [lively.getGlobalCenter(from), lively.getGlobalCenter(to)];
     lively.showPath(line, "rgba(80,180,80,1)", true);
   }
@@ -116,9 +158,7 @@ export default class LivelyConnectionEditor extends Morph {
 
   // store something that would be lost
   livelyPrepareSave() {
-    this.setAttribute("data-mydata1", this.get("#labelField").value);
-    /*this.setAttribute("data-mydata2", this.get("#trackingCodeField").value);
-    this.setAttribute("data-mydata3", this.get("#modifyingCodeField").value);*/
+    this.setAttribute("data-mydata-label", this.get("#labelField").value)
   }
 
   livelyPreMigrate() {
@@ -135,7 +175,7 @@ export default class LivelyConnectionEditor extends Morph {
 
   async livelyExample() {
     // this customizes a default instance to a pretty example
-    this.setConnection(new Connection(1, 'width', 2, 'value', false));
+    this.setConnection(new Connection(1, 'value', 2, 'value', false));
   }
 
 }
