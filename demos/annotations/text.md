@@ -131,7 +131,10 @@ var container = lively.query(this, "lively-container");
     "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt",
     "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a")
     
-  return text.toHTML()    
+  var p = document.createElement("pre")  
+  debugger
+  p.textContent = text.toHTML()
+  return p
 })()
 </script>
 
