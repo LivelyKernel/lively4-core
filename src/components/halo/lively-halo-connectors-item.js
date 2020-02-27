@@ -133,7 +133,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   async finishCreatingConnectionCustom(target, event) {
-    var userinput = await lively.prompt("Enter something", "width");
+    var userinput = await lively.prompt("Enter something", "style.width");
     this.finishCreatingConnection(target, userinput, event);
   }
   
