@@ -303,7 +303,7 @@ MD*/
     if (text) {
       splitters.add(text.length);
     }
-    splitters = Array.from(splitters).sort();
+    splitters = Array.from(splitters).sort((a, b) => a-b);
     var regions = [];
     var last = 0;
 
