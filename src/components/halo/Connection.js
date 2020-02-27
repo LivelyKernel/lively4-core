@@ -162,7 +162,7 @@ export default class Connection {
   
   copyAndActivate() {
     let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
-    newConnection.setModifyingCodeString(this.valueModifyingCode);
+    newConnection.setModifyingCode(this.valueModifyingCode);
     newConnection.activate();
     return newConnection;
   }
