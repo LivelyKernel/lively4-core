@@ -101,12 +101,19 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.dropIndicator.style.border = "3px dashed rgba(0,100,0,0.5)"
       this.dropIndicator.innerHTML = ""
     }
+    
+    if (this.valueIndicator) this.valueIndicator.remove()
+    this.valueIndicator = <span>{this.sourceProperty}</span>
+    this.valueIndicator.style.zIndex = 200;
+    lively.setGlobalPosition(this.valueIndicator, lively.getPosition(evt))
+    document.body.appendChild(this.valueIndicator)
   }
   
   onPointerUp(evt) {
     lively.removeEventListener("Connectors")
     
     if (this.dropIndicator) this.dropIndicator.remove()
+    if (this.valueIndicator) this.valueIndicator.remove()
     var morph = this.elementUnderHand(evt)
     
     this.showFinishingConnectorsMenuFor(evt, morph);
@@ -141,7 +148,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();
-    if(event.shiftKey){
+    if(!event.shiftKey){
       this.openConnectionEditor(connection);
     }
   } 
