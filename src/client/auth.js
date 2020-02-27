@@ -1,6 +1,7 @@
 import focalStorage from '../external/focalStorage.js';
 
 
+
 export default class Auth {
   
   static get name() { /* subclass responsibility */}

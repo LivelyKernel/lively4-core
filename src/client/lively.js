@@ -10,7 +10,6 @@
 
 MD*/
 
-
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import _ from 'src/external/lodash/lodash.js'

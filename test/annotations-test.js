@@ -21,6 +21,76 @@ describe('Annotation', function() {
       expect(a.equals(c)).to.be.true
     });
   });
+  
+  describe('intersectRegion', function() {
+    it("before", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 0, to: 1})).to.equal(null)
+    })   
+    
+    it("before and on border", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 0, to: 2})).to.equal(null)
+    }) 
+    
+    it("half in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 0, to: 4})).to.eql({from: 3, to:4})
+    }) 
+    it("complete in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 0, to: 10})).to.eql({from: 3, to:5})
+    })
+    it("half out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 4, to: 10})).to.eql({from: 4, to: 5})
+    })
+    it("complete out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).intersectRegion({from: 6, to: 10})).to.equal(null)
+    })
+  })
+  
+  
+  describe('isInRegion', function() {
+    it("before", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 0, to: 1})).to.equal(false)
+    })   
+    
+    it("before and on border", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 0, to: 2})).to.equal(false)
+    }) 
+    
+    it("half in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 0, to: 4})).to.equal(true)
+    }) 
+    it("complete in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 0, to: 10})).to.equal(true)
+    })
+    it("half out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 4, to: 10})).to.equal(true)
+    })
+    it("complete out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).isInRegion({from: 6, to: 10})).to.equal(false)
+    })
+  })
+  
+   describe('cutRegion', function() {
+    it("before", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).cutRegion({from: 0, to: 1})).to.eql(new Annotation({name: "b", from: 3, to: 5}))
+    })   
+        
+    it("half in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).cutRegion({from: 0, to: 4})).to.eql(new Annotation({name: "b", from: 4, to: 5}))
+    }) 
+    it("complete in", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).cutRegion({from: 0, to: 10})).to.eql(null) 
+    })
+    it("cut out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 6}).cutRegion({from: 4, to: 5})).to.eql([new Annotation({name: "b", from: 3, to: 4}), 
+                                                                                              new Annotation({name: "b", from: 5, to: 6})]) 
+    })
+    it("half out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).cutRegion({from: 4, to: 10})).to.eql(new Annotation({name: "b", from: 3, to: 4}))
+    })
+    it("complete out", function() {
+      expect(new Annotation({name: "b", from: 3, to: 5}).cutRegion({from: 6, to: 10})).to.eql(new Annotation({name: "b", from: 3, to: 5}))
+    })
+  })
 })
 
 
@@ -86,33 +156,7 @@ describe('AnnotationSet', function() {
       expect(regions.length, "length").to.equal(3)
     });
   })
-  
-  describe('isInRegion', function() {
-    let annotations = new AnnotationSet()      
-    it("before", function() {
-      expect(annotations.isInRegion({from: 0, to: 1}, {name: "b", from: 3, to: 5})).to.equal(false)
-    })   
-    
-    it("before and on border", function() {
-      expect(annotations.isInRegion({from: 0, to: 2}, {name: "b", from: 3, to: 5})).to.equal(false)
-    }) 
-    
-    it("half in", function() {
-      expect(annotations.isInRegion({from: 0, to: 4}, {name: "b", from: 3, to: 5})).to.equal(true)
-    }) 
-    it("complete in", function() {
-      expect(annotations.isInRegion({from: 0, to: 10}, {name: "b", from: 3, to: 5})).to.equal(true)
-    })
-    it("half out", function() {
-      expect(annotations.isInRegion({from: 4, to: 10}, {name: "b", from: 3, to: 5})).to.equal(true)
-    })
-    it("complete out", function() {
-      expect(annotations.isInRegion({from: 6, to: 10}, {name: "b", from: 3, to: 5})).to.equal(false)
-    })
-  })
-  
-  
-  
+   
   describe('toXML', function() {
     it('print xml', function() {
       let text = "abcdefghi"
@@ -189,6 +233,32 @@ describe('AnnotationSet', function() {
       
     });
   })
+  
+  describe('removeFromTo', function() {
+    it('delete complete', function() {
+      let a = new Annotation({from: 0, to: 5, name: "a"})
+      let b = new Annotation({from: 10, to: 15, name: "b"})
+      let c = new Annotation({from: 20, to: 25, name: "c"})
+      
+      let annotations = new AnnotationSet([a,b,c])
+      annotations.removeFromTo(10,15)
+      
+      expect(annotations).to.eql(new AnnotationSet([a,c]))
+      
+    });
+  })
+  
+  it('cuts regions', function() {
+      let a = new Annotation({from: 0, to: 10, name: "a"})
+      let b = new Annotation({from: 10, to: 20, name: "b"})
+      
+      let annotations = new AnnotationSet([a,b])
+      annotations.removeFromTo(5,15)
+      
+      expect(annotations).to.eql(new AnnotationSet([{from: 0, to: 5, name: "a"},{from: 15, to: 20, name: "b"}]))
+      
+    });
+  
   
 });
 

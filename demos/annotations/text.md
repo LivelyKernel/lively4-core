@@ -8,7 +8,7 @@ Showcase for [annotations](edit:/src/client/annotations.js) #WorkInProgress
 
 
 <script>
-import {AnnotatedText, Annotation, AnnotationSet} from "src/client/annotations.js"
+import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 
 var container = lively.query(this, "lively-container");
 (async () => {
@@ -74,7 +74,6 @@ var container = lively.query(this, "lively-container");
   
   
   async function loadText() {
-    debugger
     text  = await AnnotatedText.fromURL(textURL, annotationURL)
     editor.value = text.text
     for(let ea of text.annotations) {
@@ -120,6 +119,136 @@ var container = lively.query(this, "lively-container");
         </div>
 })()
 </script>
+
+
+
+# With Lively Editor
+
+<script>
+
+(async () => {
+  var text = await AnnotatedText.fromURL(
+    "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt",
+    "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a")
+    
+  return text.toHTML()    
+})()
+</script>
+
+<script>
+// #META #Example of Mini-Custom Editor, like in the first days of Lively4
+(async () => {                     
+  let textURL = "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt"
+  let text;
+  let annotationsURL;
+
+  let lastText;// for merging
+
+  var livelyEditor = await (<lively-editor style="width:800px; height:100px"></lively-editor>)
+  livelyEditor.addEventListener("loaded-file", async evt => {
+      textURL = livelyEditor.getURL()
+      annotationsURL = textURL + ".l4a" // or something else...
+        
+      text  = await AnnotatedText.fromURL(textURL, annotationsURL)
+      text.annotations.renderCodeMirrorMarks(cm)
+      
+      lastText = text.clone()
+      
+  })
+  async function saveAnnotations() {
+    text.setText(livelyEditor.getText())
+    
+    var response = await fetch(annotationsURL, {
+      method: 'PUT', 
+      body: text.annotations.toJSONL(),
+      headers: {lastversion: text.annotations.lastVersion }
+    })
+    var newVersion = response.headers.get("fileversion");
+    var conflictVersion = response.headers.get("conflictversion");  
+    if (conflictVersion) {
+        await solveAnnotationConflict(newVersion, conflictVersion)
+    }
+    text.annotations.renderCodeMirrorMarks(cm)
+  }
+  
+  
+  livelyEditor.addEventListener("saved-file", async evt => {
+    saveAnnotations()
+  })
+  livelyEditor.addEventListener("solved-conflict", evt => {
+    // we can ignore this, since it will be solved... by the editor
+    lively.notify("TEXT CONFLICT " + evt.detail.version )
+  })
+
+  let solvingConflict;
+
+  async function solveAnnotationConflict(newVersion, otherVersion) {
+    // solveConflict
+    if (solvingConflict) {
+      lively.warn("prevent endless recursion in solving conflict?")
+      return
+    }
+    
+    lively.notify("CONFLICT " + otherVersion)
+    
+    var parentAnnotations = lastText.annotations
+    var otherAnnotationsSource = await fetch(annotationsURL, {
+      headers: { fileversion: otherVersion }
+    }).then(r => r.text());
+    var otherAnnotations = AnnotationSet.fromJSONL(otherAnnotationsSource)
+  
+    var myAnnotations = text.annotations
+    
+    // only when no text diff.....
+    var mergedAnnotations =   myAnnotations.merge(otherAnnotations, parentAnnotations)
+      
+    text.annotations = mergedAnnotations
+    text.annotations.renderCodeMirrorMarks(cm)
+    text.annotations.lastVersion = otherVersion
+    
+    solvingConflict = true;
+    let stats = {}
+    try {
+      await saveAnnotations()
+    } finally {
+      solvingConflict = false;
+    }
+  }
+
+  livelyEditor.setURL(textURL)
+  livelyEditor.loadFile()
+  
+  var cm = await livelyEditor.awaitEditor()
+  
+  function markColor(color="yellow") {
+    var from  = cm.indexFromPos(cm.getCursor("from"))
+    var to  = cm.indexFromPos(cm.getCursor("to"))  
+    var annotation = new Annotation({from: from, to: to, name: "color", color: color})
+    text.setText(livelyEditor.getText())
+    text.annotations.add(annotation)
+    annotation.codeMirrorMark(cm)
+  }
+  
+  function clearAnnotations() {
+    var from  = cm.indexFromPos(cm.getCursor("from"))
+    var to  = cm.indexFromPos(cm.getCursor("to"))
+  
+    text.annotations.removeFromTo(from, to)
+    text.annotations.renderCodeMirrorMarks(cm) 
+  }  
+     
+  lively.sleep(1).then( () => cm.refresh()) // #hack... do force display?
+  return <div>
+          <div>
+            <button click={evt=> markColor("lightblue")} style="color:lightblue">mark</button>
+            <button click={evt=> markColor("yellow")} style="color:yellow">mark</button>
+            <button click={evt=> clearAnnotations()} style="">clear</button>
+          </div>
+          {livelyEditor}
+        </div>
+})()
+</script>
+
 
 
 

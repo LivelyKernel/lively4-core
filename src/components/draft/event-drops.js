@@ -193,8 +193,7 @@ export default class EventDrops extends Morph {
     ];
 
     return `
-        ${monthNames[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}
-        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}
+        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}:${('0'+date.getSeconds()).slice(-2)}.${('000'+date.getMilliseconds()).slice(-4)}
     `;
   }
 
