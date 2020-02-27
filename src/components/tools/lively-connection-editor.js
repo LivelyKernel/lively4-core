@@ -10,9 +10,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.registerButtons();
     this.activityCheckbox.addEventListener("click", () => this.activeChanged());
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
-    this.sourcePicture.addEventListener("click", () => this.chooseNewElement(true));
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
-    this.targetPicture.addEventListener("click", () => this.chooseNewElement(false));
     this.get("#labelField").value = this.getAttribute("data-mydata-label") || 0;
     this.trackingCodeField.editorLoaded().then(() => {this.trackingCodeField.doSave = () => this.saveConnection()})
     this.modifyingCodeField.editorLoaded().then(() => {this.modifyingCodeField.doSave = () => this.saveConnection()})
@@ -101,6 +99,14 @@ export default class LivelyConnectionEditor extends Morph {
 
   get activityCheckbox() {
     return this.get("#activityCheckbox");
+  }
+  
+  onNewSourceButton() {
+    this.chooseNewElement(true)
+  }
+  
+  onNewTargetButton() {
+    this.chooseNewElement(false)
   }
 
   onDrawConnectionArrowButton() {
