@@ -89,7 +89,7 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
-        this.currentEditor().replaceSelection(`\/\*MD MD\*\/`)
+        this.currentEditor().replaceSelection(`/*MD MD*/`)
         this.currentEditor().execCommand(`goWordLeft`)
       }
 
@@ -103,7 +103,6 @@ export default class Editor extends Morph {
       this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
       this.textChanged = true;
     } else {
-      debugger
       if (this.annotatedText && !this.annotatedText.equals(this.lastAnnotatedText)) {
         this.get("#changeIndicator").style.backgroundColor = "rgb(20,20,220)";  
         this.textChanged = false;
@@ -682,7 +681,7 @@ export default class Editor extends Morph {
     await files.saveFile(newurl, blob)
     
     this.withEditorObjectDo(editor => {
-      var text = encodeURIComponent(filename).replace(/\%2F/g,"/")
+      var text = encodeURIComponent(filename).replace(/%2F/g,"/")
       if (this.getURLString().match(/\.md/)) {
         if (files.isVideo(filename)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
@@ -832,7 +831,6 @@ export default class Editor extends Morph {
     text.annotations.lastVersion = otherVersion
     
     this.solvingAnnotationConflict = true;
-    let stats = {}
     try {
       await this.saveAnnotations()
     } finally {
@@ -847,7 +845,6 @@ export default class Editor extends Morph {
   } 
   
   async saveAnnotations(textVersion=this.lastVersion) {
-    debugger
     var cm = await this.awaitEditor()
     var text = this.annotatedText
     text.setText(this.getText(), textVersion)
