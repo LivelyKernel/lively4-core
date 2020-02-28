@@ -3,6 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { querySelectorAllDeep } from 'https://raw.githubusercontent.com/Georgegriff/query-selector-shadow-dom/master/src/querySelectorDeep.js';
 import d3 from "src/external/d3.v5.js";
+import {copyTextToClipboard} from 'utils';
 
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 window.SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
@@ -28,6 +29,7 @@ export default class LivelySmaug extends Morph {
       // speech recognition API not supported
       lively.error('speech recognition API not supported by your browser');
     }
+    lively.clipboard
   }
 
   _initRecognition() {
@@ -202,17 +204,8 @@ export default class LivelySmaug extends Morph {
     }
   }
 
-  _logResults(event) {
-    for (let x of event.results) {
-      const line = <div>
-              <span style="font-size: xx-small; color: blue;">{x[0].transcript}</span>
-            </div>;
-      setTimeout(() => line.remove(), 5000);
-      this.get('#results').appendChild(line);
-    }
-  }
-
-  onStartButton() {
+  onStartButton(evt) {
+    copyTextToClipboard('test')
     this.recognition.start();
   }
 
@@ -261,9 +254,6 @@ export default class LivelySmaug extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.style.backgroundColor = "lightgray";
-    this.someJavaScriptProperty = 42;
-    this.appendChild(<div>This is my content</div>);
   }
 
 }

@@ -2,16 +2,21 @@
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
 // Depends on eslint.js from https://github.com/eslint/eslint
+
+/* global eslint */
+
+//import {parse} from "./eslint-parser.js";
+
 (function(CodeMirror) {
   
   const defaultConfig = {
     parserOptions: {
-      ecmaVersion: 8,
+      ecmaVersion: 8,                       // only for default eslint parser
       sourceType: "module",
       ecmaFeatures: {
         jsx: true,
         modules: true,
-        experimentalObjectRestSpread: true
+        experimentalObjectRestSpread: true  // only for default eslint parser
       }
     },
     env: {
@@ -297,9 +302,12 @@
   }
   
   function validator(text, options) {
-    // console.log("[eslint] validator xxx " + text.length) // Here we go!!!
     var result = [], config = defaultConfig;
-    var errors = new eslint().verify(text, config);
+    var linter = new eslint();
+    //linter.defineParser("babel-parser", {parse});
+    //config.parser = "babel-parser";
+    var errors = linter.verify(text, config);
+    
     for (var i = 0; i < errors.length; i++) {
       var error = errors[i];
       result.push({message: error.message,

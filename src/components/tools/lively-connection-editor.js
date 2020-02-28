@@ -11,22 +11,21 @@ export default class LivelyConnectionEditor extends Morph {
     this.activityCheckbox.addEventListener("click", () => this.activeChanged());
     this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
     this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
-    this.get("#sourcePropertyField").value = this.getAttribute("data-mydata1") || 0;
-    //this.get("#modifyingCodeField").value = this.getAttribute("data-mydata3") || 0;
-    this.get("#blah").editorLoaded().then(() => lively.notify('editor loaded', 1+this.get('#blah').value))
+    this.get("#labelField").value = this.getAttribute("data-mydata-label") || 0;
+    this.trackingCodeField.editorLoaded().then(() => {this.trackingCodeField.doSave = () => this.saveConnection()})
+    this.modifyingCodeField.editorLoaded().then(() => {this.modifyingCodeField.doSave = () => this.saveConnection()})
   }
 
   setConnection(connection) {
     this.connection = connection;
-    this.get("#connectionLabel").innerHTML = this.connection.connectionString();
+    this.get("#labelField").value = this.connection.getLabel();
     this.get("#sourceLabel").innerHTML = 'Source: ' + this.getClassName(this.connection.getSource());
     this.get("#targetLabel").innerHTML = 'Target: ' + this.getClassName(this.connection.getTarget());
     this.activityCheckbox.checked = this.connection.isActive;
     this.addPictureForElement(this.connection.getSource(), this.sourcePicture);
     this.addPictureForElement(this.connection.getTarget(), this.targetPicture);
-    this.get("#sourcePropertyField").value = this.connection.  getSourceProperty();
-    //this.get("#modifyingCodeField").value = this.connection.getModifyingCodeString();
-    this.get("#blah").editorLoaded().then(() => this.get('#blah').value = this.connection.getModifyingCodeString())
+    this.get("#trackingCodeField").editorLoaded().then(() => this.get('#trackingCodeField').value = this.connection.getTrackingCode())
+    this.get("#modifyingCodeField").editorLoaded().then(() => this.get('#modifyingCodeField').value = this.connection.getModifyingCode())
   }
 
   addPictureForElement(element, container) {
@@ -40,11 +39,53 @@ export default class LivelyConnectionEditor extends Morph {
     copiedSource.style.left = '0px';
   }
 
+  chooseNewElement(isSource) {
+    this._toBeChangedElementIsSource = isSource;
+    
+     lively.addEventListener("Connectors", document.body.parentElement, "pointermove",
+      e => this.onPointerMove(e), { capture: true });
+    lively.addEventListener("Connectors", document.body.parentElement, "pointerup",
+      e => this.onPointerUp(e), { capture: true });
+  }
+  
+  saveNewElement(object) {
+    if(this._toBeChangedElementIsSource) {
+      this.connection.setSource(object);
+    } else {
+      this.connection.setTarget(object);
+    }
+    this.setConnection(this.connection);
+  }
+  
+  elementUnderHand(evt) {
+    var path = evt.composedPath().slice(evt.composedPath().indexOf(evt.srcElement))
+    return path[0]
+  }
+  
+  onPointerMove(evt) {
+    if (this.dropIndicator) this.dropIndicator.remove()
+    this.dropTarget = this.elementUnderHand(evt)
+    if (this.dropTarget) {
+      this.dropIndicator = lively.showElement(this.dropTarget)
+      this.dropIndicator.style.border = "3px dashed rgba(0,100,0,0.5)"
+      this.dropIndicator.innerHTML = ""
+    }
+  }
+  
+  onPointerUp(evt) {
+    lively.removeEventListener("Connectors")
+    
+    if (this.dropIndicator) this.dropIndicator.remove()
+    var morph = this.elementUnderHand(evt)
+    
+    this.saveNewElement(morph);
+  }
+  
   get sourcePicture() {
     return this.get("#sourcePicture");
   }
 
-   get targetPicture() {
+  get targetPicture() {
     return this.get("#targetPicture");
   }
 
@@ -59,7 +100,19 @@ export default class LivelyConnectionEditor extends Morph {
   get activityCheckbox() {
     return this.get("#activityCheckbox");
   }
+  
+  onNewSourceButton() {
+    this.chooseNewElement(true)
+  }
+  
+  onNewTargetButton() {
+    this.chooseNewElement(false)
+  }
 
+  onDrawConnectionArrowButton() {
+    this.connection.drawConnectionLine();
+  }
+  
   onDestroyButton() {
     this.connection.destroy();
     if (this.parentElement && this.parentElement.localName === 'lively-window') {
@@ -70,13 +123,40 @@ export default class LivelyConnectionEditor extends Morph {
   }
 
   onSaveButton() {
-    //lively.openInspector(this.get("#textField").value);
-    this.connection.setSourceProperty(this.get("#sourcePropertyField").value);
-    this.get("#blah").editorLoaded().then(() => this.connection.setModifyingCodeString(this.get("#blah").value))
-    //this.connection.setModifyingCodeString(this.get("#modifyingCodeField").value);
+    this.saveConnection();
+  }
+  
+  saveConnection() {
+    lively.notify('wup')
+    this.connection.setLabel(this.get("#labelField").value);
+    this.trackingCodeField.editorLoaded().then(() => this.connection.setTrackingCode(this.trackingCodeField.value))
+    this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCode(this.modifyingCodeField.value))
+  }
+  
+  get trackingCodeField() {
+    return this.get("#trackingCodeField")
+  }
+  
+  get modifyingCodeField() {
+    return this.get("#modifyingCodeField")
+  }
+  
+  onCopyButton() {
+    let copiedConnection = this.connection.copyAndActivate();
+    this.openEditorForConnection(copiedConnection);
+  }
+  
+  async openEditorForConnection(connection) {
+    let editor = await lively.openComponentInWindow('lively-connection-editor')
+    editor.setConnection(connection)
+  }
+  
+  onToggleDirectionButton() {
+    this.connection.toggleDirection();
+    this.setConnection(this.connection);
   }
 
-  startDrawingArrowToSource(from, to){
+  startDrawingArrowToSource(from, to) {
     let line = [lively.getGlobalCenter(from), lively.getGlobalCenter(to)];
     lively.showPath(line, "rgba(80,180,80,1)", true);
   }
@@ -85,11 +165,7 @@ export default class LivelyConnectionEditor extends Morph {
 
   // store something that would be lost
   livelyPrepareSave() {
-    this.setAttribute("data-mydata1", this.get("#sourcePropertyField").value
-    //How to do that with connection?
-    );
-    this.setAttribute("data-mydata2", this.get("#targetPropertyField").value);
-    this.setAttribute("data-mydata3", this.get("#modifyingCodeField").value);
+    this.setAttribute("data-mydata-label", this.get("#labelField").value)
   }
 
   livelyPreMigrate() {
@@ -106,11 +182,7 @@ export default class LivelyConnectionEditor extends Morph {
 
   async livelyExample() {
     // this customizes a default instance to a pretty example
-    // this is used by the 
-    //this.style.backgroundColor = "lightgray"
-    //this.someJavaScriptProperty = 42
-    //this.appendChild(<div>This is my content</div>)
-    this.setConnection(new Connection(1, 'width', 2, 'value', false));
+    this.setConnection(new Connection(1, 'value', 2, 'value', false));
   }
 
 }

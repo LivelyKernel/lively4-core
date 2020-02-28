@@ -71,6 +71,7 @@ self.addEventListener('fetch', (evt) => {
       
       if (method == "GET" && 
           !evt.request.headers.get("lively-proxied") && 
+          !evt.request.headers.get("lively-fetch") &&
           !evt.request.headers.get("debug-session") &&
           !url.match(/external\/jszip.js/) && /* boot time... we cannot handle that in any client...*/
           !url.match(/client\/boot.js/) &&

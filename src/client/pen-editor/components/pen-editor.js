@@ -1036,18 +1036,10 @@ ${this._styles_variable_colors()}
 document.querySelectorAll("pen-editor").forEach(pe => {
   const history = pe.history;
   if (history) {
-    // evil live programming
-    history.constructor = History
-
-    // we can fix this, so we can do live development again....
-    history.__proto__ = History.prototype
+    history.migrateTo(History);
   }
   const navigation = pe.navigation;
   if (navigation) {
-    // evil live programming
-    navigation.constructor = Navigation
-
-    // we can fix this, so we can do live development again....
-    navigation.__proto__ = Navigation.prototype
+    navigation.migrateTo(Navigation)
   }
 });
