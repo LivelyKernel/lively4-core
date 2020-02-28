@@ -22,15 +22,13 @@ export default class Connection {
     this.isEvent = isEvent;
     this.isActive = false
     this._eventListener = evt => this.connectionFunction(evt)
-    let ending = '';
-    if(this._targetProperty.includes('style')){
-      ending = " + 'pt'"
-    }
+    this._targetProperty = this._targetProperty.split(".").map(each => each.camelCase()).join(".")
     if(isEvent){
-      this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42" + ending + "}";
+      this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42}";
       this.trackingCode = this._sourceProperty;
     } else {
-      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}";
+      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue}";
+      this._sourceProperty = this._sourceProperty.split(".").map(each => each.camelCase()).join(".")
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
 }`
@@ -127,9 +125,11 @@ export default class Connection {
   }
   
   setTrackingCode(string) {
-    if(this.isEvent){this.deactivate()}
+    const isActive = this.isActive
+    if(isActive){this.deactivate()}
     this.trackingCode = string;
     this.saveSerializedConnectionIntoWidget();
+    if(isActive){this.activate()}
   }
   
   async connectionFunction(sourceValue) {  

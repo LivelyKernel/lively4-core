@@ -7,7 +7,6 @@ import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promise
 
 export default class PluginExplorer extends Morph {
 
-  static get defaultSourceURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-source.js"; }
   static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
 
   static get defaultWorkspacePath() { return "/src/components/tools/lively-plugin-explorer-playground.workspace"; }
@@ -18,9 +17,8 @@ export default class PluginExplorer extends Morph {
 
   get executionConsole() { return this.get("#executionConsole"); }
 
-  get sourceEditor() { return this.get("#source"); }
-  get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
-  get sourceCM() { return this.sourceEditor.currentEditor(); }
+  get sourceLCM() { return this.get("#source"); }
+  get sourceCM() { return this.sourceLCM.editor; }
   get source() { return this.sourceCM.getValue(); }
 
   get sourceAstInspector() { return this.get("#sourceAst"); }
@@ -43,7 +41,6 @@ export default class PluginExplorer extends Morph {
   get transformedSourceLCM() { return this.get("#transformedSource"); }
   get transformedSourceCM() { return this.transformedSourceLCM.editor; }
   
-  get sourceURL() { return this.sourceEditor.getURLString(); }
   get pluginURL() { return this.pluginEditor.getURLString(); }
 
   get workspacePath() { return this.get("#workspace-path"); }
@@ -52,7 +49,7 @@ export default class PluginExplorer extends Morph {
   onWorkspacePathEntered(urlString) { this.loadWorkspaceFile(urlString); }
   
   get saveButton() { return this.get("#save"); }
-  get autoSave() { return this.workspace.autoSave; }
+  get autoSave() { return false; }
   set autoSave(bool) {
     this.saveButton.classList.toggle("on", bool);
     this.workspace.autoSave = bool;
@@ -122,15 +119,6 @@ export default class PluginExplorer extends Morph {
     }
   }
 
-  async initLivelyEditorFromAttribute(editor, attributeToRead, defaultPath) {
-    var filePath =  this.getAttribute(attributeToRead);
-    if (!filePath) {
-      filePath = defaultPath;
-    }
-    editor.setURL(filePath);
-    await editor.loadFile();
-  }
-
   async initialize() {
     this.windowTitle = "Plugin Explorer";
     this.registerButtons();
@@ -165,11 +153,10 @@ export default class PluginExplorer extends Morph {
       this.transformedSourceCM.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
     });
 
-    this.sourceEditor.awaitEditor().then(() => {
-      this.sourceEditor.hideToolbar();
-      this.sourceAstInspector.connectEditor(this.sourceEditor);
+    this.sourceLCM.editorLoaded().then(() => {
+      this.sourceAstInspector.connectLivelyCodeMirror(this.sourceLCM);
       this.sourceLCM.doSave = async () => {
-        await this.sourceEditor.saveFile();
+        // TODO: Save source
         this.updateAST();
       };
       enableSyntaxCheckForEditor(this.sourceLCM);
@@ -183,7 +170,7 @@ export default class PluginExplorer extends Morph {
 
     await Promise.all([
       this.pluginEditor.awaitEditor(),
-      this.sourceEditor.awaitEditor(),
+      this.sourceLCM.editorLoaded(),
       this.transformedSourceLCM.editorLoaded(),
     ]);
     
@@ -208,8 +195,8 @@ export default class PluginExplorer extends Morph {
     this.workspace = ws;
     this.pluginEditor.setURL(new URL(this.fullUrl(ws.plugin)));
     this.pluginEditor.loadFile();
-    this.sourceEditor.setURL(new URL(this.fullUrl(ws.source)));
-    this.sourceEditor.loadFile();
+    //TODO
+    this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
     this.setOptions(ws);
   }
   
@@ -273,13 +260,13 @@ export default class PluginExplorer extends Morph {
         this.transformationResult = this.ast.transformAsAST(plugin);
       }
       
-      this.transformedSourceCM.setValue(this.transformationResult.code);
+      this.transformedSourceLCM.value = this.transformationResult.code;
       
       if (this.autoExecute) this.execute();
       if (this.runsTests) executeAllTestRunners();
     } catch(err) {
       console.error(err);
-      this.transformedSourceCM.setValue("Error: " + err.message);
+      this.transformedSourceLCM.value = "Error: " + err.message;
     } finally {
       console.groupEnd();
     }
@@ -408,7 +395,10 @@ export default class PluginExplorer extends Morph {
 }
 
 class Source {
-  
+  /*
+  - contents
+  - file
+  */
 }
 
 class BabelWorkspace {

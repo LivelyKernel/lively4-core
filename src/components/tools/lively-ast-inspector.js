@@ -37,8 +37,10 @@ export default class AstInspector extends Morph {
   }
   
   connectEditor(editor) {
-    this.editor = editor;
-    const lcm = editor.livelyCodeMirror();
+    this.connectLivelyCodeMirror(editor.livelyCodeMirror());
+  }
+  
+  connectLivelyCodeMirror(lcm) {
     lcm.editor.on("cursorActivity", (cm) => {
       lcm.astCapabilities(cm).then(ac => {
         if (!ac.programPath) return;
