@@ -1,6 +1,4 @@
 "enable aexpr";
-import {pt} from 'src/client/graphics.js';
-import {uuid} from 'utils';
 
 window.allConnections = window.allConnections || new Set()
 
@@ -39,18 +37,8 @@ export default class Connection {
   }
   
   makeSavingScript() {
-    if(this.target.hasAttribute('connectionId')){
-      this.targetId = this.target.getAttribute('connectionId');
-    } else {
-      this.targetId = uuid();
-      this.target.setAttribute('connectionId', this.targetId);
-    }
-     if(this.source.hasAttribute('connectionId')){
-      this.sourceId = this.source.getAttribute('connectionId');
-    } else {
-      this.sourceId = uuid();
-      this.source.setAttribute('connectionId', this.sourceId);
-    }
+    this.targetId = lively.ensureID(this.target);
+    this.sourceId = lively.ensureID(this.source);
     this.saveSerializedConnectionIntoWidget();
   }
   
@@ -85,9 +73,9 @@ export default class Connection {
   }
   
   static connectionFromExistingData(targetId, modifyingCode, sourceId, trackingCode, label, isEvent) {
-    let target = document.body.querySelector(`[connectionId="${targetId}"]`);
-    let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
-    let undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
+    const target = lively.elementByID(targetId);
+    const source = lively.elementByID(sourceId);
+    const undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
     undeadConnection.setModifyingCode(modifyingCode);
     undeadConnection.setTrackingCode(trackingCode);
     undeadConnection.setLabel(label);
@@ -233,8 +221,8 @@ export default class Connection {
   
   static allConnectionsFor(object) {
     let connections = [];
-    if (object.hasAttribute && object.hasAttribute('connectionId')) {
-      let objectId = object.getAttribute('connectionId');
+    if (object.hasAttribute && object.hasAttribute('data-lively-id')) {
+      let objectId = object.getAttribute('data-lively-id');
       this.allConnections.forEach(connection => {
         if((connection.targetId == objectId) || (connection.sourceId == objectId)) {connections.push(connection)}
       })
