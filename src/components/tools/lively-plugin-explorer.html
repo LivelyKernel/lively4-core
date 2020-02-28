@@ -5,7 +5,7 @@
     :host {
       display: flex;
     }
-  
+    
     .layout-column {
       display: flex;
       flex-direction: column;
@@ -38,8 +38,8 @@
     }
     
     input {
-      width: 40px;
-      flex: 100;
+      min-width: 40px; /* reduce minimum size */
+      flex: auto;
       margin: 2px;
     }
 
@@ -50,6 +50,24 @@
     #toolPane {
       flex: 5;
     }
+    
+    .label {
+      flex: auto;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 100%;
+      text-align: left;
+    }
+    
+    .toolbar {
+      display: flex;
+      flex-direction: row;
+      justify-content: stretch;
+      overflow: hidden;
+      flex: none;
+      height: fit-content;
+      width: 100%;
+    }
 
     #source, #sourceAst, #transformedSource, #plugin, #executionConsole {
       width: 100%;
@@ -58,6 +76,10 @@
 
     #executionConsole {
       margin-left: 15px;
+    }
+    
+    button {
+      height: 25px;
     }
     
     button.toggle {
@@ -72,22 +94,22 @@
   </style>
   
   <div id="content" class="pane layout-column">
-    <div id="navigationPane" class="layout-row">
+    <div id="workspaceToolbar" class="toolbar">
       <input type="text" id="workspace-path" value="">
       <button class="toggle" id="save" title="Save Workspace to file (right-click to toggle auto-mode).">
-          <i class="fa fa-floppy-o"></i>
+        <i class="fa fa-floppy-o"></i>
       </button>
       <button class="toggle" id="update" title="Update AST and apply plugin (right-click to toggle auto-mode).">
-          <i class="fa fa-refresh fa-fw"></i>
+        <i class="fa fa-refresh fa-fw"></i>
       </button>
       <button class="toggle" id="execute" title="Execute transformed code (right-click to toggle auto-mode).">
-          <i class="fa fa-cog fa-fw"></i>
+        <i class="fa fa-cog fa-fw"></i>
       </button>
       <button class="toggle" id="toggleRunsTests" title="Toggle: Run tests after successful transformation.">
-          <i class="fa fa-shield"></i>
+        <i class="fa fa-shield"></i>
       </button>
       <button class="toggle" id="toggleSystemJS" title="Toggle: SystemJS.">
-          <i class="fa fa-cloud"></i>
+        <i class="fa fa-cloud"></i>
       </button>
     </div>
 
@@ -102,8 +124,15 @@
       <div id="toolPane" class="pane layout-row">
         <div class="pane layout-column">
           <div class="pane tool layout-column">
-            <b>Source</b>
-            <lively-editor class="pane" id="source"></lively-editor>
+            <div class="toolbar" id="sourceToolBar">
+              <div class="label">
+                <b>Source</b>
+              </div>
+              <button class="toggle" id="saveSource" title="Save source.">
+                <i class="fa fa-floppy-o"></i>
+              </button>
+            </div>
+            <lively-code-mirror class="pane" id="source"></lively-code-mirror>
           </div>
           <lively-separator></lively-separator>
           <div class="pane tool layout-column">

@@ -2,9 +2,9 @@
 
 Showcase for [annotations](edit:/src/client/annotations.js) #WorkInProgress
 
-- [ ] allow marking text and add them to annotations file
-- [ ] allow editing text and update position in annotations file
-- [ ] merge different commits of text/annotation pairs
+- [x] allow marking text and add them to annotations file
+- [x] allow editing text and update position in annotations file
+- [x] merge different commits of text/annotation pairs
 
 
 <script>
@@ -121,7 +121,6 @@ var container = lively.query(this, "lively-container");
 </script>
 
 
-
 # With Lively Editor
 
 <script>
@@ -132,7 +131,6 @@ var container = lively.query(this, "lively-container");
     "https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a")
     
   var p = document.createElement("pre")  
-  debugger
   p.textContent = text.toHTML()
   return p
 })()
@@ -151,15 +149,22 @@ var container = lively.query(this, "lively-container");
   livelyEditor.addEventListener("loaded-file", async evt => {
       textURL = livelyEditor.getURL()
       annotationsURL = textURL + ".l4a" // or something else...
-        
+      
+      
+      // load annotated text in the version that was  last annotated
       text  = await AnnotatedText.fromURL(textURL, annotationsURL)
+      
+      // set current text and version, and update annotations accordingly 
+      text.setText(evt.detail.text, evt.detail.version)
+      
       text.annotations.renderCodeMirrorMarks(cm)
       
       lastText = text.clone()
       
   })
-  async function saveAnnotations() {
-    text.setText(livelyEditor.getText())
+  async function saveAnnotations(textVersion) {
+    text.setText(livelyEditor.getText(), textVersion)
+    
     
     var response = await fetch(annotationsURL, {
       method: 'PUT', 
@@ -176,7 +181,7 @@ var container = lively.query(this, "lively-container");
   
   
   livelyEditor.addEventListener("saved-file", async evt => {
-    saveAnnotations()
+    saveAnnotations(evt.detail.version)
   })
   livelyEditor.addEventListener("solved-conflict", evt => {
     // we can ignore this, since it will be solved... by the editor
@@ -253,6 +258,53 @@ var container = lively.query(this, "lively-container");
 </script>
 
 
+# Plain Files
+
+Editing the plain files without updating each other can break the markup....
+
+<script>
+async function simpleFileEditor(textURL) {
+  var editor = await (<lively-code-mirror style="width:800px; height:100px"></lively-code-mirror>)
+  editor.mode = "text"
+
+  async function loadText() {
+    editor.value = await textURL.fetchText()
+    lively.notify("loaded text")
+  }
+  await loadText()
+
+  async function saveText() {
+    await lively.files.saveFile(textURL, editor.value)
+    lively.notify("saved text")
+  }
+
+  
+  lively.sleep(1).then( () => {
+    var cm = await editor.awaitEditor()
+    cm.refresh()
+  }) // #hack... do force display?  
+
+
+  return <div>
+        <div>
+          <button click={evt=> loadText()}>load</button>
+          <button click={evt=> saveText()}>save</button>
+        </div>
+        {editor}
+      </div>
+}
+simpleFileEditor("https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt"  )
+</script>
+
+<script>
+simpleFileEditor("https://lively-kernel.org/lively4/lively4-jens/demos/annotations/text.txt.l4a"  )
+</script>
+
+# Challenge:
+
+Remember the reference to the text and it's version in the annotation file...
+
+It Works!
 
 
 
