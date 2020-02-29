@@ -37,13 +37,17 @@ export class Annotation {
   }
   
   codeMirrorMark(cm) {
+    var color = this.color || "lightgray"
+    if (color == "yellow") color = "rgba(255,255,0,0.5)"
+    if (color == "lightblue") color = "rgba(100,100,255,0.5)"
+    
     var marker = cm.markText(cm.posFromIndex(this.from), cm.posFromIndex(this.to), 
       {
         className: "lively-annotation",
         attributes: {
           "data-annotation": JSON.stringify(this)
         },
-        css: `background-color: ${this.color ? this.color : "lightgrey" }` });
+        css: `background-color: ${color}`});
     return marker
   }
   
@@ -87,7 +91,7 @@ export default class AnnotationSet {
     this.reference;
     for(let ea of annotationsAndVersions) {
       if (ea.type == "Reference") {
-        this.version = ea.version // multiple text references per annotations file not (yet) supported 
+        this.textVersion = ea.version // multiple text references per annotations file not (yet) supported 
       } else {
         this.add(ea)
       }
@@ -215,10 +219,13 @@ MD*/
     for(let ea of this) {
       var intersection = ea.intersectRegion(region)
       if (intersection) {
-        if (ea.equalsRegion(intersection)) {
+        var result = ea.cutRegion(intersection)
+        if (result == null) {
           this.remove(ea)
-        } else {
-          ea.cutRegion(intersection)
+        } else if (result == ea) {
+          // do nothing
+        }else if (result.length == 2) {
+          this.add(result[1]) // we are cut in half
         }
       } 
     }
@@ -266,7 +273,11 @@ MD*/
   }
 
   toJSONL() {
-    return this.list.map(ea => JSON.stringify(ea)).join("\n");    
+    var config = []
+    if (this.textVersion) {
+      config.push({type: "Reference", version: this.textVersion})
+    }
+    return config.concat(this.list).map(ea => JSON.stringify(ea)).join("\n");    
   }
 
   toXML(text) {
@@ -303,7 +314,7 @@ MD*/
     if (text) {
       splitters.add(text.length);
     }
-    splitters = Array.from(splitters).sort();
+    splitters = Array.from(splitters).sort((a, b) => a-b);
     var regions = [];
     var last = 0;
 
@@ -315,9 +326,13 @@ MD*/
     return regions;
   }
   
-  renderCodeMirrorMarks(cm) {
+
+  clearCodeMirrorMarks(cm) {
     cm.getAllMarks().forEach(ea => ea.clear())
-    
+  }
+
+  renderCodeMirrorMarks(cm) {
+    this.clearCodeMirrorMarks(cm)
     for(let ea of this) {
       ea.codeMirrorMark(cm)
     }
@@ -357,13 +372,20 @@ export class AnnotatedText {
   }
   
   static async fromURL(fileURL, annotationsURL) {
-    var resp = await fetch(fileURL)
-    var text = await resp.text()
-    var response = await fetch(annotationsURL)
-    var annotations = AnnotationSet.fromJSONL((await response.text()))
+    var annotationsResp = await fetch(annotationsURL)
+    var annotations = AnnotationSet.fromJSONL((await annotationsResp.text()))
     annotations.fileURL = fileURL
     annotations.annotationsURL = annotationsURL
-    annotations.lastVersion = response.headers.get("fileversion")
+    annotations.lastVersion = annotationsResp.headers.get("fileversion")
+    
+    var headers = {}
+    if (annotations.textVersion) {
+        headers.fileversion = annotations.textVersion
+    }
+    var textResp = await fetch(fileURL, {
+      method: "GET",  
+      headers: headers})
+    var text = await textResp.text()
     var annotatedText = new AnnotatedText(text, annotations)
     
     
@@ -375,17 +397,30 @@ export class AnnotatedText {
     await lively.files.saveFile(annotationsURL, this.annotations.toJSONL()) 
   }
   
+  equals(otherText) {
+    if (!otherText) return false
+    if (!otherText.annotations) return false
+    return this.text == otherText.text && this.annotations.equals(otherText.annotations)
+  }
+  
   
   // set text and upate annotations
-  setText(string) {
+  setText(string, version) {
     var oldText = this.text
     this.text = string
+    if (version) {
+      this.annotations.textVersion = version
+    }
     let textDiff = dmp.diff_main(oldText, this.text);
     this.annotations.applyTextDiff(textDiff)
   }
   
   toHTML() {
     return this.annotations.toXML(this.text)
+  }
+  
+  clearCodeMirrorMarks(cm) {
+    return this.annotations.clearCodeMirrorMarks(cm)
   }
   
   static fromHTML(html) {

@@ -154,7 +154,21 @@ describe('AnnotationSet', function() {
       ])      
       var regions = annotations.regions(text)
       expect(regions.length, "length").to.equal(3)
+      expect(regions[0]).to.eql({from: 0, to: 3, content: "abc"})
+      
+      
     });
+    
+    it('real world example', function() {
+      let text = new AnnotatedText("This is some text and some annotations.", new AnnotationSet([
+        {from: 8, to: 12, name: "color", color: "lightblue"},
+        {from: 27, to: 38, name: "color", color: "yellow"}]))
+      
+      var regions = text.annotations.regions(text.text)
+      
+      expect(regions.length, "length").to.equal(5)
+    });
+     
   })
    
   describe('toXML', function() {
@@ -167,6 +181,19 @@ describe('AnnotationSet', function() {
       
       var xml = annotations.toXML(text)
       expect(xml, "xml").to.equal("abc<b>def</b>ghi")
+    });
+    
+    
+     it('print xml', function() {
+      let text = "abcdefghi"
+      
+      let annotations = new AnnotationSet([
+        {name: "b", from: 3, to: 6},
+        {name: "i", from: 1, to: 2}
+      ])      
+      
+      var xml = annotations.toXML(text)
+      expect(xml, "xml").to.equal("a<i>b</i>c<b>def</b>ghi")
     });
   })
   
@@ -289,5 +316,19 @@ describe('AnnotatedText', function() {
         {from: 2, to: 3, name: "i"}]))
     })
   })
+  
+  
+  describe("toHTML", function() {
+    it('extracts text and annotations', function() {
+      let text = new AnnotatedText("This is some text and some annotations.", new AnnotationSet([
+        {from: 8, to: 12, name: "color", color: "lightblue"},
+        {from: 27, to: 38, name: "color", color: "yellow"}]))
+      debugger
+      expect(text.toHTML(), "text").to.equal("This is <color>some</color> text and some <color>annotations</color>.")
+      
+    })
+    
+  })
+  
 })
 

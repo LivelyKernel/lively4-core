@@ -130,10 +130,8 @@ export default class CodemirrorPlayground extends Morph {
     const cursor = this.$.getCursor();
     const code = this.lcm.value;
     let dep = new DependencyGraph(code);
-    let deps = this.dependencyGraph.resolveDependencies(cursor);
-    //let occurences = [...deps].map(binding => [binding.path, ... binding.constantViolations]).flatten();    
-    let occurences = [...deps].map(binding => [... binding.constantViolations]).flatten();
-    occurences.forEach((path) => {
+    let deps = this.dependencyGraph.resolveDependencies(cursor);  
+    deps.forEach((path) => {
       const r = range(path.node.loc).asCM();
       this.textMarkers.push(this.$.markText(r[0], r[1], {
         css: "background-color: orange",
@@ -148,32 +146,33 @@ export default class CodemirrorPlayground extends Morph {
     
     this.aexprs.forEach((path)=> {
       let dependencies = this.dependencyGraph._resolveDependencies(path.get("arguments")[0]);
-      let occurences = [...dependencies].map(binding => [... binding.constantViolations]).flatten();
-      occurences.map(statement => {
+      
+      dependencies.forEach(statement => {
+        // keep node identity instead of nodepaths???
         if (!dict.get(statement)) {
           dict.set(statement, []);
         }
+      
         //for now store the aExpr directly as dep of the line.
         let tmp = dict.get(statement);
         tmp.push(path);
-        dict.set(statement, tmp);
       });
-    })
+    });
     
-    dict.forEach((aExprs,statement) => {
-        let line = statement.node.loc.start.line - 1; 
-        if (!lines[line]) {
-          lines[line] = [];
-        }
-        for (let aExpr of aExprs ){
-          lines[line].push(aExpr);
-        }
-      });
-
+    for ( let [statement,aExprs] of dict.entries()){
+      let line = statement.node.loc.start.line - 1; 
+      if (!lines[line]) {
+        lines[line] = [];
+      }
+      for (let aExpr of aExprs ){
+        lines[line].push(aExpr);
+      }
+    }
+    
     this.$.doc.clearGutter('extragutter');
     lines.forEach((deps, line) => {
       this.drawAExprGutter(line, deps);
-    })    
+    })
   }
   
   drawAExprGutter(line, dependencies) {
@@ -191,8 +190,7 @@ export default class CodemirrorPlayground extends Morph {
     try{
       this.showAExprMarker();
     } catch (e) {
-      // NOP
-      // current AST is invalid
+      console.error(e);
     }
     this.resetTextMarkers();
     lively.warn('instant update');
