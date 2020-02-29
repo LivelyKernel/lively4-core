@@ -20,7 +20,7 @@ export default class EventDrops extends Morph {
       drop: {
           date: event => event.timestamp,
           color: event => {
-            switch(event.message) {
+            switch(event.type) {
               case 'created': return 'green';
               case 'disposed': return 'red';
               case 'changed value': return 'blue';
@@ -43,7 +43,7 @@ export default class EventDrops extends Morph {
             this.tooltip.append(() =>
                     <div class="event">
                       <div class="content">
-                        <h3 style="font-size: 1em">{event.message}</h3>
+                        <h3 style="font-size: 1em">{event.type}</h3>
                         <span style="font-size: 1em">{(event.value || "").toString()}</span>
                         <p style="font-size: 1em">at {this.humanizeDate(event.timestamp)}</p>
                       </div>

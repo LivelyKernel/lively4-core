@@ -189,9 +189,9 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    if(location){this.meta({location})}
-    this.meta({events : new Array()});
-    this.meta().get('events').push({timestamp: new Date(), message: 'created'});
+    if(location){this.meta({location})};
+    this.initializeEvents();
+    this.logEvent('created');
 
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -299,11 +299,7 @@ export class BaseActiveExpression {
     const lastValue = this.lastValue;
     this.storeResult(value);
     
-    this.meta().get('events').push({
-      timestamp: new Date(), 
-      message: 'changed value',
-      value: value
-    });
+    this.logEvent('changed value', value);
 
     this.notify(value, {
       lastValue,
@@ -409,7 +405,7 @@ export class BaseActiveExpression {
       this._isDisposed = true;
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
-      this.meta().get('events').push({timestamp: new Date(), message: 'disposed'});
+      this.logEvent('disposed');
     }
   }
 
@@ -443,8 +439,18 @@ export class BaseActiveExpression {
     return false;
   }
   
-  logEvent(event) {
-    //TODO
+  initializeEvents() {
+    this.meta({events : new Array()});
+  }
+  
+  logEvent(type, value) {
+    //if(!this.meta().has('events'))this.meta({events : new Array()});
+    if(!this.isMeta())this.meta().get('events').push({timestamp: new Date(), type, value});
+  }
+  
+  isMeta(value) {
+    if(value !== undefined)this.meta({isMeta : value});
+    else return this.meta().has('isMeta') && this.meta().get('isMeta');
   }
 }
 
