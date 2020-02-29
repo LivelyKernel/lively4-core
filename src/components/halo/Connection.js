@@ -37,11 +37,7 @@ export default class Connection {
   }
   
   cleanProperty(property) {
-    if(property.includes('.')) {
-      return property.split(".").map(each => this.camelCaseIfNeeded(each)).join(".")
-    } else {
-      return property
-    }
+    return property.split(".").map(each => this.camelCaseIfNeeded(each)).join(".")
   }
   
   camelCaseIfNeeded(propertyPart) {
