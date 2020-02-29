@@ -24,6 +24,7 @@ export default class EventDrops extends Morph {
               case 'created': return 'green';
               case 'disposed': return 'red';
               case 'changed value': return 'blue';
+              case 'dependencies changed': return 'purple';
               default : return 'black';
             }
           }, //'#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
