@@ -3,9 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 import eventDrops from 'src/external/event-drops.js';
-//import eventDrops from 'https://unpkg.com/event-drops@1.3.0/dist/index.js';
 import d3 from 'src/external/d3.v5.js';
-import repositoriesData from 'src/components/draft/event-drops-data.js'
 
 import {AExprRegistry} from 'src/client/reactive/active-expression/active-expression.js'
 
@@ -71,11 +69,6 @@ export default class EventDrops extends Morph {
       },
     };
     this.chart = eventDrops(this.config);
-
-
-    //let repositoriesData = require('event-drops-data.json');
-    
-    repositoriesData = repositoriesData.map(repository => ({name: repository.name, data: repository.commits}));
     
     this.numberEventsContainer = this.get('#numberEvents');
     this.zoomStart = this.get('#zoomStart');
@@ -177,23 +170,7 @@ export default class EventDrops extends Morph {
   }
   
   humanizeDate(date) {
-    const monthNames = [
-        'Jan.',
-        'Feb.',
-        'March',
-        'Apr.',
-        'May',
-        'June',
-        'Jul.',
-        'Aug.',
-        'Sept.',
-        'Oct.',
-        'Nov.',
-        'Dec.',
-    ];
-
-    return `
-        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}:${('0'+date.getSeconds()).slice(-2)}.${('000'+date.getMilliseconds()).slice(-4)}
+    return `        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}:${('0'+date.getSeconds()).slice(-2)}.${('000'+date.getMilliseconds()).slice(-4)}
     `;
   }
 

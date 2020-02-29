@@ -231,7 +231,7 @@ export default class AexprTable extends Morph {
   }
   
   async openEventDrops() {
-    let eventDrops = await lively.openComponentInWindow('event-drops');
+    let eventDrops = await lively.openComponentInWindow('aexpr-timeline');
     eventDrops.dataFromSource = this.rows()
       .map(each => each.aexpr)
       .filter(each => this.filter(each));
