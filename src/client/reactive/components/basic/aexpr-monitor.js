@@ -28,6 +28,7 @@ export default class AexprTable extends Morph {
   }
   
   update() {
+    if(this.detached)return;
     this.rows().forEach(coolDown);
     if(this._filterDirty !== false) {
       this.updateFilter();
@@ -167,7 +168,11 @@ export default class AexprTable extends Morph {
   }
   
   async livelyExample() {
-    
+  
+  }
+  
+  detachedCallback() {
+    this.detached = true;
   }
   
 
