@@ -92,10 +92,8 @@ export default class Clipboard {
       })
     }
     
-    all.forEach(child => {
-      makeLivelyIdNonConflicting(child, all);
-      persistence.initLivelyObject(child);
-    });
+    all.forEach(child => makeLivelyIdNonConflicting(child, all));
+    all.forEach(child => persistence.initLivelyObject(child));
   }
   
   static getTopLeft(elements) {
