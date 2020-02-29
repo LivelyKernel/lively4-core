@@ -9,9 +9,7 @@ export default class AexprTable extends Morph {
     this.initializeCallbacks();
     this.initializeHeader();
     this.value = new Array();
-    this.repopulate();
-    this.events = new Map();
-    //this.filter.onchange = (x,y,z) => lively.notify(x+" -- "+y+" -- "+z);
+    this.populate();
     this.buttonShowEvents.addEventListener('click', () => this.openEventDrops());
     this.filterElement.addEventListener('change', () => this.filterChanged());
     this.update();
@@ -38,20 +36,11 @@ export default class AexprTable extends Morph {
     setTimeout(() => {this.update()}, 100);
   }
   
-  get value() {
-    return this._value
-  }
-
-  set value(v) {
-    this._value = v
-    //this.update()
-  }
   
   get table() {
     return this.get("#table");
   }
   
-    
   get filterElement() {
     return this.get("#filter");
   }
@@ -61,19 +50,14 @@ export default class AexprTable extends Morph {
   }
 
   
-  repopulate() {  
+  populate() {  
     this._rows = [];
-    let added = AExprRegistry.allAsArray().difference(this.value);
-    let removed = this.value.difference(AExprRegistry.allAsArray());
-    for(let each of removed)this.removeAexpr(each);
-    for(let each of added)this.addAexpr(each);
+    for(let each of AExprRegistry.allAsArray())this.addAexpr(each);
   } 
   
   addAexpr(aexpr){
-    let row = this.createRow(aexpr);
-    this.table.appendChild(row);
+    this.createRow(aexpr);
     this.value.push(aexpr);
-    this.rows().push(row);
     this.filterChanged();
   }
   
@@ -99,9 +83,8 @@ export default class AexprTable extends Morph {
   }
   
   igniteRow(row){
-    let currentHeat = parseFloat(row.getAttribute("heat"));
-    row.setAttribute("heat", currentHeat+1);
-    let newColor = colorForHeat(Math.min(currentHeat+1, 30));
+    row.heat++;
+    let newColor = colorForHeat(row.heat);
     row.setAttribute("bgcolor", newColor);
   }
   
@@ -115,15 +98,15 @@ export default class AexprTable extends Morph {
   }
   
   rowOf(aexpr){
-    return this.rows().filter(each => each.aexpr === aexpr)[0];
+    return this.rows().find(each => each.aexpr === aexpr);
   }
   
   createRow(aexpr){
     let htmlRow = <tr class='aeRow'></tr>;
-    htmlRow.setAttribute("heat", 0);
-    //htmlRow.cells = {};
+    htmlRow.heat = 0;
     this.setRow(htmlRow, aexpr);
-    return htmlRow; 
+    this.table.appendChild(htmlRow);
+    this.rows().push(htmlRow);
   }
   
   setRow(row, aexpr){
@@ -133,14 +116,7 @@ export default class AexprTable extends Morph {
     }
     for(let attribute in attributes){
       let value = attributes[attribute](aexpr);
-      let cell = row.cells[attribute];
-      if(!cell) {
-        cell = <td>{value}</td>;
-        row.appendChild(cell);
-        //row.cells[attribute] = cell;
-      } else {
-        //cell.textContent = {...value};
-      }
+      row.appendChild(<td>{value}</td>);
     }
   }
   
@@ -157,8 +133,8 @@ export default class AexprTable extends Morph {
     let numResults = 0;
     let numErrored = 0;
     try {
-      if(!code || code == '')code = 'true';
-      this.filter = new Function("each", "return "+code);
+      if(code && code !== '')this.filter = new Function("each", "return "+code);
+      else this.filter = () => true;
       this.rows().forEach(each => {
         let filterIn = false;
         try {
@@ -170,7 +146,8 @@ export default class AexprTable extends Morph {
         if(filterIn)numResults++;
         each.style.display = filterIn ? 'table-row' : 'none';
       });
-      this.get('#filter-info').textContent = "results/errored/total = "+numResults+"/"+numErrored+"/"+this.rows().length;
+      this.get('#filter-info').textContent = 
+        "results/errored/total = "+numResults+"/"+numErrored+"/"+this.rows().length;
     } catch(e) {
       lively.notify('Error parsing '+code+': '+e);
     }
@@ -196,17 +173,13 @@ export default class AexprTable extends Morph {
 
 }
 
+/*MD ## Row Utilities MD*/
 const attributes = {
   id : ae => ae.meta().get('id'),
   function : deBabelify,
-  //lastValue : ae => ""+ae.lastValue,
   currentValue : getValueTag,
   callbacks : ae => listify(ae.callbacks),
-  
-  dependencies : ae => ae.supportsDependencies() ? 
-      listify(ae.dependencies().all().map(dependencyString))
-    : <font color="#551199">{"no dependecy api available"}</font>,
-  
+  dependencies : getDependencies,
   actions : ae => <div>
     <button click={evt => lively.openInspector(ae, undefined, ae)}>inspect</button>
     <button click={() => ae.dispose()}>dispose</button>
@@ -216,12 +189,6 @@ const attributes = {
 function deBabelify(ae) {
   let location = ae.meta().get('location');
   return location && location.source || ae.func.toString();
-}
-
-function listify(array, protect) {
-  return <ul style="display:block">{...(
-      array.map(each => <li style={protect ? "white-space: nowrap" : ""}>{each}</li>)
-    )}</ul>
 }
 
 function inspectorLink(object) {
@@ -235,6 +202,12 @@ function getValueTag(ae) {
   let {value, isError} = ae.evaluateToCurrentValue();
   return <font color={isError ? "red" : "blue"}>{""+value}</font>;
 }
+
+function getDependencies(ae) {
+  return ae => ae.supportsDependencies() ? 
+      listify(ae.dependencies().all().map(dependencyString))
+      : <font color="#551199">{"no dependecy api available"}</font>
+}
   
 function dependencyString(dependency) {
   let descriptor = dependency.getAsDependencyDescription();
@@ -247,22 +220,26 @@ function dependencyString(dependency) {
       .map(key => <span>{key+' : '}{inspectorLink(descriptor[key])}</span>), true)}</li>
 }
 
+function listify(array, protect) {
+  return <ul style="display:block">{...(
+      array.map(each => <li style={protect ? "white-space: nowrap" : ""}>{each}</li>)
+    )}</ul>
+}
+
 function colorForHeat(heat) {
-  let others = Math.round(256/Math.pow(heat+0.1, 1)).toString(16);
+  let others = Math.round(256/(heat+1.02)).toString(16);
   if(others.length == 1)others = "0"+others;
   return "#FF"+others+others;
 }
 
-function coolDown(element) {
-  let currentcount = parseFloat(element.getAttribute("heat"));
-  if(currentcount <= 0)return;
-  let step = 0.1;
-  currentcount = currentcount * 0.95 - 0.01;
-  element.setAttribute("heat", Math.max(currentcount, 0));
-  let newColor = colorForHeat(currentcount+1);
-  element.setAttribute("bgcolor", newColor);
-  if(currentcount <= 0) {
-    element.setAttribute('heat', 0);
-    element.setAttribute("bgcolor", "#FFFFFF");
+function coolDown(row) {
+  let currentHeat = row.heat;
+  if(currentHeat <= 0)return;
+  row.heat = Math.max(currentHeat * 0.95 - 0.01, 0);
+  let newColor = colorForHeat(row.heat);
+  row.setAttribute("bgcolor", newColor);
+  if(row.heat <= 0) {
+    row.heat = 0;
+    row.setAttribute("bgcolor", "#FFFFFF");
   }
 }
