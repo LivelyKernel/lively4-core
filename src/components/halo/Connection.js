@@ -20,13 +20,13 @@ export default class Connection {
     this.isEvent = isEvent;
     this.isActive = false
     this._eventListener = evt => this.connectionFunction(evt)
-    this._targetProperty = this._targetProperty.split(".").map(each => each.camelCase()).join(".")
+    this._targetProperty = this.cleanProperty(this._targetProperty)
     if(isEvent){
       this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42}";
       this.trackingCode = this._sourceProperty;
     } else {
       this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue}";
-      this._sourceProperty = this._sourceProperty.split(".").map(each => each.camelCase()).join(".")
+      this._sourceProperty = this.cleanProperty(this._sourceProperty)
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
 }`
@@ -34,6 +34,22 @@ export default class Connection {
     
     this.label = 'Connection ' + this.id
     this.makeSavingScript();
+  }
+  
+  cleanProperty(property) {
+    if(property.includes('.')) {
+      return property.split(".").map(each => this.camelCaseIfNeeded(each)).join(".")
+    } else {
+      return property
+    }
+  }
+  
+  camelCaseIfNeeded(propertyPart) {
+    if(propertyPart.includes('-')) {
+      return propertyPart.camelCase();
+    } else {
+      return propertyPart;
+    }
   }
   
   makeSavingScript() {
