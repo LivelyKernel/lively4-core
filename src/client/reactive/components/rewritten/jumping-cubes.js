@@ -92,7 +92,6 @@ export default class JumpingCubes extends Morph {
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
   }
   
   livelyInspect(contentNode, inspector) {

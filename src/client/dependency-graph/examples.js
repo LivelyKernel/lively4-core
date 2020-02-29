@@ -236,6 +236,17 @@
   obj.y = () => x * x * x; // <--
 }
 
+/*MD ### Member changes because object changes MD*/
+{
+  let obj = {
+    x: 0,
+  }
+
+  aexpr(() => obj.x);
+  
+  obj = { x: 1 }; // <--
+}
+
 /*MD ### Unclear function resolution MD*/
 {
   let obj = {

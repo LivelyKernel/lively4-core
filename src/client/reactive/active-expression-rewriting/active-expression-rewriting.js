@@ -506,6 +506,7 @@ class FrameBasedHook extends Hook {
     let x = 0;
     // #TODO: caution, we currently use a side-effect function! How can we mitigate this? E.g. using `Date.now()` as expression
     let ae = frameBasedAExpr.aexpr(() => x++)
+    ae.isMeta(true);
     ae.onChange(() => {
       this.changeHappened();
     })

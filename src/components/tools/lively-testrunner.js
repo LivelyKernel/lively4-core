@@ -124,6 +124,7 @@ export default class TestRunner extends Morph {
     var self = this;
     mocha.run(failures => {
       if (self.prevState) {
+        this.isRunning = false
         window.history.pushState(self.prevState, '', self.prevLocation + "&grep=.*");
         self.prevState = self.prevLocation = undefined;
       }
@@ -145,7 +146,7 @@ export default class TestRunner extends Morph {
 
   // some tests, e.g. ContextJS manage to break mocha, so that they can be only once... without this
   resetMocha() {
-    lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true).then(() => {
+    return lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true).then(() => {
       mocha.setup("bdd");
     });
   }
