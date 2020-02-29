@@ -149,6 +149,7 @@ export default class AexprTable extends Morph {
     if(!row)return;
     this.setRow(row, aexpr);
     this.igniteRow(row);
+    this.filterChanged();
   }
   
   igniteRow(row){
