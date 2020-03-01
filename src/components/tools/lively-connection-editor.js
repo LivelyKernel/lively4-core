@@ -127,7 +127,6 @@ export default class LivelyConnectionEditor extends Morph {
   }
   
   saveConnection() {
-    lively.notify('wup')
     this.connection.setLabel(this.get("#labelField").value);
     this.trackingCodeField.editorLoaded().then(() => this.connection.setTrackingCode(this.trackingCodeField.value))
     this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCode(this.modifyingCodeField.value))

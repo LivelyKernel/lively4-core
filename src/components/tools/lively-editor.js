@@ -29,6 +29,9 @@ import {pt} from "src/client/graphics.js"
 import {getObjectFor, updateEditors} from "utils";
 import files from "src/client/files.js"
 
+import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
+import ContextMenu from 'src/client/contextmenu.js'
+
 export default class Editor extends Morph {
 
   /*MD ## Setup MD*/
@@ -74,7 +77,7 @@ export default class Editor extends Morph {
     });
     
     this.addEventListener("paste", evt => this.onPaste(evt))
-
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);  
     
     // wait for CodeMirror for adding custom keys
     await  editor.editorLoaded()
@@ -86,7 +89,7 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
-        this.currentEditor().replaceSelection(`\/\*MD MD\*\/`)
+        this.currentEditor().replaceSelection(`/*MD MD*/`)
         this.currentEditor().execCommand(`goWordLeft`)
       }
 
@@ -100,8 +103,13 @@ export default class Editor extends Morph {
       this.get("#changeIndicator").style.backgroundColor = "rgb(220,30,30)";
       this.textChanged = true;
     } else {
-      this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
-      this.textChanged = false;
+      if (this.annotatedText && !this.annotatedText.equals(this.lastAnnotatedText)) {
+        this.get("#changeIndicator").style.backgroundColor = "rgb(20,20,220)";  
+        this.textChanged = false;
+      } else {
+        this.get("#changeIndicator").style.backgroundColor = "rgb(200,200,200)";
+        this.textChanged = false;
+      }
     }
   }
   
@@ -161,6 +169,22 @@ export default class Editor extends Morph {
     if(this.insertDataTransfer(evt.dataTransfer, evt, false)) {
       evt.stopPropagation()
       evt.preventDefault();
+    }
+  }
+  
+  onContextMenu(evt) {
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      var menu = new ContextMenu(this, [
+          ["<b>Annotations</b>", this.annotatedText ? () => this.enableAnnotations() : null],
+          ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
+          ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
+          ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
+          ["clear", () => this.onAnnotationsClear()],
+        ]);
+      menu.openIn(document.body, evt, this);
+      return 
     }
   }
   
@@ -308,6 +332,7 @@ export default class Editor extends Morph {
   
   async loadFile(version) {
     var url = this.getURL();
+    
     // console.log("load " + url);
     this.updateEditorMode();
 
@@ -330,6 +355,10 @@ export default class Editor extends Morph {
           "url": url,
           "text": result,
           "version": this.lastVersion}})); 
+    
+
+    await this.checkAndLoadAnnotations()
+    
     if (this.postLoadFile) {
       result = await this.postLoadFile(result) // #TODO babylonian programming requires to adapt editor behavior
     }
@@ -337,8 +366,13 @@ export default class Editor extends Morph {
     return result
   }
 
-
-  
+  async checkAndLoadAnnotations() {
+    if(await lively.files.exists(this.getAnnotationsURL())) {
+      this.enableAnnotations()   
+    } else {
+      this.disableAnnotations()   
+    }
+  }
   async saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
@@ -407,7 +441,7 @@ export default class Editor extends Morph {
         this.dispatchEvent(new CustomEvent("saved-file", {detail: {
           "url": urlString,
           "text": data,
-          "version": newVersion}})); 
+          "version": this.lastVersion}})); 
         
         return stats
 
@@ -647,7 +681,7 @@ export default class Editor extends Morph {
     await files.saveFile(newurl, blob)
     
     this.withEditorObjectDo(editor => {
-      var text = encodeURIComponent(filename).replace(/\%2F/g,"/")
+      var text = encodeURIComponent(filename).replace(/%2F/g,"/")
       if (this.getURLString().match(/\.md/)) {
         if (files.isVideo(filename)){
           text = `<video autoplay controls><source src="${text}" type="video/mp4"></video>`
@@ -722,7 +756,7 @@ export default class Editor extends Morph {
             let container = lively.query(this, "lively-container")
             if (container) {
               lively.html.fixLinks(widget.shadowRoot.querySelectorAll("[href],[src]"), 
-                                    this.getURL().toString().replace(/[^/]*$/,""),
+                                    this.getURLString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
           } else {
@@ -751,8 +785,8 @@ export default class Editor extends Morph {
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
     
-    var cm = codeMirrorComponent.editor
-    var cursorPos = cm.getCursor()
+    // var cm = codeMirrorComponent.editor
+    // var cursorPos = cm.getCursor()
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
@@ -768,6 +802,122 @@ export default class Editor extends Morph {
     // cm.setCursor(cursorPos)
     // cm.scrollTo(null, cm.charCoords(cursorPos).top)
   }
+  
+  async solveAnnotationConflict(newVersion, otherVersion) {
+    var cm = await this.awaitEditor()
+    // solveConflict
+    var lastText = this.lastAnnotatedText
+    var text = this.annotatedText
+    
+    if (this.solvingAnnotationConflict) {
+      lively.warn("prevent endless recursion in solving conflict?")
+      return
+    }
+    lively.notify("Conflicting Annotations: " + otherVersion)
+    
+    var parentAnnotations = lastText.annotations
+    var otherAnnotationsSource = await fetch(this.getAnnotationsURL(), {
+      headers: { fileversion: otherVersion }
+    }).then(r => r.text());
+    var otherAnnotations = AnnotationSet.fromJSONL(otherAnnotationsSource)
+  
+    var myAnnotations = text.annotations
+    
+    // only when no text diff.....
+    var mergedAnnotations =   myAnnotations.merge(otherAnnotations, parentAnnotations)
+      
+    text.annotations = mergedAnnotations
+    text.annotations.renderCodeMirrorMarks(cm)
+    text.annotations.lastVersion = otherVersion
+    
+    this.solvingAnnotationConflict = true;
+    try {
+      await this.saveAnnotations()
+    } finally {
+      this.solvingAnnotationConflict = false;
+    }
+  }
+  
+  /*MD ## Annotations MD*/
+  
+  getAnnotationsURL() {
+    return this.getURLString() + ".l4a"
+  } 
+  
+  async saveAnnotations(textVersion=this.lastVersion) {
+    var cm = await this.awaitEditor()
+    var text = this.annotatedText
+    text.setText(this.getText(), textVersion)
+    var response = await fetch(this.getAnnotationsURL(), {
+      method: 'PUT', 
+      body: text.annotations.toJSONL(),
+      headers: {lastversion: text.annotations.lastVersion }
+    })
+    var newVersion = response.headers.get("fileversion");
+    var conflictVersion = response.headers.get("conflictversion");  
+    if (conflictVersion) {
+        await this.solveAnnotationConflict(newVersion, conflictVersion)
+    }
+    this.annotatedText.annotations.renderCodeMirrorMarks(cm)
+  }
+  
+  async onAnnotationsMarkColor(color="yellow") {
+    if (!this.annotatedText) {
+      await this.enableAnnotations()
+    }
+    
+    var cm = await this.awaitEditor()
+    var from  = cm.indexFromPos(cm.getCursor("from"))
+    var to  = cm.indexFromPos(cm.getCursor("to"))  
+    var annotation = new Annotation({from: from, to: to, name: "color", color: color})
+    this.annotatedText.setText(this.getText())
+    this.annotatedText.annotations.add(annotation)
+    annotation.codeMirrorMark(cm)
+    this.updateChangeIndicator()
+  }
+  
+  async onAnnotationsClear() {
+    var cm = await this.awaitEditor()
+    var from  = cm.indexFromPos(cm.getCursor("from"))
+    var to  = cm.indexFromPos(cm.getCursor("to"))
+    this.annotatedText.annotations.removeFromTo(from, to)
+    this.annotatedText.annotations.renderCodeMirrorMarks(cm) 
+    this.updateChangeIndicator()
+  }  
+  
+  async loadAnnotations(text, version) {
+    var cm = await this.awaitEditor()
+    // load annotated text in the version that was  last annotated
+    this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL())
+    // set current text and version, and update annotations accordingly 
+    this.annotatedText.setText(text, version)
+    this.annotatedText.annotations.renderCodeMirrorMarks(cm)
+    this.lastAnnotatedText = this.annotatedText.clone()
+  }
+  
+  async disableAnnotations() { 
+    if (this.annotatedText) {
+      this.annotatedText.clearCodeMirrorMarks(await this.awaitEditor())
+    }
+    lively.removeEventListener("annotations", this)
+    delete this.annotatedText
+  }
+  
+  async enableAnnotations() { 
+    lively.removeEventListener("annotations", this)
+    lively.addEventListener("annotations", this, "loaded-file", async evt => {
+      this.loadAnnotations(evt.detail.text, evt.detail.version) 
+    })
+    lively.addEventListener("annotations", this, "saved-file", async evt => {
+      this.saveAnnotations(evt.detail.version)
+    })
+    // lively.addEventListener("annotations", this, "solved-conflict", evt => {
+    //   // we can ignore this, since it will be solved... by the editor
+    //   lively.notify("TEXT CONFLICT " + evt.detail.version )
+    // })
+    await this.loadAnnotations(this.getText(), this.lastVersion) 
+  }
+  
   
   /*MD ## Hooks MD*/
 

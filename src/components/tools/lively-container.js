@@ -1666,8 +1666,10 @@ export default class Container extends Morph {
         this.sourceContent  = await fetch(urlString).then(r => r.text())
       }
       
-      
       livelyEditor.setText(this.sourceContent); // directly setting the source we got
+      if (livelyEditor.checkAndLoadAnnotations) {
+        await livelyEditor.checkAndLoadAnnotations()
+      }
 
       if (codeMirror.editor) {
         if (!codeMirror.tagName == "LIVELY-CODE-MIRROR") {

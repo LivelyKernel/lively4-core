@@ -47,7 +47,8 @@ function markMemberToNotBeRewritten(path) {
   return path;
 }
 
-export default function({ types: t, template, traverse }) {
+export default function(babel) {
+  let { types: t, template, traverse } = babel;
 
   function getPropertyFromMemberExpression(node) {
     // We are looking for MemberExpressions, which have two distinct incarnations:
@@ -424,7 +425,10 @@ export default function({ types: t, template, traverse }) {
                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
               ) {
-                const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+                let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+                if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+                  fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
+                }
                 const sourceLocation = template(`({
                   file: '${fileName}',
                   end: {
@@ -434,18 +438,29 @@ export default function({ types: t, template, traverse }) {
                   start: {
                     column: START_COLUMN,
                     line: START_LINE
-                  }
+                  },
+                  source: SOURCE
                 })`);
-                function buildSourceLocation(node) {
+                function buildSourceLocation(path) {
+                  let node = path.node;
+                  let wrapper = {
+                    directives: [],
+                    start: 0,
+                    end: 0,
+                    type: 'Program',
+                    sourceType: 'module',
+                    body: [path.parent.arguments[0]]
+                  };
+                  let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
                     END_COLUMN: t.numericLiteral(node.loc.end.column),
                     END_LINE: t.numericLiteral(node.loc.end.line),
                     START_COLUMN: t.numericLiteral(node.loc.start.column),
-                    START_LINE: t.numericLiteral(node.loc.start.line)
+                    START_LINE: t.numericLiteral(node.loc.start.line),
+                    SOURCE: t.stringLiteral(source)
                   }).expression;
                 }
-                
-                let location = buildSourceLocation(path.node);
+                let location = buildSourceLocation(path);
                 //logIdentifier("call to aexpr", path);
                 path.replaceWith(
                   addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
