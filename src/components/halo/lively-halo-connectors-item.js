@@ -102,11 +102,11 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.dropIndicator.innerHTML = ""
     }
     
-    if (this.valueIndicator) this.valueIndicator.remove()
-    this.valueIndicator = <span>{this.sourceProperty}</span>
+    if (this.valueIndicator) this.valueIndicator.remove();
+    this.valueIndicator = <span>{this.sourceProperty}</span>;
     this.valueIndicator.style.zIndex = 200;
-    lively.setGlobalPosition(this.valueIndicator, lively.getPosition(evt))
-    document.body.appendChild(this.valueIndicator)
+    lively.setGlobalPosition(this.valueIndicator, lively.getPosition(evt));
+    document.body.appendChild(this.valueIndicator);
   }
   
   onPointerUp(evt) {
