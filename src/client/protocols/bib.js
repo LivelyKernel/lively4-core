@@ -13,16 +13,16 @@ export class BibScheme extends Scheme {
   
   resolve() {
     return true
-  }  
+  }    
   
   async GET(options) {
     var key = this.url.replace(/bib\:\/\//,"")
     
     
-    var entries = await FileIndex.current().db.bibref.where("key").equals(key).toArray()
+    var entries = await FileIndex.current().db.bibliography.where("key").equals(key).toArray()
     var entry = entries[0] || {} 
     
-    var content = `<h2>[${key}]<br/>${entry.authors || ""}.  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
+    var content = `<h2>[${key}]<br/>${entry.authors ? entry.authors + ".": ""}  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
   
     if (entry.source) {
       content += "<pre>" + entry.source+ "</pre>"
@@ -50,6 +50,22 @@ export class BibScheme extends Scheme {
       status: 200,
     })
   }
+  
+  
+   async OPTIONS(options) {
+    
+    var content = JSON.stringify({}, undefined, 2)
+  
+     
+    return new Response(content, {
+      headers: {
+        "content-type": "application/json",
+      },
+      status: 200,
+    })
+  }
+  
+  
 
   
 }

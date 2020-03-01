@@ -89,7 +89,8 @@ export default class ComponentLoader {
     _log('onCreatedCallback ' + componentName)
       
     // attach lively4scripts from the shadow root to this
-    scriptManager.attachScriptsFromShadowDOM(object);
+    if (this.shadowRoot)
+      scriptManager.attachScriptsFromShadowDOM(object);
     
     // attach lively4script from the instance
     scriptManager.findLively4Script(object, false);
@@ -161,12 +162,12 @@ export default class ComponentLoader {
   }
   
   static applyTemplate(element, componentName) {
-    if (!element.shadowRoot) {
-      element.attachShadow({mode: 'open'});
-    }
-    
     var template = this.templates[componentName]
     if (template) {
+      if (!element.shadowRoot) {
+        element.attachShadow({mode: 'open'});
+      }
+      
       var fragment = template.cloneNode(true)
       fragment.childNodes.forEach(ea => {
         var clone = document.importNode(ea, true)
@@ -436,6 +437,8 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/',
         lively4url + '/src/babylonian-programming-editor/demos/canvas/',
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
+        lively4url + '/src/client/reactive/components/rewritten/conduit/src/components/',
+        lively4url + '/src/client/reactive/components/rewritten/conduit/rpComponents/',
       ]; // default
     } 
     return this.templatePaths
@@ -458,7 +461,6 @@ export default class ComponentLoader {
   
     // #IDEA, using HTTP HEAD could be faster, but is not always implemented... as ource OPTIONS is neigher
     // this method avoids the 404 in the console.log
-    
     
     // the OPTIONS request seems to break karma... waits to long..
     if (!window.__karma__) { 
@@ -526,7 +528,7 @@ export default class ComponentLoader {
             template.remove()
           }          
         }
-        this.register(name, template.content, aClass)
+        this.register(name, template && template.content, aClass)
         _timeLog(name, "registered")
         return true;
       } else {

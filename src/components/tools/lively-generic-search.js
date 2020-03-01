@@ -161,7 +161,8 @@ export default class LivelyGenericSearch extends Morph {
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
-    this.input.value = other.input.value
+    this.input.value = other.input.value;
+    this.input.focus();
   }
   
   livelyInspect(contentNode, inspector) {

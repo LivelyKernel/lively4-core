@@ -1,5 +1,6 @@
 import { loc, range } from 'utils';
 
+import boundEval from 'src/client/bound-eval.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import FileIndex from "src/client/fileindex.js";
 
@@ -43,20 +44,25 @@ export default class ASTCapabilities {
    * Get the root path
   */
   get programPath() {
-    var myself = this;
     if (!this.myProgramPath) {
-      try {
-        this.sourceCode.traverseAsAST({
-          Program(path) {
-            myself.myProgramPath = path;
-          }
-        });
-      } catch (err) {
-        return null;
-      }
+      this.myProgramPath = this.programPathFor(this.sourceCode);
+    }
+    return this.myProgramPath;
+  }
+
+  programPathFor(code) {
+    var programPath = null;
+    try {
+      code.traverseAsAST({
+        Program(path) {
+          programPath = path;
+        }
+      });
+    } catch (err) {
+      return null;
     }
 
-    return this.myProgramPath;
+    return programPath;
   }
 
   codeChanged() {
@@ -337,9 +343,19 @@ export default class ASTCapabilities {
     return this.getFirstSelectedIdentifierWithName(binding.path, binding.identifier.name);
   }
 
-  getBindings(startPath) {
+  getBindingsInFile(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
-    if (!identifier) return;
+    if (!identifier) return [];
+    const astBindings = this.getASTBinding(identifier)
+
+    if(astBindings) {
+      return astBindings;
+    }
+
+    return this.getClassBindings(identifier);
+  }
+
+  getASTBinding(identifier) {
     if (identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
       const identifierPaths = [...new Set([this.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
@@ -347,8 +363,7 @@ export default class ASTCapabilities {
         return identifierPaths;
       }
     }
-
-    return this.getClassBindings(identifier);
+    return undefined;
   }
 
   getClassBindings(identifier) {
@@ -378,16 +393,37 @@ export default class ASTCapabilities {
     return [methodIdentifier, ...this.getMemberBindings(methodIdentifier)];
   }
 
-  getMemberBindings(identifier) {
+  /**
+   * if getUnbound is set to true, instead of getting all member Expressions with this (= that are bound) we only get those, that are unbound
+   */
+  getMemberBindings(identifier, getUnbound = false, startPath = this.programPath) {
     var members = [];
-    this.programPath.traverse({
+    startPath.traverse({
       Identifier(path) {
-        if (t.isMemberExpression(path.parent) && t.isThisExpression(path.parent.object) && path.node.name === identifier.node.name) {
-          members.push(path);
+        if (t.isMemberExpression(path.parent) && path.node.name === identifier.node.name) {
+          if (t.isThisExpression(path.parent.object) && !getUnbound) {
+            members.push(path);
+          } else if (getUnbound) {
+            members.push(path);
+          }
         }
       }
     });
     return members;
+  }
+
+  getAllUnboundIdentifierNames(startPath = this.programPath) {
+    var unboundIdentifiers = [];
+    startPath.traverse({
+      Identifier(path) {
+        if (t.isMemberExpression(path.parent)) {
+          if (!t.isThisExpression(path.parent.object)) {
+            unboundIdentifiers.push(path);
+          }
+        }
+      }
+    });
+    return unboundIdentifiers.map(binding => binding.node.name).filter((value, index, self) => self.indexOf(value) === index);
   }
 
   getNextASTNodeInListWith(condition, pathList, path) {
@@ -515,8 +551,7 @@ export default class ASTCapabilities {
   selectNextReference(reversed) {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
-    const bindings = this.getBindings(selectedPath);
-    if (bindings) {
+    const bindings = this.getBindingsInFile(selectedPath);if (bindings) {
       let sortedBindings = [...bindings].sort((a, b) => a.node.start - b.node.start);
       let index = sortedBindings.indexOf(selectedPath);
       index += reversed ? -1 : 1;
@@ -558,15 +593,100 @@ export default class ASTCapabilities {
         }));
       }
     }
+    /**
+      TODO: if our dependencies don't have the method, we can search all classes    
+      Also: do not only search for methods, but for members too (even though they are technically not bindings?)
+    */
+  }
+
+  async rename() {
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+
+    var identifier = this.getFirstSelectedIdentifier(selectedPath);
+    if (!identifier) return;
+    const astBindings = this.getASTBinding(identifier)
+
+    if(astBindings) {
+      this.selectPaths(astBindings);
+      return;
+    }
+    
+    const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
+
+    
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setAdditionalInput("Name", "enter new name");
+    comp.setTitle("Rename " + identifier.node.name);
+    const references = await comp.selectItems(bindingItems);
+    
+    const newName = comp.getAdditionalInput().camelCase();
+    if(newName === "") return;
+    
+    for(const reference of references) {
+      const code = await fetch(reference.url).then(r => r.text());
+      
+      const codeLines = code.split("\n");
+      
+      String.prototype.replaceBetween = function(start, end, what) {
+        return this.substring(0, start) + what + this.substring(end);
+      };
+      codeLines[reference.line] = codeLines[reference.line].replaceBetween(reference.ch, reference.ch + identifier.node.name.length, newName);
+      
+      const newCode = codeLines.join("\n");
+      await lively.files.saveFile(reference.url, newCode);
+      await lively.reloadModule(reference.url)
+      await System.import(reference.url);
+    }
   }
 
   selectBindings() {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
-    const bindings = this.getBindings(selectedPath);
+    const bindings = this.getBindingsInFile(selectedPath);
     if (bindings) {
       this.selectPaths(bindings);
     }
+  }
+
+  async printAllBindings() {
+    const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+
+    //const bindings = this.getBindings(selectedPath);
+    var identifier = this.getFirstSelectedIdentifier(selectedPath);
+
+    //find classes that contain the method
+    const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
+
+    this.openReferencesMenu(bindingItems, identifier.node.name);
+  }
+
+  async getPossibleBindingsAcrossFiles(identifier) {
+    let index = await FileIndex.current();
+    let ids = await index.db.files.filter(file => {
+      if (!file.unboundIdentifiers) return false;
+      return file.unboundIdentifiers.some(id => id.name == identifier.name);
+    }).toArray();
+    const bindingItems = [];
+
+    for (const id of ids) {
+      const code = await fetch(id.url).then(r => r.text());
+      const program = this.programPathFor(code);
+      for (const reference of this.getMemberBindings(identifier, true, program)) {
+        const line = reference.node.loc.start.line - 1;
+        const ch = reference.node.loc.start.column;
+        bindingItems.push({ id: id.url.substring(id.url.lastIndexOf("/") + 1) + ": " + line, url: id.url, line, ch });
+      }
+    }
+
+    return bindingItems;
+  }
+
+  async openReferencesMenu(ids, identifierName) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("References of " + identifierName);
+    return comp.selectItems(ids);
   }
 
   async findImports() {
@@ -683,7 +803,7 @@ export default class ASTCapabilities {
       this.wrapExpressionIntoActiveExpression();
     }, '→', fa('suitcase')], ['Rename', () => {
       menu.remove();
-      this.selectBindings();
+      this.rename();
     }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
       menu.remove();
       this.extractMethod();
@@ -702,7 +822,10 @@ export default class ASTCapabilities {
     }], ['Generate HTML Accessors', () => {
       menu.remove();
       this.generateHTMLAccessors();
-    }, 'Alt+H', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+    }, 'Alt+H', fa('suitcase')], ['Print References', () => {
+      this.printAllBindings();
+      menu.remove();
+    }, 'Alt+I', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
     var menuPosition = this.codeMirror.cursorCoords(false, "window");
 
     const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
@@ -715,28 +838,77 @@ export default class ASTCapabilities {
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
 
+  async openHTMLAccessorsMenu(ids, initialSelectionState) {
+    let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
+    comp.focus();
+    comp.setTitle("HTML Accessor Menu");
+    return comp.selectItems(ids, initialSelectionState);
+  }
+
+  getExistingAccessors() {
+    let classMethodIdentifier;
+    this.programPath.traverse({
+      ExportDefaultDeclaration(path) {
+        if (path && path.node.declaration && path.node.declaration.type == "ClassDeclaration") {
+          classMethodIdentifier = path.node.declaration.body.body.map(elem => elem.key.name);
+          path.stop();
+        }
+      }
+    });
+    return classMethodIdentifier || [];
+  }
+
   async generateHTMLAccessors() {
-    var lol = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
-    var jsURI = encodeURI(lol.shadowRoot.querySelector("#filename").value);
-
-    const htmlURI = jsURI::replaceFileEndingWith('html');
-
-    var html = await htmlURI.fetchText();
-
-    if (html === "File not found!\n") {
-      lively.warn("There is no HTML associated with this file.");
+    const ids = await this.compileListOfIDs();
+    if (ids.length == 0) {
       return;
     }
 
-    var tmp = <div></div>;
-    tmp.innerHTML = html;
-    var ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
+    let existingMethods = this.getExistingAccessors();
+    let initialSelectionState = ids.map(elem => existingMethods.includes(this.generateMethodNameFromProperty(elem.id)));
+    const selectedItems = await this.openHTMLAccessorsMenu(ids, initialSelectionState);
 
-    ids.forEach(id => {
-      this.generateCodeFragment(id, name => this.compileHTMLGetter(name));
+    if (selectedItems.length === 0) {
+      return;
+    }
+    lively.warn(`${selectedItems.length} Accessors generated`);
+
+    selectedItems.forEach(item => {
+      this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
+      const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
+      let line = selectedPath.parent.loc.end.line + 1;
+      this.editor.setSelection({ line, ch: 0 });
     });
+  }
 
-    //get fileName() { return this.get('input#fileName'); }
+  async compileListOfIDs() {
+    let editor = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
+    let jsURI = encodeURI(editor.shadowRoot.querySelector("#filename").value);
+    const htmlURI = jsURI::replaceFileEndingWith('html');
+    let html = await htmlURI.fetchText();
+
+    if (html === "File not found!\n") {
+      lively.warn("There is no HTML associated with this file.");
+      return [];
+    }
+
+    let tmp = <div></div>;
+    tmp.innerHTML = html;
+    let ids = tmp.childNodes[0].content.querySelectorAll("[id]").map(ea => ea.id);
+
+    const htmlLines = html.split("\n");
+
+    const idsWithLocation = [];
+    for (const id of ids) {
+      for (const line of htmlLines) {
+        const indexOfId = line.indexOf("id=\"" + id + "\"");
+        if (indexOfId !== -1) {
+          idsWithLocation.push({ id, url: htmlURI, line: htmlLines.indexOf(line), ch: indexOfId + 4 });
+          break;
+        }
+      }
+    }
+    return idsWithLocation;
   }
 
   generateTestCase() {
@@ -821,9 +993,13 @@ export default class ASTCapabilities {
 
   compileHTMLGetter(property) {
     var propertyName = property.identifier;
-    var methodName = propertyName.camelCase();
+    var methodName = this.generateMethodNameFromProperty(propertyName);
     property.identifier = methodName;
     return t.classMethod("get", t.identifier(methodName), [], t.blockStatement([t.returnStatement(t.callExpression(t.memberExpression(t.thisExpression(), t.identifier("get")), [t.stringLiteral("#" + propertyName)]))]));
+  }
+
+  generateMethodNameFromProperty(name) {
+    return name.camelCase();
   }
 
   async getUserInput(description, defaultValue) {
@@ -1246,7 +1422,9 @@ export default class ASTCapabilities {
     return this.livelyCodeMirror.value;
   }
   set sourceCode(text) {
-    return this.livelyCodeMirror.value = text;
+    this.livelyCodeMirror.value = text;
+    this.codeChanged();
+    return this.livelyCodeMirror.value;
   }
 
   focusEditor() {
@@ -1332,8 +1510,7 @@ export default class ASTCapabilities {
     let locations = possibleClasses.filter(cl => {
       return possibleExports.some(e => e.url == cl.url && e.classes.some(eCl => eCl == cl.name));
     });
-    locations = locations.filter(ea => ea.url.match(lively4url)); //filter local files
-    return locations;
+    return locations.filter(ea => ea.url.match(lively4url)); //filter local files
   }
 
   async getFunctionExportURLs(methodName) {
@@ -1341,8 +1518,7 @@ export default class ASTCapabilities {
     let locations = await index.db.exports.filter(exp => {
       return exp.functions.some(me => me == methodName);
     }).toArray();
-    debugger;
-    return locations.map(loc => loc.url); //.replace(lively4url,''));
+    return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 
   /*MD ## Color Picker MD*/
