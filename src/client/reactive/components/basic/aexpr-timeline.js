@@ -3,9 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 import eventDrops from 'src/external/event-drops.js';
-//import eventDrops from 'https://unpkg.com/event-drops@1.3.0/dist/index.js';
 import d3 from 'src/external/d3.v5.js';
-import repositoriesData from 'src/components/draft/event-drops-data.js'
 
 import {AExprRegistry} from 'src/client/reactive/active-expression/active-expression.js'
 
@@ -14,21 +12,29 @@ export default class EventDrops extends Morph {
     this.windowTitle = "Active Expression Event Timeline";
     this.config = {
       d3,
-      range : this.chart ? this.chart.range : void 0,
-      zoom: {
-          onZoom: () => {this.zoomedTo = this.chart.scale().domain()},
-          onZoomEnd: () => this.updateMetaInformation(),
+      bound : {format: () => undefined},
+      range : {start: new Date(performance.timeOrigin), end: new Date()},
+      line : {
+        color: (_, index) => d3.schemeCategory10[index%10]
       },
+      zoom: {
+          onZoom: () => {
+            this.zoomedTo = this.chart.scale().domain();
+            this.updateMetaInformation();
+          },
+      },
+      restrictPan : true,
       drop: {
           date: event => event.timestamp,
           color: event => {
-            switch(event.message) {
+            switch(event.type) {
               case 'created': return 'green';
               case 'disposed': return 'red';
               case 'changed value': return 'blue';
+              case 'dependencies changed': return 'purple';
               default : return 'black';
             }
-          }, //'#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6),
+          },
           onClick : data => {
             lively.notify(JSON.stringify(data));
             lively.openInspector(data);
@@ -39,29 +45,18 @@ export default class EventDrops extends Morph {
                 .duration(200)
                 .style('opacity', 1)
                 .style('pointer-events', 'auto');
-            //lively.showEvent(d3.event);
-            //lively.openInspector(d3.event)
-            this.tooltip.html('')// = '';
+            this.tooltip.html('');
             this.tooltip.append(() =>
                     <div class="event">
                       <div class="content">
-                        <h3 style="font-size: 1em">{event.message}</h3>
+                        <h3 style="font-size: 1em">{event.type}</h3>
                         <span style="font-size: 1em">{(event.value || "").toString()}</span>
                         <p style="font-size: 1em">at {this.humanizeDate(event.timestamp)}</p>
                       </div>
                     </div>);
-                // .style('left', `${d3.event.clientX - 30}px`)
-                // .style('top', `${d3.event.clientY + 20}px`)
-            //debugger;
             lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX +3, d3.event.clientY+3));
-            //this.tooltip.style.display = 'inline';
-            //this.hideTooltip.cancel();
         },
         onMouseOut: () => {
-          //lively.notify('out')
-            //this.hideTooltip();
-            //this.tooltip.style.display = 'none';
-            //this.hideTooltip();
             this.tooltip
                 .transition()
                 .duration(500)
@@ -71,35 +66,12 @@ export default class EventDrops extends Morph {
       },
     };
     this.chart = eventDrops(this.config);
-
-
-    //let repositoriesData = require('event-drops-data.json');
-    
-    repositoriesData = repositoriesData.map(repository => ({name: repository.name, data: repository.commits}));
     
     this.numberEventsContainer = this.get('#numberEvents');
     this.zoomStart = this.get('#zoomStart');
     this.zoomEnd = this.get('#zoomEnd');
     document.body.querySelectorAll('#event-drops-tooltip').forEach(each => each.remove());
-      
-      // d3
-      // .select(this)
-      // .append('div')
-      // .classed('tooltip', true)
-      // .style('opacity', 0)
-      // .style('border', 'red 3px solid')
-      // .style('width', '100px')
-      // .style('height', '100px')
-      // .style('background-color', 'blue')
-      // .style('pointer-events', 'auto');
-
     this.d3 = d3;
-
-    // this.chart.setDomain = (domain) => {
-    //   this.chart.scale().domain(domain);
-    //   let svg = d3.select(this.get('.event-drop-chart'));
-    //   svg.call(this.chart.draw(_.merge(defaultConfig, this.config), this.chart.scale()));
-    // }
     this.update();
    
   }
@@ -119,7 +91,6 @@ export default class EventDrops extends Morph {
       .style('background-color', '#EEEEEE')
       .style('z-index', 500)
       .style('pointer-events', 'auto');
-     // || document.body.appendChild(<div id='event-drops-tooltip' class='tooltip' style='background-color:gray; display:none; width:200px; z-index: 500; position:relative'></div>);
   }
   
 
@@ -135,8 +106,9 @@ export default class EventDrops extends Morph {
   }
   
   update() {
+    if(this.detached)return;
     this.setAexprs(this.getDataFromSource());
-    if(this.isStillInWorld())setTimeout(() => {this.update()}, 1000);
+    setTimeout(() => {this.update()}, 1000);
   }
   
   setAexprs(aexprs) {
@@ -157,8 +129,9 @@ export default class EventDrops extends Morph {
       newDomain = [min, max];
     }
     this.chart.scale().domain(newDomain);
-    this.chart.zoomToDomain(newDomain);  
-    this.updateMetaInformation();
+    this.config.range = {start: newDomain[0], end: newDomain[1]};
+    this.chart.zoomToDomain(newDomain); 
+    this.chart.draw(this.config);
     this.get('#diagram').scrollTop = scrollBefore;
   }
   
@@ -166,45 +139,29 @@ export default class EventDrops extends Morph {
     d3
       .select(this.get('#diagram'))
       .data([data])
-      .call(this.chart);;
+      .call(this.chart);
   }
   
   updateMetaInformation() {
     const numEvents = _.sumBy(this.chart.filteredData(), each => each.data.length);
     this.numberEventsContainer.textContent = numEvents;
-    this.zoomStart.textContent = this.humanizeDate(this.chart.scale().domain()[0]);
-    this.zoomEnd.textContent = this.humanizeDate(this.chart.scale().domain()[1]);
+    this.zoomStart.textContent = this.humanizeDate(this.zoomedTo[0]);
+    this.zoomEnd.textContent = this.humanizeDate(this.zoomedTo[1]);
   }
   
   humanizeDate(date) {
-    const monthNames = [
-        'Jan.',
-        'Feb.',
-        'March',
-        'Apr.',
-        'May',
-        'June',
-        'Jul.',
-        'Aug.',
-        'Sept.',
-        'Oct.',
-        'Nov.',
-        'Dec.',
-    ];
-
-    return `
-        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}:${('0'+date.getSeconds()).slice(-2)}.${('000'+date.getMilliseconds()).slice(-4)}
+    return `        ${date.getHours()}:${('0'+date.getMinutes()).slice(-2)}:${('0'+date.getSeconds()).slice(-2)}.${('000'+date.getMilliseconds()).slice(-4)}
     `;
-  }
-
-  isStillInWorld() {
-    return this.parentElement && this.parentElement.parentElement != undefined;
   }
 
   livelyMigrate(other) {
     this.zoomedTo = other.zoomedTo;
     this.groupingFunction = other.groupingFunction;
     this.dataFromSource = other.dataFromSource;
+  }
+
+  detachedCallback() {
+    this.detached = true;
   }
   
 }
