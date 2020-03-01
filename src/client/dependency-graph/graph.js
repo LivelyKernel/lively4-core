@@ -1,25 +1,5 @@
-/*MD
-# Dependency Graph
-
-## Summary
-This graph helps to find dependencies of [**href**] callexpressions by statically analysing the AST. It can be (and is) used to enhance the [**href**]`code mirror` and provide program comprehension for the programmer regarding active expressions.
-
-## API
-#### `resolveDependencies(location)`
-Main entry for collecting the dependencies.
-Takes the location of a callexpression.
-Returns a `Set` of all nodes, that (may) change state touched by the callexpression.
-Returns `undefined` if there is no callexpression at the given location
-
-#### `_resolveDependencies(nodePath)`
-See `resolveDependencies(location)` but takes the babel `nodePath` instead of a location.
-
-## Not supported Syntax elements
-* `delete object.property` - change from some value to undefined not found
-* computed properties - just don't
-* `this`
-MD*/
 import babelDefault from 'systemjs-babel-build';
+
 import { range } from 'utils';
 const { types: t } = babelDefault.babel;
 
@@ -61,8 +41,21 @@ export class DependencyGraph {
 			}
 		});
 
-		// Filters every memberassignment and registers it in `this.memberAssignments`
+		this.extractMemberAssignments();
+    
+    this.enrichFunctionNodes();
+
 		this._inner.traverseAsAST({
+			Expression(expr) {
+				self.collectExpressionInformation(expr);
+			}
+		});
+	}
+  
+	// Filters every memberassignment and registers it in `this.memberAssignments`
+  extractMemberAssignments(){
+    let self = this;
+    this._inner.traverseAsAST({
 			MemberExpression(expr) {
 				if (expr.node.computed) return;
 				if (!expr.parentPath.isAssignmentExpression()) return;
@@ -89,10 +82,11 @@ export class DependencyGraph {
 				}
 			}
 		});
-
-		// adds bindings definend outside of the current scope(e.g. Function) to the scope
+  }
+  
+  enrichFunctionNodes(){
+    // adds bindings definend outside of the current scope(e.g. Function) to the scope
 		this._inner.traverseAsAST({
-			//  add scopable????
 			'Function|ArrowFunctionExpression|Program'(path) {
 				path.node.extra.leakingBindings = leakingBindings(path);
 				const callExpressions = path.node.extra.callExpressions = [];
@@ -126,15 +120,15 @@ export class DependencyGraph {
 				})
 			}
 		});
+  }
 
-		this._inner.traverseAsAST({
-			Expression(expr) {
-				self.collectExpressionInformation(expr);
-			}
-		});
-    console.warn(this);
-	}
-
+  /* Main recursion for enriching AST 
+  *  Resolves Expression nodes and follows their children in order to find
+  *  - resolvedObjects - the {ObjExpression, [Bindings]} in which the expression may result
+  *  - resolvedCallees - the [Function] which callepressions may actually be
+  *  - results         - the [Function] which may be returned by an expression or Identifier
+  *
+  */
 	collectExpressionInformation(path) {
     //debugger;
 		if (path.node.extra.returnVisited <= 0) {
@@ -209,9 +203,6 @@ export class DependencyGraph {
 		} else if (path.isMemberExpression()) {
 			const objExpr = path.get("object");
 			this.collectExpressionInformation(objExpr);
-      
-      // wir selbst wenn obj ein identifier ist?
-      // FIND BINDINGS OF OBJ vie resolved OBJ hochbubbeln???
 
 			let tmp = objExpr.node.extra.resolvedObjects.flat();
 			tmp.forEach(result => {
@@ -222,14 +213,11 @@ export class DependencyGraph {
 				})
 			});
 		}
-    if ([...resolvedObjects, ...results].includes(undefined)) {
-      //debugger;
-    }
     path.node.extra.resolvedObjects = resolvedObjects.flat();
 		path.node.extra.results = results.flat();
 	}
 
-
+  // Returns for a given 'property' and {ObjExpression, [Binding]} all known assignments including the declaration
 	assignmentsOf(property, obj) {
     
     let result = [];
@@ -259,8 +247,6 @@ export class DependencyGraph {
           result.push(tmp);
         }
       }
-    } else {
-      console.error("what?", obj);
     }
 		return result;
 	}
@@ -276,8 +262,12 @@ export class DependencyGraph {
 		return;
 	}
   
-  shadowedBindings(bindings) {
-    /*ATTENTNION: some bindings shadow others, so instead of using the actual binding `b`, we use every binding `b` resolves to (including `b`)
+    /* returns all [binding] that the input [binding] may be assigned to.
+     * ATTENTION: this only works for object bindings, since literal values are copied in javascript
+     * `let a = 4; let b = a` `b` is not shadowed
+     *
+     *
+     * But if `a` is an object it is, so instead of using the actual binding `b`, we use every binding `b` resolves to (including `b`)
      * 
      * //Where is b changed?
      * let a = {x:1};
@@ -285,6 +275,7 @@ export class DependencyGraph {
      * a.x = 2; //<--!!!
      * //b is equal to {x:2}
      */
+  shadowedBindings(bindings) {
     
     /* this should be stored in the members map or in an extra property. 
     * DOES NOT DETECT DEPENDENCIES THROUGH SIMPLE ASSIGNMENTS (a la `a = b`)
@@ -302,6 +293,10 @@ export class DependencyGraph {
     return result;
   }
 
+  /* returns a [Node] of nodes where the active Expression on this location may be changed
+  * DOES NOT care for execution order of the code
+  * uses heuristics e.g. fixed recursion depth
+  */
 	resolveDependencies(location) {
 
 		let node;
@@ -353,8 +348,7 @@ export class DependencyGraph {
 				}
 
 				if (t.isVariableDeclarator(callee)) {
-					//???
-					//console.error(callee);
+					//we should not end up here
 				}
 			})
 		});

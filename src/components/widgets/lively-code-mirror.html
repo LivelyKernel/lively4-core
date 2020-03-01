@@ -141,6 +141,67 @@
 #suggestBox > select > option:hover {
 	box-shadow: 0 0 10px 100px #4A8CF7 inset; color: white;
 }
+/*
+  ActiveExpressions Gutter
+  */
+  .activeExpressionGutter {
+    width: 10px;
+
+    transition: all 0.5s ease-in-out;
+    transition-property: opacity;
+
+    opacity: 0;
+    background-color: orange;/*lightgray;*/
+    border-left: solid 0.3px gray;
+    border-right: solid 0.3px gray;
+  }
+  .activeExpressionGutter:hover {
+    opacity: 0.4;
+  }
+
+  .activeExpressionGutter-marker {
+    width: 10px;
+    cursor: pointer;
+    box-sizing: content-box;
+
+    transition: all 0.3s ease-in-out;
+    transition-property: background-color, color;
+
+    background-color: rgba(255,165,0,0.5);
+    color: rgba(0,0,0,0.5);
+    text-align: center;
+    vertical-align: middle;
+    line-height: normal;
+    display: flex;
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+  }
+  .activeExpressionGutter-marker:hover {
+    background-color: orange;
+    color: black;
+  }
+    
+  .aexprDependencies {    
+    position: absolute;
+    background: #646464;
+    border-radius:4px;
+    padding: 6px 12px;
+    font-family: arial;
+    font-size: 12px;
+    text-shadow: 0px 1px 1px #000;
+    color: #ffc64a;
+  }
+  .aexprDependencies:before {
+    content : " ";
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #646464;
+    position:absolute;
+    bottom:-5px;
+    left:5px;
+  }
     
   </style>
   <style id="customStyle"></style>
