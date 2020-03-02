@@ -457,7 +457,7 @@ export default function(babel) {
                     END_LINE: t.numericLiteral(node.loc.end.line),
                     START_COLUMN: t.numericLiteral(node.loc.start.column),
                     START_LINE: t.numericLiteral(node.loc.start.line),
-                    // SOURCE: t.stringLiteral(source)
+                    SOURCE: t.stringLiteral("") // source
                   }).expression;
                 }
                 let location = buildSourceLocation(path);
