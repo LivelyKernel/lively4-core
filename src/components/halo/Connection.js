@@ -22,10 +22,14 @@ export default class Connection {
     this._eventListener = evt => this.connectionFunction(evt)
     this._targetProperty = this.cleanProperty(this._targetProperty)
     if(isEvent){
-      this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42}";
+      this.valueModifyingCode = `(target, event) => {
+  target.${this._targetProperty} = 42;
+}`;
       this.trackingCode = this._sourceProperty;
     } else {
-      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue}";
+      this.valueModifyingCode = `(target, sourceValue) => {
+  target.${this._targetProperty} = sourceValue;
+}`;
       this._sourceProperty = this.cleanProperty(this._sourceProperty)
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
