@@ -129,9 +129,7 @@ export default class EventDrops extends Morph {
       newDomain = [min, max];
     }
     this.chart.scale().domain(newDomain);
-    this.config.range = {start: newDomain[0], end: newDomain[1]};
     this.chart.zoomToDomain(newDomain); 
-    this.chart.draw(this.config);
     this.get('#diagram').scrollTop = scrollBefore;
   }
   

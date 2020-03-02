@@ -157,7 +157,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.myASTCapabilities = System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
         .then(m => {
           var capabilities = new m.default(this, cm);
-          cm.on("change", (() => {capabilities.codeChanged()}).debounce(200))
+          cm.on("change", (() =>{capabilities.codeChanged()}).debounce(200));
           return capabilities;
         });
     }
@@ -253,9 +253,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("showTrailingSpace", true)
     // editor.setOption("matchTags", true)
 
-    editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})))
-    editor.on("change", (() => this.checkSyntax()).debounce(500))
-
+    editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})));
+    editor.on("change", (() => this.checkSyntax()).debounce(500));
+    
+    editor.on("change", (() => this.updateAExprDependencies()).debounce(500));
     
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
     
@@ -440,6 +441,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },
+        // #KeyboardShortcut Alt-A show additional info of this Active Expression
+        "Alt-A": async cm => {
+          this.showAExprDependencyTextMarkers();
+        },
         // #Async #Workspace #Snippet #Workaround missing global async/await support in JavaScript / our Workspaces
         "Ctrl-Alt-A": cm => {
           var selection = this.editor.getSelection()
@@ -450,7 +455,8 @@ export default class LivelyCodeMirror extends HTMLElement {
 })()`)
           this.editor.execCommand(`goWordLeft`)
           this.editor.execCommand(`goCharLeft`)
-        }
+        }, 
+        
       }
       // Alt-Enter has to react on key up, so we make an extra rule here
       // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
@@ -500,7 +506,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseTags", true)
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")
-
+    
     editor.setOption("tabSize", 2)
     editor.setOption("indentWithTabs", false)
 
@@ -1283,7 +1289,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.value.split("\n").forEach((ea, index) => {
       var startPos = ea.indexOf(str)
       if (!found && (startPos != -1)) {
-	    this.editor.setCursor(index + 20, 10000);// line end ;-)
+        this.editor.setCursor(index + 20, 10000);// line end ;-)
         this.editor.focus()
         this.editor.setSelection({line: index, ch: startPos }, {line: index, ch: startPos + str.length})
         found = ea;
@@ -1313,8 +1319,162 @@ export default class LivelyCodeMirror extends HTMLElement {
       return this.value.slice(0,80)
     }
   
+  /*MD ## Active Expression Support MD*/
+  async updateAExprDependencies() {
+    await this.editor;
+    const capabilities = await this.astCapabilities(this.editor);
+    if (!capabilities.canParse || !capabilities.hasActiveExpressionsDirective) {
+      this.hideAExprDependencyGutter();
+      this.resetAExprTextMarkers();
+      this.resetAExprDependencyTextMarkers();
+      return;
+    }
+    this.showAExprTextMarkers();
+    await this.showAExprDependencyGutter();
+    this.showAExprDependencyGutterMarkers();
+  }
+
+  async showAExprTextMarkers() {
+    const editor = await this.editor;
+    await this.resetAExprTextMarkers();
+    const capabilities = await this.astCapabilities(this.editor);
+    capabilities.getAllActiveExpressions().forEach(path => {
+      const r = range(path.node.loc).asCM();
+      const mark = this.editor.markText(r[0], r[1], {
+        css: "background-color: #3BEDED",
+      });
+      mark.isAExprTextMarker = true;
+    })
+  }
+
+  async resetAExprTextMarkers() {
+    const editor = await this.editor;
+    editor.getAllMarks().forEach(mark => {
+      if (mark.isAExprTextMarker) {
+        mark.clear();
+      }
+    });
+  }
+
+  async showAExprDependencyGutter() {
+    const id = "activeExpressionGutter";
+    const editor = await this.editor;
+    let gutters = editor.getOption("gutters");
+    if (!gutters.some(marker => marker === id)) {
+      editor.setOption('gutters', [...gutters, id]);
+    };
+  }
   
+  async hideAExprDependencyGutter() {
+    const id = "activeExpressionGutter";
+    const editor = await this.editor;
+    let gutters = editor.getOption("gutters");
+    gutters = gutters.filter(marker => marker !== id);
+    editor.setOption('gutters', gutters);
+  }
+
+  async resetAExprDependencyTextMarkers() {
+    const editor = await this.editor;
+    editor.getAllMarks().forEach(mark => {
+      if (mark.isAExprDependencyTextMarker) {
+        mark.clear();
+      }
+    });
+  }
+
+  async showAExprDependencyTextMarkers() {
+    await this.editor;
+    await this.resetAExprDependencyTextMarkers();
+    const cursor = this.editor.getCursor();
+    const capabilities = await this.astCapabilities(this.editor);
+    const aexprPath = capabilities.getAexprAtCursor(cursor);
+    if (!aexprPath) return;
+    const deps = capabilities.resolveDependencies(aexprPath.get("arguments")[0]);
+    deps.forEach((path) => {
+      const r = range(path.node.loc).asCM();
+      const mark = this.editor.markText(r[0], r[1], {
+        css: "background-color: orange",
+      });
+      mark.isAExprDependencyTextMarker = true;
+    });
+  }
+  
+  async showAExprDependencyGutterMarkers() {
+    const dict = new Map();
+    const lines = [];
+    
+    await this.editor;
+    const capabilities = await this.astCapabilities(this.editor);
+    capabilities.getAllActiveExpressions().forEach(path => {
+      const dependencies = capabilities.resolveDependencies(path.get("arguments")[0]);
+
+      dependencies.forEach(statement => {
+        if (!dict.get(statement)) {
+          dict.set(statement, []);
+        }
+        dict.get(statement).push(path);
+      });
+    });
+  
+    for (const [statement,aExprs] of dict.entries()){
+      const line = statement.node.loc.start.line - 1; 
+      if (!lines[line]) {
+        lines[line] = [];
+      }
+      for (let aExpr of aExprs ){
+        lines[line].push(aExpr);
+      }
+    }
+    
+    this.editor.doc.clearGutter('activeExpressionGutter');
+    lines.forEach((deps, line) => {
+      this.drawAExprGutter(line, deps);
+    })
+  }
+  
+  drawAExprGutter(line, dependencies) {
+    this.editor.doc.setGutterMarker(
+      line,
+      'activeExpressionGutter',
+      this.drawAExprGutterMarker(dependencies));
+  }
+
+  drawAExprGutterMarker(dependencies) {
+    const callback = async (evt) => {
+      const list = this.drawAExprDependencyList(dependencies);
+      const depListWrap = <div class="aexprDependencies"></div>;
+      depListWrap.append(list);
+      this.prepend(depListWrap);
+      
+      depListWrap.style.height = "100px";
+      depListWrap.style.width = "100px";
+      const padding = 5;
+      const markerBounds = evt.target.getBoundingClientRect();
+      const wrapBounds = depListWrap.getBoundingClientRect();
+      console.error(markerBounds, wrapBounds);
+      console.error(evt.target, depListWrap);
+      const top = markerBounds.top - (wrapBounds.height + padding);
+      console.error(`${markerBounds.top} - ${wrapBounds.height + padding} === ${top}`);
+      depListWrap.style.top = `${top}px`;
+      depListWrap.style.right = `${markerBounds.left}px`;
+    }
+    
+    // TODO render this without the "0"
+    return <div class="activeExpressionGutter-marker" click={callback}>
+      {dependencies.length}
+    </div>
+  }
+
+  drawAExprDependencyList(dependencies) {
+    const list = <div style="display:flex;flex-direction:column;width:fit-content;height:fit-content;"></div>;
+    dependencies.forEach(dep => {
+      const state = dep.get("arguments.0.body").getSource();
+      const line = dep.node.loc.start.line;
+      const description = `${line} : ${state}`;
+      const item = <div style="width:fit-content;height:fit-content;">{description}</div>;
+      list.append(item);
+    });
+
+    return list;
+  }
 }
-
-// LivelyCodeMirror.loadModules()
-

@@ -47,8 +47,6 @@ export default class CodemirrorPlayground extends Morph {
     this.lcm.shadowRoot.prepend(codeMirrorStyle);
     await this.lcm.editorLoaded();
     
-    this.addExtragutter();
-    
     const delayedUpdate = ((...args) => this.delayedUpdate(...args)).debounce(1000)
     this.lcm.addEventListener('change', () => {
       this.instantUpdate();
@@ -77,7 +75,6 @@ export default class CodemirrorPlayground extends Morph {
   
   collectAExpr() {
     const allAExpr = [];
-    console.log(this.dependencyGraph);
     this.dependencyGraph.inner.traverseAsAST({
       CallExpression(path) {
         if (isAExpr(path) ) {
@@ -120,7 +117,6 @@ export default class CodemirrorPlayground extends Morph {
   
   showAExprInfo() {
     this.resetTextMarkers();
-    console.log
     
     const aexpr = this.selectedAExpr();
     if (!aexpr) return;
@@ -140,7 +136,7 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   
-  showAExprMarker(){
+  showAExprMarker() {
     let dict = new Map();
     let lines = [];    
     
@@ -169,20 +165,10 @@ export default class CodemirrorPlayground extends Morph {
       }
     }
     
-    this.$.doc.clearGutter('extragutter');
+    this.$.doc.clearGutter('activeExpressionGutter');
     lines.forEach((deps, line) => {
-      this.drawAExprGutter(line, deps);
+      this.lcm.drawAExprGutter(line, deps);
     })
-  }
-  
-  drawAExprGutter(line, dependencies) {
-    let clickMethod = e => lively.openInspector(dependencies);
-    
-    this.$.doc.setGutterMarker(
-      line,
-      'extragutter',
-      <div class="extragutter-marker" click={clickMethod}>{dependencies.length}</div>// TODO render this without the "0"
-      )
   }
   
   instantUpdate() {
@@ -245,55 +231,6 @@ export default class CodemirrorPlayground extends Morph {
     })
     
   }
-
-  /*MD ### Left Gutter MD*/
-  addExtragutter() {
-    const gutters = Array.from(this.$.options.gutters)
-    if (!gutters.includes('extragutter')) {
-      this.lcm.setCustomStyle(`
-      .extragutter {
-        width: 10px;
-
-        transition: all 0.5s ease-in-out;
-        transition-property: opacity;
-
-        opacity: 0;
-        background-color: lightgray;
-        border-left: solid 0.3px gray;
-        border-right: solid 0.3px gray;
-      }
-      .extragutter:hover {
-        opacity: 0.4;
-      }
-
-      .extragutter-marker {
-        width: 10px;
-        cursor: pointer;
-        box-sizing: content-box;
-
-        transition: all 0.3s ease-in-out;
-        transition-property: background-color, color;
-
-        background-color: rgba(255,165,0,0.5);
-        color: rgba(0,0,0,0.5);
-        text-align: center;
-        vertical-align: middle;
-        line-height: normal;
-        display: flex;
-        justify-content: center; /* align horizontal */
-        align-items: center; /* align vertical */
-      }
-      .extragutter-marker:hover {
-        background-color: orange;
-        color: black;
-      }
-      `)
-
-      gutters.splice(gutters.indexOf('CodeMirror-linenumbers') + 1 || 0, 0, 'extragutter');
-      this.lcm.setOption('gutters', gutters)
-    }
-  }
-
 
   /*MD #### Right Gutter MD*/
   identifierToRightGutter() {

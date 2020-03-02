@@ -425,7 +425,10 @@ export default function(babel) {
                 path.node.name === AEXPR_IDENTIFIER_NAME &&
                 !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
               ) {
-                const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+                let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+                if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+                  fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
+                }
                 const sourceLocation = template(`({
                   file: '${fileName}',
                   end: {
@@ -448,13 +451,13 @@ export default function(babel) {
                     sourceType: 'module',
                     body: [path.parent.arguments[0]]
                   };
-                  let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+                  // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
                     END_COLUMN: t.numericLiteral(node.loc.end.column),
                     END_LINE: t.numericLiteral(node.loc.end.line),
                     START_COLUMN: t.numericLiteral(node.loc.start.column),
                     START_LINE: t.numericLiteral(node.loc.start.line),
-                    SOURCE: t.stringLiteral(source)
+                    // SOURCE: t.stringLiteral(source)
                   }).expression;
                 }
                 let location = buildSourceLocation(path);

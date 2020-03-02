@@ -1,4 +1,5 @@
 "use proxies for aexprs";
+import { reset } from 'active-expression-proxies';
 
 import chai, { expect } from "src/external/chai.js";
 import sinon from "src/external/sinon-3.2.1.js";
@@ -11,6 +12,18 @@ describe("Proxy-based Implementation", () => {
     const ae = aexpr(() => book.pages);
     ae.onChange(spy);
     book.pages = 320;
+    expect(spy).to.have.been.calledOnce;
+    expect(spy).to.have.been.calledWith(320);
+  });
+  it("active expressions should not detect changes after a reset", () => {
+    const book = { pages: 230, genre: "funny" };
+    const spy = sinon.spy();
+    const ae = aexpr(() => book.pages);
+    ae.onChange(spy);
+    book.pages = 320;    
+    reset();
+    book.pages = 400;
+    
     expect(spy).to.have.been.calledOnce;
     expect(spy).to.have.been.calledWith(320);
   });
@@ -85,13 +98,6 @@ describe("Proxy-based Implementation", () => {
 
     expect(spy).to.have.been.calledOnce;
     expect(spy).to.have.been.calledWith("Good Book");
-
-    spy.reset();
-
-    book.title = "Bad Book";
-
-    expect(spy).to.have.been.calledOnce;
-    expect(spy).to.have.been.calledWith("Bad Book");
   });
 
   it("active expressions involving ternary statements should detect changes ", () => {
@@ -115,17 +121,6 @@ describe("Proxy-based Implementation", () => {
     expect(spy).to.have.been.calledWith("Bad Book");
   });
 
-  xit("active expressions should provide additional information (e.g. the last value of the expression) to the callback", () => {
-    const book = { pages: 230, title: "Good Book", genre: "funny" };
-    const spy = sinon.spy();
-
-    aexpr(() => book.genre).onChange(spy);
-
-    book.genre = "sad";
-    expect(spy).to.have.been.calledOnce;
-    expect(spy.getCall(0).args[0]).to.equal(42);
-    expect(spy.getCall(0).args[1]).to.have.property("lastValue", 17);
-  });
 
   it("all active expressions listening on a property should be checked", () => {
     const book = { pages: 230, title: "Good Book", genre: "funny" };
@@ -209,10 +204,11 @@ describe("Proxy-based Implementation", () => {
   });
 
   describe("Arrays and Active Expression", () => {
-    it("active expressions involving arrays last property should detect changes", () => {
+
+    xit("active expressions listening to changes for array containers should trigger", () => {
       const books = ["HP", "GOT"];
       const spy = sinon.spy();
-      const ae = aexpr(() => books.last);
+      const ae = aexpr(() => books);
       ae.onChange(spy);
 
       books.push("LOTR");
@@ -223,10 +219,10 @@ describe("Proxy-based Implementation", () => {
       expect(spy).to.have.been.calledWith("GOT");
     });
 
-    xit("active expressions listening to changes for array containers should trigger", () => {
+    it("active expressions involving arrays last property should detect changes", () => {
       const books = ["HP", "GOT"];
       const spy = sinon.spy();
-      const ae = aexpr(() => books);
+      const ae = aexpr(() => books.last);
       ae.onChange(spy);
 
       books.push("LOTR");
@@ -313,6 +309,19 @@ describe("Proxy-based Implementation", () => {
   });
 
   describe("Sets and Active Expression", () => {
+
+    xit("active expressions listening to changes for set containers should trigger", () => {
+      const books = new Set(["HP", "LOTR"]);
+      const spy = sinon.spy();
+      const ae = aexpr(() => books);
+      ae.onChange(spy);
+
+      books.add("GOT");
+
+      expect(spy).to.have.been.calledOnce;
+      expect(spy).to.have.been.calledWith(books);
+    });
+
     it("active expressions involving Set.add should detect changes in the size of the set", () => {
       const books = new Set(["HP", "LOTR"]);
       const spy = sinon.spy();
@@ -415,6 +424,23 @@ describe("Proxy-based Implementation", () => {
   });
 
   describe("Maps and Active Expression", () => {
+
+    xit("active expressions listening to changes for map containers should trigger", () => {
+      const readers = new Map([
+        ["first", "Nico"],
+        ["second", "Jonas"]
+      ]);
+
+      const spy = sinon.spy();
+      const ae = aexpr(() => readers);
+      ae.onChange(spy);
+
+      readers.set("third", "Stefan");
+
+      expect(spy).to.have.been.calledOnce;
+      expect(spy).to.have.been.calledWith(readers);
+    });
+
     it("active expressions involving Map.set should detect changes in the size of the Map", () => {
       const readers = new Map([
         ["first", "Nico"],
@@ -543,7 +569,7 @@ describe("Proxy-based Implementation", () => {
     });
   });
 
-  xit("active expression should detect usage of delete of object properties", () => {
+  it("active expression should detect usage of delete of object properties", () => {
     let book = {
       pages: 42,
       genre: "funny"
@@ -560,7 +586,7 @@ describe("Proxy-based Implementation", () => {
     expect(book).to.not.have.property("genre");
   });
 
-  xit("active expression should detect changes for deleted object properties", () => {
+  it("active expression should detect changes for deleted object properties", () => {
     let book = {
       pages: 42,
       genre: "funny"
@@ -575,6 +601,35 @@ describe("Proxy-based Implementation", () => {
     expect(spy).to.have.been.calledOnce;
 
     spy.reset();
+  });
+
+
+  describe("Reset method", () => {
+    it("should be able to reset between loop iterations", () => {
+      function createRectangle(width = 10, height = 20) {
+        return {
+          width,
+          height,
+          area() {
+            return this.width * this.height;
+          },
+          aspectRatio() {
+            return this.width / this.height;
+          }
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const targetAspectRatio = 2;
+        const rect = createRectangle(20, 10);
+
+        const ae = aexpr(() => rect.aspectRatio());
+        ae.onChange(() => (rect.height = rect.width / targetAspectRatio));
+
+        rect.width = 100;
+        reset();
+      }
+    });
   });
 });
 

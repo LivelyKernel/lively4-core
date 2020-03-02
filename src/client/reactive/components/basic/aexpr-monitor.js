@@ -209,7 +209,7 @@ function getValueTag(ae) {
 }
 
 function getDependencies(ae) {
-  return ae => ae.supportsDependencies() ? 
+  return ae.supportsDependencies() ? 
       listify(ae.dependencies().all().map(dependencyString))
       : <font color="#551199">{"no dependecy api available"}</font>
 }
