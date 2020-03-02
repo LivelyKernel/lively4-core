@@ -451,13 +451,13 @@ export default function(babel) {
                     sourceType: 'module',
                     body: [path.parent.arguments[0]]
                   };
-                  let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+                  // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
                     END_COLUMN: t.numericLiteral(node.loc.end.column),
                     END_LINE: t.numericLiteral(node.loc.end.line),
                     START_COLUMN: t.numericLiteral(node.loc.start.column),
                     START_LINE: t.numericLiteral(node.loc.start.line),
-                    SOURCE: t.stringLiteral(source)
+                    // SOURCE: t.stringLiteral(source)
                   }).expression;
                 }
                 let location = buildSourceLocation(path);
