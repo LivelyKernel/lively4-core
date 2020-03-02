@@ -1,3 +1,4 @@
+
 var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices","https://lively-kernel.org/research"] // #TODO how to detect this?
 var baseUrlsAuthNeededForWriting = [ "https://lively-kernel.org/lively4"]
 
@@ -92,16 +93,8 @@ export async function installProxyFetch() {
 
 
 export async function installAuthorizedFetch() {
-//   var focalStorage = (await System.import("src/external/focalStorage.js")).default
-  
-//   var mounts = await focalStorage.getItem("lively4mounts")
-  
-//   if (!mounts) return 
-  
-  var gh = window.lively4github
-  
+  var gh = window.lively4github  
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isAuthFetch);
-  
   self.lively4fetchHandlers.push({
     isAuthFetch: true,
     handle(request, options) {
@@ -109,8 +102,6 @@ export async function installAuthorizedFetch() {
       var method = "GET"
       if (options && options.method) method = options.method;
       
-      
-
       var isWriting = method != "OPTIONS" && method != "GET" && method != "HEAD"
       
       async function ensureGithubLogin() {
@@ -122,7 +113,6 @@ export async function installAuthorizedFetch() {
           await gh.loadCredentials()
         }
       }
-      
       
       function addUserNameAndPassword(options, username="anonymous", password="xxx") {
         if (!options) options = {};
@@ -139,16 +129,12 @@ export async function installAuthorizedFetch() {
         return options
       }
       
-      
       if (baseUrlsAuthNeeded.find( ea => url.startsWith(ea))) {
         return {
             result: (async () => {
               console.log("AuthorizedFetch: " + url)
-            
               await ensureGithubLogin() 
               options =  addUserNameAndPassword(options, gh.username,   await gh.token)
-             
-          
               return proxyRequest(url, options)
             })()
         }          
@@ -158,9 +144,7 @@ export async function installAuthorizedFetch() {
         return {
             result: (async () => {
               console.log("AuthorizedFetch Write: " + url)
-            
               ensureGithubLogin() // but don't wait... we want to avoid deadlocks... or if there is no login..
-              
               if (gh) {
                 options = addUserNameAndPassword(options, gh.username,  gh.token)
               } else {
@@ -174,10 +158,48 @@ export async function installAuthorizedFetch() {
   })
 }
 
+export async function installDebugFetch() {
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isDebugFetch);
+  self.lively4fetchHandlers.push({
+    isDebugFetch: true,
+    options(request, options) {
+      var url = (request.url || request).toString()
+      if (url.match(/lively4(S2)?\//)) {
+        // console.log("DEBUG FETCH " + url)
+        if (!options) {
+          options = {
+            method: "GET"
+          }
+        }
+        if (!options.headers) {
+          options.headers = new Headers()
+        }
+        if (options.headers.set) {
+          var stack = self.lively ? lively.currentStack() : "";
+          if(!options.headers.get("debug-initiator")) {
+            options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
+            options.headers.set("debug-session", self.lively4session)
+             options.headers.set("debug-system", self.lively4systemid)
+          }
+          
+          
+          return options  
+        } else {
+          // convert first?
+        }
+        
+        
+      }
+      
+    }   
+  })
+}
+
 
 export async function installFetchHandlers() {
   await installProxyFetch()
   await installAuthorizedFetch()
+  await installDebugFetch()
 } 
 
 
@@ -185,5 +207,3 @@ if (self.lively) {
   // dev time
  installFetchHandlers()
 }
-
-// installProxyFetch()

@@ -419,7 +419,8 @@ export default class FileIndex {
       let response = await await fetch(url, {
             method: "OPTIONS",
             headers: {
-              showversions: true
+              showversions: true,
+              "debug-initiator": "fileindex.js#loadVersions"
             }
           })
       let text = await response.text()
@@ -735,7 +736,10 @@ export default class FileIndex {
     url = getBaseURL(url)
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
-      method: "OPTIONS"
+      method: "OPTIONS", 
+      headers: {
+        "debug-initiator": "fileindex.js#updateFile"
+      }
     }).then(r => r.clone().json())
     
     if (!stats.error) {
@@ -771,7 +775,12 @@ export default class FileIndex {
   
     if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
       if (size < 100000) {
-        let response = await fetch(url)
+        let response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "debug-initiator": "fileindex.js#addFile"
+          }
+        })
         file.version = response.clone().headers.get("fileversion")
         file.content = await response.clone().text()    
       }
@@ -810,7 +819,7 @@ export default class FileIndex {
 
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
-      await this.addVersions(file)
+      // await this.addVersions(file) // #Disabled for now, this is expensive!
     }
     
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
@@ -827,7 +836,8 @@ export default class FileIndex {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
-        filelist  : true
+        filelist  : true,
+        "debug-initiator": "fileindex.js#updateDirectory"
       }
     }).then(r => {
       if (r.status == 200) {

@@ -7,254 +7,320 @@ import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promise
 
 export default class PluginExplorer extends Morph {
 
-  static get defaultSourceURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-source.js"; }
   static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
 
-  get sourceEditor() { return this.get("#source"); }
-  get sourceAstInspector() { return this.get("#sourceAst") }
-  get pluginEditor() { return this.get("#plugin"); }
-  get transformedSourceEditor() { return this.get("#transformedSource"); }
-  get sourceURL() { return this.sourceEditor.getURLString(); }
-  get pluginURL() { return this.pluginEditor.getURLString(); }
-  
-  get runTests() { return this.get('#run-tests').checked; }
-  set runTests(value) { return this.get('#run-tests').checked = value; }
+  static get defaultWorkspacePath() { return "/src/components/tools/lively-plugin-explorer-playground.workspace"; }
 
-  async initLivelyEditorFromAttribute(editor, attributeToRead, defaultPath) {
-    var filePath =  this.getAttribute(attributeToRead);
-    if (!filePath) {
-      filePath = defaultPath;
+  /*MD ## UI Accessing MD*/
+
+  get container() { return this.get("#content"); }
+
+  get executionConsole() { return this.get("#executionConsole"); }
+
+  get sourceLCM() { return this.get("#source"); }
+  get sourceCM() { return this.sourceLCM.editor; }
+  get source() { return this.sourceCM.getValue(); }
+
+  get sourceAstInspector() { return this.get("#sourceAst"); }
+  
+  get pluginEditor() { return this.get("#plugin"); }
+  get pluginLCM() { return this.pluginEditor.livelyCodeMirror(); }
+  get pluginCM() { return this.pluginEditor.currentEditor(); }
+  get pluginSource() { return this.pluginCM.getValue(); }
+
+  async getPlugin() {
+    const url = this.fullUrl(this.pluginURL) || "";
+    const module = await System.import(url);
+    // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
+    // assumend problem: there is a bad version of the code in either the browser or system.js cache
+    // idea: we have to find and flush it...
+    // wip: the browser does not cache it, but system.js does...
+    return module.default;
+  }
+  
+  get transformedSourceLCM() { return this.get("#transformedSource"); }
+  get transformedSourceCM() { return this.transformedSourceLCM.editor; }
+  
+  get pluginURL() { return this.pluginEditor.getURLString(); }
+
+  get workspacePath() { return this.get("#workspace-path"); }
+  get workspaceURL() { return this.workspacePath.value; }
+  set workspaceURL(urlString) { this.workspacePath.value = urlString; }
+  onWorkspacePathEntered(urlString) { this.loadWorkspaceFile(urlString); }
+  
+  get saveButton() { return this.get("#save"); }
+  get autoSave() { return false; }
+  set autoSave(bool) {
+    this.saveButton.classList.toggle("on", bool);
+    this.workspace.autoSave = bool;
+  }
+  onSave(evt) {
+    if (evt.button === 2) this.autoSave = !this.autoSave;
+    this.save();
+  }
+
+  get updateButton() { return this.get("#update"); }
+  get autoUpdate() { return this.workspace.autoUpdate; }
+  set autoUpdate(bool) {
+    this.updateButton.classList.toggle("on", bool);
+    this.updateButton.querySelector("i").classList.toggle("fa-spin", bool);
+    this.workspace.autoUpdate = bool;
+  }
+  onUpdate(evt) {
+    if (evt.button === 2) this.autoUpdate = !this.autoUpdate;
+    this.updateAST();
+  }
+
+  get runsTestsButton() { return this.get("#toggleRunsTests"); }
+  get runsTests() { return this.workspace.runsTests; }
+  set runsTests(bool) {
+    this.runsTestsButton.classList.toggle("on", bool);
+    this.workspace.runsTests = bool;
+  }
+  onToggleRunsTests() { this.runsTests = !this.runsTests; }
+
+  get executeButton() { return this.get("#execute"); }
+  get autoExecute() { return this.workspace.autoExecute; }
+  set autoExecute(bool) {
+    this.executeButton.querySelector("i").classList.toggle("fa-spin", bool);
+    this.executeButton.classList.toggle("on", bool);
+    this.workspace.autoExecute = bool;
+  }
+  onExecute(evt) {
+    if (evt.button === 2) this.autoExecute = !this.autoExecute;
+    this.execute();
+  }
+  
+  get systemJSButton() { return this.get("#toggleSystemJS"); }
+  get systemJS() { return this.workspace.systemJS; }
+  set systemJS(bool) {
+    this.systemJSButton.classList.toggle("on", bool);
+    this.workspace.systemJS = bool;
+  }
+  onToggleSystemJS() { this.systemJS = !this.systemJS; }
+  
+  get options() {
+    return {
+      "systemJS": false,
+      "autoExecute": true,
+      "runsTests": false,
+      "autoUpdate": true,
+      "autoSave": true, 
     }
-    editor.setURL(filePath);
-    await editor.loadFile();
+  }
+
+  /*MD ## Initialization MD*/
+
+  fullUrl(urlString) {
+    try {
+      return lively.paths.normalizePath(urlString, "");
+    } catch(e) {
+      return null;
+    }
   }
 
   async initialize() {
     this.windowTitle = "Plugin Explorer";
+    this.registerButtons();
 
-    await this.initLivelyEditorFromAttribute(this.sourceEditor, 'source', PluginExplorer.defaultSourceURL);
-    await this.initLivelyEditorFromAttribute(this.pluginEditor, 'plugin', PluginExplorer.defaultPluginURL);
+    this.workspace = {};
+
+    this.getAllSubmorphs("button").forEach(button => {
+      button.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.dispatchEvent(new MouseEvent("click", {button: 2}));
+      });
+    });
+
+    this.debouncedUpdateAST = this.updateAST::debounce(500);
+    this.debouncedUpdateTransformation = this.updateTransformation::debounce(500);
+    
+    function enableSyntaxCheckForEditor(editor) {
+      editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.editor))::debounce(200));
+    }
 
     this.pluginEditor.awaitEditor().then(() => {
-      this.pluginEditor.get('#editor').doSave = async () => {
+      this.pluginEditor.hideToolbar();
+      this.pluginLCM.doSave = async () => {
         await this.pluginEditor.saveFile();
 
         await lively.reloadModule("" + this.pluginURL);
         this.updateAST();
       };
+      enableSyntaxCheckForEditor(this.pluginLCM);
+      // this.pluginLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateTransformation()});
+      this.transformedSourceCM.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
     });
-    this.sourceEditor.awaitEditor().then(() => {
-      this.sourceAstInspector.connectEditor(this.sourceEditor);
-      this.sourceEditor.get('#editor').doSave = async () => {
-        await this.sourceEditor.saveFile();
+
+    this.sourceLCM.editorLoaded().then(() => {
+      this.sourceAstInspector.connectLivelyCodeMirror(this.sourceLCM);
+      this.sourceLCM.doSave = async () => {
+        // TODO: Save source
         this.updateAST();
       };
+      enableSyntaxCheckForEditor(this.sourceLCM);
+      this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateAST()});
+      this.sourceCM.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
     });
-    
-    this.pluginEditor.addEventListener('url-changed', async event => {
-      this.setAttribute("plugin", event.detail.url);
-      this.updateAST();
-    });
-    this.sourceEditor.addEventListener('url-changed', async event => {
-      this.setAttribute("source", event.detail.url);
-      this.updateAST();
+
+    this.workspacePath.addEventListener("keyup", evt => {
+      if (evt.code == "Enter") this.onWorkspacePathEntered(this.workspacePath.value);
     });
 
     await Promise.all([
-      this.pluginEditor.awaitEditor(), // Busy waiting for promise
-      // promisedEvent(this.pluginEditor.get('#editor'), "editor-loaded"),
-      this.sourceEditor.awaitEditor(),
-      // promisedEvent(this.sourceEditor.get('#editor'), "editor-loaded"),
-      this.transformedSourceEditor.editorLoaded() // check property, fallback to event; #TODO: which is better? Both have a problem: the component class has to be loaded first
-      //promisedEvent(this.outputEditor, "editor-loaded"),
+      this.pluginEditor.awaitEditor(),
+      this.sourceLCM.editorLoaded(),
+      this.transformedSourceLCM.editorLoaded(),
     ]);
     
-    function enableSyntaxCheckForEditor(editor) {
-      editor.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(editor.editor))::debounce(200));
-    }
-    enableSyntaxCheckForEditor(this.sourceEditor.get('#editor'));
-    enableSyntaxCheckForEditor(this.pluginEditor.get('#editor'));
-    
-  	this.sourceEditor.get('#editor').editor.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
-    this.transformedSourceEditor.editor.on("beforeSelectionChange", evt => this.onTransformedSourceSelectionChanged(evt));
-   
     this.dispatchEvent(new CustomEvent("initialize"));
   }
+
+  async loadWorkspaceFile(urlString) {
+    try {
+      const url = new URL(this.fullUrl(urlString));
+      const response = await fetch(url);
+      const text = await response.text();
+      const ws = BabelWorkspace.deserialize(text);
+      this.workspacePath.value = urlString;
+      this.loadWorkspace(ws);
+    } catch (e) {
+      lively.error(`[Plugin Explorer] Failed to load workspace.`, urlString);
+    }
+  }
+
+  async loadWorkspace(ws) {
+    console.log(ws);
+    this.workspace = ws;
+    this.pluginEditor.setURL(new URL(this.fullUrl(ws.plugin)));
+    this.pluginEditor.loadFile();
+    //TODO
+    this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
+    this.setOptions(ws);
+  }
   
+  async setOptions(ws) {
+    for (const [option, defaultValue] of Object.entries(this.options)) {
+      console.log(option, defaultValue);
+      this[option] = option in ws ? ws[option] : defaultValue;
+    }
+  }
+
+  async saveWorkspaceFile(urlString) {
+    try {
+      const url = new URL(this.fullUrl(urlString));
+      const text = BabelWorkspace.serialize(this.workspace);
+      await fetch(url, {
+        method: 'PUT', 
+        body: text,
+      });
+    } catch (e) {
+      lively.error('[Plugin Explorer] Failed to save workspace.', urlString);
+    }
+  }
+
+  /*MD ## Execution MD*/
+
   async updateAST() {
-    const src = this.sourceEditor.get('#editor').editor.getValue();
-    
-    const filename = "tempfile.js"
+    try {
+      this.ast = this.source.toAST();
+      this.sourceAstInspector.inspect(this.ast);
+      this.updateTransformation();
+    } catch (e) {
+      this.ast = null;
+      this.sourceAstInspector.inspect({Error: e.message});
+    }
+  }
 
-    // #HACK: we explicitly enable some syntax plugins for now
-    // #TODO: how to include syntax extensions for ast generation (without the plugin to develop)?
-    const syntaxPlugins = (await Promise.all([
-      'babel-plugin-syntax-jsx',
-      'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind',
-      'babel-plugin-syntax-async-generators'
-    ]
-      .map(syntaxPlugin => System.import(syntaxPlugin))))
-      .map(m => m.default);
-
-    // get pure ast
-    this.ast = babel.transform(src, {
-        babelrc: false,
-        plugins: syntaxPlugins,
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-    }).ast;
-    this.sourceAstInspector.inspect(this.ast);
-
-    
-    // #TODO refactor
-    // this.pluginEditor.editor.getSession().setAnnotations([]);
-
-    var url = "" + this.pluginURL;
-    // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
-    // assumend problem: there is a bad version of the code in either the browser or system.js cache
-    // idea: we have to find and flush it...
-    // wip: the browser does not cache it, but system.js does...
-    const plugin = (await System.import(url)).default;
+  async updateTransformation() {
+    const plugin = await this.getPlugin();
     
     try {
       console.group("PLUGIN TRANSFORMATION");
-      var config = {
-        babelrc: false,
-        plugins: [...syntaxPlugins, plugin],
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        // inputSourceMap: load.metadata.sourceMap,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-      }
-      
-      if (this.get("#systemjs").checked) {
+      if (!this.ast) return;
+      if (this.systemJS) {
         // use SystemJS config do do a full transform
         if (!self.lively4lastSystemJSBabelConfig) {
-          lively.error("lively4lastSystemJSBabelConfig missing")
-          return
+          lively.error("lively4lastSystemJSBabelConfig missing");
+          return;
         }
-        var myconfig = config;
-        config = Object.assign({}, self.lively4lastSystemJSBabelConfig)
-        var originalPluginURL = url.replace(/-dev/,"") // name of the original plugin .... the one without -dev
+        let config = Object.assign({}, self.lively4lastSystemJSBabelConfig);
+        let url = this.fullUrl(this.pluginURL) || "";
+        let originalPluginURL = url.replace(/-dev/,""); // name of the original plugin .... the one without -dev
         // replace the original plugin with the one under development.... e.g. -dev
         config.plugins = config.plugins.filter(ea => !ea.livelyLocation || !(ea.livelyLocation == originalPluginURL))
                           .concat([plugin])
+        let filename = "tempfile.js";
         config.filename = filename
         config.sourceFileName = filename
         config.moduleIds = false
-        
+        this.transformationResult = babel.transform(this.source, config);
+      } else {
+        this.transformationResult = this.ast.transformAsAST(plugin);
       }
-      this.result = babel.transform(src, config);
+      
+      this.transformedSourceLCM.value = this.transformationResult.code;
+      
+      if (this.autoExecute) this.execute();
+      if (this.runsTests) executeAllTestRunners();
     } catch(err) {
       console.error(err);
-      this.transformedSourceEditor.editor.setValue("Error transforming code: " + err);
-   
-      // #TODO refactor
-      // #Feature Show Syntax errors in editor... should be generic
-//       this.pluginEditor.editor.getSession().setAnnotations(err.stack.split('\n')
-//         .filter(line => line.match('updateAST'))
-//         .map(line => {
-//           let [row, column] = line
-//             .replace(/.*<.*>:/, '')
-//             .replace(/\)/, '')
-//             .split(':')
-//           return {
-//             row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
-//           }
-//         }));
-      
-      lively.notify(err.name, err.message, 5, () => {}, 'red');
-      return;
+      this.transformedSourceLCM.value = "Error: " + err.message;
     } finally {
       console.groupEnd();
     }
-    
-    this.transformedSourceEditor.editor.setValue(this.result.code);
-    
-    let logNode = this.get("#result");
-    logNode.innerHTML = "";
-    logNode.textContent = "";
-    if (this.get("#live").checked) {
-      var oldLog = console.log
-      try {
-        console.group("EXECUTE REWRITTEN FILE");
-        console.log = (...fragments) => {
-          oldLog.call(console, ...fragments)
-          //typeof fragments[i] === "string"
-          // let toPrint = fragments::flatmap((obj, i) => {
-          //   return [<p>{obj}</p>];
-          // });
-          // logNode.appendChild(<div>{toPrint[0]}</div>)
-          logNode.textContent += fragments.join(', ') + "\n"
-        }
-        // #TODO active expressions...
-        var transformedSource = this.transformedSourceEditor.editor.getValue()
-        if (this.get("#systemjs").checked) {
-          // use systemjs to load it's module without any further transformation
-          var url = "tmp://" + filename // replace this with local TMP 
-          
-          var modURL = lively.swxURL(url)
-          await lively.unloadModule(modURL)
-          await fetch(url, {
-            method: "PUT",
-            body: transformedSource 
-          })
-          await System.import(modURL)
-        } else {
-          var result ='' + (await this.transformedSourceEditor.boundEval(transformedSource)).value;
-        }
-        
-        // var result ='' + eval(this.outputEditor.editor.getValue());
-        this.get("#result").textContent += "-> " + result;       
-      } catch(e) {
-        console.error(e);
-        this.get("#result").textContent += "Error: " + e
-      } finally {
-        console.log = oldLog
-        console.groupEnd();
-      }
-    }
-    
-    if(this.runTests) {
-      executeAllTestRunners();
-    }
-  }
-  
-  livelyPrepareSave() {
-    this.setAttribute('source', this.sourceURL);
-    this.setAttribute('plugin', this.pluginURL);
-    console.log("PREPARE SAVE", this.getAttribute('source'), this.getAttribute('plugin'));
-  }
-  
-  livelyMigrate(other) {
-    // #TODO: do we still need this?
-    this.addEventListener("initialize", () => {
-      this.transformedSourceEditor.editor.setValue(other.transformedSourceEditor.editor.getValue()); 
-      this.result = other.result;
-      this.runTests = other.runTests;
-      this.updateAST();
-    });
   }
 
+  async execute() {
+    const log = this.executionConsole;
+    log.innerHTML = "";
+    log.textContent = "";
+    
+    const oldLog = console.log
+    try {
+      console.group("[Plugin Explorer] EXECUTE REWRITTEN FILE");
+      console.log = (...fragments) => {
+        oldLog.call(console, ...fragments)
+        log.textContent += fragments.join(', ') + "\n"
+      }
+      // #TODO active expressions...
+      var transformedSource = this.transformedSourceCM.getValue()
+      if (this.systemJS) {
+        // use systemjs to load it's module without any further transformation
+        var url = "tmp://" + filename // replace this with local TMP 
+        
+        var modURL = lively.swxURL(url)
+        await lively.unloadModule(modURL)
+        await fetch(url, {
+          method: "PUT",
+          body: transformedSource 
+        })
+        await System.import(modURL)
+      } else {
+        var result ='' + (await this.transformedSourceLCM.boundEval(transformedSource)).value;
+      }
+      
+      // var result ='' + eval(this.outputEditor.editor.getValue());
+      this.executionConsole.textContent += "-> " + result;       
+    } catch(e) {
+      console.error(e);
+      this.executionConsole.textContent += "Error: " + e
+    } finally {
+      console.log = oldLog
+      console.groupEnd();
+    }
+  }
+
+  save() {
+    this.pluginEditor.saveFile();
+    this.saveWorkspaceFile(this.workspaceURL);
+  }
+
+  /*MD ## Mapping Sources MD*/
+
   originalPositionFor(line, column) {
-    var smc =  new sourcemap.SourceMapConsumer(this.result.map)
+    var smc =  new sourcemap.SourceMapConsumer(this.transformationResult.map)
     return smc.originalPositionFor({
       line: line,
       column: column
@@ -262,8 +328,8 @@ export default class PluginExplorer extends Morph {
   }
   
   generatedPositionFor(line, column) {
-    if (!this.result || !this.result.map) return; 
-    var smc =  new sourcemap.SourceMapConsumer(this.result.map)
+    if (!this.transformationResult || !this.transformationResult.map) return; 
+    var smc =  new sourcemap.SourceMapConsumer(this.transformationResult.map)
     return smc.generatedPositionFor({
       source: "tempfile.js",
       line: line,
@@ -290,18 +356,60 @@ export default class PluginExplorer extends Morph {
   
   onSourceSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.sourceEditor.get('#editor').isFocused()) {
+      if(this.sourceLCM.isFocused()) {
         this.mapEditorsFromToPosition(
-          this.sourceEditor.get('#editor').editor, this.transformedSourceEditor.editor, false)
+          this.sourceCM, this.transformedSourceCM, false)
       }
     }, 0);
   }
   onTransformedSourceSelectionChanged(evt) {
     setTimeout(() => {
-      if(this.transformedSourceEditor.isFocused()) {
+      if(this.transformedSourceLCM.isFocused()) {
         this.mapEditorsFromToPosition(
-          this.transformedSourceEditor.editor, this.sourceEditor.get('#editor').editor, true)
+          this.transformedSourceCM, this.sourceCM, true)
       }
     }, 0);
+  }
+
+  /*MD ## Lively Integration MD*/
+
+  livelyPrepareSave() {
+    this.setAttribute('workspace', BabelWorkspace.serialize(this.workspace));
+    console.log("PREPARE SAVE (Plugin Explorer)");
+  }
+  
+  livelyMigrate(other) {
+    // #TODO: do we still need this?
+    this.addEventListener("initialize", () => {
+      this.loadWorkspace(other.workspace);
+      // this.transformedSourceCM.setValue(other.transformedSourceCM.getValue()); 
+      // this.transformationResult = other.transformationResult;
+      // this.runsTests = other.runTests;
+      // this.updateAST();
+    });
+  }
+
+  livelyExample() {
+    this.loadWorkspaceFile(PluginExplorer.defaultWorkspacePath);
+  }
+}
+
+class Source {
+  /*
+  - contents
+  - file
+  */
+}
+
+class BabelWorkspace {
+  static deserialize(json) {
+    return JSON.parse(json);
+    // return JSON.parse(json, ([key, value]) => {
+      
+    // });
+  }
+
+  static serialize(ws) {
+    return JSON.stringify(ws);
   }
 }

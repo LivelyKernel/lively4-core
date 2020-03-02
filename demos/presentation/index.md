@@ -1,7 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<style data-src="./style.css"></style>
-
+<style data-src="../../src/client/presentation.css"></style>
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"

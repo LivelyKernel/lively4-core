@@ -1,9 +1,22 @@
-"enable aexpr";
+"enable aexpr"
 
-  let x = 0;
-  let y = () => x * x;
+let x = 2;
+let y = 2;
+let outerObj =  funct();
+let a = {func() {return x}};
+let b = {func() {return y}};
 
-  aexpr(() => y());
-  
-  x = 1; // <--
-  y = () => x * x * x; // <--
+function funct(){
+  return a;
+}
+
+aexpr(()=> outerObj.func());
+
+x = 3; // <--
+a = {func: ()=> x + 1}; // <--
+a.func = ()=>x + 2; // <--
+outerObj = b; //<--
+y = 3; // <--
+
+// BOOOOOOOOOM
+

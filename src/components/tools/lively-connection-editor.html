@@ -9,20 +9,23 @@
   background-color: gray;
 }
 </style>
-  <div id = connectionLabel>Con</div>
+  <input id="labelField" value=0>
   <div id = sourceLabel>Sou</div>
   <div id = sourcePicture>SouP</div>
+  <button id="newSourceButton">Set new source</button>
   <div id = targetLabel>Tar</div>
   <div id = targetPicture>TarP</div>
-  <input id="sourcePropertyField" value=0>
-  <input id="targetPropertyField" value=0>
-  <input id="modifyingCodeField" value=0>
-  <lively-code-mirror id="blah">'lively.notify(5)'</lively-code-mirror>
+  <button id="newTargetButton">Set new target</button>
+  <lively-code-mirror id="trackingCodeField">'lively.notify(5)'</lively-code-mirror>
+  <lively-code-mirror id="modifyingCodeField">'lively.notify(5)'</lively-code-mirror>
 <div id="content">
 	<slot></slot>
 </div>
   <button id="destroyButton">Destroy</button>
   <button id="saveButton">Save</button>
+  <button id="toggleDirectionButton"><-></\-\></button>
+  <button id="drawConnectionArrowButton">Draw connection arrow</button>
+  <button id="copyButton">Copy</button>
   <input id="activityCheckbox" name="activityCheckbox" type="checkbox">
   <label for="activityCheckbox">Connection is active</label>
 </template>

@@ -5,7 +5,7 @@ import {pt} from 'src/client/graphics.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 import SVG from "src/client/svg.js"
-import _ from 'src/external/underscore.js'
+import _ from 'src/external/lodash/lodash.js'
 
 export default class HaloControlPointItem extends HaloItem {
   

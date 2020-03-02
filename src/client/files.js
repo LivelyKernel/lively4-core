@@ -438,13 +438,15 @@ export default class Files {
       var name =  ea.type == "directory" ? 
         ea.name + "/" :
         ea.name
+      
+      var ref = name.replace(/ /g, "%20")
       if (name == "index.md") return // don't include yourself
       
-      fileNames.push(name)
+      fileNames.push(ref)
       // item.textContent = name
-      if (!links.includes(name)) {
+      if (!links.includes(ref)) {
         // list.appendChild(item)  
-        source += `  - [${name}](${name})\n`
+        source += `  - [${name}](${ref})\n`
       }
     })
 
@@ -552,6 +554,7 @@ export default class Files {
     back.url = url
   }
 }
+
 
 
 

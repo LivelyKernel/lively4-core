@@ -1,33 +1,21 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import SocketIO from 'src/external/socketio.js';
+import {SocketSingleton} from 'src/components/mle/socket.js';
 
 export default class LivelyMleFunctionExecutor extends Morph {
   async initialize() {
+    this.amount = 0;
     this.initialized = false;
     this.windowTitle = "MLE Function Executor";
     this.registerButtons()
-    this.socket = SocketIO("http://132.145.55.192:8080");
-    this.socket.emit('options',  {
-      connectString: 'localhost:1521/MLE',
-      user: 'system',
-      password: 'MY_PASSWORD_123'
-    });
-    lively.notify('Connected');
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', () => {
-      if(!this.initialized){
-        this.initialized = true;
-        lively.notify('Connected');
-      }
-      lively.success('Resource successfully processed');
-    });
-    this.socket.on('result', r => {result.values = JSON.stringify(r.rows)});
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+    this.socket = await SocketSingleton.get();
+    this.socket.on('result', (r, status) => {
+      if(status === "tested") {
+        lively.success('Resource successfully processed');
+        result.value = r.data.rows[0][0];
+    }});
     this.innerHTML = '';
-    this.amount = 0;
     this.types = [];
     this.args= [];
     this.typeSelectors = <div></div>;
@@ -37,10 +25,10 @@ export default class LivelyMleFunctionExecutor extends Morph {
     }}/>;
     const functionName = <input placeholder="Function Name" type="text"></input>;
     const test = <button id='test' click={() => {
-      result.value= 21; //use 8
       this.socket.emit('test', {
+        id: "testrunner",
         func: functionName.value,
-        parameters: this.args.map((x,i) => this.types[i] === "String" ? x : +x)
+        parameters: this.args.filter((_, i) => i<this.amount).map((x,i) => this.types[i] === "String" ? x : +x)
       })
     }}>Test</button>;
     const result = <input disabled type="text" />;
