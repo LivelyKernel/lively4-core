@@ -1325,6 +1325,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     const capabilities = await this.astCapabilities(this.editor);
     if (!capabilities.canParse || !capabilities.hasActiveExpressionsDirective) {
       this.hideAExprDependencyGutter();
+      this.resetAExprTextMarkers();
+      this.resetAExprDependencyTextMarkers();
       return;
     }
     this.showAExprTextMarkers();
