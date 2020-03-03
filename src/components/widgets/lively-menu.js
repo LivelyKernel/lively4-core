@@ -9,6 +9,75 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { pt } from 'src/client/graphics.js';
 import html from 'src/client/html.js';
 
+class Entry {
+  static fromDescription(desc) {
+    if (Array.isArray(desc)) {
+      return this.fromArray(desc);
+    } else if (desc instanceof String) {
+      // #TODO: convert the String '---' into a <hl />
+    } else {
+      // #TODO: Object
+    }
+  }
+  
+  static fromArray([name, callbackOrChildren, right, icon, selectHandler, deselectHandler]) {
+    const entry = new Entry();
+
+    entry.name = name;
+    entry.callbackOrChildren = callbackOrChildren;
+    if (callbackOrChildren instanceof Function) {
+      entry.callback = callbackOrChildren;
+    } else if(callbackOrChildren instanceof Array || callbackOrChildren instanceof Promise) {
+      entry.children = callbackOrChildren;
+    }
+    entry.right = right;
+    entry.icon = icon;
+    entry.selectHandler = selectHandler;
+    entry.deselectHandler = deselectHandler;
+
+    return entry;
+  }
+
+  asItem(menu) {
+    const item = document.createElement("li");
+    item.entry = this;
+    const iconHTML = `<div class='icon'>${this.icon || ""}</div>`;
+    const right = <label>{this.right ? this.right.replace ? this.right.replace("CMD", "Ctrl") : this.right : ""}
+      <span class="submenuindicator">{this.children ? <span>►</span> : " "}</span>
+    </label>;
+
+    item.innerHTML = iconHTML + this.name;
+    item.appendChild(right);
+
+    if (this.callback) {
+      item.addEventListener("click", evt => this.callback(evt, item));
+    }
+
+    item.addEventListener("mouseenter", async evt => {
+      if (menu.matchingItems.includes(item)) {
+        menu.selectItem(item);
+      }
+    });
+
+    return item;
+  }
+
+  matchesFilter(filter) {
+    return typeof this.name === 'string' && this.name.toLowerCase().includes(filter.toLowerCase());
+  }
+
+  selected() {
+    if (this.selectHandler) {
+      this.selectHandler();
+    }
+  }
+  deselected() {
+    if (this.deselectHandler) {
+      this.deselectHandler();
+    }
+  }
+}
+
 const FILTER_KEY_BLACKLIST = ['Control', 'Shift', 'Capslock', 'Alt', ' ', 'Enter', 'Escape', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'Tab'];
 
 export default class LivelyMenu extends Morph {
@@ -92,10 +161,7 @@ export default class LivelyMenu extends Morph {
   }
 
   matchFilter(item) {
-    if (!item || !item.entry || typeof item.entry[0] !== 'string') {
-      return false;
-    }
-    return item.entry[0].toLowerCase().includes(this.filter.toLowerCase());
+    return item && item.entry && item.entry.matchesFilter(this.filter);
   }
 
   get matchingItems() {
@@ -150,7 +216,7 @@ export default class LivelyMenu extends Morph {
 
     var entry = this.currentItem.entry;
 
-    if ((await entry[1]) instanceof Array) {
+    if ((await entry.children) instanceof Array) {
       this.enterSubmenu(evt);
     }
   }
@@ -168,68 +234,40 @@ export default class LivelyMenu extends Morph {
     this.submenu.selectUpOrDown(evt);
   }
 
-  onEnterUp(evt) {
+  async onEnterUp(evt) {
     if (!this.currentItem) return;
 
     var entry = this.currentItem.entry;
-    if (entry[1] instanceof Function) {
-      entry[1](evt, this.currentItem);
-    } else if (entry[1] instanceof Array) {
+    if (entry.callback) {
+      entry.callback(evt, this.currentItem);
+    } else if ((await entry.children) instanceof Array) {
       this.enterSubmenu(evt);
     }
   }
 
   async openOn(items, optEvt, optPos) {
-    var menu = this.get(".container");
-    menu.innerHTML = ""; // clear
+    var container = this.get(".container");
+    container.innerHTML = ""; // clear
     // create a radio button for each tool
     if (!items) {
       console.log("WARNING: no items to open");
       return Promise.resolve();
     }
     for (let ea of items) {
-      let item = document.createElement("li");
-      item.entry = ea;
-      let icon = "<div class='icon'>" + (ea[3] ? ea[3] : "") + "</div>";
-      let right = <label>{ea[2] ? ea[2].replace ? ea[2].replace("CMD", "Ctrl") : ea[2] : ""}
-        <span class="submenuindicator">{ea[1] instanceof Array || ea[1] instanceof Promise ? <span>►</span> : " "}</span>
-      </label>;
-
-      item.innerHTML = icon + ea[0];
-      item.appendChild(right);
-
-      if (ea[1] instanceof Function) {
-        let func = ea[1];
-        item.addEventListener("click", evt => func(evt, item));
-      }
-
-      if (ea[4]) {
-        item.selectListener = ea[4];
-      }
-
-      if (ea[5]) {
-        item.deselectListener = ea[5];
-      }
-
-      item.addEventListener("mouseenter", async evt => {
-        if (this.matchingItems.includes(item)) {
-          this.selectItem(item);
-        }
-      });
-      menu.appendChild(item);
+      const entry = Entry.fromDescription(ea);
+      const item = entry.asItem(this);
+      container.appendChild(item);
     }
     if (optPos) lively.setPosition(this, optPos);
     this.moveInsideWindow();
 
-    return Promise.resolve(menu);
+    return Promise.resolve(container);
   }
 
   async selectItem(item) {
     if (this.currentItem) {
       this.currentItem.classList.remove("current");
-      if (this.currentItem.deselectListener) {
-        this.currentItem.deselectListener();
-      }
+      this.currentItem.entry.deselected();
     }
     if (!item) return;
 
@@ -243,22 +281,17 @@ export default class LivelyMenu extends Morph {
     var ea = item.entry;
     var menu = this.get(".container");
     if (this.submenu) this.submenu.remove();
-    if (item.selectListener) {
-      item.selectListener();
-    }
-    var sub = ea[1];
-    if (!sub) return;
-    if (sub.then) sub = await sub; // resolve Promise
-    if (sub instanceof Array) {
-      var subitems = sub;
+    item.entry.selected();
+    const subitems = await ea.children; // resolve Promise
+    if (subitems instanceof Array) {
       this.submenu = document.createElement("lively-menu");
       this.submenu.parentMenu = this;
       await lively.components.openIn(menu, this.submenu);
       var bounds = item.getBoundingClientRect();
       var menuBounds = menu.getBoundingClientRect();
-      this.submenu.openOn(subitems, null, pt(bounds.right, bounds.top).subPt(pt(menuBounds.left, menuBounds.top))
+      this.submenu.openOn(subitems, null, pt(bounds.right, bounds.top).subPt(pt(menuBounds.left, menuBounds.top
       // lively.moveBy(this, delta)
-      );
+      )));
     }
   }
 
