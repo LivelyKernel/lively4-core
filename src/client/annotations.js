@@ -4,6 +4,9 @@ const dmp = new diff.diff_match_patch();
 
 import { uuid as genUUID } from 'utils';
 
+import tinycolor from 'src/external/tinycolor.js';
+
+
 export class Annotation {
   constructor(config) {
     this.from = 0, // starts here...
@@ -38,16 +41,21 @@ export class Annotation {
   
   codeMirrorMark(cm) {
     var color = this.color || "lightgray"
-    if (color == "yellow") color = "rgba(255,255,0,0.5)"
-    if (color == "lightblue") color = "rgba(100,100,255,0.5)"
     
-    var marker = cm.markText(cm.posFromIndex(this.from), cm.posFromIndex(this.to), 
+    color = tinycolor(color)
+    color.setAlpha(0.4)
+
+    
+    var fromPos = cm.posFromIndex(this.from)
+    var toPos = cm.posFromIndex(this.to)
+      
+    var marker = cm.markText(fromPos, toPos, 
       {
         className: "lively-annotation",
         attributes: {
           "data-annotation": JSON.stringify(this)
         },
-        css: `background-color: ${color}`});
+        css: `background-color: ${color.toString()}`});
     return marker
   }
   
@@ -340,7 +348,9 @@ MD*/
 
 
   clone() {
-    return AnnotationSet.fromJSON(this.toJSON());
+    var r =  AnnotationSet.fromJSON(this.toJSON());
+    r.lastVersion = this.lastVersion // keep meta information
+    return r
   }
 
   static fromJSON(json) {
@@ -377,6 +387,7 @@ export class AnnotatedText {
     annotations.fileURL = fileURL
     annotations.annotationsURL = annotationsURL
     annotations.lastVersion = annotationsResp.headers.get("fileversion")
+    
     
     var headers = {}
     if (annotations.textVersion) {
