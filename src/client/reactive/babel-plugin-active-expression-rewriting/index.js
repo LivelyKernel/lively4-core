@@ -439,7 +439,7 @@ export default function(babel) {
                     column: START_COLUMN,
                     line: START_LINE
                   },
-                  source: SOURCE
+                  source: ''
                 })`);
                 function buildSourceLocation(path) {
                   let node = path.node;
@@ -449,7 +449,7 @@ export default function(babel) {
                     end: 0,
                     type: 'Program',
                     sourceType: 'module',
-                    body: [path.parent.arguments[0]]
+                    body: [path.parent.arguments[0]] // #BUG: expression should be put into an ExpressionStatement
                   };
                   // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
@@ -457,7 +457,7 @@ export default function(babel) {
                     END_LINE: t.numericLiteral(node.loc.end.line),
                     START_COLUMN: t.numericLiteral(node.loc.start.column),
                     START_LINE: t.numericLiteral(node.loc.start.line),
-                    SOURCE: t.stringLiteral("") // source
+                    // SOURCE: source
                   }).expression;
                 }
                 let location = buildSourceLocation(path);
