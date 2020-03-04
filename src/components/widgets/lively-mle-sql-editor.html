@@ -1,8 +1,33 @@
-<template id="lively-mle-sql-editor" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"></style
-<div id="content">
-	<slot></slot>
-</div>
+<template id="lively-mle-sql-editor">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"></style>
+  <style>
+    *, *::before, *::after {
+          box-sizing: border-box;
+        }
+        :host {
+          overflow: auto;
+        }
+  </style>
+  <article class="media">
+    <div class="field media-content">
+      <div class="control">
+        <textarea class="textarea" placeholder="SQL" id="sql"></textarea>
+      </div>
+    </div>
+    <div class="media-right">
+      <p class="control">
+        <button class="button is-link" id="executeButton">
+          Execute
+        </button>
+      </p>
+      <p class="control">
+        <button id="resetButton" class="button is-warning">
+          Reset Connection
+        </button>
+      </p>
+    </div>
+  </article>
+  <div class="control" id="result">
+  </div>
 </template>
-
