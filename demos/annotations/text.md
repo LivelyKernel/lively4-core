@@ -279,8 +279,8 @@ async function simpleFileEditor(textURL) {
   }
 
   
-  lively.sleep(1).then( () => {
-    var cm = await editor.awaitEditor()
+  lively.sleep(1).then( async () => {
+    var cm = editor.editor
     cm.refresh()
   }) // #hack... do force display?  
 

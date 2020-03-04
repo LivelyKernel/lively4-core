@@ -24,9 +24,9 @@ For consistent naming, here are some guidelines:
 
 current:
 ```javascript
-[(input, output) => {
-  for (let item of input) {
-    output.push(item);
+[async function*(input) {
+  for await(let item of input) {
+    yield item;
   }
 }, {
   
@@ -35,11 +35,4 @@ current:
 
 desired?:
 ```javascript
-[async function*(input) {
-  for await(let item of input) {
-    yield item;
-  }
-}, {
-  
-}]
 ```

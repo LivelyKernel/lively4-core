@@ -14,6 +14,7 @@ export default class LivelyHaloVivideScriptSuggestion extends HaloItem {
   async updateList(search){
     const list = this.shadowRoot.getElementById('suggestion-list');
     list.innerHTML = "";
+    if (!window.that || !window.that.input) return;
     const suggestions = await getMatches(JSON.stringify(window.that.input[0], (_, value) => typeof value === "object" ? value : typeof value), search);
     suggestions.forEach(s => {
       list.appendChild(<li click={() => setScript(s.url, window.that)}>{s.name}</li>)})

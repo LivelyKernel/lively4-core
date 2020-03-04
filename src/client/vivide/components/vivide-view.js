@@ -150,20 +150,20 @@ export default class VivideView extends Morph {
     this.transmitDataToOutportTargets(VivideView.forestToData(stuffToTransmit));
   }
   notifyOutportTargets() {
-    lively.warn('VIEW::NOTIFY2', this.forestToDisplay[0])
+    // lively.warn('VIEW::NOTIFY2', this.forestToDisplay[0])
     this.reallyNotifyOutportTargets(this.forestToDisplay);
   }
   
   updateOutportTargets() {
     const dataToTransmit = this.getDataToTransmit();
     if(dataToTransmit) {
-      lively.warn('VIEW::UPDATE', dataToTransmit[0])
+      // lively.warn('VIEW::UPDATE', dataToTransmit[0])
       this.transmitDataToOutportTargets(dataToTransmit);
     }
   }
   
   getDataToTransmit() {
-      lively.warn('display all data')
+      // lively.warn('display all data')
     if(this.widget && this.widget.multiSelectionEnabled) {
       return this.getSelectedData();
     } else if (this.widget && this.widget.localName === 'vivide-text-widget') {
@@ -191,7 +191,7 @@ export default class VivideView extends Morph {
     // #TODO: An improved fix would be to change what is returned by the widget selection
     let selection = this.getDataToTransmit();
     if(selection) {
-      lively.warn('VivideView::addDragInfoTo', selection[0])
+      // lively.warn('VivideView::addDragInfoTo', selection[0])
       dt.setData("javascript/object", getTempKeyFor(selection));
     } else {
       lively.error('could not add drag data');

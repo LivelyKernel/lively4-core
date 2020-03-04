@@ -224,6 +224,7 @@ function instrumentFetch() {
 }
 
 
+
 function installCachingFetch() {
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isCachingFetch);
   self.lively4fetchHandlers.push({
@@ -243,7 +244,7 @@ function installCachingFetch() {
     },
     handle(request, options) {
       var url = (request.url || request).toString()
-      // console.log("HANDLE " + url )
+      console.log("HANDLE " + url )
       var method = "GET"
       if (options && options.method) method = options.method;
       
@@ -255,7 +256,7 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          if (options && options.headers && (options.headers["fileversion"] || options.headers["forediting"])) {
+          if (options && options.headers && options.headers.get("fileversion") || options.headers.get("forediting")) {
             return // don't cache versions request...
           }
           
@@ -279,7 +280,9 @@ function installCachingFetch() {
           
           // and don't further handle it... so that it will be saved on the server
         } else if (method == "OPTIONS") {
-           if (options && options.headers && options.headers["showversions"]) {
+          console.log("[fetch cache] OPTIONS " + url)
+          if (options && options.headers && options.headers.get("showversions")) {
+            console.log("[fetch cache] OPTION don't cache versions...")
             return // don't cache versions request...
           }
 
@@ -302,7 +305,6 @@ function installCachingFetch() {
     }
   })
 }
-
 
 /*
  * MAIN BOOT FUNCTION: load Lively4 and get it going....

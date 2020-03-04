@@ -4,7 +4,9 @@ export async function getName(saveTarget, type, noNameProvided){
     let name, description;
     if(noNameProvided || !saveTarget[`${type}Name`]){
       name = await lively.prompt("Please attach a name", `vivide-${type}-name`);
-      description = await lively.prompt("You may add a short description", "");
+      
+      // bad UI
+      description = "" // await lively.prompt("You may add a short description", "");
     } else {
       name = saveTarget[`${type}Name`];
       description = saveTarget[`${type}Description`];

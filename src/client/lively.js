@@ -853,16 +853,16 @@ export default class Lively {
   }
 
   static success(title, text, timeout, cb) {
-    this.notify(title, text, timeout, cb, 'green');
+    lively.notify(title, text, timeout, cb, 'green');
   }
 
   static warn(title, text, timeout, cb) {
-    this.notify(title, text, timeout, cb, 'yellow');
+    lively.notify(title, text, timeout, cb, 'yellow');
   }
 
   static error(title, text, timeout, cb) {
     debugger
-    this.notify(title, text, timeout, cb, 'red');
+    lively.notify(title, text, timeout, cb, 'red');
   }
 
   static async ensureHand() {

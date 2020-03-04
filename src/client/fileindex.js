@@ -664,7 +664,6 @@ export default class FileIndex {
         }
       },
       Identifier(path) {
-        debugger;
         if (!(FileIndex.hasASTBinding(path))) {
           unboundIdentifiers.push(path.node.name);
         }

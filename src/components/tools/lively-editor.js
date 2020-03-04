@@ -433,6 +433,7 @@ export default class Editor extends Morph {
         }
         lively.notify("saved file", url );
         this.lastText = data;
+        this.lastAnnotatedText = this.annotatedText
         this.updateChangeIndicator();
         this.updateOtherEditors();
 
@@ -467,7 +468,7 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
-    highlightChanges(otherText) {
+  highlightChanges(otherText) {
     var editor = this.currentEditor();
     var myText = editor.getValue(); // data
     var dmp = new diff.diff_match_patch();
@@ -803,7 +804,7 @@ export default class Editor extends Morph {
     // cm.scrollTo(null, cm.charCoords(cursorPos).top)
   }
   
-  async solveAnnotationConflict(newVersion, otherVersion) {
+  async solveAnnotationConflict(newAnnotationsVersion, conflictingAnnotationsVersion) {
     var cm = await this.awaitEditor()
     // solveConflict
     var lastText = this.lastAnnotatedText
@@ -813,11 +814,11 @@ export default class Editor extends Morph {
       lively.warn("prevent endless recursion in solving conflict?")
       return
     }
-    lively.notify("Conflicting Annotations: " + otherVersion)
+    lively.notify("Conflicting Annotations: " + conflictingAnnotationsVersion)
     
     var parentAnnotations = lastText.annotations
     var otherAnnotationsSource = await fetch(this.getAnnotationsURL(), {
-      headers: { fileversion: otherVersion }
+      headers: { fileversion: conflictingAnnotationsVersion }
     }).then(r => r.text());
     var otherAnnotations = AnnotationSet.fromJSONL(otherAnnotationsSource)
   
@@ -828,7 +829,7 @@ export default class Editor extends Morph {
       
     text.annotations = mergedAnnotations
     text.annotations.renderCodeMirrorMarks(cm)
-    text.annotations.lastVersion = otherVersion
+    text.annotations.lastVersion = conflictingAnnotationsVersion  // is not textVersion
     
     this.solvingAnnotationConflict = true;
     try {
@@ -851,13 +852,16 @@ export default class Editor extends Morph {
     var response = await fetch(this.getAnnotationsURL(), {
       method: 'PUT', 
       body: text.annotations.toJSONL(),
-      headers: {lastversion: text.annotations.lastVersion }
+      headers: {lastversion: this.annotatedText.annotations.lastVersion}
     })
-    var newVersion = response.headers.get("fileversion");
-    var conflictVersion = response.headers.get("conflictversion");  
-    if (conflictVersion) {
-        await this.solveAnnotationConflict(newVersion, conflictVersion)
-    }
+    var newAnnotationsVersion = response.headers.get("fileversion");
+    var conflictAnnotationsVersion = response.headers.get("conflictversion");  
+    if (conflictAnnotationsVersion) {
+        await this.solveAnnotationConflict(newAnnotationsVersion, conflictAnnotationsVersion)
+    } else {
+      this.annotatedText.annotations.lastVersion = newAnnotationsVersion 
+    } 
+    
     this.annotatedText.annotations.renderCodeMirrorMarks(cm)
   }
   

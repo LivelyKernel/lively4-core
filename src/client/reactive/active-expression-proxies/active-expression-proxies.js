@@ -2,12 +2,15 @@ import { BaseActiveExpression } from 'active-expression';
 
 self.__expressionAnalysisMode__ = false;
 
+// #TODO: should be a stack for nested aexprs
+// #TODO: maybe we should provide a global stack across all implementations
 self.__currentActiveExpression__ = false;
 
 // maps from proxy to target
 self.__proxyToTargetMap__ = new WeakMap();
 
 // maps from target ids to active expressions
+// #TODO: should use a MultiMap
 self.__proxyIdToActiveExpressionsMap__ = new Map();
 
 export function reset() {
@@ -105,7 +108,7 @@ export function wrap(typeOfWhat, what) {
   return proxy;
 }
 
-
+// #TODO: should be a default export
 export function aexpr(func, ...arg) {
   return new ProxiesActiveExpression(func, ...arg);
 }

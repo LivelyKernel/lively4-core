@@ -12,7 +12,7 @@ export let allFiles = () => Promise.all(folders.map(folderURL =>
        .map(({name}) => folderURL+name))
 ));
 
-async function createView(content, createEditor = false, createDependents = false, name){
+export async function createView(content, createEditor = false, createDependents = false, name){
   const componentWindow = await lively.openComponentInWindow('vivide-view');
   if (!createDependents) componentWindow.input = JSON.parse(content.inputs);
   const script = await Script.fromJSON(content.script,componentWindow);

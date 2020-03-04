@@ -5,6 +5,7 @@ import chai, { expect } from "src/external/chai.js";
 import sinon from "src/external/sinon-3.2.1.js";
 import sinonChai from "src/external/sinon-chai.js";
 chai.use(sinonChai);
+
 describe("Proxy-based Implementation", () => {
   it("active expressions for simple object properties should detect changes", () => {
     const book = { pages: 230, genre: "funny" };
@@ -205,18 +206,31 @@ describe("Proxy-based Implementation", () => {
 
   describe("Arrays and Active Expression", () => {
 
-    xit("active expressions listening to changes for array containers should trigger", () => {
+    it("active expressions listening to changes for array containers should trigger", () => {
       const books = ["HP", "GOT"];
       const spy = sinon.spy();
       const ae = aexpr(() => books);
       ae.onChange(spy);
+      ae.onChange(lively.notify)
 
+      // #TODO: somehow .calledWith cannot properly read the wrapped array (might be due to way its proxied), thus, we got to ask very explicitly for what we want to check
       books.push("LOTR");
-      books.pop();
+      expect(spy).to.have.been.calledOnce;
+      var spyCall = spy.getCall(0);
+      let firstArgument = spyCall.args[0];
+      expect(firstArgument[0]).to.equal("HP")
+      expect(firstArgument[1]).to.equal("GOT")
+      expect(firstArgument[2]).to.equal("LOTR")
 
-      expect(spy).to.have.been.calledTwice;
-      expect(spy).to.have.been.calledWith("LOTR");
-      expect(spy).to.have.been.calledWith("GOT");
+      spy.reset();
+
+      books.pop();
+      expect(spy).to.have.been.calledOnce;
+      spyCall = spy.getCall(0);
+      firstArgument = spyCall.args[0];
+      expect(firstArgument[0]).to.equal("HP")
+      expect(firstArgument[1]).to.equal("GOT")
+      expect(firstArgument[2]).to.equal(undefined)
     });
 
     it("active expressions involving arrays last property should detect changes", () => {
@@ -310,7 +324,7 @@ describe("Proxy-based Implementation", () => {
 
   describe("Sets and Active Expression", () => {
 
-    xit("active expressions listening to changes for set containers should trigger", () => {
+    it("active expressions listening to changes for set containers should trigger", () => {
       const books = new Set(["HP", "LOTR"]);
       const spy = sinon.spy();
       const ae = aexpr(() => books);
@@ -425,7 +439,7 @@ describe("Proxy-based Implementation", () => {
 
   describe("Maps and Active Expression", () => {
 
-    xit("active expressions listening to changes for map containers should trigger", () => {
+    it("active expressions listening to changes for map containers should trigger", () => {
       const readers = new Map([
         ["first", "Nico"],
         ["second", "Jonas"]
