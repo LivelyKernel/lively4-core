@@ -19,6 +19,9 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
+import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
+import LivelyCodeMirrorCodeAugmentations from 'src/components/widgets/lively-code-mirror-code-augmentations.js';
+import openMenu from 'src/components/widgets/lively-code-mirror-context-menu.js';
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
 import {isSet} from 'utils'
 import fake from "./lively-code-mirror-fake.js"
@@ -154,10 +157,15 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   astCapabilities(cm) {
     if(!this.myASTCapabilities) {
-      this.myASTCapabilities = System.import('src/components/widgets/lively-code-mirror-ast-capabilities.js')
+      this.myASTCapabilities = System.import('src/components/widgets/ast-capabilities.js')
         .then(m => {
-          var capabilities = new m.default(this, cm);
-          cm.on("change", (() =>{capabilities.codeChanged()}).debounce(200));
+          var codeProvider = new LivelyCodeMirrorCodeProvider(this, cm);
+          var capabilities = new m.default(codeProvider);
+          var codeAugmentations = new LivelyCodeMirrorCodeAugmentations(capabilities, cm);
+          cm.on("change", (() => {
+            capabilities.codeChanged();
+            codeAugmentations.codeChanged();
+          }).debounce(200));
           return capabilities;
         });
     }
@@ -463,7 +471,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.editor.on("keyup", (cm, event) => {
         if(event.altKey && event.keyCode == 13) {
           if(this.isJavaScript){
-            this.astCapabilities(cm).then(ac => ac.openMenu());
+            this.openContextMenu(cm);
           } else {
             lively.warn("Context Menu doesn't work outside of js files for now!");
           }
@@ -473,6 +481,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       
     }
     return this.extraKeys
+  }
+  
+  openContextMenu(cm) {
+    this.astCapabilities(cm).then(ac => {
+      openMenu(ac, cm, this);
+    });
   }
   
   async singalEditorbackNavigation(closeEditor) {

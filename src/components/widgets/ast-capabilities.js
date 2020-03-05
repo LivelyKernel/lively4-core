@@ -1,7 +1,6 @@
 import { loc, range } from 'utils';
 
 import boundEval from 'src/client/bound-eval.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import FileIndex from "src/client/fileindex.js";
 
 import babelDefault from 'systemjs-babel-build';
@@ -14,22 +13,16 @@ import { fileEnding, replaceFileEndingWith } from "utils";
 
 export default class ASTCapabilities {
 
-  constructor(livelyCodeMirror, codeMirror) {
-    this.livelyCodeMirror = livelyCodeMirror;
-    this.codeMirror = codeMirror;
-    if (!codeMirror) debugger;
+  constructor(codeProvider) {
+    this.codeProvider = codeProvider;
     this.codeChanged();
   }
 
-  get editor() {
-    return this.codeMirror;
-  }
-
   get selectionRanges() {
-    if (this.editor.listSelections().length == 0) {
+    if (this.codeProvider.selections.length == 0) {
       return this.firstSelection;
     }
-    return this.editor.listSelections().map(range);
+    return this.codeProvider.selections.map(range);
   }
 
   get firstSelection() {
@@ -37,10 +30,10 @@ export default class ASTCapabilities {
   }
 
   _getFirstSelectionOrCursorPosition() {
-    if (this.editor.listSelections().length == 0) {
-      return { anchor: this.editor.getCursor(), head: this.editor.getCursor() };
+    if (this.codeProvider.selections.length == 0) {
+      return { anchor: this.codeProvider.cursor, head: this.codeProvider.cursor };
     }
-    return this.editor.listSelections()[0];
+    return this.codeProvider.selections[0];
   }
   
   /*MD ## Navigation MD*/
@@ -77,7 +70,6 @@ export default class ASTCapabilities {
   codeChanged() {
     this.myProgramPath = undefined;
     this.parsingFailed = null;
-    this.updateColorPicker();
     this.finishedEnrichment = false;
     this.memberAssignments = new Map();
     this.aexprs = undefined;
@@ -456,28 +448,15 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Select the text corresponding to the given nodes in the editor
+   * Select the text corresponding to the given nodes
    */
   selectNodes(nodes, selectStringContentsOnly = false) {
-    const ranges = nodes.map(node => {
-      const [anchor, head] = range(node.loc).asCM();
-      if (selectStringContentsOnly && t.isStringLiteral(node)) {
-        anchor.ch++;
-        head.ch--;
-      }
-      return { anchor, head };
-    });
-    // #TODO: include primary selection
-    if (ranges.length == 1) {
-      this.editor.setSelection(ranges[0].head, ranges[0].anchor);
-    } else {
-      this.editor.setSelections(ranges);
-    }
-    this.codeMirror.scrollIntoView({ from: ranges[0].head, to: ranges[0].anchor }, 120);
+    const ranges = nodes.map(node => range(node.loc));
+    this.codeProvider.selections = ranges;
   }
 
   /** 
-   * Select the text corresponding to the given paths in the editor
+   * Select the text corresponding to the given paths
    */
   selectPaths(paths, selectStringContentsOnly = false) {
     this.selectNodes(paths.map(path => path.node), selectStringContentsOnly);
@@ -518,10 +497,12 @@ export default class ASTCapabilities {
     return classPath;
   }
 
-  getColorLiterals(programPath) {
+  getColorLiterals() {
+    var pPath = this.programPath;
+    if(!pPath) return;
     let colorPaths = [];
     const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}$/g;
-    programPath.traverse({
+    pPath.traverse({
       StringLiteral(path) {
         if (path.node.value.match(colorRegex)) {
           colorPaths.push(path);
@@ -752,106 +733,24 @@ export default class ASTCapabilities {
     return path.node && path.node.type === type;
   }
 
-  async openMenu() {
+ /*MD ## Color Picker MD*/
 
-    function fa(name, ...modifiers) {
-      return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
-    }
 
-    const myself = this;
-    /*MD ### Generate Submenus MD*/
-
-    async function generateGenerationSubmenu() {
-
-      let submenu = [['Class', () => {
-        menu.remove();
-        myself.generateClass();
-      }, '→', fa('suitcase')]];
-
-      const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
-
-      //add testcase if in describe
-      if (myself.isInDescribe(selectedPath)) {
-        submenu.unshift(['Testcase', () => {
-          menu.remove();
-          myself.generateTestCase();
-        }, '→', fa('suitcase')]);
+  updateColor(currentLocation, color) {
+    var location = { anchor: currentLocation, head: currentLocation };
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isStringLiteral(path.node)) {
+            path.node.value = color;
+          }
+        }
       }
-
-      if (myself.isDirectlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
-        submenu.push(['Getter', () => {
-          menu.remove();
-          myself.generateGetter();
-        }, '→', fa('suitcase')], ['Setter', () => {
-          menu.remove();
-          myself.generateSetter();
-        }, '→', fa('suitcase')]);
-      }
-
-      return submenu;
-    }
-
-    async function generateImportSubmenu() {
-      let { identName, functions, classes } = await myself.findImports();
-      let submenu = [];
-      if (!identName || functions.length == 0 && classes.length == 0) {
-        submenu.push(['none', () => {
-          menu.remove();
-        }, '', '']);
-      } else {
-        functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
-          menu.remove();
-          myself.addImport(url, identName, true);
-        }, '-', fa('share-square-o')]));
-        classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
-          menu.remove();
-          myself.addImport(cl.url, cl.name, false);
-        }, '-', fa('share-square-o')]));
-      }
-      return submenu;
-    }
-
-    /*MD ### Generate Factoring Menu MD*/
-
-    const menuItems = [['selection to local variable', () => {
-      menu.remove();
-      this.extractExpressionIntoLocalVariable();
-    }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
-      menu.remove();
-      this.wrapExpressionIntoActiveExpression();
-    }, '→', fa('suitcase')], ['Rename', () => {
-      menu.remove();
-      this.rename();
-    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
-      menu.remove();
-      this.extractMethod();
-    }, 'Alt+M', fa('suitcase'), () => {
-      const selection = this.selectMethodExtraction(this.programPath, true);
-      if (selection) {
-        this.changedSelectionInMenu = true;
-        this.selectPaths(selection.selectedPaths);
-      } else {
-        this.changedSelectionInMenu = false;
-      }
-    }, () => {
-      if (this.changedSelectionInMenu) {
-        this.editor.undoSelection();
-      }
-    }], ['Generate HTML Accessors', () => {
-      menu.remove();
-      this.generateHTMLAccessors();
-    }, 'Alt+H', fa('suitcase')], ['Print References', () => {
-      this.printAllBindings();
-      menu.remove();
-    }, 'Alt+I', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
-    var menuPosition = this.codeMirror.cursorCoords(false, "window");
-
-    const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
-    menu.addEventListener("DOMNodeRemoved", () => {
-      this.focusEditor();
-    });
+    })).code;
+    this.scrollTo(scrollInfo);
   }
-
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
@@ -895,14 +794,12 @@ export default class ASTCapabilities {
       this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
       const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
       let line = selectedPath.parent.loc.end.line + 1;
-      this.editor.setSelection({ line, ch: 0 });
+      this.codeProvider.cursor = loc({line, ch: 0});
     });
   }
 
   async compileListOfIDs() {
-    let editor = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
-    let jsURI = encodeURI(editor.shadowRoot.querySelector("#filename").value);
-    const htmlURI = jsURI::replaceFileEndingWith('html');
+    const htmlURI = this.codeProvider.htmlURI;
     let html = await htmlURI.fetchText();
 
     if (html === "File not found!\n") {
@@ -987,7 +884,6 @@ export default class ASTCapabilities {
     this.selectPaths([pathToSelect], true);
 
     this.scrollTo(scrollInfo);
-    this.focusEditor();
   }
 
   compileTestCase(explanation) {
@@ -1380,7 +1276,6 @@ export default class ASTCapabilities {
     const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
     this.selectPaths(pathsToSelect);
-    this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
@@ -1430,35 +1325,26 @@ export default class ASTCapabilities {
     const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
     this.selectPaths(pathsToSelect);
-    this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
   /*MD ## Accessors MD*/
 
   get sourceCode() {
-    return this.livelyCodeMirror.value;
+    return this.codeProvider.code;
   }
   set sourceCode(text) {
-    this.livelyCodeMirror.value = text;
+    this.codeProvider.code = text;
     this.codeChanged();
-    return this.livelyCodeMirror.value;
+    return this.codeProvider.code;
   }
-
-  focusEditor() {
-    this.livelyCodeMirror.focus();
-  }
-
+  
   get scrollInfo() {
-    return this.codeMirror.getScrollInfo();
+    return this.codeProvider.scrollInfo;
   }
+  
   scrollTo(scrollInfo) {
-    this.codeMirror.scrollIntoView({
-      left: scrollInfo.left,
-      top: scrollInfo.top,
-      right: scrollInfo.left + scrollInfo.width,
-      bottom: scrollInfo.top + scrollInfo.height
-    }, 120);
+    this.codeProvider.scrollInfo;
   }
 
   /*MD ## Utilities MD*/
@@ -1539,51 +1425,7 @@ export default class ASTCapabilities {
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 
-  /*MD ## Color Picker MD*/
 
-  updateColorPicker() {
-    const pPath = this.programPath;
-    if (!pPath) {
-      return;
-    }
-    const old = this.editor.getAllMarks();
-    old.forEach(marker => {
-      if (marker.type === "bookmark") {
-        marker.clear();
-      }
-    });
-    const colorLiterals = this.getColorLiterals(pPath);
-    colorLiterals.forEach(path => {
-      const location = { line: path.node.loc.end.line - 1, ch: path.node.loc.end.column };
-      var picker = document.createElement("input");
-      picker.type = "color";
-      picker.value = path.node.value;
-      picker.height = "15";
-      picker.width = "15";
-      const bookmark = this.editor.setBookmark(location, picker);
-      picker.addEventListener('change', event => {
-        const currentLocation = bookmark.find();
-        this.updateColor(currentLocation, event.target.value);
-      });
-    });
-  }
-
-  updateColor(currentLocation, color) {
-    var location = { anchor: currentLocation, head: currentLocation };
-    const scrollInfo = this.scrollInfo;
-    this.sourceCode = this.sourceCode.transformAsAST(() => ({
-      visitor: {
-        Program: programPath => {
-          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
-          if (t.isStringLiteral(path.node)) {
-            path.node.value = color;
-          }
-        }
-      }
-    })).code;
-    this.scrollTo(scrollInfo);
-    this.updateColorPicker();
-  }
   
   /*MD ## Active_Expressions MD*/
 
