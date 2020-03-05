@@ -1,4 +1,4 @@
-import { loc, range } from 'utils';
+import { loc, range, fileEnding, replaceFileEndingWith } from 'utils';
 
 export default class CodeMirrorCodeProvider {
   
