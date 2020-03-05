@@ -943,6 +943,13 @@ export default class Lively {
     
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
+    if (preferences.get('TipOfTheDay')) {
+      const existingContainers = Array.from(document.body.querySelectorAll('lively-code-tip'));
+      if(existingContainers.length !== 0) {
+        existingContainers.map(tip => tip.parentElement.remove());
+      }
+      lively.openComponentInWindow("lively-code-tip");
+    }
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();

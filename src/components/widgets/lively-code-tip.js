@@ -2,6 +2,8 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from "src/client/fileindex.js";
 import _ from 'src/external/lodash/lodash.js';
 
+import preferences from 'src/client/preferences.js';
+
 export default class CodeTip extends Morph {
 
   initialize() {
@@ -15,10 +17,21 @@ export default class CodeTip extends Morph {
 
     this.onResetButton();
     this.whackImg.addEventListener("click", this.moveImg.bind(this));
+    
+    this.startupCheckbox.checked = preferences.get('TipOfTheDay');
   }
 
   setupTipText() {
-    this.tips = ["With 'Alt-Enter' you can access a powerful refactoring menu.", "Press 'Next Tip' to get more advice!", "Make your code simpler to understand with the extract method feature 'Alt+M'.", "You can find many useful shortcuts under 'Right-click' --> 'Documentation'.", "'that' can be used to reference the last component you used the 'halo-menu' (Alt+Click) on.", "'Ctrl+Shift+F' opens the global text search (that is case sensitive!).", "This could be your tip!", "Use 'Alt+P' to switch between markdown code and its visualization in the codemirror.", "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa."];
+    this.tips = [
+      "With 'Alt-Enter' you can access a powerful refactoring menu.",
+      "Press 'Next Tip' to get more advice!",
+      "Make your code simpler to understand with the extract method feature 'Alt+M'.",
+      "You can find many useful shortcuts under 'Right-click' --> 'Documentation'.",
+      "'that' can be used to reference the last component you used the 'halo-menu' (Alt+Click) on.",
+      "'Ctrl+Shift+F' opens the global text search (that is case sensitive!).",
+      "This could be your tip! Add new tips in lively-code-tip.js",
+      "Use 'Alt+P' to switch between markdown code and its visualization in the codemirror.",
+      "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa."];
     this.tipIndex = Math.floor(Math.random() * this.tips.length);
     this.generateTipText();
   }
@@ -33,7 +46,13 @@ export default class CodeTip extends Morph {
   }
 
   onCancelButton() {
+    const showOnNextStartup = this.startupCheckbox.checked;
+    preferences.write('TipOfTheDay', showOnNextStartup);
     this.parentElement.remove();
+  }
+
+  get startupCheckbox() {
+    return this.get("#startupCheckbox");
   }
 
   get cancelButton() {
@@ -102,7 +121,7 @@ export default class CodeTip extends Morph {
 
     this.avg.innerHTML = Math.floor(sum / this.tapTimes.length).toString() + "ms";
   }
-  
+
   setupTimer(last) {
     const htmlElement = this.currentTime;
     clearInterval(this.timer);
