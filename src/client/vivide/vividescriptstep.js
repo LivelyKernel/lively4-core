@@ -244,9 +244,14 @@ export default class ScriptStep {
       type: this.type,
       source: this.source,
       cursor: this.cursor,
-      route: this.route
+      route: this.route,
     };
+     
+    if (this._loopTargetStep) {
+      scriptJson["loop-target-step-id"] = this._loopTargetStep.id // every step has to save it's id
+    }
     
+      
     // #TODO: maybe need to save next step id or loop target
     
     return scriptJson

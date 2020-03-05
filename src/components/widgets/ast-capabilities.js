@@ -1,7 +1,6 @@
 import { loc, range } from 'utils';
 
 import boundEval from 'src/client/bound-eval.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import FileIndex from "src/client/fileindex.js";
 
 import babelDefault from 'systemjs-babel-build';
@@ -14,18 +13,16 @@ import { fileEnding, replaceFileEndingWith } from "utils";
 
 export default class ASTCapabilities {
 
-  constructor(livelyCodeMirror, codeMirror) {
-    this.livelyCodeMirror = livelyCodeMirror;
-    this.codeMirror = codeMirror;
+  constructor(codeProvider) {
+    this.codeProvider = codeProvider;
+    this.codeChanged();
   }
-  get editor() {
-    return this.codeMirror;
-  }
+
   get selectionRanges() {
-    if (this.editor.listSelections().length == 0) {
+    if (this.codeProvider.selections.length == 0) {
       return this.firstSelection;
     }
-    return this.editor.listSelections().map(range);
+    return this.codeProvider.selections.map(range);
   }
 
   get firstSelection() {
@@ -33,19 +30,20 @@ export default class ASTCapabilities {
   }
 
   _getFirstSelectionOrCursorPosition() {
-    if (this.editor.listSelections().length == 0) {
-      return { anchor: this.editor.getCursor(), head: this.editor.getCursor() };
+    if (this.codeProvider.selections.length == 0) {
+      return { anchor: this.codeProvider.cursor, head: this.codeProvider.cursor };
     }
-    return this.editor.listSelections()[0];
+    return this.codeProvider.selections[0];
   }
-
+  
   /*MD ## Navigation MD*/
   /**
    * Get the root path
   */
   get programPath() {
-    if (!this.myProgramPath) {
+    if (!this.myProgramPath && !this.parsingFailed) {
       this.myProgramPath = this.programPathFor(this.sourceCode);
+      this.parsingFailed = !this.myProgramPath;
     }
     return this.myProgramPath;
   }
@@ -59,15 +57,27 @@ export default class ASTCapabilities {
         }
       });
     } catch (err) {
-      return null;
+      return undefined;
     }
 
     return programPath;
   }
 
+  get rootNode() {
+    return this.programPath && this.programPath.parent;
+  }
+
   codeChanged() {
     this.myProgramPath = undefined;
-    this.updateColorPicker();
+    this.parsingFailed = null;
+    this.finishedEnrichment = false;
+    this.memberAssignments = new Map();
+    this.aexprs = undefined;
+  }
+
+  get canParse() {
+    if (this.parsingFailed == null) this.programPath;
+    return !this.parsingFailed;
   }
 
   /** 
@@ -438,28 +448,15 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Select the text corresponding to the given nodes in the editor
+   * Select the text corresponding to the given nodes
    */
   selectNodes(nodes, selectStringContentsOnly = false) {
-    const ranges = nodes.map(node => {
-      const [anchor, head] = range(node.loc).asCM();
-      if (selectStringContentsOnly && t.isStringLiteral(node)) {
-        anchor.ch++;
-        head.ch--;
-      }
-      return { anchor, head };
-    });
-    // #TODO: include primary selection
-    if (ranges.length == 1) {
-      this.editor.setSelection(ranges[0].head, ranges[0].anchor);
-    } else {
-      this.editor.setSelections(ranges);
-    }
-    this.codeMirror.scrollIntoView({ from: ranges[0].head, to: ranges[0].anchor }, 120);
+    const ranges = nodes.map(node => range(node.loc));
+    this.codeProvider.selections = ranges;
   }
 
   /** 
-   * Select the text corresponding to the given paths in the editor
+   * Select the text corresponding to the given paths
    */
   selectPaths(paths, selectStringContentsOnly = false) {
     this.selectNodes(paths.map(path => path.node), selectStringContentsOnly);
@@ -500,10 +497,12 @@ export default class ASTCapabilities {
     return classPath;
   }
 
-  getColorLiterals(programPath) {
+  getColorLiterals() {
+    var pPath = this.programPath;
+    if(!pPath) return;
     let colorPaths = [];
     const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}$/g;
-    programPath.traverse({
+    pPath.traverse({
       StringLiteral(path) {
         if (path.node.value.match(colorRegex)) {
           colorPaths.push(path);
@@ -734,106 +733,24 @@ export default class ASTCapabilities {
     return path.node && path.node.type === type;
   }
 
-  async openMenu() {
+ /*MD ## Color Picker MD*/
 
-    function fa(name, ...modifiers) {
-      return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
-    }
 
-    const myself = this;
-    /*MD ### Generate Submenus MD*/
-
-    async function generateGenerationSubmenu() {
-
-      let submenu = [['Class', () => {
-        menu.remove();
-        myself.generateClass();
-      }, '→', fa('suitcase')]];
-
-      const selectedPath = myself.getInnermostPathContainingSelection(myself.programPath, myself.firstSelection);
-
-      //add testcase if in describe
-      if (myself.isInDescribe(selectedPath)) {
-        submenu.unshift(['Testcase', () => {
-          menu.remove();
-          myself.generateTestCase();
-        }, '→', fa('suitcase')]);
+  updateColor(currentLocation, color) {
+    var location = { anchor: currentLocation, head: currentLocation };
+    const scrollInfo = this.scrollInfo;
+    this.sourceCode = this.sourceCode.transformAsAST(() => ({
+      visitor: {
+        Program: programPath => {
+          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
+          if (t.isStringLiteral(path.node)) {
+            path.node.value = color;
+          }
+        }
       }
-
-      if (myself.isDirectlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
-        submenu.push(['Getter', () => {
-          menu.remove();
-          myself.generateGetter();
-        }, '→', fa('suitcase')], ['Setter', () => {
-          menu.remove();
-          myself.generateSetter();
-        }, '→', fa('suitcase')]);
-      }
-
-      return submenu;
-    }
-
-    async function generateImportSubmenu() {
-      let { identName, functions, classes } = await myself.findImports();
-      let submenu = [];
-      if (!identName || functions.length == 0 && classes.length == 0) {
-        submenu.push(['none', () => {
-          menu.remove();
-        }, '', '']);
-      } else {
-        functions.forEach(url => submenu.push([url.replace(lively4url, ''), () => {
-          menu.remove();
-          myself.addImport(url, identName, true);
-        }, '-', fa('share-square-o')]));
-        classes.forEach(cl => submenu.push([cl.name + ", " + cl.url.replace(lively4url, ''), () => {
-          menu.remove();
-          myself.addImport(cl.url, cl.name, false);
-        }, '-', fa('share-square-o')]));
-      }
-      return submenu;
-    }
-
-    /*MD ### Generate Factoring Menu MD*/
-
-    const menuItems = [['selection to local variable', () => {
-      menu.remove();
-      this.extractExpressionIntoLocalVariable();
-    }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
-      menu.remove();
-      this.wrapExpressionIntoActiveExpression();
-    }, '→', fa('suitcase')], ['Rename', () => {
-      menu.remove();
-      this.rename();
-    }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
-      menu.remove();
-      this.extractMethod();
-    }, 'Alt+M', fa('suitcase'), () => {
-      const selection = this.selectMethodExtraction(this.programPath, true);
-      if (selection) {
-        this.changedSelectionInMenu = true;
-        this.selectPaths(selection.selectedPaths);
-      } else {
-        this.changedSelectionInMenu = false;
-      }
-    }, () => {
-      if (this.changedSelectionInMenu) {
-        this.editor.undoSelection();
-      }
-    }], ['Generate HTML Accessors', () => {
-      menu.remove();
-      this.generateHTMLAccessors();
-    }, 'Alt+H', fa('suitcase')], ['Print References', () => {
-      this.printAllBindings();
-      menu.remove();
-    }, 'Alt+I', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
-    var menuPosition = this.codeMirror.cursorCoords(false, "window");
-
-    const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);
-    menu.addEventListener("DOMNodeRemoved", () => {
-      this.focusEditor();
-    });
+    })).code;
+    this.scrollTo(scrollInfo);
   }
-
   /*MD ## Generations MD*/
 
   /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
@@ -877,14 +794,12 @@ export default class ASTCapabilities {
       this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
       const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
       let line = selectedPath.parent.loc.end.line + 1;
-      this.editor.setSelection({ line, ch: 0 });
+      this.codeProvider.cursor = loc({line, ch: 0});
     });
   }
 
   async compileListOfIDs() {
-    let editor = lively.allParents(this.livelyCodeMirror, undefined, true).find(ele => ele.tagName && ele.tagName === 'LIVELY-EDITOR');
-    let jsURI = encodeURI(editor.shadowRoot.querySelector("#filename").value);
-    const htmlURI = jsURI::replaceFileEndingWith('html');
+    const htmlURI = this.codeProvider.htmlURI;
     let html = await htmlURI.fetchText();
 
     if (html === "File not found!\n") {
@@ -969,7 +884,6 @@ export default class ASTCapabilities {
     this.selectPaths([pathToSelect], true);
 
     this.scrollTo(scrollInfo);
-    this.focusEditor();
   }
 
   compileTestCase(explanation) {
@@ -1362,7 +1276,6 @@ export default class ASTCapabilities {
     const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
     this.selectPaths(pathsToSelect);
-    this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
@@ -1412,35 +1325,26 @@ export default class ASTCapabilities {
     const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
 
     this.selectPaths(pathsToSelect);
-    this.focusEditor();
     this.scrollTo(scrollInfo);
   }
 
   /*MD ## Accessors MD*/
 
   get sourceCode() {
-    return this.livelyCodeMirror.value;
+    return this.codeProvider.code;
   }
   set sourceCode(text) {
-    this.livelyCodeMirror.value = text;
+    this.codeProvider.code = text;
     this.codeChanged();
-    return this.livelyCodeMirror.value;
+    return this.codeProvider.code;
   }
-
-  focusEditor() {
-    this.livelyCodeMirror.focus();
-  }
-
+  
   get scrollInfo() {
-    return this.codeMirror.getScrollInfo();
+    return this.codeProvider.scrollInfo;
   }
+  
   scrollTo(scrollInfo) {
-    this.codeMirror.scrollIntoView({
-      left: scrollInfo.left,
-      top: scrollInfo.top,
-      right: scrollInfo.left + scrollInfo.width,
-      bottom: scrollInfo.top + scrollInfo.height
-    }, 120);
+    this.codeProvider.scrollInfo;
   }
 
   /*MD ## Utilities MD*/
@@ -1521,50 +1425,416 @@ export default class ASTCapabilities {
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 
-  /*MD ## Color Picker MD*/
 
-  updateColorPicker() {
-    const pPath = this.programPath;
-    if (!pPath) {
-      return;
-    }
-    const old = this.editor.getAllMarks();
-    old.forEach(marker => {
-      if (marker.type === "bookmark") {
-        marker.clear();
-      }
+  
+  /*MD ## Active_Expressions MD*/
+
+  getAexprAtCursor(location) {
+    let aexprPath;
+		this.programPath.traverse({
+			CallExpression(path) {
+        if (!range(path.node.loc).contains(location)) {
+          path.skip();
+        } else if (isAExpr(path)) {
+          aexprPath = path;
+          path.stop();
+				}
+			}
     });
-    const colorLiterals = this.getColorLiterals(pPath);
-    colorLiterals.forEach(path => {
-      const location = { line: path.node.loc.end.line - 1, ch: path.node.loc.end.column };
-      var picker = document.createElement("input");
-      picker.type = "color";
-      picker.value = path.node.value;
-      picker.height = "15";
-      picker.width = "15";
-      const bookmark = this.editor.setBookmark(location, picker);
-      picker.addEventListener('change', event => {
-        const currentLocation = bookmark.find();
-        this.updateColor(currentLocation, event.target.value);
-      });
+    return aexprPath;
+  }
+
+  get hasActiveExpressionsDirective() {
+    return this.programPath.node.directives.some(node => {
+      return node.value.value === "enable aexpr";
     });
   }
 
-  updateColor(currentLocation, color) {
-    var location = { anchor: currentLocation, head: currentLocation };
-    const scrollInfo = this.scrollInfo;
-    this.sourceCode = this.sourceCode.transformAsAST(() => ({
-      visitor: {
-        Program: programPath => {
-          const path = this.getInnermostPathContainingSelection(programPath, range(location)); //this.getPathBeforeCursor(programPath, currentLocation);
-          if (t.isStringLiteral(path.node)) {
-            path.node.value = color;
+  ensureEnrichment() {
+    if (this.finishedEnrichment) return true;
+    if (!this.programPath || !this.hasActiveExpressionsDirective) return false;
+    try {
+      this.enrich();
+    } catch (err) {
+      console.error("Unable to process source code", err);
+      return false;
+    }
+    return true;
+  }
+  
+  enrich() {
+    let self = this;
+		this.rootNode.traverseAsAST({
+			enter(path) {
+				path.node.extra = {
+					// this is necessary due to possible circles
+					// this collects the correct dependencies
+					// breaks (meaning not beeing entirely correct anymore) as soon as a node is contained by more than one circle (but this turned out to be unlikely)
+					visited: 2,
+					//same for return recursion
+					returnVisited: 2
+				};
+			}
+    });
+
+		// adds the corresponding binding to every identifier
+		this.rootNode.traverseAsAST({
+      Scope(path) {
+				Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
+					binding.referencePaths.forEach(path => {
+						path.node.extra.binding = binding;
+					})
+				})
+			}
+		});
+
+		this.extractMemberAssignments();
+    
+    this.enrichFunctionNodes();
+
+		this.programPath.traverse({
+			Expression(expr) {
+				self.collectExpressionInformation(expr);
+			}
+    });
+    
+    this.finishedEnrichment = true;
+	}
+  
+  // Filters every member assignment and registers it in `this.memberAssignments`
+  extractMemberAssignments(){
+    let self = this;
+    this.programPath.traverse({
+			MemberExpression(expr) {
+				if (expr.node.computed) return;
+				if (!expr.parentPath.isAssignmentExpression()) return;
+        let assignment = self.assignedValue(expr.parentPath);
+
+				let obj = expr.get("object");
+				let objKey = obj.node.extra.binding || 'misc';
+				let property = expr.get("property").node.name;
+
+				let entry = self.memberAssignments.get(property);
+				if (!entry) {
+					// property unknown, adding new property and its accesses to the map
+					let newMap = new Map();
+
+					newMap.set(objKey, [assignment]);
+					self.memberAssignments.set(property, newMap);
+				} else {
+					let objEntry = entry.get(objKey);
+					if (!objEntry) {
+						objEntry = [];
+						entry.set(objKey, objEntry);
+					}
+					objEntry.push(assignment);
+				}
+			}
+		});
+  }
+  
+  enrichFunctionNodes(){
+  // adds bindings definend outside of the current scope(e.g. Function) to the scope
+    this.rootNode.traverseAsAST({
+      'Function|ArrowFunctionExpression|Program'(path) {
+        path.node.extra.leakingBindings = leakingBindings(path);
+        const callExpressions = path.node.extra.callExpressions = [];
+        const objects = path.node.extra.objects = new Map();
+        const returns = path.node.extra.returns = [];
+
+        path.traverse({
+          MemberExpression(expr) {
+            if (expr.parentPath.isAssignmentExpression()) return;
+            let objExpr = expr.get("object").node;
+            let property = expr.get("property").node.name;
+
+            let entry = objects.get(objExpr);
+            if (!entry) {
+              objects.set(objExpr, new Set([property]));
+            } else {
+              entry.add(property);
+            }
           }
+        });
+
+        path.traverse({
+          ReturnStatement(ret) {
+            if (ret.has("argument")) {
+              returns.push(ret.get("argument"));
+            }
+          },
+          CallExpression(call) {
+            callExpressions.push(call)
+          }
+        })
+      }
+    });
+  }
+  
+  /* Main recursion for enriching AST 
+  *  Resolves Expression nodes and follows their children in order to find
+  *  - resolvedObjects - the {ObjExpression, [Bindings]} in which the expression may result
+  *  - resolvedCallees - the [Function] which callepressions may actually be
+  *  - results         - the [Function] which may be returned by an expression or Identifier
+  *
+  */
+	collectExpressionInformation(path) {
+		if (path.node.extra.returnVisited <= 0) {
+			return [];
+		}
+
+		path.node.extra.returnVisited -= 1;
+
+		if (path.node.extra.results) {
+			return path.node.extra.results
+		}
+
+		let results = [];
+    let resolvedObjects = [];
+
+		if (path.isObjectExpression()) {
+      resolvedObjects = [{objectExpression:path, bindings:new Set()}];
+
+		} else if (path.isIdentifier()) {
+      if (!path.parentPath.isUpdateExpression()) {
+        let binding = path.node.extra.binding;
+        if (binding) {
+          [binding.path, ...binding.constantViolations].forEach(item => {
+            this.collectExpressionInformation(item);
+            results.push(item.node.extra.results);
+            item.node.extra.resolvedObjects.forEach(obj =>{
+              obj.bindings.add(binding);            
+              resolvedObjects.push(obj);            
+            })
+          })
         }
       }
-    })).code;
-    this.scrollTo(scrollInfo);
-    this.updateColorPicker();
+    } else if (path.isAssignmentExpression() || path.isVariableDeclarator()) {
+      let val = this.assignedValue(path);
+			this.collectExpressionInformation(val);
+			results = val.node.extra.results;
+      resolvedObjects = val.node.extra.resolvedObjects;
+    } else if (path.isFunction()) {
+			results = [path];
+		} else if (path.isConditionalExpression()) {
+			[path.get("consequent"), path.get("alternate")].forEach(expr => {
+				this.collectExpressionInformation(expr);
+				results.push(expr.node.extra.results);
+        resolvedObjects.push(expr.node.extra.resolvedObjects);
+			})
+		} else if (path.isCallExpression()) {
+			const callee = path.get("callee");
+			let resolvedCallees = [];
+			this.collectExpressionInformation(callee);
+			callee.node.extra.results.forEach(func => {
+				this.collectExpressionInformation(func);
+				const body = func.get("body");
+				if (!body.isBlockStatement()) {
+					// slim arrow function        
+					this.collectExpressionInformation(body);
+					results.push(body.node.extra.results);
+				} else {
+					func.node.extra.returns.forEach(returnStatement => {
+						this.collectExpressionInformation(returnStatement);
+						results.push(returnStatement.node.extra.results);
+            resolvedObjects.push(returnStatement.node.extra.resolvedObjects);
+					})
+				}
+				// hey we found a callee as well. 
+				resolvedCallees.push(func);
+			})
+			path.node.extra.resolvedCallees = resolvedCallees.flat();
+
+		} else if (path.isMemberExpression()) {
+			const objExpr = path.get("object");
+			this.collectExpressionInformation(objExpr);
+
+			let tmp = objExpr.node.extra.resolvedObjects.flat();
+			tmp.forEach(result => {
+				this.assignmentsOf(path.get("property").node.name, result).forEach(assignment => {
+					this.collectExpressionInformation(assignment);
+					results.push(assignment.node.extra.results);
+          resolvedObjects.push(assignment.node.extra.resolvedObjects);
+				})
+			});
+		}
+    path.node.extra.resolvedObjects = resolvedObjects.flat();
+		path.node.extra.results = results.flat();
+	}
+  
+  // Returns for a given 'property' and {ObjExpression, [Binding]} all known assignments including the declaration
+	assignmentsOf(property, obj) {
+    
+    let result = [];
+    this.shadowedBindings(obj.bindings).forEach(binding=>{
+    
+      let propertyEntry = this.memberAssignments.get(property) || new Map();
+      let memberDependencies = propertyEntry.get("misc") || [];
+      memberDependencies.forEach(assignment => result.push(assignment));
+
+      let objEntry = propertyEntry.get(binding);
+      if (objEntry) {
+        objEntry.forEach(assignment => result.push(assignment))
+      }
+    });    
+    
+    // try to read as much from the given ObjectExpression as possible
+		let objExpr = obj.objectExpression; // the nodePath
+    if (objExpr && objExpr.isObjectExpression()){
+      let tmp = objExpr
+        .get("properties")
+        .find(path => path.get("key").node.name === property);
+      if(tmp) {
+        if (tmp.isObjectProperty()) {
+          result.push(tmp.get("value"));
+        } else if (tmp.isObjectMethod()) {
+          result.push(tmp);
+        }
+      }
+    }
+		return result;
+	}
+  
+  assignedValue(path) {
+    if (path.isUpdateExpression()) return path;
+    if (path.isFunctionDeclaration()) return path;
+    if (path.isAssignmentExpression()) return path.get("right");
+    if (path.isVariableDeclarator()) {
+      const id = path.get("id");
+      if (id.isPattern()) return; // #TODO
+      return path.get("init");
+    }
+    return;
+  }
+  
+  
+  /* returns all [binding] that the input [binding] may be assigned to.
+   * ATTENTION: this only works for object bindings, since literal values are copied in javascript
+   * `let a = 4; let b = a` `b` is not shadowed but if `a` is an object, then it is shadowed, so instead of using the actual binding `b`, we use every binding `b` resolves to (including `b`)
+   * 
+   * //Where is b changed?
+   * let a = {x:1};
+   * let b = a; // a is shadowed binding
+   * a.x = 2; //<--!!!
+   * //b is equal to {x:2}
+   */
+  shadowedBindings(bindings) {
+    
+    /* this should be stored in the members map or in an extra property. 
+    * DOES NOT DETECT DEPENDENCIES THROUGH SIMPLE ASSIGNMENTS (a la `a = b`)
+    * do this with extra sweep as last enrichment step, when the new property in there
+    */
+    let result = bindings;
+    bindings.forEach(binding=>{
+      binding.path.node.extra.resolvedObjects.forEach(obj=>{
+        if(obj.bindings) {
+          obj.bindings.forEach(item => result.add(item));
+        }
+      })
+    });
+    
+    return result;
+  }
+  
+ /* returns a set of nodes where the active Expression on this location may be changed
+  * DOES NOT care for execution order of the code
+  * uses heuristics e.g. fixed recursion depth
+  */
+	resolveDependencies(path) {
+    if (!this.ensureEnrichment()) return new Set();
+
+    if (path.node.dependencies != null) {
+      return path.node.dependencies;
+    }
+    
+		return this._resolveDependencies(path);
+	}
+  
+	_resolveDependencies(path) {
+    const self = this;
+		if ((path.node.extra.visited -= 1) <= 0) {
+			return path.node.extra.dependencies || new Set();
+		}
+
+		if (path.node.extra.dependencies) {
+			// the dependencies were already collected... just return them
+			return path.node.extra.dependencies
+		}
+
+		let dependencies = new Set([...this.shadowedBindings(path.node.extra.leakingBindings)].map(binding => [...binding.constantViolations]).flat());
+		path.node.extra.callExpressions.forEach(callExpression => {
+			callExpression.node.extra.resolvedCallees.forEach(callee => {
+				if (t.isFunction(callee)) {
+					this._resolveDependencies(callee).forEach(dep => dependencies.add(dep));
+				}
+
+				if (t.isAssignmentExpression(callee)) {
+					const value = this.assignedValue(callee);
+					if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
+						this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
+					}
+				}
+
+				if (t.isVariableDeclarator(callee)) {
+					//NOP
+				}
+			})
+		});
+
+		if (path.node.extra.objects.size) {
+			for (const [objExpr, members] of path.node.extra.objects.entries()) {
+        if (t.isThisExpression(objExpr)) continue;
+				for (const member of members) {
+            self.assignmentsOf(member, {bindings: new Set([objExpr.extra.binding])}).forEach(assignment => {
+						dependencies.add(assignment)
+					});
+				}
+			}
+		}
+		path.node.extra.dependencies = dependencies;
+		return dependencies;
+	}
+  
+  getAllActiveExpressions() {
+    return this.aexprs || (this.aexprs = this._collectAExprs());
+  }
+  
+  _collectAExprs() {
+    const allAExpr = [];
+    this.programPath.traverse({
+      CallExpression(path) {
+        if (isAExpr(path) ) {
+          allAExpr.push(path);
+        }
+      }
+    });    
+    return allAExpr;    
   }
 
+}
+
+/*MD ## Active Expressions Helper*/
+
+const AEXPR_IDENTIFIER_NAME = 'aexpr';
+
+function leakingBindings(path) {
+	const bindings = new Set;
+	path.traverse({
+		ReferencedIdentifier(id) {
+			const outerBinding = path.scope.getBinding(id.node.name);
+			if (!outerBinding) return;
+			const actualBinding = id.scope.getBinding(id.node.name);
+			if (outerBinding === actualBinding) {
+				bindings.add(actualBinding);
+			}
+		}
+	});
+	return bindings;
+}
+
+function isAExpr(path) {
+	return t.isCallExpression(path)
+		&& t.isIdentifier(path.node.callee)
+		&& path.node.callee.name === AEXPR_IDENTIFIER_NAME
+		&& !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME, true);
 }

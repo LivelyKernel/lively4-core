@@ -1,60 +1,37 @@
 "enable aexpr";
 
 import HaloItem from 'src/components/halo/lively-halo-item.js';
-
-const basePath = "src/client/vivide/scripts/scripts/";
-
-export async function saveFile(saveTarget, isNameNotProvided){
-  let name;
-  if(isNameNotProvided || !saveTarget.scriptName){
-    name = await lively.prompt("Please attach a name", "vivide-script-name");
-  } else {
-    name = saveTarget.scriptName
-  }
-  if(name === undefined) return;
-  saveTarget.scriptName = name;
-  /*
-  We have to save a multitude of things:
-  inputData
-  scriptSteps
-  And for applications:
-  input targets
-  output targets
-  */
-  const script = saveTarget.myCurrentScript.toJSON();
-  const stringToSave = JSON.stringify({
-    script,
-    widget: saveTarget.widget.tagName.toLowerCase(),     
-    inputs: JSON.stringify(saveTarget.input)
-  });
-  const url = `${lively4url}/${basePath}${name}.json`;
-  const exists = await lively.files.exists(url);
-  if(exists){   
-    const confirm = await lively.confirm(`Are you sure you want to overwrite ${name}?`);
-    if(confirm){
-      writeFile(url, stringToSave);
-    } else {
-      saveFile(saveTarget, true);
-    }
-  } else {
-    writeFile(url, stringToSave);
-  }
-}
-
-
-
-async function writeFile(url, content){
-  const res = await lively.files.saveFile(url, content);
-  if(res.ok){
-    lively.success("Saved");
-  }else{
-    lively.error(await res.text())
-  }
-}
+import {getName, writeFile} from 'src/client/vivide/scripts/saving.js';
 
 export default class LivelyHaloVivideSaveScriptItem extends HaloItem {
-  async onClick(evt){
+  async onClick(){
     const saveTarget = window.that;
-    saveFile(saveTarget);
+    const {name, description, url} = await getName(saveTarget, "script");
+    const content = JSON.stringify(this.createJSON(saveTarget, name, description));
+    writeFile(url, content);
+  }
+  
+  createJSON(saveTarget, name, description){
+    if(name === undefined) return;
+    /*
+    We have to save a multitude of things:
+    inputData
+    scriptStepson
+    And for applications:
+    input targets
+    output targets
+    */
+    // We also want to save a description for scripts so we can suggest with more info
+    // Additionally we want to safe the shape of the in and out object with types for later suggestion
+    const script = saveTarget.myCurrentScript.toJSON();
+    const stringToSave = {
+      script,
+      description,
+      widget: saveTarget.widget.tagName.toLowerCase(),     
+      inputs: JSON.stringify(saveTarget.input),
+      inScheme: JSON.stringify(saveTarget.input[0], (_, value) => typeof value === "object" ? value : typeof value),
+      outScheme: JSON.stringify(saveTarget.getDataToTransmit()[0], (_,value) => typeof value === "object" ? value : typeof value)
+    };
+    return stringToSave;
   }
 }

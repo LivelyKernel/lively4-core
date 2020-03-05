@@ -1,6 +1,4 @@
 "enable aexpr";
-import {pt} from 'src/client/graphics.js';
-import {uuid} from 'utils';
 
 window.allConnections = window.allConnections || new Set()
 
@@ -22,15 +20,17 @@ export default class Connection {
     this.isEvent = isEvent;
     this.isActive = false
     this._eventListener = evt => this.connectionFunction(evt)
-    let ending = '';
-    if(this._targetProperty.includes('style')){
-      ending = " + 'pt'"
-    }
+    this._targetProperty = this.cleanProperty(this._targetProperty)
     if(isEvent){
-      this.valueModifyingCode = "(target, event) => {target." + this._targetProperty + " = 42" + ending + "}";
+      this.valueModifyingCode = `(target, event) => {
+  target.${this._targetProperty} = 42;
+}`;
       this.trackingCode = this._sourceProperty;
     } else {
-      this.valueModifyingCode = "(target, sourceValue) => {target." + this._targetProperty + " = sourceValue*1" + ending + "}";
+      this.valueModifyingCode = `(target, sourceValue) => {
+  target.${this._targetProperty} = sourceValue;
+}`;
+      this._sourceProperty = this.cleanProperty(this._sourceProperty)
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
 }`
@@ -40,30 +40,32 @@ export default class Connection {
     this.makeSavingScript();
   }
   
-  makeSavingScript(){
-    if(this.target.hasAttribute('connectionId')){
-      this.targetId = this.target.getAttribute('connectionId');
+  cleanProperty(property) {
+    return property.split(".").map(each => this.camelCaseIfNeeded(each)).join(".")
+  }
+  
+  camelCaseIfNeeded(propertyPart) {
+    if(propertyPart.includes('-')) {
+      return propertyPart.camelCase();
     } else {
-      this.targetId = uuid();
-      this.target.setAttribute('connectionId', this.targetId);
+      return propertyPart;
     }
-     if(this.source.hasAttribute('connectionId')){
-      this.sourceId = this.source.getAttribute('connectionId');
-    } else {
-      this.sourceId = uuid();
-      this.source.setAttribute('connectionId', this.sourceId);
-    }
+  }
+  
+  makeSavingScript() {
+    this.targetId = lively.ensureID(this.target);
+    this.sourceId = lively.ensureID(this.source);
     this.saveSerializedConnectionIntoWidget();
   }
   
-  saveSerializedConnectionIntoWidget(){
+  saveSerializedConnectionIntoWidget() {
     const serializedConnections = Array.from(window.allConnections)
       .filter(connection => connection.source === this.source)
       .map(connection => connection.serialize())
     this.source.setJSONAttribute('data-connection', serializedConnections);
   }
   
-  serialize(){
+  serialize() {
     return {
       sourceId: this.sourceId,
       targetId: this.targetId,
@@ -74,7 +76,7 @@ export default class Connection {
     }
   }
   
-  static deserialize(json){
+  static deserialize(json) {
     json.forEach(connectionData => {
       this.connectionFromExistingData(connectionData.targetId, connectionData.modifyingcode, connectionData.sourceId, connectionData.trackingCode, connectionData.label, connectionData.isEvent)
     })
@@ -86,23 +88,23 @@ export default class Connection {
     }
   }
   
-  static connectionFromExistingData(targetId, modifyingCode, sourceId, trackingCode, label, isEvent){
-    let target = document.body.querySelector(`[connectionId="${targetId}"]`);
-    let source = document.body.querySelector(`[connectionId="${sourceId}"]`);
-    let undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
+  static connectionFromExistingData(targetId, modifyingCode, sourceId, trackingCode, label, isEvent) {
+    const target = lively.elementByID(targetId);
+    const source = lively.elementByID(sourceId);
+    const undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
     undeadConnection.setModifyingCode(modifyingCode);
     undeadConnection.setTrackingCode(trackingCode);
     undeadConnection.setLabel(label);
     undeadConnection.activate();
   }
   
-  activate(){
+  activate() {
     
-    if(this.isActive){
+    if(this.isActive) {
        this.deactivate()
     }
     
-    if(this.isEvent){
+    if(this.isEvent) {
       this.activateEvent()
     }
     else {
@@ -126,19 +128,21 @@ export default class Connection {
     return this.trackingCode
   }
   
-  setTrackingCode(string){
-    if(this.isEvent){ this.deactivate()}
+  setTrackingCode(string) {
+    const isActive = this.isActive
+    if(isActive){this.deactivate()}
     this.trackingCode = string;
     this.saveSerializedConnectionIntoWidget();
+    if(isActive){this.activate()}
   }
   
-  async connectionFunction(sourceValue){  
+  async connectionFunction(sourceValue) {  
     let myFunction = await this.valueModifyingCode.boundEval()
     myFunction(this.target, sourceValue)
   }
   
   drawConnectionLine() {
-    let line = [lively.getGlobalPosition(this.source), lively.getGlobalPosition(this.target)];
+    let line = [lively.getGlobalCenter(this.source), lively.getGlobalCenter(this.target)];
     lively.showPath(line, "rgba(80,180,80,1)", true);
   }
   
@@ -162,7 +166,7 @@ export default class Connection {
   
   copyAndActivate() {
     let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
-    newConnection.setModifyingCodeString(this.valueModifyingCode);
+    newConnection.setModifyingCode(this.valueModifyingCode);
     newConnection.activate();
     return newConnection;
   }
@@ -184,12 +188,20 @@ export default class Connection {
     return this.source
   }
   
+  setSource(object) {
+    this.source = object
+  }
+  
   getSourceId() {
     return this.sourceId
   }
   
   getTarget() {
     return this.target
+  }
+  
+  setTarget(object) {
+    this.target = object
   }
   
   getTargetId() {
@@ -225,10 +237,10 @@ export default class Connection {
   
   static allConnectionsFor(object) {
     let connections = [];
-    if (object.hasAttribute && object.hasAttribute('connectionId')) {
-      let objectId = object.getAttribute('connectionId');
+    if (object.hasAttribute && object.hasAttribute('data-lively-id')) {
+      let objectId = object.getAttribute('data-lively-id');
       this.allConnections.forEach(connection => {
-        if((connection.getTargetId() == objectId) || (connection.getSourceId() == objectId)) {connections.push(connection)}
+        if((connection.targetId == objectId) || (connection.sourceId == objectId)) {connections.push(connection)}
       })
     }
     return connections

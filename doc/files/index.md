@@ -54,7 +54,6 @@
 
     button.addEventListener("click", () => {
       var table = markdown.get("#table").get("lively-table")
-      debugger
       if (table) {
         table.setFromJSO(table.asJSO().sortBy(ea => Number(ea.versions)).reverse())
       }      
