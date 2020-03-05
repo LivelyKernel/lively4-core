@@ -257,12 +257,16 @@ export default class FileIndex {
   }
   
   extractModuleSemantics(file) {
-    var ast = this.parseSource(file.url, file.content)
-    if(!ast) {
-      console.info('Could not parse file:', file.url)
-      return []
+    try {
+      var ast = this.parseSource(file.url, file.content)
+      if(!ast) {
+        console.info('Could not parse file:', file.url)
+        return []
+      }
+      var results = this.parseModuleSemantics(ast)
+     } catch(e) {
+      console.warn('[fileindex] extractModuleSemantics ', e)
     }
-    var results = this.parseModuleSemantics(ast)
     return results;
   }
   
