@@ -526,7 +526,7 @@ export default class Container extends Morph {
     
     var container = this.get('#container-editor');
     
-    var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor");
+    var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
     
     if (livelyEditor && (livelyEditor.localName != editorType)) {
       livelyEditor.remove()
@@ -1636,6 +1636,9 @@ export default class Container extends Morph {
       editorType = "lively-image-editor"
     }
 
+    if (urlString.match(/((shadama))$/i)) {
+      editorType = "lively-shadama-editor"
+    }
     
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")

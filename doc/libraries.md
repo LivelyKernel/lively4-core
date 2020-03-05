@@ -4,13 +4,13 @@
 
 __We don't want to do everything ourselves... anymore__
 
-Using powerful compontents can make live more complicated, e.g. sometimes understanding them and intergrating them can be hard or sometimes nearly imposible. And sometimes your are buying more that you actually wanted..
+Using powerful components can make live more complicated, e.g. sometimes understanding them and integrating them can be hard or sometimes nearly impossible. And sometimes your are buying more that you actually wanted..
 
-We have serveral use cases in mind:
+We have several use cases in mind:
 
 - create diagrams for documentation / illustration / mindmapping... ("Graffle")
 - collaborative note taking and scribling with a pen, say digital whiteboard + notebook (OneNote)
-- make use of interactive graph edting and layout in our applications ("Lively Fabrik")
+- make use of interactive graph editing and layout in our applications ("Lively Fabrik")
 - create (interactive) visualizations ("D3")
 - Mix textual notes with hand taken notes and vector drawings into interactive documents ("Lively Notes")
 

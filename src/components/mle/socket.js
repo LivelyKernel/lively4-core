@@ -24,6 +24,7 @@ export const SocketSingleton = (function() {
   }
   
   return {
-    get: () =>  !socket ? create() : socket
+    get: () =>  !socket ? create() : socket,
+    reset: () => create()
   }
 })()
