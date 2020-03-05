@@ -1,5 +1,6 @@
 import { toDOMNode } from "./ui-aexpr.js";
 import { BaseActiveExpression as ActiveExpression } from 'active-expression';
+import _ from 'src/external/lodash/lodash.js';
 
 /**
  * Resources for JSX Semantics
@@ -79,9 +80,16 @@ function isActiveGroup(obj) {
 
 function composeElement(tagElement, attributes, children) {
   for (let [key, value] of Object.entries(attributes)) {
-    if(value instanceof Function) {
+    if (!value) continue;
+    if (key.startsWith('v-')) {
+      _.assign(
+        tagElement.props || (tagElement.props = {}),
+        { [key.substring(2)]: value }
+      );
+    } else if(value instanceof Function) {
       // functions provided as attributes are used to create event listeners
-      tagElement.addEventListener(key, value);
+      // tagElement.addEventListener(key, value);
+      tagElement[`on${key}`] = value;
     } else {
       tagElement.setAttribute(key, value.toString());
     }

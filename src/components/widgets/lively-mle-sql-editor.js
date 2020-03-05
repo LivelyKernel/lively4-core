@@ -1,42 +1,62 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import SocketIO from 'src/external/socketio.js';
+import {SocketSingleton} from 'src/components/mle/socket.js';
+
+function paintResult(r){
+  if(r.rows){
+    return <lively-mle-table-viewer />.then(t => {
+      t.data = r;
+      return t;
+    })
+  }
+  return Promise.resolve(<div class="notification is-success">Your query affected {r.rowsAffected} rows.</div>);
+}
 
 export default class LivelyMleSqlEditor extends Morph {
   async initialize() {
     this.initialized = false;
-    this.windowTitle = "Lively MLE SQL Editor";
-    this.registerButtons()
-    this.innerHTML = '';
-    this.socket = SocketIO("http://132.145.55.192:8080");
-    this.socket.emit('options',  {
-      connectString: 'localhost:1521/MLE',
-      user: 'system',
-      password: 'MY_PASSWORD_123'
+    this.windowTitle = "MLE SQL Editor";
+    this.registerButtons();
+    this.socket = await SocketSingleton.get();
+    const result = this.shadowRoot.getElementById("result");
+    this.socket.on('failure', m => {
+      this.loading = false;
+      result.innerHTML = m;
+      result.className = "notification is-danger";
+    })
+    this.socket.on('busy', m => {
+      this.loading = false;
     });
-    lively.notify('Connected');
-    this.socket.on('busy', () => lively.warn('Resource currently busy'));
-    this.socket.on('failure', err => lively.error('Resource failed processing', err));
-    this.socket.on('success', () => {
-      if(!this.initialized){
-        this.initialized = true;
-        lively.notify('Connected');
+    this.socket.on('result', (r, status) => {
+      if(status=== "executed"){
+        result.innerHTML = ""
+        this.loading = false;
+        paintResult(r).then(e => result.appendChild(e));
       }
-      lively.success('Resource successfully processed');
     });
-    this.socket.on('result', r => {result.innerHTML = r.rows ? JSON.stringify(r.rows): r.rowsAffected});
-    const sql = <lively-code-mirror></lively-code-mirror>;
-    const exec = <button id='execute' click={() => {
-      lively.success('Resource successfully processed');
-      sql.then(e => {
-        this.socket.emit('executeSQL', {
-          sql: e.editor.getValue()
-        });
-    })}}>Execute</button>;
-    const result = <textarea disabled></textarea>;
-    const surrounding = <div>{sql}{exec}{result}</div>;
-    this.appendChild(surrounding);
+  }
+  
+  onExecuteButton(){
+    this.loading = true;
+    this.socket.emit('executeSQL', {
+      sql: this.shadowRoot.getElementById("sql").value
+    });
+  }
+  
+  async onResetButton(){
+    this.loading = true;
+    this.socket = await SocketSingleton.reset();
+    this.loading = false;
+  }
+  
+  set loading(v){
+    this.shadowRoot.getElementById("sql").disabled = v;
+    this.shadowRoot.getElementById("executeButton").disabled = v;
+    this.shadowRoot.getElementById("result").className = ""
+    this.shadowRoot.getElementById("executeButton").className = `button is-link ${v ? "is-loading" : ""}`;
+    this.shadowRoot.getElementById("resetButton").disabled = v;
+    this.shadowRoot.getElementById("resetButton").className = `button is-warning ${v ? "is-loading" : ""}`;
   }
   
   /* Lively-specific API */

@@ -1,8 +1,9 @@
 <!-- markdown-config presentation=true -->
 
-<style data-src="./style.css"></style>
+<style data-src="../../src/client/presentation.css"></style>
 <style data-src="../../src/client/lively.css"></style>
 <style data-src="../../templates/livelystyle.css"></style>
+<style data-src="./style.css"></style>
 
 <style>
   li.box {

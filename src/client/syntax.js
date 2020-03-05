@@ -82,6 +82,7 @@ export default class SyntaxChecker {
     
     const syntaxPlugins = (await Promise.all([
       'babel-plugin-syntax-jsx',
+      'babel-plugin-syntax-async-generators',
       'babel-plugin-syntax-do-expressions',
       'babel-plugin-syntax-function-bind'
     ]

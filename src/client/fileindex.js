@@ -257,12 +257,16 @@ export default class FileIndex {
   }
   
   extractModuleSemantics(file) {
-    var ast = this.parseSource(file.url, file.content)
-    if(!ast) {
-      console.info('Could not parse file:', file.url)
-      return []
+    try {
+      var ast = this.parseSource(file.url, file.content)
+      if(!ast) {
+        console.info('Could not parse file:', file.url)
+        return []
+      }
+      var results = this.parseModuleSemantics(ast)
+     } catch(e) {
+      console.warn('[fileindex] extractModuleSemantics ', e)
     }
-    var results = this.parseModuleSemantics(ast)
     return results;
   }
   
@@ -419,7 +423,8 @@ export default class FileIndex {
       let response = await await fetch(url, {
             method: "OPTIONS",
             headers: {
-              showversions: true
+              showversions: true,
+              "debug-initiator": "fileindex.js#loadVersions"
             }
           })
       let text = await response.text()
@@ -663,14 +668,40 @@ export default class FileIndex {
         }
       },
       Identifier(path) {
-        if (t.isMemberExpression(path.parent)) {
-          if(!t.isThisExpression(path.parent.object)) {
-            unboundIdentifiers.push(path.node.name);
-          }
+        if (!(FileIndex.hasASTBinding(path))) {
+          unboundIdentifiers.push(path.node.name);
         }
       }
     })
     return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
+  }
+  
+  static getBindingDeclarationIdentifierPath(binding) {
+    return this.getFirstSelectedIdentifierWithName(binding.path, binding.identifier.name);
+  }
+  
+  static getFirstSelectedIdentifierWithName(startPath, name) {
+    if (t.isIdentifier(startPath.node, { name: name })) {
+      return startPath;
+    }
+    var first;
+    startPath.traverse({
+      Identifier(path) {
+        if (!first && t.isIdentifier(path.node, { name: name })) {
+          first = path;
+          path.stop();
+        }
+      }
+    });
+    return first;
+  }
+  
+  static hasASTBinding(identifier) {
+    if (!identifier.scope.hasBinding(identifier.node.name)) return false;
+
+    const binding = identifier.scope.getBinding(identifier.node.name);
+    const identifierPaths = [...new Set([FileIndex.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => FileIndex.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
+    return identifierPaths.includes(identifier);
   }
   
   // ********************************************************
@@ -708,7 +739,10 @@ export default class FileIndex {
     url = getBaseURL(url)
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
-      method: "OPTIONS"
+      method: "OPTIONS", 
+      headers: {
+        "debug-initiator": "fileindex.js#updateFile"
+      }
     }).then(r => r.clone().json())
     
     if (!stats.error) {
@@ -744,7 +778,12 @@ export default class FileIndex {
   
     if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
       if (size < 100000) {
-        let response = await fetch(url)
+        let response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "debug-initiator": "fileindex.js#addFile"
+          }
+        })
         file.version = response.clone().headers.get("fileversion")
         file.content = await response.clone().text()    
       }
@@ -783,7 +822,7 @@ export default class FileIndex {
 
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
-      await this.addVersions(file)
+      // await this.addVersions(file) // #Disabled for now, this is expensive!
     }
     
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
@@ -800,7 +839,8 @@ export default class FileIndex {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
-        filelist  : true
+        filelist  : true,
+        "debug-initiator": "fileindex.js#updateDirectory"
       }
     }).then(r => {
       if (r.status == 200) {

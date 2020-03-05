@@ -1,16 +1,40 @@
-<template id="lively-mle-table-viewer" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  
-}
-#content {
-  background-color: gray;
-}
-</style>
-<div id="content">
-	<slot></slot>
-</div>
-</template>
+<template id="lively-mle-table-viewer">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"></style>
+  <style>
+    :host {
+      overflow: auto;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    div {
+      padding: 0.25em;
+    }
+  </style>
+  <div class="field has-addons">
+    <p class="control">
+      <button class="button is-static" tabindex="-1">Table</button>
+    </p>
+    <p class="control is-expanded">
+      <input type="text" class="input" id="table" />
+    </p>
+    <p class="control">
+      <button id="viewButton" class="button is-primary">View</button>
+    </p>
+  </div>
+  <div class="table-container" id="result">
+    <table class="table is-hoverable is-fullwidth">
+      <thead>
+        <tr id="header">
+        </tr>
+      </thead>
+      <tbody id="body"></tbody>
 
+      <tfoot>
+        <tr id="footer">
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</template>

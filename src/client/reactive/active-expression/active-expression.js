@@ -189,9 +189,9 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    if(location){this.meta({location})}
-    this.meta({events : new Array()});
-    this.meta().get('events').push({timestamp: new Date(), message: 'created'});
+    if(location){this.meta({location})};
+    this.initializeEvents();
+    this.logEvent('created');
 
     if(new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -266,6 +266,7 @@ export class BaseActiveExpression {
    */
   onChange(callback) {
     this.callbacks.push(callback);
+    this.logEvent('dependencies changed', 'Added: '+callback);
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -279,6 +280,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
+      this.logEvent('dependencies changed', 'Removed: '+callback);
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -299,11 +301,7 @@ export class BaseActiveExpression {
     const lastValue = this.lastValue;
     this.storeResult(value);
     
-    this.meta().get('events').push({
-      timestamp: new Date(), 
-      message: 'changed value',
-      value: value
-    });
+    this.logEvent('changed value', value);
 
     this.notify(value, {
       lastValue,
@@ -409,7 +407,7 @@ export class BaseActiveExpression {
       this._isDisposed = true;
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
-      this.meta().get('events').push({timestamp: new Date(), message: 'disposed'});
+      this.logEvent('disposed');
     }
   }
 
@@ -441,6 +439,23 @@ export class BaseActiveExpression {
 
   supportsDependencies() {
     return false;
+  }
+  
+  initializeEvents() {
+    this.meta({events : new Array()});
+  }
+  
+  logEvent(type, value) {
+    if(this.isMeta())return;
+    //if(!this.meta().has('events'))this.meta({events : new Array()});
+    let events = this.meta().get('events');
+    events.push({timestamp: new Date(), type, value});
+    if(events.length > 5000)events.shift();
+  }
+  
+  isMeta(value) {
+    if(value !== undefined)this.meta({isMeta : value});
+    else return this.meta().has('isMeta') && this.meta().get('isMeta');
   }
 }
 

@@ -9,6 +9,17 @@ MD*/
  * HELPER
  */
 
+
+// BEGIN COPIED from 'utils'
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    var r = crypto.getRandomValues(new Uint8Array(1))[0] % 16 | 0,
+        v = c == 'x' ? r : r & 0x3 | 0x8;
+    return v.toString(16);
+  });
+}
+// END COPIED
+
 async function loadJavaScript(name, src, force) {
   var code = await fetch(src).then(r => r.text())
   eval(code)
@@ -63,7 +74,15 @@ self.lively4transpilationCache = {
   },
   cache: new Map()
 } 
- 
+
+if (self.localStorage) {
+  if (!self.localStorage["lively4systemid"]) {
+    self.localStorage["lively4systemid"] = "System" +  generateUUID()
+  }  
+  self.lively4systemid = self.localStorage["lively4systemid"]
+}
+
+self.lively4session = "Session" +  generateUUID()
 self.lively4syncCache = new Map()
 self.lively4optionsCache = new Map()
 self.lively4fetchLog = []
@@ -111,24 +130,36 @@ async function preloadFileCaches() {
         mimeType = " text/plain"
       if (url.match(/\.js$/)) mimeType = "application/javascript"
       if (url.match(/\.css$/)) mimeType = "text/css"
-      var response = new Response(content, {
-        headers: {
-          "content-type": mimeType,
-          modified: modified
-        }
-      })
-      self.lively4syncCache.set(url, response)
       
       let optionsPath = ".options/" + ea.replace(/\//g,"_"), 
         optionsFile = archive.file(optionsPath)
       if (optionsFile) {
         let optionsContent = await optionsFile.async("string")
+        try {
+          var options = JSON.parse(optionsContent)
+        } catch(e) {
+          console.warn("[boot] preloadFileCaches: Could not parse OPTIONS", optionsPath, optionsContent)
+        }
         self.lively4optionsCache.set(url, new Response(optionsContent, {
           headers: {
             "content-type": "application/json"
           }
         }))
       }
+      var headers =  {
+          "content-type": mimeType,
+          modified: modified
+        }
+      if (options) {
+        headers.fileversion = options.version
+      }
+          
+      var response = new Response(content, {
+        headers: headers
+      })
+      self.lively4syncCache.set(url, response)
+      
+      
       
       if (ea.match(/.js$/)) {
         let transpiledPath = ".transpiled/" + ea.replace(/\//g,"_"),
@@ -166,9 +197,14 @@ function instrumentFetch() {
       try {
 
         if (self.lively4fetchHandlers) {
+          // FIRST go through our list of handlers... everybody can change the options... 
+          for(let handler of self.lively4fetchHandlers) {
+            let newOptions = handler.options && handler.options(request, options)
+            options = newOptions || options      
+          }
           // go through our list of handlers... the first one who handles it wins
-          for(var handler of self.lively4fetchHandlers) {
-            var handled = handler.handle && handler.handle(request, options)
+          for(let handler of self.lively4fetchHandlers) {
+            let handled = handler.handle && handler.handle(request, options)
             if (handled) return resolve(handled.result);        
           }
         }
@@ -187,10 +223,28 @@ function instrumentFetch() {
   }  
 }
 
+
+
 function installCachingFetch() {
-  self.lively4fetchHandlers.push({    
+  self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isCachingFetch);
+  self.lively4fetchHandlers.push({
+    isCachingFetch: true,
+    options(request, options) {
+      var url = (request.url || request).toString()
+      if (url.match(lively4url)) {
+        if (!options) {
+          options = {
+            method: "GET"
+          }
+        }
+        options.headers = new Headers(options.headers)
+        options.headers.set("lively-fetch", true)
+        return options
+      }
+    },
     handle(request, options) {
       var url = (request.url || request).toString()
+      console.log("HANDLE " + url )
       var method = "GET"
       if (options && options.method) method = options.method;
       
@@ -202,13 +256,13 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          if (options && options.headers && (options.headers["fileversion"] || options.headers["forediting"])) {
+          if (options && options.headers && options.headers.get("fileversion") || options.headers.get("forediting")) {
             return // don't cache versions request...
           }
           
           let match = self.lively4syncCache.get(url)
           if (match) {
-            // console.log("[boot] SYNC CACHED " + url)
+            console.log("[boot] SYNC CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          
@@ -226,7 +280,9 @@ function installCachingFetch() {
           
           // and don't further handle it... so that it will be saved on the server
         } else if (method == "OPTIONS") {
-           if (options && options.headers && options.headers["showversions"]) {
+          console.log("[fetch cache] OPTIONS " + url)
+          if (options && options.headers && options.headers.get("showversions")) {
+            console.log("[fetch cache] OPTION don't cache versions...")
             return // don't cache versions request...
           }
 
@@ -245,7 +301,7 @@ function installCachingFetch() {
       }
     },
     finished(request, options) {
-      console.log("[boot] FINISHED fetch " + request.toString()) 
+      // console.log("[boot] FINISHED fetch " + request.toString()) 
     }
   })
 }

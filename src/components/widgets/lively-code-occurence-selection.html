@@ -97,6 +97,15 @@
     #replaceBar {
       display: none;
     }
+    
+    #additionalInput {
+      display: none;
+    }
+    
+    #additionalInputField {
+      width: unset;
+      flex: 1;
+    }
       
     :host([replace=true]) #replaceBar {
       display: inherit;
@@ -111,6 +120,9 @@
     }
     </style>
   <div class="container">
+    <p class="fill" id="additionalInput">
+      <input class="" id="additionalInputField" value=""/>
+    </p>
     <div id="ListContainer">
           <table id="CodeOccurencesList"></table>  
     </div>

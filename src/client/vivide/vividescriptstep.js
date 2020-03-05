@@ -244,9 +244,14 @@ export default class ScriptStep {
       type: this.type,
       source: this.source,
       cursor: this.cursor,
-      route: this.route
+      route: this.route,
     };
+     
+    if (this._loopTargetStep) {
+      scriptJson["loop-target-step-id"] = this._loopTargetStep.id // every step has to save it's id
+    }
     
+      
     // #TODO: maybe need to save next step id or loop target
     
     return scriptJson
@@ -279,12 +284,9 @@ export default class ScriptStep {
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
   if(!vv.myCurrentScript) { return; }
-  
-  vv.myCurrentScript.stepsAsArray().forEach(s => {
-    // evil live programming
-    s.constructor === ScriptStep;
 
-    // we can fix this, so we can do live development again....
+  vv.myCurrentScript.stepsAsArray().forEach(s => {
+    s.migrateTo(ScriptStep);
     s.__proto__ = ScriptStep.prototype;
   });
 })

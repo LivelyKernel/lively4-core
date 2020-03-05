@@ -79,31 +79,31 @@ if ('serviceWorker' in navigator || window.lively4chrome || externalSite) {
 
   if (('serviceWorker' in navigator && navigator.serviceWorker.controller) || window.lively4chrome || externalSite) {
 
-    console.log("NO Service worker during migration!!!")
+    console.warn("NO Service worker during migration!!!")
     if (window.lively4chrome) {
       console.log("[Livley4] running without service worker");
     } else if (externalSite) {
-      console.log("[Lively4] load from external site");
+      console.warn("[Lively4] load from external site");
     } else {
-      console.log("[Lively4] Use existing service worker");
+      console.warn("[Lively4] Use existing service worker");
     }
     // we don't have to do anything here... the service worker is already there
     onReady();
   } else {
     // the scope of the serviceworker can only be refined to something below it's root... so we have to install it as a file at the content's side. 
     navigator.serviceWorker.register(new URL('swx-loader.js', window.location)).then(function(registration) {
-      console.log("SWX registration", registration)
+      console.warn("SWX registration", registration)
       window.lively4swxregistration = registration; // for debugging
       // Registration was successful
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      console.warn('ServiceWorker registration successful with scope: ', registration.scope);
 
       // so now we have to reload!
-      console.log("ok... lets wait for the service worker.");
+      console.warn("ok... lets wait for the service worker.");
       // console.log("Lively4 ServiceWorker installed! Reboot needed! ;-)")
       // window.location = window.location
     }).catch(function(err) {
       // registration failed
-      console.log('ServiceWorker registration failed: ', err);
+      console.warn('ServiceWorker registration failed: ', err);
     });
     navigator.serviceWorker.ready.then(onReady);
   }
@@ -113,3 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (Notification.permission !== "granted")
     Notification.requestPermission();
 });
+
+
+

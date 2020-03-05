@@ -165,6 +165,21 @@ export default class Script {
       }
       lastScriptStep = step
     }
+    for (let scriptId in jsonScripts) {
+      let step = scripts[scriptId]
+      let stepJSON =  jsonScripts[scriptId]
+      var loopId = stepJSON["loop-target-step-id"]
+      if(loopId) {
+        var otherStep = scripts[loopId]
+        if (otherStep) {
+          step.setLoopTargetStep(otherStep)
+        } else {
+          debugger
+          lively.warn("Could not restore Vivide Step Loop")
+        }
+      }
+    }
+    
     
     script.setInitialStep(firstScriptStep);
     return script;
@@ -176,12 +191,7 @@ export default class Script {
 // go through all object reachable from window
 document.querySelectorAll("vivide-view").forEach(vv => {
   const script = vv.myCurrentScript;
-
   if(script) {
-    // evil live programming
-    script.constructor === Script;
-
-    // we can fix this, so we can do live development again....
-    script.__proto__ = Script.prototype;
+    script.migrateTo(Script);
   }
 });
