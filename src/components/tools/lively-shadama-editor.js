@@ -34,6 +34,7 @@ export default class LivelyShadamaEditor extends Morph {
     var cm = await this.livelyEditor.awaitEditor()
     cm.setOption("mode", "text/shadama");
     this.shadama.initEnv(() => {
+      this.shadama.setRootURL(this.getURL())
       this.shadama.updateCode()
     })
   }
@@ -47,7 +48,8 @@ export default class LivelyShadamaEditor extends Morph {
       await lively.loadJavaScriptThroughDOM("shadamaShadama", baseURL + "shadama.js") /* globals ShadamaFactory */
       await lively.loadJavaScriptThroughDOM("shadamaTest", baseURL +  "shadama-tests.js")
       var editor = await this.get("#code").awaitEditor()
-      this.shadama = ShadamaFactory(null, 2, this.shadowRoot, undefined, true, this.shadowRoot, baseURL, editor);
+      var rootURL = this.getURL() || baseURL
+      this.shadama = ShadamaFactory(null, 2, this.shadowRoot, undefined, true, this.shadowRoot, rootURL, editor);
   }
   
   detachedCallback() {
