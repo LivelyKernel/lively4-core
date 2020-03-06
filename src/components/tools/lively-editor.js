@@ -121,6 +121,7 @@ export default class Editor extends Morph {
   
   updateEditorMode() {
     var url = this.getURL();
+    if (!url) return;
     var editorComp = this.get("#editor");
     if (editorComp && editorComp.changeModeForFile) {
       editorComp.changeModeForFile(url.pathname);
@@ -218,7 +219,11 @@ export default class Editor extends Morph {
   }
   
   getURL() {
-    return new URL(this.getURLString());
+    try {
+      return new URL(this.getURLString());
+    } catch(e) {
+      return undefined
+    }
   }
 
   getURLString() {
@@ -713,7 +718,9 @@ export default class Editor extends Morph {
   /*MD ## Widgets MD*/
   
   async showEmbeddedWidgets() {
-    var type = files.getEnding(this.getURL())
+    var url = this.getURL()
+    if (!url) return
+    var type = files.getEnding(url)
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
 
