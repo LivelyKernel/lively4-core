@@ -7,31 +7,45 @@ export default class LivelyShadamaEditor extends Morph {
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
-    this.loaded = this.loadShadama()
+    await this.livelyEditor.awaitEditor()
     
+    this.livelyEditor.addEventListener("loaded-file", evt => this.onFileLoaded(evt))
+    this.loaded = this.loadShadama()
     if (this.getURL()) {
        this.updateShadama() 
     }
-    
   }
   
-  
+  onFullscreen() {
+     this.shadama.goFullScreen()
+  }
+
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
     if (evt.ctrlKey && evt.key == "s") {
       evt.stopPropagation()
-      evt.preventDefault()      
-      lively.notify("only update")
+      evt.preventDefault()
+      
+      this.livelyEditor.saveFile()
     }
   }
+  
+  async onFileLoaded(evt) {
+    var cm = await this.livelyEditor.awaitEditor()
+    cm.setOption("mode", "text/shadama");
+    this.shadama.initEnv(() => {
+      this.shadama.updateCode()
+    })
+  }
+  
+  
   async loadShadama() {
       var baseURL = "https://lively-kernel.org/lively4/shadama/"
   
       window.ohm = (await System.import(baseURL + "thirdparty/ohm.min.js")).default
       await lively.loadJavaScriptThroughDOM("shadamaPapa", baseURL + "thirdparty/papaparse.min.js")
-      await lively.loadJavaScriptThroughDOM("shadamaShadama", baseURL + "shadama.js")
+      await lively.loadJavaScriptThroughDOM("shadamaShadama", baseURL + "shadama.js") /* globals ShadamaFactory */
       await lively.loadJavaScriptThroughDOM("shadamaTest", baseURL +  "shadama-tests.js")
-    
       var editor = await this.get("#code").awaitEditor()
       this.shadama = ShadamaFactory(null, 2, this.shadowRoot, undefined, true, this.shadowRoot, baseURL, editor);
   }
@@ -43,16 +57,18 @@ export default class LivelyShadamaEditor extends Morph {
     
   }
   
+  get livelyEditor() {
+    return this.get("#code")
+  }
+  
   
   async updateShadama() {
     await this.loaded
-    var livelyEditor = this.get("#code")
-    livelyEditor.setURL(this.getURL())
-    await livelyEditor.loadFile()
-    this.shadama.updateCode()
+    this.livelyEditor.setURL(this.getURL())
+    await this.livelyEditor.loadFile()
   }
   
-  getURL(url) {
+  getURL() {
     return this.getAttribute("src")
   }
   
@@ -60,15 +76,15 @@ export default class LivelyShadamaEditor extends Morph {
     this.setAttribute("src", url)
     await this.updateShadama()
   }
-  
-  
+
   saveFile() {
     lively.warn("#TODO implement save")
   }
 
   
   async livelyExample() {
-    this.setURL("https://lively-kernel.org/lively4/shadama/examples/1-Fill.shadama")
+    // this.setURL("https://lively-kernel.org/lively4/shadama/examples/1-Fill.shadama")
+    this.setURL("https://lively-kernel.org/lively4/shadama/examples/9-Mandelbrot.shadama")
   }
   
   
