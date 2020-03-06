@@ -1,0 +1,33 @@
+<template id="lively-mle-ide" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"></style>
+  <style>
+    :host {
+      overflow: auto;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    div {
+      padding: 0.25em;
+    }
+  </style>
+  <section>
+  <div class="columns">
+    <div class="column is-8" id="code">
+      <lively-mle-code-editor></lively-mle-code-editor>
+    </div>
+    <div class="column" id="table">
+      <lively-mle-table-viewer></lively-mle-table-viewer>
+    </div>
+  </div>
+  <div class="columns">
+    <div class="column is-8" id="test">
+      <lively-mle-test-case></lively-mle-test-case>
+    </div>
+    <div class="column" id="sql">
+      <lively-mle-sql-editor></lively-mle-sql-editor>
+    </div>
+  </div></section>
+</template>
+

@@ -26,8 +26,8 @@ export default class LivelyMleTestCase extends Morph {
       if(status === "gotTypes"){
         this.loading = false;
       }
-      if(status === "executed" || status === "deployed"){
-        this.onExecuteButton();
+      if(status==="deployed"){
+        this.onExecuteButton()
       }
     });
   }
