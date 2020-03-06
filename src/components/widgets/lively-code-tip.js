@@ -8,8 +8,8 @@ export default class CodeTip extends Morph {
 
   initialize() {
     this.registerButtons();
-    this.nextTipButton.style.background = "#00FF00";
-    this.cancelButton.style.background = "#ff0000";
+    this.nextTipButton.style.background = "#54ab5f";
+    this.cancelButton.style.background = "#be4441";
     this.setTitle("Tip of the Day");
 
     // TODO tidy up
@@ -17,7 +17,7 @@ export default class CodeTip extends Morph {
 
     this.onResetButton();
     this.whackImg.addEventListener("click", this.moveImg.bind(this));
-    
+
     this.startupCheckbox.checked = preferences.get('TipOfTheDay');
   }
 
@@ -28,7 +28,7 @@ export default class CodeTip extends Morph {
       "Make your code simpler to understand with the extract method feature 'Alt+M'.",
       "You can find many useful shortcuts under 'Right-click' --> 'Documentation'.",
       "'that' can be used to reference the last component you used the 'halo-menu' (Alt+Click) on.",
-      "'Ctrl+Shift+F' opens the global text search (that is case sensitive!).",
+      "'Ctrl+Shift+F' opens the global text search (which is case sensitive!).",
       "This could be your tip! Add new tips in lively-code-tip.js",
       "Use 'Alt+P' to switch between markdown code and its visualization in the codemirror.",
       "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa."];
