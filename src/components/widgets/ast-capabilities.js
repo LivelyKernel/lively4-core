@@ -1,6 +1,5 @@
 import { loc, range } from 'utils';
 
-import boundEval from 'src/client/bound-eval.js';
 import FileIndex from "src/client/fileindex.js";
 
 import babelDefault from 'systemjs-babel-build';
@@ -8,8 +7,6 @@ const babel = babelDefault.babel;
 
 const t = babel.types;
 const template = babel.template;
-
-import { fileEnding, replaceFileEndingWith } from "utils";
 
 export default class ASTCapabilities {
 
@@ -35,7 +32,7 @@ export default class ASTCapabilities {
     }
     return this.codeProvider.selections[0];
   }
-  
+
   /*MD ## Navigation MD*/
   /**
    * Get the root path
@@ -67,6 +64,9 @@ export default class ASTCapabilities {
     return this.programPath && this.programPath.parent;
   }
 
+  /**
+   * Invalidates old state on code change
+  */
   codeChanged() {
     this.myProgramPath = undefined;
     this.parsingFailed = null;
@@ -232,7 +232,7 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Takes the outermost node whose corresponding selection range is minimal for containing the selected text.
+   * Takes the outermost node which corresponding selection range is minimal for containing the selected text.
    * a      foo = bar
    * --b    foo
    *   --c  foo
@@ -263,6 +263,7 @@ export default class ASTCapabilities {
     });
     return linearizedPathList;
   }
+
   /**
    * Array of all children in reversed depth first search order
    */
@@ -275,6 +276,7 @@ export default class ASTCapabilities {
     });
     return linearizedPathList.reverse();
   }
+
   /**
    * select the selection range of the next ast node after the current selection that satisfies a given condition
    * select previous selection instead of next, if reversed is set to true
@@ -332,9 +334,6 @@ export default class ASTCapabilities {
 
   getAllIdentifiers(startPath) {
     var identifiers = [];
-    /*if (startPath.node.type == "Identifier") {
-      identifiers.push(startPath);
-    }*/
     startPath.traverse({
       Identifier(path) {
         identifiers.push(path);
@@ -356,15 +355,18 @@ export default class ASTCapabilities {
   getBindingsInFile(startPath) {
     var identifier = this.getFirstSelectedIdentifier(startPath);
     if (!identifier) return [];
-    const astBindings = this.getASTBinding(identifier)
+    const astBindings = this.getASTBinding(identifier);
 
-    if(astBindings) {
+    if (astBindings) {
       return astBindings;
     }
 
     return this.getClassBindings(identifier);
   }
 
+  /**
+   * Returns all bindings of a given identifier
+   */
   getASTBinding(identifier) {
     if (identifier.scope.hasBinding(identifier.node.name)) {
       const binding = identifier.scope.getBinding(identifier.node.name);
@@ -376,6 +378,9 @@ export default class ASTCapabilities {
     return undefined;
   }
 
+  /**
+   * Returns bindings of given identifier in its class
+   */
   getClassBindings(identifier) {
     if (t.isMemberExpression(identifier.parent)) {
       if (t.isThisExpression(identifier.parent.object)) {
@@ -411,9 +416,7 @@ export default class ASTCapabilities {
     startPath.traverse({
       Identifier(path) {
         if (t.isMemberExpression(path.parent) && path.node.name === identifier.node.name) {
-          if (t.isThisExpression(path.parent.object) && !getUnbound) {
-            members.push(path);
-          } else if (getUnbound) {
+          if (getUnbound || t.isThisExpression(path.parent.object)) {
             members.push(path);
           }
         }
@@ -436,11 +439,11 @@ export default class ASTCapabilities {
     return unboundIdentifiers.map(binding => binding.node.name).filter((value, index, self) => self.indexOf(value) === index);
   }
 
-  getNextASTNodeInListWith(condition, pathList, path) {
+  getNextASTNodeInListWith(conditionFunc, pathList, path) {
     const currentPathInList = pathList.find(pathInList => pathInList.node === path.node);
     const currentIndex = pathList.indexOf(currentPathInList);
     for (var i = currentIndex + 1; i < pathList.length; i++) {
-      if (condition(path, pathList[i])) {
+      if (conditionFunc(path, pathList[i])) {
         return pathList[i];
       }
     }
@@ -451,7 +454,15 @@ export default class ASTCapabilities {
    * Select the text corresponding to the given nodes
    */
   selectNodes(nodes, selectStringContentsOnly = false) {
-    const ranges = nodes.map(node => range(node.loc));
+    const ranges = nodes.map(node => {
+      let selectedRange = range(node.loc);
+      if (selectStringContentsOnly) {
+        //only select the contents, not the quotes around it 
+        selectedRange.start._cmCharacter++;
+        selectedRange.end._cmCharacter--;
+      }
+      return selectedRange;
+    });
     this.codeProvider.selections = ranges;
   }
 
@@ -483,7 +494,7 @@ export default class ASTCapabilities {
   }
 
   /** 
-   * Get the path of the first file
+   * Get the path of the first class
    */
   getClassPath(programPath) {
     let classPath;
@@ -499,7 +510,7 @@ export default class ASTCapabilities {
 
   getColorLiterals() {
     var pPath = this.programPath;
-    if(!pPath) return;
+    if (!pPath) return;
     let colorPaths = [];
     const colorRegex = /(0[xX]|#)[0-9a-fA-F]{6}$/g;
     pPath.traverse({
@@ -577,6 +588,8 @@ export default class ASTCapabilities {
       if (methodPath) {
         this.selectNodes([methodPath.node.key]);
       } else {
+
+        // Find the declaration in other files and open the possible files in a new browser at the correct location
         const classUrls = await this.getCorrespondingClasses(identName).then(arr => arr.map(cl => cl.url));
         const functionUrls = await this.getFunctionExportURLs(identName);
         const urls = classUrls.concat(functionUrls);
@@ -603,38 +616,42 @@ export default class ASTCapabilities {
 
     var identifier = this.getFirstSelectedIdentifier(selectedPath);
     if (!identifier) return;
-    const astBindings = this.getASTBinding(identifier)
+    const astBindings = this.getASTBinding(identifier);
 
-    if(astBindings) {
+    // If there is a binding in the current AST, all references get selected for renaming
+    if (astBindings) {
       this.selectPaths(astBindings);
       return;
     }
-    
+
+    /**
+     * If not: the user gets a list of all possible occurrences and can select entries for renaming and can choose the new name.
+     * Afterwards the selected occurrences in other files get refactored in the background.
+     */
     const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
 
-    
     let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
     comp.setAdditionalInput("Name", "enter new name");
     comp.setTitle("Rename " + identifier.node.name);
     const references = await comp.selectItems(bindingItems);
-    
+
     const newName = comp.getAdditionalInput().camelCase();
-    if(newName === "") return;
-    
-    for(const reference of references) {
+    if (newName === "") return;
+
+    for (const reference of references) {
       const code = await fetch(reference.url).then(r => r.text());
-      
+
       const codeLines = code.split("\n");
-      
-      String.prototype.replaceBetween = function(start, end, what) {
+
+      String.prototype.replaceBetween = function (start, end, what) {
         return this.substring(0, start) + what + this.substring(end);
       };
       codeLines[reference.line] = codeLines[reference.line].replaceBetween(reference.ch, reference.ch + identifier.node.name.length, newName);
-      
+
       const newCode = codeLines.join("\n");
       await lively.files.saveFile(reference.url, newCode);
-      await lively.reloadModule(reference.url)
+      await lively.reloadModule(reference.url);
       await System.import(reference.url);
     }
   }
@@ -651,15 +668,18 @@ export default class ASTCapabilities {
   async printAllBindings() {
     const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
 
-    //const bindings = this.getBindings(selectedPath);
+    // const bindings = this.getBindings(selectedPath);
     var identifier = this.getFirstSelectedIdentifier(selectedPath);
 
-    //find classes that contain the method
+    // find classes that contain the method
     const bindingItems = await this.getPossibleBindingsAcrossFiles(identifier);
 
     this.openReferencesMenu(bindingItems, identifier.node.name);
   }
 
+  /**
+   * Uses the FileIndex to look for possible bindings in other files and returns an array containing elements with the name of found files, their urls and the line and column of the occurrence.
+   */
   async getPossibleBindingsAcrossFiles(identifier) {
     let index = await FileIndex.current();
     let ids = await index.db.files.filter(file => {
@@ -716,6 +736,9 @@ export default class ASTCapabilities {
     return possiblePath;
   }
 
+  // returns a parentPath if path is somewhere in a path with a type stored in type
+  // or null if no type matches
+  // type can be a single type string or an array of type strings
   isIn(type, path) {
     while (path !== null) {
       if (this.isDirectlyIn(type, path)) {
@@ -726,6 +749,8 @@ export default class ASTCapabilities {
     return null;
   }
 
+  // returns if path is directly in a path with a type stored in type
+  // type can be a single type string or an array of type strings 
   isDirectlyIn(type, path) {
     if (type instanceof Array) {
       return type.map(elem => this.isDirectlyIn(elem, path)).reduce((accu, elem) => accu || elem, false);
@@ -733,8 +758,7 @@ export default class ASTCapabilities {
     return path.node && path.node.type === type;
   }
 
- /*MD ## Color Picker MD*/
-
+  /*MD ## Color Picker MD*/
 
   updateColor(currentLocation, color) {
     var location = { anchor: currentLocation, head: currentLocation };
@@ -753,17 +777,17 @@ export default class ASTCapabilities {
   }
   /*MD ## Generations MD*/
 
-  /*MD ### Generate Testcase / Class / get / set / HTML accessorss MD*/
+  /*MD ### Generate Testcase / Class / get / set / HTML accessors MD*/
 
   async openHTMLAccessorsMenu(ids, initialSelectionState) {
     let comp = await lively.openComponentInWindow("lively-code-occurence-selection");
     comp.focus();
-    comp.setTitle("HTML Accessor Menu");
+    comp.setTitle("Select HTML Accessors to generate");
     return comp.selectItems(ids, initialSelectionState);
   }
 
   getExistingAccessors() {
-    let classMethodIdentifier;
+    let classMethodIdentifier = [];
     this.programPath.traverse({
       ExportDefaultDeclaration(path) {
         if (path && path.node.declaration && path.node.declaration.type == "ClassDeclaration") {
@@ -772,12 +796,12 @@ export default class ASTCapabilities {
         }
       }
     });
-    return classMethodIdentifier || [];
+    return classMethodIdentifier;
   }
 
   async generateHTMLAccessors() {
     const ids = await this.compileListOfIDs();
-    if (ids.length == 0) {
+    if (ids.length === 0) {
       return;
     }
 
@@ -794,10 +818,11 @@ export default class ASTCapabilities {
       this.generateCodeFragment(item.id, name => this.compileHTMLGetter(name));
       const selectedPath = this.getInnermostPathContainingSelection(this.programPath, this.firstSelection);
       let line = selectedPath.parent.loc.end.line + 1;
-      this.codeProvider.cursor = loc({line, ch: 0});
+      this.codeProvider.cursor = loc({ line, ch: 0 });
     });
   }
 
+  // collects all html element ids of the current file
   async compileListOfIDs() {
     const htmlURI = this.codeProvider.htmlURI;
     let html = await htmlURI.fetchText();
@@ -854,19 +879,22 @@ export default class ASTCapabilities {
         Program: programPath => {
           let pathBefore = this.getPathBeforeCursor(programPath, selection.start);
           let pathWithin = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
-          // we're on top of the program
           generatedCode = replacementGenerator(identifierObject);
           if (pathBefore === undefined) {
+            // we're on top of the program
             pathWithin.unshiftContainer('body', generatedCode);
           } else if (this.isDirectlyIn(pathWithin.type, pathBefore.parentPath)) {
+            // we're inside of a code block, but not in the first line
             pathBefore.insertAfter(generatedCode);
           } else {
+            // we're in the first line of a block
             pathWithin.unshiftContainer('body', generatedCode);
           }
         }
       }
     })).code;
 
+    // after code generation, we have to find the generated code another time to be able to select it for renaming
     var pathToSelect;
     this.programPath.traverse({
       StringLiteral(path) {
@@ -892,7 +920,6 @@ export default class ASTCapabilities {
     });
   }
 
-  //TODO: nice identifier
   compileGetter(propertyName) {
     return t.classMethod("get", t.identifier(propertyName), [], t.blockStatement([t.returnStatement(t.memberExpression(t.thisExpression(), t.identifier("internalPropertyName")))]));
   }
@@ -916,19 +943,11 @@ export default class ASTCapabilities {
     return name.camelCase();
   }
 
-  async getUserInput(description, defaultValue) {
-    let input = await lively.prompt(description, defaultValue);
-    return new Promise((resolve, reject) => {
-      if (input) {
-        resolve(input);
-      } else {
-        reject("No input given!");
-      }
-    });
-  }
-
   /*MD ### Generate Import MD*/
 
+  /**
+   * Converts the selected expression to a member expression and adds an import to the file if it doesn't already exist.
+   */
   addImport(url, importName, isFunction) {
     const selection = this.firstSelection;
     const scrollInfo = this.scrollInfo;
@@ -1040,7 +1059,7 @@ export default class ASTCapabilities {
     }
 
     var methodContent = content.map(p => {
-      //remove formatting for propper re-formatting
+      //remove formatting for proper re-formatting
       p.node.loc = null;
       p.node.start = null;
       p.node.end = null;
@@ -1090,11 +1109,13 @@ export default class ASTCapabilities {
     const transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
+          const extraction = this.selectMethodExtraction(programPath);
+          if (!extraction) return;
           const {
             selectedPaths,
             extractingExpression,
             actualSelections
-          } = this.selectMethodExtraction(programPath);
+          } = extraction;
 
           const identifiers = selectedPaths.map(this.getAllIdentifiers).flat();
           let surroundingMethod = selectedPaths[0].find(parent => {
@@ -1338,13 +1359,13 @@ export default class ASTCapabilities {
     this.codeChanged();
     return this.codeProvider.code;
   }
-  
+
   get scrollInfo() {
     return this.codeProvider.scrollInfo;
   }
-  
+
   scrollTo(scrollInfo) {
-    this.codeProvider.scrollInfo;
+    this.codeProvider.scrollInfo = scrollInfo;
   }
 
   /*MD ## Utilities MD*/
@@ -1425,21 +1446,19 @@ export default class ASTCapabilities {
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 
-
-  
   /*MD ## Active_Expressions MD*/
 
   getAexprAtCursor(location) {
     let aexprPath;
-		this.programPath.traverse({
-			CallExpression(path) {
+    this.programPath.traverse({
+      CallExpression(path) {
         if (!range(path.node.loc).contains(location)) {
           path.skip();
         } else if (isAExpr(path)) {
           aexprPath = path;
           path.stop();
-				}
-			}
+        }
+      }
     });
     return aexprPath;
   }
@@ -1461,80 +1480,80 @@ export default class ASTCapabilities {
     }
     return true;
   }
-  
+
   enrich() {
     let self = this;
-		this.rootNode.traverseAsAST({
-			enter(path) {
-				path.node.extra = {
-					// this is necessary due to possible circles
-					// this collects the correct dependencies
-					// breaks (meaning not beeing entirely correct anymore) as soon as a node is contained by more than one circle (but this turned out to be unlikely)
-					visited: 2,
-					//same for return recursion
-					returnVisited: 2
-				};
-			}
+    this.rootNode.traverseAsAST({
+      enter(path) {
+        path.node.extra = {
+          // this is necessary due to possible circles
+          // this collects the correct dependencies
+          // breaks (meaning not beeing entirely correct anymore) as soon as a node is contained by more than one circle (but this turned out to be unlikely)
+          visited: 2,
+          //same for return recursion
+          returnVisited: 2
+        };
+      }
     });
 
-		// adds the corresponding binding to every identifier
-		this.rootNode.traverseAsAST({
+    // adds the corresponding binding to every identifier
+    this.rootNode.traverseAsAST({
       Scope(path) {
-				Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
-					binding.referencePaths.forEach(path => {
-						path.node.extra.binding = binding;
-					})
-				})
-			}
-		});
+        Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
+          binding.referencePaths.forEach(path => {
+            path.node.extra.binding = binding;
+          });
+        });
+      }
+    });
 
-		this.extractMemberAssignments();
-    
+    this.extractMemberAssignments();
+
     this.enrichFunctionNodes();
 
-		this.programPath.traverse({
-			Expression(expr) {
-				self.collectExpressionInformation(expr);
-			}
+    this.programPath.traverse({
+      Expression(expr) {
+        self.collectExpressionInformation(expr);
+      }
     });
-    
+
     this.finishedEnrichment = true;
-	}
-  
+  }
+
   // Filters every member assignment and registers it in `this.memberAssignments`
-  extractMemberAssignments(){
+  extractMemberAssignments() {
     let self = this;
     this.programPath.traverse({
-			MemberExpression(expr) {
-				if (expr.node.computed) return;
-				if (!expr.parentPath.isAssignmentExpression()) return;
+      MemberExpression(expr) {
+        if (expr.node.computed) return;
+        if (!expr.parentPath.isAssignmentExpression()) return;
         let assignment = self.assignedValue(expr.parentPath);
 
-				let obj = expr.get("object");
-				let objKey = obj.node.extra.binding || 'misc';
-				let property = expr.get("property").node.name;
+        let obj = expr.get("object");
+        let objKey = obj.node.extra.binding || 'misc';
+        let property = expr.get("property").node.name;
 
-				let entry = self.memberAssignments.get(property);
-				if (!entry) {
-					// property unknown, adding new property and its accesses to the map
-					let newMap = new Map();
+        let entry = self.memberAssignments.get(property);
+        if (!entry) {
+          // property unknown, adding new property and its accesses to the map
+          let newMap = new Map();
 
-					newMap.set(objKey, [assignment]);
-					self.memberAssignments.set(property, newMap);
-				} else {
-					let objEntry = entry.get(objKey);
-					if (!objEntry) {
-						objEntry = [];
-						entry.set(objKey, objEntry);
-					}
-					objEntry.push(assignment);
-				}
-			}
-		});
+          newMap.set(objKey, [assignment]);
+          self.memberAssignments.set(property, newMap);
+        } else {
+          let objEntry = entry.get(objKey);
+          if (!objEntry) {
+            objEntry = [];
+            entry.set(objKey, objEntry);
+          }
+          objEntry.push(assignment);
+        }
+      }
+    });
   }
-  
-  enrichFunctionNodes(){
-  // adds bindings definend outside of the current scope(e.g. Function) to the scope
+
+  enrichFunctionNodes() {
+    // adds bindings definend outside of the current scope(e.g. Function) to the scope
     this.rootNode.traverseAsAST({
       'Function|ArrowFunctionExpression|Program'(path) {
         path.node.extra.leakingBindings = leakingBindings(path);
@@ -1564,13 +1583,13 @@ export default class ASTCapabilities {
             }
           },
           CallExpression(call) {
-            callExpressions.push(call)
+            callExpressions.push(call);
           }
-        })
+        });
       }
     });
   }
-  
+
   /* Main recursion for enriching AST 
   *  Resolves Expression nodes and follows their children in order to find
   *  - resolvedObjects - the {ObjExpression, [Bindings]} in which the expression may result
@@ -1578,113 +1597,109 @@ export default class ASTCapabilities {
   *  - results         - the [Function] which may be returned by an expression or Identifier
   *
   */
-	collectExpressionInformation(path) {
-		if (path.node.extra.returnVisited <= 0) {
-			return [];
-		}
+  collectExpressionInformation(path) {
+    if (path.node.extra.returnVisited <= 0) {
+      return [];
+    }
 
-		path.node.extra.returnVisited -= 1;
+    path.node.extra.returnVisited -= 1;
 
-		if (path.node.extra.results) {
-			return path.node.extra.results
-		}
+    if (path.node.extra.results) {
+      return path.node.extra.results;
+    }
 
-		let results = [];
+    let results = [];
     let resolvedObjects = [];
 
-		if (path.isObjectExpression()) {
-      resolvedObjects = [{objectExpression:path, bindings:new Set()}];
-
-		} else if (path.isIdentifier()) {
+    if (path.isObjectExpression()) {
+      resolvedObjects = [{ objectExpression: path, bindings: new Set() }];
+    } else if (path.isIdentifier()) {
       if (!path.parentPath.isUpdateExpression()) {
         let binding = path.node.extra.binding;
         if (binding) {
           [binding.path, ...binding.constantViolations].forEach(item => {
             this.collectExpressionInformation(item);
             results.push(item.node.extra.results);
-            item.node.extra.resolvedObjects.forEach(obj =>{
-              obj.bindings.add(binding);            
-              resolvedObjects.push(obj);            
-            })
-          })
+            item.node.extra.resolvedObjects.forEach(obj => {
+              obj.bindings.add(binding);
+              resolvedObjects.push(obj);
+            });
+          });
         }
       }
     } else if (path.isAssignmentExpression() || path.isVariableDeclarator()) {
       let val = this.assignedValue(path);
-			this.collectExpressionInformation(val);
-			results = val.node.extra.results;
+      this.collectExpressionInformation(val);
+      results = val.node.extra.results;
       resolvedObjects = val.node.extra.resolvedObjects;
     } else if (path.isFunction()) {
-			results = [path];
-		} else if (path.isConditionalExpression()) {
-			[path.get("consequent"), path.get("alternate")].forEach(expr => {
-				this.collectExpressionInformation(expr);
-				results.push(expr.node.extra.results);
+      results = [path];
+    } else if (path.isConditionalExpression()) {
+      [path.get("consequent"), path.get("alternate")].forEach(expr => {
+        this.collectExpressionInformation(expr);
+        results.push(expr.node.extra.results);
         resolvedObjects.push(expr.node.extra.resolvedObjects);
-			})
-		} else if (path.isCallExpression()) {
-			const callee = path.get("callee");
-			let resolvedCallees = [];
-			this.collectExpressionInformation(callee);
-			callee.node.extra.results.forEach(func => {
-				this.collectExpressionInformation(func);
-				const body = func.get("body");
-				if (!body.isBlockStatement()) {
-					// slim arrow function        
-					this.collectExpressionInformation(body);
-					results.push(body.node.extra.results);
-				} else {
-					func.node.extra.returns.forEach(returnStatement => {
-						this.collectExpressionInformation(returnStatement);
-						results.push(returnStatement.node.extra.results);
+      });
+    } else if (path.isCallExpression()) {
+      const callee = path.get("callee");
+      let resolvedCallees = [];
+      this.collectExpressionInformation(callee);
+      callee.node.extra.results.forEach(func => {
+        this.collectExpressionInformation(func);
+        const body = func.get("body");
+        if (!body.isBlockStatement()) {
+          // slim arrow function        
+          this.collectExpressionInformation(body);
+          results.push(body.node.extra.results);
+        } else {
+          func.node.extra.returns.forEach(returnStatement => {
+            this.collectExpressionInformation(returnStatement);
+            results.push(returnStatement.node.extra.results);
             resolvedObjects.push(returnStatement.node.extra.resolvedObjects);
-					})
-				}
-				// hey we found a callee as well. 
-				resolvedCallees.push(func);
-			})
-			path.node.extra.resolvedCallees = resolvedCallees.flat();
+          });
+        }
+        // hey we found a callee as well. 
+        resolvedCallees.push(func);
+      });
+      path.node.extra.resolvedCallees = resolvedCallees.flat();
+    } else if (path.isMemberExpression()) {
+      const objExpr = path.get("object");
+      this.collectExpressionInformation(objExpr);
 
-		} else if (path.isMemberExpression()) {
-			const objExpr = path.get("object");
-			this.collectExpressionInformation(objExpr);
-
-			let tmp = objExpr.node.extra.resolvedObjects.flat();
-			tmp.forEach(result => {
-				this.assignmentsOf(path.get("property").node.name, result).forEach(assignment => {
-					this.collectExpressionInformation(assignment);
-					results.push(assignment.node.extra.results);
+      let tmp = objExpr.node.extra.resolvedObjects.flat();
+      tmp.forEach(result => {
+        this.assignmentsOf(path.get("property").node.name, result).forEach(assignment => {
+          this.collectExpressionInformation(assignment);
+          results.push(assignment.node.extra.results);
           resolvedObjects.push(assignment.node.extra.resolvedObjects);
-				})
-			});
-		}
+        });
+      });
+    }
     path.node.extra.resolvedObjects = resolvedObjects.flat();
-		path.node.extra.results = results.flat();
-	}
-  
+    path.node.extra.results = results.flat();
+  }
+
   // Returns for a given 'property' and {ObjExpression, [Binding]} all known assignments including the declaration
-	assignmentsOf(property, obj) {
-    
+  assignmentsOf(property, obj) {
+
     let result = [];
-    this.shadowedBindings(obj.bindings).forEach(binding=>{
-    
+    this.shadowedBindings(obj.bindings).forEach(binding => {
+
       let propertyEntry = this.memberAssignments.get(property) || new Map();
       let memberDependencies = propertyEntry.get("misc") || [];
       memberDependencies.forEach(assignment => result.push(assignment));
 
       let objEntry = propertyEntry.get(binding);
       if (objEntry) {
-        objEntry.forEach(assignment => result.push(assignment))
+        objEntry.forEach(assignment => result.push(assignment));
       }
-    });    
-    
+    });
+
     // try to read as much from the given ObjectExpression as possible
-		let objExpr = obj.objectExpression; // the nodePath
-    if (objExpr && objExpr.isObjectExpression()){
-      let tmp = objExpr
-        .get("properties")
-        .find(path => path.get("key").node.name === property);
-      if(tmp) {
+    let objExpr = obj.objectExpression; // the nodePath
+    if (objExpr && objExpr.isObjectExpression()) {
+      let tmp = objExpr.get("properties").find(path => path.get("key").node.name === property);
+      if (tmp) {
         if (tmp.isObjectProperty()) {
           result.push(tmp.get("value"));
         } else if (tmp.isObjectMethod()) {
@@ -1692,9 +1707,9 @@ export default class ASTCapabilities {
         }
       }
     }
-		return result;
-	}
-  
+    return result;
+  }
+
   assignedValue(path) {
     if (path.isUpdateExpression()) return path;
     if (path.isFunctionDeclaration()) return path;
@@ -1706,8 +1721,7 @@ export default class ASTCapabilities {
     }
     return;
   }
-  
-  
+
   /* returns all [binding] that the input [binding] may be assigned to.
    * ATTENTION: this only works for object bindings, since literal values are copied in javascript
    * `let a = 4; let b = a` `b` is not shadowed but if `a` is an object, then it is shadowed, so instead of using the actual binding `b`, we use every binding `b` resolves to (including `b`)
@@ -1719,96 +1733,96 @@ export default class ASTCapabilities {
    * //b is equal to {x:2}
    */
   shadowedBindings(bindings) {
-    
+
     /* this should be stored in the members map or in an extra property. 
     * DOES NOT DETECT DEPENDENCIES THROUGH SIMPLE ASSIGNMENTS (a la `a = b`)
     * do this with extra sweep as last enrichment step, when the new property in there
     */
     let result = bindings;
-    bindings.forEach(binding=>{
-      binding.path.node.extra.resolvedObjects.forEach(obj=>{
-        if(obj.bindings) {
+    bindings.forEach(binding => {
+      binding.path.node.extra.resolvedObjects.forEach(obj => {
+        if (obj.bindings) {
           obj.bindings.forEach(item => result.add(item));
         }
-      })
+      });
     });
-    
+
     return result;
   }
-  
- /* returns a set of nodes where the active Expression on this location may be changed
-  * DOES NOT care for execution order of the code
-  * uses heuristics e.g. fixed recursion depth
-  */
-	resolveDependencies(path) {
+
+  /* returns a set of nodes where the active Expression on this location may be changed
+   * DOES NOT care for execution order of the code
+   * uses heuristics e.g. fixed recursion depth
+   */
+  resolveDependencies(path) {
     if (!this.ensureEnrichment()) return new Set();
 
     if (path.node.dependencies != null) {
       return path.node.dependencies;
     }
-    
-		return this._resolveDependencies(path);
-	}
-  
-	_resolveDependencies(path) {
+
+    return this._resolveDependencies(path);
+  }
+
+  _resolveDependencies(path) {
     const self = this;
-		if ((path.node.extra.visited -= 1) <= 0) {
-			return path.node.extra.dependencies || new Set();
-		}
+    if ((path.node.extra.visited -= 1) <= 0) {
+      return path.node.extra.dependencies || new Set();
+    }
 
-		if (path.node.extra.dependencies) {
-			// the dependencies were already collected... just return them
-			return path.node.extra.dependencies
-		}
+    if (path.node.extra.dependencies) {
+      // the dependencies were already collected... just return them
+      return path.node.extra.dependencies;
+    }
 
-		let dependencies = new Set([...this.shadowedBindings(path.node.extra.leakingBindings)].map(binding => [...binding.constantViolations]).flat());
-		path.node.extra.callExpressions.forEach(callExpression => {
-			callExpression.node.extra.resolvedCallees.forEach(callee => {
-				if (t.isFunction(callee)) {
-					this._resolveDependencies(callee).forEach(dep => dependencies.add(dep));
-				}
+    let dependencies = new Set([...this.shadowedBindings(path.node.extra.leakingBindings)].map(binding => [...binding.constantViolations]).flat());
+    path.node.extra.callExpressions.forEach(callExpression => {
+      callExpression.node.extra.resolvedCallees.forEach(callee => {
+        if (t.isFunction(callee)) {
+          this._resolveDependencies(callee).forEach(dep => dependencies.add(dep));
+        }
 
-				if (t.isAssignmentExpression(callee)) {
-					const value = this.assignedValue(callee);
-					if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
-						this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
-					}
-				}
+        if (t.isAssignmentExpression(callee)) {
+          const value = this.assignedValue(callee);
+          if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
+            this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
+          }
+        }
 
-				if (t.isVariableDeclarator(callee)) {
-					//NOP
-				}
-			})
-		});
+        if (t.isVariableDeclarator(callee)) {
+          //NOP
+        }
+      });
+    });
 
-		if (path.node.extra.objects.size) {
-			for (const [objExpr, members] of path.node.extra.objects.entries()) {
+    if (path.node.extra.objects.size) {
+      for (const [objExpr, members] of path.node.extra.objects.entries()) {
         if (t.isThisExpression(objExpr)) continue;
-				for (const member of members) {
-            self.assignmentsOf(member, {bindings: new Set([objExpr.extra.binding])}).forEach(assignment => {
-						dependencies.add(assignment)
-					});
-				}
-			}
-		}
-		path.node.extra.dependencies = dependencies;
-		return dependencies;
-	}
-  
+        for (const member of members) {
+          self.assignmentsOf(member, { bindings: new Set([objExpr.extra.binding]) }).forEach(assignment => {
+            dependencies.add(assignment);
+          });
+        }
+      }
+    }
+    path.node.extra.dependencies = dependencies;
+    return dependencies;
+  }
+
   getAllActiveExpressions() {
     return this.aexprs || (this.aexprs = this._collectAExprs());
   }
-  
+
   _collectAExprs() {
     const allAExpr = [];
     this.programPath.traverse({
       CallExpression(path) {
-        if (isAExpr(path) ) {
+        if (isAExpr(path)) {
           allAExpr.push(path);
         }
       }
-    });    
-    return allAExpr;    
+    });
+    return allAExpr;
   }
 
 }
@@ -1818,23 +1832,20 @@ export default class ASTCapabilities {
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 
 function leakingBindings(path) {
-	const bindings = new Set;
-	path.traverse({
-		ReferencedIdentifier(id) {
-			const outerBinding = path.scope.getBinding(id.node.name);
-			if (!outerBinding) return;
-			const actualBinding = id.scope.getBinding(id.node.name);
-			if (outerBinding === actualBinding) {
-				bindings.add(actualBinding);
-			}
-		}
-	});
-	return bindings;
+  const bindings = new Set();
+  path.traverse({
+    ReferencedIdentifier(id) {
+      const outerBinding = path.scope.getBinding(id.node.name);
+      if (!outerBinding) return;
+      const actualBinding = id.scope.getBinding(id.node.name);
+      if (outerBinding === actualBinding) {
+        bindings.add(actualBinding);
+      }
+    }
+  });
+  return bindings;
 }
 
 function isAExpr(path) {
-	return t.isCallExpression(path)
-		&& t.isIdentifier(path.node.callee)
-		&& path.node.callee.name === AEXPR_IDENTIFIER_NAME
-		&& !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME, true);
+  return t.isCallExpression(path) && t.isIdentifier(path.node.callee) && path.node.callee.name === AEXPR_IDENTIFIER_NAME && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME, true);
 }
