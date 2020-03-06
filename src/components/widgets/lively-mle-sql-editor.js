@@ -20,7 +20,24 @@ export default class LivelyMleSqlEditor extends Morph {
     this.windowTitle = "MLE SQL Editor";
     this.registerButtons();
     this.err = !(this.getAttribute("showError") === "false");
-    this.socket = await SocketSingleton.get();
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
+  }
+  
+  onExecuteButton(){
+    this.loading = true;
+    this.socket.emit('executeSQL', {
+      sql: this.shadowRoot.getElementById("sql").value
+    });
+  }
+  
+  async onResetButton(){
+    this.loading = true;
+    this.socket = await SocketSingleton.reset();
+    this.loading = false;
+  }
+  
+  set socket(v){
+    this.socket = v;
     const result = this.shadowRoot.getElementById("result");
     this.socket.on('failure', m => {
       this.loading = false;
@@ -39,19 +56,6 @@ export default class LivelyMleSqlEditor extends Morph {
         paintResult(r).then(e => result.appendChild(e));
       }
     });
-  }
-  
-  onExecuteButton(){
-    this.loading = true;
-    this.socket.emit('executeSQL', {
-      sql: this.shadowRoot.getElementById("sql").value
-    });
-  }
-  
-  async onResetButton(){
-    this.loading = true;
-    this.socket = await SocketSingleton.reset();
-    this.loading = false;
   }
   
   set showError(v){

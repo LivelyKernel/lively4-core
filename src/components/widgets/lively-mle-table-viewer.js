@@ -8,7 +8,18 @@ export default class LivelyMleTableViewer extends Morph {
     this.windowTitle = "MLE Table Inspector";
     this.err = !(this.getAttribute("showError") === "false");
     this.registerButtons();
-    this.socket = await SocketSingleton.get();
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
+  }
+  
+  onViewButton(){
+    this.loading = true;
+    this.socket.emit('getTable', {
+        table: this.shadowRoot.getElementById("table").value          
+      });
+  }
+  
+  set socket(v){
+    this.socket=v;
     this.socket.on('failure', m => {
       this.loading = false;
       if(this.err){
@@ -27,13 +38,6 @@ export default class LivelyMleTableViewer extends Morph {
         this.onViewButton();
       }
     });
-  }
-  
-  onViewButton(){
-    this.loading = true;
-    this.socket.emit('getTable', {
-        table: this.shadowRoot.getElementById("table").value          
-      });
   }
   
   set showError(v){

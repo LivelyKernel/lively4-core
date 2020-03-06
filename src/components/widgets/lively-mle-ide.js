@@ -7,7 +7,11 @@ export default class LivelyMleIde extends Morph {
   async initialize() {
     this.windowTitle = "MLE IDE";
     this.registerButtons();
-    this.socket = await SocketSingleton.get();
+    const socket = await SocketSingleton.get();
+    this.shadowRoot.getElementById("code").socket = socket;
+    this.shadowRoot.getElementById("table").socket = socket;
+    this.shadowRoot.getElementById("test").socket = socket;
+    this.shadowRoot.getElementById("sql").socket = socket;
   }
   
   /* Lively-specific API */

@@ -7,7 +7,25 @@ export default class LivelyMleCodeEditor extends Morph {
   async initialize() {
     this.windowTitle = "MLE Code Editor";
     this.registerButtons();
-    this.socket = await SocketSingleton.get();
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
+  }
+
+  onDeployButton() {
+    this.loading = true;
+    const editor = this.shadowRoot.getElementById("code");
+    this.socket.emit('save', {
+      file: editor.getValue()
+    });
+  }
+  
+  async onResetButton(){
+    this.loading = true;
+    this.socket = await SocketSingleton.reset();
+    this.loading = false;
+  }
+  
+  set socket(v){
+    this.socket = v;
     this.loading = true;
     this.socket.emit('read');
     this.socket.on('failure', m => {
@@ -37,20 +55,6 @@ export default class LivelyMleCodeEditor extends Morph {
         this.shadowRoot.getElementById("result").classNames = "notification is-success";
       }
     });
-  }
-
-  onDeployButton() {
-    this.loading = true;
-    const editor = this.shadowRoot.getElementById("code");
-    this.socket.emit('save', {
-      file: editor.getValue()
-    });
-  }
-  
-  async onResetButton(){
-    this.loading = true;
-    this.socket = await SocketSingleton.reset();
-    this.loading = false;
   }
 
   set loading(v) {
