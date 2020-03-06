@@ -584,7 +584,6 @@ export default class Container extends Morph {
   getDoitContext() {
     if(this.getURL().pathname.match(/.*\.md/)) {
       var url = this.getURL()
-      debugger
       var otherContainer = this.getOtherContainers()[0]
       var markdown = otherContainer && otherContainer.get("lively-markdown")
       var script = markdown && markdown.get("lively-script")

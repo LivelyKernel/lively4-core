@@ -1,30 +1,53 @@
 <template id="lively-shadama-editor" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-  
-<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/shadama/shadama.css">
+  <style data-src="/templates/livelystyle.css"></style>
+  <link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/shadama/shadama.css">
+  <style>
+    :host {
+      overflow: hidden;
+    }
+    
+    #pane {
+      display: flex;
+       background-color: lightgray;
+      flex-direction: row;
+      width: calc(100%);
+      height: calc(100%);
+    }
+    
+    
+    
+    #editor-pane {
+      flex: 1;
+    
+      
+    }
 
-<style>
-:host {
-  
-}
-</style>
+    #view-pane {
+      height: 100%; 
+      flex: 1;
+      overflow: scroll;
+    }
 
+  </style>
   
-<lively-editor style="float: left" id="code"></lively-editor>
-
-<div style="float: left">
-              <canvas id="shadamaCanvas"></canvas>
-</div>
-<div style="float: left" id="controlBox">
-  <hr>
-  <div id="watcherList"></div>
-  <hr>
-  <div id="envList"></div>
-</div>
-<div id="readout"></div>
- 
-  
-  <slot></slot>
+  <div id="pane">
+    <div id="editor-pane">
+      <lively-editor id="code"></lively-editor>
+    </div>
+    <lively-separator></lively-separator>
+    <div id="view-pane">
+      <div>
+        <canvas id="shadamaCanvas"></canvas>     	
+      </div>
+      <div id="controlBox">
+        <hr>
+        <div id="watcherList"></div>
+        <hr>
+        <div id="envList"></div>
+        <div id="readout"></div>  
+        <button id="fullscreen">Full Screen</button>
+      </div>
+    </div>
+  </div>
 </template>
 

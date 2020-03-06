@@ -598,7 +598,6 @@ export default class Editor extends Morph {
         myWindow.get(".window-content").style.overflow = "visible"
       }
       myWindow.appendChild(this.versionControl)
-      lively.showElement(this.versionControl)
 
       this.versionControl.style.display = "block";
       this.versionControl.style.backgroundColor = "gray";
