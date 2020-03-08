@@ -10,7 +10,6 @@
 
 MD*/
 
-
 import './patches.js'; // monkey patch the meta sytem....
 // import * as jquery from '../external/jquery.js'; // should not be needed any more!
 import _ from 'src/external/lodash/lodash.js'
@@ -854,16 +853,16 @@ export default class Lively {
   }
 
   static success(title, text, timeout, cb) {
-    this.notify(title, text, timeout, cb, 'green');
+    lively.notify(title, text, timeout, cb, 'green');
   }
 
   static warn(title, text, timeout, cb) {
-    this.notify(title, text, timeout, cb, 'yellow');
+    lively.notify(title, text, timeout, cb, 'yellow');
   }
 
   static error(title, text, timeout, cb) {
     debugger
-    this.notify(title, text, timeout, cb, 'red');
+    lively.notify(title, text, timeout, cb, 'red');
   }
 
   static async ensureHand() {
@@ -944,6 +943,13 @@ export default class Lively {
     
     await persistence.current.loadLivelyContentForURL()
     preferences.loadPreferences()
+    if (preferences.get('TipOfTheDay')) {
+      const existingContainers = Array.from(document.body.querySelectorAll('lively-code-tip'));
+      if(existingContainers.length !== 0) {
+        existingContainers.map(tip => tip.parentElement.remove());
+      }
+      lively.openComponentInWindow("lively-code-tip");
+    }
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
     await lively.ensureHand();

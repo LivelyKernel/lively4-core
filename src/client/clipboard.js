@@ -4,7 +4,7 @@
 
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js";
-import { uuid as generateUUID } from 'utils';
+import { uuid } from 'utils';
 import persistence from "src/client/persistence.js"
 
 export default class Clipboard {
@@ -69,28 +69,31 @@ export default class Clipboard {
   }
   
   static initializeElements(all) {
-    all.forEach(child => {
-      persistence.initLivelyObject(child)      
-      var id = child.getAttribute("data-lively-id")    
+    function makeLivelyIdNonConflicting(me, all) {
+      const idAttribute = "data-lively-id";
+      const id = me.getAttribute(idAttribute);
+      if (!id) { return; }
+
       // if we have an ID, some other me might be lying around somewhere...
-      if (id) {
-        var otherMe = lively.elementByID(id)
-        if (otherMe) {
-          // so there is an identiy crysis... so we have to become somebody new...
-          var newId = generateUUID()
-          // ... and I have to notify my buddies that I am no longer myself
-          all.forEach(other => {
-            for(var i=0; i < other.attributes.length; i++) {
-              var attr = other.attributes[i]
-              if (attr.value == id) {
-                // lively.notify("found a reference to me: " + other + "." + attr.name)
-                attr.value = newId
-              }
-            }
-          })
+      const otherMe = lively.elementByID(id);
+      if (!otherMe) { return; }
+
+      // so there is an identiy crisis... so we have to become somebody new...
+      const newId = uuid();
+      me.setAttribute(idAttribute, newId);
+
+      // ... and I have to notify my buddies that I am no longer myself
+      const pattern = new RegExp(id, 'ig');
+      all.forEach(other => {
+        for(let i = 0; i < other.attributes.length; i++) {
+          const attr = other.attributes[i];
+          attr.value = attr.value.replace(pattern, newId);
         }
-      }
-     })
+      })
+    }
+    
+    all.forEach(child => makeLivelyIdNonConflicting(child, all));
+    all.forEach(child => persistence.initLivelyObject(child));
   }
   
   static getTopLeft(elements) {

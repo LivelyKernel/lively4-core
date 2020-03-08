@@ -5,37 +5,87 @@ import {SocketSingleton} from 'src/components/mle/socket.js';
 
 export default class LivelyMleTableViewer extends Morph {
   async initialize() {
-    this.length = 0;
-    this.windowTitle = "LivelyMleTableViewer";
+    this.windowTitle = "MLE Table Inspector";
+    this.err = !(this.getAttribute("showError") === "false");
     this.registerButtons();
-    this.initialized = false;
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-    this.innerHTML = '';
-    this.socket = await SocketSingleton.get();
-    this.socket.on('result', (r,status) => {
-      if(status === "gotTable"){
-        result.innerHTML ='';
-        const header = <thead><tr></tr></thead>;
-        const body = <tbody></tbody>;
-        r.metaData.forEach(k => header.firstChild.appendChild(<th>{k.name}</th>))
-        r.rows.forEach(r => {
-          const row = <tr></tr>;
-          Object.values(r).forEach(v => row.appendChild(<td>{v}</td>));
-          body.appendChild(row);
-        });
-        result.appendChild(header);
-        result.appendChild(body);
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
+  }
+  
+  onViewButton(){
+    this.loading = true;
+    this.socket.emit('getTable', {
+        table: this.shadowRoot.getElementById("table").value          
+      });
+  }
+  
+  set socket(v){
+    this.socket=v;
+    this.socket.on('failure', m => {
+      this.loading = false;
+      if(this.err){
+        this.shadowRoot.getElementById("result").innerHTML = m;
+        this.shadowRoot.getElementById("result").className = "notification is-danger";
       }
     });
-    const selector = <input type="text" placeholder="Table Name"/>;
-    const execute = <button id="execute" className="button" click={() => {
-      this.socket.emit('getTable', {
-        table: selector.value          
-      });
-    }}>View Table</button>
-    const result = <table></table>;
-    const surrounding = <div><p>{selector}{execute}</p>{result}</div>;
-    this.appendChild(surrounding);
+    this.socket.on('busy', m => {
+      this.loading = false;
+    });
+    this.socket.on('result', (r,status) => {
+      if(status === "gotTable"){
+        this.data = r;
+      }
+      if(status === "executed"){
+        this.onViewButton();
+      }
+    });
+  }
+  
+  set showError(v){
+    this.err =v;
+  }
+  
+  set data(r){
+    this.loading = false;
+    const result = this.shadowRoot.getElementById("result");
+    result.innerHTML = "";
+    result.className = "";
+    result.appendChild(<table class="table is-hoverable is-fullwidth">
+      <thead>
+        <tr id="header">
+        </tr>
+      </thead>
+      <tbody id="body"></tbody>
+
+      <tfoot>
+        <tr id="footer">
+        </tr>
+      </tfoot>
+    </table>);
+    const header = this.shadowRoot.getElementById("header");
+    const footer = this.shadowRoot.getElementById("footer");
+    const body = this.shadowRoot.getElementById("body");
+    header.innerHTML = "";
+    footer.innerHTML = "";
+    body.innerHTML = "";
+    r.metaData.forEach(k => {
+      header.appendChild(<th>{k.name}</th>);
+      footer.appendChild(<th>{k.name}</th>);
+    });
+    r.rows.forEach(r => {
+      const row = <tr></tr>;
+      r.forEach(v => row.appendChild(<td>{v}</td>));
+      body.appendChild(row);
+    });    
+  }
+  
+  set loading(v){
+    this.shadowRoot.getElementById("table").disabled = v;
+    this.shadowRoot.getElementById("viewButton").disabled = v;
+    this.shadowRoot.getElementById("viewButton").className = `button is-primary ${v ? "is-loading": ""}`;
+  }
+  
+  set inputVisible(v){
+    this.shadowRoot.getElementById("input").style.display = v ? "flex" :"none";
   }
 
   /* Lively-specific API */
@@ -52,7 +102,6 @@ export default class LivelyMleTableViewer extends Morph {
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
   }
   
   livelyInspect(contentNode, inspector) {
@@ -62,8 +111,6 @@ export default class LivelyMleTableViewer extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.style.backgroundColor = "lightgray"
-    this.someJavaScriptProperty = 42
   }
   
   

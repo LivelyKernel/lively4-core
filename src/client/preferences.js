@@ -27,6 +27,7 @@ export default class Preferences {
       PiTerminalCWD: {default: "", short: "current working directory of pi terminal"},
       PiTerminalSecret: {default: "", short: "pi terminal credentials"},
       ExtraSearchRoots: {default: [], short: "extra search roots"},
+      TipOfTheDay: {default: true, short: "show tip of the day on startup"}
     }
   }
   

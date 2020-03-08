@@ -44,7 +44,7 @@ SystemJS.config({
     plugins: []
   },
   meta: {
-    '*.js': moduleOptionsNon
+    '*.js': moduleOptionsNon,
   },
   map: {
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
@@ -158,7 +158,8 @@ const aexprViaDirective = {
 
 SystemJS.config({
   meta: {
-    '*.js': liveES7,
+    '*.js': liveES7,    
+    '*.mjs': liveES7,
     [lively4url + "/src/external/*.js"]: liveES7,
     /* FILE-BASED */
     // plugins are not transpiled with other plugins, except for SystemJS-internal plugins

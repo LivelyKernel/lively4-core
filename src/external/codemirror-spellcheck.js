@@ -104,8 +104,9 @@ export async  function startSpellCheck(cm, typo) {
   // console.log("register context menu spell checker")
   lively.removeEventListener("spellcheck", cm.getWrapperElement(), "contextmenu")
 	lively.addEventListener("spellcheck", cm.getWrapperElement(), "contextmenu", e => {
-		e.preventDefault();
-		e.stopPropagation();
+    if (!e.target.classList.contains('cm-spell-error')) return      
+    e.preventDefault();
+	  e.stopPropagation();  
 		sbox.suggest(cm, e);
 		return false;
 	});

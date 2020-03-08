@@ -4,7 +4,7 @@
  * call at least with some data as Array as argument
  */
 export async function letsScript(object, evt, sourceView) {
-  lively.success('LETS_SCRIPT')
+  // lively.success('LETS_SCRIPT')
   let pos;
   if(evt) {
     pos = lively.getPosition(evt);
