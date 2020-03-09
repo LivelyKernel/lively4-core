@@ -6,12 +6,26 @@ import {SocketSingleton} from 'src/components/mle/socket.js';
 export default class LivelyMleTableViewer extends Morph {
   async initialize() {
     this.windowTitle = "MLE Table Inspector";
+    this.err = !(this.getAttribute("showError") === "false");
     this.registerButtons();
-    this.socket = await SocketSingleton.get();
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
+  }
+  
+  onViewButton(){
+    this.loading = true;
+    this.socket.emit('getTable', {
+        table: this.shadowRoot.getElementById("table").value          
+      });
+  }
+  
+  set socket(v){
+    this.socket=v;
     this.socket.on('failure', m => {
       this.loading = false;
-      this.shadowRoot.getElementById("result").innerHTML = m;
-      this.shadowRoot.getElementById("result").className = "notification is-danger";
+      if(this.err){
+        this.shadowRoot.getElementById("result").innerHTML = m;
+        this.shadowRoot.getElementById("result").className = "notification is-danger";
+      }
     });
     this.socket.on('busy', m => {
       this.loading = false;
@@ -26,11 +40,8 @@ export default class LivelyMleTableViewer extends Morph {
     });
   }
   
-  onViewButton(){
-    this.loading = true;
-    this.socket.emit('getTable', {
-        table: this.shadowRoot.getElementById("table").value          
-      });
+  set showError(v){
+    this.err =v;
   }
   
   set data(r){
@@ -71,6 +82,10 @@ export default class LivelyMleTableViewer extends Morph {
     this.shadowRoot.getElementById("table").disabled = v;
     this.shadowRoot.getElementById("viewButton").disabled = v;
     this.shadowRoot.getElementById("viewButton").className = `button is-primary ${v ? "is-loading": ""}`;
+  }
+  
+  set inputVisible(v){
+    this.shadowRoot.getElementById("input").style.display = v ? "flex" :"none";
   }
 
   /* Lively-specific API */

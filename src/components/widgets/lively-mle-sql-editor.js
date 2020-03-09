@@ -6,6 +6,7 @@ import {SocketSingleton} from 'src/components/mle/socket.js';
 function paintResult(r){
   if(r.rows){
     return <lively-mle-table-viewer />.then(t => {
+      t.inputVisible = false;
       t.data = r;
       return t;
     })
@@ -18,23 +19,8 @@ export default class LivelyMleSqlEditor extends Morph {
     this.initialized = false;
     this.windowTitle = "MLE SQL Editor";
     this.registerButtons();
-    this.socket = await SocketSingleton.get();
-    const result = this.shadowRoot.getElementById("result");
-    this.socket.on('failure', m => {
-      this.loading = false;
-      result.innerHTML = m;
-      result.className = "notification is-danger";
-    })
-    this.socket.on('busy', m => {
-      this.loading = false;
-    });
-    this.socket.on('result', (r, status) => {
-      if(status=== "executed"){
-        result.innerHTML = ""
-        this.loading = false;
-        paintResult(r).then(e => result.appendChild(e));
-      }
-    });
+    this.err = !(this.getAttribute("showError") === "false");
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
   }
   
   onExecuteButton(){
@@ -48,6 +34,32 @@ export default class LivelyMleSqlEditor extends Morph {
     this.loading = true;
     this.socket = await SocketSingleton.reset();
     this.loading = false;
+  }
+  
+  set socket(v){
+    this.socket = v;
+    const result = this.shadowRoot.getElementById("result");
+    this.socket.on('failure', m => {
+      this.loading = false;
+      if(this.err){
+        result.innerHTML = m;
+        result.className = "notification is-danger";
+      }
+    })
+    this.socket.on('busy', m => {
+      this.loading = false;
+    });
+    this.socket.on('result', (r, status) => {
+      if(status=== "executed"){
+        result.innerHTML = ""
+        this.loading = false;
+        paintResult(r).then(e => result.appendChild(e));
+      }
+    });
+  }
+  
+  set showError(v){
+    this.err =v;
   }
   
   set loading(v){

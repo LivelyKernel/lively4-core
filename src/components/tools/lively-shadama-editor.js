@@ -79,11 +79,38 @@ export default class LivelyShadamaEditor extends Morph {
     await this.updateShadama()
   }
 
+  /*MD # Editor API MD*/
   saveFile() {
     lively.warn("#TODO implement save")
   }
 
+  awaitEditor() {
+    return this.livelyEditor.awaitEditor()
+  }
   
+  hideToolbar() {
+    return this.livelyEditor.hideToolbar()
+  }
+  
+  livelyCodeMirror() {
+    return this.livelyEditor.livelyCodeMirror()
+  }
+  
+  toggleVersions() {
+    return this.livelyEditor.toggleVersions()
+  }
+  
+  setText(t) {
+    return this.livelyEditor.setText(t)
+  }
+  
+  getText() {
+    return this.livelyEditor.getText()
+  }
+  
+  
+  
+
   async livelyExample() {
     // this.setURL("https://lively-kernel.org/lively4/shadama/examples/1-Fill.shadama")
     this.setURL("https://lively-kernel.org/lively4/shadama/examples/9-Mandelbrot.shadama")

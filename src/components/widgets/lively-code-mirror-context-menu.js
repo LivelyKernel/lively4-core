@@ -10,13 +10,15 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
 
   async function generateGenerationSubmenu() {
 
+    // for now, classes can be generated everywhere
+    // if this isn't wanted anymore, scope checks can be done as can be seen below
     let submenu = [['Class', () => {
-      menu.remove();
-      astCapabilities.generateClass();
-    }, '→', fa('suitcase')]];
+        menu.remove();
+        astCapabilities.generateClass();
+      }, '→', fa('suitcase')]];
 
     const selectedPath = astCapabilities.getInnermostPathContainingSelection(astCapabilities.programPath, astCapabilities.firstSelection);
-
+    
     //add testcase if in describe
     if (astCapabilities.isInDescribe(selectedPath)) {
       submenu.unshift(['Testcase', () => {
@@ -24,7 +26,8 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
         astCapabilities.generateTestCase();
       }, '→', fa('suitcase')]);
     }
-
+    
+    //add getter / setter if directly in ClassBody or ObjectExpression
     if (astCapabilities.isDirectlyIn(["ClassBody", "ObjectExpression"], selectedPath)) {
       submenu.push(['Getter', () => {
         menu.remove();

@@ -6,30 +6,8 @@ import {SocketSingleton} from 'src/components/mle/socket.js';
 export default class LivelyMleTestCase extends Morph {
   async initialize() {
     this.windowTitle = "MLE Test Case Editor";
-    this.socket = await SocketSingleton.get();
-    this.shadowRoot.getElementById("tests").innerHTML = "";
     this.registerButtons();
-    this.socket.on('failure', () => {
-      this.loading = false;
-    });
-    this.socket.on('busy', m => {
-      this.loading = false;
-    });
-    this.socket.on("result", (r, status) => {
-      if(status === "multipleTests"){
-        this.loading = false;
-        const tests = this.shadowRoot.getElementById("tests").childNodes;
-        for(const test of tests){
-          test.result = r.find(res => res.id == test.id).result
-        }
-      }
-      if(status === "gotTypes"){
-        this.loading = false;
-      }
-      if(status === "executed" || status === "deployed"){
-        this.onExecuteButton();
-      }
-    });
+    if(!(this.getAttribute("initSocket") === "false")) this.socket = await SocketSingleton.get();
   }
   
   deleteTest(id){
@@ -63,6 +41,32 @@ export default class LivelyMleTestCase extends Morph {
       })
     }
     this.socket.emit("multipleTests", cases);    
+  }
+  
+  set socket(v){
+    this.socket = v;
+    this.shadowRoot.getElementById("tests").innerHTML = "";
+    this.socket.on('failure', () => {
+      this.loading = false;
+    });
+    this.socket.on('busy', m => {
+      this.loading = false;
+    });
+    this.socket.on("result", (r, status) => {
+      if(status === "multipleTests"){
+        this.loading = false;
+        const tests = this.shadowRoot.getElementById("tests").childNodes;
+        for(const test of tests){
+          test.result = r.find(res => res.id == test.id).result
+        }
+      }
+      if(status === "gotTypes"){
+        this.loading = false;
+      }
+      if(status==="deployed"){
+        this.onExecuteButton()
+      }
+    });
   }
   
   set loading(v) {
