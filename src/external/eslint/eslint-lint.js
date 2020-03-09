@@ -5,7 +5,7 @@
 
 /* global eslint */
 
-//import {parse} from "./eslint-parser.js";
+ import {parse} from "./eslint-parser.js";
 
 (function(CodeMirror) {
   
@@ -304,8 +304,8 @@
   function validator(text, options) {
     var result = [], config = defaultConfig;
     var linter = new eslint();
-    //linter.defineParser("babel-parser", {parse});
-    //config.parser = "babel-parser";
+    linter.defineParser("babel-parser", {parse});
+    config.parser = "babel-parser";
     var errors = linter.verify(text, config);
     
     for (var i = 0; i < errors.length; i++) {

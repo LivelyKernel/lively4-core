@@ -504,6 +504,7 @@ export default class ContextMenu {
           const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
         },
           "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
+        ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setGlobalPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>']
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {

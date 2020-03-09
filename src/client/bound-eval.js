@@ -46,7 +46,7 @@ export default async function boundEval(source, thisReference, targetModule) {
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):
     
-    // console.log("setURL " + codeId + " -> " + targetModule)
+    console.log("setURL " + codeId + " -> " + targetModule)
     
     workspaces.setCode(path, source);
     

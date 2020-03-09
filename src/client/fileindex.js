@@ -257,12 +257,16 @@ export default class FileIndex {
   }
   
   extractModuleSemantics(file) {
-    var ast = this.parseSource(file.url, file.content)
-    if(!ast) {
-      console.info('Could not parse file:', file.url)
-      return []
+    try {
+      var ast = this.parseSource(file.url, file.content)
+      if(!ast) {
+        console.info('Could not parse file:', file.url)
+        return []
+      }
+      var results = this.parseModuleSemantics(ast)
+     } catch(e) {
+      console.warn('[fileindex] extractModuleSemantics ', e)
     }
-    var results = this.parseModuleSemantics(ast)
     return results;
   }
   
@@ -696,6 +700,8 @@ export default class FileIndex {
     if (!identifier.scope.hasBinding(identifier.node.name)) return false;
 
     const binding = identifier.scope.getBinding(identifier.node.name);
+    if (!binding) return false;
+    
     const identifierPaths = [...new Set([FileIndex.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => FileIndex.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
     return identifierPaths.includes(identifier);
   }

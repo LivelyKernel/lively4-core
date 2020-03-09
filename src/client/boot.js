@@ -244,7 +244,6 @@ function installCachingFetch() {
     },
     handle(request, options) {
       var url = (request.url || request).toString()
-      console.log("HANDLE " + url )
       var method = "GET"
       if (options && options.method) method = options.method;
       
@@ -280,9 +279,9 @@ function installCachingFetch() {
           
           // and don't further handle it... so that it will be saved on the server
         } else if (method == "OPTIONS") {
-          console.log("[fetch cache] OPTIONS " + url)
+          // console.log("[fetch cache] OPTIONS " + url)
           if (options && options.headers && options.headers.get("showversions")) {
-            console.log("[fetch cache] OPTION don't cache versions...")
+            // console.log("[fetch cache] OPTION don't cache versions...")
             return // don't cache versions request...
           }
 
