@@ -467,12 +467,26 @@ extend(String.prototype, {
   
   /**
    * Get file info for a remote file or directory.
+   * @public
    * @example <caption>Get file info of start.html.</caption>
    * const startHTML = lively4url + '/start.html';
    * startHTML.fetchStats();
    */
   fetchStats(options) {
     return this.fetchJSON(Object.assign({ method: 'OPTIONS' }, options));
+  },
+  
+  /**
+   * Split the String by line breaks.
+   * @public
+   * @returns {Array<String>} the resulting lines of the String
+   * @example <caption>Split Hello World.</caption>
+   * const str = `Hello\nWorld
+   * !`;
+   * str.lines(); // -> ['Hello', 'World', '!']
+   */
+  lines() {
+    return this.split(/\n/ig);
   }
 
 });

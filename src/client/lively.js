@@ -33,7 +33,7 @@ import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 import SystemjsWorker from "src/worker/systemjs-worker.js"
-
+import Stack from 'src/client/utils/stack.js'
 
 
 /* expose external modules */
@@ -1977,6 +1977,21 @@ export default class Lively {
     return performance.now() - start
   }
   
+  static stack({ debug = false, log = false } = {}) {
+    let stack;
+    try {
+      throw new Error(Stack.defaultErrorMessage);
+    } catch (e) {
+      stack = new Stack(e);
+    }
+    if (log) {
+      console.warn(stack);
+    }
+    if (debug) {
+      debugger;
+    }
+    return stack;
+  }
   
   static allElements(deep=false, root=document.body, all=new Set()) {
     if (deep && root.shadowRoot) {
