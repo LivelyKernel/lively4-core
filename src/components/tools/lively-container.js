@@ -1304,7 +1304,9 @@ export default class Container extends Morph {
     var contentRoot = md.get("#content")
     
     contentRoot.querySelectorAll(`input[type="checkbox"]`).forEach(ea => {
-      
+      if (!ea.parentElement.classList.contains("task-list-item")) {
+        return;
+      }      
       lively.addEventListener("input", ea, "click", async evt => {
         ea.checked = !ea.checked
         this.markdownCheckCheckboxAndSave(ea)
