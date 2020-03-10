@@ -14,7 +14,7 @@ export default class Stack {
       if (lines[0].startsWith('Error: ')) {
         lines.shift();
       }
-      return lines.map(line => new Frame(line, this));
+      return lines.map(line => new Frame(line));
     } else {
       console.error('could not get Stack from Error');
       debugger;
@@ -36,14 +36,25 @@ export default class Stack {
 [regex101](https://regex101.com/)
 MD*/
 export class Frame {
-  constructor(descPart, stack) {
-    this._stack = stack;
+  constructor(descPart) {
     this._desc = descPart;
 
     this._extractInfos(this._desc)
+      // if (this._func === 'stuff') lively.openInspector(this)
   }
 
   _extractInfos(desc) {
+    // just file, line, char given -> no parens around
+    // " at https://lively-kernel.org/lively4/aexpr/src/external/mocha.js?1583757762700:4694:7"
+    if (!this._desc.endsWith(')')) {
+      const noNameFileLineChar = /^\s+at\s(.*)\:(\d+)\:(\d+)$/;
+      let result = noNameFileLineChar.exec(desc);
+      this._file = result[1];
+      this._line = parseInt(result[2]);
+      this._char = parseInt(result[3]);
+      return;
+    }
+
     // " at doEvaluate (eval at loadJavaScript (https://lively-kernel.org/lively4/aexpr/src/client/boot.js:25:3), &lt;anonymous>:1554:13)"
     // can also have no infos on location of eval call:
     // "    at eval (eval at <anonymous> (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled), <anonymous>:8:19)"
@@ -71,19 +82,10 @@ export class Frame {
       this._file = result[3];
       this._line = parseInt(result[4]);
       this._char = parseInt(result[5]);
+      // if (this._async) lively.openInspector(this)
       return;
     }
     
-    // " at https://lively-kernel.org/lively4/aexpr/src/external/mocha.js?1583757762700:4694:7"
-    if (!this._desc.endsWith(')')) {
-      const noNameFileLineChar = /^\s*at\s(.*)\:(\d+)\:(\d+)$/;
-      let result = noNameFileLineChar.exec(desc);
-      this._file = result[1];
-      this._line = parseInt(result[2]);
-      this._char = parseInt(result[3]);
-      return;
-    }
-
     lively.warn('could not analyse frame', desc)
     debugger
   }
@@ -91,8 +93,12 @@ export class Frame {
   /**
    * returns Bool
    */
-  get async() {
-    return this._async;
+  get isAsync() {
+    return this._async || false;
+  }
+
+  get isNew() {
+    return this._new || false;
   }
 
   get func() {

@@ -96,20 +96,12 @@ describe('Stack', function () {
     }
     const stack = exec(myFn);
 stack;
-`
+`;
     const stack = await code.boundEval();
 
     expect(stack.getFrame(0).func).to.equal('Function.stack');
     expect(stack.getFrame(1).func).to.equal('myFn');
     expect(stack.getFrame(2).func).to.equal('exec');
-    // expect(stack.getFrame(3).func).to.equal('exec');
-    // expect(stack.getFrame(4).func).to.equal('exec');
-    // expect(stack.getFrame(5).func).to.equal('exec');
-    // expect(stack.getFrame(6).func).to.equal('exec');
-    // expect(stack.getFrame(7).func).to.equal('exec');
-    // expect(stack.getFrame(8).func).to.equal('exec');
-    // expect(stack.getFrame(9).func).to.equal('exec');
-    // expect(stack.getFrame(10)).to.equal(42);
   });
 
   it('function in eval', async () => {
@@ -122,21 +114,110 @@ stack;
     }
     const stack = exec(myFn);
 stack;
-`
+`;
     const stack = eval(code);
 
-    expect(stack.getFrame(0).func).to.equal('Function.stack');
     expect(stack.getFrame(1).func).to.equal('myFn');
     expect(stack.getFrame(2).func).to.equal('exec');
     expect(stack.getFrame(3).func).to.equal('eval');
-    // expect(stack.getFrame(3).func).to.equal('exec');
-    // expect(stack.getFrame(4).func).to.equal('exec');
-    // expect(stack.getFrame(5).func).to.equal('exec');
-    // expect(stack.getFrame(6).func).to.equal('exec');
-    // expect(stack.getFrame(7).func).to.equal('exec');
-    // expect(stack.getFrame(8).func).to.equal('exec');
-    // expect(stack.getFrame(9).func).to.equal('exec');
-    // expect(stack.getFrame(10)).to.equal(42);
   });
 
+  xit('constructor124124', () => {
+    // return;
+    let stack;
+    class AClass {
+      constructor() {
+        stack = lively.stack();
+      }
+    }
+    new AClass();
+
+    expect(stack.getFrame(1).func).to.equal('myFn');
+    expect(stack.getFrame(2).func).to.equal('exec');
+    expect(stack.getFrame(3).func).to.equal('eval');
+  });
+
+  it('computed property', () => {
+    const o = {
+      ['stuff']() {
+        return lively.stack();
+      }
+
+    };
+    const stack = o['stu' + 'ff']();
+
+    expect(stack.getFrame(1).func).to.equal('Object.stuff');
+    // lively.openInspector(this)
+  });
+
+  xit('getter', () => {
+    // return;
+    const o = {
+      get myGetter() {
+        return lively.stack();
+      }
+
+    };
+    const stack = o.myGetter;
+
+    expect(stack.getFrame(1).func).to.equal('myGetter');
+  });
+
+  xit('static getter', () => {
+    // return;
+    class AClass {
+      static get myStaticGetter() {
+        return lively.stack();
+      }
+
+    }
+    const stack = AClass.myStaticGetter;
+
+    expect(stack.getFrame(1).func).to.equal('myStaticGetter');
+  });
+
+  it('new as property name', () => {
+    const o = {
+      new() {
+        return lively.stack();
+      }
+    };
+    const stack = o.new();
+
+    expect(stack.getFrame(1).func).to.equal('Object.new');
+  });
+
+  it('call to nested property', () => {
+    const o = {
+      o2: {
+        fn() {
+          return lively.stack();
+        }
+
+      }
+    };
+    const stack = o.o2.fn();
+
+    expect(stack.getFrame(1).func).to.equal('Object.fn');
+  });
+
+  it('get as function name', () => {
+    function get() {
+      return lively.stack();
+    }
+    const stack = get();
+
+    expect(stack.getFrame(1).func).to.equal('get');
+  });
+
+  xit('anonymous class', () => {
+    let stack;
+    new class {
+      constructor() {
+        stack = lively.stack();
+      }
+    }();
+lively.openInspector(stack)
+    expect(stack.getFrame(1).func).to.equal('get');
+  });
 });
