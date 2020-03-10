@@ -1,5 +1,3 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from "src/client/fileindex.js";
 import { pt } from 'src/client/graphics.js';
@@ -18,10 +16,12 @@ export default class LivelyGenericSearch extends Morph {
     this.setupInput();
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
-    
+
+    this.addEventListener("focusout", () => this.close())
+    this.addEventListener("click", evt => this.onClick(evt))
     this.init()
   }
-  
+    
   setupInput() {
     this.input.addEventListener("keyup", evt => {
       this.onKeyInput(evt);
@@ -34,13 +34,21 @@ export default class LivelyGenericSearch extends Morph {
     this.startSearching()
   }
   
+  close() {
+    try {
+      this.remove()
+    } catch(e) {
+      // no errors please..
+    }
+  }
+  
   onKeyInput(evt) {
     const keyActions = new Map([
       [13, evt => {
         this.jumpToSelectedItem(evt);
-        this.remove();
+        this.close();
       }], // ENTER
-      [27, evt => this.remove()], // ESCAPE
+      [27, evt => this.close()], // ESCAPE
     ]);
     
     keyActions.getOrCreate(evt.keyCode, keyCode => evt => {})(evt);
@@ -74,11 +82,19 @@ export default class LivelyGenericSearch extends Morph {
   }
   
   async jumpToSelectedItem(evt) {
-    const item = this.get('.selected')
-    if (item) {
-      const container = await lively.openBrowser(item.getAttribute('file'), !evt.shiftKey);
-      // lively.setGlobalPosition(container.parentElement, lively.getPosition(evt));
-    }
+    this.jumpToItem(this.get('.selected'), evt)
+  }
+  
+  async jumpToItem(item, evt) {
+    if (!item) return
+    this.close()
+    return lively.openBrowser(item.getAttribute('file'), !evt.shiftKey);
+  }
+  
+  
+  onClick(evt) {
+    var item =  evt.composedPath().find(ea => ea.classList.contains("item"))
+    this.jumpToItem(item, evt)
   }
   
   setFocus() {
@@ -114,6 +130,8 @@ export default class LivelyGenericSearch extends Morph {
   }
   async updateList(filesToDisplay) {
     this.list.innerHTML = '';
+    filesToDisplay = filesToDisplay.slice(0,50)
+    
     filesToDisplay.forEach(file => {
       const name = file.url.replace(lively4url, '')
       

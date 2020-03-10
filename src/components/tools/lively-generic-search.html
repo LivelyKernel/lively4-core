@@ -1,11 +1,10 @@
-f<template id="lively-generic-search" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<template id="lively-generic-search" >
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
     opacity: 0.9;
     z-index: 1000;
-    background-color: PowderBlue;
+    background-color: #6D9BC3;
     border: 1px solid gray;
     box-shadow: 10px 10px 6px 2px rgba(0, 0, 0, .2);
   }
@@ -26,11 +25,24 @@ f<template id="lively-generic-search" >
     background-color: steelblue;
     color: ivory;
   }
+  
+  .item:hover {
+    background-color: steelblue;
+    color: ivory;
+  }
+  
+  #pane {
+    padding: 10px;
+  }
+  
+  
 </style>
+<div id="pane">  
+  <i>Search File [F8]</i>  
   <input id='input' type='text' placeholder='search modifiers and terms'/>
   <div id='list'>
     
-  </div>
+</div>
 </template>
 
 
