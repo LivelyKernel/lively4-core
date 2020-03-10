@@ -261,7 +261,7 @@ function installCachingFetch() {
           
           let match = self.lively4syncCache.get(url)
           if (match) {
-            console.log("[boot] SYNC CACHED " + url)
+            // console.log("[boot] SYNC CACHED " + url)
             return {
               result: Promise.resolve(match.clone())
             }          

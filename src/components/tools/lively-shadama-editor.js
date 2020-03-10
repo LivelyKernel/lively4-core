@@ -33,6 +33,7 @@ export default class LivelyShadamaEditor extends Morph {
   async onFileLoaded(evt) {
     var cm = await this.livelyEditor.awaitEditor()
     cm.setOption("mode", "text/shadama");
+    if (!this.shadama) return // not finished initialization yet... hope it comes again! 
     this.shadama.initEnv(() => {
       this.shadama.setRootURL(this.getURL())
       this.shadama.updateCode()
