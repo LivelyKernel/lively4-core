@@ -87,8 +87,8 @@ export default class LivelyGenericSearch extends Morph {
   
   async jumpToItem(item, evt) {
     if (!item) return
+    lively.openBrowser(item.getAttribute('file'), !evt.shiftKey);
     this.close()
-    return lively.openBrowser(item.getAttribute('file'), !evt.shiftKey);
   }
   
   
