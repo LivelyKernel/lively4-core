@@ -167,7 +167,7 @@ SystemJS.config({
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
 
-    [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon,
+    [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
     
     
     [lively4url + '/demos/*.js']: aexprViaDirective,

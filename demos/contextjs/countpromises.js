@@ -5,7 +5,7 @@ cop.layer(window, "LogPromisesLayer").refineClass(Promise, {
 
   then(onresolve, onerror) {
     // console.log("Promise.then ... ");
-    var s = lively.currentStack();
+    var s = lively.stack();
     var newResolve = function(...args) {
       cop.withoutLayers([LogPromisesLayer], () => {
         resolveCounter++
