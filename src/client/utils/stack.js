@@ -6,7 +6,6 @@ export default class Stack {
   constructor(error) {
     this._error = error;
     this._frames = this._computeFrames(this._error.stack);
-    // lively.openInspector(this);
   }
   _computeFrames(desc) {
     let lines = desc.lines();
@@ -33,71 +32,140 @@ export default class Stack {
 }
 
 /*MD # Frame
-[regex101](https://regex101.com/)
+View some examples at [regex101](https://regex101.com/r/pSppPm/3)
 MD*/
 export class Frame {
-  constructor(descPart) {
-    this._desc = descPart;
-
-    this._extractInfos(this._desc)
-      // if (this._func === 'stuff') lively.openInspector(this)
+  constructor(desc) {
+    this._desc = desc;
+    this._extractInfos(this._desc);
   }
 
   _extractInfos(desc) {
-    // just file, line, char given -> no parens around
+    // just file, transpiled, line, char given -> no parens around
     // " at https://lively-kernel.org/lively4/aexpr/src/external/mocha.js?1583757762700:4694:7"
     if (!this._desc.endsWith(')')) {
-      const noNameFileLineChar = /^\s+at\s(.*)\:(\d+)\:(\d+)$/;
-      let result = noNameFileLineChar.exec(desc);
-      this._file = result[1];
-      this._line = parseInt(result[2]);
-      this._char = parseInt(result[3]);
+      const extractSourceInfo = /^\s+at\s(.*)$/;
+      const result = extractSourceInfo.exec(desc);
+      // lively.openInspector(result)
+      const info = this._getFileLineChar(result[1]);
+      this._applyLocationInfo(info);
+
       return;
     }
 
-    // " at doEvaluate (eval at loadJavaScript (https://lively-kernel.org/lively4/aexpr/src/client/boot.js:25:3), &lt;anonymous>:1554:13)"
-    // can also have no infos on location of eval call:
-    // "    at eval (eval at <anonymous> (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled), <anonymous>:8:19)"
-    const namedOuterEvalAnonymousFileLineChar = /^\s+at\s(.*)\s\(eval\sat\s(.*)\s\((.*)\)\,\s(.*)\:(\d+)\:(\d+)\)$/;
-    let result2;
-    if ((result2 = namedOuterEvalAnonymousFileLineChar.exec(desc)) !== null) {
-      this._async = false
-      this._func = result2[1];
-      this._evalFunc = result2[2];
-      this._evalFile = result2[3];
-      // #TODO: get line/char of eval call if present (+ strip them from file name)
-      // this._evalLine = result2[2];
-      // this._evalChar = result2[3];
-      this._file = result2[4];
-      this._line = parseInt(result2[5]);
-      this._char = parseInt(result2[6]);
-      return;
-    }
-    // " at Function.stack (https://lively-kernel.org/lively4/aexpr/src/client/lively.js!transpiled:2548:19)"
-    const namedFileLineChar = /^\s*at?(\sasync)?\s([\.a-zA-Z1-9]*)\s\((.*)\:(\d+)\:(\d+)\)$/
-    let result;
-    if ((result = namedFileLineChar.exec(desc)) !== null) {
-      this._async = result[1] === ' async' ? true : false;
-      this._func = result[2];
-      this._file = result[3];
-      this._line = parseInt(result[4]);
-      this._char = parseInt(result[5]);
-      // if (this._async) lively.openInspector(this)
+    // e.g. " at Function.stack (https://lively-kernel.org/lively4/aexpr/src/client/lively.js!transpiled:2548:19)"
+    const isNamedCall = /^\s+at\s([^\(]*)\s\((.*)\)$/;
+    let namedCall;
+    if ((namedCall = isNamedCall.exec(desc)) !== null) {
+      const [, funcDesc, location] = namedCall;
+      
+      let locations;
+      // " at doEvaluate (eval at loadJavaScript (https://lively-kernel.org/lively4/aexpr/src/client/boot.js:25:3), &lt;anonymous>:1554:13)"
+      // can also have no infos on function name of eval call:
+      // "    at eval (eval at <anonymous> (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled), <anonymous>:8:19)"
+      const getLocations = /^(?:eval\sat\s(.*\)),\s)?(.*)$/;
+      if ((locations = getLocations.exec(location)) !== null) {
+        const [, evalInfo, sourceLocation] = locations;
+
+        if (evalInfo) {
+          this._extractEvalInfos(evalInfo);
+        }
+
+        const info = this._getFileLineChar(sourceLocation);
+        this._applyLocationInfo(info);
+      }
+
+      const info2 = this._getFunction(funcDesc);
+      this._applyFunctionInfo(info2);
+      
       return;
     }
     
-    lively.warn('could not analyse frame', desc)
-    debugger
+    lively.warn('could not analyse frame', desc);
+    debugger;
+  }
+  
+  _extractEvalInfos(desc) {
+    const isNamedCall = /^([^\(]*)\s\((.*)\)$/;
+    let namedCall;
+    if ((namedCall = isNamedCall.exec(desc)) !== null) {
+      const [, funcDesc, location] = namedCall;
+      
+      const info = this._getFileLineChar(location);
+      this._applyEvalLocationInfo(info);
+      
+      const info2 = this._getFunction(funcDesc);
+      this._applyEvalFunctionInfo(info2);
+    }
   }
 
+  /*MD ## location utils MD*/
+  _getFileLineChar(locationDesc) {
+    function reverseString(str) {
+      return str.split('').reverse().join('');
+    }
+
+    const reversedDesc = reverseString(locationDesc);
+    const reversedFileLineChar = /^(?:(\d+):)?(?:(\d+):)?(?:(delipsnart)!)?(.*)$/;
+
+    const [, char, line, transpiled, file] = reversedFileLineChar.exec(reversedDesc);
+
+    return {
+      char: char && parseInt(reverseString(char)),
+      line: line && parseInt(reverseString(line)),
+      transpiled: !!transpiled,
+      file: reverseString(file)
+    };
+  }
+
+  _applyLocationInfo({ char, line, transpiled, file }) {
+    this._char = char;
+    this._line = line;
+    this._transpiled = transpiled;
+    this._file = file;
+  }
+
+  _applyEvalLocationInfo({ char, line, transpiled, file }) {
+    this._evalChar = char;
+    this._evalLine = line;
+    this._evalTranspiled = transpiled;
+    this._evalFile = file;
+  }
+
+  /*MD ## func utils MD*/
+  _getFunction(desc) {
+    const newAsyncFunc = /^(?:(new)\s)?(?:(async)\s)?(.+)$/;
+
+    const [, isNew, isAsync, func] = newAsyncFunc.exec(desc);
+
+    return {
+      isNew: !!isNew,
+      isAsync: !!isAsync,
+      func,
+    };
+  }
+
+  _applyFunctionInfo({ isNew, isAsync, func }) {
+    this._new = isNew;
+    this._async = isAsync;
+    this._func = func;
+  }
+
+  _applyEvalFunctionInfo({ isNew, isAsync, func }) {
+    this._evalNew = isNew;
+    this._evalAsync = isAsync;
+    this._evalFunc = func;
+  }
+
+  /*MD ## func MD*/
   /**
    * returns Bool
    */
-  get isAsync() {
+  get async() {
     return this._async || false;
   }
 
-  get isNew() {
+  get new() {
     return this._new || false;
   }
 
@@ -105,8 +173,13 @@ export class Frame {
     return this._func;
   }
 
+  /*MD ## location MD*/
   get file() {
     return this._file;
+  }
+
+  get transpiled() {
+    return this._transpiled || false;
   }
 
   get line() {
@@ -117,12 +190,37 @@ export class Frame {
     return this._char;
   }
 
+  /*MD ## eval func MD*/
+  /**
+   * returns Bool
+   */
+  get evalAsync() {
+    return this._evalAsync || false;
+  }
+
+  get evalNew() {
+    return this._evalNew || false;
+  }
+
   get evalFunc() {
     return this._evalFunc;
   }
 
+  /*MD ## eval location MD*/
   get evalFile() {
     return this._evalFile;
+  }
+
+  get evalTranspiled() {
+    return this._evalTranspiled;
+  }
+
+  get evalLine() {
+    return this._evalLine;
+  }
+
+  get evalChar() {
+    return this._evalChar;
   }
 
   // #TODO: implement

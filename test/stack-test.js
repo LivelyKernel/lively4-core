@@ -122,8 +122,7 @@ stack;
     expect(stack.getFrame(3).func).to.equal('eval');
   });
 
-  xit('constructor124124', () => {
-    // return;
+  it('constructor124124', () => {
     let stack;
     class AClass {
       constructor() {
@@ -132,9 +131,7 @@ stack;
     }
     new AClass();
 
-    expect(stack.getFrame(1).func).to.equal('myFn');
-    expect(stack.getFrame(2).func).to.equal('exec');
-    expect(stack.getFrame(3).func).to.equal('eval');
+    expect(stack.getFrame(1).func).to.equal('AClass');
   });
 
   it('computed property', () => {
@@ -150,8 +147,7 @@ stack;
     // lively.openInspector(this)
   });
 
-  xit('getter', () => {
-    // return;
+  it('getter', () => {
     const o = {
       get myGetter() {
         return lively.stack();
@@ -160,11 +156,10 @@ stack;
     };
     const stack = o.myGetter;
 
-    expect(stack.getFrame(1).func).to.equal('myGetter');
+    expect(stack.getFrame(1).func).to.equal('Object.get myGetter [as myGetter]');
   });
 
-  xit('static getter', () => {
-    // return;
+  it('static getter', () => {
     class AClass {
       static get myStaticGetter() {
         return lively.stack();
@@ -173,7 +168,7 @@ stack;
     }
     const stack = AClass.myStaticGetter;
 
-    expect(stack.getFrame(1).func).to.equal('myStaticGetter');
+    expect(stack.getFrame(1).func).to.equal('Function.get myStaticGetter [as myStaticGetter]');
   });
 
   it('new as property name', () => {
@@ -210,14 +205,154 @@ stack;
     expect(stack.getFrame(1).func).to.equal('get');
   });
 
-  xit('anonymous class', () => {
+  it('anonymous class', () => {
     let stack;
     new class {
       constructor() {
         stack = lively.stack();
       }
     }();
-lively.openInspector(stack)
-    expect(stack.getFrame(1).func).to.equal('get');
+// lively.openInspector(stack)
+    expect(stack.getFrame(1).func).to.equal('eval');
   });
+});
+
+describe('Frame', () => {
+
+  function frameTest(str, expected) {
+    it(`frameTest: "${str}"`, () => {
+      const frame = new Frame(str);
+
+      for (let [key, value] of Object.entries(expected)) {
+        expect(frame[key]).to.equal(value, `expected frame.${key} to equal ${value}, but was ${frame[key]}`);
+      }
+    });
+  }
+
+  frameTest(" at https://lively-kernel.org/lively4/aexpr/src/external/mocha.js?1583757762700:4694:7", {
+    file: "https://lively-kernel.org/lively4/aexpr/src/external/mocha.js?1583757762700",
+    transpiled: false,
+    line: 4694,
+    char: 7,
+  });
+  
+  frameTest("   at doEvaluate (eval at loadJavaScript (https://lively-kernel.org/lively4/aexpr/src/client/boot.js:25:3), &lt;anonymous>:1554:13)", {
+    async: false,
+    new: false,
+    func: "doEvaluate",
+
+    file: "&lt;anonymous>",
+    transpiled: false,
+    line: 1554,
+    char: 13,
+    
+    evalAsync: false,
+    evalNew: false,
+    evalFunc: "loadJavaScript",
+    
+    evalFile: "https://lively-kernel.org/lively4/aexpr/src/client/boot.js",
+    evalTranspiled: false,
+    evalLine: 25,
+    evalChar: 3,
+  })
+  frameTest("    at eval (eval at <anonymous> (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled), <anonymous>:8:19)", {
+    async: false,
+    new: false,
+    func: "eval",
+
+    file: "<anonymous>",
+    transpiled: false,
+    line: 8,
+    char: 19,
+    
+    evalAsync: false,
+    evalNew: false,
+    evalFunc: "<anonymous>",
+
+    evalFile: "https://lively-kernel.org/lively4/aexpr/test/stack-test.js",
+    evalTranspiled: true,
+    evalLine: undefined,
+    evalChar: undefined,
+  })
+  frameTest(" at Function.stack (https://lively-kernel.org/lively4/aexpr/src/client/lively.js!transpiled:2548:19)", {
+    async: false,
+    new: false,
+    func: "Function.stack",
+
+    file: "https://lively-kernel.org/lively4/aexpr/src/client/lively.js",
+    transpiled: true,
+    line: 2548,
+    char: 19,
+  })
+  frameTest(" at Object.get getter [as getter] (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled:241:29)", {
+    async: false,
+    new: false,
+    func: "Object.get getter [as getter]",
+
+    file: "https://lively-kernel.org/lively4/aexpr/test/stack-test.js",
+    transpiled: true,
+    line: 241,
+    char: 29,
+  })
+  frameTest(" at Function.get staticGetter [as staticGetter] (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled:241:29)", {
+    async: false,
+    new: false,
+    func: "Function.get staticGetter [as staticGetter]",
+
+    file: "https://lively-kernel.org/lively4/aexpr/test/stack-test.js",
+    transpiled: true,
+    line: 241,
+    char: 29,
+  })
+  frameTest(" at async String.boundEval (https://lively-kernel.org/lively4/aexpr/src/client/lang/lang-ext.js:292:26)", {
+    async: true,
+    new: false,
+    func: "String.boundEval",
+
+    file: "https://lively-kernel.org/lively4/aexpr/src/client/lang/lang-ext.js",
+    transpiled: false,
+    line: 292,
+    char: 26,
+  })
+  frameTest(" at async boundEval (https://lively-kernel.org/lively4/aexpr/src/client/bound-eval.js!transpiled:117:18)", {
+    async: true,
+    new: false,
+    func: "boundEval",
+
+    file: "https://lively-kernel.org/lively4/aexpr/src/client/bound-eval.js",
+    transpiled: true,
+    line: 117,
+    char: 18,
+  })
+  frameTest(" at new AClass (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled:226:30)", {
+    async: false,
+    new: true,
+    func: "AClass",
+
+    file: "https://lively-kernel.org/lively4/aexpr/test/stack-test.js",
+    transpiled: true,
+    line: 226,
+    char: 30,
+  })
+  frameTest(" at new eval (https://lively-kernel.org/lively4/aexpr/test/stack-test.js!transpiled:312:30)", {
+    async: false,
+    new: true,
+    func: "eval",
+
+    file: "https://lively-kernel.org/lively4/aexpr/test/stack-test.js",
+    transpiled: true,
+    line: 312,
+    char: 30,
+  })
+  frameTest(" at new ClassB (workspace:7159c399-4d43-4781-b2c0-98c82fd93f92/lively-kernel.org/lively4/aexpr/unnamed_module_c6ec94a4_42d9_4324_9b1c_af48fc2b9557!transpiled:25:248)", {
+    async: false,
+    new: true,
+    func: "ClassB",
+
+    file: "workspace:7159c399-4d43-4781-b2c0-98c82fd93f92/lively-kernel.org/lively4/aexpr/unnamed_module_c6ec94a4_42d9_4324_9b1c_af48fc2b9557",
+    transpiled: true,
+    line: 25,
+    char: 248,
+  })
+
 });
