@@ -12,13 +12,10 @@ export default class CodeTip extends Morph {
     this.cancelButton.style.background = "#be4441";
     this.setTitle("Tip of the Day");
 
-    // TODO tidy up
-    this.setupTipText();
-
-    this.onResetButton();
-    this.whackImg.addEventListener("click", this.moveImg.bind(this));
-
+    this.setupTipText();    
     this.startupCheckbox.checked = preferences.get('TipOfTheDay');
+    
+    this.startupCheckbox.addEventListener("click", () => this.updatePreferences() )
   }
 
   setupTipText() {
@@ -45,9 +42,13 @@ export default class CodeTip extends Morph {
     this.tipIndex = (this.tipIndex + 1) % this.tips.length;
   }
 
-  onCancelButton() {
+  updatePreferences() {
     const showOnNextStartup = this.startupCheckbox.checked;
-    preferences.write('TipOfTheDay', showOnNextStartup);
+    lively.notify("update preference: TipOfTheDay " +  showOnNextStartup)
+    preferences.set('TipOfTheDay', showOnNextStartup);
+  }
+  
+  onCancelButton() {
     this.parentElement.remove();
   }
 
@@ -67,91 +68,15 @@ export default class CodeTip extends Morph {
     return this.get("#text");
   }
 
-  get stats() {
-    return this.get("#stats");
-  }
-
-  get avg() {
-    return this.get("#avg");
-  }
-
-  get currentTime() {
-    return this.get("#current-time");
-  }
-
-  get whackImg() {
-    return this.get("#whack-img");
-  }
-
   setTitle(title) {
     this.windowTitle = title;
-  }
-
-  focus() {
-    //this.get("#searchInput").focus();
-  }
-  clearLog(s) {
-    this.codeOccurencesList.innerHTML = "";
   }
 
   progressString() {
     return `Tip: ${this.tipIndex + 1} / ${this.tips.length}`;
   }
-
-  moveImg(a) {
-    const box = a.target;
-
-    box.style.marginLeft = (Math.random() * (box.parentElement.offsetWidth - box.offsetWidth)).toString() + "px";
-    box.style.marginTop = (Math.random() * (box.parentElement.offsetHeight - box.offsetHeight)).toString() + "px";
-
-    const newLength = this.tapTimes.push(new Date().getTime());
-    this.setupTimer(this.tapTimes[this.tapTimes.length - 1]);
-    if (newLength < 2) {
-      this.avg.innerHTML = "-";
-      this.stats.style.display = "block";
-      return;
-    } else if (newLength > 10) {
-      this.tapTimes = this.tapTimes.splice(1, 10);
-    }
-
-    let sum = 0;
-    for (let i = 0; i < this.tapTimes.length - 1; i++) {
-      sum += parseInt(this.tapTimes[i + 1]) - parseInt(this.tapTimes[i]);
-    }
-
-    this.avg.innerHTML = Math.floor(sum / this.tapTimes.length).toString() + "ms";
-  }
-
-  setupTimer(last) {
-    const htmlElement = this.currentTime;
-    clearInterval(this.timer);
-    this.timer = setInterval(function () {
-      const now = new Date().getTime();
-      const distance = now - last;
-
-      const seconds = Math.floor(distance % (1000 * 60) / 1000);
-      const milliseconds = distance % 1000;
-
-      htmlElement.innerHTML = seconds + "s " + milliseconds + "ms";
-
-      if (distance > 10000) {
-        htmlElement.innerHTML = "Too slow!";
-        clearInterval(this.timer);
-      }
-    }, 1);
-  }
-
-  onResetButton() {
-    this.tapTimes = [];
-    this.stats.style.display = "none";
-    this.avg.innerHTML = "";
-    this.whackImg.style.marginLeft = "5px";
-    this.whackImg.style.marginTop = "5px";
-    clearInterval(this.timer);
-  }
-
+  
   generateTipText() {
     this.text.innerHTML = this.tips[this.tipIndex] + "<br> " + this.progressString();
   }
-
 }

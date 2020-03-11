@@ -483,7 +483,7 @@ export default class Lively {
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
     var name = "lively-code-mirror"
-    return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
+    return  lively.openComponentInWindow(name, null, pt(700,400), worldContext).then((comp) => {
       comp.mode = "text/jsx";
       comp.value = string;
       comp.setAttribute("overscroll", "contain")
@@ -948,7 +948,7 @@ export default class Lively {
       if(existingContainers.length !== 0) {
         existingContainers.map(tip => tip.parentElement.remove());
       }
-      lively.openComponentInWindow("lively-code-tip");
+      lively.openComponentInWindow("lively-code-tip", undefined,  lively.pt(800,200));
     }
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
@@ -1455,13 +1455,12 @@ export default class Lively {
 
 
 
-  static openComponentInWindow(name, globalPos, extent, worldContext) {
+  static async openComponentInWindow(name, globalPos, extent, worldContext) {
     worldContext = worldContext || document.body
 
-    var w = document.createElement("lively-window");
+    var w = await lively.create("lively-window");
     if (extent) {
-      w.style.width = extent.x;
-      w.style.height = extent.y;
+      lively.setExtent(w, extent)
     }
     if (!globalPos) {
       let pos = lively.findPositionForWindow(worldContext);
