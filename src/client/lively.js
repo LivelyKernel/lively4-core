@@ -33,7 +33,7 @@ import {pt, rect} from './graphics.js';
 import Dialog from 'src/components/widgets/lively-dialog.js'
 import ViewNav from 'src/client/viewnav.js'
 import SystemjsWorker from "src/worker/systemjs-worker.js"
-
+import Stack from 'src/client/utils/stack.js'
 
 
 /* expose external modules */
@@ -483,7 +483,7 @@ export default class Lively {
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
     var name = "lively-code-mirror"
-    return  lively.openComponentInWindow(name, null, pt(400,500), worldContext).then((comp) => {
+    return  lively.openComponentInWindow(name, null, pt(700,400), worldContext).then((comp) => {
       comp.mode = "text/jsx";
       comp.value = string;
       comp.setAttribute("overscroll", "contain")
@@ -948,7 +948,7 @@ export default class Lively {
       if(existingContainers.length !== 0) {
         existingContainers.map(tip => tip.parentElement.remove());
       }
-      lively.openComponentInWindow("lively-code-tip");
+      lively.openComponentInWindow("lively-code-tip", undefined,  lively.pt(800,200));
     }
     // here, we should scrap any existing (lazyly created) preference, there should only be one
 
@@ -1455,13 +1455,12 @@ export default class Lively {
 
 
 
-  static openComponentInWindow(name, globalPos, extent, worldContext) {
+  static async openComponentInWindow(name, globalPos, extent, worldContext) {
     worldContext = worldContext || document.body
 
-    var w = document.createElement("lively-window");
+    var w = await lively.create("lively-window");
     if (extent) {
-      w.style.width = extent.x;
-      w.style.height = extent.y;
+      lively.setExtent(w, extent)
     }
     if (!globalPos) {
       let pos = lively.findPositionForWindow(worldContext);
@@ -1650,20 +1649,6 @@ export default class Lively {
       }
     }
     return keys
-  }
-
-
-  static currentStack() {
-    try {
-      throw new Error("XYZError")
-    } catch(e) {
-      return e.stack.split("\n")
-        .filter(ea => !ea.match("src/client/ContextJS/src/Layers.js") )
-        .filter(ea => !ea.match("XYZError") )
-        .filter(ea => !ea.match("currentStack") )
-        .map(ea => ea.replace(/\(.*?\)/,""))
-        .join("\n")
-    }
   }
 
 
@@ -1984,6 +1969,21 @@ export default class Lively {
     return performance.now() - start
   }
   
+  static stack({ debug = false, log = false } = {}) {
+    let stack;
+    try {
+      throw new Error(Stack.defaultErrorMessage);
+    } catch (e) {
+      stack = new Stack(e);
+    }
+    if (log) {
+      console.warn(stack);
+    }
+    if (debug) {
+      debugger;
+    }
+    return stack;
+  }
   
   static allElements(deep=false, root=document.body, all=new Set()) {
     if (deep && root.shadowRoot) {

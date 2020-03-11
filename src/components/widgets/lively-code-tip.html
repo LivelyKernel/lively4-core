@@ -1,6 +1,7 @@
 <template id="lively-code-tip" >
   <style data-src="/templates/livelystyle.css"></style>
     <style>
+     
     .container {
         width: 100%;
         height: 100%;
@@ -20,40 +21,12 @@
       flex: 1;
       margin: 2px;
     }
-    #whack {
-      flex: 1 1 auto;
-    }
-    #whack-img {
-      width: 5%;
-      margin-left: 5px;
-      margin-top: 5px;
-    }
-      
-    #stats {
-      display: flex;
-      flex-direction: row;
-      text-align: center;
-      padding: 0;
-      margin: 0;
-    }    
-      
   </style>
   <div class="container">
     <p id="text">lol</p>
-    <button id="nextTipButton">Next Tip</button>
-    <button id="cancelButton">Cancel</button>
+    <button id="nextTipButton">Next Tip</button><button id="cancelButton">Cancel</button>
     <div>
     <input id="startupCheckbox" type="checkbox">Show on next Startup
-    </div>
-    <div id="stats">
-      <label for="avg">Average speed (last 10):</label>
-      <output id="avg"></output>
-      <button id="resetButton">Reset</button>
-      <label for="current-time">Current time:</label>
-      <output id="current-time"></output>
-    </div>
-    <div id="whack">
-      <img id="whack-img" src="https://lively-kernel.org/lively4/lively4-core/media/lively4_logo_smooth_200.png">
     </div>
   </div>
 
