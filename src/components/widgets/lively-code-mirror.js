@@ -33,6 +33,15 @@ import { loc, range } from 'utils';
 import _ from 'src/external/lodash/lodash.js'
 
 
+export function stripErrorString(s) {
+  debugger
+  return s.toString()
+    .replace(/Error: workspace(js)?:[^:]*:/,"Error:")
+    .replace(/\n {2}Evaluating workspace(js)?:.*/,"")
+    .replace(/\n {2}Loading workspace(js)?:.*/,"")
+    .replace(/\n {2}Instantiating workspace(js)?:.*/,"")
+}
+
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 
@@ -774,12 +783,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     return s
   }
   
-  stripErrorString(s) {
-    return s
-      .replace(/\n {2}Evaluating workspace(js)?:.*/,"")
-      .replace(/\n {2}Loading workspace(js)?:.*/,"")
-      .replace(/\n {2}Instantiating workspace(js)?:.*/,"")
-  }
 
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
@@ -788,7 +791,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       console.error(e);
       if (printResult) {
         window.LastError = e;
-        this.printResult(this.stripErrorString("" + e));
+        this.printResult(stripErrorString("" + e));
       } else {
         lively.handleError(e);
       }
@@ -807,7 +810,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           .catch( error => {
             console.error(error);
             // window.LastError = error;
-            this.printResult(this.stripErrorString("Error in Promise: \n" +error))
+            this.printResult(stripErrorString("Error in Promise: \n" +error))
           })
       } else {
         this.printResult(" " + this.ensuredPrintString(result), result)

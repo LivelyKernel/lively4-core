@@ -3,6 +3,9 @@ import boundEval from 'src/client/bound-eval.js';
 import _ from 'src/external/lodash/lodash.js'
 import { uuid as generateUuid, waitForDeepProperty } from 'utils'
 
+import {stripErrorString} from "src/components/widgets/lively-code-mirror.js"
+
+
 /* Replacement for "script" tag, that supports
  *  - import module statements
  *  - extended syntax 
@@ -27,8 +30,7 @@ export default class LivelyScript extends Morph {
     this.get("#result").innerHTML = `[pending exec script${this.id ? " " + this.id :""}]`
     var result = await this.boundEval(src)
     if (result.isError) {
-      lively.showError(result.value)
-      this.get("#result").innerHTML = "<lively-error><pre>" + result.value + "</pre></lively-error>" 
+      this.get("#result").innerHTML = "<lively-error><pre>" + stripErrorString(result.value).replace(/</g,"&lt;") + "</pre></lively-error>" 
       return 
     }
     
