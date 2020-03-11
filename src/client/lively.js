@@ -1652,20 +1652,6 @@ export default class Lively {
   }
 
 
-  static currentStack() {
-    try {
-      throw new Error("XYZError")
-    } catch(e) {
-      return e.stack.split("\n")
-        .filter(ea => !ea.match("src/client/ContextJS/src/Layers.js") )
-        .filter(ea => !ea.match("XYZError") )
-        .filter(ea => !ea.match("currentStack") )
-        .map(ea => ea.replace(/\(.*?\)/,""))
-        .join("\n")
-    }
-  }
-
-
   static onUnload() {
     // #TODO How to deal with multiple open lively pages?
     // last closing site wins!

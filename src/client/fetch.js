@@ -175,7 +175,7 @@ export async function installDebugFetch() {
           options.headers = new Headers()
         }
         if (options.headers.set) {
-          var stack = self.lively ? lively.currentStack() : "";
+          var stack = self.lively ? ''+lively.stack() : "";
           if(!options.headers.get("debug-initiator")) {
             options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
             options.headers.set("debug-session", self.lively4session)

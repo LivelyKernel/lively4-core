@@ -29,6 +29,9 @@ export default class Stack {
   getFrames(from, to) {
     return this.frames.slice(from, to);
   }
+  toString() {
+    return this.frames.join('\n')
+  }
 }
 
 /*MD # Frame
@@ -223,9 +226,14 @@ export class Frame {
     return this._evalChar;
   }
 
+  /*MD ## utils MD*/
   // #TODO: implement
   openInBrowser(browser) {
     // #TODO: requires back mapping of source code information #SourceMaps
+  }
+  
+  toString() {
+    return this._desc.replace(/\s+at\s/, '');
   }
 
 }
