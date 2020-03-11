@@ -276,6 +276,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     // }
   }
   
+  clearHistory() {
+    var cm = this.editor;
+    cm.getDoc().clearHistory()
+  }
+  
   addKeys(keymap) {
     var keys = this.ensureExtraKeys()
     this.extraKeys = Object.assign(keys, keymap)

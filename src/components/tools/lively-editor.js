@@ -95,7 +95,7 @@ export default class Editor extends Morph {
 
     })
   }
-
+  
   updateChangeIndicator() {
     if (!this.lastText) return;
     var newText = this.currentEditor().getValue();
@@ -266,6 +266,9 @@ export default class Editor extends Morph {
       this.get('#editor').value = text
     }
     
+    // To solve "empty editor after Ctrl+Z" bug clear undo history of Codemirror after initial file loading 
+    this.clearHistory()
+    
     if (preserveView) {
       this.setScrollInfo(scroll)
       this.setCursor(cur)
@@ -369,6 +372,10 @@ export default class Editor extends Morph {
     }
     
     return result
+  }
+  
+  clearHistory() {
+    this.livelyCodeMirror().clearHistory()
   }
 
   async checkAndLoadAnnotations() {
