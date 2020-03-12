@@ -3,10 +3,15 @@
 - Problem: How to show Annotations in a Source file in a rendered product....
 - Idea: We could try to find the same text?!
 
-
-
-
 <script>
+// every time we use editors in as content, we have to make sure the CTRL+S does not go outside!
+this.parentElement.addEventListener("keydown", evt => {
+  if (evt.key == "s" && evt.ctrlKey) {
+    evt.stopPropagation()
+    evt.preventDefault()
+  }
+})
+
 var container = lively.query(this, "lively-container");
 var url = container.getDir() + "/example.md";
 async function editFile(url) {
