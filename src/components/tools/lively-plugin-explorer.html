@@ -42,11 +42,31 @@
       flex: auto;
       margin: 2px;
     }
+    
+    #main {
+      flex: 4;
+    }
+    #bottom {
+      flex: 1;
+    }
+    
+    #tracePane {
+      flex: 3;
+    }
+    #consolePane {
+      flex: 1;
+    }
+    
+    #sourceAndAst {
+      flex: 5;
+    }
+    #transformedPane {
+      flex: 2;
+    }
 
     #pluginPane {
       flex: 4;
     }
-
     #toolPane {
       flex: 5;
     }
@@ -113,7 +133,7 @@
       </button>
     </div>
 
-    <div class="pane layout-row">
+    <div id="main" class="pane layout-row">
       <div id="pluginPane" class="pane tool layout-column">
         <b>Plugin</b>
         <lively-editor class="pane" id="plugin"></lively-editor>
@@ -121,8 +141,8 @@
 
       <lively-separator reverse=true></lively-separator>
 
-      <div id="toolPane" class="pane layout-row">
-        <div class="pane layout-column">
+      <div id="toolPane" class="pane layout-column">
+        <div id="sourceAndAst" class="pane layout-row">
           <div class="pane tool layout-column">
             <div class="toolbar" id="sourceToolBar">
               <div class="label">
@@ -134,27 +154,41 @@
             </div>
             <lively-code-mirror class="pane" id="source"></lively-code-mirror>
           </div>
-          <lively-separator></lively-separator>
-          <div class="pane tool layout-column">
-            <b>Transformed Source</b>
-            <lively-code-mirror class="pane" id="transformedSource"></lively-code-mirror>
-          </div>
-        </div>
-
-        <lively-separator reverse=true></lively-separator>
-
-        <div class="pane layout-column">
-          <div class="pane tool layout-column">
-            <b>Source AST</b>
-            <lively-ast-inspector class="pane" id="sourceAst"></lively-ast-inspector>
-          </div>
           <lively-separator reverse=true></lively-separator>
-          <div class="pane tool layout-column">
-            <b>Execution Console</b>
-            <div class="pane">
-              <pre id="executionConsole"></pre>
+
+          <div class="pane layout-column">
+            <div class="pane tool layout-column">
+              <b>Source AST</b>
+              <lively-ast-inspector class="pane" id="sourceAst"></lively-ast-inspector>
+            </div>
+            <lively-separator reverse=true></lively-separator>
+            <div class="pane tool layout-column">
+              <b>Transformed AST</b>
+              <lively-ast-inspector class="pane" id="transformedAst"></lively-ast-inspector>
             </div>
           </div>
+        </div>
+        <lively-separator></lively-separator>
+        <div id="transformedPane" class="pane tool layout-column">
+          <b>Transformed Source</b>
+          <lively-code-mirror class="pane" id="transformedSource"></lively-code-mirror>
+        </div>
+
+      </div>
+    </div>
+
+    <lively-separator reverse=true></lively-separator>
+    
+    <div id="bottom" class="pane layout-row">
+      <div id="tracePane" class="pane tool layout-column">
+        <b>Transformation Trace</b>
+        <div class="pane"></div>
+      </div>
+      <lively-separator reverse=true></lively-separator>
+      <div id="console" class="pane tool layout-column">
+        <b>Execution Console</b>
+        <div class="pane">
+          <pre id="executionConsole"></pre>
         </div>
       </div>
     </div>

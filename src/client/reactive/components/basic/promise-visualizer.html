@@ -1,0 +1,61 @@
+<template id="promise-visualizer" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  #outer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
+  .layout-row {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+  }
+  .layout-column {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  #promiseContainer {
+    overflow: auto;
+    
+    flex: 2;
+  }
+  #promiseList {
+    min-width: 200px;
+  }
+  #promiseArea {
+    flex: 2;
+    border: yellow 2px solid;
+  }
+  .eventEntry:nth-child(even) {
+    background-color: rgb(230,230,150);
+  }
+  .eventEntry:nth-child(odd) {
+    background-color: beige;
+  }
+</style>
+  <div id="outer">
+    <div class="pane layout-column">
+      <div>
+        <button id="clearButton">clear</button>
+        <button id="updateButton">update</button>
+        <span><span id="numEvt">?</span> Events</span>
+        <span><span id="numProm">?</span> Promises</span>
+      </div>
+      <div class="pane layout-row">
+        <div id="promiseContainer">
+          <div id="promiseList">
+          </div>
+        </div>
+        <div id="promiseArea">
+        </div>
+      </div>
+    </div>
+  </div>
+    
+</template>
+
