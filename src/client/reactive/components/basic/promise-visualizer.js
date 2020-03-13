@@ -3,22 +3,43 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export class Track {
+
+  // events
   static get events() {
     if (!self.__events__) {
-      self.__events__ = [1, 2, 3];
+      self.__events__ = [];
     }
+
     return self.__events__;
   }
   static clearE() {
     this.events.length = 0;
   }
+  static logE() {}
+
+  // promises
   static get promises() {
     if (!self.__promises__) {
       self.__promises__ = new Set();
     }
+
     return self.__promises__;
   }
   static update() {}
+  static pid(prom) {
+    if (!prom) {
+      return;
+    }
+
+    if (!self.__promise_id__) {
+      self.__promise_id__ = 1;
+    }
+    if (!prom.id) {
+      prom.id = self.__promise_id__++;
+    }
+    return prom.id;
+  }
+
 }
 
 export default class PromiseVisualizer extends Morph {
@@ -52,11 +73,32 @@ export default class PromiseVisualizer extends Morph {
 
   renderEvents() {
     this.list.innerHTML = '';
-    this.list.innerHTML = Track.events.map(e => `<div class="eventEntry">E${e.id}:${e.msg}</div>`).join('\n');
+    this.list.innerHTML = Track.events.map(e => {
+      const msg = e.msg.replace(/(P\d+)/gm, `<span class="Promise $1" onmouseover="
+var parents = lively.allParents(this, undefined, true)
+var viewer = parents.find(e => e && e.tagName === 'PROMISE-VISUALIZER');
+if (viewer) {
+  viewer.highlightPromise('$1')
+}
+">$1</span>`);
+
+      return `<div class="eventEntry">E${e.id}: ${msg}</div>`;
+    }).join('\n');
+  }
+
+  get highlightPromiseStyle() {
+    return this.get('#highlight-promise')
+  }
+  highlightPromise(pid) {
+    this.highlightPromiseStyle.innerHTML = `
+  #promiseList .Promise.${pid} {
+    background-color: steelblue;
+  }
+`
   }
 
   renderPromises() {
-    this.promiseArea.innerHTML = 'sssss';
+    this.promiseArea.innerHTML = '';
     Track.promises.forEach(e => this.promiseArea.innerHTML += `<div>${e}</div>`);
   }
 
