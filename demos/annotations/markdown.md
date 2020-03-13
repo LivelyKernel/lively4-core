@@ -66,7 +66,8 @@ import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/an
     ea.annotateInDOM(root)
   }
   
-  return markdown
+  
+  return <div style="padding: 5px; background-color: lightgray">{markdown}</div>
 })()
 </script>
 

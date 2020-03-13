@@ -128,6 +128,7 @@ export default class AnnotationSet {
     for(let ea of annotationsAndVersions) {
       if (ea.type == "Reference") {
         this.textVersion = ea.version // multiple text references per annotations file not (yet) supported 
+        this.textContent = ea.content
       } else {
         this.add(ea)
       }
@@ -311,7 +312,7 @@ MD*/
   toJSONL() {
     var config = []
     if (this.textVersion) {
-      config.push({type: "Reference", version: this.textVersion})
+      config.push({type: "Reference", version: this.textVersion, content: this.textContent})
     }
     return config.concat(this.list).map(ea => JSON.stringify(ea)).join("\n");    
   }
@@ -448,8 +449,11 @@ export class AnnotatedText {
     var oldText = this.text
     this.text = string
     if (version) {
+      // #TODO find last online commited version (e.g. uploaded to GitHub) that will not be squashed...
+      // this.annotations.syncedTextVersion = version
       this.annotations.textVersion = version
     }
+    this.annotations.textContent = string // we cannot rely on the version alone
     let textDiff = dmp.diff_main(oldText, this.text);
     this.annotations.applyTextDiff(textDiff)
   }

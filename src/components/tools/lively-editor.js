@@ -818,6 +818,7 @@ export default class Editor extends Morph {
   }
   
   async solveAnnotationConflict(newAnnotationsVersion, conflictingAnnotationsVersion) {
+    debugger
     var cm = await this.awaitEditor()
     // solveConflict
     var lastText = this.lastAnnotatedText
