@@ -45,7 +45,7 @@ self.addEventListener('fetch', (evt) => {
   if (m) {
     var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    console.log("[swx] POID GET " + url)  
+    // console.log("[swx] POID GET " + url)  
     evt.respondWith(
       self.clients.get(evt.clientId)
         .then(async client => {

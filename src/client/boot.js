@@ -239,6 +239,10 @@ function installCachingFetch() {
         }
         options.headers = new Headers(options.headers)
         options.headers.set("lively-fetch", true)
+        if (options.headers.get("fileversion")) {
+          options.headers.set('pragma', 'no-cache')
+          options.headers.set('cache-control', 'no-cache')
+        }
         return options
       }
     },

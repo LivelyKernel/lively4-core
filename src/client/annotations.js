@@ -417,18 +417,29 @@ export class AnnotatedText {
     annotations.annotationsURL = annotationsURL
     annotations.lastVersion = annotationsResp.headers.get("fileversion")
     
-    
-    var headers = {}
-    if (annotations.textVersion) {
-        headers.fileversion = annotations.textVersion
+    // hopefully we have the full text content... 
+    if (false&& annotations.textContent) {
+      var text = annotations.textContent         
+    } else {
+      debugger
+      // if not, we can try to get it...
+      var headers = {}
+      if (annotations.textVersion) {
+          headers.fileversion = annotations.textVersion
+      }
+
+      var textResp = await fetch(fileURL, {
+        method: "GET",  
+        headers: headers})
+      
+      if (textResp.status !== 200) {
+        throw new Error("[annotations] could not load reference text for annotations")
+      }
+      text = await textResp.text()
+      debugger
     }
-    var textResp = await fetch(fileURL, {
-      method: "GET",  
-      headers: headers})
-    var text = await textResp.text()
-    var annotatedText = new AnnotatedText(text, annotations)
     
-    
+    var annotatedText = new AnnotatedText(text, annotations)    
     return annotatedText 
   }  
   
