@@ -82,19 +82,24 @@ if (viewer) {
 }
 ">$1</span>`);
 
-      return `<div class="eventEntry">E${e.id}: ${msg}</div>`;
+      const usefulFrame = e.stack.getFrames(2)
+        .filter(f => !f.file || !f.file.includes("active-expression-rewriting.js"))
+        .filter(f => !f.file || !f.file.includes("Layers.js"))
+        .map(f => (f.async ? '🦓' : '')+f.func + '@' + (f.file ? f.file.replace(/.*\//,"") : ""))
+        .join(', ');
+      return `<div class="eventEntry">E${e.id}: ${msg} (${usefulFrame})</div>`;
     }).join('\n');
   }
 
   get highlightPromiseStyle() {
-    return this.get('#highlight-promise')
+    return this.get('#highlight-promise');
   }
   highlightPromise(pid) {
     this.highlightPromiseStyle.innerHTML = `
   #promiseList .Promise.${pid} {
     background-color: steelblue;
   }
-`
+`;
   }
 
   renderPromises() {
