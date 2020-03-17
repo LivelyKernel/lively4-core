@@ -4,7 +4,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class GsSimulator extends Morph {
   async initialize() {
-    this.windowTitle = "GsSimulator";
+    this.windowTitle = "GS";
     this.registerButtons()
 
     lively.html.registerKeys(this); // automatically installs handler for some methods

@@ -26,18 +26,42 @@ export class Track {
     return self.__promises__;
   }
   static update() {}
+  id(object, store, ) {}
   static pid(prom) {
     if (!prom) {
       return;
     }
+    if (prom instanceof self.Promise || prom instanceof self.OriginalPromise) {
 
-    if (!self.__promise_id__) {
-      self.__promise_id__ = 1;
+      if (!self.__promise_id__) {
+        self.__promise_id__ = 1;
+      }
+      if (!prom.id) {
+        prom.id = self.__promise_id__++;
+      }
+      return prom.id;
+      
     }
-    if (!prom.id) {
-      prom.id = self.__promise_id__++;
+    
+    return undefined;
+  }
+  static fid(fn) {
+    if (!fn) {
+      return;
     }
-    return prom.id;
+    if (fn instanceof Function) {
+
+      if (!self.__function_id__) {
+        self.__function_id__ = 1;
+      }
+      if (!fn.id) {
+        fn.id = self.__function_id__++;
+      }
+      return fn.id;
+      
+    }
+    
+    return undefined;
   }
 
 }
@@ -74,7 +98,11 @@ export default class PromiseVisualizer extends Morph {
   renderEvents() {
     this.list.innerHTML = '';
     this.list.innerHTML = Track.events.map(e => {
-      const msg = e.msg.replace(/(P\d+)/gm, `<span class="Promise $1" onmouseover="
+      const msg = e.msg
+        .replace(/new Promise/gm, `<span class="Method">new</span> Promise`)
+        .replace(/Promise\.([a-zA-Z0-9$_]+)\(/gm, `Promise.<span class="Method">$1</span>(`)
+        .replace(/(P\d+)\.([a-zA-Z0-9$_]+)/gm, `$1.<span class="Method">$2</span>`)
+        .replace(/(P\d+)/gm, `<span class="Promise $1" onmouseover="
 var parents = lively.allParents(this, undefined, true)
 var viewer = parents.find(e => e && e.tagName === 'PROMISE-VISUALIZER');
 if (viewer) {
