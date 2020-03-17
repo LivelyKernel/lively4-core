@@ -106,6 +106,7 @@ if (viewer) {
 ">$1</span>`);
 
       function printFrame(frame) {
+        //if(frame.func === 'example2') {debugger}
         const isAsync = frame.async ? '🦓' : '';
         const func = isAsync + frame.func;
         if (!frame.file) {
