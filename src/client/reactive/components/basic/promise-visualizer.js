@@ -26,42 +26,37 @@ export class Track {
     return self.__promises__;
   }
   static update() {}
-  id(object, store, ) {}
-  static pid(prom) {
-    if (!prom) {
+  static ensureID(thing, store) {
+    if (!self[store]) {
+      self[store] = 1;
+    }
+    if (!thing.id) {
+      thing.id = self[store]++;
+    }
+    return thing.id;
+  }
+  static id(thing) {
+    return this.printID(thing)
+  }
+  static printID(thing) {
+    if (!thing) {
       return;
     }
-    if (prom instanceof self.Promise || prom instanceof self.OriginalPromise) {
-
-      if (!self.__promise_id__) {
-        self.__promise_id__ = 1;
-      }
-      if (!prom.id) {
-        prom.id = self.__promise_id__++;
-      }
-      return prom.id;
-      
+    if (thing instanceof self.Promise || thing instanceof self.OriginalPromise) {
+      return 'P' + this.ensureID(thing, '__promise_id__')
+    }
+    if (thing instanceof Function) {
+      return 'F' + this.ensureID(thing, '__function_id__')
     }
     
     return undefined;
   }
+  // get print id
+  static pid(prom) {
+    return this.printID(prom)
+  }
   static fid(fn) {
-    if (!fn) {
-      return;
-    }
-    if (fn instanceof Function) {
-
-      if (!self.__function_id__) {
-        self.__function_id__ = 1;
-      }
-      if (!fn.id) {
-        fn.id = self.__function_id__++;
-      }
-      return fn.id;
-      
-    }
-    
-    return undefined;
+    return this.printID(fn)
   }
 
 }
@@ -110,12 +105,30 @@ if (viewer) {
 }
 ">$1</span>`);
 
-      const usefulFrame = e.stack.getFrames(2)
+      function printFrame(frame) {
+        const isAsync = frame.async ? '🦓' : '';
+        const func = isAsync + frame.func;
+        if (!frame.file) {
+          return func
+        } else {
+          let file = frame.file
+            .replace(/^workspace.*$/, 'workspace')
+            .replace(/.*\//, '')
+          return func + '@' + file
+        }
+      }
+      let usefulFrame = e.stack.getFrames(2)
         .filter(f => !f.file || !f.file.includes("active-expression-rewriting.js"))
         .filter(f => !f.file || !f.file.includes("Layers.js"))
-        .map(f => (f.async ? '🦓' : '')+f.func + '@' + (f.file ? f.file.replace(/.*\//,"") : ""))
-        .join(', ');
-      return `<div class="eventEntry">E${e.id}: ${msg} (${usefulFrame})</div>`;
+        .filter(f => !f.func || !f.func.includes(".layered ReplayLayerActivationsLayer"))
+        .map(printFrame)
+        [0];
+      if (!usefulFrame) {
+        usefulFrame = '&lt;no frame>'
+      }
+      const entry = `E${e.id}: ${msg} (${usefulFrame})`
+        .replace(/(example\d+)/gm, `<span class="Example">$1</span>`);
+      return `<div class="eventEntry">${entry}</div>`;
     }).join('\n');
   }
 
