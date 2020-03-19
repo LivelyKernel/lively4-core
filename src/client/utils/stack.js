@@ -3,22 +3,13 @@ export default class Stack {
   static get defaultErrorMessage() {
     return 'Error for stack';
   }
-  constructor(error) {
-    this._error = error;
-    this._frames = this._computeFrames(this._error.stack);
+  constructor({ omitFn = Stack, max }) {
+    Error.stackTraceLimit = Infinity;
+    Error.captureStackTrace(this._error = {}, omitFn);
+    this._frames = this._computeFrames(this._error.stack, max);
   }
-  _computeFrames(desc) {
-    let lines = desc.lines();
-    if (lines.length >= 1) {
-      if (lines[0].startsWith('Error: ')) {
-        lines.shift();
-      }
-      return lines.map(line => new Frame(line));
-    } else {
-      console.error('could not get Stack from Error');
-      debugger;
-      return [];
-    }
+  _computeFrames(desc, max) {
+    return desc.lines().slice(1, max).map(line => new Frame(line));
   }
   get frames() {
     return this._frames;
@@ -30,7 +21,7 @@ export default class Stack {
     return this.frames.slice(from, to);
   }
   toString() {
-    return this.frames.join('\n')
+    return this.frames.join('\n');
   }
 }
 
@@ -61,7 +52,7 @@ export class Frame {
     let namedCall;
     if ((namedCall = isNamedCall.exec(desc)) !== null) {
       const [, funcDesc, location] = namedCall;
-      
+
       let locations;
       // " at doEvaluate (eval at loadJavaScript (https://lively-kernel.org/lively4/aexpr/src/client/boot.js:25:3), &lt;anonymous>:1554:13)"
       // can also have no infos on function name of eval call:
@@ -80,23 +71,23 @@ export class Frame {
 
       const info2 = this._getFunction(funcDesc);
       this._applyFunctionInfo(info2);
-      
+
       return;
     }
-    
+
     lively.warn('could not analyse frame', desc);
     debugger;
   }
-  
+
   _extractEvalInfos(desc) {
     const isNamedCall = /^([^\(]*)\s\((.*)\)$/;
     let namedCall;
     if ((namedCall = isNamedCall.exec(desc)) !== null) {
       const [, funcDesc, location] = namedCall;
-      
+
       const info = this._getFileLineChar(location);
       this._applyEvalLocationInfo(info);
-      
+
       const info2 = this._getFunction(funcDesc);
       this._applyEvalFunctionInfo(info2);
     }
@@ -144,7 +135,7 @@ export class Frame {
     return {
       isNew: !!isNew,
       isAsync: !!isAsync,
-      func,
+      func
     };
   }
 
@@ -231,7 +222,7 @@ export class Frame {
   openInBrowser(browser) {
     // #TODO: requires back mapping of source code information #SourceMaps
   }
-  
+
   toString() {
     return this._desc.replace(/\s+at\s/, '');
   }
