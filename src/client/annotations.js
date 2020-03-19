@@ -418,10 +418,10 @@ export class AnnotatedText {
     annotations.lastVersion = annotationsResp.headers.get("fileversion")
     
     // hopefully we have the full text content... 
-    if (false&& annotations.textContent) {
+    if (annotations.textContent) {
       var text = annotations.textContent         
     } else {
-      debugger
+      
       // if not, we can try to get it...
       var headers = {}
       if (annotations.textVersion) {
@@ -436,7 +436,6 @@ export class AnnotatedText {
         throw new Error("[annotations] could not load reference text for annotations")
       }
       text = await textResp.text()
-      debugger
     }
     
     var annotatedText = new AnnotatedText(text, annotations)    
