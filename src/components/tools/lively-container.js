@@ -21,6 +21,7 @@ import Clipboard from "src/client/clipboard.js"
 import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
+import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 
 /*MD
 
@@ -2222,6 +2223,7 @@ export default class Container extends Morph {
     let menuItems = [
       ['edit source', () => this.showMarkdownElement(elements[0]), '', ``],
       ['edit', () => this.editMarkdownElement(elements.last, markdown), '', ``],
+      ['show annotations', () => this.showMarkdownAnnotations(markdown), '', ``],
     ];
     var checkbox = elements[0].querySelector(`input[type="checkbox"]`)
     if (checkbox) {
@@ -2372,6 +2374,23 @@ export default class Container extends Morph {
       range = await this.saveRegionWithEditor(this.getURL(), range, workspace.value)    
     }
     
+  }
+  
+  async showMarkdownAnnotations(markdown) {
+    var url = this.getURL()
+    var annotationURL = url + ".l4a"
+    if (await lively.files.exists(annotationURL)) {
+      var annotatedText = await AnnotatedText.fromURL(url, annotationURL)
+      var root = markdown.get("#content")
+      var renderedText = root.textContent
+
+      annotatedText.setText(renderedText)
+
+
+      for(var ea of annotatedText.annotations) {
+        ea.annotateInDOM(root)
+      }      
+    }
   }
   
   async saveRegionWithEditor(url, range, text) {
