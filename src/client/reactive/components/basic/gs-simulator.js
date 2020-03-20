@@ -3,6 +3,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class GsSimulator extends Morph {
+  
+  get battleLog() { return this.get('#log'); }
+
   async initialize() {
     this.windowTitle = "GS";
     this.registerButtons()
@@ -10,7 +13,7 @@ export default class GsSimulator extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
     lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
+      evt => this.onDblClick(evt));
     // #Note 1
     // ``lively.addEventListener`` automatically registers the listener
     // so that the the handler can be deactivated using:
@@ -19,8 +22,17 @@ export default class GsSimulator extends Morph {
     // registering a closure instead of the function allows the class to make 
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
     // replaced during development
-    
+    (4).times(()=>this.log('>> init'))
+    this.getJSONAttribute('battle');
      this.get("#textField").value = this.getAttribute("data-mydata") || 0
+  }
+  
+  log(msg) {
+    this.battleLog.prepend(<div class='entry'>{msg}</div>)
+  }
+  
+  async setupBattle() {
+    
   }
   
   onDblClick() {
@@ -62,6 +74,7 @@ export default class GsSimulator extends Morph {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty
+    this.log(">> sIMULATOR MIGRATED");
   }
   
   livelyInspect(contentNode, inspector) {
@@ -74,6 +87,8 @@ export default class GsSimulator extends Morph {
     this.style.backgroundColor = "lightgray"
     this.someJavaScriptProperty = 42
     this.appendChild(<div>This is my content</div>)
+        this.log('>> example')
+
   }
   
   
