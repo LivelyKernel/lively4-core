@@ -83,7 +83,7 @@ export default class LivelyDrawio extends Morph {
   }
 
   async onWebhook(change) {
-    if (!change || change.commits) return
+    if (!change || !change.commits) return
     if (change.commits.find(ea => 
           ea.modified.find(path => path == this.githubInfo.path))) {
       this.updateFromDrawIO(change.after)
