@@ -483,6 +483,11 @@ export default class Files {
       var container = <div style="display:none"></div> // hide the uglyness, at least in the UI
       document.body.appendChild(container)
       var syncTool = await lively.create("lively-sync", container); // #Hack #Ugly
+      
+      
+      if (url.match("https://lively-kernel.org/research")) {
+        syncTool.setServerURL("https://lively-kernel.org/research") // #TODO generalize mapping of urls to server urls?
+      }
 
       var serverURL = syncTool.getServerURL()
       if (!url.match(serverURL)) {
