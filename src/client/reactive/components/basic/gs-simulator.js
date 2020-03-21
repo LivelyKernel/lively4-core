@@ -38,15 +38,15 @@ class Battler {
 
     return battler;
   }
-  toString() {
-    return `<span style='color: ${this.color()}'>${this.type} (spd: ${this.spd})</span>`;
-  }
 
   color() {
     return colorForString(this.type);
   }
 
   toLogTag() {}
+  toSpan() {
+    return <span style={`color: ${this.color()};`}>{this.name || this.namePref || this.id || 'undefined Battler'}</span>;
+  }
   static deserialize(json) {}
 }
 
@@ -75,25 +75,22 @@ export default class GsSimulator extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
     lively.addEventListener("template", this, "dblclick", evt => this.onDblClick(evt));
     this.getJSONAttribute('battle');
-    this.get("#textField").value = this.getAttribute("data-mydata") || 0;
+    this.get("#textField").value = this.getAttribute("data-mydata") || 1000;
 
-    this.log('>> init simulator');
+    this.log('init simulator');
     await this.setupBattle();
-    // to next turn
-    await this.advanceToTurn();
-    await this.updateField();
-    await this.updateCTB();
+    await this.visuallyAdvanceToTurn();
   }
 
   log(msg) {
-    this.battleLog.prepend(<div class="entry">{msg}</div>);
+    this.battleLog.prepend(<div class="entry">>> {msg}</div>);
   }
 
   async setupBattle() {
-    this.log('>> new battle');
+    this.log('new battle');
 
     // lively.files.walkDir()
-    this.battle = await Promise.all(['orcus', 'slime', 'slime', 'slime', 'slime'].map(async type => Battler.create(type)));
+    this.battle = await Promise.all(['orcus', 'loren', 'melissa', 'slime', 'slime', 'slime', 'slime'].map(async type => Battler.create(type)));
     this.ensureUniqueNames();
     this.initWaitTimes();
     await this.updateField();
@@ -137,7 +134,7 @@ export default class GsSimulator extends Morph {
         <div class="hp-bar" data-percentage={battler.hp / battler.maxhp}></div>
         <div class="" style={'color: blue'}>{battler.mp}/{battler.maxmp}</div>
         <div class="mp-bar" data-percentage={battler.mp / battler.maxmp}></div>
-        <div class="spd">{battler.waitTime}@{battler.spd} SPD</div>
+        <div class="spd">{battler.waitTime.round()}@{battler.spd} SPD</div>
         <div class="sp">{battler.sp} SP</div>
       </div>
     </span>;
@@ -159,19 +156,19 @@ export default class GsSimulator extends Morph {
       duration: 1000
     });
   }
-  
+
   async updateCTB() {
-    this.ctb.innerHTML = ''
-    const actors = this.battle.reverse().map(battler => {
+    this.ctb.innerHTML = '';
+    const actors = this.battle.map(battler => {
       const { waitTime, spd } = battler;
       return {
         totalTime: 0,
         waitTime,
         spd,
         battler
-      }
+      };
     });
-    
+
     let shownTurns = 30;
     shownTurns.times(() => {
       const numTicks = actor => actor.waitTime / actor.spd;
@@ -181,12 +178,44 @@ export default class GsSimulator extends Morph {
       const ticksTaken = numTicks(nextActor);
       actors.forEach(actor => {
         actor.waitTime -= ticksTaken * actor.spd;
-        actor.totalTime += ticksTaken * actor.spd
+        actor.totalTime += ticksTaken * actor.spd;
       });
-      
-      this.ctb.innerHTML += nextActor.totalTime/ nextActor.spd + `/${nextActor.totalTime/TURN_DURATION}: `+nextActor.battler.name + '<br />'
+
+      this.ctb.appendChild(<div>{(nextActor.totalTime / nextActor.spd).round()}/{(nextActor.totalTime / TURN_DURATION).round(1)}: {nextActor.battler.toSpan()}</div>);
       nextActor.waitTime = TURN_DURATION;
-    })
+    });
+  }
+
+  async onStepButton(evt) {
+    const battlersOnTurn = this.battle.count(battler => battler.onTurn);
+    if (battlersOnTurn !== 1) {
+      lively.error('expected exactly 1 battler to be onTurn, but found ' + battlersOnTurn);
+      return;
+    }
+
+    await this.prepareTurn();
+
+    await this.doTurn();
+
+    await this.visuallyAdvanceToTurn();
+  }
+
+  async prepareTurn() {
+  }
+
+  async visuallyAdvanceToTurn() {
+    await this.advanceToTurn();
+    await this.updateField();
+    await this.updateCTB();
+  }
+
+  async doTurn() {
+    const battlerOnTurn = this.battle.find(battler => battler.onTurn);
+    this.log(<span>{battlerOnTurn.toSpan()}`s turn</span>
+
+    // end turn
+    );battlerOnTurn.onTurn = false;
+    battlerOnTurn.waitTime = TURN_DURATION;
   }
 
   // this method is autmatically registered through the ``registerKeys`` method
@@ -218,7 +247,7 @@ export default class GsSimulator extends Morph {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty;
-    this.log(">> sIMULATOR MIGRATED");
+    this.log("sIMULATOR MIGRATED");
   }
 
   livelyInspect(contentNode, inspector) {
@@ -231,7 +260,7 @@ export default class GsSimulator extends Morph {
     this.style.backgroundColor = "lightgray";
     this.someJavaScriptProperty = 42;
     this.appendChild(<div>This is my content</div>);
-    this.log('>> example');
+    this.log('example');
   }
 
 }

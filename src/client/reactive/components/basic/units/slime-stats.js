@@ -8,6 +8,6 @@ export default function stats() {
     mp: 7,
     maxmp: 10,
     sp: 2,
-    spd: 10,
+    spd: 20,
   })
 }

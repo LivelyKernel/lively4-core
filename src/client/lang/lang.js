@@ -385,10 +385,19 @@ extend(Array.prototype, {
       lastItem = item;
     }
     return result;
-  }
+  },
+
+  /**
+   * Counts the number of items that satisfy the given condition.
+   * @param predicate (Function<value, index, array -> Boolean>) return true count the element.
+   * @returns {Number} Counted number of elements.
+   */
+  count(predicate) {
+    return this.filter(predicate).length;
+  },
+  
 
 });
-
 
 /*MD # Array-like MD*/
 extendFromLodash(NodeList.prototype, [
