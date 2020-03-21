@@ -26,6 +26,15 @@
     flex: 2;
     overflow: auto;
   }
+  #party-container, #enemies-container {
+    flex: 2;
+    overflow: auto;
+  }
+#party, #enemies {
+  display: inline;
+    width: 100%;
+    height: 100%;
+}  
   #ctb {
     overflow: auto;
   }
@@ -40,9 +49,19 @@
   }
   #log .entry:nth-child(odd) {
     background-color: rgb(220,220,220);
-  }</style>
+  }
+  .battler-container {
+  }
+  .battler {
+  position: relative;
+    border: 3px solid gray;
+    width: 150px;
+    max-width: 150px;
+  }
+  </style>
   <div id='content' class='layout-column'>
     <div id='menu' class='pane'>
+      <button id="newButton">new</button>
       <button id="resetButton">reset</button>
       <button id="playPauseButton">play/pause</button>
       <input id="textField" value=0 />
@@ -51,30 +70,13 @@
       <button id="minusButton">minus</button>
     </div>
     <div id='main' class='layout-row'>
-      <div id='field' class='pane'>
-        <b>battlefield</b>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
-        <div id="minusButton">minus</div>
+      <div id='field' class='layout-row'>
+        <div id='party-container' class='pane'>
+          <div id='party'></div>
+        </div>
+        <div id='enemies-container' class='pane'>
+          <div id='enemies'></div>
+        </div>
       </div>
       <div id='ctb' class='pane'>
         <b>ctb</b>
