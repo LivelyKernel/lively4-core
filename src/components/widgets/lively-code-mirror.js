@@ -34,7 +34,6 @@ import _ from 'src/external/lodash/lodash.js'
 
 
 export function stripErrorString(s) {
-  debugger
   return s.toString()
     .replace(/Error: workspace(js)?:[^:]*:/,"Error:")
     .replace(/\n {2}Evaluating workspace(js)?:.*/,"")
