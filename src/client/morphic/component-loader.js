@@ -420,7 +420,7 @@ export default class ComponentLoader {
   
   static getTemplatePaths() {
     if (!this.templatePaths) {
-      this.templatePaths = [
+      this.templatePaths = [ // default
         lively4url + '/templates/',
         lively4url + '/src/components/',
         lively4url + '/src/components/widgets/',
@@ -439,9 +439,9 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/src/components/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/rpComponents/',
-      ]; // default
+      ].concat(JSON.parse(localStorage.lively4customTemplatePaths || '[]')); 
     } 
-    return this.templatePaths
+    return this.templatePaths;
   }
 
   static addTemplatePath(path) {
