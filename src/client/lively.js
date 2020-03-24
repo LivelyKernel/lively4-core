@@ -202,8 +202,12 @@ export default class Lively {
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
     } else {
-      // Find all modules that depend on me
-      dependedModules = lively.findDependedModules(path);
+      // Find all modules that depend on me 
+      // dependedModules = lively.findDependedModules(path); 
+      
+      // vs. find recursively all! 
+      dependedModules = lively.findDependedModules(path, true); 
+
     }
 
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
