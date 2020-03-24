@@ -3,8 +3,6 @@
 loads lively in any page that inserts through a script tag
 MD*/
 
-debugger
-
 /* eslint no-console: off */
 
 /*
