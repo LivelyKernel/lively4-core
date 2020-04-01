@@ -194,8 +194,7 @@ export class PlexScheme extends Scheme {
   }
 }
 
-lively.components.addTemplatePath(lively4url + "/demos/plex/")
-lively.components.resetTemplatePathCache()
+lively.components.addPersistentCustomTemplatePath("/demos/plex/")
 
 PolymorphicIdentifier.register(PlexScheme)
 
