@@ -18,10 +18,10 @@ Auto-merging writetest2.txt
 CONFLICT (content): Merge conflict in writetest2.txt
 Automatic merge failed; fix conflicts and then commit the result.
 PUSH2
-git push https://JensLincke:4f1ae87054f08c5310d6789481b92f8006eeb414@github.com/LivelyKernel/lively4-dummy master
-To https://JensLincke:4f1ae87054f08c5310d6789481b92f8006eeb414@github.com/LivelyKernel/lively4-dummy
+git push https://JensLincke:4f1ae87xxx@github.com/LivelyKernel/lively4-dummy master
+To https://JensLincke:4f1ae87xxxx@github.com/LivelyKernel/lively4-dummy
  ! [rejected]        master -> master (non-fast-forward)
-error: failed to push some refs to 'https://JensLincke:4f1ae87054f08c5310d6789481b92f8006eeb414@github.com/LivelyKernel/lively4-dummy'
+error: failed to push some refs to 'https://JensLincke:4f1ae870xxx@github.com/LivelyKernel/lively4-dummy'
 hint: Updates were rejected because the tip of your current branch is behind
 hint: its remote counterpart. Integrate the remote changes (e.g.
 hint: 'git pull ...') before pushing again.
