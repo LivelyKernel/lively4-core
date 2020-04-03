@@ -206,13 +206,14 @@ export default class Sync extends Morph {
   }
   
   linkifyFiles(htmlString) {
+    var base = this.getServerURL() + "/" + this.getRepository() + "/"
     return htmlString
       // .replace(/(<span style="color:#A00">(?:deleted\: *)?)([^<]*)(<\/span>)/g, (m,a,b,c) => 
       //     `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>${c}`)
-      .replace(/(modified: *)([a-zA-Z-_/ .]*)/g, (m,a,b) => 
-          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>`)
+      .replace(/(modified: *)([a-zA-Z0-9\-_/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); lively.openBrowser(this.href,true)" href="${base + b}">${b}</a>`)
       .replace(/((?:\+\+\+\s*b\/)|(?:\-\-\- a\/))([a-zA-Z-_0-9/ .]*)/g, (m,a,b) => 
-          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>`)
+          `${a}<a onclick="event.preventDefault(); lively.openBrowser(this.href,true)" href="${base + b}">${b}</a>`)
 // 
   }
   
