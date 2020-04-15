@@ -202,8 +202,12 @@ export default class Lively {
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
     } else {
-      // Find all modules that depend on me
-      dependedModules = lively.findDependedModules(path);
+      // Find all modules that depend on me 
+      // dependedModules = lively.findDependedModules(path); 
+      
+      // vs. find recursively all! 
+      dependedModules = lively.findDependedModules(path, true); 
+
     }
 
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
@@ -1969,19 +1973,18 @@ export default class Lively {
     return performance.now() - start
   }
   
-  static stack({ debug = false, log = false } = {}) {
-    let stack;
-    try {
-      throw new Error(Stack.defaultErrorMessage);
-    } catch (e) {
-      stack = new Stack(e);
-    }
+  // #transformation #TODO #BUG: if we name omitFn 'omit', the omit method from underscore is accessed as this reference!
+  // this might be due to rewriting (either var recorder or aexprs)
+  static stack({ debug = false, log = false, omitFn = lively.stack, max = Infinity } = {}) {
+    let stack = new Stack({ omitFn, max });
+
     if (log) {
       console.warn(stack);
     }
     if (debug) {
       debugger;
     }
+
     return stack;
   }
   

@@ -48,7 +48,6 @@ export default class ComponentLoader {
     this._def("templates", {});
     this._def("prototypes", {});
     this._def("proxies", {});
-    this._def("templatePaths");
     this._def("templatePathsCache", {});
     this._def("templatePathsCacheTime", {});
     this._def("templateFirstLoadTimes", {}); 
@@ -390,6 +389,7 @@ export default class ComponentLoader {
   
   
   static resetTemplatePathCache() {
+    this.templatePaths = undefined
     this.templatePathsCache = undefined
     this.templatePathsCacheTime = undefined
   }
@@ -420,7 +420,7 @@ export default class ComponentLoader {
   
   static getTemplatePaths() {
     if (!this.templatePaths) {
-      this.templatePaths = [
+      const defaultPaths = [ // default
         lively4url + '/templates/',
         lively4url + '/src/components/',
         lively4url + '/src/components/widgets/',
@@ -439,18 +439,42 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/src/components/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/rpComponents/',
-      ]; // default
+      ];
+
+      const customPaths = this.persistentCustomTemplatePaths
+        .map(path => path.startsWith('/') ? lively4url + path : path);
+
+      this.templatePaths = defaultPaths.concat(customPaths); 
     } 
-    return this.templatePaths
+    return this.templatePaths;
   }
 
-  static addTemplatePath(path) {
-    if (!lively.files.isURL(path)) {
-      path = lively.location.href.replace(/[^/]*$/, path)
+  /*MD ### PersistentCustomPaths MD*/
+  static get persistentCustomTemplatePaths() {
+    return JSON.parse(localStorage.lively4customTemplatePaths || '[]')
+  }
+
+  static set persistentCustomTemplatePaths(paths) {
+    localStorage.lively4customTemplatePaths = JSON.stringify(paths);
+    this.resetTemplatePathCache();
+  }
+
+  static addPersistentCustomTemplatePath(path) {
+    const customPaths = this.persistentCustomTemplatePaths;
+
+    if (!customPaths.includes(path)) {
+      customPaths.push(path);
+      this.persistentCustomTemplatePaths = customPaths;
     }
-    var all = this.getTemplatePaths()
-    if (!all.includes(path)) {
-      all.push(path)
+  }
+
+  static removePersistentCustomTemplatePath(path) {
+    const customPaths = this.persistentCustomTemplatePaths;
+
+    const index = customPaths.indexOf(path);
+    if (index > -1) {
+      customPaths.splice(index, 1);
+      this.persistentCustomTemplatePaths = customPaths;
     }
   }
 
@@ -630,8 +654,6 @@ export default class ComponentLoader {
   }
   
 }
+
 ComponentLoader.load()
-
-
-ComponentLoader.templatePathsCache = null
-
+ComponentLoader.resetTemplatePathCache()

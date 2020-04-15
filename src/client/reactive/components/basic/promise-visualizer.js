@@ -26,18 +26,37 @@ export class Track {
     return self.__promises__;
   }
   static update() {}
-  static pid(prom) {
-    if (!prom) {
+  static ensureID(thing, store) {
+    if (!self[store]) {
+      self[store] = 1;
+    }
+    if (!thing.id) {
+      thing.id = self[store]++;
+    }
+    return thing.id;
+  }
+  static id(thing) {
+    return this.printID(thing)
+  }
+  static printID(thing) {
+    if (!thing) {
       return;
     }
-
-    if (!self.__promise_id__) {
-      self.__promise_id__ = 1;
+    if (thing instanceof self.Promise || thing instanceof self.OriginalPromise) {
+      return 'P' + this.ensureID(thing, '__promise_id__')
     }
-    if (!prom.id) {
-      prom.id = self.__promise_id__++;
+    if (thing instanceof Function) {
+      return 'F' + this.ensureID(thing, '__function_id__')
     }
-    return prom.id;
+    
+    return undefined;
+  }
+  // get print id
+  static pid(prom) {
+    return this.printID(prom)
+  }
+  static fid(fn) {
+    return this.printID(fn)
   }
 
 }
@@ -74,7 +93,11 @@ export default class PromiseVisualizer extends Morph {
   renderEvents() {
     this.list.innerHTML = '';
     this.list.innerHTML = Track.events.map(e => {
-      const msg = e.msg.replace(/(P\d+)/gm, `<span class="Promise $1" onmouseover="
+      const msg = e.msg
+        .replace(/new Promise/gm, `<span class="Method">new</span> Promise`)
+        .replace(/Promise\.([a-zA-Z0-9$_]+)\(/gm, `Promise.<span class="Method">$1</span>(`)
+        .replace(/(P\d+)\.([a-zA-Z0-9$_]+)/gm, `$1.<span class="Method">$2</span>`)
+        .replace(/(P\d+)/gm, `<span class="Promise $1" onmouseover="
 var parents = lively.allParents(this, undefined, true)
 var viewer = parents.find(e => e && e.tagName === 'PROMISE-VISUALIZER');
 if (viewer) {
@@ -82,19 +105,43 @@ if (viewer) {
 }
 ">$1</span>`);
 
-      return `<div class="eventEntry">E${e.id}: ${msg}</div>`;
+      function printFrame(frame) {
+        //if(frame.func === 'example2') {debugger}
+        const isAsync = frame.async ? '🦓' : '';
+        const func = isAsync + frame.func;
+        if (!frame.file) {
+          return func
+        } else {
+          let file = frame.file
+            .replace(/^workspace.*$/, 'workspace')
+            .replace(/.*\//, '')
+          return func + '@' + file
+        }
+      }
+      let usefulFrame = e.stack.getFrames(2)
+        .filter(f => !f.file || !f.file.includes("active-expression-rewriting.js"))
+        .filter(f => !f.file || !f.file.includes("Layers.js"))
+        .filter(f => !f.func || !f.func.includes(".layered ReplayLayerActivationsLayer"))
+        .map(printFrame)
+        [0];
+      if (!usefulFrame) {
+        usefulFrame = '&lt;no frame>'
+      }
+      const entry = `E${e.id}: ${msg} (${usefulFrame})`
+        .replace(/(example\d+)/gm, `<span class="Example">$1</span>`);
+      return `<div class="eventEntry">${entry}</div>`;
     }).join('\n');
   }
 
   get highlightPromiseStyle() {
-    return this.get('#highlight-promise')
+    return this.get('#highlight-promise');
   }
   highlightPromise(pid) {
     this.highlightPromiseStyle.innerHTML = `
   #promiseList .Promise.${pid} {
     background-color: steelblue;
   }
-`
+`;
   }
 
   renderPromises() {

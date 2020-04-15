@@ -16,6 +16,16 @@ describe('Stack', function () {
     expect(lively.stack()).to.be.an.instanceof(Stack);
   });
 
+  it('named function as first frame', () => {
+    function expectedFunc() {
+      return lively.stack();
+    }
+
+    const stack = expectedFunc();
+
+    expect(stack.getFrame(0).func).to.equal('expectedFunc');
+  });
+
   it('named function', () => {
     function expectedFunc() {
       return lively.stack();
@@ -41,7 +51,8 @@ describe('Stack', function () {
       return lively.stack();
     }();
 
-    expect(stack.getFrame(1).func).to.equal('eval');
+    expect(stack.getFrame(0).func).to.equal('eval');
+    expect(stack.getFrame(1).func).to.equal('Context.eval');
   });
 
   it('arrow function (iife) represented by `eval`', () => {
@@ -49,7 +60,7 @@ describe('Stack', function () {
       return lively.stack();
     })();
 
-    expect(stack.getFrame(1).func).to.equal('eval');
+    expect(stack.getFrame(0).func).to.equal('eval');
   });
 
   it('named arrow function', () => {
@@ -58,7 +69,7 @@ describe('Stack', function () {
     };
     const stack = myFn();
 
-    expect(stack.getFrame(1).func).to.equal('myFn');
+    expect(stack.getFrame(0).func).to.equal('myFn');
   });
 
   it('function as parameter', () => {
@@ -69,8 +80,8 @@ describe('Stack', function () {
       return lively.stack();
     });
 
-    expect(stack.getFrame(1).func).to.equal('eval');
-    expect(stack.getFrame(2).func).to.equal('exec');
+    expect(stack.getFrame(0).func).to.equal('eval');
+    expect(stack.getFrame(1).func).to.equal('exec');
   });
 
   it('named function as parameter', () => {
@@ -82,8 +93,8 @@ describe('Stack', function () {
     }
     const stack = exec(myFn);
 
-    expect(stack.getFrame(1).func).to.equal('myFn');
-    expect(stack.getFrame(2).func).to.equal('exec');
+    expect(stack.getFrame(0).func).to.equal('myFn');
+    expect(stack.getFrame(1).func).to.equal('exec');
   });
 
   it('function in boundEval', async () => {
@@ -99,9 +110,8 @@ stack;
 `;
     const stack = await code.boundEval();
 
-    expect(stack.getFrame(0).func).to.equal('Function.stack');
-    expect(stack.getFrame(1).func).to.equal('myFn');
-    expect(stack.getFrame(2).func).to.equal('exec');
+    expect(stack.getFrame(0).func).to.equal('myFn');
+    expect(stack.getFrame(1).func).to.equal('exec');
   });
 
   it('function in eval', async () => {
@@ -117,12 +127,12 @@ stack;
 `;
     const stack = eval(code);
 
-    expect(stack.getFrame(1).func).to.equal('myFn');
-    expect(stack.getFrame(2).func).to.equal('exec');
-    expect(stack.getFrame(3).func).to.equal('eval');
+    expect(stack.getFrame(0).func).to.equal('myFn');
+    expect(stack.getFrame(1).func).to.equal('exec');
+    expect(stack.getFrame(2).func).to.equal('eval');
   });
 
-  it('constructor124124', () => {
+  it('constructor', () => {
     let stack;
     class AClass {
       constructor() {
@@ -131,7 +141,7 @@ stack;
     }
     new AClass();
 
-    expect(stack.getFrame(1).func).to.equal('AClass');
+    expect(stack.getFrame(0).func).to.equal('AClass');
   });
 
   it('computed property', () => {
@@ -143,7 +153,7 @@ stack;
     };
     const stack = o['stu' + 'ff']();
 
-    expect(stack.getFrame(1).func).to.equal('Object.stuff');
+    expect(stack.getFrame(0).func).to.equal('Object.stuff');
     // lively.openInspector(this)
   });
 
@@ -156,7 +166,7 @@ stack;
     };
     const stack = o.myGetter;
 
-    expect(stack.getFrame(1).func).to.equal('Object.get myGetter [as myGetter]');
+    expect(stack.getFrame(0).func).to.equal('Object.get myGetter [as myGetter]');
   });
 
   it('static getter', () => {
@@ -168,7 +178,7 @@ stack;
     }
     const stack = AClass.myStaticGetter;
 
-    expect(stack.getFrame(1).func).to.equal('Function.get myStaticGetter [as myStaticGetter]');
+    expect(stack.getFrame(0).func).to.equal('Function.get myStaticGetter [as myStaticGetter]');
   });
 
   it('new as property name', () => {
@@ -179,7 +189,7 @@ stack;
     };
     const stack = o.new();
 
-    expect(stack.getFrame(1).func).to.equal('Object.new');
+    expect(stack.getFrame(0).func).to.equal('Object.new');
   });
 
   it('call to nested property', () => {
@@ -193,7 +203,7 @@ stack;
     };
     const stack = o.o2.fn();
 
-    expect(stack.getFrame(1).func).to.equal('Object.fn');
+    expect(stack.getFrame(0).func).to.equal('Object.fn');
   });
 
   it('get as function name', () => {
@@ -202,7 +212,7 @@ stack;
     }
     const stack = get();
 
-    expect(stack.getFrame(1).func).to.equal('get');
+    expect(stack.getFrame(0).func).to.equal('get');
   });
 
   it('anonymous class', () => {
@@ -212,8 +222,8 @@ stack;
         stack = lively.stack();
       }
     }();
-// lively.openInspector(stack)
-    expect(stack.getFrame(1).func).to.equal('eval');
+    expect(stack.getFrame(0).func).to.equal('eval');
+    expect(stack.getFrame(1).func).to.equal('Context.eval');
   });
 });
 
