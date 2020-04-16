@@ -118,7 +118,7 @@ self.addEventListener('fetch', (evt) => {
           })
         );
       } else {
-        // console.log("SWX let it go through: " + url)
+         // console.log("SWX let it go through: " + url)
       }
     }
   }
