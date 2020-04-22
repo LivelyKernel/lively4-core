@@ -754,6 +754,7 @@ export default class Container extends Morph {
     }
     if (!urls) urls = [url]
     var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
+    urls = urls.sortBy(ea => ea).reverse() // delete children first
     if (await lively.confirm("<b>Delete " + urls.length + " files:</b><br>" +
         "<ol>" + names.map( ea => "<li>" + ea + "</li>" ).join("") + "</ol>")) {
       for(let url of urls) {
