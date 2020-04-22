@@ -2100,7 +2100,6 @@ export default class Container extends Morph {
     this.id = 'main-content';
     this.setAttribute("load", "auto");
       
-    let path, edit;
     window.onpopstate = (event) => {
         var state = event.state;
         if (state && state.followInline) {
@@ -2108,8 +2107,13 @@ export default class Container extends Morph {
           this.followPath(state.path);
         }
     };
-    path = lively.preferences.getURLParameter("load");
-    edit = lively.preferences.getURLParameter("edit");
+    var path = lively.preferences.getURLParameter("load");
+    var editPath = lively.preferences.getURLParameter("edit");
+    if (editPath) {
+      path = editPath
+      var edit = true
+    }
+    
     let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
     if (fullscreen) {
       this.onFullscreen() // #TODO replace toggle logic with enableFullscreen, disableFullscreen
@@ -2121,8 +2125,6 @@ export default class Container extends Morph {
       edit = undefined;
     }
 
-    
-    
     if (!path || path == "null") {
       path = lively4url + "/"
     }
