@@ -230,7 +230,13 @@ export default class Container extends Morph {
     }
     
     // check if our file is a directory
-    var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})  
+    
+    var options
+    try { 
+      options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json())
+    } catch(e) {
+      options = {}
+    }
     if (!isdir && !other) {
       if (options && options.type == "directory") {
         isdir = true
@@ -747,16 +753,40 @@ export default class Container extends Morph {
   }
   /*MD ## File Operations MD*/
 
+  
+  
+  
   async deleteFile(url, urls) {
     lively.notify("delelteFile " + url)
     if (!urls || !urls.includes(url)) {
       urls = [url] // clicked somewhere else
     }
     if (!urls) urls = [url]
-    var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
+    
+    var allURLs = new Set()
+    for(var ea of urls) {
+      if (!allURLs.has(ea)) {
+        allURLs.add(ea)
+        for(var newfile of await lively.files.walkDir(ea)) {
+          allURLs.add(newfile)
+        }
+      }    
+    }
+    urls = Array.from(allURLs)
     urls = urls.sortBy(ea => ea).reverse() // delete children first
-    if (await lively.confirm("<b>Delete " + urls.length + " files:</b><br>" +
-        "<ol>" + names.map( ea => "<li>" + ea + "</li>" ).join("") + "</ol>")) {
+    
+    var prefix = Strings.longestCommonPrefix(urls)
+    
+    var names = urls.reverse().map(ea => decodeURI(ea.replace(/\/$/,"").replace(prefix,"")))
+    var customDialog = dialog => {
+      var messageDiv = dialog.get("#message")
+      messageDiv.style.maxHeight = "300px"
+      messageDiv.style.overflow = "auto"
+      messageDiv.style.backgroundColor = "white"
+    }
+    var msg = "<b>Delete " + urls.length + " files:</b><br>" +
+        "<ol>" + names.map( ea => "<li>" + ea + "</li>",  ).join("") + "</ol>"
+    if (await lively.confirm(msg, customDialog)) {
       for(let url of urls) {
         var result = await fetch(url, {method: 'DELETE'})
           .then(r => {
