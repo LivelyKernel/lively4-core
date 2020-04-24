@@ -757,7 +757,7 @@ export default class Container extends Morph {
   
   
   async deleteFile(url, urls) {
-    lively.notify("delelteFile " + url)
+    lively.notify("deleteFile " + url)
     if (!urls || !urls.includes(url)) {
       urls = [url] // clicked somewhere else
     }
@@ -767,15 +767,17 @@ export default class Container extends Morph {
     for(var ea of urls) {
       if (!allURLs.has(ea)) {
         allURLs.add(ea)
-        for(var newfile of await lively.files.walkDir(ea)) {
-          allURLs.add(newfile)
+        if (ea.endsWith("/")) {
+          for(var newfile of await lively.files.walkDir(ea)) {
+            allURLs.add(newfile)
+          }          
         }
       }    
     }
     urls = Array.from(allURLs)
     urls = urls.sortBy(ea => ea).reverse() // delete children first
     
-    var prefix = Strings.longestCommonPrefix(urls)
+    var prefix = Strings.longestCommonPrefix(urls.map(ea => ea.replace(/[^/]*$/,""))) // shared dir prefix
     
     var names = urls.reverse().map(ea => decodeURI(ea.replace(/\/$/,"").replace(prefix,"")))
     var customDialog = dialog => {
