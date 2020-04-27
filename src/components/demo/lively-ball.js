@@ -32,6 +32,7 @@ export default class LivelyBall extends Morph {
   
   step() {
     if (!lively.isInBody(this)) return;
+    // console.log("B")
     var time = Date.now()
     if (this.lastTime) {
       var t = (time - this.lastTime) * 0.01
