@@ -102,7 +102,7 @@ self.addEventListener('fetch', (evt) => {
             } 
             
             if (!msg || !msg.data || !msg.data.content) {
-              console.warn("SWX fallback... fetch again: " + url)
+              // console.warn("SWX fallback... fetch again: " + url)
               return fetch(url, {
                 method: method,
                 headers: Object.assign(headers, {

@@ -1588,8 +1588,8 @@ export default class Lively {
     return document.querySelector(query)
   }
 
-  static confirm(msg) {
-    return Dialog.confirm(msg)
+  static confirm(msg, customizeCB) {
+    return Dialog.confirm(msg, customizeCB)
   }
 
   static prompt(msg, value, customizeCB) {

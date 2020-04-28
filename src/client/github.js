@@ -36,10 +36,8 @@ export class Comment extends Issue {
   }
 }
 
-
-
 export default class GitHub {
-  
+   
   static current(force) {
     if (!this._current || force) {
       this._current = new GitHub()
