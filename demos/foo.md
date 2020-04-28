@@ -10,3 +10,5 @@ like foo.js but only for markdown features?
 
 3 + 5
 ```
+
+#hashtag
