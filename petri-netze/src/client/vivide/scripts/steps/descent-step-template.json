@@ -1,8 +1,0 @@
-{
-    "script": "[item => [], {\n  \n}]",
-    "cursor": {
-      "anchor": { "line": 0, "ch": 10},
-      "head": { "line": 0, "ch": 10}
-    },
-    "type": "descent"
-}
