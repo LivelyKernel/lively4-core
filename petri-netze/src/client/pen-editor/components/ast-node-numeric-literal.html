@@ -1,0 +1,23 @@
+<template id="ast-node-numeric-literal" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+  }
+#content {
+  background-color: gray;
+}
+  ::part(input-field) {
+    color: #164;
+  }
+  :host(.use-inner) ::part(input-field) {
+    font-weight: bold;
+    color: #000;
+  }
+</style>
+  <primitive-string id="number" exportparts="input-field"></primitive-string>
+</template>
+
+

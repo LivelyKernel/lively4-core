@@ -1,0 +1,32 @@
+<template id="ast-node-new-expression" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host {
+  display: flex;
+}
+.content {
+  width: min-content;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+  #new {
+    margin-right: 3px;
+  }
+#new, #callee, #open-bracket, #arguments, #closing-bracket {
+  align-self: center;
+}
+</style>
+  <span id="new" part="keyword">new</span>
+  <span id="callee">
+    <slot name="callee"></slot>
+  </span>
+  <span id="open-bracket" part="notation">(</span>
+  <span id="arguments">
+    <slot name="arguments"></slot>
+  </span>
+  <span id="closing-bracket" part="notation">)</span>
+</template>
+
+

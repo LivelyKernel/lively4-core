@@ -1,0 +1,28 @@
+<template id="ast-node-import-specifier" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+:host(*) .aliased {
+  display: none;
+}
+#imported, #local, #as, .bracket {
+  align-self: center;
+}
+</style>
+  <span class="bracket" part="notation">{</span>
+  <slot id="imported" name="imported"></slot>
+	<span id="as" class="aliased" part="keyword">as</span>
+  <slot id="local" class="aliased" name="local"></slot>
+  <span class="bracket" part="notation">}</span>
+</template>
+
+

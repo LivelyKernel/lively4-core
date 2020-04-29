@@ -1,0 +1,53 @@
+<template id="generic-ast-node">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  background-color: rgba(111,0,0,0.1);
+  overflow-y: auto
+}
+  #container {
+    font-size: small;
+    border: 1px solid transparent;
+    border-radius: 2px;
+/*     display: flex;
+    flex-direction: row; */
+  }
+  #container:hover {
+/*     border: 1px solid rgba(0,0,0,1); */
+  }
+  #node-type {
+    font-size: smaller;
+/*     border: 1px solid rgba(255,255,0,0.2); */
+/*     color: gray; */
+    background-color: rgba(1,1,1,0.1);
+  }
+  #child-list {
+    border: 1px solid rgba(0,255,0,0.2);
+    display:flex;
+    flex-direction: column;
+  }
+  #child-list span {
+    background-color: rgba(1,1,1,0.1)
+  }
+  .kv-pair {
+    display:flex;
+    flex-direction: row;
+    border: 2px solid rgba(0,0,255,0.3);
+  }
+  .property-key {
+    font-size: smaller;
+/*     color: red; */
+    background-color: red;
+/*     border: 3px red solid; */
+  }
+  slot {
+    border: 5px red solid;
+  }
+</style>
+  <div id="container">
+    <span id="node-type">undefined</span>
+    <div id="child-list"></div>
+  </div>
+</template>

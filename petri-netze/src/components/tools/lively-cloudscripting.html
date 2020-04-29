@@ -1,0 +1,160 @@
+<link rel="import" href="./lively-cloudscripting-item.html" />
+<link rel="import" href="./lively-cloudscripting-action-item.html" />
+
+<template id="lively-cloudscripting" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+     .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .header-row {
+      height: 40px;
+    }
+    
+    .editor {
+      flex: 1;
+    }
+    
+    .column-left {
+      width: 300px;
+      flex: 0 0 300px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgb(120, 118, 116);
+      overflow: scroll;
+    }
+
+    .top {
+      margin: 0;
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .bottom {
+      margin: 0;
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .items {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: scroll;
+    }
+
+    .items .empty {
+      margin-top: 10px;
+      font-size: 12px;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .services-menu {
+      display: flex;
+      align-items: flex-end;
+      border-top: 1px solid rgb(120, 118, 116);
+    }
+    
+    .script-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid rgb(120, 118, 116);
+    }
+    
+    h2, h4 {
+      display: inline-block;
+      margin: 5px 20px 5px 5px;
+    }
+    
+    button {
+      margin-right: 2px;
+    }
+
+    .column-right {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+/*     input {
+      width: 40px;
+      flex: 1;
+      margin: 2px;
+    }
+ */
+    input#name {
+      display: inline-block;
+      width: 8em;
+    }
+    
+    #log {
+      flex: 1;
+      width: 100%;
+    }
+    
+  </style>
+  
+    <div class="container">
+      <div class="column-left">
+        <div class="script-heading">
+          <h4>
+            Watcher
+          </h4>
+          <button id="addTriggerButton" title="Add Watcher"><i class="fa fa-fw fa-plus" aria-hidden="true"></i></button>
+        </div>
+        <div id="trigger-wrapper">
+        </div>
+        <button id="createWatcher" title="Add Watcher">Create Watcher</button>
+        <button id="createAction" title="Add Watcher">Create Action</button>
+      </div>
+      <div class="column-right">
+        <div class="top">
+          <div class="header-row">
+            <h2>
+              Name:
+            </h2>
+            <input id="name" type="text" value="somethin123"> 
+<!--             TODO: Delete default value -->
+            <button id="login">
+              Login
+            </button>  
+            <button id="credentials">
+              Credentials
+            </button>
+            <span id="loginIndicator"></span>
+          </div>
+    
+          <lively-code-mirror class="editor" id="code"></lively-code-mirror>
+          <div class="control-elements">
+            <button id="startButton">
+              Start Watcher
+            </button>
+            <button id="stopButton">
+              Stop Watcher
+            </button>
+          </div>  
+        </div>
+        <div class="bottom">
+          <div class="header-row">
+            <h2>
+              Logs
+            </h2>
+          </div>
+          <lively-code-mirror class="editor" id="logs"></lively-code-mirror>
+        </div>
+      </div>
+    </div>
+</template>
+
+

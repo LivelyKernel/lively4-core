@@ -1,0 +1,38 @@
+<template id="ast-node-conditional-expression" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+  flex-direction: column;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+  .row {
+    display: flex;
+  }
+#question-mark, #colon {
+  margin-left: 10px;
+  margin-right: 3px;
+}
+  
+#test, #question-mark, #alternate, #colon, #consequent {
+  align-self: center;
+}
+</style>
+  <slot id="test" name="test"></slot>
+  <div class="row">
+    <span id="question-mark" part="notation">?</span>
+    <slot id="alternate" name="alternate"></slot>
+  </div>
+  <div class="row">
+    <span id="colon" part="notation">:</span>
+    <slot id="consequent" name="consequent"></slot>
+  </div>
+</template>
+
+

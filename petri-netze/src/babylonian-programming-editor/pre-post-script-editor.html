@@ -1,0 +1,27 @@
+<template id="pre-post-script-editor">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #prescript, #postscript {
+      flex: 1;
+      border-top: 1px solid rgb(221, 221, 221);
+    }
+    
+    #prescript {
+      border-bottom: 1px solid rgb(221, 221, 221);
+    }
+    
+    #prescript-header, #postscript-header {
+      margin: 0.5em; 
+    }
+  </style> 
+  
+  <h5 id="prescript-header">prescript() {</h5>
+  <lively-code-mirror  id="prescript" ></lively-code-mirror>
+  
+  <h5 id="postscript-header">postscript() {</h5>
+  <lively-code-mirror  id="postscript" ></lively-code-mirror>
+</template>

@@ -1,0 +1,107 @@
+<template id="lively-editor" >
+    <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+    <style>
+    :host {
+      // width: 100%;
+      // height: 100%;
+    }
+    .container {
+        width: 100%;
+        height: 100%;
+        /*
+        box-sizing: border-box;
+        padding-top: 25px; */
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar {
+        /* position: absolute;
+        left: 0px;
+        top: 0px; */
+        width: 100%;
+        height: 25px;
+        /* flex: 0; */
+    }
+    #toolbarFlex {
+      display: flex;  
+      flex-direction: row;
+    }
+      
+    #filename {
+      /* width: 100%; */
+      flex: 1; 
+      
+      
+    }
+    #editor {
+      /* box-sizing: border-box; */
+      /* width: 100%; */
+      max-height: calc(100%);
+      flex: 1; 
+    }
+    #versionControl {
+      padding: 5px;
+      position: absolute;
+      top: 0px;
+      right: -400px;
+      width: 400px;
+      height: calc(100% - 40px);
+      z-index: 800;      
+      border-radius: 10px;
+    	background-color: rgb(230,230,235);
+      display: none; 
+    }
+
+    #versions {
+      position: absolute;
+      top: 30px;
+      left: 5px;
+      height: calc(100% - 40px);
+      width: calc(100% - 10px);
+      }
+     
+    #changeIndicator {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: 17px;
+      top: 0px;
+      z-index: 10;
+      background: rgb(220,30,30)
+    }
+    .cm-trailingspace { 
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAYAAAB/qH1jAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUXCToH00Y1UgAAACFJREFUCNdjPMDBUc/AwNDAAAFMTAwMDA0OP34wQgX/AQBYgwYEx4f9lQAAAABJRU5ErkJggg==);
+      background-position: bottom left;
+      background-repeat: repeat-x;
+    }
+      
+      #loadButton {
+        display: none
+      }
+    </style>
+    <div class="container">
+        <div class="toolbar" id="toolbar">
+          <div id="toolbarFlex">
+            <button id="loadButton">load</button>
+            <input type="text" id="filename" value="">
+            <button class="edit" id="versionsButton" title="versions">
+         <i class="fa fa-code-fork" aria-hidden="true"></i></button>
+            <button class="edit" id="browse" title="open new browser for url">
+        <i class="fa fa-external-link" aria-hidden="true"></i></button>
+            <button class="browse edit" id="saveButton" title="save file CTRL+S"> 
+        <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div id="changeIndicator"></div>
+
+      	<div id="versionControl">
+          <button id="loadVersionButton">load</button>
+          <button id="closeVersionsButton">close</button>
+          <lively-version-control id="versions"></lively-version-control>
+        </div>
+    </div>
+
+
+</template>
+
+

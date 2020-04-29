@@ -1,0 +1,32 @@
+<template id="lively-presentation">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    button {
+      background: none;
+      border: none;
+      color: lightgray;
+      font-size: 8pt;
+      padding: 1px;
+
+    }
+    #buttons {
+      width: 300px;
+      top: 10px;
+
+      position: absolute;
+      z-index: 10000;
+    }
+  </style>
+
+  <div id="content">
+    <slot></slot>
+  </div>
+  <div id="buttons">
+    <button id="fullscreenButton" title="toggle fullscreen"><i class="fa fa-arrows-alt"></i></button>
+    <button id="prevButton" title="prev slide"><i class="fa fa-caret-left"></i></button>
+    <button id="gotoButton" title="goto slide"><i class="fa fa-circle"></i></button>
+    <button id="nextButton" title="next slide"><i class="fa fa-caret-right"></i></button>
+    <button id="printButton" title="print presentation"><i class="fa fa-print"></i></button>
+  </div>
+</template>

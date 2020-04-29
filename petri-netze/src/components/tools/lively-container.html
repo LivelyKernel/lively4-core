@@ -1,0 +1,276 @@
+<template id="lively-container" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/client/lively.css"></style>
+  <style data-src="/src/external/highlight.css"></style>
+  <style>
+      :host {
+        height: 700px;
+        width:  1210px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #d5d5d5;
+      }
+      
+      ::-webkit-scrollbar { 
+        /* display: none; */
+      }
+
+      /*#container-content::-webkit-scrollbar { */
+      /*   display: none; */
+      /*}*/
+
+      .edit {
+        visibility: hidden;
+        display: none;
+      }
+    
+      #container-rightpane {
+        flex: 80;
+        position: relative;
+ 	      border-top: 1px solid #d5d5d5;
+/*         border: 1px solid blue; */
+ 	      /*
+ 	      background-image: url("https://github.com/subtlepatterns/SubtlePatterns/raw/gh-pages/light_wool.png");
+ 	      */
+      }
+      
+      #container-editor, #container-content{
+        position:absolute;
+      }
+      
+      #layout-center {
+        overflow: hidden;
+        flex: 100;
+        display: flex;
+        flex-direction: row;
+      }
+      
+    	#container-content {
+    	  width: 100%;
+        height: 100%;
+        overflow: auto;
+        overscroll-behavior: contain; 
+        flex: 100;
+        margin: 0px;
+        padding: 0px;
+        z-index: 0;
+      }
+    	
+    	
+    	#container-root {
+        max-width: 1200px;
+    	  min-width: 400px;
+    	  margin: 0px;
+    	  padding: 1px;
+    	  padding-left: 20px;
+    	}
+    	
+      #container-editor {
+        width: 100%;
+        height: 100%;
+        flex: 100;
+    	}
+    	
+      #container-leftpane {
+        margin: 0;
+        width: 350px;
+/*         border: 1px solid red; */
+      }
+
+      #container-path {
+        border: 1px solid #d5d5d5;
+        border-radius: 2px;
+      }
+        
+      #delete {
+        color: #b33630;
+      }
+      
+      #delete:hover {
+        background:  linear-gradient(#dc5f59, #b33630);
+        color: white;
+      }
+      
+      div.fill {
+        display: flex;
+        flex-direction: row;
+      }
+      
+      input {
+        width: 40px;
+        flex: 100;
+        margin: 2px;
+      }
+      
+      input#live {
+        width: auto;
+      }
+      
+      label {
+        max-height: 18px;
+      }
+      
+      lively-editor {
+        margin: 0px;
+      }
+      
+      table.directory tr th {
+         text-align: left;
+      }
+      
+      table.directory {
+        font-size: 10pt;
+        color: #666666;
+        margin: 10px;
+      }
+      
+      table.directory .thumbnail{
+        height: 100px;
+      }
+      #live {
+        width: 20px;
+        height: 20px;
+        margin: 6px 1px 0px 4px;
+      }
+    
+      #evaltext {
+        font-size: 13px;
+        line-height: 15px;
+        margin: 6px 2px 0px 4px;
+      }
+      
+      #fullscreenInline {
+        font-size: 10pt; 
+        position:absolute; 
+        right: 16px; 
+        top: 10px;
+        z-index: 10;
+        display: none;
+        /* background-color: white; */
+      }
+      
+      #changeIndicator {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        right: 17px;
+        top: 0px;
+        z-index: 10;
+        background: rgb(220,30,30)
+      }
+
+    
+    #container-navigation .edit, #container-navigation .browse {
+      display: none;
+      visibility: hidden;
+    }
+
+    :host([mode="edit"]) #container-navigation .edit {
+      display: inline;
+      visibility: visible;
+    }
+
+    
+    :host([mode="show"]) #container-navigation .browse {
+      display: inline;
+      visibility: visible;
+    }
+
+    :host([mode="edit"]) #container-navigation .edit.optional {
+      display: none;
+      visibility: hidden;
+    }
+    :host([mode="edit"].show-options) #container-navigation .edit {
+      display: inline;
+      visibility: visible;
+    }
+    :host([mode="show"]) #container-navigation .browse.optional {
+      display: none;
+      visibility: hidden;
+    }
+    
+    :host([mode="show"].show-options) #container-navigation .browse {
+      display: inline;
+      visibility: visible;
+    }
+    
+    :host(.show-options) #toggleOptions i {
+    }
+    
+    button.optional {
+      color: steelblue;
+      border: steelblue 1px dashed;
+    }
+    
+    lively-separator {
+    }    
+    </style>
+    <div id="container-navigation" class="fill">
+      <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
+      <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
+      <button id="up"><i class="fa fa-arrow-up" title="Up" aria-hidden="true"></i></button>
+      <button id="home"><i class="fa fa-home" title="Up" aria-hidden="true"></i></button>
+      
+      <input type="text" id="container-path" value="">
+
+      <div class="optional edit" id="eval">
+          <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+      </div>
+      
+      <button class="optional edit browse" id="favorite" title="fav this file">
+        <i class="fa fa-star-o"></i></button>
+      <button class="optional edit" id="beautify" title="beautify the code">
+        <i class="fa fa-paint-brush"></i></button>
+      <button class="edit" id="apply" title="apply code or template">
+        <i class="fa fa-gears" aria-hidden="true"></i></button>
+      <button class="edit" id="browse" title="open new browser for url">
+        <i class="fa fa-external-link" aria-hidden="true"></i></button>
+      <button class="optional edit" id="dependencies" title="browse dependencies">
+        <i class="fa fa-sitemap" aria-hidden="true"></i></button>
+      <button class="optional edit" id="sync" title="sync changes">
+        <i class="fa fa-refresh" aria-hidden="true"></i></button>
+      <button class="optional edit" id="delete" title="delete file">
+        <i class="fa fa-trash" aria-hidden="true"></i></button>
+      <button class="optional browse edit" id="newfile" title="create new file">
+        <i class="fa fa-file-o" aria-hidden="true"></i></button>
+      <button class="optional browse edit" id="newdirectory" title="create new directory">
+        <i class="fa fa-folder-o" aria-hidden="true"></i></button>
+      <button class="optional edit" id="versions" title="versions">
+        <i class="fa fa-code-fork" aria-hidden="true"></i></button>
+      <button class="optional browse edit" id="save" title="save file CTRL+S"> 
+        <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+      <button class="optional edit" id="accept" title="accept changes CTRL+SHIFT+S">
+        <i class="fa fa-check-circle" aria-hidden="true"></i></button>
+      <button class="edit" id="cancel" title="return to view without changes">
+        <i class="fa fa-ban" aria-hidden="true"></i></button> 
+      <button class="browse" id="edit" title="edit file">
+        <i class="fa fa-pencil" aria-hidden="true"></i></button>
+      <button class="optional browse edit" id="fullscreen" title="fullscreen">
+        <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>
+      <button class="browse edit" id="toggleOptions" title="more options">
+        <i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>
+    </div>
+
+    <div id="layout-center">
+      <lively-container-navbar id="container-leftpane">
+      </lively-container-navbar>
+      <lively-separator></lively-separator>
+      <div id="container-rightpane">
+        <div id="changeIndicator"></div>
+        <div id="container-content" class="lively-no-paste">
+          <div id="container-root" class="lively-no-paste">
+          <!-- by default the content is hidden-->
+          <slot></slot>
+          </div>
+        </div>
+        <div id="container-editor"></div>
+        <!-- #TODO move this into button row -->
+        <a id="fullscreenInline">
+          <i class="fa fa-arrows-alt" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+
+</template>
+

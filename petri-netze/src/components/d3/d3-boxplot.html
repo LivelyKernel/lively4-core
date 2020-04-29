@@ -1,0 +1,139 @@
+<template id="d3-boxplot">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  font-family: xcharter;
+  overflow-y: auto;
+}
+
+#chart {
+  width: 100%;
+  height: 100%;
+}
+
+.box {
+    font: 14px xcharter;
+}
+
+.box line,
+.box rect,
+.box circle {
+    fill: white;
+    stroke: #000;
+    stroke-width: 1px;
+}
+
+.box .center {
+    stroke-dasharray: 3,3;
+}
+
+.box .outlier {
+    fill: none;
+    stroke: #000;
+}
+
+.box .separator line {
+    stroke: #afafaf;
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-dasharray: 1, 5;
+    shape-rendering: crispEdges;
+}
+
+.box .tickLines line {
+    stroke: #afafaf;
+    stroke-width: 1;
+    stroke-linecap: round;
+/*    stroke-dasharray: 1, 5;
+    shape-rendering: crispEdges;
+*/}
+
+line.median {
+    stroke: red;
+    stroke-width: 2px;
+    stroke-linecap: round;
+}
+
+.axis {
+    font: 16px xcharter;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.x.axis path {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+  
+  
+  
+  /* MULTISELECTION SUPPORT */
+  g.selectable-group {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -khtml-user-drag: element;
+    -webkit-user-drag: element;
+    user-drag: element;
+  }
+  g.selectable-group rect.selectable-background {
+    stroke: black;
+    stroke-opacity: 0;
+    fill: black;
+    fill-opacity: 0;
+  }
+/*   g.selectable-group.selected rect.selectable-background {
+    fill: lightsteelblue;
+    fill-opacity: 1;
+  }
+  g.selectable-group.selected line,
+  g.selectable-group.selected rect,
+  g.selectable-group.selected circle {
+    stroke-width: 2px;
+  } */
+  g.selectable-group.selected line,
+  g.selectable-group.selected rect,
+  g.selectable-group.selected circle {
+    stroke-width: 2px;
+  }
+  g.selectable-group.selected text {
+    fill: black;
+    stroke: black;
+    stroke-width: 1px;
+  }
+  g.selectable-group.last-selected rect.selectable-background {
+    fill: lightskyblue;
+    fill-opacity: 0.6;
+/*     stroke-width: 3px; */
+  }
+/*   g.selectable-group:hover rect.selectable-background {
+    fill: lightskyblue;
+    fill-opacity: 1;
+  } */
+  g.selectable-group:hover line,
+  g.selectable-group:hover rect,
+  g.selectable-group:hover circle {
+    stroke: blue;
+    stroke-width: 2px;
+  }
+  g.selectable-group:hover text {
+    fill: blue;
+    stroke: blue;
+    stroke-width: 1px;
+  }
+/*   g.selectable-group:focus rect.selectable-background {
+    stroke: steelblue;
+    stroke-opacity: 1;
+    stroke-width: 5px;
+  } */
+  </style>
+<div id="charts"></div>
+</template>

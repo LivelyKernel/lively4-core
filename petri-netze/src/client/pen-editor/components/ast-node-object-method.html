@@ -1,0 +1,55 @@
+<template id="ast-node-object-method" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+  :host(*) {
+    display: flex;
+    flex-direction: column;
+
+    margin: 1px;
+    padding: 1px;
+    border: 1px solid goldenrod;
+    background-color: #eeeeee;
+  }
+
+  :host(:not(.computed)) .bracket {
+    display: none;
+  }
+
+  #body-container {
+    width: min-content;
+    border: 1px solid goldenrod;
+    background-color: #eeeeee;
+  }
+  #header {
+    display: flex;
+  }
+  #kind, #async, #generator {
+    margin-right: 3px;
+  }
+
+  #async, #generator, #key, #params, #open-bracket, #arguments, #closing-bracket, .bracket {
+  align-self: center;
+}
+  </style>
+  <div id="header">
+    <span id="kind" part="keyword">kind</span>
+    <span id="async" part="keyword">async</span>
+    <span id="generator" part="notation">*</span>
+
+    <span class="bracket" part="notation">[</span>
+    <slot id="key" name="key"></slot>
+    <span class="bracket" part="notation">]</span>
+
+    <span id="open-bracket" part="notation">(</span>
+    <slot id="params"name="params"></slot>
+    <span id="closing-bracket" part="notation">)</span>
+  </div>
+  
+  <div id="body-container">
+    <slot name="body"></slot>
+  </div>
+</template>
+
+

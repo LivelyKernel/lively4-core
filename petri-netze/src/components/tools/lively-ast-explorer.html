@@ -1,0 +1,84 @@
+<template id="lively-ast-explorer" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: flex;
+    }
+  
+    .layout-column {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .layout-row {
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    .pane {
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .pane.tool {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+    }
+    
+    #content {
+      margin: 1px;
+    }
+    
+    #workspace-path {
+      border: 1px solid #d5d5d5;
+      border-radius: 2px;
+    }
+    
+    input {
+      width: 40px;
+      flex: 100;
+      margin: 2px;
+    }
+
+    #source, #ast {
+      width: 100%;
+      height: 100%;
+    }
+    
+    button.toggle {
+      color: black;
+    }
+
+    button.toggle.on {
+      color: white;
+      background: steelblue;
+    }
+    
+  </style>
+  
+  <div id="content" class="pane layout-column">
+    <div id="navigationPane" class="layout-row">
+      <input type="text" id="sourcePath" value="">
+      <button class="toggle" id="update" title="Update AST (right-click to toggle auto-mode).">
+          <i class="fa fa-refresh fa-fw"></i>
+      </button>
+    </div>
+
+    <div class="pane layout-row">
+      <div class="pane tool layout-column">
+        <b>Source</b>
+        <lively-editor class="pane" id="source"></lively-editor>
+      </div>
+
+      <lively-separator></lively-separator>
+      
+      <div class="pane tool layout-column">
+        <b>AST</b>
+        <lively-ast-inspector class="pane" id="ast"></lively-ast-inspector>
+      </div>
+    </div>
+  </div>
+</template>

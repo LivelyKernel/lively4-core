@@ -1,0 +1,36 @@
+<template id="lively-separator" >
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+    :host {
+      display: block;
+      padding-left: 0px;
+      padding-right: 10px;
+      margin-left: 0px; 
+      margin-right: -10px;
+      
+      padding-top: 5px;
+      padding-bottom: 5px;
+      margin-top: -5px; 
+      margin-bottom: -5px; 
+      
+      z-index: 1000;
+      /*
+      background-color: rgba(1,255,1,0.2);
+      */
+      transition: background-color 150ms ease-in-out; 
+    }
+    :host(.horizontal) {
+      
+    }
+    
+    :host(:hover) {
+      cursor: nw-resize;
+      background-color: rgba(1,1,1,0.2);
+    }
+
+    :host(.horizontal:hover) {
+      
+    }
+
+    </style>
+</template>

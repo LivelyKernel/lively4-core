@@ -1,0 +1,19 @@
+<!doctype html>
+<script src="jspm_packages/system.src.js"></script>
+<!--
+  (Native SystemJS test)
+<script src="jspm.browser.js"></script>
+<script src="jspm.js"></script>
+-->
+<script>
+System.config({
+  map: {
+    'plugin-babel': '../plugin-babel.js',
+    'systemjs-babel-build': './systemjs-babel-browser.js'
+  },
+  transpiler: 'plugin-babel'
+});
+System.import('test.js').then(function(m) {
+  m.p().then(console.log.bind(console));
+});
+</script>

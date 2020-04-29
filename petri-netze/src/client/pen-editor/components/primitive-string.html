@@ -1,0 +1,71 @@
+<template id="primitive-string" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {}
+
+#input {
+  transition: all 0.2s ease-out;
+
+/*  initial values  */
+/*   -webkit-writing-mode: horizontal-tb !important;
+  text-rendering: auto;
+  color: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  text-indent: 0px;
+  text-shadow: none;
+  display: inline-block;
+  text-align: start;
+  -webkit-appearance: textfield;
+  background-color: white;
+  -webkit-rtl-ordering: logical;
+  cursor: text;
+  margin: 0em;
+  font: 400 13.3333px Arial;
+  padding: 1px 0px;
+  border-width: 2px;
+  border-style: inset;
+  border-color: initial;
+  border-image: initial; */
+
+   -webkit-writing-mode: horizontal-tb !important;
+  text-rendering: auto;
+  color: steelblue;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  text-indent: 0px;
+  text-shadow: none;
+  display: inline-block;
+  text-align: start;
+  -webkit-appearance: textfield;
+  background-color: transparent;
+  -webkit-rtl-ordering: logical;
+  cursor: text;
+  margin: 0em;
+  font: 400 13.3333px Arial;
+  padding: 1px 0px;
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: transparent;
+  border-image: none;
+
+  font-family: "Courier New";
+  outline: none;
+/* outline: black dashed 1px; */
+  
+}
+#input:hover, #input:focus {
+  background-color: white;
+
+/*   border-width: 0.5px;
+  border-style: solid;
+  border-color: transparent; */
+}
+
+</style>
+<!-- size="1"   -->
+<input part="input-field" id="input" type="text" placeholder="value" />
+</template>

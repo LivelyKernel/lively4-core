@@ -1,0 +1,28 @@
+<template id="ast-node-block-statement" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+  :host {
+    display: flex;
+  }
+  #indention-container {
+    display: grid;
+    border-left: solid 1px goldenrod;
+    border-right: solid 1px goldenrod;
+  }
+  #indention {
+    align-self: center;
+    font-weight: bold;
+  }
+</style>
+  <div id="indention-container">
+    <span id="indention" part="notation">{</span>
+  </div>
+  <div>
+	  <slot name="body"></slot>
+    
+  </div>
+</template>
+
+

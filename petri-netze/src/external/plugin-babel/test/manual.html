@@ -1,0 +1,12 @@
+<!doctype html>
+  <script src="../node_modules/systemjs/dist/system.src.js"></script>
+  <script>
+    System.config({
+      map: {
+        'plugin-babel': '../plugin-babel.js',
+        'systemjs-babel-build': '../systemjs-babel-browser.js'
+      },
+      transpiler: 'plugin-babel'
+    });
+    System.import('./testing-code.js').then(m => m.p()).then(console.log.bind(console));
+  </script>

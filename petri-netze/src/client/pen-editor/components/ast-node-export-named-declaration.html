@@ -1,0 +1,28 @@
+<template id="ast-node-export-named-declaration" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+#export, #from, #right {
+  align-self: center;
+}
+  :host(.no-source) #from {
+    display: none;
+  }
+</style>
+  <span id="export" part="keyword">export</span>
+  <slot name="declaration"></slot>
+  <slot name="specifiers"></slot>
+  <span id="from" part="keyword">from</span>
+  <slot id="source" name="source"></slot>
+</template>
+
+

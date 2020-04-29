@@ -1,0 +1,55 @@
+<template id="lively-mle-function-executor">
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  <style data-src="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css"></style>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+  </style>
+  <article class="media box">
+    <div class="media-content">
+      <div class="field is-horizontal">
+        <div class="field-body">
+          <div class="field">
+            <p class="control is-expanded">
+              <span class="select is-fullwidth">
+                <select id="function">
+                </select>
+              </span>
+            </p>
+          </div>
+          <div class="field has-addons">
+            <p class="control">
+              <button type="text" class="button is-static" tabindex="-1">Expected</button>
+            </p>
+            <p class="control">
+              <input type="text" class="input" id="expected">
+            </p>
+          </div>
+          <div class="field has-addons">
+            <p class="control">
+              <button type="text" class="button is-static" id="indicator" tabindex="-1">Result</button>
+            </p>
+            <p class="control">
+              <input type="text" readonly class="input" id="result" tabindex="-1">
+            </p>
+          </div>
+        </div>
+      </div>
+      <div id="params">
+      </div>
+    </div>
+    <div class="media-right">
+      <div class="field is-pulled-right">
+        <p class="control">
+          <button class="delete" id="deleteButton" />
+        </p>
+      </div>
+      <div class="field">
+        <p class="control">
+          <button id="testButton" class="button is-primary">Test</button>
+        </p>
+      </div>
+    </div>
+  </article>
+</template>

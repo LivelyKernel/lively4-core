@@ -1,0 +1,134 @@
+/*
+ * #TODO hook css auto loading into lively-container
+ lively.loadCSSThroughDOM("LivelyCSS", "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css")
+ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  text-align: left!;
+  /* Needed for PDF selection */
+  user-select: auto;
+}
+
+
+.lively-file  {
+  user-select: none;
+} 
+
+
+lively-menu, lively-navbar  {
+  user-select: none;
+} 
+
+
+/* 
+body {
+  user-select: none; 
+}
+
+lively-container > * {
+  user-select: text;  
+}
+
+lively-pdf, lively-markdown {
+  user-select: text;  
+}
+
+lively-halo  {
+  user-select: none;
+} 
+
+div.lively-content  {
+  user-select: text;
+} 
+ */
+h1, h2, h3, h4 {
+  color: rgb(0, 78, 151);
+}
+
+/*
+::-webkit-scrollbar { 
+  display: none; 
+}
+*/
+
+lively-table table, lively-table tr, lively-table  th, lively-table  td {
+  border: 1px solid gray;
+  border-collapse: collapse;
+}
+ 
+lively-table td {
+  white-space: nowrap;
+}
+
+lively-table td.number {
+  text-align: right;
+}
+
+ 
+lively-table.active .table-selected {
+  margin: -1px;
+  border-collapse: collapse;
+  background-color: rgba(190,190,190,0.3);
+  border: 1px solid gray;
+  
+}
+
+lively-table.active .start-selection {
+  margin: -2px;
+  border: 2px solid blue;
+  border-collapse: collapse;
+  background-color: rgba(100,100,200,0.1);
+}
+
+lively-table .editing {
+  background-color: white;
+  border: 2px solid red;
+}
+
+lively-container img {
+  max-width: 800px;
+}
+
+
+.lively-preferences {
+  display: none;
+}
+
+.lively-text:empty:before {
+  content: "<insert text here>";
+  color: lightgray;
+  border: none;
+}
+
+
+.lively-text:empty {
+  border: 1px solid lightgray;
+  content: "haha";
+}
+
+.lively-text {
+  background-color: none;
+}
+
+.CodeMirror-Tern-tooltip {
+/*   position: fixed;
+  top: 0px !important;
+  left: 0px !important;
+  background-color: lightgray;
+  font-size: 14px; */
+  z-index: 100000 !important;  
+}
+
+.CodeMirror-lint-tooltip {
+  z-index: 100000 !important; 
+}
+
+.task-list-item {
+  list-style-type: none;
+}
+
+
+

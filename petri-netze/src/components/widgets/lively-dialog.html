@@ -1,0 +1,59 @@
+<template id="lively-dialog" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style>
+    :host {
+        position: fixed;
+        z-index: 500;
+        background-color:  rgba(230,230,230,0.8);
+        min-width: 200px;
+        min-height: 100px;
+        width: 600px;
+        border: solid 1px lightgray;
+        border-radius: 10px;
+      }
+      
+      #message {
+        flow: 1;
+        margin: 20px;
+      }
+      
+      #prompt {
+        flow: 1;
+        width: calc(100% - 40px);
+        margin: 20px;
+      }
+      
+      #buttons {
+        width: 100%
+        padding: 10px;
+        margin: 5px;
+        float: right;
+      }
+      
+      #buttons button {
+        margin: 10px;
+      }
+    
+      #container {
+        display: flow;
+      }
+    
+      #close {
+        background:none;
+        border: none;
+        float: right;
+        vertical-align: top;
+        color: gray;
+        font-size: 20px;
+      }
+  </style>
+  <button id="close"><i class="fa fa-close" aria-hidden="true"></i></button>
+  <div id="container">
+    <div id="message">Dialog</div>
+    <input id="prompt"></input>
+    <div id="buttons">
+      <button id="ok">OK</button>
+      <button id="cancel">Cancel</button>
+    </div>
+  </div>
+</template>

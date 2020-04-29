@@ -1,0 +1,20 @@
+---
+git:
+  depth: 1
+sudo: false
+cache:
+  directories:
+  - node_modules
+  - build-babel/node_modules
+  - build-babel/jspm_packages
+language: node_js
+matrix:
+  include:
+    #
+    - node_js: '4'
+    - node_js: '5'
+    - node_js: '6'
+before_script:
+  - "npm i jspm@beta --prefix build-babel" # Force install in build-babel/node_modules
+  - "cd build-babel && ./node_modules/.bin/jspm install && cd .."
+  - "npm run build"

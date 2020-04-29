@@ -1,0 +1,44 @@
+<template id="ast-node-switch-statement" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style>
+:host(*) {
+  display: flex;
+  flex-direction: column;
+
+  margin: 1px;
+  padding: 1px;
+  border: 1px solid goldenrod;
+  background-color: #eeeeee;
+}
+  #header {
+    display: flex;
+  }
+  #body {
+    display: flex;
+  }
+  #cases-container {
+    display: flex;
+    flex-direction: column;
+  }
+  #switch {
+    margin-right: 3px;
+  }
+#switch, #discriminant, #bracket {
+  align-self: center;
+}
+</style>
+  <div id="header">
+    <span id="switch" part="keyword">switch</span>
+    <slot name="discriminant"></slot>
+  </div>
+  <div id="body">
+    <span id="bracket" part="notation">{</span>
+    <div id="cases-container">
+      <slot name="cases"></slot>
+    </div>
+  </div>
+</template>
+
+

@@ -1,0 +1,219 @@
+<template id="lively-cloudscripting-item">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style>
+    .item {
+      padding: 4px;
+      display: flex;
+/*       cursor: pointer; */
+    }
+    
+    .item:hover {
+      background-color: #eee;
+    }
+    
+    .selected {
+      background-color: #2B65EC;
+      color: #fff;
+    }
+    
+    .selected:hover {
+      color: #000;
+    }
+    
+    .item h4 {
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .item small {
+      font-size: 12px;
+      font-style: italic;
+    }
+    
+    .status {
+      font-size: 30px;
+      margin-right: 8px;
+    }
+    
+    .running {
+      color: green;
+    }
+    
+    .errored {
+      color: red;
+    }
+    
+    .warning {
+      color: #edde3f;
+    }
+    
+    .not-running {
+      color: gray;
+    }
+    
+    .add-action {
+      cursor: pointer;
+      text-align: center;
+      height: 100%;
+    }
+    
+    .delete-action {
+      cursor: pointer;
+    }
+    
+    .clouditem-right {
+      width: 100%;
+    }
+    
+    .watcher-wrapper {
+      border: 1px solid #aaa;
+      padding: 2px;
+      background-color: #997987;
+    }
+    
+    .action-list {
+/*       list-style: none; */
+      padding-left: 0;
+      margin: 2px 0 0 5px;
+      border: 1px solid #aaa;
+      background-color: #879979;
+    }
+    
+    .delete-action {
+      cursor: pointer;
+    }
+    
+    button {
+      font-size: 75%;
+      margin-left: 1em;
+    }
+    
+    h6 {
+      position: relative;
+/*       font-size: 30px; */
+      z-index: 1;
+      overflow: hidden;
+      text-align: center;
+      margin: 0;
+    }
+    h6:before, h1:after {
+      position: absolute;
+      top: 51%;
+      overflow: hidden;
+      width: 50%;
+      height: 1px;
+      content: '\a0';
+      background-color: black;
+    }
+    h6:before {
+      margin-left: -50%;
+      text-align: right;
+    }
+    .show{
+      height:auto;
+      transition: all 2s ease-in-out;
+    }
+    .config-table{
+      width:100%;
+    }
+    .valueEntry{
+      width:50%;
+    }
+    .keyEntry{
+      width:50%;
+    }
+    .valueInput{
+      width:100%;
+    }
+    #modify-configuration{
+      display:inline-block;
+      width:110px;
+      font-size:80%;
+      color:lightgrey;
+      border:solid 1px lightgrey;
+      cursor:pointer;
+    }
+    #modify-configuration:hover{
+      opacity:.5;
+    }
+    .chevron{
+      float:right;
+      padding-right:5px;
+      padding-top:2px;
+    }
+    .chevron-cross:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .add-config{
+      width:90%;
+      border-top:1px solid lightgrey;
+      margin:0 auto;
+      margin-top:5px;
+      padding-top:3px;
+      text-align:center;
+    }
+    .add-config:hover{
+      opacity:.5;
+      cursor:pointer;
+    }
+    .hide{
+      display:none;
+    }
+    .newConfInput{
+      width:100%;
+    }
+    .deleteWatcher{
+      margin-left:5px;
+    }
+    .deleteWatcher:hover{
+      cursor:pointer;
+      opacity:.5;
+    }
+    .Itemname{
+      display:inline-block;
+    }
+    .editTemplate{
+      float:right;
+      cursor:pointer;
+    }
+    .editTemplate:hover{
+      opacity:.7;
+    }
+  </style>
+
+<div class="item show">
+  
+  <div class="status">&#9679;</div>
+  
+  <div class="clouditem-right">
+    <div class="watcher-wrapper">
+      <h6>
+        Watcher
+      </h6>
+      <h4 class="Itemname">Itemname</h4><i class=" deleteWatcher fa fa-times"></i>
+      <i class=" editTemplate fa fa-edit"></i>
+      <br/>
+      <div id="modify-configuration">
+        Modify config 
+        <i class=" chevron fa fa-chevron-down" aria-hidden="true"></i>
+      </div>
+      <table class="config-table">
+        
+      </table>
+      <div class="add-config hide">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="action-list">
+      <h6>
+        Actions
+      </h6>
+    </div>
+    <div class="add-action">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </div>  
+  </div>
+</div>
+
+</template>

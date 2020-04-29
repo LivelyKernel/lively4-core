@@ -1,0 +1,196 @@
+<template id="lively-plugin-explorer" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: flex;
+    }
+    
+    .layout-column {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .layout-row {
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    .pane {
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .pane.tool {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+    }
+    
+    #content {
+      margin: 1px;
+    }
+    
+    #workspace-path {
+      border: 1px solid #d5d5d5;
+      border-radius: 2px;
+    }
+    
+    input {
+      min-width: 40px; /* reduce minimum size */
+      flex: auto;
+      margin: 2px;
+    }
+    
+    #main {
+      flex: 4;
+    }
+    #bottom {
+      flex: 1;
+    }
+    
+    #tracePane {
+      flex: 3;
+    }
+    #consolePane {
+      flex: 1;
+    }
+    
+    #sourceAndAst {
+      flex: 5;
+    }
+    #transformedPane {
+      flex: 2;
+    }
+
+    #pluginPane {
+      flex: 4;
+    }
+    #toolPane {
+      flex: 5;
+    }
+
+    #source, #sourceAst, #transformedSource, #plugin, #executionConsole {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .toolbar {
+      display: flex;
+      flex-direction: row;
+      justify-content: stretch;
+      overflow: hidden;
+      flex: none;
+      height: fit-content;
+      width: 100%;
+    }
+
+    #executionConsole {
+      margin-left: 15px;
+    }
+    
+    button {
+      height: 25px;
+    }
+    
+    button.toggle {
+      color: black;
+    }
+
+    button.toggle.on {
+      color: white;
+      background: steelblue;
+    }
+    
+  </style>
+  
+  <div id="content" class="pane layout-column">
+    <div id="workspaceToolbar" class="toolbar">
+      <input type="text" id="workspace-path" value="">
+      <button class="toggle" id="saveWorkspace" title="Save Workspace to file (right-click to toggle auto-mode).">
+        <i class="fa fa-floppy-o"></i>
+      </button>
+      <button class="toggle" id="updateAST" title="Update AST (right-click to toggle auto-mode).">
+        <i class="fa fa-refresh fa-fw"></i>
+      </button>
+      <button class="toggle" id="updateTransformation" title="Update transformation (right-click to toggle auto-mode).">
+        <i class="fa fa-refresh fa-fw"></i>
+      </button>
+      <button class="toggle" id="execute" title="Execute transformed code (right-click to toggle auto-mode).">
+        <i class="fa fa-cog fa-fw"></i>
+      </button>
+      <button class="toggle" id="runTests" title="Run tests in all opened test runners (right-click to toggle auto-mode).">
+        <i class="fa fa-shield"></i>
+      </button>
+      <button class="toggle" id="toggleSystemJS" title="Toggle: SystemJS.">
+        <i class="fa fa-cloud"></i>
+      </button>
+    </div>
+
+    <div id="main" class="pane layout-row">
+      <div id="pluginPane" class="pane tool layout-column">
+        <b>Plugin</b>
+        <lively-editor class="pane" id="plugin"></lively-editor>
+      </div>
+
+      <lively-separator reverse=true></lively-separator>
+
+      <div id="toolPane" class="pane layout-column">
+        <div id="sourceAndAst" class="pane layout-row">
+          <div class="pane tool layout-column">
+            <div class="toolbar" id="sourceToolBar">
+              <button class="toggle" id="sourceMenu" title="Open source selection menu.">
+                <i class="fa fa-bars"></i>
+              </button>
+              <input type="text" id="sourcePath" value="">
+              <button class="toggle" id="saveSourceToWorkspace" title="Save source to workspace (right-click to toggle auto-mode).">
+                <i class="fa fa-archive"></i>
+              </button>
+              <button class="toggle" id="saveSourceToDisk" title="Save source to specified path (also: Ctrl+s).">
+                <i class="fa fa-floppy-o"></i>
+              </button>
+            </div>
+            <lively-code-mirror class="pane" id="source"></lively-code-mirror>
+          </div>
+          <lively-separator reverse=true></lively-separator>
+
+          <div class="pane layout-column">
+            <div class="pane tool layout-column">
+              <b>Source AST</b>
+              <lively-ast-inspector class="pane" id="sourceAst"></lively-ast-inspector>
+            </div>
+            <lively-separator reverse=true></lively-separator>
+            <div class="pane tool layout-column">
+              <b>Transformed AST</b>
+              <lively-ast-inspector class="pane" id="transformedAst"></lively-ast-inspector>
+            </div>
+          </div>
+        </div>
+        <lively-separator></lively-separator>
+        <div id="transformedPane" class="pane tool layout-column">
+          <b>Transformed Source</b>
+          <lively-code-mirror class="pane" id="transformedSource"></lively-code-mirror>
+        </div>
+
+      </div>
+    </div>
+
+    <lively-separator reverse=true></lively-separator>
+    
+    <div id="bottom" class="pane layout-row">
+      <div id="tracePane" class="pane tool layout-column">
+        <b>Transformation Trace</b>
+        <div class="pane"></div>
+      </div>
+      <lively-separator reverse=true></lively-separator>
+      <div id="console" class="pane tool layout-column">
+        <b>Execution Console</b>
+        <div class="pane">
+          <pre id="executionConsole"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</template>

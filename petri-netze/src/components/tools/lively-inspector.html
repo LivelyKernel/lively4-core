@@ -1,0 +1,73 @@
+<template id="lively-inspector" >
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+  :host {
+    white-space: normal;  
+  }
+  
+    #top {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    #container {
+      flex: 0.66;
+      margin: 0px;
+      overflow: auto;
+/*       overscroll-behavior: contain; */
+    }
+    #editor {
+      flex: 0.33;
+    }
+    
+    #more:hover {
+      background: lightgray;
+    }
+
+    #tagname:hover {
+      background: lightgray;
+    }
+
+    div.element {
+      margin-left: 20px;
+      font-family: Monaco, monospace;
+      font-size: 9pt;
+    }
+
+    div.selected {
+      background: rgb(240,240,240);
+    }
+
+
+    div.tag > .tagname{
+      color: purple ;
+    }
+
+    div.comment {
+      color: green ;
+    }
+    
+    span {
+/*       border-top: 1px solid red; */
+    }
+    span.attrName {
+      color: brown ;
+    }
+    span.attrValue {
+      color: blue ;
+    }
+    span.syntax {
+      color: gray ;
+    }
+  </style>
+  <div id="top">
+    <div id="container">
+    </div>
+    <lively-separator></lively-separator>
+    <lively-code-mirror id="editor"></lively-code-mirror>
+  </div>
+</template>
+
+

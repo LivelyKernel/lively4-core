@@ -1,0 +1,80 @@
+<template id="lively-treeview">
+	<style>
+	:host {
+		box-sizing: border-box;
+		border: 1px solid #999999;
+	}
+	:host * {
+		box-sizing: border-box;
+	}
+	
+	::slotted(ul)  {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		width: 100%;
+		font-size: inherit;
+	}
+    
+  /*
+    #Issue selecting with ::slotted does not apply to the inside....
+    https://github.com/w3c/webcomponents/issues/594
+    
+    "That is by design. See #331 for details.
+    We don't have a plan to support an arbitrary selector for ::slotted.
+    Note that we supported an arbitrary selector in ::content (in Shadow DOM v0) in Blink, as you are suggesting, however, we had experienced that it would make the implementation complicated and would be the root cause of a performance issue. Thus, we introduced this limitation to ::slotted intentionally."
+    */
+    /* #TODO get this to work without CSS here... */
+/* 	::slotted(*)  li {
+    border: 2px solid red;
+		position: relative;
+		font-size: inherit;
+		padding: 2px 0px 2px 8px;
+		vertical-align: middle;
+		line-height: 1rem;
+		color: #333;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	::slotted(*) li.node {
+
+		padding-left: 12px;
+	}
+	::slotted(*) .node.collapsed > ul {
+		display: none;
+	}
+	::slotted(*) .leaf {
+		cursor: pointer;
+	}
+	::slotted(*) .node .leaf {
+		position: relative;
+	}
+	::slotted(*) .node > .leaf {
+		font-weight: bold;
+	}
+	::slotted(*) .node > .leaf::before {
+		position: absolute;
+		slot(*): '\25b8';
+		transform: rotate(90deg);
+		left: -7px;
+		transition: transform 200ms;
+	}
+	::slotted(*) .node.collapsed > .leaf::before {
+		transform: rotate(0deg);
+	}
+	
+	::slotted(*) .active {
+		font-weight: bold;
+		color: #000;
+	}
+	::slotted(*) .active {
+		font-weight: bold;
+		background: gray;
+		color: rgb(240,240,240);
+	} */
+	</style>
+
+	<slot></slot>
+</template>
+

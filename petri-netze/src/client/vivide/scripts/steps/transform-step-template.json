@@ -1,0 +1,8 @@
+{
+    "script": "[async function* transform(input) {\n  for await (let item of input) {\n    yield item;\n  }\n}, {\n  \n}]",
+    "cursor": {
+      "anchor": { "line": 2, "ch": 14},
+      "head": { "line": 2, "ch": 14}
+    },
+    "type": "transform"
+}
