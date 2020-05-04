@@ -19,7 +19,7 @@ export default class PluginExplorer extends Morph {
 
   get sourceLCM() { return this.get("#source"); }
   get sourceCM() { return this.sourceLCM.editor; }
-  get source() { return this.sourceCM.getValue(); }
+  get sourceText() { return this.sourceCM.getValue(); }
 
   get sourceAstInspector() { return this.get("#sourceAst"); }
   
@@ -43,69 +43,127 @@ export default class PluginExplorer extends Morph {
   
   get pluginURL() { return this.pluginEditor.getURLString(); }
 
-  get workspacePath() { return this.get("#workspace-path"); }
-  get workspaceURL() { return this.workspacePath.value; }
-  set workspaceURL(urlString) { this.workspacePath.value = urlString; }
-  onWorkspacePathEntered(urlString) { this.loadWorkspaceFile(urlString); }
+  get workspacePathInput() { return this.get("#workspace-path"); }
+  get workspaceURL() { return this.workspacePathInput.value; }
+  set workspaceURL(urlString) { this.workspacePathInput.value = urlString; }
+  onWorkspacePathInputEntered(urlString) { this.loadWorkspaceFile(urlString); }
   
-  get saveButton() { return this.get("#save"); }
-  get autoSave() { return false; }
-  set autoSave(bool) {
-    this.saveButton.classList.toggle("on", bool);
-    this.workspace.autoSave = bool;
+  /*MD ## Workspace Options MD*/
+
+  get saveWorkspaceButton() { return this.get("#saveWorkspace"); }
+  get autoSaveWorkspace() { return false; } //TODO
+  set autoSaveWorkspace(bool) {
+    this.saveWorkspaceButton.classList.toggle("on", bool);
   }
-  onSave(evt) {
-    if (evt.button === 2) this.autoSave = !this.autoSave;
-    this.save();
+  onSaveWorkspace(evt) {
+    if (evt.button === 2) {
+      this.toggleOption("autoSaveWorkspace");
+    } else {
+      this.saveWorkspace();
+    }
   }
 
-  get updateButton() { return this.get("#update"); }
-  get autoUpdate() { return this.workspace.autoUpdate; }
-  set autoUpdate(bool) {
-    this.updateButton.classList.toggle("on", bool);
-    this.updateButton.querySelector("i").classList.toggle("fa-spin", bool);
-    this.workspace.autoUpdate = bool;
+  get updateASTButton() { return this.get("#updateAST"); }
+  get autoUpdateAST() { return this.getOption("autoUpdateAST"); }
+  set autoUpdateAST(bool) {
+    this.updateASTButton.classList.toggle("on", bool);
+    this.updateASTButton.querySelector("i").classList.toggle("fa-spin", bool);
   }
-  onUpdate(evt) {
-    if (evt.button === 2) this.autoUpdate = !this.autoUpdate;
-    this.updateAST();
+  onUpdateAST(evt) {
+    if (evt.button === 2) {
+      this.toggleOption("autoUpdateAST");
+    } else {
+      this.updateAST();
+    }
   }
 
-  get runsTestsButton() { return this.get("#toggleRunsTests"); }
-  get runsTests() { return this.workspace.runsTests; }
-  set runsTests(bool) {
-    this.runsTestsButton.classList.toggle("on", bool);
-    this.workspace.runsTests = bool;
+  get updateTransformationButton() { return this.get("#updateTransformation"); }
+  get autoUpdateTransformation() { return this.getOption("autoUpdateTransformation"); }
+  set autoUpdateTransformation(bool) {
+    this.updateTransformationButton.classList.toggle("on", bool);
+    this.updateTransformationButton.querySelector("i").classList.toggle("fa-spin", bool);
   }
-  onToggleRunsTests() { this.runsTests = !this.runsTests; }
+  onUpdateTransformation(evt) {
+    if (evt.button === 2) {
+      this.toggleOption("autoUpdateTransformation");
+    } else {
+      this.updateTransformation();
+    }
+  }
+
+  get runTestsButton() { return this.get("#runTests"); }
+  get autoRunTests() { return this.getOption("autoRunTests"); }
+  set autoRunTests(bool) {
+    this.runTestsButton.classList.toggle("on", bool);
+  }
+  onRunTests(evt) {
+    if (evt.button === 2) {
+      this.toggleOption("autoRunTests");
+    } else {
+      this.runTests();
+    }
+  }
 
   get executeButton() { return this.get("#execute"); }
-  get autoExecute() { return this.workspace.autoExecute; }
+  get autoExecute() { return this.getOption("autoExecute"); }
   set autoExecute(bool) {
     this.executeButton.querySelector("i").classList.toggle("fa-spin", bool);
     this.executeButton.classList.toggle("on", bool);
-    this.workspace.autoExecute = bool;
   }
   onExecute(evt) {
-    if (evt.button === 2) this.autoExecute = !this.autoExecute;
-    this.execute();
+    if (evt.button === 2) {
+      this.toggleOption("autoExecute");
+    } else {
+      this.execute();
+    }
   }
   
   get systemJSButton() { return this.get("#toggleSystemJS"); }
-  get systemJS() { return this.workspace.systemJS; }
+  get systemJS() { return this.getOption("systemJS"); }
   set systemJS(bool) {
     this.systemJSButton.classList.toggle("on", bool);
-    this.workspace.systemJS = bool;
   }
-  onToggleSystemJS() { this.systemJS = !this.systemJS; }
+  onToggleSystemJS() { this.toggleOption("systemJS"); }
   
-  get options() {
+  /*MD ## Options MD*/
+
+  setOption(option, value) {
+    this.workspace.options[option] = value;
+    this[option] = value;
+  }
+
+  getOption(option) {
+    if (option in this.workspace.options) {
+      return this.workspace.options[option];
+    } else {
+      return this.optionDefaults[option];
+    }
+  }
+
+  toggleOption(option) {
+    this.setOption(option, !this.getOption(option));
+  }
+
+  loadOptions(options) {
+    for (const [option, value] of Object.entries(options)) {
+      this.setOption(option, value);
+    }
+  }
+
+  initOptions() {
+    for (const [option, value] of Object.entries(this.optionDefaults)) {
+      this[option] = value;
+    }
+  }
+
+  get optionDefaults() {
     return {
       "systemJS": false,
       "autoExecute": true,
-      "runsTests": false,
-      "autoUpdate": true,
-      "autoSave": true, 
+      "autoRunTests": false,
+      "autoUpdateAST": true,
+      "autoUpdateTransformation": true,
+      "autoSaveWorkspace": true, 
     }
   }
 
@@ -123,7 +181,11 @@ export default class PluginExplorer extends Morph {
     this.windowTitle = "Plugin Explorer";
     this.registerButtons();
 
-    this.workspace = {};
+    this.workspace = {
+      options: {}
+    };
+
+    this.initOptions();
 
     this.getAllSubmorphs("button").forEach(button => {
       button.addEventListener('contextmenu', e => {
@@ -160,12 +222,12 @@ export default class PluginExplorer extends Morph {
         this.updateAST();
       };
       enableSyntaxCheckForEditor(this.sourceLCM);
-      this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdateAST()});
+      this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdateAST) this.debouncedUpdateAST()});
       this.sourceCM.on("beforeSelectionChange", evt => this.onSourceSelectionChanged(evt));
     });
 
-    this.workspacePath.addEventListener("keyup", evt => {
-      if (evt.code == "Enter") this.onWorkspacePathEntered(this.workspacePath.value);
+    this.workspacePathInput.addEventListener("keyup", evt => {
+      if (evt.code == "Enter") this.onWorkspacePathInputEntered(this.workspacePathInput.value);
     });
 
     await Promise.all([
@@ -177,56 +239,70 @@ export default class PluginExplorer extends Morph {
     this.dispatchEvent(new CustomEvent("initialize"));
   }
 
-  async loadWorkspaceFile(urlString) {
+  async loadFile(urlString) {
     try {
       const url = new URL(this.fullUrl(urlString));
       const response = await fetch(url);
-      const text = await response.text();
-      const ws = BabelWorkspace.deserialize(text);
-      this.workspacePath.value = urlString;
+      return response.text();
+    } catch (e) {
+      lively.error(`Failed to load file '${url}'`);
+      return null;
+    }
+  }
+
+  async saveFile(urlString, contents) {
+    try {
+      const url = new URL(this.fullUrl(urlString));
+      await fetch(url, {
+        method: 'PUT', 
+        body: contents,
+      });
+    } catch (e) {
+      lively.error(`Failed to save file '${url}'`);
+    }
+  }
+
+  async loadWorkspaceFile(urlString) {
+    try {
+      const text = await this.loadFile(urlString);
+      const ws = JSON.parse(text);
+      this.workspacePathInput.value = urlString;
       this.loadWorkspace(ws);
     } catch (e) {
-      lively.error(`[Plugin Explorer] Failed to load workspace.`, urlString);
+      lively.error(`Failed to load workspace '${urlString}'`);
     }
   }
 
   async loadWorkspace(ws) {
-    console.log(ws);
     this.workspace = ws;
+    this.loadOptions(ws.options);
     this.pluginEditor.setURL(new URL(this.fullUrl(ws.plugin)));
     this.pluginEditor.loadFile();
     //TODO
     this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
-    this.setOptions(ws);
-  }
-  
-  async setOptions(ws) {
-    for (const [option, defaultValue] of Object.entries(this.options)) {
-      console.log(option, defaultValue);
-      this[option] = option in ws ? ws[option] : defaultValue;
-    }
   }
 
   async saveWorkspaceFile(urlString) {
     try {
-      const url = new URL(this.fullUrl(urlString));
-      const text = BabelWorkspace.serialize(this.workspace);
-      await fetch(url, {
-        method: 'PUT', 
-        body: text,
-      });
+      const text = JSON.stringify(this.workspace);
+      this.saveFile(urlString, text);
     } catch (e) {
-      lively.error('[Plugin Explorer] Failed to save workspace.', urlString);
+      lively.error(`Failed to save workspace '${urlString}'`);
     }
+  }
+
+  async saveWorkspace() {
+    this.pluginEditor.saveFile();
+    this.saveWorkspaceFile(this.workspaceURL);
   }
 
   /*MD ## Execution MD*/
 
   async updateAST() {
     try {
-      this.ast = this.source.toAST();
+      this.ast = this.sourceText.toAST();
       this.sourceAstInspector.inspect(this.ast);
-      this.updateTransformation();
+      if (this.autoUpdateTransformation) this.updateTransformation();
     } catch (e) {
       this.ast = null;
       this.sourceAstInspector.inspect({Error: e.message});
@@ -255,7 +331,7 @@ export default class PluginExplorer extends Morph {
         config.filename = filename
         config.sourceFileName = filename
         config.moduleIds = false
-        this.transformationResult = babel.transform(this.source, config);
+        this.transformationResult = babel.transform(this.sourceText, config);
       } else {
         this.transformationResult = this.ast.transformAsAST(plugin);
       }
@@ -263,7 +339,7 @@ export default class PluginExplorer extends Morph {
       this.transformedSourceLCM.value = this.transformationResult.code;
       
       if (this.autoExecute) this.execute();
-      if (this.runsTests) executeAllTestRunners();
+      if (this.autoRunTests) runTests();
     } catch(err) {
       console.error(err);
       this.transformedSourceLCM.value = "Error: " + err.message;
@@ -312,9 +388,8 @@ export default class PluginExplorer extends Morph {
     }
   }
 
-  save() {
-    this.pluginEditor.saveFile();
-    this.saveWorkspaceFile(this.workspaceURL);
+  runTests() {
+    executeAllTestRunners();
   }
 
   /*MD ## Mapping Sources MD*/
@@ -395,18 +470,79 @@ export default class PluginExplorer extends Morph {
 }
 
 class Source {
-  /*
-  - contents
-  - file
-  */
+  get name() {
+    return this._name;
+  }
+
+  set name(str) {
+    return this._name = str;
+  }
+}
+
+class LocalSource extends Source {
+  constructor() {
+    super();
+  }
+
+  async getContent() {
+    return this.content || "";
+  }
+
+  async setContent(str) {
+    this.content = str;
+  }
+}
+
+class FileSource extends Source {
+  constructor() {
+    super();
+  }
+
+  fullUrl() {
+    const normalizedPath = lively.paths.normalizePath(this.url, "");
+    return new URL(normalizedPath);
+  }
+
+  async getContent() {
+    try {
+      const url = this.fullUrl();
+      const response = await fetch(url);
+      return response.text();
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  async setContent(text) {
+    try {
+      const url = this.fullUrl();
+      const response = await fetch(url, {
+        method: 'PUT', 
+        body: text,
+      });
+      return response.ok;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  get name() {
+    return this._name || this.url;
+  }
 }
 
 class BabelWorkspace {
   static deserialize(json) {
-    return JSON.parse(json);
-    // return JSON.parse(json, ([key, value]) => {
-      
-    // });
+    return JSON.parse(json, ([key, value]) => {
+      if (value.type === "local") {
+        return Object.assign(new LocalSource(), value);
+      } else if (value.type === "file") {
+        return Object.assign(new FileSource(), value);
+      }
+      return value;
+    });
   }
 
   static serialize(ws) {

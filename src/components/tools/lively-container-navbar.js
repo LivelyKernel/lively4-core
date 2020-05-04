@@ -664,10 +664,9 @@ export default class LivelyContainerNavbar extends Morph {
     const menuElements = []
     
     var selection =  this.getSelection()
-    if (selection.length == 1) {
+    if (selection.length < 2) {
       selection = [otherUrl] // user means probably the thing pointed to
     }
-    
     
     if (selection.length > 0) {
       menuElements.push(...[

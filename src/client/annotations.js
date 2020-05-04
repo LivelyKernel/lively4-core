@@ -1,6 +1,7 @@
 import _ from 'src/external/lodash/lodash.js'
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
+import Github from "src/client/github.js"
 
 import { uuid as genUUID } from 'utils';
 
@@ -212,7 +213,6 @@ MD*/
     return result
   }
 
-
   diff(otherAnnotationSet) {
     var result = this.compare(otherAnnotationSet)
     
@@ -311,7 +311,7 @@ MD*/
 
   toJSONL() {
     var config = []
-    if (this.textVersion) {
+    if (this.textVersion ||  this.textContent) {
       config.push({type: "Reference", version: this.textVersion, content: this.textContent})
     }
     return config.concat(this.list).map(ea => JSON.stringify(ea)).join("\n");    
@@ -385,6 +385,19 @@ MD*/
   static fromJSON(json) {
     return new AnnotationSet(JSON.parse(json));
   }
+
+  static async fromURL(url, version) {
+    var source = await lively.files.loadFile(url, version)
+    return this.fromJSON(JSON.parse(source))
+  }
+
+ 
+  livelyInspect(contentNode, inspector) {
+    if (this.list) contentNode.appendChild(inspector.display(this.list, false, "list", this));
+    if (this.textVersion) contentNode.appendChild(inspector.display(this.textVersion, false, "textVersion", this));
+    if (this.textContent) contentNode.appendChild(inspector.display(this.textContent, false, "textContent", this));
+  
+  }
 }
 
 
@@ -409,35 +422,28 @@ export class AnnotatedText {
     }
     
   }
-  
-  static async fromURL(fileURL, annotationsURL) {
-    var annotationsResp = await fetch(annotationsURL)
+    
+  static async fromURL(fileURL, annotationsURL, annotationsVersion) {
+    var annotationsResp = await lively.files.loadFileResponse(annotationsURL, annotationsVersion)
     var annotations = AnnotationSet.fromJSONL((await annotationsResp.text()))
     annotations.fileURL = fileURL
     annotations.annotationsURL = annotationsURL
     annotations.lastVersion = annotationsResp.headers.get("fileversion")
-    
+    debugger
     // hopefully we have the full text content... 
     if (annotations.textContent) {
       var text = annotations.textContent         
-    } else {
-      
+    } else {      
       // if not, we can try to get it...
-      var headers = {}
-      if (annotations.textVersion) {
-          headers.fileversion = annotations.textVersion
-      }
-
-      var textResp = await fetch(fileURL, {
-        method: "GET",  
-        headers: headers})
-      
+      var textResp = await lively.files.loadFileResponse(fileURL, annotations.textVersion || annotationsVersion)
       if (textResp.status !== 200) {
         throw new Error("[annotations] could not load reference text for annotations")
       }
       text = await textResp.text()
+      debugger
+      annotations.textVersion = textResp.headers.get("fileversion")
+      annotations.textContent = text
     }
-    
     var annotatedText = new AnnotatedText(text, annotations)    
     return annotatedText 
   }  
@@ -514,5 +520,65 @@ export class AnnotatedText {
     return new AnnotatedText(this.text, this.annotations.clone())
   }
   
+  
+  // Example: AnnotationSet.getGitMergeBase("https://lively-kernel.org/lively4",  "lively4-dummyA", "HEAD", "fd956")
+  static async getGitMergeBase(serverURL, repositoryName, versionA, versionB) {
+    var github = Github.current()
+    var headers = new Headers({
+      "gitusername":          github.username,
+      "gitpassword":          github.token, 
+      "gitemail":             github.email,
+      "gitrepository":        repositoryName,
+      gitversiona: versionA,
+      gitversionb: versionB,
+    })
+
+    return fetch(serverURL + "/_git/mergebase", {
+      headers: headers
+    }).then(r => r.text())    
+  }
+
+  static async solveAnnotationConflict(textURL, annotationURL) {
+    var sourceWithConflict = await annotationURL.fetchText() 
+    
+    var serverURL = lively.files.serverURL(textURL)
+    var repositoryName = lively.files.repositoryName(textURL)
+    
+    
+    if (!serverURL || !repositoryName) throw new Error("Can only merge conflicts lively repository")
+    
+    var versions = _.uniq(sourceWithConflict.split("\n")
+      .filter(ea => ea.match(/^(<<<<<<<)|(>>>>>>>) /))
+      .map(ea => ea.replace(/^(<<<<<<<)|(>>>>>>>) /, "")))
+
+    if (versions.length == 0) return // nothing to do
+    
+    if (versions.length != 2) throw new Error("merge  != 2 not support yet")
+    var versionA= versions[0]
+    var versionB = versions[1]
+    
+        
+    // use git to find a common ancestor for merging:
+    //   lively4@livelygraph:~/lively4/lively4-dummyA$ git merge-base HEAD fd956
+    //   7d66773a9d35de3c95b0478b2fccf70c97c0061a
+
+
+    var versionBase = await this.getGitMergeBase(serverURL, repositoryName, versionA, versionB)
+    var a = await this.fromURL(textURL, annotationURL, versionA)
+    var b = await this.fromURL(textURL, annotationURL, versionB)
+    var base = await this.fromURL(textURL, annotationURL, versionBase)
+
+    // update the index positions of to fit text of a
+    b.setText(a.text)
+    base.setText(a.text) 
+    
+    var mergedAnnotations = a.annotations.merge(b.annotations, base.annotations) 
+    
+    
+    mergedAnnotations.textVersion = a.annotations.textVersion
+    mergedAnnotations.textContent = a.text
+
+    return new AnnotatedText(a.text, mergedAnnotations)
+  }
 }
 

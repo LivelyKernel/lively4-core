@@ -23,24 +23,16 @@ export default class LivelyBall extends Morph {
  
 
   render(t) {
-    if (!this.parentElement) return;
+    // console.log("A")
     var p = pt(20, lively.getExtent(this.parentElement).y - this.s - lively.getExtent(this).y)
     lively.setPosition(this, p)  
     p.x  = (this.lastTime - this.startTime) * 0.01    
     this.path.push(p)
-    
-    // var svg = lively.createPath(this.path, "blue", false)
-    // svg.id = "plot"
-    // var plot = this.parentElement.querySelector("#plot")
-    // if (plot) plot.remove()
-    // this.parentElement.appendChild(svg)
-      
-    // var log = this.parentElement.querySelector("#log")
-    // if (log) log.innerHTML = " s= " + Math.round(this.s) + "<br>" + " v= " + Math.round(this.v)
   }
   
   step() {
-    if (!this.parentElement) return;
+    if (!lively.isInBody(this)) return;
+    // console.log("B")
     var time = Date.now()
     if (this.lastTime) {
       var t = (time - this.lastTime) * 0.01

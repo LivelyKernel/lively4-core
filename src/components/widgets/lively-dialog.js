@@ -79,8 +79,8 @@ export default class Dialog extends Morph {
   }
 
   
-  static async confirm(msg) {
-    var dialog = await this.dialog()
+  static async confirm(msg, customizeCB) {
+    var dialog = await this.dialog(customizeCB)
     dialog.get("#prompt").style.display = "none"
     dialog.get("#ok").focus()
     return dialog.confirm(msg)  
