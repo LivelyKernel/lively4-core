@@ -19,6 +19,10 @@ export default class CodeTip extends Morph {
   }
 
   setupTipText() {
+    function fa(cls) {
+      return `<i class='fa fa-${cls}' aria-hidden='true'></i>`;
+    }
+
     this.tips = [
       "With 'Alt-Enter' you can access a powerful refactoring menu.",
       "Press 'Next Tip' to get more advice!",
@@ -28,7 +32,10 @@ export default class CodeTip extends Morph {
       "'Ctrl+Shift+F' opens the global text search (which is case sensitive!).",
       "This could be your tip! Add new tips in lively-code-tip.js",
       "Use 'Alt+P' to switch between markdown code and its visualization in the codemirror.",
-      "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa."];
+      "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa.",
+      "Press 'F8' to search files by name.",
+      `You can fav files you frequently edit using the ${fa('star-o')} symbol (under ${fa('ellipsis-h')}) in the browser. Access them from the context menu under '${fa('star')} Favorites'.`
+    ];
     this.tipIndex = Math.floor(Math.random() * this.tips.length);
     this.generateTipText();
   }
@@ -73,10 +80,11 @@ export default class CodeTip extends Morph {
   }
 
   progressString() {
+    
     return `Tip: ${this.tipIndex + 1} / ${this.tips.length}`;
   }
   
   generateTipText() {
-    this.text.innerHTML = this.tips[this.tipIndex] + "<br> " + this.progressString();
+    this.text.innerHTML = this.tips[this.tipIndex] + "<br /> " + this.progressString();
   }
 }
