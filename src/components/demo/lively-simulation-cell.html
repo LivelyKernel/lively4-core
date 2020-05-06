@@ -1,0 +1,30 @@
+<template id="lively-simulation-cell" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  .container {
+    margin: 50px;
+  }
+  .w100 {
+    width: 100%;
+  }
+  #cellName {
+    border: none;
+  }
+  #stateTextArea {
+    resize: none;
+    width: 100%;
+    height: 100px;
+  }
+  #snippetCodeMirror {
+    height: 300px;
+    width: 100%;
+  }
+</style>
+<div class='container'>
+  <input id='cellNameInput' class='w100' />
+  <textarea id='stateTextArea' class='w100'></textarea>
+  <lively-code-mirror id='snippetCodeMirror' class='w100'></lively-code-mirror>
+</div>
+</template>
+
