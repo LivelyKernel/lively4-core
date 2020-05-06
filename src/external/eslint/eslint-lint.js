@@ -306,7 +306,12 @@
     var linter = new eslint();
     linter.defineParser("babel-parser", {parse});
     config.parser = "babel-parser";
-    var errors = linter.verify(text, config);
+    try {
+      var errors = linter.verify(text, config);
+    } catch(err) {
+      console.error("ESLINT ERROR during linting", err, "source: " + text)
+      errors = []
+    }
     
     for (var i = 0; i < errors.length; i++) {
       var error = errors[i];
