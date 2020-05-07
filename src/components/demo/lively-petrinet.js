@@ -8,7 +8,6 @@ export default class LivelyPetrinet extends Morph {
     this.windowTitle = "LivelyPetrinet";
     this.registerButtons()
     this.testVariable = 1
-    this.show = "#draggable-window";
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
