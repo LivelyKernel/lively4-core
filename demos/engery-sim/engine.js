@@ -8,9 +8,9 @@ const MILLISECONDS_PER_SECOND = 1000;
 
 class Engine {
   
-  constructor(velocity = MIN_VELOCITY, cells = []) {
+  constructor(velocity = MIN_VELOCITY, collectCells = () => []) {
+    this.collectCells = collectCells;
     this.velocity = velocity;
-    this.cells = cells;
     this.step = this.step.bind(this);
   }
   
@@ -42,9 +42,10 @@ class Engine {
   }
   
   step() {
-    const prevState = this.collectState();
-    const nextState = this.executeAllCells(prevState);
-    this.updateCellStates(nextState);
+    const cells = this.collectCells();
+    const prevState = this.collectState(cells);
+    this.executeAllCells(cells, prevState)
+      .then(nextState => this.updateCellStates(cells, nextState));
   }
   
   increaseVelocity() {
@@ -62,19 +63,12 @@ class Engine {
     this.updateSimulationLoop();
   }
   
-  appendCell(cell) {
-    const { cells } = this;
-    cells.push(cell);
-  }
-  
-  updateCellStates(state) {
-    const { cells } = this;
+  updateCellStates(cells, state) {
     _.forEach(cells, cell =>
       cell.setState(state[cell.getName()]));
   }
-  
-  collectState() {
-    const { cells } = this;
+
+  collectState(cells) {
     return _.reduce(
       cells, 
       (partialState, cell) => { 
@@ -85,15 +79,11 @@ class Engine {
     );
   }
   
-  executeAllCells(state) {
-    const { cells } = this;
+  executeAllCells(cells, state) {
     return _.reduce(
       cells, 
-      (scope, cell) => { 
-        cell.execute(scope); 
-        return scope;
-      }, 
-      state
+      (statePromise, cell) => statePromise.then(state => cell.execute(state)), 
+      Promise.resolve(state)
     );
   }
 }
