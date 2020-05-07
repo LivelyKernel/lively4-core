@@ -1,24 +1,95 @@
-     <template id="lively-petrinet" >
-    <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-    <style data-src="/templates/livelystyle.css"></style>
-    <style>
-    :host {
+       <template id="lively-petrinet" >
+      <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+      <style data-src="/templates/livelystyle.css"></style>
+      <style>
+      :host {
 
-    }
-    #content {
+      }
+      #content {
+        background-color: white;
+      }
+      
+        /* Style the header */
+     #header {
       background-color: white;
-
+      padding: 30px;
+      text-align: center;
+      font-size: 15px;
+      color: #707070;
+      }
+        
+      #wrapper {
+        display: flex;
+      }
+         
+      #section {
+        width: 50px;
+        margin-left: 5px;
+        border: 1px solid grey;
+        height: 400px;
+        background-color: white
+        text-align: center
+      }
+      
+      #center {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 80%
+      }
+        
+      #section2 {
+        border: 1px solid grey;
+        height: 400px;
+        width: 100%;
+        margin-right: 10px;
+        margin-left: 10px;
+        background-color: white;
+        text-align: center ;
+      }
+        
+      
+        
+      /* Style the footer */
+      #footer {
+        background-color: white;
+        padding: 10px 10px 10px 10px;
+        text-align: center;
+        color: #707070;
       }
 
-    #circle {
-        border:1px solid #d3d3d3;
-      }
-    }
-    </style>
+      </style>
+               
       <button id="plusButton">plus</button>
       <button id="minusButton">minus</button>
       <input id="textField" value=0 />
-    <div id="content">
-        <canvas id="circle" width=500 height=300 draggable="true"></canvas>
-    </div>
-    </template>
+      <header id="header"><h2>Hallo Linus</h2></header>
+      <div id="wrapper">
+        <div id="section">
+            <img id="center" src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/circle.png" alt="Circle">
+            <img id="center"src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/rectangle.png" alt="Rectangle">
+        </div>        
+         <div id="section2">
+          <p> Hallo</p>
+        </div>
+      </div>
+
+
+      <div id="footer"><p>Proudly created by Linus and Anne</p></div>
+         
+         
+         
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
