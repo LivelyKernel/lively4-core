@@ -1,28 +1,50 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import _ from 'src/external/lodash/lodash.js';
 
 export default class LivelySimulationCell extends Morph {
   
   // life cycle
-  
   initialize() {
-    const name = this.getAttribute('data-name') || '';
-    const state = this.getAttribute('data-state') || '';
-    const snippet = this.getAttribute('data-snippet') || '';
-    this.setName(name);
-    this.setPlainState(state);
-    this.setSnippet(snippet);
+    this.initializeCellNameInput();
+    this.initializeStateTextArea();
+    this.initializeSnippetCodeMirror();
   }
- 
+  
+  // initialize
+  initializeSnippetCodeMirror() {
+    const snippetCodeMirror = this.getSnippetCodeMirror();
+    const snippet = this.getAttribute('data-snippet') || '// Enter simulation code here';
+    snippetCodeMirror.editorLoaded()
+      .then(() => snippetCodeMirror.editor.setOption('lint', false))
+      .then(() => this.setSnippet(snippet));
+  }
+  
+  initializeStateTextArea() {
+    const state = this.getAttribute('data-state') || '{}';
+    this.setPlainState(state);
+  }
+  
+  initializeCellNameInput() {
+    const name = this.getAttribute('data-name') || '';
+    this.setName(name);
+  }
+  
+  //
+  execute(scope = {}) {
+    const codeMirror = this.getSnippetCodeMirror();
+    const snippet = this.getSnippet();
+    if (!snippet.trim().length) return Promise.resolve(scope);
+    codeMirror.setDoitContext(scope);
+    return codeMirror.tryBoundEval(snippet).then(() => codeMirror.getDoitContext());
+  }
+  
   isFocused() {
     const { shadowRoot } = this;
-    const codeMirror = shadowRoot.querySelector('#snippetCodeMirror');
-    const textArea = shadowRoot.querySelector('#stateTextArea');
-    const input = shadowRoot.querySelector('#cellNameInput'); 
-    return this.isChildFocused(codeMirror) || 
-      this.isChildFocused(textArea) ||
-      this.isChildFocused(input);
+    const childrenSelectors = ['#snippetCodeMirror', '#stateTextArea', '#cellNameInput'];
+    return _.some(_.map(childrenSelectors, selector => 
+                        this.isChildFocused(shadowRoot.querySelector(selector))));
   }
   
   isChildFocused(child, doc) {
@@ -33,75 +55,58 @@ export default class LivelySimulationCell extends Morph {
     return false;
   }
   
-  getState() {
-    const stateJSON = `{ ${ this.sanitizeJSON(this.getPlainState()) } }`;
-    return JSON.parse(stateJSON);
-  }
-  
-  getPlainState() {
-    const { shadowRoot } = this;
-    const textArea = shadowRoot.querySelector('#stateTextArea');
-    return textArea.value;
-  }
-  
-  setState(newState) {
-    const INTENT = 2;
-    let content = JSON.stringify(newState, null, INTENT);
-    content = content.substring(2, content.length - 2); // remove curly brackets and line breaks
-    content = content.replace(/"(\w+)"\s*:/g, '$1:'); // remove quotes around keys
-    this.setPlainState(content);
-  }
-  
-  setPlainState(state) {
-    const { shadowRoot } = this;
-    const textArea = shadowRoot.querySelector('#stateTextArea');
-    textArea.value = state;
-  }
-  
-  sanitizeJSON(json) {
-    // insert missing quotes
-    return json.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
-  }
-  
+  // getter/ setter
   getName() {
-    const { shadowRoot } = this;
-    const input = shadowRoot.querySelector('#cellNameInput');
+    const input = this.getCellNameInput();
     return input.value;
   }
   
   setName(name) {
-    const { shadowRoot } = this;
-    const input = shadowRoot.querySelector('#cellNameInput');
+    const input = this.getCellNameInput();
     input.value = name;
   }
   
-  execute(scope = {}) {
-    const snippet = this.getSnippet();
-    const preprocessedSnippet = this.preprocessSnippet(snippet);
-    return this.evalInContext(preprocessedSnippet, scope);
+  getState() {
+    return JSON.parse(this.getPlainState());
+  }
+  
+  setState(state) {
+    this.setPlainState(JSON.stringify(state));
+  }
+  
+  getPlainState() {
+    const textArea = this.getStateTextArea();
+    return textArea.value;
+  }
+  
+  setPlainState(state) {
+    const textArea = this.getStateTextArea();
+    textArea.value = state;
   }
   
   getSnippet() {
-    const { shadowRoot } = this;
-    const codeMirror = shadowRoot.querySelector('#snippetCodeMirror');
-    return codeMirror.value;  
+    const codeMirror = this.getSnippetCodeMirror();
+    return codeMirror.editor.getValue();  
   }
   
   setSnippet(snippet) {
+    const codeMirror = this.getSnippetCodeMirror();
+    codeMirror.editor.setValue(snippet);
+  }
+  
+  getSnippetCodeMirror() {
     const { shadowRoot } = this;
-    const codeMirror = shadowRoot.querySelector('#snippetCodeMirror');
-    codeMirror.value = snippet;
+    return shadowRoot.querySelector('#snippetCodeMirror');
   }
   
-  evalInContext(snippet, scope) {
-    // https://stackoverflow.com/questions/8403108/calling-eval-in-particular-context
-  // not supported in strict mode: eval("with (vars) {var result = (" + func + ")}");
-    return function() { return eval(snippet); }.call(scope);
+  getStateTextArea() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#stateTextArea');
   }
   
-  preprocessSnippet(snippet) {
-    // TODO do preprocessing here (resolve #XXX references, add `this.` etc.)
-    return snippet;
+  getCellNameInput() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#cellNameInput');
   }
   
   /* Lively-specific API */

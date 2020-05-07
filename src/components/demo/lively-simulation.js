@@ -2,7 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Engine from 'demos/engery-sim/engine.js';
-import _ from 'src/external/lodash/lodash.js'
+import _ from 'src/external/lodash/lodash.js';
 
 export default class LivelySimulation extends Morph {
   
@@ -10,44 +10,36 @@ export default class LivelySimulation extends Morph {
   initialize() {
     this.windowTitle = "LivelySimulationComponent";
     lively.html.registerKeys(this);
-    this.reset();
+    this.collectCells = this.collectCells.bind(this);
+    this.addCell = this.addCell.bind(this);
+    this.reset = this.reset.bind(this);
+    this.initializeEngine();
+    this.initializeController();
   }
   
   detachedCallback() {
     const { engine } = this;
-    engine.stop(); 
+    engine.stop();
   }
   
   // initialization
-  
-  initializeCells() {
-    const { shadowRoot } = this;
-    const cellsContainer = shadowRoot.querySelector('#cells');
-    const cells = Array.from(this.querySelectorAll('lively-simulation-cell'));
-    cellsContainer.innerHTML = '';
-    _.forEach(cells, cell => cellsContainer.appendChild(cell.cloneNode(true)));
-  }
-  
   initializeEngine() {
-    const { shadowRoot } = this;
-    const velocity = this.getJSONAttribute('data-velocity') || 1;
-    const cells = Array.from(shadowRoot.querySelectorAll('lively-simulation-cell'));
-    this.engine = new Engine(velocity, cells); 
+    const velocity = this.getJSONAttribute('data-velocity') || undefined;
+    this.engine = new Engine(velocity, this.collectCells);
   }
   
-  registerController() {
+  initializeController() {
     const { engine, shadowRoot } = this;
     const controller = shadowRoot.querySelector('#controller');
     controller.engine = engine;
-    controller.onAppendCell = () => this.appendCell();
-    controller.onReset = () => this.reset();
+    controller.onAddCell = this.addCell;
+    controller.onReset = this.reset;
   }
   
   // event listener
-  
   onKeyDown(event) {
     const { engine } = this;
-    if (this.someCellHasFocus()) return;
+    if(this.isCellFocusActive()) return;
     switch (event.key) {
       case ' ':
         engine.toggleStartStop();
@@ -65,42 +57,35 @@ export default class LivelySimulation extends Morph {
         engine.reset();
         break;
       case 'a':
-        this.appendCell();
+        this.addCell();
         break;
     }
     event.preventDefault();
   }
   
-  async appendCell() {
-    const { engine, shadowRoot } = this;
-    const cell = await (<lively-simulation-cell></lively-simulation-cell>);
-    engine.appendCell(cell);
-    const cells = shadowRoot.querySelector('#cells');
-    cells.appendChild(cell);
+  //
+  collectCells() {
+    return Array.from(this.querySelectorAll('lively-simulation-cell'));
+  }
+  
+  addCell() {
+    return Promise
+      .resolve(<lively-simulation-cell></lively-simulation-cell>)
+      .then(cell => this.appendChild(cell));
   }
   
   reset() {
-    const { engine } = this;
-    if (engine) engine.stop();
-    this.initializeCells();
-    this.initializeEngine();
-    this.registerController();
+    alert('TODO reset')
   }
   
-  // helper
-  someCellHasFocus() {
-    const { shadowRoot } = this;
-    const cells = Array.from(shadowRoot.querySelectorAll('lively-simulation-cell'));
+  isCellFocusActive() {
+    const cells = this.collectCells();
     return _.some(cells, cell => cell.isFocused());
   }
-
+  
   /* Lively-specific API */
-
   livelyPrepareSave() {
-    const { engine: { velocity }, shadowRoot } = this;
-    const cells = shadowRoot.querySelector('#cells');
-    _.forEach(cells.children, cell => cell.livelyPrepareSave());
-    this.innerHTML = cells.innerHTML;
+    const { engine: { velocity } } = this;
     this.setJSONAttribute('data-velocity', velocity);
-  }  
+  } 
 }

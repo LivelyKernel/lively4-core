@@ -10,7 +10,6 @@ export default class LivelySimulationController extends Morph {
     this.registerSliders();
     this.registerIsRunningUpdater();
     this.registerVelocityUpdater();
-    // TODO load cell state and snippet
   }
   
   detachedCallback() {
@@ -23,7 +22,6 @@ export default class LivelySimulationController extends Morph {
     Array.from(this.shadowRoot.querySelectorAll('input[type="range"]')).forEach(node => {
       var name = node.id;
       var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
-      // console.log('register button ' + name)
       node.addEventListener("input", evt => {
         if (this[funcName] instanceof Function) {
           this[funcName](evt);
@@ -72,7 +70,7 @@ export default class LivelySimulationController extends Morph {
   }
   
   onAppendCellButton() {
-    const { onAppendCell } = this;
-    onAppendCell();
+    const { onAddCell } = this;
+    onAddCell();
   }
 }
