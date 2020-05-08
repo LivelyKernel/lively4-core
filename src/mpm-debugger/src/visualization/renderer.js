@@ -273,21 +273,21 @@ import Vector2 from "./../external/vector2.js";
 
 			// draw obstacles
 			if(system.doObstacles) {
-				_.each(system.obstacles, function(obstacle) {
+				_.each(system.obstacles, (obstacle) => {
 					this.drawObstacle(obstacle)
-				}, this);
+				});
 			}
 			
 			// draw all particles in the system
-			_.each(system.particles, function(p) {
+			_.each(system.particles, (p) => {
 				this.drawParticle(p);
-			}, this);
+			});
 			
 			// draw all springs in the system
 			if(system.drawSprings) {
-				_.each(system.springs, function(s) {
+				_.each(system.springs, (s) => {
 					this.drawSpring(s);
-				}, this);
+				});
 			}
 		},
 		drawGrid: function(grid) {
