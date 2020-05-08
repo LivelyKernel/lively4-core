@@ -1588,8 +1588,8 @@ export default class Lively {
     return document.querySelector(query)
   }
 
-  static confirm(msg) {
-    return Dialog.confirm(msg)
+  static confirm(msg, customizeCB) {
+    return Dialog.confirm(msg, customizeCB)
   }
 
   static prompt(msg, value, customizeCB) {
@@ -1903,10 +1903,12 @@ export default class Lively {
     if (!evt.shiftKey) { // evt.ctrlKey
       evt.preventDefault();
       evt.stopPropagation();
-      if (lively.lastScrollLeft) {
+      // #Hack #Workaround weired browser scrolling behavior
+      if (lively.lastScrollLeft || lively.lastScrollTop) {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
+      
       var link = Array.from(evt.composedPath()).find(ea => ea.localName == "a")
       if (link) {
         // #TODO can we shorten this or hide this context specific behavior, 

@@ -70,13 +70,10 @@
     #toolPane {
       flex: 5;
     }
-    
-    .label {
-      flex: auto;
-      display: inline-block;
-      vertical-align: middle;
-      line-height: 100%;
-      text-align: left;
+
+    #source, #sourceAst, #transformedSource, #plugin, #executionConsole {
+      width: 100%;
+      height: 100%;
     }
     
     .toolbar {
@@ -87,11 +84,6 @@
       flex: none;
       height: fit-content;
       width: 100%;
-    }
-
-    #source, #sourceAst, #transformedSource, #plugin, #executionConsole {
-      width: 100%;
-      height: 100%;
     }
 
     #executionConsole {
@@ -116,16 +108,19 @@
   <div id="content" class="pane layout-column">
     <div id="workspaceToolbar" class="toolbar">
       <input type="text" id="workspace-path" value="">
-      <button class="toggle" id="save" title="Save Workspace to file (right-click to toggle auto-mode).">
+      <button class="toggle" id="saveWorkspace" title="Save Workspace to file (right-click to toggle auto-mode).">
         <i class="fa fa-floppy-o"></i>
       </button>
-      <button class="toggle" id="update" title="Update AST and apply plugin (right-click to toggle auto-mode).">
+      <button class="toggle" id="updateAST" title="Update AST (right-click to toggle auto-mode).">
+        <i class="fa fa-refresh fa-fw"></i>
+      </button>
+      <button class="toggle" id="updateTransformation" title="Update transformation (right-click to toggle auto-mode).">
         <i class="fa fa-refresh fa-fw"></i>
       </button>
       <button class="toggle" id="execute" title="Execute transformed code (right-click to toggle auto-mode).">
         <i class="fa fa-cog fa-fw"></i>
       </button>
-      <button class="toggle" id="toggleRunsTests" title="Toggle: Run tests after successful transformation.">
+      <button class="toggle" id="runTests" title="Run tests in all opened test runners (right-click to toggle auto-mode).">
         <i class="fa fa-shield"></i>
       </button>
       <button class="toggle" id="toggleSystemJS" title="Toggle: SystemJS.">
@@ -145,10 +140,14 @@
         <div id="sourceAndAst" class="pane layout-row">
           <div class="pane tool layout-column">
             <div class="toolbar" id="sourceToolBar">
-              <div class="label">
-                <b>Source</b>
-              </div>
-              <button class="toggle" id="saveSource" title="Save source.">
+              <button class="toggle" id="sourceMenu" title="Open source selection menu.">
+                <i class="fa fa-bars"></i>
+              </button>
+              <input type="text" id="sourcePath" value="">
+              <button class="toggle" id="saveSourceToWorkspace" title="Save source to workspace (right-click to toggle auto-mode).">
+                <i class="fa fa-archive"></i>
+              </button>
+              <button class="toggle" id="saveSourceToDisk" title="Save source to specified path (also: Ctrl+s).">
                 <i class="fa fa-floppy-o"></i>
               </button>
             </div>

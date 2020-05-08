@@ -87,14 +87,18 @@ export default class Files {
         })()
       })
   }
-  
-  static async loadFile(url, version) {
+
+  static async loadFileResponse(url, version) {
     url = this.resolve(url.toString())
     return fetch(url, {
       headers: {
         fileversion: version
       }
-    }).then(function (response) {
+    })
+  }
+
+  static async loadFile(url, version) {
+    return this.loadFileResponse(url, version).then(response => {
       console.log("file " + url + " read.");
       return response.text();
     })
@@ -550,6 +554,31 @@ export default class Files {
     return path.toString().replace(/[#?].*/,"").replace(/.*\./,"");
   }
   
+  
+  static serverURL(url) {
+    // #TODO to replace this static list, we could add this info OPTION requests... 
+    var knownServers = [
+      "https://lively-kernel.org/voices",
+      "https://lively-kernel.org/research",
+      "https://lively-kernel.org/lively4S2",
+      "https://lively-kernel.org/lively4"
+    ]
+    
+    for(var ea of knownServers) {
+      if (url.startsWith(ea)) {
+        return ea        
+      }
+      
+    }
+    return null // don't know?
+  }
+
+  static repositoryName(url) {  
+    var serverURL = this.serverURL(url)
+    if (!serverURL) return null
+    var repo =  url.replace(serverURL +"/", "").replace(/\/.*/,"");
+    return repo
+  }
   
   static async setURLAsBackground(url) {
     document.querySelectorAll("lively-background").forEach(ea => ea.remove())

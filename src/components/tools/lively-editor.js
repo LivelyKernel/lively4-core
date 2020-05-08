@@ -177,6 +177,13 @@ export default class Editor extends Morph {
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
+      
+      // #Hack #Workaround weired browser scrolling behavior
+      if (lively.lastScrollLeft || lively.lastScrollTop) {
+        document.scrollingElement.scrollTop = lively.lastScrollTop;
+        document.scrollingElement.scrollLeft = lively.lastScrollLeft;
+      }
+      
       var menu = new ContextMenu(this, [
           ["<b>Annotations</b>", this.annotatedText ? () => this.enableAnnotations() : null],
           ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
@@ -818,7 +825,7 @@ export default class Editor extends Morph {
   }
   
   async solveAnnotationConflict(newAnnotationsVersion, conflictingAnnotationsVersion) {
-    debugger
+    
     var cm = await this.awaitEditor()
     // solveConflict
     var lastText = this.lastAnnotatedText
@@ -838,6 +845,7 @@ export default class Editor extends Morph {
   
     var myAnnotations = text.annotations
     
+    debugger
     // only when no text diff.....
     var mergedAnnotations =   myAnnotations.merge(otherAnnotations, parentAnnotations)
       
@@ -863,11 +871,17 @@ export default class Editor extends Morph {
     var cm = await this.awaitEditor()
     var text = this.annotatedText
     text.setText(this.getText(), textVersion)
+    
+    
     var response = await fetch(this.getAnnotationsURL(), {
       method: 'PUT', 
       body: text.annotations.toJSONL(),
       headers: {lastversion: this.annotatedText.annotations.lastVersion}
     })
+    
+    var writeResult = await response.text()
+    lively.notify("save annotations: " + writeResult)
+    
     var newAnnotationsVersion = response.headers.get("fileversion");
     var conflictAnnotationsVersion = response.headers.get("conflictversion");  
     if (conflictAnnotationsVersion) {

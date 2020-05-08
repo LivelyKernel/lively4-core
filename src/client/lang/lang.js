@@ -299,7 +299,8 @@ extendFromLodash(Array.prototype, [
   'sample',
   'sampleSize',
   'shuffle',
-  'sum'
+  'sum',
+  'sumBy'
 ]);
 
 extend(Array.prototype, {
@@ -376,10 +377,11 @@ extend(Array.prototype, {
   joinElements(builder) {
     const result = [];
     let lastItem;
+    let index = 0;
     for (let item of this) {
       // not the first item
       if (result.length > 0) {
-        result.push(builder(lastItem, item));
+        result.push(builder(lastItem, item, index++, this));
       }
       result.push(item);
       lastItem = item;
