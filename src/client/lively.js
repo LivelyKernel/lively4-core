@@ -901,11 +901,8 @@ export default class Lively {
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document
-    this.addEventListener('lively', doc, 'mousedown', function(evt){
-      lively.onMouseDown(evt)}, false);
-    this.addEventListener('lively', doc, 'contextmenu', function(evt) {
-        lively.onContextMenu(evt)
-    }, false);
+    this.addEventListener('lively', doc, 'mousedown', evt => lively.onMouseDown(evt), true); // capture...
+    this.addEventListener('lively', doc, 'contextmenu', evt => lively.onContextMenu(evt), false);
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
     
