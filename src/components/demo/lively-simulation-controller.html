@@ -1,0 +1,55 @@
+<template id="lively-simulation-controller" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>  
+<style>
+  .slider {
+  -webkit-appearance: none;
+  width: 20%;
+  height: 5px;
+  border-radius: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4CAF50;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4CAF50;
+  cursor: pointer;
+}
+</style>
+<button id="startStopButton">Start</button>
+<button id="stepButton">Step</button>
+<button id="resetButton">Reset</button>
+Steps per Second: 
+<span id="velocitySpan"></span>
+  <input 
+    id="velocitySlider" 
+    class="slider"
+    type="range" 
+    min="1" 
+    max="60" 
+    step="1" 
+    value="1"
+  />
+<button id="appendCellButton">+ Add Cell</button>
+</template>
+
