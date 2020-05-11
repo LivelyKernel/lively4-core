@@ -7,7 +7,8 @@ export default class AutoCompletion {
   
   complete(livelyCodeMirror, codeMirror) {
     
-    lively.openInspector(livelyCodeMirror);
+    // lively.openInspector(livelyCodeMirror);
+    lively.warn('hello')
   }
 }
 
