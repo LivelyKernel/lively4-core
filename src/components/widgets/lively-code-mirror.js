@@ -178,8 +178,12 @@ export default class LivelyCodeMirror extends HTMLElement {
         });
     }
     
-    
     return this.myASTCapabilities;
+  }
+  
+  autoCompletion(cm) {
+    return System.import('src/components/widgets/auto-completion.js')
+      .then(m => new m.default(this, cm));
   }
   
   get ternWrapper() {
@@ -477,6 +481,11 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.editor.execCommand(`goWordLeft`)
           this.editor.execCommand(`goCharLeft`)
         }, 
+        
+        // #KeyboardShortcut Alt-Q sample shortcut for auto-completion
+        "Alt-Q": cm => {
+          this.autoCompletion(cm).then(ac => ac.complete(this, cm));
+        },
         
       }
       // Alt-Enter has to react on key up, so we make an extra rule here

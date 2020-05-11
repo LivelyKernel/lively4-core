@@ -177,6 +177,13 @@ export default class Editor extends Morph {
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
+      
+      // #Hack #Workaround weired browser scrolling behavior
+      if (lively.lastScrollLeft || lively.lastScrollTop) {
+        document.scrollingElement.scrollTop = lively.lastScrollTop;
+        document.scrollingElement.scrollLeft = lively.lastScrollLeft;
+      }
+      
       var menu = new ContextMenu(this, [
           ["<b>Annotations</b>", this.annotatedText ? () => this.enableAnnotations() : null],
           ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],

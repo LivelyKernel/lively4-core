@@ -1732,7 +1732,7 @@ export default class Container extends Morph {
   }
 
   getHTMLSource() {
-    this.querySelectorAll("*").forEach( ea => {
+    this.getContentRoot().querySelectorAll("*").forEach( ea => {
       if (ea.livelyPrepareSave)
         ea.livelyPrepareSave();
     });
