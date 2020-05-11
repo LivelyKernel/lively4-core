@@ -1897,7 +1897,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
           auto_place_container = document.createElement('div');
           dom.addClass(auto_place_container, CSS_NAMESPACE);
           dom.addClass(auto_place_container, GUI.CLASS_AUTO_PLACE_CONTAINER);
-          document.body.appendChild(auto_place_container);
+          (params.parentContainer || document.body).appendChild(auto_place_container);
           auto_place_virgin = false;
         }
 
