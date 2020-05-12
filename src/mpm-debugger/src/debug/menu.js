@@ -12,19 +12,19 @@ import DebugOption from "./option.js";
 		debugTickAvg: 0.016,
 		debugRealTime: window.performance.now(),
 		
-		initialize: function() {
+		initialize: function(parent) {
 			// Inject the Stylesheet
 			var style = $("<link />");
 			console.log(style);
 			style.attr("rel", 'stylesheet');
 			style.attr("type", 'text/css');
-			style.attr("href", 'src/debug/debug.css');
+			style.attr("href", lively4url + '/src/mpm-debugger/src/debug/debug.css');
 			$("body").append(style);
 
 			// Create the Debug Container
 			this.container = $('<div />');
 			this.container.addClass("ig_debug");
-			$("body").prepend( this.container );
+			parent.prepend( this.container.get( 0 ) );
 			
 			// Create and add the Menu Container
 			this.panelMenu = $('<div />');

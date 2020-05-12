@@ -71,7 +71,7 @@ import Integrator from "./integrator.js";
 		this.sumUpPerMaterialGradients();
 		
 		// Calculate pressure and add forces to grid
-		_.each(this.particles, function(p, pIndex) {
+		_.each(this.particles, (p, pIndex) => {
 			var material = p.material;
 			var dudx = 0, dudy = 0,
 				dvdx = 0, dvdy = 0,
@@ -176,7 +176,7 @@ import Integrator from "./integrator.js";
 			if (this.doObstacles){
 				
 				// circular obstacles
-				_.each(this.obstacles, function(obstacle) {
+				_.each(this.obstacles, (obstacle) => {
 					var obstacleRadius  = obstacle.radius;
 					var obstacleRadiusSquared = obstacleRadius * obstacleRadius;
 					var particleDistanceToMiddlePoint = obstacle.position.sub(p.position);
@@ -186,14 +186,14 @@ import Integrator from "./integrator.js";
 						var dR = obstacleRadius-distance;
 						f.subSelf(particleDistanceToMiddlePoint.mulFloat(dR/distance));
 					}
-				}, this);
+				});
 			}
 			
 			this.integrator.integrate(p, function(particle, node, phi, gxpy, pxgy) {
 				node.acceleration.x += -(gxpy * T00 + pxgy * T01) + f.x * phi;
 				node.acceleration.y += -(gxpy * T01 + pxgy * T11) + f.y * phi;
 			});
-		}, this);
+		});
 
 		// Update acceleration of nodes
 		this.grid.iterate(function(node) {
@@ -202,7 +202,7 @@ import Integrator from "./integrator.js";
 			}
 		}, this);
 
-		_.each(this.particles, function(p, pIndex) {
+		_.each(this.particles, (p, pIndex) => {
 			var material = p.material;
 
 			// Update particle velocities
@@ -217,7 +217,7 @@ import Integrator from "./integrator.js";
 			this.integrator.integrate(p, function(particle, node, phi, gxpy, pxgy) {
 				node.velocity2.weightedAddSelf(particle.velocity, material.particleMass * phi);
 			});
-		}, this);
+		});
 
 		// Update node velocities
 		this.grid.iterate(function(node) {
@@ -232,7 +232,7 @@ import Integrator from "./integrator.js";
 	};
 
 	System.prototype.mapPropertiesToGrid = function() {
-		_.each(this.particles, function(p, pIndex) {
+		_.each(this.particles, (p, pIndex) => {
 			var material = p.material;
 
 			// Update grid cell index and kernel weights
@@ -247,7 +247,7 @@ import Integrator from "./integrator.js";
 				node.cgx[material.materialIndex] += gxpy;
 				node.cgy[material.materialIndex] += pxgy;
 			});
-		}, this);
+		});
 	};
 	
 	System.prototype.sumUpPerMaterialGradients = function() {
@@ -293,7 +293,7 @@ import Integrator from "./integrator.js";
 	};
 
 	System.prototype.advanceParticles = function() {
-		_.each(this.particles, function(p, pIndex) {
+		_.each(this.particles, (p, pIndex) => {
 			var material = p.material;
 			
 			var gVelocity = Vector2.Zero.copy();
@@ -334,21 +334,21 @@ import Integrator from "./integrator.js";
 			p.position.addSelf(gVelocity);
 			p.gridVelocity.set(gVelocity);
 			p.velocity.weightedAddSelf(gVelocity.sub(p.velocity), material.smoothing);
-		}, this);
+		});
 	};
 
 	System.prototype.springDisplacement = function() {
 		if(this.doSprings) {
-			_.each(this.springs, function(s, sIndex) {
+			_.each(this.springs, (s, sIndex) => {
 				s.update();
 				s.solve();
-			}, this);
+			});
 		}
 	};
 	
 	// hard boundary correction
 	System.prototype.boundaryCorrection = function() {
-		_.each(this.particles, function(p, pIndex) {
+		_.each(this.particles, (p, pIndex) => {
 			if (p.position.x < this.wall.Min.x - 4)
 				p.position.x = this.wall.Min.x - 4 + .01 * Math.random();
 			else if (p.position.x > this.wall.Max.x + 4)
@@ -357,7 +357,7 @@ import Integrator from "./integrator.js";
 				p.position.y = this.wall.Min.y - 4 + .01 * Math.random();
 			else if (p.position.y > this.wall.Max.y + 4)
 				p.position.y = this.wall.Max.y + 4 - .01 * Math.random();
-		}, this);
+		});
 	};
 
 	export default System;
