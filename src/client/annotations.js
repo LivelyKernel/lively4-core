@@ -423,8 +423,14 @@ export class AnnotatedText {
     
   }
     
-  static async fromURL(fileURL, annotationsURL, annotationsVersion) {
+  static async fromURL(fileURL, annotationsURL, annotationsVersion, force) {
     var annotationsResp = await lively.files.loadFileResponse(annotationsURL, annotationsVersion)
+    if (annotationsResp.status != 200) {
+      if (force) {
+        return this.fromSource("", fileURL, annotationsURL)
+      } 
+      return // nothing to see here...
+    }
     var source = await annotationsResp.text()
     return this.fromSource(source, fileURL, annotationsURL, annotationsResp.headers.get("fileversion"))
   }  
@@ -455,7 +461,7 @@ export class AnnotatedText {
     return this.annotations.toJSONL() 
   }
   
-  async saveToURL(fileURL, annotationsURL) {
+  async saveToURL(fileURL=this.annotations.fileURL, annotationsURL=this.annotations.annotationsURL) {
     await lively.files.saveFile(fileURL, this.text) 
     await lively.files.saveFile(annotationsURL, this.annotations.toJSONL()) 
   }

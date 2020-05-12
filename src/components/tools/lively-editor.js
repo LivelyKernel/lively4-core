@@ -183,15 +183,24 @@ export default class Editor extends Morph {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
+      var items = []
       
-      var menu = new ContextMenu(this, [
-          ["<b>Annotations</b>", this.annotatedText ? () => this.enableAnnotations() : null],
-          ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
-          ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
-          ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
-          ["clear", () => this.onAnnotationsClear()],
-          ["delete all anntations", () => this.onDeleteAllAnnotations()],
-        ]);
+      if (this.annotatedText) {
+        items.push(...[
+            ["<b>Annotations</b>"],
+            ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
+            ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
+            ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
+            ["clear", () => this.onAnnotationsClear()],
+            ["delete all anntations", () => this.onDeleteAllAnnotations()],
+          ])
+      } else {
+        items.push(...[
+            ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
+          ])
+      }      
+      
+      var menu = new ContextMenu(this, items);
       menu.openIn(document.body, evt, this);
       return 
     }
@@ -934,7 +943,7 @@ export default class Editor extends Morph {
   async loadAnnotations(text, version) {
     var cm = await this.awaitEditor()
     // load annotated text in the version that was  last annotated
-    this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL())
+    this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL(), version, true)
     // set current text and version, and update annotations accordingly 
     this.annotatedText.setText(text, version)
     this.annotatedText.annotations.renderCodeMirrorMarks(cm)
@@ -950,6 +959,8 @@ export default class Editor extends Morph {
   }
   
   async enableAnnotations() { 
+    debugger
+    await this.loadAnnotations(this.getText(), this.lastVersion) 
     lively.removeEventListener("annotations", this)
     lively.addEventListener("annotations", this, "loaded-file", async evt => {
       this.loadAnnotations(evt.detail.text, evt.detail.version) 
@@ -961,7 +972,6 @@ export default class Editor extends Morph {
     //   // we can ignore this, since it will be solved... by the editor
     //   lively.notify("TEXT CONFLICT " + evt.detail.version )
     // })
-    await this.loadAnnotations(this.getText(), this.lastVersion) 
   }
   
   
