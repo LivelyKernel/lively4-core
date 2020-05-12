@@ -425,28 +425,35 @@ export class AnnotatedText {
     
   static async fromURL(fileURL, annotationsURL, annotationsVersion) {
     var annotationsResp = await lively.files.loadFileResponse(annotationsURL, annotationsVersion)
-    var annotations = AnnotationSet.fromJSONL((await annotationsResp.text()))
+    var source = await annotationsResp.text()
+    return this.fromSource(source, fileURL, annotationsURL, annotationsResp.headers.get("fileversion"))
+  }  
+  
+  static async fromSource(source, fileURL, annotationsURL, lastVersion) {
+    var annotations = AnnotationSet.fromJSONL(source)
     annotations.fileURL = fileURL
     annotations.annotationsURL = annotationsURL
-    annotations.lastVersion = annotationsResp.headers.get("fileversion")
-    debugger
+    annotations.lastVersion = lastVersion
     // hopefully we have the full text content... 
     if (annotations.textContent) {
       var text = annotations.textContent         
-    } else {      
+    } else if(fileURL){      
       // if not, we can try to get it...
-      var textResp = await lively.files.loadFileResponse(fileURL, annotations.textVersion || annotationsVersion)
+      var textResp = await lively.files.loadFileResponse(fileURL, annotations.textVersion || lastVersion)
       if (textResp.status !== 200) {
         throw new Error("[annotations] could not load reference text for annotations")
       }
       text = await textResp.text()
-      debugger
       annotations.textVersion = textResp.headers.get("fileversion")
       annotations.textContent = text
     }
     var annotatedText = new AnnotatedText(text, annotations)    
     return annotatedText 
-  }  
+  }
+  
+  toSource() {
+    return this.annotations.toJSONL() 
+  }
   
   async saveToURL(fileURL, annotationsURL) {
     await lively.files.saveFile(fileURL, this.text) 
@@ -512,6 +519,7 @@ export class AnnotatedText {
     var parser = new DOMParser();
     var doc = parser.parseFromString(html,"text/html");
     visit(doc.body)
+    annotations.textContent = string
     var annotatedText = new AnnotatedText(string, annotations);
     return annotatedText
   }
@@ -540,6 +548,9 @@ export class AnnotatedText {
 
   static async solveAnnotationConflict(textURL, annotationURL) {
     var sourceWithConflict = await annotationURL.fetchText() 
+    var textResp = await fetch(textURL)
+    var text =  await textResp.text()
+    var textVersion = textResp.headers.get("fileversion")
     
     var serverURL = lively.files.serverURL(textURL)
     var repositoryName = lively.files.repositoryName(textURL)
@@ -568,17 +579,23 @@ export class AnnotatedText {
     var b = await this.fromURL(textURL, annotationURL, versionB)
     var base = await this.fromURL(textURL, annotationURL, versionBase)
 
+    
+    return this.mergeAnnotations(a, b, base, text, textVersion)
+  }
+  
+  static async mergeAnnotations(a, b, base, mergedText, mergedTextVersion) {
     // update the index positions of to fit text of a
-    b.setText(a.text)
-    base.setText(a.text) 
-    
-    var mergedAnnotations = a.annotations.merge(b.annotations, base.annotations) 
-    
-    
-    mergedAnnotations.textVersion = a.annotations.textVersion
-    mergedAnnotations.textContent = a.text
+    base.setText(mergedText)
+    a.setText(mergedText)
+    b.setText(mergedText)
 
+    var mergedAnnotations = a.annotations.merge(b.annotations, base.annotations) 
+    mergedAnnotations.textVersion = mergedText
+    mergedAnnotations.textContent = mergedTextVersion
+    
     return new AnnotatedText(a.text, mergedAnnotations)
   }
+  
+
 }
 
