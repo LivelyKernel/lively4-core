@@ -289,8 +289,9 @@ export default class Window extends Morph {
 
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.get('lively-resizer').style.display =
-      bool ? "block" : "none";
+    this.getAllSubmorphs('lively-resizer').forEach(ea => {
+      ea.style.display = bool ? "block" : "none";
+    })
   }
   
   
