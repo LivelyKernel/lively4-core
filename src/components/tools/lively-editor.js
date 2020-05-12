@@ -190,6 +190,7 @@ export default class Editor extends Morph {
           ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
           ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
           ["clear", () => this.onAnnotationsClear()],
+          ["delete all anntations", () => this.onDeleteAllAnnotations()],
         ]);
       menu.openIn(document.body, evt, this);
       return 
@@ -916,6 +917,19 @@ export default class Editor extends Morph {
     this.annotatedText.annotations.renderCodeMirrorMarks(cm) 
     this.updateChangeIndicator()
   }  
+
+  async onDeleteAllAnnotations() {
+    var cm = await this.awaitEditor()
+    this.annotatedText.annotations.removeFromTo(0, this.getText().length)
+    this.annotatedText.annotations.renderCodeMirrorMarks(cm) 
+    this.updateChangeIndicator()
+    
+    // an now delete file...
+    var file = this.annotatedText.annotations.annotationsURL
+    if (await lively.confirm("delete all the annotations? <br><code>"  + file +"</code>")) {
+      await fetch(file, {method: "DELETE"})
+    }
+  }
   
   async loadAnnotations(text, version) {
     var cm = await this.awaitEditor()
