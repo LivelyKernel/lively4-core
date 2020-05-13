@@ -2,8 +2,10 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Engine from 'demos/engery-sim/engine.js';
+import History from 'demos/engery-sim/history.js';
 import _ from 'src/external/lodash/lodash.js';
 
+const EMPTY_PLACEHOLDER = 'EMPTY';
 export default class LivelySimulation extends Morph {
   
   // lifecycle
@@ -17,29 +19,40 @@ export default class LivelySimulation extends Morph {
     this.initializeController();
   }
   
+  attachedCallback() {
+    this.initializeHistory();
+  }
+  
   detachedCallback() {
-    const { engine } = this;
+    const { engine, history } = this;
     engine.stop();
+    history.shutdown();
   }
   
   // initialization
+  initializeHistory() {
+    this.history = new History(() => this.getInnerHTML());
+  }
+  
   initializeEngine() {
     const velocity = this.getJSONAttribute('data-velocity') || undefined;
     this.engine = new Engine(velocity, this.collectCells);
   }
   
   initializeController() {
-    const { engine, shadowRoot } = this;
+    const { engine, history, shadowRoot } = this;
     const controller = shadowRoot.querySelector('#controller');
     controller.engine = engine;
     controller.onAddCell = this.addCell;
     controller.onReset = this.reset;
+    controller.getHistory = history.get;
   }
   
   // event listener
   onKeyDown(event) {
     const { engine } = this;
     if(this.isCellFocusActive()) return;
+    let matched = true;
     switch (event.key) {
       case ' ':
         engine.toggleStartStop();
@@ -59,8 +72,10 @@ export default class LivelySimulation extends Morph {
       case 'a':
         this.addCell();
         break;
+      default:
+        matched = false;
     }
-    event.preventDefault();
+    if (matched) event.preventDefault();
   }
   
   //
@@ -74,13 +89,19 @@ export default class LivelySimulation extends Morph {
       .then(cell => this.appendChild(cell));
   }
   
-  reset() {
-    alert('TODO reset')
+  reset(snapshot) {
+    this.innerHTML = snapshot === EMPTY_PLACEHOLDER ? '' : snapshot;
   }
   
   isCellFocusActive() {
     const cells = this.collectCells();
     return _.some(cells, cell => cell.isFocused());
+  }
+  
+  // getter & setter
+  getInnerHTML() {
+    const { innerHTML } = this;
+    return innerHTML.length ? innerHTML : EMPTY_PLACEHOLDER;
   }
   
   /* Lively-specific API */
