@@ -257,6 +257,10 @@ export default class Graffle {
   static async startConnectorDrawing(evt) {
     var connector = document.createElement("lively-connector")
     await lively.components.openIn(this.targetContainer, connector)
+    
+    // var connector = await (<lively-connector></lively-connector>)
+    // var connector = await lively.create(lively-connector, this.targetContainer)
+    
     lively.setGlobalPosition(connector, pt(evt.clientX, evt.clientY))
     window.that = connector
     HaloService.showHalos(connector)

@@ -1,0 +1,31 @@
+<template id="lively-petrinet-edge">
+<style type="text/css">
+ #line {
+  margin-top: 14px;
+  width: 90px;
+  background: #E0E0E0;
+  height: 10px;
+  float: left;
+}
+  
+  #arrow {
+  width: 120px;
+}
+  
+  #point {
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-left: 30px solid #E0E0E0;
+  float: right;
+}
+  
+</style>
+
+  <div class="lively-content" id="arrow">
+    <div class="lively-content" id="line"></div>
+    <div class="lively-content" id="point"></div>
+  <slot></slot>
+</div>
+</template>
