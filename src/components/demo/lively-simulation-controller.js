@@ -1,13 +1,23 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import _ from 'src/external/lodash/lodash.js';
+
+const MILLISECONDS_PER_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
 
 export default class LivelySimulationController extends Morph {
   
   // lifecycle
   async initialize() {
+    this.updateCheckpointOptions = this.updateCheckpointOptions.bind(this);
+    this.onResetSelectChange = this.onResetSelectChange.bind(this);
     this.registerButtons();
     this.registerSliders();
+    this.initializeResetSelect();
+  }
+  
+  attachedCallback() {
     this.registerIsRunningUpdater();
     this.registerVelocityUpdater();
   }
@@ -34,18 +44,24 @@ export default class LivelySimulationController extends Morph {
   
   registerIsRunningUpdater() {
     this.isRunningUpdater = aexpr(() => this.engine.isRunning).onChange(isRunning => {
-      const startStopButton = this.shadowRoot.querySelector('#startStopButton');
+      const startStopButton = this.getStartStopButton();
       startStopButton.textContent = isRunning ? 'Stop' : 'Start';
     });
   }
   
   registerVelocityUpdater() {
     this.velocityUpdater = aexpr(() => this.engine.velocity).onChange(velocity => {
-      const velocitySlider = this.shadowRoot.querySelector('#velocitySlider');
+      const velocitySlider = this.getVelocitySlider();
       velocitySlider.value = velocity;
-      var velocitySpan = this.shadowRoot.querySelector('#velocitySpan');
+      var velocitySpan = this.getVelocitySpan();
       velocitySpan.innerHTML = velocity;
     });
+  }
+  
+  initializeResetSelect() {
+    const resetSelect = this.getResetSelect();
+    resetSelect.addEventListener('click', this.updateCheckpointOptions);
+    resetSelect.addEventListener('change', this.onResetSelectChange);
   }
   
   // event listener
@@ -59,11 +75,6 @@ export default class LivelySimulationController extends Morph {
     engine.step();
   }
   
-  onResetButton() {
-    const { onReset } = this;
-    onReset();
-  }
-  
   onVelocitySlider({ target: { value: velocity } }) {
     const { engine } = this;
     engine.setVelocity(velocity);
@@ -72,5 +83,66 @@ export default class LivelySimulationController extends Morph {
   onAppendCellButton() {
     const { onAddCell } = this;
     onAddCell();
+  }
+  
+  onResetSelectChange({ target: { value: snapshot } }){
+    const { onReset } = this;
+    onReset(snapshot);
+    this.resetResetSelect();
+  }
+  
+  //
+  updateCheckpointOptions() {
+    const resetSelect = this.getResetSelect();
+    const options = this.generateCheckpointOptions();
+    this.resetResetSelect();
+    _.forEach(options, option => resetSelect.appendChild(option));
+  }
+  
+  resetResetSelect() {
+    const resetSelect = this.getResetSelect();
+    const { children } = resetSelect;
+    const checkpointOptions = _.takeRight(children, children.length - 1);
+    _.forEach(checkpointOptions, child => child.remove());
+    resetSelect.value = '';
+  }
+  
+  generateCheckpointOptions() {
+    const { getHistory } = this;
+    const history = _.filter(_.reverse(getHistory()));
+    const now = new Date().getTime();
+    return _.map(history, ({ snapshot, timestamp }) => (
+      <option value={snapshot}>
+        { this.readableTimeDifference(now, timestamp) }
+      </option>
+    ));
+  }
+  
+  readableTimeDifference(now, timestamp) {
+    const timeDifferenceInSeconds = Math.abs(timestamp - now) / MILLISECONDS_PER_SECOND;
+    const minutes = Math.floor(timeDifferenceInSeconds / SECONDS_PER_MINUTE);
+    const seconds = Math.round(timeDifferenceInSeconds - minutes * SECONDS_PER_MINUTE);
+    return `${minutes ? `${minutes}min ` : ''}${seconds}s ago`;
+  }
+  
+  // getter & setter
+  getResetSelect() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#resetSelect');
+  }
+  
+  getVelocitySlider() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#velocitySlider');
+  }
+  
+  getVelocitySpan() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#velocitySpan');
+  }
+  
+  getStartStopButton() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#startStopButton');
   }
 }
