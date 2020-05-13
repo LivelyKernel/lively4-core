@@ -185,7 +185,13 @@ export default class Editor extends Morph {
       }
       var items = []
       
-      if (this.annotatedText) {
+      var source = this.getText()
+      if (lively.files.hasGitMergeConflict(source)) {
+        // there is as git merge conflict here we have to deal with
+        items.push(...[
+            ["(Auto) Resolve Merge Conglicts", () => this.autoResolveMergeConflicts()],
+          ])
+      } else if (this.annotatedText) {
         items.push(...[
             ["<b>Annotations</b>"],
             ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
@@ -199,6 +205,8 @@ export default class Editor extends Morph {
             ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
           ])
       }      
+      
+      
       
       var menu = new ContextMenu(this, items);
       menu.openIn(document.body, evt, this);
@@ -974,7 +982,28 @@ export default class Editor extends Morph {
     // })
   }
   
-  
+  // lets try to resolve the merge, that git could not resolve!
+  async autoResolveMergeConflicts() {
+    var source = this.getText()
+    
+    if (this.getURLString().match(/.l4a$/)) {
+      lively.notify("not supported yet... #TODO")
+      
+      // use solveAnnotationConflict
+      return
+    }
+    
+     var versions = lively.files.extractGitMergeConflictVersions(source) 
+    if (versions.length == 0) return // nothing to do
+    
+    if (versions.length != 2) throw new Error("merge  != 2 not support yet")
+    var versionA= versions[0]
+    var versionB = versions[1]
+    var versionBase = await this.getGitMergeBase(serverURL, repositoryName, versionA, versionB)
+    
+    
+    lively.notify("yeah... here we go")
+  }
   /*MD ## Hooks MD*/
 
   livelyExample() {

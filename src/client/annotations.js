@@ -535,22 +535,7 @@ export class AnnotatedText {
   }
   
   
-  // Example: AnnotationSet.getGitMergeBase("https://lively-kernel.org/lively4",  "lively4-dummyA", "HEAD", "fd956")
-  static async getGitMergeBase(serverURL, repositoryName, versionA, versionB) {
-    var github = Github.current()
-    var headers = new Headers({
-      "gitusername":          github.username,
-      "gitpassword":          github.token, 
-      "gitemail":             github.email,
-      "gitrepository":        repositoryName,
-      gitversiona: versionA,
-      gitversionb: versionB,
-    })
 
-    return fetch(serverURL + "/_git/mergebase", {
-      headers: headers
-    }).then(r => r.text())    
-  }
 
   static async solveAnnotationConflict(textURL, annotationURL) {
     var sourceWithConflict = await annotationURL.fetchText() 
@@ -564,10 +549,7 @@ export class AnnotatedText {
     
     if (!serverURL || !repositoryName) throw new Error("Can only merge conflicts lively repository")
     
-    var versions = _.uniq(sourceWithConflict.split("\n")
-      .filter(ea => ea.match(/^(<<<<<<<)|(>>>>>>>) /))
-      .map(ea => ea.replace(/^(<<<<<<<)|(>>>>>>>) /, "")))
-
+    var versions = lively.files.extractGitMergeConflictVersions(sourceWithConflict) 
     if (versions.length == 0) return // nothing to do
     
     if (versions.length != 2) throw new Error("merge  != 2 not support yet")
@@ -579,8 +561,7 @@ export class AnnotatedText {
     //   lively4@livelygraph:~/lively4/lively4-dummyA$ git merge-base HEAD fd956
     //   7d66773a9d35de3c95b0478b2fccf70c97c0061a
 
-
-    var versionBase = await this.getGitMergeBase(serverURL, repositoryName, versionA, versionB)
+    var versionBase = await Github.current().getGitMergeBase(serverURL, repositoryName, versionA, versionB)
     var a = await this.fromURL(textURL, annotationURL, versionA)
     var b = await this.fromURL(textURL, annotationURL, versionB)
     var base = await this.fromURL(textURL, annotationURL, versionBase)
