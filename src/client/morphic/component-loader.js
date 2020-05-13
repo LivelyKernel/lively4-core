@@ -439,6 +439,7 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/src/components/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/rpComponents/',
+        lively4url + '/src/mpm-debugger/components/',
       ];
 
       const customPaths = this.persistentCustomTemplatePaths

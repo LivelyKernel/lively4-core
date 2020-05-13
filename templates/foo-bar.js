@@ -2,15 +2,13 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-export default class LivelyPetrinet extends Morph {
-
+export default class FooBar extends Morph {
   async initialize() {
-    this.windowTitle = "LivelyPetrinet";
+    this.windowTitle = "FooBar";
     this.registerButtons()
-    this.testVariable = 1
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
-
+    
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt))
     // #Note 1
@@ -21,10 +19,10 @@ export default class LivelyPetrinet extends Morph {
     // registering a closure instead of the function allows the class to make 
     // use of a dispatch at runtime. That means the ``onDblClick`` method can be
     // replaced during development
-
-     this.get("#textField").value = this.testVariable;
+    
+     this.get("#textField").value = this.getAttribute("data-mydata") || 0
   }
-
+  
   onDblClick() {
     this.animate([
       {backgroundColor: "lightgray"},
@@ -34,23 +32,19 @@ export default class LivelyPetrinet extends Morph {
       duration: 1000
     })
   }
-
-
-
+  
   // this method is autmatically registered through the ``registerKeys`` method
   onKeyDown(evt) {
     lively.notify("Key Down!" + evt.charCode)
   }
-
+  
   // this method is automatically registered as handler through ``registerButtons``
   onPlusButton() {
-    this.testVariable += 1;
-    this.get("#textField").value =  this.testVariable
+    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
   }
-
+  
   onMinusButton() {
-    this.testVariable -= 1;
-    this.get("#textField").value =  this.testVariable
+    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
   }
 
   /* Lively-specific API */
@@ -59,20 +53,28 @@ export default class LivelyPetrinet extends Morph {
   livelyPrepareSave() {
     this.setAttribute("data-mydata", this.get("#textField").value)
   }
-
+  
   livelyPreMigrate() {
     // is called on the old object before the migration
   }
-
+  
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty
   }
-
+  
   livelyInspect(contentNode, inspector) {
     // do nothing
   }
-
-
+  
+  async livelyExample() {
+    // this customizes a default instance to a pretty example
+    // this is used by the 
+    this.style.backgroundColor = "lightgray"
+    this.someJavaScriptProperty = 42
+    this.appendChild(<div>This is my content</div>)
+  }
+  
+  
 }
