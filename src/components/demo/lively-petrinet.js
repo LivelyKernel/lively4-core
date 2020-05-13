@@ -108,7 +108,7 @@ export default class LivelyPetrinet extends Morph {
   
   async addNode() {
       var node = await (<lively-petrinet-node></lively-petrinet-node>);
-      lively.setExtent(node, pt(100, 100));
+      lively.setExtent(node, pt(50, 50));
       lively.setPosition(node, pt(100, 100));
       this.nodes.push(node);
       this.appendChild(node);
@@ -116,6 +116,8 @@ export default class LivelyPetrinet extends Morph {
   
   async addPane() {
     var pane = await (<lively-petrinet-pane></lively-petrinet-pane>);
+    lively.setExtent(pane, pt(50, 50));
+    lively.setPosition(pane, pt(100, 100));
     this.appendChild(pane);
   }
   
