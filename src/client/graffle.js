@@ -253,6 +253,25 @@ export default class Graffle {
     this.openAsLivelyContent(text, evt)
     return text
   }
+  
+   static async onMouseDown(evt) {    
+    if (!this.specialKeyDown()) return
+    evt.stopPropagation()
+    evt.preventDefault()
+    document.documentElement.style.touchAction = "none"    
+    this.ensureTargetContainer(evt)
+    if (this.keysDown["S"]) {
+      await this.startShapeDrawing(evt)
+    } else if (this.keysDown["T"]) {
+      await this.startTextDrawing(evt)
+    }  else if (this.keysDown["C"]) {
+      await this.startConnectorDrawing(evt)
+    }  else if (this.keysDown["D"]) {
+      await this.startPathDrawing(evt)
+    } else if (this.keysDown["F"]) {
+      await this.startFreehandDrawing(evt)
+    }
+  }
 
   static async startConnectorDrawing(evt) {
     var connector = document.createElement("lively-connector")
@@ -342,25 +361,6 @@ export default class Graffle {
       this.targetContainer = targetContainer
     } else {
       this.targetContainer = document.body
-    }
-  }
-  
-  static async onMouseDown(evt) {    
-    if (!this.specialKeyDown()) return
-    evt.stopPropagation()
-    evt.preventDefault()
-    document.documentElement.style.touchAction = "none"    
-    this.ensureTargetContainer(evt)
-    if (this.keysDown["S"]) {
-      await this.startShapeDrawing(evt)
-    } else if (this.keysDown["T"]) {
-      await this.startTextDrawing(evt)
-    }  else if (this.keysDown["C"]) {
-      await this.startConnectorDrawing(evt)
-    }  else if (this.keysDown["D"]) {
-      await this.startPathDrawing(evt)
-    } else if (this.keysDown["F"]) {
-      await this.startFreehandDrawing(evt)
     }
   }
   
