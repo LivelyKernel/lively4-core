@@ -8,6 +8,38 @@ import 'src/client/lang/lang-ext.js';
 
 describe('lang', function() {
 
+  describe('Number.remap', function() {
+
+    it('degenerated domain and range', () => {
+      expect(() => {
+        (1).remap([2,2], [3,4])
+      }).to.throw(Error, /domain start and end are equal/)
+      expect((1).remap([3, 4], [2, 2])).to.equal(2);
+    });
+
+    it('simple', () => {
+      expect((1.0).remap([1, 2], [5, 6])).to.equal(5.0);
+      expect((1.2).remap([1, 2], [5, 6])).to.equal(5.2);
+      expect((1.4).remap([1, 2], [5, 6])).to.equal(5.4);
+      expect((1.6).remap([1, 2], [5, 6])).to.equal(5.6);
+      expect((1.8).remap([1, 2], [5, 6])).to.equal(5.8);
+      expect((2.0).remap([1, 2], [5, 6])).to.equal(6.0);
+    });
+
+    it('inverse start and end', () => {
+      expect((11).remap([13, 10], [3, 6])).to.equal(5); // inverse start
+      expect((11).remap([10, 13], [6, 3])).to.equal(5); // inverse end
+      expect((11).remap([13, 10], [6, 3])).to.equal(4); // both
+    });
+
+    it('clip', () => {
+      expect((7.5).remap([0, 10], [1, 2], true)).to.equal(1.75);
+      expect((11).remap([0, 10], [1, 2], true)).to.equal(2);
+      expect((11).remap([10, 0], [1, 2], true)).to.equal(1);
+    });
+
+  });
+
   describe('computeDiff', function() {
 
     describe('Object diff', function() {
