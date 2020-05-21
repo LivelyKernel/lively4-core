@@ -1,5 +1,5 @@
 	var Input = mini.Class.subclass({
-		initialize: function(domElementId) {
+		initialize: function(domElement) {
 			var that = this;
 			
 			this.bindings = {};
@@ -20,8 +20,7 @@
 				y: 0,
 				z: 0
 			};
-			this.domElementId = domElementId;
-			this.domElement = document.getElementById(domElementId);
+			this.domElement = domElement;
 			
 			//helpers:
 			//http://js-tut.aardon.de/js-tut/tutorial/position.html
@@ -43,7 +42,7 @@
 				return {x: x, y: y};
 			};
 			
-			this.canvasPosition = getElementPosition(document.getElementById(domElementId));
+			this.canvasPosition = getElementPosition(domElement);
 			
 			document.addEventListener("mousedown", function(e) {
 	            that.isMouseDown = true;
@@ -95,8 +94,8 @@
 		initKeyboard: function() {
 			if( this.isUsingKeyboard ) { return; }
 			this.isUsingKeyboard = true;
-			window.addEventListener('keydown', this.keydown.bind(this), false );
-			window.addEventListener('keyup', this.keyup.bind(this), false );
+			this.domElement.addEventListener('keydown', this.keydown.bind(this), false );
+			this.domElement.addEventListener('keyup', this.keyup.bind(this), false );
 		},
 		
 		initAccelerometer: function() {

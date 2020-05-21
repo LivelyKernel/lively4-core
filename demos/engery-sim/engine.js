@@ -43,9 +43,10 @@ class Engine {
   
   step() {
     const cells = this.collectCells();
-    const prevState = this.collectState(cells);
-    this.executeAllCells(cells, prevState)
-      .then(nextState => this.updateCellStates(cells, nextState));
+    const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
+    const prevState = this.collectState(sortedCells);
+    this.executeAllCells(sortedCells, prevState)
+      .then(nextState => this.updateCellStates(sortedCells, nextState));
   }
   
   increaseVelocity() {

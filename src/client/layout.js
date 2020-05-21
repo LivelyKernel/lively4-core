@@ -114,7 +114,49 @@ export default class Layout {
     } while(intersections.length > 0 && i < maxiterations)
   }
   
-  static expandUntilNoIntersectionsExplosion(windows, maxiterations) {
+    static expandUntilNoIntersectionsExplosion(windows, maxiterations) {  
+      var all = windows || Windows.allWindows()
+
+      var count = 30
+      while(count > 0 /* or error is small enough */ ) {
+        count--
+        for(var elementA of all) {
+          for(var elementB of all) {
+
+            var a = lively.getGlobalBounds(elementA)
+            var b = lively.getGlobalBounds(elementB)
+
+
+            var intersection = a.intersection(b) 
+
+
+            if (intersection.isNonEmpty()) {
+
+              // lively.showRect(intersection)
+
+              if (a.left() < intersection.left()) {
+                var xdir = -1
+              } else {
+                xdir = 1
+              }
+
+              if (a.top() < intersection.top()) {
+                var ydir = -1
+              } else {
+                ydir = 1
+              }
+
+              lively.moveBy(elementA, lively.pt(xdir *  0.1 * intersection.width, ydir *  0.1 * intersection.width))
+              lively.moveBy(elementB, lively.pt(-xdir *  0.1 * intersection.width, -ydir *  0.1 * intersection.width))
+
+            }
+          }
+        }        
+    }
+  }
+  
+  // this implementation moves the windows to far....
+  static oldExpandUntilNoIntersectionsExplosion(windows, maxiterations) {
     windows = windows || Windows.allWindows()
     if (maxiterations === undefined) maxiterations = 200;
     var center = this.getCenter(windows)

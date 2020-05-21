@@ -348,10 +348,15 @@ export default class Container extends Morph {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
     }
     
+    headers['cache-control'] = 'no-cache'
+    // #deprecated since we now use no-ache
     if (url.toString().match(lively4url)) {
       headers["forediting"] = true
     }
-  
+
+
+    
+    
     
     
     return fetch(url, {

@@ -5,6 +5,7 @@ MD*/
 
 
 import { uuid as generateUuid } from 'utils';
+import _ from 'src/external/lodash/lodash.js'
 import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
@@ -587,6 +588,23 @@ export default class Files {
     document.body.appendChild(back)
     back.url = url
   }
+  
+  
+  /*MD ## Git Infos MD*/
+  static hasGitMergeConflict(source) {
+    return source.match(/<<<<<<<(.|\n)*=======(.|\n)*>>>>>>>/m)
+  }
+  
+  static extractGitMergeConflictVersions(sourceWithConflict) {
+     var versions = _.uniq(sourceWithConflict.split("\n")
+      .filter(ea => ea.match(/^(<<<<<<<)|(>>>>>>>) /))
+      .map(ea => ea.replace(/^(<<<<<<<)|(>>>>>>>) /, "")))
+     return versions
+  }
+  
+  
+  
+  
 }
 
 
