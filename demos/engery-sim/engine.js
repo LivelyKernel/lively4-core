@@ -8,9 +8,10 @@ const MILLISECONDS_PER_SECOND = 1000;
 
 class Engine {
   
-  constructor(velocity = MIN_VELOCITY, collectCells = () => []) {
+  constructor(velocity = MIN_VELOCITY, collectCells = () => [], stopOnError = false) {
     this.collectCells = collectCells;
     this.velocity = velocity;
+    this.stopOnError = stopOnError;
     this.step = this.step.bind(this);
   }
   
@@ -41,11 +42,12 @@ class Engine {
     this.start();
   }
   
-  step() {
+  step(limitExecution) {
     const cells = this.collectCells();
     const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
     const prevState = this.collectState(sortedCells);
-    this.executeAllCells(sortedCells, prevState)
+    const exectionCells = limitExecution || sortedCells;
+    return this.executeAllCells(exectionCells, prevState)
       .then(nextState => this.updateCellStates(sortedCells, nextState));
   }
   
@@ -66,14 +68,14 @@ class Engine {
   
   updateCellStates(cells, state) {
     _.forEach(cells, cell =>
-      cell.setState(state[cell.getName()]));
+      cell.setState(state[cell.getNormalizedName()]));
   }
 
   collectState(cells) {
     return _.reduce(
       cells, 
       (partialState, cell) => { 
-        partialState[cell.getName()] = cell.getState();
+        partialState[cell.getNormalizedName()] = cell.getState();
         return partialState;
       },
       {}
@@ -81,9 +83,13 @@ class Engine {
   }
   
   executeAllCells(cells, state) {
+    const { stopOnError } = this;
     return _.reduce(
       cells, 
-      (statePromise, cell) => statePromise.then(state => cell.execute(state)), 
+      (statePromise, cell) => 
+      statePromise
+        .then(state => cell.execute(state))
+        .catch(({ state }) => (!stopOnError || !this.stop()) && state),
       Promise.resolve(state)
     );
   }

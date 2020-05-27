@@ -3,23 +3,22 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import _ from 'src/external/lodash/lodash.js';
 
-const MILLISECONDS_PER_SECOND = 1000;
-const SECONDS_PER_MINUTE = 60;
-
 export default class LivelySimulationController extends Morph {
   
   // lifecycle
   async initialize() {
     this.updateCheckpointOptions = this.updateCheckpointOptions.bind(this);
-    this.onResetSelectChange = this.onResetSelectChange.bind(this);
+    this.onRevertSelectChange = this.onRevertSelectChange.bind(this);
     this.registerButtons();
     this.registerSliders();
-    this.initializeResetSelect();
+    this.registerCheckBoxes();
+    this.initializeRevertSelect();
   }
   
   attachedCallback() {
     this.registerIsRunningUpdater();
     this.registerVelocityUpdater();
+    this.registerStopOnErrorUpdater();
   }
   
   detachedCallback() {
@@ -28,6 +27,20 @@ export default class LivelySimulationController extends Morph {
   }
   
   // initialization
+  registerCheckBoxes() { // based on registerButtons from Morph class
+    Array.from(this.shadowRoot.querySelectorAll('input[type="checkbox"]')).forEach(node => {
+      var name = node.id;
+      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      node.addEventListener("click", evt => {
+        if (this[funcName] instanceof Function) {
+          this[funcName](evt);
+        } else {
+          alert('No callback: ' +  funcName);
+        }
+      });
+    });
+  }
+  
   registerSliders() { // based on registerButtons from Morph class
     Array.from(this.shadowRoot.querySelectorAll('input[type="range"]')).forEach(node => {
       var name = node.id;
@@ -58,10 +71,17 @@ export default class LivelySimulationController extends Morph {
     });
   }
   
-  initializeResetSelect() {
-    const resetSelect = this.getResetSelect();
-    resetSelect.addEventListener('click', this.updateCheckpointOptions);
-    resetSelect.addEventListener('change', this.onResetSelectChange);
+  registerStopOnErrorUpdater() {
+    this.stopOnErrorUpdater = aexpr(() => this.engine.stopOnError).onChange(stopOnError => {
+      const stopOnErrorCheckBox = this.getStopOnErrorCheckBox();
+      stopOnErrorCheckBox.checked = stopOnError;
+    });
+  }
+  
+  initializeRevertSelect() {
+    const revertSelect = this.getRevertSelect();
+    revertSelect.addEventListener('click', this.updateCheckpointOptions);
+    revertSelect.addEventListener('change', this.onRevertSelectChange);
   }
   
   // event listener
@@ -80,55 +100,52 @@ export default class LivelySimulationController extends Morph {
     engine.setVelocity(velocity);
   }
   
-  onAppendCellButton() {
+  onAppendCellButton(event) {
     const { onAddCell } = this;
-    onAddCell();
+    onAddCell(event);
   }
   
-  onResetSelectChange({ target: { value: snapshot } }){
-    const { onReset } = this;
-    onReset(snapshot);
-    this.resetResetSelect();
+  onRevertSelectChange({ target: { value: snapshot } }){
+    const { onRevert } = this;
+    onRevert(snapshot);
+    this.resetRevertSelect();
+  }
+  
+  onStopOnErrorCheckBox({ target: { checked: stopOnError } }) {
+    const { onStopOnError } = this;
+    onStopOnError(stopOnError);
   }
   
   //
   updateCheckpointOptions() {
-    const resetSelect = this.getResetSelect();
+    const revertSelect = this.getRevertSelect();
     const options = this.generateCheckpointOptions();
-    this.resetResetSelect();
-    _.forEach(options, option => resetSelect.appendChild(option));
+    this.resetRevertSelect();
+    _.forEach(options, option => revertSelect.appendChild(option));
   }
   
-  resetResetSelect() {
-    const resetSelect = this.getResetSelect();
-    const { children } = resetSelect;
+  resetRevertSelect() {
+    const revertSelect = this.getRevertSelect();
+    const { children } = revertSelect;
     const checkpointOptions = _.takeRight(children, children.length - 1);
     _.forEach(checkpointOptions, child => child.remove());
-    resetSelect.value = '';
+    revertSelect.value = '';
   }
   
   generateCheckpointOptions() {
     const { getHistory } = this;
-    const history = _.filter(_.reverse(getHistory()));
-    const now = new Date().getTime();
+    const history = _.filter(getHistory());
     return _.map(history, ({ snapshot, timestamp }) => (
       <option value={snapshot}>
-        { this.readableTimeDifference(now, timestamp) }
+        { timestamp }
       </option>
     ));
   }
   
-  readableTimeDifference(now, timestamp) {
-    const timeDifferenceInSeconds = Math.abs(timestamp - now) / MILLISECONDS_PER_SECOND;
-    const minutes = Math.floor(timeDifferenceInSeconds / SECONDS_PER_MINUTE);
-    const seconds = Math.round(timeDifferenceInSeconds - minutes * SECONDS_PER_MINUTE);
-    return `${minutes ? `${minutes}min ` : ''}${seconds}s ago`;
-  }
-  
   // getter & setter
-  getResetSelect() {
+  getRevertSelect() {
     const { shadowRoot } = this;
-    return shadowRoot.querySelector('#resetSelect');
+    return shadowRoot.querySelector('#revertSelect');
   }
   
   getVelocitySlider() {
@@ -144,5 +161,10 @@ export default class LivelySimulationController extends Morph {
   getStartStopButton() {
     const { shadowRoot } = this;
     return shadowRoot.querySelector('#startStopButton');
+  }
+  
+  getStopOnErrorCheckBox() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#stopOnErrorCheckBox');
   }
 }

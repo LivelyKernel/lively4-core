@@ -2,57 +2,128 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-  .container {   
-    margin:0px;
-    padding: 0px;
-    width: 100%;
-    height: 100%;
-    min-width: 300px;
-    min-height: 300px;
+  :host {
+    position: absolute;
+    min-height: 115px;
+    min-width: 250px;
     border: solid lightgrey 1px;
     border-radius: 1.5px;
     background: white;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    z-index: 1;
+  }
+  #container { 
+    display: flex;
+    flex-direction: column;
+    padding: 1px;
+    width: 100%;
+    height: 100%;
+  }
+  #container[disabled=true] {
+    opacity: 0.3;
   }
   hr {
-    width:100%;
-    margin:0px;
-    height:1px;
+    margin: 0 5px;
+    height: 1px;
     border-width:0;
     color: rgba(160,160,160,0.2);
     background-color: rgba(160,160,160,0.2);
   }
-  
-  .content {
-    padding: 10px;
-  }
   .header {
-    padding: 10px;
-  }
-  .w100 {
-    width: 100%;
+    display: flex;
+    align-items: center;
   }
   #cellNameInput {
     border: none;
     background: none;
+    margin: 5px;
+    font-size: 1.3rem;
+    text-align: center;
+    flex-grow: 1;
   }
   #stateTextArea {
-    resize: none;
-    height: 50px;
+    resize: vertical;
+    min-height: 1.3em;
     border: 2px solid lightgrey;
+    margin: 5px;
   }
   #snippetCodeMirror {
-    height: 180px;
+    min-height: 20px;
+    flex-grow: 1;
+    margin-left: 5px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+  #errorContainer {
+    display: none;
+    color: rgb(97, 26, 21);
+    border: 1px solid #f44336;
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+  #errorMessageDiv {
+    flex-grow: 1;
+    overflow-wrap: anywhere;
+  }
+  a {
+    color: inherit;
+  }
+  #stateErrorSpan {
+    display: none;
+    color: red;
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: bold;
+  }  
+  #mydiv {
+    position: absolute;
+  }
+  #mydivheader {
+    cursor: move;
+  }
+  #titleBar {
+    display: flex;
+    height: 1.2em;
+    width: 100%;
+    background-color: #778899;
+  }
+  #titleBar * {
+    color: white;
+    padding: 2px;
+    width: 1.3rem;
+    font-weight: 500;
+    cursor: pointer;
+    line-height: 1.0rem;
+    font-size: 0.8em;
+  }
+  #titleBar i:hover {
+    background-color: #cde6f7;
+    color: #2a8dd4;
+  }
+  #cellNameSpan {
+    flex-grow: 1;
   }
 </style>
-<div class='container'>
+<div id='container'>
+  <div id='titleBar'>
+    <i id='menuIcon' class="fa fa-bars"></i>
+    <span id='cellNameSpan'></span>
+    <i id='deleteIcon' class="fa fa-trash"></i>
+  </div>
   <div class='header'>
-      <input id='cellNameInput' class='w100' placeholder="Enter cell name" />
+    <input id='cellNameInput' placeholder="Enter cell name" />
   </div>
   <hr>
-  <div class='content' class='w100'>
-    <textarea id='stateTextArea' class='w100'></textarea>
-    <lively-code-mirror id='snippetCodeMirror' class='w100'></lively-code-mirror>
+  <textarea id='stateTextArea'></textarea>
+  <span id='stateErrorSpan'></span>
+  <lively-code-mirror id='snippetCodeMirror' overscroll='contain' wrapmode='true'></lively-code-mirror>
+  <div id='errorContainer'>
+    <div id='errorMessageDiv'></div>
+    <a id='openErrorLink'><i class="fa fa-external-link-square"></i></a>
   </div>
 </div>
 <lively-resizer class="top-left"></lively-resizer>

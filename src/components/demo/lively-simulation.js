@@ -14,9 +14,11 @@ export default class LivelySimulation extends Morph {
     lively.html.registerKeys(this);
     this.collectCells = this.collectCells.bind(this);
     this.addCell = this.addCell.bind(this);
-    this.reset = this.reset.bind(this);
+    this.revert = this.revert.bind(this);
+    this.onStopOnError = this.onStopOnError.bind(this);
     this.initializeEngine();
     this.initializeController();
+    this.initializeContainerRoot();
   }
   
   attachedCallback() {
@@ -30,13 +32,19 @@ export default class LivelySimulation extends Morph {
   }
   
   // initialization
+  initializeContainerRoot() {
+    const { parentElement } = this;
+    if (parentElement.id === 'container-root')
+      parentElement.style.height = '100%';
+  }
   initializeHistory() {
     this.history = new History(() => this.getInnerHTML());
   }
   
   initializeEngine() {
     const velocity = this.getJSONAttribute('data-velocity') || undefined;
-    this.engine = new Engine(velocity, this.collectCells);
+    const stopOnError = this.getJSONAttribute('data-stop-on-error') || undefined;
+    this.engine = new Engine(velocity, this.collectCells, stopOnError);
   }
   
   initializeController() {
@@ -44,8 +52,9 @@ export default class LivelySimulation extends Morph {
     const controller = shadowRoot.querySelector('#controller');
     controller.engine = engine;
     controller.onAddCell = this.addCell;
-    controller.onReset = this.reset;
+    controller.onRevert = this.revert;
     controller.getHistory = history.get;
+    controller.onStopOnError = this.onStopOnError;
   }
   
   // event listener
@@ -83,13 +92,18 @@ export default class LivelySimulation extends Morph {
     return Array.from(this.querySelectorAll('lively-simulation-cell'));
   }
   
-  addCell() {
+  addCell(event) {
     return Promise
       .resolve(<lively-simulation-cell></lively-simulation-cell>)
-      .then(cell => this.appendChild(cell));
+      .then(cell => {
+        this.appendChild(cell);
+        cell.setName(this.ensureUniqueCellName(cell.getName()));
+        if (!event) return;
+        cell.startGrabbing(event);
+      });
   }
   
-  reset(snapshot) {
+  revert(snapshot) {
     this.innerHTML = snapshot === EMPTY_PLACEHOLDER ? '' : snapshot;
   }
   
@@ -98,15 +112,50 @@ export default class LivelySimulation extends Morph {
     return _.some(cells, cell => cell.isFocused());
   }
   
+  onStopOnError(stopOnError) {
+    const { engine } = this;
+    engine.stopOnError = stopOnError;
+  }
+  
+  ensureUniqueCellName(cellNameProposal, counterSlug = 1) {
+    const cellNameProposalWithSlug = 
+        counterSlug > 1 ? `${cellNameProposal} (${counterSlug})` : cellNameProposal;
+    const cellNames = _.map(this.collectCells(), cell => cell.getName());
+    const sameNameCount = _.filter(cellNames, name => 
+                                   name === cellNameProposalWithSlug).length;
+    if (sameNameCount - (counterSlug === 1) <= 0) return cellNameProposalWithSlug;
+    return this.ensureUniqueCellName(cellNameProposal, counterSlug + 1);
+  }
+  
+  cloneCell(event, cell) {
+    cell.livelyPrepareSave();
+    const clone = cell.cloneNode();
+    this.appendChild(clone);
+    setTimeout(() => {
+      clone.setName(this.ensureUniqueCellName(clone.getName()));
+      clone.startGrabbing(event);
+    }, 0);
+  }
+  
+  executeSingleCell(cell) {
+    const { engine } = this;
+    return engine.step([ cell ]);
+  }
+  
   // getter & setter
   getInnerHTML() {
     const { innerHTML } = this;
     return innerHTML.length ? innerHTML : EMPTY_PLACEHOLDER;
   }
   
+  getForegroundCell() {
+    return _.maxBy(this.collectCells(), cell => parseInt(cell.style.zIndex || 1));
+  }
+  
   /* Lively-specific API */
   livelyPrepareSave() {
-    const { engine: { velocity } } = this;
+    const { engine: { stopOnError, velocity } } = this;
     this.setJSONAttribute('data-velocity', velocity);
+    this.setJSONAttribute('data-stop-on-error', stopOnError);
   } 
 }
