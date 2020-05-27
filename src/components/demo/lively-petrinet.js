@@ -11,63 +11,45 @@ export default class LivelyPetrinet extends Morph {
   async initialize() {
     this.windowTitle = "LivelyPetrinet";
     this.registerButtons();
-    this.testVariable = 1;
-    this.nodes = [];
+    this.mouseIsOnNode = false;
+    
+    lively.addEventListener("OnMouseClick", this,     "pointerdown", (evt) => this.onMouseClick(evt))
+    
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
+    lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
 
-    // this.get("#textField").value = this.testVariable;
-    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false)
 
   }
   
-    async livelyExample() {
-      var a = await (<lively-petrinet-node></lively-petrinet-node>)
-      lively.setExtent(a, pt(100,100))
-      lively.setPosition(a, pt(100,100))
-
-      var b = document.createElement("div")
-      b.style.backgroundColor = "blue"
-      b.textContent = "b"
-      lively.setExtent(b, pt(100,100))
-      lively.setPosition(b, pt(300,100))
-
-      const connector = await (<lively-connector></lively-connector>);
-
-      //this.appendChild(a)
-      //this.appendChild(connector)
-      //this.appendChild(b)
-
-      //connector.connect(a, b) 
+  get nodes() {
+    return Array.from(this.querySelectorAll("lively-petrinet-node"));
   }
+  
+  async livelyExample() {
+    /*
+    var a = await (<div></div>)
+    a.style.backgroundColor = "red"
+    a.textContent = "a"
+    lively.setExtent(a, pt(100,100))
+    lively.setPosition(a, pt(100,100))
+    lively.addEventListener("petri", a, "click", () => this.manageNewConnection(a))
 
 
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
+    var b = await (<div></div>)
+    b.style.backgroundColor = "blue"
+    b.textContent = "b"
+    lively.setExtent(b, pt(100,100))
+    lively.setPosition(b, pt(300,100));
+    lively.addEventListener("b_listener", b, "click", () => this.manageNewConnection(b))
 
-  // this method is automatically registered as handler through ``registerButtons``
-  onPlusButton() {
-    this.testVariable += 1;
-    this.get("#textField").value =  this.testVariable
-  }
 
-  onMinusButton() {
-    this.testVariable -= 1;
-    this.get("#textField").value =  this.testVariable
-  }
+    this.appendChild(a)
+    this.appendChild(b)
+    */
+}
 
   /* Lively-specific API */
 
@@ -76,15 +58,6 @@ export default class LivelyPetrinet extends Morph {
     this.setAttribute("data-mydata", this.get("#textField").value)
   }
 
-  livelyPreMigrate() {
-    // is called on the old object before the migration
-  }
-
-  livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
-  }
 
   livelyInspect(contentNode, inspector) {
     // do nothing
@@ -97,8 +70,7 @@ export default class LivelyPetrinet extends Morph {
 
         var menu = new ContextMenu(this, [
               ["add node", () => this.addNode()],
-              ["add pane", () => this.addPane()],
-              ["add connector", () => this.addConnector()]
+              ["delete node", () => this.deleteNode()],
             ]);
         menu.openIn(document.body, evt, this);
         return true;
@@ -106,28 +78,87 @@ export default class LivelyPetrinet extends Morph {
   }
   
   
-  async addNode() {
-      var node = await (<lively-petrinet-node></lively-petrinet-node>);
-      lively.setExtent(node, pt(50, 50));
-      lively.setPosition(node, pt(100, 100));
-      this.nodes.push(node);
-      this.appendChild(node);
+  async onMouseMove(evt) { 
+    const cursor = this.get("#cursor");
+    const windowPosition = lively.getGlobalPosition(this);
+    const x = evt.clientX - windowPosition.x;
+    const y = evt.clientY - windowPosition.y;
+    const offset = 5;
+    if (this.connectionIsStarted()) {
+      lively.setPosition(cursor, pt(x - offset,y - offset));
+    }
   }
   
-  async addPane() {
-    var pane = await (<lively-petrinet-pane></lively-petrinet-pane>);
-    lively.setExtent(pane, pt(50, 50));
-    lively.setPosition(pane, pt(100, 100));
-    this.appendChild(pane);
+  connectionIsStarted() {
+    const cursor = this.get("#cursor");
+    const startedConnection = cursor != null;
+    return startedConnection;
   }
   
-  async addConnector() {
-    var connector = await(<lively-connector></lively-connector>);
-    connector.connect(this.nodes[0], this.nodes[1]);
-    this.appendChild(connector);
+  onMouseClick(evt) {
+    if (this.mouseIsOnNode || !this.connectionIsStarted())      {
+        return;
+    }
     
+    let cursor = this.get("#cursor");
+    cursor.remove();
+    this.unfinishedConnector.remove();
   }
   
+  async startConnectionFrom(element) {
+    //Create Connector
+    var connector = await (<lively-petrinet-edge></lively-petrinet-edge>);
+    this.append(connector);
+    connector.connectFrom(element);
+    
+    // Create Cursor That Moves Connector
+    var cursor = await (<div></div>)
+    cursor.style.backgroundColor = "blue"
+    cursor.id = "cursor"
+    lively.setExtent(cursor, pt(5,5))
+    lively.setPosition(cursor, lively.getPosition(element));
+    this.append(cursor);
+    
+    //Connect Cursor To Connector
+    connector.connectTo(cursor);
+    this.unfinishedConnector = connector;
+
+    return connector
+  }
+  
+  async connectTo(element) {
+    this.unfinishedConnector.connectTo(element);
+    this.get("#cursor").remove();
+  }
+  
+  
+  
+  async manageNewConnection(element) {
+    if (!this.connectionIsStarted()) {
+      await this.startConnectionFrom(element);
+    } else {
+      await this.connectTo(element);
+    }
+  }
+  
+  
+    async addNode() {
+      var node = await (<lively-petrinet-node></lively-petrinet-node>);
+      var x = Math.random() * 100;
+      var y = Math.random() * 100;
+      lively.setPosition(node, pt(x,y));
+      node.onmouseover = () => this.mouseIsOnNode = true;
+      node.onmouseout = () => this.mouseIsOnNode = false;
+      this.appendChild(node);
+      lively.addEventListener("ClickOnNode", node, "click", () => this.manageNewConnection(node));
+      
+
+  }
+
+    async deleteNode(){
+    this.nodes[0].remove()
+  }
+
   
 //  onDblClick() {
 //    this.animate([

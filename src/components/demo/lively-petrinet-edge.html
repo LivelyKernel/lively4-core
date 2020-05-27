@@ -1,31 +1,30 @@
-<template id="lively-petrinet-edge">
-<style type="text/css">
- #line {
-  margin-top: 14px;
-  width: 90px;
-  background: #E0E0E0;
-  height: 10px;
-  float: left;
-}
-  
-  #arrow {
-  width: 120px;
-}
-  
-  #point {
-  width: 0;
-  height: 0;
-  border-top: 20px solid transparent;
-  border-bottom: 20px solid transparent;
-  border-left: 30px solid #E0E0E0;
-  float: right;
-}
-  
-</style>
-
-  <div class="lively-content" id="arrow">
-    <div class="lively-content" id="line"></div>
-    <div class="lively-content" id="point"></div>
+<template id="lively-petrinet-edge" >
+  <style>
+    :host {
+      position: absolute;
+    }
+    #content {
+      background-color: blue;
+    }
+    #svg {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 100px;
+      height: 100px;
+      border: none;
+      opacity: 1;
+      overflow: visible;
+      z-index: 1;
+    }
+  </style>
+  <svg id="svg">
+    <defs>
+      <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="10" refY="6" orient="auto">
+        <path d="M2,2 M4,10 L10,6 L4,2" style="fill:transparent;" stroke='gray' />
+      </marker>
+    </defs>`;
+    <path id="path" stroke='gray' stroke-width="2" d="M 0 0 L 100 100" stroke-linejoin="round" style="marker-end: url(#markerArrow)"></path>
+  </svg>
   <slot></slot>
-</div>
 </template>
