@@ -4,10 +4,10 @@ import {pt} from 'src/client/graphics.js';
 
 
 
-export default class LivelyPetrinetNode extends Morph {
+export default class LivelyPetrinetPlace extends Morph {
 
   initialize() {
-    this.windowTitle = "LivelyPetrinetNode";
+    this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     //this.addEventListener("add dot", this, "click", () => this.onClick());
@@ -33,34 +33,32 @@ export default class LivelyPetrinetNode extends Morph {
       evt.preventDefault();
 
        var menu = new ContextMenu(this, [
-          ["add dot", () => this.addDot()],
-          ["delete dot", () => this.deleteDot()],
+          ["add token", () => this.addToken()],
+          ["delete token", () => this.deleteToken()],
             ]);
        menu.openIn(document.body, evt, this);
         return true;
       }
   }
 
-      async addDot() {
-      
-      //for(var i=0; i<1;i++){
-      var dot = await (<lively-petrinet-dot></lively-petrinet-dot>);
-      //lively.setExtent(dot, pt(50, 50));
-      var x = Math.random() * 50 + 25;
-      var y = Math.random() * 50 + 25;
-      lively.setPosition(dot, pt(x,y));
+      async addToken() {
+      const length = 50;
+      var token = await (<lively-petrinet-token></lively-petrinet-token>);
+      var x = Math.random() * length/2 + length/4;
+      var y = Math.random() * length/2 + length/4;
+      lively.setPosition(token, pt(x,y));
         
       //lively.setPosition(dot, pt(10, 10));
-      this.appendChild(dot); 
+      this.appendChild(token); 
   }
   
   
-  async deleteDot(){
-      this.dots[0].remove()
+  async deleteToken(){
+      this.tokens[0].remove()
   }
    
-  get dots() {
-    return Array.from(this.querySelectorAll("lively-petrinet-dot"));
+  get tokens() {
+    return Array.from(this.querySelectorAll("lively-petrinet-token"));
   }
   
   

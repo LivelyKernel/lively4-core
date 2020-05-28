@@ -38,9 +38,6 @@
 </style>
 <button id="startStopButton">Start</button>
 <button id="stepButton">Step</button>
-<select id='resetSelect'>
-  <option value="" disabled selected>Reset to...</option>
-</select>
 Steps per Second: 
 <span id="velocitySpan"></span>
   <input 
@@ -52,6 +49,10 @@ Steps per Second:
     step="1" 
     value="1"
   />
+<label><input id='stopOnErrorCheckBox' type="checkbox" />Stop on error</label>
+<select id='revertSelect'>
+  <option value="" disabled selected>Revert to...</option>
+</select>
 <button id="appendCellButton">+ Add Cell</button>
 </template>
 
