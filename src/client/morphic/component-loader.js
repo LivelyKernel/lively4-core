@@ -162,11 +162,14 @@ export default class ComponentLoader {
   
   static applyTemplate(element, componentName) {
     var template = this.templates[componentName]
+    return this.applyTemplateElement(element, template) 
+  }
+
+  static applyTemplateElement(element,template) {
     if (template) {
       if (!element.shadowRoot) {
         element.attachShadow({mode: 'open'});
-      }
-      
+      }      
       var fragment = template.cloneNode(true)
       fragment.childNodes.forEach(ea => {
         var clone = document.importNode(ea, true)
@@ -175,7 +178,7 @@ export default class ComponentLoader {
       })
     }
   }
-  
+
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
   static async register(componentName, template, aClass) { 

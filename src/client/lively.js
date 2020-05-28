@@ -329,6 +329,7 @@ export default class Lively {
     // #TODO bug, sometimes the cache invalidation... does not work #BUG
     return fetch("cached:" + url).then(r => r.text()).then(css => {
       // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+      element.setAttribute("data-url", lively.paths.normalizeURL(url)) // so we find it again for updating... data-src is relative
       element.innerHTML = css;
     })
   }
@@ -348,7 +349,6 @@ export default class Lively {
           cssURL = baseURL.replace(/\/?$/, "/") + cssURL
         }
         allSrc.push(src)
-        ea.url = lively.paths.normalizeURL(cssURL)
         promises.push(this.fillTemplateStyle(ea, cssURL));
       }
     });
