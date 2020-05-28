@@ -1,0 +1,8 @@
+#foo {
+  border: 19px solid yellow;
+}
+#bar {
+  border: 19px solid yellow;
+  color: blue;
+  font-size: bold;
+}
