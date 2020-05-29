@@ -10,6 +10,7 @@ import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-r
 import d3 from 'src/external/d3.v5.js';
 
 const VARIABLE_ID_MAP = new Map();
+const VARIABLE_COLOR_MAP = new Map();
 let NEXT_VARIABLE_ID = 0;
 
 export default class AstNodeIdentifier extends AbstractAstNode {
@@ -27,6 +28,11 @@ export default class AstNodeIdentifier extends AbstractAstNode {
     // #TODO: this is a simple error-afflicted method to discover binding
     // first, learn more about the actual use case, before optimizing too far
     this.setAttribute('ast-node-identifier-id', VARIABLE_ID_MAP.getOrCreate(path.scope.getBinding(path.node.name), () => NEXT_VARIABLE_ID++ % 200));
+    this.style.setProperty('--identifier-color', VARIABLE_COLOR_MAP.getOrCreate(path.scope.getBinding(path.node.name), () => d3.hsl(
+      Math.random() * 360,
+      Math.random() * 0.2 + 0.4,
+      Math.random() * 0.2 + 0.4
+    )));
   }
   
   get name() { return this.get('#name'); }
