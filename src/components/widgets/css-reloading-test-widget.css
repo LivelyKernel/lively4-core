@@ -1,9 +1,9 @@
 #foo {
-  border: 19px solid yellow;
+  border: 22px green solid;
 }
 #bar {
-  border: 19px solid yellow;
-  color: red;
+  border: 19px solid pink;
+
   font-size: bold;
 }
 
