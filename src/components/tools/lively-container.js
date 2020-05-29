@@ -2011,7 +2011,13 @@ export default class Container extends Morph {
   
   updateCSS() {
     var url = "" + this.getURL()
+    
+    
     var all = Array.from(lively.allElements(true))
+    
+    Object.values(lively.components.templates).forEach(template => {
+      all.push(...template.querySelectorAll("*"))      
+    })
     
     all.filter(ea => ea.localName == "link")
       .filter(ea => ea.href == url)

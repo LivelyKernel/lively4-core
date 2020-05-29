@@ -1,8 +1,8 @@
 #foo {
-  border: 22px green solid;
+  border: 22px blue solid;
 }
 #bar {
-  border: 19px solid pink;
+  border: 19px solid blue;
 
   font-size: bold;
 }
