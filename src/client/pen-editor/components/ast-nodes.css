@@ -3,6 +3,10 @@
 .keyword {
   border: var(--my-border, 2px green solid);
 }
+[part=notation]
+ {
+  border: var(--my-border, 2px green solid);
+}
 
 .notation {
   border: var(--my-border, 2px green solid);

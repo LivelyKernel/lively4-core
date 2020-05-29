@@ -1,8 +1,8 @@
-#foo {
-  border: 22px blue solid;
+.foo {
+    border:  var(--my-color, blueviolet);
 }
 #bar {
-  border: 19px solid blue;
+  border: 49px solid green;
 
   font-size: bold;
 }
