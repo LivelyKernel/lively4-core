@@ -13,8 +13,7 @@ describe('Component loader', () => {
         expect(element.shadowRoot.querySelector("#foo").localName).to.equal("div")
       })
 
-      // does not run in travis... #TODO fix timeout or paht issue
-      xit('fills style ', async () => {        
+      it('fills style ', async () => {        
         var element = <div>World</div>
         var path = "/test/component-loader-test.css"
         var url = lively4url + path
