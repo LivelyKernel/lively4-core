@@ -320,39 +320,7 @@ export default class ComponentLoader {
     })
     .map((el) => {
       var name = el.nodeName.toLowerCase();
-      if (loadingPromises[name]) {
-        // the loading was already triggered
-        return loadingPromises[name];
-      }
-
-      __debugOpenPromisedComponents.add(name)
-      // create a promise that resolves once el is completely created
-      var createdPromise = new Promise((resolve, reject) => {
-        if (el._lively4created) {
-          return resolve({target: el})
-        }
-        el.addEventListener("created", (evt) => {
-          evt.stopPropagation();
-          __debugOpenPromisedComponents.delete(name)
-          resolve(evt);
-        });
-      });
-
-      // trigger loading the template of the unresolved element
-      loadingPromises[name] = createdPromise;
-      
-      loadingPromises[name].name = "[Loaded " +name + " " + Date.now() + "]"
-      
-      this.loadByName(name).then((didInsertTag) => {
-        if(!didInsertTag) {
-          console.error("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
-          delete loadingPromises[name];
-          return null;
-        }
-      })
-      
-
-      return createdPromise;
+      return this.ensureLoadByName(name, __debugOpenPromisedComponents, el)
     })
     .filter(promise => promise != null);
     
@@ -388,6 +356,44 @@ export default class ComponentLoader {
           _log("ERROR loading component ", err)
       })
     })
+  }
+  
+  static ensureLoadByName(name, __debugOpenPromisedComponents=new Set(), el) {
+     if (loadingPromises[name]) {
+        console.log("EARLY ensureLoadByName... " + name)
+        // the loading was already triggered
+        return loadingPromises[name];
+      }
+
+      __debugOpenPromisedComponents.add(name)
+      // create a promise that resolves once el is completely created
+      var createdPromise = new Promise((resolve, reject) => {
+        if (el) {
+          if (el._lively4created) {
+            return resolve({target: el})
+          }
+          el.addEventListener("created", (evt) => {
+            evt.stopPropagation();
+            __debugOpenPromisedComponents.delete(name)
+            resolve(evt);
+          });          
+        }
+      });
+
+      // trigger loading the template of the unresolved element
+      loadingPromises[name] = createdPromise;
+      
+      loadingPromises[name].name = "[Loaded " +name + " " + Date.now() + "]"
+      
+      this.loadByName(name).then((didInsertTag) => {
+        if(!didInsertTag) {
+          console.error("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+          delete loadingPromises[name];
+          return null;
+        }
+      })
+      console.log("FINISHE ensureLoadByName... " + name)
+      return createdPromise;
   }
   
   
