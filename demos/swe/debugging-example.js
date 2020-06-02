@@ -1,9 +1,9 @@
-var a = 2;
-var b = 3;
+let a = 2;
+let b = 3;
 
 function mul() {
-  var result = a * b;
+  let result = a * b;
   return result;
 }
 
-lively.notify(mul())
+mul()
