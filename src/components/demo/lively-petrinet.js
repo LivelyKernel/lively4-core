@@ -13,25 +13,22 @@ export default class LivelyPetrinet extends Morph {
     this.windowTitle = "LivelyPetrinet";
     this.registerButtons();
     this.mouseIsOnNode = false;
-    
-    const simulator = this.get("lively-petrinet-simulation")
-    simulator.setOnStep(() => this.onStep(this));
-    
-    
+                
     lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
     
-
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
     lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false)
 
-  }
+}
   
-  get simulator() {
-        return Array.from(this.querySelectorAll("lively-petrinet-simulator"));
-  }
+  
+  
+  // Access Methods
+  
+  
   
   get places() {
     return Array.from(this.querySelectorAll("lively-petrinet-place"));
@@ -44,20 +41,41 @@ export default class LivelyPetrinet extends Morph {
   get connectors() {
     return Array.from(this.querySelectorAll("lively-petrinet-edge"))
   }
-
   
   
-  /* Lively-specific API */
+  
+  // Methods For Simulation
+  
+  
+  
+  getState() {
+    const numberOfTokens = {}
+    for (const place of this.places) {
+      numberOfTokens[place.placeId] = place.numberOfTokens();
+    }
+    return numberOfTokens;
 
-  // store something that would be lost
-  livelyPrepareSave() {
-    this.setAttribute("data-mydata", this.get("#textField").value)
   }
   
-  onStep(petrinet) {
-    for (const transition of petrinet.transitions) {
-      const placesBefore = petrinet.getPlacesBefore(transition);
-      const placesAfter = petrinet.getPlacesAfter(transition);
+  saveState() {
+    this.testState = this.getState();
+  }
+  
+  
+  async setState(state) {
+    for (const placeId of Object.keys(state)) {
+      const place = this.places.filter(place => place.placeId === placeId)[0];
+      place.deleteAllTokens();
+      for (let i = 0; i < state[placeId]; i++) {
+        place.addToken();
+      }
+    }
+  }
+  
+  onStep() {
+    for (const transition of this.transitions) {
+      const placesBefore = this.getPlacesBefore(transition);
+      const placesAfter = this.getPlacesAfter(transition);
       const firingIsPossible = placesBefore.every((place) => place.tokens.length > 0);
       const transitionAllowsFiring = transition.isActiveTransition();
       if (!firingIsPossible || !transitionAllowsFiring) {
@@ -69,38 +87,40 @@ export default class LivelyPetrinet extends Morph {
       for (const place of placesAfter) {
         place.addToken();
       }
+      }
     }
-  }
 
-  
-  
-copyElements(elementsArray) {
-   return elementsArray.map(element => element.cloneNode());
-}
-  
-
-  
   getPlacesBefore(transition) {
     let placesBefore = [];
     for (const connector of this.connectors) {
-      if (connector.toElement == transition) {
-        placesBefore.push(connector.fromElement);
+      if (connector.toComponent == transition) {
+        placesBefore.push(connector.fromComponent);
       }
     }
     return placesBefore;
   }
   
-    getPlacesAfter(transition) {
+  getPlacesAfter(transition) {
     let placesAfter = [];
     for (const connector of this.connectors) {
-      if (connector.fromElement == transition) {
-        placesAfter.push(connector.toElement);
+      if (connector.fromComponent == transition) {
+        placesAfter.push(connector.toComponent);
       }
     }
     return placesAfter;
   }
 
   
+  
+  /* Lively-specific API */
+  
+
+  
+  // store something that would be lost
+  livelyPrepareSave() {
+    
+  }
+    
 
   livelyInspect(contentNode, inspector) {
     // do nothing
@@ -123,6 +143,26 @@ copyElements(elementsArray) {
       }
   }
   
+  async livelyExample() {
+    await this.addPlace();
+    this.places[0].addToken();
+    await this.addPlace();
+    await this.addTransition();
+    lively.setPosition(this.places[1], pt(500, 100))
+    lively.setPosition(this.transitions[0], pt(300, 100));
+    const connector1 = await(<lively-petrinet-edge></lively-petrinet-edge>);
+    this.appendChild(connector1);
+    connector1.connectPetrinetComponents(this.places[0], this.transitions[0]);
+    const connector2 = await(<lively-petrinet-edge></lively-petrinet-edge>);
+    this.appendChild(connector2);
+    connector2.connectPetrinetComponents(this.transitions[0],this.places[1]);
+  }
+  
+  
+  
+  // Handle Connector Creation
+  
+  
   
   async onMouseMove(evt) { 
     const cursor = this.get("#cursor");
@@ -133,21 +173,6 @@ copyElements(elementsArray) {
     if (this.connectionIsStarted()) {
       lively.setPosition(cursor, pt(x - offset,y - offset));
     }
-  }
-  
-  async livelyExample() {
-    await this.addPlace();
-    this.places[0].addToken();
-    await this.addPlace();
-    await this.addTransition();
-    lively.setPosition(this.places[1], pt(500, 100))
-    lively.setPosition(this.transitions[0], pt(300, 100));
-    const connector1 = await(<lively-petrinet-edge></lively-petrinet-edge>);
-    this.appendChild(connector1);
-    connector1.connect(this.places[0], this.transitions[0]);
-    const connector2 = await(<lively-petrinet-edge></lively-petrinet-edge>);
-    this.appendChild(connector2);
-    connector2.connect(this.transitions[0], this.places[1]);
   }
   
   connectionIsStarted() {
@@ -172,7 +197,7 @@ copyElements(elementsArray) {
     //Create Connector
     var connector = await (<lively-petrinet-edge></lively-petrinet-edge>);
     this.append(connector);
-    connector.connectFrom(element);
+    connector.connectFromPetrinetComponent(element);
     
     // Create Cursor That Moves Connector
     var cursor = await (<div></div>)
@@ -198,7 +223,7 @@ copyElements(elementsArray) {
       this.deleteUnfinishedConnector(this.get("#cursor"), this.unfinishedConnector);
       return
     }
-    this.unfinishedConnector.connectTo(element);
+    this.unfinishedConnector.connectToPetrinetComponent(element);
     this.get("#cursor").remove();
   }
   
@@ -210,23 +235,44 @@ copyElements(elementsArray) {
     }
   }
   
+  updateAllConnectors() {
+    for (const connector of this.connectors) {
+      connector.updateConnector();
+    }
+  }
   
   
-    async addPlace() {
+  
+  
+  
+  // Add and Delete Elements
+  
+  
+  
+  async addPlace() {
       var node = await (<lively-petrinet-place></lively-petrinet-place>);
       this.initializeElement(node);
       this.appendChild(node);
   }
   
-  async initializeElement(element) {
+  async addListeners(element) {
+      element.onmouseover = () => this.mouseIsOnNode = true;
+      element.onmouseout = () => this.mouseIsOnNode = false;
+      lively.addEventListener("onDblClick", element.graphicElement(), "dblclick", () =>     this.manageNewConnection(element));
+  }
+  
+  setInitialPosition(element) {
       var x = Math.random() * 50 + 50;
       var y = Math.random() * 50 + 50;
       lively.setPosition(element, pt(x,y));
-      element.onmouseover = () => this.mouseIsOnNode = true;
-      element.onmouseout = () => this.mouseIsOnNode = false;
-      lively.addEventListener("onDblClick", element, "dblclick", () =>     this.manageNewConnection(element));
+  }
+  
+  async initializeElement(element) {
+      this.setInitialPosition(element);
+      this.addListeners(element);
   }
 
+  
   async deletePlace(){
     this.places[0].remove()
   }
@@ -238,8 +284,34 @@ copyElements(elementsArray) {
     this.appendChild(transition);
   }
 
-    async deleteTransition(){
+  
+  async deleteTransition(){
       this.transitions[0].remove()
+  }
+  
+  
+  
+  
+// Array Helper Methods
+
+  
+  
+  copyElements(elementsArray) {
+     return elementsArray.map(element => element.cloneNode());
+  }
+  
+  deleteAllElements(elementsArray) {
+    const arrayLength = elementsArray.length;
+    for (let i = 0; i < arrayLength; i++) {
+      // Is it risky to delete While in For Loop?
+      elementsArray[i].remove();
+    }
+  }
+  
+  async addAllElements(elementsArray) {
+    for (const element of elementsArray) {
+      await this.appendChild(element);
+    }
   }
 
 }
