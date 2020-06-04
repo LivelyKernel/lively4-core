@@ -10,7 +10,9 @@ export default class LivelySimulationCell extends Morph {
   // life cycle
   initialize() {
     this.state = {};
+    this.logs = [];
     this.shouldSkip = this.hasAttribute('data-should-skip');
+    this.showLog = this.hasAttribute('data-show-log');
     this.handleStateTextAreaFocusOut = this.handleStateTextAreaFocusOut.bind(this);
     this.handleStateTextAreaFocusIn = this.handleStateTextAreaFocusIn.bind(this);
     this.handleStateTextAreaKeyDown = this.handleStateTextAreaKeyDown.bind(this);
@@ -24,6 +26,7 @@ export default class LivelySimulationCell extends Morph {
     this.handleExecutionResult = this.handleExecutionResult.bind(this);
     this.toggleSkip = this.toggleSkip.bind(this);
     this.executeSelf = this.executeSelf.bind(this);
+    this.toggleLogCodeView = this.toggleLogCodeView.bind(this);
     this.initializeCellNameInput();
     this.initializeStateTextArea();
     this.initializeSnippetCodeMirror();
@@ -31,14 +34,16 @@ export default class LivelySimulationCell extends Morph {
     this.initializeTitleBar();
     this.initializeZIndexHandler();
     this.initializeContainer();
+    this.initializeToggleLogViewDiv();
+    this.initializeClearLogSpan();
   }
   
   attachedCallback() {
-    this.registerCellNameUpdater();
+    this.registerLogTable();  
   }
   
   detachedCallback() {
-    this.cellNameUpdater.dispose();
+    this.logTableUpdater.dispose();
   }
   
   // initialize
@@ -47,6 +52,7 @@ export default class LivelySimulationCell extends Morph {
     const snippet = this.getAttribute('data-snippet') || '// Enter simulation code here';
     snippetCodeMirror.editorLoaded()
       .then(() => snippetCodeMirror.editor.setOption('lint', false))
+      .then(() => snippetCodeMirror.editor.setOption('lineNumbers', false))
       .then(() => this.setSnippet(snippet));
   }
   
@@ -99,15 +105,29 @@ export default class LivelySimulationCell extends Morph {
     deleteIcon.addEventListener('click', () => this.remove());
   }
   
-  registerCellNameUpdater() {
-    const cellNameSpan = this.getCellNameSpan();
-    this.cellNameUpdater = aexpr(() => this.getName()).onChange(cellName => cellNameSpan.innerText = cellName);
-  }
-  
   initializeContainer() {
     const container = this.getContainer();
     const { shouldSkip } = this;
     container.setAttribute('disabled', shouldSkip);
+  }
+  
+  initializeToggleLogViewDiv() {
+    const toggleLogViewDiv = this.getToggleLogViewDiv();
+    toggleLogViewDiv.addEventListener('click', this.toggleLogCodeView);
+    this.updateLogView();
+  }
+  
+  initializeClearLogSpan() {
+    const clearLogSpan = this.getClearLogSpan();
+    clearLogSpan.addEventListener('click', () => this.logs = []);
+  }
+  
+  registerLogTable() {
+    this.logTableUpdater = aexpr(() => this.logs.length).onChange(() => {
+      const logTable = this.getLogTable();
+      logTable.setFromJSO(this.logs);
+      logTable.scrollTop = logTable.scrollHeight;
+    });
   }
   
   // event listener
@@ -165,62 +185,52 @@ export default class LivelySimulationCell extends Morph {
   }
   
   //
-  execute(scope = {}) {
+  execute(timestamp, scope = {}) {
     const { executeSingle, shouldSkip } = this;
     const snippet = this.getSnippet();
     if ((!executeSingle && shouldSkip) || _.isEmpty(snippet.trim())) return Promise.resolve(scope);
+    scope.log = entry => this.log(timestamp, entry);
     const codeMirror = this.getSnippetCodeMirror();
+    const preProcessedSnippet = this.preProcessSnippet(snippet, scope);
     codeMirror.setDoitContext(scope);
-    const preProcessSnippet = this.preProcessSnippet(snippet, scope);
-    return codeMirror.boundEval(preProcessSnippet).then(this.handleExecutionResult);
+    return codeMirror.boundEval(preProcessedSnippet).then(this.handleExecutionResult);
   }
   
   handleExecutionResult({ isError, value: error }) {
     const codeMirror = this.getSnippetCodeMirror();
+    const scope = codeMirror.getDoitContext();
+    scope.log = undefined;
     if (isError) {
       this.setError(error);
       throw {
-        state: codeMirror.getDoitContext(),
+        state: scope,
         error: new Error()
       };
     }
     else this.clearError();
-    return codeMirror.getDoitContext()
+    return scope;
   };
   
   preProcessSnippet(snippet, scope) {
     let processedSnippet = snippet;
-    processedSnippet = this.addLodashImportToSnippet(processedSnippet);
-    processedSnippet = this.addThisBeforeCellIdentifier(processedSnippet, scope);
     processedSnippet = this.replaceDollarSignWithSelf(processedSnippet);
+    processedSnippet = this.addScopeDeclarationToSnippet(processedSnippet, scope);
+    processedSnippet = this.addLodashImportToSnippet(processedSnippet);
     return processedSnippet;
   }
   
   replaceDollarSignWithSelf(snippet) {
-    let processedSnippet = snippet;
-    let match;
-      while ((match = /(?<![.])\$[.|[|;|\n]/g.exec(processedSnippet)) != null) {
-        processedSnippet = _.join([
-          processedSnippet.slice(0, match.index),
-          processedSnippet.slice(match.index + 1)
-        ], `this.${this.getNormalizedName()}`);
-      }
-    return processedSnippet;
+    return `const $ = ${this.getNormalizedName()};\n${snippet}`;
   }
   
-  addThisBeforeCellIdentifier(snippet, scope) {
-    let processedSnippet = snippet;
-    const cellIdRegExps = _.mapValues(scope, (_, cellId) => new RegExp(`(?<![this.])${cellId}`, 'g'));
-    _.forOwn(cellIdRegExps, (regex, cellId) => {
-      let match;
-      while ((match = regex.exec(processedSnippet)) != null) {
-        processedSnippet = _.join([
-          processedSnippet.slice(0, match.index),
-          processedSnippet.slice(match.index)
-        ], 'this.');
-      }
-    });
-    return processedSnippet;
+  addScopeDeclarationToSnippet(snippet, scope) {
+    return _.join(
+      _.concat(
+        _.map(_.keys(scope), cellId => `const ${cellId} = this.${cellId};`), 
+        snippet
+      ), 
+      '\n'
+    );
   }
   
   addLodashImportToSnippet(snippet) {
@@ -328,6 +338,30 @@ export default class LivelySimulationCell extends Morph {
     const { parentElement: simulation } = this;
     this.executeSingle = true;
     simulation.executeSingleCell(this).finally(() => this.executeSingle = false);
+  }
+  
+  toggleLogCodeView() {
+    const { showLog: prevShowLog } = this;
+    this.showLog = !prevShowLog;
+    this.updateLogView();
+  }
+  
+  updateLogView() {
+    const { showLog } = this;
+    const showCodeIcon = this.getShowCodeIcon();
+    const showLogIcon = this.getShowLogIcon();
+    showCodeIcon.style.display = showLog ? 'inline-block' : 'none';
+    showLogIcon.style.display = showLog ? 'none' : 'inline-block';
+    const codeView = this.getCodeView();
+    const logView = this.getLogView();
+    codeView.style.display = showLog ? 'none' : 'flex';
+    logView.style.display = showLog ? 'flex' : 'none';
+  }
+  
+  log(timestamp, entry) {
+    const { logs } = this;
+    const timestampedEntry = _.assign({ timestamp }, entry);
+    logs.push(timestampedEntry);
   }
   
   // getter/ setter
@@ -445,11 +479,6 @@ export default class LivelySimulationCell extends Morph {
     return shadowRoot.querySelector('#menuIcon');
   }
   
-  getCellNameSpan() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#cellNameSpan');
-  }
-  
   getDeleteIcon() {
     const { shadowRoot } = this;
     return shadowRoot.querySelector('#deleteIcon');
@@ -460,6 +489,41 @@ export default class LivelySimulationCell extends Morph {
     return shadowRoot.querySelector('#container');
   }
   
+  getToggleLogViewDiv() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#toggleLogViewDiv');
+  }
+  
+  getShowLogIcon() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#showLogIcon');
+  }
+  
+  getShowCodeIcon() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#showCodeIcon');
+  }
+  
+  getCodeView() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#codeView');
+  }
+  
+  getLogView() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#logView');
+  }
+  
+  getLogTable() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#logTable');
+  }
+  
+  getClearLogSpan() {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector('#clearLogSpan');
+  }
+  
   /* Lively-specific API */
   livelyPrepareSave() {
     const { state } = this;
@@ -468,6 +532,8 @@ export default class LivelySimulationCell extends Morph {
     this.setAttribute('data-state', JSON.stringify(state));
     this.setAttribute('data-snippet', this.getSnippet());
     this.setAttribute('data-state-style', stateTextArea.style.cssText);
+    if (this.showLog) this.setAttribute('data-show-log', true);
+    else this.removeAttribute('data-show-log');
     if (this.shouldSkip) this.setAttribute('data-should-skip', true);
     else this.removeAttribute('data-should-skip');
   }

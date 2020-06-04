@@ -10,10 +10,12 @@
   
 </style>
 
-<div id="click" class="click"></div>
-Probability:  <input id="inputProbability" type="text" value="0" size="2"> <button id="saveProbability">Save</button> <br />
-<div class="lively-content" id="transition"> 
-</div>
-<p id="test"></p>
-  <slot></slot>
+  <div class="lively-content" id="transition"> 
+  </div>
+  <p style="font-size: 11px; color: #333333; margin-left: -12px">
+  Prob:
+  <input style="font-size: 11px; color: #333333; background-color: #ffffff; border-color: transparent" id="inputProbability" type="text" value="0" size="8">
+  </p>
+  <input style="font-size: 11px; color: #333333; background-color: #ffffff; border-color: transparent; margin-left: -12px" id="inputText" type="text" value="Text" size="8">
+<slot></slot>
 </template>

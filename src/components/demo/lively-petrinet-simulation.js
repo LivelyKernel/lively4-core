@@ -17,14 +17,22 @@ export default class LivelyPetrinetSimulation extends Morph {
     this.registerButtons();
   }
   
-  setOnStep(onStepFunction) {
-    this.onStep = onStepFunction;
-    return true;
+  get petrinet() {
+    const petrinet = lively.query(this, "lively-petrinet");
+    if (petrinet === undefined) {
+      lively.notify("Error: No Petrinet")
+    }
+    return petrinet;
   }
   
-async sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  
+  async sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
+  onStep() {
+    this.petrinet.onStep();
+  }
   
   
   async onStartButton() {
@@ -34,30 +42,45 @@ async sleep(ms) {
       startButton.innerHTML = STOP;
     } else {
       startButton.innerHTML = START;
+      this.get("#runButton").innerHTML = RUN;
     }
     
+    if (this.isStarted()) {
+      this.oldPetrinetState = this.petrinet.getState();
+    } else {
+      this.petrinet.setState(this.oldPetrinetState);
+    }
+    
+  }
+  
+  onStepButton() {
+    if (this.isStarted()) {
+        this.onStep()
+    }
+  }
+  
+ async onRunButton(){
+   if (!this.isStarted()) {
+     return;
+   }
+   
+    let runButton = this.get("#runButton");
+    if (!this.isRunning()) {
+      runButton.innerHTML = PAUSE;
+    } else {
+      runButton.innerHTML = RUN;
+    }
+    
+        
     // StartRunning
-    while (this.isStarted()) {
+    while (this.isStarted() && this.isRunning()) {
       this.onStep();
       await this.sleep(1000);
     }
   }
   
-  onStepButton() {
-    this.onStep()
-  }
-  
-  onPauseButton(){
-    let pauseButton = this.get("#pauseButton");
-    if (!this.isRunning()) {
-      pauseButton.innerHTML = PAUSE;
-    } else {
-      pauseButton.innerHTML = RUN;
-    }
-  }
-  
   isRunning() {
-    return this.get("#pauseButton").innerHTML == PAUSE;
+    return this.get("#runButton").innerHTML == PAUSE;
   }
   
   isStarted() {

@@ -160,7 +160,7 @@ export default class LivelyConnector extends Morph {
   
   connectFrom(a, doNotUpdate, keepbounds) {
     if (!a) return
-    this.setAttribute("fromElement", lively.ensureID(a))
+    this.setAttribute("fromElement", lively.ensureID(a));
     this.fromElement = a
     this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
     if (!doNotUpdate)
@@ -168,12 +168,30 @@ export default class LivelyConnector extends Morph {
   }
   
   connectTo(b, doNotUpdate, keepbounds) {
-    if (!b) return
+    if (!b) return   
     this.toElement = b
+
     this.setAttribute("toElement", lively.ensureID(b))
     this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
     if (!doNotUpdate)
       this.updateConnector(keepbounds); // just don't do it twice
+  }
+  
+  connectPetrinetComponents(a, b) {
+    this.connectFromPetrinetComponent(a, false)
+    this.connectToPetrinetComponent(b)
+  }
+  
+  connectFromPetrinetComponent(a, doNotUpdate, keepbounds) {
+    this.connectFrom(a.graphicElement(), doNotUpdate, keepbounds);
+    this.fromComponent = a;
+    this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
+  }
+  
+  connectToPetrinetComponent(b, doNotUpdate, keepbounds) {
+    this.connectTo(b.graphicElement(), doNotUpdate, keepbounds);
+    this.toComponent = b;
+    this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
   }
 
   disconnect() {

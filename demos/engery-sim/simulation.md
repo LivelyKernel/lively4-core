@@ -1,3 +1,44 @@
+# Lively Minimal Simulation Engine
+
+### Simulation Cells
+
+The core of the simulation engine are the simulation cells, they have a unique name, a filed for variables which should be in json format and a field to type in code. You can access the variables in the code and also other cells variables though the cell name (in camelCase) and the variable name like you see in the Example Cell.
+
+- cell controls
+  - through the context menu 
+    - you can execute only this cell - that means execute the code in the CodeMirror of that cell
+    - skip it - that means if the whole simulation is running this cell won't be executed 
+    - and clone it
+  - delete
+  - dragging
+- catching & showing errors
+
+<div style="height:230px;"><lively-simulation data-hide-controller="" tabindex="0"><lively-simulation-cell style="z-index: 87; width: 376.912px; height: 220.594px; position: absolute;" data-name="Example Cell" data-state="{&quot;variable&quot;:36000}" data-snippet="this.exampleCell['variable'] += 1;" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 53px;"></lively-simulation-cell></lively-simulation></div>
+
+### Simulation Controller
+
+With the simulation controller you can start and stop the simulation, which basically starts a stepping-loop to step which means to execute all simulation cells that are enabled.
+- stepping Loop - bringing the simulation alive - tells the cells to step
+- start/stop/velocity
+- history
+- add cells
+
+<div style="height:270px;"><lively-simulation><lively-simulation-cell style="z-index: 87; width: 376.912px; height: 220.594px; position: absolute;" data-name="Example Cell" data-state="{&quot;variable&quot;:36000}" data-snippet="this.exampleCell['variable'] += 1;" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 53px;"></lively-simulation-cell></lively-simulation></div>
+
+### Logging
+
+### The Energy Simulation
+
+Basis for the development was this Simulation <https://lively-kernel.org/repository/webwerkstatt/demos/EnergySimulationScripted.xhtml> which simulates an Energy System.
+
+The actual version of this Energy Simulation with our new simulation engine looks like this:
+
+TODO: why is this not working?
+<div style="height:1500px;position:relative">
+<lively-import src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/energy-simulation.html"></lively-import>
+</div>
+
+<!--
 <lively-simulation tabindex="0" data-velocity="&quot;60&quot;" data-stop-on-error="false"><lively-simulation-cell style="top: 284.758px; left: 25px; width: 339.433px; height: 187.824px; z-index: 80;" data-name="Fuel" data-state="{&quot;gas&quot;:36000}" data-snippet="if (this.fuel['gas'] <= 0)
   throw Error('Gas is empty!')" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 45px;"></lively-simulation-cell><lively-simulation-cell style="top: 491.754px; left: 29px; z-index: 89; width: 474.816px; height: 286.351px;" data-name="Heating System" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:20,&quot;maxHeat&quot;:5}" data-snippet="const shouldApplyMax = () => {
   const { factor, heat, maxHeat } = $;
@@ -100,4 +141,4 @@ heatStorage['capacity'] = 0.1 * 3600 // 1h 3kw" data-state-style="margin-top: 5p
   consumedHeat: heatConsumer.consumed,
   twp: thermalPowerStation.heat,
   hs: heatingSystem.heat
-});" data-state-style="" data-show-log="true"></lively-simulation-cell></lively-simulation>
+});" data-state-style="" data-show-log="true"></lively-simulation-cell></lively-simulation>-->

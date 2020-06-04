@@ -50,11 +50,17 @@ export default class LivelySimulation extends Morph {
   initializeController() {
     const { engine, history, shadowRoot } = this;
     const controller = shadowRoot.querySelector('#controller');
-    controller.engine = engine;
-    controller.onAddCell = this.addCell;
-    controller.onRevert = this.revert;
-    controller.getHistory = history.get;
-    controller.onStopOnError = this.onStopOnError;
+    const hideController = !!this.hasAttribute('data-hide-controller');
+    if (hideController) {
+      controller.style.display = 'none';
+    } else {
+      controller.engine = engine;
+      controller.onAddCell = this.addCell;
+      controller.onRevert = this.revert;
+      controller.getHistory = history.get;
+      controller.onStopOnError = this.onStopOnError;
+    }
+    
   }
   
   // event listener
