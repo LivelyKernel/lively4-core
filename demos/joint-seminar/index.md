@@ -43,7 +43,7 @@ Presentation.config(this, {
 
 ---
 
-# Motivation
+# Motivation -- Or No Motivation?
 
 - Lively Kernel Project
   - Use Web-technology to escape Web-technology to go direction of Smalltalk
