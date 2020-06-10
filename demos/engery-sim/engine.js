@@ -46,8 +46,8 @@ class Engine {
     const cells = this.collectCells();
     const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
     const prevState = this.collectState(sortedCells);
-    const exectionCells = limitExecution || sortedCells;
-    return this.executeAllCells(exectionCells, prevState)
+    const executionCells = limitExecution || sortedCells;
+    return this.executeAllCells(executionCells, prevState)
       .then(nextState => this.updateCellStates(sortedCells, nextState));
   }
   
@@ -84,11 +84,12 @@ class Engine {
   
   executeAllCells(cells, state) {
     const { stopOnError } = this;
+    const now = new Date().getTime();
     return _.reduce(
       cells, 
       (statePromise, cell) => 
       statePromise
-        .then(state => cell.execute(state))
+        .then(state => cell.execute(now, state))
         .catch(({ state }) => (!stopOnError || !this.stop()) && state),
       Promise.resolve(state)
     );

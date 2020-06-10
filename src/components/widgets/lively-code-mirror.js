@@ -876,6 +876,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   setCustomStyle(source) {
+    debugger;
     this.shadowRoot.querySelector("#customStyle").textContent = source
   }
 

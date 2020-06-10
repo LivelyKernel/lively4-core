@@ -1,95 +1,85 @@
-<lively-simulation tabindex="0" data-velocity="&quot;60&quot;" data-stop-on-error="false"><lively-simulation-cell style="top: 284.758px; left: 25px; width: 339.433px; height: 187.824px; z-index: 80;" data-name="Fuel" data-state="{&quot;gas&quot;:36000}" data-snippet="if (this.fuel['gas'] <= 0)
-  throw Error('Gas is empty!')" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 45px;"></lively-simulation-cell><lively-simulation-cell style="top: 491.754px; left: 29px; z-index: 89; width: 474.816px; height: 286.351px;" data-name="Heating System" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:20,&quot;maxHeat&quot;:5}" data-snippet="const shouldApplyMax = () => {
-  const { factor, heat, maxHeat } = $;
-  const { gas } = fuel;
-  const { capacity, energy } = heatStorage;
+<lively-simulation tabindex="0" data-velocity="&quot;50&quot;" data-stop-on-error="false"><lively-simulation-cell style="top: 284.758px; left: 25px; width: 360.567px; height: 179.828px; z-index: 80;" data-name="Fuel" data-state="{&quot;gas&quot;:36000}" data-snippet="if (gas <= 0)
+  throw Error('Gas is empty!')" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 45px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 491.754px; left: 29px; z-index: 89; width: 643.96px; height: 282.129px;" data-name="Heating System" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:20,&quot;maxHeat&quot;:5}" data-snippet="const shouldApplyMax = () => {
   const full = maxHeat * factor;
   const LOWER_ENERGY_THRESHOLD_PERCENTAGE = 0.3;
   return _.every([
     heat < full,
-    gas > maxHeat,
-    energy < LOWER_ENERGY_THRESHOLD_PERCENTAGE * capacity
+    #Fuel['gas'] > maxHeat,
+    #HeatStorage['energy'] < LOWER_ENERGY_THRESHOLD_PERCENTAGE * #HeatStorage['capacity']
   ]);
 };
 
 const shouldTransferHeatToStorage = () => {
-  const { heat, maxHeat } = $;
-  const { capacity, energy } = heatStorage;
-  return heat > 2 * maxHeat &amp;&amp; energy < capacity;
+  return heat > 2 * maxHeat &amp;&amp; #HeatStorage['energy'] < #HeatStorage['capacity'];
 };
 
 if (shouldApplyMax()) {
-  const { maxHeat } = $;
   const gasConsumption = maxHeat;
-  fuel['gas'] -= gasConsumption;
-  $['heat'] += maxHeat;
+  #Fuel['gas'] -= gasConsumption;
+  heat += maxHeat;
 }
 
-const { factor, heat } = $;
 const delta = heat / factor;
 const HEAT_LOSS_PERCENTAGE = 0.2;
 if (shouldTransferHeatToStorage()) {
-  $['heat'] -= delta;
-  heatStorage['energy'] += (1.0 - HEAT_LOSS_PERCENTAGE) * delta;
+  heat -= delta;
+  #HeatStorage['energy'] += (1.0 - HEAT_LOSS_PERCENTAGE) * delta;
 } else 
-  $['heat'] -= HEAT_LOSS_PERCENTAGE;" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 278px;"></lively-simulation-cell><lively-simulation-cell style="top: 285px; left: 393.762px; z-index: 87; width: 345.719px; height: 187.008px;" data-name="Heat Storage" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 53px;"></lively-simulation-cell><lively-simulation-cell style="top: 285px; left: 748.23px; z-index: 90; width: 400px; height: 186.062px;" data-name="Battery" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 55px;"></lively-simulation-cell><lively-simulation-cell style="top: 479.234px; left: 551px; z-index: 86; width: 468.441px; height: 286.414px;" data-name="Thermal Power Station" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:10,&quot;maxHeat&quot;:7.5}" data-snippet="const shouldApplyMax = () => {
-  const { factor, heat, maxHeat } = $;
-  const { gas } = fuel;
-  const { capacity, energy } = heatStorage;
+  heat -= HEAT_LOSS_PERCENTAGE;" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 278px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 285.258px; left: 413.258px; z-index: 87; width: 345.719px; height: 187.008px;" data-name="Heat Storage" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 53px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 282px; left: 811.754px; z-index: 90; width: 400px; height: 186.062px;" data-name="Battery" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 55px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 482px; left: 744.738px; z-index: 86; width: 628.071px; height: 274.953px;" data-name="Thermal Power Station" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:10,&quot;maxHeat&quot;:7.5}" data-snippet="const shouldApplyMax = () => {
   const full = maxHeat * factor;
   const LOWER_ENERGY_THRESHOLD_PERCENTAGE = 0.9;
   return _.every([
     heat < full,
-    gas > maxHeat,
-    energy < LOWER_ENERGY_THRESHOLD_PERCENTAGE * capacity
+    #Fuel['gas'] > maxHeat,
+    #HeatStorage['energy'] < LOWER_ENERGY_THRESHOLD_PERCENTAGE * #HeatStorage['capacity']
   ]);
 };
 
 if (shouldApplyMax()) {
-  const { maxHeat } = $;
   const gasConsumption = maxHeat;
-  fuel['gas'] -= gasConsumption;
-  $['heat'] += maxHeat;
+  #Fuel['gas'] -= gasConsumption;
+  heat += maxHeat;
 }
 
-const { factor, heat } = $;
 const delta = heat / factor * 1.0;
 const HEAT_THRESHOLD = 2;
 if (heat > HEAT_THRESHOLD) {
-  $['heat'] -= delta;
-  if (heatStorage['energy'] < heatStorage['capacity'])
-    heatStorage['energy'] += 0.5 * delta;
-  if (battery['energy'] < battery['capacity'])
-    battery['energy'] += 0.4 * delta;
-}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 281px;"></lively-simulation-cell><lively-simulation-cell style="left: 33.2344px; top: 790px; z-index: 53; width: 469.219px; height: 312.453px; position: absolute;" data-name="Heat Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:3,&quot;extra&quot;:0}" data-snippet="const { demand } = $;
-const { energy } = heatStorage;
-if (energy > demand) {
-    heatStorage['energy'] -= demand;
-    $['consumed'] += demand;
+  heat -= delta;
+  if (#HeatStorage['energy'] < #HeatStorage['capacity'])
+    #HeatStorage['energy'] += 0.5 * delta;
+  if (#Battery['energy'] < #Battery['capacity'])
+    #Battery['energy'] += 0.4 * delta;
+}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 281px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="left: 33.2344px; top: 790px; z-index: 53; width: 469.219px; height: 312.453px; position: absolute;" data-name="Heat Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:3,&quot;extra&quot;:0}" data-snippet="if (#HeatStorage['energy'] > demand) {
+    #HeatStorage['energy'] -= demand;
+    consumed += demand;
     // TODO consume Extra
 } else {
-    $['extra'] += demand;
+    extra += demand;
     throw Error('Room too cold!');
-}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;"></lively-simulation-cell><lively-simulation-cell style="left: 551.738px; top: 771px; z-index: 82; width: 469.781px; height: 337.594px; position: absolute;" data-name="Electric Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:1.5,&quot;extra&quot;:0}" data-snippet="$['demand'] += (Math.random() - 0.5) * 0.01;
-const { demand } = $;
-const { energy } = battery;
-if (energy > demand) {
-    battery['energy'] -= demand;
-    $['consumed'] += demand;
+}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="left: 551.738px; top: 771px; z-index: 94; width: 469.781px; height: 337.594px; position: absolute;" data-name="Electric Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:1.5,&quot;extra&quot;:0}" data-snippet="demand += (Math.random() - 0.5) * 0.01;
+if (#Battery['energy'] > demand) {
+    #Battery['energy'] -= demand;
+    consumed += demand;
 } else {
-    $['extra'] += demand;
+    extra += demand;
     throw Error('Energy Too Low!')
 }
-" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;"></lively-simulation-cell><lively-simulation-cell style="top: 36.75px; left: 33.75px; z-index: 85; width: 884.969px; height: 241.965px;" data-name="Reset" data-state="{}" data-snippet="fuel['gas'] = 5 * 2 * 3600 // two hours gas
-heatStorage['energy'] = 0
-battery['energy'] = 0 
-electricConsumer['consumed'] = 0
-electricConsumer['demand'] = 1.5
-electricConsumer['extra'] = 0
-heatConsumer['consumed'] = 0
-heatConsumer['demand'] = 3
-heatConsumer['extra'] = 0
-thermalPowerStation['heat'] = 0
-heatingSystem['heat'] = 0
-battery['capacity'] = 0.1 * 3600 // 1h 2kw
-heatStorage['capacity'] = 0.1 * 3600 // 1h 3kw" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 7px;" data-should-skip="true"></lively-simulation-cell></lively-simulation>
+" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 37px; left: 33.7578px; z-index: 98; width: 884.969px; height: 241.965px;" data-name="Reset" data-state="{}" data-snippet="#Fuel['gas'] = 5 * 2 * 3600 // two hours gas
+#HeatStorage['energy'] = 0
+#Battery['energy'] = 0 
+#ElectricConsumer['consumed'] = 0
+#ElectricConsumer['demand'] = 1.5
+#ElectricConsumer['extra'] = 0
+#HeatConsumer['consumed'] = 0
+#HeatConsumer['demand'] = 3
+#HeatConsumer['extra'] = 0
+#ThermalPowerStation['heat'] = 0
+#HeatingSystem['heat'] = 0
+#Battery['capacity'] = 0.1 * 3600 // 1h 2kw
+#HeatStorage['capacity'] = 0.1 * 3600 // 1h 3kw" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 7px;" data-view="codeView" data-should-skip="true" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 1151.75px; left: 41px; z-index: 97; position: absolute; width: 981.51px; height: 268.352px;" data-name="Logging" data-state="{&quot;gas&quot;:28132.5,&quot;heat&quot;:323.9806305248641,&quot;battery&quot;:361.0419910494338,&quot;consumedPower&quot;:1805.4913938787588,&quot;consumedHeat&quot;:3636,&quot;twp&quot;:57.306077644932664,&quot;hs&quot;:-216.45458668415904}" data-snippet="gas = #Fuel.gas;
+heat = #HeatStorage.energy;
+battery = #Battery.energy;
+consumedPower = #ElectricConsumer.consumed;
+consumedHeat = #HeatConsumer.consumed;
+twp = #ThermalPowerStation.heat;
+hs = #HeatingSystem.heat;" data-state-style="" data-show-log="true" data-view="logView" data-loginterval="10"></lively-simulation-cell></lively-simulation>
