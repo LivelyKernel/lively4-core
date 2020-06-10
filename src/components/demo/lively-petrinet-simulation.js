@@ -15,7 +15,10 @@ export default class LivelyPetrinetSimulation extends Morph {
   initialize() {
     this.windowTitle = "LivelyPetrinetSimulation";
     this.registerButtons();
+    this.get("#delete").addEventListener( "click", () => this.onDelete());
+    
   }
+  
   
   get petrinet() {
     const petrinet = lively.query(this, "lively-petrinet");
@@ -85,7 +88,14 @@ export default class LivelyPetrinetSimulation extends Morph {
   
   isStarted() {
     return this.get("#startButton").innerHTML == STOP;
-  }  
+  }
+  
+  onDelete(){
+    //lively.notify("Hallo");
+    this.petrinet.deleteSelectedElement();
+  }
+  
+  
 
   
 }

@@ -8,22 +8,72 @@ import {pt} from 'src/client/graphics.js';
 
 export default class LivelyPetrinet extends Morph {
   
+  
+  
+  // Initialization
+  
+  
 
   async initialize() {
     this.windowTitle = "LivelyPetrinet";
     this.registerButtons();
     this.mouseIsOnNode = false;
-                
-    lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
     
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+    this.addAllListeners();
+    this.initializeConnectors();
+    this.updateConnectorPosition();
+    
+    this.selectedElement = undefined
+
+}
+  
+  
+  addAllListeners() {
+    lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
 
     lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
 
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false)
-
-}
+    
+    for (const place of this.places) {
+      this.addListeners(place)
+    }
+    
+    for (const transition of this.transitions) {
+      this.addListeners(transition)
+    }
+  }
   
+  
+  async initializeConnectors() {
+    for (const connector of this.connectors) {
+      const fromComponent = this.getComponentFrom(connector.fromComponentId);
+      const toComponent = this.getComponentFrom(connector.toComponentId);
+      if (!fromComponent || !toComponent) {
+        continue;
+      }
+      const newConnector = await(<lively-petrinet-edge></lively-petrinet-edge>);
+      this.appendChild(newConnector);
+      newConnector.connectPetrinetComponents(fromComponent, toComponent);
+      connector.remove();
+    }
+  }
+  
+  
+  attachedCallback() {
+    // The connector has some weird behaviour, in that it is not 100% connected to the elements in the beginning. We fix this by manually updating its position.
+    setTimeout(() => this.updateConnectorPosition(), 1000);
+  }
+  
+  updateConnectorPosition() {
+    // This is very hacky. We set a minimal (impossible to see) position change, which triggers the
+    // update position function of the edge. We observed that updateConnector() didn't work for this.
+    const allElements = [...this.places, ...this.transitions];
+    for (const element of allElements) {
+      const originalPosition = lively.getPosition(element);
+      lively.setPosition(element, originalPosition.addPt(pt(0,0.01)));
+    }
+  }
   
   
   // Access Methods
@@ -51,7 +101,7 @@ export default class LivelyPetrinet extends Morph {
   getState() {
     const numberOfTokens = {}
     for (const place of this.places) {
-      numberOfTokens[place.placeId] = place.numberOfTokens();
+      numberOfTokens[place.componentId] = place.numberOfTokens();
     }
     return numberOfTokens;
 
@@ -63,10 +113,10 @@ export default class LivelyPetrinet extends Morph {
   
   
   async setState(state) {
-    for (const placeId of Object.keys(state)) {
-      const place = this.places.filter(place => place.placeId === placeId)[0];
+    for (const componentId of Object.keys(state)) {
+      const place = this.places.filter(place => place.componentId === componentId)[0];
       place.deleteAllTokens();
-      for (let i = 0; i < state[placeId]; i++) {
+      for (let i = 0; i < state[componentId]; i++) {
         place.addToken();
       }
     }
@@ -93,38 +143,41 @@ export default class LivelyPetrinet extends Morph {
   getPlacesBefore(transition) {
     let placesBefore = [];
     for (const connector of this.connectors) {
-      if (connector.toComponent == transition) {
-        placesBefore.push(connector.fromComponent);
+      if (connector.toComponentId == transition.componentId) {
+        const fromComponent = this.getComponentFrom(connector.fromComponentId);
+        placesBefore.push(fromComponent);
       }
+    }
+    if (placesBefore.length == 0) {
+      lively.error("Did not find any places from Connector");
     }
     return placesBefore;
   }
+
   
   getPlacesAfter(transition) {
     let placesAfter = [];
     for (const connector of this.connectors) {
-      if (connector.fromComponent == transition) {
-        placesAfter.push(connector.toComponent);
+      if (connector.fromComponentId == transition.componentId) {
+        const toComponent = this.getComponentFrom(connector.toComponentId);
+        placesAfter.push(toComponent);
       }
+    }
+    if (placesAfter.length == 0) {
+      lively.error("Did not find any places from Connector");
     }
     return placesAfter;
   }
-
   
-  
-  /* Lively-specific API */
-  
-
-  
-  // store something that would be lost
-  livelyPrepareSave() {
-    
+  getComponentFrom(id) {
+    const allComponents = [...this.places, ...this.transitions];
+    for (const component of allComponents) {
+      if (component.componentId == id) {
+        return component;
+      }
+    }
   }
-    
 
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
   
   onContextMenu(evt) {
     if (!evt.shiftKey) {
@@ -160,7 +213,7 @@ export default class LivelyPetrinet extends Morph {
   
   
   
-  // Handle Connector Creation
+  // Connector Creation
   
   
   
@@ -243,9 +296,7 @@ export default class LivelyPetrinet extends Morph {
   
   
   
-  
-  
-  // Add and Delete Elements
+  // Add And Delete Elements
   
   
   
@@ -259,6 +310,12 @@ export default class LivelyPetrinet extends Morph {
       element.onmouseover = () => this.mouseIsOnNode = true;
       element.onmouseout = () => this.mouseIsOnNode = false;
       lively.addEventListener("onDblClick", element.graphicElement(), "dblclick", () =>     this.manageNewConnection(element));
+      lively.addEventListener("lively", element, "click", (evt) => { 
+              evt.preventDefault();
+              evt.stopPropagation();
+      this.selectedElement = element;
+
+            });
   }
   
   setInitialPosition(element) {
@@ -273,45 +330,15 @@ export default class LivelyPetrinet extends Morph {
   }
 
   
-  async deletePlace(){
-    this.places[0].remove()
-  }
-  
-  
   async addTransition() {
     var transition = await (<lively-petrinet-transition></lively-petrinet-transition>);
     this.initializeElement(transition);
     this.appendChild(transition);
   }
-
   
-  async deleteTransition(){
-      this.transitions[0].remove()
+  deleteSelectedElement(){
+    this.selectedElement.remove();
   }
   
-  
-  
-  
-// Array Helper Methods
-
-  
-  
-  copyElements(elementsArray) {
-     return elementsArray.map(element => element.cloneNode());
-  }
-  
-  deleteAllElements(elementsArray) {
-    const arrayLength = elementsArray.length;
-    for (let i = 0; i < arrayLength; i++) {
-      // Is it risky to delete While in For Loop?
-      elementsArray[i].remove();
-    }
-  }
-  
-  async addAllElements(elementsArray) {
-    for (const element of elementsArray) {
-      await this.appendChild(element);
-    }
-  }
 
 }
