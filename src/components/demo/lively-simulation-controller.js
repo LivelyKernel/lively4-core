@@ -5,127 +5,128 @@ import _ from 'src/external/lodash/lodash.js';
 
 export default class LivelySimulationController extends Morph {
   
-  // lifecycle
-  async initialize() {
-    this.updateCheckpointOptions = this.updateCheckpointOptions.bind(this);
-    this.onRevertSelectChange = this.onRevertSelectChange.bind(this);
-    this.registerButtons();
-    this.registerSliders();
-    this.registerCheckBoxes();
+  // life cycle
+  initialize() {
+    this.initializeStartStopButton();
+    this.initializeStepButton();
+    this.initializeAppendCellButton();
+    this.initializeVelocitySlider();
     this.initializeRevertSelect();
+    this.initializeStopOnErrorCheckBox();
   }
   
-  attachedCallback() {
-    this.registerIsRunningUpdater();
-    this.registerVelocityUpdater();
-    this.registerStopOnErrorUpdater();
+  initializeStartStopButton() {
+    const startStopButton = this.get('#startStopButton');
+    startStopButton.addEventListener('click', () => this.onStartStopButton());
+  }
+  
+  initializeStepButton() {
+    const stepButton = this.get('#stepButton');
+    stepButton.addEventListener('click', () => this.onStepButton());
+  }
+  
+  initializeAppendCellButton() {
+    const appendCellButton = this.get('#appendCellButton');
+    appendCellButton.addEventListener('click', (event) => this.onAppendCellButton(event));
+  }
+  
+  initializeVelocitySlider() {
+    const velocitySlider = this.get('#velocitySlider');
+    velocitySlider.addEventListener('input', (event) => this.onVelocitySlider(event));
+  }
+  
+  initializeRevertSelect() {
+    const revertSelect = this.get('#revertSelect');
+    revertSelect.addEventListener('click', () => this.onRevertSelect());
+    revertSelect.addEventListener('change', (event) => this.onRevertSelectChange(event));
+  }
+  
+  initializeStopOnErrorCheckBox() {
+    const stopOnErrorCheckBox = this.get('#stopOnErrorCheckBox');
+    stopOnErrorCheckBox.addEventListener('change', ({ target: { checked: stopOnError }}) => this.onStopOnError(stopOnError))
+  }
+  
+  initializeEngine(engine) {
+    this.registerIsRunningUpdater(engine);
+    this.registerVelocityUpdater(engine);
+    this.registerStopOnErrorUpdater(engine);
   }
   
   detachedCallback() {
-    this.isRunningUpdater.dispose();
-    this.velocityUpdater.dispose();
+    if (this.isRunningUpdater) this.isRunningUpdater.dispose();
+    if (this.velocityUpdater) this.velocityUpdater.dispose();
+    if (this.stopOnErrorUpdater) this.stopOnErrorUpdater.dispose();
   }
   
-  // initialization
-  registerCheckBoxes() { // based on registerButtons from Morph class
-    Array.from(this.shadowRoot.querySelectorAll('input[type="checkbox"]')).forEach(node => {
-      var name = node.id;
-      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
-      node.addEventListener("click", evt => {
-        if (this[funcName] instanceof Function) {
-          this[funcName](evt);
-        } else {
-          alert('No callback: ' +  funcName);
-        }
-      });
-    });
-  }
-  
-  registerSliders() { // based on registerButtons from Morph class
-    Array.from(this.shadowRoot.querySelectorAll('input[type="range"]')).forEach(node => {
-      var name = node.id;
-      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
-      node.addEventListener("input", evt => {
-        if (this[funcName] instanceof Function) {
-          this[funcName](evt);
-        } else {
-          alert('No callback: ' +  funcName);
-        }
-      });
-    });
-  }
-  
-  registerIsRunningUpdater() {
-    this.isRunningUpdater = aexpr(() => this.engine.isRunning).onChange(isRunning => {
-      const startStopButton = this.getStartStopButton();
+  registerIsRunningUpdater(engine) {
+    this.isRunningUpdater = aexpr(() => engine.isRunning).onChange(isRunning => {
+      const startStopButton = this.get('#startStopButton');
       startStopButton.textContent = isRunning ? 'Stop' : 'Start';
     });
   }
   
-  registerVelocityUpdater() {
-    this.velocityUpdater = aexpr(() => this.engine.velocity).onChange(velocity => {
-      const velocitySlider = this.getVelocitySlider();
+  registerVelocityUpdater(engine) {
+    this.velocityUpdater = aexpr(() => engine.velocity).onChange(velocity => {
+      const velocitySlider = this.get('#velocitySlider');
       velocitySlider.value = velocity;
-      var velocitySpan = this.getVelocitySpan();
-      velocitySpan.innerHTML = velocity;
     });
   }
   
-  registerStopOnErrorUpdater() {
-    this.stopOnErrorUpdater = aexpr(() => this.engine.stopOnError).onChange(stopOnError => {
-      const stopOnErrorCheckBox = this.getStopOnErrorCheckBox();
+  registerStopOnErrorUpdater(engine) {
+    this.stopOnErrorUpdater = aexpr(() => engine.stopOnError).onChange(stopOnError => {
+      const stopOnErrorCheckBox = this.get('#stopOnErrorCheckBox');
       stopOnErrorCheckBox.checked = stopOnError;
     });
   }
   
-  initializeRevertSelect() {
-    const revertSelect = this.getRevertSelect();
-    revertSelect.addEventListener('click', this.updateCheckpointOptions);
-    revertSelect.addEventListener('change', this.onRevertSelectChange);
-  }
-  
   // event listener
   onStartStopButton() {
-    const { engine } = this;
+    const engine = this.getEngine();
+    if (!engine) return;
     engine.toggleStartStop();
   }
   
   onStepButton() {
-    const { engine } = this;
+    const engine = this.getEngine();
+    if (!engine) return;
     engine.step();
   }
   
+  onAppendCellButton(event) {
+    const simulation = this.getSimulation();
+    if (simulation && simulation.addCell) simulation.addCell(event);
+  }
+  
   onVelocitySlider({ target: { value: velocity } }) {
-    const { engine } = this;
+    const velocitySpan = this.get('#velocitySpan');
+    velocitySpan.innerText = velocity;
+    const engine = this.getEngine();
+    if (!engine) return;
     engine.setVelocity(velocity);
   }
   
-  onAppendCellButton(event) {
-    const { onAddCell } = this;
-    onAddCell(event);
-  }
-  
-  onRevertSelectChange({ target: { value: snapshot } }){
-    const { onRevert } = this;
-    onRevert(snapshot);
-    this.resetRevertSelect();
-  }
-  
-  onStopOnErrorCheckBox({ target: { checked: stopOnError } }) {
-    const { onStopOnError } = this;
-    onStopOnError(stopOnError);
-  }
-  
-  //
-  updateCheckpointOptions() {
-    const revertSelect = this.getRevertSelect();
+  onRevertSelect() {
+    const revertSelect = this.get('#revertSelect');
     const options = this.generateCheckpointOptions();
     this.resetRevertSelect();
     _.forEach(options, option => revertSelect.appendChild(option));
   }
   
+  onRevertSelectChange({ target: { value: snapshot } }){
+    const simulation = this.getSimulation();
+    if (simulation && simulation.revert) simulation.revert(snapshot);
+    this.resetRevertSelect();
+  }
+  
+  onStopOnError(stopOnError) {
+    const engine = this.getEngine();
+    if (!engine) return;
+    engine.stopOnError = stopOnError;
+  }
+  
+  // other
   resetRevertSelect() {
-    const revertSelect = this.getRevertSelect();
+    const revertSelect = this.get('#revertSelect');
     const { children } = revertSelect;
     const checkpointOptions = _.takeRight(children, children.length - 1);
     _.forEach(checkpointOptions, child => child.remove());
@@ -133,8 +134,7 @@ export default class LivelySimulationController extends Morph {
   }
   
   generateCheckpointOptions() {
-    const { getHistory } = this;
-    const history = _.filter(getHistory());
+    const history = _.filter(this.getHistory());
     return _.map(history, ({ snapshot, timestamp }) => (
       <option value={snapshot}>
         { timestamp }
@@ -142,29 +142,22 @@ export default class LivelySimulationController extends Morph {
     ));
   }
   
-  // getter & setter
-  getRevertSelect() {
+  get(selector) {
     const { shadowRoot } = this;
-    return shadowRoot.querySelector('#revertSelect');
+    return shadowRoot.querySelector(selector);
   }
   
-  getVelocitySlider() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#velocitySlider');
+  getSimulation() {
+    return this.getRootNode().host;
   }
   
-  getVelocitySpan() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#velocitySpan');
+  getEngine() {
+    const simulation = this.getSimulation();
+    return simulation && simulation.getEngine && simulation.getEngine();
   }
   
-  getStartStopButton() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#startStopButton');
-  }
-  
-  getStopOnErrorCheckBox() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#stopOnErrorCheckBox');
+  getHistory() {
+    const simulation = this.getSimulation();
+    return simulation && simulation.getHistory && simulation.getHistory();
   }
 }

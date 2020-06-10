@@ -1,0 +1,52 @@
+<template id="lively-simulation-titlebar" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  #titleBar {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    background-color: #778899;
+    align-items: center;
+  }
+  i {
+    color: white;
+    padding: 2px;
+    width: 1.3rem;
+    font-weight: 500;
+    cursor: pointer;
+    line-height: 1.0rem;
+    font-size: 0.8em;
+  }
+  i:hover {
+    background-color: #cde6f7;
+    color: #2a8dd4;
+  }
+  #spacing {
+    width: 50px;
+  }
+  #cellName {
+    flex-grow: 1;
+    background-color: transparent;
+    color: white;
+    max-width: 200px;
+    margin: 0 auto;
+    border: none;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+  #cellName::placeholder {
+    color: lightgrey;
+  }
+</style>
+<div id='titleBar'>
+  <i id='menu' class="fa fa-bars"></i>
+  <i id='locate' class="fa fa-map-marker"></i>
+  <span id='spacing'></span>
+  <input id='cellName' placeholder="Enter cell name" />
+  <i id='code' class="fa fa-code"></i>
+  <i id='log' class="fa fa-table"></i>
+  <i id='chart' class="fa fa-bar-chart"></i>
+  <i id='delete' class="fa fa-trash"></i>
+</div>
+</template>

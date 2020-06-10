@@ -8,17 +8,38 @@ import _ from 'src/external/lodash/lodash.js';
 const EMPTY_PLACEHOLDER = 'EMPTY';
 export default class LivelySimulation extends Morph {
   
-  // lifecycle
+  // life cycle
   initialize() {
-    this.windowTitle = "LivelySimulationComponent";
+    this.windowTitle = 'Simulation';
     lively.html.registerKeys(this);
-    this.collectCells = this.collectCells.bind(this);
-    this.addCell = this.addCell.bind(this);
-    this.revert = this.revert.bind(this);
-    this.onStopOnError = this.onStopOnError.bind(this);
     this.initializeEngine();
     this.initializeController();
-    this.initializeContainerRoot();
+  }
+  
+  initializeEngine() {
+    const velocity = this.dataset['velocity'] || undefined;
+    const stopOnError = this.dataset['stoponerror'] || undefined;
+    this.engine = new Engine(velocity, () => this.collectCells(), stopOnError);
+  }
+  
+  initializeController() {
+    const { engine } = this;
+    const controller = this.get('#controller');
+    controller.initializeEngine(engine);
+    const hideController = !!this.hasAttribute('data-hide-controller');
+    if (hideController) controller.style.display = 'none';
+  }
+  
+  initializeContainerRoot() {
+    const { parentElement } = this;
+    if (parentElement.id === 'container-root') {
+      parentElement.style.width = '100%';
+      parentElement.style.height = '100%';
+    }
+  }
+  
+  initializeHistory() {
+    this.history = new History(() => this.getInnerHTML());
   }
   
   attachedCallback() {
@@ -31,36 +52,10 @@ export default class LivelySimulation extends Morph {
     history.shutdown();
   }
   
-  // initialization
-  initializeContainerRoot() {
-    const { parentElement } = this;
-    if (parentElement.id === 'container-root')
-      parentElement.style.height = '100%';
-  }
-  initializeHistory() {
-    this.history = new History(() => this.getInnerHTML());
-  }
-  
-  initializeEngine() {
-    const velocity = this.getJSONAttribute('data-velocity') || undefined;
-    const stopOnError = this.getJSONAttribute('data-stop-on-error') || undefined;
-    this.engine = new Engine(velocity, this.collectCells, stopOnError);
-  }
-  
-  initializeController() {
-    const { engine, history, shadowRoot } = this;
-    const controller = shadowRoot.querySelector('#controller');
-    const hideController = !!this.hasAttribute('data-hide-controller');
-    if (hideController) {
-      controller.style.display = 'none';
-    } else {
-      controller.engine = engine;
-      controller.onAddCell = this.addCell;
-      controller.onRevert = this.revert;
-      controller.getHistory = history.get;
-      controller.onStopOnError = this.onStopOnError;
-    }
-    
+  livelyPrepareSave() {
+    const { engine: { stopOnError, velocity } } = this;
+    this.dataset['velocity'] = velocity;
+    this.dataset['stoponerror'] = stopOnError;
   }
   
   // event listener
@@ -93,9 +88,14 @@ export default class LivelySimulation extends Morph {
     if (matched) event.preventDefault();
   }
   
-  //
+  // other
+  get(selector) {
+    const { shadowRoot } = this;
+    return shadowRoot.querySelector(selector);
+  }
+  
   collectCells() {
-    return Array.from(this.querySelectorAll('lively-simulation-cell'));
+    return [...this.querySelectorAll('lively-simulation-cell')];
   }
   
   addCell(event) {
@@ -109,6 +109,20 @@ export default class LivelySimulation extends Morph {
       });
   }
   
+  ensureUniqueCellName(cellNameProposal, counterSlug = 1) {
+    const cellNameProposalWithSlug = 
+        counterSlug > 1 ? `${cellNameProposal} (${counterSlug})` : cellNameProposal;
+    const cellNames = _.map(this.collectCells(), cell => this.toAlphaNumeric(cell.getName()));
+    const sameNameCount = _.filter(cellNames, name => 
+                                   name === this.toAlphaNumeric(cellNameProposalWithSlug)).length;
+    if (sameNameCount - (counterSlug === 1) <= 0) return cellNameProposalWithSlug;
+    return this.ensureUniqueCellName(cellNameProposal, counterSlug + 1);
+  }
+  
+  toAlphaNumeric(str) {
+    return str.replace(/\W/g, '');
+  }
+  
   revert(snapshot) {
     this.innerHTML = snapshot === EMPTY_PLACEHOLDER ? '' : snapshot;
   }
@@ -116,21 +130,6 @@ export default class LivelySimulation extends Morph {
   isCellFocusActive() {
     const cells = this.collectCells();
     return _.some(cells, cell => cell.isFocused());
-  }
-  
-  onStopOnError(stopOnError) {
-    const { engine } = this;
-    engine.stopOnError = stopOnError;
-  }
-  
-  ensureUniqueCellName(cellNameProposal, counterSlug = 1) {
-    const cellNameProposalWithSlug = 
-        counterSlug > 1 ? `${cellNameProposal} (${counterSlug})` : cellNameProposal;
-    const cellNames = _.map(this.collectCells(), cell => cell.getName());
-    const sameNameCount = _.filter(cellNames, name => 
-                                   name === cellNameProposalWithSlug).length;
-    if (sameNameCount - (counterSlug === 1) <= 0) return cellNameProposalWithSlug;
-    return this.ensureUniqueCellName(cellNameProposal, counterSlug + 1);
   }
   
   cloneCell(event, cell) {
@@ -148,7 +147,6 @@ export default class LivelySimulation extends Morph {
     return engine.step([ cell ]);
   }
   
-  // getter & setter
   getInnerHTML() {
     const { innerHTML } = this;
     return innerHTML.length ? innerHTML : EMPTY_PLACEHOLDER;
@@ -158,10 +156,20 @@ export default class LivelySimulation extends Morph {
     return _.maxBy(this.collectCells(), cell => parseInt(cell.style.zIndex || 1));
   }
   
-  /* Lively-specific API */
-  livelyPrepareSave() {
-    const { engine: { stopOnError, velocity } } = this;
-    this.setJSONAttribute('data-velocity', velocity);
-    this.setJSONAttribute('data-stop-on-error', stopOnError);
-  } 
+  getEngine() {
+    const { engine } = this;
+    return engine;
+  }
+  
+  getHistory() {
+    const { history } = this;
+    return history.get();
+  }
+  
+  toggleHighlight(cellRef) {
+    const { currentHighlight } = this;
+    this.currentHighlight = (currentHighlight === cellRef) ? undefined : cellRef;
+    const cells = this.collectCells();
+    _.forEach(cells, cell => cell.highlight(this.currentHighlight));
+  }
 }

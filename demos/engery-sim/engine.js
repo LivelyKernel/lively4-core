@@ -46,8 +46,8 @@ class Engine {
     const cells = this.collectCells();
     const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
     const prevState = this.collectState(sortedCells);
-    const exectionCells = limitExecution || sortedCells;
-    return this.executeAllCells(exectionCells, prevState)
+    const executionCells = limitExecution || sortedCells;
+    return this.executeAllCells(executionCells, prevState)
       .then(nextState => this.updateCellStates(sortedCells, nextState));
   }
   
