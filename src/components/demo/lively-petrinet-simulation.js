@@ -16,14 +16,14 @@ export default class LivelyPetrinetSimulation extends Morph {
     this.windowTitle = "LivelyPetrinetSimulation";
     this.registerButtons();
     this.get("#delete").addEventListener( "click", () => this.onDelete());
-    
+    this.stepState = this.petrinet.stepUntilFired();
   }
   
   
   get petrinet() {
     const petrinet = lively.query(this, "lively-petrinet");
     if (petrinet === undefined) {
-      lively.notify("Error: No Petrinet")
+      lively.error("Error: No Petrinet")
     }
     return petrinet;
   }
@@ -49,16 +49,16 @@ export default class LivelyPetrinetSimulation extends Morph {
     }
     
     if (this.isStarted()) {
-      this.oldPetrinetState = this.petrinet.getState();
+      this.petrinet.start();
     } else {
-      this.petrinet.setState(this.oldPetrinetState);
+      this.petrinet.reset();
     }
     
   }
   
   onStepButton() {
     if (this.isStarted()) {
-        this.onStep()
+      this.stepState.next();
     }
   }
   
