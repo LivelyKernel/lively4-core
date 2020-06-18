@@ -1,37 +1,50 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
+import {Helper} from "src/components/demo/lively-petrinet-helper.js"
 
 
 
 export default class LivelyPetrinetPlace extends Morph {
 
   initialize() {
-    this.placeId = Math.random().toString(36).substring(7);
+    if (!this.componentId) {
+        this.componentId = Helper.getRandomId();
+    }
     this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
-    //this.addEventListener("add dot", this, "click", () => this.onClick());
-    //this.removeEventListener("add dot", this, "click");
+    this.get("#inputLabel").addEventListener("change", (evt) => this.onLabelChange(evt));
+    lively.addEventListener("foo", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
     
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+
+    const label = this.getAttribute("label");
+    if (label) {
+      this.get("#inputLabel").value = label;
+    }
     
   }
   
-  attachedCallback() {
+  
+  
+  
+  
+
+  
+  get componentId() {
+    return this.getAttribute("componentId");
   }
-  
-  detachedCallback() {
+
+  set componentId(id) {
+    this.setAttribute("componentId", id);
   }
-  
-  
-  onAddButton() {
-    this.addBall()
-  }
-  
   
   graphicElement() {
     return this.get("#circle");
+  }
+  
+  onLabelChange(evt) {
+    this.setAttribute("label", this.get("#inputLabel").value);
   }
   
   

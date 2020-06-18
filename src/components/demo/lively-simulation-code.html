@@ -1,0 +1,37 @@
+<template id="lively-simulation-code" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  #code {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  #codeMirror {
+    flex-grow: 1;
+    border: 2px solid lightgrey;
+    overflow-y: auto;
+  }
+  #status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 1px;
+    padding: 5px;
+    color: green;
+    border-color: green;
+  }
+  .error {
+    color: red !important;
+    border-color: red !important;
+  }
+</style>
+<div id='code'>
+  <lively-code-mirror id='codeMirror' overscroll='contain' wrapmode='true'></lively-code-mirror>  
+  <span id='status'>No Error</span>
+</div>
+</template>
