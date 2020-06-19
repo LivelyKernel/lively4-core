@@ -12,7 +12,10 @@ export default class LivelyPetrinetPlace extends Morph {
       this.componentId = Helper.getRandomId();
     }
     
-    this.history = [];
+    if (this.history === null) {
+       this.history = [];
+    }
+    
     this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
@@ -28,12 +31,14 @@ export default class LivelyPetrinetPlace extends Morph {
   
   // Access
   
+  
+  
   get history() {
-    return this.getAttribute("history");
+    return JSON.parse(this.getAttribute("history"));
   }
   
   set history(historyArray) {
-    this.setAttribute("history", historyArray);
+    this.setAttribute("history", JSON.stringify(historyArray));
   }
     
   get componentId() {
@@ -53,28 +58,31 @@ export default class LivelyPetrinetPlace extends Morph {
   }
   
   
+  
   // Simulation State
   
   
-  reset() {
+  
+  setState(step) {
     this.deleteAllTokens();
-    const numberTokensInBeginning = this.history[0];
-    for (let i = 0; i < numberTokensInBeginning; i++) {
+    const numberTokensAtStep = this.history[step];
+    for (let i = 0; i < numberTokensAtStep; i++) {
       this.addToken();
     }
-    this.history = [];
   }
   
   start() {
     this.history = [this.numberOfTokens()];
   }  
   
-  saveStateOnStep() {
-    this.history.push(this.numberOfTokens());
+  persistState() {
+    this.history = [...this.history, this.numberOfTokens()];
   }
   
   
+  
   // Interaction
+  
   
   
   graphicElement() {
