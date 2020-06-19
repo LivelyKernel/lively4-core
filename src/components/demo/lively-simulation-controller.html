@@ -2,57 +2,106 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>  
 <style>
-  .slider {
-  -webkit-appearance: none;
-  width: 20%;
-  height: 5px;
-  border-radius: 5px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-}
+  :host {
+    width: fit-content;
+  }
+  #controller {
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+  }
+  .row:last-child {
+    margin-bottom: 0px;
+    padding-bottom: 5px;
+    border-bottom: solid 1px lightgrey;
+  }
+  .row > * {
+    margin-right: 5px;
+  }
+  .row > *:last-child {
+    margin-right: 2px;
+  }
+  .row > span {
+    font-size: 0.8rem
+  }
+  #velocity {
+    display: flex;
+    flex-direction: column;
+  }
+  #velocitySlider {
+    height: 5px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+  }
 
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #4CAF50;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #4CAF50;
-  cursor: pointer;
-}
+  #velocitySlider:hover {
+    opacity: 1;
+  }
+  button {
+    padding: 4px 8px;
+  }
+  #stepButton {
+    color: white;
+    background: green;
+    border: none;
+  }
+  #startStopButton.stop {
+    background: red !important;
+    color: white !important;
+  }
+  .spacing {
+    flex-grow: 1;
+  }
+  #revertSelect {
+    border: none;
+  }
+  #dt {
+    width: 50px;
+  }
 </style>
-<button id="startStopButton">Start</button>
-<button id="stepButton">Step</button>
-Steps per Second: 
-<span id="velocitySpan">1</span>
-<input 
-  id="velocitySlider" 
-  class="slider"
-  type="range" 
-  min="1" 
-  max="60" 
-  step="1" 
-  value="1"
-/>
-<label><input id='stopOnErrorCheckBox' type="checkbox" />Stop on error</label>
-<select id='revertSelect'>
-  <option value="" disabled selected>Revert to...</option>
-</select>
-<button id="appendCellButton">+ Add Cell</button>
+<div id='controller'>
+  <div class='row'>
+    <button id="stepButton">Step</button>
+    <button id="startStopButton">Start</button>
+    <div id='velocity'>
+      <div style='display: flex; flex-wrap: wrap; font-size: 0.7rem;'>
+        Steps per Second: 
+        <span id="velocitySpan">1</span>
+      </div>
+      <input 
+        id="velocitySlider" 
+        type="range" 
+        min="1" 
+        max="60" 
+        step="1" 
+        value="1"
+      />
+    </div>
+    <div class='spacing'></div>
+    <label style='display: none;'><input id='stopOnErrorCheckBox' type="checkbox" />Stop on error</label>
+    <span>Time delta</span>
+    <input id='dt' type='number' min='1' step='1' placeholder="Time progress per step in ms" value='1000' />
+    <span>Current time:</span>
+    <span id='time'>0</span>
+    <span>ms</span>
+    <button id="resetTime">Reset</button>
+  </div>
+  <div class='row'>
+    <button id="appendCellButton">+ Add Cell</button>
+    <div class='spacing'></div>
+    <select id='revertSelect'>
+      <option value="" disabled selected>Revert to...</option>
+    </select>
+  </div>
+</div>
 </template>
 
