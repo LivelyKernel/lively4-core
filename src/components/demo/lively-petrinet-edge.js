@@ -49,6 +49,7 @@ export default class LivelyConnector extends Morph {
     this.setAttribute("stroke-width", w)
     return this.getPath().setAttribute("stroke-width", w)
   }
+  
 
   livelyExample() {
     var a = document.createElement("div")
@@ -177,22 +178,6 @@ export default class LivelyConnector extends Morph {
       this.updateConnector(keepbounds); // just don't do it twice
   }
   
-  connectPetrinetComponents(a, b) {
-    this.connectFromPetrinetComponent(a, false)
-    this.connectToPetrinetComponent(b)
-  }
-  
-  connectFromPetrinetComponent(a, doNotUpdate, keepbounds) {
-    this.connectFrom(a.graphicElement(), doNotUpdate, keepbounds);
-    this.fromComponent = a;
-    this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
-  }
-  
-  connectToPetrinetComponent(b, doNotUpdate, keepbounds) {
-    this.connectTo(b.graphicElement(), doNotUpdate, keepbounds);
-    this.toComponent = b;
-    this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
-  }
 
   disconnect() {
     this.disconnectFromElement()
@@ -290,4 +275,54 @@ export default class LivelyConnector extends Morph {
       dragBehaviorMove(halo, evt, pos) {}
     };
   }
+  
+  
+  
+  // Added Methods by Linus and Anne
+  
+  
+  connectPetrinetComponents(a, b) {
+    this.connectFromPetrinetComponent(a, false)
+    this.connectToPetrinetComponent(b)
+  }
+  
+  connectFromPetrinetComponent(a, doNotUpdate, keepbounds) {
+    this.connectFrom(a.graphicElement(), doNotUpdate, keepbounds);
+    this.fromComponentId = a.componentId;
+    this.observePositionChange(a,  "fromObjectObserver", () => this.updateConnector())
+
+  }
+  
+  connectToPetrinetComponent(b, doNotUpdate, keepbounds) {
+    this.connectTo(b.graphicElement(), doNotUpdate, keepbounds);
+    this.toComponentId = b.componentId;
+    this.observePositionChange(b,  "toObjectObserver", () => this.updateConnector())
+
+  }
+  
+  get fromComponentId() {
+    return this.getAttribute("fromComponent");
+  }
+  
+  set fromComponentId(componentId) {
+    this.setAttribute("fromComponent", componentId);
+  }
+  
+  get toComponentId() {
+    return this.getAttribute("toComponent");
+  }
+  
+  set toComponentId(componentId) {
+    this.setAttribute("toComponent", componentId)
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }

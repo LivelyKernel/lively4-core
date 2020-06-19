@@ -12,3 +12,12 @@ like foo.js but only for markdown features?
 ```
 
 #hashtag
+
+
+<script>
+
+import foo from "./foo.js"
+
+foo(3)
+
+</script>

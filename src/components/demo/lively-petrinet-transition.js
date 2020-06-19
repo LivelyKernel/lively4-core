@@ -1,34 +1,52 @@
 import Morph from "src/components/widgets/lively-morph.js"
+import {Helper} from "src/components/demo/lively-petrinet-helper.js"
 
 export default class LivelyPetrinetTransition extends Morph {
   
 
   initialize() {
+    if (!this.componentId) {
+      this.componentId = Helper.getRandomId();
+    }
     this.windowTitle = "LivelyPetrinetTransition";
     this.registerButtons();
     
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+    const inputLabel = this.get("#inputLabel");
     
-    //lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
+    // Register Listeners
     
-
+    inputLabel.addEventListener("change", (evt) => this.onLabelChange(evt));
+    
+    // Initialize Displayed Values
+    
+    const label = this.getAttribute("label")
+    
+    if (label) {
+      inputLabel.value = label;
+    }
+    
     
   } 
   
   
-  graphicElement() {
-    return this.get("#transition");
+  get componentId() {
+    return this.getAttribute("componentId");
+  }
+
+  set componentId(id) {
+    this.setAttribute("componentId", id);
   }
   
+  onLabelChange(evt) {
+    this.setAttribute("label", this.get("#inputLabel").value);
+  } 
   
-    isActiveTransition(){
-      const randomNumber = Math.random();
-      var prob = this.get("#inputProbability").value;
-      if( randomNumber <= prob){
-        return true
-      } else {
-        return false
-      }
+  
+  
+  
+  
+  graphicElement() {
+    return this.get("#transition");
   }
   
 }

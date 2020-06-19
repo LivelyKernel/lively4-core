@@ -1,37 +1,88 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
+import {Helper} from "src/components/demo/lively-petrinet-helper.js"
 
 
 
 export default class LivelyPetrinetPlace extends Morph {
 
   initialize() {
-    this.placeId = Math.random().toString(36).substring(7);
+    if (!this.componentId) {
+      this.componentId = Helper.getRandomId();
+    }
+    
+    this.history = [];
     this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
-    //this.addEventListener("add dot", this, "click", () => this.onClick());
-    //this.removeEventListener("add dot", this, "click");
+    this.get("#inputLabel").addEventListener("change", (evt) => this.onLabelChange(evt));
+    lively.addEventListener("foo", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
     
-    lively.html.registerKeys(this); // automatically installs handler for some methods
+    const label = this.getAttribute("label");
+    if (label) {
+      this.get("#inputLabel").value = label;
+    }
+  }
+  
+  
+  // Access
+  
+  get history() {
+    return this.getAttribute("history");
+  }
+  
+  set history(historyArray) {
+    this.setAttribute("history", historyArray);
+  }
     
+  get componentId() {
+    return this.getAttribute("componentId");
+  }
+
+  set componentId(id) {
+    this.setAttribute("componentId", id);
   }
   
-  attachedCallback() {
+  get tokens() {
+    return Array.from(this.querySelectorAll("lively-petrinet-token"));
   }
   
-  detachedCallback() {
+  numberOfTokens(){
+    return this.tokens.length;
   }
   
   
-  onAddButton() {
-    this.addBall()
+  // Simulation State
+  
+  
+  reset() {
+    this.deleteAllTokens();
+    const numberTokensInBeginning = this.history[0];
+    for (let i = 0; i < numberTokensInBeginning; i++) {
+      this.addToken();
+    }
+    this.history = [];
   }
+  
+  start() {
+    this.history = [this.numberOfTokens()];
+  }  
+  
+  saveStateOnStep() {
+    this.history.push(this.numberOfTokens());
+  }
+  
+  
+  // Interaction
   
   
   graphicElement() {
     return this.get("#circle");
+  }
+  
+  onLabelChange(evt) {
+    this.setAttribute("label", this.get("#inputLabel").value);
   }
   
   
@@ -61,10 +112,6 @@ export default class LivelyPetrinetPlace extends Morph {
     this.appendChild(token); 
   }
   
-  numberOfTokens(){
-    return this.tokens.length;
-  }
-  
   
   async deleteToken(){
       this.tokens[0].remove()
@@ -76,9 +123,5 @@ export default class LivelyPetrinetPlace extends Morph {
     }
   }
    
-  get tokens() {
-    return Array.from(this.querySelectorAll("lively-petrinet-token"));
-  }
-  
   
 }
