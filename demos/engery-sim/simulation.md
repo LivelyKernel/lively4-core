@@ -47,3 +47,17 @@ You can see here the Reset-Cell which is a cell like all others, but is not enab
 <div style="height:1500px;position:relative">
 <lively-import src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/energy-simulation.html"></lively-import>
 </div>
+
+### Important files
+<a href="https://lively-kernel.org/lively4/lively4-livelyenergy/src/components/demo/lively-simulation-cell.html">simulation-cell.html</a>
+
+<https://lively-kernel.org/lively4/lively4-livelyenergy/src/components/demo/lively-simulation-cell.js>
+
+<https://lively-kernel.org/lively4/lively4-livelyenergy/src/components/demo/lively-simulation-code-view.html>
+
+<https://lively-kernel.org/lively4/lively4-livelyenergy/src/components/demo/lively-simulation-code-view.js>
+
+<https://lively-kernel.org/lively4/lively4-livelyenergy/src/components/demo/lively-simulation-code.html>
+### Development of Cells
+
+![Old Cells](https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/2020-05-20%20(8).png)

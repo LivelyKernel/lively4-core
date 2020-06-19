@@ -17,6 +17,7 @@ export default class LivelySimulationCell extends Morph {
     this.initializeCodeView();
     this.initializeLogView();
     this.initializeViewSlot();
+    this.addEventListener('mousedown', () => this.bringToFront());
   }
   
   initializeTitleBar() {
@@ -62,12 +63,20 @@ export default class LivelySimulationCell extends Morph {
   }
 
   onPointerUp() {
-    const simulation = this.getSimulation();
-    simulation.removeEventListener('pointermove', this.onPointerMove);
-    simulation.removeEventListener('pointerup', this.onPointerUp);
+    const anchor = document.body.parentElement;
+    anchor.removeEventListener('pointermove', this.onPointerMove);
+    anchor.removeEventListener('pointerup', this.onPointerUp);
   }
   
   // other
+  bringToFront() {
+    const simulation = this.getSimulation();
+    if (!simulation.getForegroundCell) return;
+    const foregroundCell = simulation.getForegroundCell();
+    if (foregroundCell === this) return;
+    this.style.zIndex = parseInt(foregroundCell.style.zIndex || 1) + 1;
+  }
+  
   get(selector) {
     const { shadowRoot } = this;
     return shadowRoot.querySelector(selector);
@@ -144,11 +153,12 @@ export default class LivelySimulationCell extends Morph {
   }
   
   startGrabbing(event, initPosition = true) {
-    const simulation = this.getSimulation();
-    simulation.addEventListener('pointermove', this.onPointerMove);
-    simulation.addEventListener('pointerup', this.onPointerUp);
+    const anchor = document.body.parentElement;
+    anchor.addEventListener('pointermove', this.onPointerMove);
+    anchor.addEventListener('pointerup', this.onPointerUp);
     this.lastMove = _.pick(event, ['clientX', 'clientY']);
     if (initPosition) {
+      const simulation = this.getSimulation();
       const parentBounds = simulation.getBoundingClientRect();
       this.style.top = `${event.clientY - parentBounds.y}px`;
       this.style.left = `${event.clientX - parentBounds.x - this.clientWidth / 2}px`;
@@ -156,7 +166,9 @@ export default class LivelySimulationCell extends Morph {
   }
   
   isFocused() {
-    return this.get('#codeView').isFocused() || this.get('#titleBar').isFocused();
+    return this.get('#codeView').isFocused() 
+    || this.get('#titleBar').isFocused() 
+    || this.get('#logView').isFocused();
   }
   
   getSimulation() {

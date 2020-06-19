@@ -58,4 +58,14 @@ export default class LivelySimulationLogView extends Morph {
     return parseInt(this.get('#interval').value) || DEFAULT_INTERVAL;
   }
   
+  isFocused() {
+    return this.isChildFocused(this.get('#interval'));
+  }
+  
+  isChildFocused(child, doc = document) {
+    if (doc.activeElement === child) return true;
+    if (doc.activeElement && doc.activeElement.shadowRoot)
+			return this.isChildFocused(child, doc.activeElement.shadowRoot)
+    return false;
+  }
 }

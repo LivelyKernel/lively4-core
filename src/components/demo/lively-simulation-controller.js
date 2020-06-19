@@ -13,6 +13,8 @@ export default class LivelySimulationController extends Morph {
     this.initializeVelocitySlider();
     this.initializeRevertSelect();
     this.initializeStopOnErrorCheckBox();
+    this.initializeResetTimeButton();
+    this.initializeTimeDeltaInput();
   }
   
   initializeStartStopButton() {
@@ -46,36 +48,68 @@ export default class LivelySimulationController extends Morph {
     stopOnErrorCheckBox.addEventListener('change', ({ target: { checked: stopOnError }}) => this.onStopOnError(stopOnError))
   }
   
+  initializeResetTimeButton() {
+    const resetTimeButton = this.get('#resetTime');
+    resetTimeButton.addEventListener('click', () => this.handleResetTime());
+  }
+  
+  initializeTimeDeltaInput() {
+    const timeDeltaInput = this.get('#dt');
+    timeDeltaInput.addEventListener('change', ({ target: { value: timeDelta }}) => this.handleTimeDelta(timeDelta));
+  }
+  
   initializeEngine(engine) {
     this.registerIsRunningUpdater(engine);
     this.registerVelocityUpdater(engine);
     this.registerStopOnErrorUpdater(engine);
+    this.registerTimeUpdater(engine);
+    this.registerTimeDeltaUpdater(engine);
   }
   
   detachedCallback() {
     if (this.isRunningUpdater) this.isRunningUpdater.dispose();
     if (this.velocityUpdater) this.velocityUpdater.dispose();
     if (this.stopOnErrorUpdater) this.stopOnErrorUpdater.dispose();
+    if (this.timeUpdater) this.timeUpdater.dispose();
+    if (this.timeDeltaUpdater) this.timeDeltaUpdater.dispose();
   }
   
   registerIsRunningUpdater(engine) {
-    this.isRunningUpdater = aexpr(() => engine.isRunning).onChange(isRunning => {
+    this.isRunningUpdater = aexpr(() => engine.isRunning).dataflow(isRunning => {
       const startStopButton = this.get('#startStopButton');
       startStopButton.textContent = isRunning ? 'Stop' : 'Start';
+      if (isRunning) startStopButton.classList.add('stop');
+      else startStopButton.classList.remove('stop');
     });
   }
   
   registerVelocityUpdater(engine) {
-    this.velocityUpdater = aexpr(() => engine.velocity).onChange(velocity => {
+    this.velocityUpdater = aexpr(() => engine.velocity).dataflow(velocity => {
       const velocitySlider = this.get('#velocitySlider');
       velocitySlider.value = velocity;
+      const velocitySpan = this.get('#velocitySpan');
+      velocitySpan.innerText = velocity;
     });
   }
   
   registerStopOnErrorUpdater(engine) {
-    this.stopOnErrorUpdater = aexpr(() => engine.stopOnError).onChange(stopOnError => {
+    this.stopOnErrorUpdater = aexpr(() => engine.stopOnError).dataflow(stopOnError => {
       const stopOnErrorCheckBox = this.get('#stopOnErrorCheckBox');
       stopOnErrorCheckBox.checked = stopOnError;
+    });
+  }
+  
+  registerTimeUpdater(engine) {
+    this.timeUpdater = aexpr(() => engine.time).dataflow(time => {
+      const timeSpan = this.get('#time');
+      timeSpan.innerText = time;
+    });
+  }
+  
+  registerTimeDeltaUpdater(engine) {
+    this.timeDeltaUpdater = aexpr(() => engine.timeDeltaPerStepInMilliseconds).dataflow(dt => {
+      const dtSpan = this.get('#dt');
+      dtSpan.value = dt;
     });
   }
   
@@ -98,8 +132,6 @@ export default class LivelySimulationController extends Morph {
   }
   
   onVelocitySlider({ target: { value: velocity } }) {
-    const velocitySpan = this.get('#velocitySpan');
-    velocitySpan.innerText = velocity;
     const engine = this.getEngine();
     if (!engine) return;
     engine.setVelocity(velocity);
@@ -122,6 +154,20 @@ export default class LivelySimulationController extends Morph {
     const engine = this.getEngine();
     if (!engine) return;
     engine.stopOnError = stopOnError;
+  }
+  
+  handleResetTime() {
+    const engine = this.getEngine();
+    if (!engine) return;
+    engine.setTime(0);
+  }
+  
+  handleTimeDelta(timeDelta) {
+    const engine = this.getEngine();
+    if (!engine) return;
+    try {
+      engine.setTimeDeltaPerStepInMilliseconds(parseInt(timeDelta));
+    } catch (e) { /* ignore */ }
   }
   
   // other
@@ -159,5 +205,16 @@ export default class LivelySimulationController extends Morph {
   getHistory() {
     const simulation = this.getSimulation();
     return simulation && simulation.getHistory && simulation.getHistory();
+  }
+  
+  isFocused() {
+    return this.isChildFocused(this.get('#dt'));
+  }
+  
+  isChildFocused(child, doc = document) {
+    if (doc.activeElement === child) return true;
+    if (doc.activeElement && doc.activeElement.shadowRoot)
+			return this.isChildFocused(child, doc.activeElement.shadowRoot)
+    return false;
   }
 }

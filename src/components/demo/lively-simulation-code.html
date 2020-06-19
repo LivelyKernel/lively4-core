@@ -6,6 +6,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
   }
   #codeMirror {
     flex-grow: 1;
@@ -13,7 +14,7 @@
     overflow-y: auto;
   }
   #status {
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     margin-top: 5px;
@@ -22,16 +23,40 @@
     border-style: solid;
     border-width: 1px;
     padding: 5px;
-    color: green;
-    border-color: green;
   }
   .error {
-    color: red !important;
-    border-color: red !important;
+    display: flex !important;
+    color: red;
+    border-color: red;
+  }
+  #saveDiscard {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    padding: 5px;
+    display: none;
+    z-index: 2;
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+  #saveDiscard > * {
+    margin-right: 2px;
+  }
+  #saveDiscard > *:last-child {
+    margin-right: 0;
+  }
+  #saveDiscard i {
+    cursor: pointer;
+  }
+  #saveDiscard.show {
+    display: block;
   }
 </style>
 <div id='code'>
   <lively-code-mirror id='codeMirror' overscroll='contain' wrapmode='true'></lively-code-mirror>  
-  <span id='status'>No Error</span>
+  <div id='saveDiscard'>
+    <i id='save' class="fa fa-floppy-o"></i>
+    <i id='discard' class="fa fa-ban"></i>
+  </div>
+  <span id='status'></span>
 </div>
 </template>

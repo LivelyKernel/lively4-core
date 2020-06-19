@@ -6,6 +6,8 @@ import History from 'demos/engery-sim/history.js';
 import _ from 'src/external/lodash/lodash.js';
 
 const EMPTY_PLACEHOLDER = 'EMPTY';
+const RESERVED_CELL_NAMES = ['simulation'];
+
 export default class LivelySimulation extends Morph {
   
   // life cycle
@@ -14,12 +16,15 @@ export default class LivelySimulation extends Morph {
     lively.html.registerKeys(this);
     this.initializeEngine();
     this.initializeController();
+    this.initializeContainerRoot();
   }
   
   initializeEngine() {
-    const velocity = this.dataset['velocity'] || undefined;
+    const velocity = _.has(this.dataset, 'velocity') ? parseInt(this.dataset['velocity']) : undefined;
     const stopOnError = this.dataset['stoponerror'] || undefined;
-    this.engine = new Engine(velocity, () => this.collectCells(), stopOnError);
+    const time = _.has(this.dataset, 'time') ? parseInt(this.dataset['time']) : undefined;
+    const dt = _.has(this.dataset, 'dt') ? parseFloat(this.dataset['dt']) : undefined;
+    this.engine = new Engine(velocity, () => this.collectCells(), stopOnError, time, dt);
   }
   
   initializeController() {
@@ -53,15 +58,17 @@ export default class LivelySimulation extends Morph {
   }
   
   livelyPrepareSave() {
-    const { engine: { stopOnError, velocity } } = this;
+    const { engine: { stopOnError, time, timeDeltaPerStepInMilliseconds, velocity } } = this;
     this.dataset['velocity'] = velocity;
     this.dataset['stoponerror'] = stopOnError;
+    this.dataset['time'] = time;
+    this.dataset['dt'] = timeDeltaPerStepInMilliseconds;
   }
   
   // event listener
   onKeyDown(event) {
     const { engine } = this;
-    if(this.isCellFocusActive()) return;
+    if(this.isCellFocusActive() || this.get('#controller').isFocused()) return;
     let matched = true;
     switch (event.key) {
       case ' ':
@@ -112,9 +119,11 @@ export default class LivelySimulation extends Morph {
   ensureUniqueCellName(cellNameProposal, counterSlug = 1) {
     const cellNameProposalWithSlug = 
         counterSlug > 1 ? `${cellNameProposal} (${counterSlug})` : cellNameProposal;
-    const cellNames = _.map(this.collectCells(), cell => this.toAlphaNumeric(cell.getName()));
-    const sameNameCount = _.filter(cellNames, name => 
-                                   name === this.toAlphaNumeric(cellNameProposalWithSlug)).length;
+    const cellNames = _.concat(
+      _.map(this.collectCells(), cell => this.toAlphaNumeric(cell.getName().toLowerCase())), 
+      RESERVED_CELL_NAMES
+    );
+    const sameNameCount = _.filter(cellNames, name => name === this.toAlphaNumeric(cellNameProposalWithSlug.toLowerCase())).length;
     if (sameNameCount - (counterSlug === 1) <= 0) return cellNameProposalWithSlug;
     return this.ensureUniqueCellName(cellNameProposal, counterSlug + 1);
   }
@@ -171,5 +180,6 @@ export default class LivelySimulation extends Morph {
     this.currentHighlight = (currentHighlight === cellRef) ? undefined : cellRef;
     const cells = this.collectCells();
     _.forEach(cells, cell => cell.highlight(this.currentHighlight));
+    
   }
 }
