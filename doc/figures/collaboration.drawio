@@ -1,4 +1,4 @@
-<mxfile modified="2020-06-22T13:11:43.546Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="bJXoRBpa-lmIJSbrm2nw" version="13.3.0" type="github">
+<mxfile modified="2020-06-22T13:12:12.681Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="BQk981SCojSJ18_8V2Dq" version="13.3.0" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="3466" dy="1492" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
@@ -50,10 +50,10 @@
           <mxGeometry x="-540" y="-310" width="120" height="850" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-7" value="Container / Browser" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="20" y="132" width="230" height="37" as="geometry" />
+          <mxGeometry x="150" y="132" width="100" height="37" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-8" value="Editor" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="20" y="180" width="230" height="37" as="geometry" />
+          <mxGeometry x="150" y="180" width="100" height="37" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-9" value="Lively4 Server" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="570" y="-28" width="230" height="70" as="geometry" />
@@ -104,7 +104,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-27" value="Sync Tool" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="20" y="263" width="230" height="37" as="geometry" />
+          <mxGeometry x="20" y="135" width="80" height="37" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-28" value="create commits" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="600" y="198.5" width="120" height="20" as="geometry" />
