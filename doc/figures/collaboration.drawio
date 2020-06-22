@@ -1,6 +1,6 @@
-<mxfile modified="2020-06-22T13:28:36.829Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="9-AXjLIVzjiunlvk1EZ0" version="13.3.0" type="github">
+<mxfile modified="2020-06-22T13:30:15.277Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="m6cmCaIPsW_LZ9f6AYuP" version="13.3.0" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1246" dy="1358" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1023" dy="1207" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,7 +8,7 @@
           <mxGeometry x="30" y="-117" width="250" height="217" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-4" value="Chrome (client)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="30" y="-200" width="250" height="70" as="geometry" />
+          <mxGeometry x="40" y="-255" width="250" height="70" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-7" value="Container / Browser" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="160" y="-51" width="100" height="37" as="geometry" />
@@ -230,6 +230,15 @@
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-79" value="fallback to manual conflict resolution...&amp;nbsp;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
           <mxGeometry x="820" y="530" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-80" value="&lt;i&gt;&lt;font color=&quot;#4d4d4d&quot;&gt;lively4-authentification&lt;/font&gt;&lt;/i&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="320" y="-390" width="170" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-81" value="&lt;i&gt;&lt;font color=&quot;#4d4d4d&quot;&gt;lively4-server&lt;/font&gt;&lt;/i&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="595" y="-230" width="170" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-82" value="&lt;i&gt;&lt;font color=&quot;#4d4d4d&quot;&gt;lively4-core&lt;/font&gt;&lt;/i&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="35" y="-148" width="170" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
