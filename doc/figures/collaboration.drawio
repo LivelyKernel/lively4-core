@@ -1,6 +1,6 @@
-<mxfile modified="2020-06-22T13:19:02.225Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="Cqza0oc6JHQqbDBhUwZi" version="13.3.0" type="github">
+<mxfile modified="2020-06-22T13:24:48.280Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="AXX6tHLuDehqgwFHOOcr" version="13.3.0" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="700" dy="1176" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1038" dy="1232" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -153,6 +153,62 @@
           <mxGeometry x="0.2473" y="1" relative="1" as="geometry">
             <mxPoint x="-91.72" y="-17.52" as="offset" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-54" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="290" y="570" width="250" height="217" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="wsxFhhJqC8uP3kLpo3IL-55" target="wsxFhhJqC8uP3kLpo3IL-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-57" value="(4) PUT conflicting file.md&lt;br&gt;conflict is detected&lt;br&gt;(5) merge with local changes and PUT again" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="wsxFhhJqC8uP3kLpo3IL-56">
+          <mxGeometry x="0.3416" y="-4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-55" value="Editor" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="650" width="100" height="37" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-58" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;strokeColor=#FF9933;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="320" y="638.5" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-60" value="CONFLICT bewtween Lively commits" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="320" y="540" width="230" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-61" value="solves conflict (using diff match patch per character and not line based)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="325" y="610" width="230" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontColor=#FF9933;" edge="1" parent="1" source="wsxFhhJqC8uP3kLpo3IL-62" target="wsxFhhJqC8uP3kLpo3IL-63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;fontColor=#FF9933;" edge="1" parent="1" source="wsxFhhJqC8uP3kLpo3IL-62" target="wsxFhhJqC8uP3kLpo3IL-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-72" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;fontColor=#FF9933;exitX=0.181;exitY=-0.047;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="wsxFhhJqC8uP3kLpo3IL-62" target="wsxFhhJqC8uP3kLpo3IL-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-62" value="CONFLICT bewtween Lively adn GitHub" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="730" y="360" width="230" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-63" value="GitHub" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="237" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-64" value="Repository" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="277" width="110" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-65" value="Lively4" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="580" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-66" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="397" width="250" height="217" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-69" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;fontColor=#FF9933;entryX=0.171;entryY=0.938;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="wsxFhhJqC8uP3kLpo3IL-67" target="wsxFhhJqC8uP3kLpo3IL-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-67" value="Sync Tool" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="459" width="80" height="37" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-68" value="Lively4" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="830" y="410" width="40" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
