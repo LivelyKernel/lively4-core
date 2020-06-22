@@ -1,0 +1,45 @@
+<template id="lively-petrinet-toolbar">
+<style type="text/css">
+  .simulationButton {
+    margin: 3px;    
+  }
+  
+  .alignRight {
+    text-align: right;
+    display: inline-block
+  }
+  
+  
+  
+  #outerBox {
+      border-bottom: 3px solid #f0f0f5;
+  }
+  
+  
+  #delete {
+    margin-top: 5px;
+    padding-right: 10px;
+    float: right;
+  }
+</style>
+
+<div id="outerBox">
+  <button class="simulationButton" id="startButton">Start</button>
+  <button class="simulationButton" id="stepButton">Step</button>
+  <button class="simulationButton" id="runButton">Run</button>
+  <span id="simulationState">1</span>
+  <input 
+    id="simulationSlider" 
+    class="slider"
+    type="range" 
+    min="0" 
+    max="60" 
+    step="1" 
+    value="1"
+  />
+  <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/Trash_20px.png" id="delete">
+
+  
+
+</div>
+</template>

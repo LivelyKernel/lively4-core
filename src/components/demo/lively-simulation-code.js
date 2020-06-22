@@ -10,17 +10,27 @@ export default class LivelySimulationCode extends Morph {
     
   // lifecycle
   initialize() {
+    this.initializeCodeMirror();
+    this.initializeSaveDiscard();
+  }
+  
+  initializeCodeMirror() {
     const codeMirror = this.get('#codeMirror');
     codeMirror.addEventListener('focusout', () => this.handleFocusOut());
     codeMirror.addEventListener('focusin', () => this.handleFocusIn());
     codeMirror.checkSyntax = () => {};
-    codeMirror.setCustomStyle('.cm-error { color: blue !important; }');
+    codeMirror.setCustomStyle('.cm-error { color: inherit !important; }');
+  }
+  
+  initializeSnippet(snippet = DEFAULT_SNIPPET) {
+    const codeMirror = this.get('#codeMirror');
+    codeMirror.editorLoaded().then(() => this.initializeEditor(snippet));
   }
   
   initializeEditor(snippet) {
     const codeMirror = this.get('#codeMirror');
     codeMirror.editor.setValue(snippet);
-     codeMirror.editor.setOption('lineNumbers', false);
+    codeMirror.editor.setOption('lineNumbers', false);
     codeMirror.editor.setOption('gutters', []);
     codeMirror.editor.setOption('highlight', false);
     codeMirror.editor.setOption('lint', false);
@@ -28,9 +38,11 @@ export default class LivelySimulationCode extends Morph {
     this.updateCellTags();
   }
   
-  initializeSnippet(snippet = DEFAULT_SNIPPET) {
-    const codeMirror = this.get('#codeMirror');
-    codeMirror.editorLoaded().then(() => this.initializeEditor(snippet));
+  initializeSaveDiscard() {
+    const save = this.get('#save');
+    save.addEventListener('click', () => this.handleSaveDiscard(true));
+    const discard = this.get('#discard');
+    discard.addEventListener('click', () => this.handleSaveDiscard(false));
   }
   
   attachedCallback() {
@@ -45,18 +57,23 @@ export default class LivelySimulationCode extends Morph {
     this.cellNameUpdater = aexpr(() => {
       const codeView = this.getCodeView();
       return codeView.getCell().getNormalizedName();
-    }).onChange((cellName) => {
+    }).dataflow((cellName) => {
       if (!_.isEmpty(cellName)) this.preCompile();
     });
   }
   
   // event handler
   handleFocusOut() {
-    this.preCompile();
-    this.updateCellTags();
+    if (this.checkpoint === this.getSnippet()) this.handleSaveDiscard(false);
   }
   
   handleFocusIn() {
+    if (!this.isEditing) {
+      this.isEditing = true;
+      this.checkpoint = this.getSnippet();
+      const saveDiscard = this.get('#saveDiscard');
+      saveDiscard.classList.add('show');
+    }
     this.clearAllMarks();
   }
   
@@ -68,7 +85,24 @@ export default class LivelySimulationCode extends Morph {
     event.preventDefault();
   }
   
+  handleSaveDiscard(save) {
+    const saveDiscard = this.get('#saveDiscard');
+    saveDiscard.classList.remove('show');
+    this.isEditing = false;
+    if (save) this.save();
+    else this.discard();
+  }
+  
   // other
+  save() {
+    this.preCompile();
+    this.updateCellTags();
+  }
+  
+  discard() {
+    this.setSnippet(this.checkpoint);
+  }
+  
   execute(state) {
     const cellNames = _.keys(state);
     try {
@@ -98,6 +132,7 @@ export default class LivelySimulationCode extends Morph {
     const name = codeView.getCell().getNormalizedName();
     let processedSnippet = snippet;
     processedSnippet = this.preImportStateAsLocal(processedSnippet, name, localState);
+    processedSnippet = this.preImportSimulationAsLocal(processedSnippet, localState);
     processedSnippet = this.preTransformExternalState(processedSnippet);
     processedSnippet = this.preExportStateAsLocal(processedSnippet, name, localState);
     return processedSnippet;
@@ -117,6 +152,11 @@ export default class LivelySimulationCode extends Morph {
     if (_.isEmpty(localState)) return snippet;
     return `let { ${name}: { ${_.join(_.keys(localState), ',')} } } = this;\n
             ${snippet}`;
+  }
+  
+  preImportSimulationAsLocal(snippet, localState) {
+    if (_.isEmpty(localState)) return snippet;
+    return `const { simulation: { dt, time } } = this;\n${snippet}`;
   }
   
   preExportStateAsLocal(snippet, name, localState) {
@@ -143,7 +183,7 @@ export default class LivelySimulationCode extends Morph {
   addWidget(match) {
     const cm =  this.get('#codeMirror').editor;
     const cellRef = match[1].toLowerCase();
-    const widget = <span style='cursor: pointer'>{ match[0] }</span>;
+    const widget = <span style='cursor: pointer; transition: background-color 0.3s ease;'>{ match[0] }</span>;
     widget.dataset['cellref'] = cellRef;
     widget.addEventListener('mousedown', (event) => this.handleCellRef(event, cellRef));
     try {
@@ -161,16 +201,57 @@ export default class LivelySimulationCode extends Morph {
   }
   
   highlight(cellRef) {
+    this.clearConnector();
+    if (!cellRef) {
+      this.clearMarkupHighlight();
+    } else {
+      const matchingWidgets = this.updateMarkupHighlights(cellRef);
+      if (!_.isEmpty(matchingWidgets)) this.createConnector(cellRef);
+    }
+  }
+  
+  clearConnector() {
+    if (this.connector) {
+      this.connector.remove();
+      this.connector = undefined;
+    }
+  }
+  
+  updateMarkupHighlights(cellRef) {
     const cm =  this.get('#codeMirror').editor;
     const widgets = _.map(cm.getAllMarks(), mark => _.get(mark, 'widgetNode.children[0]'));
-    if (!cellRef) {
-      _.forEach(widgets, widget => widget.style.backgroundColor = '');
-    } else {
-      const matchingWidgets = _.filter(widgets, widget => widget.dataset['cellref']== cellRef);
-      const otherWidgets = _.reject(widgets, widget => widget.dataset['cellref']== cellRef);
-      _.forEach(otherWidgets, widget => widget.style.backgroundColor = '');
-      _.forEach(matchingWidgets, widget => widget.style.backgroundColor = HIGHLIGHT_BG_COLOR);
+    const matchingWidgets = _.filter(widgets, widget => widget.dataset['cellref']== cellRef);
+    const otherWidgets = _.reject(widgets, widget => widget.dataset['cellref']== cellRef);
+    _.forEach(otherWidgets, widget => widget.style.backgroundColor = '');
+    _.forEach(matchingWidgets, widget => widget.style.backgroundColor = HIGHLIGHT_BG_COLOR);
+    return matchingWidgets;
+  }
+  
+  clearMarkupHighlight() {
+    const cm =  this.get('#codeMirror').editor;
+    const widgets = _.map(cm.getAllMarks(), mark => _.get(mark, 'widgetNode.children[0]'));
+    _.forEach(widgets, widget => widget.style.backgroundColor = '');
+  }
+  
+  createConnector(cellRef) {
+    this.clearConnector();
+    const targetCell = _.find(this.getSimulation().collectCells(), cell => cell.getNormalizedName().toLowerCase() === cellRef);
+    if (targetCell) {
+      Promise.resolve(<lively-connector></lively-connector>)
+        .then(connector => {
+          this.initializeConnector(connector, targetCell);
+          this.connector = connector;
+        });
     }
+  }
+  
+  initializeConnector(connector, targetCell) {
+    this.getSimulation().appendChild(connector);
+    connector.connectFrom(this.getCodeView().getCell(), false, true);
+    connector.connectTo(targetCell, false, true);
+    connector.style.zIndex = 9999;
+    connector.style.cursor = 'pointer';
+    connector.addEventListener('click', () => targetCell.scrollIntoView());
   }
   
   setSnippet(snippet) {
@@ -192,7 +273,7 @@ export default class LivelySimulationCode extends Morph {
   
   clearError() {
     const status = this.get('#status');
-    status.innerText = 'No Error';
+    status.innerText = '';
     status.classList.remove('error');
   }
   

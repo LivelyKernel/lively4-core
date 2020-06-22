@@ -9,28 +9,38 @@ export default class LivelyPetrinetPlace extends Morph {
 
   initialize() {
     if (!this.componentId) {
-        this.componentId = Helper.getRandomId();
+      this.componentId = Helper.getRandomId();
     }
+    
+    if (this.history === null) {
+       this.history = [];
+    }
+    
     this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     this.get("#inputLabel").addEventListener("change", (evt) => this.onLabelChange(evt));
     lively.addEventListener("foo", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
     
-
     const label = this.getAttribute("label");
     if (label) {
       this.get("#inputLabel").value = label;
     }
-    
   }
   
   
+  // Access
   
   
   
-
+  get history() {
+    return JSON.parse(this.getAttribute("history"));
+  }
   
+  set history(historyArray) {
+    this.setAttribute("history", JSON.stringify(historyArray));
+  }
+    
   get componentId() {
     return this.getAttribute("componentId");
   }
@@ -38,6 +48,42 @@ export default class LivelyPetrinetPlace extends Morph {
   set componentId(id) {
     this.setAttribute("componentId", id);
   }
+  
+  get tokens() {
+    return Array.from(this.querySelectorAll("lively-petrinet-token"));
+  }
+  
+  numberOfTokens(){
+    return this.tokens.length;
+  }
+  
+  
+  
+  // Simulation State
+  
+  
+  
+  setState(step) {
+    this.deleteAllTokens();
+    const numberTokensAtStep = this.history[step];
+    for (let i = 0; i < numberTokensAtStep; i++) {
+      this.addToken();
+    }
+  }
+  
+  start() {
+    this.history = [this.numberOfTokens()];
+  }  
+  
+  persistState() {
+    this.history = [...this.history, this.numberOfTokens()];
+  }
+  
+  
+  
+  // Interaction
+  
+  
   
   graphicElement() {
     return this.get("#circle");
@@ -74,10 +120,6 @@ export default class LivelyPetrinetPlace extends Morph {
     this.appendChild(token); 
   }
   
-  numberOfTokens(){
-    return this.tokens.length;
-  }
-  
   
   async deleteToken(){
       this.tokens[0].remove()
@@ -89,9 +131,5 @@ export default class LivelyPetrinetPlace extends Morph {
     }
   }
    
-  get tokens() {
-    return Array.from(this.querySelectorAll("lively-petrinet-token"));
-  }
-  
   
 }
