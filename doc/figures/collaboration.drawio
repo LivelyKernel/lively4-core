@@ -1,6 +1,6 @@
-<mxfile modified="2020-06-22T13:24:48.280Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="AXX6tHLuDehqgwFHOOcr" version="13.3.0" type="github">
+<mxfile modified="2020-06-22T13:28:36.829Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36" etag="9-AXjLIVzjiunlvk1EZ0" version="13.3.0" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1038" dy="1232" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1246" dy="1358" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -93,7 +93,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wsxFhhJqC8uP3kLpo3IL-33" value="(A) Editors" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;direction=south;fontSize=16;fontColor=#004C99;" vertex="1" parent="1">
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-33" value="(A) Collaboration and Conflict Resolution" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;direction=south;fontSize=16;fontColor=#004C99;" vertex="1" parent="1">
           <mxGeometry x="10" y="200" width="310" height="40" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-36" value="Lively4" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
@@ -171,8 +171,8 @@
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-58" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;strokeColor=#FF9933;strokeWidth=2;" vertex="1" parent="1">
           <mxGeometry x="320" y="638.5" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="wsxFhhJqC8uP3kLpo3IL-60" value="CONFLICT bewtween Lively commits" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
-          <mxGeometry x="320" y="540" width="230" height="20" as="geometry" />
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-60" value="(A) in one browser page" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="60" y="347" width="160" height="20" as="geometry" />
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-61" value="solves conflict (using diff match patch per character and not line based)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
           <mxGeometry x="325" y="610" width="230" height="20" as="geometry" />
@@ -209,6 +209,27 @@
         </mxCell>
         <mxCell id="wsxFhhJqC8uP3kLpo3IL-68" value="Lively4" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="830" y="410" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-73" value="conflict in file,&lt;br&gt;needs to be manually changed...." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;dashed=1;strokeColor=#FF9933;strokeWidth=2;fillColor=none;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="790" y="240" width="80" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-74" value="CONFLICT bewtween Lively commits" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="330" y="550" width="230" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-75" value="(B) between different lively session in one checked out repository" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="280" y="500" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-76" value="(C) between distributed respositories" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="800" y="170" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-77" value="Live... immediate feedback" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="40" y="495.5" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-78" value="automerge when saving file&lt;br&gt;highlight changes" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="320" y="710" width="160" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wsxFhhJqC8uP3kLpo3IL-79" value="fallback to manual conflict resolution...&amp;nbsp;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;dashed=1;fontColor=#FF9933;" vertex="1" parent="1">
+          <mxGeometry x="820" y="530" width="160" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
