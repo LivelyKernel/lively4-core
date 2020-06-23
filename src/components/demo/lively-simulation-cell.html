@@ -1,27 +1,49 @@
-<template id="lively-simulation-cell" >
+<template id="lively-simulation-cell">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-  .container {
-    margin: 50px;
-  }
-  .w100 {
-    width: 100%;
-  }
-  #cellNameInput {
-    border: none;
-  }
-  #stateTextArea {
-    resize: none;
+  :host {
+    position: absolute;
     height: 100px;
+    width: 300px;
+    min-height: 100px;
+    min-width: 300px;
+    border: solid lightgrey 1px;
+    border-radius: 1.5px;
+    background: white;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    z-index: 1;
   }
-  #snippetCodeMirror {
-    height: 300px;
+  #cell { 
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  #viewSlot {
+    padding: 5px;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  #viewSlot[disabled=true] {
+    opacity: 0.3;
+  }
+  #viewSlot > * {
+    display: none;
+    height: 100%;
+  }
+  #viewSlot > *.active {
+    display: flex;
   }
 </style>
-<div class='container'>
-  <input id='cellNameInput' class='w100' />
-  <textarea id='stateTextArea' class='w100'></textarea>
-  <lively-code-mirror id='snippetCodeMirror' class='w100'></lively-code-mirror>
+<div id='cell'>
+  <lively-simulation-titlebar id='titleBar'></lively-simulation-titlebar>
+  <div id='viewSlot'>
+    <lively-simulation-code-view id='codeView' class='active'></lively-simulation-code-view>
+    <lively-simulation-log-view id='logView'></lively-simulation-log-view>
+  </div>
 </div>
+<lively-resizer class="top-left"></lively-resizer>
+<lively-resizer class="top-right"></lively-resizer>
+<lively-resizer class="bottom-right"></lively-resizer>
+<lively-resizer class="bottom-left"></lively-resizer>
 </template>

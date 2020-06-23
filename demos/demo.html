@@ -1,0 +1,38 @@
+<h1>Hello This is a change</h1>
+
+
+<div class="lively-content" style="width: 200px; height: 100px; border: 1px solid black; position: relative; background-color: rgba(40, 40, 80, 0.5);"></div><div><b>
+
+world
+
+
+</b></div><div><br></div><div><br></div><div><br></div><div><br></div><div class="lively-content" style="width: 127px; height: 191.125px; border: 1px solid black; position: absolute; background-color: rgba(40, 40, 80, 0.5); left: 305px; top: 81.875px;"></div><d3-barchart class="" style="position: absolute; left: 490.508px; top: 74.5px;"></d3-barchart><d3-barchart class="lively-content" style="position: absolute; width: 288.81px; height: 198.562px; left: 369px; top: 112px;" data-lively-id="a5e0fc35-dc9b-44b5-89f5-bfbe5e3ae321"><script type="lively4script" data-name="livelyLoad">async function livelyLoad() {
+  
+  var d3 = await System.import("src/external/d3.v5.js")
+   this.config({
+      color(d) {
+        if (!this.colorGen) {
+          this.colorGen = d3.scaleOrdinal(d3.schemeCategory10);
+        }
+        
+        return this.colorGen(d.label)
+      }
+    });
+    this.setData([
+      {label: "a", x0: 0,  x1: 14, 
+       children: [
+         {label: "a1", x0: 4,  x1: 8},
+         {label: "a2", x0: 8,  x1: 12},
+        ]}, 
+      {label: "b", x0: 3, x1: 8}, 
+      {label: "c", x0: 5, x1: 15}, 
+      {label: "d", x0: 2, x1: 16}, 
+      {label: "e", x0: 0, x1: 23}, 
+      {label: "f", x0: 10, x1: 42, 
+        children: [
+         {label: "f1", x0: 11,  x1: 16},
+         {label: "f2", x0: 18,  x1: 40},
+        ]}
+    ])
+    this.updateViz() 
+}</script></d3-barchart>

@@ -580,4 +580,22 @@ export default class GitHub {
     var updateContent = this.stringifyMarkdownStories(stories)
     return lively.files.saveFile(url, updateContent)
   }
+  
+  
+  // Example: AnnotationSet.getGitMergeBase("https://lively-kernel.org/lively4",  "lively4-dummyA", "HEAD", "fd956")
+  async getGitMergeBase(serverURL, repositoryName, versionA, versionB) {
+    var headers = new Headers({
+      "gitusername":          this.username,
+      "gitpassword":          this.token, 
+      "gitemail":             this.email,
+      "gitrepository":        repositoryName,
+      gitversiona: versionA,
+      gitversionb: versionB,
+    })
+
+    return fetch(serverURL + "/_git/mergebase", {
+      headers: headers
+    }).then(r => r.text())    
+  }
+  
 }

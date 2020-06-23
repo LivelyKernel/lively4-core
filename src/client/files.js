@@ -5,6 +5,7 @@ MD*/
 
 
 import { uuid as generateUuid } from 'utils';
+import _ from 'src/external/lodash/lodash.js'
 import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
@@ -488,16 +489,10 @@ export default class Files {
       document.body.appendChild(container)
       var syncTool = await lively.create("lively-sync", container); // #Hack #Ugly
       
-      
-      if (url.match("https://lively-kernel.org/research")) {
-        syncTool.setServerURL("https://lively-kernel.org/research") // #TODO generalize mapping of urls to server urls?
-      }
+      var serverURL = this.serverURL(url) 
+      if (!serverURL) return
+      syncTool.setServerURL(serverURL) 
 
-      var serverURL = syncTool.getServerURL()
-      if (!url.match(serverURL)) {
-        console.warn("url is not on server: " + serverURL)
-        return
-      }
       var m = url.replace(serverURL,"").replace(/^\//,"").match(/([^/]*)(\/*.*)/)
       var repository = m[1]
       var path = m[2]
@@ -519,10 +514,7 @@ export default class Files {
   
   static async githubFileInfo(url) {
     return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
-      var serverURL = syncTool.getServerURL()    
-      if (!url.match(serverURL)) { // we are in a checked out repo....
-        return undefined // not information for files we do not manage...
-      }
+      var serverURL = syncTool.getServerURL()      
       var remoteURL = await syncTool.gitControl("remoteurl")
       remoteURL = remoteURL.replace(/\n/,"")
       
@@ -587,6 +579,23 @@ export default class Files {
     document.body.appendChild(back)
     back.url = url
   }
+  
+  
+  /*MD ## Git Infos MD*/
+  static hasGitMergeConflict(source) {
+    return source.match(/<<<<<<<(.|\n)*=======(.|\n)*>>>>>>>/m)
+  }
+  
+  static extractGitMergeConflictVersions(sourceWithConflict) {
+     var versions = _.uniq(sourceWithConflict.split("\n")
+      .filter(ea => ea.match(/^(<<<<<<<)|(>>>>>>>) /))
+      .map(ea => ea.replace(/^(<<<<<<<)|(>>>>>>>) /, "")))
+     return versions
+  }
+  
+  
+  
+  
 }
 
 

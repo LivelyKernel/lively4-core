@@ -3,116 +3,184 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import _ from 'src/external/lodash/lodash.js';
 
+const DEFAULT_VIEW = 'codeView';
+
 export default class LivelySimulationCell extends Morph {
   
   // life cycle
   initialize() {
-    this.initializeCellNameInput();
-    this.initializeStateTextArea();
-    this.initializeSnippetCodeMirror();
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerUp = this.onPointerUp.bind(this);
+    this.shouldSkip = this.hasAttribute('data-should-skip');
+    this.executeSingle = false;
+    this.initializeTitleBar();
+    this.initializeCodeView();
+    this.initializeLogView();
+    this.initializeViewSlot();
+    this.addEventListener('mousedown', () => this.bringToFront());
   }
   
-  // initialize
-  initializeSnippetCodeMirror() {
-    const snippetCodeMirror = this.getSnippetCodeMirror();
-    const snippet = this.getAttribute('data-snippet') || '// Enter simulation code here';
-    snippetCodeMirror.editorLoaded()
-      .then(() => snippetCodeMirror.editor.setOption('lint', false))
-      .then(() => this.setSnippet(snippet));
+  initializeTitleBar() {
+    const titleBar = this.get('#titleBar');
+    titleBar.initializeName(this.dataset['name']);
   }
   
-  initializeStateTextArea() {
-    const state = this.getAttribute('data-state') || '{}';
-    this.setPlainState(state);
+  initializeCodeView() {
+    const codeView = this.get('#codeView');
+    codeView.initializeState(this.dataset['state']);
+    codeView.initializeSnippet(this.dataset['snippet']);
   }
   
-  initializeCellNameInput() {
-    const name = this.getAttribute('data-name') || '';
-    this.setName(name);
+  initializeLogView() {
+    const logView = this.get('#logView');
+    logView.initializeInterval(this.dataset['loginterval']);
   }
   
-  //
-  execute(scope = {}) {
-    const codeMirror = this.getSnippetCodeMirror();
-    const snippet = this.getSnippet();
-    if (!snippet.trim().length) return Promise.resolve(scope);
-    codeMirror.setDoitContext(scope);
-    return codeMirror.tryBoundEval(snippet).then(() => codeMirror.getDoitContext());
+  initializeViewSlot() {
+    const { shouldSkip } = this;
+    const viewSlot = this.get('#viewSlot');
+    viewSlot.setAttribute('disabled', shouldSkip);
+    this.switchViewTo(this.dataset['view']);
   }
   
-  isFocused() {
+  livelyPrepareSave() {
+    this.dataset['name'] = this.getName();
+    this.dataset['state'] = JSON.stringify(this.getState());
+    this.dataset['snippet'] = this.getSnippet();
+    this.dataset['view'] = this.getActiveView();
+    this.dataset['loginterval'] = this.get('#logView').getInterval();
+    if (this.shouldSkip) this.setAttribute('data-should-skip', true);
+    else this.removeAttribute('data-should-skip');
+  }
+  
+  // event handler
+  onPointerMove(event) {
+    const { clientX, clientY } = event;
+    const { lastMove } = this;
+    this.style.left = `${this.offsetLeft + clientX - lastMove.clientX}px`;
+    this.style.top = `${this.offsetTop + clientY - lastMove.clientY}px`;
+    this.lastMove = _.pick(event, ['clientX', 'clientY']);
+  }
+
+  onPointerUp() {
+    const anchor = document.body.parentElement;
+    anchor.removeEventListener('pointermove', this.onPointerMove);
+    anchor.removeEventListener('pointerup', this.onPointerUp);
+  }
+  
+  // other
+  bringToFront() {
+    const simulation = this.getSimulation();
+    if (!simulation.getForegroundCell) return;
+    const foregroundCell = simulation.getForegroundCell();
+    if (foregroundCell === this) return;
+    this.style.zIndex = parseInt(foregroundCell.style.zIndex || 1) + 1;
+  }
+  
+  get(selector) {
     const { shadowRoot } = this;
-    const childrenSelectors = ['#snippetCodeMirror', '#stateTextArea', '#cellNameInput'];
-    return _.some(_.map(childrenSelectors, selector => 
-                        this.isChildFocused(shadowRoot.querySelector(selector))));
+    return shadowRoot.querySelector(selector);
   }
   
-  isChildFocused(child, doc) {
-    doc = doc || document;
-    if (doc.activeElement === child) return true;
-    if (doc.activeElement && doc.activeElement.shadowRoot)
-			return this.isChildFocused(child, doc.activeElement.shadowRoot)
-    return false;
-  }
-  
-  // getter/ setter
   getName() {
-    const input = this.getCellNameInput();
-    return input.value;
+    return this.get('#titleBar').getName();
+  }
+  
+  getNormalizedName() {
+    return this.get('#titleBar').getNormalizedName();
   }
   
   setName(name) {
-    const input = this.getCellNameInput();
-    input.value = name;
+    this.get('#titleBar').setName(name);
+    const simulation = this.getSimulation();
+    this.highlight(simulation.currentHighlight);
   }
   
   getState() {
-    return JSON.parse(this.getPlainState());
+    return this.get('#codeView').getState();
   }
   
   setState(state) {
-    this.setPlainState(JSON.stringify(state));
-  }
-  
-  getPlainState() {
-    const textArea = this.getStateTextArea();
-    return textArea.value;
-  }
-  
-  setPlainState(state) {
-    const textArea = this.getStateTextArea();
-    textArea.value = state;
+    return this.get('#codeView').setState(state);
   }
   
   getSnippet() {
-    const codeMirror = this.getSnippetCodeMirror();
-    return codeMirror.editor.getValue();  
+    return this.get('#codeView').getSnippet();
   }
   
-  setSnippet(snippet) {
-    const codeMirror = this.getSnippetCodeMirror();
-    codeMirror.editor.setValue(snippet);
+  log(timestamp, state) {
+    return this.get('#logView').log(timestamp, state);
   }
   
-  getSnippetCodeMirror() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#snippetCodeMirror');
+  execute(timestamp, scope = {}) {
+    const { executeSingle, shouldSkip } = this;
+    if (!executeSingle && shouldSkip) return Promise.resolve(scope);
+    return this.get('#codeView').execute(scope)
+      .then(updatedScope => {
+        this.log(timestamp, updatedScope[this.getNormalizedName()]);
+        return updatedScope;
+      });
   }
   
-  getStateTextArea() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#stateTextArea');
+  executeSelf() {
+    if (this.executeSingle) return;
+    const simulation = this.getSimulation();
+    if (!simulation.executeSingleCell) return;
+    this.executeSingle = true;
+    simulation.executeSingleCell(this).finally(() => this.executeSingle = false);
   }
   
-  getCellNameInput() {
-    const { shadowRoot } = this;
-    return shadowRoot.querySelector('#cellNameInput');
+  delete() {
+    this.remove();
   }
   
-  /* Lively-specific API */
-  livelyPrepareSave() {
-    this.setAttribute('data-name', this.getName());
-    this.setAttribute('data-state', this.getPlainState());
-    this.setAttribute('data-snippet', this.getSnippet());
+  clone(event) {
+    const simulation = this.getSimulation();
+    if (!simulation.cloneCell) return;
+    simulation.cloneCell(event, this);
+  }
+  
+  switchViewTo(target = DEFAULT_VIEW) {
+    const views = _.map(['codeView', 'logView'], name => this.get(`#${name}`));
+    _.forEach(views, view => view.classList.remove('active'));
+    this.get(`#${target}`).classList.add('active');
+  }
+  
+  toggleSkip() {
+    this.shouldSkip = !this.shouldSkip;
+    const { shouldSkip } = this;
+    this.get('#viewSlot').setAttribute('disabled', shouldSkip);
+  }
+  
+  startGrabbing(event, initPosition = true) {
+    const anchor = document.body.parentElement;
+    anchor.addEventListener('pointermove', this.onPointerMove);
+    anchor.addEventListener('pointerup', this.onPointerUp);
+    this.lastMove = _.pick(event, ['clientX', 'clientY']);
+    if (initPosition) {
+      const simulation = this.getSimulation();
+      const parentBounds = simulation.getBoundingClientRect();
+      this.style.top = `${event.clientY - parentBounds.y}px`;
+      this.style.left = `${event.clientX - parentBounds.x - this.clientWidth / 2}px`;
+    }
+  }
+  
+  isFocused() {
+    return this.get('#codeView').isFocused() 
+    || this.get('#titleBar').isFocused() 
+    || this.get('#logView').isFocused();
+  }
+  
+  getSimulation() {
+    return this.parentElement;
+  }
+  
+  getActiveView() {
+    return this.get('#viewSlot').querySelector('.active').id;
+  }
+  
+  highlight(cellRef) {
+    this.get('#titleBar').highlight(cellRef === this.getNormalizedName().toLowerCase());
+    this.get('#codeView').highlight(cellRef);
   }
 }

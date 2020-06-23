@@ -1,7 +1,7 @@
 <template id="ast-node-function-declaration" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
-<style data-src="/src/client/pen-editor/components/ast-nodes.css?3"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
 <style>
 :host {
   display: flex;
@@ -24,17 +24,17 @@
 }
 </style>
   <div id="header">
-    <span id="async" class="keyword" part="keyword">async</span>
-    <span id="function" class="keyword" part="keyword">function</span>
-    <span id="generator" class="notation" part="notation">*</span>
+    <span id="async" class="keyword" class="keyword">async</span>
+    <span id="function" class="keyword" class="keyword">function</span>
+    <span id="generator" class="notation" class="notation">*</span>
     <span id="name">
       <slot name="id"></slot>
     </span>
-    <span id="open-bracket" class="notation" part="notation">(</span>
+    <span id="open-bracket" class="notation" class="notation">(</span>
     <span id="params">
       <slot name="params"></slot>
     </span>
-    <span id="closing-bracket" class="notation" part="notation">)</span>
+    <span id="closing-bracket" class="notation" class="notation">)</span>
   </div>
   
   <div id="body-container">

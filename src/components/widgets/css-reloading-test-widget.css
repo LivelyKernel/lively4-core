@@ -1,0 +1,9 @@
+.foo {
+    border:  var(--my-color, blueviolet);
+}
+#bar {
+  border: 49px solid green;
+
+  font-size: bold;
+}
+
