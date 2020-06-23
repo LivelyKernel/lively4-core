@@ -1,7 +1,7 @@
 <template id="ast-node-class-declaration" >
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
-<style data-src="/src/client/pen-editor/components/ast-nodes.css"></style>
+<style data-src="/src/client/pen-editor/components/ast-nodes.css?4"></style>
 <style>
 :host(*) {
   display: flex;
@@ -24,13 +24,13 @@
 }
 </style>
   <div id="vertical">
-    <span id="class" part="keyword">
+    <span id="class" class="keyword">
       class
     </span>
     <span id="id">
       <slot name="id"></slot>
     </span>
-    <span id="extends" part="keyword">
+    <span id="extends" class="keyword">
       extends
     </span>
     <span id="superClass">

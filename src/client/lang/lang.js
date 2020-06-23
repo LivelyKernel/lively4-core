@@ -425,6 +425,21 @@ extend(Number.prototype, {
   
   to(end, step) {
     return _.range(this, end, step);
+  },
+  
+  remap([domainStart, domainEnd] = [], [rangeStart, rangeEnd] = [], clip = false) {
+    if (domainStart === domainEnd) { throw new Error('domain start and end are equal'); }
+    
+    let input = this;
+    if (clip && !this.inRange(domainStart, domainEnd)) {
+      const domainLower = domainStart < domainEnd ? domainStart : domainEnd;
+      const domainUpper = domainEnd > domainStart ? domainEnd : domainStart;
+      input = this.clamp(domainLower, domainUpper);
+    }
+
+    const percent = (input - domainStart) / (domainEnd - domainStart);
+    let result = percent * (rangeEnd - rangeStart) + rangeStart;
+    return result;
   }
 
 });

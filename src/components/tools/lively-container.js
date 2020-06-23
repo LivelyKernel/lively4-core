@@ -348,10 +348,15 @@ export default class Container extends Morph {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
     }
     
+    headers['cache-control'] = 'no-cache'
+    // #deprecated since we now use no-ache
     if (url.toString().match(lively4url)) {
       headers["forediting"] = true
     }
-  
+
+
+    
+    
     
     
     return fetch(url, {
@@ -1165,7 +1170,10 @@ export default class Container extends Morph {
     var sourceCode = this.getSourceCode();
     // lively.notify("!!!saved " + url)
     window.LastURL = url
-    if (await this.isTemplate(url)) {
+    // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
+    if (this.getURL().pathname.match(/\.css$/)) {
+      this.updateCSS();
+    } else if (await this.isTemplate(url)) {
       lively.notify("update template")
       if (url.toString().match(/\.html/)) {
         // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
@@ -1174,9 +1182,6 @@ export default class Container extends Morph {
         await lively.updateTemplate(templateSourceCode);
 
       }
-    }
-    if (this.getURL().pathname.match(/.*css/)) {
-      this.updateCSS();
     }
     this.updateOtherContainers();
 
@@ -2006,7 +2011,13 @@ export default class Container extends Morph {
   
   updateCSS() {
     var url = "" + this.getURL()
+    
+    
     var all = Array.from(lively.allElements(true))
+    
+    Object.values(lively.components.templates).forEach(template => {
+      all.push(...template.querySelectorAll("*"))      
+    })
     
     all.filter(ea => ea.localName == "link")
       .filter(ea => ea.href == url)
@@ -2017,11 +2028,11 @@ export default class Container extends Morph {
         lively.notify("update css",  ea.href)
       })
     
-    all.filter(ea => ea.localName == "style")
-      .filter(ea => ea.url == url)
+    all.filter(ea => ea.localName == "style") 
+      .filter(ea => ea.getAttribute("data-url") == url) // vs. this.getAttribute("data-src")
       .forEach(ea => {
         lively.fillTemplateStyle(ea, url)
-        lively.notify("upodate css", url)
+        lively.notify("update style css", url)
       })
   }
 

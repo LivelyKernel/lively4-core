@@ -3,8 +3,21 @@
 .keyword {
   border: var(--my-border, 2px green solid);
 }
+[class=notation]
+ {
+  border: var(--my-border, 2px green solid);
+}
+:host {
+  margin: 10px;
+  padding: 10px;
+  border: 11px solid goldenrod;
+  background-color: #eeeeee;
+}
 
 .notation {
   border: var(--my-border, 2px green solid);
 }
 
+#name {
+  color: var(--identifier-color, red);
+}

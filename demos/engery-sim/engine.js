@@ -8,9 +8,12 @@ const MILLISECONDS_PER_SECOND = 1000;
 
 class Engine {
   
-  constructor(velocity = MIN_VELOCITY, collectCells = () => []) {
+  constructor(velocity = MIN_VELOCITY, collectCells = () => [], stopOnError = false, time = 0, timeDeltaPerStepInMilliseconds = 1 * MILLISECONDS_PER_SECOND) {
     this.collectCells = collectCells;
     this.velocity = velocity;
+    this.stopOnError = stopOnError;
+    this.time = time;
+    this.timeDeltaPerStepInMilliseconds = timeDeltaPerStepInMilliseconds;
     this.step = this.step.bind(this);
   }
   
@@ -41,11 +44,22 @@ class Engine {
     this.start();
   }
   
-  step() {
+  step(limitExecution) {
     const cells = this.collectCells();
-    const prevState = this.collectState(cells);
-    this.executeAllCells(cells, prevState)
-      .then(nextState => this.updateCellStates(cells, nextState));
+    const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
+    const prevState = this.collectState(sortedCells);
+    const time = this.injectTime(prevState);
+    const executionCells = limitExecution || sortedCells;
+    return this.executeAllCells(executionCells, prevState, time)
+      .then(nextState => this.updateCellStates(sortedCells, nextState))
+      .then(() => this.stepCounter++);
+  }
+  
+  injectTime(state) {
+    const { time, timeDeltaPerStepInMilliseconds } = this;
+    this.time = time + timeDeltaPerStepInMilliseconds;
+    state['simulation'] = { time: this.time, dt: timeDeltaPerStepInMilliseconds };
+    return this.time;
   }
   
   increaseVelocity() {
@@ -63,26 +77,38 @@ class Engine {
     this.updateSimulationLoop();
   }
   
+  setTime(time) {
+    this.time = time;
+  }
+  
+  setTimeDeltaPerStepInMilliseconds(dt) {
+    this.timeDeltaPerStepInMilliseconds = dt;
+  }
+  
   updateCellStates(cells, state) {
     _.forEach(cells, cell =>
-      cell.setState(state[cell.getName()]));
+      cell.setState(state[cell.getNormalizedName()]));
   }
 
   collectState(cells) {
     return _.reduce(
       cells, 
       (partialState, cell) => { 
-        partialState[cell.getName()] = cell.getState();
+        partialState[cell.getNormalizedName()] = cell.getState();
         return partialState;
       },
       {}
     );
   }
   
-  executeAllCells(cells, state) {
+  executeAllCells(cells, state, time) {
+    const { stopOnError } = this;
     return _.reduce(
       cells, 
-      (statePromise, cell) => statePromise.then(state => cell.execute(state)), 
+      (statePromise, cell) => 
+      statePromise
+        .then(state => cell.execute(time, state))
+        .catch(({ state }) => (!stopOnError || !this.stop()) && state),
       Promise.resolve(state)
     );
   }

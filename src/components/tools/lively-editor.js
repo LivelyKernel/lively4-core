@@ -183,15 +183,32 @@ export default class Editor extends Morph {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
+      var items = []
       
-      var menu = new ContextMenu(this, [
-          ["<b>Annotations</b>", this.annotatedText ? () => this.enableAnnotations() : null],
-          ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
-          ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
-          ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
-          ["clear", () => this.onAnnotationsClear()],
-          ["delete all anntations", () => this.onDeleteAllAnnotations()],
-        ]);
+      var source = this.getText()
+      if (lively.files.hasGitMergeConflict(source)) {
+        // there is as git merge conflict here we have to deal with
+        items.push(...[
+            ["(Auto) Resolve Merge Conglicts", () => this.autoResolveMergeConflicts()],
+          ])
+      } else if (this.annotatedText) {
+        items.push(...[
+            ["<b>Annotations</b>"],
+            ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
+            ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
+            ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
+            ["clear", () => this.onAnnotationsClear()],
+            ["delete all anntations", () => this.onDeleteAllAnnotations()],
+          ])
+      } else {
+        items.push(...[
+            ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
+          ])
+      }      
+      
+      
+      
+      var menu = new ContextMenu(this, items);
       menu.openIn(document.body, evt, this);
       return 
     }
@@ -934,7 +951,7 @@ export default class Editor extends Morph {
   async loadAnnotations(text, version) {
     var cm = await this.awaitEditor()
     // load annotated text in the version that was  last annotated
-    this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL())
+    this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL(), version, true)
     // set current text and version, and update annotations accordingly 
     this.annotatedText.setText(text, version)
     this.annotatedText.annotations.renderCodeMirrorMarks(cm)
@@ -950,6 +967,8 @@ export default class Editor extends Morph {
   }
   
   async enableAnnotations() { 
+    debugger
+    await this.loadAnnotations(this.getText(), this.lastVersion) 
     lively.removeEventListener("annotations", this)
     lively.addEventListener("annotations", this, "loaded-file", async evt => {
       this.loadAnnotations(evt.detail.text, evt.detail.version) 
@@ -961,10 +980,30 @@ export default class Editor extends Morph {
     //   // we can ignore this, since it will be solved... by the editor
     //   lively.notify("TEXT CONFLICT " + evt.detail.version )
     // })
-    await this.loadAnnotations(this.getText(), this.lastVersion) 
   }
   
-  
+  // lets try to resolve the merge, that git could not resolve!
+  async autoResolveMergeConflicts() {
+    var source = this.getText()
+    
+    if (this.getURLString().match(/.l4a$/)) {
+      lively.notify("not supported yet... #TODO")
+      
+      // use solveAnnotationConflict
+      return
+    }
+    
+     var versions = lively.files.extractGitMergeConflictVersions(source) 
+    if (versions.length == 0) return // nothing to do
+    
+    if (versions.length != 2) throw new Error("merge  != 2 not support yet")
+    var versionA= versions[0]
+    var versionB = versions[1]
+    var versionBase = await this.getGitMergeBase(serverURL, repositoryName, versionA, versionB)
+    
+    
+    lively.notify("yeah... here we go")
+  }
   /*MD ## Hooks MD*/
 
   livelyExample() {

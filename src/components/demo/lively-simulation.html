@@ -3,10 +3,15 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   #container {
+    display: flex;
+    flex-direction: column;
     overflow: scroll;
     height: 100%;
     width: 100%;
-  }  
+  }
+  #cells {
+    flex-grow: 1;
+  }
 </style>
 <div id='container'>
   <lively-simulation-controller id='controller'></lively-simulation-controller>
