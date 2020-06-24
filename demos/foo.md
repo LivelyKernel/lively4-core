@@ -14,7 +14,13 @@ like foo.js but only for markdown features?
 #hashtag
 
 
+<!--
+
+
+-->
+
 ![](elements/elephant.html)
+
 
 <script>
 
