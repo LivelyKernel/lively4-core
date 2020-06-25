@@ -107,9 +107,9 @@ export default class LivelySimulationController extends Morph {
   }
   
   registerTimeDeltaUpdater(engine) {
-    this.timeDeltaUpdater = aexpr(() => engine.timeDeltaPerStepInMilliseconds).dataflow(dt => {
-      const dtSpan = this.get('#dt');
-      dtSpan.value = dt;
+    this.timeDeltaUpdater = aexpr(() => engine.timeDeltaPerStepInSeconds).dataflow(dt => {
+      const dtInput = this.get('#dt');
+      dtInput.value = dt;
     });
   }
   
@@ -157,16 +157,16 @@ export default class LivelySimulationController extends Morph {
   }
   
   handleResetTime() {
-    const engine = this.getEngine();
-    if (!engine) return;
-    engine.setTime(0);
+    const simulation = this.getSimulation();
+    if (!simulation.reset) return;
+    simulation.reset();
   }
   
   handleTimeDelta(timeDelta) {
     const engine = this.getEngine();
     if (!engine) return;
     try {
-      engine.setTimeDeltaPerStepInMilliseconds(parseInt(timeDelta));
+      engine.setTimeDeltaPerStepInSeconds(parseFloat(timeDelta));
     } catch (e) { /* ignore */ }
   }
   

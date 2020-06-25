@@ -88,9 +88,9 @@
     </div>
     <div class='spacing'></div>
     <label style='display: none;'><input id='stopOnErrorCheckBox' type="checkbox" />Stop on error</label>
-    <span>Time delta</span>
-    <input id='dt' type='number' min='1' step='1' placeholder="Time progress per step in ms" value='1000' />
-    <span>Current time:</span>
+    <span>Time delta [s]</span>
+    <input id='dt' type='number' min='0.000001' step='1' placeholder="Time progress per step in s" value='1' />
+    <span>Current time</span>
     <span id='time'>0</span>
     <span>ms</span>
     <button id="resetTime">Reset</button>

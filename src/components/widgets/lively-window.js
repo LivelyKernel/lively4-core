@@ -245,6 +245,12 @@ export default class Window extends Morph {
   }
 
   
+  detachedCallback() {
+    if (this.isMaximized()) {
+      document.body.style.overflow = this.getAttribute("prev-overflow")
+    }
+  }
+  
   /*MD ## Maximize/Minimize MD*/
 
   // #important

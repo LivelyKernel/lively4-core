@@ -19,7 +19,7 @@ export default class LivelySimulationCode extends Morph {
     codeMirror.addEventListener('focusout', () => this.handleFocusOut());
     codeMirror.addEventListener('focusin', () => this.handleFocusIn());
     codeMirror.checkSyntax = () => {};
-    codeMirror.setCustomStyle('.cm-error { color: inherit !important; }');
+    codeMirror.setCustomStyle('.CodeMirror * { font-size: 0.7rem } .cm-error { color: inherit !important; }');
   }
   
   initializeSnippet(snippet = DEFAULT_SNIPPET) {
@@ -34,6 +34,7 @@ export default class LivelySimulationCode extends Morph {
     codeMirror.editor.setOption('gutters', []);
     codeMirror.editor.setOption('highlight', false);
     codeMirror.editor.setOption('lint', false);
+    codeMirror.editor.refresh();
     this.preCompile();
     this.updateCellTags();
   }
@@ -91,12 +92,12 @@ export default class LivelySimulationCode extends Morph {
     this.isEditing = false;
     if (save) this.save();
     else this.discard();
+    this.updateCellTags();
   }
   
   // other
   save() {
     this.preCompile();
-    this.updateCellTags();
   }
   
   discard() {

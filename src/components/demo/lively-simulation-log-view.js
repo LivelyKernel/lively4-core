@@ -10,8 +10,11 @@ export default class LivelySimulationLogView extends Morph {
   // life cycle
   initialize() {
     this.logs = [];
-    this.get('#clearLog').addEventListener('click', () => this.logs = []);
-    this.get('#interval').addEventListener('focusout', () => this.updateLogTable());
+    this.get('#clearLog').addEventListener('click', () => { 
+      const cell = this.getCell();
+      if (cell.clearLog) cell.clearLog();
+    });
+    this.get('#interval').addEventListener('change', () => this.updateLogTable());
   }
   
   initializeInterval(interval = DEFAULT_INTERVAL) {
@@ -41,6 +44,10 @@ export default class LivelySimulationLogView extends Morph {
     logs.push(timestampedEntry);
   }
   
+  clearLog() {
+    this.logs = [];
+  }
+  
   updateLogTable() {
     if (!this.classList.contains('active')) return;
     const logTable = this.get('#logTable');
@@ -67,5 +74,9 @@ export default class LivelySimulationLogView extends Morph {
     if (doc.activeElement && doc.activeElement.shadowRoot)
 			return this.isChildFocused(child, doc.activeElement.shadowRoot)
     return false;
+  }
+  
+  getCell() {
+    return this.getRootNode().host;
   }
 }
