@@ -16,7 +16,6 @@ export default class LivelySimulationState extends Morph {
   initializeEntries() {
     const entries = this.get('#entries');
     entries.addEventListener('focusin', () => this.handleFocusIn());
-    entries.addEventListener('focusout', () => this.handleFocusOut());
   }
 
   initializeState(state = DEFAULT_STATE) {
@@ -36,18 +35,14 @@ export default class LivelySimulationState extends Morph {
     if (!this.isEditing) {
       this.isEditing = true;
       this.checkpoint = this.entriesToStateJSON();
-      const saveDiscard = this.get('#saveDiscard');
-      saveDiscard.classList.add('show');
+      this.get('#saveDiscard').classList.add('show');
+      this.get('#entries').classList.add('edit');
     }
   }
 
-  handleFocusOut() {
-    if (this.checkpoint === this.entriesToStateJSON()) this.handleSaveDiscard(false);
-  }
-
   handleSaveDiscard(save) {
-    const saveDiscard = this.get('#saveDiscard');
-    saveDiscard.classList.remove('show');
+    this.get('#saveDiscard').classList.remove('show');
+    this.get('#entries').classList.remove('edit');
     this.isEditing = false;
     if (save) this.save();
     else this.discard();
@@ -55,8 +50,7 @@ export default class LivelySimulationState extends Morph {
   
   handleDelete(entry) {
     entry.remove();
-    if (_.isEmpty(this.get('#entries').children)) this.addEmptyEntry();
-    this.get('#entries').children[0].focus();
+    if (!this.hasEmptyEntry()) this.addEmptyEntry();
   }
 
   // other
@@ -66,7 +60,6 @@ export default class LivelySimulationState extends Morph {
       this.clearError();
     } catch ({ message }) {
       this.setError(message);
-      this.get('#entries').focus();
     }
   }
 
@@ -119,11 +112,13 @@ export default class LivelySimulationState extends Morph {
   }
   
   entriesToState() {
-    return JSON.parse(this.entriesToStateJSON());
+    const json = this.entriesToStateJSON();
+    return json && JSON.parse(json);
   }
   
   entriesToStateJSON() {
     const entries = _.map([...this.get('#entries').children], entry => [entry.getKey(), entry.getValue()]);
+    if (_.isEmpty(entries)) return undefined;
     const filteredEntries = _.reject(entries, ([ key ]) => _.isEmpty(key.trim()));
     const entriesAsJson = _.map(filteredEntries, ([ key, value ]) => `"${key}": ${isNaN(value) ? `"${value}"` : value}`);
     return `{
@@ -136,7 +131,7 @@ export default class LivelySimulationState extends Morph {
   updateEntries() {
     const { state } = this;
     const entriesState = this.entriesToState();
-    if (_.isEqual(state, entriesState)) return;
+    if (_.isEqual(state, entriesState) && this.hasEmptyEntry()) return;
     if (_.isEqual(_.keys(state), _.keys(entriesState))) this.updateEntryValues();
     else this.replaceEntries();
   }
@@ -149,6 +144,7 @@ export default class LivelySimulationState extends Morph {
       const value = state[entry.getKey()];
       entry.setValue(isNaN(value) ? value : parseFloat(value.toFixed(3)));
     });
+    this.ensureEmpty();
   }
   
   replaceEntries() {
@@ -160,22 +156,24 @@ export default class LivelySimulationState extends Morph {
     this.addEmptyEntry();
   }
   
+  hasEmptyEntry() {
+    return _.some([...this.get('#entries').children], entry => _.isEmpty(entry.getKey().trim()) && _.isEmpty(entry.getValue().trim()));
+  }
+  
   addEmptyEntry() {
     const entries = this.get('#entries');
     entries.appendChild(this.createEntry('', ''));
   }
   
   ensureEmpty(entry) {
-    const entries = [...this.get('#entries').children];
-    if (!_.some(entries, entry => _.isEmpty(entry.getKey().trim()) && _.isEmpty(entry.getValue().trim())))
-      this.addEmptyEntry();
-    entry.focus();
+    if (!this.hasEmptyEntry()) this.addEmptyEntry();
+    if (entry) entry.focus();
   }
   
   createEntry(key, value) {
     const entry = (
       <div class='entry'>
-        <input value={String(key)} placeholder='Key' />
+        <input value={String(key)} placeholder='Name' />
         <input value={String(value)} placeholder='Value' />
         <i class="fa fa-times"></i>
       </div>

@@ -8,12 +8,12 @@ const MILLISECONDS_PER_SECOND = 1000;
 
 class Engine {
   
-  constructor(velocity = MIN_VELOCITY, collectCells = () => [], stopOnError = false, time = 0, timeDeltaPerStepInMilliseconds = 1 * MILLISECONDS_PER_SECOND) {
+  constructor(velocity = MIN_VELOCITY, collectCells = () => [], stopOnError = false, time = 0, timeDeltaPerStepInSeconds = 1) {
     this.collectCells = collectCells;
     this.velocity = velocity;
     this.stopOnError = stopOnError;
     this.time = time;
-    this.timeDeltaPerStepInMilliseconds = timeDeltaPerStepInMilliseconds;
+    this.timeDeltaPerStepInSeconds = timeDeltaPerStepInSeconds;
     this.step = this.step.bind(this);
   }
   
@@ -48,17 +48,18 @@ class Engine {
     const cells = this.collectCells();
     const sortedCells = _.sortBy(cells, ['offsetTop', 'offsetLeft']);
     const prevState = this.collectState(sortedCells);
-    const time = this.injectTime(prevState);
+    const time = this.injectTime(prevState, _.isEmpty(limitExecution));
     const executionCells = limitExecution || sortedCells;
     return this.executeAllCells(executionCells, prevState, time)
       .then(nextState => this.updateCellStates(sortedCells, nextState))
       .then(() => this.stepCounter++);
   }
   
-  injectTime(state) {
-    const { time, timeDeltaPerStepInMilliseconds } = this;
-    this.time = time + timeDeltaPerStepInMilliseconds;
-    state['simulation'] = { time: this.time, dt: timeDeltaPerStepInMilliseconds };
+  injectTime(state, incrementTime) {
+    const { time, timeDeltaPerStepInSeconds } = this;
+    if (incrementTime)
+      this.time = time + timeDeltaPerStepInSeconds * MILLISECONDS_PER_SECOND;
+    state['simulation'] = { time: this.time, dt: timeDeltaPerStepInSeconds };
     return this.time;
   }
   
@@ -81,8 +82,8 @@ class Engine {
     this.time = time;
   }
   
-  setTimeDeltaPerStepInMilliseconds(dt) {
-    this.timeDeltaPerStepInMilliseconds = dt;
+  setTimeDeltaPerStepInSeconds(dt) {
+    this.timeDeltaPerStepInSeconds = dt;
   }
   
   updateCellStates(cells, state) {

@@ -109,7 +109,13 @@ export default class LivelySimulationCell extends Morph {
   }
   
   log(timestamp, state) {
-    return this.get('#logView').log(timestamp, state);
+    this.get('#chartView').append(timestamp, state);
+    this.get('#logView').log(timestamp, state);
+  }
+  
+  clearLog() {
+    this.get('#chartView').reset();
+    this.get('#logView').clearLog();
   }
   
   execute(timestamp, scope = {}) {
@@ -141,7 +147,7 @@ export default class LivelySimulationCell extends Morph {
   }
   
   switchViewTo(target = DEFAULT_VIEW) {
-    const views = _.map(['codeView', 'logView'], name => this.get(`#${name}`));
+    const views = _.map(['codeView', 'logView', 'chartView'], name => this.get(`#${name}`));
     _.forEach(views, view => view.classList.remove('active'));
     this.get(`#${target}`).classList.add('active');
   }
