@@ -3617,6 +3617,9 @@ function translateAndInstantiate (loader, key, source, metadata, processAnonRegi
   return Promise.resolve(source)
   // translate
   .then(function (source) {
+    if (!source) throw new Error("SystemJS error: could not load " + key)
+    
+    
     if (metadata.load.format === 'detect')
       metadata.load.format = undefined;
 

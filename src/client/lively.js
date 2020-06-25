@@ -1599,7 +1599,7 @@ export default class Lively {
     if (element.id == "container-root") return element
     
     if (!element.parentElement) {
-      
+      debugger
       // if (element.parentNode.host && element.parentNode.host.localName == "lively-container") {
       //   return element.parentNode.host.getContentRoot()
       // }

@@ -18,6 +18,10 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.windowTitle = "LivelyPetrinetCodeTransition";
     this.registerButtons();
     this.currentCode = "";
+    if (!this.componentId) {
+        this.componentId = this.get("lively-petrinet-transition").componentId;
+    }
+
     
     lively.addEventListener("dragAndDrop", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
 }
@@ -28,9 +32,12 @@ export default class LivelyPetrinetCodeTransition extends Morph {
   }
   
   get componentId() {
-    return this.get("lively-petrinet-transition").componentId;
+    return this.getAttribute("componentId");
   }
-      
+  
+  set componentId(id) {
+    this.setAttribute("componentId", id);
+  }
   
   async onAddCodeButton() {
     const codeEditor = await lively.openComponentInWindow("lively-petrinet-code-editor");

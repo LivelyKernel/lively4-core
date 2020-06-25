@@ -50,7 +50,7 @@ export default class LivelyPetrinet extends Morph {
       const fromComponent = this.getComponentFrom(connector.fromComponentId);
       const toComponent = this.getComponentFrom(connector.toComponentId);
       if (!fromComponent || !toComponent) {
-        continue;
+        lively.error("Connector is not connected to component");
       }
       const newConnector = await(<lively-petrinet-edge></lively-petrinet-edge>);
       this.appendChild(newConnector);
@@ -106,10 +106,14 @@ export default class LivelyPetrinet extends Morph {
     }
   }
   
-  reset() {
+  setState(step) {
     for (const place of this.places) {
-      place.reset()
+      place.setState(step);
     }
+  }
+  
+  getCurrentStep() {
+    return this.places[0].history.length
   }
   
   *stepUntilFired() {
@@ -119,6 +123,7 @@ export default class LivelyPetrinet extends Morph {
           this.fire(transition);
           yield;
         }
+        this.persistPlaceState()
       }
     }
   }
@@ -129,6 +134,7 @@ export default class LivelyPetrinet extends Morph {
             this.fire(transition)
           }
       }
+      this.persistPlaceState();
   }
   
   canFire(transition) {
@@ -154,7 +160,6 @@ export default class LivelyPetrinet extends Morph {
       return
   }
 
-
   getPlacesBefore(transition) {
     let placesBefore = [];
     for (const connector of this.connectors) {
@@ -169,7 +174,6 @@ export default class LivelyPetrinet extends Morph {
     return placesBefore;
   }
 
-  
   getPlacesAfter(transition) {
     let placesAfter = [];
     for (const connector of this.connectors) {
@@ -192,7 +196,18 @@ export default class LivelyPetrinet extends Morph {
       }
     }
   }
+  
+  persistPlaceState() {
+    for (const place of this.places) {
+      place.persistState();
+    }
+  }
 
+  
+  
+  // Lively Methods
+  
+  
   
   onContextMenu(evt) {
     if (!evt.shiftKey) {

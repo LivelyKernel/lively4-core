@@ -17,6 +17,9 @@ export default class LivelyPetrinetProbTransition extends Morph {
   async initialize() {
     this.windowTitle = "LivelyPetrinetProbTransition";
     this.registerButtons();
+    if (!this.componentId) {
+       this.componentId = this.get("lively-petrinet-transition").componentId;
+    }
     
     const inputProbability = this.get("#inputProbability");
 
@@ -34,7 +37,11 @@ export default class LivelyPetrinetProbTransition extends Morph {
   // Access
   
   get componentId() {
-    return this.get("lively-petrinet-transition").componentId;
+    return this.getAttribute("componentId");
+  }
+  
+  set componentId(id) {
+    this.setAttribute("componentId", id);
   }
   
   
