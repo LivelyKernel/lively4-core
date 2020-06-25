@@ -128,18 +128,18 @@ export default class LivelyPetrinet extends Morph {
     }
   }
   
-  onStep() {
+  async onStep() {
        for (const transition of this.transitions) {
           if (this.canFire(transition)) {
-            this.fire(transition)
+            await this.fire(transition)
           }
       }
       this.persistPlaceState();
   }
   
   canFire(transition) {
-      const placesBefore = this.getPlacesBefore(transition);
-      const placesAfter = this.getPlacesAfter(transition);
+      const placesBefore = this.getFirstComponents(this.getConnectorsBefore(transition));
+      const placesAfter = this.getSecondComponents(this.getConnectorsAfter(transition));
       const firingIsPossible = placesBefore.every((place) => place.tokens.length > 0);
       const transitionAllowsFiring = transition.isActiveTransition();
       if (!firingIsPossible || !transitionAllowsFiring) {
@@ -148,44 +148,57 @@ export default class LivelyPetrinet extends Morph {
       return true;
   }
   
-  fire(transition) {
-      const placesBefore = this.getPlacesBefore(transition);
-      const placesAfter = this.getPlacesAfter(transition);
-      for (const place of placesBefore) {
+  async fire(transition) {
+      const connectorsBefore = this.getConnectorsBefore(transition);
+      const connectorsAfter = this.getConnectorsAfter(transition);
+      for (const place of this.getFirstComponents(connectorsBefore)) {
         place.deleteToken();
       }
-      for (const place of placesAfter) {
+    
+      // Animation
+      await Promise.all(connectorsBefore.map(connector => connector.animateMovingToken()));
+    
+      await Promise.all(connectorsAfter.map(connector => connector.animateMovingToken()));
+    
+      for (const place of this.getSecondComponents(connectorsAfter)) {
         place.addToken();
       }
       return
   }
-
-  getPlacesBefore(transition) {
-    let placesBefore = [];
+  
+  getFirstComponents(connectors) {
+    return connectors.map(connector => this.getComponentFrom(connector.fromComponentId));
+  }
+  
+  getSecondComponents(connectors) {
+    return connectors.map(connector => this.getComponentFrom(connector.toComponentId));
+  }
+  
+  getConnectorsBefore(transition) {
+    let connectorsBefore = [];
     for (const connector of this.connectors) {
       if (connector.toComponentId == transition.componentId) {
-        const fromComponent = this.getComponentFrom(connector.fromComponentId);
-        placesBefore.push(fromComponent);
+        connectorsBefore.push(connector);
       }
     }
-    if (placesBefore.length == 0) {
-      lively.error("Did not find any places from Connector");
+    if (connectorsBefore.length == 0) {
+      lively.error("Did not find any places connected to transition");
     }
-    return placesBefore;
+    return connectorsBefore;
   }
-
-  getPlacesAfter(transition) {
-    let placesAfter = [];
+  
+  
+  getConnectorsAfter(transition) {
+    let connectorsAfter = [];
     for (const connector of this.connectors) {
       if (connector.fromComponentId == transition.componentId) {
-        const toComponent = this.getComponentFrom(connector.toComponentId);
-        placesAfter.push(toComponent);
+        connectorsAfter.push(connector);
       }
     }
-    if (placesAfter.length == 0) {
-      lively.error("Did not find any places from Connector");
+    if (connectorsAfter.length == 0) {
+      lively.error("Did not find any places that the transition connects to");
     }
-    return placesAfter;
+    return connectorsAfter;
   }
   
   getComponentFrom(id) {
@@ -372,11 +385,11 @@ export default class LivelyPetrinet extends Morph {
   onElementClick(evt, element) {
     evt.preventDefault();
     evt.stopPropagation();
-    element.graphicElement().style.border = "1px solid red";
+    element.graphicElement().style.border = "3px solid #FFD54F";
     this.selectedElement = element;
     for (const otherElement of [...this.transitions, ...this.places]) {
       if (otherElement != element) {
-        otherElement.graphicElement().style.border = "1px solid transparent";
+        otherElement.graphicElement().style.border = "1px solid #333333";
       }
     }
   }
