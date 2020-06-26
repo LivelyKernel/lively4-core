@@ -58,11 +58,11 @@ export default class LivelySimulation extends Morph {
   }
   
   livelyPrepareSave() {
-    const { engine: { stopOnError, time, timeDeltaPerStepInMilliseconds, velocity } } = this;
+    const { engine: { stopOnError, time, timeDeltaPerStepInSeconds, velocity } } = this;
     this.dataset['velocity'] = velocity;
     this.dataset['stoponerror'] = stopOnError;
     this.dataset['time'] = time;
-    this.dataset['dt'] = timeDeltaPerStepInMilliseconds;
+    this.dataset['dt'] = timeDeltaPerStepInSeconds;
   }
   
   // event listener
@@ -84,7 +84,7 @@ export default class LivelySimulation extends Morph {
         engine.step();
         break;
       case 'r':
-        engine.reset();
+        this.reset();
         break;
       case 'a':
         this.addCell();
@@ -154,6 +154,12 @@ export default class LivelySimulation extends Morph {
   executeSingleCell(cell) {
     const { engine } = this;
     return engine.step([ cell ]);
+  }
+  
+  reset() {
+    const { engine } = this;
+    engine.setTime(0);
+    _.forEach(this.collectCells(), cell => cell.clearLog());
   }
   
   getInnerHTML() {

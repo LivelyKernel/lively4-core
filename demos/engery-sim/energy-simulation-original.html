@@ -1,0 +1,89 @@
+<lively-simulation tabindex="0" data-velocity="1" data-stoponerror="false" data-time="16200" data-dt="0.1"><lively-simulation-cell style="top: 686px; left: 47px; width: 541.453px; height: 261.359px; z-index: 94;" data-name="ResetSimulation" data-state="{}" data-snippet="//#MeasureData.time = Date.now() / 1000
+#MeasureData.start = #MeasureData.time
+#Fuel.gas = 5 * 2 * 3600 // two hours gas
+#HeatStorage.energy = 0
+#Battery.energy = 0 
+#ElectricConsumer.consumed = 0
+#ElectricConsumer.demand = 1.5
+#ElectricConsumer.extra = 0
+#HeatConsumer.consumed = 0
+#HeatConsumer.demand = 3
+#HeatConsumer.extra = 0
+#ThermalPowerStation.heat = 0
+#HeatingSystem.heat = 0
+#Battery.max = 0.1 * 3600 // 1h 2kw
+#HeatStorage.max = 0.1 * 3600 // 1h 3kw
+#MeasureData.counter = 10000
+//#SimulationResults.resetData()
+//#SimulationResults.showData()Enter simulation code here" data-view="codeView" data-loginterval="1" data-lively-id="06da03ff-d2a9-40ae-9b8c-249188499333" data-should-skip="true"></lively-simulation-cell><lively-simulation-cell style="top: 389px; left: 42px; width: 283.2px; height: 100px; z-index: 79;" data-name="Fuel" data-state="{&quot;gas&quot;:35808.75}" data-snippet="if (gas < 0) {
+    throw Error(&quot;Gas Empty&quot;)
+}" data-view="codeView" data-loginterval="1" data-lively-id="ba6ff769-a34c-4a74-a03b-01d6fc58e32c"></lively-simulation-cell><lively-simulation-cell style="top: 497px; left: 373px; width: 615.6px; height: 277.594px; z-index: 86;" data-name="Thermal Power Station" data-state="{&quot;heat&quot;:58.300488653589134,&quot;factor&quot;:10,&quot;max&quot;:7.5}" data-snippet="var full = max * factor;
+if (heat < full &amp;&amp; #Fuel.gas > max * dt
+    &amp;&amp; (#Battery.energy < 0.9 * #Battery.max )) {
+    var gas = max * dt;
+    #Fuel.gas -= gas;
+    heat += 1.0 * gas
+}
+var delta = heat / factor * dt;
+if (heat > 2) {
+    heat -= delta;
+    if(#HeatStorage.energy < #HeatStorage.max) {
+        #HeatStorage.energy += 0.5 * delta;
+    }
+    if (#Battery.energy < #Battery.max ) {
+        #Battery.energy += 0.4 * delta;
+    }
+}" data-view="codeView" data-loginterval="1" data-lively-id="2e059ec9-8855-4f09-9904-58ac0a6d7528"></lively-simulation-cell><lively-simulation-cell style="top: 90px; left: 345px; z-index: 90; width: 511.167px; height: 279.833px;" data-name="Heating System" data-state="{&quot;heat&quot;:53.49566315615359,&quot;factor&quot;:20,&quot;max&quot;:5}" data-snippet="var full = max  * factor
+if (heat < full &amp;&amp; #Fuel.gas > max * dt &amp;&amp;
+    #HeatStorage.energy < 0.3 * #HeatStorage.max) {
+    var gas = max * dt;
+    #Fuel.gas -= gas;
+    heat += gas;
+}
+
+var delta = (heat / factor) * dt;
+if (heat > 2 * max  &amp;&amp; #HeatStorage.energy < #HeatStorage.max ) {
+    heat -= delta;
+    #HeatStorage.energy += 0.8 * delta;
+} else {
+    heat -= 0.2 * delta;
+}" data-view="codeView" data-loginterval="1" data-lively-id="252dd96b-b9d9-4425-ab4e-46fbb438b08f"></lively-simulation-cell><lively-simulation-cell style="top: 276px; left: 904.067px; z-index: 75;" data-name="Heat Storage" data-state="{&quot;energy&quot;:10.544754762400512,&quot;max&quot;:360}" data-snippet="// Enter simulation code here" data-view="codeView" data-loginterval="1" data-lively-id="39901d78-163a-4886-9a58-598bbf12e978"></lively-simulation-cell><lively-simulation-cell style="top: 391px; left: 899px; z-index: 74; width: 164.533px; height: 100px;" data-name="Battery" data-state="{&quot;energy&quot;:4.26456477058538,&quot;max&quot;:360}" data-snippet="// Enter simulation code here" data-view="codeView" data-loginterval="1" data-lively-id="94fca127-f19b-4814-a483-4c95c2d4dd72"></lively-simulation-cell><lively-simulation-cell style="top: 57.9333px; left: 1169px; z-index: 87; width: 468.533px; height: 200px; position: absolute;" data-name="Heat Consumer" data-state="{&quot;consumed&quot;:36.000000000000014,&quot;extra&quot;:0,&quot;demand&quot;:3}" data-snippet="var delta = demand * dt
+if (#HeatStorage.energy > delta) {
+    #HeatStorage.energy -= delta
+    consumed += delta
+    // TODO consume Extra
+} else {
+    extra  +=  delta
+    throw Error(&quot;RoomToCold&quot;)
+}
+" data-view="codeView" data-loginterval="1" data-lively-id="87bd7e7a-3dfd-4c23-a5d3-0afff12e4386"></lively-simulation-cell><lively-simulation-cell style="top: 537px; left: 1170.93px; z-index: 98; width: 447.844px; height: 180px;" data-name="Electric Consumer" data-state="{&quot;consumed&quot;:17.865287582226923,&quot;extra&quot;:0,&quot;demand&quot;:1.5011637811707246}" data-snippet="demand += (Math.random() - 0.5) * 0.01 * dt
+var delta = demand * dt
+if (#Battery.energy > delta) {
+    #Battery.energy -= delta
+    consumed += delta
+} else {
+    extra += delta
+    throw Error(&quot;EngeryToLow&quot;)
+}
+" data-view="codeView" data-loginterval="1" data-lively-id="a62d79e7-a893-4785-93ce-ea74d62adc28"></lively-simulation-cell><lively-simulation-cell style="top: 796px; left: 1064px; z-index: 99; width: 648px; height: 288px;" data-name="Log" data-state="{&quot;time&quot;:1391552235.949,&quot;counter&quot;:1000,&quot;start&quot;:1391552235.949,&quot;gas&quot;:0,&quot;heat&quot;:0,&quot;battery&quot;:0,&quot;consumedpower&quot;:0,&quot;consumedheat&quot;:0,&quot;TWP&quot;:0,&quot;HS&quot;:0,&quot;total&quot;:0}" data-snippet="time += dt;
+ounter += dt;
+if (counter < 5) return
+counter = 0;
+gas = #Fuel.gas;
+heat = #HeatStorage.energy;
+battery = #Battery.energy;
+consumedpower = #ElectricConsumer.consumed;
+consumedheat = #HeatConsumer.consumed;
+TWP = #ThermalPowerStation.heat;
+HS = #HeatingSystem.heat;
+total = Properties.values(data).sum();
+var factor = 0.01; // scale, so that it fits into vis
+gas *= factor;
+consumedPower *= factor;
+consumedHeat *= factor;
+total *= factor;
+//Properties.own(data).each(function(ea) {
+//    data[ea] = data[ea].roundTo(0.000001)
+//});
+//data.Time = time;
+//#SimulationResults.addData(data)" data-view="codeView" data-loginterval="1"></lively-simulation-cell></lively-simulation>
