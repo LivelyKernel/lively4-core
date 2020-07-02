@@ -920,9 +920,10 @@ export default class Container extends Morph {
       
       var worldContext = document.body; // default to opening context menu content globally
       // opening in the content makes only save if that content could be persisted and is displayed
-      if (this.contentIsEditable() && !this.isEditing()) {
-        worldContext = this
-      }
+      // disable this for now:
+      // if (this.contentIsEditable() && !this.isEditing()) {
+      //  worldContext = this
+      // }
 	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
     }

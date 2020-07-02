@@ -398,6 +398,15 @@ extend(Array.prototype, {
     return this.filter(predicate).length;
   },
   
+  /**
+   * Maps the items, then removes all items mapped to a falsy value.
+   * @param mapper (Function<value, index, array -> any>) standard map callback function.
+   * @returns {Array<any>} Array of mapped truthy items.
+   */
+  filterMap(mapper, ...rest) {
+    return this.map(mapper, ...rest).filter(Function.identity);
+  },
+  
 
 });
 
