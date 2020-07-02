@@ -316,6 +316,14 @@ export default class LivelyConnector extends Morph {
     this.setAttribute("toComponent", componentId)
   }
   
+  setSelectedStyle() {
+    this.stroke = "#FF6E40";
+  }
+  
+  setDisselectedStyle() {
+    this.stroke = "grey"
+  }
+  
   async animateMovingToken() {
     const token = await(<lively-petrinet-token></lively-petrinet-token>);
     this.appendChild(token);

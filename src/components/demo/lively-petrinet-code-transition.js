@@ -13,7 +13,6 @@ export default class LivelyPetrinetCodeTransition extends Morph {
   
   
   
-
   async initialize() {
     this.windowTitle = "LivelyPetrinetCodeTransition";
     this.registerButtons();
@@ -39,6 +38,12 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.setAttribute("componentId", id);
   }
   
+  
+  
+  // Interaction
+  
+  
+  
   async onAddCodeButton() {
     const codeEditor = await lively.openComponentInWindow("lively-petrinet-code-editor");
     if (this.currentCode != "") {
@@ -51,6 +56,13 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     return this.get("lively-petrinet-transition").graphicElement();
   }
   
+  setSelectedStyle() {
+    this.graphicElement().style.border = Helper.getSelectedBorder();
+  }
+  
+  setDisselectedStyle() {
+    this.graphicElement().style.border = Helper.getDisselectedBorder();
+  }
   
   
   

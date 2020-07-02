@@ -5,9 +5,7 @@ export default class LivelyPetrinetTransition extends Morph {
   
 
   initialize() {
-    if (!this.componentId) {
-      this.componentId = Helper.getRandomId();
-    }
+    this.componentId = Helper.getRandomId();
     this.windowTitle = "LivelyPetrinetTransition";
     this.registerButtons();
     
@@ -18,28 +16,40 @@ export default class LivelyPetrinetTransition extends Morph {
     inputLabel.addEventListener("change", (evt) => this.onLabelChange(evt));
     
     // Initialize Displayed Values
-    
-    const label = this.getAttribute("label")
-    
-    if (label) {
-      inputLabel.value = label;
+        
+    if (this.label) {
+      inputLabel.value = this.label;
     }
-    
-    
   } 
   
-  
-  get componentId() {
-    return this.getAttribute("componentId");
+  get parentTransition() {
+    const probTransition = lively.query(this, "lively-petrinet-prob-transition");
+    const codeTransition = lively.query(this, "lively-petrinet-code-transition");
+    if (codeTransition === undefined && probTransition === undefined) {
+      lively.error("Found no parent transition");
+    }
+    if (codeTransition != undefined && probTransition != undefined) {
+      lively.error("Found two parent transitions");
+    }
+    if (codeTransition != undefined) {
+      return codeTransition;
+    }
+    if (probTransition != undefined) {
+      return probTransition;
+    }
   }
-
-  set componentId(id) {
-    this.setAttribute("componentId", id);
+  
+  get label() {
+    return this.parentTransition.getAttribute("label");
+  }
+  
+  set label(textLabel) {
+    this.parentTransition.setAttribute("label", textLabel);
   }
   
   onLabelChange(evt) {
-    this.setAttribute("label", this.get("#inputLabel").value);
-  } 
+    this.label = this.get("#inputLabel").value;
+  }
   
   
   
