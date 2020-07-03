@@ -23,20 +23,7 @@ export default class LivelyPetrinetTransition extends Morph {
   } 
   
   get parentTransition() {
-    const probTransition = lively.query(this, "lively-petrinet-prob-transition");
-    const codeTransition = lively.query(this, "lively-petrinet-code-transition");
-    if (codeTransition === undefined && probTransition === undefined) {
-      lively.error("Found no parent transition");
-    }
-    if (codeTransition != undefined && probTransition != undefined) {
-      lively.error("Found two parent transitions");
-    }
-    if (codeTransition != undefined) {
-      return codeTransition;
-    }
-    if (probTransition != undefined) {
-      return probTransition;
-    }
+    return lively.allParents(this, [], true)[2]
   }
   
   get label() {
