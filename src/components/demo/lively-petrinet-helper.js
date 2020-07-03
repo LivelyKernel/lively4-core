@@ -16,6 +16,14 @@ export class Helper {
   static getRandomId() {
      return Math.random().toString(36).substring(7);
   }
+  
+  static getSelectedBorder() {
+    return "3px solid #FF6E40"
+  }
+  
+  static getDisselectedBorder() {
+    return "1px solid #333333";
+  }
                             
                             
 }

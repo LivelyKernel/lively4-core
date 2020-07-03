@@ -34,7 +34,10 @@ export default class LivelyPetrinetProbTransition extends Morph {
 }
   
   
+  
   // Access
+  
+  
   
   get componentId() {
     return this.getAttribute("componentId");
@@ -56,10 +59,22 @@ export default class LivelyPetrinetProbTransition extends Morph {
   }
   
   
-  
-  
   graphicElement() {
     return this.get("lively-petrinet-transition").graphicElement();
+  }
+  
+  
+  
+  // Interaction
+  
+  
+  
+  setSelectedStyle() {
+    this.graphicElement().style.border = Helper.getSelectedBorder();
+  }
+  
+  setDisselectedStyle() {
+    this.graphicElement().style.border = Helper.getDisselectedBorder();
   }
   
   onProbabilityChange(evt) {
