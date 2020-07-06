@@ -95,6 +95,12 @@ export default class LivelyPetrinet extends Morph {
     }
   }
   
+  resetToState(step) {
+    for (const place of this.places) {
+      place.resetToState(step);
+    }
+  }
+  
   getCurrentStep() {
     return this.places[0].history.length
   }
@@ -106,7 +112,7 @@ export default class LivelyPetrinet extends Morph {
           this.fire(transition);
           yield;
         }
-        this.persistPlaceState()
+        this.persistPlaceState();
       }
     }
   }
@@ -114,11 +120,12 @@ export default class LivelyPetrinet extends Morph {
   async onStep() {
        for (const transition of this.transitions) {
           if (this.canFire(transition)) {
-            await this.fire(transition)
+            await this.fire(transition);
           }
       }
       this.persistPlaceState();
   }
+  
   
   canFire(transition) {
       const placesBefore = this.getFirstComponents(this.getConnectorsBefore(transition));
@@ -144,7 +151,7 @@ export default class LivelyPetrinet extends Morph {
       await Promise.all(connectorsAfter.map(connector => connector.animateMovingToken()));
     
       for (const place of this.getSecondComponents(connectorsAfter)) {
-        place.addToken();
+        await place.addToken();
       }
       return
   }
