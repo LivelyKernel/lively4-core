@@ -83,7 +83,13 @@ export default class LivelyPetrinetPlace extends Morph {
   
   // Interaction
   
+  setSelectedStyle() {
+    this.graphicElement().style.border = Helper.getSelectedBorder();
+  }
   
+  setDisselectedStyle() {
+    this.graphicElement().style.border = Helper.getDisselectedBorder();
+  }
   
   graphicElement() {
     return this.get("#circle");

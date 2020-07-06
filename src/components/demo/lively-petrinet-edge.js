@@ -316,6 +316,38 @@ export default class LivelyConnector extends Morph {
     this.setAttribute("toComponent", componentId)
   }
   
+  setSelectedStyle() {
+    this.stroke = "#FF6E40";
+  }
+  
+  setDisselectedStyle() {
+    this.stroke = "grey"
+  }
+  
+  async animateMovingToken() {
+    const token = await(<lively-petrinet-token></lively-petrinet-token>);
+    this.appendChild(token);
+    const vertices = SVG.getPathVertices(this.getPath());
+    const pt2 = pt(vertices[1].x1, vertices[1].y1);
+    const pt1 = pt(vertices[0].x1, vertices[0].y1);
+    lively.setPosition(token, pt1);
+
+    
+    var animation = token.animate([
+    {  top: pt1.y + "px", left: pt1.x + "px", position: "relative"},
+    { top: pt2.y + "px", left: pt2.x + "px", position: "relative"}],
+    {
+      duration: 500
+    });
+    
+    return new Promise(function (resolve, reject) {
+        animation.onfinish = () => {
+          token.remove();
+          resolve("Success");
+        };
+    });
+  }
+  
   
   
   

@@ -20,10 +20,10 @@ describe("LivelyScriptTest",  function() {
   it("should exec script", async function() {
     self.thisScriptWasHere = undefined
     var root = <div></div>
-    testWorld().appendChild(root)
     var source = `<lively-script><script>
         self.thisScriptWasHere = this
       </script></lively-script>`
+    testWorld().appendChild(root)
     root.innerHTML = source
     await components.loadUnresolved(root);
     await lively.sleep(10); // ok, there is aysnc behavior here... give it a chance to run
