@@ -184,7 +184,7 @@ export default class LivelySimulationCode extends Morph {
   addWidget(match) {
     const cm =  this.get('#codeMirror').editor;
     const cellRef = match[1].toLowerCase();
-    const widget = <span style='cursor: pointer; transition: background-color 0.3s ease;'>{ match[0] }</span>;
+    const widget = <span style='cursor: pointer; transition: background-color 0.3s ease; text-decoration: underline;'>{ match[0] }</span>;
     widget.dataset['cellref'] = cellRef;
     widget.addEventListener('mousedown', (event) => this.handleCellRef(event, cellRef));
     try {
