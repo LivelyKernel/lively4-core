@@ -23,6 +23,7 @@ import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 
+
 /*MD
 
 ![](lively-container.drawio)
@@ -1148,7 +1149,60 @@ export default class Container extends Morph {
     lively.notify("Save as... in EditMode not implemented yet");
   }
 
+  async buildLatex(dir, pdf) {
+        
+    var serverURL = lively.files.serverURL(dir)
+    if (!serverURL) {
+      lively.warn("no lively server found for: " + dir)
+      return
+    }
 
+    lively.notify("LaTeX", "build", 10)
+
+    var buildPath = dir.replace(serverURL, "")
+    var makeURL = serverURL + "/_make/" + buildPath
+    
+    var resp = await fetch(makeURL)
+    
+    var result = await resp.text()
+
+    var logUniqId = "LaTexLog"
+    var log = document.body.querySelector("#" + logUniqId)
+    if (log) {
+      log.value = result
+      var show = lively.showElement(log)
+      show.style.border = "1px solid green"
+
+    } else {
+      lively.notify("LaTeX", "finished", 10, async () => {
+        var log = await lively.openComponentInWindow("lively-code-mirror")
+        log.mode =  "text"
+        log.id = logUniqId
+        log.parentElement.setAttribute("title", "LaTexLog")
+        log.value = "" + result
+      })      
+    }
+     
+    var pdfContainers = lively.queryAll(document.body, "lively-container").filter(ea => ea.getURL().toString() == pdf)
+    pdfContainers.forEach(async ea => {
+      var preserveContentScroll = ea.get("#container-content").scrollTop;
+      var pdf = ea.getContentRoot().querySelector("lively-pdf")
+      var page = pdf.getCurrentPage()
+      await pdf.setURL(ea.getURL().toString())
+      await pdf.pdfLoaded
+      await lively.sleep(500) // #TODO fuck it... page loading seems not be finished, even if PDF.js said so
+      
+      if (page) pdf.setCurrentPage(page)
+      lively.notify("page " + page)
+      ea.get("#container-content").scrollTop = preserveContentScroll
+    })
+    
+    if (pdfContainers.length == 0) {
+      lively.notify("LaTeX", "view pdf", undefined, () => {
+        lively.openBrowser(pdf)
+      })
+    }  
+  }
   
   // #important
   async onSave(doNotQuit) {
@@ -1183,6 +1237,17 @@ export default class Container extends Morph {
         await lively.updateTemplate(templateSourceCode);
 
       }
+    } else if (this.getURL().pathname.match(/\.md$/)){
+        var m = sourceCode.match(/markdown-config .*latex\=([^ ]*)/)
+        if (m) {
+          var dir = this.normalizeURL(this.getDir() + m[1])
+          
+          var m2 = sourceCode.match(/markdown-config .*pdf\=([^ ]*)/)
+          if (m2) {
+            var pdf = this.normalizeURL(this.getDir() + m2[1])          
+          }
+          this.buildLatex(dir, pdf)
+        }
     }
     this.updateOtherContainers();
 
