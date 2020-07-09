@@ -223,7 +223,12 @@ function instrumentFetch() {
   }  
 }
 
-
+function livelyFilesServerURL(url) {
+  if (self.lively && lively.files) {
+    return lively.files.serverURL(url)
+  }
+  return url.match(lively4url); // fall back to basic behavior at boot time...
+}
 
 function installCachingFetch() {
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isCachingFetch);
@@ -231,7 +236,7 @@ function installCachingFetch() {
     isCachingFetch: true,
     options(request, options) {
       var url = (request.url || request).toString()
-      if (url.match(lively4url)) {
+      if (livelyFilesServerURL(url)) {
         if (!options) {
           options = {
             method: "GET"
@@ -259,7 +264,9 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          if (options && options.headers && options.headers.get("fileversion") || options.headers.get("forediting")) {
+          if (options && options.headers && options.headers.get && 
+              (options.headers.get("fileversion") || options.headers.get("forediting"))) {
+            // console.log("[boot filecache] don't cache versions request:  " + request.url)
             return // don't cache versions request...
           }
           
@@ -308,6 +315,7 @@ function installCachingFetch() {
     }
   })
 }
+
 
 /*
  * MAIN BOOT FUNCTION: load Lively4 and get it going....

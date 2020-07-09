@@ -122,7 +122,9 @@ export default class Sync extends Morph {
   }
   
   async sync() {
-    await this.gitControl("sync");
+    var syncResult = await this.gitControl("sync");
+    debugger 
+    
     this.log("invalidate local caches")
     window.lively4invalidateFileCaches && window.lively4invalidateFileCaches() // global variable set in boot
   }

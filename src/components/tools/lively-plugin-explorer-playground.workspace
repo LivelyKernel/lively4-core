@@ -1,12 +1,1 @@
-{
-  "source": "/src/components/tools/lively-ast-explorer-example-source.js",
-  "plugin": "/src/components/tools/lively-plugin-explorer-playground.js",
-  "options": {
-    "autoUpdateAST": true,
-    "autoUpdateTransformation": true,
-    "autoExecute": true,
-    "systemJS": false,
-    "autoRunTests": false,
-    "autoSaveWorkspace": false
-  }
-}
+{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"/src/components/tools/lively-plugin-explorer-playground.js","options":{"autoUpdateAST":true,"autoUpdateTransformation":true,"autoExecute":true,"systemJS":false,"autoRunTests":false,"autoSaveWorkspace":false}}

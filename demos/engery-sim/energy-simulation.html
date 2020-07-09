@@ -1,0 +1,87 @@
+<lively-simulation tabindex="0" data-velocity="50" data-stoponerror="false" data-time="0" data-dt="0.1"><lively-simulation-cell style="top: 89px; left: 24.7578px; width: 256.625px; height: 78.4487px; z-index: 80;" data-name="Fuel" data-state="{&quot;gas&quot;:36000}" data-snippet="if (gas <= 0)
+  throw Error('Gas is empty!')" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 45px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 205px; left: 29.5352px; z-index: 89; width: 620.379px; height: 282.41px;" data-name="Heating System" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:20,&quot;maxHeat&quot;:5}" data-snippet="const shouldApplyMax = () => {
+  const full = maxHeat * factor;
+  const LOWER_ENERGY_THRESHOLD_PERCENTAGE = 0.3;
+  return _.every([
+    heat < full,
+    #Fuel['gas'] > maxHeat * dt,
+    #HeatStorage['energy'] < LOWER_ENERGY_THRESHOLD_PERCENTAGE * #HeatStorage['capacity']
+  ]);
+};
+
+const shouldTransferHeatToStorage = () => {
+  return heat > 2 * maxHeat &amp;&amp; #HeatStorage['energy'] < #HeatStorage['capacity'];
+};
+
+if (shouldApplyMax()) {
+  const gasConsumption = maxHeat * dt;
+  #Fuel['gas'] -= gasConsumption;
+  heat += gasConsumption;
+}
+
+const delta = (heat / factor) * dt;
+const HEAT_LOSS_PERCENTAGE = 0.2;
+if (shouldTransferHeatToStorage()) {
+  heat -= delta;
+  #HeatStorage['energy'] += (1.0 - HEAT_LOSS_PERCENTAGE) * delta;
+} else 
+  heat -= HEAT_LOSS_PERCENTAGE * delta;" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 278px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 87.2344px; left: 347px; z-index: 87; width: 300px; height: 100px;" data-name="Heat Storage" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 53px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 83.7539px; left: 662.754px; z-index: 90; width: 200px; height: 87.7423px;" data-name="Battery" data-state="{&quot;energy&quot;:0,&quot;capacity&quot;:360}" data-snippet="// Enter simulation code here" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 55px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 203.258px; left: 666.258px; z-index: 86; width: 537.066px; height: 284.938px;" data-name="Thermal Power Station" data-state="{&quot;heat&quot;:0,&quot;factor&quot;:10,&quot;maxHeat&quot;:7.5}" data-snippet="const shouldApplyMax = () => {
+  const full = maxHeat * factor;
+  const LOWER_ENERGY_THRESHOLD_PERCENTAGE = 0.9;
+  return _.every([
+    heat < full,
+    #Fuel['gas'] > maxHeat * dt,
+    #HeatStorage['energy'] < LOWER_ENERGY_THRESHOLD_PERCENTAGE * #HeatStorage['capacity']
+  ]);
+};
+
+if (shouldApplyMax()) {
+  const gasConsumption = maxHeat * dt;
+  #Fuel['gas'] -= gasConsumption;
+  heat += gasConsumption;
+}
+
+const delta = heat / factor * 1.0;
+const HEAT_THRESHOLD = 2;
+if (heat > HEAT_THRESHOLD) {
+  heat -= delta;
+  if (#HeatStorage['energy'] < #HeatStorage['capacity'])
+    #HeatStorage['energy'] += 0.5 * delta;
+  if (#Battery['energy'] < #Battery['capacity'])
+    #Battery['energy'] += 0.4 * delta;
+}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 281px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="left: 34.7383px; top: 504px; z-index: 53; width: 500px; height: 183.844px; position: absolute;" data-name="Heat Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:3,&quot;extra&quot;:0}" data-snippet="const delta = demand * dt;
+if (#HeatStorage['energy'] > delta) {
+    #HeatStorage['energy'] -= delta;
+    consumed += delta;
+    // TODO consume Extra
+} else {
+    extra += delta;
+    throw Error('Room too cold!');
+}" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="left: 548.242px; top: 502px; z-index: 94; width: 450.856px; height: 186.992px; position: absolute;" data-name="Electric Consumer" data-state="{&quot;consumed&quot;:0,&quot;demand&quot;:1.5,&quot;extra&quot;:0}" data-snippet="demand += (Math.random() - 0.5) * 0.01 * dt;
+delta = demand * dt;
+if (#Battery['energy'] > delta) {
+    #Battery['energy'] -= delta;
+    consumed += delta;
+} else {
+    extra += delta;
+    throw Error('Energy Too Low!')
+}
+" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 87px;" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 991.762px; left: 28px; z-index: 98; width: 884.969px; height: 241.965px;" data-name="Reset" data-state="{}" data-snippet="#Fuel['gas'] = 5 * 2 * 3600 // two hours gas
+#HeatStorage['energy'] = 0
+#Battery['energy'] = 0 
+#ElectricConsumer['consumed'] = 0
+#ElectricConsumer['demand'] = 1.5
+#ElectricConsumer['extra'] = 0
+#HeatConsumer['consumed'] = 0
+#HeatConsumer['demand'] = 3
+#HeatConsumer['extra'] = 0
+#ThermalPowerStation['heat'] = 0
+#HeatingSystem['heat'] = 0
+#Battery['capacity'] = 0.1 * 3600 // 1h 2kw
+#HeatStorage['capacity'] = 0.1 * 3600 // 1h 3kw" data-state-style="margin-top: 5px; margin-bottom: 5px; height: 7px;" data-view="codeView" data-should-skip="true" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 705.938px; left: 30px; z-index: 99; position: absolute; width: 589.648px; height: 274.469px;" data-name="Logging" data-state="{&quot;gas&quot;:36000,&quot;heat&quot;:0,&quot;battery&quot;:0,&quot;consumedPower&quot;:0,&quot;consumedHeat&quot;:0,&quot;twp&quot;:0,&quot;hs&quot;:0}" data-snippet="gas = #Fuel.gas;
+heat = #HeatStorage.energy;
+battery = #Battery.energy;
+consumedPower = #ElectricConsumer.consumed;
+consumedHeat = #HeatConsumer.consumed;
+twp = #ThermalPowerStation.heat;
+hs = #HeatingSystem.heat;" data-state-style="" data-show-log="true" data-view="codeView" data-loginterval="10"></lively-simulation-cell></lively-simulation>

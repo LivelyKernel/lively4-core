@@ -11,7 +11,7 @@ Ok, haha this is text! And this is a [link](https://foobarlink/xy/)..
 nothing to 
 see here haha
 
-- [x] this is an issue #hashtag
+- [ ] this is an issue #hashtag
 - [x] ok blabla ba here we go 
   - [x] foo
 

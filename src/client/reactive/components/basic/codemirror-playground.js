@@ -269,7 +269,6 @@ export default class CodemirrorPlayground extends Morph {
   
   /*MD ## Line Widget MD*/
   lineWidget() {
-    /*
     this.lcm.value.traverseAsAST({
       CallExpression: path => {
         const callee = path.get('callee');
@@ -305,7 +304,6 @@ export default class CodemirrorPlayground extends Morph {
         }
       }
     });
-    */
   }
   
   _lineWidget(location, element) {

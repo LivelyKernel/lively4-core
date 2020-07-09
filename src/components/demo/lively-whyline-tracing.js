@@ -75,7 +75,7 @@ export class ExecutionTrace {
     let parent = traceNode;
     while (!parent.isFunction) {
       this.end(parent);
-      parent = traceNode.parent;
+      parent = parent.parent;
     }
     this.end(parent);
     return parent.value = value;

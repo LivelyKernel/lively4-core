@@ -1,0 +1,15 @@
+<lively-simulation tabindex="0" data-velocity="15" data-stoponerror="false" data-time="266000" data-dt="1"><lively-simulation-cell style="top: 486.067px; left: 78.0667px; z-index: 8;" data-name="Gravity" data-state="{&quot;g&quot;:4}" data-snippet="// Enter simulation code here" data-view="codeView" data-loginterval="1"></lively-simulation-cell><lively-simulation-cell style="top: 107.933px; left: 183.933px; z-index: 10; width: 600px; height: 225.867px;" data-name="Ball (2)" data-state="{&quot;height&quot;:200.2,&quot;mass&quot;:0.6,&quot;velocity&quot;:-0.3999999999999999,&quot;falling&quot;:&quot;false&quot;}" data-snippet="if(height <= 0) {
+  falling = false;
+}
+if(velocity <= 0) {
+  falling = true;
+}
+
+
+if(falling == true){
+  height -= velocity;
+  velocity += #Gravity.g * mass
+} else {
+  velocity -= #Gravity.g * mass;
+  height += velocity
+}" data-view="codeView" data-loginterval="1"></lively-simulation-cell></lively-simulation>

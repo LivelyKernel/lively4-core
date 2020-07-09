@@ -80,8 +80,13 @@ export default class Markdown {
   
   static parseAndReplaceFigureRefs(element) {
     element.querySelectorAll("lively-drawio").forEach(ea => {
-      var title = <div class="figuretitle"><a id={ea.getAttribute("alt")}></a><b>Figure {ea.getAttribute("alt")}. </b>{ea.getAttribute("title")}</div>
-      ea.parentElement.appendChild(title)
+      var name = ea.getAttribute("alt")
+      if (name && name !== null) {
+        var titleString = ea.getAttribute("title")
+        if (titleString == null) titleString = "" 
+        var title = <div class="figuretitle"><a id={ea.getAttribute("alt")}></a><b>Figure {ea.getAttribute("alt")}. </b>{titleString}</div>
+        ea.parentElement.appendChild(title)        
+      }
     })
     
     // late parse and convert latex figure references

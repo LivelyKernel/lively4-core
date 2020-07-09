@@ -230,7 +230,13 @@ export default class Container extends Morph {
     }
     
     // check if our file is a directory
-    var options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json()).catch(e => {})  
+    
+    var options
+    try { 
+      options = await fetch(url, {method: "OPTIONS"}).then(r =>  r.json())
+    } catch(e) {
+      options = {}
+    }
     if (!isdir && !other) {
       if (options && options.type == "directory") {
         isdir = true
@@ -342,10 +348,15 @@ export default class Container extends Morph {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
     }
     
+    headers['cache-control'] = 'no-cache'
+    // #deprecated since we now use no-ache
     if (url.toString().match(lively4url)) {
       headers["forediting"] = true
     }
-  
+
+
+    
+    
     
     
     return fetch(url, {
@@ -747,15 +758,42 @@ export default class Container extends Morph {
   }
   /*MD ## File Operations MD*/
 
+  
+  
+  
   async deleteFile(url, urls) {
-    lively.notify("delelteFile " + url)
+    lively.notify("deleteFile " + url)
     if (!urls || !urls.includes(url)) {
       urls = [url] // clicked somewhere else
     }
     if (!urls) urls = [url]
-    var names = urls.map(ea => decodeURI(ea.replace(/\/$/,"").replace(/.*\//,"")))
-    if (await lively.confirm("<b>Delete " + urls.length + " files:</b><br>" +
-        "<ol>" + names.map( ea => "<li>" + ea + "</li>" ).join("") + "</ol>")) {
+    
+    var allURLs = new Set()
+    for(var ea of urls) {
+      if (!allURLs.has(ea)) {
+        allURLs.add(ea)
+        if (ea.endsWith("/")) {
+          for(var newfile of await lively.files.walkDir(ea)) {
+            allURLs.add(newfile)
+          }          
+        }
+      }    
+    }
+    urls = Array.from(allURLs)
+    urls = urls.sortBy(ea => ea).reverse() // delete children first
+    
+    var prefix = Strings.longestCommonPrefix(urls.map(ea => ea.replace(/[^/]*$/,""))) // shared dir prefix
+    
+    var names = urls.reverse().map(ea => decodeURI(ea.replace(/\/$/,"").replace(prefix,"")))
+    var customDialog = dialog => {
+      var messageDiv = dialog.get("#message")
+      messageDiv.style.maxHeight = "300px"
+      messageDiv.style.overflow = "auto"
+      messageDiv.style.backgroundColor = "white"
+    }
+    var msg = "<b>Delete " + urls.length + " files:</b><br>" +
+        "<ol>" + names.map( ea => "<li>" + ea + "</li>",  ).join("") + "</ol>"
+    if (await lively.confirm(msg, customDialog)) {
       for(let url of urls) {
         var result = await fetch(url, {method: 'DELETE'})
           .then(r => {
@@ -882,9 +920,10 @@ export default class Container extends Morph {
       
       var worldContext = document.body; // default to opening context menu content globally
       // opening in the content makes only save if that content could be persisted and is displayed
-      if (this.contentIsEditable() && !this.isEditing()) {
-        worldContext = this
-      }
+      // disable this for now:
+      // if (this.contentIsEditable() && !this.isEditing()) {
+      //  worldContext = this
+      // }
 	    lively.openContextMenu(document.body, evt, undefined, worldContext);
 	    return false;
     }
@@ -1132,7 +1171,10 @@ export default class Container extends Morph {
     var sourceCode = this.getSourceCode();
     // lively.notify("!!!saved " + url)
     window.LastURL = url
-    if (await this.isTemplate(url)) {
+    // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
+    if (this.getURL().pathname.match(/\.css$/)) {
+      this.updateCSS();
+    } else if (await this.isTemplate(url)) {
       lively.notify("update template")
       if (url.toString().match(/\.html/)) {
         // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
@@ -1141,9 +1183,6 @@ export default class Container extends Morph {
         await lively.updateTemplate(templateSourceCode);
 
       }
-    }
-    if (this.getURL().pathname.match(/.*css/)) {
-      this.updateCSS();
     }
     this.updateOtherContainers();
 
@@ -1699,7 +1738,7 @@ export default class Container extends Morph {
   }
 
   getHTMLSource() {
-    this.querySelectorAll("*").forEach( ea => {
+    this.getContentRoot().querySelectorAll("*").forEach( ea => {
       if (ea.livelyPrepareSave)
         ea.livelyPrepareSave();
     });
@@ -1973,7 +2012,13 @@ export default class Container extends Morph {
   
   updateCSS() {
     var url = "" + this.getURL()
+    
+    
     var all = Array.from(lively.allElements(true))
+    
+    Object.values(lively.components.templates).forEach(template => {
+      all.push(...template.querySelectorAll("*"))      
+    })
     
     all.filter(ea => ea.localName == "link")
       .filter(ea => ea.href == url)
@@ -1984,11 +2029,11 @@ export default class Container extends Morph {
         lively.notify("update css",  ea.href)
       })
     
-    all.filter(ea => ea.localName == "style")
-      .filter(ea => ea.url == url)
+    all.filter(ea => ea.localName == "style") 
+      .filter(ea => ea.getAttribute("data-url") == url) // vs. this.getAttribute("data-src")
       .forEach(ea => {
         lively.fillTemplateStyle(ea, url)
-        lively.notify("upodate css", url)
+        lively.notify("update style css", url)
       })
   }
 
@@ -2099,7 +2144,6 @@ export default class Container extends Morph {
     this.id = 'main-content';
     this.setAttribute("load", "auto");
       
-    let path, edit;
     window.onpopstate = (event) => {
         var state = event.state;
         if (state && state.followInline) {
@@ -2107,8 +2151,13 @@ export default class Container extends Morph {
           this.followPath(state.path);
         }
     };
-    path = lively.preferences.getURLParameter("load");
-    edit = lively.preferences.getURLParameter("edit");
+    var path = lively.preferences.getURLParameter("load");
+    var editPath = lively.preferences.getURLParameter("edit");
+    if (editPath) {
+      path = editPath
+      var edit = true
+    }
+    
     let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
     if (fullscreen) {
       this.onFullscreen() // #TODO replace toggle logic with enableFullscreen, disableFullscreen
@@ -2120,8 +2169,6 @@ export default class Container extends Morph {
       edit = undefined;
     }
 
-    
-    
     if (!path || path == "null") {
       path = lively4url + "/"
     }

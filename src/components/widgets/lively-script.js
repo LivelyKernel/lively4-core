@@ -24,6 +24,13 @@ export default class LivelyScript extends Morph {
 
   
   async initialize() {
+    
+  }
+  
+  
+  // evalute script not when the component is initialized, but when it is actually in the DOM
+  async attachedCallback() {
+    // console.log("SCRIPT attached ", lively.findWorldContext(this))
     var src = this.textContent
     // console.log("LivelyScript>>initialize " + src)
 
@@ -48,6 +55,7 @@ export default class LivelyScript extends Morph {
       this.get("#result").innerHTML = ""
     }
   }
+  
 
   async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
@@ -71,7 +79,17 @@ export default class LivelyScript extends Morph {
   
   async boundEval(str) {
     // console.log("" + this.id + ">>boundEval " + str )
-    var targetModule =  await this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
+    var worldContext = lively.findWorldContext(this)
+    
+    
+    if (worldContext) {
+      // #Bug we are not yet in a body or shadow-root
+      console.warn("Executing lively-script without world context" , this)
+    }
+    
+    var targetModule =  await this.moduleFor(worldContext) // all scripts in one container should share scope? 
+    
+    //console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
@@ -86,7 +104,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval exec " + str, targetModule )
+    console.log("" + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()
