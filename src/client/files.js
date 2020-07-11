@@ -549,7 +549,10 @@ export default class Files {
   
   static serverURL(url) {
     // #TODO to replace this static list, we could add this info OPTION requests... 
+    
+  
     var knownServers = [
+      lively4url.replace(/\/[^/]+$/,""),
       "https://lively-kernel.org/voices",
       "https://lively-kernel.org/research",
       "https://lively-kernel.org/lively4S2",
