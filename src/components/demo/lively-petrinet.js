@@ -215,9 +215,8 @@ export default class LivelyPetrinet extends Morph {
 
         var menu = new ContextMenu(this, [
               ["add place", () => this.addPlace(mousePosition)],
-              ["delete place", () => this.deletePlace()],
               ["add transition", () => this.addTransition(mousePosition)],
-              ["delete transition", () => this.deleteTransition()],
+              ["add code transition", () => this.addCodeTransition(mousePosition)],
           
             ]);
         menu.openIn(document.body, evt, this);
@@ -360,6 +359,12 @@ export default class LivelyPetrinet extends Morph {
       var node = await (<lively-petrinet-place></lively-petrinet-place>);
       this.initializeElement(node, position);
       this.appendChild(node);
+  }
+  
+  async addCodeTransition(position) {
+    var codeTransition = await (<lively-petrinet-code-transition></lively-petrinet-code-transition>);
+    this.initializeElement(codeTransition, position);
+    this.appendChild(codeTransition);
   }
   
   async addListeners(element) {

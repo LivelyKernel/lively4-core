@@ -38,6 +38,14 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.setAttribute("componentId", id);
   }
   
+  get petrinet() {
+    const petrinet = lively.query(this, "lively-petrinet");
+    if (petrinet === undefined) {
+      lively.error("Error: No Petrinet")
+    }
+    return petrinet;
+  }
+  
   
   
   // Interaction
@@ -64,13 +72,17 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.graphicElement().style.border = Helper.getDisselectedBorder();
   }
   
+  isActiveTransition(){
+    return this.shouldFire(this.petrinet.places, this.petrinet.transitions, this.petrinet.connectors);
+  }
+  
   
   
   addTransactionFunction(text) {
     if (this.currentCode != "") {
-      scriptManager.removeScript(this, "isActiveTransaction")
+      scriptManager.removeScript(this, "shouldFire")
     }
-    scriptManager.addScript(this, text, {name: "isActiveTransaction"});
+    scriptManager.addScript(this, text, {name: "shouldFire"});
     this.currentCode = text;
   }
 

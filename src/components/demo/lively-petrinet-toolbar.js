@@ -72,7 +72,7 @@ export default class LivelyPetrinetToolbar extends Morph {
   onSimulationSlider({ target: { value: simulationStep } }) {
     const simulationState = this.get('#simulationState');
     simulationState.innerText = simulationStep;
-    this.petrinet.setState(simulationStep);
+    this.petrinet.setState(simulationStep-1);
   }
   
   initializeSimulationButtons() {

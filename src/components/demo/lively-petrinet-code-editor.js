@@ -19,7 +19,7 @@ export default class LivelyPetrinetCodeEditor extends Morph {
   async initialize() {
     this.windowTitle = "LivelyPetrinetCodeEditor";
     this.registerButtons();
-    this.codeMirror.value = "function onTransition() {" + NEWLINE
+    this.codeMirror.value = "function shouldFire(places, transitions, connectors) {" + NEWLINE
     + TAB + 'lively.notify("test")' + NEWLINE
     + "}";
     this.onSave = undefined;
