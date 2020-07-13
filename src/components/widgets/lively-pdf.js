@@ -9,7 +9,7 @@ export default class LivelyPDF extends Morph {
     pdf.onLoad().then(()=> {
       this.isLoaded = true
       if (this.getAttribute("src")) {
-        this.setURL(this.getAttribute("src"));
+        this.setURL(this.getAttribute("src"), this.pdfLoaded);
       }
     })
     
@@ -38,7 +38,7 @@ export default class LivelyPDF extends Morph {
                           () => this.onPdfDelete());
     this.registerButtons()
     
-    this.currentPage = 1
+    this.currentPage = this.currentPage
   }
   
   // pageNumber first==1
@@ -58,7 +58,8 @@ export default class LivelyPDF extends Morph {
   }
   
   prevPage() {
-    var page = this.getPage(this.currentPage--) 
+    this.currentPage--
+    var page = this.getPage(this.currentPage) 
     if (!page) {
       this.currentPage = Number(this.pages().last.getAttribute("data-page-number")) // wrap around
       page = this.getPage(this.currentPage)  
@@ -67,12 +68,25 @@ export default class LivelyPDF extends Morph {
   }
   
   nextPage() {
-    var page = this.getPage(this.currentPage++) 
+    this.currentPage++
+    var page = this.getPage(this.currentPage) 
     if (!page) {
       this.currentPage = 1// wrap around
       page = this.getPage(this.currentPage)  
     }
     return page
+  }
+  
+  getCurrentPage() {
+    return this.currentPage
+  }
+  
+  setCurrentPage(number) {
+    this.currentPage = number
+    var page = this.getPage(number) 
+    if (page) {
+      this.showPage(page)
+    }
   }
   
   onUpDown(evt) {
@@ -109,7 +123,10 @@ export default class LivelyPDF extends Morph {
   }
   
   
-  async setURL(url) {
+  async setURL(url, oldPromise) {
+    this.pdfLoaded = oldPromise || (new Promise(resolve => {
+      this.resolveLoaded = resolve
+    }))
     this.setAttribute("src", url)
     
     if (!this.isLoaded) return
@@ -146,6 +163,7 @@ export default class LivelyPDF extends Morph {
         this.pdfLinkService.setDocument(pdfDocument, null);
     
         await this.pdfViewer.pagesPromise
+        this.resolveLoaded()
         // #TODO can we advice the pdfView to only render the current page we need?
         // if (this.getAttribute("mode") != "scroll") {
         //   this.currentPage = 1 

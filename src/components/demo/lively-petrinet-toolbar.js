@@ -47,6 +47,10 @@ export default class LivelyPetrinetToolbar extends Morph {
     return this.get("#runButton").innerHTML == PAUSE;
   }
   
+  getCurrentState() {
+    return this.get("#simulationSlider").value;
+  }
+  
   
   
   
@@ -68,7 +72,7 @@ export default class LivelyPetrinetToolbar extends Morph {
   onSimulationSlider({ target: { value: simulationStep } }) {
     const simulationState = this.get('#simulationState');
     simulationState.innerText = simulationStep;
-    this.petrinet.setState(simulationStep);
+    this.petrinet.setState(simulationStep-1);
   }
   
   initializeSimulationButtons() {
@@ -119,6 +123,7 @@ export default class LivelyPetrinetToolbar extends Morph {
    
     let runButton = this.get("#runButton");
     if (!this.isRunning()) {
+      this.petrinet.resetToState(this.getCurrentState())
       runButton.innerHTML = PAUSE;
       runButton.style.backgroundColor = "#FFCC80";
       
