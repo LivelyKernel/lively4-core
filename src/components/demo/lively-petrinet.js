@@ -12,19 +12,18 @@ export default class LivelyPetrinet extends Morph {
   
   // Initialization
   
-  
-
   async initialize() {
     this.windowTitle = "LivelyPetrinet";
+    lively.setExtent(this.parentNode, pt(1280,860));
     this.registerButtons();
     this.mouseIsOnNode = false;
+  
     
     this.addAllListeners();
-    this.initializeConnectors();
+    await this.initializeConnectors();
     this.updateConnectorPosition();
     
     this.selectedElement = undefined
-
   }
   
   addAllListeners() {
@@ -52,25 +51,9 @@ export default class LivelyPetrinet extends Morph {
       if (!fromComponent || !toComponent) {
         lively.error("Connector is not connected to component");
       }
-      const newConnector = await(<lively-petrinet-edge></lively-petrinet-edge>);
-      this.appendChild(newConnector);
-      newConnector.connectPetrinetComponents(fromComponent, toComponent);
+      await this.addConnector(fromComponent, toComponent);
+
       connector.remove();
-    }
-  }
-  
-  attachedCallback() {
-    // The connector has some weird behaviour, in that it is not 100% connected to the elements in the beginning. We fix this by manually updating its position.
-    setTimeout(() => this.updateConnectorPosition(), 1000);
-  }
-  
-  updateConnectorPosition() {
-    // This is very hacky. We set a minimal (impossible to see) position change, which triggers the
-    // update position function of the edge. We observed that updateConnector() didn't work for this.
-    const allElements = [...this.places, ...this.transitions];
-    for (const element of allElements) {
-      const originalPosition = lively.getPosition(element);
-      lively.setPosition(element, originalPosition.addPt(pt(0,0.01)));
     }
   }
   
@@ -112,6 +95,12 @@ export default class LivelyPetrinet extends Morph {
     }
   }
   
+  resetToState(step) {
+    for (const place of this.places) {
+      place.resetToState(step);
+    }
+  }
+  
   getCurrentStep() {
     return this.places[0].history.length
   }
@@ -123,7 +112,7 @@ export default class LivelyPetrinet extends Morph {
           this.fire(transition);
           yield;
         }
-        this.persistPlaceState()
+        this.persistPlaceState();
       }
     }
   }
@@ -131,11 +120,12 @@ export default class LivelyPetrinet extends Morph {
   async onStep() {
        for (const transition of this.transitions) {
           if (this.canFire(transition)) {
-            await this.fire(transition)
+            await this.fire(transition);
           }
       }
       this.persistPlaceState();
   }
+  
   
   canFire(transition) {
       const placesBefore = this.getFirstComponents(this.getConnectorsBefore(transition));
@@ -161,7 +151,7 @@ export default class LivelyPetrinet extends Morph {
       await Promise.all(connectorsAfter.map(connector => connector.animateMovingToken()));
     
       for (const place of this.getSecondComponents(connectorsAfter)) {
-        place.addToken();
+        await place.addToken();
       }
       return
   }
@@ -174,29 +164,23 @@ export default class LivelyPetrinet extends Morph {
     return connectors.map(connector => this.getComponentFrom(connector.toComponentId));
   }
   
-  getConnectorsBefore(transition) {
+  getConnectorsBefore(element) {
     let connectorsBefore = [];
     for (const connector of this.connectors) {
-      if (connector.toComponentId == transition.componentId) {
+      if (connector.toComponentId == element.componentId) {
         connectorsBefore.push(connector);
       }
-    }
-    if (connectorsBefore.length == 0) {
-      lively.error("Did not find any places connected to transition");
     }
     return connectorsBefore;
   }
   
   
-  getConnectorsAfter(transition) {
+  getConnectorsAfter(element) {
     let connectorsAfter = [];
     for (const connector of this.connectors) {
-      if (connector.fromComponentId == transition.componentId) {
+      if (connector.fromComponentId == element.componentId) {
         connectorsAfter.push(connector);
       }
-    }
-    if (connectorsAfter.length == 0) {
-      lively.error("Did not find any places that the transition connects to");
     }
     return connectorsAfter;
   }
@@ -223,15 +207,16 @@ export default class LivelyPetrinet extends Morph {
   
   
   onContextMenu(evt) {
+    console.log(evt);
     if (!evt.shiftKey) {
         evt.stopPropagation();
         evt.preventDefault();
+        const mousePosition = this.getPositionInWindow(evt);
 
         var menu = new ContextMenu(this, [
-              ["add place", () => this.addPlace()],
-              ["delete place", () => this.deletePlace()],
-              ["add transition", () => this.addTransition()],
-              ["delete transition", () => this.deleteTransition()],
+              ["add place", () => this.addPlace(mousePosition)],
+              ["add transition", () => this.addTransition(mousePosition)],
+              ["add code transition", () => this.addCodeTransition(mousePosition)],
           
             ]);
         menu.openIn(document.body, evt, this);
@@ -240,18 +225,12 @@ export default class LivelyPetrinet extends Morph {
   }
   
   async livelyExample() {
-    await this.addPlace();
+    await this.addPlace(pt(100, 100));
     this.places[0].addToken();
-    await this.addPlace();
-    await this.addTransition();
-    lively.setPosition(this.places[1], pt(500, 100))
-    lively.setPosition(this.transitions[0], pt(300, 100));
-    const connector1 = await(<lively-petrinet-edge></lively-petrinet-edge>);
-    this.appendChild(connector1);
-    connector1.connectPetrinetComponents(this.places[0], this.transitions[0]);
-    const connector2 = await(<lively-petrinet-edge></lively-petrinet-edge>);
-    this.appendChild(connector2);
-    connector2.connectPetrinetComponents(this.transitions[0],this.places[1]);
+    await this.addPlace(pt(500, 100));
+    await this.addTransition(pt(300, 100));
+    this.addConnector(this.places[0], this.transitions[0]);
+    this.addConnector(this.transitions[0],this.places[1]);
   }
   
   
@@ -262,13 +241,18 @@ export default class LivelyPetrinet extends Morph {
   
   async onMouseMove(evt) { 
     const cursor = this.get("#cursor");
+    const pos = this.getPositionInWindow(evt)
+    const offset = 5;
+    if (this.connectionIsStarted()) {
+      lively.setPosition(cursor, pt(pos.x - offset,pos.y - offset));
+    }
+  }
+  
+  getPositionInWindow(evt){
     const windowPosition = lively.getGlobalPosition(this);
     const x = evt.clientX - windowPosition.x;
     const y = evt.clientY - windowPosition.y;
-    const offset = 5;
-    if (this.connectionIsStarted()) {
-      lively.setPosition(cursor, pt(x - offset,y - offset));
-    }
+    return pt(x,y);
   }
   
   connectionIsStarted() {
@@ -310,17 +294,19 @@ export default class LivelyPetrinet extends Morph {
     return connector
   }
   
-  async connectTo(element) {
+  async connectTo(component) {
     if (!this.unfinishedConnector) {
       return;
     }
-    const fromElement = this.unfinishedConnector.fromElement;
-    if (fromElement == element) {
-      this.deleteUnfinishedConnector(this.get("#cursor"), this.unfinishedConnector);
+    const fromComponent = this.getComponentFrom(this.unfinishedConnector.fromComponentId);
+    this.deleteUnfinishedConnector(this.get("#cursor"), this.unfinishedConnector);
+    //this.get("#cursor").remove();
+
+    if (fromComponent == component) {
       return
     }
-    this.unfinishedConnector.connectToPetrinetComponent(element);
-    this.get("#cursor").remove();
+    
+    await this.addConnector(fromComponent, component);
   }
   
   async manageNewConnection(element) {
@@ -343,10 +329,42 @@ export default class LivelyPetrinet extends Morph {
   
   
   
-  async addPlace() {
+  async addConnector(fromComponent, toComponent) {
+    const newConnector = await(<lively-petrinet-edge></lively-petrinet-edge>);
+    this.appendChild(newConnector);
+    await newConnector.connectPetrinetComponents(fromComponent, toComponent);
+    lively.addEventListener("onClick", newConnector, "click", (evt) => this.onElementClick(evt, newConnector));
+    // The connector has some weird behaviour, in that it is not 100% connected to the elements in the beginning. We fix this by manually updating its position.
+    setTimeout(() => this.updateConnectorPosition(), 1000);
+  }
+  
+  updateConnectorPosition() {
+    // This is very hacky. We set a minimal (impossible to see) position change, which triggers the
+    // update position function of the edge. We observed that updateConnector() didn't work for this.
+    const allElements = [...this.places, ...this.transitions];
+    for (const element of allElements) {
+      const originalPosition = lively.getPosition(element);
+      lively.setPosition(element, originalPosition.addPt(pt(0,0.01)));
+    }
+  }
+  
+  async addTransition(position) {
+    var transition = await (<lively-petrinet-prob-transition></lively-petrinet-prob-transition>);
+    this.initializeElement(transition, position);
+    this.appendChild(transition);
+  }
+  
+  
+  async addPlace(position) {
       var node = await (<lively-petrinet-place></lively-petrinet-place>);
-      this.initializeElement(node);
+      this.initializeElement(node, position);
       this.appendChild(node);
+  }
+  
+  async addCodeTransition(position) {
+    var codeTransition = await (<lively-petrinet-code-transition></lively-petrinet-code-transition>);
+    this.initializeElement(codeTransition, position);
+    this.appendChild(codeTransition);
   }
   
   async addListeners(element) {
@@ -356,25 +374,20 @@ export default class LivelyPetrinet extends Morph {
       lively.addEventListener("lively", element, "click", (evt) => this.onElementClick(evt, element))
   }
   
-  setInitialPosition(element) {
-      var x = Math.random() * 50 + 50;
-      var y = Math.random() * 50 + 50;
-      lively.setPosition(element, pt(x,y));
-  }
-  
-  async initializeElement(element) {
-      this.setInitialPosition(element);
+  async initializeElement(element, position) {
+      lively.setPosition(element, position);
       this.addListeners(element);
-  }
-
-  
-  async addTransition() {
-    var transition = await (<lively-petrinet-prob-transition></lively-petrinet-prob-transition>);
-    this.initializeElement(transition);
-    this.appendChild(transition);
   }
   
   deleteSelectedElement(){
+    const connectorsBefore = this.getConnectorsBefore(this.selectedElement);
+    for (const connector of connectorsBefore) {
+      connector.remove();
+    }
+    const connectorsAfter = this.getConnectorsAfter(this.selectedElement);
+    for (const connector of connectorsAfter) {
+      connector.remove();
+    }
     this.selectedElement.remove();
   }
   
@@ -385,11 +398,11 @@ export default class LivelyPetrinet extends Morph {
   onElementClick(evt, element) {
     evt.preventDefault();
     evt.stopPropagation();
-    element.graphicElement().style.border = "3px solid #FFD54F";
     this.selectedElement = element;
-    for (const otherElement of [...this.transitions, ...this.places]) {
+    element.setSelectedStyle();
+    for (const otherElement of [...this.transitions, ...this.places, ...this.connectors]) {
       if (otherElement != element) {
-        otherElement.graphicElement().style.border = "1px solid #333333";
+        otherElement.setDisselectedStyle();
       }
     }
   }

@@ -64,11 +64,19 @@ export default class LivelyPetrinetPlace extends Morph {
   
   
   setState(step) {
-    this.deleteAllTokens();
     const numberTokensAtStep = this.history[step];
+    if (numberTokensAtStep == this.numberOfTokens()) {
+      return;
+    }
+
+    this.deleteAllTokens();
     for (let i = 0; i < numberTokensAtStep; i++) {
       this.addToken();
     }
+  }
+  
+  resetToState(step) {
+    this.history = this.history.slice(0,step);
   }
   
   start() {
@@ -83,7 +91,13 @@ export default class LivelyPetrinetPlace extends Morph {
   
   // Interaction
   
+  setSelectedStyle() {
+    this.graphicElement().style.border = Helper.getSelectedBorder();
+  }
   
+  setDisselectedStyle() {
+    this.graphicElement().style.border = Helper.getDisselectedBorder();
+  }
   
   graphicElement() {
     return this.get("#circle");

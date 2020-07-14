@@ -5,14 +5,13 @@
 
 
   .simulationButton {
-    margin: 3px;
+    margin: 4px;
     font-weight: bold;
     border: none;
     width: 60px;
     height: 35px;
     color: #ffffff;
     font-size: 15px;
-    margin-top: 5px;
   }
   
   .alignRight {
@@ -20,43 +19,53 @@
     display: inline-block
   }
   
+  .slider {
+    margin-left: 10px;
+    margin-top: 15px;
+  }
   
+  #startButton {
+    margin-left: 80px;
+  }
   
   #outerBox {
-      border-bottom: 3px solid #f0f0f5;
+      border-bottom: 1px solid #f0f0f5;
   }
   
   #logo{
-    margin-top: 5px;
     margin-left: 15px;
+    float: left;
+    width: 80px;
+    height: 54px;
   }
   
-  
   #delete {
-    margin-top: 10px;
+    margin-top: 8px;
     padding-right: 10px;
-    float: right;
+    margin-left: 100px;
   }
 </style>
   
-<div id="outerBox">
+
+  
+<div id="outerBox" style="padding: 15px">
   <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/Logo.png" id="logo">
-   <i style="margin-left: 50px">Unser Name</i>
+   <i style="margin-left: 25px; color: #FF6E40">Le réseau de Pétri</i>
   <button class="simulationButton" id="startButton" style="background-color:#C5E1A5">Start</button>
   <button class="simulationButton" id="runButton" style="background-color:#C5E1A5">Run</button>
   <button class="simulationButton" id="stepButton" style="background-color:#80DEEA">Step</button>
   
-  <span id="simulationState">1</span>
+  <span id="simulationState" style="margin-left: 40px">1</span>
   <input 
     id="simulationSlider" 
     class="slider"
     type="range" 
-    min="0" 
+    min="1" 
     max="60" 
     step="1" 
     value="1"
   />
-  <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/trash_24px.png" id="delete">
+  <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/trash_light_24px.png" id="delete">
 
   
 

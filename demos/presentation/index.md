@@ -41,7 +41,7 @@ Presentation.config(this, {
 
 ---
 
-whatever
+whatever [browse a file](browse://src/client/lively.js)
 
 ---
 

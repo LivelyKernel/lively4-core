@@ -13,7 +13,6 @@ export default class LivelyPetrinetCodeTransition extends Morph {
   
   
   
-
   async initialize() {
     this.windowTitle = "LivelyPetrinetCodeTransition";
     this.registerButtons();
@@ -39,6 +38,20 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.setAttribute("componentId", id);
   }
   
+  get petrinet() {
+    const petrinet = lively.query(this, "lively-petrinet");
+    if (petrinet === undefined) {
+      lively.error("Error: No Petrinet")
+    }
+    return petrinet;
+  }
+  
+  
+  
+  // Interaction
+  
+  
+  
   async onAddCodeButton() {
     const codeEditor = await lively.openComponentInWindow("lively-petrinet-code-editor");
     if (this.currentCode != "") {
@@ -51,14 +64,25 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     return this.get("lively-petrinet-transition").graphicElement();
   }
   
+  setSelectedStyle() {
+    this.graphicElement().style.border = Helper.getSelectedBorder();
+  }
+  
+  setDisselectedStyle() {
+    this.graphicElement().style.border = Helper.getDisselectedBorder();
+  }
+  
+  isActiveTransition(){
+    return this.shouldFire(this.petrinet.places, this.petrinet.transitions, this.petrinet.connectors);
+  }
   
   
   
   addTransactionFunction(text) {
     if (this.currentCode != "") {
-      scriptManager.removeScript(this, "isActiveTransaction")
+      scriptManager.removeScript(this, "shouldFire")
     }
-    scriptManager.addScript(this, text, {name: "isActiveTransaction"});
+    scriptManager.addScript(this, text, {name: "shouldFire"});
     this.currentCode = text;
   }
 
