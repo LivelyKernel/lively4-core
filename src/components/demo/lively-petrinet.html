@@ -1,14 +1,18 @@
 <template id="lively-petrinet" >
 <style type="text/css">
   #outerBox { 
-    width: 100%;
+    display: inline-block;
+    background: grey;
+  }
+  #container {
     height: 100%;
+    width: 100%;
+    background: white;
   }
   
 </style>
-<div id="outerBox">
+<div id="container">
   <slot></slot>
-  <lively-petrinet-toolbar></lively-petrinet-toolbar>
 </div>
 
 

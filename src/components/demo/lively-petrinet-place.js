@@ -12,9 +12,7 @@ export default class LivelyPetrinetPlace extends Morph {
       this.componentId = Helper.getRandomId();
     }
     
-    if (this.history === null) {
-       this.history = [];
-    }
+    this.history = [];
     
     this.windowTitle = "LivelyPetrinetPlace";
     this.registerButtons();
@@ -31,15 +29,6 @@ export default class LivelyPetrinetPlace extends Morph {
   
   // Access
   
-  
-  
-  get history() {
-    return JSON.parse(this.getAttribute("history"));
-  }
-  
-  set history(historyArray) {
-    this.setAttribute("history", JSON.stringify(historyArray));
-  }
     
   get componentId() {
     return this.getAttribute("componentId");
