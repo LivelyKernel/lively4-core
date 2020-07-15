@@ -1,6 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<link rel="stylesheet" type="text/css" href="./style.css"  />
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/style.css"  />
 <link href='https://fonts.googleapis.com/css?family=Lato:400' rel='stylesheet' type='text/css' />
 <link href='https://fonts.googleapis.com/css?family=Raleway:500,600' rel='stylesheet' type='text/css' />
 
@@ -13,7 +13,7 @@ Presentation.config(this, { pageNumbers: true });
 <div class="layout layout-title">
   <div class="header">
     <div class='slots'></div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <span class="title">
@@ -38,12 +38,12 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Outline</h1>
     <ol class='outline'>
-      <li>Dynamic Simulations</li>
+      <li>Simulations</li>
       <li>Motivation</li>
       <li>Project Goal</li>
       <li>Energy Simulation</li>
@@ -65,7 +65,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Dynamic Simulations</h1>
@@ -100,22 +100,34 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Simulations</h1>
-    <p align="center">Real system &#x1f30e; &rarr; too complex &#10068; &#x1f630; &rarr; model &#x1f4dd; &rarr; simulation &#x2699;</p>
-    <ul>
-      <li>Make experiments in simulation &rarr; find hypothesis &rarr; test in real world</li>
-      <li><b>Dynamic simulations:</b> time dependent &#x1f551; &rarr; observe processes and flows</li>
-      <!-- <li>Normally: "More configuration than programming"</li> -->
-    </ul>
+    <p align="center">Real system &#x1f30e; &rarr; Too complex &#10068; &#x1f630; &rarr; Model &#x1f4dd; &rarr; Simulation &#x2699;</p>
+    <div id='energySim'>
+      <div id='leftEnergySim' style='width: 73%;'>
+        <ul>
+          <li>Experimenting in simulation &rarr; finding hypothesis</li>
+          <li>Understanding the behavior of systems</li>
+          <li><b>Dynamic simulations:</b> time dependent &#x1f551; </li>
+          <ul style="list-style-type:none;">
+            <li> &rarr; observe processes and flows</li>
+          </ul>
+        </ul>
+      </div>
+      <div id='bounceBall'>
+        <div class='flexCol'>
+          <img style='width: 94%;' src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/screenshots/2020-07-07%20onlybounce.png"/>
+          <p class='caption'>Bouncing Ball Example</p>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="footer"></div>
 </div>
 
 ---
-
 
 <div class="layout">
   <div class="header">
@@ -125,38 +137,39 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
+  </div>
+  <div class="content">
+    <h1>Demo Bouncing Ball</h1>
+    <video width="823" height="375" controls>
+      <source src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/screencast_bounce.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+  <div class="footer"></div>
+</div>
+
+---
+
+<div class="layout">
+  <div class="header">
+    <div class="slots">
+      <div class='slot'>14.07.2020</div>
+      <div class='slot'>End User Development SS 20</div>
+      <div class='slot'>Lively Simulation</div>
+      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
+    </div>
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Motivation</h1>
-    <div id='energySim'>
-      <div id='leftMotivation'>
-        <ul>
-        <li>Understanding the domain though reverse engineering</li></ul>
-            <!--<li>We don't know the formulas  &rarr; so we tune the parameters so they fit</li>
-            <li>Extrapolate data points / estimate the errors</li>
-              <ul>
-                <li>what happens inbetween the timesteps?</li>
-              </ul>-->
-        <ul>
-          <li>"From whiteboard to code" - approach </li>
-            <ul>
-              <li>Related to: ipython notebooks &rarr; code and documentation snippets</li>
-            </ul>
-        </ul>
-        </div>
-        <div id='bounceBall'>
-            <div class='flexCol'>
-              <img src="../screenshots/2020-07-07%20onlybounce.png"/>
-              <p class='caption'>Bouncing Ball Example</p>
-            </div>
+    <div id='flexCol'>
+      <img class='full' style='height: 275px; margin-left: auto; margin-right: auto;' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/pres-visual.png' />
+      <div id='greenBoxWrapper'>
+        <div class="greenBox">
+          We want to enable end-users to create simulations in a visually structured way
         </div>
       </div>
-      <div id='greenBoxWrapper'>
-          <div class="greenBox">
-            We want to enable end-users to create simulations in a visually structured way
-          </div>
-        </div>
     </div>
   </div>
   <div class="footer"></div>
@@ -172,7 +185,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Project Goal</h1>
@@ -181,18 +194,30 @@ Presentation.config(this, { pageNumbers: true });
         We want to enable end-users to create simulations in a visually structured way
       </div>
     </div>
-    <span>
-      <b>Idea</b> Build a semi-graphical simulation framework
-    </span>
-    <ul>
-      <li><i>Starting point:</i> PoC in Lively Webwerkstatt <img class='inline-img' src='./webwerkstatt.png'/></li>
-      <li>Allow documentation <img class='inline-img' src='./manual.svg'/> to be part of simulation</li>
-      <li>Provide a way that allows simulation result investigation <img class='inline-img' src='./investigation.svg'/></li>
-      <li>Proper Lively integration <img class='inline-img' src='./integration.svg'/></li>
-      <li>Port <img class='inline-img' src='./port.svg'/> existing <i>energy simulation</i> from PoC</li>
-    </ul>
+    <div class='twoPane'>
+      <div id='left' style='width: 57%;'>
+        <span>
+          <b>Idea</b> Build a semi-graphical simulation framework
+        </span>
+        <ul class='no-bullets'>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/webwerkstatt.png'/> <i>Starting point:</i> PoC* in Lively Webwerkstatt (legacy)</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/manual.svg'/> Allow documentation to be part of simulation</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/investigation.svg'/> Provide a way that allows simulation result investigation </li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/integration.svg'/> Proper Lively integration</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/port.svg'/> Port existing <i>energy simulation</i> from legacy</li>
+        </ul>
+      </div>
+      <div id='right' style='width: 40%;'>
+        <div class='flexCol'>
+          <img id='simulationImage' style='height: 204px;' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/simulation.png' />
+          <p class='caption'>Simulation Framework</p>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="footer"></div>
+  <div class="footer">
+    <i>*PoC...Proof of concept</i>
+  </div>
 </div>
 
 ---
@@ -205,7 +230,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Energy Simulation</h1>
@@ -224,7 +249,7 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='rightEnergySim'>
         <div class='flexCol'>
-          <img src="./energy-sim.png" />
+          <img src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/energy-sim.png" />
           <p class='caption'>Energy simulation in Lively Webwerkstatt [1]</p>
         </div>
       </div>
@@ -240,7 +265,7 @@ Presentation.config(this, { pageNumbers: true });
 <div class="layout layout-section-heading">
   <div class="header">
     <div class='slots'></div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <span class="sectionHeading">
@@ -264,7 +289,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Demo</h1>
@@ -281,7 +306,7 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='right'>
         <div class='flexCol'>
-          <img id='livelyEnergySimImage' src='./lively-energy-sim.png' />
+          <img id='livelyEnergySimImage' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/lively-energy-sim.png' />
           <p class='caption'>Energy simulation in Lively4</p>
         </div>
       </div>
@@ -300,18 +325,14 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Demo</h1>
-    TODO insert screencast as backup
-    <ul>
-      <li>show ported energy sim without log component, run</li>
-      <li>reset</li>
-      <li>create log cell (or maybe drag it from the world into sim? - fancy)</li>
-      <li>show connectors for battery or fuel</li>
-      <li>look at the pictures and notes!</li>
-    </ul>
+    <video width="823" height="375" controls>
+      <source src="https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/demo.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
   </div>
   <div class="footer"></div>
 </div>
@@ -326,7 +347,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Demo</h1>
@@ -343,7 +364,7 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='right'>
         <div class='flexCol'>
-          <img id='livelyEnergySimImage' src='./lively-energy-sim.png' />
+          <img id='livelyEnergySimImage' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/lively-energy-sim.png' />
           <p class='caption'>Energy simulation in Lively4</p>
         </div>
       </div>
@@ -357,7 +378,7 @@ Presentation.config(this, { pageNumbers: true });
 <div class="layout layout-section-heading">
   <div class="header">
     <div class='slots'></div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <span class="sectionHeading">
@@ -383,11 +404,11 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Managing State and Behavior</h1>
-    <img class='full' style='height: 375px;' src='./state-behavior.png' />
+    <img class='full' style='height: 378px; margin-left: 24px;' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/state-behavior.png' />
   </div>
   <div class="footer"></div>
 </div>
@@ -402,19 +423,40 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <img class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
-    <h1>Cell views</h1>
+    <h1>Managing State and Behavior</h1>
+    <img class='full' style='height: 375px;' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/self-ui.png' />
+  </div>
+  <div class="footer">
+    Image based on: Smith, R. B., Maloney, J., &amp; Ungar, D. (1995, October). The Self-4.0 user interface: manifesting a system-wide vision of concreteness, uniformity, and flexibility. In Proceedings of the tenth annual conference on Object-oriented programming systems (pp. 47-60).
+  </div>
+</div>
+
+---
+
+<div class="layout">
+  <div class="header">
+    <div class="slots">
+      <div class='slot'>14.07.2020</div>
+      <div class='slot'>End User Development SS 20</div>
+      <div class='slot'>Lively Simulation</div>
+      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
+    </div>
+    <img class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
+  </div>
+  <div class="content">
+    <h1>Cell Views</h1>
     <div class='twoPane'>
       <div id='left'>
         <ul>
-          <li>PoC had <u>one</u> centralized log/ chart</li>
+          <li>Legacy had <u>one</u> centralized log/ chart</li>
           <li>Each cell represents one simulation unit</li>
         </ul>
         <blockquote>
           <p>
-            An environment that works the way nonprogrammers expect is more inviting and helps users become more confident and productive. [1]
+            An environment that works the way nonprogrammers expect is more inviting and helps users become more confident and productive. [2]
           </p>
         </blockquote>
         <p>
@@ -424,8 +466,8 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='right'>
         <div class='flexCol'>
-          <img class='full' id='flipCard' src='./card-flip.png' />
-          <p class='caption'>each entity has different views [1]</p>
+          <img class='full' id='flipCard' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/card-flip.png' />
+          <p class='caption'>each entity has different views [2]</p>
         </div>
       </div>
     </div>
@@ -445,24 +487,24 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <img class='logo' src='./hpi_logo.png' />
+    <img class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
-    <h1>Cell views</h1>
+    <h1>Cell Views</h1>
     <div class='twoPane'>
       <div id='left'>
         <ul>
-          <li>PoC had <u>one</u> centralized log/ chart</li>
+          <li>Legacy had <u>one</u> centralized log/ chart</li>
           <li>Each cell represents one simulation unit</li>
         </ul>
         <blockquote>
           <p>
-            An environment that works the way nonprogrammers expect is more inviting and helps users become more confident and productive. [1]
+            An environment that works the way nonprogrammers expect is more inviting and helps users become more confident and productive. [2]
           </p>
         </blockquote>
         <p>
           &rarr; each unit should have it's own<br />
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;state/ behavior, log, chart
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;state/ behavior, log, chart, <b>...custom view?!</b>
         </p>
       </div>
       <div id='right'>
@@ -475,7 +517,7 @@ Presentation.config(this, { pageNumbers: true });
     </div>
   </div>
   <div class="footer">
-    [1] Myers, B. A., Pane, J. F., &amp; Ko, A. (2004). Natural programming languages and environments. Communications of the ACM, 47(9), 47-52.
+    [2] Myers, B. A., Pane, J. F., &amp; Ko, A. (2004). Natural programming languages and environments. Communications of the ACM, 47(9), 47-52.
   </div>
 </div>
 
@@ -489,17 +531,122 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
-    <h1>Unit support for DSL</h1>
+    <h1>What's Next?</h1>
+    <b>Learnings &#x1f4da;</b>
+      <ul>
+        <li>Lively integration is easier than expected</li>
+        <li>Plenty tools &amp; features &rarr; keeping overview is hard for newbies</li>
+        <li>Stable internet connection required</li>
+        <li>Dataflow for nested components is not specified</li>
+      </ul>
+    <b>Next Steps &#x1f3c3;</b>
+      <ul>
+        <li>Mirroring of cells</li>
+      </ul>
+  </div>
+  <div class="footer"></div>
+</div>
+
+---
+
+<div class="layout">
+  <div class="header">
+    <div class="slots">
+      <div class='slot'>14.07.2020</div>
+      <div class='slot'>End User Development SS 20</div>
+      <div class='slot'>Lively Simulation</div>
+      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
+    </div>
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
+  </div>
+  <div class="content">
+    <h1>What's Next?</h1>
+    <div class='twoPane'>
+      <div id='left'>
+        <b>Future Work ➡️</b>
+        <br/>
+        <br/>
+         &rarr; <i>Gas tank simulation</i> shows functionality for further development
+          <ul>
+            <li><b>Variable number</b> of entities of a cell</li>
+            <li>Creating a <b>visualization</b> component</li>
+          </ul>
+      </div>
+      <div id='right'>
+        <lively-bouncing-ball id='gastank'></lively-bouncing-ball>
+      </div>
+    </div>
+  </div>
+  <div class="footer"></div>
+</div>
+
+---
+
+<div class="layout">
+  <div class="header">
+    <div class="slots">
+      <div class='slot'>14.07.2020</div>
+      <div class='slot'>End User Development SS 20</div>
+      <div class='slot'>Lively Simulation</div>
+      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
+    </div>
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
+  </div>
+  <div class="content">
+    <h1>Project Goal</h1>
+    <div id='greenBoxWrapper'>
+      <div class="greenBox">
+        We want to enable end-users to create simulations in a visually structured way
+      </div>
+    </div>
+    <div class='twoPane'>
+      <div id='left' style='width: 57%;'>
+        <span>
+          <b>Idea</b> Build a semi-graphical simulation framework
+        </span>
+        <ul class='no-bullets'>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/webwerkstatt.png'/> <i>Starting point:</i> PoC* in Lively Webwerkstatt (legacy)</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/manual.svg'/> Allow documentation to be part of simulation</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/investigation.svg'/> Provide a way that allows simulation result investigation </li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/integration.svg'/> Proper Lively integration</li>
+          <li><img class='inline-img' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/port.svg'/> Port existing <i>energy simulation</i> from legacy</li>
+        </ul>
+      </div>
+      <div id='right' style='width: 40%;'>
+        <div class='flexCol'>
+          <img id='simulationImage' style='height: 230px;' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/simulation-connect.png' />
+          <p class='caption'>Simulation Framework</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"></div>
+</div>
+
+---
+
+<div class="layout">
+  <div class="header">
+    <div class="slots">
+      <div class='slot'>14.07.2020</div>
+      <div class='slot'>End User Development SS 20</div>
+      <div class='slot'>Lively Simulation</div>
+      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
+    </div>
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
+  </div>
+  <div class="content">
+    <h1>Unit Support for DSL</h1>
     <div class='twoPane' style='height: fit-content'>
       <div id='left' style="width: 75%;">
         <span class='mb2' style='display: block;'>
           <b>Goal</b> Allow usage of units in DSL and support automatic conversion
         </span>
         <span class='mb2' style='display: block;'>
-          <b>PoC</b> Add units as comment to state only
+          <b>Legacy</b> Add units as comment to state only
         </span>
         <span class='success mb2' style='display: block;'>
           <b>Solution</b> Use mathjs [3] to parse the code and work with units
@@ -507,13 +654,13 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='right' style="width: 25%;">
         <div id='mathjsIcon'>
-          <img width='165' height='50' src='./mathjs.png' />
+          <img width='165' height='50' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/mathjs.png' />
         </div>
       </div>
     </div>
     <blockquote>
       <p>
-        [Mathjs] features a flexible expression parser [...] and offers an integrated solution to work with [...] units, and matrices. Powerful and easy to use.
+        [Mathjs] features a flexible expression parser [...] and offers an integrated solution to work with [...] units, and matrices. Powerful and easy to use. [3]
       </p>
     </blockquote>
     <pre style='margin: 0;'>math.evaluate('5.08 cm + 2 inch')     // 10.16 cm</pre>  
@@ -533,17 +680,17 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
-    <h1>Unit support for DSL</h1>
+    <h1>Outlook: Unit Support for DSL</h1>
     <div class='twoPane' style='height: fit-content'>
       <div id='left' style="width: 75%;">
         <span class='mb2' style='display: block;'>
           <b>Goal</b> Allow usage of units in DSL and support automatic conversion
         </span>
         <span class='mb2' style='display: block;'>
-          <b>PoC</b> Add units as comment to state only
+          <b>Legacy</b> Add units as comment to state only
         </span>
         <span class='error mb2' style='display: block; text-decoration: line-through;'>
           <b>Solution</b> Use mathjs [3] to parse the code and work with units
@@ -551,13 +698,13 @@ Presentation.config(this, { pageNumbers: true });
       </div>
       <div id='right' style="width: 25%;">
         <div id='mathjsIcon'>
-          <img width='165' height='50' src='./mathjs.png' />
+          <img width='165' height='50' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/mathjs.png' />
         </div>
       </div>
     </div>
     <blockquote>
       <p>
-        [Mathjs] features a flexible expression parser [...] and offers an integrated solution to work with [...] units, and matrices. Powerful and easy to use.
+        [Mathjs] features a flexible expression parser [...] and offers an integrated solution to work with [...] units, and matrices. Powerful and easy to use. [3]
       </p>
     </blockquote>
     <pre style='margin: 0;'>math.evaluate('5.08 cm + 2 inch')     // 10.16 cm</pre>    
@@ -573,6 +720,8 @@ Presentation.config(this, { pageNumbers: true });
   </div>
 </div>
 
+<!-- 
+
 ---
 
 <div class="layout">
@@ -583,7 +732,7 @@ Presentation.config(this, { pageNumbers: true });
       <div class='slot'>Lively Simulation</div>
       <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
     </div>
-    <image class='logo' src='./hpi_logo.png' />
+    <image class='logo' src='https://lively-kernel.org/lively4/lively4-livelyenergy/demos/engery-sim/presentation/hpi_logo.png' />
   </div>
   <div class="content">
     <h1>Performance</h1>
@@ -609,97 +758,4 @@ Presentation.config(this, { pageNumbers: true });
   </div>
 </div>
 
----
-
-<div class="layout">
-  <div class="header">
-    <div class="slots">
-      <div class='slot'>14.07.2020</div>
-      <div class='slot'>End User Development SS 20</div>
-      <div class='slot'>Lively Simulation</div>
-      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
-    </div>
-    <image class='logo' src='./hpi_logo.png' />
-  </div>
-  <div class="content">
-    <h1>Project Goal ✅</h1>
-    <div id='greenBoxWrapper'>
-      <div class="greenBox">
-        We want to enable end-users to create simulations in a visually structured way
-      </div>
-    </div>
-    <span>
-      <b>Idea</b> Build a semi-graphical simulation framework
-    </span>
-    <ul>
-      <li><i>Starting point:</i> PoC in Lively Webwerkstatt <img class='inline-img' src='./webwerkstatt.png'/></li>
-      <li>Allow documentation <img class='inline-img' src='./manual.svg'/> to be part of simulation</li>
-      <li>Provide a way that allows simulation result investigation <img class='inline-img' src='./investigation.svg'/></li>
-      <li>Proper Lively integration <img class='inline-img' src='./integration.svg'/></li>
-      <li>Port <img class='inline-img' src='./port.svg'/> existing <i>energy simulation</i> from PoC</li>
-    </ul>
-  </div>
-  <div class="footer"></div>
-</div>
-
----
-
-<div class="layout">
-  <div class="header">
-    <div class="slots">
-      <div class='slot'>14.07.2020</div>
-      <div class='slot'>End User Development SS 20</div>
-      <div class='slot'>Lively Simulation</div>
-      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
-    </div>
-    <image class='logo' src='./hpi_logo.png' />
-  </div>
-  <div class="content">
-    <h1>What's Next?</h1>
-    <b>Learnings &#x1f4da;</b>
-      <ul>
-        <li>Lively integration is easier than expected <img class='inline-img' src='./integration.svg'/></li>
-        <li>Plenty tools &amp; features &rarr; keeping overview is hard for newbies</li>
-        <li>Stable internet connection required &#x1f310;</li>
-        <li>Dataflow for nested components is not specified</li>
-      </ul>
-    <b>Next Steps &#x1f3c3;</b>
-      <ul>
-        <li>Mirroring of cells</li>
-      </ul>
-  </div>
-  <div class="footer"></div>
-</div>
-
----
-
-<div class="layout">
-  <div class="header">
-    <div class="slots">
-      <div class='slot'>14.07.2020</div>
-      <div class='slot'>End User Development SS 20</div>
-      <div class='slot'>Lively Simulation</div>
-      <div class='slot'>Leonardo Hübscher, Juliane Kleinknecht</div>
-    </div>
-    <image class='logo' src='./hpi_logo.png' />
-  </div>
-  <div class="content">
-    <h1>What's Next?</h1>
-    <div class='twoPane'>
-      <div id='left'>
-        <b>Future Work ➡️</b>
-        <ul>
-          <li>Gas tank example is a direction where it could go</li>
-          <ul>
-            <li>Variable number of entities of a cell/ array of a cells</li>
-            <li>Creating a visualization/ painting component</li>
-          </ul>
-        </ul>
-      </div>
-      <div id='right'>
-        <lively-bouncing-ball></lively-bouncing-ball>
-      </div>
-    </div>
-  </div>
-  <div class="footer"></div>
-</div>
+-->

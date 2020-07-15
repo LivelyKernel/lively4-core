@@ -277,6 +277,17 @@ blockquote p {
   text-align: center;
 }
 
+.no-bullets {
+  list-style-type: none;
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.no-bullets > li::before {
+  display: none;
+}
+
 /* Component specific */
 #energySim {
   display: flex;
@@ -284,7 +295,7 @@ blockquote p {
 }
 
 #leftEnergySim {
-  min-width: 345px;
+  min-width: 375px;
 }
 
 #rightEnergySim {
@@ -322,15 +333,42 @@ blockquote p {
 #bounceBall {
   display: flex;
   flex-grow: 1;
-  height: 300px;
+  align-self: center;
+  width: 60%;
+  height: 100%;
 }
 
 #bounceBall img {
   align-self: start;
   flex: 0 0 auto;
-  width: 100%;
   object-fit: contain;
   margin: 30px 20px 0px 20px;
+}
+
+#energySim {
+  display: flex;
+  height: 100%;
+}
+
+#energySim {
+  display: flex;
+  height: 100%mn;
+}
+#ipython {
+  display: flex;
+  flex-grow: 1;
+  width: 80px;
+}
+
+#motivation {
+  display: flex;
+  height: 100%mn;
+}
+#ipython img {
+  align-self: start;
+  flex: 0 0 auto;
+  object-fit: contain;
+  margin: 0px 10px 0px 30px;
 }
 
 #simulationCellWrapper {
@@ -342,4 +380,8 @@ blockquote p {
 #mathjsIcon {
   display: flex;
   justify-content: flex-end;
+}
+
+#gastank {
+  zoom: 70%;
 }

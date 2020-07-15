@@ -407,6 +407,28 @@ extend(Array.prototype, {
     return this.map(mapper, ...rest).filter(Function.identity);
   },
   
+  /**
+   * Randomly selects an item, considering the given weight function.
+   * @param weightMapper (Function<value, index, array -> Number>) standard mapping callback to calculate the weight of each item.
+   * @returns {any} The selected item from the Array.
+   */
+  weightedSample(weightMapper = () => 1, ...rest) {
+    const weights = this.map(weightMapper, ...rest);
+    
+    let totalWeight = weights.sum();
+    let random = Math.random() * totalWeight;
+
+    for (let i = 0; i < weights.length; i++) {
+      if (random < weights[i]) {
+        return this[i];
+      }
+
+      random -= weights[i];
+    }
+
+    return undefined;
+  },
+  
 
 });
 
