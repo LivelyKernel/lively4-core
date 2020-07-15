@@ -22,6 +22,7 @@ export default class LivelyPetrinet extends Morph {
     
     await this.initializeConnectors();
     this.updateConnectorPosition();
+    this.changePosition();
     
     this.selectedElement = undefined
   }
@@ -152,7 +153,7 @@ export default class LivelyPetrinet extends Morph {
     await petrinetEditor.initializePetrinet(this);
   }
   
-  changePosition() {
+  getPositions() {
     let maxXPosition = 0;
     let minXPosition = 10000;
     let maxYPosition = 0;
@@ -165,6 +166,21 @@ export default class LivelyPetrinet extends Morph {
       minYPosition = Math.min(elementPosition.y, minYPosition);
     }
     return {maxX: maxXPosition, minX: minXPosition, maxY: maxYPosition,       minY: minYPosition}
+  }
+  
+  changePosition() {
+    const {maxX, minX, maxY, minY} = this.getPositions();
+    const windowExtent = lively.getExtent(this.get("#container"));
+    console.log(windowExtent);
+    const rightOffset = 75;
+    let scalingY = (windowExtent.y - rightOffset) / (maxY - minY);
+    let scalingX = (windowExtent.x - rightOffset)/ (maxX - minX);
+    for (const element of [...this.places, ...this.transitions]) {
+      const newY = (lively.getPosition(element).y - minY) * scalingY;
+      const newX = (lively.getPosition(element).x - minX) * scalingX;
+      lively.setPosition(element, pt(newX, newY));
+    }
+    
   }
   
 
