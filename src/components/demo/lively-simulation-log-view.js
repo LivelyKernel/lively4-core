@@ -40,7 +40,7 @@ export default class LivelySimulationLogView extends Morph {
   // other
   log(timestamp, entry) {
     const { logs } = this;
-    const timestampedEntry = _.assign({ timestamp }, entry);
+    const timestampedEntry = _.assign({ timestamp }, _.mapValues(entry, 'value'));
     logs.push(timestampedEntry);
   }
   

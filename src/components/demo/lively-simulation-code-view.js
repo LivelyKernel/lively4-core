@@ -46,4 +46,9 @@ export default class LivelySimulationCodeView extends Morph {
     return this.get('#code').highlight(cellRef);
   }
   
+  preCompile() {
+    const code = this.get('#code');
+    return code.preCompile && code.preCompile();
+  }
+  
 }

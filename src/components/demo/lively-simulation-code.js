@@ -24,12 +24,12 @@ export default class LivelySimulationCode extends Morph {
   
   initializeSnippet(snippet = DEFAULT_SNIPPET) {
     const codeMirror = this.get('#codeMirror');
-    codeMirror.editorLoaded().then(() => this.initializeEditor(snippet));
+    codeMirror.editView(snippet);
+    codeMirror.editorLoaded().then(() => this.initializeEditor());
   }
   
-  initializeEditor(snippet) {
+  initializeEditor() {
     const codeMirror = this.get('#codeMirror');
-    codeMirror.editor.setValue(snippet);
     codeMirror.editor.setOption('lineNumbers', false);
     codeMirror.editor.setOption('gutters', []);
     codeMirror.editor.setOption('highlight', false);
@@ -140,7 +140,7 @@ export default class LivelySimulationCode extends Morph {
   }
   
   preTransformExternalState(processedSnippet) {
-    // adapted from old simulation
+    // adapted from old simulation (#Cell -> this['cell'])
     return processedSnippet.replace(/#([A-Za-z][A-Za-z0-9]*(?:#[A-Za-z0-9]*)*)(\$)?(?!#)/g, 
         (m, $1) => {
             var s = "this"
@@ -279,7 +279,8 @@ export default class LivelySimulationCode extends Morph {
   }
   
   getSnippet() {
-    return this.get('#codeMirror').editor.getValue();
+    const editor = this.get('#codeMirror').editor;
+    return editor ? editor.getValue() : '';
   }
   
   isFocused() {
