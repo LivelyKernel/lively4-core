@@ -66,7 +66,10 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   const menuItems = [['selection to local variable', () => {
     menu.remove();
     astCapabilities.extractExpressionIntoLocalVariable();
-  }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
+  }, '→', fa('share-square-o', 'flip-horizontal')], ['inline variable', () => {
+    menu.remove();
+    astCapabilities.inlineLocalVariable();
+  }, '→', fa('external-link', 'flip-vertical')], ['wrap into active expression', () => {
     menu.remove();
     astCapabilities.wrapExpressionIntoActiveExpression();
   }, '→', fa('suitcase')], ['Rename', () => {
