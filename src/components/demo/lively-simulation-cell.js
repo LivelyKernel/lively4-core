@@ -11,7 +11,7 @@ export default class LivelySimulationCell extends Morph {
   initialize() {
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
-    this.shouldSkip = this.hasAttribute('data-should-skip');
+    this.shouldSkip = this.hasAttribute('data-should-skip') || this.isMirrorCell();
     this.executeSingle = false;
     this.initializeTitleBar();
     this.initializeCodeView();
@@ -100,7 +100,8 @@ export default class LivelySimulationCell extends Morph {
     return this.get('#codeView').getState();
   }
   
-  setState(state) {
+  setState(state, time) {
+    if (time) this.log(time, state);
     return this.get('#codeView').setState(state);
   }
   
@@ -118,18 +119,14 @@ export default class LivelySimulationCell extends Morph {
     this.get('#logView').clearLog();
   }
   
-  execute(timestamp, scope = {}) {
+  execute(scope = {}) {
     const { executeSingle, shouldSkip } = this;
-    if (!executeSingle && shouldSkip) return Promise.resolve(scope);
-    return this.get('#codeView').execute(scope)
-      .then(updatedScope => {
-        this.log(timestamp, updatedScope[this.getNormalizedName()]);
-        return updatedScope;
-      });
+    if (!executeSingle && shouldSkip || this.isMirrorCell()) return Promise.resolve(scope);
+    return this.get('#codeView').execute(scope);
   }
   
   executeSelf() {
-    if (this.executeSingle) return;
+    if (this.executeSingle || this.isMirrorCell()) return
     const simulation = this.getSimulation();
     if (!simulation.executeSingleCell) return;
     this.executeSingle = true;
@@ -137,6 +134,10 @@ export default class LivelySimulationCell extends Morph {
   }
   
   delete() {
+    const simulation = this.getSimulation();
+    if (simulation.removeMirrorCells && !this.isMirrorCell()) {
+      simulation.removeMirrorCells(this.getName());
+    }
     this.remove();
   }
   
@@ -146,6 +147,12 @@ export default class LivelySimulationCell extends Morph {
     simulation.cloneCell(event, this);
   }
   
+  mirror(event) {
+    const simulation = this.getSimulation();
+    if (!simulation.mirrorCell) return;
+    simulation.mirrorCell(event, this);
+  }
+  
   switchViewTo(target = DEFAULT_VIEW) {
     const views = _.map(['codeView', 'logView', 'chartView'], name => this.get(`#${name}`));
     _.forEach(views, view => view.classList.remove('active'));
@@ -153,6 +160,7 @@ export default class LivelySimulationCell extends Morph {
   }
   
   toggleSkip() {
+    if (this.isMirrorCell()) return;
     this.shouldSkip = !this.shouldSkip;
     const { shouldSkip } = this;
     this.get('#viewSlot').setAttribute('disabled', shouldSkip);
@@ -188,5 +196,9 @@ export default class LivelySimulationCell extends Morph {
   highlight(cellRef) {
     this.get('#titleBar').highlight(cellRef === this.getNormalizedName().toLowerCase());
     this.get('#codeView').highlight(cellRef);
+  }
+  
+  isMirrorCell() {
+    return this.hasAttribute('data-is-mirror');
   }
 }

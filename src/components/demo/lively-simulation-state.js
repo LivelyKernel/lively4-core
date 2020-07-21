@@ -7,6 +7,11 @@ const DEFAULT_STATE = '{}';
 
 export default class LivelySimulationState extends Morph {
 
+  constructor() {
+    super();
+    this.state = DEFAULT_STATE;
+  }
+  
   // life cycle
   initialize() {
     this.initializeEntries();
@@ -57,6 +62,8 @@ export default class LivelySimulationState extends Morph {
   save() {
     try {
       this.setState(this.entriesToState());
+      const codeView = this.getCodeView();
+      if (codeView && codeView.preCompile) codeView.preCompile(); 
       this.clearError();
     } catch ({ message }) {
       this.setError(message);
@@ -77,7 +84,11 @@ export default class LivelySimulationState extends Morph {
   }
 
   setState(state) {
-    this.state = state;
+    const stateWithUnits = _.mapValues(state, (entry, key) => ({
+      unit: _.isObject(entry) ? _.get(entry, 'unit', '') : this.state[key] && this.state[key].unit || '',
+      value: _.isObject(entry) ? _.get(entry, 'value', 0) : entry
+    }));
+    this.state = stateWithUnits;
     if (this.isEditing) return;
     this.updateEntries();
   }
@@ -117,10 +128,15 @@ export default class LivelySimulationState extends Morph {
   }
   
   entriesToStateJSON() {
-    const entries = _.map([...this.get('#entries').children], entry => [entry.getKey(), entry.getValue()]);
-    if (_.isEmpty(entries)) return undefined;
+    const entries = _.map([...this.get('#entries').children], entry => ([
+      entry.getKey(), 
+      {
+        value: isNaN(entry.getValue()) ? entry.getValue() : parseFloat(entry.getValue()),
+        unit: entry.getUnit()
+      }
+    ]));
     const filteredEntries = _.reject(entries, ([ key ]) => _.isEmpty(key.trim()));
-    const entriesAsJson = _.map(filteredEntries, ([ key, value ]) => `"${key}": ${isNaN(value) ? `"${value}"` : value}`);
+    const entriesAsJson = _.map(filteredEntries, (entry) => JSON.stringify(_.fromPairs([entry])).slice(1, -1));
     return `{
       ${
         _.join(entriesAsJson, ',\n')
@@ -141,7 +157,7 @@ export default class LivelySimulationState extends Morph {
     if (_.isEqual(state, {})) return this.addEmptyEntry();
     const entries = _.reject([...this.get('#entries').children], entry => _.isEmpty(entry.getKey().trim()));
     _.forEach(entries, entry => {
-      const value = state[entry.getKey()];
+      const value = state[entry.getKey()].value;
       entry.setValue(isNaN(value) ? value : parseFloat(value.toFixed(3)));
     });
     this.ensureEmpty();
@@ -151,7 +167,7 @@ export default class LivelySimulationState extends Morph {
     const { state } = this;
     const entries = this.get('#entries');
     entries.innerHTML = ''; // no diffing, just plain remove all + add
-    const newEntries = _.map(_.toPairs(state), ([key, value]) => this.createEntry(key, isNaN(value) ? value : parseFloat(value.toFixed(3))));
+    const newEntries = _.map(_.toPairs(state), ([key, { unit, value }]) => this.createEntry(key, isNaN(value) ? value : parseFloat(value.toFixed(3)), unit));
     _.forEach(newEntries, (entry) => entries.appendChild(entry));
     this.addEmptyEntry();
   }
@@ -162,7 +178,7 @@ export default class LivelySimulationState extends Morph {
   
   addEmptyEntry() {
     const entries = this.get('#entries');
-    entries.appendChild(this.createEntry('', ''));
+    entries.appendChild(this.createEntry('', '', ''));
   }
   
   ensureEmpty(entry) {
@@ -170,20 +186,27 @@ export default class LivelySimulationState extends Morph {
     if (entry) entry.focus();
   }
   
-  createEntry(key, value) {
+  createEntry(key, value, unit) {
     const entry = (
       <div class='entry'>
         <input value={String(key)} placeholder='Name' />
         <input value={String(value)} placeholder='Value' />
+        <input value={String(unit)} placeholder='Unit' />
         <i class="fa fa-times"></i>
       </div>
     );
     entry.children[0].addEventListener('input', () => this.ensureEmpty(entry));
     entry.children[1].addEventListener('input', () => this.ensureEmpty(entry));
-    entry.children[2].addEventListener('mousedown', () => this.handleDelete(entry));
+    entry.children[2].addEventListener('input', () => this.ensureEmpty(entry));
+    entry.children[3].addEventListener('mousedown', () => this.handleDelete(entry));
     entry.getKey = () => entry.children[0].value;
     entry.getValue = () => entry.children[1].value;
+    entry.getUnit = () => entry.children[2].value;
     entry.setValue = (value) => entry.children[1].value = value;
     return entry;
+  }
+  
+  getCodeView() {
+    return this.getRootNode().host;
   }
 }

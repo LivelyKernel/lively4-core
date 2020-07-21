@@ -71,12 +71,12 @@ export default class LivelySimulationChartView extends Morph {
     const newDatasets = _.difference(_.keys(entry), _.keys(keyedDatasets));
     _.forEach(_.toPairs(keyedDatasets), ([label, dataset]) => dataset.data.push({
       x: timestamp,
-      y: entry[label]
+      y: entry[label].value
     }));
     _.forEach(newDatasets, label => 
       chart.data.datasets.push({
         label,
-        data: [{ x: timestamp, y: entry[label] }]
+        data: [{ x: timestamp, y: entry[label].value }]
       }));
     if (this.classList.contains('active')) chart.update(0);
   }

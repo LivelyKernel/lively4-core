@@ -21,9 +21,14 @@ export default class LivelySimulationTitlebar extends Morph {
   }
   
   initializeName(name = DEFAULT_NAME) {
+    const cell = this.getCell();
     const cellNameInput = this.get('#cellName');
     this.setName(name);
-    cellNameInput.addEventListener('focusout', () => this.handleCellNameInputFocusOut());
+    if (cell && cell.isMirrorCell()) {
+      cellNameInput.setAttribute('disabled', true);
+    } else {
+      cellNameInput.addEventListener('focusout', () => this.handleCellNameInputFocusOut());
+    }
   }
   
   initializeViewSwitch() {
@@ -101,7 +106,8 @@ export default class LivelySimulationTitlebar extends Morph {
           (event) => cell.clone(event), 
           cell.shouldSkip, 
           () => cell.toggleSkip(), 
-          () => cell.executeSelf()));
+          () => cell.executeSelf(),
+          (event) => cell.mirror(event)));
         this.shadowRoot.appendChild(livelyMenu);
         livelyMenu.style.top = `${menuIcon.offsetHeight}px`;
         setTimeout(() => livelyMenu.addEventListener('click', () => this.handleMenuClick()), 0);
@@ -157,7 +163,7 @@ export default class LivelySimulationTitlebar extends Morph {
   }
 }
 
-const menu = (clone, shouldSkip, toggleSkip, execute) => [
+const menu = (clone, shouldSkip, toggleSkip, execute, mirror) => [
   [
     "Clone",
     event => clone && clone(event),
@@ -175,5 +181,11 @@ const menu = (clone, shouldSkip, toggleSkip, execute) => [
     () => execute && execute(),
     "",
     '<i class="fa fa-cogs"></i>'
+  ],
+  [
+    'Mirror',
+    event => mirror && mirror(event),
+    "",
+    '<i class="fa fa-anchor"></i>'
   ]
 ]

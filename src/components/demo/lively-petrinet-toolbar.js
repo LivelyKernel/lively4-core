@@ -32,7 +32,7 @@ export default class LivelyPetrinetToolbar extends Morph {
   
   
   get petrinet() {
-    const petrinet = lively.query(this, "lively-petrinet");
+    const petrinet = lively.query(this, "lively-petrinet-editor");
     if (petrinet === undefined) {
       lively.error("Error: No Petrinet")
     }
@@ -93,15 +93,15 @@ export default class LivelyPetrinetToolbar extends Morph {
 
     if (!this.isStarted()) {
       startButton.innerHTML = STOP;
-      startButton.style.backgroundColor = "#FFCC80";
+      startButton.style.borderColor = "#FFCC80";
       this.petrinet.start();
     } else {
       // Change Start Button
       startButton.innerHTML = START;
-      startButton.style.backgroundColor ="#C5E1A5";
+      startButton.style.borderColor ="#C5E1A5";
       // Change Run Button
       this.get("#runButton").innerHTML = RUN;
-      runButton.style.backgroundColor = "#C5E1A5";
+      runButton.style.borderColor = "#C5E1A5";
       this.petrinet.setState(0);
       this.updateSlider(1);
 
@@ -125,11 +125,11 @@ export default class LivelyPetrinetToolbar extends Morph {
     if (!this.isRunning()) {
       this.petrinet.resetToState(this.getCurrentState())
       runButton.innerHTML = PAUSE;
-      runButton.style.backgroundColor = "#FFCC80";
+      runButton.style.bordergroundColor = "#FFCC80";
       
     } else {
       runButton.innerHTML = RUN;
-      runButton.style.backgroundColor = "#C5E1A5";
+      runButton.style.bordergroundColor = "#C5E1A5";
     }
     
         
