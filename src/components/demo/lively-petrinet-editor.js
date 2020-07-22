@@ -14,23 +14,25 @@ export default class LivelyPetrinetEditor extends Morph {
   
   async initialize() {
     this.windowTitle = "LivelyPetrinetEditor";
-    lively.setExtent(this.parentNode, pt(1280,860));
     this.registerButtons();
     this.mouseIsOnNode = false;
-    this.selectedElement = undefined
+    this.selectedElement = undefined;
+    if (this.petrinet != undefined) {
+        this.addAllListeners();
+    }
   }
   
   
   async initializePetrinet(petrinet) {
     await this.appendChild(petrinet);
-    lively.removeEventListener("openEditor", petrinet);
     this.addAllListeners();
   }
   
   
   
-  
   // Access
+  
+  
   
   get petrinet() {
     return this.get("lively-petrinet");
@@ -116,7 +118,6 @@ export default class LivelyPetrinetEditor extends Morph {
       this.persistPlaceState();
   }
   
-  
   canFire(transition) {
       const placesBefore = this.getFirstComponents(this.getConnectorsBefore(transition));
       const placesAfter = this.getSecondComponents(this.getConnectorsAfter(transition));
@@ -193,11 +194,13 @@ export default class LivelyPetrinetEditor extends Morph {
         evt.stopPropagation();
         evt.preventDefault();
         const mousePosition = this.getPositionInWindow(evt);
+        const offset = lively.getGlobalPosition(this.get("lively-petrinet")).y - lively.getGlobalPosition(this).y;
+        const positionInPetrinet = pt(mousePosition.x, mousePosition.y - offset)
 
         var menu = new ContextMenu(this, [
-              ["add place", () => this.addPlace(mousePosition)],
-              ["add transition", () => this.addTransition(mousePosition)],
-              ["add code transition", () => this.addCodeTransition(mousePosition)],
+              ["add place", () => this.addPlace(positionInPetrinet)],
+              ["add transition", () => this.addTransition(positionInPetrinet)],
+              ["add code transition", () => this.addCodeTransition(positionInPetrinet)],
           
             ]);
         menu.openIn(document.body, evt, this);
@@ -208,8 +211,8 @@ export default class LivelyPetrinetEditor extends Morph {
   async livelyExample() {
     const petrinet = await (<lively-petrinet></lively-petrinet>);
     await this.initializePetrinet(petrinet);
-    await this.addPlace(pt(100, 100));
-    petrinet.places[0].addToken();
+    await this.addPlace(pt(0,0));
+    this.petrinet.places[0].addToken();
     await this.addPlace(pt(500, 100));
     await this.addTransition(pt(300, 100));
     this.addConnector(this.places[0], this.transitions[0]);
@@ -224,10 +227,9 @@ export default class LivelyPetrinetEditor extends Morph {
   
   async onMouseMove(evt) { 
     const cursor = this.get("#cursor");
-    const pos = this.getPositionInWindow(evt)
-    const offset = 5;
+    const pos = pt(evt.clientX, evt.clientY);
     if (this.connectionIsStarted()) {
-      lively.setPosition(cursor, pt(pos.x - offset,pos.y - offset));
+      lively.setGlobalPosition(cursor, pos);
     }
   }
   
@@ -266,9 +268,10 @@ export default class LivelyPetrinetEditor extends Morph {
     var cursor = await (<div></div>)
     cursor.style.backgroundColor = "blue"
     cursor.id = "cursor"
-    lively.setExtent(cursor, pt(5,5))
-    lively.setPosition(cursor, lively.getPosition(element));
-    this.append(cursor);
+    lively.setExtent(cursor, pt(5,5));
+    const position = lively.getGlobalPosition(element);
+    await this.append(cursor);
+    lively.setGlobalPosition(cursor, position);
     
     //Connect Cursor To Connector
     connector.connectTo(cursor);
@@ -316,8 +319,6 @@ export default class LivelyPetrinetEditor extends Morph {
     const newConnector = await this.petrinet.addConnector(fromComponent, toComponent);
     lively.addEventListener("onClick", newConnector, "click", (evt) => this.onElementClick(evt, newConnector));
   }
-  
-
   
   async addTransition(position) {
     const transition = await this.petrinet.addTransition(position);
@@ -372,26 +373,6 @@ export default class LivelyPetrinetEditor extends Morph {
         otherElement.setDisselectedStyle();
       }
     }
-  }
-  
-  async savePetrinet() {
-    var name = "src/parts/test.html";
-    if (!name) return;
-    var url = name;
-
-    if (!url.match(/https?:\/\//)) {
-      if (url.match(/^[a-zA-Z0-9]+\:/)) {
-        // url = lively.swxURL(url)
-      } else {
-        url = lively4url + "/" + url 
-      }
-    }
-    var source = ""
-    if (name.match(/\.html$/)) {
-      source = this.petrinet.outerHTML  
-    }
-    const result = await lively.files.saveFile (url, source);
-    return result;
   }
   
   
