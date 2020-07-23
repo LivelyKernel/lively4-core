@@ -34,21 +34,11 @@ export default class LivelyPetrinetProbTransition extends Morph {
 }
   
   
-  
-  // Access
-  
+  // Interface
   
   
-  get componentId() {
-    return this.getAttribute("componentId");
-  }
   
-  set componentId(id) {
-    this.setAttribute("componentId", id);
-  }
-  
-  
-  isActiveTransition(){
+  isActiveTransition(placesBefore, placesAfter){
     const randomNumber = Math.random();
     var prob = this.get("#inputProbability").value;
     if( randomNumber <= prob){
@@ -58,10 +48,35 @@ export default class LivelyPetrinetProbTransition extends Morph {
     }
   }
   
+  getPlacesToRemoveTokenFrom(placesBefore, placesAfter) {
+    return placesBefore;
+  }
+  
+  getPlacesToAddTokenTo(placesBefore, placesAfter) {
+    return placesAfter;
+  }
+  
+  
+  
+  // Access
+  
+  get petrinet(){
+    return Helper.getPetrinetOf(this);
+  }
+  
+  get componentId() {
+    return this.getAttribute("componentId");
+  }
+  
+  set componentId(id) {
+    this.setAttribute("componentId", id);
+  }
   
   graphicElement() {
     return this.get("lively-petrinet-transition").graphicElement();
   }
+  
+  
   
   
   

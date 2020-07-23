@@ -56,16 +56,12 @@ export default class LivelyPetrinetEditor extends Morph {
   
   addAllListeners() {
     lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
-
     lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
-    
-
-    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false)
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     
     for (const place of this.places) {
       this.addListeners(place)
     }
-    
     for (const transition of this.transitions) {
       this.addListeners(transition)
     }
@@ -128,7 +124,7 @@ export default class LivelyPetrinetEditor extends Morph {
       const placesBefore = this.getFirstComponents(this.getConnectorsBefore(transition));
       const placesAfter = this.getSecondComponents(this.getConnectorsAfter(transition));
       const firingIsPossible = placesBefore.every((place) => place.tokens.length > 0);
-      const transitionAllowsFiring = transition.isActiveTransition();
+      const transitionAllowsFiring = transition.isActiveTransition(placesBefore, placesAfter);
       if (!firingIsPossible || !transitionAllowsFiring) {
         return false;
       }
@@ -138,19 +134,32 @@ export default class LivelyPetrinetEditor extends Morph {
   async fire(transition) {
       const connectorsBefore = this.getConnectorsBefore(transition);
       const connectorsAfter = this.getConnectorsAfter(transition);
-      for (const place of this.getFirstComponents(connectorsBefore)) {
+      const placesBefore = this.getFirstComponents(connectorsBefore);
+      const placesAfter = this.getSecondComponents(connectorsAfter);
+      const placesToRemoveTokenFrom = transition.getPlacesToRemoveTokenFrom(placesBefore, placesAfter);
+      const placesToAddTokenTo = transition.getPlacesToAddTokenTo(placesBefore, placesAfter);
+      for (const place of placesToRemoveTokenFrom) {
         place.deleteToken();
       }
     
       // Animation
-      await Promise.all(connectorsBefore.map(connector => connector.animateMovingToken()));
+      await Promise.all(placesToRemoveTokenFrom.map(place => this.getConnectorOfPlace(place, connectorsBefore)).map(connector => connector.animateMovingToken()));
     
-      await Promise.all(connectorsAfter.map(connector => connector.animateMovingToken()));
+      await Promise.all(placesToAddTokenTo.map(place => this.getConnectorOfPlace(place, connectorsAfter)).map(connector => connector.animateMovingToken()));
     
-      for (const place of this.getSecondComponents(connectorsAfter)) {
+      for (const place of placesToAddTokenTo) {
         await place.addToken();
       }
       return
+  }
+  
+  getConnectorOfPlace(place, connectorsToCompare) {
+    for (const connector of connectorsToCompare) {
+      if (connector.fromComponentId === place.componentId || connector.toComponentId === place.componentId) {
+            return connector;
+      }
+    }
+    lively.error("When transitioning, did not found connector that connects the place with the transition")
   }
   
   getFirstComponents(connectors) {

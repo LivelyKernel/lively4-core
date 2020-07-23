@@ -12,7 +12,6 @@ export class Helper {
     });
   }
   
-  
   static getRandomId() {
      return Math.random().toString(36).substring(7);
   }
@@ -23,6 +22,14 @@ export class Helper {
   
   static getDisselectedBorder() {
     return "1px solid #333333";
+  }
+  
+  static getPetrinetOf(component){
+    const petrinet = lively.query(component, "lively-petrinet-editor");
+    if (petrinet === undefined) {
+      lively.error("Error: No Petrinet")
+    }
+    return petrinet;
   }
   
   static shuffled(array) {

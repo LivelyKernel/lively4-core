@@ -20,9 +20,8 @@ export default class LivelyPetrinetPlace extends Morph {
     this.get("#inputLabel").addEventListener("change", (evt) => this.onLabelChange(evt));
     lively.addEventListener("foo", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
     
-    const label = this.getAttribute("label");
-    if (label) {
-      this.get("#inputLabel").value = label;
+    if (this.label) {
+      this.get("#inputLabel").value = this.label;
     }
   }
   
@@ -46,6 +45,13 @@ export default class LivelyPetrinetPlace extends Morph {
     return this.tokens.length;
   }
   
+  get label() {
+    return this.getAttribute("label");
+  }
+  
+  set label(text) {
+    this.setAttribute("label", text);
+  }
   
   
   // Simulation State
@@ -93,7 +99,7 @@ export default class LivelyPetrinetPlace extends Morph {
   }
   
   onLabelChange(evt) {
-    this.setAttribute("label", this.get("#inputLabel").value);
+    this.label = this.get("#inputLabel").value;
   }
   
   
