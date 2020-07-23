@@ -29,7 +29,7 @@ export default class LivelyConnector extends Morph {
     this.withAttributeDo("stroke-width", (width) => {
      this.strokeWidth = width
     })
-  } 
+  }
   
   get stroke() {
     return this.getPath().getAttribute("stroke")
