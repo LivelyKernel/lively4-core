@@ -3,6 +3,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
+import {Helper} from "src/components/demo/lively-petrinet-helper.js"
+
 
 
 
@@ -99,23 +101,27 @@ export default class LivelyPetrinetEditor extends Morph {
   
   *stepUntilFired() {
     while (true) {
-       for (const transition of this.transitions) {
+       for (const transition of Helper.shuffled(this.transitions)) {
         if (this.canFire(transition)) {
           this.fire(transition);
+          this.persistPlaceState();
           yield;
         }
-        this.persistPlaceState();
       }
     }
   }
   
   async onStep() {
-       for (const transition of this.transitions) {
+      let hasFired = false;
+      for (const transition of Helper.shuffled(this.transitions)) {
           if (this.canFire(transition)) {
             await this.fire(transition);
+            hasFired = true;
           }
       }
-      this.persistPlaceState();
+      if (hasFired) {
+        this.persistPlaceState();
+      }
   }
   
   canFire(transition) {
@@ -195,17 +201,30 @@ export default class LivelyPetrinetEditor extends Morph {
         evt.preventDefault();
         const mousePosition = this.getPositionInWindow(evt);
         const offset = lively.getGlobalPosition(this.get("lively-petrinet")).y - lively.getGlobalPosition(this).y;
-        const positionInPetrinet = pt(mousePosition.x, mousePosition.y - offset)
+        const positionInPetrinet = pt(mousePosition.x, mousePosition.y - offset);
+        const toolbarToggleText = this.toolbarIsActive() ? "disable toolbar" : "activate toolbar";
 
         var menu = new ContextMenu(this, [
               ["add place", () => this.addPlace(positionInPetrinet)],
               ["add transition", () => this.addTransition(positionInPetrinet)],
               ["add code transition", () => this.addCodeTransition(positionInPetrinet)],
-          
+              [toolbarToggleText, () => this.toggleToolbar()]
             ]);
         menu.openIn(document.body, evt, this);
         return true;
       }
+  }
+  
+  toggleToolbar() {
+    if (this.toolbarIsActive()){
+      this.get("lively-petrinet-toolbar").style.display = "none";
+    } else {
+      this.get("lively-petrinet-toolbar").style.display = "block";
+    }
+  }
+  
+  toolbarIsActive() {
+    return this.get("lively-petrinet-toolbar").style.display != "none";
   }
   
   async livelyExample() {
@@ -217,7 +236,10 @@ export default class LivelyPetrinetEditor extends Morph {
     await this.addTransition(pt(300, 100));
     this.addConnector(this.places[0], this.transitions[0]);
     this.addConnector(this.transitions[0],this.places[1]);
+    this.toggleToolbar();
   }
+  
+
   
   
   

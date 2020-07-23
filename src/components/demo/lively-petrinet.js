@@ -3,6 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
+imprt {Helper} from 'src/components'
 
 
 
