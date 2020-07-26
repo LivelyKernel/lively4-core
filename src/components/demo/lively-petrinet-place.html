@@ -1,22 +1,35 @@
 <template id="lively-petrinet-place">
 <style type="text/css">
   #circle {
-    width: 50px;
+    width: 50%;
     height:50px;
+    margin: 0 auto;
     border-radius: 50%;
     z-index: 1;
-    position: sticky;
-    border: 2px solid #333333; 
-    
+    border: 2px solid #333333;
+  }
+  #container {
+    width:100px;
+  }
+  #inputLabel {
+    font-size: 11px;
+    color: #333333;
+    text-align: center;
+    background-color: transparent;
+    border-color: transparent;
+    width:94%;
+    z-index: 1;
   }
   
 </style>
 
 
-<div class="lively-content" id="circle">
- </div>
-  
-    <input class="dblclick" style="font-size: 11px; color: #333333; background-color: transparent; border-color: transparent; margin-left: 11px; z-index: 1; position: sticky;" id="inputLabel" type="Text" value="Text" size="15"> 
+<div id="container">
+  <div class="lively-content" id="circle">
+  </div>
+  <input id=inputLabel type="Text" value="Eingabe">
+
+</div>
 
 <slot></slot>
 </template>

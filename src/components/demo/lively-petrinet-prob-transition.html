@@ -1,15 +1,41 @@
-<template id="lively-petrinet-code-transition" >
+<template id="lively-petrinet-prob-transition" >
 <style type="text/css">
   #buttonWrapper { 
-    text-align: left
+    text-align: left;
+  }
+  
+  #container {
+    width: 100px;
+  }
+  
+  #inputProbability {
+    font-size: 11px;
+    color: #333333;
+    text-align: center;
+    background-color: transparent;
+    border-color: transparent;
+    width:94%;
+    z-index: 1;
   }
 
 </style>
-
-<div>
+  
+<div id="container">
 <lively-petrinet-transition></lively-petrinet-transition>
-<p style="font-size: 11px; color: #333333; margin-left: -12px">
-Prob:
-<input style="font-size: 11px; color: #333333; background-color: #ffffff; border-color: transparent; z-index: 1; position: sticky" id="inputProbability" type="text" value="0" size="2">
-</p>
+<input id="inputProbability" type="text" value="0.0">
 </div>
+</template>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

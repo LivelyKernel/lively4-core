@@ -54,6 +54,10 @@ export default class LivelyPetrinetEditor extends Morph {
     return this.petrinet.connectors;
   }
   
+  get tokens() {
+    return this.places.reduce((accumulator, place) => [...accumulator, ...place.tokens], []);
+  }
+  
   addAllListeners() {
     lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
     lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
@@ -65,6 +69,14 @@ export default class LivelyPetrinetEditor extends Morph {
     for (const transition of this.transitions) {
       this.addListeners(transition)
     }
+    
+    for (const connector of this.connectors) {
+      lively.addEventListener("onClick", connector, "click", (evt) => this.onElementClick(evt, connector));
+      console.log(this.connectors.length);
+    }
+    
+    const tokens = 
+    for ()
   }
   
 
@@ -371,7 +383,7 @@ export default class LivelyPetrinetEditor extends Morph {
       element.onmouseover = () => this.mouseIsOnNode = true;
       element.onmouseout = () => this.mouseIsOnNode = false;
       lively.addEventListener("onDblClick", element.graphicElement(), "dblclick", () =>     this.manageNewConnection(element));
-      lively.addEventListener("lively", element, "click", (evt) => this.onElementClick(evt, element))
+      lively.addEventListener("lively", element, "click", (evt) => this.onElementClick(evt, element));
   }
   
   async initializeElement(element, position) {
@@ -395,11 +407,12 @@ export default class LivelyPetrinetEditor extends Morph {
   }
 
   onElementClick(evt, element) {
+    console.log("Clicked");
     evt.preventDefault();
     evt.stopPropagation();
     this.selectedElement = element;
     element.setSelectedStyle();
-    for (const otherElement of [...this.transitions, ...this.places, ...this.connectors]) {
+    for (const otherElement of [...this.transitions, ...this.places, ...this.connectors, ...this.tokens]) {
       if (otherElement != element) {
         otherElement.setDisselectedStyle();
       }

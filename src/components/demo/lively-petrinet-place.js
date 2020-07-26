@@ -53,6 +53,9 @@ export default class LivelyPetrinetPlace extends Morph {
     this.setAttribute("label", text);
   }
   
+  get petrinet() {
+    return Helper.getPetrinetOf(this);
+  }
   
   // Simulation State
   
@@ -110,8 +113,8 @@ export default class LivelyPetrinetPlace extends Morph {
 
        var menu = new ContextMenu(this, [
           ["add token", () => this.addToken()],
-          ["delete token", () => this.deleteToken()],
-            ]);
+            ["start connection", () => this.petrinet.startConnectionFrom(this)]],
+                                 );
        menu.openIn(document.body, evt, this);
         return true;
       }
@@ -119,14 +122,16 @@ export default class LivelyPetrinetPlace extends Morph {
   
 
   async addToken() {
-    const length = 50;
-    var token = await (<lively-petrinet-token></lively-petrinet-token>);
-    var x = Math.random() * length/2 + length/4;
-    var y = Math.random() * length/2 + length/4;
-    lively.setPosition(token, pt(x,y));
-
-    //lively.setPosition(dot, pt(10, 10));
-    this.appendChild(token); 
+    const length = lively.getExtent(this.graphicElement()).x;
+    const token = await (<lively-petrinet-token></lively-petrinet-token>);
+    const margin = lively.getGlobalPosition(this.graphicElement()).x - lively.getGlobalPosition(this).x;
+    console.log(margin);
+    const x = Math.random() * length/2 + length/4;
+    const y = Math.random() * length/2 + length/4;
+    const tokenPosition = pt(margin+x,y);
+    lively.setPosition(token, tokenPosition);
+    this.appendChild(token)
+    lively.addEventListener("TokenSelected", token, "click", (evt) => this.petrinet.onElementClick(evt, token));
   }
   
   
