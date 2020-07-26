@@ -452,6 +452,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-H": cm => {
           this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
         },
+        // #KeyboardShortcut Alt-I Inline variable
+        "Alt-I": cm => {
+          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+        },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
