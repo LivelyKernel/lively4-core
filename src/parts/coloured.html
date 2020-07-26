@@ -1,0 +1,21 @@
+<lively-petrinet-editor><lively-petrinet><lively-petrinet-place componentid="pk2w2" style="position: absolute; left: 23.4922px; top: 14.7461px;"><lively-petrinet-token style="position: absolute; left: 39.2944px; top: 23.9276px;"></lively-petrinet-token><lively-petrinet-token style="position: absolute; left: 61.1519px; top: 22.8044px;"></lively-petrinet-token></lively-petrinet-place><lively-petrinet-place componentid="rqbkde" style="position: absolute; left: 500px; top: 100px;"></lively-petrinet-place><lively-petrinet-code-transition componentid="qx06dd" style="position: absolute; left: 240.789px; top: 63.4648px;"><script type="lively4script" data-name="customFunctionality"> 
+  function customFunctionality(MODE, placesBefore, placesAfter){
+    
+    
+    // How should be decided if transition can fire?
+
+    if (MODE === "GET_IS_ACTIVE") {
+      return placesBefore[0].getTokensWithColour(2).length > 0;
+
+    // From what places should a token be removed?
+
+    } else if(MODE === "GET_PLACES_BEFORE") {
+      return [[placesBefore[0],2]];
+
+    // To what places should a token be added?
+
+    } else if(MODE === "GET_PLACES_AFTER") {
+      return [[placesAfter[0],3]];
+    }
+  }
+</script></lively-petrinet-code-transition><lively-petrinet-edge fromelement="6dc9ac75-ddd9-43d0-b1d7-720704d01198" fromcomponent="pk2w2" toelement="5e371526-3eda-43be-a6a3-9ce208a984ff" tocomponent="qx06dd" style="width: 0px; height: 0px; position: absolute; left: 99.4844px; top: 40.7344px;" stroke="grey" x1="0" y1="0" x2="182.296875" y2="50.71875"></lively-petrinet-edge><lively-petrinet-edge fromelement="5e371526-3eda-43be-a6a3-9ce208a984ff" fromcomponent="qx06dd" toelement="f0ad32ee-5d28-4074-86e0-a88c73401fa9" tocomponent="rqbkde" style="width: 0px; height: 0px; position: absolute; left: 298.781px; top: 91.4687px;" stroke="grey" x1="0" y1="0" x2="224.21875" y2="34.546875"></lively-petrinet-edge></lively-petrinet></lively-petrinet-editor>

@@ -39,6 +39,10 @@ export default class LivelyPetrinetProbTransition extends Morph {
   
   
   isActiveTransition(placesBefore, placesAfter){
+    const hasNormalTokens = placesBefore.every(place => place.getTokensWithColour(1).length > 0)
+    if (!hasNormalTokens) {
+      return false;
+    }
     const randomNumber = Math.random();
     var prob = this.get("#inputProbability").value;
     if( randomNumber <= prob){
@@ -49,11 +53,11 @@ export default class LivelyPetrinetProbTransition extends Morph {
   }
   
   getPlacesToRemoveTokenFrom(placesBefore, placesAfter) {
-    return placesBefore;
+    return placesBefore.map(place => [place, 1]);
   }
   
   getPlacesToAddTokenTo(placesBefore, placesAfter) {
-    return placesAfter;
+    return placesAfter.map(place => [place, 1]);
   }
   
   

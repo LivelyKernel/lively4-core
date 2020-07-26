@@ -57,19 +57,23 @@ export default class LivelyPetrinetPlace extends Morph {
     return Helper.getPetrinetOf(this);
   }
   
+  getTokensWithColour(colour) {
+    return this.tokens.filter(token => token.colour === colour);
+  }
+  
   // Simulation State
   
   
   
   setState(step) {
-    const numberTokensAtStep = this.history[step];
-    if (numberTokensAtStep == this.numberOfTokens()) {
+    const tokensAtStep = this.history[step];
+    if (tokensAtStep.toString() === this.tokens.map(token => token.colour).toString()) {
       return;
     }
 
     this.deleteAllTokens();
-    for (let i = 0; i < numberTokensAtStep; i++) {
-      this.addToken();
+    for (const tokenColour of tokensAtStep) {
+      this.addToken(tokenColour);
     }
   }
   
@@ -78,11 +82,11 @@ export default class LivelyPetrinetPlace extends Morph {
   }
   
   start() {
-    this.history = [this.numberOfTokens()];
+    this.history = [this.tokens.map(token => token.colour)];
   }  
   
   persistState() {
-    this.history = [...this.history, this.numberOfTokens()];
+    this.history = [...this.history, this.tokens.map(token => token.colour)];
   }
   
   
@@ -112,18 +116,23 @@ export default class LivelyPetrinetPlace extends Morph {
       evt.preventDefault();
 
        var menu = new ContextMenu(this, [
-          ["add token", () => this.addToken()],
-            ["start connection", () => this.petrinet.startConnectionFrom(this)]],
-                                 );
+         ["add token", () => this.addToken(1)],
+          ["add coloured token", [
+            [`2`, () => this.addToken(2)], 
+            [`3`, () => this.addToken(3)],
+            [`4`, () => this.addToken(4)]
+          ], "", ''],
+          ["start connection", () => this.petrinet.startConnectionFrom(this)]]);
        menu.openIn(document.body, evt, this);
         return true;
       }
   }
   
 
-  async addToken() {
+  async addToken(colour) {
     const length = lively.getExtent(this.graphicElement()).x;
     const token = await (<lively-petrinet-token></lively-petrinet-token>);
+    token.setColour(colour);
     const margin = lively.getGlobalPosition(this.graphicElement()).x - lively.getGlobalPosition(this).x;
     console.log(margin);
     const x = Math.random() * length/2 + length/4;
@@ -135,9 +144,15 @@ export default class LivelyPetrinetPlace extends Morph {
   }
   
   
-  async deleteToken(){
-      this.tokens[0].remove()
+  async deleteToken(colour){
+      const tokensWithSameColour = this.getTokensWithColour(colour);
+      if (tokensWithSameColour.length == 0) {
+        lively.error("Error: We found no token with colour: " + colour);
+      }
+      tokensWithSameColour[0].remove()
   }
+  
+  
   
   async deleteAllTokens(){
     for (let token of this.tokens) {

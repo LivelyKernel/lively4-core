@@ -151,19 +151,28 @@ export default class LivelyPetrinetEditor extends Morph {
       const placesAfter = this.getSecondComponents(connectorsAfter);
       const placesToRemoveTokenFrom = transition.getPlacesToRemoveTokenFrom(placesBefore, placesAfter);
       const placesToAddTokenTo = transition.getPlacesToAddTokenTo(placesBefore, placesAfter);
-      for (const place of placesToRemoveTokenFrom) {
-        place.deleteToken();
+      for (const [place,colour] of placesToRemoveTokenFrom) {
+        await place.deleteToken(colour);
       }
     
       // Animation
-      await Promise.all(placesToRemoveTokenFrom.map(place => this.getConnectorOfPlace(place, connectorsBefore)).map(connector => connector.animateMovingToken()));
+      await this.animateTokens(placesToRemoveTokenFrom, connectorsBefore);
+      await this.animateTokens(placesToAddTokenTo, connectorsAfter);
+      
     
-      await Promise.all(placesToAddTokenTo.map(place => this.getConnectorOfPlace(place, connectorsAfter)).map(connector => connector.animateMovingToken()));
-    
-      for (const place of placesToAddTokenTo) {
-        await place.addToken();
+      for (const [place,colour] of placesToAddTokenTo) {
+        await place.addToken(colour);
       }
       return
+  }
+  
+  async animateTokens(placesToChangeToken, connectorsConnectedToThem) {
+    let animationPromises = []
+    for (const [place, colour] of placesToChangeToken) {
+      const connectorOfPlace = this.getConnectorOfPlace(place, connectorsConnectedToThem);
+  animationPromises.push(connectorOfPlace.animateMovingToken(colour));
+    }
+    await Promise.all(animationPromises);
   }
   
   getConnectorOfPlace(place, connectorsToCompare) {
@@ -253,7 +262,7 @@ export default class LivelyPetrinetEditor extends Morph {
     const petrinet = await (<lively-petrinet></lively-petrinet>);
     await this.initializePetrinet(petrinet);
     await this.addPlace(pt(0,0));
-    this.petrinet.places[0].addToken();
+    this.petrinet.places[0].addToken(1);
     await this.addPlace(pt(500, 100));
     await this.addTransition(pt(300, 100));
     this.addConnector(this.places[0], this.transitions[0]);
@@ -273,7 +282,7 @@ export default class LivelyPetrinetEditor extends Morph {
     const cursor = this.get("#cursor");
     const pos = pt(evt.clientX, evt.clientY);
     if (this.connectionIsStarted()) {
-      lively.setGlobalPosition(cursor, pos);
+      lively.setGlobalPosition(cursor, pt(pos.x-5, pos.y-5));
     }
   }
   
@@ -294,6 +303,7 @@ export default class LivelyPetrinetEditor extends Morph {
     if (this.mouseIsOnNode || !this.connectionIsStarted())      {
         return;
     }
+    console.log(this.mouseIsOnNode);
     this.deleteUnfinishedConnector(this.get("#cursor"),   this.unfinishedConnector);
   }
   
@@ -330,7 +340,6 @@ export default class LivelyPetrinetEditor extends Morph {
     }
     const fromComponent = this.petrinet.getComponentFrom(this.unfinishedConnector.fromComponentId);
     this.deleteUnfinishedConnector(this.get("#cursor"), this.unfinishedConnector);
-    //this.get("#cursor").remove();
 
     if (fromComponent == component) {
       return
@@ -381,8 +390,8 @@ export default class LivelyPetrinetEditor extends Morph {
   }
   
   async addListeners(element) {
-      element.onmouseover = () => this.mouseIsOnNode = true;
-      element.onmouseout = () => this.mouseIsOnNode = false;
+      element.graphicElement().onmouseover = () => this.mouseIsOnNode = true;
+      element.graphicElement().onmouseout = () => this.mouseIsOnNode = false;
       lively.addEventListener("onDblClick", element.graphicElement(), "dblclick", () =>     this.manageNewConnection(element));
     this.listenForSelect(element);
   }
