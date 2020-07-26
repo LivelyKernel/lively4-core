@@ -1,3 +1,7 @@
+/*MD
+  ![](https://lively-kernel.org/lively4/lively4-core/demos/lively-simulation/screenshots/code-view.png){width=500px}
+MD*/
+
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
