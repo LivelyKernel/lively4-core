@@ -250,7 +250,6 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   static canDropInto(node, targetNode) {
-    
     if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
     

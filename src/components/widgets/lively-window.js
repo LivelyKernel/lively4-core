@@ -245,6 +245,12 @@ export default class Window extends Morph {
   }
 
   
+  detachedCallback() {
+    if (this.isMaximized()) {
+      document.body.style.overflow = this.getAttribute("prev-overflow")
+    }
+  }
+  
   /*MD ## Maximize/Minimize MD*/
 
   // #important
@@ -289,8 +295,9 @@ export default class Window extends Morph {
 
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.get('lively-resizer').style.display =
-      bool ? "block" : "none";
+    this.getAllSubmorphs('lively-resizer').forEach(ea => {
+      ea.style.display = bool ? "block" : "none";
+    })
   }
   
   

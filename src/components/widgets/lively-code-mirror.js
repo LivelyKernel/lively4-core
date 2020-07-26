@@ -20,7 +20,6 @@ import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
-import LivelyCodeMirrorCodeAugmentations from 'src/components/widgets/lively-code-mirror-code-augmentations.js';
 import openMenu from 'src/components/widgets/lively-code-mirror-context-menu.js';
 import * as spellCheck from "src/external/codemirror-spellcheck.js"
 import {isSet} from 'utils'
@@ -169,17 +168,19 @@ export default class LivelyCodeMirror extends HTMLElement {
         .then(m => {
           var codeProvider = new LivelyCodeMirrorCodeProvider(this, cm);
           var capabilities = new m.default(codeProvider);
-          var codeAugmentations = new LivelyCodeMirrorCodeAugmentations(capabilities, cm);
           cm.on("change", (() => {
             capabilities.codeChanged();
-            codeAugmentations.codeChanged();
           }).debounce(200));
           return capabilities;
         });
     }
     
-    
     return this.myASTCapabilities;
+  }
+  
+  autoCompletion(cm) {
+    return System.import('src/components/widgets/auto-completion.js')
+      .then(m => new m.default(this, cm));
   }
   
   get ternWrapper() {
@@ -271,8 +272,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", {detail: evt})));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
-    
-    editor.on("change", (() => this.updateAExprDependencies()).debounce(500));
     
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
     
@@ -453,6 +452,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-H": cm => {
           this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
         },
+        // #KeyboardShortcut Alt-I Inline variable
+        "Alt-I": cm => {
+          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+        },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
         "alt-Backspace": async cm => {
@@ -476,7 +479,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 })()`)
           this.editor.execCommand(`goWordLeft`)
           this.editor.execCommand(`goCharLeft`)
-        }, 
+        },
+        // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
+        "Ctrl-Shift-A": cm => {
+          this.updateAExprDependencies();
+        },
+        
+        // #KeyboardShortcut Alt-Q sample shortcut for auto-completion
+        "Alt-Q": cm => {
+          this.autoCompletion(cm).then(ac => ac.complete(this, cm));
+        },
         
       }
       // Alt-Enter has to react on key up, so we make an extra rule here

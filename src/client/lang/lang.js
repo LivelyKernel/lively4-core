@@ -299,7 +299,8 @@ extendFromLodash(Array.prototype, [
   'sample',
   'sampleSize',
   'shuffle',
-  'sum'
+  'sum',
+  'sumBy'
 ]);
 
 extend(Array.prototype, {
@@ -376,10 +377,11 @@ extend(Array.prototype, {
   joinElements(builder) {
     const result = [];
     let lastItem;
+    let index = 0;
     for (let item of this) {
       // not the first item
       if (result.length > 0) {
-        result.push(builder(lastItem, item));
+        result.push(builder(lastItem, item, index++, this));
       }
       result.push(item);
       lastItem = item;
@@ -394,6 +396,37 @@ extend(Array.prototype, {
    */
   count(predicate) {
     return this.filter(predicate).length;
+  },
+  
+  /**
+   * Maps the items, then removes all items mapped to a falsy value.
+   * @param mapper (Function<value, index, array -> any>) standard map callback function.
+   * @returns {Array<any>} Array of mapped truthy items.
+   */
+  filterMap(mapper, ...rest) {
+    return this.map(mapper, ...rest).filter(Function.identity);
+  },
+  
+  /**
+   * Randomly selects an item, considering the given weight function.
+   * @param weightMapper (Function<value, index, array -> Number>) standard mapping callback to calculate the weight of each item.
+   * @returns {any} The selected item from the Array.
+   */
+  weightedSample(weightMapper = () => 1, ...rest) {
+    const weights = this.map(weightMapper, ...rest);
+    
+    let totalWeight = weights.sum();
+    let random = Math.random() * totalWeight;
+
+    for (let i = 0; i < weights.length; i++) {
+      if (random < weights[i]) {
+        return this[i];
+      }
+
+      random -= weights[i];
+    }
+
+    return undefined;
   },
   
 
@@ -423,6 +456,21 @@ extend(Number.prototype, {
   
   to(end, step) {
     return _.range(this, end, step);
+  },
+  
+  remap([domainStart, domainEnd] = [], [rangeStart, rangeEnd] = [], clip = false) {
+    if (domainStart === domainEnd) { throw new Error('domain start and end are equal'); }
+    
+    let input = this;
+    if (clip && !this.inRange(domainStart, domainEnd)) {
+      const domainLower = domainStart < domainEnd ? domainStart : domainEnd;
+      const domainUpper = domainEnd > domainStart ? domainEnd : domainStart;
+      input = this.clamp(domainLower, domainUpper);
+    }
+
+    const percent = (input - domainStart) / (domainEnd - domainStart);
+    let result = percent * (rangeEnd - rangeStart) + rangeStart;
+    return result;
   }
 
 });

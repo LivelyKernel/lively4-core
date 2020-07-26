@@ -305,15 +305,17 @@ describe('AnnotatedText', function() {
       let text = AnnotatedText.fromHTML("a<b>b</b>c")
       expect(text.text, "text").to.equal("abc")
       expect(text.annotations.list[0].from, "from").to.equal(1)
-      expect(text.annotations).to.eql(new AnnotationSet([{from: 1, to: 2, name: "b"}]))
+      expect(text.annotations.equals(new AnnotationSet([{type: "Reference", content: "abc"}, 
+                                                         {from: 1, to: 2, name: "b"}]))).to.be.true
     })
     
     it('extracts text and two annotations', function() {
       let text = AnnotatedText.fromHTML("a<b>b</b><i>c</i>")
       expect(text.text, "text").to.equal("abc")
-      expect(text.annotations).to.eql(new AnnotationSet([
+      expect(text.annotations.equals(new AnnotationSet([
+        {type: "Reference", content: "abc"},
         {from: 1, to: 2, name: "b"}, 
-        {from: 2, to: 3, name: "i"}]))
+        {from: 2, to: 3, name: "i"}]))).to.true;
     })
   })
   
@@ -323,11 +325,54 @@ describe('AnnotatedText', function() {
       let text = new AnnotatedText("This is some text and some annotations.", new AnnotationSet([
         {from: 8, to: 12, name: "color", color: "lightblue"},
         {from: 27, to: 38, name: "color", color: "yellow"}]))
-      debugger
       expect(text.toHTML(), "text").to.equal("This is <color>some</color> text and some <color>annotations</color>.")
       
     })
+  })
+
+  // we use HTML annotations just, because it's easier to read and write... 
+  describe("mergeAnnotations", function() {
+   
     
+    it('merges', async function() {
+      var textConflict = `We say: Hello and World!`
+
+      // but we convert them first to our stand-off markup... before testing them. 
+      var l4aBase = AnnotatedText.fromHTML(`Hello <b>World</b>`).toSource()
+      var l4aVersionA = AnnotatedText.fromHTML(`<u>We say:</u> Hello <b>World</b>`).toSource()
+      var l4aVersionB = AnnotatedText.fromHTML(`<i>Hello</i> and <b>World</b>!`).toSource()
+
+      // just for illustration... 
+      var l4aConflict = `<<<<<<< HEAD
+  ${l4aVersionA}
+  =======
+  ${l4aVersionB}
+  >>>>>>> annotationsVersionB`
+
+      var l4aExpectedMergeHTML = `<u>We say:</u> <i>Hello</i> and <b>World</b>!`
+            
+      var versionA = await AnnotatedText.fromSource(l4aVersionA)
+      var versionB = await AnnotatedText.fromSource(l4aVersionB)
+      var base = await AnnotatedText.fromSource(l4aBase)
+
+      var result = await AnnotatedText.mergeAnnotations(versionA, versionB, base, textConflict)      
+      
+      expect(result.toHTML()).equals(l4aExpectedMergeHTML)
+    })
+  })
+    
+  // and now a little bit easier for the eyes  
+  it('merge A content and B annotation change', async function() {
+    var textConflict = `Hello and World`
+            
+    var base = AnnotatedText.fromHTML(`Hello World`)
+    var versionA = AnnotatedText.fromHTML(`Hello and World`)
+    var versionB = AnnotatedText.fromHTML(`Hello <b>World</b>`)
+
+    var l4aExpectedMergeHTML = `Hello and <b>World</b>`
+    var result = await AnnotatedText.mergeAnnotations(versionA, versionB, base, textConflict)      
+
+    expect(result.toHTML()).equals(l4aExpectedMergeHTML)
   })
   
 })

@@ -6,7 +6,7 @@ import {pt} from "src/client/graphics.js"
 export default class Ball extends Morph {
 
   initialize() {
-    this.windowTitle = "Bouncing Atoms and other stuff";
+    this.windowTitle = "Bouncing Atoms";
     this.hits = this.hits || 0;
     if (!this.balls) {
       this.balls =  [{dx: 1, dy: 2, y: 180, x: 20}];
@@ -27,8 +27,7 @@ export default class Ball extends Morph {
     var canvas = this.get("#bouncing-ball");
     var context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
-    
-    
+
     if (!this.balls) return
     this.balls.forEach(ball => {
         context.beginPath();
@@ -88,6 +87,5 @@ export default class Ball extends Morph {
        this.balls = oldInstance.balls
     if (oldInstance.hits)
        this.hits = oldInstance.hits
-
   }
 }

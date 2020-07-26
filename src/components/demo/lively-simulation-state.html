@@ -1,0 +1,83 @@
+<template id="lively-simulation-state" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  #state {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  #entries {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  #entries i {
+    display: none;
+  }
+  #entries.edit i {
+    display: block;
+  }
+  .entry {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+  .entry:last-child {
+    margin-bottom: 0;
+  }
+  .entry > input {
+    width: 33%;
+    margin-right: 5px;
+  }
+  .entry > input:last-of-type {
+    margin-right: 0;
+  }
+  .entry > i {
+    cursor: pointer;
+  }
+  #status {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-style: solid;
+    border-width: 1px;
+    padding: 5px;
+  }
+  #status.error {
+    display: flex !important;
+    color: red;
+    border-color: red;
+  }
+  #saveDiscard {
+    display: none;
+    justify-content: flex-end;
+    padding: 5px 0;
+    z-index: 2;
+  }
+  #saveDiscard.show {
+    display: flex;
+  }
+  #saveDiscard > span {
+    font-size: 0.6rem;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  #saveDiscard > span:last-child {
+    text-align: right;
+    margin-right: 0;
+  }
+</style>
+<div id='state'>
+  <div id='saveDiscard'>
+    <span id='save'><i class="fa fa-floppy-o"></i>Save</span>
+    <span id='discard'><i class="fa fa-ban"></i>Discard</span>
+  </div>
+  <div id='entries'></div>
+  <span id='status'></span>
+</div>
+</template>

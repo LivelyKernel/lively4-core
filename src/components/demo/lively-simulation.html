@@ -1,0 +1,23 @@
+<template id="lively-simulation" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  #container {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    height: 100%;
+    width: 100%;
+  }
+  #cells {
+    flex-grow: 1;
+  }
+</style>
+<div id='container'>
+  <lively-simulation-controller id='controller'></lively-simulation-controller>
+  <div id="cells">
+    <slot></slot>
+  </div>
+</div>
+</template>
+

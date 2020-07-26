@@ -326,9 +326,10 @@ export default class Lively {
     });
   }
   static async fillTemplateStyle(element, url) {
-    // #TODO bug, sometimes the cache invalidation... does not work #BUG
+    var url =  lively.paths.normalizeURL(url)
     return fetch("cached:" + url).then(r => r.text()).then(css => {
       // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+      element.setAttribute("data-url", url) // so we find it again for updating... data-src is relative
       element.innerHTML = css;
     })
   }
@@ -348,7 +349,6 @@ export default class Lively {
           cssURL = baseURL.replace(/\/?$/, "/") + cssURL
         }
         allSrc.push(src)
-        ea.url = lively.paths.normalizeURL(cssURL)
         promises.push(this.fillTemplateStyle(ea, cssURL));
       }
     });
@@ -901,11 +901,8 @@ export default class Lively {
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document
-    this.addEventListener('lively', doc, 'mousedown', function(evt){
-      lively.onMouseDown(evt)}, false);
-    this.addEventListener('lively', doc, 'contextmenu', function(evt) {
-        lively.onContextMenu(evt)
-    }, false);
+    this.addEventListener('lively', doc, 'mousedown', evt => lively.onMouseDown(evt), true); // capture...
+    this.addEventListener('lively', doc, 'contextmenu', evt => lively.onContextMenu(evt), false);
     this.addEventListener('lively', doc, 'click', function(evt){lively.hideContextMenu(evt)}, false);
     this.addEventListener('lively', doc, 'keydown', function(evt){lively.keys.handle(evt)}, false);
     
@@ -1602,7 +1599,7 @@ export default class Lively {
     if (element.id == "container-root") return element
     
     if (!element.parentElement) {
-      
+      debugger
       // if (element.parentNode.host && element.parentNode.host.localName == "lively-container") {
       //   return element.parentNode.host.getContentRoot()
       // }
@@ -1903,10 +1900,12 @@ export default class Lively {
     if (!evt.shiftKey) { // evt.ctrlKey
       evt.preventDefault();
       evt.stopPropagation();
-      if (lively.lastScrollLeft) {
+      // #Hack #Workaround weired browser scrolling behavior
+      if (lively.lastScrollLeft || lively.lastScrollTop) {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
         document.scrollingElement.scrollLeft = lively.lastScrollLeft;
       }
+      
       var link = Array.from(evt.composedPath()).find(ea => ea.localName == "a")
       if (link) {
         // #TODO can we shorten this or hide this context specific behavior, 

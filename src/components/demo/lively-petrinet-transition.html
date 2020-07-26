@@ -1,0 +1,35 @@
+<template id="lively-petrinet-transition">
+<style type="text/css">
+  
+
+#transition{
+    width: 10px;
+    height: 50px;
+    background: #333333;
+    z-index: 1;
+    margin: 0 auto;
+}
+  
+#container {
+    width: 100px;
+}
+  
+#inputLabel{
+    font-size: 11px;
+    color: #333333;
+    text-align: center;
+    background-color: transparent;
+    border-color: transparent;
+    width:94%;
+    z-index: 1;  
+  }
+  
+</style>
+
+  <div id="container">
+  <div class="lively-content" id="transition"> 
+  </div>
+  <input id="inputLabel" type="text" value="Eingabe">
+    </div>
+<slot></slot>
+</template> 
