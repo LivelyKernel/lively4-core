@@ -18,11 +18,6 @@ export default class LivelyPetrinet extends Morph {
     this.mouseIsOnNode = false;
     this.positionUpdate = setInterval(() => this.updateConnectorPosition(), 1000);
     
-
-    await this.initializeConnectors();
-    this.updateConnectorPosition();
-    
-    this.selectedElement = undefined
   }
   
   
@@ -35,8 +30,8 @@ export default class LivelyPetrinet extends Morph {
         lively.error("Connector is not connected to component");
       }
       await this.addConnector(fromComponent, toComponent);
-
       connector.remove();
+      
     }
   }
   

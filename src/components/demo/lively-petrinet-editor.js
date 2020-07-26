@@ -20,6 +20,7 @@ export default class LivelyPetrinetEditor extends Morph {
     this.mouseIsOnNode = false;
     this.selectedElement = undefined;
     if (this.petrinet != undefined) {
+        await this.petrinet.initializeConnectors();
         this.addAllListeners();
     }
   }
@@ -62,7 +63,7 @@ export default class LivelyPetrinetEditor extends Morph {
     lively.addEventListener("OnDblClick", this, "dblclick", (evt) => this.onDblClick(evt))
     lively.addEventListener("MouseDraw", this, "mousemove", evt => this.onMouseMove(evt));
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
-    
+
     for (const place of this.places) {
       this.addListeners(place)
     }
@@ -71,12 +72,12 @@ export default class LivelyPetrinetEditor extends Morph {
     }
     
     for (const connector of this.connectors) {
-      lively.addEventListener("onClick", connector, "click", (evt) => this.onElementClick(evt, connector));
-      console.log(this.connectors.length);
+      this.listenForSelect(connector);
     }
     
-    const tokens = 
-    for ()
+    for (const token of this.tokens) {
+      this.listenForSelect(token);
+    }
   }
   
 
@@ -383,7 +384,11 @@ export default class LivelyPetrinetEditor extends Morph {
       element.onmouseover = () => this.mouseIsOnNode = true;
       element.onmouseout = () => this.mouseIsOnNode = false;
       lively.addEventListener("onDblClick", element.graphicElement(), "dblclick", () =>     this.manageNewConnection(element));
-      lively.addEventListener("lively", element, "click", (evt) => this.onElementClick(evt, element));
+    this.listenForSelect(element);
+  }
+  
+  listenForSelect(element) {
+    lively.addEventListener("lively", element, "click", (evt) => this.onElementClick(evt, element));
   }
   
   async initializeElement(element, position) {
@@ -407,7 +412,6 @@ export default class LivelyPetrinetEditor extends Morph {
   }
 
   onElementClick(evt, element) {
-    console.log("Clicked");
     evt.preventDefault();
     evt.stopPropagation();
     this.selectedElement = element;

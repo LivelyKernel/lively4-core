@@ -131,7 +131,7 @@ export default class LivelyPetrinetPlace extends Morph {
     const tokenPosition = pt(margin+x,y);
     lively.setPosition(token, tokenPosition);
     this.appendChild(token)
-    lively.addEventListener("TokenSelected", token, "click", (evt) => this.petrinet.onElementClick(evt, token));
+    this.petrinet.listenForSelect(token);
   }
   
   
