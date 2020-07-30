@@ -39,7 +39,7 @@ export default class LivelyPetrinetProbTransition extends Morph {
   
   
   isActiveTransition(placesBefore, placesAfter){
-    const hasNormalTokens = placesBefore.every(place => place.getTokensWithColour(1).length > 0)
+    const hasNormalTokens = placesBefore.every(place => place.getNormalTokens().length > 0)
     if (!hasNormalTokens) {
       return false;
     }
@@ -53,11 +53,11 @@ export default class LivelyPetrinetProbTransition extends Morph {
   }
   
   getPlacesToRemoveTokenFrom(placesBefore, placesAfter) {
-    return placesBefore.map(place => [place, 1]);
+    return placesBefore.map(place => [place, place.defaultColour()]);
   }
   
   getPlacesToAddTokenTo(placesBefore, placesAfter) {
-    return placesAfter.map(place => [place, 1]);
+    return placesAfter.map(place => [place, place.defaultColour()]);
   }
   
   

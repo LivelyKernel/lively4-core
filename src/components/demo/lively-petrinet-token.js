@@ -6,7 +6,18 @@ export default class LivelyPetrinetToken extends Morph {
   initialize() {
     this.windowTitle = "LivelyPetrinetToken";
     this.registerButtons();
-    this.color = undefined;
+    if (this.colour != undefined) {
+      this.setColour(this.colour);
+    }
+  }
+  
+  
+  get colour() {
+    return this.getAttribute("colour");
+  }
+  
+  set colour(colour) {
+    this.setAttribute("colour", colour);
   }
   
   setSelectedStyle() {
@@ -18,6 +29,7 @@ export default class LivelyPetrinetToken extends Morph {
   }
   
   setColour(colour) {
+    this.get("#token").style.backgroundColor = colour;
     this.colour = colour;
   }
   

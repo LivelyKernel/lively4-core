@@ -3,9 +3,11 @@ import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
 import {Helper} from "src/components/demo/lively-petrinet-helper.js"
 
+const DEFAULT_COLOUR = "black";
 
 
 export default class LivelyPetrinetPlace extends Morph {
+  
 
   initialize() {
     if (!this.componentId) {
@@ -59,6 +61,14 @@ export default class LivelyPetrinetPlace extends Morph {
   
   getTokensWithColour(colour) {
     return this.tokens.filter(token => token.colour === colour);
+  }
+  
+  getNormalTokens() {
+    return this.getTokensWithColour(DEFAULT_COLOUR);
+  }
+  
+  defaultColour() {
+    return DEFAULT_COLOUR
   }
   
   // Simulation State
@@ -116,11 +126,11 @@ export default class LivelyPetrinetPlace extends Morph {
       evt.preventDefault();
 
        var menu = new ContextMenu(this, [
-         ["add token", () => this.addToken(1)],
+         ["add token", () => this.addToken(DEFAULT_COLOUR)],
           ["add coloured token", [
-            [`2`, () => this.addToken(2)], 
-            [`3`, () => this.addToken(3)],
-            [`4`, () => this.addToken(4)]
+            [`blue`, () => this.addToken("blue")], 
+            [`green`, () => this.addToken("green")],
+            [`red`, () => this.addToken("red")]
           ], "", ''],
           ["start connection", () => this.petrinet.startConnectionFrom(this)]]);
        menu.openIn(document.body, evt, this);

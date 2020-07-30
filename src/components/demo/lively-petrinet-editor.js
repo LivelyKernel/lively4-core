@@ -262,16 +262,14 @@ export default class LivelyPetrinetEditor extends Morph {
     const petrinet = await (<lively-petrinet></lively-petrinet>);
     await this.initializePetrinet(petrinet);
     await this.addPlace(pt(0,0));
-    this.petrinet.places[0].addToken(1);
+    this.petrinet.places[0].addToken("black");
     await this.addPlace(pt(500, 100));
     await this.addTransition(pt(300, 100));
     this.addConnector(this.places[0], this.transitions[0]);
     this.addConnector(this.transitions[0],this.places[1]);
     this.toggleToolbar();
   }
-  
 
-  
   
   
   // Connector Creation

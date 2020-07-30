@@ -43,7 +43,12 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     this.windowTitle = "LivelyPetrinetCodeTransition";
     this.registerButtons();
     this.currentCode = defaultCode;
-    scriptManager.addScript(this, defaultCode, {name: "customFunctionality"});
+    if (this.get("script") != null) {
+      this.currentCode = this.get("script").text;
+    } else {
+      scriptManager.addScript(this, defaultCode, {name: "customFunctionality"});
+    }
+
     if (!this.componentId) {
         this.componentId = this.get("lively-petrinet-transition").componentId;
     }
@@ -51,11 +56,6 @@ export default class LivelyPetrinetCodeTransition extends Morph {
     
     lively.addEventListener("dragAndDrop", this, "pointerdown", evt => Helper.startDragAndDrop(evt, this));
 }
-  
-  async livelyExample() {
-    const script =  <div id="test"><script type='lively4script' data-name="helloWorld">{"function notify() {lively.notify('Hello')}"}</script></div>
-    scriptManager.addScript(this, "function notify() {lively.notify('Hello')}", {name: "helloWorld"});
-  }
   
   
   

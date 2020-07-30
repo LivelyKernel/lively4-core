@@ -40,6 +40,28 @@ export class Helper {
     }
     return shuffled;
   }
+  
+  
+  /* The function works, but I got horrible errors when trying to change the innerHTML before saving, so we wont use prettyPrint.
+  static prettyPrinted(html) {
+    const tags = html.split("<").slice(1);
+    const componentNames = tags.map(tag => tag.split(" ")[0]).map(name => name.replace(">", "")).map(name => name.replace("/", ""));
+    const withBeginningSymbol = tags.map(tag => "<" + tag);
+    const componentStack = [];
+    let prettyHtml = ""
+    for (let i = 0; i < tags.length; i++) {
+      const lastComponent = componentStack[componentStack.length-1];
+      const currentComponent = componentNames[i];
+      if (lastComponent === currentComponent) {
+        componentStack.pop();
+      } else {
+        componentStack.push(currentComponent);
+      }
+      prettyHtml += "\t".repeat(componentStack.length) + withBeginningSymbol[i] + "\n";
+    }
+    return prettyHtml;
+  }
+  */
                             
                             
 }
