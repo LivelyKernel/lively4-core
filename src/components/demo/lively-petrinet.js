@@ -16,15 +16,8 @@ export default class LivelyPetrinet extends Morph {
     this.windowTitle = "LivelyPetrinet";
     this.registerButtons();
     this.mouseIsOnNode = false;
+    this.positionUpdate = setInterval(() => this.updateConnectorPosition(), 1000);
     
-    lively.addEventListener("openEditor", this, "dblclick", (evt) => this.openPetrinetEditor());
-  
-    
-    await this.initializeConnectors();
-    this.updateConnectorPosition();
-    this.changePosition();
-    
-    this.selectedElement = undefined
   }
   
   
@@ -37,9 +30,13 @@ export default class LivelyPetrinet extends Morph {
         lively.error("Connector is not connected to component");
       }
       await this.addConnector(fromComponent, toComponent);
-
       connector.remove();
+      
     }
+  }
+  
+  detachedCallback() {
+    clearInterval(this.positionUpdate);
   }
   
   
@@ -79,8 +76,8 @@ export default class LivelyPetrinet extends Morph {
   async livelyExample() {
     await this.addPlace(pt(100, 100));
     this.places[0].addToken();
-    await this.addPlace(pt(500, 100));
-    await this.addTransition(pt(300, 100));
+    await this.addPlace(pt(500, 300));
+    await this.addTransition(pt(300, 200));
     this.addConnector(this.places[0], this.transitions[0]);
     this.addConnector(this.transitions[0],this.places[1]);
   }
@@ -97,7 +94,6 @@ export default class LivelyPetrinet extends Morph {
   }
   
   
-  
   // Add And Delete Elements
   
   
@@ -107,17 +103,12 @@ export default class LivelyPetrinet extends Morph {
     this.appendChild(newConnector);
     await newConnector.connectPetrinetComponents(fromComponent, toComponent);
     // The connector has some weird behaviour, in that it is not 100% connected to the elements in the beginning. We fix this by manually updating its position.
-    setTimeout(() => this.updateConnectorPosition(), 1000);
     return newConnector;
   }
   
   updateConnectorPosition() {
-    // This is very hacky. We set a minimal (impossible to see) position change, which triggers the
-    // update position function of the edge. We observed that updateConnector() didn't work for this.
-    const allElements = [...this.places, ...this.transitions];
-    for (const element of allElements) {
-      const originalPosition = lively.getPosition(element);
-      lively.setPosition(element, originalPosition.addPt(pt(0,0.01)));
+    for (const connector of this.connectors) {
+      connector.updateConnector();
     }
   }
   
@@ -147,44 +138,5 @@ export default class LivelyPetrinet extends Morph {
   async initializeElement(element, position) {
       lively.setPosition(element, position);
   }
-  
-  async openPetrinetEditor() {
-    const petrinetEditor = await lively.openComponentInWindow("lively-petrinet-editor");
-    await petrinetEditor.initializePetrinet(this);
-  }
-  
-  getPositions() {
-    let maxXPosition = 0;
-    let minXPosition = 10000;
-    let maxYPosition = 0;
-    let minYPosition = 10000;
-    for (const element of [...this.places, ...this.transitions]) {
-      const elementPosition = lively.getPosition(element);
-      maxXPosition = Math.max(elementPosition.x, maxXPosition);
-      minXPosition = Math.min(elementPosition.x, minXPosition);
-      maxYPosition = Math.max(elementPosition.y, maxYPosition);
-      minYPosition = Math.min(elementPosition.y, minYPosition);
-    }
-    return {maxX: maxXPosition, minX: minXPosition, maxY: maxYPosition,       minY: minYPosition}
-  }
-  
-  changePosition() {
-    const {maxX, minX, maxY, minY} = this.getPositions();
-    const windowExtent = lively.getExtent(this.get("#container"));
-    console.log(windowExtent);
-    const rightOffset = 75;
-    let scalingY = (windowExtent.y - rightOffset) / (maxY - minY);
-    let scalingX = (windowExtent.x - rightOffset)/ (maxX - minX);
-    for (const element of [...this.places, ...this.transitions]) {
-      const newY = (lively.getPosition(element).y - minY) * scalingY;
-      const newX = (lively.getPosition(element).x - minX) * scalingX;
-      lively.setPosition(element, pt(newX, newY));
-    }
-    
-  }
-  
-
-  
-  
 
 }

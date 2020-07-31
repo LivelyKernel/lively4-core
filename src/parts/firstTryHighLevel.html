@@ -1,0 +1,43 @@
+<lively-petrinet-editor><lively-petrinet><lively-petrinet-place componentid="b1kvsf" style="position: absolute; left: 5.7422px; top: 93.0115px;" label="Waiting"><lively-petrinet-token colour="red" style="position: absolute; left: 52.9929px; top: 24.6046px;"></lively-petrinet-token><lively-petrinet-token colour="red" style="position: absolute; left: 60.0347px; top: 27.354px;"></lively-petrinet-token></lively-petrinet-place><lively-petrinet-place componentid="jcfhl" style="position: absolute; left: 500px; top: 100px;" label="Finished"></lively-petrinet-place><lively-petrinet-code-transition componentid="3yaoj3" style="position: absolute; left: 128.23px; top: 83.1362px;"><script type="lively4script" data-name="customFunctionality"> 
+  function customFunctionality(MODE, placesBefore, placesAfter){
+    
+    const waitingPlace = placesBefore.filter(place => place.label === "Waiting")[0];
+    const freeBarbersPlace = placesBefore.filter(place => place.label === "Free_Barber")[0];
+    const busyPlace = placesAfter.filter(place => place.label === "Busy_Barber")[0];
+    
+    // How should be decided if transition can fire?
+
+    if (MODE === "GET_IS_ACTIVE") {
+      return waitingPlace.getTokensWithColour("red").length != 0 && freeBarbersPlace.getTokensWithColour("green").length != 0 ;
+
+    // From what places should a token be removed?
+
+    } else if(MODE === "GET_PLACES_BEFORE") {
+      return [[waitingPlace, "red"], [freeBarbersPlace, "blue"]];
+
+    // To what places should a token be added?
+
+    } else if(MODE === "GET_PLACES_AFTER") {
+      return placesAfter;
+    }
+  }
+</script></lively-petrinet-code-transition><lively-petrinet-place componentid="qnike6" style="position: absolute; left: 263.973px; top: 22.5px;" label="Free_Barber"><lively-petrinet-token colour="blue" style="position: absolute; left: 47.3398px; top: 22.0078px;"></lively-petrinet-token></lively-petrinet-place><lively-petrinet-code-transition componentid="ivgn9o" style="position: absolute; left: 409.695px; top: 92.1636px;"><script type="lively4script" data-name="customFunctionality"> 
+  function customFunctionality(MODE, placesBefore, placesAfter){
+    
+    // How should be decided if transition can fire?
+
+    if (MODE === "GET_IS_ACTIVE") {
+      return true;
+
+    // From what places should a token be removed?
+
+    } else if(MODE === "GET_PLACES_BEFORE") {
+      return placesBefore;
+
+    // To what places should a token be added?
+
+    } else if(MODE === "GET_PLACES_AFTER") {
+      return placesAfter;
+    }
+  }
+</script></lively-petrinet-code-transition><lively-petrinet-place componentid="dxf7ea" style="position: absolute; left: 277.434px; top: 182.578px;" label="Busy_Barber"></lively-petrinet-place><lively-petrinet-edge fromelement="7b41eabe-0f15-42ab-9175-5b550a9e375f" fromcomponent="qnike6" toelement="c99b88fb-d7b5-4721-a9f2-99182fc076d1" tocomponent="3yaoj3" style="width: 0px; height: 0px; position: absolute; left: 187.219px; top: 48.5px;" stroke="grey" x1="100.75" y1="0" x2="0" y2="62.625"></lively-petrinet-edge><lively-petrinet-edge fromelement="3d5c20c2-ce35-43dc-af02-90c7f7a239c0" fromcomponent="b1kvsf" toelement="c99b88fb-d7b5-4721-a9f2-99182fc076d1" tocomponent="3yaoj3" style="width: 0px; height: 0px; position: absolute; left: 81.7344px; top: 111.125px;" stroke="grey" x1="0" y1="7.875" x2="87.484375" y2="0"></lively-petrinet-edge><lively-petrinet-edge fromelement="c99b88fb-d7b5-4721-a9f2-99182fc076d1" fromcomponent="3yaoj3" toelement="85841fda-fe76-402c-9bcf-9045f1b0ca72" tocomponent="dxf7ea" style="width: 0px; height: 0px; position: absolute; left: 184.219px; top: 109.125px;" stroke="grey" x1="0" y1="0" x2="114.203125" y2="101.4375"></lively-petrinet-edge></lively-petrinet></lively-petrinet-editor>

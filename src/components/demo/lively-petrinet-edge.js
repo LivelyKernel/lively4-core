@@ -29,7 +29,7 @@ export default class LivelyConnector extends Morph {
     this.withAttributeDo("stroke-width", (width) => {
      this.strokeWidth = width
     })
-  } 
+  }
   
   get stroke() {
     return this.getPath().getAttribute("stroke")
@@ -324,8 +324,9 @@ export default class LivelyConnector extends Morph {
     this.stroke = "grey"
   }
   
-  async animateMovingToken() {
+  async animateMovingToken(colour) {
     const token = await(<lively-petrinet-token></lively-petrinet-token>);
+    token.setColour(colour);
     this.appendChild(token);
     const vertices = SVG.getPathVertices(this.getPath());
     const pt2 = pt(vertices[1].x1, vertices[1].y1);

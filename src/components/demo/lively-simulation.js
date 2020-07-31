@@ -1,8 +1,12 @@
+/*MD
+  ![](https://lively-kernel.org/lively4/lively4-core/demos/lively-simulation/screenshots/simulation.png){width=500px}
+MD*/
+
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import Engine from 'demos/engery-sim/engine.js';
-import History from 'demos/engery-sim/history.js';
+import Engine from 'demos/lively-simulation/engine.js';
+import History from 'demos/lively-simulation/history.js';
 import _ from 'src/external/lodash/lodash.js';
 
 const EMPTY_PLACEHOLDER = 'EMPTY';
@@ -122,7 +126,7 @@ export default class LivelySimulation extends Morph {
     const cellNameProposalWithSlug = 
         counterSlug > 1 ? `${cellNameProposal} (${counterSlug})` : cellNameProposal;
     const cellNames = _.concat(
-      _.map(this.collectCells(), cell => this.toAlphaNumeric(cell.getName().toLowerCase())), 
+      _.map(_.reject(this.collectCells(), cell => cell.isMirrorCell()), cell => this.toAlphaNumeric(cell.getName().toLowerCase())), 
       RESERVED_CELL_NAMES
     );
     const sameNameCount = _.filter(cellNames, name => name === this.toAlphaNumeric(cellNameProposalWithSlug.toLowerCase())).length;
