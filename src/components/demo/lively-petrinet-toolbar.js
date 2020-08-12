@@ -1,6 +1,8 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import ContextMenu from 'src/client/contextmenu.js';
 import {pt} from 'src/client/graphics.js';
+import {Helper} from "src/components/demo/lively-petrinet-helper.js"
+
 
 const START = "Start";
 const STOP = "Stop";
@@ -32,11 +34,7 @@ export default class LivelyPetrinetToolbar extends Morph {
   
   
   get petrinet() {
-    const petrinet = lively.query(this, "lively-petrinet-editor");
-    if (petrinet === undefined) {
-      lively.error("Error: No Petrinet")
-    }
-    return petrinet;
+    return Helper.getPetrinetOf(this);
   }
   
   isStarted() {

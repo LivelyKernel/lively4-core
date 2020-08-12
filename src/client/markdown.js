@@ -17,8 +17,9 @@ var a = "hello"
 This is a reference to a paper [@Rein2016LLP] and this is a footnote^[https://d3js.org/]. 
 
 <script>
+// #TODO lively-script gets executed very often in this context!
 import Markdown from "src/client/markdown.js"
-Markdown.parseAndReplaceLatex(this.parentElement)
+Markdown.parseAndReplaceLatex(this.parentElement)    
 </script>
 
 MD*/
@@ -32,11 +33,12 @@ export default class Markdown {
   // #helper 
   static parseAndReplaceTextNode(ea, eaChild,  regex, func) {
     var s = eaChild.textContent
-    var m
+    var m;
+    regex = new RegExp(regex)
     var replace = () => {
       m  = regex.exec(s)
       if (m) {
-        var replacement = func(m)
+        var replacement = func(m, ea)
         if (replacement) {
           ea.insertBefore(new Text(s.slice(0, m.index )), eaChild)
           ea.insertBefore(replacement, eaChild)
@@ -57,26 +59,56 @@ export default class Markdown {
   
   // #helper 
   static parseAndReplace(element, regex, func) {
-    element.querySelectorAll("*").forEach(ea => {
+    var all = [element].concat(Array.from(element.querySelectorAll("*")))
+    // lively.notify("parse " + all.length + " elements.")
+    for(var ea of all) {
       // if (ea.localName == "code" || ea.localName == "pre") return; 
-      ea.childNodes.forEach(eaChild => {
-        if (eaChild instanceof Text) {
-          this.parseAndReplaceTextNode(ea, eaChild, regex, func)
-        }
-      })
-    })
+      try {
+        // lively.showElement(ea)
+        if (!ea.childNodes) continue; 
+          
+        for(var eaChild of ea.childNodes) {
+          if (eaChild instanceof Text) {
+            this.parseAndReplaceTextNode(ea, eaChild, regex, func)
+          }
+        }        
+      } catch(e) {
+        console.error(e)
+      }
+    }
   }
 
   static parseAndReplaceBibrefs(element) {
-    this.parseAndReplace(element, /\@([A-Za-z]+[0-9][A-Z]+)/, (m) => {
+    
+    this.parseAndReplace(element, /\@([A-Za-z0-9_]+)/g, (m) => {
       var link = <a click={evt => {
         evt.preventDefault(); 
-        lively.openBrowser(link.href)
-      }} href={"bib://" +m[1]}>{m[1]}</a>
+        evt.stopPropagation();
+        lively.openBrowser("bib://" + m[1])
+      }} >{m[1]}</a> // href={"bib://" +m[1]}
       return link 
     })
   }
   
+  static parseAndReplaceLabels(element) {
+    
+    this.parseAndReplace(element, /\\label({[^}]+})?/g, (m, contextElement) => {
+      if (contextElement.localName !== "p") return 
+      
+      var id = "undefined" // the id is allreay 
+      var anchor = <a click={evt => {
+      }} id={id}></a>
+      return anchor 
+    })
+  }
+  static parseAndReplaceMiscLatex(element) {
+    
+    this.parseAndReplace(element, /(\\[a-z]+({[^}]+})?)/g, (m, contextElement) => {
+      if (contextElement.localName !== "p") return 
+      
+      return <span class="stripped" latex={m[1]}></span> 
+    })
+  }
   
   static parseAndReplaceFigureRefs(element) {
     element.querySelectorAll("lively-drawio").forEach(ea => {
@@ -90,7 +122,7 @@ export default class Markdown {
     })
     
     // late parse and convert latex figure references
-    this.parseAndReplace(element, /@fig:([A-Za-z0-9]+)/, (m) => <a href={"#" +m[1]}>{m[1]}</a>)
+    this.parseAndReplace(element, /@fig:([A-Za-z0-9]+)/g, (m) => <a href={"#" +m[1]}>{m[1]}</a>)
   }
                          
   static allNodesBetween(startNode, endNode) {
@@ -113,18 +145,19 @@ export default class Markdown {
     var stack = []
     
     // hacky hacky hack hack hack!
-    this.parseAndReplace(element, /((\^\[)|])/, (m) => {
+    this.parseAndReplace(element, /((\^\[)|\])/g, (m) => {
       if (m[1] == "^[") {
         var footnote = {index: count++, content: "", id() {  return "footnote_" + this.index} }
         footnotes.push(footnote)
-        var link = <sup><a href={"#" + footnote.id()}>{footnote.index}</a></sup>
+        let link = <sup><a href={"#" + footnote.id()}>{footnote.index}</a></sup>
         footnote.startNode = link
         stack.push(footnote)
         return link
       } else {
-        var last = stack.pop()
+        let last = stack.pop()
         if (last) {
-          var marker = <b>XXXX</b>
+          var marker = document.createElement("b")
+          marker.textContent = "END" + last.index
           last.endNode = marker
           return marker
         }
@@ -162,13 +195,22 @@ Markdown.extractReferences(`Hello @`+`Foo1981HHC World\nggg @`+`Bar2019X`)
   MD*/
   
   static extractReferences(source) {
-    return Strings.matchAll(/@([A-Z][a-z]+[0-9][0-9][0-9][0-9][A-Z]+)/g, source).map(ea => ea[1])
+    return Strings.matchAll(/@([A-Za-z0-9_]+)/g, source).map(ea => ea[1])
   }
   
   static parseAndReplaceLatex(element) {
-    this.parseAndReplaceFigureRefs(element)
+    // do it only once
+    if (element._parsedLatex) {
+      return
+    } else {
+      element._parsedLatex = true    
+    }
+
     this.parseAndReplaceBibrefs(element)
     this.parseAndReplaceFootenotes(element)
+    this.parseAndReplaceFigureRefs(element)
+    this.parseAndReplaceLabels(element)
+    this.parseAndReplaceMiscLatex(element)
   }
   
 }

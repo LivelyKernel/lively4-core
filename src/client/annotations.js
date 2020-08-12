@@ -8,6 +8,8 @@ import { uuid as genUUID } from 'utils';
 import tinycolor from 'src/external/tinycolor.js';
 
 
+
+
 export class Annotation {
   constructor(config) {
     this.from = 0, // starts here...
