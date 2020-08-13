@@ -456,12 +456,38 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-I": cm => {
           this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
         },
+        // #KeyboardShortcut Alt-E Insert new line below
+        "Alt-E": cm => {
+          var Pos = CodeMirror.Pos;
+          function copyCursor(cur) {
+            return Pos(cur.line, cur.ch);
+          }
+          function lineLength(cm, lineNum) {
+            return cm.getLine(lineNum).length;
+          }
+
+          const actionArgs = { after: true }
+          var insertAt = copyCursor(cm.getCursor());
+          if (insertAt.line === cm.firstLine() && !actionArgs.after) {
+            // Special case for inserting newline before start of document.
+            cm.replaceRange('\n', Pos(cm.firstLine(), 0));
+            cm.setCursor(cm.firstLine(), 0);
+          } else {
+            insertAt.line = (actionArgs.after) ? insertAt.line :
+                insertAt.line - 1;
+            insertAt.ch = lineLength(cm, insertAt.line);
+            cm.setCursor(insertAt);
+            var newlineFn = CodeMirror.commands.newlineAndIndentContinueComment ||
+                CodeMirror.commands.newlineAndIndent;
+            newlineFn(cm);
+          }
+        },
         
-        // #KeyboardShortcut Alt-Backspace Leave Editor and got to Navigation
+        // #KeyboardShortcut Alt-Backspace Leave Editor and go to Navigation
         "alt-Backspace": async cm => {
           this.singalEditorbackNavigation()
         },
-        // #KeyboardShortcut Shift-Alt-Backspace Leave and Close Editor and got to Navigation
+        // #KeyboardShortcut Shift-Alt-Backspace Leave and Close Editor and go to Navigation
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },
