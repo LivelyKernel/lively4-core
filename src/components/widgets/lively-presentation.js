@@ -238,7 +238,7 @@ export default class LivelyPresentation extends Morph {
 
       document.body.style = ""
 
-      await lively.sleep(1000)
+      await lively.sleep(3000)
 
       window.print()
 
