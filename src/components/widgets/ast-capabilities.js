@@ -8,6 +8,14 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
+var Pos = CodeMirror.Pos;
+function copyCursor(cur) {
+  return Pos(cur.line, cur.ch);
+}
+function lineLength(cm, lineNum) {
+  return cm.getLine(lineNum).length;
+}
+
 export default class ASTCapabilities {
 
   constructor(codeProvider) {
@@ -33,6 +41,75 @@ export default class ASTCapabilities {
     return this.codeProvider.selections[0];
   }
 
+  /*MD ## Keyboard Shortcuts MD*/
+
+  newlineAndIndent(after) {
+    const cm = this.codeProvider.codeMirror;
+
+    const insertAt = copyCursor(cm.getCursor());
+    if (insertAt.line === cm.firstLine() && !after) {
+      // Special case for inserting newline before start of document.
+      cm.replaceRange('\n', Pos(cm.firstLine(), 0));
+      cm.setCursor(cm.firstLine(), 0);
+    } else {
+      insertAt.line = after ? insertAt.line : insertAt.line - 1;
+      insertAt.ch = lineLength(cm, insertAt.line);
+      cm.setCursor(insertAt);
+      var newlineFn = CodeMirror.commands.newlineAndIndentContinueComment || CodeMirror.commands.newlineAndIndent;
+      newlineFn(cm);
+    }
+  }
+
+  altU() {
+    this.replaceParentWithSelection();
+  }
+  // replace parent with me
+  // #TODO: also for multiselections
+  replaceParentWithSelection() {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    let pathLocationToSelect;
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const parentPath = selectedPath.parentPath;
+
+          // #TODO: which cases do we not want to support?
+          if (false) {
+            lively.warn('special case not supported');
+            exitedEarly = true;
+            return;
+          }
+          
+          // #TODO: smooth some rough edges
+
+          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          const initPath = variableDeclarator.get('init');
+
+          // default case
+          pathLocationToSelect = parentPath.getPathLocation();
+          parentPath.replaceWith(selectedPath.node);
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes([pathLocationToSelect]);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
   /*MD ## Navigation MD*/
   /**
    * Get the root path

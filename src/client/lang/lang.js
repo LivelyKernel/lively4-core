@@ -429,6 +429,10 @@ extend(Array.prototype, {
     return undefined;
   },
   
+  getItem(index) {
+    const i = index % this.length;
+    return this[i < 0 ? i + this.length : i];
+  },
 
 });
 
