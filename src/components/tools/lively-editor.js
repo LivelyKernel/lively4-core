@@ -967,7 +967,6 @@ export default class Editor extends Morph {
   }
   
   async enableAnnotations() { 
-    debugger
     await this.loadAnnotations(this.getText(), this.lastVersion) 
     lively.removeEventListener("annotations", this)
     lively.addEventListener("annotations", this, "loaded-file", async evt => {
