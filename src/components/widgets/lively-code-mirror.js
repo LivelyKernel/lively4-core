@@ -281,6 +281,37 @@ export default class LivelyCodeMirror extends HTMLElement {
     // if(Preferences.get('UseTernInCodeMirror')) {
     //   this.enableTern();
     // }
+    editor.on("keydown", (...args) => this.keyEvent(...args));
+  }
+  
+  keyEvent(cm, evt) {
+    
+    if (this.classList.contains('ast-mode') && !evt.repeat) {
+      function unifiedKeyDescription(e) {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Cctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      }
+      const operations = {
+        Escape: () => {
+          this.classList.remove('ast-mode');
+        },
+        i: () => {
+          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+        },
+      };
+      
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        evt.preventDefault();
+        evt.codemirrorIgnore = true;
+
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this, cm, evt])
+      }
+    }
   }
   
   clearHistory() {
@@ -298,6 +329,130 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (!this.extraKeys) {
       var editor = this.editor
       this.extraKeys = {
+        "Alt-1": cm => this.astCapabilities(cm).then(ac => ac.alt1()),
+        "Ctrl-Alt-1": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt1()),
+        "Shift-Alt-1": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt1()),
+        "Alt-2": cm => this.astCapabilities(cm).then(ac => ac.alt2()),
+        "Ctrl-Alt-2": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt2()),
+        "Shift-Alt-2": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt2()),
+        "Alt-3": cm => this.astCapabilities(cm).then(ac => ac.alt3()),
+        "Ctrl-Alt-3": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt3()),
+        "Shift-Alt-3": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt3()),
+        "Alt-4": cm => this.astCapabilities(cm).then(ac => ac.alt4()),
+        "Ctrl-Alt-4": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt4()),
+        "Shift-Alt-4": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt4()),
+        "Alt-5": cm => this.astCapabilities(cm).then(ac => ac.alt5()),
+        "Ctrl-Alt-5": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt5()),
+        "Shift-Alt-5": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt5()),
+        "Alt-6": cm => this.astCapabilities(cm).then(ac => ac.alt6()),
+        "Ctrl-Alt-6": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt6()),
+        "Shift-Alt-6": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt6()),
+        "Alt-7": cm => this.astCapabilities(cm).then(ac => ac.alt7()),
+        "Ctrl-Alt-7": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt7()),
+        "Shift-Alt-7": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt7()),
+        "Alt-8": cm => this.astCapabilities(cm).then(ac => ac.alt8()),
+        "Ctrl-Alt-8": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt8()),
+        "Shift-Alt-8": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt8()),
+        "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.alt9()),
+        "Ctrl-Alt-9": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt9()),
+        "Shift-Alt-9": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt9()),
+        "Alt-0": cm => this.astCapabilities(cm).then(ac => ac.alt0()),
+        "Ctrl-Alt-0": cm => this.astCapabilities(cm).then(ac => ac.ctrlAlt0()),
+        "Shift-Alt-0": cm => this.astCapabilities(cm).then(ac => ac.shiftAlt0()),
+
+        "Alt-Q": cm => this.astCapabilities(cm).then(ac => ac.altQ()),
+        "Ctrl-Alt-Q": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltQ()),
+        "Shift-Alt-Q": cm => this.astCapabilities(cm).then(ac => ac.shiftAltQ()),
+        "Alt-W": cm => this.astCapabilities(cm).then(ac => ac.altW()),
+        "Ctrl-Alt-W": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltW()),
+        "Shift-Alt-W": cm => this.astCapabilities(cm).then(ac => ac.shiftAltW()),
+        "Alt-E": cm => this.astCapabilities(cm).then(ac => ac.altE()),
+        "Ctrl-Alt-E": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltE()),
+        "Shift-Alt-E": cm => this.astCapabilities(cm).then(ac => ac.shiftAltE()),
+        "Alt-R": cm => this.astCapabilities(cm).then(ac => ac.altR()),
+        "Ctrl-Alt-R": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltR()),
+        "Shift-Alt-R": cm => this.astCapabilities(cm).then(ac => ac.shiftAltR()),
+        "Alt-T": cm => this.astCapabilities(cm).then(ac => ac.altT()),
+        "Ctrl-Alt-T": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltT()),
+        "Shift-Alt-T": cm => this.astCapabilities(cm).then(ac => ac.shiftAltT()),
+        "Alt-Y": cm => this.astCapabilities(cm).then(ac => ac.altY()),
+        "Ctrl-Alt-Y": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltY()),
+        "Shift-Alt-Y": cm => this.astCapabilities(cm).then(ac => ac.shiftAltY()),
+        // #KeyboardShortcut Alt-U Replace parent node with selection
+        "Alt-U": cm => this.astCapabilities(cm).then(ac => ac.replaceParentWithSelection()),
+        "Ctrl-Alt-U": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltU()),
+        "Shift-Alt-U": cm => this.astCapabilities(cm).then(ac => ac.shiftAltU()),
+        "Alt-I": cm => this.astCapabilities(cm).then(ac => ac.altI()),
+        "Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltI()),
+        "Shift-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.shiftAltI()),
+        // #KeyboardShortcut Alt-O Insert new line below
+        "Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(true)),
+        "Ctrl-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltO()),
+        // #KeyboardShortcut Shift-Alt-O Insert new line above
+        "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
+        "Alt-P": cm => this.astCapabilities(cm).then(ac => ac.altP()),
+        "Ctrl-Alt-P": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltP()),
+        "Shift-Alt-P": cm => this.astCapabilities(cm).then(ac => ac.shiftAltP()),
+
+        "Alt-A": cm => this.astCapabilities(cm).then(ac => ac.altA()),
+        "Ctrl-Alt-A": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltA()),
+        "Shift-Alt-A": cm => this.astCapabilities(cm).then(ac => ac.shiftAltA()),
+        "Alt-S": cm => this.astCapabilities(cm).then(ac => ac.altS()),
+        "Ctrl-Alt-S": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltS()),
+        "Shift-Alt-S": cm => this.astCapabilities(cm).then(ac => ac.shiftAltS()),
+        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.altD()),
+        "Ctrl-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltD()),
+        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.shiftAltD()),
+        "Alt-F": cm => this.astCapabilities(cm).then(ac => ac.altF()),
+        "Ctrl-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltF()),
+        "Shift-Alt-F": cm => this.astCapabilities(cm).then(ac => ac.shiftAltF()),
+        "Alt-G": cm => this.astCapabilities(cm).then(ac => ac.altG()),
+        "Ctrl-Alt-G": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltG()),
+        "Shift-Alt-G": cm => this.astCapabilities(cm).then(ac => ac.shiftAltG()),
+        "Alt-H": cm => this.astCapabilities(cm).then(ac => ac.altH()),
+        "Ctrl-Alt-H": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltH()),
+        "Shift-Alt-H": cm => this.astCapabilities(cm).then(ac => ac.shiftAltH()),
+        "Alt-J": cm => this.astCapabilities(cm).then(ac => ac.altJ()),
+        "Ctrl-Alt-J": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltJ()),
+        "Shift-Alt-J": cm => this.astCapabilities(cm).then(ac => ac.shiftAltJ()),
+        "Alt-K": cm => this.astCapabilities(cm).then(ac => ac.altK()),
+        "Ctrl-Alt-K": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltK()),
+        "Shift-Alt-K": cm => this.astCapabilities(cm).then(ac => ac.shiftAltK()),
+        "Alt-L": cm => this.astCapabilities(cm).then(ac => ac.altL()),
+        "Ctrl-Alt-L": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltL()),
+        "Shift-Alt-L": cm => this.astCapabilities(cm).then(ac => ac.shiftAltL()),
+
+        "Alt-Z": cm => this.astCapabilities(cm).then(ac => ac.altZ()),
+        "Ctrl-Alt-Z": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltZ()),
+        "Shift-Alt-Z": cm => this.astCapabilities(cm).then(ac => ac.shiftAltZ()),
+        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.altX()),
+        "Ctrl-Alt-X": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltX()),
+        "Shift-Alt-X": cm => this.astCapabilities(cm).then(ac => ac.shiftAltX()),
+        "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.altC()),
+        "Ctrl-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltC()),
+        "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.shiftAltC()),
+        "Alt-V": cm => this.astCapabilities(cm).then(ac => ac.altV()),
+        "Ctrl-Alt-V": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltV()),
+        "Shift-Alt-V": cm => this.astCapabilities(cm).then(ac => ac.shiftAltV()),
+        "Alt-B": cm => this.astCapabilities(cm).then(ac => ac.altB()),
+        "Ctrl-Alt-B": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltB()),
+        "Shift-Alt-B": cm => this.astCapabilities(cm).then(ac => ac.shiftAltB()),
+        // "Alt-N": cm => this.astCapabilities(cm).then(ac => ac.altN()),
+        // "Ctrl-Alt-N": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltN()),
+        // "Shift-Alt-N": cm => this.astCapabilities(cm).then(ac => ac.shiftAltN()),
+        // "Alt-M": cm => this.astCapabilities(cm).then(ac => ac.altM()),
+        // "Ctrl-Alt-M": cm => this.astCapabilities(cm).then(ac => ac.ctrlAltM()),
+        // "Shift-Alt-M": cm => this.astCapabilities(cm).then(ac => ac.shiftAltM()),
+        "Alt-N Alt-M": cm => lively.notify('A Multistroke Shortcut!'),
+        // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
+        "Alt-M": cm => {
+          if(this.isJavaScript){
+            this.openContextMenu(cm);
+          } else {
+            lively.warn("Context Menu doesn't work outside of js files for now!");
+          }
+        },
+        
         // #KeyboardShortcut Ctrl-H search and replace
         "Insert": (cm) => {
           // do nothing... the INSERT mode is so often activated by accident 
@@ -395,7 +550,8 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.ternWrapper.then(tw => tw.showReferences(cm, this));
         },
 
-        // #AST-Navigation
+        /*MD #AST-Navigation MD*/
+
         // #KeyboardShortcut Alt-Up Expand selection in ast-aware manner
         "Alt-Up": cm => {
           this.astCapabilities(cm).then(ac => ac.expandSelection(cm));
@@ -412,30 +568,24 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-Down": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(false));
         },
+
         // #KeyboardShortcut Alt-Left Select previous element in ast-aware manner
         "Alt-Left": cm => {
-          //lol I was here
           this.astCapabilities(cm).then(ac => ac.selectNextASTChild(true));
         },
         // #KeyboardShortcut Alt-Right Select next element in ast-aware manner
         "Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextASTChild(false));
         },
-        
         // #KeyboardShortcut Alt-Shift-Left Select previous reference
-        // #todo find unused keybinding, Alt-Shift-Left is already used by the editor 
         "Shift-Alt-Left": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
         },
         // #KeyboardShortcut Alt-Shift-Right Select next reference
-        // #todo find unused keybinding, Alt-Shift-Right is already used by the editor 
         "Shift-Alt-Right": cm => {
           this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
         },
-        // #KeyboardShortcut Alt-C Update color picker locations
-        "Alt-C": cm => {
-          this.astCapabilities(cm).then(ac => ac.updateColorPicker());
-        },
+
         // #KeyboardShortcut Alt-J Jump to declaration of this identifier
         "Alt-J": cm => {
           this.astCapabilities(cm).then(ac => ac.selectDeclaration());
@@ -444,43 +594,17 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.rename());
         },
-        // #KeyboardShortcut Alt-M Extract method
-        "Alt-M": cm => {
-          this.astCapabilities(cm).then(ac => ac.extractMethod());
-        },
-        // #KeyboardShortcut Alt-H Generate accessors for tags with id in corresponding .html file
-        "Alt-H": cm => {
-          this.astCapabilities(cm).then(ac => ac.generateHTMLAccessors());
+        // #KeyboardShortcut Alt-Enter Toggle AST Mode
+        "Alt-Enter": cm => {
+          this.classList.toggle('ast-mode');
         },
         // #KeyboardShortcut Alt-I Inline variable
         "Alt-I": cm => {
           this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
         },
-        // #KeyboardShortcut Alt-E Insert new line below
+        // #KeyboardShortcut Alt-E Extract Expression into a local variable
         "Alt-E": cm => {
-          var Pos = CodeMirror.Pos;
-          function copyCursor(cur) {
-            return Pos(cur.line, cur.ch);
-          }
-          function lineLength(cm, lineNum) {
-            return cm.getLine(lineNum).length;
-          }
-
-          const actionArgs = { after: true }
-          var insertAt = copyCursor(cm.getCursor());
-          if (insertAt.line === cm.firstLine() && !actionArgs.after) {
-            // Special case for inserting newline before start of document.
-            cm.replaceRange('\n', Pos(cm.firstLine(), 0));
-            cm.setCursor(cm.firstLine(), 0);
-          } else {
-            insertAt.line = (actionArgs.after) ? insertAt.line :
-                insertAt.line - 1;
-            insertAt.ch = lineLength(cm, insertAt.line);
-            cm.setCursor(insertAt);
-            var newlineFn = CodeMirror.commands.newlineAndIndentContinueComment ||
-                CodeMirror.commands.newlineAndIndent;
-            newlineFn(cm);
-          }
+          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
         },
         
         // #KeyboardShortcut Alt-Backspace Leave Editor and go to Navigation
@@ -491,8 +615,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         "shift-alt-Backspace": async cm => {
           this.singalEditorbackNavigation(true)
         },
-        // #KeyboardShortcut Alt-A show additional info of this Active Expression
-        "Alt-A": async cm => {
+        // #KeyboardShortcut Shift-Alt-A show additional info of this Active Expression
+        "Shift-Alt-A": async cm => {
           this.showAExprDependencyTextMarkers();
         },
         // #Async #Workspace #Snippet #Workaround missing global async/await support in JavaScript / our Workspaces
@@ -515,20 +639,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-Q": cm => {
           this.autoCompletion(cm).then(ac => ac.complete(this, cm));
         },
-        
+  
       }
-      // Alt-Enter has to react on key up, so we make an extra rule here
-      // #KeyboardShortcut Alt-Enter ast refactoring/autocomplete menu
-      this.editor.on("keyup", (cm, event) => {
-        if(event.altKey && event.keyCode == 13) {
-          if(this.isJavaScript){
-            this.openContextMenu(cm);
-          } else {
-            lively.warn("Context Menu doesn't work outside of js files for now!");
-          }
-        }
-      })
-      
       
     }
     return this.extraKeys
