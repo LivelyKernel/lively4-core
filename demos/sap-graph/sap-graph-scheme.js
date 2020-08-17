@@ -35,16 +35,22 @@ export class SAPGraphScheme extends Scheme {
   }
   
   
-  async GET(options) {
+  async GET(options={}) {
+    
+    options.headers = options.headers || {};
+ 
+    
+    
+    if (new URL(this.url).pathname.match(/\/$/)) return new Response("{}", {status: 200}) // should we redirect?
+    
     var resp = await this.api("GET", this.apiString)
     
     if (resp.status == "200") {
       var json = await resp.json()
       
       if (options.headers["content-type"] == "text/html") { // #TODO vs. header.get()
-        var html = `<sap-graph src="${"https://api.graph.sap/beta/" + apiString}"></sap-graph>`
         
-        
+        var html = `<sap-graph src="${this.url}"></sap-graph>`
         return new Response(html, resp.headers)  
       }
       var text = JSON.stringify(json, undefined, 2)
@@ -72,7 +78,10 @@ export class SAPGraphScheme extends Scheme {
 
   async OPTIONS() {
     // #Hack
-    if (new URL(this.url).pathname.match(/.l4a$/)) return new Response({}, {status: 300}) // #TODO how do we deal with this?
+    if (new URL(this.url).pathname.match(/.l4a$/)) return new Response("{}", {status: 300}) // #TODO how do we deal with this?
+    
+    if (new URL(this.url).pathname.match(/\/$/)) return new Response("{}", {status: 200}) // should we redirect?
+    
     
     var resp = await this.api("GET", this.apiString)
     

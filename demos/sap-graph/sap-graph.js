@@ -26,24 +26,49 @@ export default class SAPGraph extends Morph {
 
   async fetchJSON(url) {
     try {
-      return fetch(url, {
+      var text = await fetch(url, {
         method: "GET",
         headers: {
           "content-type": "application/json"
         }
-      }).then(r => r.json())
+      }).then(r => r.text())
+      return JSON.parse(text)
     } catch(e) {
-      this.get("#content").innerHTML = "Error: " + e
+      this.get("#content").innerHTML = "Error: " + e + " response: " + text
       return false
-    }
+    } 
   }
   
   async render() {
     if (!this.src || this.src == "") return;
+    this.get("#content").innerHTML = "loading " + this.src
     var json = await this.fetchJSON(this.src)  
     if (!json) return
     this.json = json
-    this.get("#content").innerHTML = "<pre>" + JSON.stringify(json, undefined, 2) + "</pre>"
+    if (json.value) {
+      this.renderArray(json.value)
+    } else {
+      this.renderSingle(json)
+    }
+  }
+  
+  async renderSingle(json) {
+    var table = await (<lively-table></lively-table>)
+    var array = [["key", "value"]]
+    for(var key of Object.keys(json)) {
+      array.push([key, json[key]])
+    }
+    
+    table.setFromArray(array)
+    this.get("#content").innerHTML = ""
+    this.get("#content").appendChild(table)
+  }
+  
+   async renderArray(json) {
+    var table = await (<lively-table></lively-table>)
+    table.setFromJSO(json)
+    this.get("#content").innerHTML = ""
+    this.get("#content").appendChild(table)
   }
   
   livelyInspect(contentNode, inspector) {
