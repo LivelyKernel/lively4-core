@@ -311,6 +311,9 @@ export default class Container extends Morph {
     if (path.match(/\?html/)) {
       format = "html"
     }
+    if (!donotrender && path.match(/sap\:/)) {
+      format = "html" // when viewing... we want HTML
+    }
     
     if (isdir) {
       // return new Promise((resolve) => { resolve("") });
@@ -1053,6 +1056,7 @@ export default class Container extends Morph {
 
 
   onEdit() {
+    debugger
     this.setAttribute("mode", "edit");
     this.showCancelAndSave();
     this.editFile();
@@ -1714,6 +1718,10 @@ export default class Container extends Morph {
   async editFile(path) {
     // console.log("[container] editFile " + path)
     this.setAttribute("mode","edit"); // make it persistent
+    
+    
+    if (!path) path = this.getPath()
+    
     if(path) await this.setPath(path, true /* do not render */) 
     
     this.clear();

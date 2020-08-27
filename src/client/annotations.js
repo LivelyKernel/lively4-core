@@ -449,7 +449,7 @@ export class AnnotatedText {
       // if not, we can try to get it...
       var textResp = await lively.files.loadFileResponse(fileURL, annotations.textVersion || lastVersion)
       if (textResp.status !== 200) {
-        throw new Error("[annotations] could not load reference text for annotations")
+        console.error("[annotations] could not load reference text for annotations")
       }
       text = await textResp.text()
       annotations.textVersion = textResp.headers.get("fileversion")
