@@ -38,8 +38,6 @@ export class SAPGraphScheme extends Scheme {
   async GET(options={}) {
     
     options.headers = options.headers || {};
- 
-    
     
     if (new URL(this.url).pathname.match(/\/$/)) return new Response("{}", {status: 200}) // should we redirect?
     
@@ -78,9 +76,12 @@ export class SAPGraphScheme extends Scheme {
 
   async OPTIONS() {
     // #Hack
-    if (new URL(this.url).pathname.match(/.l4a$/)) return new Response("{}", {status: 300}) // #TODO how do we deal with this?
+    var url = new URL(this.url)
+    if (url.pathname.match(/.l4a$/)) return new Response("{}", {status: 300}) // #TODO how do we deal with this?
     
-    if (new URL(this.url).pathname.match(/\/$/)) return new Response("{}", {status: 200}) // should we redirect?
+    if (url.pathname.match(/\/$/)) {
+      return new Response("{}", {status: 200}) // should we redirect?
+    }
     
     
     var resp = await this.api("GET", this.apiString)
@@ -92,9 +93,40 @@ export class SAPGraphScheme extends Scheme {
     if (resp.status == "200") {
       var json = await resp.json()
       
+      // this is hard coded in docs, but can we see it also in the schema?
+      if (json['@odata.context'] == "$metadata#Customers/$entity") {
+        result.contents.push({
+            name: "SalesOrders", 
+        })
+      }
+      
+      
+      // #TODO #Hack #SAP hardcode some links, because we cannot see how to generate them from the schema
+      if(json.customerID) {
+        result.contents.push({
+            name: "Customer", 
+            href:  "sap://Customers/" + json.customerID
+        })
+      }
+      if(json.productID) {
+        result.contents.push({
+            name: "Product", 
+            href:  "sap://Products/" + json.productID
+        })
+      }
+      
+      
       if (json.value && json.value.length) {
         for(var ea of json.value) {
-          result.contents.push({name: ea.id})
+          
+          var ref = {name: "SalesOrder " + ea.id}
+          
+          // because sap://Customers/1005075/SalesOrders/964 does not work... 
+          if (json["@odata.context"] == "$metadata#SalesOrders") {
+            ref.href = "sap://SalesOrders/" + ea.id
+          }
+          
+          result.contents.push(ref)
         }
       }
 
