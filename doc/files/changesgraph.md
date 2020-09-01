@@ -1,10 +1,5 @@
-# Changes Graph
-
-<lively-import src="_navigation.html"></lively-import>
-
 <div>
-url <input style="width:500px" id="url" value=""><br>
-limit <input id="limit">
+limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
 </div>
 
 <script>
@@ -12,7 +7,7 @@ limit <input id="limit">
   import moment from "src/external/moment.js";  
   import diff from 'src/external/diff-match-patch.js';
   import AnsiColorFilter from "src/external/ansi-to-html.js"
-  
+  import ViewNav from 'src/client/viewnav.js'
   
   
   class ChangesGraph {
@@ -32,7 +27,8 @@ limit <input id="limit">
       this.ctx = ctx
       var dmp = new diff.diff_match_patch();
       var baseUrl = lively4url + "/"
-      var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/auth-dropbox.js"
+      // var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/auth-dropbox.js"
+      var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/"
 
       this.query("input#url").value = url
       var limitElement = this.query("input#limit")
@@ -65,6 +61,68 @@ limit <input id="limit">
       var baseDataChildrenMap
 
       var changes
+      
+      let edges, nodes, selectedChange, selectedNode, fullNodes, parents
+      let pane, svgNodes
+
+      const DashedEdgeStyle = `[color="gray" style="dashed" arrowhead="open" arrowsize=.7]`
+
+      function key(id) {
+        return "_" + id.replace(/[^a-z0-9A-Z_]/g,"")
+      }
+
+      function addEdge(a , b, style="") {
+        edges.add(key(a)  + " -> " +  key(b) + style)
+      }
+      
+      function findConnectingPath(version, path, depth=0, visited=new Set()) {
+        if (!version) throw new Error("version missing")
+        if (visited.has(version))  return
+        visited.add(version)
+        if (depth > 10000) {
+          // addEdges(path)
+          // console.log("stop search at depth " + depth + " path: ", path)
+          return null
+        }
+        if (!path) path = [version]
+        // console.log("findConnectionPath ", version, path)
+        var change = baseDataMap.get(version)
+        if (!change) {
+          debugger
+          return // nothing found? should this happen
+        }
+        var parents = change.parents.split(" ")
+        for(var eaParentVersion of parents) {
+          if (fullNodes.has(eaParentVersion) ) {
+            return path.concat([eaParentVersion]) // found something!
+          } else {
+            // depth first search
+            var found = eaParentVersion && findConnectingPath(eaParentVersion, path.concat([eaParentVersion]), depth + 1, visited)
+            if (found) {
+              // console.log("found ... " + found)
+              return found 
+            }
+          }
+        }
+        return null
+      }
+
+      function addEdges(path) {
+        var lastVersion
+        path.forEach(ea => {
+          if (ea && lastVersion) {
+            addEdge(lastVersion, ea)
+          }
+          lastVersion = ea
+        })
+      }
+
+      function addShortPath(path) {
+        addEdge(path.first, path.last,  DashedEdgeStyle)
+        // var shortCut = ""+path.first + "_TO_" + path.last
+        // addEdge(path.first, shortCut)
+        // addEdge(shortCut, path.last)
+      }
 
       var updateTable = async () => {
 
@@ -97,24 +155,13 @@ limit <input id="limit">
         changes = new Map()
 
 
-        var fullNodes = new Set()
-        var parents = new Set()
-
-        var DashedEdgeStyle = `[color="gray" style="dashed" arrowhead="open" arrowsize=.7]`
+        fullNodes = new Set()
+        parents = new Set()
 
 
-        var edges = new Set()
-        var nodes = []
-        var selectedChange 
-        var selectedNode 
-
-        function key(id) {
-          return "_" + id.replace(/[^a-z0-9A-Z_]/g,"")
-        }
-
-        function addEdge(a , b, style="") {
-          edges.add(key(a)  + " -> " +  key(b) + style)
-        }
+        edges = new Set()
+        nodes = []
+        
 
         data.forEach(ea => {
           var version = ea.version
@@ -158,54 +205,7 @@ limit <input id="limit">
           }
         })
 
-        function findConnectingPath(version, path, depth=0, visited=new Set()) {
-          if (!version) throw new Error("version missing")
-          if (visited.has(version))  return
-          visited.add(version)
-          if (depth > 10000) {
-            // addEdges(path)
-            // console.log("stop search at depth " + depth + " path: ", path)
-            return null
-          }
-          if (!path) path = [version]
-          // console.log("findConnectionPath ", version, path)
-          var change = baseDataMap.get(version)
-          if (!change) {
-            debugger
-            return // nothing found? should this happen
-          }
-          var parents = change.parents.split(" ")
-          for(var eaParentVersion of parents) {
-            if (fullNodes.has(eaParentVersion) ) {
-              return path.concat([eaParentVersion]) // found something!
-            } else {
-              // depth first search
-              var found = eaParentVersion && findConnectingPath(eaParentVersion, path.concat([eaParentVersion]), depth + 1, visited)
-              if (found) {
-                // console.log("found ... " + found)
-                return found 
-              }
-            }
-          }
-          return null
-        }
-
-        function addEdges(path) {
-          var lastVersion
-          path.forEach(ea => {
-            if (ea && lastVersion) {
-              addEdge(lastVersion, ea)
-            }
-            lastVersion = ea
-          })
-        }
-
-        function addShortPath(path) {
-          addEdge(path.first, path.last,  DashedEdgeStyle)
-          // var shortCut = ""+path.first + "_TO_" + path.last
-          // addEdge(path.first, shortCut)
-          // addEdge(shortCut, path.last)
-        }
+        
 
 
         graphviz.innerHTML = `<` +`script type="graphviz">digraph {
@@ -214,7 +214,11 @@ limit <input id="limit">
         }<` + `/script>}`
         await graphviz.updateViz()
 
-        graphviz.shadowRoot.querySelectorAll("g.node").forEach(ea => {
+        var scrollToData = tanglingParents.first
+
+        svgNodes = graphviz.shadowRoot.querySelectorAll("g.node")
+        
+        svgNodes.forEach(ea => {
           ea.addEventListener("click", async (evt) => {
             var key = ea.querySelector('title').textContent
             var change = changes.get(key)
@@ -224,10 +228,18 @@ limit <input id="limit">
               lively.openInspector({baseDataMap, baseDataChildrenMap, change})
               return
             }
-
+            // hide previous selected node
             if (selectedNode) {
-              selectedNode.querySelector("polygon").setAttribute("fill", "none")
+             selectedNode.querySelector("polygon").setAttribute("fill", "none")
             }
+            // toggle details by clicking it
+            if(selectedNode == ea) {
+              selectedNode = null
+              details.innerHTML = ""
+              lively.setGlobalPosition(details, lively.pt(0,0)) // move out of  the way
+              return
+            }
+            
             selectedNode = ea
             selectedNode.querySelector("polygon").setAttribute("fill", "lightgray")
             selectedChange = change
@@ -242,6 +254,20 @@ limit <input id="limit">
             lively.setGlobalPosition(details, lively.getGlobalBounds(selectedNode).topRight().addPt(lively.pt(10,0)))
           })
         })
+
+        lively.sleep(0).then(() => {
+          if (pane) {
+            let pos = lively.getGlobalPosition(_.first(svgNodes))
+            let panePos = lively.getGlobalPosition(pane)        
+            let delta = pos.subPt(panePos)
+            pane.scrollLeft = delta.x - lively.getExtent(pane).y / 2
+            pane.scrollTop = delta.y - 100
+            lively.notify("scroll to: " + delta )
+
+          } else {
+            lively.notify("no pane to scroll into...")
+          }
+        })        
       }
 
       var details = <div id="details"></div>
@@ -267,13 +293,43 @@ limit <input id="limit">
         padding: 5px;
       }
       `
+      
+            
+      graphviz.style.display = "inline-block" // so it takes the width of children and not parent
+      
+      pane = <div id="root" style="z-index: -1; position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% - 0px); height: calc(100% - 0px);">
+        {style}
+         <div style="height: 20px"></div>
+        <h2>Change Graph</h2>
+        {graphviz}
+        {details}
+      </div>
+      
+      
+      var lastMove
+      function onPanningMove(evt) {
+        var pos = lively.getPosition(evt)
+        var delta = pos.subPt(lastMove)
+        pane.scrollTop -= delta.y
+        pane.scrollLeft -= delta.x
+        lastMove = pos
 
-      var div = document.createElement("div")
-      div.id = "root"
-      div.appendChild(style)
-      div.appendChild(graphviz)
-      div.appendChild(details)
-      return div
+      }
+      
+      pane.addEventListener("pointerdown", evt => {
+        if (evt.ctrlKey) {
+          lastMove = lively.getPosition(evt)
+          lively.addEventListener("changegraph", document.body.parentElement, "pointermove", evt => onPanningMove(evt))
+          lively.addEventListener("changegraph", document.body.parentElement, "pointerup", evt => {
+            lively.removeEventListener("changegraph", document.body.parentElement)
+          })
+          evt.stopPropagation()
+          evt.preventDefault()
+        }
+      }, true)
+      
+      
+      return pane
     }
   }
   ChangesGraph.create(this)
