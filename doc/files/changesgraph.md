@@ -334,17 +334,32 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
 
       }
       
+      function onPanningDown(evt) {
+        lastMove = lively.getPosition(evt)
+        lively.addEventListener("changegraph", document.body.parentElement, "pointermove", evt => onPanningMove(evt))
+        lively.addEventListener("changegraph", document.body.parentElement, "pointerup", evt => {
+          lively.removeEventListener("changegraph", document.body.parentElement)
+        })
+        evt.stopPropagation()
+        evt.preventDefault()
+      }
+      
+      // always drag with ctrl pressed
       pane.addEventListener("pointerdown", evt => {
         if (evt.ctrlKey) {
-          lastMove = lively.getPosition(evt)
-          lively.addEventListener("changegraph", document.body.parentElement, "pointermove", evt => onPanningMove(evt))
-          lively.addEventListener("changegraph", document.body.parentElement, "pointerup", evt => {
-            lively.removeEventListener("changegraph", document.body.parentElement)
-          })
-          evt.stopPropagation()
-          evt.preventDefault()
+          onPanningDown(evt)          
         }
       }, true)
+      
+      // but if nothing else... normal drag will do
+      pane.addEventListener("pointerdown", evt => {
+        var element = _.first(evt.composedPath())
+        lively.notify("element " + element.localName)
+        if (element.localName == "polygon") {
+          onPanningDown(evt)
+        }
+      })
+
       
       return pane
     }
