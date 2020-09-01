@@ -71,7 +71,7 @@ limit <input id="limit">
         details.innerHTML = ""
 
         // we need the whole graph to get the topology straight...
-        baseData = (await lively.files.loadVersions(baseUrl, true).then(r => r.json())).versions
+        baseData = (await lively.files.loadVersions(baseUrl).then(r => r.json())).versions
 
         baseDataMap = new Map()
         baseDataChildrenMap = new Map()
@@ -90,7 +90,7 @@ limit <input id="limit">
         })
 
         // get data
-        data = (await lively.files.loadVersions(url, true).then(r => r.json())).versions
+        data = (await lively.files.loadVersions(url).then(r => r.json())).versions
         data = data.filter(ea => ea && ea.version) // cleanup
 
         data = data.slice(0, limit)

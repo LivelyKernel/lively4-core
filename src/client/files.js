@@ -330,7 +330,29 @@ export default class Files {
     })
   }  
   
-  static async loadVersions(url, cached=false) {
+  static get versionHistoriesLoaded() {
+    if (!this._versionHistoriesLoaded) this._versionHistoriesLoaded = new Map();
+    return this._versionHistoriesLoaded
+  }
+  
+  static async loadVersions(url, cached) {
+    
+    var useCached  = cached || false;
+    // Fuck... some custom clever chaching logic? Should we generalize it?
+    if (cached === undefined) {
+      var maxCacheTime = 1000 * 60 * 5; // 5min in ms
+      var lastLoaded = this.versionHistoriesLoaded.get(url)
+      if (lastLoaded && ((Date.now() - lastLoaded)  < maxCacheTime)) {
+        useCached = true
+        // lively.notify("use cached version history")
+      } else {
+        this.versionHistoriesLoaded.set(url, Date.now())
+        // lively.notify("update version history")
+      }
+    } else if (!cached) {
+        this.versionHistoriesLoaded.set(url, Date.now())
+    }
+    
     var versionscache = await caches.open("file_versions")
     if (cached) {
       var resp = await versionscache.match(url)
