@@ -1581,6 +1581,18 @@ export default class Lively {
     });
   }
 
+  static async openMarkdown(url, title="Markdown", parameters={}) {
+    var comp = await lively.openComponentInWindow("lively-markdown", undefined, pt(1000,800)) 
+    var src = await fetch(url).then(r => r.text())
+    comp.parameters = parameters
+    comp.setContent(src)
+    comp.parentElement.setAttribute("title", title)
+    await comp.evaluated
+    
+    return comp
+  }
+  
+  
   static get(query) {
     return document.querySelector(query)
   }

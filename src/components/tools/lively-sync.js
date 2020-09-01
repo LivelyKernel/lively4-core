@@ -300,6 +300,11 @@ export default class Sync extends Morph {
    this.gitControl("graph");
   }
   
+  onChangesgraphButton() {
+    lively.openMarkdown(lively4url + "/doc/files/changesgraph.md", 
+      "Change Graph", {url: this.getServerURL() + "/" + this.getRepository() + "/"})
+  }
+  
   onCommitButton() {
     // return lively.notify("Commit is not implemented yet")  
     this.gitControl("commit");

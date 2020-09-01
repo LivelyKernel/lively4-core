@@ -1,3 +1,5 @@
+<!-- used as a #Tool by lively-sync --> 
+
 <div>
 limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
 </div>
@@ -9,6 +11,8 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
   import AnsiColorFilter from "src/external/ansi-to-html.js"
   import ViewNav from 'src/client/viewnav.js'
   
+  var markdownComp = lively.query(this, "lively-markdown")
+  
   
   class ChangesGraph {
 
@@ -17,20 +21,36 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
       element.addEventListener("change", function(evt) {
           update(this.value)
       })
+      
     }
     
     static query(query) {
       return lively.query(this.ctx, query)
     }
     
+    static get url() {
+      if (!this._url) 
+      this.url = "https://lively-kernel.org/lively4/lively4-jens/src/client/"
+      return this._url
+    }
+
+    static set url(url) {
+      this._url = url
+      this.query("input#url").value = url
+    }
+
+
     static async create(ctx) {
+    
       this.ctx = ctx
+      var parameters = markdownComp.parameters
+      if (parameters.url) {
+        this.url = parameters.url
+      }
+      
       var dmp = new diff.diff_match_patch();
       var baseUrl = lively4url + "/"
-      // var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/auth-dropbox.js"
-      var url = "https://lively-kernel.org/lively4/lively4-jens/src/client/"
-
-      this.query("input#url").value = url
+      var url = this.url
       var limitElement = this.query("input#limit")
       
       limitElement.value = 200
@@ -43,16 +63,14 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
 
 
       var limit = Number(limitElement.value)
-      limitElement.addEventListener("change", function(evt) {
-          limit = Number(this.value)
-          updateTable() // on Enter
-        //}
+      limitElement.addEventListener("change", (evt) => {
+          limit = Number(limitElement.value)
+          this.updateTable() // on Enter
       });
 
-      urlElement.addEventListener("change", function(evt) {
-          url = this.value
-          updateTable() // on Enter
-        //}
+      urlElement.addEventListener("change", (evt) => {
+          url = urlElement.value
+          this.updateTable() // on Enter
       });
 
       var data   
@@ -124,7 +142,7 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
         // addEdge(shortCut, path.last)
       }
 
-      var updateTable = async () => {
+      this.updateTable = async () => {
 
         details.innerHTML = ""
 
@@ -198,10 +216,10 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
         tanglingParents.forEach(ea => {
           var path = findConnectingPath(ea)
           if (path) {
-            console.log("FOUND " + path)
+            // console.log("FOUND " + path)
             addShortPath(path)
           } else {
-            console.log("nothing found for" + ea)
+            // console.log("nothing found for" + ea)
           }
         })
 
@@ -262,16 +280,16 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
             let delta = pos.subPt(panePos)
             pane.scrollLeft = delta.x - lively.getExtent(pane).y / 2
             pane.scrollTop = delta.y - 100
-            lively.notify("scroll to: " + delta )
+            // lively.notify("scroll to: " + delta )
 
           } else {
-            lively.notify("no pane to scroll into...")
+            // lively.notify("no pane to scroll into...")
           }
         })        
       }
 
       var details = <div id="details"></div>
-      updateTable()
+      this.updateTable()
 
       var style = document.createElement("style")
       style.textContent = `
@@ -296,8 +314,8 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
       
             
       graphviz.style.display = "inline-block" // so it takes the width of children and not parent
-      
-      pane = <div id="root" style="z-index: -1; position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% - 0px); height: calc(100% - 0px);">
+      // z-index: -1;
+      pane = <div id="root" style="position: absolute; top: 20px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% - 0px); height: calc(100% - 20px);">
         {style}
          <div style="height: 20px"></div>
         <h2>Change Graph</h2>
@@ -328,9 +346,12 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
         }
       }, true)
       
-      
       return pane
     }
   }
+  
+  markdownComp.ChangesGraph = ChangesGraph // expose it?
+  
+
   ChangesGraph.create(this)
 </script>

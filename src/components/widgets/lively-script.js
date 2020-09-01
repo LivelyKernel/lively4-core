@@ -24,7 +24,9 @@ export default class LivelyScript extends Morph {
 
   
   async initialize() {
-    
+    this.evaluated = new Promise(resolve => {
+      this.resolveEvaluated = resolve
+    })
   }
   
   
@@ -53,6 +55,13 @@ export default class LivelyScript extends Morph {
       this.get("#result").innerHTML = "" + result.value 
     } else {
       this.get("#result").innerHTML = ""
+    }
+    if (this.resolveEvaluated) {
+      // lively.notify("[script] evaluated " + this)
+      this.resolveEvaluated()
+      this.resolveEvaluated = null // don't do it twice...
+    } else {
+      console.log("[script] evaluated AGAIN" )
     }
   }
   
@@ -104,7 +113,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    console.log("" + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
+    // console.log("" + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()
