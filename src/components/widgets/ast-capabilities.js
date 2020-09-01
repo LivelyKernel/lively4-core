@@ -85,7 +85,7 @@ export default class ASTCapabilities {
             exitedEarly = true;
             return;
           }
-          
+
           // #TODO: smooth some rough edges
 
           const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
@@ -110,6 +110,162 @@ export default class ASTCapabilities {
 
     this.scrollTo(scrollInfo);
   }
+
+  generateIf(type) {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const statement = selectedPath.getStatementParent();
+          pathLocationsToSelect.push(statement.getPathLocation() + '.test');
+
+          statement.replaceWith(t.ifStatement(t.booleanLiteral(true), statement.node));
+          if (type === 'condition') {} else if (type === 'then') {} else if (type === 'else') {}
+
+          return;
+
+          const identifier = this.getFirstSelectedIdentifier(selectedPath);
+          if (!identifier) {
+            lively.warn('no identifier selected');
+            exitedEarly = true;
+            return;
+          }
+
+          const name = identifier.node.name;
+          if (!identifier.scope.hasBinding(name)) {
+            lively.warn('no binding found for ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          let binding = identifier.scope.getBinding(name);
+          if (!binding) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          if (!['var', 'let', 'const'].includes(binding.kind)) {
+            lively.warn('binding for "' + name + '" is of kind "' + binding.kind + '" but should be any of "var", "let", or "const"');
+            exitedEarly = true;
+            return;
+          }
+
+          const constantViolations = binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name));
+          if (constantViolations.length > 0) {
+            lively.warn('cannot inline because there is a constant violation for variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const declarationIdentifierPath = this.getBindingDeclarationIdentifierPath(binding);
+          if (!declarationIdentifierPath.parentPath.isVariableDeclarator()) {
+            lively.warn('declaration is probably in a destructuring');
+            exitedEarly = true;
+            return;
+          }
+
+          const referencePaths = binding.referencePaths;
+          if (referencePaths.length === 0) {
+            lively.warn('variable "' + name + '" is never referenced');
+            exitedEarly = true;
+            return;
+          }
+
+          const identifierPaths = [declarationIdentifierPath, ...referencePaths, ...constantViolations];
+          if (!identifierPaths.includes(identifier)) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          const initPath = variableDeclarator.get('init');
+
+          // remove declaration
+          if (variableDeclaration.get('declarations').length === 1) {
+            variableDeclaration.remove();
+          } else {
+            variableDeclarator.remove();
+          }
+
+          // inline declaration
+          referencePaths.forEach(p => {
+            pathLocationsToSelect.push(p.getPathLocation());
+          });
+          referencePaths.forEach(p => {
+            p.replaceWith(initPath.node);
+          });
+          const o = { a: 42, b: 17 };
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
+  // # Swap if and else blocks of a conditional
+  swapConditional() {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const ifStatement = selectedPath.find(p => p.isIfStatement());
+          if (!ifStatement) {
+            lively.warn('not within an if statement');
+            exitedEarly = true;
+            return;
+          }
+
+          pathLocationsToSelect.push(ifStatement.getPathLocation());
+
+          const then = ifStatement.node.consequent;
+          ifStatement.node.consequent = ifStatement.node.alternate || t.blockStatement([]);
+          if (then.type === 'BlockStatement' && then.body.length === 0) {
+            ifStatement.node.alternate = null;
+          } else {
+            ifStatement.node.alternate = then;
+          }
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
   /*MD ## Navigation MD*/
   /**
    * Get the root path
