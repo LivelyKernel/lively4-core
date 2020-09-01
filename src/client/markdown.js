@@ -123,6 +123,12 @@ export default class Markdown {
     
     // late parse and convert latex figure references
     this.parseAndReplace(element, /@fig:([A-Za-z0-9]+)/g, (m) => <a href={"#" +m[1]}>{m[1]}</a>)
+    this.parseAndReplace(element, /\\(?:auto)?ref\{([^}]+)\}/g, (m) => <a href={"#" +m[1]}>{m[1]}</a>)
+  }
+  
+  
+  static parseAndReplaceHeadings(element) {
+    this.parseAndReplace(element, /\\paragraph\{([^}]+)\}/g, (m) => <b>{m[1]}</b>)
   }
                          
   static allNodesBetween(startNode, endNode) {
@@ -210,6 +216,7 @@ Markdown.extractReferences(`Hello @`+`Foo1981HHC World\nggg @`+`Bar2019X`)
     this.parseAndReplaceFootenotes(element)
     this.parseAndReplaceFigureRefs(element)
     this.parseAndReplaceLabels(element)
+    this.parseAndReplaceHeadings(element)
     this.parseAndReplaceMiscLatex(element)
   }
   

@@ -53,15 +53,10 @@ export default class SAPGraph extends Morph {
   }
   
   async renderSingle(json) {
-    var table = await (<lively-table></lively-table>)
-    var array = [["key", "value"]]
-    for(var key of Object.keys(json)) {
-      array.push([key, json[key]])
-    }
-    
-    table.setFromArray(array)
+    var inspector = await (<lively-inspector></lively-inspector>)
+    inspector.inspect(json)
     this.get("#content").innerHTML = ""
-    this.get("#content").appendChild(table)
+    this.get("#content").appendChild(inspector)
   }
   
    async renderArray(json) {
