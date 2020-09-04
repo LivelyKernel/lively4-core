@@ -266,6 +266,90 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
+  altN() {
+    this.negateExpression();
+  }
+  // # Swap if and else blocks of a conditional
+  negateExpression() {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const negatableBinaryOperators = {
+            "==": "!=",
+            "!=": "==",
+            "===": "!==",
+            "!==": "===",
+            "<": ">=",
+            "<=": ">",
+            ">": "<=",
+            ">=": "<"
+          };
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          let pathToNegate = selectedPath.find(p => {
+            const parentPath = p.parentPath;
+
+            if (!parentPath) {
+              return false;
+            }
+
+            if (parentPath.isIfStatement() && p.parentKey === 'test') {
+              return true;
+            }
+
+            if (p.isBinaryExpression() && negatableBinaryOperators[p.node.operator]) {
+              return true;
+            }
+
+            return false;
+          });
+
+          pathToNegate = pathToNegate || selectedPath.find(p => {
+            const parentPath = p.parentPath;
+            return parentPath && parentPath.isVariableDeclarator() && p.parentKey === 'init';
+          });
+
+          if (!pathToNegate) {
+            lively.warn('not within a negatable node');
+            exitedEarly = true;
+            return;
+          }
+
+          pathLocationsToSelect.push(pathToNegate.getPathLocation());
+
+          if (pathToNegate.isUnaryExpression() && pathToNegate.node.operator === '!') {
+            pathToNegate.replaceWith(pathToNegate.get('argument').node);
+          } else {
+            const negatedOperator = negatableBinaryOperators[pathToNegate.node.operator];
+            if (pathToNegate.isBinaryExpression() && negatedOperator) {
+              pathToNegate.node.operator = negatedOperator;
+            } else {
+              pathToNegate.replaceWith(t.unaryExpression("!", pathToNegate.node));
+            }
+          }
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
   /*MD ## Navigation MD*/
   /**
    * Get the root path
