@@ -1164,9 +1164,9 @@ export default class Container extends Morph {
     lively.notify("LaTeX", "build", 10)
 
     var buildPath = dir.replace(serverURL, "")
-    var makeURL = serverURL + "/_make/" + buildPath
+    var makeURL = serverURL + "/_make/" + buildPath + "?target=" + pdf.replace(/.*\//,"")
     
-    var resp = await fetch(makeURL)
+    var resp = await fetch(makeURL, {})
     
     var result = await resp.text()
 
