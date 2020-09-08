@@ -42,4 +42,20 @@ Given, that the lively4 FileIndex contains bibliographies and PDF files, those a
 
 ![](literature_overview.png)
 
+## Script Augmented Interactive Workflows #ScriptingWorkflows
+
+Using Lively it is possible to hook into very manual workflows and start to script. This is similar to the capabilities of AppleScript, but with Halos it is much easier to actually get the elements that contain the interesting content.
+
+```javascript
+import Strings from 'src/client/strings.js'
+
+var input = document.querySelector("lively-dialog").get("input");
+
+
+var ignore = new Set(["A"]);
+
+input.value = input.value.split(" ").filter(ea => ea.length > 0).map(ea => Strings.toUpperCaseFirst(ea.replace(/[,:;]/,""))).filter(ea => !ignore.has(ea)).join("")
+```
+
+![](scriptaugmented_interactive_workflows.png)
 
