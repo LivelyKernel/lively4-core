@@ -752,8 +752,9 @@ export default class FileIndex {
     }
   } 
     
-  async addFile(url, name="", type, size, modified) {
+  async addFile(url, name="", type, size, modified, slowdown=false) {
     var start = performance.now()
+    var addedContent = false
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
       return
@@ -761,12 +762,6 @@ export default class FileIndex {
     console.log("[fileindex] addFile " + url)
 
     if (type == "file") {
-      var json = (await this.loadVersions(url))
-      if (json) {
-        var versions = json.map(ea => ea && ea.version).filter(ea => ea)  
-      } else {
-        console.warn("[lively-index] could not addFile " +url)
-      }
        
     }
     
@@ -774,12 +769,11 @@ export default class FileIndex {
       url: url,
       name: name,
       size: size,
-      modified: modified,
-      versions: versions
+      modified: modified
     }
   
     if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
-      if (size < 100000) {
+      if ((size < 100000) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
           headers: {
@@ -787,7 +781,18 @@ export default class FileIndex {
           }
         })
         file.version = response.clone().headers.get("fileversion")
-        file.content = await response.clone().text()    
+        file.content = await response.clone().text() 
+        
+        // only load versions for our small text files... 
+        console.log("[fileindex] load versions for " + url)
+
+        var versionsJSON = (await this.loadVersions(url))
+        if (versionsJSON) {
+          file.versions = versionsJSON.map(ea => ea && ea.version).filter(ea => ea)  
+        } else {
+          console.warn("[lively-index] could not versions for " +url)
+        }
+        addedContent = true
       }
     }
 
@@ -828,6 +833,11 @@ export default class FileIndex {
     }
     
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
+    
+    if (slowdown && addedContent) {
+      console.log("[fileindex] wait a second")
+      await wait(1000) // slow down the indexing
+    }
   }
 
   async dropFile(url) {
@@ -856,9 +866,12 @@ export default class FileIndex {
       return
     }
     
+    let files = json.contents
+    files = files.filter(ea => !ea.name.match(/(\.svn)|(\.git)/))
+    
     if (showProgress) {
       var progress = await lively.showProgress("add " + baseURL.replace(/\/$/,"").replace(/.*\//,""))
-      var total = json.contents.length
+      var total = files.length
       var i=0
     }
 
@@ -871,15 +884,14 @@ export default class FileIndex {
     })
     
     try {
-      for(let ea of json.contents) {
+      for(let ea of files) {
           if (showProgress) progress.value = i++ / total;
 
-          await wait(1000) // slow down the indexing
         
           let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
           let name = eaURL.replace(/.*\//,"")
           if (lastModified.get(eaURL) !== ea.modified) {
-            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified)
+            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified, true)
           }
           visited.add(eaURL)
       }
