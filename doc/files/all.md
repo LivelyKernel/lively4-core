@@ -1,4 +1,4 @@
-# Files
+# All Files in FileIndex
 
 <lively-import src="_navigation.html"></lively-import>
 
@@ -82,7 +82,7 @@
     
     table.setFromJSO(
       files
-        .filter(ea => ea.url.match(lively4url)) // only show local files...
+        // .filter(ea => ea.url.match(lively4url)) // only show local files...
         .map(ea => {
           return {
             file: ea.url.replace(lively4url, "") + '</a> ', 

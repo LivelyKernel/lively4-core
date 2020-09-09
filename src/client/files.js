@@ -125,6 +125,21 @@ export default class Files {
   }
   
   static async moveFile(url, newURL) {
+    let fromServerURL = this.serverURL(url)
+    let toServerURL = this.serverURL(url)
+    if (fromServerURL && (fromServerURL == toServerURL)) {
+      
+      // use special server MOVE/RENAME method
+      var result = await fetch(url, {
+        method: "MOVE",
+        headers: {
+          destination: newURL
+        }
+      }).then(r => r.text())
+      lively.notify("MOVE", result)
+      return 
+    }
+    
     var content = await fetch(url).then(r => r.blob())
 
     // first, save the content...
@@ -578,7 +593,9 @@ export default class Files {
       "https://lively-kernel.org/voices",
       "https://lively-kernel.org/research",
       "https://lively-kernel.org/lively4S2",
-      "https://lively-kernel.org/lively4"
+      "https://lively-kernel.org/lively4",
+      "http://localhost:9005",
+      "http://localhost:9006",
     ]
     
     for(var ea of knownServers) {
