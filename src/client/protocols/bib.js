@@ -1,37 +1,41 @@
-import {Scheme}  from "src/client/poid.js"
 import PolymorphicIdentifier  from "src/client/poid.js"
-import focalStorage from "src/external/focalStorage.js"
-import {parseQuery, getDeepProperty} from 'utils'
-
+import BibliographyScheme from "./bibliography-scheme.js";
 import FileIndex from "src/client/fileindex.js"
 
-export class BibScheme extends Scheme {
+export class BibScheme extends BibliographyScheme {
   
   get scheme() {
     return "bib"
   }
   
-  resolve() {
-    return true
-  }    
+  async searchEntries(entries, query) {
+    var key = query
+    return entries.filter(entry => entry.key == key)
+  }
   
-  async GET(options) {
-    var key = this.url.replace(/bib\:\/\//,"")
+  async content(entries, query) {
+    var entry = entries[0] || {}
     
+    var key = query
     
-    var entries = await FileIndex.current().db.bibliography.where("key").equals(key).toArray()
-    var entry = entries[0] || {} 
-    
-    var content = `<h2>[${key}]<br/>${entry.authors ? entry.authors + ".": ""}  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
-  
-    if (entry.source) {
-      content += "<pre>" + entry.source+ "</pre>"
-    
-    }
-    
-  
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
     
+    var content = `<h2>[${key}]<br/>${
+        entry.authors ? 
+          entry.authors.map(ea => `<a href="author://${ea}">${ea}</a>` ).join(", ") + ".": ""
+        }  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
+  
+    
+    if (entry.keywords) {
+      content += `<div><b>Keywords:</b> ${entry.keywords.map(ea => `<a href="keyword://${ea}">${ea}</a>`).join(", ") } </div>`
+    }
+    
+    
+    
+    if (entry.source) {
+      content += "<pre>" + entry.source+ "</pre>"
+    }
+         
     content += "<h3>Documents</h3><ul>" + files.map(ea => {
       return `<li><a href="${ea.url}">${ea.name}</a></li>`     
     }).join("\n") + "</ul>"
@@ -39,37 +43,9 @@ export class BibScheme extends Scheme {
     
     content += "<h3>Bibliographies</h3><ul>" + entries.map(ea => {
       return `<li><a href="${ea.url}">${ea.url}</a></li>`     
-    }).join("\n") + "</ul>"
-    
-    
-  
-    return new Response(content, {
-      headers: {
-        "content-type": "text/html",
-      },
-      status: 200,
-    })
+    }).join("\n") + "</ul>"    
+    return content
   }
-  
-  
-   async OPTIONS(options) {
-    
-    var content = JSON.stringify({}, undefined, 2)
-  
-     
-    return new Response(content, {
-      headers: {
-        "content-type": "application/json",
-      },
-      status: 200,
-    })
-  }
-  
-  
-
-  
 }
-
-
 
 PolymorphicIdentifier.register(BibScheme)
