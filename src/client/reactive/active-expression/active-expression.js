@@ -488,33 +488,16 @@ export class BaseActiveExpression {
   }
   
   values() {
-    
-    const disposed = new Promise(resolve => {
-      if (this.isDisposed()) {
-        resolve()
-      } else {
-        this.on('')
-      }
-    });
-    
-    Promise.race([
-      this.nextValue().then(v => ({ value: v, done: false })),
-    ])
-    
-    function newResult(v, done) {
-      
-    }
-    
+    const me = this;
     return {
       [Symbol.asyncIterator]() {
         return {
-          i: 0,
           next() {
-            if (this.i < 3) {
-              return Promise.resolve({ value: ++this.i, done: false });
-            }
-
-            return Promise.resolve({ done: true });
+            console.log("NEXT", me.getCurrentValue())
+            return Promise.race([
+              me.nextValue().then(v => ({ value: v, done: false })),
+              me.gotDisposed().then(() => ({ done: true }))
+            ]);
           }
         };
       }
