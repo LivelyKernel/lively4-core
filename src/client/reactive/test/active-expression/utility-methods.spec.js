@@ -6,86 +6,133 @@ import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
 describe('Iterators and Utility Methods for Active Expressions', () => {
-  it("chainable", () => {
-    let obj = {a: 2},
-        spy = sinon.spy();
 
-    aexpr(() => obj.a > 5)
-      .onBecomeFalse(spy)
-      .onBecomeTrue(spy)
-      .onBecomeFalse(spy)
-      .onBecomeTrue(spy);
+  describe('.gotDisposed', () => {
 
-    expect(spy).to.be.calledTwice;
+    it("aexprs define .gotDisposed", () => {
+      expect(aexpr(() => {})).to.respondTo('gotDisposed');
+    });
+
+    it("caches its Promise", () => {
+      const ae = aexpr(() => {});
+      expect(ae.gotDisposed()).to.equal(ae.gotDisposed());
+    });
+
+    it("Promise resolved if already disposed", async () => {
+      const ae = aexpr(() => {});
+      ae.dispose();
+      const prom = ae.gotDisposed();
+
+      // promise resolved
+      await prom;
+    });
+
+    it("Promise resolves later when ae gets disposed", async () => {
+      const ae = aexpr(() => {});
+      const prom = ae.gotDisposed();
+
+      lively.sleep(30).then(() => ae.dispose());
+      
+      await lively.sleep(15);
+      expect(ae.isDisposed()).to.be.false;
+      
+      // promise resolved
+      await prom;
+    });
+
   });
 
-  it("flank up", () => {
-    let obj = {a: 2},
-        spy = sinon.spy();
+  describe('.values', () => {
 
-    let axp = aexpr(() => obj.a > 5);
-    axp.onBecomeTrue(spy);
-    expect(spy).not.to.be.called;
+    it("aexprs define .values", () => {
+      expect(aexpr(() => {})).to.respondTo('values');
+    });
 
-    obj.a = 10;
-    expect(spy).to.be.calledOnce;
+    it(".values", async () => {
+      let val = 0,
+          spy = sinon.spy();
 
-    obj.a = 0;
-    expect(spy).to.be.calledOnce;
+      const ae = aexpr(() => val);
 
-    obj.a = 10;
-    expect(spy).to.be.calledTwice;
-  });
+      (async () => {
+        lively.sleep(10);
+        val++;
+        lively.sleep(10);
+        val++;
+        lively.sleep(10);
+        val++;
 
-  it("immediately triggers onBecomeTrue", () => {
-    let obj = {a: 7},
-        spy = sinon.spy();
+        lively.sleep(10);
+        ae.dispose();
 
-    let axp = aexpr(() => obj.a > 5);
-    axp.onBecomeTrue(spy);
-    expect(spy).to.be.calledOnce;
+        lively.sleep(10);
+        val++;
+      })();
+      
+      let j = 0;
+      for await (let v of ae.values()) {
+        j++;
+        expect(v).to.equal(j);
+      }
+      expect(j).to.equal(3);
+    });
 
-    obj.a = 0;
-    expect(spy).to.be.calledOnce;
+    describe('understanding generators', () => {
 
-    obj.a = 10;
-    expect(spy).to.be.calledTwice;
-  });
+      it("plain generators", () => {
+        function* gen() {
+          yield 1;
+          yield 2;
+          yield 3;
+        }
 
-  it("flank down", () => {
-    let obj = {a: 2},
-        spy = sinon.spy();
+        const iter = gen()
 
-    let axp = aexpr(() => obj.a > 0);
-    axp.onBecomeFalse(spy);
-    expect(spy).not.to.be.called;
+        expect(iter.next().value).to.equal(1);
+        expect(iter.next().value).to.equal(2);
+        expect(iter.next().value).to.equal(3);
+        expect(iter.next().done).to.equal(true);
+      });
 
-    obj.a = -2;
-    expect(spy).to.be.calledOnce;
+      it("generators and for loops", () => {
+        function* gen() {
+          yield 1;
+          yield 2;
+          yield 3;
+        }
 
-    obj.a = 2;
-    expect(spy).to.be.calledOnce;
+        let j = 0;
+        for (let i of gen()) {
+          j++;
+          expect(i).to.equal(j);
+        }
+        expect(j).to.equal(3);
+      });
 
-    obj.a = -2;
-    expect(spy).to.be.calledTwice;
-  });
+      it("async generators and for await loops", async () => {
+        async function* gen() {
+          lively.sleep(1);
+          yield 1;
+          lively.sleep(1);
+          yield Promise.resolve(2);
+          lively.sleep(1);
+          yield 3;
+        }
 
-  it("immediately triggers onBecomeFalse", () => {
-    let obj = {a: -2},
-        spy = sinon.spy();
+        let j = 0;
+        for await  (let i of gen()) {
+          j++;
+          expect(i).to.equal(j);
+        }
+        expect(j).to.equal(3);
+      });
 
-    let axp = aexpr(() => obj.a > 0);
-    axp.onBecomeFalse(spy);
-    expect(spy).to.be.calledOnce;
+    });
 
-    obj.a = 2;
-    expect(spy).to.be.calledOnce;
-
-    obj.a = -2;
-    expect(spy).to.be.calledTwice;
   });
 
   describe('nextValue', () => {
+
     it("aexprs define nextValue", () => {
       expect(aexpr(() => {})).to.respondTo('nextValue');
     });

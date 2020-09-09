@@ -427,6 +427,20 @@ export class BaseActiveExpression {
     return this;
   }
 
+  gotDisposed() {
+    if (this._disposedPromise) {
+      return this._disposedPromise;
+    }
+
+    return this._disposedPromise = new Promise(resolve => {
+      if (this.isDisposed()) {
+        resolve();
+      } else {
+        this.on('dispose', resolve);
+      }
+    });
+  }
+
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if(annotation) {
@@ -471,6 +485,40 @@ export class BaseActiveExpression {
   
   then(...args) {
     return this.nextValue().then(...args);
+  }
+  
+  values() {
+    
+    const disposed = new Promise(resolve => {
+      if (this.isDisposed()) {
+        resolve()
+      } else {
+        this.on('')
+      }
+    });
+    
+    Promise.race([
+      this.nextValue().then(v => ({ value: v, done: false })),
+    ])
+    
+    function newResult(v, done) {
+      
+    }
+    
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          i: 0,
+          next() {
+            if (this.i < 3) {
+              return Promise.resolve({ value: ++this.i, done: false });
+            }
+
+            return Promise.resolve({ done: true });
+          }
+        };
+      }
+    };
   }
 }
 
