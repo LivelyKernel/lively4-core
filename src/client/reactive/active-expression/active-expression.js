@@ -457,6 +457,21 @@ export class BaseActiveExpression {
     if(value !== undefined)this.meta({isMeta : value});
     else return this.meta().has('isMeta') && this.meta().get('isMeta');
   }
+  
+  /*MD ## Iterators and Utility Methods MD*/
+  nextValue() {
+    return new Promise((resolve, reject) => {
+      const callback = value => {
+        this.offChange(callback);
+        resolve(value);
+      };
+      this.onChange(callback);
+    });
+  }
+  
+  then(...args) {
+    return this.nextValue().then(...args);
+  }
 }
 
 export function aexpr(func, ...args) {
