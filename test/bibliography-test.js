@@ -21,6 +21,31 @@ describe('Bibliography', () => {
     it('converts normal prefixed with index number and letter', async function() {
       expect(Bibliography.filenameToKey("00C_Winograd_1996_Introduction.pdf")).to.equal("Winograd1996I")
     });
-
   })
+  
+  describe('generateCitationKey', () => {
+    it('simple', async function() {
+      expect(Bibliography.generateCitationKey({
+        entryTags: {
+          author: "Tom Jones",
+          year: 1972,
+          title: "Nothing to See Here!"
+        }
+      })).to.equal("Jones1972NSH")
+    });
+    
+     it('Name with and in name', async function() {
+      expect(Bibliography.generateCitationKey({
+        entryTags: {
+          author: "Tom Joand and Wilboar Fundi",
+          year: 1972,
+          title: "Nothing to See Here Again!"
+        }
+      })).to.equal("Joand1972NSH")
+    });
+    
+  
+  })
+  
+  
 });

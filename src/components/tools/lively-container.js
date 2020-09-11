@@ -2114,15 +2114,13 @@ export default class Container extends Morph {
       })
   }
 
-  updateOtherContainers() {
+  updateOtherContainers(url="" + this.getURL()) {
     console.warn('updateOtherContainers')
-    var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
         && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
         console.log("update container content: " + ea);
-        ea.setPath(ea.getURL() + "");
-        
+        ea.setPath(ea.getURL() + "");        
       }
     });
     
