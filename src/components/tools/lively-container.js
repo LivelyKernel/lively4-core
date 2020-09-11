@@ -817,7 +817,7 @@ export default class Container extends Morph {
     }
   }
 
-  async renameFile(url) {
+  async renameFile(url, followFile=true) {
     url = "" + url
     var base = url.replace(/[^/]*$/,"")
     var name = url.replace(/.*\//,"")
@@ -831,11 +831,14 @@ export default class Container extends Morph {
     if (newURL != url) {
       await files.moveFile(url, newURL)
       
-      this.setPath(newURL);
-      this.hideCancelAndSave();
+      if (followFile) {
+        this.setPath(newURL);
+        this.hideCancelAndSave();        
+      }
 
       lively.notify("moved to " + newURL);
     }
+    return newURL
   }
   
   async newFile(path="", type="md") {  
