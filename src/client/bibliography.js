@@ -95,8 +95,8 @@ Bibliography.cleanTitle("{{This is my Title}}")
   import Bibliography from 'src/client/bibliography.js';
   var start = performance.now();
   var result =   eval(this.parentElement.querySelector("code").textContent);
-  var time = performance.now() - start;
-  <div>{result} <i>({time} ms)</i></div>
+  // var time = performance.now() - start;
+  <div>{result} </div> // <i>({time} ms)</i>
 </script>
   MD*/
   

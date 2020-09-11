@@ -106,6 +106,13 @@ export default class LivelyGenericSearch extends Morph {
     this.startSearching();
   }
 
+  get searchRoots() {
+    if (!this._roots) {
+      this._roots = lively.preferences.get("ExtraSearchRoots") 
+    } 
+    return this._roots
+  }
+  
   async getFiles() {
     var result = [];
     await FileIndex.current().db.files.each(file => result.push(file));
@@ -121,6 +128,11 @@ export default class LivelyGenericSearch extends Morph {
         const relativePath = file.url.replace(/.*\//ig, '');
         return relativePath.match(search);
       } else {
+        var inSearchRoot = this.searchRoots.find(ea => file.url.startsWith(ea)) 
+        if (inSearchRoot) {
+          const relativePath = file.url.replace(/.*\//ig, '');
+          return relativePath.match(search);
+        }
         return false;
       }
     });
@@ -133,7 +145,13 @@ export default class LivelyGenericSearch extends Morph {
     filesToDisplay = filesToDisplay.slice(0,50)
     
     filesToDisplay.forEach(file => {
-      const name = file.url.replace(lively4url, '')
+      let name = file.url
+      var inSearchRoot = this.searchRoots.find(ea => file.url.startsWith(ea)) 
+      if (inSearchRoot) {
+        name = name.replace(inSearchRoot, '')
+      } else {
+        name = name.replace(lively4url, '')        
+      }
       
       if (this.input.value.length >= 3) {
         var regex = new RegExp(this.input.value, 'ig')

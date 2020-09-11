@@ -461,6 +461,8 @@ export default class Lively {
     await System.import("src/client/protocols/wikipedia.js") 
     await System.import("src/client/protocols/tmp.js")
     await System.import("src/client/protocols/bib.js")
+    await System.import("src/client/protocols/author.js")
+    await System.import("src/client/protocols/keyword.js")
     
     await System.import("src/client/protocols/microsoft.js") 
     

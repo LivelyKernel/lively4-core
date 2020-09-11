@@ -109,6 +109,33 @@ export default class Markdown {
       return <span class="stripped" latex={m[1]}></span> 
     })
   }
+ 
+   static parseAndReplaceFigures(element) {
+    var container = lively.query(element, "lively-container")
+    var baseDir = container ? container.getDir() : ""
+    this.parseAndReplace(element, /\\includegraphics\[[^\]]*\]{([^}]+)\}/g, (m) => <div><img src={baseDir + m[1]}></img></div>)
+    this.parseAndReplace(element, /\\caption\[[^\]]*\]{([^}]+)\}/g, (m) => <div>Figure: {m[1]}</div>)
+  }
+  
+  
+  static parseAndReplaceListings(element) {
+    var container = lively.query(element, "lively-container")
+    var baseDir = container ? container.getDir() : ""
+    this.parseAndReplace(element, /(?:^|\n)\/([^ ]+) "([^"]*)"/g, (m) => { 
+      var pre = <pre>LOADING...</pre>
+      var url = baseDir + m[1];
+      var description = m[2];
+      fetch(url).then(async r => {
+        
+        if (r.status == 200) {
+          pre.textContent = await r.text()
+        } else {
+          pre.textContent = "Could not load " + url
+        }
+      })
+      return <div>{pre}<p><b>Listing:</b> {description} </p></div> })
+  }
+ 
   
   static parseAndReplaceFigureRefs(element) {
     element.querySelectorAll("lively-drawio").forEach(ea => {
@@ -214,6 +241,8 @@ Markdown.extractReferences(`Hello @`+`Foo1981HHC World\nggg @`+`Bar2019X`)
 
     this.parseAndReplaceBibrefs(element)
     this.parseAndReplaceFootenotes(element)
+    this.parseAndReplaceListings(element)
+    this.parseAndReplaceFigures(element)
     this.parseAndReplaceFigureRefs(element)
     this.parseAndReplaceLabels(element)
     this.parseAndReplaceHeadings(element)

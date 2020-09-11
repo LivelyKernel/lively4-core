@@ -427,6 +427,20 @@ export class BaseActiveExpression {
     return this;
   }
 
+  gotDisposed() {
+    if (this._disposedPromise) {
+      return this._disposedPromise;
+    }
+
+    return this._disposedPromise = new Promise(resolve => {
+      if (this.isDisposed()) {
+        resolve();
+      } else {
+        this.on('dispose', resolve);
+      }
+    });
+  }
+
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if(annotation) {
@@ -456,6 +470,38 @@ export class BaseActiveExpression {
   isMeta(value) {
     if(value !== undefined)this.meta({isMeta : value});
     else return this.meta().has('isMeta') && this.meta().get('isMeta');
+  }
+  
+  /*MD ## Iterators and Utility Methods MD*/
+  nextValue() {
+    return new Promise((resolve, reject) => {
+      const callback = value => {
+        this.offChange(callback);
+        resolve(value);
+      };
+      this.onChange(callback);
+    });
+  }
+  
+  then(...args) {
+    return this.nextValue().then(...args);
+  }
+  
+  values() {
+    const me = this;
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          next() {
+            console.log("NEXT", me.getCurrentValue())
+            return Promise.race([
+              me.nextValue().then(v => ({ value: v, done: false })),
+              me.gotDisposed().then(() => ({ done: true }))
+            ]);
+          }
+        };
+      }
+    };
   }
 }
 
