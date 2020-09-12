@@ -54,3 +54,30 @@ json.pr.map(ea => ({
 
 
 ![](microsoft_academic_works.png)
+
+### And with the Proper API
+
+For using the API one needs a key for Project Academic Knowledge: <https://msr-apis.portal.azure-api.net/developer>
+
+There is even a fancy [interpret API](https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-interpret-method) that will generate the query for you:
+
+```javascript
+var query = "paper: jens lincke 2009 ContextJS"
+fetch(`https://api.labs.cognitive.microsoft.com/academic/v1.0/interpret?query=`
+      + encodeURI(query)
+      + `&complete=1&count=2&subscription-key=90...`).then(r => r.json())
+```
+
+
+![](microsoft_academics_interpretations.png)
+
+
+This specific query can then be evaluated using this [API](https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-evaluate-method)
+
+
+
+
+
+
+
+
