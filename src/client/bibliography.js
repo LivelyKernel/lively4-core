@@ -108,7 +108,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
   // #TODO this method obviously will need a lot of tweaking...
   static generateCitationKey(entry) {
     if (!entry || !entry.entryTags) return undefined
-    var firstAuthor = entry.entryTags.author.split("and")[0]
+    var firstAuthor = entry.entryTags.author.split(/ and /g)[0]
     if (firstAuthor.match(",")) {
       firstAuthor = firstAuthor.replace(/,.*/,"")
     } else {
@@ -136,7 +136,8 @@ Bibliography.cleanTitle("{{This is my Title}}")
   /*MD
 <style>* {background-color:lightgray}</style>
 ```javascript
-Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf")
+[Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf"),
+Bibliography.filenameToKey("00_Winograd_1996_Introduction.pdf")]
 ```
 
 <script>
@@ -150,6 +151,8 @@ Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf")
   MD*/
   
   static filenameToKey(filename) {
+    filename = filename.replace(/^[0-9][0-9]*[A-Z]?_/,"") // strip index number
+    
     var a = filename.split("_")
     if (a.length < 3) return
     var authors = a[0]

@@ -103,12 +103,14 @@ export default class Inspector extends Morph {
       node.appendChild(<span class=''> {obj.name} </span>);
       node.appendChild(<span class=''>{truncateString(obj.toString(), 20, '...')}</span>);
     } else {
-      node.appendChild(<a id='tagname' class='tagname'>{className}</a>)
+      node.appendChild(<a id='tagname' class='tagname'>{
+            (className !== "Object" && className != "Array") ? className : ""
+        }</a>)
     }
     node.appendChild(<span>
-      <span class="syntax">&#123;</span>{
+      <span class="syntax">{className == "Array" ? "[" : "{"}</span>{
           this.contentTemplate()
-        }<span class="syntax">&#125;</span>
+        }<span class="syntax">{className == "Array" ? "]" : "}"}</span>
     </span>)
   
     this.attachHandlers(node, obj, name, "renderObject");
@@ -515,7 +517,8 @@ export default class Inspector extends Morph {
     // }
     keys = allOwn;
     if (!this.isAstMode()) {
-      if (obj && this.allKeys(obj.__proto__).length > 0)
+      
+      if (obj && this.allKeys(obj.__proto__).length > 0 && (obj.__proto__ !== Object.prototype))
         keys.push("__proto__")
     }
     return _.sortBy(keys)

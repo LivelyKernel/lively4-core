@@ -846,6 +846,16 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
+
+  async removeDirectory(baseURL) {
+    var files = await this.toArray()
+    for(let ea of files) {
+      let eaURL = ea.url
+      if (eaURL.startsWith(baseURL)) {
+        this.dropFile(eaURL)
+      }     
+    }
+  }
   
   async updateDirectory(baseURL, showProgress, updateDeleted) {
     var json = await fetch(baseURL, {
@@ -886,8 +896,6 @@ export default class FileIndex {
     try {
       for(let ea of files) {
           if (showProgress) progress.value = i++ / total;
-
-        
           let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
           let name = eaURL.replace(/.*\//,"")
           if (lastModified.get(eaURL) !== ea.modified) {

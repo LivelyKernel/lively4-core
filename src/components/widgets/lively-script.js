@@ -32,6 +32,13 @@ export default class LivelyScript extends Morph {
   
   // evalute script not when the component is initialized, but when it is actually in the DOM
   async attachedCallback() {
+    
+    // we get exectuted to often?
+    if (this.lastParentElement == this.parentElement) return
+    this.lastParentElement =  this.parentElement
+    // lively.notify("execute " + this.textContent)
+    
+    
     // console.log("SCRIPT attached ", lively.findWorldContext(this))
     var src = this.textContent
     // console.log("LivelyScript>>initialize " + src)

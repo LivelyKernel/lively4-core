@@ -817,7 +817,7 @@ export default class Container extends Morph {
     }
   }
 
-  async renameFile(url) {
+  async renameFile(url, followFile=true) {
     url = "" + url
     var base = url.replace(/[^/]*$/,"")
     var name = url.replace(/.*\//,"")
@@ -831,11 +831,14 @@ export default class Container extends Morph {
     if (newURL != url) {
       await files.moveFile(url, newURL)
       
-      this.setPath(newURL);
-      this.hideCancelAndSave();
+      if (followFile) {
+        this.setPath(newURL);
+        this.hideCancelAndSave();        
+      }
 
       lively.notify("moved to " + newURL);
     }
+    return newURL
   }
   
   async newFile(path="", type="md") {  
@@ -922,14 +925,15 @@ export default class Container extends Morph {
         }
       }
       
-      var worldContext = document.body; // default to opening context menu content globally
+      // var worldContext = document.body; // default to opening context menu content globally
       // opening in the content makes only save if that content could be persisted and is displayed
       // disable this for now:
       // if (this.contentIsEditable() && !this.isEditing()) {
       //  worldContext = this
       // }
-	    lively.openContextMenu(document.body, evt, undefined, worldContext);
-	    return false;
+      lively.onContextMenu(evt)
+      // lively.openContextMenu(document.body, evt, undefined, worldContext);
+      return false;
     }
   }
   
@@ -2110,15 +2114,13 @@ export default class Container extends Morph {
       })
   }
 
-  updateOtherContainers() {
+  updateOtherContainers(url="" + this.getURL()) {
     console.warn('updateOtherContainers')
-    var url = "" + this.getURL();
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
         && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
         console.log("update container content: " + ea);
-        ea.setPath(ea.getURL() + "");
-        
+        ea.setPath(ea.getURL() + "");        
       }
     });
     

@@ -1,13 +1,5 @@
-## 2020-09-09
-*Author: @JensLincke*
+# Google Scholor IFrame
 
-## Browse Google Scholar For current PDF #ScriptingWorkflows
-
-![](browser_scholor_connection_scripting.png)
-
-Replacing copy paste into different window. Next stept would be to use Google Scholar API... if there is one. 
-
-An alternative would be the connection of whenever a PDF is browsed the scholar window would notice and show the scholar article to that file. 
 
 ```javascript
 
@@ -35,16 +27,3 @@ var query = decodeURI(container.getURL().pathname)
 
 googleScholar(query)
 ```
-
-## Custom URLs for the win!
-
-An literature overview page also links the papers through it's bibtex keys.
-
-![](literature_overview.png)
-
-And then we enter the world of bibliography entries, authors, and keywords:
-
-![](bibliography_navigation.png)
-
-
-
