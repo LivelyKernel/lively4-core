@@ -473,6 +473,8 @@ export class BaseActiveExpression {
   }
   
   /*MD ## Iterators and Utility Methods MD*/
+  
+  // #Discussion: should this reject, if the aexpr gets disposed?
   nextValue() {
     return new Promise(resolve => {
       const callback = value => {
@@ -481,10 +483,6 @@ export class BaseActiveExpression {
       };
       this.onChange(callback);
     });
-  }
-  
-  then(...args) {
-    return this.nextValue().then(...args);
   }
   
   values() {

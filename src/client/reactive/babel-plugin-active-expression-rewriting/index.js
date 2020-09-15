@@ -471,12 +471,15 @@ export default function(babel) {
                 }
               }
 
-              // Check for a call to undeclared aexpr:
-              if (
-                t.isCallExpression(path.parent) &&
-                path.node.name === AEXPR_IDENTIFIER_NAME &&
-                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
-              ) {
+              const isCallee = t.isCallExpression(path.parent) && path.parentKey === 'callee';
+              function hasUnboundName(name) {
+                // #TODO: in workspaces, this might lead to an issue, as we may override
+                // a module-global variable that was declared in an earlier execution
+                return path.node.name === name && !path.scope.hasBinding(name);
+              }
+
+              // Check for a call to undeclared `aexpr`:
+              if (isCallee && hasUnboundName(AEXPR_IDENTIFIER_NAME)) {
                 addSourceLocationToSecondParameter(path);
                 path.replaceWith(
                   addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
@@ -484,7 +487,20 @@ export default function(babel) {
                 return;
               }
               
-              AEXPR_SHORTHAND_NAME
+              // Check for a call to undeclared `ae`:
+              if (isCallee && hasUnboundName(AEXPR_SHORTHAND_NAME)) {
+                addSourceLocationToSecondParameter(path);
+
+                const expressionPath = path.parentPath.get('arguments')[0];
+                if (expressionPath) {
+                  expressionPath.replaceWith(t.arrowFunctionExpression([], expressionPath.node));
+                }
+
+                path.replaceWith(
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                );
+                return;
+              }
 
               // property local of ExportStatement
               if (

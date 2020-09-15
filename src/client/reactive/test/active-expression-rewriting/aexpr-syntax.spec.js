@@ -21,8 +21,12 @@ describe('expression only (simple case)', function() {
 });
 
 describe('ae(expr) shorthand', function() {
-  xit('transforms into an aexpr', () => {
+  it('transforms into an aexpr', () => {
     const e = ae(42);
     expect(e).to.be.an.instanceof(RewritingActiveExpression);
+  });
+  it('returns a constant', () => {
+    const e = ae(42);
+    expect(e.getCurrentValue()).to.equal(42);
   });
 });
