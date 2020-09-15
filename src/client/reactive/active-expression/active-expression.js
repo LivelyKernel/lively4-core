@@ -474,7 +474,7 @@ export class BaseActiveExpression {
   
   /*MD ## Iterators and Utility Methods MD*/
   nextValue() {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const callback = value => {
         this.offChange(callback);
         resolve(value);
@@ -488,16 +488,41 @@ export class BaseActiveExpression {
   }
   
   values() {
-    const me = this;
+    const gotDisposed = this.gotDisposed();
+    
+    const valueQueue = [];
+    
+    let gotNewValue;
+    let waitForValue;
+    function resetWaitForValue() {
+      waitForValue = new Promise(resolve => {
+        gotNewValue = resolve;
+      });
+    }
+    resetWaitForValue();
+    
+    this.onChange(v => {
+      valueQueue.push(v);
+      const temp = gotNewValue;
+      resetWaitForValue();
+      temp();
+    });
+
     return {
       [Symbol.asyncIterator]() {
         return {
           next() {
-            console.log("NEXT", me.getCurrentValue())
-            return Promise.race([
-              me.nextValue().then(v => ({ value: v, done: false })),
-              me.gotDisposed().then(() => ({ done: true }))
-            ]);
+            if (valueQueue.length > 0) {
+              return {
+                value: valueQueue.shift(),
+                done: false
+              };
+            } else {
+              return Promise.race([
+                waitForValue.then(() => this.next()),
+                gotDisposed.then(() => ({ done: true }))
+              ]);
+            }
           }
         };
       }

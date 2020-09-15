@@ -49,88 +49,82 @@ describe('Iterators and Utility Methods for Active Expressions', () => {
     });
 
     it(".values", async () => {
-      let val = 0,
-          spy = sinon.spy();
+      let val = 0;
 
       const ae = aexpr(() => val);
 
       (async () => {
-
-        console.log("START ASYNC");
-
         await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
+        val++;
+        await lively.sleep(10);
+        val++;
+        await lively.sleep(10);
         val++;
 
         await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
-        val++;
-
-        await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
-        val++;
-
-        await lively.sleep(10);
-        console.log("DISPOSE", ae.getCurrentValue());
         ae.dispose();
 
         await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
         val++;
       })();
 
       let j = 0;
-      console.log("BEFORE LOOP", val, j);
       for await (let v of ae.values()) {
         j++;
-        console.log("IN LOOP", val, v, j);
         expect(v).to.equal(j);
       }
-      console.log("AFTER LOOP", val, j);
       expect(j).to.equal(3);
     });
 
-    // #TODO: next: introduce a queue of changed-expressions-results
-    xit(".values can deal with multiple changes in a synchronous execution", async () => {
-      let val = 0,
-          spy = sinon.spy();
+    it(".values can deal with multiple changes in a synchronous execution", async () => {
+      let val = 0;
 
       const ae = aexpr(() => val);
 
       (async () => {
-
-        console.log("START ASYNC");
-
         await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
         val++;
-
-        await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
         val++;
-
-        await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
         val++;
-
-        await lively.sleep(10);
-        console.log("DISPOSE", ae.getCurrentValue());
         ae.dispose();
-
-        await lively.sleep(10);
-        console.log("SET VAL", ae.getCurrentValue());
         val++;
       })();
 
       let j = 0;
-      console.log("BEFORE LOOP", val, j);
       for await (let v of ae.values()) {
         j++;
-        console.log("IN LOOP", val, v, j);
         expect(v).to.equal(j);
       }
-      console.log("AFTER LOOP", val, j);
       expect(j).to.equal(3);
+    });
+
+    it("multiple .values can co-exist", async () => {
+      let val = 0;
+
+      const ae = aexpr(() => val);
+
+      (async () => {
+        await lively.sleep(10);
+        val++;
+        val++;
+        val++;
+        ae.dispose();
+        val++;
+      })();
+
+      async function loop() {
+        let j = 0;
+        for await (let v of ae.values()) {
+          j++;
+          expect(v).to.equal(j);
+        }
+        return j;
+      }
+      
+      const iterationCounts = await Promise.all((2).times(loop));
+      iterationCounts.forEach(j => {
+        expect(j).to.equal(3);
+      });
     });
 
     describe('understanding generators', () => {
