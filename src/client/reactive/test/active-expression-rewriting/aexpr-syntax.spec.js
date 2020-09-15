@@ -19,3 +19,10 @@ describe('expression only (simple case)', function() {
     expect(expr).to.be.an.instanceof(RewritingActiveExpression);
   });
 });
+
+describe('ae(expr) shorthand', function() {
+  xit('transforms into an aexpr', () => {
+    const e = ae(42);
+    expect(e).to.be.an.instanceof(RewritingActiveExpression);
+  });
+});

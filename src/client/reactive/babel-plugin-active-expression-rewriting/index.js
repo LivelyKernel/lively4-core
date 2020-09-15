@@ -2,6 +2,7 @@ import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
+const AEXPR_SHORTHAND_NAME = 'ae';
 
 const GET_MEMBER = 'getMember';
 const GET_AND_CALL_MEMBER = 'getAndCallMember';
@@ -418,17 +419,13 @@ export default function(babel) {
               if (path.node[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER]) {
                 return;
               }
-
-              // Check for a call to undeclared aexpr:
-              if (
-                t.isCallExpression(path.parent) &&
-                path.node.name === AEXPR_IDENTIFIER_NAME &&
-                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
-              ) {
+              
+              function addSourceLocationToSecondParameter(aexprIdentifierPath) {
                 let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
                 if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
                   fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
                 }
+
                 const sourceLocation = template(`({
                   file: '${fileName}',
                   end: {
@@ -441,16 +438,8 @@ export default function(babel) {
                   },
                   source: ''
                 })`);
-                function buildSourceLocation(path) {
-                  let node = path.node;
-                  let wrapper = {
-                    directives: [],
-                    start: 0,
-                    end: 0,
-                    type: 'Program',
-                    sourceType: 'module',
-                    body: [path.parent.arguments[0]] // #BUG: expression should be put into an ExpressionStatement
-                  };
+                function buildSourceLocation(aexprIdentifierPath) {
+                  const node = aexprIdentifierPath.node;
                   // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
                     END_COLUMN: t.numericLiteral(node.loc.end.column),
@@ -460,31 +449,42 @@ export default function(babel) {
                     // SOURCE: source
                   }).expression;
                 }
-                let location = buildSourceLocation(path);
-                //logIdentifier("call to aexpr", path);
-                path.replaceWith(
-                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
-                );
-                if(path.parentPath.get('arguments').some(any => any.isSpreadElement())){return}
-                if(path.parentPath.get('arguments').length > 1) {
-                  let argument = path.parentPath.get('arguments')[1];
+                const location = buildSourceLocation(aexprIdentifierPath);
+                //logIdentifier("call to aexpr", aexprIdentifierPath);
+                if(aexprIdentifierPath.parentPath.get('arguments').some(any => any.isSpreadElement())){return}
+                if(aexprIdentifierPath.parentPath.get('arguments').length > 1) {
+                  const argument = aexprIdentifierPath.parentPath.get('arguments')[1];
                   if(argument.isObjectExpression()){
                     argument.pushContainer('properties', t.objectProperty(t.identifier('location'), location));
                   } else {
-                    let assignment = template(`Object.assign({location : LOCATION}, EXPR || {})`);
-                    let a = assignment({LOCATION : location, EXPR : argument}).expression;
-                    argument.replaceWith(a);
+                    const assign = template(`Object.assign({location : LOCATION}, EXPR || {})`);
+                    const assigned = assign({LOCATION: location, EXPR: argument}).expression;
+                    argument.replaceWith(assigned);
                   }
-                  // path.parentPath.pushContainer('arguments', t.objectExpression([
+                  // aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
                   //   t.objectProperty(t.identifier('location'), location)
                   // ]));
                 } else {
-                  path.parentPath.pushContainer('arguments', t.objectExpression([
+                  aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
                     t.objectProperty(t.identifier('location'), location)
                   ]));
                 }
+              }
+
+              // Check for a call to undeclared aexpr:
+              if (
+                t.isCallExpression(path.parent) &&
+                path.node.name === AEXPR_IDENTIFIER_NAME &&
+                !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME)
+              ) {
+                addSourceLocationToSecondParameter(path);
+                path.replaceWith(
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                );
                 return;
               }
+              
+              AEXPR_SHORTHAND_NAME
 
               // property local of ExportStatement
               if (
