@@ -354,27 +354,6 @@ export default function(babel) {
                 }
                 return;
               }
-              
-              // transform ~[expr] notation to _aexpr(() => expr)
-              if(path.node.operator !== '~') return;
-              const array = path.get('argument');
-              if(!array.isArrayExpression()) return;
-              if(array.get('elements').length !== 1) return;
-              const expr = array.get('elements')[0];
-              
-              path.replaceWith(
-                t.callExpression(
-                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME), [
-                    t.arrowFunctionExpression(
-                      [], expr.node
-                    )
-                    // path.node.left.object,
-                    // getPropertyFromMemberExpression(path.node.left),
-                    // //t.stringLiteral(path.node.operator),
-                    // path.node.right
-                  ]
-                )
-              );
             },
 
             UpdateExpression(path) {
@@ -449,9 +428,18 @@ export default function(babel) {
                     // SOURCE: source
                   }).expression;
                 }
+
+                if(aexprIdentifierPath.parentPath.get('arguments').some(any => any.isSpreadElement())) {
+                  return;
+                }
+                /* #TODO: Support the following cases:
+                 * ae(expr)
+                 * ae(expr, { })
+                 * ae(expr, obj)
+                 * ae(expr, ...arr)
+                 * ae(...arr)
+                 */
                 const location = buildSourceLocation(aexprIdentifierPath);
-                //logIdentifier("call to aexpr", aexprIdentifierPath);
-                if(aexprIdentifierPath.parentPath.get('arguments').some(any => any.isSpreadElement())){return}
                 if(aexprIdentifierPath.parentPath.get('arguments').length > 1) {
                   const argument = aexprIdentifierPath.parentPath.get('arguments')[1];
                   if(argument.isObjectExpression()){

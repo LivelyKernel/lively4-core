@@ -5,8 +5,8 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-
 describe('location meta info', function() {
+
   it('exists for simple aexprs', () => {
     const ae = aexpr(()=>5);
     expect(ae.meta().has('location')).to.equal(true);
@@ -45,17 +45,4 @@ describe('location meta info', function() {
     expect(ae.params).to.equal(expectedParams);
   });
   
-  /* #TODO: Support the following cases:
-   * ~[expr]
-   * ~[expr, { }]
-   * ~[expr, obj]
-   * ~[expr, ...arr]
-   * ~[...arr]
-   */
-  xit('will work with ~[] notation aexprs', () => {
-    const ae = ~[x => x];
-    expect(ae.meta().has('location')).to.equal(true);
-  });
-  
 });
-
