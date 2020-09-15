@@ -6,16 +6,31 @@ chai.use(sinonChai);
 
 import {RewritingActiveExpression} from 'active-expression-rewriting';
 
-aexpr(()=>{});
+describe('ae(expr) shorthand', function() {
 
-let moduleScopedVariable = 1;
-
-describe('expression only (simple case)', function() {
   it('rewriting exports its AExpr class', () => {
     expect(RewritingActiveExpression).to.be.ok;
   });
+
   it('transforms into an aexpr', () => {
-    const expr = ~[42];
-    expect(expr).to.be.an.instanceof(RewritingActiveExpression);
+    const e = ae(42);
+    expect(e).to.be.an.instanceof(RewritingActiveExpression);
   });
+
+  it('returns a constant', () => {
+    const e = ae(42);
+    expect(e.getCurrentValue()).to.equal(42);
+  });
+
+  it('returns a constant', () => {
+    let x = 1;
+    const spy = sinon.spy();
+    
+    ae(x).onChange(spy);
+    expect(spy).not.to.be.called;
+    
+    x++;
+    expect(spy).to.be.calledOnce;
+  });
+
 });

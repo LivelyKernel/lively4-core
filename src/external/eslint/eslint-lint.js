@@ -30,6 +30,7 @@
     globals: {
         lively: true,
         aexpr: false,
+        ae: false,
         lively4url: true,
         System: true,
         SystemJS: true,
