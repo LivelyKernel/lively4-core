@@ -3,6 +3,9 @@ import PolymorphicIdentifier from "src/client/poid.js";
 import focalStorage from "src/external/focalStorage.js";
 import { parseQuery, getDeepProperty } from 'utils';
 
+import BibtexParser from 'src/external/bibtexParse.js';
+import Bibliography from "src/client/bibliography.js"
+
 import FileIndex from "src/client/fileindex.js";
 
 import _ from 'src/external/lodash/lodash.js';
@@ -61,6 +64,20 @@ fetch("academic://Jens Lincke 2009", {
   }
 }).then(r => r.text())
 ```
+
+or bibtex
+
+```javascript
+fetch("academic://Jens Lincke 2009", {
+  method: "GET",
+  headers: {
+    "content-type": "application/bibtex"
+  }
+}).then(r => r.text()).then(s => {
+  return s
+} )
+```
+
 
 MD*/
 
@@ -153,6 +170,25 @@ class Paper {
       'p': "inproceedings"})[this.value.BT]  
   }
   
+  get booktitle() {
+    return this.value.BV
+  }
+  
+  
+  toBibtexEntry() {
+    var entry = {
+      entryTags: {
+        author: this.authors.map(author => author.name).join(" and "), 
+        title: this.title, 
+        year: this.year,
+        booktitle: this.booktitle,
+      },
+      entryType: this.bibtexType
+    }
+    entry.citationKey = Bibliography.generateCitationKey(entry)
+    return entry
+  }
+  
   toHTML() {
     return `<div class="paper">
       <span class="authors">${
@@ -172,11 +208,8 @@ class Paper {
   }
   
   toBibtex() {
-    return `@${this.bibtexType}{${this.bibtexKey},
-  author      = "${this.authors.map(ea => ea.name).join(" and ")}",
-  title       = "${this.title}",
-  year        = ${this.year},
-}`
+    var entry = this.toBibtexEntry()
+    return BibtexParser.toBibtex([entry], false);
   }
   
 }
