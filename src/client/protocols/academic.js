@@ -126,7 +126,7 @@ export class MicrosoftAcademicEntities {
 
 const academicSubscriptionKeyId = "microsoft-academic-key";
 
-class Author {
+export class Author {
  
   constructor(value) {
     this.value = value
@@ -139,14 +139,70 @@ class Author {
 }
 
 
-class Paper {
+export class Paper {
+  
+  static byId(id) {
+    if (!this._byId) return
+    return this._byId.get(id)
+  }
+
+  static setById(id, paper) {
+    if (!this._byId) this._byId = new Map()
+    this._byId.set(id, paper)
+  }
+
+  static async getId(id) {
+    var paper = this.byId(id)
+    if (paper) return paper
+    var resp = await fetch("academic://expr:Id=" + id, {
+        method: "GET", 
+        headers: {
+          "content-type": "application/json"}})
+    if (resp.status != 200) {
+      return // should we note it down that we did not found it?
+    }
+    var json = await resp.json()
+    paper = new Paper(json.entity)
+    return paper
+  }
+
+  static async allBibtexEntries() {
+    return FileIndex.current().db.bibliography.toArray()
+  }
+  
+  static async importBibtexId(id) {
+    var paper = Paper.byId(id)
+    if (paper) {
+      var source = paper.toBibtex()
+      
+      var importURL = (await this.allBibtexEntries())
+            .map(ea => ea.url)
+            .find(ea => ea && ea.match(/_incomming\.bib$/))
+      if (!importURL) {
+        lively.notify("no _incomming.bib found")
+      } else {
+        var libcontent = await lively.files.loadFile(importURL)
+        
+        await lively.files.saveFile(importURL, libcontent + "\n" + source )
+        lively.notify("PATER imported", "", undefined, () => lively.openBrowser(importURL))
+      }
+    } else {
+      lively.notify("ERROR not paper with id '${this.microsoftid}' found")
+    }
+  }
+  
   
   constructor(value) {
     this.value = value
+    
+    if (this.microsoftid) {
+      Paper.setById(this.microsoftid, this)
+    }
+
   }
   
   get authors() {
-    return this.value.AA.map(ea => new Author(ea)) 
+    return (this.value.AA || []).map(ea => new Author(ea)) 
   }
 
   get year() {
@@ -154,14 +210,18 @@ class Paper {
   }
 
   get title() {
-    return this.value.DN // "Original paper title"
+    return (this.value.DN || "")// "Original paper title"
       .replace(/["{}]/g,"")  // some cleanup
   }
 
   get doi() {
     return this.value.DOI 
   }
-
+  
+  get microsoftid() {
+    return this.value.Id 
+  }
+  
   get bibtexType() {
     return ({
       'a': "article", 
@@ -174,14 +234,27 @@ class Paper {
     return this.value.BV
   }
   
+  get key() {
+    return this.toBibtexEntry().citationKey 
+  }
   
+  async findBibtexFileEntries() {
+    var key = this.key
+    var entries = await Paper.allBibtexEntries()
+        
+    return entries.filter(ea => ea.key == key)    
+  }
+   
   toBibtexEntry() {
     var entry = {
       entryTags: {
         author: this.authors.map(author => author.name).join(" and "), 
-        title: this.title, 
+        title: this.title,
         year: this.year,
         booktitle: this.booktitle,
+        doi: this.doi,
+        microsoftid: this.microsoftid,
+        
       },
       entryType: this.bibtexType
     }
@@ -189,21 +262,90 @@ class Paper {
     return entry
   }
   
-  toHTML() {
+  get abstract() {
+    var index = this.value.IA && this.value.IA.InvertedIndex
+    if (!index) return
+    var result = []
+    for(var word of Object.keys(index)) {
+      for (var pos of index[word]) {
+        result[pos] = word
+      }
+    }
+    return result.join(" ")
+  }
+  
+  async resolveReferences() {
+    this.references = []
+    if (!this.value.RId) return // nothing to do here
+    for(var refId of this.value.RId) {
+      this.references.push(await Paper.getId(refId))
+    }
+    return this.references
+  }
+  
+  async toHTML() {
+    await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
+    
+    var bibtexEntries = await this.findBibtexFileEntries()
+    
     return `<div class="paper">
-      <span class="authors">${
-        this.authors.map(ea => ea.name).join(", ")
-      }</span>.
-      <span class="year">${
-        this.year
-      }</span>.
-      <span class="title">${
+      <style>
+          .abstract {
+            color: gray;
+            font-style: italic;
+          }
+      </style>
+      <h1 class="title">${
         this.title
-      }</span>. 
+      } <span class="year">(${
+          this.year
+        })</span>
+      </h1> 
+      <h2 class="authors">${
+        this.authors.map(ea => ea.name).join(", ")
+      }</h2>
+      <div>
+      <a href="bib://${this.key}">[${this.key}]</a>
       <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
         this.doi
-      }</a></span>. 
+      }</a></span>
+      </div>
+      <h3>Bibliographies</h3>
+      <div>${
+        bibtexEntries.length > 0 ?
+          bibtexEntries.map(ea => `<a href="${ea.url}">${ea.url.replace(/.*\//,"")}</a>`).join(", ") :
+          
+        `
+<lively-script><script>
+// here comes some inception....
+import {Paper} from "src/client/protocols/academic.js"
+var container = lively.query(this, "lively-container")
+var result = <button click={async () => {
+  await Paper.importBibtexId(${this.microsoftid})
+  await lively.sleep(1000) // let the indexer do it's work?
+  if (container) container.setPath(container.getPath())
+}}>import bibtex entry</button>
+result
+</script></livley-script>
+`
+      }</div>
 
+      <h3>Abstract</h3>
+      <div class="abstract">${this.abstract}</div>
+      <h3>References</h3>
+      ${
+        this.references ?    
+        `<lively-bibtex>
+        ${
+          this.references
+              .map(ea => `<lively-bibtex-entry>${ ea.toBibtex()}</lively-bibtex-entry>`)
+              .join("\n")
+        }
+        </lively-bibtex>` : "[unresolved]"
+      }
+      
+      <h3>RAW (Debug)</h3>
+      <pre>${JSON.stringify(this.value, undefined, 2)}</pre>
   </div>`
   }
   
@@ -220,10 +362,6 @@ export default class AcademicScheme extends Scheme {
     return "academic";
   }
 
-  get isUsingAcademicKnowledgeQuery() {
-    return true // proper API vs. Hack
-  }
-  
   resolve() {
     return true;
   }
@@ -260,10 +398,8 @@ export default class AcademicScheme extends Scheme {
     });
   }
 
-  
-  
-  async rawAcademicKnowledgeQuery(textQuery) {
-      var attributes =  [
+  academicKnowledgeAttributes() {
+    return [
         ["AA.AfId","Author affiliation ID"],
         ["AA.AfN","Author affiliation name"],
         ["AA.AuId","Author ID"],
@@ -277,7 +413,7 @@ export default class AcademicScheme extends Scheme {
         ["C.CId","Conference series ID"],
         ["C.CN","Conference series name"],
         //["CC","Citation count"],
-        //["CitCon","Citation contexts</br></br>List of referenced paper ID's and the corresponding context in the paper (e.g. [{123:[\"brown foxes are known for jumping as referenced in paper 123\", \"the lazy dogs are a historical misnomer as shown in paper 123\"]})"],
+        ["CitCon","Citation contexts</br></br>List of referenced paper ID's and the corresponding context in the paper (e.g. [{123:[\"brown foxes are known for jumping as referenced in paper 123\", \"the lazy dogs are a historical misnomer as shown in paper 123\"]})"],
         ["D","Date published in YYYY-MM-DD format"],
         ["DN","Original paper title"],
         ["DOI","Digital Object Identifier</br></br>IMPORTANT: The DOI is normalized to uppercase letters, so if querying the field via evaluate/histogram ensure that the DOI value is using all uppercase letters"],
@@ -288,7 +424,7 @@ export default class AcademicScheme extends Scheme {
         //["F.FN","Normalized field of study name"],
         ["FamId","If paper is published in multiple venues (e.g. pre-print and conference) with different paper IDs, this ID represents the main/primary paper ID of the family. The field can be used to find all papers in the family group, i.e. FamId=<paper_id>"],
         ["I","Publication issue"],
-        //["IA","Inverted abstract"],
+        ["IA","Inverted abstract"],
         ["Id","Paper ID"],
         ["J.JId","Journal ID"],
         ["J.JN","Journal name"],
@@ -296,118 +432,101 @@ export default class AcademicScheme extends Scheme {
         ["LP","Last page of paper in publication"],
         ["PB","Publisher"],
         ["Pt","Publication type (0:Unknown, 1:Journal article, 2:Patent, 3:Conference paper, 4:Book chapter, 5:Book, 6:Book reference entry, 7:Dataset, 8:Repository"],
-        //["RId","List of referenced paper IDs"],
+        ["RId","List of referenced paper IDs"],
         ["S","List of source URLs of the paper, sorted by relevance"],
         ["Ti","Normalized title"],
         ["V","Publication volume"],
         ["VFN","Full name of the Journal or Conference venue"],
-        //["VSN","Short name of the Journal or Conference venue"],
-        //["W","Unique, normalized words in title"],
+        ["VSN","Short name of the Journal or Conference venue"],
+        ["W","Unique, normalized words in title"],
         ["Y","Year published"]
       ].map(ea => ea[0]).join(",")
-      debugger
-      var interpretation = await fetch(`https://api.labs.cognitive.microsoft.com/academic/v1.0/interpret?query=`
+  }
+  
+  async rawAcademicKnowledgeQuery(textQuery) {
+      var interpretation = await fetch(
+        `https://api.labs.cognitive.microsoft.com/academic/v1.0/interpret?query=`
             + encodeURI(textQuery)
-            + `&complete=1&count=1&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
+            + `&complete=1&count=1&subscription-key=${
+                await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       if (!interpretation.interpretations[0] || !interpretation.interpretations[0].rules[0]) {
         return {error: "no interpretations", value: interpretation}
       }
       
       var queryExpr = interpretation.interpretations[0].rules[0].output.value
-      var result = await fetch(`https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate?expr=`
+      return this.rawAcademicKnowledgeQueryExpr(queryExpr)
+  }
+  
+  async rawAcademicKnowledgeQueryExpr(queryExpr) {
+    var attributes =  this.academicKnowledgeAttributes()    
+    var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate?expr=`
             + encodeURI(queryExpr)
             + `&complete=1&count=1`
             + `&attributes=${attributes}`
             +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       return result
   }
-  
-  // Alternive but slightly different product API that does not require a key
-  // "https://academic.microsoft.com/api/search"
-  
-  async rawQuery(queryString) {    
-    return await fetch("https://academic.microsoft.com/api/search", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json; charset=utf-8"
-      },
-      body: JSON.stringify({
-        query: queryString,
-        queryExpression: "",
-        filters: [],
-        orderBy: 0,
-        skip: 0,
-        sortAscending: true,
-        take: 1 // feeling lucky
-      }) }).then(r => r.json());
-  }
 
-  async paperQuery(queryString, usingAcademicKnowledgeQuery=this.isUsingAcademicKnowledgeQuery) {
-    if (usingAcademicKnowledgeQuery) {
-          let raw = (await this.rawAcademicKnowledgeQuery(queryString))
-          if (raw.entities)  {
-            return  { 
-              type: "paper",
-              entity: raw.entities[0]
-            }
-          } else {
-            return { 
-              error: "could not find paper", 
-              value: raw
-            }
-          }
-    } else {  
-      let raw = await this.rawQuery(queryString);
-      let paper = raw && raw.pr && raw.pr[0] && raw.pr[0].paper;
-      if (paper) {
-        // does not fit entirely.... shit!
-        // var schema =  (await MicrosoftAcademicEntities.schemas()).paper       
-        return {
-          type: "paper",
-          entity: paper
-        };
+  async paperQuery(queryString, queryType) {
+    let raw;
+    if (queryType=="expr") {
+      raw = (await this.rawAcademicKnowledgeQueryExpr(queryString))
+    } else {
+      raw = (await this.rawAcademicKnowledgeQuery(queryString))
+    }
+    if (raw.entities)  {
+      return  { 
+        type: "paper",
+        entity: raw.entities[0]
       }
-      return { type: "none", error: "no paper found" };
+    } else {
+      return { 
+        error: "could not find paper", 
+        value: raw
+      }
     }
   }
 
-  async content(queryString) {
-    var content = `<h2>${this.scheme}: ${queryString}</h2>`;
-
-    var json = await this.paperQuery(queryString, true);
-
+  async content(json) {
+    var content = ``;
     if (json.error) return `<span class="error">${json.error}</span>`
     if (!json.entity) {
-      debugger
       return `<span class="error">no entity</span>`
     }
     var paper = new Paper(json.entity)
-    content += paper.toHTML();
+    content += await paper.toHTML();
     return content;
   }
 
   async GET(options) {
     var query = this.url.replace(new RegExp(this.scheme + "\:\/\/"), "");
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
-
+  
+    
+    // example: 
+    //  "expr:Id=3" -> expr is query type
+    var typeRegex = /^([a-z]*):/
+    var m = query.match(typeRegex)
+    query = decodeURI(query);
+    if (m) {
+      var queryType = m[1]
+      query = query.replace(typeRegex,"")
+    }
+    
+    let json = await this.paperQuery(query, queryType);
     if (options && options.headers) {
       var headers = new Headers(options.headers); // #Refactor we should unify options before
       if (headers.get("content-type") == "application/json") {
-        let json = await this.paperQuery(query);
         return this.response(JSON.stringify(json), "application/json");
       }
       
       if (headers.get("content-type") == "application/bibtex") {
-        let json = await this.paperQuery(query);
         if (!json.entity) return this.error("no entity")
         return this.response(new Paper(json.entity).toBibtex(), "application/bibtex");
-      }
-      
+      } 
     }
-
-    query = decodeURI(query);
-    var content = await this.content(query);
-
+    // default is HTML
+    var content = await this.content(json);
     return this.response(content);
   }
 
