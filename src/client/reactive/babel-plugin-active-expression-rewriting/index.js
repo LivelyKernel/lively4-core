@@ -399,6 +399,28 @@ export default function(babel) {
                 return;
               }
               
+              function addAsObjectPropertyAsSecondParameter(functionCallPath, propertyName, node) {
+                const args = functionCallPath.get('arguments');
+                debugger
+                if (args.length === 0) {
+                  return;
+                } 
+                if (args.length === 1) {
+                  functionCallPath.pushContainer('arguments', t.objectExpression([
+                    t.objectProperty(t.identifier(propertyName), node)
+                  ]));
+                  return;
+                }
+                const argument = args[1];
+                if (argument.isObjectExpression()) {
+                  argument.pushContainer('properties', t.objectProperty(t.identifier(propertyName), node));
+                } else {
+                  const assign = template(`Object.assign({${propertyName} : PROPERTY}, EXPR || {})`);
+                  const assigned = assign({PROPERTY: node, EXPR: argument}).expression;
+                  argument.replaceWith(assigned);
+                }
+              }
+
               function addSourceLocationToSecondParameter(aexprIdentifierPath) {
                 let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
                 if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
@@ -440,23 +462,24 @@ export default function(babel) {
                  * ae(...arr)
                  */
                 const location = buildSourceLocation(aexprIdentifierPath);
-                if(aexprIdentifierPath.parentPath.get('arguments').length > 1) {
-                  const argument = aexprIdentifierPath.parentPath.get('arguments')[1];
-                  if(argument.isObjectExpression()){
-                    argument.pushContainer('properties', t.objectProperty(t.identifier('location'), location));
-                  } else {
-                    const assign = template(`Object.assign({location : LOCATION}, EXPR || {})`);
-                    const assigned = assign({LOCATION: location, EXPR: argument}).expression;
-                    argument.replaceWith(assigned);
-                  }
-                  // aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
-                  //   t.objectProperty(t.identifier('location'), location)
-                  // ]));
-                } else {
-                  aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
-                    t.objectProperty(t.identifier('location'), location)
-                  ]));
+                addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'location', location);
+              }
+
+              function addOriginalSourceCode(aexprIdentifierPath) {
+                const args = aexprIdentifierPath.parentPath.get('arguments');
+                if (args.length === 0) {
+                  return;
                 }
+                const expressionPath = args[0];
+                const sourceCode = expressionPath.getSource();
+                if (sourceCode) {
+                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(sourceCode));
+                }
+              }
+
+              function addSourceMetaData(path) {
+                addSourceLocationToSecondParameter(path); 
+                addOriginalSourceCode(path);
               }
 
               const isCallee = t.isCallExpression(path.parent) && path.parentKey === 'callee';
@@ -468,7 +491,8 @@ export default function(babel) {
 
               // Check for a call to undeclared `aexpr`:
               if (isCallee && hasUnboundName(AEXPR_IDENTIFIER_NAME)) {
-                addSourceLocationToSecondParameter(path);
+                addSourceMetaData(path);
+
                 path.replaceWith(
                   addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                 );
@@ -477,7 +501,7 @@ export default function(babel) {
               
               // Check for a call to undeclared `ae`:
               if (isCallee && hasUnboundName(AEXPR_SHORTHAND_NAME)) {
-                addSourceLocationToSecondParameter(path);
+                addSourceMetaData(path);
 
                 const expressionPath = path.parentPath.get('arguments')[0];
                 if (expressionPath) {

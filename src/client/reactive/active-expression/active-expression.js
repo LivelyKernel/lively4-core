@@ -190,7 +190,7 @@ export class BaseActiveExpression {
 
     this._annotations = new Annotations();
     if (location) { this.meta({ location }); }
-    // if (sourceCode) { this.meta({ sourceCode }); }
+    if (sourceCode) { this.meta({ sourceCode }); }
 
     this.initializeEvents();
     this.logEvent('created');

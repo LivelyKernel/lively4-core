@@ -15,22 +15,19 @@ import * as tickingAExpr from "src/client/reactive/active-expression-convention/
  */
 describe('source code attached', () => {
 
-  it('base aexprs do not supportsDependencies', () => {
-    const baseExpr = baseAExpr(() => {});
-    expect(baseExpr).to.respondTo('supportsDependencies');
-    expect(baseExpr.supportsDependencies()).to.be.false;
+  it('rewriting `aexpr` tracks its original source code', () => {
+    const e = aexpr(() => foo);
+    expect(e.meta().get('sourceCode')).to.equal('() => foo');
   });
 
-  it('frame-based aexprs do not supportsDependencies', () => {
-    const frameExpr = frameBasedAExpr.aexpr(() => {});
-    expect(frameExpr).to.respondTo('supportsDependencies');
-    expect(frameExpr.supportsDependencies()).to.be.false;
+  it('rewriting `ae` tracks its original source code', () => {
+    const e = ae({});
+    expect(e.meta().get('sourceCode')).to.equal('{}');
   });
 
-  it('rewriting aexprs supportsDependencies', () => {
-    const rewritingExpr = aexpr(() => {});
-    expect(rewritingExpr).to.respondTo('supportsDependencies');
-    expect(rewritingExpr.supportsDependencies()).to.be.true;
+  it('merges source code with other parameters', () => {
+    const e = aexpr(() => foo, { testing: 'other parameters'});
+    expect(e.meta().get('sourceCode')).to.equal('() => foo');
   });
 
 });
