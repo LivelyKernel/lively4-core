@@ -74,6 +74,7 @@ export default class LivelyBibtexEntry extends Morph {
   updateView() {
     if (!this.value || !this.value.entryTags) return;
     this.get("#key").textContent = this.key;
+    this.get("#key").addEventListener("click", () => lively.openBrowser("bib://" + this.key))
     try {
       this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
     } catch (e) {
@@ -85,7 +86,15 @@ export default class LivelyBibtexEntry extends Morph {
     } catch (e) {
       this.get("#title").textContent = this.title;
     }
+    
+    if (this.value.entryTags.microsoftid) {
+      let url = "academic://expr:Id=" + this.value.entryTags.microsoftid
+      this.get("#misc").appendChild(<span class="academic"
+            click={() => lively.openBrowser(url)}>[academic]</span>)
+    }
 
+    
+    
     this.get("#filename").textContent = "// " + this.generateFilename() + "";
   }
 

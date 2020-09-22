@@ -15,32 +15,23 @@ export class BibScheme extends BibliographyScheme {
   
   async content(entries, query) {
     var entry = entries[0] || {}
-    
     var key = query
-    
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
-    
     var content = `<h2>[${key}]<br/>${
         entry.authors ? 
           entry.authors.map(ea => `<a href="author://${ea}">${ea}</a>` ).join(", ") + ".": ""
         }  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
   
-    
     if (entry.keywords) {
       content += `<div><b>Keywords:</b> ${entry.keywords.map(ea => `<a href="keyword://${ea}">${ea}</a>`).join(", ") } </div>`
     }
-    
-    
-    
     if (entry.source) {
       content += "<pre>" + entry.source+ "</pre>"
-    }
-         
+    }         
     content += "<h3>Documents</h3><ul>" + files.map(ea => {
       return `<li><a href="${ea.url}">${ea.name}</a></li>`     
     }).join("\n") + "</ul>"
-    
-    
+  
     content += "<h3>Bibliographies</h3><ul>" + entries.map(ea => {
       return `<li><a href="${ea.url}">${ea.url}</a></li>`     
     }).join("\n") + "</ul>"    

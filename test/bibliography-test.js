@@ -15,8 +15,6 @@ describe('Bibliography', () => {
     it('converts normal prefixed with long index number', async function() {
       expect(Bibliography.filenameToKey("121001_Winograd_1996_Introduction.pdf")).to.equal("Winograd1996I")
     });
-
-    
     
     it('converts normal prefixed with index number and letter', async function() {
       expect(Bibliography.filenameToKey("00C_Winograd_1996_Introduction.pdf")).to.equal("Winograd1996I")
@@ -34,7 +32,7 @@ describe('Bibliography', () => {
       })).to.equal("Jones1972NSH")
     });
     
-     it('Name with and in name', async function() {
+    it('Name with and in name', async function() {
       expect(Bibliography.generateCitationKey({
         entryTags: {
           author: "Tom Joand and Wilboar Fundi",
@@ -42,6 +40,17 @@ describe('Bibliography', () => {
           title: "Nothing to See Here Again!"
         }
       })).to.equal("Joand1972NSH")
+    });
+    
+    
+    it('Title with -oriented' , async function() {
+      expect(Bibliography.generateCitationKey({
+        entryTags: {
+          author: "Tom Joand and Wilboar Fundi",
+          year: 1972,
+          title: "Nothing-oriented to See Here Again!"
+        }
+      })).to.equal("Joand1972NOS")
     });
     
   

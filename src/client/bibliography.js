@@ -123,7 +123,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
   }
   
   static threeSignificantInitialsFromTitle(title) {
-    return title.split(" ")
+    return title.split(/[ -]/g)
       .map(ea => ea.toLowerCase())
       .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for"].includes(ea))
       .slice(0,3)
