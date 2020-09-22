@@ -8,6 +8,33 @@ import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-ex
 import * as frameBasedAExpr from "active-expression-frame-based";
 import * as tickingAExpr from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 
+/**
+ * **************************************************************
+ * ******************** dependencies ****************************
+ * **************************************************************
+ */
+describe('source code attached', () => {
+
+  it('base aexprs do not supportsDependencies', () => {
+    const baseExpr = baseAExpr(() => {});
+    expect(baseExpr).to.respondTo('supportsDependencies');
+    expect(baseExpr.supportsDependencies()).to.be.false;
+  });
+
+  it('frame-based aexprs do not supportsDependencies', () => {
+    const frameExpr = frameBasedAExpr.aexpr(() => {});
+    expect(frameExpr).to.respondTo('supportsDependencies');
+    expect(frameExpr.supportsDependencies()).to.be.false;
+  });
+
+  it('rewriting aexprs supportsDependencies', () => {
+    const rewritingExpr = aexpr(() => {});
+    expect(rewritingExpr).to.respondTo('supportsDependencies');
+    expect(rewritingExpr.supportsDependencies()).to.be.true;
+  });
+
+});
+
 describe('Reflection API', () => {
 
   /**
@@ -351,7 +378,7 @@ describe('Reflection API', () => {
       it('returns a list of AExprs', () => {
         const obj = {};
         expect(obj.dependentAExprs()).to.be.empty;
-        
+        debugger
         const expr1 = aexpr(() => obj);
         
         const list = obj.dependentAExprs();
@@ -407,34 +434,39 @@ describe('Reflection API', () => {
             AExprRegistry.on('add', addSpy);
             AExprRegistry.on('remove', removeSpy);
 
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).not.to.be.called;
+            try {
+              expect(addSpy).not.to.be.called;
+              expect(removeSpy).not.to.be.called;
 
-            const ae = aexpr(() => {});
-            
-            expect(addSpy).to.be.calledOnce;
-            expect(addSpy).to.be.calledWith(ae);
-            addSpy.reset();
-            expect(removeSpy).not.to.be.called;
+              const ae = aexpr(() => {});
 
-            const ae2 = aexpr(() => {});
-            
-            expect(addSpy).to.be.calledOnce;
-            expect(addSpy).to.be.calledWith(ae2);
-            addSpy.reset();
-            expect(removeSpy).not.to.be.called;
+              expect(addSpy).to.be.calledOnce;
+              expect(addSpy).to.be.calledWith(ae);
+              addSpy.reset();
+              expect(removeSpy).not.to.be.called;
 
-            ae2.dispose();
-            
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).to.be.calledOnce;
-            expect(removeSpy).to.be.calledWith(ae2);
-            removeSpy.reset();
+              const ae2 = aexpr(() => {});
 
-            ae2.dispose();
-            
-            expect(addSpy).not.to.be.called;
-            expect(removeSpy).not.to.be.called;
+              expect(addSpy).to.be.calledOnce;
+              expect(addSpy).to.be.calledWith(ae2);
+              addSpy.reset();
+              expect(removeSpy).not.to.be.called;
+
+              ae2.dispose();
+
+              expect(addSpy).not.to.be.called;
+              expect(removeSpy).to.be.calledOnce;
+              expect(removeSpy).to.be.calledWith(ae2);
+              removeSpy.reset();
+
+              ae2.dispose();
+
+              expect(addSpy).not.to.be.called;
+              expect(removeSpy).not.to.be.called;
+            } finally {
+              AExprRegistry.off('add', addSpy);
+              AExprRegistry.off('remove', removeSpy);
+            }
           });
 
         });
