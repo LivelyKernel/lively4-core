@@ -401,16 +401,29 @@ export default function(babel) {
               
               function addAsObjectPropertyAsSecondParameter(functionCallPath, propertyName, node) {
                 const args = functionCallPath.get('arguments');
-                debugger
+
+                /* #TODO: Support the following cases:
+                 * ae(expr)
+                 * ae(expr, { })
+                 * ae(expr, obj)
+                 * ae(expr, ...arr)
+                 * ae(...arr)
+                 */
+                if(args.some(any => any.isSpreadElement())) {
+                  return;
+                }
+
                 if (args.length === 0) {
                   return;
                 } 
+
                 if (args.length === 1) {
                   functionCallPath.pushContainer('arguments', t.objectExpression([
                     t.objectProperty(t.identifier(propertyName), node)
                   ]));
                   return;
                 }
+
                 const argument = args[1];
                 if (argument.isObjectExpression()) {
                   argument.pushContainer('properties', t.objectProperty(t.identifier(propertyName), node));
@@ -451,16 +464,6 @@ export default function(babel) {
                   }).expression;
                 }
 
-                if(aexprIdentifierPath.parentPath.get('arguments').some(any => any.isSpreadElement())) {
-                  return;
-                }
-                /* #TODO: Support the following cases:
-                 * ae(expr)
-                 * ae(expr, { })
-                 * ae(expr, obj)
-                 * ae(expr, ...arr)
-                 * ae(...arr)
-                 */
                 const location = buildSourceLocation(aexprIdentifierPath);
                 addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'location', location);
               }
