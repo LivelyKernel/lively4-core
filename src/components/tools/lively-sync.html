@@ -112,6 +112,10 @@
       background-color: rgb(155,155,155);
     }
     
+    #syncButton, #squashButton {
+      background: linear-gradient(limegreen, limegreen);
+    }
+    
   </style>
     <div class="container">
         <p class="fill">
@@ -149,10 +153,10 @@
         </p>
         
         <p>
-          <button class="repo" id="syncButton">sync</button> 
+          <button class="repo" id="syncButton" title='Pull and Push in one go (Ctrl+S)'>sync</button> 
           <button class="repo" id="statusButton">status</button> 
           <button class="repo" id="diffButton">diff</button>
-          <button class="repo" id="squashButton">squash</button>
+          <button class="repo" id="squashButton" title='Squash all commits into one (Ctrl+Q)'>squash</button>
           <!-- <button class="repo" id="resolveButton">resolve</button> -->
           <button class="repo" id="changelogButton">log</button>
           <button class="repo" id="changesgraphButton">graph</button>
