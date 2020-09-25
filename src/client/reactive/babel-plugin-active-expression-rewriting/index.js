@@ -582,11 +582,13 @@ export default function(babel) {
                     //printParents(path.getFunctionParent())
                     //path.getFunctionParent().ensureBlock();
                     //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
-                    const varBinding = path.scope.getBinding(path.node.name);
-                    const isConst = varBinding.kind === "const";
-                    const isNotChanging = varBinding.constantViolations.length === 0;
-
-                    if (!isConst && !isNotChanging) {
+                    
+                    // #TODO: we cannot ignore non-changing values, as the ae might be configured to e.g. match:shallow
+                    // then, a local might still be considered to have changed w/o 
+                    // const varBinding = path.scope.getBinding(path.node.name);
+                    // const isConst = varBinding.kind === "const";
+                    // const isNotChanging = varBinding.constantViolations.length === 0;
+                    // if (!isConst && !isNotChanging) {
                       path.insertBefore(
                         checkExpressionAnalysisMode(
                           t.callExpression(
@@ -598,7 +600,7 @@ export default function(babel) {
                           )
                         )
                       );
-                    }
+                    // }
                   } else if (path.scope.hasGlobal(path.node.name)) {
                     // #TODO: remove this code duplication
                     rewriteReadGlobal(path);

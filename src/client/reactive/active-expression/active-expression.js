@@ -58,7 +58,9 @@ export const AExprRegistry = {
    * For Development purpose if the registry gets into inconsistent state
    */
   purge() {
-    for(let each of self.__aexprRegistry_aexprs__)each._isDisposed = true;
+    for (let each of self.__aexprRegistry_aexprs__) {
+      each._isDisposed = true;
+    }
     self.__aexprRegistry_eventTarget__.callbacks.clear();
     self.__aexprRegistry_aexprs__.clear();
     self.__aexprRegistry_idCounters__.clear();
