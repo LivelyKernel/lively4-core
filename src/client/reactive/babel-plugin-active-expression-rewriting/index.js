@@ -114,10 +114,12 @@ export default function(babel) {
   // `);
 
   function addCustomTemplate(file, name) {
-    let declar = file.declarations[name];
-    if (declar) return declar;
+    const declar = file.declarations[name];
+    if (declar) {
+      return declar;
+    }
 
-    let identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
+    const identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
@@ -580,18 +582,23 @@ export default function(babel) {
                     //printParents(path.getFunctionParent())
                     //path.getFunctionParent().ensureBlock();
                     //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
+                    const varBinding = path.scope.getBinding(path.node.name);
+                    const isConst = varBinding.kind === "const";
+                    const isNotChanging = varBinding.constantViolations.length === 0;
 
-                    path.insertBefore(
-                      checkExpressionAnalysisMode(
-                        t.callExpression(
-                          addCustomTemplate(state.file, GET_LOCAL), [
-                            getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.name),
-                            nonRewritableIdentifier(path.node.name)
-                          ]
+                    if (!isConst && !isNotChanging) {
+                      path.insertBefore(
+                        checkExpressionAnalysisMode(
+                          t.callExpression(
+                            addCustomTemplate(state.file, GET_LOCAL), [
+                              getIdentifierForExplicitScopeObject(parentWithScope),
+                              t.stringLiteral(path.node.name),
+                              nonRewritableIdentifier(path.node.name)
+                            ]
+                          )
                         )
-                      )
-                    );
+                      );
+                    }
                   } else if (path.scope.hasGlobal(path.node.name)) {
                     // #TODO: remove this code duplication
                     rewriteReadGlobal(path);
