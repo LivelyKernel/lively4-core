@@ -300,7 +300,10 @@ extendFromLodash(Array.prototype, [
   'sampleSize',
   'shuffle',
   'sum',
-  'sumBy'
+  'sumBy',
+  'uniq',
+  'uniqBy',
+  'uniqWith',
 ]);
 
 extend(Array.prototype, {
