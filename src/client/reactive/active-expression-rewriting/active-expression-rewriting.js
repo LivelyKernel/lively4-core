@@ -78,7 +78,7 @@ class Dependency {
     this.associateWithHook(SourceCodeHook.getOrCreateFor(context, identifier));
 
     /*HTML <span style="font-weight: bold;">Data Structure Hook</span>: for <span style="color: green; font-weight: bold;">Sets, Arrays, Maps</span> HTML*/
-    var dataStructure;
+    let dataStructure;
     if (this._type === 'member') {
       dataStructure = context;
     } else if(this._type === 'local') {

@@ -445,7 +445,7 @@ extend(Array.prototype, {
   partition(predicate=_.identity) {
     predicate = _.iteratee(predicate);
     const groups = this.groupBy((...args) => !!predicate(...args));
-    return [groups[true], groups[false]];
+    return [groups[true] || [], groups[false] || []];
   }
 });
 
