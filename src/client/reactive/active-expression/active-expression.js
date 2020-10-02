@@ -9,36 +9,36 @@ const HACK = {};
 
 window.__compareAExprResults__ = false;
 
+self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
+self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
+self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
+
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
-
-  _eventTarget: new EventTarget(),
-  _aexprs: new Set(),
-  _idCounters: new Map(),
 
   /**
    * Handling membership
    */
   addAExpr(aexpr) {
-    this._aexprs.add(aexpr);
+    self.__aexprRegistry_aexprs__.add(aexpr);
     this.buildIdFor(aexpr);
-    this._eventTarget.dispatchEvent('add', aexpr);
+    self.__aexprRegistry_eventTarget__.dispatchEvent('add', aexpr);
   },
   removeAExpr(aexpr) {
-    const deleted = this._aexprs.delete(aexpr);
+    const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
     if (deleted) {
-      this._eventTarget.dispatchEvent('remove', aexpr);
+      self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
     }
   },
   updateAExpr(aexpr) {
-      this._eventTarget.dispatchEvent('update', aexpr);
+      self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
   },
   
   on(type, callback) {
-    return this._eventTarget.addEventListener(type, callback);
+    return self.__aexprRegistry_eventTarget__.addEventListener(type, callback);
   },
   off(type, callback) {
-    return this._eventTarget.removeEventListener(type, callback);
+    return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
   
   buildIdFor(ae) {
@@ -50,25 +50,27 @@ export const AExprRegistry = {
     } else {
       locationId = 'unknown_location';
     }
-    this._idCounters.set(locationId, this._idCounters.get(locationId) + 1 || 0);
-    ae.meta({id : locationId+'#'+this._idCounters.get(locationId)});       
+    self.__aexprRegistry_idCounters__.set(locationId, self.__aexprRegistry_idCounters__.get(locationId) + 1 || 0);
+    ae.meta({id : locationId+'#'+self.__aexprRegistry_idCounters__.get(locationId)});       
   },
   
   /**
    * For Development purpose if the registry gets into inconsistent state
    */
   purge() {
-    for(let each of this._aexprs)each._isDisposed = true;
-    this._eventTarget.callbacks.clear();
-    this._aexprs.clear();
-    this._idCounters.clear();
+    for (let each of self.__aexprRegistry_aexprs__) {
+      each._isDisposed = true;
+    }
+    self.__aexprRegistry_eventTarget__.callbacks.clear();
+    self.__aexprRegistry_aexprs__.clear();
+    self.__aexprRegistry_idCounters__.clear();
   },
 
   /**
    * Access
    */
   allAsArray() {
-    return Array.from(this._aexprs);
+    return Array.from(self.__aexprRegistry_aexprs__);
   }
 };
 
@@ -176,7 +178,7 @@ export class BaseActiveExpression {
    * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [], match, errorMode = 'silent', location } = {}) {
+  constructor(func, { params = [], match, errorMode = 'silent', location, sourceCode } = {}) {
     this._eventTarget = new EventTarget(),
     this.func = func;
     this.params = params;
@@ -189,7 +191,9 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    if(location){this.meta({location})};
+    if (location) { this.meta({ location }); }
+    if (sourceCode) { this.meta({ sourceCode }); }
+
     this.initializeEvents();
     this.logEvent('created');
 
@@ -533,3 +537,5 @@ export function aexpr(func, ...args) {
 }
 
 export default BaseActiveExpression;
+
+// #TODO: migrate aexpr object to new/reloaded classes

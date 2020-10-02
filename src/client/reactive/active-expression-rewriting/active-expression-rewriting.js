@@ -35,13 +35,10 @@ class ExpressionAnalysis {
   }
   
   static check(aexpr) {
-    let value, isError;
     using([analysisModeManager], () => {
       // Do the function execution in ExpressionAnalysisMode
       aexprStack.withElement(aexpr, () => {
-        const result = aexpr.evaluateToCurrentValue();
-        value = result.value
-        isError = result.isError
+        const { value, isError } = aexpr.evaluateToCurrentValue();
       });
     });
   }
@@ -78,10 +75,10 @@ class Dependency {
 
     /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
-    HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
+    this.associateWithHook(SourceCodeHook.getOrCreateFor(context, identifier));
 
     /*HTML <span style="font-weight: bold;">Data Structure Hook</span>: for <span style="color: green; font-weight: bold;">Sets, Arrays, Maps</span> HTML*/
-    var dataStructure;
+    let dataStructure;
     if (this._type === 'member') {
       dataStructure = context;
     } else if(this._type === 'local') {
@@ -89,13 +86,13 @@ class Dependency {
     }
     if (dataStructure instanceof Array || dataStructure instanceof Set || dataStructure instanceof Map) {
       const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
-      HooksToDependencies.associate(dataHook, this);
+      this.associateWithHook(dataHook);
     }
 
     /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
     if (isGlobal && identifier === 'that') {
       const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
-      HooksToDependencies.associate(wrappingHook, this);
+      this.associateWithHook(wrappingHook);
     }
 
     /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
@@ -104,7 +101,7 @@ class Dependency {
       if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel')) && !context.tagName.endsWith('-rp19')) {
         // TODO: the member also influences what kind of observer we want to use!
         const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
-        HooksToDependencies.associate(mutationObserverHook, this);
+        this.associateWithHook(mutationObserverHook);
       }
     }
 
@@ -114,14 +111,18 @@ class Dependency {
       // #TODO: we have to acknowledge that different properties require different events to listen on
       //  e.g. code-mirror might have 'value' (so need to listen for 'change') or 'getCursor' (so need to listen for 'cursorActivity')
       // eventBasedHook.listenFor(identifier);
-      HooksToDependencies.associate(eventBasedHook, this);
+      this.associateWithHook(eventBasedHook);
     }
 
     /*HTML <span style="font-weight: bold;">Frame-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">Date</span> HTML*/
 // -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
     if (isGlobal && identifier === 'Date') {
-      HooksToDependencies.associate(FrameBasedHook.instance, this);
+      this.associateWithHook(FrameBasedHook.instance);
     }
+  }
+
+  associateWithHook(hook) {
+    HooksToDependencies.associate(hook, this);
   }
 
   untrack() {
@@ -170,20 +171,24 @@ class Dependency {
         property: identifier,
         value
       };
-    } else if (this.isGlobalDependency()) {
+    }
+
+    if (this.isGlobalDependency()) {
       return {
         name: identifier,
         value
       };
-    } else if (this.isLocalDependency()) {
+    }
+
+    if (this.isLocalDependency()) {
       return {
         scope: context,
         name: identifier,
         value
       };
-    } else {
-      throw new Error('Dependency is neighter local, member, nor global.');
     }
+
+    throw new Error('Dependency is neighter local, member, nor global.');
   }
 
 }

@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import Filter from "src/external/ansi-to-html.js"
+import Filter from "src/external/ansi-to-html.js";
+import Strings from "src/client/strings.js";
 
 
 /*MD # Github Sync Tool
@@ -17,6 +18,8 @@ export default class Sync extends Morph {
     var container = this.get(".container");
     this.registerButtons();
     lively.html.registerInputs(this);
+    lively.html.registerKeys(this);
+    
     this.updateLoginStatus();
     
     if (window.__karma__) {
@@ -36,6 +39,33 @@ export default class Sync extends Morph {
     };
     this.updateWindowTitle()
     this.updateServerURL()
+  }
+
+  onKeyDown(evt) {
+    debugger
+    const char = String.fromCharCode(evt.keyCode || evt.charCode);
+    const ctrl = evt.ctrlKey || evt.metaKey;
+
+    if (evt.repeated) {
+      lively.notify("Key rep! " + char)
+      return;
+    }
+    if (!ctrl) { return; }
+    
+    if (char === "S") {
+      this.onSyncButton();
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    }
+
+    if(char === "Q") {
+      this.onSquashButton();
+    
+      evt.stopPropagation();
+      evt.preventDefault();
+      return;
+    }
   }
   
   log(s) {

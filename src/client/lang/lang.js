@@ -300,7 +300,10 @@ extendFromLodash(Array.prototype, [
   'sampleSize',
   'shuffle',
   'sum',
-  'sumBy'
+  'sumBy',
+  'uniq',
+  'uniqBy',
+  'uniqWith',
 ]);
 
 extend(Array.prototype, {
@@ -318,6 +321,9 @@ extend(Array.prototype, {
 
   get second() { return this[1]; },
   set second(value) { return this[1] = value; },
+
+  get third() { return this[2]; },
+  set third(value) { return this[2] = value; },
 
   get last() { return this[this.length - 1]; },
   set last(value) { return this[this.length - 1] = value; },
@@ -434,6 +440,16 @@ extend(Array.prototype, {
     return this[i < 0 ? i + this.length : i];
   },
 
+  /**
+   * Splits the array into two arrays, first contains all items that evaluated the predicate to `true`, the second all that evaluated to false.
+   * @param predicate (Function<value, index, array -> Boolean>) standard mapping callback to calculate the weight of each item.
+   * @returns {<Array, Array>} The two Arrays as Array.
+   */
+  partition(predicate=_.identity) {
+    predicate = _.iteratee(predicate);
+    const groups = this.groupBy((...args) => !!predicate(...args));
+    return [groups[true] || [], groups[false] || []];
+  }
 });
 
 /*MD # Array-like MD*/

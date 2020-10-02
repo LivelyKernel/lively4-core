@@ -114,10 +114,12 @@ export default function(babel) {
   // `);
 
   function addCustomTemplate(file, name) {
-    let declar = file.declarations[name];
-    if (declar) return declar;
+    const declar = file.declarations[name];
+    if (declar) {
+      return declar;
+    }
 
-    let identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
+    const identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
@@ -399,6 +401,41 @@ export default function(babel) {
                 return;
               }
               
+              function addAsObjectPropertyAsSecondParameter(functionCallPath, propertyName, node) {
+                const args = functionCallPath.get('arguments');
+
+                /* #TODO: Support the following cases:
+                 * ae(expr)
+                 * ae(expr, { })
+                 * ae(expr, obj)
+                 * ae(expr, ...arr)
+                 * ae(...arr)
+                 */
+                if(args.some(any => any.isSpreadElement())) {
+                  return;
+                }
+
+                if (args.length === 0) {
+                  return;
+                } 
+
+                if (args.length === 1) {
+                  functionCallPath.pushContainer('arguments', t.objectExpression([
+                    t.objectProperty(t.identifier(propertyName), node)
+                  ]));
+                  return;
+                }
+
+                const argument = args[1];
+                if (argument.isObjectExpression()) {
+                  argument.pushContainer('properties', t.objectProperty(t.identifier(propertyName), node));
+                } else {
+                  const assign = template(`Object.assign({${propertyName} : PROPERTY}, EXPR || {})`);
+                  const assigned = assign({PROPERTY: node, EXPR: argument}).expression;
+                  argument.replaceWith(assigned);
+                }
+              }
+
               function addSourceLocationToSecondParameter(aexprIdentifierPath) {
                 let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
                 if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
@@ -429,34 +466,25 @@ export default function(babel) {
                   }).expression;
                 }
 
-                if(aexprIdentifierPath.parentPath.get('arguments').some(any => any.isSpreadElement())) {
+                const location = buildSourceLocation(aexprIdentifierPath);
+                addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'location', location);
+              }
+
+              function addOriginalSourceCode(aexprIdentifierPath) {
+                const args = aexprIdentifierPath.parentPath.get('arguments');
+                if (args.length === 0) {
                   return;
                 }
-                /* #TODO: Support the following cases:
-                 * ae(expr)
-                 * ae(expr, { })
-                 * ae(expr, obj)
-                 * ae(expr, ...arr)
-                 * ae(...arr)
-                 */
-                const location = buildSourceLocation(aexprIdentifierPath);
-                if(aexprIdentifierPath.parentPath.get('arguments').length > 1) {
-                  const argument = aexprIdentifierPath.parentPath.get('arguments')[1];
-                  if(argument.isObjectExpression()){
-                    argument.pushContainer('properties', t.objectProperty(t.identifier('location'), location));
-                  } else {
-                    const assign = template(`Object.assign({location : LOCATION}, EXPR || {})`);
-                    const assigned = assign({LOCATION: location, EXPR: argument}).expression;
-                    argument.replaceWith(assigned);
-                  }
-                  // aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
-                  //   t.objectProperty(t.identifier('location'), location)
-                  // ]));
-                } else {
-                  aexprIdentifierPath.parentPath.pushContainer('arguments', t.objectExpression([
-                    t.objectProperty(t.identifier('location'), location)
-                  ]));
+                const expressionPath = args[0];
+                const sourceCode = expressionPath.getSource();
+                if (sourceCode) {
+                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(sourceCode));
                 }
+              }
+
+              function addSourceMetaData(path) {
+                addSourceLocationToSecondParameter(path); 
+                addOriginalSourceCode(path);
               }
 
               const isCallee = t.isCallExpression(path.parent) && path.parentKey === 'callee';
@@ -468,7 +496,8 @@ export default function(babel) {
 
               // Check for a call to undeclared `aexpr`:
               if (isCallee && hasUnboundName(AEXPR_IDENTIFIER_NAME)) {
-                addSourceLocationToSecondParameter(path);
+                addSourceMetaData(path);
+
                 path.replaceWith(
                   addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
                 );
@@ -477,7 +506,7 @@ export default function(babel) {
               
               // Check for a call to undeclared `ae`:
               if (isCallee && hasUnboundName(AEXPR_SHORTHAND_NAME)) {
-                addSourceLocationToSecondParameter(path);
+                addSourceMetaData(path);
 
                 const expressionPath = path.parentPath.get('arguments')[0];
                 if (expressionPath) {
@@ -553,18 +582,25 @@ export default function(babel) {
                     //printParents(path.getFunctionParent())
                     //path.getFunctionParent().ensureBlock();
                     //path.insertBefore(t.expressionStatement(t.stringLiteral("Because I'm easy come, easy go.")));
-
-                    path.insertBefore(
-                      checkExpressionAnalysisMode(
-                        t.callExpression(
-                          addCustomTemplate(state.file, GET_LOCAL), [
-                            getIdentifierForExplicitScopeObject(parentWithScope),
-                            t.stringLiteral(path.node.name),
-                            nonRewritableIdentifier(path.node.name)
-                          ]
+                    
+                    // #TODO: we cannot ignore non-changing values, as the ae might be configured to e.g. match:shallow
+                    // then, a local might still be considered to have changed w/o 
+                    // const varBinding = path.scope.getBinding(path.node.name);
+                    // const isConst = varBinding.kind === "const";
+                    // const isNotChanging = varBinding.constantViolations.length === 0;
+                    // if (!isConst && !isNotChanging) {
+                      path.insertBefore(
+                        checkExpressionAnalysisMode(
+                          t.callExpression(
+                            addCustomTemplate(state.file, GET_LOCAL), [
+                              getIdentifierForExplicitScopeObject(parentWithScope),
+                              t.stringLiteral(path.node.name),
+                              nonRewritableIdentifier(path.node.name)
+                            ]
+                          )
                         )
-                      )
-                    );
+                      );
+                    // }
                   } else if (path.scope.hasGlobal(path.node.name)) {
                     // #TODO: remove this code duplication
                     rewriteReadGlobal(path);
