@@ -151,18 +151,23 @@ export class Paper {
     this._byId.set(id, paper)
   }
 
-  static async getId(id) {
+  static async getId(id, optionalEntity) {
     var paper = this.byId(id)
     if (paper) return paper
-    var resp = await fetch("academic://expr:Id=" + id, {
-        method: "GET", 
-        headers: {
-          "content-type": "application/json"}})
-    if (resp.status != 200) {
-      return // should we note it down that we did not found it?
+    if (optionalEntity) {
+      paper = new Paper(optionalEntity)    
+    } else {
+      // download it individually
+      var resp = await fetch("academic://expr:Id=" + id, {
+          method: "GET", 
+          headers: {
+            "content-type": "application/json"}})
+      if (resp.status != 200) {
+        return // should we note it down that we did not found it?
+      }
+      var json = await resp.json()
+      paper = new Paper(json.entity)    
     }
-    var json = await resp.json()
-    paper = new Paper(json.entity)
     return paper
   }
 
@@ -238,6 +243,11 @@ export class Paper {
     return this.toBibtexEntry().citationKey 
   }
   
+  get keywords() {
+    return (this.value.F || []).map(ea => ea.DFN)    
+  }
+  
+  
   async findBibtexFileEntries() {
     var key = this.key
     var entries = await Paper.allBibtexEntries()
@@ -251,13 +261,20 @@ export class Paper {
         author: this.authors.map(author => author.name).join(" and "), 
         title: this.title,
         year: this.year,
-        booktitle: this.booktitle,
-        doi: this.doi,
         microsoftid: this.microsoftid,
-        
       },
       entryType: this.bibtexType
     }
+    if (this.booktitle) { entry.entryTags.booktitle = this.booktitle }
+    if (this.doi) { entry.entryTags.doi = this.doi }
+
+    if (this.references) {
+        entry.entryTags.microsoftreferences = this.references.map(ea => ea.microsoftid).join(",")
+    }
+    if (this.referencedBy) {
+        entry.entryTags.microsoftreferencedby = this.referencedBy.map(ea => ea.microsoftid).join(",")
+    }
+
     entry.citationKey = Bibliography.generateCitationKey(entry)
     return entry
   }
@@ -273,20 +290,52 @@ export class Paper {
     }
     return result.join(" ")
   }
+
+  
+  allReferencesRequery(references) {
+    return `Or(${ references.map(ea => 'Id=' + ea).join(",")})`
+  } 
+  
+  
+  async academicQueryToPapers(query) {
+    var response = await new AcademicScheme().rawQueryExpr(query, 100)
+    var result = []
+    for(var entity of response.entities) {
+      result.push(await Paper.getId(entity.Id, entity))
+    }
+    return result
+  }
+
+  async resolveMicrosoftIdsToPapers(references) {
+    return this.academicQueryToPapers(this.allReferencesRequery(references))
+  }
   
   async resolveReferences() {
     this.references = []
-    if (!this.value.RId) return // nothing to do here
-    for(var refId of this.value.RId) {
-      this.references.push(await Paper.getId(refId))
-    }
-    return this.references
+    if (!this.value.RId) return // nothing to do here    
+    this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId) 
+  }
+  
+  async findReferencedBy() {
+    this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
+  }
+  
+  papersToBibtex(papers) {
+    return `<lively-bibtex>
+      ${
+        papers
+            .map(ea => `<lively-bibtex-entry>${ea.toBibtex()}</lively-bibtex-entry>`)
+            .join("\n")
+      }
+      </lively-bibtex>` 
   }
   
   async toHTML() {
     await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
+    await this.findReferencedBy()
     
     var bibtexEntries = await this.findBibtexFileEntries()
+    var pdfs = this.value.S && this.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
     
     return `<div class="paper">
       <style>
@@ -309,7 +358,17 @@ export class Paper {
       <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
         this.doi
       }</a></span>
+      <lively-script><script>
+        import {Paper} from "src/client/protocols/academic.js"
+        
+        (<button click={() => lively.openInspector(Paper.byId(${this.microsoftid}))}>inspect</button>)
+      </script></lively-script> 
+  
       </div>
+      ${
+        pdfs.length > 0 ? 
+           "<h3>Online PDFs</h3>" + pdfs.map(url => `<a href="${url}">${url.replace(/.*\//,"")}</a>`) : ""
+      }
       <h3>Bibliographies</h3>
       <div>${
         bibtexEntries.length > 0 ?
@@ -330,28 +389,41 @@ result
 `
       }</div>
 
+      <h3>Keywords</h3>
+      ${
+        this.keywords.map(keyword => `<a href="academic://expr:Composite(F.DFN=${keyword})">${keyword}</a>`)
+      }
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
       <h3>References</h3>
-      ${
-        this.references ?    
-        `<lively-bibtex>
-        ${
-          this.references
-              .map(ea => `<lively-bibtex-entry>${ ea.toBibtex()}</lively-bibtex-entry>`)
-              .join("\n")
-        }
-        </lively-bibtex>` : "[unresolved]"
-      }
-      
-      <h3>RAW (Debug)</h3>
-      <pre>${JSON.stringify(this.value, undefined, 2)}</pre>
+      ${this.papersToBibtex(this.references)}
+      <h3>Referenced By</h3>
+      ${this.papersToBibtex(this.referencedBy)}     
   </div>`
   }
   
   toBibtex() {
     var entry = this.toBibtexEntry()
     return BibtexParser.toBibtex([entry], false);
+  }
+   
+  livelyInspect(contentNode, inspector, normal) {
+    inspector.renderObjectdProperties(contentNode, this)
+    
+
+    for(var name of Object.keys(Object.getOwnPropertyDescriptors(this.__proto__))) {
+      var desc = Object.getOwnPropertyDescriptor(this.__proto__, name)
+      if (desc.get) {
+        try {
+          contentNode.appendChild(inspector.display(this[name], false, name, this))
+        } catch(e) {
+          // ignore e
+        }
+      }
+    }    
+    contentNode.appendChild(inspector.display( this.toBibtex(), false, "#bibtex", this))
+    
+    
   }
   
 }
@@ -407,21 +479,21 @@ export default class AcademicScheme extends Scheme {
         ["AA.DAuN","Original author name"],
         ["AA.DAfN","Original affiliation name"],
         ["AA.S","Numeric position in author list"],
-        //["AW","Unique, normalized words in abstract, excluding common/stopwords"],
+        ["AW","Unique, normalized words in abstract, excluding common/stopwords"],
         ["BT","BibTex document type ('a':Journal article, 'b':Book, 'c':Book chapter, 'p':Conference paper)"],
         ["BV","BibTex venue name"],
         ["C.CId","Conference series ID"],
         ["C.CN","Conference series name"],
-        //["CC","Citation count"],
+        ["CC","Citation count"],
         ["CitCon","Citation contexts</br></br>List of referenced paper ID's and the corresponding context in the paper (e.g. [{123:[\"brown foxes are known for jumping as referenced in paper 123\", \"the lazy dogs are a historical misnomer as shown in paper 123\"]})"],
         ["D","Date published in YYYY-MM-DD format"],
         ["DN","Original paper title"],
         ["DOI","Digital Object Identifier</br></br>IMPORTANT: The DOI is normalized to uppercase letters, so if querying the field via evaluate/histogram ensure that the DOI value is using all uppercase letters"],
         //["E","Extended metadata</br></br>IMPORTANT: This attribute has been deprecated and is only supported for legacy applications. Requesting this attribute individually (i.e. attributes=Id,Ti,E) will result in all extended metadata attributes being returned in a serialized JSON string</br></br>All attributes contained in the extended metadata are now available as a top-level attribute and can be requested as such (i.e. attributes=Id,Ti,DOI,IA)"],
         ["ECC","Estimated citation count"],
-        //["F.DFN","Original field of study name"],
-        //["F.FId","Field of study ID"],
-        //["F.FN","Normalized field of study name"],
+        ["F.DFN","Original field of study name"],
+        ["F.FId","Field of study ID"],
+        ["F.FN","Normalized field of study name"],
         ["FamId","If paper is published in multiple venues (e.g. pre-print and conference) with different paper IDs, this ID represents the main/primary paper ID of the family. The field can be used to find all papers in the family group, i.e. FamId=<paper_id>"],
         ["I","Publication issue"],
         ["IA","Inverted abstract"],
@@ -443,65 +515,79 @@ export default class AcademicScheme extends Scheme {
       ].map(ea => ea[0]).join(",")
   }
   
-  async rawAcademicKnowledgeQuery(textQuery) {
+  async rawQueryInterpret(textQuery, count) {
       var interpretation = await fetch(
         `https://api.labs.cognitive.microsoft.com/academic/v1.0/interpret?query=`
             + encodeURI(textQuery)
-            + `&complete=1&count=1&subscription-key=${
-                await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
+            + `&complete=1`
+            + `&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       if (!interpretation.interpretations[0] || !interpretation.interpretations[0].rules[0]) {
         return {error: "no interpretations", value: interpretation}
       }
       
       var queryExpr = interpretation.interpretations[0].rules[0].output.value
-      return this.rawAcademicKnowledgeQueryExpr(queryExpr)
+      return this.rawQueryExpr(queryExpr, count)
   }
   
-  async rawAcademicKnowledgeQueryExpr(queryExpr) {
+  async rawQueryExpr(queryExpr, count=10) {
     var attributes =  this.academicKnowledgeAttributes()    
     var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate?expr=`
             + encodeURI(queryExpr)
-            + `&complete=1&count=1`
+            + `&count=${count}`
             + `&attributes=${attributes}`
             +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       return result
   }
 
-  async paperQuery(queryString, queryType) {
+  async entityQuery(queryString, queryType, count) {
     let raw;
     if (queryType=="expr") {
-      raw = (await this.rawAcademicKnowledgeQueryExpr(queryString))
+      raw = (await this.rawQueryExpr(queryString, count))
     } else {
-      raw = (await this.rawAcademicKnowledgeQuery(queryString))
+      raw = (await this.rawQueryInterpret(queryString, count))
     }
     if (raw.entities)  {
-      return  { 
-        type: "paper",
-        entity: raw.entities[0]
-      }
+      return  raw.entities
     } else {
       return { 
-        error: "could not find paper", 
+        error: "could not find entities", 
         value: raw
       }
     }
   }
 
-  async content(json) {
+  async content(entities) {
     var content = ``;
-    if (json.error) return `<span class="error">${json.error}</span>`
-    if (!json.entity) {
-      return `<span class="error">no entity</span>`
+    if (entities.error) return `<span class="error">${entities.error}</span>`
+    if (entities.length > 1) {
+      for(var entity of entities) {
+        let paper = new Paper(entity)
+        content += `<lively-bibtex-entry>${await paper.toBibtex()}</lively-bibtex-entry>`;
+      }      
+    } else if (entities.length == 1) {
+      let paper = new Paper(entities[0])
+      content += await paper.toHTML() + "\n";
+    } else {
+      content += "<h1>No entities found</h1>" + "\n";
     }
-    var paper = new Paper(json.entity)
-    content += await paper.toHTML();
     return content;
   }
 
   async GET(options) {
     var query = this.url.replace(new RegExp(this.scheme + "\:\/\/"), "");
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
-  
+    
+    
+    var argsString = query.replace(/.*\?/,"")
+    query = query.replace(/\?.*/,"") // strip arguments
+   
+    // adhoc url paremeter decoding...
+    var args = {}
+    argsString.split(/[?&]/).forEach(ea => {
+      var pair = ea.split("=")
+      args[pair[0]] = pair[1]
+    })
+    
     
     // example: 
     //  "expr:Id=3" -> expr is query type
@@ -513,20 +599,20 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
-    let json = await this.paperQuery(query, queryType);
+    
+    let entities = await this.entityQuery(query, queryType, args.count);
     if (options && options.headers) {
       var headers = new Headers(options.headers); // #Refactor we should unify options before
       if (headers.get("content-type") == "application/json") {
-        return this.response(JSON.stringify(json), "application/json");
+        return this.response(JSON.stringify(entities), "application/json");
       }
       
       if (headers.get("content-type") == "application/bibtex") {
-        if (!json.entity) return this.error("no entity")
-        return this.response(new Paper(json.entity).toBibtex(), "application/bibtex");
+        return this.response(entities.map(ea => new Paper(ea).toBibtex()).join("\n"), "application/bibtex");
       } 
     }
     // default is HTML
-    var content = await this.content(json);
+    var content = await this.content(entities);
     return this.response(content);
   }
 

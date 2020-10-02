@@ -132,6 +132,10 @@ export default class Inspector extends Morph {
       return
     } 
       
+    this.renderObjectdProperties(contentNode, obj)
+  }
+  
+  renderObjectdProperties(contentNode, obj) {      
     if(obj && obj[Symbol.iterator]) {
       this.renderIterable(contentNode, obj);
       return;
