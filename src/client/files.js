@@ -105,6 +105,19 @@ export default class Files {
     })
   }
 
+  static async loadJSON(url) {
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "content-type": "application/json"
+      }
+    }).then(response => {
+      return response.json();
+    })
+  }
+
+  
+  
   static async copyURLtoURL(fromURL, toURL) {
     var blob = await fetch(fromURL, {method: 'GET'}).then(r => r.blob())
     return fetch(toURL, {method: 'PUT', body: blob})
