@@ -78,19 +78,21 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
     menu.remove();
     astCapabilities.extractMethod();
-  }, 'Alt+M', fa('suitcase'), () => {
-    const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);
-    if (selection) {
-      openMenu.changedSelectionInMenu = true;
-      astCapabilities.selectPaths(selection.selectedPaths);
-    } else {
-      openMenu.changedSelectionInMenu = false;
-    }
-  }, () => {
-    if (openMenu.changedSelectionInMenu) {
-      codeMirror.undoSelection();
-    }
-  }], ['Generate HTML Accessors', () => {
+  }, 'Alt+M', fa('suitcase'), {
+    onSelect: () => {
+      const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);
+      if (selection) {
+        openMenu.changedSelectionInMenu = true;
+        astCapabilities.selectPaths(selection.selectedPaths);
+      } else {
+        openMenu.changedSelectionInMenu = false;
+      }
+    },
+    onDeselect: () => {
+      if (openMenu.changedSelectionInMenu) {
+        codeMirror.undoSelection();
+      }
+    }}], ['Generate HTML Accessors', () => {
     menu.remove();
     astCapabilities.generateHTMLAccessors();
   }, 'Alt+H', fa('suitcase')], ['Print References', () => {

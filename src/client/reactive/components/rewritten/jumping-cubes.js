@@ -2,11 +2,32 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
+import { shake } from 'utils';
+
+class Cube {
+  constructor(jc, { value, color }) {
+    this.jc = jc;
+
+    this.value = value;
+    this.color = color;
+    this.bindings = [];
+
+  
+  }
+  dispose() {
+    this.bindings.forEach(each => each.dispose());
+  }
+}
+
 export default class JumpingCubes extends Morph {
   get field() { return this.get('#field'); }
 
+  defaultStart() {
+    return this.fieldSize.times(() => this.fieldSize.times(() => ({ value: 2, color: 'gray'})));
+  }
+
   async initialize() {
-    this.windowTitle = "JumpingCubes";
+    this.windowTitle = "Jumping Cubes";
 
     const colorMap = new Map([
       ['red', 'rgba(255, 126, 126, 1.0)'],
@@ -14,18 +35,27 @@ export default class JumpingCubes extends Morph {
       ['gray', 'rgba(176, 176, 176, 1.0)']
     ]);
 
-    this.player = 'red';
-    this.fieldSize = 10;
+    if (this.carryOver) {
+      this.setPlayer(this.carryOver.player);
+      this.fieldSize = this.carryOver.fieldSize;
+      this.startingInfo = this.carryOver.matrix.map(line => line.map(cube => _.pick(cube, ['value', 'color'])))
+    } else {
+      this.fieldSize = 10;
+      this.startingInfo = this.defaultStart();
+      this.nextPlayer();
+    }
     this.field.innerHTML = '';
-    this.field.matrix = [];
+    this.matrix = [];
     for (let i = 0; i < this.fieldSize; i++) {
-      const div = <div></div>;
-      this.field.matrix[i] = [];
+      this.matrix[i] = [];
       for (let j = 0; j < this.fieldSize; j++) {
-        const cube = { value: 2, color: 'gray' , bindings: []};
-        this.field.matrix[i][j] = cube;
-        const button = <button style="border-color:red" click={evt => {cube.value++; this.nextPlayer()}}>un-init</button>;
-        cube.bindings = [
+        const { value , color} = this.startingInfo[i][j];
+        const cube = new Cube (this, { value, color });
+        this.matrix[i][j] = cube;
+        const button = <button class='cube' click={evt => this.clickCube(evt, cube, container)}>un-init</button>;
+        const container = <div class='cube-container'><div class='shaker'>{button}</div></div>;
+        cube.container = container;
+        cube.bindings.push(
           aexpr(() => cube.value)
             .dataflow(value => button.innerHTML = value)
             .dataflow(value => {
@@ -34,26 +64,44 @@ export default class JumpingCubes extends Morph {
                 cube.color = this.player;
                 cube.value -= neighbours.length;
                 neighbours.forEach(each => {
-                  let neighbour = this.field.matrix[each.i][each.j];
+                  const neighbour = this.matrix[each.i][each.j];
                   neighbour.color = cube.color;
                   neighbour.value ++;
-                })
+                });
               }
-          }),
-          aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value)),
-          aexpr(() => this.player).dataflow(value => button.style.borderColor = colorMap.get(value))
-        ];
-        cube.dispose = () => cube.bindings.forEach(each => each.dispose());
-        div.appendChild(button);
+          })
+        );
+        cube.bindings.push(
+          aexpr(() => cube.color).dataflow(value => button.style.background = colorMap.get(value))
+        );
+
+        this.field.appendChild(cube.container);
       }
-      this.field.appendChild(div);
     }
     
   }
-  
+
+  clickCube(evt, cube, container) {
+    if (cube.color === this.player || cube.color === 'gray') {
+      cube.color = this.player;
+      cube.value++;
+      this.nextPlayer();
+    } else {
+      shake(container.querySelector('.shaker'));
+    }
+  }
+
   nextPlayer() {
-    if(this.player === 'red')this.player = 'green';
-    else if(this.player === 'green')this.player = 'red';
+    if (this.player === 'green') {
+      this.setPlayer('red');
+    } else {
+      this.setPlayer('green');
+    }
+  }
+  
+  setPlayer(color) {
+    this.player = color;
+    this.style.setProperty('--playerOnTurn', color);
   }
   
   getNeighboursOf(i, j) {
@@ -70,13 +118,8 @@ export default class JumpingCubes extends Morph {
   }
   
   disposeBindings() {
-    this.field.matrix.forEach(row => row.forEach((each => {
-      each.dispose();
-    })));
+    this.matrix.forEach(row => row.forEach(each => each.dispose()));
   }
-  
-
-  
 
   /* Lively-specific API */
 
@@ -92,15 +135,11 @@ export default class JumpingCubes extends Morph {
   livelyMigrate(other) {
     // whenever a component is replaced with a newer version during development
     // this method is called on the new object during migration, but before initialization
-  }
-  
-  livelyInspect(contentNode, inspector) {
-    // do nothing
+    this.carryOver = other;
   }
   
   async livelyExample() {
     this.style.backgroundColor = "lightgray"
   }
-  
-  
+
 }

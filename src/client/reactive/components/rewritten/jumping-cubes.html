@@ -6,9 +6,55 @@
   
 }
 #content {
-  background-color: gray;
+  background-color: white;
 }
+  #container {
+    height: 100%;
+    overflow: auto;
+    
+    display: grid;
+    place-items: center;
+  }
+  #field {
+    border: 3px gray solid;
+    border-color: var(--playerOnTurn);
+  }
+  .cube-container {
+  }
+.cube-container {
+  transform: scale(1);
+  perspective: 600px;
+}
+
+.cube-container:hover {
+  z-index: 10;
+  transform: scale(1.3);
+}
+
+.cube-container,
+.shaker,
+  .cube,
+#field {
+  transition: all 250ms ease-out;
+}
+  
+.shaker, .cube {
+  margin: 0;
+  width: calc(100%);
+  height: calc(100%);
+}
+  
+  #field {
+      display: grid;
+  grid-gap: 0.5px;
+  grid-template-columns: repeat(10, 40px);
+  grid-template-rows: repeat(10, 40px);
+  grid-auto-flow: rows;
+
+  }
 </style>
+  <div id='container'>
     <div id="field"></div>
+  </div>
 </template>
 
