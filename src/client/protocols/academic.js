@@ -8,6 +8,8 @@ import Bibliography from "src/client/bibliography.js"
 
 import FileIndex from "src/client/fileindex.js";
 
+import Literature from "src/client/literature.js"
+
 import _ from 'src/external/lodash/lodash.js';
 /*MD 
 # Microsoft Academic Search 
@@ -126,6 +128,23 @@ export class MicrosoftAcademicEntities {
 
 const academicSubscriptionKeyId = "microsoft-academic-key";
 
+function specialInspect(target, contentNode, inspector, normal) {
+    inspector.renderObjectdProperties(contentNode, target)
+    
+
+    for(var name of Object.keys(Object.getOwnPropertyDescriptors(target.__proto__))) {
+      var desc = Object.getOwnPropertyDescriptor(target.__proto__, name)
+      if (desc.get) {
+        try {
+          contentNode.appendChild(inspector.display(target[name], false, name, target))
+        } catch(e) {
+          // ignore e
+        }
+      }
+    }    
+  }
+
+
 export class Author {
  
   constructor(value) {
@@ -136,6 +155,13 @@ export class Author {
    return this.value.DAuN // "Original author name"
   }
   
+  get id() {
+    return this.value.AuId 
+  }
+  
+  livelyInspect(contentNode, inspector, normal) {
+    specialInspect(this, contentNode, inspector, normal)
+  }
 }
 
 
@@ -149,6 +175,7 @@ export class Paper {
   static setById(id, paper) {
     if (!this._byId) this._byId = new Map()
     this._byId.set(id, paper)
+    Literature.addPaper(paper)
   }
 
   static async getId(id, optionalEntity) {
@@ -210,6 +237,11 @@ export class Paper {
     return (this.value.AA || []).map(ea => new Author(ea)) 
   }
 
+  get authorNames() {
+    return (this.value.AA || []).map(ea => ea.DAuN) 
+  }
+
+  
   get year() {
     return this.value.Y 
   }
@@ -351,7 +383,7 @@ export class Paper {
         })</span>
       </h1> 
       <h2 class="authors">${
-        this.authors.map(ea => ea.name).join(", ")
+    this.authors.map(ea => `<a href="academic://expr:Composite(AA.AuId=${ea.id})?count=1000">${ea.name}</a>`).join(", ")
       }</h2>
       <div>
       <a href="bib://${this.key}">[${this.key}]</a>
@@ -391,7 +423,7 @@ result
 
       <h3>Keywords</h3>
       ${
-        this.keywords.map(keyword => `<a href="academic://expr:Composite(F.DFN=${keyword})">${keyword}</a>`)
+        this.value.F.map(ea => `<a href="academic://expr:Composite(F.FId=${ea.FId})">${ea.DFN}</a>`)
       }
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
@@ -408,22 +440,8 @@ result
   }
    
   livelyInspect(contentNode, inspector, normal) {
-    inspector.renderObjectdProperties(contentNode, this)
-    
-
-    for(var name of Object.keys(Object.getOwnPropertyDescriptors(this.__proto__))) {
-      var desc = Object.getOwnPropertyDescriptor(this.__proto__, name)
-      if (desc.get) {
-        try {
-          contentNode.appendChild(inspector.display(this[name], false, name, this))
-        } catch(e) {
-          // ignore e
-        }
-      }
-    }    
-    contentNode.appendChild(inspector.display( this.toBibtex(), false, "#bibtex", this))
-    
-    
+    specialInspect(this, contentNode, inspector, normal)
+    contentNode.appendChild(inspector.display(this.toBibtex(), false, "#bibtex", this))
   }
   
 }

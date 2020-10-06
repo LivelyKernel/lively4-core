@@ -89,6 +89,7 @@ export default class LivelyBibtexEntry extends Morph {
     
     if (this.value.entryTags.microsoftid) {
       let url = "academic://expr:Id=" + this.value.entryTags.microsoftid
+      this.get("#misc").innerHTML = ""
       this.get("#misc").appendChild(<span class="academic"
             click={() => lively.openBrowser(url)}>[academic]</span>)
     }
