@@ -19,8 +19,6 @@
     border: 3px gray solid;
     border-color: var(--playerOnTurn);
   }
-  .cube-container {
-  }
 .cube-container {
   transform: scale(1);
   perspective: 600px;
@@ -33,9 +31,19 @@
 
 .cube-container,
 .shaker,
-  .cube,
+.cube,
+  .butto,
 #field {
   transition: all 250ms ease-out;
+}
+
+.cube {
+  border: 1px lightgray solid;
+  transition: all 250ms ease-out, border 1s ease-in;
+}
+.cube:hover {
+  border: 2px var(--playerOnTurn) solid;
+  transition: all 250ms ease-out, border 0s ease-in;
 }
   
 .shaker, .cube {
