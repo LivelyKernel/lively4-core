@@ -48,6 +48,52 @@ class KeyboardHandler {
   }
 }
 
+/*MD 
+  see also <edit://src/client/morphic/dragbehavior.js>
+MD*/
+export class Panning {
+  
+    constructor(pane) {
+      this.pane = pane
+     // always drag with ctrl pressed
+      pane.addEventListener("pointerdown", evt => {
+        if (evt.ctrlKey) {
+          this.onPanningDown(evt)          
+        }
+      }, true)
+  
+      
+      // but if nothing else... normal drag will do
+      pane.addEventListener("pointerdown", evt => {
+        var element = _.first(evt.composedPath())
+        // lively.notify("element " + element.localName)
+        if (element.localName == "polygon") {
+          this.onPanningDown(evt)
+        }
+      })      
+    }
+
+    onPanningMove(evt) {
+      var pos = lively.getPosition(evt)
+      var delta = pos.subPt(this.lastMove)
+      this.pane.scrollTop -= delta.y
+      this.pane.scrollLeft -= delta.x
+      this.lastMove = pos
+    }
+      
+    onPanningDown(evt) {
+      this.lastMove = lively.getPosition(evt)
+      lively.addEventListener("panning", document.body.parentElement, "pointermove", 
+        evt => this.onPanningMove(evt))
+      lively.addEventListener("panning", document.body.parentElement, "pointerup", 
+        evt => { lively.removeEventListener("panning", document.body.parentElement)
+      })
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+}
+
+
 export default class HTML {
 
   static findAllNodes(visit, all) {
