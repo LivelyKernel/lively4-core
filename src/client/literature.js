@@ -2,6 +2,21 @@ import Dexie from "src/external/dexie.js"
 
 export default class Literature {
   
+  static async ensurePaperEntry(paper) {
+    var raw = await this.db.papers.get(paper.microsoftid) 
+    if (!raw) {
+      raw = this.addPaper(paper)
+    }
+    return  raw
+  }
+  
+  static async deleteEmptyAuthorPapers() {    
+    var entries = await Literature.db.papers.toArray()
+    return entries
+      .filter(ea => !ea.authors)
+      .forEach(ea => Literature.db.papers.delete(ea.microsoftid))
+  }
+  
   static async addPaper(paper) {
     var raw = {
         microsoftid: paper.microsoftid,
@@ -14,10 +29,14 @@ export default class Literature {
         value: paper.value,
         abstract: paper.abstract    
     }
-    
-    // await this.db.transaction("rw", this.db.papers, () => { 
-      this.db.papers.put(raw) 
-    // })
+    await this.db.papers.put(raw) 
+    return raw
+  }
+
+  static async patchPaper(id, obj) {
+    var raw = await this.ensurePaperEntry({microsoftid: id})
+    raw = Object.assign(raw, obj)
+    return this.db.papers.put(raw) 
   }
   
   static get db() {

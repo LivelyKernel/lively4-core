@@ -71,7 +71,7 @@
       
 
 
-      var entries  = (await Literature.db.papers.toArray()).filter(ea => ea.authors.includes(this.authorName))
+      var entries  = (await Literature.db.papers.toArray()).filter(ea => ea.authors && ea.authors.includes(this.authorName))
       // entries = entries.slice(0,10)
     
       this.papersById = {}
@@ -153,13 +153,15 @@
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       // z-index: -1;
-      this.pane = <div id="root" style="position: absolute; top: 20px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% - 0px); height: calc(100% - 20px);">
+      this.pane = <div id="root" style="position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% ); height: calc(100%);">
         {style}
          <div style="height: 20px"></div>
         <h2>Papers</h2>
-        <div>Author: <input input={(() => this.update()).debounce(500) } id="author" value="Jens Lincke"></input></div>
-        <div>Max: <input input={(() => this.update()).debounce(500) } id="maxpapers" value="100"></input></div>
-        <div>Minrefs (out): <input input={(() => this.update()).debounce(500) } id="minrefs" value="2"></input></div>
+        <div>Author: 
+          <input input={(() => this.update()).debounce(500) } id="author" value="Jens Lincke"></input>
+          <button click={() => lively.openBrowser("academic://" + this.authorName + "?count=1000") }>browse</button></div>
+        <div>Max: <input input={(() => this.update()).debounce(500) } id="maxpapers" value="10"></input></div>
+        <div>Minrefs (out): <input input={(() => this.update()).debounce(500) } id="minrefs" value="0"></input></div>
 
         <div id="progress" style="width:300px; word-break: break-all;"></div>
         {this.graphviz}

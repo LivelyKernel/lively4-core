@@ -177,7 +177,8 @@ export class Paper {
   
   static byId(id) {
     if (!this._byId) return
-    return this._byId.get(id)
+    var paper = this._byId.get(id)
+    return paper     
   }
 
   static setById(id, paper) {
@@ -192,16 +193,22 @@ export class Paper {
     if (optionalEntity) {
       paper = Paper.ensure(optionalEntity)    
     } else {
-      // download it individually
-      var resp = await fetch("academic://expr:Id=" + id, {
-          method: "GET", 
-          headers: {
-            "content-type": "application/json"}})
-      if (resp.status != 200) {
-        return // should we note it down that we did not found it?
+      var entry = await Literature.db.papers.get(id)
+      if (entry) {
+        paper = new Paper(entry.value)
+      } else {
+        debugger
+        // download it individually
+        var resp = await fetch("academic://expr:Id=" + id, {
+            method: "GET", 
+            headers: {
+              "content-type": "application/json"}})
+        if (resp.status != 200) {
+          return // should we note it down that we did not found it?
+        }
+        var json = await resp.json()
+        paper = Paper.ensure(json) // json.entity ?    
       }
-      var json = await resp.json()
-      paper = Paper.ensure(json.entity)    
     }
     return paper
   }
@@ -233,10 +240,8 @@ export class Paper {
   
   
   constructor(value) {
+    if (!value) throw new Error("value is missing")
     this.value = value
-    
- 
-
   }
   
   get authors() {
@@ -331,11 +336,13 @@ export class Paper {
 
   
   allReferencesRequery(references) {
+    if (!references || references.length == 0) return 
     return `Or(${ references.map(ea => 'Id=' + ea).join(",")})`
   } 
   
   
   async academicQueryToPapers(query) {
+    if (!query) return []
     var response = await new AcademicScheme().rawQueryExpr(query, 100)
     var result = []
     for(var entity of response.entities) {
@@ -345,17 +352,44 @@ export class Paper {
   }
 
   async resolveMicrosoftIdsToPapers(references) {
-    return this.academicQueryToPapers(this.allReferencesRequery(references))
+    var papers = []
+    var rest = []
+    for(var microsoftid of references) {
+      // look each up if in db
+      var entry = await Literature.db.papers.get(microsoftid)
+      if (entry && entry.value) {
+        papers.push(new Paper(entry.value))
+      } else {
+        rest.push(microsoftid)
+      }
+    } 
+    // bulk load the rest
+    if (rest.length > 0) {
+      papers = papers.concat(await this.academicQueryToPapers(this.allReferencesRequery(rest)))
+    }
+    return papers
   }
   
   async resolveReferences() {
     this.references = []
     if (!this.value.RId) return // nothing to do here    
-    this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId) 
+    
+    this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId)
+    return this.references
   }
   
   async findReferencedBy() {
-    this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
+    if (this.referencedBy || !this.microsoftid) return;
+    
+    var entry = await Literature.db.papers.get(this.microsoftid)
+    if (entry && entry.referencedBy) {
+      this.referencedBy = await this.resolveMicrosoftIdsToPapers(entry.referencedBy)
+    } else {
+      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
+      await Literature.patchPaper(this.microsoftid, {
+        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})      
+    }
+    return this.referencedBy
   }
   
   papersToBibtex(papers) {
