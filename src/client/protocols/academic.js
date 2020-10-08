@@ -167,6 +167,14 @@ export class Author {
 
 export class Paper {
   
+  static ensure(raw) {
+    var p = new Paper(raw)
+    if (raw.microsoftid) {
+      Paper.setById(raw.microsoftid, p)
+    }
+    return p
+  }
+  
   static byId(id) {
     if (!this._byId) return
     return this._byId.get(id)
@@ -182,7 +190,7 @@ export class Paper {
     var paper = this.byId(id)
     if (paper) return paper
     if (optionalEntity) {
-      paper = new Paper(optionalEntity)    
+      paper = Paper.ensure(optionalEntity)    
     } else {
       // download it individually
       var resp = await fetch("academic://expr:Id=" + id, {
@@ -193,7 +201,7 @@ export class Paper {
         return // should we note it down that we did not found it?
       }
       var json = await resp.json()
-      paper = new Paper(json.entity)    
+      paper = Paper.ensure(json.entity)    
     }
     return paper
   }
@@ -227,9 +235,7 @@ export class Paper {
   constructor(value) {
     this.value = value
     
-    if (this.microsoftid) {
-      Paper.setById(this.microsoftid, this)
-    }
+ 
 
   }
   
@@ -579,11 +585,11 @@ export default class AcademicScheme extends Scheme {
     if (entities.error) return `<span class="error">${entities.error}</span>`
     if (entities.length > 1) {
       for(var entity of entities) {
-        let paper = new Paper(entity)
+        let paper = Paper.ensure(entity)
         content += `<lively-bibtex-entry>${await paper.toBibtex()}</lively-bibtex-entry>`;
       }      
     } else if (entities.length == 1) {
-      let paper = new Paper(entities[0])
+      let paper = Paper.ensure(entities[0])
       content += await paper.toHTML() + "\n";
     } else {
       content += "<h1>No entities found</h1>" + "\n";
@@ -626,7 +632,7 @@ export default class AcademicScheme extends Scheme {
       }
       
       if (headers.get("content-type") == "application/bibtex") {
-        return this.response(entities.map(ea => new Paper(ea).toBibtex()).join("\n"), "application/bibtex");
+        return this.response(entities.map(ea => Paper.ensure(ea).toBibtex()).join("\n"), "application/bibtex");
       } 
     }
     // default is HTML
