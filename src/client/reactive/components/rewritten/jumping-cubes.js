@@ -60,8 +60,8 @@ class Cube {
   toJSON() {
     return {
       color: this.color,
-      value: this.value,
-    }
+      value: this.value
+    };
   }
 }
 
@@ -257,8 +257,9 @@ export default class JumpingCubes extends Morph {
   }
 
   defaultStart() {
+    const defaultStartingValue = this.getConfig().startingValue;
     return this.fieldSize.times(() => this.fieldSize.times(() => ({
-      value: 2,
+      value: defaultStartingValue,
       color: 'gray'
     })));
   }
@@ -277,10 +278,12 @@ export default class JumpingCubes extends Morph {
       this.fieldSize = state.fieldSize;
       this.startingInfo = state.cubes.map(line => line.map(cubeDesc => _.pick(cubeDesc, ['value', 'color'])));
     } else {
-      this.fieldSize = 10;
+      this.fieldSize = this.getConfig().fieldSize;
       this.startingInfo = this.defaultStart();
       this.nextPlayer();
     }
+    this.field.style.setProperty('grid-template-columns', `repeat(${this.fieldSize}, 40px)`);
+    this.field.style.setProperty('grid-template-rows', `repeat(${this.fieldSize}, 40px)`);
 
     this.field.innerHTML = '';
     this.cubes = Matrix.init(this.fieldSize, (i, j) => {
@@ -359,41 +362,83 @@ export default class JumpingCubes extends Morph {
     this.aexprs.forEach(ae => ae.dispose());
   }
 
-  onContextMenu(evt) {
-    if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      // #Hack #Workaround weired browser scrolling behavior
-      if (lively.lastScrollLeft || lively.lastScrollTop) {
-        document.scrollingElement.scrollTop = lively.lastScrollTop;
-        document.scrollingElement.scrollLeft = lively.lastScrollLeft;
+  defaultConfig() {
+    return {
+      fieldSize: 10,
+      startingValue: 2
+    };
+  }
+  getConfig() {
+    function loadJSON(key) {
+      const stringValue = this.getItem(key);
+      if (!stringValue) {
+        return undefined;
       }
-      var items = [];
-
-      items.push(...[["<b>Enable Annotations</b>", () => this.enableAnnotations()]]);
-
-      const menu = new ContextMenu(this, items);
-      menu.openIn(document.body, evt, this);
+      return JSON.parse(stringValue);
     }
+
+    const config = localStorage::loadJSON('JumpingCubes');
+    if (config) {
+      return config;
+    }
+    return this.defaultConfig();
+  }
+  setConfig(config) {
+    function saveJSON(key, json) {
+      const stringValue = JSON.stringify(json, undefined, 2);
+      return this.setItem(key, stringValue);
+    }
+
+    return localStorage::saveJSON('JumpingCubes', config);
+  }
+  resetConfig() {
+    return localStorage.removeItem('JumpingCubes');
+  }
+  configure(callback) {
+    const config = this.getConfig();
+    callback(config);
+    this.setConfig(config);
   }
 
-  static preferenceEntry(preferenceKey) {
-    let enabledIcon = function (enabled) {
-      return enabled ? '<i class="fa fa-check-square-o" aria-hidden="true"></i>' : '<i class="fa fa-square-o" aria-hidden="true"></i>';
-    };
+  onContextMenu(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
 
-    return [lively.preferences.shortDescription(preferenceKey), (evt, item) => {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (lively.preferences.get(preferenceKey)) {
-        lively.preferences.disable(preferenceKey);
-      } else {
-        lively.preferences.enable(preferenceKey);
+    function fa4(classes) {
+      return '<i class="fa fa-' + classes + '" aria-hidden="true"></i>';
+    }
+    
+    const radioButtonList = (values, configProperty) => {
+      function radioIcon(enabled) {
+        return enabled ? fa4('dot-circle-o') : fa4('circle-o');
       }
-      item.querySelector(".icon").innerHTML = enabledIcon(lively.preferences.get(preferenceKey));
-    }, "", enabledIcon(lively.preferences.get(preferenceKey))];
+
+      return values.map((value, index) => [value + '', (evt, item) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        this.configure(conf => conf[configProperty] = value);
+        item.parentElement.querySelectorAll(".icon").forEach((icon, iconIndex) => {
+          icon.innerHTML = radioIcon(index === iconIndex);
+        });
+      }, '', { toString: () => radioIcon(value === this.getConfig()[configProperty]) }]);
+    }
+
+    const fieldSizes = radioButtonList(2 .to(13), 'fieldSize');
+    const startingValues = radioButtonList([1, 2], 'startingValue');
+
+    const items = [];
+    items.push(["new game (#TODO)", ::this.restart]);
+    items.push(["field size", fieldSizes, '', fa4('cubes')]);
+    items.push(["starting value", startingValues, '', fa4('cube')]);
+    items.push(["reset to default", () => this.resetConfig(), '', fa4('trash-o')]);
+
+    const menu = new ContextMenu(this, items);
+    menu.openIn(document.body, evt, this);
+  }
+
+  restart() {
+    lively.openComponentInWindow('jumping-cubes');
   }
 
   /* Lively-specific API */
