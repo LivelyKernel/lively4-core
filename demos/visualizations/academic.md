@@ -9,7 +9,7 @@
 
   import {Paper, Author} from "src/client/protocols/academic.js"
 
-  class OverviewGraph {
+  class PaperGraph {
     static maxPapers() {
       return this.pane.querySelector("input#maxpapers").value
     }
@@ -28,13 +28,14 @@
       this.pane.querySelector("#progress").textContent += type[0]
       
       if (this.nodes.length > this.maxPapers()) {
-        throw "MaxPapers"
+        return false
       }
       
-      console.log("add paper " + paper.microsoftid)
+      // console.log("add paper " + paper.microsoftid)
     
       this.papersById[paper.microsoftid] =  paper
       this.nodes.push({id: paper.microsoftid, type: type, paper: paper}) // and another layer of indirection....
+      return paper
     }
 
     static renderEdge(edge) {
@@ -42,13 +43,16 @@
       var toPaper = this.papersById[edge.to]
       var color = "gray"
 
-      if (toPaper.authorNames.includes(this.authorName)) {
-        color = "green"
+      if (fromPaper && toPaper) {
+        if (toPaper.authorNames.includes(this.authorName)) {
+          color = "green"
+        }
+
+        if (fromPaper.authorNames.includes(this.authorName) && toPaper.authorNames.includes(this.authorName)) {
+          color = "black"
+        }      
       }
 
-      if (fromPaper.authorNames.includes(this.authorName) && toPaper.authorNames.includes(this.authorName)) {
-        color = "black"
-      }
       
       return edge.from + " -> " + edge.to + `[ color="${color}"]`
     }
@@ -58,7 +62,7 @@
     }
     
     static renderNode(node) {
-      var refsto = node.paper.referencedBy ? node.paper.referencedBy.length : 0
+      var refsto = node.paper.value.CC || 0
       return node.id + `[label="${node.paper.key}" fontsize="${
           node.paper.authorNames.includes(this.authorName) ? 20 : Math.sqrt(refsto) + 5}"]`
     }
@@ -71,7 +75,7 @@
       
 
 
-      var entries  = (await Literature.db.papers.toArray()).filter(ea => ea.authors && ea.authors.includes(this.authorName))
+      var entries  = (await Literature.papers()).filter(ea => ea.authors && ea.authors.includes(this.authorName))
       // entries = entries.slice(0,10)
     
       this.papersById = {}
@@ -81,16 +85,14 @@
           var paper = new Paper(entry.value)
           await paper.resolveReferences()
           await paper.findReferencedBy()
-          this.addPaper(paper, "root")
+          if (!this.addPaper(paper, "root")) break;
           for(var ref of paper.references) {
             this.edges.push({from: paper.microsoftid , to: ref.microsoftid})
-            await ref.findReferencedBy()
-            this.addPaper(ref, "reference")
+            if(!this.addPaper(ref, "reference")) break;
           }
           for(var ref of paper.referencedBy) {
             this.edges.push({from: ref.microsoftid , to: paper.microsoftid})
-            await ref.findReferencedBy()
-            this.addPaper(ref, "citation")
+            if(!this.addPaper(ref, "citation")) break;
           }
 
         };
@@ -123,10 +125,13 @@
     }
     
     static async update() {
+      var start = Date.now()
       this.graphviz.get("#graph").innerHTML = ""
       var source = await this.dotSource()
       this.graphviz.innerHTML = `<` +`script type="graphviz">${source}<` + `/script>}`
       await this.graphviz.updateViz()    
+      lively.notify("updated in " + (Date.now() - start) + "ms")
+
     }
     
     static async create(ctx) {
@@ -191,6 +196,9 @@
     }
   }
   
+  // import Tracing from "src/client/tracing.js"
+  // Tracing.traceObject(PaperGraph)
 
-  OverviewGraph.create(this)
+
+  PaperGraph.create(this)
 </script>

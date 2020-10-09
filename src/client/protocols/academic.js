@@ -169,9 +169,12 @@ export class Paper {
   
   static ensure(raw) {
     var p = new Paper(raw)
-    if (raw.microsoftid) {
-      Paper.setById(raw.microsoftid, p)
+    if(!raw.Id) {
+      throw new Error("Id is missing (microsoftid)")
     }
+    
+    Paper.setById(raw.Id, p)
+    
     return p
   }
   
@@ -193,11 +196,10 @@ export class Paper {
     if (optionalEntity) {
       paper = Paper.ensure(optionalEntity)    
     } else {
-      var entry = await Literature.db.papers.get(id)
+      var entry = await Literature.getPaperEntry(id)
       if (entry) {
         paper = new Paper(entry.value)
       } else {
-        debugger
         // download it individually
         var resp = await fetch("academic://expr:Id=" + id, {
             method: "GET", 
@@ -354,9 +356,12 @@ export class Paper {
   async resolveMicrosoftIdsToPapers(references) {
     var papers = []
     var rest = []
+    
+    // bulk queries are faster
+    var entries = await Literature.getPaperEntries(references)
     for(var microsoftid of references) {
       // look each up if in db
-      var entry = await Literature.db.papers.get(microsoftid)
+      var entry = entries.find(ea => ea && (ea.microsoftid == microsoftid))
       if (entry && entry.value) {
         papers.push(new Paper(entry.value))
       } else {
@@ -371,6 +376,7 @@ export class Paper {
   }
   
   async resolveReferences() {
+    
     this.references = []
     if (!this.value.RId) return // nothing to do here    
     
@@ -381,13 +387,17 @@ export class Paper {
   async findReferencedBy() {
     if (this.referencedBy || !this.microsoftid) return;
     
-    var entry = await Literature.db.papers.get(this.microsoftid)
+    var entry = await Literature.getPaperEntry(this.microsoftid)
     if (entry && entry.referencedBy) {
       this.referencedBy = await this.resolveMicrosoftIdsToPapers(entry.referencedBy)
     } else {
+      console.log("FETCH referencedBy " + this.microsoftid)
+      
       this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
+      debugger
       await Literature.patchPaper(this.microsoftid, {
-        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})      
+        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})   
+      debugger
     }
     return this.referencedBy
   }
@@ -687,3 +697,6 @@ export default class AcademicScheme extends Scheme {
 }
 
 PolymorphicIdentifier.register(AcademicScheme);
+
+// import Tracing from "src/client/tracing.js"
+// Tracing.traceClass(Paper)
