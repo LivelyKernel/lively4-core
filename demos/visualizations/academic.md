@@ -27,10 +27,6 @@
     
       this.pane.querySelector("#progress").textContent += type[0]
       
-      if (this.nodes.length > this.maxPapers()) {
-        return false
-      }
-      
       // console.log("add paper " + paper.microsoftid)
     
       this.papersById[paper.microsoftid] =  paper
@@ -75,14 +71,16 @@
       
 
 
-      var entries  = (await Literature.papers()).filter(ea => ea.authors && ea.authors.includes(this.authorName))
+      // var entries  = (await Literature.papers()).filter(ea => ea.authors && ea.authors.includes(this.authorName))
       // entries = entries.slice(0,10)
+    
+      var jsonEntries = await lively.files.loadJSON(`academic://${this.authorName}?count=${this.maxPapers()}`)
     
       this.papersById = {}
 
       try {
-        for(var entry of entries)  {
-          var paper = new Paper(entry.value)
+        for(var json of jsonEntries)  {
+          var paper = new Paper(json)
           await paper.resolveReferences()
           await paper.findReferencedBy()
           if (!this.addPaper(paper, "root")) break;
@@ -109,7 +107,7 @@
       this.pane.querySelector("#progress").textContent = ""
 
       var minrefs = this.minRefs()
-      this.nodes = this.nodes.filter(ea => ea.type == "root" || ea.type == "citation" || this.refCount(ea) >= minrefs) // filter some nodes
+      this.nodes = this.nodes.filter(ea => ea.type == "root" || this.refCount(ea) >= minrefs) // filter some nodes
       this.edges = this.edges.filter(edge => this.nodes.find(ea => ea.id ==  edge.from) && this.nodes.find(ea => ea.id == edge.to)) // remove obsolete edges 
 
       return `digraph {
