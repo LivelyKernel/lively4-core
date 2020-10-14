@@ -1666,6 +1666,12 @@ export default class Lively {
     return keys
   }
 
+  static methods(obj) {
+    return Object.getOwnPropertyNames(obj).filter(ea => {
+      var desc = Object.getOwnPropertyDescriptor(obj, ea)
+      return desc.value && _.isFunction(desc.value)
+    })
+  }
 
   static onUnload() {
     // #TODO How to deal with multiple open lively pages?

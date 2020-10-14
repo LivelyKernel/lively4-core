@@ -1060,7 +1060,6 @@ export default class Container extends Morph {
 
 
   onEdit() {
-    debugger
     this.setAttribute("mode", "edit");
     this.showCancelAndSave();
     this.editFile();

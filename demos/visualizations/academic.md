@@ -3,20 +3,24 @@
 
   import {Panning} from "src/client/html.js"
 
-  var base = lively.query(this, "lively-container").getDir();
-
   import Literature from "src/client/literature.js"
 
   import {Paper, Author} from "src/client/protocols/academic.js"
 
-  class OverviewGraph {
+  class PaperGraph {
     static maxPapers() {
-      return this.pane.querySelector("input#maxpapers").value
+      return this.pane.querySelector("input#count").value
     }
 
     static minRefs() {
-      return this.pane.querySelector("input#minrefs").value
+      return this.pane.querySelector("input#min_refs_out").value
     }
+
+    static minCitationsIn() {
+      return this.pane.querySelector("input#min_cc_in").value
+    }
+
+
 
     static query(query) {
       return lively.query(this.ctx, query)
@@ -25,32 +29,49 @@
     static addPaper(paper, type) {
       if (!lively.isInBody(this.pane)) throw "StoppedAddingPapers"
     
+      var node = this.nodesById[paper.microsoftid]
+      if (node) return true
+      
       this.pane.querySelector("#progress").textContent += type[0]
       
-      if (this.nodes.length > this.maxPapers()) {
-        throw "MaxPapers"
-      }
-      
-      console.log("add paper " + paper.microsoftid)
+      // console.log("add paper " + paper.microsoftid)
     
       this.papersById[paper.microsoftid] =  paper
-      this.nodes.push({id: paper.microsoftid, type: type, paper: paper}) // and another layer of indirection....
+      
+      node = {id: paper.microsoftid, type: type, paper: paper}
+      this.nodes.push(node) // and another layer of indirection....
+      this.nodesById[paper.microsoftid] =  node
+      
+      
+      if (type == "citation") {
+        node.selfreference = false
+        node.paper.authorNames.forEach(author => {
+          if(this.authorNames.has(author)) {
+            node.selfreference = true
+          }
+        })       
+      }
+      
+      return true
     }
 
     static renderEdge(edge) {
-      var fromPaper = this.papersById[edge.from]
-      var toPaper = this.papersById[edge.to]
+      var fromNode = this.nodesById[edge.from]
+      var toNode = this.nodesById[edge.to]
       var color = "gray"
 
-      if (toPaper.authorNames.includes(this.authorName)) {
-        color = "green"
+      if (fromNode && toNode) {
+        if (fromNode.type == "root" && toNode.type == "root") {
+          color = "black"
+        } else if (toNode.type == "root") {
+          color = "palegreen"
+        } else if (fromNode.selfreference || toNode.selfreference) {
+          color = "lightblue"
+        }
       }
 
-      if (fromPaper.authorNames.includes(this.authorName) && toPaper.authorNames.includes(this.authorName)) {
-        color = "black"
-      }
-      
-      return edge.from + " -> " + edge.to + `[ color="${color}"]`
+
+      return edge.to + " -> " + edge.from + `[ color="${color}"]`
     }
     
     static refCount(node) {
@@ -58,42 +79,70 @@
     }
     
     static renderNode(node) {
-      var refsto = node.paper.referencedBy ? node.paper.referencedBy.length : 0
-      return node.id + `[label="${node.paper.key}" fontsize="${
-          node.paper.authorNames.includes(this.authorName) ? 20 : Math.sqrt(refsto) + 5}"]`
+      var refsto = node.paper.value.CC || 0
+      
+      var color = ""
+      
+      if(node.type == "root") {
+        color = "blue" 
+      } else if (node.selfreference) {
+        color = "lightblue"
+      } else if (node.type == "citation") {
+        color = "palegreen"
+      } else {
+        color = "darkgray"
+      }
+      
+      return node.id + `[`+
+        ` label="${node.paper.key}"`+
+        ` fontsize="${node.type == "root" ? 20 : Math.sqrt(refsto) + 5}"` +
+        ` fontcolor="${color}"` +
+        
+        `]`
     }
     
     static async dotSource() {
       this.nodes = []
       this.edges = []
 
-      this.authorName = this.pane.querySelector("#author").value
+      this.queryString = this.pane.querySelector("#query").value
       
 
 
-      var entries  = (await Literature.db.papers.toArray()).filter(ea => ea.authors.includes(this.authorName))
+      // var entries  = (await Literature.papers()).filter(ea => ea.authors && ea.authors.includes(this.queryString))
       // entries = entries.slice(0,10)
     
+      var jsonEntries = await lively.files.loadJSON(`academic://${this.queryString}?count=${this.maxPapers()}`)
+    
       this.papersById = {}
+      this.nodesById = {}
+
+      this.authorNames = new Set()
 
       try {
-        for(var entry of entries)  {
-          var paper = new Paper(entry.value)
+        var rootPapers = []
+        for(var json of jsonEntries)  {
+          var paper = new Paper(json)
           await paper.resolveReferences()
           await paper.findReferencedBy()
-          this.addPaper(paper, "root")
-          for(var ref of paper.references) {
-            this.edges.push({from: paper.microsoftid , to: ref.microsoftid})
-            await ref.findReferencedBy()
-            this.addPaper(ref, "reference")
-          }
+          if (!this.addPaper(paper, "root")) break;
+          rootPapers.push(paper)
+          
+          
+          paper.authorNames.forEach(author => this.authorNames.add(author))
+        };
+        for(paper of rootPapers) {
           for(var ref of paper.referencedBy) {
             this.edges.push({from: ref.microsoftid , to: paper.microsoftid})
-            await ref.findReferencedBy()
-            this.addPaper(ref, "citation")
+            if(!this.addPaper(ref, "citation")) break;
           }
-
-        };
+        }        
+        for(paper of rootPapers) {
+          for(var ref of paper.references) {          
+            this.edges.push({from: paper.microsoftid , to: ref.microsoftid})
+            if(!this.addPaper(ref, "reference")) break;
+          }
+        }        
       } catch(e) {
         if (e == "MaxPapers") {
           // do nothing
@@ -107,14 +156,18 @@
       this.pane.querySelector("#progress").textContent = ""
 
       var minrefs = this.minRefs()
-      this.nodes = this.nodes.filter(ea => ea.type == "root" || ea.type == "citation" || this.refCount(ea) >= minrefs) // filter some nodes
+      var minCitationsIn = this.minCitationsIn()
+      this.nodes = this.nodes.filter(ea => ea.type == "root" || 
+        (ea.type == "reference" && (this.refCount(ea) >= minrefs)) ||
+        (ea.type == "citation" && (ea.paper.value.CC >= minCitationsIn))) // filter some nodes
+      
       this.edges = this.edges.filter(edge => this.nodes.find(ea => ea.id ==  edge.from) && this.nodes.find(ea => ea.id == edge.to)) // remove obsolete edges 
 
       return `digraph {
         rankdir=LR;
         graph [  
-          splines="false"  
-          overlap="true"  ];
+          splines="true"  
+          overlap="false"  ];
         node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
         edge [  fontname="Arial"  arrowhead="none" color="gray" fontsize="8" ];
         ${this.edges.map(ea => this.renderEdge(ea)).join(";\n")}
@@ -123,18 +176,18 @@
     }
     
     static async update() {
+      var start = Date.now()
       this.graphviz.get("#graph").innerHTML = ""
       var source = await this.dotSource()
       this.graphviz.innerHTML = `<` +`script type="graphviz">${source}<` + `/script>}`
       await this.graphviz.updateViz()    
+      lively.notify("updated in " + (Date.now() - start) + "ms")
+
     }
     
     static async create(ctx) {
       this.ctx = ctx
-      // var parameters = markdownComp.parameters
-      // if (parameters.url) {
-      //   this.url = parameters.url
-      // }
+      
 
       this.container = this.query("lively-container");
       this.graphviz = await (<graphviz-dot></graphviz-dot>)
@@ -145,6 +198,10 @@
       td.comment {
         max-width: 300px
       }
+      input#author {
+        width: 400px;
+      }
+      
       div#root {
         overflow: visible;
         width: 5000px;
@@ -153,17 +210,30 @@
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       // z-index: -1;
-      this.pane = <div id="root" style="position: absolute; top: 20px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% - 0px); height: calc(100% - 20px);">
+      this.pane = <div id="root" style="position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% ); height: calc(100%);">
         {style}
-         <div style="height: 20px"></div>
-        <h2>Papers</h2>
-        <div>Author: <input input={(() => this.update()).debounce(500) } id="author" value="Jens Lincke"></input></div>
-        <div>Max: <input input={(() => this.update()).debounce(500) } id="maxpapers" value="100"></input></div>
-        <div>Minrefs (out): <input input={(() => this.update()).debounce(500) } id="minrefs" value="2"></input></div>
+        <div><h2>Paper Query: </h2> 
+            <input input={(() => this.update()).debounce(500) } id="query" value="Jens Lincke"></input>
+            <span>Max: <input input={(() => this.update()).debounce(500) } id="count" value="5"></input></span>
 
-        <div id="progress" style="width:300px; word-break: break-all;"></div>
+          <button click={() => lively.openBrowser("academic://" + this.queryString + "?count=1000") }>browse</button></div>
+        <div>
+          <span>Min References (out): <input input={(() => this.update()).debounce(500) } id="min_refs_out" value="2"></input></span>
+          <span>Min Citations (In): <input input={(() => this.update()).debounce(500) } id="min_cc_in" value="2"></input></span>
+        </div>
+        <div id="progress" style="width:600px; word-break: break-all;"></div>
         {this.graphviz}
       </div>
+      
+      var parameters = markdownComp.parameters
+      for(let name of Object.keys(parameters)) {
+         var element = this.pane.querySelector("#" +name)
+         if (element) element.value = parameters[name]
+         else {
+          lively.warn("parameter " + name + " not found")
+         }
+      }
+      
       
       this.update() // async...
       
@@ -189,6 +259,9 @@
     }
   }
   
+  // import Tracing from "src/client/tracing.js"
+  // Tracing.traceObject(PaperGraph)
 
-  OverviewGraph.create(this)
+
+  PaperGraph.create(this)
 </script>
