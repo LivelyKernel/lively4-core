@@ -337,24 +337,39 @@ class Player {
 
       const field = cubes.toJSON();
 
-      field.forEach(line => line.forEach(cube => cube.numNeighbours = 4));
-      field.forEach(line => {
-        line.first.numNeighbours--;
-        line.last.numNeighbours--;
-      });
-      field.first.forEach(cube => cube.numNeighbours--);
-      field.last.forEach(cube => cube.numNeighbours--);
+      field.forEach((line, i) => line.forEach((cube, j) => {
+        cube.neighbours = [];
+        if (field[i - 1]) {
+          cube.neighbours.push(field[i - 1][j]);
+        }
+        if (field[i][j - 1]) {
+          cube.neighbours.push(field[i][j - 1]);
+        }
+        if (field[i + 1]) {
+          cube.neighbours.push(field[i + 1][j]);
+        }
+        if (field[i][j + 1]) {
+          cube.neighbours.push(field[i][j + 1]);
+        }
+      }));
+
+      field.forEach(line => line.forEach(cube => cube.numNeighbours = cube.neighbours.length));
 
       return { field, color };
     }
 
+    jc.aiProgressStart(jc.player.color)
+
     const mcts = new MCTS(getInitialState(jc));
-    const move = await mcts.run(200);
+    const move = await mcts.run(1000, {
+      progress: ::jc.aiProgressStep
+    });
 
     if (this.gameNumber < jc.gameNumber) {
       return;
     }
 
+    jc.aiProgressEnd()
     jc.processQueue(jc.cubes.get(move.i, move.j));
   }
 
@@ -409,6 +424,11 @@ export default class JumpingCubes extends Morph {
 
   reset(state) {
     this.blinkOut();
+    const aiProgress = this.aiProgress;
+    aiProgress.animate([{ 'opacity': 0 }], {
+      duration: 0,
+      fill: 'forwards'
+    });
 
     this.gameNumber++;
     this.animationSpeed = this.getConfig().animationSpeed;
@@ -641,7 +661,7 @@ export default class JumpingCubes extends Morph {
         });
       }, '', { toString: () => radioIcon(value === this.getConfig()[configProperty]) }]);
     };
-    const fieldSizes = radioButtonList(1 .to(13), 'fieldSize');
+    const fieldSizes = radioButtonList(2 .to(13), 'fieldSize');
     const startingValues = radioButtonList([1, 2], 'startingValue');
     const animationSpeed = radioButtonList([0.5, 0.75, 1, 1.25, 1.5, 2, 4, 'Instantaneous'], 'animationSpeed');
 
@@ -738,6 +758,61 @@ export default class JumpingCubes extends Morph {
   win(color) {
     this.cleanup();
     this.blinkIn(color);
+  }
+
+  get aiProgress() {
+    return this.get('#ai-progress');
+  };
+  
+  get aiProgressLabel() {
+    return this.get('#ai-progress-label');
+  };
+  
+  aiProgressStart(color) {
+    const aiProgress = this.aiProgress;
+    aiProgress.style.display = 'block';
+    aiProgress.style.backgroundImage =``;
+    aiProgress.style.setProperty('opacity', 0);
+    aiProgress.animate([{ 'opacity': 0 }, { 'opacity': 1 }], {
+      duration: 1000,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+
+    const aiProgressLabel = this.aiProgressLabel;
+    aiProgressLabel.style.color = color;
+  }
+
+  aiProgressStep(color, progress) {
+    const aiProgress = this.aiProgress;
+    let cssColor;
+    if (color === 'red') {
+      cssColor = '255, 0, 0'
+    } else if (color === 'green') {
+      cssColor = '0, 255, 0'
+    } else {
+      cssColor = '0, 0, 255'
+    }
+    const progressPercentage = progress * 100;
+    aiProgress.style.backgroundImage =`linear-gradient( 
+      to right,
+      rgba(${cssColor}, 0.45), 
+      rgba(${cssColor}, 0.45) ${progressPercentage}%,
+      rgba(0,0,0,0) ${progressPercentage}%,
+      rgba(0,0,0,0)
+    )`;
+
+    const aiProgressLabel = this.aiProgressLabel;
+    aiProgressLabel.style.color = color;
+  }
+
+  aiProgressEnd() {
+    const aiProgress = this.aiProgress;
+    aiProgress.animate([{ 'opacity': 1 }, { 'opacity': 0 }], {
+      duration: 500,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
   }
 
   /* Lively-specific API */

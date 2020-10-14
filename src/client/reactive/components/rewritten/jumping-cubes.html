@@ -112,9 +112,31 @@
     text-shadow: -1px 0 darkgray, 0 1px darkgray, 1px 0 darkgray, 0 -1px darkgray;
   }
 
+  #ai-progress {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    opacity: 0;
+    transform: translate(-50%);
+    border: 1px solid gray;
+    border-radius: 40px;
+    width: 100px;
+    height: 4px;
+  }
+  #ai-progress-label {
+    position: absolute;
+    font-size: 10pt;
+    bottom: 5px;
+    left: 50%;
+    transform: translate(-50%);
+    color: red;
+  }
 </style>
   <span id='greenPlayer'></span>
   <span id='redPlayer'></span>
+  <div id='ai-progress'>
+    <div id='ai-progress-label'>thinking</div>
+  </div>
   <span id='energy'></span>
   <div id='container'>
     <div id="field"></div>
