@@ -18,12 +18,9 @@ MD*/
 /*MD 
 <style>* {background-color:lightgray}</style>
 
-### Example:  
+### Documentation
 
-```javascript{.example}
-  import {MicrosoftAcademicEntities} from "src/client/protocols/academic-scheme.js"
-  MicrosoftAcademicEntities.schemas()
-``` 
+<https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes>
 
 ### Microsoft Academic Raw Query:
 
@@ -349,7 +346,12 @@ export class Paper {
   
   async academicQueryToPapers(query) {
     if (!query) return []
-    var response = await new AcademicScheme().rawQueryExpr(query, 1000)
+    try {
+      var response = await new AcademicScheme().rawQueryExpr(query, 1000)
+    } catch(e) {
+      console.warn("[academic] Error academicQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
+      return null
+    }
     var result = []
     for(var entity of response.entities) {
       result.push(await Paper.getId(entity.Id, entity))
@@ -374,7 +376,8 @@ export class Paper {
     } 
     // bulk load the rest
     if (rest.length > 0) {
-      papers = papers.concat(await this.academicQueryToPapers(this.allReferencesRequery(rest)))
+      let list = await this.academicQueryToPapers(this.allReferencesRequery(rest))
+      if (list) papers = papers.concat(list)
     }
     return papers
   }
@@ -398,8 +401,10 @@ export class Paper {
       console.log("FETCH referencedBy " + this.microsoftid)
       
       this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)  
-      await Literature.patchPaper(this.microsoftid, {
-        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})   
+      if (this.referencedBy) {
+        await Literature.patchPaper(this.microsoftid, {
+          referencedBy: this.referencedBy.map(ea => ea.microsoftid)})           
+      }
     }
     return this.referencedBy
   }
@@ -442,6 +447,14 @@ export class Paper {
       <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
         this.doi
       }</a></span>
+  
+      <div id="journal">${this.value.J ? "Journal: " + `<a href=
+        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
+        }> ` + this.value.J.JN  
+          + " Volume " + this.value.V 
+          + " Issue" + this.value.I + "</a>": "" }</div>
+      <div id="conference">${this.value.C ? this.value.C.CN  : ""}</div>
+      
       <lively-script><script>
         import {Paper} from "src/client/protocols/academic.js"
         
@@ -630,13 +643,15 @@ export default class AcademicScheme extends Scheme {
     var content = ``;
     if (entities.error) return `<span class="error">${entities.error}</span>`
     
-    content = `<button onclick='lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
+    var code = `lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
       "Academic Visualizaton", {
-        query: "${this.query}",
+        query: ${JSON.stringify(this.query)},
         "count": ${this.count},
         "min_cc_in": 2,
         "min_refs_out": 10,
-})'>visualize</button>`
+    })`
+    
+    content = `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
     
     if (entities.length > 1) {
       for(var entity of entities) {
