@@ -448,13 +448,20 @@ export class Paper {
         this.doi
       }</a></span>
   
-      <div id="journal">${this.value.J ? "Journal: " + `<a href=
+      ${this.value.J ? `<div id="journal">Journal: ` + `<a href=
         "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
         }> ` + this.value.J.JN  
           + " Volume " + this.value.V 
-          + " Issue" + this.value.I + "</a>": "" }</div>
+          + " Issue" + this.value.I + "</a></div>": "" }
       <div id="conference">${this.value.C ? this.value.C.CN  : ""}</div>
-      
+
+  
+        <div id="fields">${this.value.F ? "<h3>Fields</h3> " + 
+            this.value.F.map(F => `<a href=
+        "academic://expr:Composite(F.FId=${F.FId})?count=30"
+        }> ` + F.DFN + "</a>").join(" "): "" }</div>
+
+  
       <lively-script><script>
         import {Paper} from "src/client/protocols/academic.js"
         
@@ -486,10 +493,6 @@ result
 `
       }</div>
 
-      <h3>Keywords</h3>
-      ${
-        this.value.F.map(ea => `<a href="academic://expr:Composite(F.FId=${ea.FId})">${ea.DFN}</a>`)
-      }
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
       <h3>References</h3>
@@ -621,6 +624,15 @@ export default class AcademicScheme extends Scheme {
             +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       return result
   }
+  
+  async rawQueryHist(queryExpr, attributes=["Y"], count=10) {
+    var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/calchistogram?expr=`
+            + encodeURI(queryExpr)
+            + `&count=${count}`
+            + `&attributes=${attributes}`
+            +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
+      return result
+  }
 
   async entityQuery(queryString, queryType, count) {
     let raw;
@@ -685,6 +697,7 @@ export default class AcademicScheme extends Scheme {
     })
     this.count = args["count"] || 10
     
+    
     // example: 
     //  "expr:Id=3" -> expr is query type
     var typeRegex = /^([a-z]*):/
@@ -695,6 +708,11 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
+    if (queryType=="hist") {
+      var queryAttributes = args["attr"] 
+      let raw = (await this.rawQueryHist(query, queryAttributes, this.count))
+      return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+    } 
     
     let entities = await this.entityQuery(query, queryType, args.count);
     if (options && options.headers) {
