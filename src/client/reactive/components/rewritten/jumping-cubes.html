@@ -66,12 +66,6 @@
     bottom: 0;
     right: 0;
   }
-  #greenPlayer {
-    color: green;
-  }
-  #redPlayer {
-    color: red;
-  }
   #gameEnd-container {
     position: absolute;
     top: 0;
@@ -131,20 +125,78 @@
     transform: translate(-50%);
     color: red;
   }
+  
+  /* player score */
+  .player-score {
+    background-color: darkgray;
+    border: 1px solid gray;
+    width: 30%;
+    height: 5px;
+    position: absolute;
+    top: 35px;
+  }
+  #greenPlayer {
+    color: #007900;
+    left: 0;
+  }
+  #redPlayer {
+    color: #790000;
+    right: 0;
+  }
+  .score-label {
+    position: absolute;
+    width: 100%;
+    bottom: 7px;
+    display: grid;
+    place-items: center;
+    transform-origin: bottom;
+    vertical-align: middle;
+  }
+
+  .foreground, .background {
+    position: absolute;
+    width: 0;
+    height: 100%;
+  }
+  .background {
+    background: gray;
+  }
+  #greenPlayer .foreground {
+    background: linear-gradient(#9fff7e, #3fae18);
+  }
+  #redPlayer .background, #redPlayer .foreground {
+    right: 0;
+  }
+  .background {
+    background: gray;
+  }
+  #redPlayer .foreground {
+    background: linear-gradient(rgb(255 205 189), rgb(242 92 92));8));
+  }
 </style>
-  <span id='greenPlayer'></span>
-  <span id='redPlayer'></span>
-  <div id='ai-progress'>
-    <div id='ai-progress-label'>thinking</div>
-  </div>
-  <span id='energy'></span>
   <div id='container'>
     <div id="field"></div>
+  </div>
+  
+  <div id='greenPlayer' class='player-score'>
+    <div class='background'></div>
+    <div class='foreground'></div>
+    <span class='score-label'></span>
+  </div>
+  <div id='redPlayer' class='player-score'>
+    <div class='background'></div>
+    <div class='foreground'></div>
+    <span class='score-label'></span>
   </div>
 
   <div id='gameEnd-container'>
     <div id="gameEnd-message">Player Green Wins!</div>
     <div id="gameEnd-newGame">Click to Start a New Game</div>
   </div>
+
+  <div id='ai-progress'>
+    <div id='ai-progress-label'>thinking</div>
+  </div>
+  <span id='energy'></span>
 </template>
 
