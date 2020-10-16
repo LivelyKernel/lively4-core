@@ -393,11 +393,9 @@ export class Paper {
     } else {
       console.log("FETCH referencedBy " + this.microsoftid)
       
-      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
-      debugger
+      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)  
       await Literature.patchPaper(this.microsoftid, {
         referencedBy: this.referencedBy.map(ea => ea.microsoftid)})   
-      debugger
     }
     return this.referencedBy
   }

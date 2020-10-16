@@ -73,7 +73,6 @@
           color = "lightblue"
         }
         var CitationContext = fromNode.paper.value.CitCon
-        debugger
         if (CitationContext && CitationContext[edge.to]) {
           width = CitationContext[edge.to].length + 1
           tooltip = this.cleanString("" + CitationContext[edge.to].map(ea => "- '" + ea + "'").join("\n"))
