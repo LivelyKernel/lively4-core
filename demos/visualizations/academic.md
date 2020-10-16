@@ -283,7 +283,7 @@
       
       new Panning(this.pane)
 
-      this.pane.addEventListener("click", evt => {
+      this.pane.addEventListener("click", async evt => {
         var g = evt.composedPath().find(ea => ea.localName == "g" && ea.classList.contains("node"))
         var id = g && g.querySelector("title").textContent
         if (!id) {
@@ -294,10 +294,13 @@
         }
         var paper = this.papersById[id] // because we left our object realm... we have to jump through hoops 
         if (paper) {
+          evt.stopPropagation()
+          evt.preventDefault()
           if (evt.shiftKey) {
             lively.openInspector(paper)
           } else {
-            lively.openBrowser("academic://expr:Id=" + id)
+            var browser = await lively.openBrowser("academic://expr:Id=" + id)
+            browser.parentElement.focus()
           }
         } else {
           lively.notify("no paper found for " + JSON.stringify(id) )
