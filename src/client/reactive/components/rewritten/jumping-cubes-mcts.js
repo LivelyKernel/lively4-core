@@ -27,8 +27,8 @@ class MCTSNode {
     return this._children = this._children || this.possibleMoves().map(move => [move, this.applyMove(move)]);
   }
 
-  childNodes() {
-    return this._children.map(moveAndChild => moveAndChild[1]);
+  get childNodes() {
+    return this._childNodes = this._childNodes || this.children.map(moveAndChild => moveAndChild[1]);
   }
 
   applyMove(move) {
@@ -123,8 +123,8 @@ export default class MCTS {
     lively.warn(times.average())
 
     // lively.openInspector(this.root)
-    // lively.notify(this.root.children.map(([, c]) => c.wins + '/' + c.playouts).join(' '));
-    return this.root.children.maxBy(([, { playouts }]) => playouts).first;
+    // lively.notify(this.root.childNodes.map(c => c.wins + '/' + c.playouts).join(' '));
+    return this.root.children.maxBy(([move, { playouts }]) => playouts).first;
   }
 
   step() {
@@ -136,7 +136,7 @@ export default class MCTS {
 
   selection(node) {
     function bestUCT(node) {
-      return node.children.map(([, childNode]) => childNode).maxBy(childNode => {
+      return node.childNodes.maxBy(childNode => {
         return childNode.wins / childNode.playouts + Math.SQRT2 * Math.sqrt(Math.log(node.playouts) / childNode.playouts);
       });
     }
@@ -151,7 +151,7 @@ export default class MCTS {
     if (node.isTerminal()) {
       return node;
     }
-    return node.children.filter(([, { visited }]) => !visited).map(([, child]) => child).sample() || node;
+    return node.childNodes.filter(({ visited }) => !visited).sample() || node;
   }
 
   simulation(leafNode) {
