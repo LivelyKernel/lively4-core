@@ -167,14 +167,18 @@ export class Author {
 
 export class Paper {
   
-  static ensure(raw) {
-    var p = new Paper(raw)
-    if(!raw.Id) {
-      throw new Error("Id is missing (microsoftid)")
-    }
-    
-    Paper.setById(raw.Id, p)
-    
+  static async ensure(raw) {
+    var existing = await Literature.getPaperEntry(raw.microsoftid)
+    if (!existing) {
+      var p = new Paper(raw)
+      if(!raw.Id) {
+        throw new Error("Id is missing (microsoftid)")
+      }
+
+      Paper.setById(raw.Id, p)      
+    } else {
+      p = new Paper(existing.value)
+    }    
     return p
   }
   
@@ -194,7 +198,7 @@ export class Paper {
     var paper = this.byId(id)
     if (paper) return paper
     if (optionalEntity) {
-      paper = Paper.ensure(optionalEntity)    
+      paper = await Paper.ensure(optionalEntity)    
     } else {
       var entry = await Literature.getPaperEntry(id)
       if (entry) {
@@ -209,7 +213,7 @@ export class Paper {
           return // should we note it down that we did not found it?
         }
         var json = await resp.json()
-        paper = Paper.ensure(json) // json.entity ?    
+        paper = await Paper.ensure(json) // json.entity ?    
       }
     }
     return paper
@@ -345,7 +349,7 @@ export class Paper {
   
   async academicQueryToPapers(query) {
     if (!query) return []
-    var response = await new AcademicScheme().rawQueryExpr(query, 100)
+    var response = await new AcademicScheme().rawQueryExpr(query, 1000)
     var result = []
     for(var entity of response.entities) {
       result.push(await Paper.getId(entity.Id, entity))
@@ -636,11 +640,11 @@ export default class AcademicScheme extends Scheme {
     
     if (entities.length > 1) {
       for(var entity of entities) {
-        let paper = Paper.ensure(entity)
+        let paper = await Paper.ensure(entity)
         content += `<lively-bibtex-entry>${await paper.toBibtex()}</lively-bibtex-entry>`;
       }      
     } else if (entities.length == 1) {
-      let paper = Paper.ensure(entities[0])
+      let paper = await Paper.ensure(entities[0])
       content += await paper.toHTML() + "\n";
     } else {
       content += "<h1>No entities found</h1>" + "\n";
@@ -685,7 +689,11 @@ export default class AcademicScheme extends Scheme {
       }
       
       if (headers.get("content-type") == "application/bibtex") {
-        return this.response(entities.map(ea => Paper.ensure(ea).toBibtex()).join("\n"), "application/bibtex");
+        var papers = []
+        for(let ea of entities) {
+          papers.push(await Paper.ensure(ea))
+        }        
+        return this.response(papers.map(ea => ea.toBibtex()).join("\n"), "application/bibtex");
       } 
     }
     // default is HTML

@@ -8,8 +8,8 @@
   import {Paper, Author} from "src/client/protocols/academic.js"
 
   const default_query="Jens Lincke"
-  const default_count = 3
-  const default_min_cc_in = 2
+  const default_count = 10
+  const default_min_cc_in = 20
   const default_min_refs_out = 6
 
   class PaperGraph {
@@ -115,11 +115,14 @@
            + node.paper.booktitle 
            );
       
+      var fontsize =  Math.sqrt(refsto) + 5
+      
+      if (node.type == "root") fontsize = Math.max(10, fontsize);
       
       return node.id + `[`+
         ` label="${node.paper.key}"`+
         ` tooltip="${tooltip}"`+
-        ` fontsize="${node.type == "root" ? 20 : Math.sqrt(refsto) + 5}"` +
+        ` fontsize="${fontsize}"` +
         ` fontcolor="${color}"` +
         
         `]`
