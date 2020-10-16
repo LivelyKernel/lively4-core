@@ -7,6 +7,11 @@
 
   import {Paper, Author} from "src/client/protocols/academic.js"
 
+  const default_query="Jens Lincke"
+  const default_count = 3
+  const default_min_cc_in = 2
+  const default_min_refs_out = 6
+
   class PaperGraph {
     static maxPapers() {
       return this.pane.querySelector("input#count").value
@@ -19,8 +24,6 @@
     static minCitationsIn() {
       return this.pane.querySelector("input#min_cc_in").value
     }
-
-
 
     static query(query) {
       return lively.query(this.ctx, query)
@@ -59,7 +62,8 @@
       var fromNode = this.nodesById[edge.from]
       var toNode = this.nodesById[edge.to]
       var color = "gray"
-
+      var width = 1
+      var tooltip = "no citation context"
       if (fromNode && toNode) {
         if (fromNode.type == "root" && toNode.type == "root") {
           color = "black"
@@ -68,20 +72,33 @@
         } else if (fromNode.selfreference || toNode.selfreference) {
           color = "lightblue"
         }
+        var CitationContext = fromNode.paper.value.CitCon
+        debugger
+        if (CitationContext && CitationContext[edge.to]) {
+          width = CitationContext[edge.to].length + 1
+          tooltip = this.cleanString("" + CitationContext[edge.to].map(ea => "- '" + ea + "'").join("\n"))
+        }
+      } else {
+        color = "red"
       }
 
 
-      return edge.to + " -> " + edge.from + `[ color="${color}"]`
+      return edge.to + " -> " + edge.from + `[penwidth=${width} tooltip="${tooltip}" color="${color}"]`
     }
     
     static refCount(node) {
       return this.edges.filter(ea => ea.to == node.id).length
     }
     
+    static cleanString(s) {
+      return s.replace(/["]/g,"")
+    }
+    
     static renderNode(node) {
       var refsto = node.paper.value.CC || 0
       
       var color = ""
+      var tooltip = ""
       
       if(node.type == "root") {
         color = "blue" 
@@ -93,12 +110,39 @@
         color = "darkgray"
       }
       
+      tooltip = this.cleanString(
+           node.paper.authorNames.join(", ") + ". "+node.paper.year + ".\n" 
+           + node.paper.title + ".\n"
+           + node.paper.booktitle 
+           );
+      
+      
       return node.id + `[`+
         ` label="${node.paper.key}"`+
+        ` tooltip="${tooltip}"`+
         ` fontsize="${node.type == "root" ? 20 : Math.sqrt(refsto) + 5}"` +
         ` fontcolor="${color}"` +
         
         `]`
+    }
+    
+    static printEdge(edge) {
+      var fromPaper =  this.papersById[edge.from]
+      var toPaper =  this.papersById[edge.to]
+      return `Edge(${fromPaper ? fromPaper.key : edge.from}, ${toPaper ? toPaper.key : edge.to} )`
+  }
+    
+    static addEdge(edge) {
+      let existing = this.edges.find(ea => (ea.from == edge.from) && (ea.to == edge.to))
+      if (existing) {
+        return
+      }
+      let back = this.edges.find(ea => (ea.to === edge.from) && (ea.from === edge.to))
+      if (back) {
+        return
+      }
+      // lively.notify("addEdge" + this.printEdge(edge))
+      this.edges.push(edge)
     }
     
     static async dotSource() {
@@ -133,14 +177,14 @@
         };
         for(paper of rootPapers) {
           for(var ref of paper.referencedBy) {
-            this.edges.push({from: ref.microsoftid , to: paper.microsoftid})
             if(!this.addPaper(ref, "citation")) break;
+            this.addEdge({from: ref.microsoftid , to: paper.microsoftid})
           }
         }        
         for(paper of rootPapers) {
           for(var ref of paper.references) {          
-            this.edges.push({from: paper.microsoftid , to: ref.microsoftid})
             if(!this.addPaper(ref, "reference")) break;
+            this.addEdge({from: paper.microsoftid , to: ref.microsoftid})
           }
         }        
       } catch(e) {
@@ -163,7 +207,7 @@
       
       this.edges = this.edges.filter(edge => this.nodes.find(ea => ea.id ==  edge.from) && this.nodes.find(ea => ea.id == edge.to)) // remove obsolete edges 
 
-      return `digraph {
+      return `digraph "" {
         rankdir=LR;
         graph [  
           splines="true"  
@@ -206,20 +250,21 @@
         overflow: visible;
         width: 5000px;
         height: 800px;
+        user-select: none
       }
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       // z-index: -1;
-      this.pane = <div id="root" style="position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% ); height: calc(100%);">
+      this.pane = <div id="root" title=" " style="position: absolute; top: 0px; left: 0px; overflow-x: auto; overflow-y: scroll; width: calc(100% ); height: calc(100%);">
         {style}
         <div><h2>Paper Query: </h2> 
-            <input input={(() => this.update()).debounce(500) } id="query" value="Jens Lincke"></input>
-            <span>Max: <input input={(() => this.update()).debounce(500) } id="count" value="5"></input></span>
+            <input input={(() => this.update()).debounce(500) } id="query" value={default_query}></input>
+            <span>Max: <input input={(() => this.update()).debounce(500) } id="count" value={default_count}></input></span>
 
-          <button click={() => lively.openBrowser("academic://" + this.queryString + "?count=1000") }>browse</button></div>
+          <button click={() => lively.openBrowser("academic://" + this.queryString + "?count=" + this.maxPapers()) }>browse</button></div>
         <div>
-          <span>Min References (out): <input input={(() => this.update()).debounce(500) } id="min_refs_out" value="2"></input></span>
-          <span>Min Citations (In): <input input={(() => this.update()).debounce(500) } id="min_cc_in" value="2"></input></span>
+          <span>Min References (out): <input input={(() => this.update()).debounce(500) } id="min_refs_out" value={default_min_refs_out}></input></span>
+          <span>Min Citations (In): <input input={(() => this.update()).debounce(500) } id="min_cc_in" value={default_min_cc_in}></input></span>
         </div>
         <div id="progress" style="width:600px; word-break: break-all;"></div>
         {this.graphviz}
@@ -242,7 +287,12 @@
       this.pane.addEventListener("click", evt => {
         var g = evt.composedPath().find(ea => ea.localName == "g" && ea.classList.contains("node"))
         var id = g && g.querySelector("title").textContent
-        if (!id) return;
+        if (!id) {
+          if(evt.shiftKey) {
+            lively.openInspector(this)
+          }
+          return;
+        }
         var paper = this.papersById[id] // because we left our object realm... we have to jump through hoops 
         if (paper) {
           if (evt.shiftKey) {
@@ -253,6 +303,8 @@
         } else {
           lively.notify("no paper found for " + JSON.stringify(id) )
         }
+        
+        
       })
       
       return this.pane

@@ -627,6 +627,15 @@ export default class AcademicScheme extends Scheme {
   async content(entities) {
     var content = ``;
     if (entities.error) return `<span class="error">${entities.error}</span>`
+    
+    content = `<button onclick='lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
+      "Academic Visualizaton", {
+        query: "${this.query}",
+        "count": ${this.count},
+        "min_cc_in": 2,
+        "min_refs_out": 10,
+})'>visualize</button>`
+    
     if (entities.length > 1) {
       for(var entity of entities) {
         let paper = Paper.ensure(entity)
@@ -649,13 +658,15 @@ export default class AcademicScheme extends Scheme {
     var argsString = query.replace(/.*\?/,"")
     query = query.replace(/\?.*/,"") // strip arguments
    
+    this.query = query;
+    
     // adhoc url paremeter decoding...
     var args = {}
     argsString.split(/[?&]/).forEach(ea => {
       var pair = ea.split("=")
       args[pair[0]] = pair[1]
     })
-    
+    this.count = args["count"] || 10
     
     // example: 
     //  "expr:Id=3" -> expr is query type
