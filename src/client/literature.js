@@ -4,17 +4,28 @@ export default class Literature {
   
   
   static async ensureCache() {
+    if (this.isLoadingCache) {
+      await this.isLoadingCache
+    }
+      
     if (!this.cachedPapers || !this.cachedPapersById) {
+      this.isLoadingCache = new Promise(async resolve => {
+        try {
+          var start = Date.now()
+          this.cachedPapers = await this.db.papers.toArray()
+          console.log("[literature] ensureCache indexdb " + (Date.now() - start))
 
-      var start = Date.now()
-      this.cachedPapers = await this.db.papers.toArray()
-      console.log("[literature] ensureCache indexdb " + (Date.now() - start))
-
-      this.cachedPapersById = new Map()
-      for(var ea of this.cachedPapers) {
-        this.cachedPapersById.set(ea.microsoftid, ea)
-      }
-      console.log("[literature] ensureCache total " + (Date.now() - start))
+          this.cachedPapersById = new Map()
+          for(var ea of this.cachedPapers) {
+            this.cachedPapersById.set(ea.microsoftid, ea)
+          }
+          console.log("[literature] ensureCache total " + (Date.now() - start))          
+        } finally {
+          resolve()
+        }
+      })
+      await this.isLoadingCache
+      this.isLoadingCache = false
     }
   }
   
@@ -31,6 +42,8 @@ export default class Literature {
   
   static invalidateCache() {
     this.cachedPapers = null
+    this.cachedPapersById  = null
+    this.isLoadingCache = false
   }
   
   static async ensurePaperEntry(paper) {
