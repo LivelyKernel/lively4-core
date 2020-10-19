@@ -32,6 +32,7 @@ src/client/bibliography.js
 src/client/bootlog.js
 src/client/bound-eval.js
 src/client/clipboard.js
+src/client/constants.js
 src/client/contextmenu.js
 src/client/draganddrop.js
 src/client/expose.js
@@ -47,12 +48,14 @@ src/client/grid.svg
 src/client/html.js
 src/client/index.md
 src/client/info.js
+src/client/interactive.js
 src/client/keyinfo.js
 src/client/keys.js
 src/client/lang/lang-ext.js
 src/client/lang/lang.js
 src/client/lang/utils.js
 src/client/layout.js
+src/client/literature.js
 src/client/lively.css
 src/client/lively.js
 src/client/load-swx.js
@@ -74,7 +77,11 @@ src/client/persistence.js
 src/client/poid.js
 src/client/preferences.js
 src/client/preload.js
+src/client/protocols/academic.js
+src/client/protocols/author.js
 src/client/protocols/bib.js
+src/client/protocols/bibliography-scheme.js
+src/client/protocols/keyword.js
 src/client/protocols/microsoft.js
 src/client/protocols/rest.js
 src/client/protocols/tmp.js
@@ -116,6 +123,7 @@ src/client/utils.js
 src/client/utils/stack.js
 src/client/viewnav.js
 src/client/vivide/components/vivide-view.js
+src/client/vivide/components/vivide.css
 src/client/vivide/scripts/loading.js
 src/client/vivide/scripts/saving.js
 src/client/vivide/utils.js
@@ -144,6 +152,7 @@ src/components/halo/lively-halo-handle-item.html
 src/components/halo/lively-halo-handle-item.js
 src/components/halo/lively-halo-inspect-item.html
 src/components/halo/lively-halo-inspect-item.js
+src/components/halo/lively-halo-item.css
 src/components/halo/lively-halo-item.html
 src/components/halo/lively-halo-item.js
 src/components/halo/lively-halo-menu-item.html
@@ -258,6 +267,7 @@ src/external/code-mirror/../eslint-lint.js
 src/external/code-mirror/../eslint.js
 src/external/code-mirror/../eslint/eslint.js
 src/external/code-mirror/addon/comment/comment.js
+src/external/code-mirror/addon/dialog/dialog.css
 src/external/code-mirror/addon/dialog/dialog.js
 src/external/code-mirror/addon/edit/closebrackets.js
 src/external/code-mirror/addon/edit/closetag.js
@@ -272,9 +282,11 @@ src/external/code-mirror/addon/hint/show-hint.js
 src/external/code-mirror/addon/lint/javascript-lint.js
 src/external/code-mirror/addon/lint/lint.css
 src/external/code-mirror/addon/lint/lint.js
+src/external/code-mirror/addon/merge/merge.css
 src/external/code-mirror/addon/merge/merge.js
 src/external/code-mirror/addon/mode/overlay.js
 src/external/code-mirror/addon/scroll/annotatescrollbar.js
+src/external/code-mirror/addon/scroll/simplescrollbars.css
 src/external/code-mirror/addon/scroll/simplescrollbars.js
 src/external/code-mirror/addon/search/jump-to-line.js
 src/external/code-mirror/addon/search/match-highlighter.js
@@ -282,7 +294,9 @@ src/external/code-mirror/addon/search/matchesonscrollbar.js
 src/external/code-mirror/addon/search/search.js
 src/external/code-mirror/addon/search/searchcursor.js
 src/external/code-mirror/addon/selection/mark-selection.js
+src/external/code-mirror/addon/tern/tern.css
 src/external/code-mirror/keymap/sublime.js
+src/external/code-mirror/lib/codemirror.css
 src/external/code-mirror/lib/codemirror.js
 src/external/code-mirror/mode/clike/clike.js
 src/external/code-mirror/mode/css/css.js
@@ -299,6 +313,7 @@ src/external/code-mirror/mode/xml/xml.js
 src/external/codemirror-spellcheck.js
 src/external/d3.v5.js
 src/external/dexie.js
+src/external/dexie3.js
 src/external/dicts/en_US.aff
 src/external/dicts/en_US.dic
 src/external/diff-match-patch.js
@@ -316,6 +331,7 @@ src/external/eslint/tokTypes.js
 src/external/focalStorage.js
 src/external/font-awesome/css/font-awesome.min.css
 src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
+src/external/highlight.css
 src/external/highlight.js
 src/external/htmlparser2.js
 src/external/jszip.js
@@ -343,3 +359,4 @@ src/worker/systemjs-worker.js
 templates/graph-control.js
 templates/knot-view.js
 templates/lively4.css
+templates/livelystyle.css
