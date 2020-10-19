@@ -17,9 +17,13 @@ export default class Auth {
   }
 
   static parseAuthInfoFromUrl(data) {
-    var authInfo = JSON.parse(
-      '{"' + data.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
-      (key, value) => { return key === "" ? value : decodeURIComponent(value); });
+    try {
+      var authInfo = JSON.parse(
+        '{"' + data.replace(/&/g, '","').replace(/=/g, '":"') + '"}',
+        (key, value) => { return key === "" ? value : decodeURIComponent(value); });      
+    } catch(e) {
+      console.warn("[auth] parseAuthInfoFromUrl could not parse ", data)
+    }
     return authInfo;
   }
 
