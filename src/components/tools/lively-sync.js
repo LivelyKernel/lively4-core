@@ -140,7 +140,9 @@ export default class Sync extends Morph {
       for(var key in optHeaders) {
         headers.set(key, optHeaders[key])
       }
-      lively.files.fetchChunks(fetch(this.getServerURL() +"/_git/" + cmd, {
+      let commandURL = this.getServerURL() +"/_git/" + cmd;
+      debugger;
+      lively.files.fetchChunks(fetch(commandURL, {
               headers: headers
             }), (eaChunk) => {
           if (eachCB) 
@@ -252,8 +254,7 @@ export default class Sync extends Morph {
   /*MD ## Events MD*/
   
   onSyncButton() {
-    this.gitControl("status").then((status) => {
-      if (!status.match("AUTO-COMMIT-")) {
+    this.gitControl("status").then((status) => { if (!status.match("AUTO-COMMIT-")) {
         this.sync()
         // lively.notify("sync directly")
       } else {
@@ -292,6 +293,13 @@ export default class Sync extends Morph {
 
   onStatusButton() {
     this.gitControl("status")  
+  }
+
+  onResetHardButton() {
+    
+    if (window.confirm("Do you want revert all local commits and reset to your current branch?")) {
+      this.gitControl("reset-hard");
+    }
   }
   
   onDiffButton() {
