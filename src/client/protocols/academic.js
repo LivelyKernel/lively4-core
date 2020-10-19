@@ -18,12 +18,9 @@ MD*/
 /*MD 
 <style>* {background-color:lightgray}</style>
 
-### Example:  
+### Documentation
 
-```javascript{.example}
-  import {MicrosoftAcademicEntities} from "src/client/protocols/academic-scheme.js"
-  MicrosoftAcademicEntities.schemas()
-``` 
+<https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes>
 
 ### Microsoft Academic Raw Query:
 
@@ -167,14 +164,18 @@ export class Author {
 
 export class Paper {
   
-  static ensure(raw) {
-    var p = new Paper(raw)
-    if(!raw.Id) {
-      throw new Error("Id is missing (microsoftid)")
-    }
-    
-    Paper.setById(raw.Id, p)
-    
+  static async ensure(raw) {
+    var existing = await Literature.getPaperEntry(raw.microsoftid)
+    if (!existing) {
+      var p = new Paper(raw)
+      if(!raw.Id) {
+        throw new Error("Id is missing (microsoftid)")
+      }
+
+      Paper.setById(raw.Id, p)      
+    } else {
+      p = new Paper(existing.value)
+    }    
     return p
   }
   
@@ -194,7 +195,7 @@ export class Paper {
     var paper = this.byId(id)
     if (paper) return paper
     if (optionalEntity) {
-      paper = Paper.ensure(optionalEntity)    
+      paper = await Paper.ensure(optionalEntity)    
     } else {
       var entry = await Literature.getPaperEntry(id)
       if (entry) {
@@ -209,7 +210,7 @@ export class Paper {
           return // should we note it down that we did not found it?
         }
         var json = await resp.json()
-        paper = Paper.ensure(json) // json.entity ?    
+        paper = await Paper.ensure(json) // json.entity ?    
       }
     }
     return paper
@@ -345,7 +346,12 @@ export class Paper {
   
   async academicQueryToPapers(query) {
     if (!query) return []
-    var response = await new AcademicScheme().rawQueryExpr(query, 100)
+    try {
+      var response = await new AcademicScheme().rawQueryExpr(query, 1000)
+    } catch(e) {
+      console.warn("[academic] Error academicQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
+      return null
+    }
     var result = []
     for(var entity of response.entities) {
       result.push(await Paper.getId(entity.Id, entity))
@@ -370,7 +376,8 @@ export class Paper {
     } 
     // bulk load the rest
     if (rest.length > 0) {
-      papers = papers.concat(await this.academicQueryToPapers(this.allReferencesRequery(rest)))
+      let list = await this.academicQueryToPapers(this.allReferencesRequery(rest))
+      if (list) papers = papers.concat(list)
     }
     return papers
   }
@@ -393,11 +400,11 @@ export class Paper {
     } else {
       console.log("FETCH referencedBy " + this.microsoftid)
       
-      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)
-      debugger
-      await Literature.patchPaper(this.microsoftid, {
-        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})   
-      debugger
+      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)  
+      if (this.referencedBy) {
+        await Literature.patchPaper(this.microsoftid, {
+          referencedBy: this.referencedBy.map(ea => ea.microsoftid)})           
+      }
     }
     return this.referencedBy
   }
@@ -440,6 +447,21 @@ export class Paper {
       <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
         this.doi
       }</a></span>
+  
+      ${this.value.J ? `<div id="journal">Journal: ` + `<a href=
+        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
+        }> ` + this.value.J.JN  
+          + " Volume " + this.value.V 
+          + " Issue" + this.value.I + "</a></div>": "" }
+      <div id="conference">${this.value.C ? this.value.C.CN  : ""}</div>
+
+  
+        <div id="fields">${this.value.F ? "<h3>Fields</h3> " + 
+            this.value.F.map(F => `<a href=
+        "academic://expr:Composite(F.FId=${F.FId})?count=30"
+        }> ` + F.DFN + "</a>").join(" "): "" }</div>
+
+  
       <lively-script><script>
         import {Paper} from "src/client/protocols/academic.js"
         
@@ -471,10 +493,6 @@ result
 `
       }</div>
 
-      <h3>Keywords</h3>
-      ${
-        this.value.F.map(ea => `<a href="academic://expr:Composite(F.FId=${ea.FId})">${ea.DFN}</a>`)
-      }
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
       <h3>References</h3>
@@ -606,6 +624,15 @@ export default class AcademicScheme extends Scheme {
             +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       return result
   }
+  
+  async rawQueryHist(queryExpr, attributes=["Y"], count=10) {
+    var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/calchistogram?expr=`
+            + encodeURI(queryExpr)
+            + `&count=${count}`
+            + `&attributes=${attributes}`
+            +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
+      return result
+  }
 
   async entityQuery(queryString, queryType, count) {
     let raw;
@@ -627,13 +654,24 @@ export default class AcademicScheme extends Scheme {
   async content(entities) {
     var content = ``;
     if (entities.error) return `<span class="error">${entities.error}</span>`
+    
+    var code = `lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
+      "Academic Visualizaton", {
+        query: ${JSON.stringify(this.query)},
+        "count": ${this.count},
+        "min_cc_in": 2,
+        "min_refs_out": 10,
+    })`
+    
+    content = `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
+    
     if (entities.length > 1) {
       for(var entity of entities) {
-        let paper = Paper.ensure(entity)
+        let paper = await Paper.ensure(entity)
         content += `<lively-bibtex-entry>${await paper.toBibtex()}</lively-bibtex-entry>`;
       }      
     } else if (entities.length == 1) {
-      let paper = Paper.ensure(entities[0])
+      let paper = await Paper.ensure(entities[0])
       content += await paper.toHTML() + "\n";
     } else {
       content += "<h1>No entities found</h1>" + "\n";
@@ -649,12 +687,15 @@ export default class AcademicScheme extends Scheme {
     var argsString = query.replace(/.*\?/,"")
     query = query.replace(/\?.*/,"") // strip arguments
    
+    this.query = query;
+    
     // adhoc url paremeter decoding...
     var args = {}
     argsString.split(/[?&]/).forEach(ea => {
       var pair = ea.split("=")
       args[pair[0]] = pair[1]
     })
+    this.count = args["count"] || 10
     
     
     // example: 
@@ -667,6 +708,11 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
+    if (queryType=="hist") {
+      var queryAttributes = args["attr"] 
+      let raw = (await this.rawQueryHist(query, queryAttributes, this.count))
+      return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+    } 
     
     let entities = await this.entityQuery(query, queryType, args.count);
     if (options && options.headers) {
@@ -676,7 +722,11 @@ export default class AcademicScheme extends Scheme {
       }
       
       if (headers.get("content-type") == "application/bibtex") {
-        return this.response(entities.map(ea => Paper.ensure(ea).toBibtex()).join("\n"), "application/bibtex");
+        var papers = []
+        for(let ea of entities) {
+          papers.push(await Paper.ensure(ea))
+        }        
+        return this.response(papers.map(ea => ea.toBibtex()).join("\n"), "application/bibtex");
       } 
     }
     // default is HTML

@@ -2226,11 +2226,18 @@ export default class Container extends Morph {
         }
     };
     var path = lively.preferences.getURLParameter("load");
+    
     var editPath = lively.preferences.getURLParameter("edit");
     if (editPath) {
       path = editPath
       var edit = true
     }
+    
+    if (path) {
+      // allow nested queries... http://localhost:9005/lively4-core/start.html?load=academic://Tim%20Felgentreff?count=3
+      path = window.location.search.replace(/.*[?&]((load)|(edit))=/,"")
+    }
+  
     
     let fullscreen = lively.preferences.getURLParameter("fullscreen") == "true";
     if (fullscreen) {

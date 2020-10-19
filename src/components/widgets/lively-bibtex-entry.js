@@ -13,7 +13,11 @@ import Strings from 'src/client/strings.js';
 export default class LivelyBibtexEntry extends Morph {
   async initialize() {
     this.windowTitle = "LivelyBibtexEntry";
-    this.value = Parser.toJSON(this.textContent)[0];
+    try {
+      this.value = Parser.toJSON(this.textContent)[0];
+    } catch(e) {
+      console.warn("[lively-bibtex-entry] initialize failed, could not parse ", this.textContent)
+    }
     this.addEventListener("dblclick", evt => this.onDblClick(evt));
 
     this.get("#entry").addEventListener("dragstart", evt => this.onDragStart(evt));

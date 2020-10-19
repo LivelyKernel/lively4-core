@@ -3,118 +3,11 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import Strings from 'src/client/strings.js';
+
 import MCTS from './jumping-cubes-mcts.js';
+import Matrix from './square-matrix.js';
 
 import { shake } from 'utils';
-
-class Matrix {
-
-  constructor(size) {
-    this.size = size;
-    this.inner = size.times(() => []);
-  }
-
-  get(i, j) {
-    return this.inner[i][j];
-  }
-
-  set(i, j, value) {
-    return this.inner[i][j] = value;
-  }
-
-  static init(size, fn) {
-    const result = new Matrix(size);
-    result.forEach((_, i, j) => {
-      result.set(i, j, fn(i, j));
-    });
-    return result;
-  }
-
-  forEach(fn) {
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
-        fn(this.get(i, j), i, j, this);
-      }
-    }
-  }
-
-  map(fn) {
-    const result = new Matrix(this.size);
-    this.forEach((item, i, j) => {
-      result.set(i, j, fn(item, i, j, this));
-    });
-    return result;
-  }
-
-  indexOf(item) {
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
-        if (this.get(i, j) === item) {
-          return { i, j };
-        }
-      }
-    }
-  }
-  getNeighboursOf(i, j) {
-    return [{ i: i - 1, j }, { i, j: j - 1 }, { i: i + 1, j }, { i, j: j + 1 }].filter(({ i, j }) => i >= 0 && i < this.size && j >= 0 && j < this.size).map(({ i, j }) => this.get(i, j));
-  }
-
-  sumBy(accessor) {
-    const iter = iteratee(accessor);
-
-    let sum = 0;
-    this.forEach(item => sum += iter(item));
-    return sum;
-  }
-
-  count(predicate) {
-    const iter = iteratee(predicate);
-
-    let counter = 0;
-    this.forEach(item => {
-      if (iter(item)) {
-        counter++;
-      }
-    });
-    return counter;
-  }
-
-  toJSON() {
-    const json = [];
-    this.forEach((item, i, j) => {
-      json[i] = json[i] || [];
-      json[i][j] = item.toJSON();
-    });
-    return json;
-  }
-
-  static fromJSON(json, builder) {
-    if (!Array.isArray(json)) {
-      throw new Error('json for Matrix is no Array');
-    }
-
-    const iter = iteratee(builder);
-    return this.init(json.length, (i, j) => iter(json[i][j]));
-  }
-}
-
-function iteratee(value) {
-  if (typeof value == 'function') {
-    return value;
-  }
-
-  if (value == null) {
-    return Function.identity;
-  }
-
-  if (typeof value == 'string') {
-    return function (object) {
-      return object == null ? undefined : object[value];
-    };
-  }
-
-  return () => {};
-}
 
 class Cube {
 
@@ -337,24 +230,39 @@ class Player {
 
       const field = cubes.toJSON();
 
-      field.forEach(line => line.forEach(cube => cube.numNeighbours = 4));
-      field.forEach(line => {
-        line.first.numNeighbours--;
-        line.last.numNeighbours--;
-      });
-      field.first.forEach(cube => cube.numNeighbours--);
-      field.last.forEach(cube => cube.numNeighbours--);
+      field.forEach((line, i) => line.forEach((cube, j) => {
+        cube.neighbours = [];
+        if (field[i - 1]) {
+          cube.neighbours.push(field[i - 1][j]);
+        }
+        if (field[i][j - 1]) {
+          cube.neighbours.push(field[i][j - 1]);
+        }
+        if (field[i + 1]) {
+          cube.neighbours.push(field[i + 1][j]);
+        }
+        if (field[i][j + 1]) {
+          cube.neighbours.push(field[i][j + 1]);
+        }
+      }));
+
+      field.forEach(line => line.forEach(cube => cube.numNeighbours = cube.neighbours.length));
 
       return { field, color };
     }
 
+    jc.aiProgressStart(jc.player.color);
+
     const mcts = new MCTS(getInitialState(jc));
-    const move = await mcts.run(200);
+    const move = await mcts.run(jc.getConfig().aiIterations, {
+      progress: ::jc.aiProgressStep
+    });
 
     if (this.gameNumber < jc.gameNumber) {
       return;
     }
 
+    jc.aiProgressEnd();
     jc.processQueue(jc.cubes.get(move.i, move.j));
   }
 
@@ -409,6 +317,11 @@ export default class JumpingCubes extends Morph {
 
   reset(state) {
     this.blinkOut();
+    const aiProgress = this.aiProgress;
+    aiProgress.animate([{ 'opacity': 0 }], {
+      duration: 0,
+      fill: 'forwards'
+    });
 
     this.gameNumber++;
     this.animationSpeed = this.getConfig().animationSpeed;
@@ -436,11 +349,77 @@ export default class JumpingCubes extends Morph {
         this.win(color);
       }
     };
-    this.ae(() => this.cubes.count(cube => cube.color === 'green')).dataflow(v => this.get('#greenPlayer').innerHTML = v).onChange(v => checkEnd('green', v));
-    this.ae(() => this.cubes.count(cube => cube.color === 'red')).dataflow(v => this.get('#redPlayer').innerHTML = v).onChange(v => checkEnd('red', v));
+
+    const greenCubes = this.ae(() => this.cubes.count(cube => cube.color === 'green'));
+    greenCubes.dataflow(v => this.updatePlayerWidget('green', v));
+    greenCubes.onChange(v => checkEnd('green', v));
+    const redCubes = this.ae(() => this.cubes.count(cube => cube.color === 'red'));
+    redCubes.dataflow(v => this.updatePlayerWidget('red', v));
+    redCubes.onChange(v => checkEnd('red', v));
 
     this.saveToAttribute();
     this.startTurnForCurrentPlayer();
+  }
+
+  updatePlayerWidget(color, value) {
+    const widget = this.get(`#${color}Player`);
+
+    const numCubes = this.fieldSize * this.fieldSize;
+    const currentValue = value / numCubes;
+
+    const label = widget.querySelector('.score-label');
+    label.innerHTML = value;
+    if (widget.previousValue !== undefined) {
+      const idleForm = { 'filter': 'brightness(1)', 'transform': '' };
+      if (currentValue > widget.previousValue) {
+        label.animate([idleForm, { 'filter': 'brightness(3)', 'transform': 'rotate(2deg) scale(1.3, 1.7)' }, idleForm], {
+          duration: 300,
+          easing: 'ease-in-out',
+          fill: 'forwards',
+          composite: 'accumulate'
+        });
+      } else if (currentValue < widget.previousValue) {
+        label.animate([idleForm, { 'filter': 'brightness(0.5)', 'transform': 'rotate(-5deg) scale(1.5, 0.5)' }, idleForm], {
+          duration: 400,
+          easing: 'ease-in-out',
+          fill: 'forwards',
+          composite: 'accumulate'
+        });
+      }
+    }
+
+    const percentage = `${currentValue * 100}%`;
+
+    const background = widget.querySelector('.background');
+    const foreground = widget.querySelector('.foreground');
+    if (widget.previousValue === undefined) {
+      background.style.width = percentage;
+      foreground.style.width = percentage;
+    } else if (currentValue > widget.previousValue) {
+      background.animate([{ 'width': percentage }], {
+        duration: 0,
+        fill: 'both'
+      });
+      foreground.animate([{ 'width': percentage }], {
+        duration: 400,
+        easing: 'ease-in-out',
+        fill: 'both'
+      });
+    } else if (currentValue < widget.previousValue) {
+      foreground.animate([{ 'width': percentage }], {
+        duration: 0,
+        fill: 'both'
+      });
+      background.animate([{ 'width': percentage }], {
+        duration: 400,
+        easing: 'ease-in-out',
+        fill: 'both'
+      });
+    } else {
+      background.style.width = percentage;
+      foreground.style.width = percentage;
+    }
+    widget.previousValue = currentValue;
   }
 
   createPlayers() {
@@ -568,7 +547,8 @@ export default class JumpingCubes extends Morph {
       }, {
         color: 'red',
         ai: true
-      }]
+      }],
+      aiIterations: 1000,
     };
   }
   getConfig() {
@@ -641,18 +621,21 @@ export default class JumpingCubes extends Morph {
         });
       }, '', { toString: () => radioIcon(value === this.getConfig()[configProperty]) }]);
     };
-    const fieldSizes = radioButtonList(1 .to(13), 'fieldSize');
+    const fieldSizes = radioButtonList(2 .to(13), 'fieldSize');
     const startingValues = radioButtonList([1, 2], 'startingValue');
     const animationSpeed = radioButtonList([0.5, 0.75, 1, 1.25, 1.5, 2, 4, 'Instantaneous'], 'animationSpeed');
+    const aiIterations = radioButtonList([1E2, 1E3, 1E4, 1E5, 1E6, 1E7, 1E8], 'aiIterations');
 
     const items = [];
-    items.push(["restart game", ::this.restart, '', fa4('fast-backward')]);
-    items.push(["new game", () => lively.openComponentInWindow('jumping-cubes')]);
+    items.push(["restart game", ::this.restart, '', fa4('undo')]);
+    items.push(["new game", () => lively.openComponentInWindow('jumping-cubes'), '', fa4('plus')]);
     items.push(["players", players, '', fa4('users')]);
     items.push(["field size", fieldSizes, '', fa4('cubes')]);
     items.push(["starting value", startingValues, '', fa4('cube')]);
-    items.push(["animation speed", animationSpeed, '', fa4('cube')]);
+    items.push(["animation speed", animationSpeed, '', fa4('hourglass')]);
+    items.push(["ai iterations", aiIterations, '', fa4('reddit-alien')]);
     items.push(["reset to default", ::this.resetConfig, '', fa4('trash-o')]);
+    
 
     const menu = new ContextMenu(this, items);
     menu.openIn(document.body, evt, this);
@@ -738,6 +721,61 @@ export default class JumpingCubes extends Morph {
   win(color) {
     this.cleanup();
     this.blinkIn(color);
+  }
+
+  get aiProgress() {
+    return this.get('#ai-progress');
+  }
+
+  get aiProgressLabel() {
+    return this.get('#ai-progress-label');
+  }
+
+  aiProgressStart(color) {
+    const aiProgress = this.aiProgress;
+    aiProgress.style.display = 'block';
+    aiProgress.style.backgroundImage = ``;
+    aiProgress.style.setProperty('opacity', 0);
+    aiProgress.animate([{ 'opacity': 0 }, { 'opacity': 1 }], {
+      duration: 1000,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+
+    const aiProgressLabel = this.aiProgressLabel;
+    aiProgressLabel.style.color = color;
+  }
+
+  aiProgressStep(color, progress) {
+    const aiProgress = this.aiProgress;
+    let cssColor;
+    if (color === 'red') {
+      cssColor = '255, 0, 0';
+    } else if (color === 'green') {
+      cssColor = '0, 255, 0';
+    } else {
+      cssColor = '0, 0, 255';
+    }
+    const progressPercentage = progress * 100;
+    aiProgress.style.backgroundImage = `linear-gradient( 
+      to right,
+      rgba(${cssColor}, 0.45), 
+      rgba(${cssColor}, 0.45) ${progressPercentage}%,
+      rgba(0,0,0,0) ${progressPercentage}%,
+      rgba(0,0,0,0)
+    )`;
+
+    const aiProgressLabel = this.aiProgressLabel;
+    aiProgressLabel.style.color = color;
+  }
+
+  aiProgressEnd() {
+    const aiProgress = this.aiProgress;
+    aiProgress.animate([{ 'opacity': 1 }, { 'opacity': 0 }], {
+      duration: 500,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
   }
 
   /* Lively-specific API */

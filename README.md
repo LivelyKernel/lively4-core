@@ -10,9 +10,6 @@ Web-based Development Environment
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>
 
-
-
-
 Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](doc/lively4-server.md), we can directly edit and use the environment in a self-supporting way.
 
 A project or branch of a project on GitHub can be checked out in multiple directories at once. Working on the same URL allows to collaborate in a very tight way, working in a separate directory provides more distance.
@@ -35,7 +32,3 @@ The Livel4 server and GitHub sync tools can check out arbitrary projects, such a
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 - [Imprint](imprint.md)
-
-<!-- HAHA -->
-
-[.](https://lively-kernel.org/lively4/lively4-seminars/PX2019/project_1/index.md)

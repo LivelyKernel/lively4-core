@@ -4,17 +4,28 @@ export default class Literature {
   
   
   static async ensureCache() {
+    if (this.isLoadingCache) {
+      await this.isLoadingCache
+    }
+      
     if (!this.cachedPapers || !this.cachedPapersById) {
+      this.isLoadingCache = new Promise(async resolve => {
+        try {
+          var start = Date.now()
+          this.cachedPapers = await this.db.papers.toArray()
+          console.log("[literature] ensureCache indexdb " + (Date.now() - start))
 
-      var start = Date.now()
-      this.cachedPapers = await this.db.papers.toArray()
-      console.log("[literature] ensureCache indexdb " + (Date.now() - start))
-
-      this.cachedPapersById = new Map()
-      for(var ea of this.cachedPapers) {
-        this.cachedPapersById.set(ea.microsoftid, ea)
-      }
-      console.log("[literature] ensureCache total " + (Date.now() - start))
+          this.cachedPapersById = new Map()
+          for(var ea of this.cachedPapers) {
+            this.cachedPapersById.set(ea.microsoftid, ea)
+          }
+          console.log("[literature] ensureCache total " + (Date.now() - start))          
+        } finally {
+          resolve()
+        }
+      })
+      await this.isLoadingCache
+      this.isLoadingCache = false
     }
   }
   
@@ -30,7 +41,11 @@ export default class Literature {
 
   
   static invalidateCache() {
+    console.log("[literature] invalidate Cache")
+    debugger
     this.cachedPapers = null
+    this.cachedPapersById  = null
+    this.isLoadingCache = false
   }
   
   static async ensurePaperEntry(paper) {
@@ -63,15 +78,26 @@ export default class Literature {
         abstract: paper.abstract    
     }
     await this.db.papers.put(raw)
-    this.invalidateCache()
+
+    await this.updateCache(raw)
+    
     return raw
   }
 
+  static async updateCache(raw) {
+    await this.ensureCache()
+    
+    // manual cache update, because invalidating is very expensive
+    this.cachedPapers = this.cachedPapers.filter(ea => ea.microsoftid == raw.microsoftid)
+    this.cachedPapers.push(raw)
+    this.cachedPapersById.set(raw.microsoftid, raw)
+  }
+  
   static async patchPaper(id, obj) {
     var raw = await this.ensurePaperEntry({microsoftid: id})
     raw = Object.assign(raw, obj)
-    this.invalidateCache()
-    return this.db.papers.put(raw) 
+    await this.db.papers.put(raw) 
+    await this.updateCache(raw)
   }
   
   static async getPaperEntry(id) {
