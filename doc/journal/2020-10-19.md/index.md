@@ -36,3 +36,9 @@ var ctx = canvas.getContext('2d');
 }).defer(100)
 canvas
 </script>
+
+## And we made a button for it!
+
+<academic://expr:Composite(AA.AuId=2055148755)?count=1000>
+
+![](academic_histogram.png)
