@@ -28,6 +28,7 @@ const dmp = new diff.diff_match_patch();
 const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
 
 const FETCH_TIMEOUT = 5000
+const MAX_FILESIZE = 200000
 
 const t = babel.types;
 
@@ -773,7 +774,7 @@ export default class FileIndex {
     }
   
     if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
-      if ((size < 100000) || name.match(/\.((bib))$/) ) {
+      if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
           headers: {
