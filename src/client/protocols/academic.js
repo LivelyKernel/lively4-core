@@ -18,12 +18,9 @@ MD*/
 /*MD 
 <style>* {background-color:lightgray}</style>
 
-### Example:  
+### Documentation
 
-```javascript{.example}
-  import {MicrosoftAcademicEntities} from "src/client/protocols/academic-scheme.js"
-  MicrosoftAcademicEntities.schemas()
-``` 
+<https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes>
 
 ### Microsoft Academic Raw Query:
 
@@ -349,7 +346,12 @@ export class Paper {
   
   async academicQueryToPapers(query) {
     if (!query) return []
-    var response = await new AcademicScheme().rawQueryExpr(query, 1000)
+    try {
+      var response = await new AcademicScheme().rawQueryExpr(query, 1000)
+    } catch(e) {
+      console.warn("[academic] Error academicQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
+      return null
+    }
     var result = []
     for(var entity of response.entities) {
       result.push(await Paper.getId(entity.Id, entity))
@@ -374,7 +376,8 @@ export class Paper {
     } 
     // bulk load the rest
     if (rest.length > 0) {
-      papers = papers.concat(await this.academicQueryToPapers(this.allReferencesRequery(rest)))
+      let list = await this.academicQueryToPapers(this.allReferencesRequery(rest))
+      if (list) papers = papers.concat(list)
     }
     return papers
   }
@@ -398,8 +401,10 @@ export class Paper {
       console.log("FETCH referencedBy " + this.microsoftid)
       
       this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)  
-      await Literature.patchPaper(this.microsoftid, {
-        referencedBy: this.referencedBy.map(ea => ea.microsoftid)})   
+      if (this.referencedBy) {
+        await Literature.patchPaper(this.microsoftid, {
+          referencedBy: this.referencedBy.map(ea => ea.microsoftid)})           
+      }
     }
     return this.referencedBy
   }
@@ -442,6 +447,21 @@ export class Paper {
       <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
         this.doi
       }</a></span>
+  
+      ${this.value.J ? `<div id="journal">Journal: ` + `<a href=
+        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
+        }> ` + this.value.J.JN  
+          + " Volume " + this.value.V 
+          + " Issue" + this.value.I + "</a></div>": "" }
+      <div id="conference">${this.value.C ? this.value.C.CN  : ""}</div>
+
+  
+        <div id="fields">${this.value.F ? "<h3>Fields</h3> " + 
+            this.value.F.map(F => `<a href=
+        "academic://expr:Composite(F.FId=${F.FId})?count=30"
+        }> ` + F.DFN + "</a>").join(" "): "" }</div>
+
+  
       <lively-script><script>
         import {Paper} from "src/client/protocols/academic.js"
         
@@ -473,10 +493,6 @@ result
 `
       }</div>
 
-      <h3>Keywords</h3>
-      ${
-        this.value.F.map(ea => `<a href="academic://expr:Composite(F.FId=${ea.FId})">${ea.DFN}</a>`)
-      }
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
       <h3>References</h3>
@@ -608,6 +624,15 @@ export default class AcademicScheme extends Scheme {
             +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
       return result
   }
+  
+  async rawQueryHist(queryExpr, attributes=["Y"], count=10) {
+    var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/calchistogram?expr=`
+            + encodeURI(queryExpr)
+            + `&count=${count}`
+            + `&attributes=${attributes}`
+            +`&subscription-key=${await AcademicScheme.getSubscriptionKey()}`).then(r => r.json())
+      return result
+  }
 
   async entityQuery(queryString, queryType, count) {
     let raw;
@@ -630,13 +655,15 @@ export default class AcademicScheme extends Scheme {
     var content = ``;
     if (entities.error) return `<span class="error">${entities.error}</span>`
     
-    content = `<button onclick='lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
+    var code = `lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
       "Academic Visualizaton", {
-        query: "${this.query}",
+        query: ${JSON.stringify(this.query)},
         "count": ${this.count},
         "min_cc_in": 2,
         "min_refs_out": 10,
-})'>visualize</button>`
+    })`
+    
+    content = `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
     
     if (entities.length > 1) {
       for(var entity of entities) {
@@ -670,6 +697,7 @@ export default class AcademicScheme extends Scheme {
     })
     this.count = args["count"] || 10
     
+    
     // example: 
     //  "expr:Id=3" -> expr is query type
     var typeRegex = /^([a-z]*):/
@@ -680,6 +708,11 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
+    if (queryType=="hist") {
+      var queryAttributes = args["attr"] 
+      let raw = (await this.rawQueryHist(query, queryAttributes, this.count))
+      return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+    } 
     
     let entities = await this.entityQuery(query, queryType, args.count);
     if (options && options.headers) {

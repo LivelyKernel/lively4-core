@@ -547,7 +547,7 @@ export default class Editor extends Morph {
       var animation = widget.animate([{ background: backgroundColor, color: "black" }, { background: "transparent", color: targetColor }], {
         duration: 3000
       });
-      animation.onfinish = () => marker.clear();
+      animation.onfinish = () => marker && marker.clear();
     } else {
 
       index += text.length;
