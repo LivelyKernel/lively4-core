@@ -356,6 +356,7 @@ src/worker/livelyworker.js
 src/worker/meta-worker.js
 src/worker/service-worker.js
 src/worker/systemjs-worker.js
+start.html
 templates/graph-control.js
 templates/knot-view.js
 templates/lively4.css
