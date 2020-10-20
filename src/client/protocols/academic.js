@@ -90,17 +90,35 @@ export class MicrosoftAcademicEntities {
   }
 
   static async generateSchema(entityName) {
+    return this.schemaFromURL(this.baseURL + "reference-" + entityName + "-entity-attributes.md")
+  }
+    
+  
+  static async schemaFromURL(url) {
+    var content = await fetch(url).then(r => r.text());
     var md = new MarkdownIt();
-    var content = await fetch(this.baseURL + "reference-" + entityName + "-entity-attributes.md").then(r => r.text());
     var html = md.render(content);
     var div = <div></div>;
     div.innerHTML = html;
     var tbody = div.querySelector("tbody");
     return tbody ? Array.from(tbody.querySelectorAll("tr").map(ea => Array.from(ea.querySelectorAll("td").map(td => td.textContent))).map(ea => ({ name: ea[0], description: ea[1], type: ea[2], operations: ea[3] }))) : [];
-  }
+  }  
 
+  static entityTypeEnum() {
+    return ["paper", "author", "journal", "conference-series", "conference-instance", "affiliation", "field-of-study"]
+  }
+    
+  static getEntityType(i) {
+    return this.entityTypeEnum()[i]
+  }
+    
   static async allSchemas() {
     var all = {};
+    all.entity =  await this.schemaFromURL(this.baseURL + "reference-entity-attributes.md")
+    
+    //all.entityTypeEnum = ["Paper", "Author", "Journal", "Conference Series", "Conference Instance", "Affiliation", "Field Of Study"]
+    all.entityTypeEnum = this.entityTypeEnum()
+
     for (var ea of ["affiliation", "author", "conference-instance", "conference-series", "field-of-study", "journal", "paper"]) {
       var list = await this.generateSchema(ea);
       var obj = {};
@@ -113,6 +131,7 @@ export class MicrosoftAcademicEntities {
     return all;
   }
 
+    
   static async schemas() {
     // window.lively4academicSchemas = null
     if (!window.lively4academicSchemas) {
@@ -558,6 +577,7 @@ export default class AcademicScheme extends Scheme {
 
   academicKnowledgeAttributes() {
     return [
+        ["Ty", "Type"],
         ["AA.AfId","Author affiliation ID"],
         ["AA.AfN","Author affiliation name"],
         ["AA.AuId","Author ID"],
@@ -615,8 +635,8 @@ export default class AcademicScheme extends Scheme {
       return this.rawQueryExpr(queryExpr, count)
   }
   
-  async rawQueryExpr(queryExpr, count=10) {
-    var attributes =  this.academicKnowledgeAttributes()    
+  async rawQueryExpr(queryExpr, count=10, attributes) {
+    var attributes =  attributes || this.academicKnowledgeAttributes()    
     var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate?expr=`
             + encodeURI(queryExpr)
             + `&count=${count}`
@@ -634,10 +654,10 @@ export default class AcademicScheme extends Scheme {
       return result
   }
 
-  async entityQuery(queryString, queryType, count) {
+  async entityQuery(queryString, queryType, count, attributes) {
     let raw;
     if (queryType=="expr") {
-      raw = (await this.rawQueryExpr(queryString, count))
+      raw = (await this.rawQueryExpr(queryString, count, attributes))
     } else {
       raw = (await this.rawQueryInterpret(queryString, count))
     }
@@ -711,7 +731,8 @@ export default class AcademicScheme extends Scheme {
     })
     this.count = args["count"] || 10
     
-    
+    var attributes = args["attr"]; // optional
+   
     // example: 
     //  "expr:Id=3" -> expr is query type
     var typeRegex = /^([a-z]*):/
@@ -722,15 +743,67 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
+    
+    options = options || {}
+    var headers = new Headers(options.headers); // #Refactor we should unify options before
+    
+    if (queryType=="meta") {
+      var schemas = await MicrosoftAcademicEntities.schemas()
+      var result = schemas
+      var path = query.split("/")
+      for(let key of path) {
+        try {
+          if (key) {
+            result = result[key]
+          }
+        } catch(e) {
+          this.response("could not find " + query + " in schemas");
+        }
+      }
+      
+      
+      return this.response(JSON.stringify(result, undefined, 2), "application/json");
+    }
+    
+    if (queryType=="raw") {
+      let raw = await this.rawQueryExpr(query, this.count, attributes)
+      return this.response(JSON.stringify(raw, undefined, 2), "application/json");      
+    }
+    
     if (queryType=="hist") {
-      var queryAttributes = args["attr"] 
-      let raw = (await this.rawQueryHist(query, queryAttributes, this.count))
-      return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+      if (headers.get("content-type") == "application/json") {
+        let raw = (await this.rawQueryHist(query, attributes, this.count))
+        return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+      } else {
+        return this.response(`
+<html>
+<lively-script><script>
+  (async () => {
+      var url = lively4url + "/demos/visualizations/academic-histogram.md"
+      var comp = await (<lively-markdown style="width:100%; height:100%"></lively-markdown>);
+      var src = await fetch(url).then(r => r.text());
+      comp.parameters = {
+        query: ${JSON.stringify(query)},
+        attr: "${attributes}",
+        "count": 100,
+      };
+      comp.setContent(src);
+      comp.parentElement.setAttribute("title", "Academic Histogram");
+      return comp;
+    })()
+</script><lively-script>        
+        
+
+</html>
+`)        
+  
+      
+      
+      }
     } 
     
-    let entities = await this.entityQuery(query, queryType, args.count);
+    let entities = await this.entityQuery(query, queryType, args.count, attributes);
     if (options && options.headers) {
-      var headers = new Headers(options.headers); // #Refactor we should unify options before
       if (headers.get("content-type") == "application/json") {
         return this.response(JSON.stringify(entities), "application/json");
       }

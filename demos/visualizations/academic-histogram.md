@@ -5,7 +5,7 @@ import {Panning} from "src/client/html.js"
 import Literature from "src/client/literature.js"
 import {Paper, Author, MicrosoftAcademicEntities} from "src/client/protocols/academic.js"
 import Chart from 'src/external/chart.js';
-
+import Strings from "src/client/strings.js"
 
 
 import files from "src/client/files.js"
@@ -45,6 +45,12 @@ class HistogramChart {
       
       input#count, input#min {
         width: 30px
+      }
+      
+      div#info {
+        color: lightgray;
+        font-style: italic;
+        padding: 2px;
       }
       `
       return style
@@ -115,6 +121,23 @@ class HistogramChart {
     var json  = await files.loadJSON(`academic://hist:${this.queryString()}?count=${this.count()}&attr=${this.attr()}`);
     var ctx = this.canvas.getContext('2d');
   
+  
+    let info = ""
+    for(var m of Strings.matchAll(/[Ii]d=([0-9]+)/, this.queryString())) {
+      let id = m[1]
+      let raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti`)
+      
+      var entity = raw.entities[0]
+      var type = MicrosoftAcademicEntities.getEntityType(entity.Ty)
+      info += `<span>${id}: type=${type}, `+
+        `${type == "author" ? "name=" + entity["AuN"] : ""} ` +
+        `${type == "paper" ? "title=" + entity["Ti"] : ""}</span><br>` 
+    }
+    this.pane.querySelector("#info").innerHTML = info
+
+  
+  
+  
     this.canvas.onclick  = evt => {
       if (!this.chart) return
       this.onClick(evt, this.chart.getElementAtEvent(evt));
@@ -148,6 +171,7 @@ class HistogramChart {
           <span>Attribute: <input input={update} id="attr" value={default_attr} list="attributelist"></input></span>
           <datalist id="attributelist" ></datalist> 
           <span>min: <input input={update} id="min" value={default_min}></input></span>
+          <div id="info"></div>
           <button click={browse}>browse</button>
           </div>
         <button click={inspect}>inspect</button>
