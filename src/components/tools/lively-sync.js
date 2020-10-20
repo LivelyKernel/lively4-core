@@ -296,7 +296,10 @@ export default class Sync extends Morph {
   }
 
   onResetHardButton() {
-    this.gitControl("reset-hard")  
+    
+    if (window.confirm("Do you want revert all local commits and reset to your current branch?")) {
+      this.gitControl("reset-hard");
+    }
   }
   
   onDiffButton() {

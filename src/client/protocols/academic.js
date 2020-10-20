@@ -663,7 +663,21 @@ export default class AcademicScheme extends Scheme {
         "min_refs_out": 10,
     })`
     
+    
+
     content = `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
+
+    if (this.query.startsWith("expr:")) {
+            var histogramCode = `lively.openMarkdown(lively4url + "/demos/visualizations/academic-histogram.md", 
+      "Academic Histogram", {
+        query: ${JSON.stringify(this.query.replace(/^expr\:/,""))},
+        "count": ${this.count},
+    })`
+    
+    content += `<button onclick="${histogramCode.replace(/"/g,"&quot;")}">histogram</button>`
+    
+    }
+    
     
     if (entities.length > 1) {
       for(var entity of entities) {

@@ -25,7 +25,7 @@ var url = "https://lively-kernel.org/lively4/lively4-core/demos/bibliographie/in
   var htmlElement = <div></div>
   htmlElement.innerHTML = text
 
-  // return "<pre>" + text.replace(/\</g,"&gt;") + "</pre"
+  // return "<pre>" + text.replace(/\</g,"&gt;") + "</pre
   
   var pubList = htmlElement.querySelectorAll(".publist")
 
@@ -44,5 +44,8 @@ var url = "https://lively-kernel.org/lively4/lively4-core/demos/bibliographie/in
   // return htmlElement.querySelectorAll(".publist").length
 })()
 </script>
+
+
+## Notes
 
 
