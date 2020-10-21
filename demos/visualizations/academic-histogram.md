@@ -13,7 +13,7 @@ import files from "src/client/files.js"
 const default_query="Composite(AA.AuId=2055148755)"
 const default_count = 1000
 const default_min = 0
-const default_attr = "Y"
+const default_attr = "F.FN"
 
 class HistogramChart {
 
@@ -102,7 +102,7 @@ class HistogramChart {
   }
   
   static async onClick(evt, element) {
-    if (evt.shiftDown) lively.openInspector(element);
+    if (evt.shiftKey) return lively.openInspector(this);
     
     var firstPoint = this.chart.getElementAtEvent(evt)[0];
     if (firstPoint) {
@@ -110,6 +110,24 @@ class HistogramChart {
       var value = this.chart.data.datasets[firstPoint._datasetIndex].data[firstPoint._index];
       
       lively.openBrowser(this.subQuery(this.queryString(), this.attr(), label, 20))      
+    } else {
+    
+      let mousePoint = Chart.helpers.getRelativePosition(evt, this.chart.chart);
+      let value = this.chart.scales['x-axis-0'].getValueForPixel(mousePoint.x);
+      let label = this.chart.data.labels[value]
+      let attribute = this.attr() 
+      
+      
+      if (attribute == "F.FN"){
+        var newquery = `And(Composite(F.FN='${label}'),${this.queryString()})`
+        lively.openBrowser("academic://hist:" + newquery + "?count=" + this.count() + "&attr=" + attribute)
+      } else {
+        lively.notify("narrowing in on " + attribute + " is not supported yet!")
+      }
+
+
+      
+      
     }
   }
 
@@ -121,17 +139,24 @@ class HistogramChart {
     var json  = await files.loadJSON(`academic://hist:${this.queryString()}?count=${this.count()}&attr=${this.attr()}`);
     var ctx = this.canvas.getContext('2d');
   
-  
+    let targetLabel = ""
     let info = ""
     for(var m of Strings.matchAll(/[Ii]d=([0-9]+)/, this.queryString())) {
       let id = m[1]
-      let raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti`)
+      let raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`)
       
       var entity = raw.entities[0]
       var type = MicrosoftAcademicEntities.getEntityType(entity.Ty)
-      info += `<span>${id}: type=${type}, `+
-        `${type == "author" ? "name=" + entity["AuN"] : ""} ` +
-        `${type == "paper" ? "title=" + entity["Ti"] : ""}</span><br>` 
+      var label = ""
+      if(type =="author") { 
+        label = entity["AuN"]
+      } else if(type == "field-of-study") { 
+        label =  entity["FN"] 
+      } else if(type =="paper") { 
+        label =  entity["Ti"] 
+      }
+      
+      info += `<span>${id}: ${type}, ${label}</span><br>` 
     }
     this.pane.querySelector("#info").innerHTML = info
 
@@ -185,7 +210,7 @@ class HistogramChart {
     let parameters = markdownComp.parameters
     for(let name of Object.keys(parameters)) {
        let element = this.pane.querySelector("#" +name)
-       if (element) element.value = parameters[name]
+       if (element && (parameters[name] !== undefined)) element.value = parameters[name]
        else {
         lively.warn("parameter " + name + " not found")
        }

@@ -1,0 +1,20 @@
+
+<html>
+<lively-script><script>
+  (async () => {
+      var url = lively4url + "/demos/visualizations/academic-histogram.md"
+      var comp = await (<lively-markdown style="width:100%; height:100%"></lively-markdown>);
+      var src = await fetch(url).then(r => r.text());
+      comp.parameters = {
+        query: "Composite(AA.AuN='jens lincke')",
+        attr: "Y",
+        "count": 100,
+      };
+      comp.setContent(src);
+      comp.parentElement.setAttribute("title", "Academic Histogram");
+      return comp;
+    })()
+</script><lively-script>        
+        
+
+</html>

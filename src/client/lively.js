@@ -464,7 +464,8 @@ export default class Lively {
     await System.import("src/client/protocols/author.js")
     await System.import("src/client/protocols/keyword.js")
     await System.import("src/client/protocols/academic.js")
-    
+
+      
     await System.import("src/client/protocols/microsoft.js") 
     
     await System.import("src/client/files-caches.js") // depends on me
@@ -1526,6 +1527,7 @@ export default class Lively {
       lively.openComponentInWindow("lively-container", undefined, undefined, worldContext);
 
     return containerPromise.then(comp => {
+      
       livelyContainer = comp;
       livelyContainer.hideNavbar()
       comp.parentElement.style.width = "950px";
@@ -1541,6 +1543,7 @@ export default class Lively {
         comp.isSearchBrowser = true;
         comp.hideNavbar();
       }
+      comp.focus()
       return comp.followPath(url)
     }).then(async () => {
       if (edit) {
@@ -1799,7 +1802,8 @@ export default class Lively {
   // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
-    // console.log("focusWithoutScroll " + element)
+    
+    //console.log("focusWithoutScroll " + element, lively.stack().toString())
     var scrollTop = document.scrollingElement.scrollTop;
     var scrollLeft = document.scrollingElement.scrollLeft;
     element.focus({ preventScroll : true});
