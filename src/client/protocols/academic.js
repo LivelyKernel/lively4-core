@@ -90,17 +90,35 @@ export class MicrosoftAcademicEntities {
   }
 
   static async generateSchema(entityName) {
+    return this.schemaFromURL(this.baseURL + "reference-" + entityName + "-entity-attributes.md")
+  }
+    
+  
+  static async schemaFromURL(url) {
+    var content = await fetch(url).then(r => r.text());
     var md = new MarkdownIt();
-    var content = await fetch(this.baseURL + "reference-" + entityName + "-entity-attributes.md").then(r => r.text());
     var html = md.render(content);
     var div = <div></div>;
     div.innerHTML = html;
     var tbody = div.querySelector("tbody");
     return tbody ? Array.from(tbody.querySelectorAll("tr").map(ea => Array.from(ea.querySelectorAll("td").map(td => td.textContent))).map(ea => ({ name: ea[0], description: ea[1], type: ea[2], operations: ea[3] }))) : [];
-  }
+  }  
 
+  static entityTypeEnum() {
+    return ["paper", "author", "journal", "conference-series", "conference-instance", "affiliation", "field-of-study"]
+  }
+    
+  static getEntityType(i) {
+    return this.entityTypeEnum()[i]
+  }
+    
   static async allSchemas() {
     var all = {};
+    all.entity =  await this.schemaFromURL(this.baseURL + "reference-entity-attributes.md")
+    
+    //all.entityTypeEnum = ["Paper", "Author", "Journal", "Conference Series", "Conference Instance", "Affiliation", "Field Of Study"]
+    all.entityTypeEnum = this.entityTypeEnum()
+
     for (var ea of ["affiliation", "author", "conference-instance", "conference-series", "field-of-study", "journal", "paper"]) {
       var list = await this.generateSchema(ea);
       var obj = {};
@@ -113,6 +131,7 @@ export class MicrosoftAcademicEntities {
     return all;
   }
 
+    
   static async schemas() {
     // window.lively4academicSchemas = null
     if (!window.lively4academicSchemas) {
@@ -419,6 +438,84 @@ export class Paper {
       </lively-bibtex>` 
   }
   
+  static shortPaperCSS() {
+    return `
+      .paper {
+        padding: 5px;
+        padding-left: 30px;
+      }
+
+      .paper .key {
+        margin-left: -30px;      
+        font-size: 10pt;
+        font-weight: bold;
+      }
+
+      .paper .title {
+        font-style: italic;
+      }
+
+      .paper .title {
+        font-style: italic;
+      }
+
+
+      .paper a {
+        color: black;
+        text-decoration-line: none
+      }
+
+      .paper a:hover {
+        color: darkblue;
+        text-decoration: underline currentcolor; 
+      }
+
+
+    `
+  }
+    
+  async toShortHTML() {
+    
+    var bibtexEntries = await this.findBibtexFileEntries()
+    var pdfs = this.value.S && this.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
+    
+    return `<div class="paper" title="">
+      <style>
+          .abstract {
+            color: gray;
+            font-style: italic;
+          }
+      </style>
+      <a class="key" href="bib://${this.key}">[${this.key}]</a>
+      <span class="authors">${
+        this.authors.map(ea => `<a href="academic://expr:Composite(AA.AuId=${ea.id})?count=1000">${ea.name}</a>`).join(", ")
+      }.
+      </span>
+      <span class="year"><a href="academic://hist:Composite(AA.AuId=${this.authors[0].id})?count=100&attr=Y"> ${this.year}</a>.</span>
+      <span class="title"><a href="academic://expr:Id=${this.microsoftid}?count=1">${this.title}</a>. </span>
+      <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
+        this.doi
+      }</a></span>
+  
+      ${this.htmlJournalSnippet()}
+      <span id="conference">${this.value.C ? this.value.C.CN  : ""}</span>
+  
+       
+      ${
+        (pdfs && pdfs.length) > 0 ? 
+          "(" + pdfs.map(url => `<a href="${url}" title="${url}">pdf ⇗</a>`).join(", ") + `)` : ""
+      }
+    </div>`
+  }
+    
+  htmlJournalSnippet() {
+    return this.value.J ? `<span id="journal">` + `<a href=
+        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
+        }> ` + this.value.J.JN  
+          + " Volume " + this.value.V 
+          + " Issue" + this.value.I + "</a><span>": ""
+  }
+    
   async toHTML() {
     await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
     await this.findReferencedBy()
@@ -448,22 +545,14 @@ export class Paper {
         this.doi
       }</a></span>
   
-      ${this.value.J ? `<div id="journal">Journal: ` + `<a href=
-        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
-        }> ` + this.value.J.JN  
-          + " Volume " + this.value.V 
-          + " Issue" + this.value.I + "</a></div>": "" }
-      <div id="conference">${this.value.C ? this.value.C.CN  : ""}</div>
-
-  
+      <div>${this.htmlJournalSnippet()}</div>
         <div id="fields">${this.value.F ? "<h3>Fields</h3> " + 
             this.value.F.map(F => `<a href=
         "academic://expr:Composite(F.FId=${F.FId})?count=30"
         }> ` + F.DFN + "</a>").join(" "): "" }</div>
 
-  
       <lively-script><script>
-        import {Paper} from "src/client/protocols/academic.js"
+        import {Paper} from "src/client/protocols/academic.js";
         
         (<button click={() => lively.openInspector(Paper.byId(${this.microsoftid}))}>inspect</button>)
       </script></lively-script> 
@@ -476,21 +565,20 @@ export class Paper {
       <h3>Bibliographies</h3>
       <div>${
         bibtexEntries.length > 0 ?
-          bibtexEntries.map(ea => `<a href="${ea.url}">${ea.url.replace(/.*\//,"")}</a>`).join(", ") :
-          
-        `
-<lively-script><script>
+          bibtexEntries.map(ea => `<a href="${ea.url}">${ea.url.replace(/.*\//,"")}</a>`).join(", ") :    
+        
+`<lively-script><script>
 // here comes some inception....
-import {Paper} from "src/client/protocols/academic.js"
-var container = lively.query(this, "lively-container")
-var result = <button click={async () => {
-  await Paper.importBibtexId(${this.microsoftid})
-  await lively.sleep(1000) // let the indexer do it's work?
-  if (container) container.setPath(container.getPath())
-}}>import bibtex entry</button>
-result
-</script></livley-script>
-`
+ import {Paper} from "src/client/protocols/academic.js"
+   var container = lively.query(this, "lively-container")
+   var result = <button click={async () => {
+     await Paper.importBibtexId(${this.microsoftid})
+     await lively.sleep(1000) // let the indexer do it's work?
+     if (container) container.setPath(container.getPath())
+   }}>import bibtex entry</button>
+   result
+</script></livley-script>`
+
       }</div>
 
       <h3>Abstract</h3>
@@ -558,6 +646,7 @@ export default class AcademicScheme extends Scheme {
 
   academicKnowledgeAttributes() {
     return [
+        ["Ty", "Type"],
         ["AA.AfId","Author affiliation ID"],
         ["AA.AfN","Author affiliation name"],
         ["AA.AuId","Author ID"],
@@ -615,8 +704,8 @@ export default class AcademicScheme extends Scheme {
       return this.rawQueryExpr(queryExpr, count)
   }
   
-  async rawQueryExpr(queryExpr, count=10) {
-    var attributes =  this.academicKnowledgeAttributes()    
+  async rawQueryExpr(queryExpr, count=10, attributes) {
+    var attributes =  attributes || this.academicKnowledgeAttributes()    
     var result = await fetch(`cached:https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate?expr=`
             + encodeURI(queryExpr)
             + `&count=${count}`
@@ -634,10 +723,10 @@ export default class AcademicScheme extends Scheme {
       return result
   }
 
-  async entityQuery(queryString, queryType, count) {
+  async entityQuery(queryString, queryType, count, attributes) {
     let raw;
     if (queryType=="expr") {
-      raw = (await this.rawQueryExpr(queryString, count))
+      raw = (await this.rawQueryExpr(queryString, count, attributes))
     } else {
       raw = (await this.rawQueryInterpret(queryString, count))
     }
@@ -655,34 +744,41 @@ export default class AcademicScheme extends Scheme {
     var content = ``;
     if (entities.error) return `<span class="error">${entities.error}</span>`
     
-    var code = `lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
-      "Academic Visualizaton", {
-        query: ${JSON.stringify(this.query)},
-        "count": ${this.count},
-        "min_cc_in": 2,
-        "min_refs_out": 10,
-    })`
-    
-    
 
-    content = `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
 
     if (this.query.startsWith("expr:")) {
-            var histogramCode = `lively.openMarkdown(lively4url + "/demos/visualizations/academic-histogram.md", 
-      "Academic Histogram", {
-        query: ${JSON.stringify(this.query.replace(/^expr\:/,""))},
-        "count": ${this.count},
-    })`
-    
-    content += `<button onclick="${histogramCode.replace(/"/g,"&quot;")}">histogram</button>`
-    
+      var code = `lively.openMarkdown(lively4url + "/demos/visualizations/academic.md", 
+        "Academic Visualizaton", {
+          query: ${JSON.stringify(this.query)},
+          "count": ${this.count},
+          "min_cc_in": 2,
+          "min_refs_out": 10,
+      })`
+      content += `<button onclick="${code.replace(/"/g,"&quot;")}">visualize</button>`
+      
+      var histogramCode = `lively.openMarkdown(lively4url + "/demos/visualizations/academic-histogram.md", 
+        "Academic Histogram", {
+          query: ${JSON.stringify(this.query.replace(/^expr\:/,""))},
+          "count": ${this.count},
+      })`
+      content += `<button onclick="${histogramCode.replace(/"/g,"&quot;")}">histogram</button>`
+      
+      var inspectCode = `
+        let url = "academic://${this.query}?count=${this.count}"
+        lively.notify("inspect: " + url);
+        lively.files.loadJSON(url).then(json => {
+           lively.openInspector(json)
+        })  
+      `
+      content += `<button onclick="${inspectCode.replace(/"/g,"&quot;")}">inspect</button>`
     }
     
     
     if (entities.length > 1) {
+      content += `<style>${Paper.shortPaperCSS()}</style>\n`
       for(var entity of entities) {
         let paper = await Paper.ensure(entity)
-        content += `<lively-bibtex-entry>${await paper.toBibtex()}</lively-bibtex-entry>`;
+        content += await paper.toShortHTML();
       }      
     } else if (entities.length == 1) {
       let paper = await Paper.ensure(entities[0])
@@ -701,7 +797,7 @@ export default class AcademicScheme extends Scheme {
     var argsString = query.replace(/.*\?/,"")
     query = query.replace(/\?.*/,"") // strip arguments
    
-    this.query = query;
+    this.query = decodeURI(query);
     
     // adhoc url paremeter decoding...
     var args = {}
@@ -711,7 +807,8 @@ export default class AcademicScheme extends Scheme {
     })
     this.count = args["count"] || 10
     
-    
+    var attributes = args["attr"]; // optional
+   
     // example: 
     //  "expr:Id=3" -> expr is query type
     var typeRegex = /^([a-z]*):/
@@ -722,15 +819,67 @@ export default class AcademicScheme extends Scheme {
       query = query.replace(typeRegex,"")
     }
     
+    
+    options = options || {}
+    var headers = new Headers(options.headers); // #Refactor we should unify options before
+    
+    if (queryType=="meta") {
+      var schemas = await MicrosoftAcademicEntities.schemas()
+      var result = schemas
+      var path = query.split("/")
+      for(let key of path) {
+        try {
+          if (key) {
+            result = result[key]
+          }
+        } catch(e) {
+          this.response("could not find " + query + " in schemas");
+        }
+      }
+      
+      
+      return this.response(JSON.stringify(result, undefined, 2), "application/json");
+    }
+    
+    if (queryType=="raw") {
+      let raw = await this.rawQueryExpr(query, this.count, attributes)
+      return this.response(JSON.stringify(raw, undefined, 2), "application/json");      
+    }
+    
     if (queryType=="hist") {
-      var queryAttributes = args["attr"] 
-      let raw = (await this.rawQueryHist(query, queryAttributes, this.count))
-      return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+      if (headers.get("content-type") == "application/json") {
+        let raw = (await this.rawQueryHist(query, attributes, this.count))
+        return this.response(JSON.stringify(raw, undefined, 2), "application/json");
+      } else {
+        return this.response(`
+<html>
+<lively-script><script>
+  (async () => {
+      var url = lively4url + "/demos/visualizations/academic-histogram.md"
+      var comp = await (<lively-markdown style="width:100%; height:100%"></lively-markdown>);
+      var src = await fetch(url).then(r => r.text());
+      comp.parameters = {
+        query: ${JSON.stringify(decodeURI(query))},
+        attr: "${attributes}",
+        "count": 100,
+      };
+      comp.setContent(src);
+      comp.parentElement.setAttribute("title", "Academic Histogram");
+      return comp;
+    })()
+</script><lively-script>        
+        
+
+</html>
+`)        
+  
+      
+      
+      }
     } 
     
-    let entities = await this.entityQuery(query, queryType, args.count);
+    let entities = await this.entityQuery(query, queryType, args.count, attributes);
     if (options && options.headers) {
-      var headers = new Headers(options.headers); // #Refactor we should unify options before
       if (headers.get("content-type") == "application/json") {
         return this.response(JSON.stringify(entities), "application/json");
       }
