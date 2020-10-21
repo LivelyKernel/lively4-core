@@ -334,22 +334,33 @@ export default class Lively {
     })
   }
   
-  static async fillTemplateStyles(root, debugInfo, baseURL=lively4url) {
+  static async fillTemplateStyles(root, debugInfo, baseURL=lively4url+'/') {
     // there seems to be no <link ..> tag allowed to reference css inside of templates #Jens
     
     // var start = performance.now()
     var promises = [];
-    var allSrc = []
+    const lively4dir = lively4url + '/'
+    function normalize(cssURL) {
+      let url
+      if (cssURL[0] === '/') {
+        url = new URL(cssURL.substring(1), lively4dir)
+      } else if (cssURL[0] === '.') {
+        url = new URL(cssURL, baseURL)
+      } else {
+        url = new URL(cssURL)
+      }
+
+      if (!url) {
+        return ''
+      }
+      return url.toString()
+    }
+
     root.querySelectorAll("style").forEach(ea => {
-      var src = ea.getAttribute("data-src");
-      if (src) {
-        
-        var cssURL = src
-        if (!cssURL.match(/^[a-zA-Z0-9]+:/)) {
-          cssURL = baseURL.replace(/\/?$/, "/") + cssURL
-        }
-        allSrc.push(src)
-        promises.push(this.fillTemplateStyle(ea, cssURL));
+      const cssURL = ea.getAttribute("data-src");
+      if (cssURL) {
+        const normalizedURL = normalize(cssURL)
+        promises.push(this.fillTemplateStyle(ea, normalizedURL));
       }
     });
     await Promise.all(promises)    

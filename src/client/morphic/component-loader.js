@@ -181,7 +181,7 @@ export default class ComponentLoader {
 
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
-  static async register(componentName, template, aClass) { 
+  static async register(componentName, template, aClass, componentUrl) { 
     _log("[component loader] register " + componentName)
     var proxy
     
@@ -191,7 +191,7 @@ export default class ComponentLoader {
     
     if (template) {
       _log("[component loader] register fillTemplateStyles: " + componentName)
-      await lively.fillTemplateStyles(template, "source: " + componentName)
+      await lively.fillTemplateStyles(template, "source: " + componentName, componentUrl)
     }
     
     if (!this.proxies[componentName]) {
@@ -561,7 +561,7 @@ export default class ComponentLoader {
             template.remove()
           }          
         }
-        this.register(name, template && template.content, aClass)
+        this.register(name, template && template.content, aClass, templateURL)
         _timeLog(name, "registered")
         return true;
       } else {
