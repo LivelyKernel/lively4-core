@@ -1,7 +1,6 @@
-## 2020-10-16
+## 2020-10-16 Microsoft Academics Histograms
 *Author: @JensLincke*
 
-## Microsoft Academics Histograms
 
 Example, the distribution of fields of all our papers:
 
