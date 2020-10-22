@@ -146,6 +146,11 @@ export default class Container extends Morph {
       return this.followPath(m[1]);
     }
     
+    this.get("#container-info").innerHTML = ""
+    this.get("#container-info").appendChild(<div id="loading-info">Loading {path}</div>)
+    
+    
+    
     try {
       var options = await fetch(path, {method: "OPTIONS"}).then(r => r.json())
     } catch(e) {
@@ -1388,6 +1393,7 @@ export default class Container extends Morph {
   /*MD ## Render Content MD*/
 
   async appendMarkdown(content, renderTimeStamp) {
+    this.clear()
     var md = await lively.create("lively-markdown", this.getContentRoot())
     // md.setAttribute("data-lively4-donotpersist", true) // will be thrown away after loading anyway, #DoesNotWork
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
@@ -2011,7 +2017,7 @@ export default class Container extends Morph {
 
 
   clear() {
-    
+    this.get("#container-info").innerHTML = ""
     this.getContentRoot().innerHTML = '';
     // Array.from(this.get('#container-content').childNodes)
     //   .filter( ea => ea.id !== "container-root")
@@ -2285,6 +2291,7 @@ export default class Container extends Morph {
   
   listingForDirectory(url, render, renderTimeStamp) {
     return files.statFile(url).then((content) => {
+      this.clear()
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
       }
