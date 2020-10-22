@@ -2109,7 +2109,41 @@ export default class Lively {
 
     return result
   }
-  
+
+  static registerSWXHandshake() {
+    
+    if (!navigator.serviceWorker) {
+      console.warn("[lively] registerSWXHandshake fail: no serviceWorker found")
+      return;
+    }
+    lively.removeEventListener("handshake", navigator.serviceWorker)
+    lively.addEventListener("handshake", navigator.serviceWorker, "message", async (evt) => {
+        try {
+          if(!evt.data.name || !evt.data.name.match(/swx:started/)) return; // not for me
+
+          if (!evt.ports[0]) {
+            console.warn("registerSWXHandshake got message... but could not answer")
+            return 
+          }
+          console.log("[lively] SWX started")
+          evt.ports[0].postMessage({
+            name: "client:handshake"
+          })
+           
+        } catch(err) {
+          evt.ports[0].postMessage({error: err});
+        }
+      });
+
+  }
+
+  static headersToJSO(headers) {
+    var o = {}
+    for(var [k,v] of headers.entries()) {
+      o[k] = v
+    }
+    return o
+  }
   
   static registerSWXFetchHandler() {
     
@@ -2128,13 +2162,23 @@ export default class Lively {
             return 
           }
           if(evt.data.name == 'swx:proxy:GET') {
-            // console.log("[lively] registerSWXFetchHandler FETCH SWX: " + url)
-            evt.ports[0].postMessage({content: await fetch(url, {
+            //  console.log("[lively] registerSWXFetchHandler FETCH SWX: " + url)
+            var response = await fetch(url, {
               method: "GET",
               headers: Object.assign(evt.data.headers, {
                 "lively-proxied": "true"
               })
-            }).then(r => r.blob())}); 
+            })
+            evt.ports[0].postMessage({
+              content: await response.blob(),
+              ok: response.ok, 
+              redirected: response.redirected, 
+              status: response.status, 
+              statusText: response.statusText,
+              type: response.type,
+              url: response.url,
+              headers: this.headersToJSO(response.headers)
+            }); 
           } 
         } catch(err) {
           evt.ports[0].postMessage({error: err});
@@ -2159,6 +2203,7 @@ if (!window.lively || window.lively.name != "Lively") {
 // #TODO pull this this out into boot.js #Continue
 lively.registerSWXFetchHandler() // #BUG this is to late for booting lively itself if not everthing is in the zip
 
+lively.registerSWXHandshake()
 
 var modulesExported = Lively.exportModules();
 
