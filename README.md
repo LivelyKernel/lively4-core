@@ -19,7 +19,6 @@ A project or branch of a project on GitHub can be checked out in multiple direct
 - [lively4-jens](https://lively-kernel.org/lively4/lively4-jens/start.html)
 - ...
 
-
 The Livel4 server and GitHub sync tools can check out arbitrary projects, such as the code of [lively4-server](https://lively-kernel.org/lively4/lively4-server/) itself, or the source of a paper hosted by overleaf.
 
 ## Authors / Contributors
