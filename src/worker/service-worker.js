@@ -26,6 +26,28 @@ async function sendMessage(client, data, timeout=5 * 60 * 1000) {
   })
 }
 
+
+
+// fuck it... we gonna fuck around with the SWX again, because I cannot find any events that signal me 
+// that there is a new client... we have to wait!
+
+// let livelyClients = {}
+// setTimeout(() => {
+//   self.clients.matchAll().then((clients) => {
+//     clients.forEach(function(client) {
+//         sendMessage(client, {
+//           name: "swx:started",
+          
+//         }).then(resp => {
+//           livelyClients[client.id] = true // we could store the client here... but we don't need to yet
+//           // console.log("client answered back!", client)
+//         })
+//     })
+//     console.log('anybody here?', clients)
+//   })  
+// }, 100)
+
+
 function headersToJSO(headers) {
   var o = {}
   for(var [k,v] of headers.entries()) {
@@ -89,13 +111,22 @@ self.addEventListener('fetch', (evt) => {
               if (client.url.match(/start.html$/)) {          
                 // console.log("SWX found client: ", client)
                 try {
+                  // if (!livelyClients[client.id]) {
+                  //   console.log("[swx] DEBUG client is not ready yet!", client)
+                  //   throw new Error("client is not ready yet!") // so don't wait on it            
+                  // }
+                  // console.log("[swx] try proxy send:" +  client.id, url)
                   var msg = await sendMessage(client, {
                     name: 'swx:proxy:'+ method , 
                     url: url,
                     headers: headers
-                  }, 5 * 1000 /*s*/)
+                  }, 5 * 1000 /*s*/);
+                  if(!msg.data || msg.data.error) {
+                    console.error("[swx] proxy error:" +  client.id, msg.data.error, msg)
+                  }
+                  
                 } catch(e) {
-                  console.warn("SWX message send timed out: " + e)
+                  console.warn("SWX message send timed out: " + client.id,  e)
                 }
                 continue; 
               }
@@ -110,6 +141,7 @@ self.addEventListener('fetch', (evt) => {
                 })
               })
             }
+            // console.log("[swx] PROXY successfull", url, msg.data.headers)
             return new Response(msg.data.content, {
               status: msg.data.status,
               statusText: msg.data.statusText,

@@ -130,6 +130,7 @@ async function preloadFileCaches() {
         mimeType = " text/plain"
       if (url.match(/\.js$/)) mimeType = "application/javascript"
       if (url.match(/\.css$/)) mimeType = "text/css"
+      if (url.match(/\.html$/)) mimeType = "text/html"
       
       let optionsPath = ".options/" + ea.replace(/\//g,"_"), 
         optionsFile = archive.file(optionsPath)
