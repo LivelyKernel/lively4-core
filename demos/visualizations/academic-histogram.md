@@ -5,7 +5,7 @@ import {Panning} from "src/client/html.js"
 import Literature from "src/client/literature.js"
 import {Paper, Author, MicrosoftAcademicEntities} from "src/client/protocols/academic.js"
 import Chart from 'src/external/chart.js';
-
+import Strings from "src/client/strings.js"
 
 
 import files from "src/client/files.js"
@@ -13,7 +13,7 @@ import files from "src/client/files.js"
 const default_query="Composite(AA.AuId=2055148755)"
 const default_count = 1000
 const default_min = 0
-const default_attr = "Y"
+const default_attr = "F.FN"
 
 class HistogramChart {
 
@@ -45,6 +45,12 @@ class HistogramChart {
       
       input#count, input#min {
         width: 30px
+      }
+      
+      div#info {
+        color: lightgray;
+        font-style: italic;
+        padding: 2px;
       }
       `
       return style
@@ -96,7 +102,7 @@ class HistogramChart {
   }
   
   static async onClick(evt, element) {
-    if (evt.shiftDown) lively.openInspector(element);
+    if (evt.shiftKey) return lively.openInspector(this);
     
     var firstPoint = this.chart.getElementAtEvent(evt)[0];
     if (firstPoint) {
@@ -104,6 +110,24 @@ class HistogramChart {
       var value = this.chart.data.datasets[firstPoint._datasetIndex].data[firstPoint._index];
       
       lively.openBrowser(this.subQuery(this.queryString(), this.attr(), label, 20))      
+    } else {
+    
+      let mousePoint = Chart.helpers.getRelativePosition(evt, this.chart.chart);
+      let value = this.chart.scales['x-axis-0'].getValueForPixel(mousePoint.x);
+      let label = this.chart.data.labels[value]
+      let attribute = this.attr() 
+      
+      
+      if (attribute == "F.FN"){
+        var newquery = `And(Composite(F.FN='${label}'),${this.queryString()})`
+        lively.openBrowser("academic://hist:" + newquery + "?count=" + this.count() + "&attr=" + attribute)
+      } else {
+        lively.notify("narrowing in on " + attribute + " is not supported yet!")
+      }
+
+
+      
+      
     }
   }
 
@@ -114,6 +138,30 @@ class HistogramChart {
   
     var json  = await files.loadJSON(`academic://hist:${this.queryString()}?count=${this.count()}&attr=${this.attr()}`);
     var ctx = this.canvas.getContext('2d');
+  
+    let targetLabel = ""
+    let info = ""
+    for(var m of Strings.matchAll(/[Ii]d=([0-9]+)/, this.queryString())) {
+      let id = m[1]
+      let raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`)
+      
+      var entity = raw.entities[0]
+      var type = MicrosoftAcademicEntities.getEntityType(entity.Ty)
+      var label = ""
+      if(type =="author") { 
+        label = entity["AuN"]
+      } else if(type == "field-of-study") { 
+        label =  entity["FN"] 
+      } else if(type =="paper") { 
+        label =  entity["Ti"] 
+      }
+      
+      info += `<span>${id}: ${type}, ${label}</span><br>` 
+    }
+    this.pane.querySelector("#info").innerHTML = info
+
+  
+  
   
     this.canvas.onclick  = evt => {
       if (!this.chart) return
@@ -148,6 +196,7 @@ class HistogramChart {
           <span>Attribute: <input input={update} id="attr" value={default_attr} list="attributelist"></input></span>
           <datalist id="attributelist" ></datalist> 
           <span>min: <input input={update} id="min" value={default_min}></input></span>
+          <div id="info"></div>
           <button click={browse}>browse</button>
           </div>
         <button click={inspect}>inspect</button>
@@ -161,7 +210,7 @@ class HistogramChart {
     let parameters = markdownComp.parameters
     for(let name of Object.keys(parameters)) {
        let element = this.pane.querySelector("#" +name)
-       if (element) element.value = parameters[name]
+       if (element && (parameters[name] !== undefined)) element.value = parameters[name]
        else {
         lively.warn("parameter " + name + " not found")
        }

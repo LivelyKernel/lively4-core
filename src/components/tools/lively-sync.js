@@ -42,7 +42,6 @@ export default class Sync extends Morph {
   }
 
   onKeyDown(evt) {
-    debugger
     const char = String.fromCharCode(evt.keyCode || evt.charCode);
     const ctrl = evt.ctrlKey || evt.metaKey;
 
@@ -141,7 +140,6 @@ export default class Sync extends Morph {
         headers.set(key, optHeaders[key])
       }
       let commandURL = this.getServerURL() +"/_git/" + cmd;
-      debugger;
       lively.files.fetchChunks(fetch(commandURL, {
               headers: headers
             }), (eaChunk) => {
@@ -155,7 +153,6 @@ export default class Sync extends Morph {
   
   async sync() {
     var syncResult = await this.gitControl("sync");
-    debugger 
     
     this.log("invalidate local caches")
     window.lively4invalidateFileCaches && window.lively4invalidateFileCaches() // global variable set in boot

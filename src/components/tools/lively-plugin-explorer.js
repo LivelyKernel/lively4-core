@@ -23,6 +23,10 @@ export default class PluginExplorer extends Morph {
 
   get sourceAstInspector() { return this.get("#sourceAst"); }
   
+  get transformedAstInspector() { return this.get("#transformedAst"); }
+  
+  
+  
   get pluginEditor() { return this.get("#plugin"); }
   get pluginLCM() { return this.pluginEditor.livelyCodeMirror(); }
   get pluginCM() { return this.pluginEditor.currentEditor(); }
@@ -40,6 +44,7 @@ export default class PluginExplorer extends Morph {
   
   get transformedSourceLCM() { return this.get("#transformedSource"); }
   get transformedSourceCM() { return this.transformedSourceLCM.editor; }
+  get transformedSourceText() { return this.transformedSourceCM.getValue(); }
   
   get pluginURL() { return this.pluginEditor.getURLString(); }
 
@@ -233,7 +238,13 @@ export default class PluginExplorer extends Morph {
     await Promise.all([
       this.pluginEditor.awaitEditor(),
       this.sourceLCM.editorLoaded(),
-      this.transformedSourceLCM.editorLoaded(),
+      this.transformedSourceLCM.editorLoaded().then(() => {
+        this.transformedAstInspector.connectLivelyCodeMirror(this.transformedSourceLCM);
+        this.transformedSourceLCM.doSave = async () => {
+          // TODO: Save source
+          this.updateTransformedAST();
+        };
+      }),
     ]);
     
     this.dispatchEvent(new CustomEvent("initialize"));
@@ -300,21 +311,30 @@ export default class PluginExplorer extends Morph {
 
   async updateAST() {
     try {
-      this.ast = this.sourceText.toAST();
-      this.sourceAstInspector.inspect(this.ast);
-      if (this.autoUpdateTransformation) this.updateTransformation();
+      let ast = this.sourceText.toAST();
+      this.sourceAstInspector.inspect(ast);
+      if (this.autoUpdateTransformation) this.updateTransformation(ast);
     } catch (e) {
-      this.ast = null;
       this.sourceAstInspector.inspect({Error: e.message});
+    }
+    this.updateTransformedAST();
+  }
+  
+  async updateTransformedAST() {
+    try {
+      let ast = this.transformedSourceText.toAST();
+      this.transformedAstInspector.inspect(ast);
+    } catch (e) {
+      this.transformedAstInspector.inspect({Error: e.message});
     }
   }
 
-  async updateTransformation() {
+  async updateTransformation(ast) {
     const plugin = await this.getPlugin();
     
     try {
       console.group("PLUGIN TRANSFORMATION");
-      if (!this.ast) return;
+      if (!ast) return;
       if (this.systemJS) {
         // use SystemJS config do do a full transform
         if (!self.lively4lastSystemJSBabelConfig) {
@@ -333,7 +353,7 @@ export default class PluginExplorer extends Morph {
         config.moduleIds = false
         this.transformationResult = babel.transform(this.sourceText, config);
       } else {
-        this.transformationResult = this.ast.transformAsAST(plugin);
+        this.transformationResult = ast.transformAsAST(plugin);
       }
       
       this.transformedSourceLCM.value = this.transformationResult.code;

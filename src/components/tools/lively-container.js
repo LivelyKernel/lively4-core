@@ -146,6 +146,11 @@ export default class Container extends Morph {
       return this.followPath(m[1]);
     }
     
+    this.get("#container-info").innerHTML = ""
+    this.get("#container-info").appendChild(<div id="loading-info">Loading {path}</div>)
+    
+    
+    
     try {
       var options = await fetch(path, {method: "OPTIONS"}).then(r => r.json())
     } catch(e) {
@@ -206,10 +211,10 @@ export default class Container extends Morph {
     this.get('#container-content').style.display = "block";
     this.get('#container-editor').style.display = "none";
 
-    if (this.viewNav) {
-      lively.setPosition(this.get("#container-root"), pt(0,0))
-      this.viewNav.disable()
-    }
+    // if (this.viewNav) {
+    //   lively.setPosition(this.get("#container-root"), pt(0,0))
+    //   this.viewNav.disable()
+    // }
 
     this.windowTitle = path.replace(/.*\//,"")
     if (!path) {
@@ -1388,6 +1393,7 @@ export default class Container extends Morph {
   /*MD ## Render Content MD*/
 
   async appendMarkdown(content, renderTimeStamp) {
+    this.clear()
     var md = await lively.create("lively-markdown", this.getContentRoot())
     // md.setAttribute("data-lively4-donotpersist", true) // will be thrown away after loading anyway, #DoesNotWork
     if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
@@ -1601,7 +1607,9 @@ export default class Container extends Morph {
       delete this.preserveContentScroll
     }
 
-    ViewNav.enable(this)
+    
+    // this is bad and breaks layout 100% layout....
+    // ViewNav.enable(this)
 
     
     // await lively.sleep(500) // wait for renderer to get some positions to scroll to....
@@ -2009,11 +2017,11 @@ export default class Container extends Morph {
 
 
   clear() {
-    
+    this.get("#container-info").innerHTML = ""
     this.getContentRoot().innerHTML = '';
-    Array.from(this.get('#container-content').childNodes)
-      .filter( ea => ea.id !== "container-root")
-      .forEach(ea => ea.remove());
+    // Array.from(this.get('#container-content').childNodes)
+    //   .filter( ea => ea.id !== "container-root")
+    //   .forEach(ea => ea.remove());
     this.get('#container-editor').innerHTML = '';
   }
 
@@ -2283,6 +2291,7 @@ export default class Container extends Morph {
   
   listingForDirectory(url, render, renderTimeStamp) {
     return files.statFile(url).then((content) => {
+      this.clear()
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
       }

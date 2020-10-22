@@ -175,8 +175,7 @@ export default class Editor extends Morph {
   
   onContextMenu(evt) {
     if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
+    
       
       // #Hack #Workaround weired browser scrolling behavior
       if (lively.lastScrollLeft || lively.lastScrollTop) {
@@ -201,12 +200,15 @@ export default class Editor extends Morph {
             ["delete all anntations", () => this.onDeleteAllAnnotations()],
           ])
       } else {
-        items.push(...[
-            ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
-          ])
+        return 
+        // Disable enabling #Annotations for now  
+        // items.push(...[
+        //     ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
+        //   ])
       }      
       
-      
+      evt.stopPropagation();
+      evt.preventDefault();
       
       var menu = new ContextMenu(this, items);
       menu.openIn(document.body, evt, this);
