@@ -1,23 +1,26 @@
-<mxfile modified="2020-10-23T10:17:43.240Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36" etag="DEA5SW_1T85YVE_Ly-0n" version="13.8.1" type="github">
+<mxfile modified="2020-10-23T10:20:32.780Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36" etag="v3AbtFwHlNAY9LL8K2Hw" version="13.8.1" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="763" dy="450" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1335" dy="787" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-6" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="120" y="142" width="420" height="178" as="geometry" />
+          <mxGeometry x="120" y="150" width="420" height="170" as="geometry" />
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-2" value="&lt;span&gt;Microsoft Academic&lt;/span&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
-          <mxGeometry x="300" y="30" width="130" height="60" as="geometry" />
+          <mxGeometry x="265" y="10" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=block;endFill=1;strokeWidth=4;strokeColor=#999999;" edge="1" parent="1" source="OL13b-HZ6Mmib4nQ43Un-3" target="OL13b-HZ6Mmib4nQ43Un-6">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-3" value="REST services" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="285" y="100" width="160" height="20" as="geometry" />
+          <mxGeometry x="265" y="80" width="130" height="20" as="geometry" />
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-5" value="academic://" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="130" y="200" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-7" value="polymorphic identifier" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2" vertex="1" parent="1">
-          <mxGeometry x="130" y="142" width="120" height="20" as="geometry" />
+          <mxGeometry x="120" y="130" width="120" height="20" as="geometry" />
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-11" value="expr:" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="235" y="170" width="60" height="20" as="geometry" />
@@ -48,6 +51,21 @@
         </mxCell>
         <mxCell id="OL13b-HZ6Mmib4nQ43Un-27" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_1;align=left;pointerEvents=1;rotation=-180;" vertex="1" parent="1">
           <mxGeometry x="506" y="189" width="10" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-30" value="html" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="177" y="305" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-31" value="json" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="305" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-32" value="bibtex" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="305" y="305" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-33" value="mime types" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="150" y="285" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="OL13b-HZ6Mmib4nQ43Un-34" value="url" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="80" y="150" width="120" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
