@@ -73,7 +73,7 @@ export default class LivelyScript extends Morph {
   }
   
   cleanModuleURL(url) {
-    return url.toString().replace(/[^A-Za-z0-9:\/.]/g, "")
+    return url.toString().replace(/[^A-Za-z0-9\-_:\/.]/g, "") // #TODO this is important, maybe we should blacklist instead of whitelist
   }
 
   async moduleFor(obj) {
