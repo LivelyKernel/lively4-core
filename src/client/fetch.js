@@ -3,7 +3,7 @@ var baseUrlsAuthNeeded = [ "https://lively-kernel.org/voices","https://lively-ke
 var baseUrlsAuthNeededForWriting = [ "https://lively-kernel.org/lively4"]
 
 async function proxyRequest(url, options={}) {
-  console.log("PROXY reqest: " + options.method + " " + url)
+  // console.log("PROXY reqest: " + options.method + " " + url)
   return self.originalFetch(url, {
       mode: options.mode,
       cache: options.cache,
@@ -42,7 +42,7 @@ export async function installProxyFetch() {
           }
         }
         
-        console.log("proxy fetch " + url)
+        // console.log("proxy fetch " + url)
         var mountPoint = m[1]
         var rest = m[2]
        

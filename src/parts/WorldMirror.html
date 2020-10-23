@@ -234,7 +234,7 @@
   this.style.userSelect = "none"
   
   if (!this.shadowRoot) {
-    this.createShadowRoot()
+    this.attachShadow({mode: "open"})
   }
   this.style.border = ""
   
