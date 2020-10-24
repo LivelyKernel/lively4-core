@@ -1246,7 +1246,7 @@ export default class Container extends Morph {
         // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
         var templateSourceCode = sourceCode
 
-        await lively.updateTemplate(templateSourceCode);
+        await lively.updateTemplate(templateSourceCode, url.toString());
 
       }
     } else if (this.getURL().pathname.match(/\.md$/)){

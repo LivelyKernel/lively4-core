@@ -262,7 +262,7 @@ export default class Lively {
           console.log("[templates] update template " + templateURL);
           setTimeout(() => {
             lively.files.loadFile(templateURL).then( sourceCode =>
-              lively.updateTemplate(sourceCode));
+              lively.updateTemplate(sourceCode, templateURL));
           },100)
 
         } catch(e) {
@@ -1056,8 +1056,8 @@ export default class Lively {
    * a) don't touch the instance, just update the class
    *
    */
-  static async updateTemplate(html) {
-    var tagName = await components.reloadComponent(html);
+  static async updateTemplate(html, url) {
+    var tagName = await components.reloadComponent(html, url);
     if (!tagName) return;
 
     let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));

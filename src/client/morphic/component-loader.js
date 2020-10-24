@@ -651,7 +651,7 @@ export default class ComponentLoader {
     }
   }  
 
-  static reloadComponent(source) {
+  static reloadComponent(source, url) {
     var template = lively.html.parseHTML(source).find(ea => ea.localName == "template");
     if (!template) return;
     var name = template.id;
@@ -659,7 +659,7 @@ export default class ComponentLoader {
     var templateClone = document.importNode(template.content, true);
     ComponentLoader.templates[name] = templateClone;
     
-    return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
+    return lively.fillTemplateStyles(templateClone, "source: " + name, url).then( () => name);
   }
   
 }
