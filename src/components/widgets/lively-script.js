@@ -79,16 +79,29 @@ export default class LivelyScript extends Morph {
   async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      var container = lively.query(this, "lively-container")
-      if (container) {
-        
-        await waitForDeepProperty(container, "getURL")
-        container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
-        
-        // all scripts in one container share the same module... but a second container will get a different module
-        moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
-      } else {
-        // no container, so we assume lively4 as root
+      // first check if we are part of a markdonw 
+      var markdown = lively.query(this, "lively-markdown")
+      if (markdown) {
+        var url = markdown.getAttribute("url") 
+        if (url) {
+          moduleName = url.replace(/[^/]*$/,"livelyscript_" + generateUuid())
+        }
+      } 
+      // check if for a container...
+      if (!moduleName) {
+        var container = lively.query(this, "lively-container") 
+        if (container) {
+
+          await waitForDeepProperty(container, "getURL")
+          container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
+
+          // all scripts in one container share the same module... but a second container will get a different module
+          moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
+        } 
+      }
+      
+      // no markdown, no container, so we assume lively4 as root
+      if (!moduleName) {
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
       }
       moduleMap.set(obj, moduleName)
