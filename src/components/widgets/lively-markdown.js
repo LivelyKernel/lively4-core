@@ -313,7 +313,8 @@ export default class LivelyMarkdown extends Morph {
   async getContent() {
     var src = this.getAttribute("src")
     if (src) {
-      return fetch(src).then(r => r.text())
+      var text = await lively.files.loadFile(src)
+      return text
     }
     return this.textContent
   }

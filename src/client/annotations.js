@@ -426,15 +426,25 @@ export class AnnotatedText {
   }
     
   static async fromURL(fileURL, annotationsURL, annotationsVersion, force) {
-    var annotationsResp = await lively.files.loadFileResponse(annotationsURL, annotationsVersion)
-    if (annotationsResp.status != 200) {
-      if (force) {
-        return this.fromSource("", fileURL, annotationsURL)
-      } 
-      return // nothing to see here...
+    
+    
+    var version;
+    if (annotationsVersion) {
+      var annotationsResp = await lively.files.loadFileResponse(annotationsURL, annotationsVersion)
+      if (annotationsResp.status != 200) {
+        if (force) {
+          return this.fromSource("", fileURL, annotationsURL)
+        } 
+        return // nothing to see here...
+      }
+      var source = await annotationsResp.text()      
+    } else {
+      debugger
+      source = await lively.files.loadFile(annotationsURL)
+      version = undefined; // does not work: annotationsResp.headers.get("fileversion")
     }
-    var source = await annotationsResp.text()
-    return this.fromSource(source, fileURL, annotationsURL, annotationsResp.headers.get("fileversion"))
+    
+    return this.fromSource(source, fileURL, annotationsURL, version)
   }  
   
   static async fromSource(source, fileURL, annotationsURL, lastVersion) {
