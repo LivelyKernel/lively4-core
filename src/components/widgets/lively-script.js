@@ -108,7 +108,7 @@ export default class LivelyScript extends Morph {
     
     var targetModule =  await this.moduleFor(worldContext) // all scripts in one container should share scope? 
     
-    //console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
+    console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
     
     var resolveMe
     if (currentScriptPromises.length > 0) {

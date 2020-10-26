@@ -25,7 +25,7 @@ export async function locate(load) {
       var targetModule = m[2]
 
       if (targetModule.match(/\.js$/)) {
-        return "https://" + targetModule // we stripped the HTTPS earlier...
+        return new URL(lively4url).protocol + "//" + targetModule // we stripped the HTTP(S) earlier...
       }
     }
   return 
