@@ -146,9 +146,23 @@ function addToError (childErr, newMessage) {
  */
 function resolveUrlToParentIfNotPlain (relUrl, parentUrl) {
 
+  // BEGIN #Lively4 #Workspace #RelativeURLsHack
+  try {
+    if (self.lively4url) {
+      let m = parentUrl.match(/^(workspace:[a-z0-9-]+)(.*)/)
+      if (m) {
+        parentUrl = new URL(self.lively4url).protocol + "/"  + m[2] 
+      }
+    }    
+  } catch(e) {
+    console.error("[systemjs] resolveUrlToParentIfNotPlain ", e)
+    debugger
+  }
   function throwResolveError () {
     throw new RangeError('Unable to resolve "' + relUrl + '" to ' + parentUrl);
   }
+  // END #Lively4 #Workspace #RelativeURLsHack
+
 
   var protocolIndex = relUrl.indexOf(':');
   if (protocolIndex !== -1) {

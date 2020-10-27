@@ -82,7 +82,7 @@ export default class LivelyScript extends Morph {
       // first check if we are part of a markdonw 
       var markdown = lively.query(this, "lively-markdown")
       if (markdown) {
-        var url = markdown.getAttribute("url") 
+        var url = markdown.getAttribute("url") || markdown.getAttribute("src") 
         if (url) {
           moduleName = url.replace(/[^/]*$/,"livelyscript_" + generateUuid())
         }
@@ -121,7 +121,7 @@ export default class LivelyScript extends Morph {
     
     var targetModule =  await this.moduleFor(worldContext) // all scripts in one container should share scope? 
     
-    console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
+    // console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
@@ -136,7 +136,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
+    // console.log("[lively-script] " + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()
