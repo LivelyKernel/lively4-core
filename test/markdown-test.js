@@ -21,7 +21,6 @@ describe('Markdown', () => {
      it('should replace siimple latex code ', () => {
       var element = <div></div>
       element.textContent =`hello \\foo world`
-      debugger
       Markdown.parseAndReplaceMiscLatex(element)
       
       expect(element.textContent).to.equal("hello  world");

@@ -24,7 +24,7 @@ Markdown.parseAndReplaceLatex(this.parentElement)
 
 MD*/
 import Strings from "src/client/strings.js"
-
+import _ from 'src/external/lodash/lodash.js' 
 
 export default class Markdown {
 
@@ -40,7 +40,7 @@ export default class Markdown {
       if (m) {
         var replacement = func(m, ea)
         if (replacement !== undefined) {
-          if (replacement instanceof String) {
+          if (_.isString(replacement)) {
             replacement = new Text(replacement)
           }
           

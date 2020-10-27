@@ -473,14 +473,14 @@ export class Paper {
         }> ` + F.DFN + "</a>").join(" "): "" }</div>
 
       <lively-script><script>
-        import {Paper} from "src/client/protocols/academic.js";
+        import {Paper} from "src/client/literature.js";
         
         (<button click={() => lively.openInspector(Paper.byId(${this.microsoftid}))}>inspect</button>)
       </script></lively-script> 
   
       </div>
       ${
-        pdfs.length > 0 ? 
+        pdfs && pdfs.length > 0 ? 
            "<h3>Online PDFs</h3>" + pdfs.map(url => `<a href="${url}">${url.replace(/.*\//,"")}</a>`) : ""
       }
       <h3>Bibliographies</h3>
@@ -490,7 +490,7 @@ export class Paper {
         
 `<lively-script><script>
 // here comes some inception....
- import {Paper} from "src/client/protocols/academic.js"
+ import {Paper} from "src/client/literature.js"
    var container = lively.query(this, "lively-container")
    var result = <button click={async () => {
      await Paper.importBibtexId(${this.microsoftid})
