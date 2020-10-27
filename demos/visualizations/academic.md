@@ -5,7 +5,7 @@
 
   import Literature from "src/client/literature.js"
 
-  import {Paper, Author} from "src/client/protocols/academic.js"
+  import {Paper, Author} from "src/client/literature.js"
 
   const default_query="Jens Lincke"
   const default_count = 10

@@ -39,7 +39,11 @@ export default class Markdown {
       m  = regex.exec(s)
       if (m) {
         var replacement = func(m, ea)
-        if (replacement) {
+        if (replacement !== undefined) {
+          if (replacement instanceof String) {
+            replacement = new Text(replacement)
+          }
+          
           ea.insertBefore(new Text(s.slice(0, m.index )), eaChild)
           ea.insertBefore(replacement, eaChild)
           var rest = new Text(s.slice(m.index + m[0].length, s.length))
@@ -102,9 +106,8 @@ export default class Markdown {
     })
   }
   static parseAndReplaceMiscLatex(element) {
-    
-    this.parseAndReplace(element, /(\\[a-z]+({[^}]+})?)/g, (m, contextElement) => {
-      if (contextElement.localName !== "p") return 
+    this.parseAndReplace(element, /(\\[a-z]+({[^}]+})?(\[[^\]]+\])?)/g, (m, contextElement) => {
+      if (contextElement.localName !== "p") return ""
       
       return <span class="stripped" latex={m[1]}></span> 
     })

@@ -1,4 +1,3 @@
 {"type":"Reference","version":"40840b3f46cc89eae34a2556653d4866f92cd785","content":"### Hello World this is new text\n\nThis a new World!\n\n- foo\n- bar"}
-{"from":10,"to":15,"name":"color","color":"red"}
-{"from":54,"to":54,"name":"color","color":"yellow"}
-{"from":55,"to":58,"name":"color","color":"yellow"}
+{"from":16,"to":20,"name":"color","color":"yellow"}
+{"from":4,"to":9,"name":"color","color":"blue"}
