@@ -107,7 +107,7 @@ async function preloadFileCaches() {
   await loadJavaScript("JSZip", lively4url + "/src/external/jszip.js" )
   
   var start = performance.now()
-  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now()
+  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now() // #TODO get hash / version of bundle before requesting it... and then cache it too... this takes 3000ms to load from lively-kernel.org from non HPI vs 1000ms localhost ... 
   var resp = await fetch(preloadurl)
   if (resp.status != "200") {
     console.warn("NO preload cache found in", preloadurl)
