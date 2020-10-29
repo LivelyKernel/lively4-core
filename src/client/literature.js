@@ -499,8 +499,16 @@ export class Paper {
    }}>import bibtex entry</button>
    result
 </script></livley-script>`
-
-      }</div>
+      }
+    ${`<lively-script><script>
+  import {Paper} from "src/client/literature.js"
+  var paper = Paper.byId(${this.microsoftid})
+  var result = <button click={async () => {
+     lively.openWorkspace(paper.toBibtex())
+  }}>bibtex</button>
+  result
+</script></livley-script>`
+}</div>
 
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
