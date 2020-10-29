@@ -753,7 +753,7 @@ export default class FileIndex {
     }
   } 
     
-  async addFile(url, name="", type, size, modified, slowdown=false) {
+  async addFile(url, name="", type, size, modified, slowdown=false, indexVersions=false) {
     var start = performance.now()
     var addedContent = false
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -787,11 +787,13 @@ export default class FileIndex {
         // only load versions for our small text files... 
         console.log("[fileindex] load versions for " + url)
 
-        var versionsJSON = (await this.loadVersions(url))
-        if (versionsJSON) {
-          file.versions = versionsJSON.map(ea => ea && ea.version).filter(ea => ea)  
-        } else {
-          console.warn("[lively-index] could not versions for " +url)
+        if (indexVersions) {
+          var versionsJSON = (await this.loadVersions(url))
+          if (versionsJSON) {
+            file.versions = versionsJSON.map(ea => ea && ea.version).filter(ea => ea)  
+          } else {
+            console.warn("[lively-index] could not versions for " +url)
+          }          
         }
         addedContent = true
       }
@@ -858,7 +860,7 @@ export default class FileIndex {
     }
   }
   
-  async updateDirectory(baseURL, showProgress, updateDeleted) {
+  async updateDirectory(baseURL, showProgress, updateDeleted, indexVersion=false) {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
@@ -877,7 +879,7 @@ export default class FileIndex {
       return
     }
     
-    let files = json.contents
+    let files = json.contents || []
     files = files.filter(ea => !ea.name.match(/(\.svn)|(\.git)/))
     
     if (showProgress) {
@@ -900,7 +902,7 @@ export default class FileIndex {
           let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
           let name = eaURL.replace(/.*\//,"")
           if (lastModified.get(eaURL) !== ea.modified) {
-            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified, true)
+            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified, true, indexVersion)
           }
           visited.add(eaURL)
       }
@@ -916,7 +918,7 @@ export default class FileIndex {
   }
 
   async addDirectory(baseURL) {
-    this.updateDirectory(baseURL, true) // much faster and better
+    return this.updateDirectory(baseURL, true) // much faster and better
   }
   showAsTable() {
     var result= []

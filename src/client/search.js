@@ -1,11 +1,14 @@
-/*
- * Repository-wide Search and Replace 
- *
- * Examples:
- *  Search.search("lively-ball")
- *  Search.searchAndRename("lively-ball","lively-baaaaall")
- * 
- */
+/*MD # Repository-wide Search
+
+```
+Examples:
+   Search.search("lively-ball")
+   Search.searchAndRename("lively-ball","lively-baaaaall")
+``` 
+MD*/
+
+import _ from 'src/external/lodash/lodash.js' 
+import FileIndex from "src/client/fileindex.js"
 
 export default class Search {
   

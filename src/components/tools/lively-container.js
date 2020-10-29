@@ -663,9 +663,8 @@ export default class Container extends Morph {
   
   contentIsEditable() {
     var url = this.getURL()
-    return url && url.pathname && url.pathname.match(/\.html$/) || this.getURL().pathname.match(/\.md$/)
+    return url && url.pathname && (url.pathname.match(/\.html$/) || url.pathname.match(/\.md$/))
   }
-  
   /*MD ## Modules MD*/
 
   reloadModule(url) {
@@ -2400,6 +2399,8 @@ export default class Container extends Morph {
   onMarkdownEditorCursorActivity(cm, markdown) {
     var line = cm.getCursor().line + 1
     var root = markdown.get("#content")
+    var highlights = markdown.get("#highlights")
+    
     var elements = root.querySelectorAll(`[data-source-line]`).filter(ea => {
       var range = this.getMarkdownRange(ea)
       return (range[0] == line) // && (line < range[1])
@@ -2417,6 +2418,9 @@ export default class Container extends Morph {
       this.lastEditCursorHighlight = lively.showElement(element)
       this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
       this.lastEditCursorHighlight.innerHTML = ""
+      highlights.appendChild(this.lastEditCursorHighlight)
+      this.lastEditCursorHighlight
+      lively.setGlobalPosition(this.lastEditCursorHighlight, lively.getGlobalPosition(element))
     }
   }
   
@@ -2515,7 +2519,7 @@ export default class Container extends Morph {
   
   async showMarkdownAnnotations(markdown) {
     var url = this.getURL()
-    var annotationURL = url + ".l4a"
+    var annotationURL = url.replace(/([?#].*$)/,"") + ".l4a"
     if (await lively.files.exists(annotationURL)) {
       var annotatedText = await AnnotatedText.fromURL(url, annotationURL)
       var root = markdown.get("#content")

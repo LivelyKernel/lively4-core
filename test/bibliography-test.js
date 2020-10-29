@@ -1,5 +1,6 @@
 import {expect} from 'src/external/chai.js';
 import Bibliography from "src/client/bibliography.js"
+import Parser from 'src/external/bibtexParse.js';
 
 describe('Bibliography', () => {
   
@@ -52,9 +53,48 @@ describe('Bibliography', () => {
         }
       })).to.equal("Joand1972NOS")
     });
-    
-  
   })
   
-  
+  describe('updateBibtexEntryInSource', () => {
+    var source = `
+@article{Schmidt1981FPB,
+          title={First paper in bibliography},
+          author={Hans Schmidt},
+          year={1981},
+        }
+
+@article{Mustermann2020,
+          title={Old title for nothing},
+          author={Hans Mustermann},
+          year={2020},
+        }
+
+@article{Zoro1992LPB,
+          title={Last paper in bibliography},
+          author={Alfons Zoro},
+          year={1992},
+        }
+`
+     var newentry =  {
+          "citationKey": "Mustermann2020",
+          "entryType": "article",
+          "entryTags": {
+            "title": "New title for nothing",
+            "author": "Hans Mustermann",
+            "year": "2020"
+          }
+        }
+    
+    
+    it('replaces entries field', () => {
+      var newsource = Bibliography.patchBibtexEntryInSource(source, "Mustermann2020", newentry)
+      // old stuff is still there
+      expect(newsource).to.match(/Schmidt1981FPB/)
+      expect(newsource).to.match(/Zoro1992LPB/)
+      
+      
+      expect(newsource).to.match(/New title for nothing/)
+      expect(newsource).to.not.match(/old title for nothing/)
+    })
+  })
 });
