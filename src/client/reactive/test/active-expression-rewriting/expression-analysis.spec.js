@@ -10,7 +10,7 @@ describe('expression analysis mode-related stuff', () => {
   it("set local while in expression analysis", () => {
     let x = 3;
     const decrease = y => {
-      // y = y - 1;
+      y = y - 1;
       return y;
     }
 
