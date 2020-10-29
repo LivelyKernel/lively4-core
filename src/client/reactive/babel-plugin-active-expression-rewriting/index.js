@@ -544,7 +544,7 @@ export default function(babel) {
                 !t.isClassMethod(path.parent) &&
                 !t.isImportSpecifier(path.parent) &&
                 !t.isObjectMethod(path.parent) &&
-                !t.isVariableDeclarator(path.parent) &&
+                !(t.isVariableDeclarator(path.parent) && path.parentKey === 'id') &&
                 !t.isFunctionDeclaration(path.parent) &&
                 !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') &&
                 !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') &&

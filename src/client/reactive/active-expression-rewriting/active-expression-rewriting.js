@@ -38,7 +38,12 @@ class ExpressionAnalysis {
     using([analysisModeManager], () => {
       // Do the function execution in ExpressionAnalysisMode
       aexprStack.withElement(aexpr, () => {
-        const { value, isError } = aexpr.evaluateToCurrentValue();
+        try {
+          DependencyGatherer.startDependencyGathering(aexpr);
+          const { value, isError } = aexpr.evaluateToCurrentValue();
+        } finally {
+          DependencyGatherer.finishDependencyGathering(aexpr);
+        }
       });
     });
   }
@@ -626,19 +631,38 @@ class DependencyManager {
    */
   static associateMember(obj, prop) {
     const dependency = Dependency.getOrCreateFor(obj, prop, 'member');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    DependencyGatherer.associate(this.currentAExpr, dependency);
   }
 
   static associateGlobal(globalName) {
     const dependency = Dependency.getOrCreateFor(globalRef, globalName, 'member');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    DependencyGatherer.associate(this.currentAExpr, dependency);
   }
 
   static associateLocal(scope, varName) {
     const dependency = Dependency.getOrCreateFor(scope, varName, 'local');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    DependencyGatherer.associate(this.currentAExpr, dependency);
   }
 
+}
+
+import MultiMap from './multi-map.js';
+const aexprToDependenciesGATHERED = new MultiMap();
+class DependencyGatherer {
+  static associate(aexpr, dependency) {
+    aexprToDependenciesGATHERED.add(aexpr, dependency);
+  }
+  static startDependencyGathering(aexpr) {
+    if (aexprToDependenciesGATHERED.get(aexpr).size > 0) {
+      throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
+    }
+  }
+  static finishDependencyGathering(aexpr) {
+    aexprToDependenciesGATHERED.get(aexpr).forEach(dependency => {
+      DependenciesToAExprs.associate(dependency, aexpr);
+    });
+    aexprToDependenciesGATHERED.removeAllFor(aexpr);
+  }
 }
 
 class TracingHandler {
