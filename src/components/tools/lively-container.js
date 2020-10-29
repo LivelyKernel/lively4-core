@@ -663,9 +663,8 @@ export default class Container extends Morph {
   
   contentIsEditable() {
     var url = this.getURL()
-    return url && url.pathname && url.pathname.match(/\.html$/) || this.getURL().pathname.match(/\.md$/)
+    return url && url.pathname && (url.pathname.match(/\.html$/) || url.pathname.match(/\.md$/))
   }
-  
   /*MD ## Modules MD*/
 
   reloadModule(url) {

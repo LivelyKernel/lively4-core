@@ -213,24 +213,26 @@ export default class Lively {
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
 
-    
     // and update them
-    await Promise.all(dependedModules.map(dependentModule => this.unloadModule(dependentModule)));
+    for(let ea of dependedModules) {
+      try {
+        await this.unloadModule(ea)
+      } catch(e) {
+        lively.notify("[lively] Ignore Error unloadModule dependend module", ea, e)
+      }
+    }
+    
 
-    // console.log("[reloadModule] unload dependend modules ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
-
-    await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
-    // for(let ea of dependedModules) {
-    //   // console.log("reload " + path + " triggers reload of " + ea)
-    //   //System.registry.delete(ea);
-    // }
-    // // now the system may build up a cache again
-    // for(let ea of dependedModules) {
-    //   // console.log("import " + ea)
-    //   // #TODO, #BUG: does not seem to work as intended
-    //   // however, import statement triggers the execution
-    // }
+    // await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
+    for(let ea of dependedModules) {
+      try {
+        await System.import(ea)
+      } catch(e) {
+        lively.error("Error reloading dependend module", ea)
+      }
+    }
+    
     // now check for dependent web components
     for(let ea of dependedModules) {
       // System.import(ea);
