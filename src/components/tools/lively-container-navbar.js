@@ -7,11 +7,10 @@ import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js"; 
-import FileCache from "src/client/fileindex.js"
 import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
-
+import Search from "src/client/search.js"
 /*MD # Navbar
 
 ![](lively-container-navbar.png){width=300px}
@@ -693,9 +692,17 @@ export default class LivelyContainerNavbar extends Morph {
       ])
     }
     if (isDir) {
-      menuElements.push(...[
-        [`add search root`, () => this.addSearchRoot(otherUrl)],
-      ])
+      
+      if(Search.isSearchRoot(otherUrl)) {
+        menuElements.push(...[
+          [`update search root`, () => Search.addSearchRoot(otherUrl)],
+          [`remove search root`, () => Search.removeSearchRoot(otherUrl)],
+        ])        
+      } else {
+        menuElements.push(...[
+          [`add search root`, () => Search.addSearchRoot(otherUrl)],
+        ])
+      }
     }
 
     if (lively.files.isPicture(otherUrl)) {
@@ -732,19 +739,7 @@ export default class LivelyContainerNavbar extends Morph {
     await fetch(newURL, {method: 'PUT', body: contents});
     this.followPath(newURL);
   }
-  
-  
-  /*
-   * #private add url to local file index rember to search there  
-   */
-  addSearchRoot(url) {
-    var roots = lively.preferences.get("ExtraSearchRoots")
-    roots = _.uniq(roots.concat([url]))
-    FileCache.current().addDirectory(url)     
-    lively.preferences.set("ExtraSearchRoots", roots)
-    lively.notify("Current Search Roots:", roots)
-  }
-  
+    
   /*MD 
   # Abstract Public Interface 
   
