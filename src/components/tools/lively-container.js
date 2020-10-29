@@ -2399,6 +2399,8 @@ export default class Container extends Morph {
   onMarkdownEditorCursorActivity(cm, markdown) {
     var line = cm.getCursor().line + 1
     var root = markdown.get("#content")
+    var highlights = markdown.get("#highlights")
+    
     var elements = root.querySelectorAll(`[data-source-line]`).filter(ea => {
       var range = this.getMarkdownRange(ea)
       return (range[0] == line) // && (line < range[1])
@@ -2416,6 +2418,9 @@ export default class Container extends Morph {
       this.lastEditCursorHighlight = lively.showElement(element)
       this.lastEditCursorHighlight.style.borderColor = "rgba(0,0,200,0.5)"
       this.lastEditCursorHighlight.innerHTML = ""
+      highlights.appendChild(this.lastEditCursorHighlight)
+      this.lastEditCursorHighlight
+      lively.setGlobalPosition(this.lastEditCursorHighlight, lively.getGlobalPosition(element))
     }
   }
   
