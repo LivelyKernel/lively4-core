@@ -2514,7 +2514,7 @@ export default class Container extends Morph {
   
   async showMarkdownAnnotations(markdown) {
     var url = this.getURL()
-    var annotationURL = url + ".l4a"
+    var annotationURL = url.replace(/([?#].*$)/,"") + ".l4a"
     if (await lively.files.exists(annotationURL)) {
       var annotatedText = await AnnotatedText.fromURL(url, annotationURL)
       var root = markdown.get("#content")

@@ -884,7 +884,7 @@ export default class Editor extends Morph {
   /*MD ## Annotations MD*/
   
   getAnnotationsURL() {
-    return this.getURLString() + ".l4a"
+    return this.getURLString().replace(/[#?].*$/,"")+ ".l4a"
   } 
   
   async saveAnnotations(textVersion=this.lastVersion) {

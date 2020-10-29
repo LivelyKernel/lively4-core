@@ -10,7 +10,7 @@ import moment from "src/external/moment.js";
 import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
-import Search from "src/client/search.js"
+import SearchRoots from "src/client/search-roots.js"
 /*MD # Navbar
 
 ![](lively-container-navbar.png){width=300px}
@@ -693,14 +693,14 @@ export default class LivelyContainerNavbar extends Morph {
     }
     if (isDir) {
       
-      if(Search.isSearchRoot(otherUrl)) {
+      if(SearchRoots.isSearchRoot(otherUrl)) {
         menuElements.push(...[
-          [`update search root`, () => Search.addSearchRoot(otherUrl)],
-          [`remove search root`, () => Search.removeSearchRoot(otherUrl)],
+          [`update search root`, () => SearchRoots.addSearchRoot(otherUrl)],
+          [`remove search root`, () => SearchRoots.removeSearchRoot(otherUrl)],
         ])        
       } else {
         menuElements.push(...[
-          [`add search root`, () => Search.addSearchRoot(otherUrl)],
+          [`add search root`, () => SearchRoots.addSearchRoot(otherUrl)],
         ])
       }
     }

@@ -1,11 +1,11 @@
-/*
- * Repository-wide Search and Replace 
- *
- * Examples:
- *  Search.search("lively-ball")
- *  Search.searchAndRename("lively-ball","lively-baaaaall")
- * 
- */
+/*MD # Repository-wide Search
+
+```
+Examples:
+   Search.search("lively-ball")
+   Search.searchAndRename("lively-ball","lively-baaaaall")
+``` 
+MD*/
 
 import _ from 'src/external/lodash/lodash.js' 
 import FileIndex from "src/client/fileindex.js"
@@ -56,37 +56,5 @@ export default class Search {
       }  
     }
     return files
-  }
-  
-  
-  /*MD ## Search Root Management MD*/
-  
-  static getSearchRoots() {
-    return lively.preferences.get("ExtraSearchRoots")
-  }
-
-  static setSearchRoots(roots) {
-    return lively.preferences.set("ExtraSearchRoots", roots)
-  }
-  
-  /*
-   * add url to local file index rember to search there  
-   */
-  static addSearchRoot(url) {
-    var roots = this.getSearchRoots()
-    roots = _.uniq(roots.concat([url]))
-    FileIndex.current().addDirectory(url)     
-    this.setSearchRoots(roots)
-  }
-
-  static removeSearchRoot(url) {
-    var roots = this.getSearchRoots();
-    roots = roots.filter(ea => ea != url)
-    this.setSearchRoots(roots)
-    FileIndex.current().removeDirectory(url)     
-  }
-
-  static isSearchRoot(url) {
-    return this.getSearchRoots().find(ea => ea == url)
   }
 }
