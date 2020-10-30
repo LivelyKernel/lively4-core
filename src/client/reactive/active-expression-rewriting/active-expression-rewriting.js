@@ -12,7 +12,11 @@ import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
 import { using, isFunction } from 'utils';
+
 /*MD # Dependency Analysis MD*/
+
+const analysisStack = new Stack();
+
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
 
@@ -26,18 +30,16 @@ const analysisModeManager = {
     window.__expressionAnalysisMode__ = expressionAnalysisMode;
   }
 }
+
 class ExpressionAnalysis {
   
   static recalculateDependencies(aexpr) {
-    // #TODO: compute diff of Dependencies
-    DependencyManager.disconnectAllFor(aexpr);
-    this.check(aexpr);
-  }
-  
-  static check(aexpr) {
     if (analysisStack.findUp(({ currentAExpr }) => currentAExpr === aexpr)) {
       throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
     }
+
+    // #TODO: compute diff of Dependencies
+    DependencyManager.disconnectAllFor(aexpr);
 
     using([analysisModeManager], () => {
       // Do the function execution in ExpressionAnalysisMode
@@ -45,13 +47,26 @@ class ExpressionAnalysis {
         try {
           const { value, isError } = aexpr.evaluateToCurrentValue();
         } finally {
-          DependencyGatherer.finishDependencyGathering();
+          this.applyDependencies();
         }
       });
     });
   }
 
+  static associateDependency(dependency) {
+    const { dependencies } = analysisStack.top();
+    dependencies.add(dependency);
+  }
+
+  static applyDependencies() {
+    const { currentAExpr, dependencies } = analysisStack.top();
+    dependencies.forEach(dependency => {
+      DependenciesToAExprs.associate(dependency, currentAExpr);
+    });
+  }
+
 }
+
 
 class Dependency {
   static getOrCreateFor(context, identifier, type) {
@@ -530,9 +545,6 @@ class FrameBasedHook extends Hook {
   }
 }
 
-
-const analysisStack = new Stack();
-
 export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
     super(func, ...args);
@@ -630,40 +642,17 @@ class DependencyManager {
    */
   static associateMember(obj, prop) {
     const dependency = Dependency.getOrCreateFor(obj, prop, 'member');
-    DependencyGatherer.associateDependency(dependency);
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
   static associateGlobal(globalName) {
     const dependency = Dependency.getOrCreateFor(globalRef, globalName, 'member');
-    DependencyGatherer.associateDependency(dependency);
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
   static associateLocal(scope, varName) {
     const dependency = Dependency.getOrCreateFor(scope, varName, 'local');
-    DependencyGatherer.associateDependency(dependency);
-  }
-
-}
-
-class DependencyGatherer {
-
-  static get currentAExpr() {
-    return analysisStack.top().currentAExpr;
-  }
-  
-  static get currentDependencies() {
-    return analysisStack.top().dependencies;
-  }
-  
-  static associateDependency(dependency) {
-    this.currentDependencies.add(dependency);
-  }
-
-  static finishDependencyGathering() {
-    const aexpr = this.currentAExpr;
-    this.currentDependencies.forEach(dependency => {
-      DependenciesToAExprs.associate(dependency, aexpr);
-    });
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
 }
