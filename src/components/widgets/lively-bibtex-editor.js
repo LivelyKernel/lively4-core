@@ -96,7 +96,9 @@ export default class LivelyBibtexEditor extends Morph {
     var flatEntries = entries.map(ea => {
       var row = {citationKey: ea.citationKey, entryType: ea.entryType} 
       for(var key in ea.entryTags) {
-        row[key] = ea.entryTags[key]
+        if(key && ea.entryTags[key]) {
+          row[key] = ea.entryTags[key]
+        }
       }
       return row 
     })
@@ -107,7 +109,7 @@ export default class LivelyBibtexEditor extends Morph {
   flatEntriesToBibtex(flatEntries) {
     var entries = flatEntries.map(ea => {
       var row = {citationKey: ea.citationKey, entryType: ea.entryType, entryTags: []} 
-      for(var key in ea) {
+      for(var key of Object.keys(ea).sort()) {
         if (key !== "citationKey" && key !== "entryType" && key !== "entryTags"  && key && ea[key]) {
           row.entryTags[key] = ea[key]
         }
@@ -212,7 +214,7 @@ export default class LivelyBibtexEditor extends Morph {
       this.get('#details').appendChild(detailsTable)
       var a = []
       for(var key in entry) {
-        if (key) {
+        if (key && entry[key]) {
           a.push([key, entry[key]])
         }
       }
