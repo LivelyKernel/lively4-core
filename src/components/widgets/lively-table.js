@@ -11,10 +11,9 @@ export default class LivelyTable extends Morph {
 
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt));
-    lively.html.registerKeys(this, "Table"
     //  this.setAttribute("tabindex", 0)
-
-    );this.addEventListener("mousedown", evt => this.onMouseDown(evt));
+    lively.html.registerKeys(this, "Table");
+    this.addEventListener("mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("copy", evt => this.onCopy(evt));
     this.addEventListener("cut", evt => this.onCut(evt));
     this.addEventListener("paste", evt => this.onPaste(evt));
@@ -177,12 +176,21 @@ export default class LivelyTable extends Morph {
       rowCells
     } = this.initailizeCells(element);
 
+    
+    if (this.currentRow) {
+      this.currentRow.classList.remove('current')
+    }
     this.currentRow = element.parentElement;
+    this.currentRow.classList.add('current')
+    
     this.currentRowIndex = rows.indexOf(row);
     this.currentColumnIndex = rowCells.indexOf(element);
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex]);
 
     this.selectCellPrivate(multipleSelection, rows, row, rowCells, element);
+    
+    this.dispatchEvent(new CustomEvent("cell-selected"))
+    
   }
 
   initailizeCells(element) {
@@ -322,8 +330,11 @@ export default class LivelyTable extends Morph {
 
     if (wasEditing) {
       cell.classList.remove("editing");
+      this.dispatchEvent(new CustomEvent("finish-editing-cell"))
     } else {
       cell.classList.add("editing");
+      this.dispatchEvent(new CustomEvent("start-editing-cell"))
+
     }
     evt.stopPropagation();
     evt.preventDefault();
@@ -365,7 +376,6 @@ export default class LivelyTable extends Morph {
   }
 
   onMouseDown(evt) {
-
     var cell = evt.composedPath()[0];
     if (cell === this.currentCell) return;
 
@@ -425,7 +435,8 @@ export default class LivelyTable extends Morph {
 
   onClick(evt) {
     if (this.currentCell === evt.srcElement) {
-      this.currentCell.contentEditable = true; // edit only on second click into selection
+      // edit only on second click into selection #TODO does not work any more... edit seems to be always on
+      this.currentCell.contentEditable = true; 
     } else {
       this.selectCell(evt.srcElement);
     }
