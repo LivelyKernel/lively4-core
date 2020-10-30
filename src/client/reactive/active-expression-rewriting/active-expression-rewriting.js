@@ -22,7 +22,7 @@ const analysisModeManager = {
     window.__expressionAnalysisMode__ = expressionAnalysisMode;
   },
   __exit__() {
-    expressionAnalysisMode = !!aexprStack.top();
+    expressionAnalysisMode = !!analysisStack.top();
     window.__expressionAnalysisMode__ = expressionAnalysisMode;
   }
 }
@@ -35,14 +35,17 @@ class ExpressionAnalysis {
   }
   
   static check(aexpr) {
+    if (analysisStack.findUp(({ currentAExpr }) => currentAExpr === aexpr)) {
+      throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
+    }
+
     using([analysisModeManager], () => {
       // Do the function execution in ExpressionAnalysisMode
-      aexprStack.withElement(aexpr, () => {
+      analysisStack.withElement({ currentAExpr: aexpr, dependencies: new Set() }, () => {
         try {
-          DependencyGatherer.startDependencyGathering(aexpr);
           const { value, isError } = aexpr.evaluateToCurrentValue();
         } finally {
-          DependencyGatherer.finishDependencyGathering(aexpr);
+          DependencyGatherer.finishDependencyGathering();
         }
       });
     });
@@ -528,7 +531,7 @@ class FrameBasedHook extends Hook {
 }
 
 
-const aexprStack = new Stack();
+const analysisStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
@@ -607,10 +610,6 @@ const globalRef = typeof window !== "undefined" ? window : // browser tab
     global); // node.js
 
 class DependencyManager {
-  static get currentAExpr() {
-    return aexprStack.top();
-  }
-  
   // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
@@ -631,38 +630,42 @@ class DependencyManager {
    */
   static associateMember(obj, prop) {
     const dependency = Dependency.getOrCreateFor(obj, prop, 'member');
-    DependencyGatherer.associate(this.currentAExpr, dependency);
+    DependencyGatherer.associateDependency(dependency);
   }
 
   static associateGlobal(globalName) {
     const dependency = Dependency.getOrCreateFor(globalRef, globalName, 'member');
-    DependencyGatherer.associate(this.currentAExpr, dependency);
+    DependencyGatherer.associateDependency(dependency);
   }
 
   static associateLocal(scope, varName) {
     const dependency = Dependency.getOrCreateFor(scope, varName, 'local');
-    DependencyGatherer.associate(this.currentAExpr, dependency);
+    DependencyGatherer.associateDependency(dependency);
   }
 
 }
 
-import MultiMap from './multi-map.js';
-const aexprToDependenciesGATHERED = new MultiMap();
 class DependencyGatherer {
-  static associate(aexpr, dependency) {
-    aexprToDependenciesGATHERED.add(aexpr, dependency);
+
+  static get currentAExpr() {
+    return analysisStack.top().currentAExpr;
   }
-  static startDependencyGathering(aexpr) {
-    if (aexprToDependenciesGATHERED.get(aexpr).size > 0) {
-      throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
-    }
+  
+  static get currentDependencies() {
+    return analysisStack.top().dependencies;
   }
-  static finishDependencyGathering(aexpr) {
-    aexprToDependenciesGATHERED.get(aexpr).forEach(dependency => {
+  
+  static associateDependency(dependency) {
+    this.currentDependencies.add(dependency);
+  }
+
+  static finishDependencyGathering() {
+    const aexpr = this.currentAExpr;
+    this.currentDependencies.forEach(dependency => {
       DependenciesToAExprs.associate(dependency, aexpr);
     });
-    aexprToDependenciesGATHERED.removeAllFor(aexpr);
   }
+
 }
 
 class TracingHandler {
