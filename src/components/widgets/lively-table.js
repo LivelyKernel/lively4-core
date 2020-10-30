@@ -11,7 +11,7 @@ export default class LivelyTable extends Morph {
 
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt));
-    //  this.setAttribute("tabindex", 0)
+    this.setAttribute("tabindex", 0)
     lively.html.registerKeys(this, "Table");
     this.addEventListener("mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("copy", evt => this.onCopy(evt));
@@ -73,7 +73,7 @@ export default class LivelyTable extends Morph {
   setFocusAndTextSelection(element) {
     if (!element) return;
     this.clearAllSelection();
-    element.contentEditable = true;
+    // element.contentEditable = true;
     element.focus();
     var sel = window.getSelection
     // sel.selectAllChildren(element)
@@ -320,14 +320,22 @@ export default class LivelyTable extends Morph {
   onEnterDown(evt) {
 
     if (!this.currentCell) return;
-    var cell = evt.srcElement;
-    if (this.currentCell != cell) return;
+    var cell = this.currentCell
     var wasEditing = this.isInEditing(cell);
 
-    this.clearSelection(true);
-    this.setFocusAndTextSelection(cell);
-    this.setTextSelectionOfCellContents(cell);
+    if (wasEditing) {
+      this.currentCell.contentEditable = false
+      this.focus()
 
+      // this.clearSelection(true);
+      // this.setFocusAndTextSelection(cell);
+      // this.setTextSelectionOfCellContents(cell);
+    } else {
+      this.currentCell.contentEditable = true
+      this.currentCell.focus()
+    }
+    
+    
     if (wasEditing) {
       cell.classList.remove("editing");
       this.dispatchEvent(new CustomEvent("finish-editing-cell"))
@@ -377,7 +385,24 @@ export default class LivelyTable extends Morph {
 
   onMouseDown(evt) {
     var cell = evt.composedPath()[0];
-    if (cell === this.currentCell) return;
+    if (cell === this.currentCell) {
+      if (this.isInEditing(this.currentCell)) {
+        // cell.classList.remove("editing");
+        this.currentCell.contentEditable = false;
+        this.focus()
+      } else {
+        // edit only on second click into selection #TODO does not work any more... edit seems to be always on
+        this.currentCell.contentEditable = true;
+        this.currentCell.classList.add("editing");
+        this.currentCell.focus()        
+      }
+    } else {
+      this.focus()
+      this.selectCell(cell);
+      this.setFocusAndTextSelection(this.currentCell);
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
 
     if (cell !== this.currentCell) {
       this.clearSelection(true);
@@ -385,14 +410,11 @@ export default class LivelyTable extends Morph {
     }
 
     lively.addEventListener("LivelyTable", document.body, "mousemove", evt => this.onMouseMoveSelection(evt));
-    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt
-
-    // evt.stopPropagation()
-    ));evt.preventDefault
-
-    // lively.notify("mouse down")
-
-    ();
+    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt));
+    
+    
+    evt.preventDefault()
+    evt.stopPropagation()
   }
 
   onMouseMoveSelection(evt) {
@@ -434,17 +456,7 @@ export default class LivelyTable extends Morph {
   }
 
   onClick(evt) {
-    if (this.currentCell === evt.srcElement) {
-      // edit only on second click into selection #TODO does not work any more... edit seems to be always on
-      this.currentCell.contentEditable = true; 
-    } else {
-      this.selectCell(evt.srcElement);
-    }
-
-    this.setFocusAndTextSelection(this.currentCell);
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    
   }
 
   insertColumnAt(index) {
@@ -463,10 +475,10 @@ export default class LivelyTable extends Morph {
     });
   }
 
-  isInFocus(focusedElement = document.activeElement) {
+  isInFocus(focusedElement = lively.activeElement()) {
     if (focusedElement === this) return true;
     if (!focusedElement) return false;
-    return this.isInFocus(focusedElement.parentElement);
+    return this.isInFocus(focusedElement.parentElement || focusedElement.parentNode );
   }
 
   insertRowAt(index) {
