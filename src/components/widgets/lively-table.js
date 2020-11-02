@@ -26,6 +26,8 @@ export default class LivelyTable extends Morph {
 
     this.addEventListener("extent-changed", evt => this.onExtentChanged(evt));
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
+    this.activeExpression = {};
   }
 
   isCell(cell) {
@@ -741,21 +743,32 @@ export default class LivelyTable extends Morph {
   
   
   registerOnAllCells() {
-    for(const row of this.cells()) {
-      for(const cell of row) {
-        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive));
+    const cells = this.cells();
+    for(let r = 0; r < cells.length; r++) {
+      const row = cells[r];
+      for(let c = 0; c < row.length; c++) {
+        const cell = row[c];
+        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive, r, c));
       } 
     }
   }
   
-  cellChangedActive(cell, isActive) {
+  cellChangedActive(cell, isActive, row, column) {
     const text = cell.textContent;
     if(isActive) {
+      debugger;
       this.currentCellValue = cell.textContent;
+      const expression = this.activeExpression[row + "_" + column];
+      if(expression) {
+        expression.expression.dispose();
+        cell.textContent = expression.text;
+      }
+      delete this.activeExpression[row + "_" + column];
     } else {
       if(text[0] === '=') {
+        const expression = aexpr(() => this.evaluateCellText(text)).onChange((newValue) => cell.textContent = newValue);
         cell.textContent = this.evaluateCellText(text);
-        aexpr(() => this.evaluateCellText(text)).onChange((newValue) => cell.textContent = newValue);
+        this.activeExpression[row + "_" + column] = {expression, text};
       }
     }
   }
