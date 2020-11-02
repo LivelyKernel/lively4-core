@@ -734,11 +734,17 @@ export default class LivelyTable extends Morph {
   
   
   /*MD ## Excel Functionality MD*/
-  getCellValue(cell) {
+  getCellValue(column, row) {
+    const cell = this.cellFromCode(column, row);
     if(this.currentCell === cell) {
       return this.currentCellValue;
     }
-    return cell.textContent;
+    debugger;
+    const expression = this.activeExpression[(row - 1) + "_" + this.columnIndex(column)];
+    if(expression) {
+      return expression.expression.getCurrentValue();
+    }
+    return isNaN(+cell.textContent) ? cell.textContent : +cell.textContent;
   }
   
   
@@ -748,20 +754,22 @@ export default class LivelyTable extends Morph {
       const row = cells[r];
       for(let c = 0; c < row.length; c++) {
         const cell = row[c];
-        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive, r, c));
+        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive, c, r));
       } 
     }
   }
   
-  cellChangedActive(cell, isActive, row, column) {
+  cellChangedActive(cell, isActive, column, row) {
     const text = cell.textContent;
     if(isActive) {
       debugger;
-      this.currentCellValue = cell.textContent;
       const expression = this.activeExpression[row + "_" + column];
       if(expression) {
+        this.currentCellValue = expression.expression.getCurrentValue();
         expression.expression.dispose();
         cell.textContent = expression.text;
+      } else {        
+        this.currentCellValue = cell.textContent;
       }
       delete this.activeExpression[row + "_" + column];
     } else {
@@ -775,7 +783,12 @@ export default class LivelyTable extends Morph {
   
   evaluateCellText(text) {
     let code = text.substring(1, text.length);
-    return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => this.getCellValue(this.cellFromCode(column, row))));
+    let params = {};
+    return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => {
+      debugger;
+      params[ref] = this.getCellValue(column, row);
+      return "params[\"" + ref + "\"]";
+    }));
   }
   
   
@@ -785,6 +798,10 @@ export default class LivelyTable extends Morph {
     @Return the corresponding cell
    */
   cellFromCode(column, rowIndex) {
+    return this.cellAt(this.columnIndex(column), rowIndex - 1)
+  }
+  
+  columnIndex(column) {
     var a = column;
     let columnIndex = 0;
     while(a.length > 0) {
@@ -792,6 +809,6 @@ export default class LivelyTable extends Morph {
       columnIndex += a.charCodeAt(a.length - 1) - 65;
       var a = a.substring(0, a.length - 1);
     }
-    return this.cellAt(columnIndex, rowIndex - 1)
+    return columnIndex;
   }
 }
