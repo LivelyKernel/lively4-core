@@ -64,7 +64,7 @@ export function /*example:*//*example:*//*example:*/generateLocationMap/*{"id":"
  * Checks whether a path can be probed
  */
 export function /*example:*//*example:*/canBeProbe/*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
-  if(!path) {
+  if(!path || !path.parentPath) {
     return false;
   }
   
@@ -87,7 +87,7 @@ export function /*example:*//*example:*/canBeProbe/*{"id":"ced4_825a_793a","name
  * Checks whether a path can be a slider
  */
 export function /*example:*/canBeSlider/*{"id":"4426_b3f0_d927","name":{"mode":"input","value":"Function Name"},"color":"hsl(130, 30%, 70%)","values":{"path":{"mode":"select","value":"d695_3c6c_89a9"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
-  if(!path) {
+  if(!path || !path.parentPath) {
     return false;
   }
   
@@ -118,7 +118,7 @@ export const canBeExample = (path) => {
  * Checks whether a path can be an instance
  */
 export const canBeInstance  = (path) => {
-  if(!path) {
+  if(!path || !path.parentPath) {
     return false;
   }
   
@@ -131,7 +131,7 @@ export const canBeInstance  = (path) => {
  * Checks whether a path can be replaced
  */
 export const canBeReplacement = (path) => {
-  if(!path) {
+  if(!path || !path.parentPath) {
     return false;
   }
   
