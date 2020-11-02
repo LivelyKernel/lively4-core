@@ -110,28 +110,30 @@ Bibliography.cleanTitle("{{This is my Title}}")
     if (!entry || !entry.entryTags) return undefined
     var firstAuthor = entry.entryTags.author.split(/ and /g)[0]
     if (firstAuthor.match(",")) {
-      firstAuthor = firstAuthor.replace(/,.*/,"")
+      var lastName = firstAuthor.replace(/,.*/,"")
     } else {
-      firstAuthor = firstAuthor.replace(/ *$/,"").split(" ").last
+      lastName = firstAuthor.replace(/ *$/,"").split(" ").last
     }
-    firstAuthor = firstAuthor.replace(/ /g,"")
-    firstAuthor = firstAuthor.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
+    var cleanLastName = lastName.replace(/[ \-']/g,"")
+    var normalizedLastName = cleanLastName.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
 
     var year  =  entry.entryTags.year
   
-    return firstAuthor + year + this.threeSignificantInitialsFromTitle(entry.entryTags.title)
+    return normalizedLastName + year + this.threeSignificantInitialsFromTitle(entry.entryTags.title)
   }
   
   static threeSignificantInitialsFromTitle(title) {
     return title.split(/[ -]/g)
       .map(ea => ea.toLowerCase())
-      .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for"].includes(ea))
+      .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for", "but"].includes(ea))
+      .filter(ea => ea.length >  2  && !["der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
+      .filter(ea => !ea.match(/^[0-9]/))
+      .filter(ea => !ea.match(/^[\(\)\[\]\/\\]/))
       .slice(0,3)
       .map(ea => ea[0])
       .join("")
       .toUpperCase()
   } 
-  
   
   /*MD
 <style>* {background-color:lightgray}</style>
