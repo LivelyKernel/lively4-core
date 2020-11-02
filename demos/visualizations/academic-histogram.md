@@ -3,7 +3,7 @@ var markdownComp = lively.query(this, "lively-markdown")
 
 import {Panning} from "src/client/html.js"
 import Literature from "src/client/literature.js"
-import {Paper, Author, MicrosoftAcademicEntities} from "src/client/protocols/academic.js"
+import {Paper, Author, MicrosoftAcademicEntities} from "src/client/literature.js"
 import Chart from 'src/external/chart.js';
 import Strings from "src/client/strings.js"
 

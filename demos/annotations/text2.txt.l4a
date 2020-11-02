@@ -1,2 +1,3 @@
-{"type":"Reference","version":"9124d96aa0c8d169c978c085ab8ad172644994c7"}
+{"type":"Reference","version":"63389228c85209fedafba37f7b0279cf12eff7a1","content":"This is another text!\n"}
 {"from":8,"to":15,"name":"color","color":"yellow"}
+{"from":16,"to":20,"name":"color","color":"red"}

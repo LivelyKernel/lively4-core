@@ -20,6 +20,7 @@ import Rasterize from 'src/client/rasterize.js'
 import Favorites from "src/client/favorites.js"
 import { applicationFolder } from 'src/client/vivide/utils.js';
 import { createView } from 'src/client/vivide/scripts/loading.js';
+import SearchRoots from "src/client/search-roots.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -684,8 +685,18 @@ export default class ContextMenu {
           },undefined, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences",
-        lively.preferences.listBooleans()
-          .map(ea => this.preferenceEntry(ea))
+        [["Search Roots", [["update all", () => {
+          SearchRoots.updateAllSearchRoots()
+        }]].concat(
+          SearchRoots.getSearchRoots().map(ea => {
+            return [ea.replace(lively4url.replace(/\/[^/]*$/,""),""), [
+              ["browse", () => lively.openBrowser(ea)],
+              ["update", () => SearchRoots.addSearchRoot(ea)],
+              ["remove", () => SearchRoots.removeSearchRoot(ea)],
+            ]]  
+          }))]].concat(
+          lively.preferences.listBooleans()
+            .map(ea => this.preferenceEntry(ea)))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(800, 500)), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>']

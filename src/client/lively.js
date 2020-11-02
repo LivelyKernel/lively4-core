@@ -213,24 +213,26 @@ export default class Lively {
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
 
-    
     // and update them
-    await Promise.all(dependedModules.map(dependentModule => this.unloadModule(dependentModule)));
+    for(let ea of dependedModules) {
+      try {
+        await this.unloadModule(ea)
+      } catch(e) {
+        lively.notify("[lively] Ignore Error unloadModule dependend module", ea, e)
+      }
+    }
+    
 
-    // console.log("[reloadModule] unload dependend modules ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
-
-    await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
-    // for(let ea of dependedModules) {
-    //   // console.log("reload " + path + " triggers reload of " + ea)
-    //   //System.registry.delete(ea);
-    // }
-    // // now the system may build up a cache again
-    // for(let ea of dependedModules) {
-    //   // console.log("import " + ea)
-    //   // #TODO, #BUG: does not seem to work as intended
-    //   // however, import statement triggers the execution
-    // }
+    // await Promise.all(dependedModules.map(dependentModule => System.import(dependentModule)));
+    for(let ea of dependedModules) {
+      try {
+        await System.import(ea)
+      } catch(e) {
+        lively.error("Error reloading dependend module", ea)
+      }
+    }
+    
     // now check for dependent web components
     for(let ea of dependedModules) {
       // System.import(ea);
@@ -262,7 +264,7 @@ export default class Lively {
           console.log("[templates] update template " + templateURL);
           setTimeout(() => {
             lively.files.loadFile(templateURL).then( sourceCode =>
-              lively.updateTemplate(sourceCode));
+              lively.updateTemplate(sourceCode, templateURL));
           },100)
 
         } catch(e) {
@@ -1056,8 +1058,8 @@ export default class Lively {
    * a) don't touch the instance, just update the class
    *
    */
-  static async updateTemplate(html) {
-    var tagName = await components.reloadComponent(html);
+  static async updateTemplate(html, url) {
+    var tagName = await components.reloadComponent(html, url);
     if (!tagName) return;
 
     let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
@@ -1600,6 +1602,7 @@ export default class Lively {
 
   static async openMarkdown(url, title="Markdown", parameters={}) {
     var comp = await lively.openComponentInWindow("lively-markdown", undefined, pt(1000,800)) 
+    comp.setAttribute("url", url)
     var src = await fetch(url).then(r => r.text())
     comp.parameters = parameters
     comp.setContent(src)

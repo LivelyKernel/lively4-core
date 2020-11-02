@@ -55,13 +55,12 @@ export default class BibliographyScheme extends Scheme {
     
     query = decodeURI(query)    
     var entries = await FileIndex.current().db.bibliography.toArray()
-      
-    entries = await this.searchEntries(entries, query)
+  
+    let filteredEntries = await this.searchEntries(entries, query)
     
-    entries = _.uniqBy(entries, ea => ea.key)
+    // entries = _.uniqBy(entries, ea => ea.key)
     
-    
-    var content = await this.content(entries, query)
+    var content = await this.content(filteredEntries, query)
     
     return this.response(content)
   }

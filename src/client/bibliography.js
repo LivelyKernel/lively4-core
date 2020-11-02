@@ -41,7 +41,7 @@ var key =  Bibliography.generateCitationKey(bib[0])
 MD*/
 
 
-// import Parser from 'src/external/bibtexParse.js'
+import Parser from 'src/external/bibtexParse.js'
 import FileIndex from 'src/client/fileindex.js'
 
 
@@ -228,4 +228,23 @@ MD*/
     return result
   }
   
+  static patchBibtexEntryInSource(source, key, entry) {
+    var entries = Parser.toJSON(source)
+    var replaced = false
+    var replacedEntries = entries.map(ea => {
+      if (ea.citationKey == key) {
+        replaced = true
+        return entry
+      }
+      return ea
+    })
+    if (!replaced) throw new Error("Could not find " + key + " to patch it!")
+    return Parser.toBibtex(replacedEntries, false)
+  }
+
+  static async patchBibtexEntryInURL(url, key, entry) {
+    var source = await lively.files.loadFile(url)
+    var newsource = this.patchBibtexEntryInSource(source, key, entry) 
+    return lively.files.saveFile(url, newsource)
+  }
 }

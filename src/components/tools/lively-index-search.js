@@ -84,7 +84,7 @@ export default class IndexSearch extends Morph {
         column: ea.column,
         selection: ea.selection }
       
-      item.innerHTML = `<td class="filename"><a>${dirAndFilename}</a></td>
+      item.innerHTML = `<td class="filename"><a>${dirAndFilename.slice(0,60)}</a></td>
         <td class="line">${ea.line + 1}:</td>
         <td><span ="pattern">${
     

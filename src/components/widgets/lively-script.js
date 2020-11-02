@@ -79,16 +79,29 @@ export default class LivelyScript extends Morph {
   async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      var container = lively.query(this, "lively-container")
-      if (container) {
-        
-        await waitForDeepProperty(container, "getURL")
-        container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
-        
-        // all scripts in one container share the same module... but a second container will get a different module
-        moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
-      } else {
-        // no container, so we assume lively4 as root
+      // first check if we are part of a markdonw 
+      var markdown = lively.query(this, "lively-markdown")
+      if (markdown) {
+        var url = markdown.getAttribute("url") || markdown.getAttribute("src") 
+        if (url) {
+          moduleName = url.replace(/[^/]*$/,"livelyscript_" + generateUuid())
+        }
+      } 
+      // check if for a container...
+      if (!moduleName) {
+        var container = lively.query(this, "lively-container") 
+        if (container) {
+
+          await waitForDeepProperty(container, "getURL")
+          container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
+
+          // all scripts in one container share the same module... but a second container will get a different module
+          moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
+        } 
+      }
+      
+      // no markdown, no container, so we assume lively4 as root
+      if (!moduleName) {
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
       }
       moduleMap.set(obj, moduleName)
@@ -108,7 +121,7 @@ export default class LivelyScript extends Morph {
     
     var targetModule =  await this.moduleFor(worldContext) // all scripts in one container should share scope? 
     
-    //console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
+    // console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
@@ -123,7 +136,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
+    // console.log("[lively-script] " + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()

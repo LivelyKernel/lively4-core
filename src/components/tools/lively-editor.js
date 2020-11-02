@@ -884,7 +884,7 @@ export default class Editor extends Morph {
   /*MD ## Annotations MD*/
   
   getAnnotationsURL() {
-    return this.getURLString() + ".l4a"
+    return this.getURLString().replace(/[#?].*$/,"")+ ".l4a"
   } 
   
   async saveAnnotations(textVersion=this.lastVersion) {
@@ -892,11 +892,15 @@ export default class Editor extends Morph {
     var text = this.annotatedText
     text.setText(this.getText(), textVersion)
     
-    
+    var headers  = {}
+    if (this.annotatedText.annotations.lastVersion) {
+      headers.lastversion = this.annotatedText.annotations.lastVersion
+    }
+  
     var response = await fetch(this.getAnnotationsURL(), {
       method: 'PUT', 
       body: text.annotations.toJSONL(),
-      headers: {lastversion: this.annotatedText.annotations.lastVersion}
+      headers: headers
     })
     
     var writeResult = await response.text()
@@ -954,6 +958,7 @@ export default class Editor extends Morph {
     var cm = await this.awaitEditor()
     // load annotated text in the version that was  last annotated
     this.annotatedText  = await AnnotatedText.fromURL(this.getURLString(), this.getAnnotationsURL(), version, true)
+    
     // set current text and version, and update annotations accordingly 
     this.annotatedText.setText(text, version)
     this.annotatedText.annotations.renderCodeMirrorMarks(cm)
@@ -969,7 +974,9 @@ export default class Editor extends Morph {
   }
   
   async enableAnnotations() { 
-    await this.loadAnnotations(this.getText(), this.lastVersion) 
+    var version = undefined; // this.lastVersion does not work
+    console.log("[annotations] enable :", this.getText(), version)
+    await this.loadAnnotations(this.getText(), version) 
     lively.removeEventListener("annotations", this)
     lively.addEventListener("annotations", this, "loaded-file", async evt => {
       this.loadAnnotations(evt.detail.text, evt.detail.version) 

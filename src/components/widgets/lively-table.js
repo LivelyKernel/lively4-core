@@ -1,6 +1,9 @@
+"enable aexpr"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js";
+import aexpr from 'active-expression-rewriting';
 
 export default class LivelyTable extends Morph {
 
@@ -11,10 +14,9 @@ export default class LivelyTable extends Morph {
 
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt));
-    lively.html.registerKeys(this, "Table"
-    //  this.setAttribute("tabindex", 0)
-
-    );this.addEventListener("mousedown", evt => this.onMouseDown(evt));
+    this.setAttribute("tabindex", 0)
+    lively.html.registerKeys(this, "Table");
+    this.addEventListener("mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("copy", evt => this.onCopy(evt));
     this.addEventListener("cut", evt => this.onCut(evt));
     this.addEventListener("paste", evt => this.onPaste(evt));
@@ -74,7 +76,7 @@ export default class LivelyTable extends Morph {
   setFocusAndTextSelection(element) {
     if (!element) return;
     this.clearAllSelection();
-    element.contentEditable = true;
+    // element.contentEditable = true;
     element.focus();
     var sel = window.getSelection
     // sel.selectAllChildren(element)
@@ -176,13 +178,21 @@ export default class LivelyTable extends Morph {
       row,
       rowCells
     } = this.initailizeCells(element);
-
-    this.currentRow = element.parentElement;
+    
+    if (this.currentRow) {
+      this.currentRow.classList.remove('current')
+    }
+    this.currentRow = row;
+    this.currentRow.classList.add('current')
+    
     this.currentRowIndex = rows.indexOf(row);
     this.currentColumnIndex = rowCells.indexOf(element);
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex]);
 
     this.selectCellPrivate(multipleSelection, rows, row, rowCells, element);
+    
+    this.dispatchEvent(new CustomEvent("cell-selected"))
+    
   }
 
   initailizeCells(element) {
@@ -232,7 +242,6 @@ export default class LivelyTable extends Morph {
   }
 
   changeSelection(columnDelta, rowDelta, removeSelection) {
-    var cells = this.cells();
     let columnA = this.startColumnIndex,
         columnB = this.currentColumnIndex + columnDelta,
         rowA = this.startRowIndex,
@@ -312,18 +321,29 @@ export default class LivelyTable extends Morph {
   onEnterDown(evt) {
 
     if (!this.currentCell) return;
-    var cell = evt.srcElement;
-    if (this.currentCell != cell) return;
+    var cell = this.currentCell
     var wasEditing = this.isInEditing(cell);
 
-    this.clearSelection(true);
-    this.setFocusAndTextSelection(cell);
-    this.setTextSelectionOfCellContents(cell);
+    if (wasEditing) {
+      this.currentCell.contentEditable = false
+      this.focus()
 
+      // this.clearSelection(true);
+      // this.setFocusAndTextSelection(cell);
+      // this.setTextSelectionOfCellContents(cell);
+    } else {
+      this.currentCell.contentEditable = true
+      this.currentCell.focus()
+    }
+    
+    
     if (wasEditing) {
       cell.classList.remove("editing");
+      this.dispatchEvent(new CustomEvent("finish-editing-cell"))
     } else {
       cell.classList.add("editing");
+      this.dispatchEvent(new CustomEvent("start-editing-cell"))
+
     }
     evt.stopPropagation();
     evt.preventDefault();
@@ -365,9 +385,25 @@ export default class LivelyTable extends Morph {
   }
 
   onMouseDown(evt) {
-
     var cell = evt.composedPath()[0];
-    if (cell === this.currentCell) return;
+    if (cell === this.currentCell) {
+      if (this.isInEditing(this.currentCell)) {
+        // cell.classList.remove("editing");
+        this.currentCell.contentEditable = false;
+        this.focus()
+      } else {
+        // edit only on second click into selection #TODO does not work any more... edit seems to be always on
+        this.currentCell.contentEditable = true;
+        this.currentCell.classList.add("editing");
+        this.currentCell.focus()        
+      }
+    } else {
+      this.focus()
+      this.selectCell(cell);
+      this.setFocusAndTextSelection(this.currentCell);
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
 
     if (cell !== this.currentCell) {
       this.clearSelection(true);
@@ -375,14 +411,11 @@ export default class LivelyTable extends Morph {
     }
 
     lively.addEventListener("LivelyTable", document.body, "mousemove", evt => this.onMouseMoveSelection(evt));
-    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt
-
-    // evt.stopPropagation()
-    ));evt.preventDefault
-
-    // lively.notify("mouse down")
-
-    ();
+    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt));
+    
+    
+    evt.preventDefault()
+    evt.stopPropagation()
   }
 
   onMouseMoveSelection(evt) {
@@ -424,16 +457,7 @@ export default class LivelyTable extends Morph {
   }
 
   onClick(evt) {
-    if (this.currentCell === evt.srcElement) {
-      this.currentCell.contentEditable = true; // edit only on second click into selection
-    } else {
-      this.selectCell(evt.srcElement);
-    }
-
-    this.setFocusAndTextSelection(this.currentCell);
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    
   }
 
   insertColumnAt(index) {
@@ -452,10 +476,10 @@ export default class LivelyTable extends Morph {
     });
   }
 
-  isInFocus(focusedElement = document.activeElement) {
+  isInFocus(focusedElement = lively.activeElement()) {
     if (focusedElement === this) return true;
     if (!focusedElement) return false;
-    return this.isInFocus(focusedElement.parentElement);
+    return this.isInFocus(focusedElement.parentElement || focusedElement.parentNode );
   }
 
   insertRowAt(index) {
@@ -493,6 +517,7 @@ export default class LivelyTable extends Morph {
       }
       return "<tr>" + html + "</tr>";
     }).join("\n") + "</table>";
+    this.registerOnAllCells();
   }
 
   setFromArray(array, force) {
@@ -546,6 +571,7 @@ export default class LivelyTable extends Morph {
         cell.textContent = fromRow[j];
       }
     }
+    this.registerOnAllCells();
   }
 
   asCSV() {
@@ -703,5 +729,56 @@ export default class LivelyTable extends Morph {
   header() {
     return this.asArray()[0];
   }
-
+  
+  
+  /*MD ## Excel Functionality MD*/
+  getCellValue(cell) {
+    if(this.currentCell === cell) {
+      return this.currentCellValue;
+    }
+    return cell.textContent;
+  }
+  
+  
+  registerOnAllCells() {
+    for(const row of this.cells()) {
+      for(const cell of row) {
+        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive));
+      } 
+    }
+  }
+  
+  cellChangedActive(cell, isActive) {
+    const text = cell.textContent;
+    if(isActive) {
+      this.currentCellValue = cell.textContent;
+    } else {
+      if(text[0] === '=') {
+        cell.textContent = this.evaluateCellText(text);
+        aexpr(() => this.evaluateCellText(text)).onChange((newValue) => cell.textContent = newValue);
+      }
+    }
+  }
+  
+  evaluateCellText(text) {
+    let code = text.substring(1, text.length);
+    return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => this.getCellValue(this.cellFromCode(column, row))));
+  }
+  
+  
+  /** 
+    @param column: The column in A - ZZ... Format
+    @param rowIndex: The Index of the row in 1 - Infintiy Range
+    @Return the corresponding cell
+   */
+  cellFromCode(column, rowIndex) {
+    var a = column;
+    let columnIndex = 0;
+    while(a.length > 0) {
+      columnIndex *= 26;
+      columnIndex += a.charCodeAt(a.length - 1) - 65;
+      var a = a.substring(0, a.length - 1);
+    }
+    return this.cellAt(columnIndex, rowIndex - 1)
+  }
 }
