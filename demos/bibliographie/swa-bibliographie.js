@@ -2,17 +2,54 @@ import BibtexParser from "src/external/bibtexParse.js";
 import Bibliography from "src/client/bibliography.js"
 
 export default class SWABibliographie {
-  constructor(importURL, exportURL){
+  constructor(importURL, exportURL, bibURL){
     this.url = importURL
     this.exportURL = exportURL
+    this.bibURL = bibURL
   }
   
+  async bibtoJSON() {
+    var source1 = await fetch(this.exportURL).then( resp => resp.text())
+    this.bib1 = BibtexParser.toJSON(source1, false)
+    var source2 = await fetch(this.bibURL).then( resp => resp.text())
+    this.bib2 = BibtexParser.toJSON(source2, false)
+    return this.bib1, this.bib2
+  }
+  
+  compare() {
+  var a = this.bib1
+  var b = this.bib2
+  var comp = ea => ea.citationKey
+  this.inAandB = []
+  this.onlyInA = []
+  this.onlyInB = []
 
-  importBibtex() {
-    
-    // var bib = BibtexParser.toJSON(file.content)
-    // #ContinueHere :-)
-  }  
+  var found
+  for(var eaA of a) {
+    found = b.find(eaB => comp(eaB) == comp(eaA))
+    if (found) {
+      this.inAandB.push(eaA)
+    } else {
+      this.onlyInA.push(eaA)
+    }
+  }
+
+
+  for(var eaB of b) {
+    found = a.find(eaA => comp(eaA) == comp(eaB))
+    if (!found) {
+      this.onlyInB.push(eaB)
+    }
+  }
+  return this.inAandB, this.onlyInA, this.onlyInB
+  }
+  
+  merge(a,b){
+    this.merged = [a]
+    this.merged.push(this.compare().this.onlyInB)
+    return this.merged
+  }
+  
   
   async import() {
     this.items =[];
