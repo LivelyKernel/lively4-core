@@ -391,8 +391,11 @@ export default class LivelyTable extends Morph {
     if (cell === this.currentCell) {
       if (this.isInEditing(this.currentCell)) {
         // cell.classList.remove("editing");
-        this.currentCell.contentEditable = false;
-        this.focus()
+        
+        
+        // this.currentCell.contentEditable = false;
+        // this.focus()
+        return 
       } else {
         // edit only on second click into selection #TODO does not work any more... edit seems to be always on
         this.currentCell.contentEditable = true;
@@ -646,7 +649,7 @@ export default class LivelyTable extends Morph {
    * set the contents of the table from a JSO where the keys of each object will become the header
    * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
    */
-  setFromJSO(jso) {
+  setFromJSO(jso, clean=false) {
     if (!jso) return;
     var headers = [];
     var rows = jso.map(obj => {
@@ -662,7 +665,11 @@ export default class LivelyTable extends Morph {
       });
     });
     rows.unshift(headers);
-    this.setFromArray(rows);
+    if (clean) {
+      this.setFromArrayClean(rows);
+    } else {
+      this.setFromArray(rows); // #TODO why do we need this optimization again?
+    }
   }
 
   onCopy(evt) {
@@ -762,7 +769,6 @@ export default class LivelyTable extends Morph {
   cellChangedActive(cell, isActive, column, row) {
     const text = cell.textContent;
     if(isActive) {
-      debugger;
       const expression = this.activeExpression[row + "_" + column];
       if(expression) {
         this.currentCellValue = expression.expression.getCurrentValue();
