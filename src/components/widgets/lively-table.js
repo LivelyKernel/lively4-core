@@ -1,6 +1,9 @@
+"enable aexpr"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js";
+import aexpr from 'active-expression-rewriting';
 
 export default class LivelyTable extends Morph {
 
@@ -175,12 +178,11 @@ export default class LivelyTable extends Morph {
       row,
       rowCells
     } = this.initailizeCells(element);
-
     
     if (this.currentRow) {
       this.currentRow.classList.remove('current')
     }
-    this.currentRow = element.parentElement;
+    this.currentRow = row;
     this.currentRow.classList.add('current')
     
     this.currentRowIndex = rows.indexOf(row);
@@ -240,7 +242,6 @@ export default class LivelyTable extends Morph {
   }
 
   changeSelection(columnDelta, rowDelta, removeSelection) {
-    var cells = this.cells();
     let columnA = this.startColumnIndex,
         columnB = this.currentColumnIndex + columnDelta,
         rowA = this.startRowIndex,
@@ -516,6 +517,7 @@ export default class LivelyTable extends Morph {
       }
       return "<tr>" + html + "</tr>";
     }).join("\n") + "</table>";
+    this.registerOnAllCells();
   }
 
   setFromArray(array, force) {
@@ -569,6 +571,7 @@ export default class LivelyTable extends Morph {
         cell.textContent = fromRow[j];
       }
     }
+    this.registerOnAllCells();
   }
 
   asCSV() {
@@ -726,5 +729,56 @@ export default class LivelyTable extends Morph {
   header() {
     return this.asArray()[0];
   }
-
+  
+  
+  /*MD ## Excel Functionality MD*/
+  getCellValue(cell) {
+    if(this.currentCell === cell) {
+      return this.currentCellValue;
+    }
+    return cell.textContent;
+  }
+  
+  
+  registerOnAllCells() {
+    for(const row of this.cells()) {
+      for(const cell of row) {
+        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive));
+      } 
+    }
+  }
+  
+  cellChangedActive(cell, isActive) {
+    const text = cell.textContent;
+    if(isActive) {
+      this.currentCellValue = cell.textContent;
+    } else {
+      if(text[0] === '=') {
+        cell.textContent = this.evaluateCellText(text);
+        aexpr(() => this.evaluateCellText(text)).onChange((newValue) => cell.textContent = newValue);
+      }
+    }
+  }
+  
+  evaluateCellText(text) {
+    let code = text.substring(1, text.length);
+    return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => this.getCellValue(this.cellFromCode(column, row))));
+  }
+  
+  
+  /** 
+    @param column: The column in A - ZZ... Format
+    @param rowIndex: The Index of the row in 1 - Infintiy Range
+    @Return the corresponding cell
+   */
+  cellFromCode(column, rowIndex) {
+    var a = column;
+    let columnIndex = 0;
+    while(a.length > 0) {
+      columnIndex *= 26;
+      columnIndex += a.charCodeAt(a.length - 1) - 65;
+      var a = a.substring(0, a.length - 1);
+    }
+    return this.cellAt(columnIndex, rowIndex - 1)
+  }
 }
