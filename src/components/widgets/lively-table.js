@@ -736,15 +736,15 @@ export default class LivelyTable extends Morph {
   /*MD ## Excel Functionality MD*/
   getCellValue(column, row) {
     const cell = this.cellFromCode(column, row);
-    if(this.currentCell === cell) {
-      return this.currentCellValue;
-    }
-    debugger;
     const expression = this.activeExpression[(row - 1) + "_" + this.columnIndex(column)];
     if(expression) {
       return expression.expression.getCurrentValue();
     }
-    return isNaN(+cell.textContent) ? cell.textContent : +cell.textContent;
+    let val = cell.textContent;
+    if(this.currentCell === cell) {
+      val = this.currentCellValue;
+    }
+    return isNaN(+val) ? val : +val;
   }
   
   
