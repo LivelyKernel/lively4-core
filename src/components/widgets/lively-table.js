@@ -4,6 +4,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js";
 import aexpr from 'active-expression-rewriting';
+import _ from 'src/external/lodash/lodash.js'
 
 export default class LivelyTable extends Morph {
 
@@ -30,64 +31,11 @@ export default class LivelyTable extends Morph {
     this.activeExpression = {};
   }
 
+  /*MD ## Rows, Coluumns, Cells MD*/
+  
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH";
-  }
-
-  onContextMenu(evt) {
-    if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      var menu = new ContextMenu(this, [["add column", () => this.insertColumnAt(this.currentColumnIndex)], ["remove column", () => this.removeColumnAt(this.currentColumnIndex)], ["add row", () => this.insertRowAt(this.currentRowIndex)], ["remove row", () => this.removeRowAt(this.currentRowIndex)]]);
-      menu.openIn(document.body, evt, this);
-      return true;
-    }
-  }
-
-  onExtentChanged() {
-    var table = this.get("table");
-    lively.setWidth(table, lively.getExtent(this).x);
-    lively.setHeight(this, lively.getExtent(table).y, true);
-  }
-
-  async onFocusout() {
-    // we are about to lose our focus lets wait a bit
-    await lively.sleep(0
-    // if we really lost our focus... 
-    );if (!this.isInFocus()) {
-      this.classList.remove("active");
-    }
-  }
-
-  onFocus() {
-    if (this.isInFocus()) {
-      this.classList.add("active");
-    }
-  }
-
-  clearAllSelection() {
-    this.querySelectorAll("td").forEach(ea => {
-      ea.classList.remove("editing");
-      ea.removeAttribute("contentEditable"
-      // ea.contentEditable = false
-
-      );
-    });
-  }
-
-  setFocusAndTextSelection(element) {
-    if (!element) return;
-    this.clearAllSelection();
-    // element.contentEditable = true;
-    element.focus();
-    var sel = window.getSelection
-    // sel.selectAllChildren(element)
-    ();
-  }
-
-  livelyExample() {
-    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
-  }
+  }  
 
   rows() {
     return Array.from(this.querySelectorAll("tr"));
@@ -104,7 +52,7 @@ export default class LivelyTable extends Morph {
     return this.cells().map(row => row[index]);
   }
 
-  cells() {
+ cells() {
     return this.rows().map(ea => this.cellsIn(ea));
   }
 
@@ -126,46 +74,28 @@ export default class LivelyTable extends Morph {
     var row = cell.parentElement;
     return this.rows().indexOf(row);
   }
-
-  clearSelection(doNotClearStart) {
-    if (this.currentCell) {
-      this.currentCell.removeAttribute("contentEditable");
-      this.currentCell.classList.remove("table-selected");
-    }
-    if (!doNotClearStart) {
-      this.currentCell = undefined;
-      this.currentRow = undefined;
-      this.currentRowIndex = undefined;
-      this.currentColumnIndex = undefined;
-      this.currentColumn = undefined;
-      this.startCell = undefined;
-      this.startRowIndex = undefined;
-      this.startColumnIndex = undefined;
-    }
-
-    this.querySelectorAll("td,th").forEach(ea => {
-      ea.classList.remove("table-selected");
-      ea.classList.remove("start-selection");
-    });
-
-    this.selectedCells = [];
+ 
+  // #private
+  initailizeCells(element) {
+    let rows = this.rows(),
+        row = element.parentElement,
+        rowCells = this.cellsIn(row);
+    return {
+      rows,
+      row,
+      rowCells
+    };
+  }
+  
+  keyForCell(cell) {
+    return this.cells()[0][this.columnOfCell(cell)].textContent;
   }
 
-  addSelectedCell(element) {
-    if (!this.selectedCells) this.selectedCells = [];
-    if (this.selectedCells.indexOf(element) < 0) {
-      this.selectedCells.push(element);
-    }
-    element.classList.add("table-selected");
+  header() {
+    return this.asArray()[0];
   }
-
-  removeSelectedCell(element) {
-    if (!this.selectedCells) this.selectedCells = [];
-    this.selectedCells.push(element);
-    this.selectedCells = this.selectedCells.filter(ea => ea !== element);
-    element.classList.remove("table-selected");
-  }
-
+  /*MD ## Selection MD*/
+  
   selectCell(element, multipleSelection) {
     if (!this.isCell(element)) return;
     if (this.currentCell && this.currentCell != element) {
@@ -196,18 +126,8 @@ export default class LivelyTable extends Morph {
     this.dispatchEvent(new CustomEvent("cell-selected"))
     
   }
-
-  initailizeCells(element) {
-    let rows = this.rows(),
-        row = element.parentElement,
-        rowCells = this.cellsIn(row);
-    return {
-      rows,
-      row,
-      rowCells
-    };
-  }
-
+  
+  // #private
   selectCellPrivate(multipleSelection, rows, row, rowCells, element) {
     if (multipleSelection) {
       this.addSelectedCell(this.currentCell);
@@ -315,11 +235,104 @@ export default class LivelyTable extends Morph {
     sel.removeAllRanges();
     sel.addRange(range);
   }
+  
+  clearAllSelection() {
+    this.querySelectorAll("td").forEach(ea => {
+      ea.classList.remove("editing");
+      ea.removeAttribute("contentEditable"
+      // ea.contentEditable = false
 
-  //
-  // Keyboard Events
-  //
+      );
+    });
+  }
 
+
+  
+  
+  clearSelection(doNotClearStart) {
+    if (this.currentCell) {
+      this.currentCell.removeAttribute("contentEditable");
+      this.currentCell.classList.remove("table-selected");
+    }
+    if (!doNotClearStart) {
+      this.currentCell = undefined;
+      this.currentRow = undefined;
+      this.currentRowIndex = undefined;
+      this.currentColumnIndex = undefined;
+      this.currentColumn = undefined;
+      this.startCell = undefined;
+      this.startRowIndex = undefined;
+      this.startColumnIndex = undefined;
+    }
+
+    this.querySelectorAll("td,th").forEach(ea => {
+      ea.classList.remove("table-selected");
+      ea.classList.remove("start-selection");
+    });
+
+    this.selectedCells = [];
+  }
+
+  addSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = [];
+    if (this.selectedCells.indexOf(element) < 0) {
+      this.selectedCells.push(element);
+    }
+    element.classList.add("table-selected");
+  }
+
+  removeSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = [];
+    this.selectedCells.push(element);
+    this.selectedCells = this.selectedCells.filter(ea => ea !== element);
+    element.classList.remove("table-selected");
+  }
+  
+  
+  /*MD ## Focus MD*/
+  
+  onContextMenu(evt) {
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      var menu = new ContextMenu(this, [["add column", () => this.insertColumnAt(this.currentColumnIndex)], ["remove column", () => this.removeColumnAt(this.currentColumnIndex)], ["add row", () => this.insertRowAt(this.currentRowIndex)], ["remove row", () => this.removeRowAt(this.currentRowIndex)]]);
+      menu.openIn(document.body, evt, this);
+      return true;
+    }
+  }
+
+  onExtentChanged() {
+    var table = this.get("table");
+    lively.setWidth(table, lively.getExtent(this).x);
+    lively.setHeight(this, lively.getExtent(table).y, true);
+  }
+
+  async onFocusout() {
+    // we are about to lose our focus lets wait a bit
+    await lively.sleep(0
+    // if we really lost our focus... 
+    );if (!this.isInFocus()) {
+      this.classList.remove("active");
+    }
+  }
+
+  onFocus() {
+    if (this.isInFocus()) {
+      this.classList.add("active");
+    }
+  }
+  
+  setFocusAndTextSelection(element) {
+    if (!element) return;
+    this.clearAllSelection();
+    // element.contentEditable = true;
+    element.focus();
+    var sel = window.getSelection();
+    // sel.selectAllChildren(element)    
+  }
+  /*MD ## Keyboard Events MD*/
+  
+  // #important
   onEnterDown(evt) {
 
     if (!this.currentCell) return;
@@ -330,23 +343,14 @@ export default class LivelyTable extends Morph {
       this.currentCell.contentEditable = false
       this.focus()
 
-      // this.clearSelection(true);
-      // this.setFocusAndTextSelection(cell);
-      // this.setTextSelectionOfCellContents(cell);
+      this.stopEditingCurrentCell()
     } else {
-      this.currentCell.contentEditable = true
-      this.currentCell.focus()
+      this.startEditingCurrentCell()
     }
     
     
-    if (wasEditing) {
-      cell.classList.remove("editing");
-      this.dispatchEvent(new CustomEvent("finish-editing-cell"))
-    } else {
-      cell.classList.add("editing");
-      this.dispatchEvent(new CustomEvent("start-editing-cell"))
-
-    }
+     
+    
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -369,7 +373,25 @@ export default class LivelyTable extends Morph {
     evt.stopPropagation();
     evt.preventDefault();
   }
-
+  
+  startEditingCurrentCell() {
+    if (!this.currentCell) return
+    // lively.showElement(this.currentCell).style.outline = "4px dashed green"
+    this.currentCell.contentEditable = true;
+    this.currentCell.classList.add("editing");
+    this.dispatchEvent(new CustomEvent("start-editing-cell"))
+    this.currentCell.focus()        
+  }
+ 
+  stopEditingCurrentCell() {
+    if (!this.currentCell) return
+    // lively.showElement(this.currentCell).style.outline = "4px dashed red"
+    this.currentCell.contentEditable = false;
+    this.currentCell.classList.remove("editing");
+    this.dispatchEvent(new CustomEvent("finish-editing-cell"))        
+  }
+  /*MD ## Events MD*/
+  
   onLeftDown(evt) {
     this.handleArrowKey(evt, -1, 0);
   }
@@ -386,23 +408,21 @@ export default class LivelyTable extends Morph {
     this.handleArrowKey(evt, 0, 1);
   }
 
+  // #important
   onMouseDown(evt) {
     var cell = evt.composedPath()[0];
     if (cell === this.currentCell) {
       if (this.isInEditing(this.currentCell)) {
-        // cell.classList.remove("editing");
-        
-        
-        // this.currentCell.contentEditable = false;
-        // this.focus()
         return 
       } else {
         // edit only on second click into selection #TODO does not work any more... edit seems to be always on
-        this.currentCell.contentEditable = true;
-        this.currentCell.classList.add("editing");
-        this.currentCell.focus()        
+        this.startEditingCurrentCell()      
       }
     } else {
+      if (this.currentCell && this.currentCell.classList.contains("editing")) {
+        this.stopEditingCurrentCell()
+      }
+      
       this.focus()
       this.selectCell(cell);
       this.setFocusAndTextSelection(this.currentCell);
@@ -417,7 +437,6 @@ export default class LivelyTable extends Morph {
 
     lively.addEventListener("LivelyTable", document.body, "mousemove", evt => this.onMouseMoveSelection(evt));
     lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt));
-    
     
     evt.preventDefault()
     evt.stopPropagation()
@@ -464,7 +483,68 @@ export default class LivelyTable extends Morph {
   onClick(evt) {
     
   }
+  
+  /*MD ## Copy and Paste MD*/
+  
+  onCopy(evt) {
+    // lively.notify("on copy")
 
+    if (!this.currentCell) return;
+    if (this.selectedCells && this.selectedCells.length > 1) {
+      var data = this.getSelectionAsCSV
+      // lively.notify("data " + data)
+      ();evt.clipboardData.setData('text/plain', data);
+    } else {
+      var selString = window.getSelection().toString();
+      if (selString.length > 0) {
+        evt.clipboardData.setData('text/plain', selString);
+      } else {
+        evt.clipboardData.setData('text/plain', this.currentCell.textContent);
+      }
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+
+  onCut(evt) {
+    this.onCopy(evt);
+    if (this.selectedCells && this.selectedCells.length > 1) {
+      // lively.notify("cut " + this.selectedCells.length)
+      this.selectedCells.forEach(ea => {
+        ea.textContent = "";
+      });
+    } else {
+      this.currentCell.textContent = "";
+    }
+  }
+
+  onPaste(evt) {
+    // lively.notify("on paste")
+
+    if (!this.currentCell) return;
+
+    var cells;
+    if (this.selectedCells && this.selectedCells.length > 1) {
+      // lively.notify("cut " + this.selectedCells.length)
+      cells = this.selectedCells;
+    } else {
+      cells = [this.currentCell];
+    }
+
+    var data = evt.clipboardData.getData('text/plain');
+
+    this.selectedCells.map(ea => {
+      // cells will change so get them early... 
+      return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
+    }).forEach(ea => {
+      this.setFromCSVat(data, ea.column, ea.row);
+    });
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  
+  /*MD ## Rows and Columns MD*/
+  
   insertColumnAt(index) {
     this.cells().forEach(cellArray => {
       var oldCell = cellArray[index];
@@ -501,12 +581,32 @@ export default class LivelyTable extends Morph {
     oldRow.remove();
   }
 
+  /*MD # Accessing Content MD*/
+  
   asArray() {
     return Array.from(this.querySelectorAll("tr")).map(eaRow => {
       return Array.from(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent);
     });
   }
+  
+  asCSV() {
+    return this.asArray().map(eaRow => eaRow.join("\t")).join("\n");
+  }
 
+  asJSO() {
+    var all = this.asArray();
+    var header = all[0];
+    return all.slice(1).map(row => {
+      var obj = {};
+      row.forEach((ea, index) => {
+        var name = header[index];
+        obj[name] = ea;
+      });
+      return obj;
+    });
+  }
+  
+  // #private
   maxColumnsIn(array) {
     return array.reduce((sum, ea) => Math.max(sum, ea.length), 0);
   }
@@ -579,10 +679,8 @@ export default class LivelyTable extends Morph {
     this.registerOnAllCells();
   }
 
-  asCSV() {
-    return this.asArray().map(eaRow => eaRow.join("\t")).join("\n");
-  }
-
+  
+  // #private
   splitIntoRows(csv, separator = /[;\t,]/) {
     return csv.split("\n").map(line => {
       return line.split(separator).map(ea => {
@@ -599,52 +697,11 @@ export default class LivelyTable extends Morph {
   setFromCSV(csv, separator) {
     this.setFromArray(this.splitIntoRows(csv, separator));
   }
+  
   setFromCSVat(csv, column, row, separator) {
     this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row);
   }
-
-  asJSO() {
-    var all = this.asArray();
-    var header = all[0];
-    return all.slice(1).map(row => {
-      var obj = {};
-      row.forEach((ea, index) => {
-        var name = header[index];
-        obj[name] = ea;
-      });
-      return obj;
-    });
-  }
-
-  copySelectionAsTable() {
-    var tmp = LivelyTable.create();
-    tmp.setFromArray(_.values(_.groupBy(this.selectedCells, ea => this.rowOfCell(ea))).map(row => _.sortBy(row, ea => this.columnOfCell(ea)).map(ea => ea.textContent)));
-    return tmp;
-  }
-
-  getSelectionAsCSV() {
-    return this.copySelectionAsTable().asCSV();
-  }
-
-  getSelectionAsJSO() {
-    if (!this.selectedCells) return [];
-
-    let result = [];
-
-    this.selectedCells.forEach(each => {
-      let row = this.rowOfCell(each);
-      let key = this.keyForCell(each);
-      if (!result[row]) result[row] = {};
-      result[row][key] = each.textContent;
-    });
-
-    return result;
-  }
-
-  keyForCell(cell) {
-    return this.cells()[0][this.columnOfCell(cell)].textContent;
-  }
-
+  
   /*
    * set the contents of the table from a JSO where the keys of each object will become the header
    * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
@@ -672,62 +729,39 @@ export default class LivelyTable extends Morph {
     }
   }
 
-  onCopy(evt) {
-    // lively.notify("on copy")
 
-    if (!this.currentCell) return;
-    if (this.selectedCells && this.selectedCells.length > 1) {
-      var data = this.getSelectionAsCSV
-      // lively.notify("data " + data)
-      ();evt.clipboardData.setData('text/plain', data);
-    } else {
-      var selString = window.getSelection().toString();
-      if (selString.length > 0) {
-        evt.clipboardData.setData('text/plain', selString);
-      } else {
-        evt.clipboardData.setData('text/plain', this.currentCell.textContent);
-      }
-    }
-    evt.stopPropagation();
-    evt.preventDefault();
+  // #private
+  copySelectionAsTable() {
+    var tmp = LivelyTable.create();
+    tmp.setFromArray(_.values(_.groupBy(this.selectedCells, ea => this.rowOfCell(ea))).map(row => _.sortBy(row, ea => this.columnOfCell(ea)).map(ea => ea.textContent)));
+    return tmp;
   }
 
-  onCut(evt) {
-    this.onCopy(evt);
-    if (this.selectedCells && this.selectedCells.length > 1) {
-      // lively.notify("cut " + this.selectedCells.length)
-      this.selectedCells.forEach(ea => {
-        ea.textContent = "";
-      });
-    } else {
-      this.currentCell.textContent = "";
-    }
+  getSelectionAsCSV() {
+    return this.copySelectionAsTable().asCSV();
   }
 
-  onPaste(evt) {
-    // lively.notify("on paste")
+  getSelectionAsJSO() {
+    if (!this.selectedCells) return [];
 
-    if (!this.currentCell) return;
+    let result = [];
 
-    var cells;
-    if (this.selectedCells && this.selectedCells.length > 1) {
-      // lively.notify("cut " + this.selectedCells.length)
-      cells = this.selectedCells;
-    } else {
-      cells = [this.currentCell];
-    }
-
-    var data = evt.clipboardData.getData('text/plain');
-
-    this.selectedCells.map(ea => {
-      // cells will change so get them early... 
-      return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
-    }).forEach(ea => {
-      this.setFromCSVat(data, ea.column, ea.row);
+    this.selectedCells.forEach(each => {
+      let row = this.rowOfCell(each);
+      let key = this.keyForCell(each);
+      if (!result[row]) result[row] = {};
+      result[row][key] = each.textContent;
     });
-    evt.stopPropagation();
-    evt.preventDefault();
+
+    return result;
   }
+
+
+
+  
+  
+  
+  /*MD ## Lively4 API MD*/
 
   livelyMigrate(other) {
     this.clearSelection();
@@ -735,11 +769,11 @@ export default class LivelyTable extends Morph {
     if (selection) this.selectCell(selection);
   }
 
-  header() {
-    return this.asArray()[0];
+  // #important #lively4api
+  livelyExample() {
+    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
   }
-  
-  
+    
   /*MD ## Excel Functionality MD*/
   getCellValue(column, row) {
     const cell = this.cellFromCode(column, row);

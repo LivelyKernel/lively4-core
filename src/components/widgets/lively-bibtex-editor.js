@@ -172,6 +172,7 @@ export default class LivelyBibtexEditor extends Morph {
     this.table.setFromJSO(all, true)
     if (this.isMerging()) {
       this.colorMergeTable()
+      this.colorDetailsTable()
     }
   }
   
@@ -276,6 +277,10 @@ export default class LivelyBibtexEditor extends Morph {
       detailsTable.setFromArray(a)      
     }
     this.get('#details-change-indicator').reset()
+    
+    if (this.isMerging()) {
+      this.colorDetailsTable()
+    }
   }
   
   getDetailsEntry() {
@@ -380,16 +385,7 @@ export default class LivelyBibtexEditor extends Morph {
       indexOf[header[i]] = i
     }
 
-    // DEBUG
-    // for(let row of rows) {
-    //   let cells = row.querySelectorAll("td") 
-    //   cells[4].textContent = "grrr"
-    // }
-    
-    
     let mergedEntries = this.table.asJSO() 
-    
-    
     for(let row of rows) {
       
       let cells = row.querySelectorAll("td")
@@ -406,7 +402,6 @@ export default class LivelyBibtexEditor extends Morph {
       } else if (b) {
         cells[0].style.backgroundColor = colorB
       }
-      debugger
       for(let name of header) {
         let cell = cells[indexOf[name]]
         if (a && b) {
@@ -422,6 +417,42 @@ export default class LivelyBibtexEditor extends Morph {
               cell.style.backgroundColor = ""
           }
         }
+      }
+    }
+  }
+  
+  colorDetailsTable() {
+    if (!this.isMerging() || !this.detailsTable) return;
+    
+    let colorA = "yellow"
+    let colorB = "lightblue"
+    let colorM = "orange"
+    
+    
+    let rows = this.detailsTable.rows() 
+    let header = this.detailsTable.column(0).map(ea => ea.textContent)
+
+    let columnTitles = rows[0].querySelectorAll("th")
+    if (columnTitles[1]) columnTitles[1].style.backgroundColor = colorA;
+    if (columnTitles[2]) columnTitles[2].style.backgroundColor = colorM;
+    if (columnTitles[3]) columnTitles[3].style.backgroundColor = colorB;
+    
+    for(let row of rows) {      
+      let cells = row.querySelectorAll("td")
+      var a = cells[1]
+      var m = cells[2]
+      var b = cells[3]
+      if (a && m && b) {
+        
+        if (a.textContent != m.textContent && b.textContent !== m.textContent) {
+          m.style.backgroundColor = colorM
+        } else if (a.textContent == m.textContent) {
+          m.style.backgroundColor = colorA
+        } else if (a.textContent == m.textContent) {
+          m.style.backgroundColor = colorA
+        } else if (b.textContent == m.textContent) {
+          m.style.backgroundColor = colorB
+        } 
       }
     }
   }
