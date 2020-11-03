@@ -991,6 +991,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this.livelyEditor().loadFile()
   }
   
+  toggleVersions() {
+    return this.livelyEditor().toggleVersions()
+  }  
   
   async awaitEditor() {
     while(!editor) {
@@ -1006,7 +1009,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.setURL(DEFAULT_FILE_URL)
     this.loadFile()
   }
-  
   
   
   
