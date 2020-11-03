@@ -791,7 +791,6 @@ export default class LivelyTable extends Morph {
     let code = text.substring(1, text.length);
     let params = {};
     return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => {
-      debugger;
       params[ref] = this.getCellValue(column, row);
       return "params[\"" + ref + "\"]";
     }));
@@ -813,7 +812,7 @@ export default class LivelyTable extends Morph {
     while(a.length > 0) {
       columnIndex *= 26;
       columnIndex += a.charCodeAt(a.length - 1) - 65;
-      var a = a.substring(0, a.length - 1);
+      a = a.substring(0, a.length - 1);
     }
     return columnIndex;
   }
