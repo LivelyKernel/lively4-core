@@ -2,7 +2,7 @@ import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 import Strings from 'src/client/strings.js'  
-
+import Bibliography from 'src/client/bibliography.js';
 /*MD
 # Lively Bibtex
 
@@ -121,16 +121,31 @@ export default class LivelyBibtexEditor extends Morph {
   }
 
   
-  flatEntriesToBibtex(flatEntries) {
-    var entries = flatEntries.map(ea => {
-      var row = {citationKey: ea.citationKey, entryType: ea.entryType, entryTags: []} 
+  flatEntryToBibtexEntry(ea) {
+    var row = {
+        citationKey: ea.citationKey, 
+        entryType: ea.entryType, 
+        entryTags: []
+      } 
       for(var key of Object.keys(ea).sort()) {
-        if (key !== "citationKey" && key !== "entryType" && key !== "entryTags"  && key && ea[key]) {
+        if (key !== "citationKey" 
+            && key !== "entryType" 
+            && key !== "entryTags"  
+            && key && ea[key]) {
           row.entryTags[key] = ea[key]
         }
-      }        
-      return row 
+      }
+    return row
+  }
+  
+  flatEntriesToBibtexEntries(flatEntries) {
+    return flatEntries.map(ea => {
+      return this.flatEntryToBibtexEntry(ea) 
     })
+  }
+  
+  flatEntriesToBibtex(flatEntries) {
+    var entries = this.flatEntriesToBibtexEntries(flatEntries)
     return Parser.toBibtex(entries, false);
   }
   
@@ -243,7 +258,7 @@ export default class LivelyBibtexEditor extends Morph {
   
   async onTableCellSelected(evt) {
     this.setDetailsEntry(this.selectedEntry())
-    this.colorMergeTable()
+    if (this.isMerging()) this.colorMergeTable()
   }
   
   async setDetailsEntry(entry) {
@@ -322,6 +337,25 @@ export default class LivelyBibtexEditor extends Morph {
 
   onFinishButton() { 
     this.finishMerge()
+  }
+  
+  onNewCitationKeyButton() {
+    if (!this.detailsTable) return;
+    
+    var flatEntry = this.getDetailsEntry()
+    if (!flatEntry) return
+    var bibtexEntry = this.flatEntryToBibtexEntry(flatEntry)
+    flatEntry.citationKey = Bibliography.generateCitationKey(bibtexEntry) 
+    this.setDetailsEntry(flatEntry)
+    this.applyDetails()
+  }
+  
+   onBrowseButton() {
+    if (!this.detailsTable) return;
+    var flatEntry = this.getDetailsEntry()
+    if (!flatEntry) return
+    lively.openBrowser("bib://"+ flatEntry.citationKey)
+    
   }
   
   isMerging() {

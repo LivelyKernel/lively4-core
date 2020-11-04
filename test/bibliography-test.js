@@ -141,7 +141,7 @@ describe('Bibliography', () => {
       var key = Bibliography.generateCitationKey({entryTags: {
         author: "Hans Mustermann",
         year: 1994,
-        title: "Jahresbericht (2018)",
+        title: "{Jahresbericht (2018)}",
       }})
       expect(key).to.equal("Mustermann1994J")
     });

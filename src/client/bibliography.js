@@ -2,6 +2,7 @@
 
 META: #ExamplesInCode #BabylonianProgramming #Lightweight
 
+<edit://test/bibliography-test.js>
 MD*/
 
 /*MD ## Example
@@ -123,7 +124,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
   }
   
   static threeSignificantInitialsFromTitle(title) {
-    return title.split(/[ -]/g)
+    return this.cleanTitle(title).split(/[ -]/g)
       .map(ea => ea.toLowerCase())
       .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for", "but"].includes(ea))
       .filter(ea => ea.length >  2  && !["der", "die", "das", "und", "oder", "aber", "für"].includes(ea))

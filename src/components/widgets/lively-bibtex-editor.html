@@ -101,13 +101,20 @@
       background-color: rgb(200,200,200);
     }
     
+    #detailsButtons {
+      float: right;
+    }
     
   </style>
   <lively-change-indicator id="content-change-indicator" target="content"></lively-change-indicator>
   <div id="pane">
     <div id="content"></div>
     <div id="details-pane">
-      <b>Details</b>
+      <b>Details</b> 
+      <span id="detailsButtons">
+        <button id="browseButton">browse</button>
+        <button id="newCitationKeyButton">new key</button>
+      </span>
       <lively-change-indicator id="details-change-indicator" target="details"></lively-change-indicator>      
       <div id="details"></div>    
     </div>
