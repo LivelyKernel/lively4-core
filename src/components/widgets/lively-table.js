@@ -777,6 +777,7 @@ export default class LivelyTable extends Morph {
   /*MD ## Excel Functionality MD*/
   getCellValue(column, row) {
     const cell = this.cellFromCode(column, row);
+    if(!cell) return undefined;
     const expression = this.activeExpression[(row - 1) + "_" + this.columnIndex(column)];
     if(expression) {
       return expression.expression.getCurrentValue();
@@ -814,8 +815,7 @@ export default class LivelyTable extends Morph {
       delete this.activeExpression[row + "_" + column];
     } else {
       if(text[0] === '=') {
-        const expression = aexpr(() => this.evaluateCellText(text)).onChange((newValue) => cell.textContent = newValue);
-        cell.textContent = this.evaluateCellText(text);
+        const expression = aexpr(() => this.evaluateCellText(text)).dataflow((newValue) => cell.textContent = newValue);
         this.activeExpression[row + "_" + column] = {expression, text};
       }
     }
@@ -824,7 +824,7 @@ export default class LivelyTable extends Morph {
   evaluateCellText(text) {
     let code = text.substring(1, text.length);
     let params = {};
-    return eval(code.replace(/\$([A-Z]+)(\d+)/gm, (ref, column, row) => {
+    return eval(code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
       params[ref] = this.getCellValue(column, row);
       return "params[\"" + ref + "\"]";
     }));
@@ -841,7 +841,7 @@ export default class LivelyTable extends Morph {
   }
   
   columnIndex(column) {
-    var a = column;
+    var a = column.toUpperCase();
     let columnIndex = 0;
     while(a.length > 0) {
       columnIndex *= 26;
