@@ -31,7 +31,7 @@ export default class LivelyTable extends Morph {
     this.activeExpression = {};
   }
 
-  /*MD ## Rows, Coluumns, Cells MD*/
+  /*MD ## Rows, Columns, Cells MD*/
   
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH";
@@ -815,14 +815,22 @@ export default class LivelyTable extends Morph {
       delete this.activeExpression[row + "_" + column];
     } else {
       if(text[0] === '=') {
-        const expression = aexpr(() => this.evaluateCellText(text)).dataflow((newValue) => cell.textContent = newValue);
+        debugger;
+        cell.setAttribute("bgcolor", "CCFFCC");
+        let code = text.substring(1, text.length);
+        const [expressionCode, onChangeCode] = code.split('|'); 
+        const expression = aexpr(() => this.evaluateCellText(expressionCode)).dataflow((newValue) => cell.textContent = newValue);
+        if(onChangeCode) {
+          expression.dataflow((value) => {eval(onChangeCode)});
+        }
         this.activeExpression[row + "_" + column] = {expression, text};
+      } else {        
+        cell.removeAttribute("bgcolor");
       }
     }
   }
   
-  evaluateCellText(text) {
-    let code = text.substring(1, text.length);
+  evaluateCellText(code) {
     let params = {};
     return eval(code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
       params[ref] = this.getCellValue(column, row);
