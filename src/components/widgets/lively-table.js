@@ -814,18 +814,24 @@ export default class LivelyTable extends Morph {
       }
       delete this.activeExpression[row + "_" + column];
     } else {
+      cell.removeAttribute("bgcolor");
       if(text[0] === '=') {
-        debugger;
-        cell.setAttribute("bgcolor", "CCFFCC");
-        let code = text.substring(1, text.length);
-        const [expressionCode, onChangeCode] = code.split('|'); 
-        const expression = aexpr(() => this.evaluateCellText(expressionCode)).dataflow((newValue) => cell.textContent = newValue);
-        if(onChangeCode) {
-          expression.dataflow((value) => {eval(onChangeCode)});
-        }
-        this.activeExpression[row + "_" + column] = {expression, text};
-      } else {        
-        cell.removeAttribute("bgcolor");
+        if(text[1]==='=') {
+          let code = text.substring(2, text.length);
+          const value = this.evaluateCellText(code);
+          cell.textContent = value;
+          const inactiveExpression = {getCurrentValue: () => {return value}, dispose: () => {}};
+          this.activeExpression[row + "_" + column] = {expression: inactiveExpression, text};
+        } else {
+          cell.setAttribute("bgcolor", "CCFFCC");
+          let code = text.substring(1, text.length);
+          const [expressionCode, onChangeCode] = code.split('|'); 
+          const expression = aexpr(() => this.evaluateCellText(expressionCode)).dataflow((newValue) => cell.textContent = newValue);
+          if(onChangeCode) {
+            expression.dataflow((value) => {eval(onChangeCode)});
+          }
+          this.activeExpression[row + "_" + column] = {expression, text};
+        }        
       }
     }
   }
