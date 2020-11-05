@@ -14,9 +14,8 @@
 - [hello2.js](hello2.js) [![](hello2.png)](edit://src/babylonian-programming-editor/demos/hello2.js) {.component}
 - [script.js](script.js) [![](script.png)](edit://src/babylonian-programming-editor/demos/script.js) {.component}
 - [tree-base.js](tree-base.js) [![](tree-base.png)](edit://src/babylonian-programming-editor/demos/tree-base.js) {.component}
-- [tree-improved.js](tree-improved.js) [![](tree-improved.png)](edit://src/babylonian-programming-editor/demos/tree-improved.js) {.component}
+improved.js) {.component}
 - [tree-scene.js](tree-scene.js)  [![](tree-scene.png)](edit://src/babylonian-programming-editor/demos/tree-scene.js) {.component} 
-- [tree.js](tree.js) [![](tree.png)](edit://src/babylonian-programming-editor/demos/tree.js) {.component} 
 
 <div style="clear: left"></div>
 

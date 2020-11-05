@@ -22,6 +22,7 @@ export default class LivelyBibtex extends Morph {
     this.addEventListener("cut", (evt) => this.onCut(evt))
     this.addEventListener("paste", (evt) => this.onPaste(evt))
     this.updateView()
+    this.registerButtons()
   }
   
   selectedEntries() {
@@ -160,6 +161,31 @@ export default class LivelyBibtex extends Morph {
       await this.appendBibtexEntry(ea)
     }
   }
+
+  toBibtex() {
+    var bibtex = ""
+    for(var ea of this.querySelectorAll("lively-bibtex-entry")) {
+      bibtex += ea.innerHTML
+    }
+    return bibtex
+  }
+  
+  async onSaveButton() {
+    var bibtex = this.toBibtex()
+    if (!this.src) throw new Error("BibtexEditor src missing" )
+    lively.files.saveFile(this.src, bibtex)
+      .then(() => lively.success("saved bibtex", this.src, 5, 
+                                  () => lively.openBrowser(this.src)))
+  }
+
+  
+  
+  async onEditButton() {
+    var editor = await (<lively-bibtex-editor src={this.src}></lively-bibtex-editor>)
+    this.parentElement.insertBefore(editor, this)
+    editor.updateView()
+    this.remove()
+  }
   
   livelySource() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("")
@@ -168,7 +194,7 @@ export default class LivelyBibtex extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.src = "https://lively-kernel.org/lively4/overleaf-cop18-promises/references.bib"
+    this.src = lively4url + "/demos/bibliographie/_incoming.bib"
     this.style.overflow = "scroll"
   }
   

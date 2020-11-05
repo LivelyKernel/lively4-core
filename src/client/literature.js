@@ -451,6 +451,10 @@ export class Paper {
             font-style: italic;
           }
       </style>
+      <lively-script><script>
+        import {Paper} from "src/client/literature.js";
+      </script></lively-script> 
+  
       <h1 class="title">${
         this.title
       } <span class="year">(${
@@ -473,8 +477,6 @@ export class Paper {
         }> ` + F.DFN + "</a>").join(" "): "" }</div>
 
       <lively-script><script>
-        import {Paper} from "src/client/literature.js";
-        
         (<button click={() => lively.openInspector(Paper.byId(${this.microsoftid}))}>inspect</button>)
       </script></lively-script> 
   
@@ -489,8 +491,6 @@ export class Paper {
           bibtexEntries.map(ea => `<a href="${ea.url}">${ea.url.replace(/.*\//,"")}</a>`).join(", ") :    
         
 `<lively-script><script>
-// here comes some inception....
- import {Paper} from "src/client/literature.js"
    var container = lively.query(this, "lively-container")
    var result = <button click={async () => {
      await Paper.importBibtexId(${this.microsoftid})
@@ -501,7 +501,6 @@ export class Paper {
 </script></livley-script>`
       }
     ${`<lively-script><script>
-  import {Paper} from "src/client/literature.js"
   var paper = Paper.byId(${this.microsoftid})
   var result = <button click={async () => {
      lively.openWorkspace(paper.toBibtex())

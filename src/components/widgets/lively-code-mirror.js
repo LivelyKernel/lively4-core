@@ -323,8 +323,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   ensureExtraKeys() {
     if (!this.extraKeys) {
-      const editor = this.editor;
-      
       const keys = '1234567890qwertyuiopasdf hjklzxcvbnm'
         .replace(/\s/, '')
         .split('')
@@ -381,7 +379,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-H search and replace
         "Ctrl-H": (cm) => {
           setTimeout(() => {
-              editor.execCommand("replace");
+              this.editor.execCommand("replace");
               this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
           }, 10)
         },
@@ -416,8 +414,9 @@ export default class LivelyCodeMirror extends HTMLElement {
           // something immediately grabs the "focus" and we close the search dialog..
           // #Hack...
           setTimeout(() => {
-                editor.execCommand("findPersistent");
-                this.shadowRoot.querySelector(".CodeMirror-search-field").focus();
+            this.editor.execCommand("findPersistent");
+            var searchField = this.shadowRoot.querySelector(".CodeMirror-search-field")
+            if (searchField) searchField.focus();
           }, 10)
           // editor.execCommand("find")
         },

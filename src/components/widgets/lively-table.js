@@ -1,6 +1,10 @@
+"enable aexpr"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js";
+import aexpr from 'active-expression-rewriting';
+import _ from 'src/external/lodash/lodash.js'
 
 export default class LivelyTable extends Morph {
 
@@ -11,10 +15,9 @@ export default class LivelyTable extends Morph {
 
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt));
-    lively.html.registerKeys(this, "Table"
-    //  this.setAttribute("tabindex", 0)
-
-    );this.addEventListener("mousedown", evt => this.onMouseDown(evt));
+    this.setAttribute("tabindex", 0)
+    lively.html.registerKeys(this, "Table");
+    this.addEventListener("mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("copy", evt => this.onCopy(evt));
     this.addEventListener("cut", evt => this.onCut(evt));
     this.addEventListener("paste", evt => this.onPaste(evt));
@@ -24,66 +27,15 @@ export default class LivelyTable extends Morph {
 
     this.addEventListener("extent-changed", evt => this.onExtentChanged(evt));
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
+    this.activeExpression = {};
   }
 
+  /*MD ## Rows, Coluumns, Cells MD*/
+  
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH";
-  }
-
-  onContextMenu(evt) {
-    if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      var menu = new ContextMenu(this, [["add column", () => this.insertColumnAt(this.currentColumnIndex)], ["remove column", () => this.removeColumnAt(this.currentColumnIndex)], ["add row", () => this.insertRowAt(this.currentRowIndex)], ["remove row", () => this.removeRowAt(this.currentRowIndex)]]);
-      menu.openIn(document.body, evt, this);
-      return true;
-    }
-  }
-
-  onExtentChanged() {
-    var table = this.get("table");
-    lively.setWidth(table, lively.getExtent(this).x);
-    lively.setHeight(this, lively.getExtent(table).y, true);
-  }
-
-  async onFocusout() {
-    // we are about to lose our focus lets wait a bit
-    await lively.sleep(0
-    // if we really lost our focus... 
-    );if (!this.isInFocus()) {
-      this.classList.remove("active");
-    }
-  }
-
-  onFocus() {
-    if (this.isInFocus()) {
-      this.classList.add("active");
-    }
-  }
-
-  clearAllSelection() {
-    this.querySelectorAll("td").forEach(ea => {
-      ea.classList.remove("editing");
-      ea.removeAttribute("contentEditable"
-      // ea.contentEditable = false
-
-      );
-    });
-  }
-
-  setFocusAndTextSelection(element) {
-    if (!element) return;
-    this.clearAllSelection();
-    element.contentEditable = true;
-    element.focus();
-    var sel = window.getSelection
-    // sel.selectAllChildren(element)
-    ();
-  }
-
-  livelyExample() {
-    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
-  }
+  }  
 
   rows() {
     return Array.from(this.querySelectorAll("tr"));
@@ -100,7 +52,7 @@ export default class LivelyTable extends Morph {
     return this.cells().map(row => row[index]);
   }
 
-  cells() {
+ cells() {
     return this.rows().map(ea => this.cellsIn(ea));
   }
 
@@ -122,46 +74,28 @@ export default class LivelyTable extends Morph {
     var row = cell.parentElement;
     return this.rows().indexOf(row);
   }
-
-  clearSelection(doNotClearStart) {
-    if (this.currentCell) {
-      this.currentCell.removeAttribute("contentEditable");
-      this.currentCell.classList.remove("table-selected");
-    }
-    if (!doNotClearStart) {
-      this.currentCell = undefined;
-      this.currentRow = undefined;
-      this.currentRowIndex = undefined;
-      this.currentColumnIndex = undefined;
-      this.currentColumn = undefined;
-      this.startCell = undefined;
-      this.startRowIndex = undefined;
-      this.startColumnIndex = undefined;
-    }
-
-    this.querySelectorAll("td,th").forEach(ea => {
-      ea.classList.remove("table-selected");
-      ea.classList.remove("start-selection");
-    });
-
-    this.selectedCells = [];
+ 
+  // #private
+  initailizeCells(element) {
+    let rows = this.rows(),
+        row = element.parentElement,
+        rowCells = this.cellsIn(row);
+    return {
+      rows,
+      row,
+      rowCells
+    };
+  }
+  
+  keyForCell(cell) {
+    return this.cells()[0][this.columnOfCell(cell)].textContent;
   }
 
-  addSelectedCell(element) {
-    if (!this.selectedCells) this.selectedCells = [];
-    if (this.selectedCells.indexOf(element) < 0) {
-      this.selectedCells.push(element);
-    }
-    element.classList.add("table-selected");
+  header() {
+    return this.asArray()[0];
   }
-
-  removeSelectedCell(element) {
-    if (!this.selectedCells) this.selectedCells = [];
-    this.selectedCells.push(element);
-    this.selectedCells = this.selectedCells.filter(ea => ea !== element);
-    element.classList.remove("table-selected");
-  }
-
+  /*MD ## Selection MD*/
+  
   selectCell(element, multipleSelection) {
     if (!this.isCell(element)) return;
     if (this.currentCell && this.currentCell != element) {
@@ -176,26 +110,24 @@ export default class LivelyTable extends Morph {
       row,
       rowCells
     } = this.initailizeCells(element);
-
-    this.currentRow = element.parentElement;
+    
+    if (this.currentRow) {
+      this.currentRow.classList.remove('current')
+    }
+    this.currentRow = row;
+    this.currentRow.classList.add('current')
+    
     this.currentRowIndex = rows.indexOf(row);
     this.currentColumnIndex = rowCells.indexOf(element);
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex]);
 
     this.selectCellPrivate(multipleSelection, rows, row, rowCells, element);
+    
+    this.dispatchEvent(new CustomEvent("cell-selected"))
+    
   }
-
-  initailizeCells(element) {
-    let rows = this.rows(),
-        row = element.parentElement,
-        rowCells = this.cellsIn(row);
-    return {
-      rows,
-      row,
-      rowCells
-    };
-  }
-
+  
+  // #private
   selectCellPrivate(multipleSelection, rows, row, rowCells, element) {
     if (multipleSelection) {
       this.addSelectedCell(this.currentCell);
@@ -232,7 +164,6 @@ export default class LivelyTable extends Morph {
   }
 
   changeSelection(columnDelta, rowDelta, removeSelection) {
-    var cells = this.cells();
     let columnA = this.startColumnIndex,
         columnB = this.currentColumnIndex + columnDelta,
         rowA = this.startRowIndex,
@@ -304,27 +235,122 @@ export default class LivelyTable extends Morph {
     sel.removeAllRanges();
     sel.addRange(range);
   }
+  
+  clearAllSelection() {
+    this.querySelectorAll("td").forEach(ea => {
+      ea.classList.remove("editing");
+      ea.removeAttribute("contentEditable"
+      // ea.contentEditable = false
 
-  //
-  // Keyboard Events
-  //
+      );
+    });
+  }
 
+
+  
+  
+  clearSelection(doNotClearStart) {
+    if (this.currentCell) {
+      this.currentCell.removeAttribute("contentEditable");
+      this.currentCell.classList.remove("table-selected");
+    }
+    if (!doNotClearStart) {
+      this.currentCell = undefined;
+      this.currentRow = undefined;
+      this.currentRowIndex = undefined;
+      this.currentColumnIndex = undefined;
+      this.currentColumn = undefined;
+      this.startCell = undefined;
+      this.startRowIndex = undefined;
+      this.startColumnIndex = undefined;
+    }
+
+    this.querySelectorAll("td,th").forEach(ea => {
+      ea.classList.remove("table-selected");
+      ea.classList.remove("start-selection");
+    });
+
+    this.selectedCells = [];
+  }
+
+  addSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = [];
+    if (this.selectedCells.indexOf(element) < 0) {
+      this.selectedCells.push(element);
+    }
+    element.classList.add("table-selected");
+  }
+
+  removeSelectedCell(element) {
+    if (!this.selectedCells) this.selectedCells = [];
+    this.selectedCells.push(element);
+    this.selectedCells = this.selectedCells.filter(ea => ea !== element);
+    element.classList.remove("table-selected");
+  }
+  
+  
+  /*MD ## Focus MD*/
+  
+  onContextMenu(evt) {
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      var menu = new ContextMenu(this, [["add column", () => this.insertColumnAt(this.currentColumnIndex)], ["remove column", () => this.removeColumnAt(this.currentColumnIndex)], ["add row", () => this.insertRowAt(this.currentRowIndex)], ["remove row", () => this.removeRowAt(this.currentRowIndex)]]);
+      menu.openIn(document.body, evt, this);
+      return true;
+    }
+  }
+
+  onExtentChanged() {
+    var table = this.get("table");
+    lively.setWidth(table, lively.getExtent(this).x);
+    lively.setHeight(this, lively.getExtent(table).y, true);
+  }
+
+  async onFocusout() {
+    // we are about to lose our focus lets wait a bit
+    await lively.sleep(0
+    // if we really lost our focus... 
+    );if (!this.isInFocus()) {
+      this.classList.remove("active");
+    }
+  }
+
+  onFocus() {
+    if (this.isInFocus()) {
+      this.classList.add("active");
+    }
+  }
+  
+  setFocusAndTextSelection(element) {
+    if (!element) return;
+    this.clearAllSelection();
+    // element.contentEditable = true;
+    element.focus();
+    var sel = window.getSelection();
+    // sel.selectAllChildren(element)    
+  }
+  /*MD ## Keyboard Events MD*/
+  
+  // #important
   onEnterDown(evt) {
 
     if (!this.currentCell) return;
-    var cell = evt.srcElement;
-    if (this.currentCell != cell) return;
+    var cell = this.currentCell
     var wasEditing = this.isInEditing(cell);
 
-    this.clearSelection(true);
-    this.setFocusAndTextSelection(cell);
-    this.setTextSelectionOfCellContents(cell);
-
     if (wasEditing) {
-      cell.classList.remove("editing");
+      this.currentCell.contentEditable = false
+      this.focus()
+
+      this.stopEditingCurrentCell()
     } else {
-      cell.classList.add("editing");
+      this.startEditingCurrentCell()
     }
+    
+    
+     
+    
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -347,7 +373,25 @@ export default class LivelyTable extends Morph {
     evt.stopPropagation();
     evt.preventDefault();
   }
-
+  
+  startEditingCurrentCell() {
+    if (!this.currentCell) return
+    // lively.showElement(this.currentCell).style.outline = "4px dashed green"
+    this.currentCell.contentEditable = true;
+    this.currentCell.classList.add("editing");
+    this.dispatchEvent(new CustomEvent("start-editing-cell"))
+    this.currentCell.focus()        
+  }
+ 
+  stopEditingCurrentCell() {
+    if (!this.currentCell) return
+    // lively.showElement(this.currentCell).style.outline = "4px dashed red"
+    this.currentCell.contentEditable = false;
+    this.currentCell.classList.remove("editing");
+    this.dispatchEvent(new CustomEvent("finish-editing-cell"))        
+  }
+  /*MD ## Events MD*/
+  
   onLeftDown(evt) {
     this.handleArrowKey(evt, -1, 0);
   }
@@ -364,10 +408,27 @@ export default class LivelyTable extends Morph {
     this.handleArrowKey(evt, 0, 1);
   }
 
+  // #important
   onMouseDown(evt) {
-
     var cell = evt.composedPath()[0];
-    if (cell === this.currentCell) return;
+    if (cell === this.currentCell) {
+      if (this.isInEditing(this.currentCell)) {
+        return 
+      } else {
+        // edit only on second click into selection #TODO does not work any more... edit seems to be always on
+        this.startEditingCurrentCell()      
+      }
+    } else {
+      if (this.currentCell && this.currentCell.classList.contains("editing")) {
+        this.stopEditingCurrentCell()
+      }
+      
+      this.focus()
+      this.selectCell(cell);
+      this.setFocusAndTextSelection(this.currentCell);
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
 
     if (cell !== this.currentCell) {
       this.clearSelection(true);
@@ -375,14 +436,10 @@ export default class LivelyTable extends Morph {
     }
 
     lively.addEventListener("LivelyTable", document.body, "mousemove", evt => this.onMouseMoveSelection(evt));
-    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt
-
-    // evt.stopPropagation()
-    ));evt.preventDefault
-
-    // lively.notify("mouse down")
-
-    ();
+    lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt));
+    
+    evt.preventDefault()
+    evt.stopPropagation()
   }
 
   onMouseMoveSelection(evt) {
@@ -424,219 +481,11 @@ export default class LivelyTable extends Morph {
   }
 
   onClick(evt) {
-    if (this.currentCell === evt.srcElement) {
-      this.currentCell.contentEditable = true; // edit only on second click into selection
-    } else {
-      this.selectCell(evt.srcElement);
-    }
-
-    this.setFocusAndTextSelection(this.currentCell);
-
-    evt.stopPropagation();
-    evt.preventDefault();
+    
   }
-
-  insertColumnAt(index) {
-    this.cells().forEach(cellArray => {
-      var oldCell = cellArray[index];
-      var newCell = document.createElement(oldCell.tagName);
-      oldCell.parentElement.insertBefore(newCell, oldCell);
-      newCell.style.width = oldCell.style.width;
-    });
-  }
-
-  removeColumnAt(index) {
-    this.cells().forEach(cellArray => {
-      var oldCell = cellArray[index];
-      oldCell.remove();
-    });
-  }
-
-  isInFocus(focusedElement = document.activeElement) {
-    if (focusedElement === this) return true;
-    if (!focusedElement) return false;
-    return this.isInFocus(focusedElement.parentElement);
-  }
-
-  insertRowAt(index) {
-    var oldRow = this.rows()[index];
-    var newRow = document.createElement("tr");
-    newRow.innerHTML = oldRow.innerHTML;
-    newRow.querySelectorAll("th,td").forEach(ea => ea.textContent = "");
-    oldRow.parentElement.insertBefore(newRow, oldRow);
-    return newRow;
-  }
-
-  removeRowAt(index) {
-    var oldRow = this.rows()[index];
-    oldRow.remove();
-  }
-
-  asArray() {
-    return Array.from(this.querySelectorAll("tr")).map(eaRow => {
-      return Array.from(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent);
-    });
-  }
-
-  maxColumnsIn(array) {
-    return array.reduce((sum, ea) => Math.max(sum, ea.length), 0);
-  }
-
-  setFromArrayClean(array) {
-    var maxColumns = this.maxColumnsIn(array);
-    this.innerHTML = "<table>" + array.map((row, rowIndex) => {
-      var html = "";
-      for (var i = 0; i < maxColumns; i++) {
-        var ea = row[i] !== undefined ? row[i] : "";
-        html += rowIndex == 0 ? // header 
-        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</th>`;
-      }
-      return "<tr>" + html + "</tr>";
-    }).join("\n") + "</table>";
-  }
-
-  setFromArray(array, force) {
-    if (!this.querySelector("tbody") || force) {
-      this.setFromArrayClean(array);
-    } else {
-      var maxColumns = this.maxColumnsIn(array);
-      this.rows().filter((ea, index) => index >= array.length).forEach(ea => ea.remove());
-      this.cells().forEach(row => {
-        row.filter((cell, index) => {
-          return index >= maxColumns;
-        }).forEach(ea => ea.remove());
-      });
-      this.querySelectorAll("td,th").forEach(ea => ea.textContent = "");
-      this.setFromArrayAt(array, 0, 0);
-    }
-  }
-
-  setFromArrayAt(array, columnOffset, rowOffset) {
-    var cells = this.cells();
-    var header = cells[0];
-    var tableLength = columnOffset + array[0].length;
-    // lively.notify("grow table? " + tableLength  + " " + header.length + " | " + columnOffset + " " + array.length )
-    if (tableLength > header.length) {
-      var rows = this.rows
-      // we have to grow wider
-      ();rows.forEach((row, index) => {
-        for (var i = 0; i < tableLength - header.length; i++) {
-          var cell = document.createElement("td");
-          row.appendChild(cell);
-        }
-      }
-      // we changed this contents and have to update
-      );cells = this.cells();
-      header = cells[0];
-    }
-    for (var i = 0; i < array.length; i++) {
-      var row = cells[rowOffset + i];
-      if (!row) {
-        var rowElement = document.createElement("tr");
-        rowElement.innerHTML = header.map(ea => "<td></td>").join("");
-        this.querySelector("tbody").appendChild(rowElement);
-        var row = rowElement.querySelectorAll("td");
-        cells.push(row);
-      }
-      var fromRow = array[i];
-      for (var j = 0; j < fromRow.length; j++) {
-        var index = columnOffset + j;
-        var cell = row[index];
-        if (!cell) throw new Error("No cell at " + index + ", in " + row);
-        cell.textContent = fromRow[j];
-      }
-    }
-  }
-
-  asCSV() {
-    return this.asArray().map(eaRow => eaRow.join("\t")).join("\n");
-  }
-
-  splitIntoRows(csv, separator = /[;\t,]/) {
-    return csv.split("\n").map(line => {
-      return line.split(separator).map(ea => {
-        var m = ea.match(/^"(.*)"$/);
-        if (m) {
-          return m[1];
-        } else {
-          return ea;
-        }
-      });
-    });
-  }
-
-  setFromCSV(csv, separator) {
-    this.setFromArray(this.splitIntoRows(csv, separator));
-  }
-  setFromCSVat(csv, column, row, separator) {
-    this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row);
-  }
-
-  asJSO() {
-    var all = this.asArray();
-    var header = all[0];
-    return all.slice(1).map(row => {
-      var obj = {};
-      row.forEach((ea, index) => {
-        var name = header[index];
-        obj[name] = ea;
-      });
-      return obj;
-    });
-  }
-
-  copySelectionAsTable() {
-    var tmp = LivelyTable.create();
-    tmp.setFromArray(_.values(_.groupBy(this.selectedCells, ea => this.rowOfCell(ea))).map(row => _.sortBy(row, ea => this.columnOfCell(ea)).map(ea => ea.textContent)));
-    return tmp;
-  }
-
-  getSelectionAsCSV() {
-    return this.copySelectionAsTable().asCSV();
-  }
-
-  getSelectionAsJSO() {
-    if (!this.selectedCells) return [];
-
-    let result = [];
-
-    this.selectedCells.forEach(each => {
-      let row = this.rowOfCell(each);
-      let key = this.keyForCell(each);
-      if (!result[row]) result[row] = {};
-      result[row][key] = each.textContent;
-    });
-
-    return result;
-  }
-
-  keyForCell(cell) {
-    return this.cells()[0][this.columnOfCell(cell)].textContent;
-  }
-
-  /*
-   * set the contents of the table from a JSO where the keys of each object will become the header
-   * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
-   */
-  setFromJSO(jso) {
-    if (!jso) return;
-    var headers = [];
-    var rows = jso.map(obj => {
-      obj = obj || {};
-      // add headers that are introduced in that row
-      Object.keys(obj).forEach(key => {
-        if (headers.indexOf(key) < 0) {
-          headers.push(key);
-        }
-      });
-      return headers.map(key => {
-        return obj[key];
-      });
-    });
-    rows.unshift(headers);
-    this.setFromArray(rows);
-  }
-
+  
+  /*MD ## Copy and Paste MD*/
+  
   onCopy(evt) {
     // lively.notify("on copy")
 
@@ -693,6 +542,226 @@ export default class LivelyTable extends Morph {
     evt.stopPropagation();
     evt.preventDefault();
   }
+  
+  /*MD ## Rows and Columns MD*/
+  
+  insertColumnAt(index) {
+    this.cells().forEach(cellArray => {
+      var oldCell = cellArray[index];
+      var newCell = document.createElement(oldCell.tagName);
+      oldCell.parentElement.insertBefore(newCell, oldCell);
+      newCell.style.width = oldCell.style.width;
+    });
+  }
+
+  removeColumnAt(index) {
+    this.cells().forEach(cellArray => {
+      var oldCell = cellArray[index];
+      oldCell.remove();
+    });
+  }
+
+  isInFocus(focusedElement = lively.activeElement()) {
+    if (focusedElement === this) return true;
+    if (!focusedElement) return false;
+    return this.isInFocus(focusedElement.parentElement || focusedElement.parentNode );
+  }
+
+  insertRowAt(index) {
+    var oldRow = this.rows()[index];
+    var newRow = document.createElement("tr");
+    newRow.innerHTML = oldRow.innerHTML;
+    newRow.querySelectorAll("th,td").forEach(ea => ea.textContent = "");
+    oldRow.parentElement.insertBefore(newRow, oldRow);
+    return newRow;
+  }
+
+  removeRowAt(index) {
+    var oldRow = this.rows()[index];
+    oldRow.remove();
+  }
+
+  /*MD # Accessing Content MD*/
+  
+  asArray() {
+    return Array.from(this.querySelectorAll("tr")).map(eaRow => {
+      return Array.from(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent);
+    });
+  }
+  
+  asCSV() {
+    return this.asArray().map(eaRow => eaRow.join("\t")).join("\n");
+  }
+
+  asJSO() {
+    var all = this.asArray();
+    var header = all[0];
+    return all.slice(1).map(row => {
+      var obj = {};
+      row.forEach((ea, index) => {
+        var name = header[index];
+        obj[name] = ea;
+      });
+      return obj;
+    });
+  }
+  
+  // #private
+  maxColumnsIn(array) {
+    return array.reduce((sum, ea) => Math.max(sum, ea.length), 0);
+  }
+
+  setFromArrayClean(array) {
+    var maxColumns = this.maxColumnsIn(array);
+    this.innerHTML = "<table>" + array.map((row, rowIndex) => {
+      var html = "";
+      for (var i = 0; i < maxColumns; i++) {
+        var ea = row[i] !== undefined ? row[i] : "";
+        html += rowIndex == 0 ? // header 
+        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</th>`;
+      }
+      return "<tr>" + html + "</tr>";
+    }).join("\n") + "</table>";
+    this.registerOnAllCells();
+  }
+
+  setFromArray(array, force) {
+    if (!this.querySelector("tbody") || force) {
+      this.setFromArrayClean(array);
+    } else {
+      var maxColumns = this.maxColumnsIn(array);
+      this.rows().filter((ea, index) => index >= array.length).forEach(ea => ea.remove());
+      this.cells().forEach(row => {
+        row.filter((cell, index) => {
+          return index >= maxColumns;
+        }).forEach(ea => ea.remove());
+      });
+      this.querySelectorAll("td,th").forEach(ea => ea.textContent = "");
+      this.setFromArrayAt(array, 0, 0);
+    }
+  }
+
+  setFromArrayAt(array, columnOffset, rowOffset) {
+    var cells = this.cells();
+    var header = cells[0];
+    var tableLength = columnOffset + array[0].length;
+    // lively.notify("grow table? " + tableLength  + " " + header.length + " | " + columnOffset + " " + array.length )
+    if (tableLength > header.length) {
+      var rows = this.rows
+      // we have to grow wider
+      ();rows.forEach((row, index) => {
+        for (var i = 0; i < tableLength - header.length; i++) {
+          var cell = document.createElement("td");
+          row.appendChild(cell);
+        }
+      }
+      // we changed this contents and have to update
+      );cells = this.cells();
+      header = cells[0];
+    }
+    for (var i = 0; i < array.length; i++) {
+      var row = cells[rowOffset + i];
+      if (!row) {
+        var rowElement = document.createElement("tr");
+        rowElement.innerHTML = header.map(ea => "<td></td>").join("");
+        this.querySelector("tbody").appendChild(rowElement);
+        var row = rowElement.querySelectorAll("td");
+        cells.push(row);
+      }
+      var fromRow = array[i];
+      for (var j = 0; j < fromRow.length; j++) {
+        var index = columnOffset + j;
+        var cell = row[index];
+        if (!cell) throw new Error("No cell at " + index + ", in " + row);
+        cell.textContent = fromRow[j];
+      }
+    }
+    this.registerOnAllCells();
+  }
+
+  
+  // #private
+  splitIntoRows(csv, separator = /[;\t,]/) {
+    return csv.split("\n").map(line => {
+      return line.split(separator).map(ea => {
+        var m = ea.match(/^"(.*)"$/);
+        if (m) {
+          return m[1];
+        } else {
+          return ea;
+        }
+      });
+    });
+  }
+
+  setFromCSV(csv, separator) {
+    this.setFromArray(this.splitIntoRows(csv, separator));
+  }
+  
+  setFromCSVat(csv, column, row, separator) {
+    this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row);
+  }
+  
+  /*
+   * set the contents of the table from a JSO where the keys of each object will become the header
+   * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
+   */
+  setFromJSO(jso, clean=false) {
+    if (!jso) return;
+    var headers = [];
+    var rows = jso.map(obj => {
+      obj = obj || {};
+      // add headers that are introduced in that row
+      Object.keys(obj).forEach(key => {
+        if (headers.indexOf(key) < 0) {
+          headers.push(key);
+        }
+      });
+      return headers.map(key => {
+        return obj[key];
+      });
+    });
+    rows.unshift(headers);
+    if (clean) {
+      this.setFromArrayClean(rows);
+    } else {
+      this.setFromArray(rows); // #TODO why do we need this optimization again?
+    }
+  }
+
+
+  // #private
+  copySelectionAsTable() {
+    var tmp = LivelyTable.create();
+    tmp.setFromArray(_.values(_.groupBy(this.selectedCells, ea => this.rowOfCell(ea))).map(row => _.sortBy(row, ea => this.columnOfCell(ea)).map(ea => ea.textContent)));
+    return tmp;
+  }
+
+  getSelectionAsCSV() {
+    return this.copySelectionAsTable().asCSV();
+  }
+
+  getSelectionAsJSO() {
+    if (!this.selectedCells) return [];
+
+    let result = [];
+
+    this.selectedCells.forEach(each => {
+      let row = this.rowOfCell(each);
+      let key = this.keyForCell(each);
+      if (!result[row]) result[row] = {};
+      result[row][key] = each.textContent;
+    });
+
+    return result;
+  }
+
+
+
+  
+  
+  
+  /*MD ## Lively4 API MD*/
 
   livelyMigrate(other) {
     this.clearSelection();
@@ -700,8 +769,85 @@ export default class LivelyTable extends Morph {
     if (selection) this.selectCell(selection);
   }
 
-  header() {
-    return this.asArray()[0];
+  // #important #lively4api
+  livelyExample() {
+    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
   }
-
+    
+  /*MD ## Excel Functionality MD*/
+  getCellValue(column, row) {
+    const cell = this.cellFromCode(column, row);
+    if(!cell) return undefined;
+    const expression = this.activeExpression[(row - 1) + "_" + this.columnIndex(column)];
+    if(expression) {
+      return expression.expression.getCurrentValue();
+    }
+    let val = cell.textContent;
+    if(this.currentCell === cell) {
+      val = this.currentCellValue;
+    }
+    return isNaN(+val) ? val : +val;
+  }
+  
+  
+  registerOnAllCells() {
+    const cells = this.cells();
+    for(let r = 0; r < cells.length; r++) {
+      const row = cells[r];
+      for(let c = 0; c < row.length; c++) {
+        const cell = row[c];
+        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive, c, r));
+      } 
+    }
+  }
+  
+  cellChangedActive(cell, isActive, column, row) {
+    const text = cell.textContent;
+    if(isActive) {
+      const expression = this.activeExpression[row + "_" + column];
+      if(expression) {
+        this.currentCellValue = expression.expression.getCurrentValue();
+        expression.expression.dispose();
+        cell.textContent = expression.text;
+      } else {        
+        this.currentCellValue = cell.textContent;
+      }
+      delete this.activeExpression[row + "_" + column];
+    } else {
+      if(text[0] === '=') {
+        const expression = aexpr(() => this.evaluateCellText(text)).dataflow((newValue) => cell.textContent = newValue);
+        this.activeExpression[row + "_" + column] = {expression, text};
+      }
+    }
+  }
+  
+  evaluateCellText(text) {
+    let code = text.substring(1, text.length);
+    let params = {};
+    return eval(code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
+      params[ref] = this.getCellValue(column, row);
+      return "params[\"" + ref + "\"]";
+    }));
+  }
+  
+  
+  /** 
+    @param column: The column in A - ZZ... Format
+    @param rowIndex: The Index of the row in 1 - Infintiy Range
+    @Return the corresponding cell
+   */
+  cellFromCode(column, rowIndex) {
+    return this.cellAt(this.columnIndex(column), rowIndex - 1)
+  }
+  
+  columnIndex(column) {
+    var a = column.toUpperCase();
+    let columnIndex = 0;
+    while(a.length > 0) {
+      columnIndex *= 26;
+      columnIndex += a.charCodeAt(a.length - 1) - 65;
+      a = a.substring(0, a.length - 1);
+    }
+    return columnIndex;
+  }
 }

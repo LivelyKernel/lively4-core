@@ -97,4 +97,56 @@ describe('Bibliography', () => {
       expect(newsource).to.not.match(/old title for nothing/)
     })
   })
+  
+    
+  describe('generateCitationKey', () => {
+    it('simple case', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1992,
+        title: "Simple Example Article with Three Significant Words in the Title",
+      }})
+      expect(key).to.equal("Mustermann1992SEA")
+    });
+
+    it('ignores small words', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1992,
+        title: "A Simple Example of an Article with Three Significant Words in the Title",
+      }})
+      expect(key).to.equal("Mustermann1992SEA")
+    });
+    
+    it('deals with complex names', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Bob O'Brian",
+        year: 1992,
+        title: "A Simple Example of an Article with Three Significant Words in the Title",
+      }})
+      expect(key).to.equal("Obrian1992SEA")
+    });
+
+    it('ignores numbers ', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Jahresbericht 1993 der Gesellschaft für Nüscht",
+      }})
+      expect(key).to.equal("Mustermann1994JGN")
+    });
+
+    
+    it('ignores special chars ', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "{Jahresbericht (2018)}",
+      }})
+      expect(key).to.equal("Mustermann1994J")
+    });
+
+    
+  })
+  
 });

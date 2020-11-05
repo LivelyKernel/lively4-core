@@ -2096,8 +2096,10 @@ export default class Container extends Morph {
   updateCSS() {
     var url = "" + this.getURL()
     
+    console.log('[container] updateCSS ', url)
     
     var all = Array.from(lively.allElements(true))
+    all.push(...document.head.querySelectorAll("link"))
     
     Object.values(lively.components.templates).forEach(template => {
       all.push(...template.querySelectorAll("*"))      
