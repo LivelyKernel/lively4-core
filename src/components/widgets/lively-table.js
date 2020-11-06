@@ -521,14 +521,21 @@ export default class LivelyTable extends Morph {
       cells = [this.currentCell];
     }
 
-    var data = evt.clipboardData.getData('text/plain');
+    var data = evt.clipboardData.getData('text/plain').trim();
 
-    this.selectedCells.map(ea => {
-      // cells will change so get them early... 
-      return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
-    }).forEach(ea => {
-      this.setFromCSVat(data, ea.column, ea.row);
-    });
+    if(data[0]==='=') {      
+      cells.forEach(cell => {
+        this.setCellExpression(cell, data);
+      });
+    } else {
+      cells.map(ea => {
+        // cells will change so get them early... 
+        return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
+      }).forEach(ea => {
+        this.setFromCSVat(data, ea.column, ea.row);
+      });
+    }
+    
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -668,10 +675,24 @@ export default class LivelyTable extends Morph {
       for (var i = 0; i < maxColumns; i++) {
         var ea = row[i] !== undefined ? row[i] : "";
         html += rowIndex == 0 ? // header 
-        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</th>`;
+        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</td>`;
       }
       return "<tr>" + html + "</tr>";
     }).join("\n") + "</table>";
+    this.registerOnAllCells();
+  }
+
+  setEmptyWithSize(width, height) {
+    var table = "<table>\n";
+    for (var column = 0; column < width; column++) {
+      var html = "";
+      for (var row = 0; row < height; row++) {
+        html += '<td style="min-width:30px; height:20px"></td>';
+      }
+      table += "<tr>" + html + "</tr>\n";
+    }
+    table += "</table>";
+    this.innerHTML += table;
     this.registerOnAllCells();
   }
 
@@ -814,7 +835,8 @@ export default class LivelyTable extends Morph {
 
   // #important #lively4api
   livelyExample() {
-    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
+    //this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
+    this.setEmptyWithSize(20, 20);
   }
 
   /*MD ## Excel Functionality MD*/
