@@ -18,6 +18,7 @@ export default class LivelyTable extends Morph {
     this.setAttribute("tabindex", 0);
     lively.html.registerKeys(this, "Table");
     this.addEventListener("mousedown", evt => this.onMouseDown(evt));
+    
     this.addEventListener("copy", evt => this.onCopy(evt));
     this.addEventListener("cut", evt => this.onCut(evt));
     this.addEventListener("paste", evt => this.onPaste(evt));
@@ -35,6 +36,11 @@ export default class LivelyTable extends Morph {
 
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH";
+  }  
+  
+  isEditingCells() {
+    var activeElement = lively.activeElement()
+    return activeElement && activeElement.contentEditable && lively.allParents(activeElement, [], true).includes(this)
   }
 
   rows() {
@@ -46,7 +52,7 @@ export default class LivelyTable extends Morph {
     if (Number.isInteger(indexOrLabel)) {
       index = indexOrLabel;
     } else {
-      index = this.header().indexOf(indexOrLabel);
+      index = this.headers().indexOf(indexOrLabel);
       if (index == -1) return undefined;
     }
     return this.cells().map(row => row[index]);
@@ -91,7 +97,7 @@ export default class LivelyTable extends Morph {
     return this.cells()[0][this.columnOfCell(cell)].textContent;
   }
 
-  header() {
+  headers() {
     return this.asArray()[0];
   }
   /*MD ## Selection MD*/
@@ -403,6 +409,14 @@ export default class LivelyTable extends Morph {
   // #important
   onMouseDown(evt) {
     var cell = evt.composedPath()[0];
+    if (evt.ctrlKey) {
+      if (cell.localName == 'td') {
+        this.selectCell(cell, true)
+        return
+      }
+    }
+    
+    
     if (cell === this.currentCell) {
       if (this.isInEditing(this.currentCell)) {
         return;
@@ -477,6 +491,8 @@ export default class LivelyTable extends Morph {
   /*MD ## Copy and Paste MD*/
 
   onCopy(evt) {
+    if (this.isEditingCells()) return
+    
     // lively.notify("on copy")
 
     if (!this.currentCell) return;
@@ -497,6 +513,8 @@ export default class LivelyTable extends Morph {
   }
 
   onCut(evt) {
+    if (this.isEditingCells()) return
+    
     this.onCopy(evt);
     if (this.selectedCells && this.selectedCells.length > 1) {
       // lively.notify("cut " + this.selectedCells.length)
@@ -508,7 +526,9 @@ export default class LivelyTable extends Morph {
     }
   }
 
-  onPaste(evt) {
+  onPaste(evt) {    
+    if (this.isEditingCells()) return
+    
     // lively.notify("on paste")
 
     if (!this.currentCell) return;
@@ -679,6 +699,20 @@ export default class LivelyTable extends Morph {
     });
   }
 
+  currentRowToJSO() {
+    return this.rowToJSO(this.currentRow)
+  }
+  
+  rowToJSO(row) {
+    var rowContents =  Array.from(row.querySelectorAll("td")).map(ea => ea.textContent)
+    var jso = {}
+    var headers = this.headers()
+    for(var i in headers) {
+      jso[headers[i]] = rowContents[i]
+    }
+    return jso
+  }
+  
   // #private
   maxColumnsIn(array) {
     return array.reduce((sum, ea) => Math.max(sum, ea.length), 0);
