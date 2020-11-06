@@ -382,19 +382,37 @@ export default class LivelyBibtexEditor extends Morph {
     }
     this.mergeOtherURL(otherURL)
   }
+  
+  
+  onCombineButton() {
+    var rows = this.selectedOrCurrentRows()
+    if (rows.length != 2) {
+      return lively.notify("select two rows (with CTRL+click)")
+    }
+    let flatEntries = rows.map(row => this.table.rowToJSO(row))
+    
+    flatEntries[0].citationKey = flatEntries[1].citationKey // #TODO merge relies on this...
+    
+    rows[1].remove() // don't need it any more
+    
+    this.mergeOtherEntries([flatEntries[1]])
+    
+    this.setDetailsEntry(flatEntries[0])
+  }
 
   onFinishButton() { 
     this.finishMerge()
   }
   
-  onNewCitationKeyButton() {
+  async onNewCitationKeyButton() {
     if (!this.detailsTable) return;
     
     var flatEntry = this.getDetailsEntry()
     if (!flatEntry) return
     var bibtexEntry = this.flatEntryToBibtexEntry(flatEntry)
     flatEntry.citationKey = Bibliography.generateCitationKey(bibtexEntry) 
-    this.setDetailsEntry(flatEntry)
+    await this.setDetailsEntry(flatEntry)
+    
     this.applyDetails()
   }
   
@@ -491,9 +509,16 @@ export default class LivelyBibtexEditor extends Morph {
   async mergeOtherURL(otherURL) {
     if (this.isMerging()) throw new Error("Merge in process")
     if (!otherURL) throw new Error("missing other URL")
-    
+  
+    var entries = await this.loadEntries(otherURL)
+    return this.mergeOtherEntries(entries)
+  }
+  
+  async mergeOtherEntries(entries) {
     this.originalEntries = this.table.asJSO()    
-    this.otherEntries = await this.loadEntries(otherURL)
+    this.otherEntries = entries
+
+    
     var merged = []
     this.mergedEntries = merged 
     for(let ea of this.originalEntries) {
