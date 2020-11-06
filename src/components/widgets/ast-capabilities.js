@@ -41,8 +41,6 @@ export default class ASTCapabilities {
     return this.codeProvider.selections[0];
   }
 
-  /*MD ## Keyboard Shortcuts MD*/
-
   newlineAndIndent(after) {
     const cm = this.codeProvider.codeMirror;
 
@@ -60,6 +58,27 @@ export default class ASTCapabilities {
     }
   }
 
+  altB() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const before = 'lively.notify(';
+    const after = ')';
+
+    const selectionTexts = cm.getSelections();
+    cm.replaceSelections(selectionTexts.map(t => before + t + after), "around"
+    // selections.forEach()
+    );const selections = lively.notify(cm.listSelections());
+    selections.forEach(({ anchor, head }) => {
+      const [left, right] = loc(anchor).isBefore(head) ? [anchor, head] : [head, anchor];
+      left.ch += before.length;
+      right.ch -= after.length;
+    });
+    cm.setSelections(selections, undefined, {
+      scroll: false
+    });
+  }
+  livelyNotify() {}
+
   altU() {
     this.replaceParentWithSelection();
   }
@@ -67,6 +86,7 @@ export default class ASTCapabilities {
   // #TODO: also for multiselections
   replaceParentWithSelection() {
     const scrollInfo = this.scrollInfo;
+    lively.noti;
     let exitedEarly = false;
 
     let pathLocationToSelect;
@@ -86,11 +106,11 @@ export default class ASTCapabilities {
             return;
           }
 
-          // #TODO: smooth some rough edges
+          //           // #TODO: smooth some rough edges
 
-          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
-          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
-          const initPath = variableDeclarator.get('init');
+          //           const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          //           const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          //           const initPath = variableDeclarator.get('init');
 
           // default case
           pathLocationToSelect = parentPath.getPathLocation();

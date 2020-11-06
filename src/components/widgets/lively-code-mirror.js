@@ -323,7 +323,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   ensureExtraKeys() {
     if (!this.extraKeys) {
-      const keys = '1234567890qwertyuiopasdf hjklzxcvbnm'
+      const keys = '1234567890qwertyuiopasdf hjk zxcvbnm'
         .replace(/\s/, '')
         .split('')
         .map(c => c.upperCase());
@@ -359,6 +359,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('condition')),
         "Ctrl-Alt-G Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('then')),
         "Shift-Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('else')),
+
+        // #KeyboardShortcut Alt-L Alt-N insert `lively.notify(<selection>)`
+        "Alt-L Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
