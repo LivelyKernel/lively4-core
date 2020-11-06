@@ -522,19 +522,20 @@ export default class LivelyTable extends Morph {
     }
 
     var data = evt.clipboardData.getData('text/plain').trim();
-
-    if(data[0]==='=') {      
-      cells.forEach(cell => {
-        this.setCellExpression(cell, data);
-      });
-    } else {
-      cells.map(ea => {
-        // cells will change so get them early... 
-        return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
-      }).forEach(ea => {
-        this.setFromCSVat(data, ea.column, ea.row);
-      });
-    }
+    
+    let baseRow = this.rowOfCell(cells[0]);
+    let baseColumn = this.columnOfCell(cells[0]);
+   
+    cells.map(cell => {
+      // cells will change so get them early... 
+      return { column: this.columnOfCell(cell), row: this.rowOfCell(cell), cell};
+    }).forEach(({column, row, cell}) => {
+      if(data[0]==='=') {      
+        this.setCellExpression(cell, this.moveRelativeReferencesInCode(data, column - baseColumn, row - baseRow));
+      } else {
+        this.setFromCSVat(data, column, row);
+      }
+    });
     
     evt.stopPropagation();
     evt.preventDefault();
@@ -568,7 +569,7 @@ export default class LivelyTable extends Morph {
   }
   
   moveReferencesInCode(code, index, moveColumns, isInsertion) {
-    return code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
+    return code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
       if(moveColumns) {
         let columnIndex = this.columnIndex(column);
         if(columnIndex - 1 >= index) {
@@ -589,7 +590,22 @@ export default class LivelyTable extends Morph {
           }
         }
       }
-      return "$"+column+row;
+      return absoluteOrRelative+column+row;
+    })
+  }
+  
+  moveRelativeReferencesInCode(code, columnOffset, rowOffset) {
+    console.log(columnOffset, rowOffset);
+    return code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
+      if(absoluteOrRelative === '~') {
+        let columnIndex = this.columnIndex(column);
+        columnIndex += columnOffset;
+        column = this.columnIndexToDigit(columnIndex);
+        
+        row = +row;
+        row += rowOffset;
+      }
+      return absoluteOrRelative+column+row;
     })
   }
 
@@ -913,10 +929,15 @@ export default class LivelyTable extends Morph {
       }
     }
   }
+  
+  static get CellReferenceRegex() {
+    return /([\$~])([a-zA-Z]+)(\d+)/gm;
+  }
+
 
   evaluateCellText(code) {
     let params = {};
-    return eval(code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
+    return eval(code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
       params[ref] = this.getCellValue(this.cellFromCode(column, row));
       return "params[\"" + ref + "\"]";
     }));
