@@ -858,7 +858,7 @@ export default class LivelyTable extends Morph {
   /*MD ## Excel Functionality MD*/
   getCellValue(cell) {
     if (!cell) return undefined;
-    if (cell.expression) {
+    if (cell.expression && !cell.expression.expression.isDisposed()) {
       return cell.expression.expression.getCurrentValue();
     }
     let val = cell.textContent;
@@ -891,8 +891,10 @@ export default class LivelyTable extends Morph {
     if (isActive) {
       const expression = cell.expression;
       if (expression) {
-        this.currentCellValue = expression.expression.getCurrentValue();
-        expression.expression.dispose();
+        if(!expression.expression.isDisposed()) {          
+          this.currentCellValue = expression.expression.getCurrentValue();
+          expression.expression.dispose();
+        }
         cell.textContent = expression.text;
       } else {
         this.currentCellValue = cell.textContent;
@@ -913,17 +915,25 @@ export default class LivelyTable extends Morph {
         cell.textContent = value;
         const inactiveExpression = { getCurrentValue: () => {
             return value;
-          }, dispose: () => {} };
+          }, dispose: () => {}, isDisposed: () => {return false} };
         cell.expression = { expression: inactiveExpression, text };
       } else {
         cell.setAttribute("bgcolor", "CCFFCC");
         let code = text.substring(1, text.length);
         const [expressionCode, onChangeCode] = code.split('|');
-        const expression = aexpr(() => this.evaluateCellText(expressionCode)).dataflow(newValue => cell.textContent = newValue);
+        
+        let expression = aexpr(() => this.evaluateCellText(expressionCode)).onChange(newValue => cell.textContent = newValue);
         if (onChangeCode) {
-          expression.dataflow(value => {
+          expression.onChange(value => {
             eval(onChangeCode);
           });
+        }
+        const { value, isError } = expression.evaluateToCurrentValue();
+        if (isError) {
+          cell.textContent = "Error in Expression";
+          expression.dispose();
+        } else {          
+          cell.textContent = value;
         }
         cell.expression = { expression, text };
       }
@@ -971,7 +981,7 @@ export default class LivelyTable extends Morph {
       columnIndex /= 26;
       columnIndex = Math.floor(columnIndex);
       columnIndex--;
-    };
+    }
     column = String.fromCharCode(65 + columnIndex % 26) + column;
     return column;
   }
