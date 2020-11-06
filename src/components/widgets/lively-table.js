@@ -1,10 +1,10 @@
-"enable aexpr"
+"enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import DragBehavior from "src/client/morphic/dragbehavior.js";
 import aexpr from 'active-expression-rewriting';
-import _ from 'src/external/lodash/lodash.js'
+import _ from 'src/external/lodash/lodash.js';
 
 export default class LivelyTable extends Morph {
 
@@ -15,7 +15,7 @@ export default class LivelyTable extends Morph {
 
   initialize() {
     this.addEventListener("click", evt => this.onClick(evt));
-    this.setAttribute("tabindex", 0)
+    this.setAttribute("tabindex", 0);
     lively.html.registerKeys(this, "Table");
     this.addEventListener("mousedown", evt => this.onMouseDown(evt));
     this.addEventListener("copy", evt => this.onCopy(evt));
@@ -27,15 +27,15 @@ export default class LivelyTable extends Morph {
 
     this.addEventListener("extent-changed", evt => this.onExtentChanged(evt));
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
-    
-    this.activeExpression = {};
+
+    this.activityChangeExpressions = [];
   }
 
-  /*MD ## Rows, Coluumns, Cells MD*/
-  
+  /*MD ## Rows, Columns, Cells MD*/
+
   isCell(cell) {
     return cell.tagName == "TD" || cell.tagName == "TH";
-  }  
+  }
 
   rows() {
     return Array.from(this.querySelectorAll("tr"));
@@ -52,7 +52,7 @@ export default class LivelyTable extends Morph {
     return this.cells().map(row => row[index]);
   }
 
- cells() {
+  cells() {
     return this.rows().map(ea => this.cellsIn(ea));
   }
 
@@ -74,7 +74,7 @@ export default class LivelyTable extends Morph {
     var row = cell.parentElement;
     return this.rows().indexOf(row);
   }
- 
+
   // #private
   initailizeCells(element) {
     let rows = this.rows(),
@@ -86,7 +86,7 @@ export default class LivelyTable extends Morph {
       rowCells
     };
   }
-  
+
   keyForCell(cell) {
     return this.cells()[0][this.columnOfCell(cell)].textContent;
   }
@@ -95,7 +95,7 @@ export default class LivelyTable extends Morph {
     return this.asArray()[0];
   }
   /*MD ## Selection MD*/
-  
+
   selectCell(element, multipleSelection) {
     if (!this.isCell(element)) return;
     if (this.currentCell && this.currentCell != element) {
@@ -110,23 +110,22 @@ export default class LivelyTable extends Morph {
       row,
       rowCells
     } = this.initailizeCells(element);
-    
+
     if (this.currentRow) {
-      this.currentRow.classList.remove('current')
+      this.currentRow.classList.remove('current');
     }
     this.currentRow = row;
-    this.currentRow.classList.add('current')
-    
+    this.currentRow.classList.add('current');
+
     this.currentRowIndex = rows.indexOf(row);
     this.currentColumnIndex = rowCells.indexOf(element);
     this.currentColumn = rows.map(ea => ea[this.currentColumnIndex]);
 
     this.selectCellPrivate(multipleSelection, rows, row, rowCells, element);
-    
-    this.dispatchEvent(new CustomEvent("cell-selected"))
-    
+
+    this.dispatchEvent(new CustomEvent("cell-selected"));
   }
-  
+
   // #private
   selectCellPrivate(multipleSelection, rows, row, rowCells, element) {
     if (multipleSelection) {
@@ -235,7 +234,7 @@ export default class LivelyTable extends Morph {
     sel.removeAllRanges();
     sel.addRange(range);
   }
-  
+
   clearAllSelection() {
     this.querySelectorAll("td").forEach(ea => {
       ea.classList.remove("editing");
@@ -246,9 +245,6 @@ export default class LivelyTable extends Morph {
     });
   }
 
-
-  
-  
   clearSelection(doNotClearStart) {
     if (this.currentCell) {
       this.currentCell.removeAttribute("contentEditable");
@@ -287,10 +283,9 @@ export default class LivelyTable extends Morph {
     this.selectedCells = this.selectedCells.filter(ea => ea !== element);
     element.classList.remove("table-selected");
   }
-  
-  
+
   /*MD ## Focus MD*/
-  
+
   onContextMenu(evt) {
     if (!evt.shiftKey) {
       evt.stopPropagation();
@@ -321,7 +316,7 @@ export default class LivelyTable extends Morph {
       this.classList.add("active");
     }
   }
-  
+
   setFocusAndTextSelection(element) {
     if (!element) return;
     this.clearAllSelection();
@@ -331,26 +326,23 @@ export default class LivelyTable extends Morph {
     // sel.selectAllChildren(element)    
   }
   /*MD ## Keyboard Events MD*/
-  
+
   // #important
   onEnterDown(evt) {
 
     if (!this.currentCell) return;
-    var cell = this.currentCell
+    var cell = this.currentCell;
     var wasEditing = this.isInEditing(cell);
 
     if (wasEditing) {
-      this.currentCell.contentEditable = false
-      this.focus()
+      this.currentCell.contentEditable = false;
+      this.focus();
 
-      this.stopEditingCurrentCell()
+      this.stopEditingCurrentCell();
     } else {
-      this.startEditingCurrentCell()
+      this.startEditingCurrentCell();
     }
-    
-    
-     
-    
+
     evt.stopPropagation();
     evt.preventDefault();
   }
@@ -373,25 +365,25 @@ export default class LivelyTable extends Morph {
     evt.stopPropagation();
     evt.preventDefault();
   }
-  
+
   startEditingCurrentCell() {
-    if (!this.currentCell) return
+    if (!this.currentCell) return;
     // lively.showElement(this.currentCell).style.outline = "4px dashed green"
     this.currentCell.contentEditable = true;
     this.currentCell.classList.add("editing");
-    this.dispatchEvent(new CustomEvent("start-editing-cell"))
-    this.currentCell.focus()        
+    this.dispatchEvent(new CustomEvent("start-editing-cell"));
+    this.currentCell.focus();
   }
- 
+
   stopEditingCurrentCell() {
-    if (!this.currentCell) return
+    if (!this.currentCell) return;
     // lively.showElement(this.currentCell).style.outline = "4px dashed red"
     this.currentCell.contentEditable = false;
     this.currentCell.classList.remove("editing");
-    this.dispatchEvent(new CustomEvent("finish-editing-cell"))        
+    this.dispatchEvent(new CustomEvent("finish-editing-cell"));
   }
   /*MD ## Events MD*/
-  
+
   onLeftDown(evt) {
     this.handleArrowKey(evt, -1, 0);
   }
@@ -413,17 +405,17 @@ export default class LivelyTable extends Morph {
     var cell = evt.composedPath()[0];
     if (cell === this.currentCell) {
       if (this.isInEditing(this.currentCell)) {
-        return 
+        return;
       } else {
         // edit only on second click into selection #TODO does not work any more... edit seems to be always on
-        this.startEditingCurrentCell()      
+        this.startEditingCurrentCell();
       }
     } else {
       if (this.currentCell && this.currentCell.classList.contains("editing")) {
-        this.stopEditingCurrentCell()
+        this.stopEditingCurrentCell();
       }
-      
-      this.focus()
+
+      this.focus();
       this.selectCell(cell);
       this.setFocusAndTextSelection(this.currentCell);
     }
@@ -437,9 +429,9 @@ export default class LivelyTable extends Morph {
 
     lively.addEventListener("LivelyTable", document.body, "mousemove", evt => this.onMouseMoveSelection(evt));
     lively.addEventListener("LivelyTable", document.body, "mouseup", evt => this.onMouseUpSelection(evt));
-    
-    evt.preventDefault()
-    evt.stopPropagation()
+
+    evt.preventDefault();
+    evt.stopPropagation();
   }
 
   onMouseMoveSelection(evt) {
@@ -480,12 +472,10 @@ export default class LivelyTable extends Morph {
     );
   }
 
-  onClick(evt) {
-    
-  }
-  
+  onClick(evt) {}
+
   /*MD ## Copy and Paste MD*/
-  
+
   onCopy(evt) {
     // lively.notify("on copy")
 
@@ -531,64 +521,147 @@ export default class LivelyTable extends Morph {
       cells = [this.currentCell];
     }
 
-    var data = evt.clipboardData.getData('text/plain');
-
-    this.selectedCells.map(ea => {
+    var data = evt.clipboardData.getData('text/plain').trim();
+    
+    let baseRow = this.rowOfCell(cells[0]);
+    let baseColumn = this.columnOfCell(cells[0]);
+   
+    cells.map(cell => {
       // cells will change so get them early... 
-      return { column: this.columnOfCell(ea), row: this.rowOfCell(ea) };
-    }).forEach(ea => {
-      this.setFromCSVat(data, ea.column, ea.row);
+      return { column: this.columnOfCell(cell), row: this.rowOfCell(cell), cell};
+    }).forEach(({column, row, cell}) => {
+      if(data[0]==='=') {      
+        this.setCellExpression(cell, this.moveRelativeReferencesInCode(data, column - baseColumn, row - baseRow));
+      } else {
+        this.setFromCSVat(data, column, row);
+      }
     });
+    
     evt.stopPropagation();
     evt.preventDefault();
   }
-  
+
   /*MD ## Rows and Columns MD*/
+
+  deactivateAllExpressions() {
+    for (const row of this.cells()) {
+      for (const cell of row) {
+        if (cell.expression) {
+          cell.expression.expression.dispose();
+        }
+      }
+    }
+    this.registerOnAllCells();
+  }
+
+  moveReferencesAfter(index, moveColumns, isInsertion) {
+    const delta = isInsertion ? 1 : -1;
+
+    for (const row of this.cells()) {
+      for (const cell of row) {
+        if (cell.expression) {
+          const rewrittenCode = this.moveReferencesInCode(cell.expression.text, index, moveColumns, isInsertion);
+          this.setCellExpression(cell, rewrittenCode);
+        }
+      }
+    }
+    this.registerOnAllCells();
+  }
   
+  moveReferencesInCode(code, index, moveColumns, isInsertion) {
+    return code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
+      if(moveColumns) {
+        let columnIndex = this.columnIndex(column);
+        if(columnIndex - 1 >= index) {
+          if(isInsertion) {
+            columnIndex++;
+          } else {
+            columnIndex--;
+          }
+        }
+        column = this.columnIndexToDigit(columnIndex);
+      } else {
+        row = +row;
+        if(row - 1 >= index) {
+          if(isInsertion) {
+            row++;
+          } else {
+            row--;
+          }
+        }
+      }
+      return absoluteOrRelative+column+row;
+    })
+  }
+  
+  moveRelativeReferencesInCode(code, columnOffset, rowOffset) {
+    console.log(columnOffset, rowOffset);
+    return code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
+      if(absoluteOrRelative === '~') {
+        let columnIndex = this.columnIndex(column);
+        columnIndex += columnOffset;
+        column = this.columnIndexToDigit(columnIndex);
+        
+        row = +row;
+        row += rowOffset;
+      }
+      return absoluteOrRelative+column+row;
+    })
+  }
+
   insertColumnAt(index) {
+    this.deactivateAllExpressions();
     this.cells().forEach(cellArray => {
       var oldCell = cellArray[index];
       var newCell = document.createElement(oldCell.tagName);
       oldCell.parentElement.insertBefore(newCell, oldCell);
       newCell.style.width = oldCell.style.width;
     });
+    this.moveReferencesAfter(index, true, true);
   }
 
   removeColumnAt(index) {
+    this.deactivateAllExpressions();
     this.cells().forEach(cellArray => {
       var oldCell = cellArray[index];
       oldCell.remove();
     });
+    this.moveReferencesAfter(index, true, false);
   }
 
   isInFocus(focusedElement = lively.activeElement()) {
     if (focusedElement === this) return true;
     if (!focusedElement) return false;
-    return this.isInFocus(focusedElement.parentElement || focusedElement.parentNode );
+    return this.isInFocus(focusedElement.parentElement || focusedElement.parentNode);
   }
 
   insertRowAt(index) {
+    this.deactivateAllExpressions();
     var oldRow = this.rows()[index];
     var newRow = document.createElement("tr");
     newRow.innerHTML = oldRow.innerHTML;
     newRow.querySelectorAll("th,td").forEach(ea => ea.textContent = "");
     oldRow.parentElement.insertBefore(newRow, oldRow);
+    this.moveReferencesAfter(index, false, true);
     return newRow;
   }
 
   removeRowAt(index) {
+    this.deactivateAllExpressions();
     var oldRow = this.rows()[index];
     oldRow.remove();
+    this.registerOnAllCells();
+    this.moveReferencesAfter(index, false, false);
   }
 
   /*MD # Accessing Content MD*/
-  
+
   asArray() {
     return Array.from(this.querySelectorAll("tr")).map(eaRow => {
       return Array.from(eaRow.querySelectorAll("td,th")).map(eaCell => eaCell.textContent);
     });
   }
-  
+
   asCSV() {
     return this.asArray().map(eaRow => eaRow.join("\t")).join("\n");
   }
@@ -605,7 +678,7 @@ export default class LivelyTable extends Morph {
       return obj;
     });
   }
-  
+
   // #private
   maxColumnsIn(array) {
     return array.reduce((sum, ea) => Math.max(sum, ea.length), 0);
@@ -618,10 +691,24 @@ export default class LivelyTable extends Morph {
       for (var i = 0; i < maxColumns; i++) {
         var ea = row[i] !== undefined ? row[i] : "";
         html += rowIndex == 0 ? // header 
-        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</th>`;
+        `<th style="width: 40px">${ea}</th>` : `<td>${ea}</td>`;
       }
       return "<tr>" + html + "</tr>";
     }).join("\n") + "</table>";
+    this.registerOnAllCells();
+  }
+
+  setEmptyWithSize(width, height) {
+    var table = "<table>\n";
+    for (var column = 0; column < width; column++) {
+      var html = "";
+      for (var row = 0; row < height; row++) {
+        html += '<td style="min-width:30px; height:20px"></td>';
+      }
+      table += "<tr>" + html + "</tr>\n";
+    }
+    table += "</table>";
+    this.innerHTML += table;
     this.registerOnAllCells();
   }
 
@@ -679,7 +766,6 @@ export default class LivelyTable extends Morph {
     this.registerOnAllCells();
   }
 
-  
   // #private
   splitIntoRows(csv, separator = /[;\t,]/) {
     return csv.split("\n").map(line => {
@@ -697,16 +783,16 @@ export default class LivelyTable extends Morph {
   setFromCSV(csv, separator) {
     this.setFromArray(this.splitIntoRows(csv, separator));
   }
-  
+
   setFromCSVat(csv, column, row, separator) {
     this.setFromArrayAt(this.splitIntoRows(csv, separator), column, row);
   }
-  
+
   /*
    * set the contents of the table from a JSO where the keys of each object will become the header
    * example: [{a: 1, b: 2}, {a: 4, b: 5, c: 6}]
    */
-  setFromJSO(jso, clean=false) {
+  setFromJSO(jso, clean = false) {
     if (!jso) return;
     var headers = [];
     var rows = jso.map(obj => {
@@ -728,7 +814,6 @@ export default class LivelyTable extends Morph {
       this.setFromArray(rows); // #TODO why do we need this optimization again?
     }
   }
-
 
   // #private
   copySelectionAsTable() {
@@ -756,11 +841,6 @@ export default class LivelyTable extends Morph {
     return result;
   }
 
-
-
-  
-  
-  
   /*MD ## Lively4 API MD*/
 
   livelyMigrate(other) {
@@ -771,83 +851,138 @@ export default class LivelyTable extends Morph {
 
   // #important #lively4api
   livelyExample() {
-    this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
+    //this.setFromArray([['A', 'B', 'C', 'D', 'E'], ['First', 'Second', 'Third', 'Fourth', ''], ['Hello', 'World', '', '', ''], ['Foo', 'Bar', '', '', '']]);
+    this.setEmptyWithSize(20, 20);
   }
-    
+
   /*MD ## Excel Functionality MD*/
-  getCellValue(column, row) {
-    const cell = this.cellFromCode(column, row);
-    if(!cell) return undefined;
-    const expression = this.activeExpression[(row - 1) + "_" + this.columnIndex(column)];
-    if(expression) {
-      return expression.expression.getCurrentValue();
+  getCellValue(cell) {
+    if (!cell) return undefined;
+    if (cell.expression && !cell.expression.expression.isDisposed()) {
+      return cell.expression.expression.getCurrentValue();
     }
     let val = cell.textContent;
-    if(this.currentCell === cell) {
+    if (this.currentCell === cell) {
       val = this.currentCellValue;
     }
     return isNaN(+val) ? val : +val;
   }
-  
-  
+
   registerOnAllCells() {
+    for (const ae of this.activityChangeExpressions) {
+      ae.dispose();
+    }
+    this.activityChangeExpressions = [];
     const cells = this.cells();
-    for(let r = 0; r < cells.length; r++) {
-      const row = cells[r];
-      for(let c = 0; c < row.length; c++) {
-        const cell = row[c];
-        aexpr(() => cell === this.currentCell).onChange((isActive) => this.cellChangedActive(cell, isActive, c, r));
-      } 
+    for (const row of this.cells()) {
+      for (const cell of row) {
+        this.registerCellForActivityChanges(cell);
+      }
     }
   }
-  
-  cellChangedActive(cell, isActive, column, row) {
+
+  registerCellForActivityChanges(cell) {
+    const expression = aexpr(() => cell === this.currentCell).onChange(isActive => this.cellChangedActive(cell, isActive));
+    this.activityChangeExpressions.push(expression);
+  }
+
+  cellChangedActive(cell, isActive) {
     const text = cell.textContent;
-    if(isActive) {
-      const expression = this.activeExpression[row + "_" + column];
-      if(expression) {
-        this.currentCellValue = expression.expression.getCurrentValue();
-        expression.expression.dispose();
+    if (isActive) {
+      const expression = cell.expression;
+      if (expression) {
+        if(!expression.expression.isDisposed()) {          
+          this.currentCellValue = expression.expression.getCurrentValue();
+          expression.expression.dispose();
+        }
         cell.textContent = expression.text;
-      } else {        
+      } else {
         this.currentCellValue = cell.textContent;
       }
-      delete this.activeExpression[row + "_" + column];
+      delete cell.expression;
     } else {
-      if(text[0] === '=') {
-        const expression = aexpr(() => this.evaluateCellText(text)).dataflow((newValue) => cell.textContent = newValue);
-        this.activeExpression[row + "_" + column] = {expression, text};
+      this.setCellExpression(cell, text)
+    }
+  }
+
+  setCellExpression(cell, text) {
+    cell.removeAttribute("bgcolor");
+
+    if (text[0] === '=') {
+      if (text[1] === '=') {
+        let code = text.substring(2, text.length);
+        const value = this.evaluateCellText(code);
+        cell.textContent = value;
+        const inactiveExpression = { getCurrentValue: () => {
+            return value;
+          }, dispose: () => {}, isDisposed: () => {return false} };
+        cell.expression = { expression: inactiveExpression, text };
+      } else {
+        cell.setAttribute("bgcolor", "CCFFCC");
+        let code = text.substring(1, text.length);
+        const [expressionCode, onChangeCode] = code.split('|');
+        
+        let expression = aexpr(() => this.evaluateCellText(expressionCode)).onChange(newValue => cell.textContent = newValue);
+        if (onChangeCode) {
+          expression.onChange(value => {
+            eval(onChangeCode);
+          });
+        }
+        const { value, isError } = expression.evaluateToCurrentValue();
+        if (isError) {
+          cell.textContent = "Error in Expression";
+          expression.dispose();
+        } else {          
+          cell.textContent = value;
+        }
+        cell.expression = { expression, text };
       }
     }
   }
   
-  evaluateCellText(text) {
-    let code = text.substring(1, text.length);
+  static get CellReferenceRegex() {
+    return /([\$~])([a-zA-Z]+)(\d+)/gm;
+  }
+
+
+  evaluateCellText(code) {
     let params = {};
-    return eval(code.replace(/\$([a-zA-Z]+)(\d+)/gm, (ref, column, row) => {
-      params[ref] = this.getCellValue(column, row);
+    return eval(code.replace(LivelyTable.CellReferenceRegex, (ref, absoluteOrRelative, column, row) => {
+      params[ref] = this.getCellValue(this.cellFromCode(column, row));
       return "params[\"" + ref + "\"]";
     }));
   }
-  
-  
+
   /** 
     @param column: The column in A - ZZ... Format
     @param rowIndex: The Index of the row in 1 - Infintiy Range
     @Return the corresponding cell
    */
   cellFromCode(column, rowIndex) {
-    return this.cellAt(this.columnIndex(column), rowIndex - 1)
+    return this.cellAt(this.columnIndex(column), rowIndex - 1);
   }
-  
+
   columnIndex(column) {
     var a = column.toUpperCase();
     let columnIndex = 0;
-    while(a.length > 0) {
+    while (a.length > 0) {
       columnIndex *= 26;
-      columnIndex += a.charCodeAt(a.length - 1) - 65;
-      a = a.substring(0, a.length - 1);
+      columnIndex++;
+      columnIndex += a.charCodeAt(0) - 65;
+      a = a.substring(1, a.length);
     }
-    return columnIndex;
+    return columnIndex - 1;
+  }
+  
+  columnIndexToDigit(columnIndex) {
+    var column = "";
+    while (columnIndex >= 26) {
+      column = String.fromCharCode(65 + columnIndex % 26) + column;
+      columnIndex /= 26;
+      columnIndex = Math.floor(columnIndex);
+      columnIndex--;
+    }
+    column = String.fromCharCode(65 + columnIndex % 26) + column;
+    return column;
   }
 }
