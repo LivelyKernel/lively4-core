@@ -903,7 +903,7 @@ export default class LivelyTable extends Morph {
   }
 
   registerOnAllCells() {
-    for (const ae of this.activityChangeExpressions) {
+    for (const ae of this.activityChangeExpressions || []) {
       ae.dispose();
     }
     this.activityChangeExpressions = [];
