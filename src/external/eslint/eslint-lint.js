@@ -37,6 +37,7 @@
         CodeMirror: true,
         a: true,
         b: true,
+        _: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {

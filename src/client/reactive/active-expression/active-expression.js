@@ -445,6 +445,13 @@ export class BaseActiveExpression {
     });
   }
 
+  /*MD ## Scoping: Enable, Disable 
+  
+    In contrast to scoping with respect to applying a single expression to multiple subjects
+MD*/
+  enable() {}
+  disable() {}
+  isEnabled() {}
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if(annotation) {
