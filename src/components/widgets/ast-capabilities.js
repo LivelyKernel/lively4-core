@@ -58,7 +58,7 @@ export default class ASTCapabilities {
     }
   }
 
-  altB() {
+  livelyNotify() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
     const before = 'lively.notify(';
@@ -67,7 +67,7 @@ export default class ASTCapabilities {
     const selectionTexts = cm.getSelections();
     cm.replaceSelections(selectionTexts.map(t => before + t + after), "around"
     // selections.forEach()
-    );const selections = lively.notify(cm.listSelections());
+    );const selections = cm.listSelections();
     selections.forEach(({ anchor, head }) => {
       const [left, right] = loc(anchor).isBefore(head) ? [anchor, head] : [head, anchor];
       left.ch += before.length;
@@ -77,11 +77,7 @@ export default class ASTCapabilities {
       scroll: false
     });
   }
-  livelyNotify() {}
 
-  altU() {
-    this.replaceParentWithSelection();
-  }
   // replace parent with me
   // #TODO: also for multiselections
   replaceParentWithSelection() {
@@ -286,9 +282,6 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
-  altN() {
-    this.negateExpression();
-  }
   // # Swap if and else blocks of a conditional
   negateExpression() {
     const scrollInfo = this.scrollInfo;

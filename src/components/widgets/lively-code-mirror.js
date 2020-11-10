@@ -327,25 +327,30 @@ export default class LivelyCodeMirror extends HTMLElement {
         .replace(/\s/, '')
         .split('')
         .map(c => c.upperCase());
-      const defaultASTHandlers = _.fromPairs(keys.flatMap(c => {
-        return ['Alt-', 'Ctrl-Alt-', 'Shift-Alt-'].map(shortcut => {
-          const shortcutC = shortcut + c;
-          const prop = shortcutC.camelCase();
+//       const defaultASTHandlers = _.fromPairs(keys.flatMap(c => {
+//         return ['Alt-', 'Ctrl-Alt-', 'Shift-Alt-'].map(shortcut => {
+//           const shortcutC = shortcut + c;
+//           const prop = shortcutC.camelCase();
 
-          return [shortcutC, cm => {
-            this.astCapabilities(cm).then(ac => {
-              if (ac[prop]) {
-                ac[prop]();
-              } else {
-                lively.notify(shortcutC, 'No Shortcut defined yet.');
-              }
-            });
-          }];
-        });
-      }));
+//           return [shortcutC, cm => {
+//             this.astCapabilities(cm).then(ac => {
+//               if (ac[prop]) {
+//                 ac[prop]();
+//               } else {
+//                 lively.notify(shortcutC, 'No Shortcut defined yet.');
+//               }
+//             });
+//           }];
+//         });
+//       }));
+      const defaultASTHandlers = {};
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
+        // #KeyboardShortcut Alt-B wrap selection in lively notify
+        "Alt-B": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
+        // #KeyboardShortcut Alt-N negate an expression
+        "Alt-N": cm => this.astCapabilities(cm).then(ac => ac.negateExpression()),
         // #KeyboardShortcut Alt-U Replace parent node with selection
         "Alt-U": cm => this.astCapabilities(cm).then(ac => ac.replaceParentWithSelection()),
         // #KeyboardShortcut Alt-O Insert new line below
@@ -359,9 +364,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('condition')),
         "Ctrl-Alt-G Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('then')),
         "Shift-Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('else')),
-
-        // #KeyboardShortcut Alt-L Alt-N insert `lively.notify(<selection>)`
-        "Alt-L Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
