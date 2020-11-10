@@ -28,9 +28,9 @@ import CodeMirror from "src/external/code-mirror/lib/codemirror.js"
 self.CodeMirror = CodeMirror // for modules
 let loadPromise = undefined;
 import { loc, range } from 'utils';
+import indentationWidth from 'src/components/widgets/indent.js';
 
 import _ from 'src/external/lodash/lodash.js'
-
 
 export function stripErrorString(s) {
   return s.toString()
@@ -607,8 +607,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 		editor.setOption("scrollbarStyle", "simple")
 		editor.setOption("scrollbarStyle", "simple")
     
-    editor.setOption("tabSize", 2)
+    editor.setOption("tabSize", indentationWidth())
     editor.setOption("indentWithTabs", false)
+    editor.setOption("indentUnit", indentationWidth())
 
     editor.setOption("highlightSelectionMatches", {showToken: /\w/, annotateScrollbar: true})
 
