@@ -22,6 +22,7 @@ import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
 import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
+import indentationWidth from 'src/components/widgets/indent.js';
 
 
 /*MD
@@ -995,10 +996,10 @@ export default class Container extends Morph {
       'max_preserve_newlines': 3,
       'js': {
         'brace_style': ['collapse', 'preserve-inline'],
-        'indent_size': 2,
+        'indent_size': indentationWidth(),
         'wrap_line_length': 120,
       },
-      'indent_size': 2,
+      'indent_size': indentationWidth(),
     }
     // load the beatify code async... because they are big
     if (ending === 'js') {
@@ -1782,7 +1783,7 @@ export default class Container extends Morph {
       if (codeMirror.editor && codeMirror.editor.session) {
         codeMirror.editor.session.setOptions({
           mode: "ace/mode/javascript",
-          tabSize: 2,
+          tabSize: indentationWidth(),
           useSoftTabs: true
         });
       }

@@ -27,7 +27,8 @@ export default class Preferences {
       PiTerminalCWD: {default: "", short: "current working directory of pi terminal"},
       PiTerminalSecret: {default: "", short: "pi terminal credentials"},
       ExtraSearchRoots: {default: [], short: "extra search roots"},
-      TipOfTheDay: {default: true, short: "show tip of the day on startup"}
+      TipOfTheDay: {default: true, short: "show tip of the day on startup"},
+      WiderIndentation: {default: false, short: "sets the indentation to 4"},
     }
   }
   
@@ -42,8 +43,8 @@ export default class Preferences {
   }
 
   static listBooleans () {
-    return Object
-      .keys(this.defaults).filter(ea => _.isBoolean(this.defaults[ea].default))
+    return Object.keys(this.defaults)
+      .filter(ea => _.isBoolean(this.defaults[ea].default))
   }
 
   
@@ -77,7 +78,6 @@ export default class Preferences {
       return pref.default
     }
   }
-  
   
   static set(preferenceKey, value) {
     var pref = this.write(preferenceKey, JSON.stringify(value))     
