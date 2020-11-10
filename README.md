@@ -1,8 +1,6 @@
 ![](https://lively-kernel.org/lively4/lively4-petrinet/media/lively4_logo_smooth_200.png)
 
-# An Explorative, Self-supporting,
-
-Web-based Development Environment
+# An Explorative, Self-supporting, Web-based Development Environment
 
 [![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
 

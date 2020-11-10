@@ -1645,6 +1645,12 @@ export default class Lively {
   }
 
   
+  static isActiveElement(element) {
+    var activeElemnt = this.activeElement()
+    return this.allParents(activeElemnt, [], true).includes(element)
+  }
+
+  
   static activeElement(worldContext, type) {
     worldContext = worldContext || document
     var element = worldContext.activeElement

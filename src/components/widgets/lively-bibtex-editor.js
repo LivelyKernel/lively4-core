@@ -29,7 +29,11 @@ export default class LivelyBibtexEditor extends Morph {
       this.onMergeButton()
     }
     
-    
+    this.addEventListener("copy", evt => this.onCopy(evt), true);
+    this.addEventListener("cut", evt => this.onCut(evt), true);
+    this.addEventListener("paste", evt => this.onPaste(evt), true);
+
+    this.addEventListener("click", evt => this.onClick(evt));
   }
  
 //   checkForContentChanges() {
@@ -42,6 +46,28 @@ export default class LivelyBibtexEditor extends Morph {
 //     }
 //     this.updateChangeIndicator()
 //   }
+  
+  isEditingCells() {
+    return this.table.isEditingCells()
+  }
+  
+  
+  onClick(evt) {
+    var path = evt.composedPath()
+    // we already have a focus here?
+    if (!this.isEditingCells()) {
+      if(this.detailsTable && path.includes(this.detailsTable)) {
+        // nothing...
+      } else {
+        
+
+        
+        
+        lively.focusWithoutScroll(this.get("#copyHack"))       
+      }
+    } 
+    
+  }
   
   
   onKeyDown(evt) {
@@ -202,9 +228,31 @@ export default class LivelyBibtexEditor extends Morph {
     return entry && JSON.stringify(entry)      
   }
   
+  isEditingDetails() {
+    return lively.allParents(lively.activeElement()).includes(this.detailsTable)
+  }
+  
+  selectedOrCurrentCells() {
+    var cells = []
+    if (this.table.selectedCells) {
+      cells.push(...this.table.selectedCells)   
+    } else if(this.currentCell) {
+      cells.push(this.currentCells)
+    }
+    return cells    
+  }
+  
+  selectedOrCurrentRows(){
+    var rows = this.selectedOrCurrentCells()
+      .map(ea => this.table.rowOfCell(ea))
+      .uniq()
+      .map(ea => this.table.rows()[ea])
+    return rows
+  }
+  
   async onSave() {
     if (this.isMerging()) return lively.notify("Merge in process")
-    if (lively.allParents(lively.activeElement()).includes(this.detailsTable)) {
+    if (this.isEditingDetails()) {
       this.applyDetails()
     } else {
       this.setDetailsEntry(this.selectedEntry())
@@ -334,19 +382,37 @@ export default class LivelyBibtexEditor extends Morph {
     }
     this.mergeOtherURL(otherURL)
   }
+  
+  
+  onCombineButton() {
+    var rows = this.selectedOrCurrentRows()
+    if (rows.length != 2) {
+      return lively.notify("select two rows (with CTRL+click)")
+    }
+    let flatEntries = rows.map(row => this.table.rowToJSO(row))
+    
+    flatEntries[0].citationKey = flatEntries[1].citationKey // #TODO merge relies on this...
+    
+    rows[1].remove() // don't need it any more
+    
+    this.mergeOtherEntries([flatEntries[1]])
+    
+    this.setDetailsEntry(flatEntries[0])
+  }
 
   onFinishButton() { 
     this.finishMerge()
   }
   
-  onNewCitationKeyButton() {
+  async onNewCitationKeyButton() {
     if (!this.detailsTable) return;
     
     var flatEntry = this.getDetailsEntry()
     if (!flatEntry) return
     var bibtexEntry = this.flatEntryToBibtexEntry(flatEntry)
     flatEntry.citationKey = Bibliography.generateCitationKey(bibtexEntry) 
-    this.setDetailsEntry(flatEntry)
+    await this.setDetailsEntry(flatEntry)
+    
     this.applyDetails()
   }
   
@@ -358,6 +424,83 @@ export default class LivelyBibtexEditor extends Morph {
     
   }
   
+  /*MD ## Copy and Paste MD*/
+  onCopy(evt) {
+    if (this.isEditingCells()) return
+    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
+
+
+    let source;
+    let rows = this.selectedOrCurrentRows()  
+    let flatEntries = rows.map(row => this.table.rowToJSO(row))
+    let entries = this.flatEntriesToBibtexEntries(flatEntries)
+    source = Parser.toBibtex(entries, false)
+    
+    evt.clipboardData.setData('application/bibtex', source);
+    evt.clipboardData.setData('text/plain', source);
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  
+  onCut(evt) {
+    if (this.isEditingCells()) return
+    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
+
+    lively.notify("on Cut")
+    this.onCopy(evt);
+    var rows = this.selectedOrCurrentRows()
+    for(var row of rows) {
+      row.remove()
+    } 
+  }
+
+  onPaste(evt) {
+    if (this.isEditingCells()) return
+    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
+
+    
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    lively.notify("ON PASTE")
+    function insert(arr, index, newitems) {
+      return [
+        ...arr.slice(0, index),
+        ...newitems,
+        ...arr.slice(index)
+      ]
+    }
+
+
+    var all = this.table.asJSO()
+    let rowInsert;
+    
+    if (this.table.currentRowIndex) {
+      rowInsert = this.table.currentRowIndex
+    } else {
+      rowInsert = all.length
+      
+    }
+    var data = evt.clipboardData.getData('text/plain');
+    
+    try {
+      var entries = this.bibtexToFlatEntries(data)
+    } catch(e) {
+      lively.error("could not pase bibtex: ", e)
+      return 
+    }
+    
+    
+    var newentries = insert(all, rowInsert, entries)
+    this.table.setFromJSO(newentries)
+
+    lively.notify("new entries", "", 10, 
+                  () =>lively.openInspector(newentries))
+   
+  }
+  
+  /*MD ## Merge MD*/
+  
   isMerging() {
     return this.originalEntries && true 
   }
@@ -366,9 +509,16 @@ export default class LivelyBibtexEditor extends Morph {
   async mergeOtherURL(otherURL) {
     if (this.isMerging()) throw new Error("Merge in process")
     if (!otherURL) throw new Error("missing other URL")
-    
+  
+    var entries = await this.loadEntries(otherURL)
+    return this.mergeOtherEntries(entries)
+  }
+  
+  async mergeOtherEntries(entries) {
     this.originalEntries = this.table.asJSO()    
-    this.otherEntries = await this.loadEntries(otherURL)
+    this.otherEntries = entries
+
+    
     var merged = []
     this.mergedEntries = merged 
     for(let ea of this.originalEntries) {
