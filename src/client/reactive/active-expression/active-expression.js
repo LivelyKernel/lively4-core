@@ -31,29 +31,29 @@ export const AExprRegistry = {
     }
   },
   updateAExpr(aexpr) {
-      self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
+    self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
   },
-  
+
   on(type, callback) {
     return self.__aexprRegistry_eventTarget__.addEventListener(type, callback);
   },
   off(type, callback) {
     return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
-  
+
   buildIdFor(ae) {
     let locationId;
-    if(ae.meta().has('location')){
+    if (ae.meta().has('location')) {
       let location = ae.meta().get('location');
-      let file = location.file.replace(lively4url+'/', '');
-      locationId = file+'@'+location.start.line+':'+location.start.column;
+      let file = location.file.replace(lively4url + '/', '');
+      locationId = file + '@' + location.start.line + ':' + location.start.column;
     } else {
       locationId = 'unknown_location';
     }
     self.__aexprRegistry_idCounters__.set(locationId, self.__aexprRegistry_idCounters__.get(locationId) + 1 || 0);
-    ae.meta({id : locationId+'#'+self.__aexprRegistry_idCounters__.get(locationId)});       
+    ae.meta({ id: locationId + '#' + self.__aexprRegistry_idCounters__.get(locationId) });
   },
-  
+
   /**
    * For Development purpose if the registry gets into inconsistent state
    */
@@ -78,39 +78,39 @@ export const AExprRegistry = {
 class DefaultMatcher {
   static compare(lastResult, newResult) {
     // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+    if (Array.isArray(lastResult) && Array.isArray(newResult)) {
       return shallowEqualsArray(lastResult, newResult);
     }
-    
+
     // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
+    if (lastResult instanceof Set && newResult instanceof Set) {
       return shallowEqualsSet(lastResult, newResult);
     }
 
     // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
+    if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
 
     return lastResult === newResult;
   }
-  
+
   static store(result) {
     // array
-    if(Array.isArray(result)) {
+    if (Array.isArray(result)) {
       return Array.prototype.slice.call(result);
     }
-    
+
     // set
-    if(result instanceof Set) {
+    if (result instanceof Set) {
       return new Set(result);
     }
-    
+
     // map
-    if(result instanceof Map) {
+    if (result instanceof Map) {
       return new Map(result);
     }
-    
+
     return result;
   }
 }
@@ -119,7 +119,7 @@ class IdentityMatcher {
   static compare(lastResult, newResult) {
     return lastResult === newResult;
   }
-  
+
   static store(result) {
     return result;
   }
@@ -128,23 +128,23 @@ class IdentityMatcher {
 class ShallowMatcher {
   static compare(lastResult, newResult) {
     // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+    if (Array.isArray(lastResult) && Array.isArray(newResult)) {
       return shallowEqualsArray(lastResult, newResult);
     }
-    
+
     // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
+    if (lastResult instanceof Set && newResult instanceof Set) {
       return shallowEqualsSet(lastResult, newResult);
     }
 
     // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
+    if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
 
-    return shallowEquals(lastResult, newResult) ;
+    return shallowEquals(lastResult, newResult);
   }
-  
+
   static store(result) {
     return clone.call(result);
   }
@@ -154,18 +154,13 @@ class DeepMatcher {
   static compare(lastResult, newResult) {
     return deepEquals(lastResult, newResult);
   }
-  
+
   static store(result) {
     return cloneDeep.call(result);
   }
 }
 
-const MATCHER_MAP = new Map([
-  ['default', DefaultMatcher],
-  ['identity', IdentityMatcher],
-  ['shallow', ShallowMatcher],
-  ['deep', DeepMatcher]
-]);
+const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
 
@@ -179,8 +174,7 @@ export class BaseActiveExpression {
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
   constructor(func, { params = [], match, errorMode = 'silent', location, sourceCode } = {}) {
-    this._eventTarget = new EventTarget(),
-    this.func = func;
+    this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
     this.setupMatcher(match);
@@ -191,17 +185,21 @@ export class BaseActiveExpression {
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    if (location) { this.meta({ location }); }
-    if (sourceCode) { this.meta({ sourceCode }); }
+    if (location) {
+      this.meta({ location });
+    }
+    if (sourceCode) {
+      this.meta({ sourceCode });
+    }
 
     this.initializeEvents();
     this.logEvent('created');
 
-    if(new.target === BaseActiveExpression) {
+    if (new.target === BaseActiveExpression) {
       this.addToRegistry();
     }
   }
-  
+
   _initLastValue() {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
@@ -214,7 +212,7 @@ export class BaseActiveExpression {
   addToRegistry() {
     AExprRegistry.addAExpr(this);
   }
-  
+
   hasCallbacks() {
     return this.callbacks.length !== 0;
   }
@@ -270,7 +268,7 @@ export class BaseActiveExpression {
    */
   onChange(callback) {
     this.callbacks.push(callback);
-    this.logEvent('dependencies changed', 'Added: '+callback);
+    this.logEvent('dependencies changed', 'Added: ' + callback);
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -284,7 +282,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('dependencies changed', 'Removed: '+callback);
+      this.logEvent('dependencies changed', 'Removed: ' + callback);
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -301,38 +299,40 @@ export class BaseActiveExpression {
    */
   checkAndNotify() {
     const { value, isError } = this.evaluateToCurrentValue();
-    if(isError || this.compareResults(this.lastValue, value)) { return; }
+    if (isError || this.compareResults(this.lastValue, value)) {
+      return;
+    }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    
+
     this.logEvent('changed value', value);
 
     this.notify(value, {
       lastValue,
-      expr: this.func ,
+      expr: this.func,
       aexpr: this
     });
   }
-  
+
   setupMatcher(matchConfig) {
     // configure using existing matcher
-    if(matchConfig && isString.call(matchConfig)) {
-      if(!MATCHER_MAP.has(matchConfig)) {
-        throw new Error(`No matcher of type '${matchConfig}' registered.`)
+    if (matchConfig && isString.call(matchConfig)) {
+      if (!MATCHER_MAP.has(matchConfig)) {
+        throw new Error(`No matcher of type '${matchConfig}' registered.`);
       }
       this.matcher = MATCHER_MAP.get(matchConfig);
       return;
     }
-    
+
     // configure using a custom matcher
-    if(typeof matchConfig === 'object') {
-      if(matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
+    if (typeof matchConfig === 'object') {
+      if (matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
         this.matcher = matchConfig;
         return;
       }
-      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`)
+      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`);
     }
-    
+
     // use smart default matcher
     this.matcher = DefaultMatcher;
   }
@@ -346,7 +346,7 @@ export class BaseActiveExpression {
       window.__compareAExprResults__ = false;
     }
   }
-  
+
   storeResult(result) {
     try {
       window.__compareAExprResults__ = true;
@@ -364,14 +364,16 @@ export class BaseActiveExpression {
   onBecomeTrue(callback) {
     // setup dependency
     this.onChange(bool => {
-      if(bool) {
+      if (bool) {
         callback();
       }
     });
 
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
-    if (!isError && value) { callback(); }
+    if (!isError && value) {
+      callback();
+    }
 
     return this;
   }
@@ -379,14 +381,16 @@ export class BaseActiveExpression {
   onBecomeFalse(callback) {
     // setup dependency
     this.onChange(bool => {
-      if(!bool) {
+      if (!bool) {
         callback();
       }
     });
 
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
-    if(!isError && !value) { callback(); }
+    if (!isError && !value) {
+      callback();
+    }
 
     return this;
   }
@@ -400,6 +404,20 @@ export class BaseActiveExpression {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
       callback(value, {});
+    }
+
+    return this;
+  }
+
+  setExpression(func, { checkImmediately = true } = {}) {
+    if (!(func instanceof Function)) {
+      throw new TypeError('no function given to .setExpression');
+    }
+
+    this.func = func;
+    // this.update
+    if (checkImmediately) {
+      this.checkAndNotify();
     }
 
     return this;
@@ -448,13 +466,13 @@ export class BaseActiveExpression {
   /*MD ## Scoping: Enable, Disable 
   
     In contrast to scoping with respect to applying a single expression to multiple subjects
-MD*/
+  MD*/
   enable() {}
   disable() {}
   isEnabled() {}
   /*MD ## Reflection Information MD*/
   meta(annotation) {
-    if(annotation) {
+    if (annotation) {
       this._annotations.add(annotation);
       return this;
     } else {
@@ -465,26 +483,25 @@ MD*/
   supportsDependencies() {
     return false;
   }
-  
+
   initializeEvents() {
-    this.meta({events : new Array()});
+    this.meta({ events: new Array() });
   }
-  
+
   logEvent(type, value) {
-    if(this.isMeta())return;
+    if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    events.push({timestamp: new Date(), type, value});
-    if(events.length > 5000)events.shift();
+    events.push({ timestamp: new Date(), type, value });
+    if (events.length > 5000) events.shift();
   }
-  
+
   isMeta(value) {
-    if(value !== undefined)this.meta({isMeta : value});
-    else return this.meta().has('isMeta') && this.meta().get('isMeta');
+    if (value !== undefined) this.meta({ isMeta: value });else return this.meta().has('isMeta') && this.meta().get('isMeta');
   }
-  
+
   /*MD ## Iterators and Utility Methods MD*/
-  
+
   // #Discussion: should this reject, if the aexpr gets disposed?
   nextValue() {
     return new Promise(resolve => {
@@ -495,12 +512,12 @@ MD*/
       this.onChange(callback);
     });
   }
-  
+
   values() {
     const gotDisposed = this.gotDisposed();
-    
+
     const valueQueue = [];
-    
+
     let gotNewValue;
     let waitForValue;
     function resetWaitForValue() {
@@ -509,7 +526,7 @@ MD*/
       });
     }
     resetWaitForValue();
-    
+
     this.onChange(v => {
       valueQueue.push(v);
       const temp = gotNewValue;
@@ -527,10 +544,7 @@ MD*/
                 done: false
               };
             } else {
-              return Promise.race([
-                waitForValue.then(() => this.next()),
-                gotDisposed.then(() => ({ done: true }))
-              ]);
+              return Promise.race([waitForValue.then(() => this.next()), gotDisposed.then(() => ({ done: true }))]);
             }
           }
         };
