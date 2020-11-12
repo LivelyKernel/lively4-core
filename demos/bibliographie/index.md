@@ -1,15 +1,28 @@
 # Bibliographie
 
+Leo and Jens were here 
+
+### Headings
+
+- list item 1
+- and two 
+
 
 
 ## Notes
-```
+
+```javascript 
 var a = 3
 ```
 
 <script> 
-var a = 3
-a+4
+var a = 3;
+
+(async () => {
+  var div = <div style="white-space:pre">{await fetch("https://lively-kernel.org/lively4/lively4-leo/demos/bibliographie/_incoming.bib").then(r => r.text())}</div>
+
+  return div 
+})()
 </script>
 
 GenerateCitationKey als Vergleich und Prüfung
