@@ -177,6 +177,7 @@ export class BaseActiveExpression {
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
+    this._isEnabled = true;
     this.setupMatcher(match);
     this._initLastValue();
     this.callbacks = [];
@@ -477,9 +478,24 @@ export class BaseActiveExpression {
   
     In contrast to scoping with respect to applying a single expression to multiple subjects
   MD*/
-  enable() {}
-  disable() {}
-  isEnabled() {}
+  enable() {
+    if (!this._isEnabled) {
+      this._isEnabled = true;
+      this.emit('enable')
+    }
+  }
+  disable() {
+    if (this._isEnabled) {
+      this._isEnabled = false;
+      this.emit('disable')
+    }
+  }
+  isEnabled() {
+    return this._isEnabled;
+  }
+  isDisabled() {
+    return !this._isEnabled;
+  }
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if (annotation) {
