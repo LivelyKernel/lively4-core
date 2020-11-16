@@ -126,9 +126,22 @@
     #buttons {
       background-color: rgb(200,200,200);
     }
+
+    #buttons {
+      text-align: right;
+    }
+
     
     #detailsButtons {
       float: right;
+    }
+    
+    #srcLabel {
+      float: left;
+      color: gray;
+      font-size: 10pt;
+      font-style: italic;
+      padding: 5px
     }
     
   </style>
@@ -136,6 +149,7 @@
   <lively-change-indicator id="content-change-indicator" target="content"></lively-change-indicator>
   <div id="pane">
     <div id="buttons">
+      <span id="srcLabel"></span>
       <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
       <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
       <button id="combineButton" title="combine two entries">combine (2)</button>
