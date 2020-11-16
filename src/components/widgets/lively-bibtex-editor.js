@@ -48,7 +48,7 @@ export default class LivelyBibtexEditor extends Morph {
 //   }
   
   isEditingCells() {
-    return this.table.isEditingCells()
+    return this.table && this.table.isEditingCells()
   }
   
   
@@ -298,10 +298,19 @@ export default class LivelyBibtexEditor extends Morph {
   }
   
   async onCancelButton() {
+    /*MD  #Refactor #Duplication with <edit://src/components/widgets/lively-bibtex.js#onEditButton> MD*/
+    if (this.style.position) {
+      var pos = lively.getPosition(this)
+      var extent = lively.getExtent(this)
+    }
     var bibtex = await (<lively-bibtex src={this.src}></lively-bibtex>)
     this.parentElement.insertBefore(bibtex, this)
     bibtex.updateView()
     this.remove()
+    if (pos) {
+      lively.setPosition(bibtex, pos)
+      lively.setExtent(bibtex, extent)
+    }
   }
   
   async onTableCellSelected(evt) {

@@ -177,6 +177,7 @@ export class BaseActiveExpression {
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
+    this._isEnabled = true;
     this.setupMatcher(match);
     this._initLastValue();
     this.callbacks = [];
@@ -361,6 +362,30 @@ export class BaseActiveExpression {
     AExprRegistry.updateAExpr(this);
   }
 
+  updateDependencies() {}
+
+  /**
+   * Change the expression to be monitored.
+   * @public
+   * @param func (Function) the new function to be monitored.
+   * @param options ({ checkImmediately = true }) whether `notify` will be executed if the current value of the expression is different from the last on, defaults to true.
+   * @returns {BaseActiveExpression} this very active expression (for chaining)
+   */
+  setExpression(func, { checkImmediately = true } = {}) {
+    if (!(func instanceof Function)) {
+      throw new TypeError('no function given to .setExpression');
+    }
+
+    this.func = func;
+    this.updateDependencies();
+    if (checkImmediately) {
+      this.checkAndNotify();
+    }
+
+    return this;
+  }
+
+  /*MD ## Convenience Methods MD*/
   onBecomeTrue(callback) {
     // setup dependency
     this.onChange(bool => {
@@ -404,20 +429,6 @@ export class BaseActiveExpression {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
       callback(value, {});
-    }
-
-    return this;
-  }
-
-  setExpression(func, { checkImmediately = true } = {}) {
-    if (!(func instanceof Function)) {
-      throw new TypeError('no function given to .setExpression');
-    }
-
-    this.func = func;
-    // this.update
-    if (checkImmediately) {
-      this.checkAndNotify();
     }
 
     return this;
@@ -467,9 +478,24 @@ export class BaseActiveExpression {
   
     In contrast to scoping with respect to applying a single expression to multiple subjects
   MD*/
-  enable() {}
-  disable() {}
-  isEnabled() {}
+  enable() {
+    if (!this._isEnabled) {
+      this._isEnabled = true;
+      this.emit('enable')
+    }
+  }
+  disable() {
+    if (this._isEnabled) {
+      this._isEnabled = false;
+      this.emit('disable')
+    }
+  }
+  isEnabled() {
+    return this._isEnabled;
+  }
+  isDisabled() {
+    return !this._isEnabled;
+  }
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if (annotation) {

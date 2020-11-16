@@ -1,5 +1,5 @@
 import { BaseActiveExpression } from 'active-expression';
-import { check } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
+import { check, setExpressionOptionsForConventionStrategies } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 import { PausableLoop } from 'utils';
 
 export class FrameBasedActiveExpression extends BaseActiveExpression {
@@ -15,6 +15,7 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
     }
   }
 
+  // #TODO: onChange here is not chainable
   onChange(...args) {
     super.onChange(...args);
 
@@ -44,6 +45,12 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
       checkLoop.pause();
     }
   }
+
+  /** the parameter `checkImmediately` is by default false for convention strategies */
+  setExpression(...params) {
+    return super.setExpression(...setExpressionOptionsForConventionStrategies(...params))
+  }
+
 }
 
 export function aexpr(func, ...args) {

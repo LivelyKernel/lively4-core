@@ -151,8 +151,12 @@ export default class LivelyBibtex extends Morph {
   async updateView() { 
     if (!this.src) return;
     this.innerHTML = ""
+    var source = await fetch(this.src).then(res => res.text());
+    return this.setBibtex(source)
+  }
+  
+  async setBibtex(source) {
     try {
-      var source = await fetch(this.src).then(res => res.text());
       var json= Parser.toJSON(source);    
     } catch(e) {
       this.innerHTML = "" + e
@@ -178,13 +182,19 @@ export default class LivelyBibtex extends Morph {
                                   () => lively.openBrowser(this.src)))
   }
 
-  
-  
   async onEditButton() {
+    if (this.style.position) {
+      var pos = lively.getPosition(this)
+      var extent = lively.getExtent(this)
+    }
     var editor = await (<lively-bibtex-editor src={this.src}></lively-bibtex-editor>)
     this.parentElement.insertBefore(editor, this)
     editor.updateView()
     this.remove()
+    if (pos) {
+      lively.setPosition(editor, pos)
+      lively.setExtent(editor, extent)
+    }
   }
   
   livelySource() {

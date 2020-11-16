@@ -2,6 +2,12 @@ import { BaseActiveExpression } from 'active-expression';
 
 const TICKING_INSTANCES = new Set();
 
+export function setExpressionOptionsForConventionStrategies(func, options = {}, ...rest) {
+  return [func, Object.assign({
+    checkImmediately: false
+  }, options), ...rest];
+}
+
 export class TickingActiveExpression extends BaseActiveExpression {
 
     // each implementation strategy ensures to track changes of the given expression
@@ -34,6 +40,11 @@ export class TickingActiveExpression extends BaseActiveExpression {
 
         return this;
     }
+  
+  /** the parameter `checkImmediately` is by default false for convention strategies */
+  setExpression(...params) {
+    return super.setExpression(...setExpressionOptionsForConventionStrategies(...params))
+  }
 }
 
 export function aexpr(func, ...args) { return new TickingActiveExpression(func, ...args); }
