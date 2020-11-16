@@ -5,6 +5,31 @@
     :host {
       
     }
+
+    #content {
+      background-color: lightgray;
+      border: 1px solid gray;  
+    }
+
+    :host([src]) #content {
+      background-color: lightblue;
+      border: 1px solid blue;  
+    }
+    
+    :host-context(lively-window) #content {
+      background-color: transparent  !important;;
+      border: none !important;
+    }
+
+    #saveButton {
+      display: none;  
+    }
+    
+    :host([src]) #saveButton {
+      display: inline;  
+    }
+
+    
     #content {
       padding: 10px;
     }

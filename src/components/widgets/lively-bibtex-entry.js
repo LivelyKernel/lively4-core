@@ -9,6 +9,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'src/external/bibtexParse.js';
 import latexconv from "src/external/latex-to-unicode-converter.js";
 import Strings from 'src/client/strings.js';
+import { getTempKeyFor } from 'utils';
 
 export default class LivelyBibtexEntry extends Morph {
   async initialize() {
@@ -26,7 +27,9 @@ export default class LivelyBibtexEntry extends Morph {
   }
 
   async onDragStart(evt) {
-
+    
+    evt.dataTransfer.setData("application/lively4id", lively.ensureID(this));
+    
     if (evt.ctrlKey) {
       evt.dataTransfer.setData("text/plain", `[@${this.key}]`);
     } else {
