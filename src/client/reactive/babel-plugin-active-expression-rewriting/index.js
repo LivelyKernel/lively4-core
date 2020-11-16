@@ -456,6 +456,9 @@ export default function(babel) {
                 })`);
                 function buildSourceLocation(aexprIdentifierPath) {
                   const node = aexprIdentifierPath.node;
+                  if(!node.loc) {
+                    console.error("Make sure to add loc information manually when inserting an AE during transformation")
+                  }
                   // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
                   return sourceLocation({
                     END_COLUMN: t.numericLiteral(node.loc.end.column),
