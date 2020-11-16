@@ -164,11 +164,13 @@ export default class Container extends Morph {
         && !path.match("https://www.draw.io/")
       ) {
       if (!options) {
+        this.clearLoadingInfo()
         return window.open(path);
       }
     }
     if (options && options.donotfollowpath) {
       fetch(path) // e.g. open://my-component
+      this.clearLoadingInfo()
       return ;
     }
 
@@ -200,6 +202,10 @@ export default class Container extends Morph {
       // #TODO replace this with a dynamic fetch
       return this.setPath(path);
     }
+  }
+  
+  clearLoadingInfo() {
+    this.get("#container-info").innerHTML = ""
   }
   
   getPath() {
@@ -2017,7 +2023,7 @@ export default class Container extends Morph {
 
 
   clear() {
-    this.get("#container-info").innerHTML = ""
+    this.clearLoadingInfo()
     this.getContentRoot().innerHTML = '';
     // Array.from(this.get('#container-content').childNodes)
     //   .filter( ea => ea.id !== "container-root")

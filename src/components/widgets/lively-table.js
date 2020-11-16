@@ -409,6 +409,8 @@ export default class LivelyTable extends Morph {
   // #important
   onMouseDown(evt) {
     var cell = evt.composedPath()[0];
+    if (cell.localName != 'td') return; // clicked somewhere elese...
+
     if (evt.ctrlKey) {
       if (cell.localName == 'td') {
         this.selectCell(cell, true)

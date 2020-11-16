@@ -28,9 +28,9 @@ export default class LivelyBibtexEntry extends Morph {
   async onDragStart(evt) {
 
     if (evt.ctrlKey) {
-      evt.dataTransfer.setData("text/plain", this.innerHTML);
-    } else {
       evt.dataTransfer.setData("text/plain", `[@${this.key}]`);
+    } else {
+      evt.dataTransfer.setData("text/plain", this.innerHTML);
     }
   }
 

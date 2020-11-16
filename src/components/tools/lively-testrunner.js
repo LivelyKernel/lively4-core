@@ -17,6 +17,10 @@ MD*/
 
 // });
 
+function isTestFile(fileName) {
+  return fileName.match(/(-|\.)(spec|test)\.js$/);
+}
+
 export default class TestRunner extends Morph {
   get testDir() { return this.get('#testDir'); }
 
@@ -60,13 +64,27 @@ export default class TestRunner extends Morph {
       console.error(e)
       files = []
     }
-    return files
-      .filter(fileName => fileName.match(/(-|\.)(spec|test)\.js$/));
+    return files.filter(isTestFile);
   }
 
   async findTestFiles() {
+    const dirs = this.testDir.value;
+    
+    // single file?
+    if (isTestFile(dirs)) {
+      try {
+        var file = dirs.startsWith('/') ? dirs.substring(1) : dirs;
+        file = new URL(file, lively4url+'/').href
+        const infoString = await lively.files.statFile(file);
+        const { type } = JSON.parse(infoString);
+        if (type === 'file') {
+          return [file];
+        }
+      } catch(e) {}
+    }
+
     var files = []
-    var list = this.testDir.value.split(",")
+    var list = dirs.split(",")
     console.log("[testrunner] findTestFiles: " + list)
 
     // await Promise.all(list.map((dir) => {
