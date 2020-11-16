@@ -149,9 +149,13 @@ export default class LivelyBibtex extends Morph {
   }
   
   async updateView() { 
-    if (!this.src) return;
+    if (!this.src) {
+      var source = this.textContent 
+      this.innerHTML = ""
+      return this.setBibtex(source)      
+    }
     this.innerHTML = ""
-    var source = await fetch(this.src).then(res => res.text());
+    source = await fetch(this.src).then(res => res.text());
     return this.setBibtex(source)
   }
   
@@ -182,19 +186,39 @@ export default class LivelyBibtex extends Morph {
                                   () => lively.openBrowser(this.src)))
   }
 
-  async onEditButton() {
+  async onEditButton(evt) {
+    
+    
     if (this.style.position) {
       var pos = lively.getPosition(this)
-      var extent = lively.getExtent(this)
+      var extent = lively.getExtent(this)  
     }
-    var editor = await (<lively-bibtex-editor src={this.src}></lively-bibtex-editor>)
-    this.parentElement.insertBefore(editor, this)
-    editor.updateView()
-    this.remove()
-    if (pos) {
-      lively.setPosition(editor, pos)
-      lively.setExtent(editor, extent)
+    var editor = await (<lively-bibtex-editor></lively-bibtex-editor>)
+    if (this.src) {
+      editor.setAttribute("src", this.src)
+    } else {
+      editor.textContent = this.textContent
     }
+    if (evt.shiftKey) {
+      var win = await (<lively-window>{editor}</lively-window>)
+      document.body.appendChild(win)
+      editor.updateView()
+      this.remove()
+      if (pos) {
+        lively.setPosition(win, pos)
+        // lively.setExtent(win, extent)
+      }
+    } else {
+     this.parentElement.insertBefore(editor, this)  
+      editor.updateView()
+      this.remove()
+      if (pos) {
+        lively.setPosition(editor, pos)
+        lively.setExtent(editor, extent)
+      }
+    }
+     
+    
   }
   
   livelySource() {

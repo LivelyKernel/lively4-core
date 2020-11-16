@@ -4,6 +4,10 @@
   <style data-src="/src/client/lively.css"></style>
   <style>
     :host {
+      min-height: 100px;
+      min-width: 200px;
+      
+      
     }
       
     #copyHack {
@@ -26,7 +30,7 @@
       max-width: 300px;
     }
    
-
+    
     lively-table table, lively-table tr, lively-table  th, lively-table  td {
       border: 1px solid gray;
       border-collapse: collapse;
@@ -41,7 +45,11 @@
       text-align: right;
     }
 
-
+    #content lively-table tr:before {
+      content: "☰"
+    }
+    
+    
     .table-selected {
       border-collapse: collapse;
       background-color: rgba(190,190,190,0.3);
@@ -91,8 +99,6 @@
       background: lightgray;
       overflow: auto;  
     }
-
-    
      
     #buttons {
       position: absolute;

@@ -271,6 +271,18 @@ const dropOnDocumentBehavior = {
         return div;
       }),
 
+  
+      new DropOnBodyHandler('text/plain', text => {
+        // test for bibtex content
+        if (text.match(/^\s*@[a-zA-Z]+\{/)) {
+            const comp = document.createElement("lively-bibtex");
+            comp.innerHTML = text;
+            return comp
+        }
+        return false
+      }),
+  
+  
       new DropOnBodyHandler('text/plain', text => {
         return <p>{text}</p>;
       }),
