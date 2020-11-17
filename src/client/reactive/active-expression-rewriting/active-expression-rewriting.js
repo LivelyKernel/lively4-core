@@ -549,7 +549,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
     super(func, ...args);
     this.meta({ strategy: 'Rewriting' });
-    ExpressionAnalysis.recalculateDependencies(this);
+    this.updateDependencies();
 
     if (new.target === RewritingActiveExpression) {
       this.addToRegistry();
@@ -561,10 +561,16 @@ export class RewritingActiveExpression extends BaseActiveExpression {
     DependencyManager.disconnectAllFor(this);
   }
   
+  // #TODO: why is this defined here, and not in the superclass?
   asAExpr() {
     return this;
   }
 
+  updateDependencies() {
+    if (this.isDisabled()) { return; }
+
+    ExpressionAnalysis.recalculateDependencies(this);
+  }
   supportsDependencies() {
     return true;
   }
@@ -629,9 +635,7 @@ class DependencyManager {
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs) {
-    aexprs.forEach(aexpr => {
-      ExpressionAnalysis.recalculateDependencies(aexpr);
-    });
+    aexprs.forEach(aexpr => aexpr.updateDependencies());
     aexprs.forEach(aexpr => aexpr.checkAndNotify());
   }
 

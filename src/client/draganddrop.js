@@ -1,6 +1,9 @@
 import { pt } from 'src/client/graphics.js';
 import { debounce, through, asDragImageFor, getObjectFor, removeTempKey } from "utils";
 import { letsScript } from 'src/client/vivide/vivide.js';
+import { MicrosoftAcademicEntities} from "src/client/literature.js"
+import Strings from "src/client/strings.js"
+
 
 export function applyDragCSSClass() {
   this.addEventListener('dragenter', evt => this.classList.add("drag"), false);
@@ -201,8 +204,52 @@ const dropOnDocumentBehavior = {
         return <plex-link src={urlString}></plex-link>
       }),
 
+      // #ExampleForLeo #Bibilograpy #TODO #Refactor
+      new DropOnBodyHandler('text/uri-list', urlString => {
+        if (!urlString.match(/^academic:\//)) { return false; }
+        lively.notify("academic " + urlString)
+        
+        var infoSpan = <div id="info"></div>
+        var link = <div class="lively-content" style="background-color: lightgray; border:1px solid orange"><a  href={urlString}>
+            {urlString}  
+        </a>{infoSpan}</div>;
+        
+        (async () => {
+          let info = "";
+          for(var m of Strings.matchAll(/[Ii]d=([0-9]+)/, urlString)) {
+            let id = m[1]
+            let raw  = await lively.files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`)
+
+            var entity = raw.entities[0]
+            var type = MicrosoftAcademicEntities.getEntityType(entity.Ty)
+            var label = ""
+            if(type =="author") { 
+              label = entity["AuN"]
+            } else if(type == "field-of-study") { 
+              label =  entity["FN"] 
+            } else if(type =="paper") { 
+              label =  entity["Ti"] 
+            }
+
+            info += `<span>${id}: ${type}, ${label}</span><br>` 
+          }
+          infoSpan.innerHTML = info
+        })()
+        
+        // register the event... to be able to remove it again...
+        lively.addEventListener("link", link, "click", evt => {
+          // #TODO make this bevior persistent?
+          evt.preventDefault();
+          evt.stopPropagation();
+          lively.openBrowser(urlString);
+          return true;
+        })
+        return link
+      }),
+      
       
       new DropOnBodyHandler('text/uri-list', urlString => {
+        
         var link = <div class="lively-content"><a  href={urlString}>
           {urlString.replace(/\/$/,"").replace(/.*\//,"")}
         </a></div>;
@@ -224,6 +271,37 @@ const dropOnDocumentBehavior = {
         return div;
       }),
 
+      new DropOnBodyHandler('application/lively4id', id => {
+        var element = lively.elementByID(id)
+    
+        if (element && 
+            (element.parentElement === document.body) /* move element */) {          
+          return element
+        }
+        
+        lively.notify("drop id:" + id)
+    
+        return false
+      }),
+  
+      new DropOnBodyHandler('text/plain', async text => {
+        // test for bibtex content
+        if (text.match(/^\s*@[a-zA-Z]+\{/)) {          
+            const comp = await (<lively-bibtex style="width:700px"></lively-bibtex>);
+            comp.innerHTML = text;
+            await comp.updateView();
+            debugger
+            var entries = comp.querySelectorAll("lively-bibtex-entry")
+             if (entries.length == 1) {
+                entries[0].style.width = "700px"
+                return entries[0]
+             }
+            return comp
+        }
+        return false
+      }),
+  
+  
       new DropOnBodyHandler('text/plain', text => {
         return <p>{text}</p>;
       }),

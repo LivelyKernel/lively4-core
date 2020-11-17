@@ -455,9 +455,9 @@ export class Paper {
         import {Paper} from "src/client/literature.js";
       </script></lively-script> 
   
-      <h1 class="title">${
+      <h1 class="title"><a href="academic://expr:Id=${this.microsoftid}">${
         this.title
-      } <span class="year">(${
+      }</a><span class="year">(${
           this.year
         })</span>
       </h1> 
@@ -498,7 +498,7 @@ export class Paper {
      if (container) container.setPath(container.getPath())
    }}>import bibtex entry</button>
    result
-</script></livley-script>`
+</script></lively-script>`
       }
     ${`<lively-script><script>
   var paper = Paper.byId(${this.microsoftid})
@@ -506,7 +506,7 @@ export class Paper {
      lively.openWorkspace(paper.toBibtex())
   }}>bibtex</button>
   result
-</script></livley-script>`
+</script></lively-script>`
 }</div>
 
       <h3>Abstract</h3>

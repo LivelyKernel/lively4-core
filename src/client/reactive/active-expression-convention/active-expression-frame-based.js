@@ -1,5 +1,5 @@
 import { BaseActiveExpression } from 'active-expression';
-import { check } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
+import { check, setExpressionOptionsForConventionStrategies } from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 import { PausableLoop } from 'utils';
 
 export class FrameBasedActiveExpression extends BaseActiveExpression {
@@ -16,25 +16,31 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
   }
 
   onChange(...args) {
-    super.onChange(...args);
+    const result = super.onChange(...args);
 
     if(!this._isDisposed) {
       FRAME_BASED_AEXPRS.add(this);
       checkLoop.ensureRunning();
     }
+    
+    return result;
   }
 
   offChange(...args) {
-    super.offChange(...args);
+    const result = super.offChange(...args);
 
     if(!this.hasCallbacks()) {
       this.revoke();
     }
+    
+    return result;
   }
 
-  dispose() {
-    super.dispose();
+  dispose(...args) {
+    const result = super.dispose(...args);
     this.revoke();
+    
+    return result;
   }
 
   // #TODO: unused!
@@ -44,6 +50,12 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
       checkLoop.pause();
     }
   }
+
+  /** the parameter `checkImmediately` is by default false for convention strategies */
+  setExpression(...params) {
+    return super.setExpression(...setExpressionOptionsForConventionStrategies(...params))
+  }
+
 }
 
 export function aexpr(func, ...args) {

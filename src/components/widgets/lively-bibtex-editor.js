@@ -4,12 +4,9 @@ import ContextMenu from 'src/client/contextmenu.js'
 import Strings from 'src/client/strings.js'  
 import Bibliography from 'src/client/bibliography.js';
 /*MD
-# Lively Bibtex
-
-![](lively-bibtex.png){style="width:350px"}
+# Lively Bibtex Editor
 
 MD*/
-
 
 export default class LivelyBibtexEditor extends Morph {
   async initialize() {
@@ -33,6 +30,12 @@ export default class LivelyBibtexEditor extends Morph {
     this.addEventListener("cut", evt => this.onCut(evt), true);
     this.addEventListener("paste", evt => this.onPaste(evt), true);
 
+    this.draggable = true;
+    this.addEventListener("dragstart", evt => this.onDragStart(evt));
+
+    this.addEventListener("drop", evt => this.onDrop(evt))
+    this.addEventListener("dragover", evt => this.onDragOver(evt))
+    
     this.addEventListener("click", evt => this.onClick(evt));
   }
  
@@ -47,8 +50,45 @@ export default class LivelyBibtexEditor extends Morph {
 //     this.updateChangeIndicator()
 //   }
   
+  async onDragStart(evt) {
+    if (!this.table) return 
+    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
+    if (this.isMerging()) return
+    
+    let source;
+    let rows = this.selectedOrCurrentRows()  
+    if (rows.length == 0) {
+      // nothing to drag
+      evt.preventDefault();
+      evt.stopPropagation();        
+      return
+    }
+    
+    let flatEntries = rows.map(row => this.table.rowToJSO(row))
+    
+    let entries = this.flatEntriesToBibtexEntries(flatEntries)
+    source = Parser.toBibtex(entries, false)
+    evt.dataTransfer.setData("text/plain", source);
+    evt.dataTransfer.setDragImage(rows[0], 0, 0); 
+  }
+  
+  onDrop(evt) {
+    if (this.isMerging()) return
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    var source = evt.dataTransfer.getData("text")
+    this.insertData(source) 
+  }
+  
+  onDragOver(evt) {
+    if (this.isMerging()) return
+    // here we could show a preview of what would happen 
+    evt.dataTransfer.dropEffect = "copy";
+  }
+
   isEditingCells() {
-    return this.table.isEditingCells()
+    return this.table && this.table.isEditingCells()
   }
   
   
@@ -187,11 +227,22 @@ export default class LivelyBibtexEditor extends Morph {
   }
 
   async updateView() { 
-    if (!this.src) return;
+    let flatEntries
+    if (!this.src) {
+      var source = this.textContent
+      try  {
+        flatEntries  = this.bibtexToFlatEntries(source)
+      } catch(e) {
+        lively.notify("could not parse: " + source)
+        return 
+      }
+    } else {
+      this.get("#srcLabel").textContent = this.src.replace(/.*\//,"")
+      flatEntries = await this.loadEntries(this.src)
+    }
     this.get('#content').innerHTML = ""
     var table = await (<lively-table></lively-table>)
     this.table = table
-    var flatEntries = await this.loadEntries(this.src)
     this.get('#content').appendChild(table)
     table.setFromJSO(flatEntries, true)
     this.setDetailsEntry(null)
@@ -298,10 +349,24 @@ export default class LivelyBibtexEditor extends Morph {
   }
   
   async onCancelButton() {
-    var bibtex = await (<lively-bibtex src={this.src}></lively-bibtex>)
+    /*MD  #Refactor #Duplication with <edit://src/components/widgets/lively-bibtex.js#onEditButton> MD*/
+    if (this.style.position) {
+      var pos = lively.getPosition(this)
+      var extent = lively.getExtent(this)
+    }
+    var bibtex = await (<lively-bibtex></lively-bibtex>)
+    if (this.src) {
+      bibtex.setAttribute("src", this.src)
+    } else {
+      bibtex.textContent = this.textContent
+    }
     this.parentElement.insertBefore(bibtex, this)
     bibtex.updateView()
     this.remove()
+    if (pos) {
+      lively.setPosition(bibtex, pos)
+      lively.setExtent(bibtex, extent)
+    }
   }
   
   async onTableCellSelected(evt) {
@@ -454,15 +519,7 @@ export default class LivelyBibtexEditor extends Morph {
     } 
   }
 
-  onPaste(evt) {
-    if (this.isEditingCells()) return
-    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
-
-    
-    evt.stopPropagation();
-    evt.preventDefault();
-    
-    lively.notify("ON PASTE")
+  insertData(data) {
     function insert(arr, index, newitems) {
       return [
         ...arr.slice(0, index),
@@ -481,12 +538,11 @@ export default class LivelyBibtexEditor extends Morph {
       rowInsert = all.length
       
     }
-    var data = evt.clipboardData.getData('text/plain');
     
     try {
       var entries = this.bibtexToFlatEntries(data)
     } catch(e) {
-      lively.error("could not pase bibtex: ", e)
+      lively.warn("could not inssert data", data )
       return 
     }
     
@@ -497,6 +553,18 @@ export default class LivelyBibtexEditor extends Morph {
     lively.notify("new entries", "", 10, 
                   () =>lively.openInspector(newentries))
    
+  }
+  
+  
+  onPaste(evt) {
+    if (this.isEditingCells()) return
+    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return   
+
+    
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    this.insertData(evt.clipboardData.getData('text/plain')) 
   }
   
   /*MD ## Merge MD*/
