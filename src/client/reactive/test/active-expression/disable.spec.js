@@ -46,7 +46,7 @@ describe('disable (Active Expressions)', () => {
     assertEnabled(ae);
   });
 
-  xit('starts disabled', () => {
+  it('starts disabled', () => {
     const ae = new BaseActiveExpression(() => {}, { disabled: true });
     assertDisabled(ae);
   });
@@ -55,26 +55,29 @@ describe('disable (Active Expressions)', () => {
     
     let ae, enableSpy, disableSpy;
     
-    beforeEach(() => {
+    const fixture = ((options) => {
       enableSpy = sinon.spy();
       disableSpy = sinon.spy();
-      ae = new BaseActiveExpression(() => {})
+      ae = new BaseActiveExpression(() => {}, options)
         .on('enable', enableSpy)
         .on('disable', disableSpy);
     });
 
     it('no events fired initially', () => {
+      fixture();
       expect(enableSpy).not.to.be.called;
       expect(disableSpy).not.to.be.called;
     });
 
     it('disable once', () => {
+      fixture();
       ae.disable();
       expect(enableSpy).not.to.be.called;
       expect(disableSpy).to.be.calledOnce;     
     });
 
     it('disable twice', () => {
+      fixture();
       ae.disable();
       disableSpy.reset();
 
@@ -84,6 +87,7 @@ describe('disable (Active Expressions)', () => {
     });
 
     it('enable once after disable', () => {
+      fixture();
       ae.disable();
       disableSpy.reset();
 
@@ -93,6 +97,7 @@ describe('disable (Active Expressions)', () => {
     });
 
     it('enable twice after disable', () => {
+      fixture();
       ae.disable();
       disableSpy.reset();
 
@@ -104,43 +109,126 @@ describe('disable (Active Expressions)', () => {
       expect(disableSpy).not.to.be.called;
     });
 
+    it('(start disabled) no events fired initially', () => {
+      fixture({ disabled: true });
+      expect(enableSpy).not.to.be.called;
+      expect(disableSpy).not.to.be.called;
+    });
+
+    it('(start disabled) disable once', () => {
+      fixture({ disabled: true });
+      ae.disable();
+      expect(enableSpy).not.to.be.called;
+      expect(disableSpy).not.to.be.called;     
+    });
+
+    it('(start disabled) enable once', () => {
+      fixture({ disabled: true });
+
+      ae.enable();
+      expect(enableSpy).to.be.calledOnce;
+      expect(disableSpy).not.to.be.called;
+    });
+
+    it('(start disabled) enable twice after disable', () => {
+      fixture({ disabled: true });
+
+      ae.enable();
+      enableSpy.reset();
+
+      ae.enable();
+      expect(enableSpy).not.to.be.called;
+      expect(disableSpy).not.to.be.called;
+    });
+
   });
 
-  it('remove listeners', () => {
-    const spy1 = sinon.spy();
-    const spy2 = sinon.spy();
-    const spy3 = sinon.spy();
-    const ae = aexpr(() => {})
-      .on('dispose', spy1)
-      .off('dispose', spy1)
-      .on('dispose', spy2)
-      .on('dispose', spy3)
-      .off('dispose', spy3)
-      .on('dispose', spy3)
+  describe('obey _isEnabled', () => {
+    
+    let ae, enableSpy, disableSpy;
+    
+    const fixture = ((options) => {
+      enableSpy = sinon.spy();
+      disableSpy = sinon.spy();
+      ae = new BaseActiveExpression(() => {}, options)
+        .on('enable', enableSpy)
+        .on('disable', disableSpy);
+    });
 
-    ae.dispose();
+    it('.checkAndNotify while disabled', () => {
+      var x = 42;
+      const spy = sinon.spy();
+      let ae = new BaseActiveExpression(() => x).onChange(spy)
+      
+      ae.disable();
+      
+      x = 17;
+      ae.checkAndNotify();
 
-    expect(spy1).not.to.be.called;
-    expect(spy2).to.be.calledOnce;
-    expect(spy3).to.be.calledOnce;
-  });
+      expect(spy).not.to.be.called;
+    });
 
-  it('get listeners', () => {
-    const callback1 = () => {};
-    const callback2 = () => {};
-    const ae = aexpr(() => {})
-      .on('dispose', callback1)
+    it('.checkAndNotify while enabled', () => {
+      var x = 42;
+      const spy = sinon.spy();
+      let ae = new BaseActiveExpression(() => x, { disabled: true }).onChange(spy)
+      
+      ae.enable();
+      
+      x = 17;
+      ae.checkAndNotify();
 
-    const listeners = ae.getEventListeners('dispose');
+      expect(spy).to.be.calledOnce;
+    });
 
-    expect(listeners).to.include(callback1);
-    expect(listeners).not.to.include(callback2);
+    it('check via .enable', () => {
+      var x = 42;
+      const spy = sinon.spy();
+      let ae = new BaseActiveExpression(() => x, { disabled: true }).onChange(spy)
+      
+      x = 17;
+      ae.enable();
 
-    ae.on('dispose', callback2);
-    const listeners2 = ae.getEventListeners('dispose');
+      expect(spy).to.be.calledOnce;
+    });
 
-    expect(listeners2).to.include(callback1);
-    expect(listeners2).to.include(callback2);
+    it('not check via .enable', () => {
+      var x = 1;
+      const spy = sinon.spy();
+      let ae = new BaseActiveExpression(() => x, { disabled: true }).onChange(spy)
+      
+      x = 2;
+      ae.enable({ check: false });
+      expect(spy).not.to.be.called;
+
+      x = 3;
+      ae.checkAndNotify();
+      expect(spy).to.be.calledOnce;
+      // #TODO: x = 2; should be the last value
+      expect(spy.firstCall.args[1].lastValue).to.equal(2)
+    });
+
+    xit('.dataflow while disabled', () => {
+      const ae = new BaseActiveExpression(() => 17, { disabled: true });
+      
+      const spy = sinon.spy();
+      ae.dataflow(spy);
+
+      // #TODO: what is the intended semantics here
+      expect(spy).not.to.be.called;
+    });
+
+    it('.setExpression while disabled', () => {
+      const spy = sinon.spy();
+      let ae = new BaseActiveExpression(() => 1, { disabled: true }).onChange(spy)
+
+      ae.setExpression(() => 2);
+      expect(spy).not.to.be.called;
+
+      ae.enable();
+      expect(spy).to.be.calledOnce;
+      expect(spy.firstCall.args[1].lastValue).to.equal(1)
+    });
 
   });
 
