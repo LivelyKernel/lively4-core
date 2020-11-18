@@ -173,15 +173,21 @@ export class BaseActiveExpression {
    * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [], match, errorMode = 'silent', location, sourceCode } = {}) {
+  constructor(func, {
+    params = [], match,
+    errorMode = 'silent',
+    disabled = false,
+    location,
+    sourceCode
+  } = {}) {
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
-    this._isEnabled = true;
+    this._isEnabled = !disabled;
     this.setupMatcher(match);
     this._initLastValue();
     this.callbacks = [];
-    // this.allCallbacks = new Map();
+
     this._isDisposed = false;
     this._shouldDisposeOnLastCallbackDetached = false;
 
@@ -202,11 +208,14 @@ export class BaseActiveExpression {
   }
 
   _initLastValue() {
+    this.lastValue = NO_VALUE_YET;
+    this.updateLastValue();
+  }
+  
+  updateLastValue() {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
       this.storeResult(value);
-    } else {
-      this.lastValue = NO_VALUE_YET;
     }
   }
 
@@ -299,6 +308,10 @@ export class BaseActiveExpression {
    * @public
    */
   checkAndNotify() {
+    if (!this._isEnabled) {
+      return;
+    }
+
     const { value, isError } = this.evaluateToCurrentValue();
     if (isError || this.compareResults(this.lastValue, value)) {
       return;
@@ -478,24 +491,36 @@ export class BaseActiveExpression {
   
     In contrast to scoping with respect to applying a single expression to multiple subjects
   MD*/
-  enable() {
+
+  enable({ check = true } = {}) {
     if (!this._isEnabled) {
       this._isEnabled = true;
-      this.emit('enable')
+      this.emit('enable');
+
+      this.updateDependencies();
+      if (check) {
+        this.checkAndNotify();
+      } else {
+        this.updateLastValue();
+      }
     }
   }
+
   disable() {
     if (this._isEnabled) {
       this._isEnabled = false;
       this.emit('disable')
     }
   }
+
   isEnabled() {
     return this._isEnabled;
   }
+
   isDisabled() {
     return !this._isEnabled;
   }
+
   /*MD ## Reflection Information MD*/
   meta(annotation) {
     if (annotation) {

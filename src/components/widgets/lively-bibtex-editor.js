@@ -237,6 +237,7 @@ export default class LivelyBibtexEditor extends Morph {
         return 
       }
     } else {
+      this.get("#srcLabel").textContent = this.src.replace(/.*\//,"")
       flatEntries = await this.loadEntries(this.src)
     }
     this.get('#content').innerHTML = ""

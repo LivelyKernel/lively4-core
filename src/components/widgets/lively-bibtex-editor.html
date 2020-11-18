@@ -4,11 +4,33 @@
   <style data-src="/src/client/lively.css"></style>
   <style>
     :host {
-      min-height: 100px;
-      min-width: 200px;
-      
-      
+      min-height: 300px;
+      min-width: 600px;
+      overflow: hidden !important;
     }
+        
+    :host {
+      background-color: white;
+      outline: 2px solid gray;  
+    }
+
+    :host([src]) :host {
+      outline: 1px solid blue;  
+    }
+    
+    :host-context(lively-window) :host  {
+      outline: none !important;
+    }
+    
+    
+    #saveButton {
+      display: none;  
+    }
+    
+    :host([src]) #saveButton {
+      display: inline;  
+    }
+
       
     #copyHack {
       position: absolute;
@@ -73,7 +95,7 @@
     }
 
     #content {
-      width: calc(100% - 0px);
+      width: calc(100% - 10px);
       border: 1px solid gray;
       flex: 50;
       overflow: auto;
@@ -81,16 +103,17 @@
     
     #pane {
       position: absolute;
-      top: 1px;
-      left: 1px;
+      top: 0px;
+      left: 0px;
       display: flex;
       flex-direction: column;   
-      height: calc(100% - 1px);
-      width: calc(100% - 1px);
+      height: calc(100%);
+      width: calc(100%);
       overflow: hidden;
     }
     
     #details {
+      
     }
 
     #details-pane {
@@ -101,20 +124,42 @@
     }
      
     #buttons {
-      position: absolute;
-      top: 0px;
-      right: 0px;
       background-color: rgb(200,200,200);
     }
+
+    #buttons {
+      text-align: right;
+    }
+
     
     #detailsButtons {
       float: right;
+    }
+    
+    #srcLabel {
+      float: left;
+      color: gray;
+      font-size: 10pt;
+      font-style: italic;
+      padding: 5px
     }
     
   </style>
   <input id="copyHack" value="" />
   <lively-change-indicator id="content-change-indicator" target="content"></lively-change-indicator>
   <div id="pane">
+    <div id="buttons">
+      <span id="srcLabel"></span>
+      <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
+      <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
+      <button id="combineButton" title="combine two entries">combine (2)</button>
+      <button id="mergeButton" title="merge entries">merge</button>
+      <button id="finishButton" title="finish merge" hidden="true">finish</button>
+
+      <button id="saveButton" title="save bibtex"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+      <button id="cancelButton" title="return to view without changes"><i class="fa fa-ban" aria-hidden="true"></i></button>
+    </div>
+
     <div id="content"></div>
     <div id="details-pane">
       <b>Details</b> 
@@ -126,14 +171,4 @@
       <div id="details"></div>    
     </div>
   </div>
-<div id="buttons">
-      <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
-      <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
-      <button id="combineButton" title="combine two entries">combine (2)</button>
-      <button id="mergeButton" title="merge entries">merge</button>
-      <button id="finishButton" title="finish merge" hidden="true">finish</button>
-
-      <button id="saveButton" title="save bibtex"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-      <button id="cancelButton" title="return to view without changes"><i class="fa fa-ban" aria-hidden="true"></i></button>
-    </div>
 </template>

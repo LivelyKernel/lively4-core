@@ -567,6 +567,8 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   }
 
   updateDependencies() {
+    if (this.isDisabled()) { return; }
+
     ExpressionAnalysis.recalculateDependencies(this);
   }
   supportsDependencies() {

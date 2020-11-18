@@ -15,27 +15,32 @@ export class FrameBasedActiveExpression extends BaseActiveExpression {
     }
   }
 
-  // #TODO: onChange here is not chainable
   onChange(...args) {
-    super.onChange(...args);
+    const result = super.onChange(...args);
 
     if(!this._isDisposed) {
       FRAME_BASED_AEXPRS.add(this);
       checkLoop.ensureRunning();
     }
+    
+    return result;
   }
 
   offChange(...args) {
-    super.offChange(...args);
+    const result = super.offChange(...args);
 
     if(!this.hasCallbacks()) {
       this.revoke();
     }
+    
+    return result;
   }
 
-  dispose() {
-    super.dispose();
+  dispose(...args) {
+    const result = super.dispose(...args);
     this.revoke();
+    
+    return result;
   }
 
   // #TODO: unused!

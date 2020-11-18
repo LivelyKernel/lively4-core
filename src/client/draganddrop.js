@@ -271,12 +271,31 @@ const dropOnDocumentBehavior = {
         return div;
       }),
 
+      new DropOnBodyHandler('application/lively4id', id => {
+        var element = lively.elementByID(id)
+    
+        if (element && 
+            (element.parentElement === document.body) /* move element */) {          
+          return element
+        }
+        
+        lively.notify("drop id:" + id)
+    
+        return false
+      }),
   
-      new DropOnBodyHandler('text/plain', text => {
+      new DropOnBodyHandler('text/plain', async text => {
         // test for bibtex content
-        if (text.match(/^\s*@[a-zA-Z]+\{/)) {
-            const comp = document.createElement("lively-bibtex");
+        if (text.match(/^\s*@[a-zA-Z]+\{/)) {          
+            const comp = await (<lively-bibtex style="width:700px"></lively-bibtex>);
             comp.innerHTML = text;
+            await comp.updateView();
+            debugger
+            var entries = comp.querySelectorAll("lively-bibtex-entry")
+             if (entries.length == 1) {
+                entries[0].style.width = "700px"
+                return entries[0]
+             }
             return comp
         }
         return false
