@@ -1,25 +1,51 @@
 # Leo's Drag 'n Drop Example
 
 <div id="helloDiv" draggable="true">
-Hello
-  <a href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.js">
-    lively-console.js
-  </a>
+  Hello
 </div>
 
-<div>
-World
+<div id="worldDiv">
+  World
 </div>
+
+<p id="description">
+</p>
 
 
 
 <script>
-  console.log("DKFNKEI");
+  let description = lively.query(this, '#description');
   let helloDiv = lively.query(this, '#helloDiv');
-  helloDiv.addEventListener("drag", onDrag);
+  helloDiv.addEventListener('dragstart', dragStart);
+  helloDiv.addEventListener('dragend', dragEnd);
   
-  function onDrag() {
-    console.log("Draggin");
+  let worldDiv = lively.query(this, '#worldDiv');
+  worldDiv.addEventListener('drop', drop);
+  
+  fetch("https://academic.microsoft.com/api/search", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8"
+    },
+    body: JSON.stringify({query: "Jens Lincke 2014", queryExpression: "", filters: [], orderBy: 0, skip: 0, sortAscending: true, take: 10})
+  }).then(r => console.log("JSON", r.json()));
+
+  
+  
+  function dragStart(event) {
+    description.innerHTML = "dragging";
+    event.dataTransfer.setData("element", event.target.id);
+  }
+  
+  function dragEnd(event) {
+    description.innerHTML = "";
+  }
+  
+  function drop(event) {
+    event.preventDefault();
+    var data = event.dataTransfer.getData("element");
+    console.log("Datatransfer Types" + event.dataTransfer.types);
+    event.target.appendChild(lively.query(this, '#'+data))
   }
 </script>
 
@@ -27,9 +53,7 @@ World
 
 
 
-
-
-<script data-name="loadLively" type="lively4script">function loadLively() {
+<!--script data-name="loadLively" type="lively4script">function loadLively() {
   lively.removeEventListener("Drag", this)
   this.draggable = true
   lively.addEventListener("Drag", this, "dragstart", 
@@ -59,7 +83,7 @@ World
   console.log("types", dataList.types)
 
   // dataList.add("http://www.example.org","text/uri-list");
-}</script>
+}</script-->
 
 
 
