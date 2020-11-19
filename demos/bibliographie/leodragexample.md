@@ -22,6 +22,15 @@
   let worldDiv = lively.query(this, '#worldDiv');
   worldDiv.addEventListener('drop', drop);
   
+  fetch("https://academic.microsoft.com/api/search", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8"
+    },
+    body: JSON.stringify({query: "Jens Lincke 2014", queryExpression: "", filters: [], orderBy: 0, skip: 0, sortAscending: true, take: 10})
+  }).then(r => console.log("JSON", r.json()));
+
+  
   
   function dragStart(event) {
     description.innerHTML = "dragging";
