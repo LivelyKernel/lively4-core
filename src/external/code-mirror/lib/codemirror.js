@@ -1269,7 +1269,7 @@ function hasBadBidiRects(measure) {
 
 // See if "".split is the broken IE version, if so, provide an
 // alternative way to split lines.
-var splitLinesAuto = "\n\nb".split(/\n/).length != 3 ? function (string) {
+var splitLinesAuto = "\n\nb".split(/\n/).length != 3 ? function (string){ 
   var pos = 0, result = [], l = string.length
   while (pos <= l) {
     var nl = string.indexOf("\n", pos)

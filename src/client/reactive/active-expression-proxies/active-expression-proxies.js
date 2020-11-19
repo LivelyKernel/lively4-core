@@ -121,6 +121,8 @@ export class ProxiesActiveExpression extends BaseActiveExpression {
 
   // #TODO: dependencies are only accumulated iver time; here, we do not remove those not needed anymore
   updateDependencies() {
+    if (this.isDisabled()) { return; }
+
     self.__expressionAnalysisMode__ = true;
     self.__currentActiveExpression__ = this;
 

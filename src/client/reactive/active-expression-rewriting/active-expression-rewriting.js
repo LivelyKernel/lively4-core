@@ -11,7 +11,7 @@ import Stack from 'src/client/reactive/utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
-import { using, isFunction } from 'utils';
+import { isFunction } from 'utils';
 
 /*MD # Dependency Analysis MD*/
 
@@ -19,17 +19,6 @@ const analysisStack = new Stack();
 
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
-
-const analysisModeManager = {
-  __enter__() {
-    expressionAnalysisMode = true;
-    window.__expressionAnalysisMode__ = expressionAnalysisMode;
-  },
-  __exit__() {
-    expressionAnalysisMode = !!analysisStack.top();
-    window.__expressionAnalysisMode__ = expressionAnalysisMode;
-  }
-}
 
 class ExpressionAnalysis {
   
@@ -41,7 +30,10 @@ class ExpressionAnalysis {
     // #TODO: compute diff of Dependencies
     DependencyManager.disconnectAllFor(aexpr);
 
-    using([analysisModeManager], () => {
+    try {
+      expressionAnalysisMode = true;
+      window.__expressionAnalysisMode__ = expressionAnalysisMode;
+
       // Do the function execution in ExpressionAnalysisMode
       analysisStack.withElement({ currentAExpr: aexpr, dependencies: new Set() }, () => {
         try {
@@ -50,7 +42,10 @@ class ExpressionAnalysis {
           this.applyDependencies();
         }
       });
-    });
+    } finally {
+      expressionAnalysisMode = !!analysisStack.top();
+      window.__expressionAnalysisMode__ = expressionAnalysisMode;
+    }
   }
 
   static associateDependency(dependency) {
@@ -567,6 +562,8 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   }
 
   updateDependencies() {
+    if (this.isDisabled()) { return; }
+
     ExpressionAnalysis.recalculateDependencies(this);
   }
   supportsDependencies() {
