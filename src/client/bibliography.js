@@ -165,7 +165,7 @@ Bibliography.filenameToKey("00_Winograd_1996_Introduction.pdf")]
     var firstAuthor = authors.split(/(?=[A-Z])/)[0]
     
     
-    var title = titleAndRest.replace(/(?<=[a-z])(?=[A-Z])/g, " ")
+    var title = titleAndRest.replace(/(?<=[a-z])(?=[A-Z0-9])/g, " ")
     return firstAuthor + year + this.threeSignificantInitialsFromTitle(title)
   }
 

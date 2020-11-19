@@ -406,9 +406,7 @@ const dropOnDocumentBehavior = {
         // window.LastCSS = value
         // target.style["background"] = "red"
       })
-        
-      } else {
-      
+    } else {  
       lively.warn("Dragged content contained neither files nor handled items");
     }
     
