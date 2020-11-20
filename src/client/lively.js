@@ -1956,6 +1956,7 @@ export default class Lively {
         // e.g. asking a link for href in the "context" of a lively container should
         // produce the following behavior! #ContextJS #UseCase 
         var url = link.getAttribute("href")
+        if (!url) return;
         var container = await lively.query(link, "lively-container")
         if (!url.match(/^[a-zA-Z0-9]+:/)) {
           if (container) {

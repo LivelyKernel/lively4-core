@@ -159,7 +159,26 @@ describe('Bibliography', () => {
       }})
       expect(key).to.equal("Mustermann1994J")
     });
+    
+     
+    it('splits slashes ', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Interactive record/replay for web application debugging",
+      }})
+      expect(key).to.equal("Mustermann1994IRR")
+    });
 
+        it('handles  On-the-fly', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Projection Boxes: On-the-fly Reconfigurable Visualization for Live Programming.",
+      }})
+      expect(key).to.equal("Mustermann1994PBO")
+    });
+    
     
   })
   

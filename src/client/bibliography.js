@@ -124,7 +124,9 @@ Bibliography.cleanTitle("{{This is my Title}}")
   }
   
   static threeSignificantInitialsFromTitle(title) {
-    return this.cleanTitle(title).split(/[ -]/g)
+    return this.cleanTitle(title)
+      .replace(/-the-/g,"the") // on-the-fly -> onthefly
+      .split(/[ -\/_]/g)
       .map(ea => ea.toLowerCase())
       .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for", "but"].includes(ea))
       .filter(ea => ea.length >  2  && !["der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
@@ -154,6 +156,7 @@ Bibliography.filenameToKey("00_Winograd_1996_Introduction.pdf")]
   MD*/
   
   static filenameToKey(filename) {
+    filename = filename.replace(/\.[a-z]{3}$/,"") // strip ending
     filename = filename.replace(/^[0-9][0-9]*[A-Z]?_/,"") // strip index number
     
     var a = filename.split("_")

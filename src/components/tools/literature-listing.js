@@ -48,50 +48,51 @@ export default class LiteratureListing extends Morph {
     return this.setAttribute("bibliography-base", url)
   }
   
-  async updateView() {
-    var base = this.base
-  
+  async updateFiles() {
     var files = await FileIndex.current().db.files
-      .filter(ea => ea.url.startsWith(base))
+      .filter(ea => ea.url.startsWith(this.base))
       .filter(ea => ea.name.match(/\.pdf$/)).toArray();
-      
-    var entries = await FileIndex.current().db.bibliography
-      .filter(ea => ea.url.startsWith(this.bibliographyBase || base))
-      .toArray()
-      
-    
-    var papers = files
+    this.literatureFiles = files
        .map(file => ({key: file.bibkey, file: file, entry: null}))
-    
+  }
+
+  async updateEntries() {
+    var entries = await FileIndex.current().db.bibliography
+      .filter(ea => ea.url.startsWith(this.bibliographyBase || this.base))
+      .toArray()
     entries.forEach(entry => {
-      var paper = papers.find(ea => ea.key == entry.key)
-        if (paper) {
-        paper.entry = entry
-      }
+      this.literatureFiles.filter(ea => ea.key == entry.key).forEach(literatureFile => {
+        literatureFile.entry = entry
+      })
     })
-
-
-    papers = papers.sortBy(paper => paper.key)    
-    let style = document.createElement("style")
-    style.textContent = this.style
-
+    this.literatureFiles = this.literatureFiles.sortBy(paper => paper.key)    
+  }
+  
+  async updateView() {
+    await this.updateFiles()
+    await this.updateEntries()
+   
     this.details = <div id="details" style="position:absolute;"></div>
     this.details.hidden = true
     
     this.get("#content").innerHTML = ""
-    this.get("#content").appendChild(<div>{style}
+    this.get("#content").appendChild(<div>
         {this.details}
-        {this.printCollection(papers)}
+        {this.renderCollection(this.literatureFiles)}
       </div>)
-
   }
   
   async renameFile(url, proposedName) {
-    var newURL = await this.container.renameFile(url, false, proposedName)
-    lively.notify("renamed file: ", newURL)
+    let literatureFile = this.literatureFiles.find(ea => ea.file.url == url)
+    let element = this.get("#content").querySelectorAll(".element").find(ea => ea.getAttribute("data-url")  == url)
+    let newURL = await this.container.renameFile(url, false, proposedName)
     if (newURL) {
-      await FileIndex.current().updateDirectory(this.base)
-      this.container.setPath(this.container.getPath())      
+      
+      if (literatureFile && element) {
+        this.updateLiteratureFileAfterRename(literatureFile, element, newURL)
+      } else {
+        lively.notify("could not update view")
+      }
     }
   }
   
@@ -119,134 +120,99 @@ export default class LiteratureListing extends Morph {
                           + this.cleanQueryString(queryString))
   }
   
-  
   async microsoftAcademic(queryString) {
     return this.openFrame("microsoftacademic", 
                             "https://academic.microsoft.com/search?f=&orderBy=0&skip=0&take=10&q=" 
                             + this.cleanQueryString(queryString))
   }
   
-  
-  get style() {
-    return `
-      li {
-        clear: both;
-      }
-
-      #details {
-        padding: 20px;
-        background-color: rgba(240,240,250,0.9);
-        border: 1px solid rgba(200,200,250,0.9);
-        border-radius: 10px;
-      }
-      
-      a {
-        color: black;
-      }
-
-      a:hover {
-        color: blue;
-        text-decoration: underline;
-      }
-
-      .key {
-        font-size: 10pt;
-      }
-
-
-      .keywords {
-        font-size: 9pt;
-        color: lightblue;
-      }
-      .authors {
-        font-size: 10pt;
-        color: lightgray;
-      }
-
-      .title {
-        font-size: 10pt;
-        color: gray;
-      }
-      
-      .year {
-        font-size: 10pt;
-        color: gray;
-      }
-
-      .noentry {
-        font-size: 10pt;
-        color: orange;
-      }
-
-      .nav {
-        /*
-        text-align: right;
-        float: right;
-        */        
-        margin-right: 50px;
-        background-color: rgb(245,245,245);
-      }
-
-      .nav a {
-        font-size: 8pt;
-        color: gray;
-      }
-    `
+  async updateLiteratureFileAfterRename(literatureFile, element, newURL) {
+    literatureFile.file.url = newURL
+    literatureFile.file.name = newURL.replace(/.*\//,"")
+    await this.updateEntries()
+    return this.updateLiteratureFile(literatureFile, element)
   }
+  
+  updateLiteratureFile(literatureFile, element) {
+    if (!element.parentElement) {
+      throw new Error("ERROR updateLiteratureFile parentElement missing")
+    }    
+    var replacement = this.renderLiteratureFile(literatureFile)
+    // lively.showElement(element)
+    var animation = replacement.animate([
+        { outline: "2px solid transparent",  }, 
+        { outline: "2px solid green",   }, 
+        { outline: "2px solid transparent",  },                                 
+      ], 
+      {
+      duration: 1000
+    });  
+                     
+    
+    element.parentElement.insertBefore(replacement, element)
+    element.remove()
+  }
+  
+  renderLiteratureFile(literatureFile) {
+    var entryDetails = literatureFile.entry ? 
+        <span>
+          <span class="authors">{literatureFile.entry.authors.join(", ")}</span>.
+          <span class="title">{literatureFile.entry.title}</span>.
+          <span class="year">{literatureFile.entry.year}</span>
+        </span> : 
+        <span class="noentry">{literatureFile.file.name}</span>
 
-  printCollection(collection) {
+      var filelink = literatureFile.file ? 
+          <a style="color:gray" click={(evt) => {
+              if (evt.shiftKey) {
+                lively.openInspector(literatureFile) // #Example #ExplorationPattern #ForMarcel build way into object inspector into UI
+              } else {
+                if (literatureFile.file) lively.openBrowser(literatureFile.file.url)
+              }
+            }
+          }>⇗pdf</a> : ""
+    var keywords = (literatureFile.entry && literatureFile.entry.keywords) ? 
+        <span class="keywords">{... literatureFile.entry.keywords.map(ea => ea + " ")}</span> : "";
+
+    let query =  literatureFile.file.name
+      .replace(/.*\//,"")
+      .replace(/\.pdf$/,"")
+      .replace(/([a-z])([A-Z])/g,"$1 $2")
+      .replace(/_/g," ")
+    var scholarLink = <a click={() => this.googleScholar(query)}>⇗GS</a>
+    var academicLink = <a click={() => this.microsoftAcademic(query)}>⇗MA</a>
+
+    var renameLink = <a click={() => this.renameFile(literatureFile.file.url)}>rename</a>
+    var microsoftIdLink = literatureFile.entry && literatureFile.entry.microsoftid ? 
+        <a click={() => lively.openBrowser("academic://expr:Id="+literatureFile.entry.microsoftid) }>academic</a> : ""
+
+    var bibtexLink = <a click={async () => {
+        this.details.innerHTML = ""
+        var search = await (<literature-search mode="fuzzy" query={query} rename-url={literatureFile.file.url}></literature-search>)
+        this.details.appendChild(search)    
+        this.details.hidden = false
+        search.updateView()
+        lively.setGlobalPosition(this.details, lively.getGlobalBounds(element).bottomLeft().addPt(pt(20,0)))
+        search.addEventListener("closed", async () => {
+          await lively.sleep(1000) // await a bit
+          await this.updateEntries()
+          this.updateLiteratureFile(literatureFile, element) 
+        })
+    }}>search</a>
+    var keyLink = <a class="key" click={() => lively.openBrowser("bib://" + literatureFile.key)}>{
+          "[" + literatureFile.key +  "]"  }</a>
+    var element = <li class="element" data-url={literatureFile.file.url}>
+        {literatureFile.key ? keyLink : ""}
+        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {academicLink} {renameLink} {bibtexLink} {microsoftIdLink}</span></li>
+    return element
+  }
+  
+  renderCollection(collection) {
     return <ul>{... 
-      collection.map(paper => {
-          var details = paper.entry ? 
-            <span>
-              <span class="authors">{paper.entry.authors.join(", ")}</span>.
-              <span class="title">{paper.entry.title}</span>.
-              <span class="year">{paper.entry.year}</span>
-            </span> : 
-            <span class="noentry">{paper.file.name}</span>
-
-          var filelink = paper.file ? 
-              <a style="color:gray" click={(evt) => {
-                  if (evt.shiftKey) {
-                    lively.openInspector(paper) // #Example #ExplorationPattern #ForMarcel build way into object inspector into UI
-                  } else {
-                    if (paper.file) lively.openBrowser(paper.file.url)
-                  }
-                }
-              }>⇗pdf</a> : ""
-        var keywords = (paper.entry && paper.entry.keywords) ? 
-            <span class="keywords">{... paper.entry.keywords.map(ea => ea + " ")}</span> : "";
-
-        let query =  paper.file.name
-          .replace(/.*\//,"")
-          .replace(/\.pdf$/,"")
-          .replace(/([a-z])([A-Z])/g,"$1 $2")
-          .replace(/_/g," ")
-        var scholarLink = <a click={() => this.googleScholar(query)}>⇗GS</a>
-        var academicLink = <a click={() => this.microsoftAcademic(query)}>⇗MA</a>
-        
-        var renameLink = <a click={() => this.renameFile(paper.file.url)}>rename</a>
-        var microsoftIdLink = paper.entry && paper.entry.microsoftid ? <a click={() => lively.openBrowser("academic://expr:Id="+paper.entry.microsoftid) }>academic</a> : ""
-     
-        var bibtexLink = <a click={async () => {
-            this.details.innerHTML = ""
-            var search = await (<literature-search mode="fuzzy" query={query} rename-url={paper.file.url}></literature-search>)
-            this.details.appendChild(search)    
-            this.details.hidden = false
-            search.updateView()
-            lively.setGlobalPosition(this.details, lively.getGlobalBounds(element).bottomLeft().addPt(pt(20,0)))
-             
-        }}>search</a>
-        var keyLink = <a class="key" click={() => lively.openBrowser("bib://" + paper.key)}>{
-              "[" + paper.key +  "]"  }</a>
-        var element = <li>
-            {paper.key ? keyLink : ""}
-            {details} {keywords} <span class="nav">{filelink} {scholarLink} {academicLink} {renameLink} {bibtexLink} {microsoftIdLink}</span></li>
-        return element
+      collection.map(literatureFile => {
+        return this.renderLiteratureFile(literatureFile)
       }) }</ul>
   }
-  
- 
 
   livelyMigrate(other) {
     this.container = other.container
