@@ -18,7 +18,7 @@ export class BibScheme extends BibliographyScheme {
   
   
   async content(entries, query) {
-    var entry = entries[0] || {}
+    var entry = entries[0] || {authors: undefined, keywords: undefined, title: ""}
     var key = query
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
     
@@ -35,7 +35,7 @@ export class BibScheme extends BibliographyScheme {
       content += "<div>" + papers.map(ea => {
         return `<a href="academic://expr:Id=${ea.microsoftid}">[academic]</a>`   
       }).join(" ") + "</div><br>"      
-    } else {
+    } else if (entry.year) {
       content += "<div>" + `<a href="academic://${entry.authors.join(",") + "." + entry.year}">[search academic]</a>` + "</div><br>"
     }
 

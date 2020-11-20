@@ -38,6 +38,7 @@ export default class LivelyBibtexEntry extends Morph {
   }
 
   onDblClick(evt) {
+    if (this.getAttribute("mode") == "readonly") return
     if (this.getAttribute("mode") == "edit") {
       var newvalue;
       try {
