@@ -85,7 +85,7 @@ export default class Preferences {
   
   static get prefsNode() {
     // #BUG: reloading Preferences causes dataset to be not defined anymore
-    if (!window.document) return null;
+    if (!(window && window.document)) return null;
     
     let node = document.body.querySelector('.lively-preferences');
     if (!node) {
@@ -145,6 +145,10 @@ export default class Preferences {
   }
 
   static getURLParameter(theParameter) {
+    if (!window) {
+      return false;
+    }
+
     var params = window.location.search.substr(1).split('&');
   
     for (var i = 0; i < params.length; i++) {
