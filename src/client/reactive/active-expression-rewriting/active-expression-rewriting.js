@@ -7,7 +7,7 @@ HTML*/
 import { BaseActiveExpression } from 'active-expression';
 import * as frameBasedAExpr from "active-expression-frame-based";
 
-import Stack from 'src/client/reactive/utils/stack.js';
+import Stack from './../utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
