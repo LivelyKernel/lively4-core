@@ -1,13 +1,75 @@
 <template id="literature-listing" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  
-}
-#content {
-}
-</style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+
+    }
+    #content {
+    }
+    li {
+      clear: both;
+    }
+
+    #details {
+      padding: 20px;
+      background-color: rgba(240,240,250,0.9);
+      border: 1px solid rgba(200,200,250,0.9);
+      border-radius: 10px;
+    }
+
+    a {
+      color: black;
+    }
+
+    a:hover {
+      color: blue;
+      text-decoration: underline;
+    }
+
+    .key {
+      font-size: 10pt;
+    }
+
+
+    .keywords {
+      font-size: 9pt;
+      color: lightblue;
+    }
+    .authors {
+      font-size: 10pt;
+      color: lightgray;
+    }
+
+    .title {
+      font-size: 10pt;
+      color: gray;
+    }
+
+    .year {
+      font-size: 10pt;
+      color: gray;
+    }
+
+    .noentry {
+      font-size: 10pt;
+      color: orange;
+    }
+
+    .nav {
+      /*
+      text-align: right;
+      float: right;
+      */        
+      margin-right: 50px;
+      background-color: rgb(245,245,245);
+    }
+
+    .nav a {
+      font-size: 8pt;
+      color: gray;
+    }  
+  </style>
   <div id="content">
   </div>
   <slot></slot>

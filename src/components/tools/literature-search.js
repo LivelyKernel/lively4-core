@@ -57,13 +57,18 @@ export default class LiteratureSearch extends Morph {
   }
   
   updateView() {
-    if (!this.queryString) {
-      
-    } else {
+    if (this.queryString) {
       this.findBibtex(this.queryString)
     }
   }
   
+  close() {
+    this.dispatchEvent(new CustomEvent("closed"))
+    if (this.literatureListing) {
+      this.literatureListing.details.hidden = true
+      this.literatureListing.details.innerHTML = "" // self destruct...
+    }
+  }
   
   async findBibtex(queryString) {
     queryString = queryString.replace(/[-_,]/g, " ")
@@ -80,12 +85,7 @@ export default class LiteratureSearch extends Morph {
     this.details.appendChild(<div>
       <h3>Searched:{input}</h3>
       <span style="position:absolute; top: 0px; right:0px">
-      <a title="close" click={() => {
-          if (this.literatureListing) {
-            this.literatureListing.details.hidden = true
-            this.literatureListing.details.innerHTML = "" // self destruct...
-          }
-          }}>
+      <a title="close" click={() => this.close()}>
         <i class="fa fa-close" aria-hidden="true"></i>
       </a></span>{div}</div>)
     
@@ -106,28 +106,38 @@ export default class LiteratureSearch extends Morph {
         for(let bib of bibEntries) {
           let id = bib.value.entryTags.microsoftid
           let existing = allBibtexEntries.filter(ea => ea.key == bib.value.citationKey)
-          let rename = <a title="rename file" style="color: gray; background: lightgray; border-radius: 5px" 
-              click={() => {
-                this.literatureListing.renameFile(this.renameURL, bib.generateFilename() + ".pdf")  
+          let rename = <a title="rename file" class="method"
+              click={async () => {
+                await this.literatureListing.renameFile(this.renameURL, bib.generateFilename() + ".pdf")
+                this.close() // we need to close it... because literatureListing will change..., oder does it?
               }}>
-              <i class="fa fa-arrow-right" aria-hidden="true"></i>
-              <i class="fa fa-file" aria-hidden="true"></i>
+             rename
             </a>
-          let importBibtex = <a click={async () => {
-              await Paper.importBibtexId(id)
-              
+          let importBibtex = <a class="method" click={async () => {
+                  await Paper.importBibtexId(id)
+                  var time = 1000
+                  var animation = importBibtex.animate([
+                     { outline: "2px solid transparent",  }, 
+                     { outline: "2px solid red",   }, 
+                     { opacity: 1, }, 
+                     { opacity: 0, }], 
+                    {
+                      duration: time
+                    });  
+                  animation.onfinish = () => importBibtex.remove()
+                  // this.close()
               }}>
-             import bibtex
+             import
             </a>    
-              
-          
           rows.push(<tr>
-              <td>
-                {this.literatureListing ? rename : ""}
+              <td style="vertical-align: top">
+                
               </td>
-              <td>{(existing.length == 0) && id ? importBibtex : ""}</td>
-
-              <td>{bib}</td>
+              <td>
+                <span class="methods" >
+                  {this.literatureListing ? rename : ""} {(existing.length == 0) && id ? importBibtex : ""} 
+                </span> <br />
+                {bib}</td>
             </tr>)
         }
       div.appendChild(
