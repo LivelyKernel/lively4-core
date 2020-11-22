@@ -20,6 +20,12 @@ describe('Bibliography', () => {
     it('converts normal prefixed with index number and letter', async function() {
       expect(Bibliography.filenameToKey("00C_Winograd_1996_Introduction.pdf")).to.equal("Winograd1996I")
     });
+    
+    it('splits number words correctly', async function() {
+        expect(Bibliography.filenameToKey(
+          "EdwardsRoy_2017_AcademicResearchInThe21stCenturyMaintainingScientificIntegrityIn.pdf" 
+        )).to.equal("Edwards2017ARC")
+    });
   })
   
   describe('generateCitationKey', () => {
@@ -135,7 +141,15 @@ describe('Bibliography', () => {
       }})
       expect(key).to.equal("Mustermann1994JGN")
     });
-
+    
+    it('ignores short words', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Foo Edwards",
+        year: 2017,
+        title: "Academic Research In The 21st Century Maintaining Scientific Integrity",
+      }})
+      expect(key).to.equal("Edwards2017ARC")
+    });
     
     it('ignores special chars ', async function() {
       var key = Bibliography.generateCitationKey({entryTags: {
@@ -145,7 +159,26 @@ describe('Bibliography', () => {
       }})
       expect(key).to.equal("Mustermann1994J")
     });
+    
+     
+    it('splits slashes ', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Interactive record/replay for web application debugging",
+      }})
+      expect(key).to.equal("Mustermann1994IRR")
+    });
 
+        it('handles  On-the-fly', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Projection Boxes: On-the-fly Reconfigurable Visualization for Live Programming.",
+      }})
+      expect(key).to.equal("Mustermann1994PBO")
+    });
+    
     
   })
   

@@ -38,6 +38,7 @@ export default class LivelyBibtexEntry extends Morph {
   }
 
   onDblClick(evt) {
+    if (this.getAttribute("mode") == "readonly") return
     if (this.getAttribute("mode") == "edit") {
       var newvalue;
       try {
@@ -108,7 +109,17 @@ export default class LivelyBibtexEntry extends Morph {
 
   generateFilename() {
     try {
-      return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join("") + `_${this.year}_${Strings.toUpperCaseFirst(Strings.toCamelCase(latexconv.convertLaTeXToUnicode(this.title).replace(/(^| )[aA] /, "")).replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, ""))}`;
+      var authors = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
+        .map(ea => _.last(ea.split(" "))).join("")
+      var words = latexconv.convertLaTeXToUnicode(this.title)
+                    .replace(/-on /g, "on ") // e.g. hands-on 
+                    .split(/[ _-]/g)
+                    .map(ea => ea.replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, ""))
+                    .map(ea => ea.toLowerCase())
+                    .filter(ea => (ea != "a"))
+                    .map(ea => Strings.toUpperCaseFirst(ea))
+      var title = words.join("")
+      return authors + `_${this.year}_${title}`;
     } catch (e) {
       return "";
     }

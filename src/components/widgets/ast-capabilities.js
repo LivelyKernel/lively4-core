@@ -1,6 +1,7 @@
 import { loc, range } from 'utils';
 
 import FileIndex from "src/client/fileindex.js";
+import diff from 'src/external/diff-match-patch.js';
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -78,6 +79,35 @@ export default class ASTCapabilities {
     });
   }
 
+  lively4url() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const l4url = 'lively4url';
+    const l4urlplus = l4url + ' + ';
+
+    const selectionTexts = cm.getSelections();
+    const simples = new Set();
+    cm.replaceSelections(selectionTexts.map((t, i) => {
+      if (t.length > 0) {
+        return l4urlplus + t;
+      } else {
+        simples.add(i);
+        return l4url;
+      };
+    }), "around");
+    const selections = cm.listSelections();
+    selections.forEach(({ anchor, head }, i) => {
+      const [left, right] = loc(anchor).isBefore(head) ? [anchor, head] : [head, anchor];
+      if (simples.has(i)) {
+        left.ch += l4url.length;
+      } else {
+        // select `lively4url + <prior>`
+      }
+    });
+    cm.setSelections(selections, undefined, {
+      scroll: false
+    });
+  }
   // replace parent with me
   // #TODO: also for multiselections
   replaceParentWithSelection() {
@@ -361,6 +391,54 @@ export default class ASTCapabilities {
     this.selectPaths(pathsToSelect);
 
     this.scrollTo(scrollInfo);
+  }
+
+  braveNewWorld() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    this.highlightChanges
+    // lively.notify('FOOOOO')
+    ();
+  }
+
+  highlightChanges() {
+    const from = document.querySelector('#from').editor;
+    const to = document.querySelector('#to').editor;
+    const targetLCM = document.querySelector('#target');
+    const targetCM = targetLCM.editor;
+    const oldText = from.getValue();
+    const newText = to.getValue();
+
+    targetLCM.value = oldText;
+
+    var dmp = new diff.diff_match_patch();
+    var d = dmp.diff_main(oldText, newText);
+    var index = 0;
+    let firstChangeStep = true
+    for (let [changeType, text] of d) {
+      index = this.highlightChange(changeType, targetCM, text, index);
+      firstChangeStep = false;
+    }
+  }
+
+  highlightChange(changeType, cm, text, index) {
+    const DMP_DELETION = -1,
+          DMP_EQUALITY = 0,
+          DMP_INSERTION = 1;
+    switch (changeType) {
+      case DMP_EQUALITY:
+        index += text.length;
+        break;
+      case DMP_INSERTION:
+        cm.replaceRange(text, cm.posFromIndex(index), cm.posFromIndex(index), 'insertion');
+        index += text.length;
+        break;
+      case DMP_DELETION:
+        cm.replaceRange('', cm.posFromIndex(index), cm.posFromIndex(index + text.length), 'deletion');
+        break;
+    }
+
+    return index;
   }
 
   /*MD ## Navigation MD*/
