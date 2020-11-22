@@ -1,6 +1,8 @@
+import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
+
 export default class LeoUIExample{
   static async create () {
-    lively.notify('create bla')
+    
     var hello = <div id="helloDiv" draggable="true" click={() => lively.notify('hi')}>
         Hi
       </div>
@@ -16,66 +18,14 @@ export default class LeoUIExample{
 
     world.addEventListener('drop', drop);
 
+    var g = ohm.grammar('Academic { \n  Exp = \n    AcademicQuery \n \n  AcademicQuery = Attribute Comparator Value -- simpleQuery \n    | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complexQuery \n    | "Composite(" CompositeQuery ")" -- compositeQuery \n \n  CompositeQuery = CompositeAttribute Comparator Value -- simpleCompositeQuery \n    | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complexCompositeQuery \n \n  Comparator = \n    PartialComparator "="? \n  PartialComparator = \n    "=" | "<" | ">" \n \n  Attribute (an attribute) = \n    letter letter? letter? \n  CompositeAttribute = \n    Attribute "." Attribute \n \n \n  Value (a value) = \n    "\'" alnum* "\'" -- string \n    | Number \n    | Date \n    | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange \n    | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange \n \n  Number = \n    digit+ \n  Date = \n    "\'" digit digit digit digit "-" digit digit "-" digit digit "\'" \n}');
+    
+    lively.notify(g.match("Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))").succeeded(), "Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))");
+    lively.notify(g.match("And(AA.AuN='mike smith',AA.AfN='harvard university')").succeeded(), "And(AA.AuN='mike smith',AA.AfN='harvard university')");
     
     
+    // TODO: Add Semantics
     
-/*fetch("https://academic.microsoft.com/api/search", {
-  method: "POST",
-  headers: {
-    "content-type": "application/json; charset=utf-8"
-  },
-  body: JSON.stringify({
-    query: "", 
-    queryExpression: "Composite(AA.AuN='jens lincke')", 
-    filters: [], 
-    orderBy: 0, 
-    skip: 0,
-    sortAscending: true, 
-    take: 10})
-}).then(r => lively.notify(r.json()))
-
-fetch("academic://Jens Lincke 2009", {
-  method: "GET",
-  headers: {
-    "content-type": "application/json"
-  }
-}).then(r => r.json())
-
-fetch("academic://Jens Lincke 2009", {
-  method: "GET",
-  headers: {
-    "content-type": "text/html"
-  }
-}).then(r => lively.notify(r.text()))
-
-fetch("academic://Jens Lincke 2009", {
-  method: "GET",
-  headers: {
-    "content-type": "application/bibtex"
-  }
-}).then(r => r.text()).then(s => {
-  lively.notify(s)
-  return s
-} )*/
-    
-
-
-    /*import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js"
-
-
-    var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" | "Hallo" }');
-
-
-    myGrammar
-
-    var userInput = 'Hello';
-    var m = myGrammar.match(userInput);
-
-
-    var userInput = 'Hallo';
-    var m = myGrammar.match(userInput);
-
-    m*/
 
     function dragStart(event) {
       description.innerHTML = "dragging";
