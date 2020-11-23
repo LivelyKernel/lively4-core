@@ -20,7 +20,6 @@ const exampleQueries = [
   "And(Composite(AA.AuN='mike smith'),Composite(AA.AfN='harvard university'))"
 ]
 
-var div = <div id="outerDiv"></div>
 
 function createUILayer(object, key) {
   var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;">{key}</div>;
@@ -174,7 +173,8 @@ export default class LeoUIExample{
     var match = g.match(query);
     var queryObject = s(match).interpret();
     
-    
+    var div = <div id="outerDiv"></div>
+
     Object.keys(queryObject).forEach(key => {
       div.appendChild(createUILayer(queryObject, key));
     });
