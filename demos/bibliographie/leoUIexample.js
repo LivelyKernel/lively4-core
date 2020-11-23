@@ -20,23 +20,40 @@ const exampleQueries = [
   "And(Composite(AA.AuN='mike smith'),Composite(AA.AfN='harvard university'))"
 ]
 
+var div = <div id="outerDiv"></div>
+
+function createUILayer(object, key) {
+  var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;">{key}</div>;
+  var valueOrObject = object[key];
+  if (typeof(valueOrObject) == "object") {
+    Object.keys(valueOrObject).map(k => {
+      subDiv.appendChild(createUILayer(valueOrObject, k));
+    });
+  } else {
+    var input = <input value={valueOrObject}></input>;
+    subDiv.appendChild(input);
+  }
+  return subDiv;
+}
+
+
 export default class LeoUIExample{
   static async create () {
     
-    var hello = <div id="helloDiv" draggable="true" click={() => lively.notify('hi')}>
-        Hi
-      </div>
+//     var hello = <div id="helloDiv" draggable="true" click={() => lively.notify('hi')}>
+//         Hi
+//       </div>
 
-    var world = <div id="worldDiv">
-        World
-      </div>
+//     var world = <div id="worldDiv">
+//         World
+//       </div>
 
-    let description = <p id="description"></p>
+//     let description = <p id="description"></p>
 
-    hello.addEventListener('dragstart', dragStart);
-    hello.addEventListener('dragend', dragEnd);
+//     hello.addEventListener('dragstart', dragStart);
+//     hello.addEventListener('dragend', dragEnd);
 
-    world.addEventListener('drop', drop);
+//     world.addEventListener('drop', drop);
 
     var g = ohm.grammar('Academic { \n  Exp = \n    AcademicQuery \n \n  AcademicQuery = Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex \n    | "Composite(" CompositeQuery ")" -- composite \n \n  CompositeQuery = Attribute "." Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex \n \n  Comparator = \n    PartialComparator "="? \n  PartialComparator = \n    "=" | "<" | ">" \n \n  Attribute (an attribute) = \n    letter letter? letter? \n  \n Value (a value) = \n    "\'" alnum* "\'" -- string \n    | Number \n    | Date \n    | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange \n    | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange \n \n  Number = \n    digit+ \n  Date = \n    "\'" Number "-" Number "-" Number "\'" \n}');
     
@@ -126,6 +143,7 @@ export default class LeoUIExample{
       }
     )
     
+    // "Test"
     exampleQueries.forEach(q => {
       var m = g.match(q);
       if (m.failed()) {
@@ -135,71 +153,76 @@ export default class LeoUIExample{
       }
     })
     
-    /*var r = g.match("A = 'e'")
-    var n = s(r)
-    lively.notify("A = 'e'", n.interpret());*/
 
-    function dragStart(event) {
-      description.innerHTML = "dragging";
-      event.dataTransfer.setData("element", event.target.id);
-    }
+//     function dragStart(event) {
+//       description.innerHTML = "dragging";
+//       event.dataTransfer.setData("element", event.target.id);
+//     }
 
-    function dragEnd(event) {
-      description.innerHTML = "";
-    }
+//     function dragEnd(event) {
+//       description.innerHTML = "";
+//     }
 
-    function drop(event) {
-      event.preventDefault();
-      var data = event.dataTransfer.getData("element");
-      console.log("Datatransfer Types" + event.dataTransfer.types);
-      event.target.appendChild(lively.query(this, '#'+data))
-    }
+//     function drop(event) {
+//       event.preventDefault();
+//       var data = event.dataTransfer.getData("element");
+//       console.log("Datatransfer Types" + event.dataTransfer.types);
+//       event.target.appendChild(lively.query(this, '#'+data))
+//     }
+    
+    var query = "Ti='indexing by latent seman'";
+    var match = g.match(query);
+    var queryObject = s(match).interpret();
     
     
+    Object.keys(queryObject).forEach(key => {
+      div.appendChild(createUILayer(queryObject, key));
+    });
+    //div.appendChild(<div>key</div>)
 
-
-    return <div>
-      <table>
-        <tr>
-          <td>
-            Title
-          </td>
-          <td>
-            Author
-          </td>
-          <td>
-            Year
-          </td>
-        </tr>
-        <tr style="vertical-align:top">
-          <td>
-            <input value='something'></input>
-          </td>
-          <td>
-            <table>
-              <tr>
-                <td>
-                  Name
-                </td>
-                <td>
-                  <input value='name'></input>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  Institution
-                </td>
-                <td>
-                  <input value='inst'></input>
-                </td>
-              </tr>
-            </table>
-          </td>
-          <td>
-            <input value='2001'></input>
-          </td>
-        </tr>
-      </table>
-    </div>
+    return div;
+    // <div>
+    //   <table>
+    //     <tr>
+    //       <td>
+    //         Title
+    //       </td>
+    //       <td>
+    //         Author
+    //       </td>
+    //       <td>
+    //         Year
+    //       </td>
+    //     </tr>
+    //     <tr style="vertical-align:top">
+    //       <td>
+    //         <input value='something'></input>
+    //       </td>
+    //       <td>
+    //         <table>
+    //           <tr>
+    //             <td>
+    //               Name
+    //             </td>
+    //             <td>
+    //               <input value='name'></input>
+    //             </td>
+    //           </tr>
+    //           <tr>
+    //             <td>
+    //               Institution
+    //             </td>
+    //             <td>
+    //               <input value='inst'></input>
+    //             </td>
+    //           </tr>
+    //         </table>
+    //       </td>
+    //       <td>
+    //         <input value='2001'></input>
+    //       </td>
+    //     </tr>
+    //   </table>
+    // </div>
   }
 }
