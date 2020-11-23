@@ -264,14 +264,7 @@ const dropOnDocumentBehavior = {
         return link
       }),
 
-      new DropOnBodyHandler('text/html', htmlString => {
-        const div = <div></div>;
-        div.innerHTML = htmlString;
-
-        return div;
-      }),
-
-      new DropOnBodyHandler('application/lively4id', id => {
+        new DropOnBodyHandler('application/lively4id', id => {
         var element = lively.elementByID(id)
     
         if (element && 
@@ -286,11 +279,10 @@ const dropOnDocumentBehavior = {
   
       new DropOnBodyHandler('text/plain', async text => {
         // test for bibtex content
-        if (text.match(/^\s*@[a-zA-Z]+\{/)) {          
+         if (text.match(/^\s*(@[a-zA-Z]+\{/)) {          
             const comp = await (<lively-bibtex style="width:700px"></lively-bibtex>);
             comp.innerHTML = text;
             await comp.updateView();
-            debugger
             var entries = comp.querySelectorAll("lively-bibtex-entry")
              if (entries.length == 1) {
                 entries[0].style.width = "700px"
@@ -299,6 +291,14 @@ const dropOnDocumentBehavior = {
             return comp
         }
         return false
+      }),
+  
+  
+      new DropOnBodyHandler('text/html', htmlString => {
+        const div = <div></div>;
+        div.innerHTML = htmlString;
+
+        return div;
       }),
   
   

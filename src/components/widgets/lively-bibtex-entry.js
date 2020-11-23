@@ -109,8 +109,9 @@ export default class LivelyBibtexEntry extends Morph {
 
   generateFilename() {
     try {
-      var authors = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
-        .map(ea => _.last(ea.split(" "))).join("")
+      var authors = Strings.fixUmlauts(this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
+        .map(ea => _.last(ea.split(" "))).join(""))
+      
       var words = latexconv.convertLaTeXToUnicode(this.title)
                     .replace(/-on /g, "on ") // e.g. hands-on 
                     .split(/[ _-]/g)

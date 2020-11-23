@@ -32,8 +32,11 @@ describe('Bibliography', () => {
           "Ingalls_1978_TheSmalltalk76ProgrammingSystemDesignAndImplementation.pdf" 
         )).to.equal("Ingalls1978SPS")
     });
-    
-     
+    it('splits after numbers', async function() {
+        expect(Bibliography.filenameToKey(
+          "SmithWolczkoUngar_1997_FromKansasToOzCollaborativeDebuggingWhenSharedWorldBreaks.pdf" 
+        )).to.equal("Smith1997KOC")
+    });
   })
   
   describe('generateCitationKey', () => {
@@ -178,7 +181,7 @@ describe('Bibliography', () => {
       expect(key).to.equal("Mustermann1994IRR")
     });
 
-        it('handles  On-the-fly', async function() {
+    it('handles  On-the-fly', async function() {
       var key = Bibliography.generateCitationKey({entryTags: {
         author: "Hans Mustermann",
         year: 1994,
@@ -187,6 +190,22 @@ describe('Bibliography', () => {
       expect(key).to.equal("Mustermann1994PBO")
     });
     
+    it('stripps tex formatting', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar}`,
+        year: 1998,
+        title: "Explicit connectors for coordination of active objects.",
+      }})
+      // Design choices
+      // (a) Unicode
+      // expect(key).to.equal("Günter1998ECC")
+      
+      // (b) no umlauts in keys...
+      // expect(key).to.equal("Gunter1998ECC")
+
+      // (c) converted umlauts
+      expect(key).to.equal("Guenter1998ECC")  
+    });
     
   })
   

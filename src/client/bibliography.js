@@ -44,8 +44,10 @@ MD*/
 
 import Parser from 'src/external/bibtexParse.js'
 import FileIndex from 'src/client/fileindex.js'
-
-
+import latexconv from "src/external/latex-to-unicode-converter.js";
+import Strings from "src/client/strings.js"
+  
+  
 export default class Bibliography {
 
   
@@ -104,8 +106,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
   static cleanTitle(titleString="") {
      return titleString.replace(/[{}]/g,"")
   }
-  
-  
+
   // #TODO this method obviously will need a lot of tweaking...
   static generateCitationKey(entry) {
     if (!entry || !entry.entryTags) return undefined
@@ -115,6 +116,14 @@ Bibliography.cleanTitle("{{This is my Title}}")
     } else {
       lastName = firstAuthor.replace(/ *$/,"").split(" ").last
     }
+    // TO SIMPLE
+    // lastName = lastName.replace(/[^A-Za-z]/g, "")
+    // keep üäöß etc...
+    lastName = latexconv.convertLaTeXToUnicode(lastName)
+    // but convert them
+    lastName = Strings.fixUmlauts(lastName)
+    
+    
     var cleanLastName = lastName.replace(/[ \-']/g,"")
     var normalizedLastName = cleanLastName.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
 
@@ -128,8 +137,8 @@ Bibliography.cleanTitle("{{This is my Title}}")
       .replace(/-the-/g,"the") // on-the-fly -> onthefly
       .split(/[ -\/_]/g)
       .map(ea => ea.toLowerCase())
-      .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for", "but"].includes(ea))
-      .filter(ea => ea.length >  2  && !["der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
+      .filter(ea => !["a","am","an","as","at","be","by","in","is","it","of","on", "to", "the", "and", "from", "out", "for", "but"].includes(ea))
+      .filter(ea => !["so", "der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
       .filter(ea => !ea.match(/^[0-9]/))
       .filter(ea => !ea.match(/^[\(\)\[\]\/\\]/))
       .slice(0,3)
