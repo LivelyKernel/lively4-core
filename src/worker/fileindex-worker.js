@@ -5,6 +5,7 @@ export function onmessage(evt) {
   var msg = evt.data
   if (msg.message == "updateDirectory") {
     FileIndex.current().updateDirectory(msg.url).then(() => {
+      console.log("post message finished ")
       postMessage({message: "updateDirectoryFinished", url: msg.url})
     })
   } else if (msg.message == "updateFile") {

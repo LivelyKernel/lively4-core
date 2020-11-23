@@ -26,6 +26,14 @@ describe('Bibliography', () => {
           "EdwardsRoy_2017_AcademicResearchInThe21stCenturyMaintainingScientificIntegrityIn.pdf" 
         )).to.equal("Edwards2017ARC")
     });
+    
+    it('splits after numbers', async function() {
+        expect(Bibliography.filenameToKey(
+          "Ingalls_1978_TheSmalltalk76ProgrammingSystemDesignAndImplementation.pdf" 
+        )).to.equal("Ingalls1978SPS")
+    });
+    
+     
   })
   
   describe('generateCitationKey', () => {

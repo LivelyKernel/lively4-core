@@ -49,6 +49,8 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateFiles() {
+    await lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
+    
     var files = await FileIndex.current().db.files
       .filter(ea => ea.url.startsWith(this.base))
       .filter(ea => ea.name.match(/\.pdf$/)).toArray();
@@ -69,6 +71,8 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
+    this.get("#content").innerHTML = "updating files and entries... (this may take a while)"
+
     await this.updateFiles()
     await this.updateEntries()
    
@@ -76,6 +80,10 @@ export default class LiteratureListing extends Morph {
     this.details.hidden = true
     
     this.get("#content").innerHTML = ""
+    if (this.literatureFiles.length == 0) {
+      this.get("#content").innerHTML = "no literature files found"
+    }
+    
     this.get("#content").appendChild(<div>
         {this.details}
         {this.renderCollection(this.literatureFiles)}
@@ -135,7 +143,7 @@ export default class LiteratureListing extends Morph {
   
   updateLiteratureFile(literatureFile, element) {
     if (!element.parentElement) {
-      throw new Error("ERROR updateLiteratureFile parentElement missing")
+      return // nothing to do here any more
     }    
     var replacement = this.renderLiteratureFile(literatureFile)
     // lively.showElement(element)
