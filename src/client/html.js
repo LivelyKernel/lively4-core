@@ -681,7 +681,33 @@ export default class HTML {
     for(let ea of contents) {
       ea.innerHTML = numbers.get(ea).join(".") + " " + ea.innerHTML
     }
-  }  
+  }
+  
+  static async highlightBeforeAndAfterPromise(element, promise) {
+    return new Promise(async resolve => {
+      var animation = element.animate([
+         { outline: "2px solid transparent",  }, 
+         { outline: "2px solid blue",   }], 
+        {
+          duration: 500
+        });
+      animation.onfinish = () => element.style.outline = "2px solid blue"
+
+      
+      await promise
+      animation.finish()
+      animation = element.animate([
+         { outline: "2px solid blue",  }, 
+         { outline: "2px solid green",   }, 
+         { opacity: 1, }, 
+         { opacity: 0, }], 
+        {
+          duration: 1000
+        });  
+      animation.onfinish = () => resolve()
+    })
+  } 
+  
 }
 
 // #LiveProgramming #Hack #CircularDependency #TODO

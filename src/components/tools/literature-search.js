@@ -113,20 +113,10 @@ export default class LiteratureSearch extends Morph {
               }}>
              rename
             </a>
-          let importBibtex = <a class="method" click={async () => {
-                  await Paper.importBibtexId(id)
-                  var time = 1000
-                  var animation = importBibtex.animate([
-                     { outline: "2px solid transparent",  }, 
-                     { outline: "2px solid red",   }, 
-                     { opacity: 1, }, 
-                     { opacity: 0, }], 
-                    {
-                      duration: time
-                    });  
-                  animation.onfinish = () => importBibtex.remove()
-                  // this.close()
-              }}>
+          let importBibtex = <a class="method" click={async () => {          
+            await lively.html.highlightBeforeAndAfterPromise(importBibtex, Paper.importBibtexId(id))
+            importBibtex.remove()
+          }}>
              import
             </a>    
           rows.push(<tr>
