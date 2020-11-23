@@ -1,6 +1,8 @@
 import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
+import {Paper} from 'src/client/literature.js'
+import Bibliography from "src/client/bibliography.js"
 
 /*MD
 # Lively Bibtex
@@ -29,17 +31,41 @@ export default class LivelyBibtex extends Morph {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"))
   }
   
+  async importEntries(entries) {
+    
+    var source = entries.map(ea => ea.textContent).join("\n")
+      
+    return Paper.importBibtexSource(source)
+  }
+  
+  
   onContextMenu(evt) {
     if (!evt.shiftKey) {
+      var entries = this.selectedEntries()
+      if (entries.length == 0) {
+        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry")
+      }
+      if (entries.length == 0) return // nothing selected or clicked on
+      
       evt.stopPropagation();
       evt.preventDefault();
       var menu = new ContextMenu(this, [
-            ["remove", () => {
-                this.selectedEntries().forEach(ea => {
-                  ea.remove()
-                })   
-            }]
-        ]);
+        ["generate key", () => {
+          entries.forEach(ea => {
+            var entry = ea.value
+            entry.citationKey = Bibliography.generateCitationKey(entry)
+            ea.value = entry
+          })   
+        }],  
+        ["import", () => {
+            this.importEntries(entries)
+        }],    
+        ["remove", () => {
+            entries.forEach(ea => {
+              ea.remove()
+            })   
+        }]
+      ]);
       menu.openIn(document.body, evt, this);
       return 
     }

@@ -170,19 +170,23 @@ export class Paper {
     if (paper) {
       var source = paper.toBibtex()
       
-      var importURL = (await this.allBibtexEntries())
-            .map(ea => ea.url)
-            .find(ea => ea && ea.match(/_incomming\.bib$/))
-      if (!importURL) {
-        lively.notify("no _incomming.bib found")
-      } else {
-        var libcontent = await lively.files.loadFile(importURL)
-        
-        await lively.files.saveFile(importURL, libcontent + "\n" + source )
-        lively.notify("PATER imported", "", undefined, () => lively.openBrowser(importURL))
-      }
+      await this.importBibtexSource(source)
     } else {
       lively.notify(`ERROR no paper with id '${this.microsoftid}' found`)
+    }
+  }
+    
+  static async importBibtexSource(source) {
+    var importURL = (await this.allBibtexEntries())
+          .map(ea => ea.url)
+          .find(ea => ea && ea.match(/_incomming\.bib$/))
+    if (!importURL) {
+      lively.notify("no _incomming.bib found")
+    } else {
+      var libcontent = await lively.files.loadFile(importURL)
+
+      await lively.files.saveFile(importURL, libcontent + "\n" + source )
+      lively.notify("PATER imported", "", undefined, () => lively.openBrowser(importURL))
     }
   }
   
