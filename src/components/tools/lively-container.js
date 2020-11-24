@@ -1884,8 +1884,8 @@ export default class Container extends Morph {
         //   title: "saved HTML",
         //   color: "green"});
        });
-    } else if (contentElement && contentElement.livelySource) {
-      var source = contentElement.livelySource()
+    } else if (contentElement && contentElement.childNodes[0] && contentElement.childNodes[0].livelySource) {
+      var source = contentElement.childNodes[0].livelySource()
       if (source.then) source = await source; // maybe some elements take a while to generate their source
       return this.saveSource(url, source);
     } else {
