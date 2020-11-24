@@ -110,7 +110,16 @@ Bibliography.cleanTitle("{{This is my Title}}")
   // #TODO this method obviously will need a lot of tweaking...
   static generateCitationKey(entry) {
     if (!entry || !entry.entryTags) return undefined
-    var firstAuthor = entry.entryTags.author.split(/ and /g)[0]
+    var tags = entry.entryTags
+    if (!tags.author ||  !tags.year || !tags.title) return undefined
+    try {
+      var author = latexconv.convertLaTeXToUnicode(tags.author)
+    } catch(e) {
+      console.warn("[bibliography] could not convertLaTeXToUnicode: " + author)
+      author = tags.author.replace(/[^A-Za-z  ,]/g, "") // just remove everything else.... 
+     }
+
+    var firstAuthor = author.split(/ and /g)[0]
     if (firstAuthor.match(",")) {
       var lastName = firstAuthor.replace(/,.*/,"")
     } else {
@@ -119,17 +128,15 @@ Bibliography.cleanTitle("{{This is my Title}}")
     // TO SIMPLE
     // lastName = lastName.replace(/[^A-Za-z]/g, "")
     // keep üäöß etc...
-    lastName = latexconv.convertLaTeXToUnicode(lastName)
+    
     // but convert them
     lastName = Strings.fixUmlauts(lastName)
-    
-    
     var cleanLastName = lastName.replace(/[ \-']/g,"")
     var normalizedLastName = cleanLastName.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
 
-    var year  =  entry.entryTags.year
+    var year  =  tags.year
   
-    return normalizedLastName + year + this.threeSignificantInitialsFromTitle(entry.entryTags.title)
+    return normalizedLastName + year + this.threeSignificantInitialsFromTitle(tags.title)
   }
   
   static threeSignificantInitialsFromTitle(title) {
