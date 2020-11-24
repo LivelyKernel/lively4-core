@@ -279,7 +279,7 @@ const dropOnDocumentBehavior = {
   
       new DropOnBodyHandler('text/plain', async text => {
         // test for bibtex content
-         if (text.match(/^\s*(@[a-zA-Z]+\{/)) {          
+         if (text.match(/^\s*@[a-zA-Z]+\{/)) {          
             const comp = await (<lively-bibtex style="width:700px"></lively-bibtex>);
             comp.innerHTML = text;
             await comp.updateView();

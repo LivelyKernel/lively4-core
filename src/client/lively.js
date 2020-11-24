@@ -1516,7 +1516,7 @@ export default class Lively {
       }
       return pos.subPt(lively.getGlobalPosition(worldContext))
   }
-
+  
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
   static async openBrowser(url, edit, patternOrPostion, replaceExisting, worldContext) {
     worldContext = worldContext || document.body

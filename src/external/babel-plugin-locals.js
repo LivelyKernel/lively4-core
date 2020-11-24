@@ -2,6 +2,7 @@ const LOCALS_NAME = "locals";
 
 export default function({ types: t }) {
     return {
+        name: 'locals',
         visitor: {
             Identifier(path) {
                 // The identifier should have the expected name
