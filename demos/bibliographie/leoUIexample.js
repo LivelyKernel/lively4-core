@@ -56,11 +56,6 @@ export default class LeoUIExample{
 
     var g = ohm.grammar('Academic { \n  Exp = \n    AcademicQuery \n \n  AcademicQuery = Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex \n    | "Composite(" CompositeQuery ")" -- composite \n \n  CompositeQuery = Attribute "." Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex \n \n  Comparator = \n    PartialComparator "="? \n  PartialComparator = \n    "=" | "<" | ">" \n \n  Attribute (an attribute) = \n    letter letter? letter? \n  \n Value (a value) = \n    "\'" alnum* "\'" -- string \n    | Number \n    | Date \n    | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange \n    | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange \n \n  Number = \n    digit+ \n  Date = \n    "\'" Number "-" Number "-" Number "\'" \n}');
     
-    /*lively.notify(g.match("Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))").succeeded(), "Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))");
-    lively.notify(g.match("And(AA.AuN='mike smith',AA.AfN='harvard university')").succeeded(), "And(AA.AuN='mike smith',AA.AfN='harvard university')");*/
-    
-    //var queryObject = {};
-    
     var s = g.createSemantics();
     
     s.addOperation(
@@ -76,16 +71,16 @@ export default class LeoUIExample{
           }}
         },
         AcademicQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]: [
-            left.interpret(),
-            right.interpret()
-          ]}
+          return {[conjunction.sourceString]:
+                  Object.assign(left.interpret(), right.interpret())
+                 }
         },
         AcademicQuery_composite: function(_1, query, _2) {
           return query.interpret();
         },
         
         CompositeQuery_simple: function(mainAttribute, _, secondaryAttribute, comparator, value) {
+          // TODO: Don't set keys! Otherwise, queries on the same attribute will be overwritten
           return {[mainAttribute.interpret()]:
                   {[secondaryAttribute.interpret()]:
                     {
@@ -96,10 +91,9 @@ export default class LeoUIExample{
           }
         },
         CompositeQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]: [
-            left.interpret(),
-            right.interpret()
-          ]}
+          return {[conjunction.sourceString]:
+                  Object.assign(left.interpret(), right.interpret())
+                 }
         },
         
         Comparator: function(main, secondary) {
@@ -120,7 +114,6 @@ export default class LeoUIExample{
           return string.sourceString;
         },
         Value_numberRange: function(leftBracket, nLeft, _, nRight, rightBracket) {
-          // TODO: refactor
           return "TODO";//arguments.map(a => {a.sourceString}).join('');
         },
         Value_dateRange: function(leftBracket, dLeft, _, dRight, rightBracket) {
@@ -169,17 +162,19 @@ export default class LeoUIExample{
 //       event.target.appendChild(lively.query(this, '#'+data))
 //     }
     
-    var query = "Ti='indexing by latent seman'";
+    var query = "And(Or(A='1985', Y='2008'), Ti='disordered electronic systems')";
     var match = g.match(query);
     var queryObject = s(match).interpret();
     
-    var div = <div id="outerDiv"></div>
+    var input = <input id="queryInput" value={query} style="width: 100%"></input>
+    var div = <div id="outerDiv" style="padding-right : 20px">
+          {input}
+        </div>
 
     Object.keys(queryObject).forEach(key => {
       div.appendChild(createUILayer(queryObject, key));
     });
-    //div.appendChild(<div>key</div>)
-
+    
     return div;
     // <div>
     //   <table>

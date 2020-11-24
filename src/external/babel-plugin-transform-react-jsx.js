@@ -47,6 +47,7 @@ export default function ({ types: t }) {
 
   return {
     inherits: jsx,
+    name: 'jsx',
     visitor
   };
 }
