@@ -101,8 +101,10 @@ describe('disable (Ticking Active Expressions)', () => {
 
 });
 
-describe('disable (Frame-based Active Expressions)', () => {
+describe('disable (Frame-based Active Expressions)', function() {
 
+  this.timeout(10000);
+  
   it('setter while disabled', async () => {
     var obj = { prop: 42 };
     const spy = sinon.spy();
@@ -111,7 +113,7 @@ describe('disable (Frame-based Active Expressions)', () => {
     ae.disable();
 
     obj.prop = 17;
-    await lively.sleep(50);
+    await lively.sleep(500);
 
     expect(spy).not.to.be.called;
   });
@@ -122,11 +124,11 @@ describe('disable (Frame-based Active Expressions)', () => {
     let ae = new FrameBasedActiveExpression(() => obj.prop, { disabled: true }).onChange(spy);
 
     ae.enable();
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).not.to.be.called;
 
     obj.prop = 17;
-    await lively.sleep(50);
+    await lively.sleep(500);
 
     expect(spy).to.be.calledOnce;
   });
@@ -137,11 +139,11 @@ describe('disable (Frame-based Active Expressions)', () => {
     let ae = new FrameBasedActiveExpression(() => x, { disabled: true }).onChange(spy);
 
     x = 17;
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).not.to.be.called;
 
     ae.enable();
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).to.be.calledOnce;
   });
 
@@ -152,11 +154,11 @@ describe('disable (Frame-based Active Expressions)', () => {
 
     obj = { prop: 2 };
     ae.enable({ check: false });
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).not.to.be.called;
 
     obj = { prop: 3 };
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).to.be.calledOnce;
     expect(spy.firstCall.args[1].lastValue).to.equal(2);
   });
@@ -166,11 +168,11 @@ describe('disable (Frame-based Active Expressions)', () => {
     let ae = new FrameBasedActiveExpression(() => 1, { disabled: true }).onChange(spy);
 
     ae.setExpression(() => 2);
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).not.to.be.called;
 
     ae.enable();
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).to.be.calledOnce;
     expect(spy.firstCall.args[1].lastValue).to.equal(1);
   });
@@ -182,13 +184,13 @@ describe('disable (Frame-based Active Expressions)', () => {
     let ae = new FrameBasedActiveExpression(() => o1.p, { disabled: true }).onChange(spy);
 
     ae.setExpression(() => o2.p);
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).not.to.be.called;
 
     ae.enable({ check: false });
 
     o2.p = 3;
-    await lively.sleep(50);
+    await lively.sleep(500);
     expect(spy).to.be.calledOnce;
     expect(spy.firstCall.args[1].lastValue).to.equal(2);
   });

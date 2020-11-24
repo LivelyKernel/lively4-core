@@ -1,11 +1,12 @@
 import Dexie from "src/external/dexie3.js"
-
 import BibtexParser from 'src/external/bibtexParse.js';
 import MarkdownIt from "src/external/markdown-it.js";
-
 import Bibliography from "src/client/bibliography.js"
-
 import FileIndex from "src/client/fileindex.js";
+import {pt} from "src/client/graphics.js"
+import toTitleCase from "src/external/title-case.js"
+import moment from "src/external/moment.js"
+ 
 
 function specialInspect(target, contentNode, inspector, normal) {
     inspector.renderObjectdProperties(contentNode, target)
@@ -151,7 +152,7 @@ export class Paper {
           return // should we note it down that we did not found it?
         }
         var json = await resp.json()
-        paper = await Paper.ensure(json) // json.entity ?    
+        paper = await Paper.ensure(json[0])    
       }
     }
     return paper
@@ -162,23 +163,30 @@ export class Paper {
   }
   
   static async importBibtexId(id) {
-    var paper = Paper.byId(id)
+    if (id === undefined) {
+      throw new Error("importBibtexId missing id")
+    }
+    var paper = await Paper.getId(id)
     if (paper) {
       var source = paper.toBibtex()
       
-      var importURL = (await this.allBibtexEntries())
-            .map(ea => ea.url)
-            .find(ea => ea && ea.match(/_incomming\.bib$/))
-      if (!importURL) {
-        lively.notify("no _incomming.bib found")
-      } else {
-        var libcontent = await lively.files.loadFile(importURL)
-        
-        await lively.files.saveFile(importURL, libcontent + "\n" + source )
-        lively.notify("PATER imported", "", undefined, () => lively.openBrowser(importURL))
-      }
+      await this.importBibtexSource(source)
     } else {
-      lively.notify("ERROR not paper with id '${this.microsoftid}' found")
+      lively.notify(`ERROR no paper with id '${this.microsoftid}' found`)
+    }
+  }
+    
+  static async importBibtexSource(source) {
+    var importURL = (await this.allBibtexEntries())
+          .map(ea => ea.url)
+          .find(ea => ea && ea.match(/_incomming\.bib$/))
+    if (!importURL) {
+      lively.notify("no _incomming.bib found")
+    } else {
+      var libcontent = await lively.files.loadFile(importURL)
+
+      await lively.files.saveFile(importURL, libcontent + "\n" + source )
+      lively.notify("PATER imported", "", undefined, () => lively.openBrowser(importURL))
     }
   }
   
@@ -663,6 +671,12 @@ export default class Literature {
     return db
   }
 }
+
+
+
+
+
+
 
 
 

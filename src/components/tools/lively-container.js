@@ -828,11 +828,10 @@ export default class Container extends Morph {
     }
   }
 
-  async renameFile(url, followFile=true) {
+  async renameFile(url, followFile=true, proposedNewName) {
     url = "" + url
     var base = url.replace(/[^/]*$/,"")
-    var name = url.replace(/.*\//,"")
-
+    var name = proposedNewName || url.replace(/.*\//,"")
     var newName = await lively.prompt("rename", name)
     if (!newName) {
       lively.notify("cancel rename " + name)
@@ -1885,8 +1884,8 @@ export default class Container extends Morph {
         //   title: "saved HTML",
         //   color: "green"});
        });
-    } else if (contentElement && contentElement.livelySource) {
-      var source = contentElement.livelySource()
+    } else if (contentElement && contentElement.childNodes[0] && contentElement.childNodes[0].livelySource) {
+      var source = contentElement.childNodes[0].livelySource()
       if (source.then) source = await source; // maybe some elements take a while to generate their source
       return this.saveSource(url, source);
     } else {

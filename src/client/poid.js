@@ -525,7 +525,11 @@ export function bar() {
 MD*/
 
 
+/*MD # Cache
 
+ - #TODO does not handle mime type!
+
+MD*/
 export class CachedRequest extends Scheme {
   
   get scheme() {

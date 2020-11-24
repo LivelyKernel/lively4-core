@@ -20,6 +20,23 @@ describe('Bibliography', () => {
     it('converts normal prefixed with index number and letter', async function() {
       expect(Bibliography.filenameToKey("00C_Winograd_1996_Introduction.pdf")).to.equal("Winograd1996I")
     });
+    
+    it('splits number words correctly', async function() {
+        expect(Bibliography.filenameToKey(
+          "EdwardsRoy_2017_AcademicResearchInThe21stCenturyMaintainingScientificIntegrityIn.pdf" 
+        )).to.equal("Edwards2017ARC")
+    });
+    
+    it('splits after numbers', async function() {
+        expect(Bibliography.filenameToKey(
+          "Ingalls_1978_TheSmalltalk76ProgrammingSystemDesignAndImplementation.pdf" 
+        )).to.equal("Ingalls1978SPS")
+    });
+    it('splits after numbers', async function() {
+        expect(Bibliography.filenameToKey(
+          "SmithWolczkoUngar_1997_FromKansasToOzCollaborativeDebuggingWhenSharedWorldBreaks.pdf" 
+        )).to.equal("Smith1997KOC")
+    });
   })
   
   describe('generateCitationKey', () => {
@@ -135,7 +152,15 @@ describe('Bibliography', () => {
       }})
       expect(key).to.equal("Mustermann1994JGN")
     });
-
+    
+    it('ignores short words', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Foo Edwards",
+        year: 2017,
+        title: "Academic Research In The 21st Century Maintaining Scientific Integrity",
+      }})
+      expect(key).to.equal("Edwards2017ARC")
+    });
     
     it('ignores special chars ', async function() {
       var key = Bibliography.generateCitationKey({entryTags: {
@@ -145,7 +170,42 @@ describe('Bibliography', () => {
       }})
       expect(key).to.equal("Mustermann1994J")
     });
+    
+     
+    it('splits slashes ', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Interactive record/replay for web application debugging",
+      }})
+      expect(key).to.equal("Mustermann1994IRR")
+    });
 
+    it('handles  On-the-fly', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: "Hans Mustermann",
+        year: 1994,
+        title: "Projection Boxes: On-the-fly Reconfigurable Visualization for Live Programming.",
+      }})
+      expect(key).to.equal("Mustermann1994PBO")
+    });
+    
+    it('stripps tex formatting', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar}`,
+        year: 1998,
+        title: "Explicit connectors for coordination of active objects.",
+      }})
+      // Design choices
+      // (a) Unicode
+      // expect(key).to.equal("Günter1998ECC")
+      
+      // (b) no umlauts in keys...
+      // expect(key).to.equal("Gunter1998ECC")
+
+      // (c) converted umlauts
+      expect(key).to.equal("Guenter1998ECC")  
+    });
     
   })
   

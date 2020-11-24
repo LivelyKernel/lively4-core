@@ -730,9 +730,9 @@ export default class LivelyBibtexEditor extends Morph {
     this.get("#finishButton").hidden = true
   }
   
-  // livelySource() {
-  //   return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("")
-  // }
+  livelySource() {
+     return thiss.toBibtex()
+  }
 
   async livelyExample() {
     // this customizes a default instance to a pretty example

@@ -157,6 +157,10 @@ export default class FileIndex {
     db.version(13).stores({
       files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers"
     }).upgrade(function () {    })
+    db.version(14).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization, microsoftid, doi'
+    }).upgrade(function () {    })
+
     return db 
   }
 
@@ -201,9 +205,16 @@ export default class FileIndex {
   }
 
   
-  addBibrefs(file) {
+  async addBibrefs(file) {
     if (file.url.match(/\.bib$/) && file.content) {    
       console.log('[fileindex] addBibrefs')
+      
+      var all = new Set()
+      var visited = new Set()
+      await this.db.bibliography.each(ea => {
+        if (ea.url == file.url) all.add(ea.key)
+      })
+   
       var bib = BibtexParser.toJSON(file.content)
       bib.forEach(entry => {
         var refentry = {
@@ -220,9 +231,19 @@ export default class FileIndex {
               refentry.year = entry.entryTags.year || entry.entryTags.Year
               refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
-              
+              refentry.microsoftid = entry.entryTags.microsoftid
+              refentry.doi = entry.entryTags.doi
           }
-         this.db.bibliography.put(refentry)
+        visited.add(refentry.key)
+        this.db.bibliography.put(refentry)
+      })
+      
+      // delete remaining entries
+      all.forEach(key => {
+        if (!visited.has(key)) {
+          console.log("[fileindex] delete bibtex entry " + file.url + " " + key)
+          this.db.bibliography.where({url: file.url, key: key}).delete()
+        }
       })
     }
   }

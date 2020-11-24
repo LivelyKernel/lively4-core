@@ -89,6 +89,17 @@ export default class Morph extends HTMLElement {
     return "[" + this.constructor.name + "]"
   }
   
+  followURLonClick(element, url) {
+    lively.removeEventListener("followurl", element, "click")
+    lively.addEventListener("followurl", element, "click", (evt) => {
+      // distinguish between clicking and selecting text
+      if(window.getSelection().toString().length == 0) {
+        lively.openBrowser(url)
+       }
+    })
+  }
+  
+  
   // another option is 'inplace'
   get livelyUpdateStrategy() { return 'migrate'; }
 }

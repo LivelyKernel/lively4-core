@@ -19,15 +19,12 @@ export default class LivelyBibtexEntry extends Morph {
     } catch(e) {
       console.warn("[lively-bibtex-entry] initialize failed, could not parse ", this.textContent)
     }
-    this.addEventListener("dblclick", evt => this.onDblClick(evt));
-
     this.get("#entry").addEventListener("dragstart", evt => this.onDragStart(evt));
 
-    this.get("#entry").draggable = true;
+    this.get("#draghandle").draggable = true;
   }
 
-  async onDragStart(evt) {
-    
+  async onDragStart(evt) { 
     evt.dataTransfer.setData("application/lively4id", lively.ensureID(this));
     
     if (evt.ctrlKey) {
@@ -37,9 +34,9 @@ export default class LivelyBibtexEntry extends Morph {
     }
   }
 
-  onDblClick(evt) {
-    if (this.getAttribute("mode") == "edit") {
-      var newvalue;
+  
+  disableEditing() {
+    var newvalue;
       try {
         newvalue = Parser.toJSON(this.textContent);
       } catch (e) {
@@ -50,10 +47,10 @@ export default class LivelyBibtexEntry extends Morph {
         this.setAttribute("mode", "view");
         this.removeAttribute("contenteditable");
       }
-    } else {
-      this.setAttribute("mode", "edit");
-      this.setAttribute("contenteditable", "true");
-    }
+  }
+  enableEditing() {
+    this.setAttribute("mode", "edit");
+    this.setAttribute("contenteditable", "true");
   }
 
   get value() {
@@ -81,7 +78,9 @@ export default class LivelyBibtexEntry extends Morph {
   updateView() {
     if (!this.value || !this.value.entryTags) return;
     this.get("#key").textContent = this.key;
-    this.get("#key").addEventListener("click", () => lively.openBrowser("bib://" + this.key))
+    this.followURLonClick(this.get("#key"), "bib://" + this.key)
+    this.get("#edit").addEventListener("click", () => this.enableEditing())
+    this.get("#cancel").addEventListener("click", () => this.disableEditing())
     try {
       this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
     } catch (e) {
@@ -100,15 +99,22 @@ export default class LivelyBibtexEntry extends Morph {
       this.get("#misc").appendChild(<span class="academic"
             click={() => lively.openBrowser(url)}>[academic]</span>)
     }
-
-    
-    
-    this.get("#filename").textContent = "// " + this.generateFilename() + "";
   }
 
   generateFilename() {
     try {
-      return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join("") + `_${this.year}_${Strings.toUpperCaseFirst(Strings.toCamelCase(latexconv.convertLaTeXToUnicode(this.title).replace(/(^| )[aA] /, "")).replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, ""))}`;
+      var authors = Strings.fixUmlauts(this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
+        .map(ea => _.last(ea.split(" "))).join(""))
+      
+      var words = latexconv.convertLaTeXToUnicode(this.title)
+                    .replace(/-on /g, "on ") // e.g. hands-on 
+                    .split(/[ _-]/g)
+                    .map(ea => ea.replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, ""))
+                    .map(ea => ea.toLowerCase())
+                    .filter(ea => (ea != "a"))
+                    .map(ea => Strings.toUpperCaseFirst(ea))
+      var title = words.join("")
+      return authors + `_${this.year}_${title}`;
     } catch (e) {
       return "";
     }

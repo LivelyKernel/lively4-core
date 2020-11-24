@@ -1,35 +1,20 @@
 # Leo's Drag 'n Drop Example
 
-<div id="helloDiv" draggable="true">
-Hello
-  <a href="https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-console.js">
-    lively-console.js
-  </a>
-</div>
-
-<div>
-World
-</div>
 
 
 
 <script>
-  console.log("DKFNKEI");
-  let helloDiv = lively.query(this, '#helloDiv');
-  helloDiv.addEventListener("drag", onDrag);
-  
-  function onDrag() {
-    console.log("Draggin");
-  }
+  import LeoDragExample from './leodragexample.js'
+
+  LeoDragExample.create();
+
 </script>
 
 
 
 
 
-
-
-<script data-name="loadLively" type="lively4script">function loadLively() {
+<!--script data-name="loadLively" type="lively4script">function loadLively() {
   lively.removeEventListener("Drag", this)
   this.draggable = true
   lively.addEventListener("Drag", this, "dragstart", 
@@ -59,7 +44,7 @@ World
   console.log("types", dataList.types)
 
   // dataList.add("http://www.example.org","text/uri-list");
-}</script>
+}</script-->
 
 
 
