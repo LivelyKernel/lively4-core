@@ -98,6 +98,7 @@ export default class LivelyBibtex extends Morph {
   
   onCopy(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     var data = this.selectedEntries().map(ea => ea.textContent).join("")
     evt.clipboardData.setData('text/plain', data);   
     evt.stopPropagation()
@@ -106,6 +107,7 @@ export default class LivelyBibtex extends Morph {
   
   onCut(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     this.onCopy(evt)
     this.selectedEntries().forEach(ea => ea.remove())
   }
