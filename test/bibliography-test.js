@@ -192,7 +192,7 @@ describe('Bibliography', () => {
     
     it('stripps tex formatting', async function() {
       var key = Bibliography.generateCitationKey({entryTags: {
-        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar}`,
+        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar`,
         year: 1998,
         title: "Explicit connectors for coordination of active objects.",
       }})

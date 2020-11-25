@@ -115,6 +115,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
     try {
       var author = latexconv.convertLaTeXToUnicode(tags.author)
     } catch(e) {
+      debugger
       console.warn("[bibliography] could not convertLaTeXToUnicode: " + author)
       author = tags.author.replace(/[^A-Za-z  ,]/g, "") // just remove everything else.... 
      }
