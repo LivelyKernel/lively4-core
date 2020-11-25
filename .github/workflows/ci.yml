@@ -12,5 +12,5 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 0.11
-    - name: Run 'npm test'
-      run: npm test
+    - run: npm install
+    - run: npm test
