@@ -12,9 +12,5 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 0.11
-    - name: Set up environment
-      run: |
-        sudo apt-get install -yq --no-install-recommends xvfb
-        echo "CHROME_BIN=$(which google-chrome-stable)" >> $GITHUB_ENV
     - run: npm install
     - run: xvfb-run npm test
