@@ -172,12 +172,6 @@ export default class Clipboard {
   }
   
   static pasteTextDataInto(data, container) {
-    
-    // guess it is bibtex? Maybe we should allow pattern matting like in drag and drop?
-    if (data.match(/@[A-Za-z]+{/)) {
-      return this.pasteBibtexDataInto(data, container)
-    }
-    
     var div = document.createElement("div")
     div.innerHTML = data
     div.classList.add("lively-content")
@@ -215,16 +209,23 @@ export default class Clipboard {
     evt.stopPropagation()
     evt.preventDefault(); 
     lively.notify("[clipboard] paste")
-    var data = evt.clipboardData.getData('text/html')
-    if (data) {
-      this.pasteHTMLDataInto(data, this.lastTarget) 
+    
+    var textData = evt.clipboardData.getData('text/plain')
+    var htmlData = evt.clipboardData.getData('text/html')
+    
+    // guess it is bibtex? Maybe we should allow pattern matting like in drag and drop?
+    if (textData.match(/@[A-Za-z]+{/)) {
+      return this.pasteBibtexDataInto(textData, this.lastTarget)
+    }
+    
+    if (htmlData) {
+      this.pasteHTMLDataInto(htmlData, this.lastTarget) 
       return 
     }
  
     
-    data = evt.clipboardData.getData('text/plain')
-    if (data) {
-       this.pasteTextDataInto(data, this.lastTarget) 
+    if (textData) {
+       this.pasteTextDataInto(textData, this.lastTarget) 
       return 
     }
     

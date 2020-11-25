@@ -15,67 +15,87 @@ function babelVisitorWrapper(key, nodeType, visitor) {
 }
 
 class Transitions {
-  constructor() {
-      this._transitions = [];
-      this.savedTransitions = [];
-  }
+    constructor() {
+        this._transitions = [];
+        this.savedTransitions = [];
+        this.selectionTookPlace = false;
+        this.errorState = null;
+    }
 
-  _getProgramParent(path) {
-    let parent = path;
-    do {
-      if (parent.isProgram()) return parent;
-    } while ((parent = parent.parentPath));
-  };
-
-  getValue() {
-    return this._transitions;
-  };
-
-  addExitTransition(code) {
-    this._transitions.push({
-      code,
-      pluginAlias: "output",
-      visitorType: "exit",
-      size: new Blob([code], { type: "text/plain" }).size,
-    });
-  };
-
-  wrapPluginVisitorMethod(pluginAlias, visitorType, callback) {
-    return (...args) => {
-      // const { code } = generate(this._getProgramParent(args[0]).node);
-        this.savedTransitions.push({
-            node: _.cloneDeep(args[0].node),
-            parent: _.cloneDeep(this._getProgramParent(args[0]).node),
-            alias: pluginAlias,
-            type: visitorType
-        })
-/*
-      if (this._transitions.length === 0 || this._transitions[this._transitions.length - 1].code !== code
-      ) {
-        this._transitions.push({
-          code,
-          pluginAlias,
-          visitorType,
-          currentNode: args[0].node.type,
-          size: new Blob([code], { type: "text/plain" }).size,
-        });
-      }*/
-      callback.call(this, ...args);
+    _getProgramParent(path) {
+        let parent = path;
+        do {
+            if (parent.isProgram()) return parent;
+        } while ((parent = parent.parentPath));
     };
-  };
-    
-    transform() {
-        for(const transition of this.savedTransitions) {
-            const {code} = babel.transformFromAst(transition.parent);
-            if (this._transitions.length === 0 || this._transitions[this._transitions.length - 1].code !== code) {
-                this._transitions.push({
-                  code,
-                  alias: transition.alias,
-                  type: transition.type,
-                  currentNode: transition.node.type,
-                  size: new Blob([code], { type: "text/plain" }).size,
+
+    getValue() {
+        return this._transitions;
+    };
+
+    addEntryTransition(code) {
+        this._transitions.push({
+            code,
+            alias: "Original",
+            type: "entry",
+            size: new Blob([code], { type: "text/plain" }).size
+        })
+    }
+
+    addExitTransition(code) {
+        this._transitions.push({
+            code,
+            alias: "output",
+            type: "exit",
+            size: new Blob([code], { type: "text/plain" }).size,
         });
-      }
+    };
+
+    wrapPluginVisitorMethod(pluginAlias, visitorType, callback) {
+        return (...args) => {
+            try {
+                callback.call(this, ...args);
+
+            this.savedTransitions.push({
+                node: _.cloneDeep(args[0].node),
+                parent: _.cloneDeep(this._getProgramParent(args[0]).node),
+                alias: pluginAlias,
+                type: visitorType,
+            })
+            } catch(e) {
+                this.errorState = {
+                    error: e,
+                    alias: pluginAlias,
+                    type: visitorType
+                };
+                // still want the normal error handling of the plugin explorer
+                throw e;
+            }
+        };
+    };
+
+    selectTransitionsIfNecessary() {
+        if (!this.selectionTookPlace) {
+            for (const transition of this.savedTransitions) {
+                const { code } = babel.transformFromAst(transition.parent);
+                if (this._transitions.length === 0 || this._transitions[this._transitions.length - 1].code !== code) {
+                    this._transitions.push({
+                        code,
+                        alias: transition.alias,
+                        type: transition.type,
+                        currentNode: transition.node.type,
+                        size: new Blob([code], { type: "text/plain" }).size,
+                    });
+                }
+            }
+            if (this.errorState !== null) {
+                this._transitions.push({
+                    code: this.errorState.error.stack,
+                    alias: this.errorState.alias,
+                    type: this.errorState.type
+                })
+            }
+            this.selectionTookPlace = true;
         }
     }
 }
@@ -405,9 +425,40 @@ export default class PluginExplorer extends Morph {
         }
     }
 
+    replaceButtonsWith(buttons) {
+        const pane = this.get('#buttonPane');
+        pane.innerHTML = '';
+        for (const button of buttons) {
+            pane.appendChild(button);
+        }
+    }
+
+    updateAndExecute(code) {
+        this.transformedSourceLCM.value = code;
+
+        if (this.autoExecute) this.execute();
+        if (this.autoRunTests) runTests();
+    }
+
+    setTransitionButtons(transitions) {
+        this.replaceButtonsWith(transitions.getValue().map((transition, index) => {
+            const button = document.createElement('button');
+            button.innerText = `${index}: ${transition.alias}`;
+            button.addEventListener('click', e => {
+                // transition.inspect()
+                this.updateAndExecute(transition.code);
+            });
+            button.addEventListener('mouseover', e => {
+                this.updateAndExecute(transition.code);
+            });
+            return button;
+        }))
+    }
+
     async updateTransformation(ast) {
         const plugin = await this.getPlugin();
         let transitions = new Transitions();
+        transitions.addEntryTransition(this.sourceText);
 
         try {
             console.group("PLUGIN TRANSFORMATION");
@@ -432,20 +483,26 @@ export default class PluginExplorer extends Morph {
                 config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
                 this.transformationResult = babel.transform(this.sourceText, config);
             } else {
-                this.transformationResult = ast.transformAsAST(plugin, {wrapPluginVisitorMethod: transitions.wrapPluginVisitorMethod.bind(transitions)});
+                this.transformationResult = ast.transformAsAST(plugin, {
+                    wrapPluginVisitorMethod: transitions.wrapPluginVisitorMethod
+                        .bind(transitions)
+                });
             }
 
-            this.transformedSourceLCM.value = this.transformationResult.code;
-            transitions.addExitTransition(this.transformationResult.code);
+            // Todo: find in original code how to use
+            // transitions.addExitTransition(this.transformationResult.code);
 
-            if (this.autoExecute) this.execute();
-            if (this.autoRunTests) runTests();
-        } catch (err) {
-            console.error(err);
-            this.transformedSourceLCM.value = "Error: " + err.message;
+            this.updateAndExecute(this.transformationResult.code);
+
+            transitions.selectTransitionsIfNecessary();
+            transitions.addExitTransition(this.transformationResult.code);
+        } catch (e) {
+            console.error(e);
+            this.transformedSourceLCM.value = e.stack;
         } finally {
             console.groupEnd();
-            transitions.inspect();
+            transitions.selectTransitionsIfNecessary();
+            this.setTransitionButtons(transitions);
         }
     }
 
@@ -482,7 +539,7 @@ export default class PluginExplorer extends Morph {
             this.executionConsole.textContent += "-> " + result;
         } catch (e) {
             console.error(e);
-            this.executionConsole.textContent += "Error: " + e
+            this.executionConsole.textContent += "Error: " + e;
         } finally {
             console.log = oldLog
             console.groupEnd();
@@ -526,8 +583,11 @@ export default class PluginExplorer extends Morph {
         //lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
         if (!start || !end) return;
 
-        toTextEditor.setSelection({ line: start.line - 1, ch: start.column - 1 }, { line: end.line - 1, ch: end.column -
-                1 })
+        toTextEditor.setSelection({ line: start.line - 1, ch: start.column - 1 }, {
+            line: end.line - 1,
+            ch: end.column -
+                1
+        })
     }
 
     onSourceSelectionChanged(evt) {
@@ -559,7 +619,7 @@ export default class PluginExplorer extends Morph {
         this.addEventListener("initialize", () => {
             this.loadWorkspace(other.workspace);
             this.sourceCM.setValue(other.sourceText);
-            this.transformedSourceCM.setValue(other.transformedSourceCM.getValue()); 
+            this.transformedSourceCM.setValue(other.transformedSourceCM.getValue());
             this.transformationResult = other.transformationResult;
             this.runsTests = other.runTests;
             this.updateAST();

@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from "src/client/fileindex.js"
 import _ from 'src/external/lodash/lodash.js'
+import Strings from "src/client/strings.js"
 
 export default class IndexSearch extends Morph {
   initialize() {
@@ -38,6 +39,24 @@ export default class IndexSearch extends Morph {
     this.get("#searchResults").innerHTML="";
   }
 
+  get mode() {
+    return this.getAttribute("mode");
+  }
+  
+  set mode(mode) {
+    return this.setAttribute("mode", mode);
+  }
+
+  
+  onReplaceModeButton() {
+    if (this.mode == "replace") {
+      this.mode = undefined
+    } else {
+      this.mode = "replace"      
+    }
+  }
+  
+  
   async showSearchResult(url, lineAndColumn) {
     var editor =  this.get("#editor")
     
@@ -94,8 +113,7 @@ export default class IndexSearch extends Morph {
   
       }</span></td>`;
       let link = item.querySelector("a");
-      link.href = ea.file;
-      link.url = url
+      link.setAttribute("href", ea.url);
       link.title = ea.file
       var self = this
       link.onclick = (evt) => {
@@ -110,6 +128,80 @@ export default class IndexSearch extends Morph {
     }
   }
 
+  async searchAndReplace(pattern, replace) {
+    this.mode = "replace"
+    // #TODO refactor
+    this.get("#searchInput").value = pattern
+    this.setAttribute("search", pattern);
+    this.get("#replaceInput").value = replace
+    
+    await this.searchFile()
+    await this.replaceInFiles(pattern, replace)
+  }
+  
+  async replaceInFiles(pattern, replace) {
+    if(this.searchInProgres || !this.files) {
+      this.log("please search files first")
+      return
+    }
+    let toReplace = []
+    let regex = new RegExp(pattern, "g")
+    for (let url of this.files.map(ea => ea.url).uniq()) {
+      let getRequest = await fetch(url)
+      let lastVersion = getRequest.headers.get("fileversion")
+      let contents = await getRequest.text()
+      let newcontents = contents.replace(regex, replace)
+      if (contents == newcontents) {
+        this.log("pattern did not match " + pattern) 
+      }
+      toReplace.push({url: url, lastversion: lastVersion, oldcontent: contents, newcontent: newcontents})
+    }
+  
+    if (!await lively.confirm("Replace <b>" + pattern + "</b> with <b>" + replace + "</b> in " + toReplace.length + " files?" +
+                             `<ul style="font-size: 10pt">${
+                                toReplace.map(ea => "<li>" 
+                                              + ea.url.replace(/.*\//,"") 
+                                              + " (" + Strings.matchAll(regex, ea.oldcontent).length + " occurence(s))"
+                                              + "</li>").join("")
+                              }<ul>`))  {
+      lively.warn("replacing files canceled")
+      return 
+    }
+    this.clearLog()
+    for (var ea of toReplace) {
+      let url = ea.url
+      let headers = {}
+      if (ea.lastVersion) {
+        headers.lastversion = ea.lastVersion
+      }
+      let putRequest = await fetch(url, {
+        method: "PUT",
+        body: ea.newcontent,
+        headers: headers
+      })
+             
+      var item = <tr>
+            <td>replaced</td>
+            <td class="filename">
+              <a click={(evt) => {
+                evt.preventDefault(); 
+                this.browseSearchResult(url, replace)}
+               } href={url}>{url.replace(/.*\//,"")}</a></td>
+            <td><b>{pattern}</b></td>
+            <td>with</td>
+            <td><b>{replace}</b></td>
+          </tr>;
+      this.get("#searchResults").appendChild(item);
+    
+      if (putRequest.status == 200) {
+        // #Idea: show diff?
+        lively.notify("Replaced in " + url)
+      } else {
+        lively.warn("could not change " + url + ", because " + putRequest )
+      }  
+    }
+  }
+  
   onSearchButton() {
     this.setAttribute("search", this.get("#searchInput").value);
     this.searchFile();
@@ -150,7 +242,7 @@ export default class IndexSearch extends Morph {
     this.clearLog();
     //this.log('found');
     this.log(`finished in ${Date.now() - start}ms`);
-    this.onSearchResults(list, search);
+    return this.onSearchResults(list, search);
   }
 
   serverURL() {
@@ -223,6 +315,8 @@ export default class IndexSearch extends Morph {
  
   livelyMigrate(other) {
     this.get("#searchInput").value =  other.get("#searchInput").value
+    this.get("#replaceInput").value =  other.get("#replaceInput").value
+
   }
   
 }

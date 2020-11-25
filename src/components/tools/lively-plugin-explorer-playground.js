@@ -3,7 +3,7 @@ export default function (babel) {
   return {
     name: "underscore-decorator",
     visitor: {
-      /*FunctionDeclaration(path) {
+      FunctionDeclaration(path) {
         const nameParts = path.node.id.name.split('_');
         if (nameParts.length < 2) {
             return;
@@ -12,7 +12,7 @@ export default function (babel) {
         
           for (const id of nameParts.slice(0, -1).reverse()) {
              body = t.callExpression(
-                 t.identifier(id), 
+                 t.identifiers(id), 
                  [t.arrowFunctionExpression([], body)])
         }
           
@@ -24,7 +24,11 @@ export default function (babel) {
       path.replaceWith(fun);
       // not exactly what I want as this does not decorate function declared in the current function
       path.stop();
-      }*/
+      },
+        
+        ReturnStatement(path) {
+            // debugger
+        }
     }
   };
 }

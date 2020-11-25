@@ -52,6 +52,14 @@ export default class LiteratureSearch extends Morph {
     this.setAttribute("rename-url", s)
   }
   
+  get baseURL() {
+    return this.getAttribute("base-url")
+  }
+
+  set baseURL(s) {
+    this.setAttribute("base-url", s)
+  }
+  
   get details() {
     return this.get("#content")
   }
@@ -105,7 +113,9 @@ export default class LiteratureSearch extends Morph {
       
         for(let bib of bibEntries) {
           let id = bib.value.entryTags.microsoftid
-          let existing = allBibtexEntries.filter(ea => ea.key == bib.value.citationKey)
+          let existing = allBibtexEntries
+            .filter(ea => ea.key == bib.value.citationKey)
+            .filter(ea => !this.baseURL || ea.url.startsWith(this.baseURL))
           let rename = <a title="rename file" class="method"
               click={async () => {
                 await this.literatureListing.renameFile(this.renameURL, bib.generateFilename() + ".pdf")
@@ -113,20 +123,10 @@ export default class LiteratureSearch extends Morph {
               }}>
              rename
             </a>
-          let importBibtex = <a class="method" click={async () => {
-                  await Paper.importBibtexId(id)
-                  var time = 1000
-                  var animation = importBibtex.animate([
-                     { outline: "2px solid transparent",  }, 
-                     { outline: "2px solid red",   }, 
-                     { opacity: 1, }, 
-                     { opacity: 0, }], 
-                    {
-                      duration: time
-                    });  
-                  animation.onfinish = () => importBibtex.remove()
-                  // this.close()
-              }}>
+          let importBibtex = <a class="method" click={async () => {          
+            await lively.html.highlightBeforeAndAfterPromise(importBibtex, Paper.importBibtexId(id))
+            importBibtex.remove()
+          }}>
              import
             </a>    
           rows.push(<tr>

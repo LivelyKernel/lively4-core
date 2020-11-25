@@ -1516,7 +1516,7 @@ export default class Lively {
       }
       return pos.subPt(lively.getGlobalPosition(worldContext))
   }
-
+  
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
   static async openBrowser(url, edit, patternOrPostion, replaceExisting, worldContext) {
     worldContext = worldContext || document.body
@@ -1761,11 +1761,25 @@ export default class Lively {
   
   static async onFileIndexPreference(bool) {
     if (bool) {
+      this.updateFileIndexDirectory(lively4url + "/")
+    }
+  }
+  
+  static async updateFileIndexDirectory(url) {
+    return new Promise((resolve) => {
       if(!this.fileIndexWorker) {
         this.fileIndexWorker = new SystemjsWorker("src/worker/fileindex-worker.js")
       }
-      this.fileIndexWorker.postMessage({message: "updateDirectory", url: lively4url + "/"})
-    }
+    
+      // fuck it this might break when called concurrently...
+      this.fileIndexWorker.onmessage = (evt) => {
+        if (evt.data.message == "updateDirectoryFinished") {
+          resolve()
+
+        }
+      }
+      this.fileIndexWorker.postMessage({message: "updateDirectory", url: url})
+    })
   }
 
   /*

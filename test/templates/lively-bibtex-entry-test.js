@@ -46,15 +46,15 @@ describe("LivelyBibtexEntryTest",  function() {
       }
       expect(that.generateFilename()).to.equal("Mustermann_1997_MetaReflectivePaperForPeople")
     });
-    it("deals with hands-on", () => {
+    it("deals with tex in author name", () => {
       that.value = {
         entryTags: {
-          author: "Hans Mustermann",
+          author: `Hans M{\\"u}stermann`,
           year: "1997",
           title: "A hands-on paper for people"
         }
       }
-      expect(that.generateFilename()).to.equal("Mustermann_1997_HandsonPaperForPeople")
+      expect(that.generateFilename()).to.equal("Muestermann_1997_HandsonPaperForPeople")
     });
   })
   

@@ -6,6 +6,7 @@
 export default class Strings {
   
   static toUpperCaseFirst(s) {
+    if (!s || s.length == 0 ) return s
     return s[0].toUpperCase() + s.slice(1)
   }
   
@@ -66,4 +67,16 @@ export default class Strings {
   static escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
   }
+    
+  static fixUmlauts(value) {
+    value = value.replace(/ä/g, 'ae');
+    value = value.replace(/ö/g, 'oe');
+    value = value.replace(/ü/g, 'ue');
+    value = value.replace(/ß/g, 'ss');
+    value = value.replace(/Ä/g, 'Ae');
+    value = value.replace(/Ö/g, 'Oe');
+    value = value.replace(/Ü/g, 'Ue');
+    return value;
+  }  
+    
 }

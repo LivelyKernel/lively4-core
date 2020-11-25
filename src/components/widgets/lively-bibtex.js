@@ -1,6 +1,8 @@
 import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
+import {Paper} from 'src/client/literature.js'
+import Bibliography from "src/client/bibliography.js"
 
 /*MD
 # Lively Bibtex
@@ -29,17 +31,66 @@ export default class LivelyBibtex extends Morph {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"))
   }
   
+  async importEntries(entries) {
+    
+    var source = entries.map(ea => ea.textContent).join("\n")
+      
+    return Paper.importBibtexSource(source)
+  }
+  
+  
   onContextMenu(evt) {
     if (!evt.shiftKey) {
+      var entries = this.selectedEntries()
+      if (entries.length == 0) {
+        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry")
+      }
+      if (entries.length == 0) return // nothing selected or clicked on
+      
       evt.stopPropagation();
       evt.preventDefault();
       var menu = new ContextMenu(this, [
-            ["remove", () => {
-                this.selectedEntries().forEach(ea => {
-                  ea.remove()
-                })   
-            }]
-        ]);
+        ["generate key", () => {
+          entries.forEach(ea => {
+            var entry = ea.value
+            var key = Bibliography.generateCitationKey(entry)
+            if (key) {
+              entry.citationKey = Bibliography.generateCitationKey(entry)
+              ea.value = entry              
+            } else {
+              lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex())
+            }
+          })   
+        }],
+        ["generate key and replace all occurences", () => {
+          entries.forEach(ea => {
+            var entry = ea.value
+            var oldkey = ea.value.citationKey
+            var key = Bibliography.generateCitationKey(entry)
+            if (key) {
+              entry.citationKey = Bibliography.generateCitationKey(entry)
+              ea.value = entry
+              
+             lively.openComponentInWindow("lively-index-search").then(comp => {
+              comp.searchAndReplace(oldkey, key)
+              lively.setExtent(comp.parentElement, lively.pt(1000, 700));
+              comp.focus();
+            });
+              
+            } else {
+              lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex())
+            }
+          })   
+        }], 
+        ["import", () => {
+            this.importEntries(entries)
+        }],    
+        ["remove", () => {
+            entries.forEach(ea => {
+              ea.remove()
+            })   
+        }]
+      ]);
       menu.openIn(document.body, evt, this);
       return 
     }
@@ -47,6 +98,7 @@ export default class LivelyBibtex extends Morph {
   
   onCopy(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     var data = this.selectedEntries().map(ea => ea.textContent).join("")
     evt.clipboardData.setData('text/plain', data);   
     evt.stopPropagation()
@@ -55,6 +107,7 @@ export default class LivelyBibtex extends Morph {
   
   onCut(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     this.onCopy(evt)
     this.selectedEntries().forEach(ea => ea.remove())
   }
@@ -118,6 +171,8 @@ export default class LivelyBibtex extends Morph {
   }
   
   onClick(evt) {
+    // don't interfere with selection
+    if (window.getSelection().toString().length > 0) return 
     if (this.isEditing()) return;
     // var oldScroll
     var entry = this.findEntryInPath(evt.composedPath())
