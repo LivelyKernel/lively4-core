@@ -1,6 +1,6 @@
 'use strict';
 
-// Livel4 Keyboard shortcuts
+// Lively4 Keyboard shortcuts
 
 // Experiments for more late bound modules... that way the expots won't get frozen!
 // idea
