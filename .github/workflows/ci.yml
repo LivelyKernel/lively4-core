@@ -12,5 +12,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 0.11
+    - name: Set up dependencies
+      run: |
+        echo "CHROME_BIN=google-chrome-stable" >> $GITHUB_ENV
     - run: npm install
     - run: npm test
