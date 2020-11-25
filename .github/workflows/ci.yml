@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - name: Clone lively4-core repository
       uses: actions/checkout@v2
@@ -12,10 +12,5 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 0.11
-    - name: Set up dependencies
-      run: |
-        # Use https (public access) instead of git for git-submodules
-        sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-        git submodule update --init --recursive
     - name: Run 'npm test'
       run: npm test
