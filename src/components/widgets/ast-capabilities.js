@@ -1,7 +1,11 @@
 import { loc, range } from 'utils';
 
 import FileIndex from "src/client/fileindex.js";
+
 import diff from 'src/external/diff-match-patch.js';
+const DMP_DELETION = -1,
+      DMP_EQUALITY = 0,
+      DMP_INSERTION = 1;
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
@@ -396,9 +400,7 @@ export default class ASTCapabilities {
   braveNewWorld() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    this.highlightChanges
-    // lively.notify('FOOOOO')
-    ();
+    this.highlightChanges();
   }
 
   highlightChanges() {
@@ -413,8 +415,13 @@ export default class ASTCapabilities {
 
     var dmp = new diff.diff_match_patch();
     var d = dmp.diff_main(oldText, newText);
+    // d.inspect()
     var index = 0;
     let firstChangeStep = true
+    // prune diffs
+    const onlySpaces = str => str.trim().length === 0
+    // d = d.filter(([changeType, text]) => changeType === 0 || !onlySpaces(text));
+    // d.inspect()
     for (let [changeType, text] of d) {
       index = this.highlightChange(changeType, targetCM, text, index);
       firstChangeStep = false;
@@ -422,9 +429,6 @@ export default class ASTCapabilities {
   }
 
   highlightChange(changeType, cm, text, index) {
-    const DMP_DELETION = -1,
-          DMP_EQUALITY = 0,
-          DMP_INSERTION = 1;
     switch (changeType) {
       case DMP_EQUALITY:
         index += text.length;
@@ -1713,7 +1717,7 @@ export default class ASTCapabilities {
     let exitedEarly = false;
 
     const pathLocationsToSelect = [];
-
+debugger
     let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
