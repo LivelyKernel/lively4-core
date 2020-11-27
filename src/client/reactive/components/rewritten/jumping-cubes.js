@@ -72,6 +72,7 @@ class Cube {
 }
 
 const EFFECT_DURATION = 400;
+const TASK_DURATION = 100;
 
 class Animation {
   constructor(jc) {
@@ -183,7 +184,7 @@ class AnimationQueue {
   }
 
   async process() {
-    const TASK_DURATION = this.jc.duration(100);
+    const duration = this.jc.duration(TASK_DURATION);
 
     let lastAnim;
     while (true) {
@@ -191,7 +192,7 @@ class AnimationQueue {
         // that.innerHTML = this.inner.length;
         const next = this.inner.shift();
         lastAnim = next.run();
-        await lively.sleep(TASK_DURATION);
+        await lively.sleep(duration);
       }
 
       await Promise.race([lastAnim, new Promise(resolve => this.resolveAnim = resolve)]);
