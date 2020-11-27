@@ -8,7 +8,6 @@ describe('Bibliography', () => {
   describe('threeSignificantInitialsFromTitle', () => {
     it('removes dashes', async function() {
       var title = `{OffscreenCanvas} — {Speed} up {Your} {Canvas} {Operations} with a {Web} {Worker}`
-      debugger
       expect(Bibliography.threeSignificantInitialsFromTitle(title)).to.equal("OSU")
     });
   })
