@@ -21,7 +21,7 @@ const exampleQueries = [
 ]
 
 
-function createUILayer(object, key) {
+/*function createUILayer(object, key) {
   var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;">{key}</div>;
   var valueOrObject = object[key];
   if (typeof(valueOrObject) == "object") {
@@ -31,6 +31,33 @@ function createUILayer(object, key) {
   } else {
     var input = <input value={valueOrObject}></input>;
     subDiv.appendChild(input);
+  }
+  return subDiv;
+}*/
+
+function parseQuery(object) {
+  var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
+  
+  switch(object.type) {
+    case "simple":
+      [object.attribute, object.comparator, object.value].forEach(value => {
+        var input = <input value={value}></input>;
+        subDiv.appendChild(input)
+      });
+      break;
+    case "conjunction":
+      var input = <input value={object.conjunction}></input>;
+      var left = parseQuery(object.left);
+      var right = parseQuery(object.right);
+      [input, left, right].forEach(element => {
+        subDiv.appendChild(element);
+      });
+      break;
+    case "composite":
+      [object.attribute, object.comparator, object.value].forEach(value => {
+        var input = <input value={value}></input>;
+        subDiv.appendChild(input)
+      });
   }
   return subDiv;
 }
@@ -96,35 +123,43 @@ export default class LeoUIExample{
         },
         
         AcademicQuery_simple: function(attribute, comparator, value) {
-          return { [attribute.interpret()]: {
-            "comparator": comparator.interpret(),
-            "value": value.interpret(),
-          }}
+          return {
+            "attribute" : attribute.interpret(),
+            "comparator" : comparator.interpret(),
+            "value" : value.interpret(),
+            "type" : "simple"
+          }
         },
         AcademicQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]:
-                  Object.assign(left.interpret(), right.interpret())
-                 }
+          return {
+            "conjunction" : conjunction.sourceString,
+            "left" : left.interpret(), 
+            "right" : right.interpret(),
+            "type" : "conjunction"
+           }
         },
         AcademicQuery_composite: function(_1, query, _2) {
           return query.interpret();
         },
         
         CompositeQuery_simple: function(mainAttribute, _, secondaryAttribute, comparator, value) {
-          // TODO: Don't set keys! Otherwise, queries on the same attribute will be overwritten
-          return {[mainAttribute.interpret()]:
-                  {[secondaryAttribute.interpret()]:
-                    {
-                      "comparator": comparator.interpret(),
-                      "value": value.interpret(),
-                    }
-                  }
+          // would it make sense to split main and secondary attribute?
+          var main = mainAttribute.interpret();
+          var secondary = secondaryAttribute.interpret();
+          return {
+            "attribute" : main + "." + secondary,
+            "comparator" : comparator.interpret(),
+            "value" : value.interpret(),
+            "type" : "composite"
           }
         },
         CompositeQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]:
-                  Object.assign(left.interpret(), right.interpret())
-                 }
+          return {
+            "conjunction" : conjunction.sourceString,
+            "left" : left.interpret(), 
+            "right" : right.interpret(),
+            "type" : "conjunction"
+          }
         },
         
         Comparator: function(main, secondary) {
@@ -172,7 +207,7 @@ export default class LeoUIExample{
       if (m.failed()) {
         lively.notify("Failed query: ", q)
       } else {
-        //lively.notify(q, s(m).interpret());
+        lively.notify(q, s(m).interpret());
       }
     })
     
@@ -202,9 +237,11 @@ export default class LeoUIExample{
           {input}
         </div>
 
-    Object.keys(queryObject).forEach(key => {
+    /*Object.keys(queryObject).forEach(key => {
       div.appendChild(createUILayer(queryObject, key));
-    });
+    });*/
+
+    div.appendChild(parseQuery(queryObject));
     
     return div;
   }
