@@ -177,8 +177,6 @@ export default class Editor extends Morph {
   
   onContextMenu(evt) {
     if (!evt.shiftKey) {
-    
-      
       // #Hack #Workaround weired browser scrolling behavior
       if (lively.lastScrollLeft || lively.lastScrollTop) {
         document.scrollingElement.scrollTop = lively.lastScrollTop;
@@ -208,13 +206,14 @@ export default class Editor extends Morph {
         //     ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
         //   ])
       }      
-      
-      evt.stopPropagation();
-      evt.preventDefault();
-      
-      var menu = new ContextMenu(this, items);
-      menu.openIn(document.body, evt, this);
-      return 
+      if (items.length > 0) {
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        var menu = new ContextMenu(this, items);
+        menu.openIn(document.body, evt, this);
+        return         
+      }
     }
   }
   

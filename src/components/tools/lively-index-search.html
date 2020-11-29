@@ -1,5 +1,6 @@
 <template id="lively-index-search" >
     <style data-src="/templates/livelystyle.css"></style>
+    <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
     <style>
     .container {
         width: 100%;
@@ -70,7 +71,7 @@
 
       
     #searchResults  {
-      width: 800px;
+      min-width: 800px;
       margin-left: 10px;
       /* width: 90%; */
     }
@@ -98,7 +99,7 @@
     }
     
     .filename {
-      width: 800px;
+      max-width: 600px;
       word-break: normal; 
     }
     
@@ -106,9 +107,27 @@
       display: none;
     }
       
-    :host([replace=true]) #replaceBar {
+    :host([mode="replace"]) #replaceBar {
       display: inherit;
     }
+      
+    .search-mode {
+      display: inherit;
+    }
+
+    .replace-mode {
+      display: none;
+    }
+
+      
+    :host([mode="replace"]) .search-mode {
+      display: none;
+    }
+
+    :host([mode="replace"]) .replace-mode {
+      display: inherit;
+    }
+      
     
     td.logentry {
    
@@ -117,17 +136,27 @@
     #preview {
 
     }
+      
+    #replaceButton {
+      background: red;
+      color: white;
+    }
+      
     </style>
     <div class="container">
         <p class="fill">
           <input class="" id="searchInput" value="" />
           <button id="searchButton">search</button> 
+          <button id="replaceModeButton" title="replace in all files">
+            <i class="fa fa-pencil search-mode" aria-hidden="true"></i>
+            <i class="fa fa-ban replace-mode" aria-hidden="true"></i>
+          </button>
         </p>
         <p class="fill" id="replaceBar">
           <input class="" id="replaceInput" value="" />
-          <button id="replaceButton">replace all!</button> 
+          <button id="replaceButton">replace all!</button>
+          
         </p>
-
         <div id="searchContainer">
           <table id="searchResults"></table>  
         </div>

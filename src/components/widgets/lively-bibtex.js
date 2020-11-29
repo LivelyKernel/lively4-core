@@ -53,10 +53,35 @@ export default class LivelyBibtex extends Morph {
         ["generate key", () => {
           entries.forEach(ea => {
             var entry = ea.value
-            entry.citationKey = Bibliography.generateCitationKey(entry)
-            ea.value = entry
+            var key = Bibliography.generateCitationKey(entry)
+            if (key) {
+              entry.citationKey = Bibliography.generateCitationKey(entry)
+              ea.value = entry              
+            } else {
+              lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex())
+            }
           })   
-        }],  
+        }],
+        ["generate key and replace all occurences", () => {
+          entries.forEach(ea => {
+            var entry = ea.value
+            var oldkey = ea.value.citationKey
+            var key = Bibliography.generateCitationKey(entry)
+            if (key) {
+              entry.citationKey = Bibliography.generateCitationKey(entry)
+              ea.value = entry
+              
+             lively.openComponentInWindow("lively-index-search").then(comp => {
+              comp.searchAndReplace(oldkey, key)
+              lively.setExtent(comp.parentElement, lively.pt(1000, 700));
+              comp.focus();
+            });
+              
+            } else {
+              lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex())
+            }
+          })   
+        }], 
         ["import", () => {
             this.importEntries(entries)
         }],    
@@ -73,6 +98,7 @@ export default class LivelyBibtex extends Morph {
   
   onCopy(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     var data = this.selectedEntries().map(ea => ea.textContent).join("")
     evt.clipboardData.setData('text/plain', data);   
     evt.stopPropagation()
@@ -81,6 +107,7 @@ export default class LivelyBibtex extends Morph {
   
   onCut(evt) {
     if (this.isEditing()) return;
+    if (window.getSelection().toString().length > 0) return
     this.onCopy(evt)
     this.selectedEntries().forEach(ea => ea.remove())
   }
@@ -144,6 +171,8 @@ export default class LivelyBibtex extends Morph {
   }
   
   onClick(evt) {
+    // don't interfere with selection
+    if (window.getSelection().toString().length > 0) return 
     if (this.isEditing()) return;
     // var oldScroll
     var entry = this.findEntryInPath(evt.composedPath())

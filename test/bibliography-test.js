@@ -3,6 +3,14 @@ import Bibliography from "src/client/bibliography.js"
 import Parser from 'src/external/bibtexParse.js';
 
 describe('Bibliography', () => {
+
+  
+  describe('threeSignificantInitialsFromTitle', () => {
+    it('removes dashes', async function() {
+      var title = `{OffscreenCanvas} — {Speed} up {Your} {Canvas} {Operations} with a {Web} {Worker}`
+      expect(Bibliography.threeSignificantInitialsFromTitle(title)).to.equal("OSU")
+    });
+  })
   
   describe('filenameToKey', () => {
     it('converts normal filename', async function() {
@@ -192,7 +200,7 @@ describe('Bibliography', () => {
     
     it('stripps tex formatting', async function() {
       var key = Bibliography.generateCitationKey({entryTags: {
-        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar}`,
+        author: `G{\\"u}nter, Manuel and Ducasse, St{\\'e}phane and Nierstrasz, Oscar`,
         year: 1998,
         title: "Explicit connectors for coordination of active objects.",
       }})

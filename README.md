@@ -2,7 +2,8 @@
 
 # An Explorative, Self-supporting, Web-based Development Environment
 
-[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core)
+[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core) [![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
+
 
 ## Getting Started{style="clear:both"}
 
@@ -17,7 +18,7 @@ A project or branch of a project on GitHub can be checked out in multiple direct
 - [lively4-jens](https://lively-kernel.org/lively4/lively4-jens/start.html)
 - ...
 
-The Livel4 server and GitHub sync tools can check out arbitrary projects, such as the code of [lively4-server](https://lively-kernel.org/lively4/lively4-server/) itself, or the source of a paper hosted by overleaf.
+The Lively4 server and GitHub sync tools can check out arbitrary projects, such as the code of [lively4-server](https://lively-kernel.org/lively4/lively4-server/) itself, or the source of a paper hosted by overleaf.
 
 ## Authors / Contributors
 
