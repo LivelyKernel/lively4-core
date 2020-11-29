@@ -54,7 +54,38 @@ export default class LeoUIExample{
 
 //     world.addEventListener('drop', drop);
 
-    var g = ohm.grammar('Academic { \n  Exp = \n    AcademicQuery \n \n  AcademicQuery = Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex \n    | "Composite(" CompositeQuery ")" -- composite \n \n  CompositeQuery = Attribute "." Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex \n \n  Comparator = \n    PartialComparator "="? \n  PartialComparator = \n    "=" | "<" | ">" \n \n  Attribute (an attribute) = \n    letter letter? letter? \n  \n Value (a value) = \n    "\'" alnum* "\'" -- string \n    | Number \n    | Date \n    | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange \n    | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange \n \n  Number = \n    digit+ \n  Date = \n    "\'" Number "-" Number "-" Number "\'" \n}');
+    var g = ohm.grammar(
+      `Academic { 
+        Exp =
+          AcademicQuery
+
+        AcademicQuery = Attribute Comparator Value -- simple
+          | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex
+          | "Composite(" CompositeQuery ")" -- composite
+        CompositeQuery = Attribute "." Attribute Comparator Value -- simple
+          | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex
+
+        Comparator =
+          PartialComparator "="?
+        PartialComparator =
+          "=" | "<" | ">"
+
+        Attribute (an attribute) =
+          letter letter? letter?
+
+        Value (a value) =
+          "\'" alnum* "\'" -- string
+          | Number
+          | Date
+          | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange
+          | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange
+
+        Number =
+          digit+
+          Date =
+          "\'" Number "-" Number "-" Number "\'"
+      }`
+    );
     
     var s = g.createSemantics();
     
@@ -141,7 +172,7 @@ export default class LeoUIExample{
       if (m.failed()) {
         lively.notify("Failed query: ", q)
       } else {
-        lively.notify(q, s(m).interpret());
+        //lively.notify(q, s(m).interpret());
       }
     })
     
@@ -162,7 +193,7 @@ export default class LeoUIExample{
 //       event.target.appendChild(lively.query(this, '#'+data))
 //     }
     
-    var query = "And(Or(A='1985', Y='2008'), Ti='disordered electronic systems')";
+    var query = "And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')";
     var match = g.match(query);
     var queryObject = s(match).interpret();
     
@@ -176,48 +207,5 @@ export default class LeoUIExample{
     });
     
     return div;
-    // <div>
-    //   <table>
-    //     <tr>
-    //       <td>
-    //         Title
-    //       </td>
-    //       <td>
-    //         Author
-    //       </td>
-    //       <td>
-    //         Year
-    //       </td>
-    //     </tr>
-    //     <tr style="vertical-align:top">
-    //       <td>
-    //         <input value='something'></input>
-    //       </td>
-    //       <td>
-    //         <table>
-    //           <tr>
-    //             <td>
-    //               Name
-    //             </td>
-    //             <td>
-    //               <input value='name'></input>
-    //             </td>
-    //           </tr>
-    //           <tr>
-    //             <td>
-    //               Institution
-    //             </td>
-    //             <td>
-    //               <input value='inst'></input>
-    //             </td>
-    //           </tr>
-    //         </table>
-    //       </td>
-    //       <td>
-    //         <input value='2001'></input>
-    //       </td>
-    //     </tr>
-    //   </table>
-    // </div>
   }
 }

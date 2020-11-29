@@ -47,7 +47,7 @@ import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js"
 
 
 var myGrammar = ohm.grammar(
-'Academic {
+`Academic {
   Exp =
     AcademicQuery
 
@@ -80,7 +80,7 @@ var myGrammar = ohm.grammar(
     digit+
   Date =
     "'" digit digit digit digit "-" digit digit "-" digit digit "'"
-}')
+}`)
 
 
 
