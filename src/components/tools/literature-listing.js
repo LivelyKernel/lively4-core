@@ -65,7 +65,7 @@ export default class LiteratureListing extends Morph {
     // reset entries
     this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
     
-    entries.forEach(entry => {
+    await entries.forEach(entry => {
       this.literatureFiles.filter(ea => ea.key == entry.key).forEach(literatureFile => {
         literatureFile.entry = entry
       })
@@ -172,6 +172,7 @@ export default class LiteratureListing extends Morph {
   }
   
   renderLiteratureFile(literatureFile) {
+    debugger
     var entryDetails = literatureFile.entry ? 
         <span>
           <span class="authors">{literatureFile.entry.authors.join(", ")}</span>.

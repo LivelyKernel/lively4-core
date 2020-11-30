@@ -215,6 +215,14 @@ describe('Bibliography', () => {
       expect(key).to.equal("Guenter1998ECC")  
     });
     
+    it('stripps colon', async function() {
+      var key = Bibliography.generateCitationKey({entryTags: {
+        author: `Ken Perlin and Zhenyi He and Karl Rosenberg`,
+        year: 2018,
+        title: "Chalktalk : A Visualization and Communication Language -- As a Tool in the Domain of Computer Science Education",
+      }})
+      expect(key).to.equal("Perlin2018CVC")
+    });  
   })
   
 });

@@ -104,7 +104,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
   MD*/
   
   static cleanTitle(titleString="") {
-     return titleString.replace(/[{}]/g,"").replace(/[—]/g," ")
+     return titleString.replace(/[{}:\[\]]/g,"").replace(/[—]/g," ")
   }
 
   // #TODO this method obviously will need a lot of tweaking...
