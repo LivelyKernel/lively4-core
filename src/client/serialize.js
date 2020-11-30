@@ -9,7 +9,7 @@ export function serialize(obj) {
         // 1st occurence: remember you saw that one
         const id = uuid();
         references.set(value, id);
-        value.$id = id;
+        return Object.assign({ $id: id }, value);
       } else {
         return { $ref: references.get(value) };
       }

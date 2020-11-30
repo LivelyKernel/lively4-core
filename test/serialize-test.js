@@ -74,6 +74,8 @@ describe('simple serialization with JSON.{parse,stringify}', () => {
     o.recursive = o;
     const o2 = deserialize(serialize(o));
 
+    expect(o).not.to.have.property('$id');
+    expect(o).not.to.have.property('$ref');
     expect(o2).not.to.have.property('$id');
     expect(o2).not.to.have.property('$ref');
   });
