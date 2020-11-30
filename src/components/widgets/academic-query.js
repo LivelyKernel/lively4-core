@@ -11,8 +11,6 @@ export default class AcademicQuery extends Morph {
   }
   
   
-  
-
   updateView() {
     var pane = this.get("#pane")
     pane.innerHTML = ""
