@@ -7,10 +7,6 @@ const assert = chai.assert;
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 
-function isACopy(a, b) {
-  
-}
-
 describe('simple serialization with JSON.{parse,stringify}', () => {
 
   it('exports defined', () => {
@@ -78,6 +74,24 @@ describe('simple serialization with JSON.{parse,stringify}', () => {
     expect(o).not.to.have.property('$ref');
     expect(o2).not.to.have.property('$id');
     expect(o2).not.to.have.property('$ref');
+  });
+
+  it('restore classes and clean up $class', () => {
+    class A {
+      get foo() { return 42; }
+    }
+    class B {
+      get foo() { return 42; }
+    }
+    const a = new A();
+    a.b = new B();
+    a.b.a = a;
+    const a2 = deserialize(serialize(a), { A, B });
+
+    expect(a).not.to.have.property('$class');
+    expect(a2).not.to.have.property('$class');
+    expect(a2 instanceof A).to.be.true;
+    expect(a2.b instanceof B).to.be.true;
   });
 
 });
