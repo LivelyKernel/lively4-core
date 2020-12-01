@@ -96,7 +96,6 @@ export default class AcademicScheme extends Scheme {
       return focalStorage.setItem(academicSubscriptionKeyId, key);
   }
   
-  
   static async getSubscriptionKey() {
     var key = await focalStorage.getItem(academicSubscriptionKeyId);
     if (!key) {

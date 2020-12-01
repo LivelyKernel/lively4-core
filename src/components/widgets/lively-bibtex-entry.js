@@ -71,6 +71,10 @@ export default class LivelyBibtexEntry extends Morph {
     this.updateView();
   }
 
+  toBibtex() {
+    return this.textContent
+  }
+  
   livelyMigrate(other) {
     this.value = other.value;
   }

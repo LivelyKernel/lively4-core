@@ -119,7 +119,15 @@ export default class Files {
   
   
   static async copyURLtoURL(fromURL, toURL) {
-    var blob = await fetch(fromURL, {method: 'GET'}).then(r => r.blob())
+    try {
+      var getResp = await fetch(fromURL, {method: 'GET'})
+    } catch(e) {
+      console.log("[files] copyURLtoURL... falling back to server side download for: " + fromURL)
+      var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+      getResp = await fetch(lively4serverurl = "/_curl/?target=" + fromURL)
+      // Error maybe due to CORS?
+    }
+    var blob = await getResp.blob()
     return fetch(toURL, {method: 'PUT', body: blob})
   }
   

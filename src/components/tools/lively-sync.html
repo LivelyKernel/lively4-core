@@ -42,7 +42,7 @@
       overscroll-behavior: contain;
     }
     
-    #travisLink {
+    #travisLink, #githubLink {
       float: right;
       margin-right: 5px;
     }
@@ -176,8 +176,10 @@
              onclick="event.preventDefault(); fetch(this.href)">imprint</a>  
           <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
-          </a>  
-      </p>
+          </a>
+          <a id="githubLink" target="_blank" href="https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI">
+            <img src="https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg" alt="Build Status Github">
+          </a>
       <div id="logContainer">
         <div id=log>
         

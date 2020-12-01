@@ -446,9 +446,6 @@ export class Paper {
   }
     
   async toHTML() {
-    await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
-    await this.findReferencedBy()
-    
     var bibtexEntries = await this.findBibtexFileEntries()
     var pdfs = this.value.S && this.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
     
@@ -490,8 +487,18 @@ export class Paper {
   
       </div>
       ${
-        pdfs && pdfs.length > 0 ? 
-           "<h3>Online PDFs</h3>" + pdfs.map(url => `<a href="${url}">${url.replace(/.*\//,"")}</a>`) : ""
+        pdfs && pdfs.length > 0 ? "<h3>Import PDFs</h3>" + 
+`<lively-script><script>
+  var pdfs = ${JSON.stringify(pdfs)}
+  var container = lively.query(this, "lively-container")
+  var result = <span>{...pdfs.map(ea => <a click={async () => {
+    var comp = await lively.openComponentInWindow("external-resource")
+    comp.importURL = ${JSON.stringify(await this.toImportURL())}
+    comp.src = ea
+}}>{ea.replace(/.*\\//,"")} </a>)}</span> 
+  result
+</script></lively-script>`: ""
+            // + pdfs.map(url => `<a href="${url}" onclick="${}">${url.replace(/.*\//,"")}</a>`) 
       }
       <h3>Bibliographies</h3>
       <div>${
@@ -520,10 +527,49 @@ export class Paper {
       <h3>Abstract</h3>
       <div class="abstract">${this.abstract}</div>
       <h3>References</h3>
-      ${this.papersToBibtex(this.references)}
+      ${`
+<lively-script><script>
+  var paper = Paper.byId(${this.microsoftid})
+  paper.resolveReferences().then(() => paper.papersToBibtex(paper.references))
+</script></lively-script>`}
+    
       <h3>Referenced By</h3>
-      ${this.papersToBibtex(this.referencedBy)}     
+      ${`
+<lively-script><script>
+    var paper = Paper.byId(${this.microsoftid})
+    paper.findReferencedBy().then(() => paper.papersToBibtex(paper.referencedBy))
+</script></lively-script>`}
+    
   </div>`
+
+    
+  /*
+      
+    await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
+    await this.findReferencedBy()
+    
+      ${this.papersToBibtex(this.references)}
+      
+      ${this.papersToBibtex(this.referencedBy)}     
+  */
+  
+  }
+  
+  async generateFilename() {
+    var entry = this.toBibtexEntry()
+    var bibentry = await (<lively-bibtex-entry></lively-bibtex-entry>)
+    bibentry.value = entry
+    var filename = bibentry.generateFilename(entry)
+    return filename + ".pdf"
+  }
+  
+  async toImportURL() {
+    var filename = await this.generateFilename()
+    var baseURL = await Paper.importBaseURL()
+    if (!baseURL) {
+      throw new Error("[Paper] toImportURL error: could not find baseURL " + Paper.importBaseURLDirName())
+    }
+    return baseURL + filename 
   }
   
   toBibtex() {
@@ -534,6 +580,17 @@ export class Paper {
   livelyInspect(contentNode, inspector, normal) {
     specialInspect(this, contentNode, inspector, normal)
     contentNode.appendChild(inspector.display(this.toBibtex(), false, "#bibtex", this))
+  }
+  
+  static importBaseURLDirName() {
+    return "_incoming" // #TODO add to preferences....
+  }
+  
+  static async importBaseURL() {
+    // #TODO make this also more customizeable
+    var files =  await FileIndex.current().db.files.toArray()
+    var file = files.find(ea => ea.url.match(`/${this.importBaseURLDirName()}/`))
+    return file && file.url.replace(/[^/]*$/,"")
   }
   
 }

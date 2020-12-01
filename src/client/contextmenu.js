@@ -698,7 +698,7 @@ export default class ContextMenu {
           lively.preferences.listBooleans()
             .map(ea => this.preferenceEntry(ea)))
       ],
-      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(800, 500)), 
+      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(900, 500)), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>']
     ];
     

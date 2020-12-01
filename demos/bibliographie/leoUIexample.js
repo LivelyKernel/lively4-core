@@ -21,7 +21,7 @@ const exampleQueries = [
 ]
 
 
-function createUILayer(object, key) {
+/*function createUILayer(object, key) {
   var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;">{key}</div>;
   var valueOrObject = object[key];
   if (typeof(valueOrObject) == "object") {
@@ -31,6 +31,33 @@ function createUILayer(object, key) {
   } else {
     var input = <input value={valueOrObject}></input>;
     subDiv.appendChild(input);
+  }
+  return subDiv;
+}*/
+
+function parseQuery(object) {
+  var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
+  
+  switch(object.type) {
+    case "simple":
+      [object.attribute, object.comparator, object.value].forEach(value => {
+        var input = <input value={value}></input>;
+        subDiv.appendChild(input)
+      });
+      break;
+    case "conjunction":
+      var input = <input value={object.conjunction}></input>;
+      var left = parseQuery(object.left);
+      var right = parseQuery(object.right);
+      [input, left, right].forEach(element => {
+        subDiv.appendChild(element);
+      });
+      break;
+    case "composite":
+      [object.attribute, object.comparator, object.value].forEach(value => {
+        var input = <input value={value}></input>;
+        subDiv.appendChild(input)
+      });
   }
   return subDiv;
 }
@@ -54,12 +81,38 @@ export default class LeoUIExample{
 
 //     world.addEventListener('drop', drop);
 
-    var g = ohm.grammar('Academic { \n  Exp = \n    AcademicQuery \n \n  AcademicQuery = Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex \n    | "Composite(" CompositeQuery ")" -- composite \n \n  CompositeQuery = Attribute "." Attribute Comparator Value -- simple \n    | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex \n \n  Comparator = \n    PartialComparator "="? \n  PartialComparator = \n    "=" | "<" | ">" \n \n  Attribute (an attribute) = \n    letter letter? letter? \n  \n Value (a value) = \n    "\'" alnum* "\'" -- string \n    | Number \n    | Date \n    | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange \n    | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange \n \n  Number = \n    digit+ \n  Date = \n    "\'" Number "-" Number "-" Number "\'" \n}');
-    
-    /*lively.notify(g.match("Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))").succeeded(), "Composite(And(AA.AuN='mike smith',AA.AfN='harvard university'))");
-    lively.notify(g.match("And(AA.AuN='mike smith',AA.AfN='harvard university')").succeeded(), "And(AA.AuN='mike smith',AA.AfN='harvard university')");*/
-    
-    //var queryObject = {};
+    var g = ohm.grammar(
+      `Academic { 
+        Exp =
+          AcademicQuery
+
+        AcademicQuery = Attribute Comparator Value -- simple
+          | ("And" | "Or") "(" AcademicQuery "," AcademicQuery ")" -- complex
+          | "Composite(" CompositeQuery ")" -- composite
+        CompositeQuery = Attribute "." Attribute Comparator Value -- simple
+          | ("And" | "Or") "(" CompositeQuery "," CompositeQuery ")" -- complex
+
+        Comparator =
+          PartialComparator "="?
+        PartialComparator =
+          "=" | "<" | ">"
+
+        Attribute (an attribute) =
+          letter letter? letter?
+
+        Value (a value) =
+          "\'" alnum* "\'" -- string
+          | Number
+          | Date
+          | ( "[" | "(" ) Number "," Number ( "]" | ")" ) -- numberRange
+          | ( "[" | "(" ) Date "," Date ( "]" | ")" ) -- dateRange
+
+        Number =
+          digit+
+          Date =
+          "\'" Number "-" Number "-" Number "\'"
+      }`
+    );
     
     var s = g.createSemantics();
     
@@ -70,36 +123,43 @@ export default class LeoUIExample{
         },
         
         AcademicQuery_simple: function(attribute, comparator, value) {
-          return { [attribute.interpret()]: {
-            "comparator": comparator.interpret(),
-            "value": value.interpret(),
-          }}
+          return {
+            "attribute" : attribute.interpret(),
+            "comparator" : comparator.interpret(),
+            "value" : value.interpret(),
+            "type" : "simple"
+          }
         },
         AcademicQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]: [
-            left.interpret(),
-            right.interpret()
-          ]}
+          return {
+            "conjunction" : conjunction.sourceString,
+            "left" : left.interpret(), 
+            "right" : right.interpret(),
+            "type" : "conjunction"
+           }
         },
         AcademicQuery_composite: function(_1, query, _2) {
           return query.interpret();
         },
         
         CompositeQuery_simple: function(mainAttribute, _, secondaryAttribute, comparator, value) {
-          return {[mainAttribute.interpret()]:
-                  {[secondaryAttribute.interpret()]:
-                    {
-                      "comparator": comparator.interpret(),
-                      "value": value.interpret(),
-                    }
-                  }
+          // would it make sense to split main and secondary attribute?
+          var main = mainAttribute.interpret();
+          var secondary = secondaryAttribute.interpret();
+          return {
+            "attribute" : main + "." + secondary,
+            "comparator" : comparator.interpret(),
+            "value" : value.interpret(),
+            "type" : "composite"
           }
         },
         CompositeQuery_complex: function(conjunction, _1, left, _2, right, _3) {
-          return {[conjunction.sourceString]: [
-            left.interpret(),
-            right.interpret()
-          ]}
+          return {
+            "conjunction" : conjunction.sourceString,
+            "left" : left.interpret(), 
+            "right" : right.interpret(),
+            "type" : "conjunction"
+          }
         },
         
         Comparator: function(main, secondary) {
@@ -120,7 +180,6 @@ export default class LeoUIExample{
           return string.sourceString;
         },
         Value_numberRange: function(leftBracket, nLeft, _, nRight, rightBracket) {
-          // TODO: refactor
           return "TODO";//arguments.map(a => {a.sourceString}).join('');
         },
         Value_dateRange: function(leftBracket, dLeft, _, dRight, rightBracket) {
@@ -169,60 +228,21 @@ export default class LeoUIExample{
 //       event.target.appendChild(lively.query(this, '#'+data))
 //     }
     
-    var query = "Ti='indexing by latent seman'";
+    var query = "And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')";
     var match = g.match(query);
     var queryObject = s(match).interpret();
     
-    var div = <div id="outerDiv"></div>
+    var input = <input id="queryInput" value={query} style="width: 100%"></input>
+    var div = <div id="outerDiv" style="padding-right : 20px">
+          {input}
+        </div>
 
-    Object.keys(queryObject).forEach(key => {
+    /*Object.keys(queryObject).forEach(key => {
       div.appendChild(createUILayer(queryObject, key));
-    });
-    //div.appendChild(<div>key</div>)
+    });*/
 
+    div.appendChild(parseQuery(queryObject));
+    
     return div;
-    // <div>
-    //   <table>
-    //     <tr>
-    //       <td>
-    //         Title
-    //       </td>
-    //       <td>
-    //         Author
-    //       </td>
-    //       <td>
-    //         Year
-    //       </td>
-    //     </tr>
-    //     <tr style="vertical-align:top">
-    //       <td>
-    //         <input value='something'></input>
-    //       </td>
-    //       <td>
-    //         <table>
-    //           <tr>
-    //             <td>
-    //               Name
-    //             </td>
-    //             <td>
-    //               <input value='name'></input>
-    //             </td>
-    //           </tr>
-    //           <tr>
-    //             <td>
-    //               Institution
-    //             </td>
-    //             <td>
-    //               <input value='inst'></input>
-    //             </td>
-    //           </tr>
-    //         </table>
-    //       </td>
-    //       <td>
-    //         <input value='2001'></input>
-    //       </td>
-    //     </tr>
-    //   </table>
-    // </div>
   }
 }
