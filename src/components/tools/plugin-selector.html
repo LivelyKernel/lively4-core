@@ -1,0 +1,41 @@
+<template id="plugin-selector">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+    
+    :host {
+        overflow: scroll;
+        width: 400px;
+    }
+    
+    button.toggle {
+      color: black;
+    }
+
+    button.toggle.on {
+      color: white;
+      background: steelblue;
+    }
+    
+    .entry {
+        position: relative;
+        width: 100%;
+        background: #ddd;
+    }
+    
+    .entry.contrast {
+        background: #ccc;
+    }
+    
+    .options {
+        position: absolute;
+        left: 300px;
+    }
+    
+</style>
+    
+    
+    <div id="pluginList"></div>
+    
+</template>
+

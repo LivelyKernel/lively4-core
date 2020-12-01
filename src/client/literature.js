@@ -405,125 +405,28 @@ export class Paper {
   }
     
   async toShortHTML() {
-    
-    var pdfs = this.value.S && this.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
-    
-    return `<div class="paper" title="">
-      <style>
-          .abstract {
-            color: gray;
-            font-style: italic;
-          }
-      </style>
-      <a class="key" href="bib://${this.key}">[${this.key}]</a>
-      <span class="authors">${
-        this.authors.map(ea => `<a href="academic://expr:Composite(AA.AuId=${ea.id})?count=1000">${ea.name}</a>`).join(", ")
-      }.
-      </span>
-      <span class="year"><a href="academic://hist:Composite(AA.AuId=${this.authors[0].id})?count=100&attr=Y"> ${this.year}</a>.</span>
-      <span class="title"><a href="academic://expr:Id=${this.microsoftid}?count=1">${this.title}</a>. </span>
-      <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
-        this.doi
-      }</a></span>
-  
-      ${this.htmlJournalSnippet()}
-      <span id="conference">${this.value.C ? this.value.C.CN  : ""}</span>
-  
-       
-      ${
-        (pdfs && pdfs.length) > 0 ? 
-          "(" + pdfs.map(url => `<a href="${url}" title="${url}">pdf ⇗</a>`).join(", ") + `)` : ""
-      }
-    </div>`
+     return `<academic-paper mode="short" microsoftid="${this.microsoftid}"></academic-paper>`
   }
-    
-  htmlJournalSnippet() {
-    return this.value.J ? `<span id="journal">` + `<a href=
-        "academic://expr:And(V='${this.value.V }',I='${this.value.I}',Composite(J.JId=${this.value.J.JId}))?count=100"
-        }> ` + this.value.J.JN  
-          + " Volume " + this.value.V 
-          + " Issue" + this.value.I + "</a><span>": ""
-  }
-    
+
   async toHTML() {
-    await this.resolveReferences() // .then(() => lively.notify("resolved references for " + this.key))
-    await this.findReferencedBy()
-    
-    var bibtexEntries = await this.findBibtexFileEntries()
-    var pdfs = this.value.S && this.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
-    
-    return `<div class="paper">
-      <style>
-          .abstract {
-            color: gray;
-            font-style: italic;
-          }
-      </style>
-      <lively-script><script>
-        import {Paper} from "src/client/literature.js";
-      </script></lively-script> 
+    return `<academic-paper microsoftid="${this.microsoftid}"></academic-paper>`
+  }
   
-      <h1 class="title"><a href="academic://expr:Id=${this.microsoftid}">${
-        this.title
-      }</a><span class="year">(${
-          this.year
-        })</span>
-      </h1> 
-      <h2 class="authors">${
-    this.authors.map(ea => `<a href="academic://expr:Composite(AA.AuId=${ea.id})?count=1000">${ea.name}</a>`).join(", ")
-      }</h2>
-      <div>
-      <a href="bib://${this.key}">[${this.key}]</a>
-      <span class="doi"><a href="https://doi.org/${this.doi}" target="_blank">${
-        this.doi
-      }</a></span>
+  async generateFilename() {
+    var entry = this.toBibtexEntry()
+    var bibentry = await (<lively-bibtex-entry></lively-bibtex-entry>)
+    bibentry.value = entry
+    var filename = bibentry.generateFilename(entry)
+    return filename + ".pdf"
+  }
   
-      <div>${this.htmlJournalSnippet()}</div>
-        <div id="fields">${this.value.F ? "<h3>Fields</h3> " + 
-            this.value.F.map(F => `<a href=
-        "academic://expr:Composite(F.FId=${F.FId})?count=30"
-        }> ` + F.DFN + "</a>").join(" "): "" }</div>
-
-      <lively-script><script>
-        (<button click={() => lively.openInspector(Paper.byId(${this.microsoftid}))}>inspect</button>)
-      </script></lively-script> 
-  
-      </div>
-      ${
-        pdfs && pdfs.length > 0 ? 
-           "<h3>Online PDFs</h3>" + pdfs.map(url => `<a href="${url}">${url.replace(/.*\//,"")}</a>`) : ""
-      }
-      <h3>Bibliographies</h3>
-      <div>${
-        bibtexEntries.length > 0 ?
-          bibtexEntries.map(ea => `<a href="${ea.url}">${ea.url.replace(/.*\//,"")}</a>`).join(", ") :    
-        
-`<lively-script><script>
-   var container = lively.query(this, "lively-container")
-   var result = <button click={async () => {
-     await Paper.importBibtexId(${this.microsoftid})
-     await lively.sleep(1000) // let the indexer do it's work?
-     if (container) container.setPath(container.getPath())
-   }}>import bibtex entry</button>
-   result
-</script></lively-script>`
-      }
-    ${`<lively-script><script>
-  var paper = Paper.byId(${this.microsoftid})
-  var result = <button click={async () => {
-     lively.openWorkspace(paper.toBibtex())
-  }}>bibtex</button>
-  result
-</script></lively-script>`
-}</div>
-
-      <h3>Abstract</h3>
-      <div class="abstract">${this.abstract}</div>
-      <h3>References</h3>
-      ${this.papersToBibtex(this.references)}
-      <h3>Referenced By</h3>
-      ${this.papersToBibtex(this.referencedBy)}     
-  </div>`
+  async toImportURL() {
+    var filename = await this.generateFilename()
+    var baseURL = await Paper.importBaseURL()
+    if (!baseURL) {
+      throw new Error("[Paper] toImportURL error: could not find baseURL " + Paper.importBaseURLDirName())
+    }
+    return baseURL + filename 
   }
   
   toBibtex() {
@@ -534,6 +437,17 @@ export class Paper {
   livelyInspect(contentNode, inspector, normal) {
     specialInspect(this, contentNode, inspector, normal)
     contentNode.appendChild(inspector.display(this.toBibtex(), false, "#bibtex", this))
+  }
+  
+  static importBaseURLDirName() {
+    return "_incoming" // #TODO add to preferences....
+  }
+  
+  static async importBaseURL() {
+    // #TODO make this also more customizeable
+    var files =  await FileIndex.current().db.files.toArray()
+    var file = files.find(ea => ea.url.match(`/${this.importBaseURLDirName()}/`))
+    return file && file.url.replace(/[^/]*$/,"")
   }
   
 }

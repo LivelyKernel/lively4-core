@@ -11,6 +11,15 @@ describe('Bibliography', () => {
       expect(Bibliography.threeSignificantInitialsFromTitle(title)).to.equal("OSU")
     });
   })
+
+  describe('cleanTitle', () => {
+    it('it strips special chars', async function() {
+     expect(Bibliography.cleanTitle(`Hello:World`)).to.equal("Hello World")
+    });
+    it('it does not insert extra whitespace', async function() {
+     expect(Bibliography.cleanTitle(`Hello: World`)).to.equal("Hello World")
+    });
+  })
   
   describe('filenameToKey', () => {
     it('converts normal filename', async function() {

@@ -172,7 +172,6 @@ export default class LiteratureListing extends Morph {
   }
   
   renderLiteratureFile(literatureFile) {
-    debugger
     var entryDetails = literatureFile.entry ? 
         <span>
           <span class="authors">{literatureFile.entry.authors.join(", ")}</span>.
