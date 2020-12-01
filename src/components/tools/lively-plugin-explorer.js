@@ -47,7 +47,7 @@ class Transitions {
             code,
             alias: "output",
             type: "exit",
-            size: new Blob([code], { type: "text/plain" }).size,
+            size: new Blob([code], { type: "text/plain" }).size
         });
     };
 
@@ -57,10 +57,10 @@ class Transitions {
                 callback.call(this, ...args);
 
             this.savedTransitions.push({
-                node: _.cloneDeep(args[0].node),
+                node: JSON.parse(JSON.stringify((args[0].node))),
                 parent: _.cloneDeep(this._getProgramParent(args[0]).node),
                 alias: pluginAlias,
-                type: visitorType,
+                type: visitorType
             })
             } catch(e) {
                 this.errorState = {
@@ -84,7 +84,7 @@ class Transitions {
                         alias: transition.alias,
                         type: transition.type,
                         currentNode: transition.node.type,
-                        size: new Blob([code], { type: "text/plain" }).size,
+                        size: new Blob([code], { type: "text/plain" }).size
                     });
                 }
             }
@@ -126,14 +126,21 @@ export default class PluginExplorer extends Morph {
     get pluginCM() { return this.pluginEditor.currentEditor(); }
     get pluginSource() { return this.pluginCM.getValue(); }
 
-    async getPlugin() {
-        const url = this.fullUrl(this.pluginURL) || "";
+    async getPlugin(url = this.pluginURL) {
+        url = this.fullUrl(url) || "";
         const module = await System.import(url);
-        // url +=  "?" + Date.now(); // #HACK, we thought we don't have this to do any more, but ran into a problem when dealing with syntax errors...
-        // assumend problem: there is a bad version of the code in either the browser or system.js cache
-        // idea: we have to find and flush it...
-        // wip: the browser does not cache it, but system.js does...
-        return module.default;
+
+        // we know no better way to get the plugin-file now, so we append the path to it to the name
+        // and can read it from there later on
+        const plugin =  module.default;
+        const modifiedPlugin = function(...args) {
+            const result = plugin(...args)
+            result.name = result.name || 'Please name your plugin!';
+            result.name += ' ' + url 
+            return result;
+        }
+        
+        return modifiedPlugin;
     }
 
     get transformedSourceLCM() { return this.get("#transformedSource"); }
@@ -379,12 +386,22 @@ export default class PluginExplorer extends Morph {
             lively.error(`Failed to load workspace '${urlString}'`);
         }
     }
+    
+    loadPluginFile(url) {
+        this.pluginEditor.setURL(url);
+        this.pluginEditor.loadFile();
+    }
+    
+    changeSelectedPlugin(url) {
+        this.workspace.plugin = url;
+        this.saveWorkspace();
+        this.loadPluginFile(this.workspace.plugin);
+    }
 
     async loadWorkspace(ws) {
         this.workspace = ws;
         this.loadOptions(ws.options);
-        this.pluginEditor.setURL(new URL(this.fullUrl(ws.plugin)));
-        this.pluginEditor.loadFile();
+        this.loadPluginFile(new URL(this.fullUrl(ws.plugin)));
         //TODO
         this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
     }
@@ -402,7 +419,19 @@ export default class PluginExplorer extends Morph {
         this.pluginEditor.saveFile();
         this.saveWorkspaceFile(this.workspaceURL);
     }
-
+    
+    /*MD # Plugin selection MD*/
+    
+    
+    onSelectPlugins() {
+        lively.openComponentInWindow('plugin-selector')  
+            .then(elm => elm.pluginExplorer = this);
+    }
+    
+    savePluginSelection(selection) {
+        this.workspace.pluginSelection = selection;
+        this.saveWorkspace();
+    }
     /*MD ## Execution MD*/
 
     async updateAST() {
@@ -442,11 +471,21 @@ export default class PluginExplorer extends Morph {
 
     setTransitionButtons(transitions) {
         this.replaceButtonsWith(transitions.getValue().map((transition, index) => {
+            const nameComponents = transition.alias.split(' ');
+            let buttonContent = transition.alias;
+            let path = null;
+            if (nameComponents.length > 1) {
+                buttonContent = nameComponents.slice(0, -1).join(' ');
+                path = nameComponents.last;
+            }
+            
             const button = document.createElement('button');
-            button.innerText = `${index}: ${transition.alias}`;
+            button.innerText = `${index}: ${buttonContent}`;
             button.addEventListener('click', e => {
                 // transition.inspect()
-                this.updateAndExecute(transition.code);
+                if(path) {
+                    lively.openBrowser(path);
+                }
             });
             button.addEventListener('mouseover', e => {
                 this.updateAndExecute(transition.code);
@@ -463,7 +502,7 @@ export default class PluginExplorer extends Morph {
         try {
             console.group("PLUGIN TRANSFORMATION");
             if (!ast) return;
-            if (this.systemJS) {
+            /*if (this.systemJS) {
                 // use SystemJS config do do a full transform
                 if (!self.lively4lastSystemJSBabelConfig) {
                     lively.error("lively4lastSystemJSBabelConfig missing");
@@ -487,7 +526,23 @@ export default class PluginExplorer extends Morph {
                     wrapPluginVisitorMethod: transitions.wrapPluginVisitorMethod
                         .bind(transitions)
                 });
-            }
+            }*/
+            
+            
+            
+            const config = {};
+            const selection = this.workspace.pluginSelection;
+            
+            config.plugins = await Promise.all(selection.map(obj => this.getPlugin(obj.url)));
+            config.plugins.push(plugin);
+            
+            const filename = 'tempfile.js';
+            config.sourceFileName = filename
+            config.moduleIds = false;
+            
+            config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
+            this.transformationResult = babel.transform(this.sourceText, config);
+            
 
             // Todo: find in original code how to use
             // transitions.addExitTransition(this.transformationResult.code);
@@ -539,7 +594,7 @@ export default class PluginExplorer extends Morph {
             this.executionConsole.textContent += "-> " + result;
         } catch (e) {
             console.error(e);
-            this.executionConsole.textContent += "Error: " + e;
+            this.executionConsole.textContent += e.stack;
         } finally {
             console.log = oldLog
             console.groupEnd();
