@@ -70,8 +70,10 @@ export default class LiteratureSearch extends Morph {
     }
   }
   
-  close() {
-    this.dispatchEvent(new CustomEvent("closed"))
+  close(fireNoEvent=false) {
+    if (!fireNoEvent){
+      this.dispatchEvent(new CustomEvent("closed"))
+    }
     if (this.literatureListing) {
       this.literatureListing.details.hidden = true
       this.literatureListing.details.innerHTML = "" // self destruct...
@@ -119,7 +121,7 @@ export default class LiteratureSearch extends Morph {
           let rename = <a title="rename file" class="method"
               click={async () => {
                 await this.literatureListing.renameFile(this.renameURL, bib.generateFilename() + ".pdf")
-                this.close() // we need to close it... because literatureListing will change..., oder does it?
+                this.close(true) // we need to close it... because literatureListing will change..., oder does it?
               }}>
              rename
             </a>

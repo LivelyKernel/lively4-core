@@ -150,9 +150,14 @@ export default class LiteratureListing extends Morph {
     return this.updateLiteratureFile(newLiteratureFile, element)
   }
   
-  updateLiteratureFile(literatureFile, element) {
+  updateLiteratureFile(literatureFile, element, oldLiteratureFile) {
+    debugger
+    if (!element) {
+      lively.notify("no element to update")
+      return // nothing to do here any more
+    }
     if (!element.parentElement) {
-      // lively.notify("could not find parent of element")
+      lively.notify("could not find parent of element")
       return // nothing to do here any more
     }    
     var replacement = this.renderLiteratureFile(literatureFile)
