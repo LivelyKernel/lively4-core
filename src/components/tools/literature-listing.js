@@ -116,7 +116,7 @@ export default class LiteratureListing extends Morph {
       iframe = await lively.openComponentInWindow("lively-iframe")
       iframe.setAttribute("id", frameId)
       iframe.hideMenubar()
-      lively.setExtent(iframe.parentElement, pt(1210, 700))
+      lively.setExtent(iframe.parentElement, lively.pt(1210, 700))
     }
     iframe.setURL(url)
   }

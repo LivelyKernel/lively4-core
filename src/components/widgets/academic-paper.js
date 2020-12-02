@@ -98,10 +98,12 @@ export default class AcademicPaper extends Morph {
          { pdfs && pdfs.length > 0 ? "PDFs:" : ""} {...pdfs
             .map((ea, index) => <a title={ea} click={async () => {
                 var comp = await lively.openComponentInWindow("external-resource")
+                comp.parentElement.setAttribute("title", await this.paper.generateFilename())
                 comp.importURL = await this.paper.toImportURL()
                 comp.src = ea
-              }}>{index}</a>) // ea.replace(/.*\//,"")
-            .map((ea,index) => <span>{ea}{index < pdfs.length - 1 ? "," : ""}</span>)
+                lively.setExtent(comp.parentElement, lively.pt(800,800))
+              }}>[{index + 1}]</a>) // ea.replace(/.*\//,"")
+            .map((ea,index) => <span>{ea}{index < pdfs.length - 1 ? ", " : ""}</span>)
         }
       </span>
 
@@ -149,9 +151,9 @@ export default class AcademicPaper extends Morph {
   }
     
   renderCitationCount() {
-    if (this.paper.value.CC) {
+    if (this.paper.value.ECC) {
       return <span id="citation-count">
-        citations: <a href={`academic://hist:RId=${this.paper.microsoftid}?count=100&attr=Y`}>{this.paper.value.CC}</a>
+        citations: <a href={`academic://hist:RId=${this.paper.microsoftid}?count=100&attr=Y`}>{this.paper.value.ECC}</a>
       </span>
     } else {
       return ""
@@ -167,6 +169,15 @@ export default class AcademicPaper extends Morph {
       shortEntries.push(<li>{comp}</li>)
     }
     return <ul>{...shortEntries}</ul>
+  }
+    
+    
+  async openIFrame(url) {
+    var iframe = await lively.openComponentInWindow("lively-iframe")
+    iframe.hideMenubar()
+    lively.setExtent(iframe.parentElement, lively.pt(1210, 700))
+    iframe.setURL(url)
+    return iframe
   }
     
   async renderLong() {
@@ -250,6 +261,13 @@ export default class AcademicPaper extends Morph {
         {this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>
+        {this.renderCitationCount()}
+        <span class="external">
+          <a title="Microsoft Academics" click={ () => {
+              var microsoftURL = `https://academic.microsoft.com/paper/${this.paper.microsoftid}`
+              this.openIFrame(microsoftURL)      
+          }}>⇗MA</a>
+        </span>
       </div>
       {fieldsSpan}
       {this.renderPDFs(true)}
@@ -279,7 +297,7 @@ export default class AcademicPaper extends Morph {
 
   
   async livelyExample() {
-    this.mode = "short"
+    // this.mode = "short"
     this.microsoftid = 2148357053
     this.updateView()
   }
