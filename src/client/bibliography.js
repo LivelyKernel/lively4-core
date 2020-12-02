@@ -142,12 +142,13 @@ Bibliography.cleanTitle("{{This is my Title}}")
   
   static threeSignificantInitialsFromTitle(title) {
     return this.cleanTitle(title)
+      .replace(/-based /g,"based ")
       .replace(/-the-/g,"the") // on-the-fly -> onthefly
       .split(/[ -\/_]/g)
       .map(ea => ea.toLowerCase())
       .filter(ea => ea.length > 0)
       .filter(ea => !["a","am","an","as","at","be","by","in","is","it","of","on", "to", "the", "and", "from", "out", "for", "but"].includes(ea))
-      .filter(ea => !["so", "der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
+      .filter(ea => !["so", "als", "der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
       .filter(ea => !ea.match(/^[0-9]/))
       .filter(ea => !ea.match(/^[\(\)\[\]\/\\]/))
       .slice(0,3)
