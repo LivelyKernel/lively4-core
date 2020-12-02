@@ -1,5 +1,4 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
 import {Paper} from "src/client/literature.js"
 
 export default class AcademicPaper extends Morph {
@@ -76,11 +75,7 @@ export default class AcademicPaper extends Morph {
   }
     
   renderTitle() {
-    return <span class="title">
-      <a title="title" href={`academic://expr:Id=${this.paper.microsoftid}?count=1`}>
-        {this.paper.title}
-      </a>
-    </span>
+    return <span class="title"><a title="title" href={`academic://expr:Id=${this.paper.microsoftid}?count=1`}>{this.paper.title}</a></span>
   }
     
   renderDOI() {
@@ -113,6 +108,8 @@ export default class AcademicPaper extends Morph {
   }
   
   renderPublication() {
+    if (!this.paper.hasPublicationInfo()) return ""
+    
     return <span class="publication" title={this.paper.booktitle}>
       {this.renderJournalSnippet()}
       {this.renderConferenceSnippet()}
@@ -188,10 +185,7 @@ export default class AcademicPaper extends Morph {
         }
       </span>
         
-    var title = <h1 class="title">
-        {this.renderTitle()}
-        ({this.renderYear()})
-      </h1>
+    var title = <h1 class="title">{this.renderTitle()} ({this.renderYear()})</h1>
     var authorsList = <h2 class="authors">{...this.renderAuthorsLinks()}</h2>
     var bibtexEntriesSpan = <span>{...
         bibtexEntries.map(ea => 
