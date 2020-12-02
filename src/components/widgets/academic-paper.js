@@ -55,32 +55,29 @@ export default class AcademicPaper extends Morph {
       {this.renderYear()}.
       {this.renderTitle()}.
       {this.renderDOI()}
-      {this.renderJournalSnippet()}
-      <span id="conference">{this.paper.value.C ? this.paper.value.C.CN  : ""}</span>
+      {this.renderPublication()}
       {this.renderPDFs()}
       {this.renderCitationCount()}
     </div>)
   }
   
   renderCitationKey() {
-    return <a class="key" href={`bib://${this.paper.key}`}>[{this.paper.key}]</a>
+    return <a class="key" title="citation key" href={`bib://${this.paper.key}`}>[{this.paper.key}]</a>
   }
   
   renderAuthorsLinks() {
-    return this.paper.authors.map(ea => 
-      <a href={`academic://expr:Composite(AA.AuId=${ea.id})?count=1000`}>{ea.name}</a>)
+    var authors = this.paper.authors
+    return authors.map((ea,index) => 
+      <span><a title="author" href={`academic://expr:Composite(AA.AuId=${ea.id})?count=1000`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>)
   }
   
   renderYear() {
-    return <span class="year">
-      <a href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}>
-        {this.paper.year}</a>
-    </span>
+    return <span class="year"><a title="year" href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}>{this.paper.year}</a></span>
   }
     
   renderTitle() {
     return <span class="title">
-      <a href={`academic://expr:Id=${this.paper.microsoftid}?count=1`}>
+      <a title="title" href={`academic://expr:Id=${this.paper.microsoftid}?count=1`}>
         {this.paper.title}
       </a>
     </span>
@@ -92,14 +89,16 @@ export default class AcademicPaper extends Morph {
     //    var comp = await lively.openComponentInWindow("lively-iframe")
     //    comp.setURL(doiURL)
     //  }}
-    return <span class="doi">
-      <a href={doiURL} target="_blank">{this.paper.doi}</a>
+    return <span class="doi" title="DOI">
+      {this.paper.doi ? 
+        <a href={doiURL} target="_blank">{this.paper.doi}</a> : ""
+      } 
     </span>
   }
     
   renderPDFs(renderHeading=false) {
     var pdfs = this.getPDFs() || []
-    return <span>
+    return <span class="pdfs">
         { renderHeading && pdfs && pdfs.length > 0 ? <h3>Import PDFs</h3> : ""}
          { pdfs && pdfs.length > 0 ? "PDFs:" : ""} {...pdfs
             .map((ea, index) => <a title={ea} click={async () => {
@@ -113,6 +112,15 @@ export default class AcademicPaper extends Morph {
 
   }
   
+  renderPublication() {
+    return <span class="publication" title={this.paper.booktitle}>
+      {this.renderJournalSnippet()}
+      {this.renderConferenceSnippet()}
+    </span>
+    
+   
+  }
+    
   renderJournalSnippet() {
     if (this.paper.value.J) {
       var academicJournalQuery = `academic://expr:And(V='${
@@ -126,6 +134,17 @@ export default class AcademicPaper extends Morph {
         <a href={academicJournalQuery}>
           {this.paper.value.J.JN  + " Volume " + this.paper.value.V + " Issue" + this.paper.value.I}
         </a>
+      </span>
+    } else {
+      return ""
+    }
+  }
+    
+  renderConferenceSnippet() {
+    if (this.paper.value.C) {
+      return <span id="conference">
+        <a title={this.paper.value.VFN} href={`academic://expr:And(Composite(C.CId=${this.paper.value.C.CId}),Y=${this.paper.year})?count=50`}>{ this.paper.value.C.CN}</a>:
+        {this.paper.booktitle}
       </span>
     } else {
       return ""
@@ -165,7 +184,7 @@ export default class AcademicPaper extends Morph {
     var fieldsSpan = <span id="fields"> 
         { fields.length > 0 ? <h3>Fields</h3> : ""}  
         {...paper.value.F.map(F => 
-            <a href={`academic://expr:Composite(F.FId=${F.FId})?count=30`}>{F.DFN}</a>)
+            <span class="field"><a  href={`academic://expr:Composite(F.FId=${F.FId})?count=30`}>{F.DFN}</a> </span>)
         }
       </span>
         
@@ -236,7 +255,7 @@ export default class AcademicPaper extends Morph {
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
         {this.renderCitationKey()}
         {this.renderDOI()}
-        <span>{this.renderJournalSnippet()}</span>
+        <span>{this.renderPublication()}</span>
       </div>
       {fieldsSpan}
       {this.renderPDFs(true)}
@@ -266,7 +285,7 @@ export default class AcademicPaper extends Morph {
 
   
   async livelyExample() {
-    //this.mode = "short"
+    this.mode = "short"
     this.microsoftid = 2148357053
     this.updateView()
   }
