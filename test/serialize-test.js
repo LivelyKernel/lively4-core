@@ -6,6 +6,8 @@ import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 const assert = chai.assert;
 
+import { uuid } from 'utils';
+
 import { serialize, deserialize } from 'src/client/serialize.js';
 
 describe('simple serialization with JSON.{parse,stringify}', () => {
@@ -142,5 +144,104 @@ describe('simple serialization with JSON.{parse,stringify}', () => {
 
     expect(a2).to.deep.equal(a);
     expect(a2[2] instanceof A).to.be.true;
+  });
+
+  describe('outerReplacer/outerReviver', () => {
+
+    it('custom $external reference', () => {
+      class MyObject {}
+      const o1 = new MyObject();
+      const o2 = new MyObject();
+
+      o1.o2 = o2;
+      o1.o1 = o1;
+      const o = { o1, o2 };
+      const refIdToObj = new Map();
+      const objToRef = new Map();
+      let refId = 0;
+      class Reference {
+        static for(obj) {
+          const ref = objToRef.getOrCreate(obj, () => new Reference());
+          refIdToObj.set(ref.id, obj);
+          return ref;
+        }
+        constructor() {
+          this.id = refId++;
+        }
+        restore() {
+          return refIdToObj.get(this.id);
+        }
+      }
+
+      function outerReplacer(key, value) {
+        if (value instanceof MyObject) {
+          value = Reference.for(value);
+        }
+        return value;
+      }
+      function outerReviver(key, value) {
+        if (value instanceof Reference) {
+          value = value.restore();
+        }
+        return value;
+      }
+      const revivedO = deserialize(serialize(o, outerReplacer), { Reference }, outerReviver);
+
+      expect(revivedO).to.deep.equal(o);
+      expect(revivedO).to.not.be.equal(o);
+      expect(revivedO === o).to.be.false;
+      expect(revivedO.o1 === o.o1).to.be.true;
+      expect(revivedO.o2 === o.o2).to.be.true;
+    });
+
+    it('implementing a reference class', () => {
+      class Battler {
+        constructor() {
+          this.id = uuid();
+        }
+      }
+      const o1 = new Battler();
+      const o2 = new Battler();
+
+      o1.o2 = o2;
+      o1.o1 = o1;
+      const o = { o1, sub: { o2 } };
+      class BattlerReference {
+        static get refToObj() {
+          return this._refToObj = this._refToObj || new Map();
+        }
+        static for(obj) {
+          BattlerReference.refToObj.set(obj.id, obj);
+          return new BattlerReference(obj);
+        }
+        constructor(o) {
+          this.id = o.id;
+        }
+        restore() {
+          return BattlerReference.refToObj.get(this.id);
+        }
+      }
+
+      function outerReplacer(key, value) {
+        if (value instanceof Battler) {
+          const ref = BattlerReference.for(value);
+          return ref;
+        }
+        return value;
+      }
+      function outerReviver(key, value) {
+        if (value instanceof BattlerReference) {
+          value = value.restore();
+        }
+        return value;
+      }
+      const revivedO = deserialize(serialize(o, outerReplacer), { BattlerReference }, outerReviver);
+
+      expect(revivedO).to.deep.equal(o);
+      expect(revivedO).to.not.be.equal(o);
+      expect(revivedO === o).to.be.false;
+      expect(revivedO.o1 === o.o1).to.be.true;
+      expect(revivedO.sub.o2 === o.sub.o2).to.be.true;
+    });
   });
 });

@@ -1,13 +1,20 @@
 import { uuid } from 'utils';
 
-export function serialize(obj) {
+/**
+ * @param outerReplacer: gets called BEFORE serialization, with same key, value, and this reference as the original replacer would
+ */
+export function serialize(obj, outerReplacer) {
   const references = new Map();
 
   function replacer(key, value) {
+    if (outerReplacer) {
+      value = outerReplacer.call(this, key, value);
+    }
+
     if (key === '$array') {
       return value;
     }
-    
+
     if (value instanceof Object && !(value instanceof Function)) {
       if (!references.has(value)) {
         // 1st occurence: remember you saw that one
@@ -43,7 +50,10 @@ export function serialize(obj) {
   return JSON.stringify(obj, replacer, 2);
 }
 
-export function deserialize(json, classes = {}) {
+/**
+ * @param outerReviver: gets called AFTER deserialization, with same key, value, and this reference as the original reviver would
+ */
+export function deserialize(json, classes = {}, outerReviver) {
   const idToObj = new Map();
 
   function reviver(key, value) {
@@ -58,7 +68,7 @@ export function deserialize(json, classes = {}) {
     if (value.$id) {
       const id = value.$id;
       delete value.$id;
-      
+
       const array = value.$array;
 
       if (idToObj.has(id)) {
@@ -91,5 +101,13 @@ export function deserialize(json, classes = {}) {
     return value;
   }
 
-  return JSON.parse(json, reviver);
+  function wrapper(key, value) {
+    value = reviver.call(this, key, value);
+    if (outerReviver) {
+      value = outerReviver.call(this, key, value);
+    }
+    return value;
+  }
+
+  return JSON.parse(json, wrapper);
 }
