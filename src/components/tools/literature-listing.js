@@ -151,7 +151,6 @@ export default class LiteratureListing extends Morph {
   }
   
   updateLiteratureFile(literatureFile, element, oldLiteratureFile) {
-    debugger
     if (!element) {
       lively.notify("no element to update")
       return // nothing to do here any more
@@ -223,7 +222,10 @@ export default class LiteratureListing extends Morph {
         search.addEventListener("closed", async () => {
           await lively.sleep(1000) // await a bit
           await this.updateEntries()
-          this.updateLiteratureFile(literatureFile, element) 
+          // might have changed
+          var newLiteratureFile =  this.literatureFiles.find(ea => ea.file.url == literatureFile.file.url) 
+    
+          this.updateLiteratureFile(newLiteratureFile, element) 
         })
     }}>search</a>
     var keyLink = <a class="key" click={() => lively.openBrowser("bib://" + literatureFile.key)}>{
