@@ -2,6 +2,14 @@ import {expect} from 'src/external/chai.js';
 import Bibliography from "src/client/bibliography.js"
 import Parser from 'src/external/bibtexParse.js';
 
+
+/*MD # Bibliography Test
+
+[TestRunner](open://lively-testrunner)
+
+
+MD*/
+
 describe('Bibliography', () => {
 
   
@@ -18,6 +26,9 @@ describe('Bibliography', () => {
     });
     it('it does not insert extra whitespace', async function() {
      expect(Bibliography.cleanTitle(`Hello: World`)).to.equal("Hello World")
+    });
+    it('it strips special chars', async function() {
+      expect(Bibliography.cleanTitle(`Hello‘World’`)).to.equal("Hello World ")
     });
   })
   

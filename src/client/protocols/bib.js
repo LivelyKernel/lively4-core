@@ -29,11 +29,9 @@ export class BibScheme extends BibliographyScheme {
           entry.authors.map(ea => `<a href="author://${ea}">${ea}</a>` ).join(", ") + ".": ""
         }  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
   
-    
-    
     if (papers.length > 0) {
       content += "<div>" + papers.map(ea => {
-        return `<a href="academic://expr:Id=${ea.microsoftid}">[academic]</a>`   
+        return `<academic-paper mode="short" microsoftid="${ea.microsoftid}"></academic-paper>`   
       }).join(" ") + "</div><br>"      
     } else if (entry.year) {
       content += "<div>" + `<a href="academic://${entry.authors.join(",") + "." + entry.year}">[search academic]</a>` + "</div><br>"
