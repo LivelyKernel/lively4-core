@@ -121,11 +121,21 @@ s.addOperation(
   }
 )
 
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(mutation => lively.notify("observation", mutation.type))
+})
+const config = {
+  attributes: true,
+  childList: true,
+  subtree: true,
+  attributeOldValue: true,
+  characterDataOldValue: true,
+  //attributeFilter: true // breaks for some reason
+}
 
 export default class AcademicQuery extends Morph {
   constructor() {
     super()
-    //this.setQuery('T=1')
   }
   
   async initialize() {
@@ -133,7 +143,6 @@ export default class AcademicQuery extends Morph {
   }
   
   async setQuery(q) {
-    lively.notify("query", q)
     var match = g.match(q);
     
     this.textContent = q;
@@ -147,8 +156,6 @@ export default class AcademicQuery extends Morph {
   async setQueryObject(o) {
     this.ui = await this.queryToView(o);
     
-    lively.notify("Object", o)
-    
     this.updateView()
   }
 
@@ -156,7 +163,6 @@ export default class AcademicQuery extends Morph {
     // Ansatz: Ein academic query widget ist nur für eine Query oder eine conjunction
     // eine conjunction enthält dann aber zwei weitere query widgets
     var pane = this.get("#pane")
-    lively.notify("pane", pane)
     pane.innerHTML = ""
     
     if(this.ui) {
@@ -173,28 +179,30 @@ export default class AcademicQuery extends Morph {
     return s
   }
   
+  onMouseOver(event) {
+    event.target.parentElement.style.color = "orange"
+  }
+  
+  onMouseOut(event) {
+    event.target.parentElement.style.color = "black"
+  }
+  
   async queryToView(object) {
       //var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
       var span = <span id="inner"></span>
       
     switch(object.type) {
       case "simple":
-        // [object.attribute, object.comparator, object.value].forEach(value => {
-        //   var input = <input value={value}></input>;
-        //   subDiv.appendChild(input)
-        // });
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span>{value} </span>;
+          var subSpan = <span id="sub">{value} </span>;
           span.appendChild(subSpan)
+          span.addEventListener('mouseover', this.onMouseOver);
+          span.addEventListener('mouseout', this.onMouseOut);
+          span.style.cursor = "grab" // on drag: grabbing
         });
         break;
+
       case "conjunction":
-        // var input = <input value={object.conjunction}></input>;
-        // var left = this.queryToView(object.left);
-        // var right = this.queryToView(object.right);
-        // [input, left, right].forEach(element => {
-        //   subDiv.appendChild(element);
-        // });
         var subSpan = <span style="font-size: 150%">{object.conjunction}</span>;
         var left = await (<academic-query style="font-size: smaller;"></academic-query>);
         left.setQueryObject(object.left);
@@ -214,23 +222,25 @@ export default class AcademicQuery extends Morph {
           </table>
         )
         break;
+
       case "composite":
-        // [object.attribute, object.comparator, object.value].forEach(value => {
-        //   var input = <input value={value}></input>;
-        //   subDiv.appendChild(input)
-        // });
         [object.attribute, object.comparator, object.value].forEach(value => {
           var subSpan = <span>{value} </span>;
           span.appendChild(subSpan)
         });
     }
-    var queryElement = <b>{span}</b>
+
+    var queryElement = <div><b>{span}</b></div>;
+    lively.notify("queryElement", typeof queryElement)
+    lively.notify("pane", typeof this.get('#pane'))
+    observer.observe(this.get('#pane'), config)
     return queryElement;
   }
   
   async livelyExample() {
-    this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
+    //this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
     //this.setQuery("And(O='abc', Y='1000')")
+    this.setQuery("Y='1000'")
   }
   
   
