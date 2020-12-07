@@ -123,27 +123,44 @@ s.addOperation(
 
 
 export default class AcademicQuery extends Morph {
+  constructor() {
+    super()
+    //this.setQuery('T=1')
+  }
+  
   async initialize() {
     this.updateView()
   }
   
-  setQuery(q) {
+  async setQuery(q) {
+    lively.notify("query", q)
     var match = g.match(q);
     
     this.textContent = q;
     var queryObject = s(match).interpret();
     
-    this.ui = this.queryToView(queryObject);
+    this.ui = await this.queryToView(queryObject);
+    
+    this.updateView()
+  }
+  
+  async setQueryObject(o) {
+    this.ui = await this.queryToView(o);
+    
+    lively.notify("Object", o)
     
     this.updateView()
   }
 
-  updateView() {
+  async updateView() {
+    // Ansatz: Ein academic query widget ist nur für eine Query oder eine conjunction
+    // eine conjunction enthält dann aber zwei weitere query widgets
     var pane = this.get("#pane")
+    lively.notify("pane", pane)
     pane.innerHTML = ""
     
     if(this.ui) {
-      pane.appendChild(this.ui)  
+      pane.appendChild(this.ui)
     }
       //<b><span class="blub">Query:</span>{this.textContent}</b>)
   }
@@ -156,35 +173,64 @@ export default class AcademicQuery extends Morph {
     return s
   }
   
-  queryToView(object) {
-      var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
-
+  async queryToView(object) {
+      //var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
+      var span = <span id="inner"></span>
+      
     switch(object.type) {
       case "simple":
+        // [object.attribute, object.comparator, object.value].forEach(value => {
+        //   var input = <input value={value}></input>;
+        //   subDiv.appendChild(input)
+        // });
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var input = <input value={value}></input>;
-          subDiv.appendChild(input)
+          var subSpan = <span>{value} </span>;
+          span.appendChild(subSpan)
         });
         break;
       case "conjunction":
-        var input = <input value={object.conjunction}></input>;
-        var left = this.queryToView(object.left);
-        var right = this.queryToView(object.right);
-        [input, left, right].forEach(element => {
-          subDiv.appendChild(element);
-        });
+        // var input = <input value={object.conjunction}></input>;
+        // var left = this.queryToView(object.left);
+        // var right = this.queryToView(object.right);
+        // [input, left, right].forEach(element => {
+        //   subDiv.appendChild(element);
+        // });
+        var subSpan = <span style="font-size: 150%">{object.conjunction}</span>;
+        var left = await (<academic-query style="font-size: smaller;"></academic-query>);
+        left.setQueryObject(object.left);
+        var right = await (<academic-query style="font-size: smaller;"></academic-query>);
+        right.setQueryObject(object.right);
+        span.appendChild(
+          <table>
+            <tr>
+              <th>{subSpan}</th>
+              <th>
+                <table>
+                  <tr>{left}</tr>
+                  <tr>{right}</tr>
+                </table>
+              </th>
+            </tr>
+          </table>
+        )
         break;
       case "composite":
+        // [object.attribute, object.comparator, object.value].forEach(value => {
+        //   var input = <input value={value}></input>;
+        //   subDiv.appendChild(input)
+        // });
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var input = <input value={value}></input>;
-          subDiv.appendChild(input)
+          var subSpan = <span>{value} </span>;
+          span.appendChild(subSpan)
         });
     }
-    return subDiv;
+    var queryElement = <b>{span}</b>
+    return queryElement;
   }
   
   async livelyExample() {
     this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
+    //this.setQuery("And(O='abc', Y='1000')")
   }
   
   
