@@ -242,6 +242,10 @@ export class Paper {
     return (this.value.F || []).map(ea => ea.DFN)    
   }
   
+  hasPublicationInfo() {
+    return this.value.J || this.value.C
+  }
+  
   
   async findBibtexFileEntries() {
     var key = this.key
