@@ -189,12 +189,12 @@ export default class AcademicQuery extends Morph {
   
   async queryToView(object) {
       //var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
-      var span = <span id="inner"></span>
+      var span = <span contenteditable="true" id="inner"></span>
       
     switch(object.type) {
       case "simple":
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span id="sub">{value} </span>;
+          var subSpan = <span contenteditable="true" id="sub">{value} </span>;
           span.appendChild(subSpan)
           span.addEventListener('mouseover', this.onMouseOver);
           span.addEventListener('mouseout', this.onMouseOut);
@@ -203,7 +203,7 @@ export default class AcademicQuery extends Morph {
         break;
 
       case "conjunction":
-        var subSpan = <span style="font-size: 150%">{object.conjunction}</span>;
+        var subSpan = <span contenteditable="true" style="font-size: 150%">{object.conjunction}</span>;
         var left = await (<academic-query style="font-size: smaller;"></academic-query>);
         left.setQueryObject(object.left);
         var right = await (<academic-query style="font-size: smaller;"></academic-query>);
@@ -225,7 +225,7 @@ export default class AcademicQuery extends Morph {
 
       case "composite":
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span>{value} </span>;
+          var subSpan = <span contenteditable="true">{value} </span>;
           span.appendChild(subSpan)
         });
     }
