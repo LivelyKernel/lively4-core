@@ -227,6 +227,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     // event.stopPropagation();
     this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
+    
+    await lively.sleep(0)
+    this.editor.refresh()
   }
 
   async editorLoaded() {
