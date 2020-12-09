@@ -1,7 +1,10 @@
+"enable aexpr";
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from "src/client/fileindex.js"
 import _ from 'src/external/lodash/lodash.js'
 import Strings from "src/client/strings.js"
+
 
 export default class IndexSearch extends Morph {
   initialize() {
@@ -12,18 +15,47 @@ export default class IndexSearch extends Morph {
     
     lively.html.registerInputs(this);
     
-
-    ['#searchInput'].forEach(selector => {
-      lively.addEventListener("lively-search", this.get(selector), "keyup", (evt) => { 
-          if(evt.keyCode == 13) { 
-            try {
-              this.onSearchButton(); 
-            } catch(e) {
-              console.error(e);
-            }
-          }
-      });
+    var onScopeOrSearchInputEnter = (evt) => { 
+      if(evt.code == "Enter") { 
+        this.onSearchButton(); 
+      }
+    }
+    this.get("#searchInput").addEventListener("keyup", onScopeOrSearchInputEnter);
+    this.get("#scopeInput").addEventListener("keyup", onScopeOrSearchInputEnter);
+    
+    /* #ActiveExpression #Example
+    this.events = {}
+    this.get("#searchInput").addEventListener("keyup", evt => {
+      this.events.searchInputKeyUp = evt; 
+      this.events.searchInputKeyUp = null
     });
+    this.get("#scopeInput").addEventListener("keyup", evt => {
+      this.events.scopeInputKeyUp = evt;
+      this.events.scopeInputKeyUp = null      
+    });
+    
+    
+    aexpr(() => this.events.scopeInputKeyUp || this.events.searchInputKeyUp).onChange(evt => {
+      if(evt && evt.code == "Enter") { 
+        this.events.scopeInputEnter = evt 
+        this.events.scopeInputEnter = null
+      }
+    });
+
+    aexpr(() => this.events.scopeInputKeyUp || this.events.searchInputKeyUp).onChange(evt => {
+      if(evt && evt.code == "Enter") { 
+        this.events.inputEnter = evt 
+        this.events.inputEnter = null
+      }
+    });
+
+    aexpr(() => this.events.inputEnter).onChange(evt => {
+      this.onSearchButton();
+    });
+    */
+    
+    aexpr(() => this.get("#scopeInput").value).onChange(v => this.scope = v);
+    aexpr(() =>  this.scope).onChange(v => this.get("#scopeInput").value = v);
       
     var search = this.getAttribute("search");
     if(search) {
@@ -31,6 +63,7 @@ export default class IndexSearch extends Morph {
       this.searchFile();
     }
   }
+  
 
   focus() {
     this.get("#searchInput").focus();
@@ -45,6 +78,14 @@ export default class IndexSearch extends Morph {
   
   set mode(mode) {
     return this.setAttribute("mode", mode);
+  }
+  
+  get scope() {
+    return this.getAttribute("scope");
+  }
+  
+  set scope(scope) {
+     return this.setAttribute("scope", scope);
   }
 
   
@@ -94,7 +135,10 @@ export default class IndexSearch extends Morph {
       let dirAndFilename = ea.url.replace(/.*\/([^/]+\/[^/]+$)/,"$1")
       let prefix = url.replace(dirAndFilename, "")
       if (lastPrefix != prefix) {
-         this.get("#searchResults").appendChild(<tr class="prefix"><td colspan="3">{prefix}</td></tr>);
+         this.get("#searchResults").appendChild(<tr class="prefix"><td colspan="3" click={() => {
+                 this.scope = prefix
+                 this.searchFile()
+               }}>{prefix}</td></tr>);
       }
       lastPrefix = prefix
       let path = ea.url.replace(this.serverURL(),"")
@@ -115,7 +159,6 @@ export default class IndexSearch extends Morph {
       let link = item.querySelector("a");
       link.setAttribute("href", ea.url);
       link.title = ea.file
-      var self = this
       link.onclick = (evt) => {
         if (evt.shiftKey || evt.ctrlKey) {
           this.browseSearchResult(url, lineAndColumn);
@@ -220,6 +263,14 @@ export default class IndexSearch extends Morph {
       this.setAttribute("replace", "true")
     }
   }
+  
+  onScopeModeButton() {
+    if (this.scope) {
+      this.removeAttribute("scope")
+    } else {
+      this.scope = lively4url
+    }
+  }
 
   async searchFile(text) {
     this.clearLog()
@@ -269,11 +320,12 @@ export default class IndexSearch extends Morph {
     
     var search = new RegExp(pattern)
     var result = []
+    var scope = this.scope
     var searchTime = await lively.time(async () => {
       var root = lively4url; // there are other files in our cache... too 
       var roots = [root].concat(lively.preferences.get("ExtraSearchRoots")).concat(this.findRootsInBrowsers())
       return FileIndex.current().db.files.each(file => {
-        if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content) {
+        if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content && (!scope || file.url.match(scope))) {
           var m = file.content.match(search)
           if (m) {
             result.push({file: file, match: m})
