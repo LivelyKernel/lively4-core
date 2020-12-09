@@ -4,6 +4,7 @@
   <style>
     :host {
       width: fill-available;
+      background: white;
     }
     :host(.selected) #root  {
       background-color: rgba(150,150,255,0.1);
@@ -37,16 +38,7 @@
       font-weight: bold
     }
 
-    :host([mode="edit"]) #content {
-      display: block;
-      white-space: pre;
-      font-family: courier;
-      font-size: 9pt;
-      overflow: scroll;
-      width: 100%;
-      background: white;
-    }
-
+   
     :host([mode="edit"]) #entry {
       display: none;
     }
@@ -54,6 +46,7 @@
     :host([mode="readonly"]) #edit {
       display: none;
     }
+    
 
     #cancel {
       display: none;
@@ -64,7 +57,8 @@
     }
     
     #edit {
-      color: lightgray;
+      color: orange;
+      
     }
     
     #key:hover, .academic:hover, #edit:hover, #cancel:hover {
@@ -76,9 +70,24 @@
     #cancel {
       position: absolute;
       top: 0px;
-      right: 0px;
+      left: 0px;
     }
     
+    #editor {
+      height: 100%;
+      width: 100%;
+    }
+    
+    #pane {
+      position: relative;
+      width: calc(100% - 20px)
+      overflow: auto;
+    }
+    
+    :host([mode="edit"]) #pane {
+      left: 30px;
+      background: lightgray;
+    }
     
     #draghandle {
       width: 6px;
@@ -87,7 +96,6 @@
       display: inline-block;
       border-radius: 4px;
       border: 1px solid darkblue;
-
     }
 
     #draghandle:hover {
@@ -95,14 +103,8 @@
     }
   </style>
   <div id="root">
-    <div id="entry">
-      <div id="draghandle"></div>
-      [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
-      <span id="title"></span>
-      <span id="misc"></span>
-      <span id="edit" title="edit entry"><i class="fa fa-pencil" aria-hidden="true"></i></span>
-    </div>
-    <div id="cancel" title="cancel editing"><i class="fa fa-ban" aria-hidden="true"></i></div>
+    <button id="cancel" title="cancel editing"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+    <div id="pane"></div>
     <div id="content"><slot></slot></div>
   </div>
 </template>
