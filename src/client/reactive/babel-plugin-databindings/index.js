@@ -2,7 +2,7 @@ export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
 
   return {
-    name: "ast-transform",
+    name: "data-binding",
     visitor: {
       Program: {
         enter(ppath, state) {
