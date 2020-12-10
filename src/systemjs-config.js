@@ -166,7 +166,7 @@ SystemJS.config({
     '*.mjs': liveES7,
     [lively4url + "/src/external/*.js"]: liveES7,
     /* FILE-BASED */
-    // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
+    /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
@@ -177,23 +177,26 @@ SystemJS.config({
     [lively4url + '/demos/*.js']: aexprViaDirective,
     [lively4url + '/templates/*.js']: aexprViaDirective,
     [lively4url + '/test/*.js']: liveES7,
+    /* some tests with aexpr */
+    [lively4url + '/test/bindings-test.js']: aexprViaDirective,
+    
     // [lively4url + '/*.js']: aexprViaDirective,
-    // default for all .js files (not just lively4)
+    /* default for all .js files (not just lively4) */
     [lively4url + "/src/client/*.js"]: aexprViaDirective,
     [lively4url + "/src/components/*.js"]: aexprViaDirective,
 
-    // base extensions
+    /* base extensions */
     [lively4url + "/src/client/lang/lang.js"]: moduleOptionsNon,
     [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
     
-    // blacklist all projects included for active expressions
+    /* blacklist all projects included for active expressions */
     [lively4url + "/src/client/reactive/*.js"]: liveES7,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: moduleOptionsNon,
     [lively4url + "/src/client/reactive/rp19-jsx/*.js"]: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/components/basic/*.js']: liveES7,
     [lively4url + '/src/client/reactive/components/rewritten/*.js']: aexprViaDirective,
-    // ... except for the tests
+    /* ... except for the tests */
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
     
     // [lively4url + '/demos/*.js']: liveES7,

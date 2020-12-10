@@ -794,7 +794,7 @@ export default class FileIndex {
       modified: modified
     }
   
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
+    if (name.match(/\.((css)|(js)|(md)|(txt)|(tex)|(bib)|(x?html))$/)) {
       if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
