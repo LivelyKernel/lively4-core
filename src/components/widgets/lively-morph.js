@@ -85,6 +85,19 @@ export default class Morph extends HTMLElement {
     });
   }
   
+  /* 
+    catches all enter keyup events and syntesizes a new enter event! 
+  */
+  registerSignalEnter(rootElement = this) {
+    var domain = "singnal-enter"
+    lively.removeEventListener(domain, rootElement) // just in case...
+    lively.addEventListener(domain, rootElement, "keyup", evt => {
+      if(evt.code == "Enter") { 
+        evt.target.dispatchEvent(new CustomEvent("enter-pressed", { detail: evt })) 
+      }  
+    })
+  }
+  
   toString() {
     return "[" + this.constructor.name + "]"
   }

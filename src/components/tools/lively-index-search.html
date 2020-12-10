@@ -2,6 +2,15 @@
     <style data-src="/templates/livelystyle.css"></style>
     <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
     <style>
+      
+       #scopeBar {
+        display: none
+      }
+      
+      :host([scope]) #scopeBar {
+        display: inherit
+      }
+      
     .container {
         width: 100%;
         height: 100%;
@@ -144,6 +153,9 @@
       
     </style>
     <div class="container">
+        <p class="fill" id="scopeBar">  
+          scope: <input class="" id="scopeInput" value="" />
+        </p>
         <p class="fill">
           <input class="" id="searchInput" value="" />
           <button id="searchButton">search</button> 
@@ -151,6 +163,10 @@
             <i class="fa fa-pencil search-mode" aria-hidden="true"></i>
             <i class="fa fa-ban replace-mode" aria-hidden="true"></i>
           </button>
+          <button id="scopeModeButton" title="replace in all files">
+            <i class="fa fa-filter" aria-hidden="true"></i>
+          </button>
+
         </p>
         <p class="fill" id="replaceBar">
           <input class="" id="replaceInput" value="" />
