@@ -282,6 +282,18 @@ export default class IndexSearch extends Morph {
     await this.replaceInFiles()
   }
   
+  updateReplacePreview() {
+    var regex = new RegExp(this.pattern, "g")
+    for (var file of this.files) {
+      if (file.item) {
+        file.item.querySelectorAll("#replace").forEach(td => td.remove());
+        var replacedText = file.text.replace(regex, this.replace)
+        var replacePreviewColumn = <td id="replace">{replacedText}</td>
+        file.item.appendChild(replacePreviewColumn)
+      }
+    }    
+  }
+  
   // #important #refactor
   async replaceInFiles(pattern=this.pattern, replace=this.replace) {
     if(this.searchInProgres || !this.files) {
@@ -346,16 +358,7 @@ export default class IndexSearch extends Morph {
     }
   }
   
-  updateReplacePreview() {
-    for (var file of this.files) {
-      if (file.item) {
-        file.item.querySelectorAll("#replace").forEach(td => td.remove());
-        var replacedText = file.text
-        var replacePreviewColumn = <td id="replace">{replacedText}</td>
-        file.item.appendChild(replacePreviewColumn)
-      }
-    }    
-  }
+
   
   
   /*MD ## Helper MD*/

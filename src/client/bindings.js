@@ -1,6 +1,9 @@
 "enable aexpr";
 
-/*MD ## Fuck it, ... here come Connections Again 
+/*MD ## ActiveExpressions based Bidirectional Connectors
+
+**WARNING** activate active expressions in client code is needed!
+
   - has nothing to do yet with the connection in the Halo
   - is also completely differently implemented from old lively-kernel connections
 MD*/
