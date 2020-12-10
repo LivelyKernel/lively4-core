@@ -182,26 +182,20 @@ export default class IndexSearch extends Morph {
       {line: lineAndColumn.line, ch: lineAndColumn.column + 
         (lineAndColumn.selection ? + lineAndColumn.selection.length : 0)})
     codeMirror.focus()
-    codeMirror.scrollIntoView(codeMirror.getCursor(), 200)
-    
-    
+    codeMirror.scrollIntoView(codeMirror.getCursor(), 200)    
   }
 
   browseSearchResult(url, pattern) {
     return lively.openBrowser(url, true, pattern, undefined, /* lively.findWorldContext(this)*/);
   }
 
-
-
   // #important
   updateSearchResults(search=this.pattern) {
     var list = _.sortBy(this.files, ea => ea.url)
     let lastPrefix
     for (var ea of list) {
-      let pattern = ea.text;
+      let text = ea.text;
       let url = ea.url;
-      let item = <tr></tr>;
-      ea.item = item
       let filename = ea.file.replace(/.*\//,"")
       let dirAndFilename = ea.url.replace(/.*\/([^/]+\/[^/]+$)/,"$1")
       let prefix = url.replace(dirAndFilename, "")
@@ -218,29 +212,36 @@ export default class IndexSearch extends Morph {
         column: ea.column,
         selection: ea.selection }
       
-      item.innerHTML = `<td class="filename"><a>${dirAndFilename.slice(0,60)}</a></td>
-        <td class="line">${ea.line + 1}:</td>
-        <td><span ="pattern">${
-    
-        pattern
-          .replace(/</g,"&lt;")
-          .replace(new RegExp("(" +search + ")"), "<b>$1</b>") 
-  
-      }</span></td>`;
-      let link = item.querySelector("a");
-      link.setAttribute("href", ea.url);
-      link.title = ea.file
-      link.onclick = (evt) => {
-        if (evt.shiftKey || evt.ctrlKey) {
-          this.browseSearchResult(url, lineAndColumn);
-        } else {
-          this.showSearchResult(url, lineAndColumn);
-        }
-        return false;
-      };
+      let link = <a href={ea.url} title={ea.file} click={(evt) => {
+          if (evt.shiftKey || evt.ctrlKey) {
+            this.browseSearchResult(url, lineAndColumn);
+          } else {
+            this.showSearchResult(url, lineAndColumn);
+          }
+          return false;
+        }}>{dirAndFilename.slice(0,60)}</a>;
+      
+      let item = <tr>
+          <td class="filename">{link}</td>
+          <td class="line">{ea.line + 1}:</td>
+          <td>
+            {this.hightlightPattern(text, this.pattern)}
+          </td>
+        </tr>;
+      ea.item = item
+      
       this.get("#searchResults").appendChild(item);
     }
   }
+  
+  hightlightPattern(text, pattern) {
+    let textSpan = <span></span>
+    textSpan.innerHTML = text
+        .replace(/</g,"&lt;")
+        .replace(new RegExp("(" +pattern.replace(/</g,"&lt;") + ")", "g"), "<b>$1</b>")
+    return textSpan
+  }
+  
   
   /*MD ## Search and Replace MD*/
 
@@ -255,11 +256,12 @@ export default class IndexSearch extends Morph {
   }
   
   updateReplacePreview() {
-    var regex = new RegExp(this.pattern, "g")
     for (var file of this.files) {
       if (file.item) {
         file.item.querySelectorAll("#replace").forEach(td => td.remove());
-        var replacedText = file.text.replace(regex, this.replace)
+        
+        var newText = file.text.replace(new RegExp(this.pattern, "g"), this.replace)
+        var replacedText = this.hightlightPattern(newText, this.replace)
         var replacePreviewColumn = <td id="replace">{replacedText}</td>
         file.item.appendChild(replacePreviewColumn)
       }
