@@ -98,6 +98,27 @@ export default class Morph extends HTMLElement {
     })
   }
   
+  registerAttributes(list) {
+    for(let name of list) {
+      this.registerAttribute(name)
+    }
+  }
+  
+  registerAttribute(name) {
+    Object.defineProperty(this, name, {
+      get() { 
+        return this.getAttribute(name); 
+      },
+      set(newValue) { 
+        this.setAttribute(name, newValue)
+      },
+      enumerable: true,
+      configurable: true
+    });
+  }
+
+  
+  
   toString() {
     return "[" + this.constructor.name + "]"
   }

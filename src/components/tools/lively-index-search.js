@@ -10,17 +10,17 @@ import Bindings from "src/client/bindings.js"
 
 export default class IndexSearch extends Morph {
   async initialize() {
-    this.windowTitle = "File Search";
+    this.registerAttributes(["pattern", "mode", "scope", "replace"])
+    this.windowTitle = "Search";
     this.registerButtons();
     this.get("lively-separator").toggleCollapse()
     // this.get("lively-editor").hideToolbar();
     
     lively.html.registerInputs(this);
     
-    this.registerAttributes(["pattern", "mode", "scope", "replace"])
-    this.bindAttributeWithInputField("scope", this.get("#scopeInput"))
-    this.bindAttributeWithInputField("pattern", this.get("#searchInput"))
-    this.bindAttributeWithInputField("replace", this.get("#replaceInput"))
+    Bindings.connect(this, "scope", this.get("#scopeInput"), "value");
+    Bindings.connect(this, "pattern", this.get("#searchInput"), "value");
+    Bindings.connect(this, "replace", this.get("#replaceInput"), "value");
     
     this.registerSignalEnter(this.shadowRoot)
     this.get("#replaceInput").addEventListener("enter-pressed", () => this.onReplaceInputEnter());
@@ -37,34 +37,6 @@ export default class IndexSearch extends Morph {
     }
   }
   
-  // #TODO pull up into own module, because of active expressions...
-  bindAttributeWithInputField(name, inputField) {
-    aexpr(() => inputField.value).onChange(v => this[name] = v);
-    aexpr(() =>  this[name]).onChange(v => inputField.value = v);
-    inputField.value = this[name] // force ui update
-  }
-
-  // #TODO pull up into morph
-  registerAttributes(list) {
-    for(let name of list) {
-      this.registerAttribute(name)
-    }
-  }
-  
-  // #TODO pull up into morph #private
-  registerAttribute(name) {
-    Object.defineProperty(this, name, {
-      get() { 
-        return this.getAttribute(name); 
-      },
-      set(newValue) { 
-        this.setAttribute(name, newValue)
-      },
-      enumerable: true,
-      configurable: true
-    });
-  }
-
   /*MD ## HTML Element MD*/
   
   focus() {
@@ -313,52 +285,68 @@ export default class IndexSearch extends Morph {
       toReplace.push({url: url, lastversion: lastVersion, oldcontent: contents, newcontent: newcontents})
     }
   
-    if (!await lively.confirm("Replace <b>" + pattern + "</b> with <b>" + replace + "</b> in " + toReplace.length + " files?" +
-                             `<ul style="font-size: 10pt">${
-                                toReplace.map(ea => "<li>" 
-                                              + ea.url.replace(/.*\//,"") 
-                                              + " (" + Strings.matchAll(regex, ea.oldcontent).length + " occurence(s))"
-                                              + "</li>").join("")
-                              }<ul>`))  {
-      lively.warn("replacing files canceled")
-      return 
+     if (!(await this.confirmReplaceDialog(toReplace, regex))) {
+      lively.warn("replacing files canceled");
+      return;
     }
     this.clearLog()
-    for (var ea of toReplace) {
-      let url = ea.url
-      let headers = {}
-      if (ea.lastVersion) {
-        headers.lastversion = ea.lastVersion
-      }
-      let putRequest = await fetch(url, {
-        method: "PUT",
-        body: ea.newcontent,
-        headers: headers
-      })
-             
-      var item = <tr>
-            <td>replaced</td>
-            <td class="filename">
-              <a click={(evt) => {
-                evt.preventDefault(); 
-                this.browseSearchResult(url, replace)}
-               } href={url}>{url.replace(/.*\//,"")}</a></td>
-            <td><b>{pattern}</b></td>
-            <td>with</td>
-            <td><b>{replace}</b></td>
-          </tr>;
-      this.get("#searchResults").appendChild(item);
-    
-      if (putRequest.status == 200) {
-        // #Idea: show diff?
-        lively.notify("Replaced in " + url)
-      } else {
-        lively.warn("could not change " + url + ", because " + putRequest )
-      }  
+    for (let ea of toReplace) {
+      await this.replaceFile(ea, replace, pattern)
     }
   }
   
+  async replaceFile(file, replace, pattern) {
+    let url = file.url;
+    let headers = {};
 
+    if (file.lastVersion) {
+      headers.lastversion = file.lastVersion;
+    }
+
+    let putRequest = await fetch(url, {
+      method: "PUT",
+      body: file.newcontent,
+      headers: headers
+    });
+    var item = <tr>
+      <td>replaced</td>
+      <td class="filename">
+        <a 
+          click={evt => {
+            evt.preventDefault()
+            this.browseSearchResult(url, replace)}} 
+          href={url}>{url.replace(/.*\//, "")}
+        </a>
+      </td>
+      <td><b>{pattern}</b></td>
+      <td>with</td>
+      <td><b>{replace}</b></td>
+    </tr>;
+    this.get("#searchResults").appendChild(item);
+
+    if (putRequest.status == 200) {
+      // #Idea: show diff?
+      lively.notify("Replaced in " + url);
+    } else {
+      lively.warn("could not change " + url + ", because " + putRequest);
+    }
+  }
+  
+  confirmReplaceDialog(toReplace, regex) {
+    const list = toReplace.map(ea => {
+      var numberOfMatches = Strings.matchAll(regex, ea.oldcontent).length;
+      var filename = ea.url.replace(/.*\//, "");
+      return <li>{filename}: {numberOfMatches} occurence(s)</li>;
+    });
+    var msg = <div>Replace 
+                <b>{this.pattern}</b> with <b>{this.replace}</b> 
+                in {toReplace.length} files?
+                <ul style="font-size: 10pt">
+                  {...list}
+                </ul>
+              </div>;
+    return lively.confirm(msg);
+  }
   
   
   /*MD ## Helper MD*/
