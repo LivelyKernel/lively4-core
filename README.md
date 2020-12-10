@@ -2,7 +2,7 @@
 
 # An Explorative, Self-supporting, Web-based Development Environment
 
-[![Build Status](https://travis-ci.org/LivelyKernel/lively4-core.svg)](https://travis-ci.org/LivelyKernel/lively4-core) [![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
+[![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
 
 ## Getting Started{style="clear:both"}
