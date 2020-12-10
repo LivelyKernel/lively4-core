@@ -37,11 +37,9 @@
       margin: 2px;
     }
 
-
     input:disabled {
       color: #aaaaaa
     }
-
 
     label {
       padding: 3px;
@@ -49,7 +47,6 @@
       font-size: 13px;
       color: #555555;
     }
-
 
     label.medium {
       width: 70px;
@@ -59,12 +56,9 @@
       width: 40px;
     }
 
-    
     td {
       overflow: hidden;
     }
-    
-    
     
     tr.prefix td:hover {
       color: rgb(0, 78, 151);
@@ -79,7 +73,6 @@
       padding-left: 5px;
     }
 
-
     input.checkbox {
       width: 14px;
       height: 14px;
@@ -92,33 +85,19 @@
       overflow: auto; 
     }
 
-
     #editor {
       flex: 0.5;
       overflow: scroll;
     }
 
-
     #searchResults  {
       min-width: 800px;
       margin-left: 10px;
-      /* width: 90%; */
     }
-
-
-    #searchResults a {
-      /*
-        display: block;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-      */
-    }
-
+    
     #searchResults span {
       font-family: monospace
     }
-
 
     #searchResults .prefix {
       height: 30px;
@@ -157,7 +136,6 @@
       display: inherit;
     }
 
-
     td.logentry {
 
     }
@@ -179,9 +157,7 @@
     td.filename a:hover {
       color: rgb(0, 78, 151);
       text-decoration: underline currentcolor;
-    }
-
-  
+    }  
   </style>
   <div class="container">
     <p class="fill" id="scopeBar">
@@ -197,20 +173,15 @@
       <button id="scopeModeButton" title="replace in all files">
         <i class="fa fa-filter" aria-hidden="true"></i>
       </button>
-
     </p>
     <p class="fill" id="replaceBar">
       <input class="" id="replaceInput" value="" />
       <button id="replaceButton">replace all!</button>
-
     </p>
     <div id="searchContainer">
       <table id="searchResults"></table>
     </div>
     <lively-separator reverse="true"></lively-separator>
     <lively-editor id="editor"></lively-editor>
-
   </div>
-  </div>
-
 </template>

@@ -188,7 +188,6 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onDirectoryDrop(evt) {
     console.log("in: onDirectoryDrop: ")
-    debugger;
     if (evt.target && evt.target.href) {
       return this.onDrop(evt, evt.target.href)
     }
