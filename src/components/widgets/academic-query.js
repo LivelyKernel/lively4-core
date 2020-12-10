@@ -180,11 +180,26 @@ export default class AcademicQuery extends Morph {
   }
   
   onMouseOver(event) {
-    event.target.parentElement.style.color = "orange"
+    this.style.color = "orange"
+    lively.notify("THIS", this)
+    lively.notify("TARGET", event.target.id)
+    // vielleicht lieber wie so ein Halo
+    // --> 0 breites span oder so, das relative ist und dem den Button als Kind
+    var span = <span id="button" style="width: 0px; position: relative"></span>
+    var button = <button>+</button>
+    span.appendChild(
+      //<div id="button" style="width: 100%; max-width: max">
+        button
+      //</div>
+    )
+    //event.target.parentElement.appendChild(this)
+    lively.query(this, "#inner").appendChild(span)
   }
   
   onMouseOut(event) {
-    event.target.parentElement.style.color = "black"
+    // checken, ob nach 5 Sekunden nicht mehr über Objekt oder Button (und dann wieder...)
+    this.style.color = "black"
+    //this.removeChild(lively.query(this, "#button"))
   }
   
   async queryToView(object) {
@@ -196,13 +211,16 @@ export default class AcademicQuery extends Morph {
         [object.attribute, object.comparator, object.value].forEach(value => {
           var subSpan = <span contenteditable="true" id="sub">{value} </span>;
           span.appendChild(subSpan)
-          span.addEventListener('mouseover', this.onMouseOver);
-          span.addEventListener('mouseout', this.onMouseOut);
+          span.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+          //span.addEventListener('mouseover', this.onMouseOver);
+          span.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
           span.style.cursor = "grab" // on drag: grabbing
         });
         break;
 
       case "conjunction":
+        // Textselection in css vielleicht entfernen für Drag & Drop (bzw. erstmal Drag einschalten)
+        // events.stoppropagation und preventdefault
         var subSpan = <span contenteditable="true" style="font-size: 150%">{object.conjunction}</span>;
         var left = await (<academic-query style="font-size: smaller;"></academic-query>);
         left.setQueryObject(object.left);
@@ -231,16 +249,16 @@ export default class AcademicQuery extends Morph {
     }
 
     var queryElement = <div><b>{span}</b></div>;
-    lively.notify("queryElement", typeof queryElement)
-    lively.notify("pane", typeof this.get('#pane'))
+    //lively.notify("queryElement", typeof queryElement)
+    //lively.notify("pane", typeof this.get('#pane'))
     observer.observe(this.get('#pane'), config)
     return queryElement;
   }
   
   async livelyExample() {
-    //this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
+    this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
     //this.setQuery("And(O='abc', Y='1000')")
-    this.setQuery("Y='1000'")
+    //this.setQuery("Y='1000'")
   }
   
   
