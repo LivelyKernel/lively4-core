@@ -264,6 +264,11 @@ export default class IndexSearch extends Morph {
         var replacedText = this.hightlightPattern(newText, this.replace)
         var replacePreviewColumn = <td id="replace">{replacedText}</td>
         file.item.appendChild(replacePreviewColumn)
+        
+        
+        file.item.querySelectorAll("#select").forEach(td => td.remove());
+        var selectColumn = <td id="select"><input type="checkbox" checked></input></td>
+        file.item.insertBefore(selectColumn, file.item.childNodes[0])
       }
     }    
   }
@@ -276,7 +281,10 @@ export default class IndexSearch extends Morph {
     }
     let toReplace = []
     let regex = new RegExp(pattern, "g")
-    for (let url of this.files.map(ea => ea.url).uniq()) {
+    var selectedFiles = this.files.filter(ea => ea.item.querySelector("td#select input").checked)
+   
+    // #TODO the UI confuses files and lines in files... (ocurences...)
+    for (let url of selectedFiles.map(ea => ea.url).uniq()) {
       let getRequest = await fetch(url)
       let lastVersion = getRequest.headers.get("fileversion")
       let contents = await getRequest.text()
