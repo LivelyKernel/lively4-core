@@ -76,7 +76,7 @@ export default class IndexSearch extends Morph {
       this.pattern = text;
     }
 
-    if (this.pattern.length < 2) {
+    if (!this.pattern || this.pattern.length < 2) {
       this.log("please enter a longer search string");
       this.searchInProgres = false;
       return; 
