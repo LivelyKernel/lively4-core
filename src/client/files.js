@@ -274,11 +274,9 @@ export default class Files {
     return (await this.type(url)) == "file"
   }
 
-  // #TODO: should be 'directiory'
   static async isDirectory(url) {
-    return (await this.type(url)) == "file"
+    return (await this.type(url)) == "directory"
   }
-
 
   static directory(string) {
     string = string.toString()

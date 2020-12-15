@@ -41,16 +41,18 @@ export default class FileChooser extends Morph {
   }
 
   async chooseFile(dir) {
+    if(!dir.match(/\/$/) && await lively.files.isDirectory(dir)) {
+      dir = dir + "/" // ensure directories end with slash
+    }
     this.root = dir
     this.updateView()
+    
     await promisedEvent(this, "choose-file")
     return this.url
   }
 
   async chooseFiles(dir) {
-    this.root = dir
-    this.updateView()
-    await promisedEvent(this, "choose-file")
+    await this.chooseFile(dir)
     return this.getSelection()
   }
 
