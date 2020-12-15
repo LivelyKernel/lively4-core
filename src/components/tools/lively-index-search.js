@@ -65,7 +65,8 @@ export default class IndexSearch extends Morph {
     this.updateReplacePreview()
   }
   
-  onReplaceButton() {
+  async onReplaceButton() {
+   
     this.replaceInFiles()
   }
   /*MD ## Search MD*/
@@ -257,6 +258,11 @@ export default class IndexSearch extends Morph {
     await this.replaceInFiles()
   }
   
+  hasPreview() {
+    return this.files && (this.files.length > 0) && this.files[0].item.querySelector("td#replace")
+  }
+  
+  
   updateReplacePreview() {
     if (this.mode != "replace") return
     for (var file of this.files) {
@@ -283,6 +289,11 @@ export default class IndexSearch extends Morph {
       this.log("please search files first")
       return
     }
+    
+    if (!this.hasPreview()) {
+      await this.updateReplacePreview()
+    }
+    
     let toReplace = []
     let regex = new RegExp(pattern, "g")
     var selectedFilesLines = this.files.filter(ea => ea.item.querySelector("td#select input").checked)
@@ -293,8 +304,6 @@ export default class IndexSearch extends Morph {
       let getRequest = await fetch(url)
       let lastVersion = getRequest.headers.get("fileversion")
       let contents = await getRequest.text()
-      
-      
       
       var lines = selectedFilesLines.filter(ea => ea.url == url)
       
