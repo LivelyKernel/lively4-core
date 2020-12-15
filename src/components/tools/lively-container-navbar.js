@@ -52,6 +52,14 @@ export default class LivelyContainerNavbar extends Morph {
     }, false);
   }
   
+  get root() {
+    return this.url
+  }
+  
+  set root(url) {
+    this.show(url)
+  }
+  
   // #important 
   async update() {
     
@@ -341,11 +349,11 @@ export default class LivelyContainerNavbar extends Morph {
       
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
-        this.showDetails()
+        await this.showDetails()
       } else if (lastURL !== this.url) {
-        this.showDetails()
+        await this.showDetails()
       } else if (lastContent != this.sourceContent) {
-        this.showDetailsContent(true)
+        await this.showDetailsContent(true)
       }        
       
       return         
@@ -941,6 +949,10 @@ export default class LivelyContainerNavbar extends Morph {
           sublist.appendChild(element) ;
         });        
       }
+  }
+  
+  hideDetails() {
+    this.get("#details").hidden = true
   }
   
   // #Markdown #private #Refactor 

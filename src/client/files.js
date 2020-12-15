@@ -656,7 +656,18 @@ export default class Files {
      return versions
   }
   
-  
+  /*MD ## File Chooser MD*/
+    
+  static async chooseFile(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFile(url)
+  }
+
+  static async chooseFiles(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFiles(url)
+  }
+
   
   
 }
