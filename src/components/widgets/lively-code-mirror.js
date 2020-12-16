@@ -946,6 +946,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     } else {
       this._value = text
     }
+    lively.sleep(0).then(() => {
+      if (this.editor) this.editor.refresh()
+    })
+    
   }
 
   setCustomStyle(source) {
