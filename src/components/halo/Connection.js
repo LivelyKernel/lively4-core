@@ -22,12 +22,12 @@ export default class Connection {
     this._eventListener = evt => this.connectionFunction(evt)
     this._targetProperty = this.cleanProperty(this._targetProperty)
     if(isEvent){
-      this.valueModifyingCode = `(target, event) => {
+      this.modifyingCode = `(target, event) => {
   target.${this._targetProperty} = 42;
 }`;
       this.trackingCode = this._sourceProperty;
     } else {
-      this.valueModifyingCode = `(target, sourceValue) => {
+      this.modifyingCode = `(target, sourceValue) => {
   target.${this._targetProperty} = sourceValue;
 }`;
       this._sourceProperty = this.cleanProperty(this._sourceProperty)
@@ -36,7 +36,7 @@ export default class Connection {
 }`
     }
     
-    this.label = 'Connection ' + this.id
+    // this.label = 'Connection ' + this.id
     this.makeSavingScript();
   }
   
@@ -69,8 +69,10 @@ export default class Connection {
     return {
       sourceId: this.sourceId,
       targetId: this.targetId,
+      sourceProperty: this._sourceProperty,
+      targetProperty: this._targetProperty,      
       trackingCode: this.trackingCode,
-      modifyingcode: this.valueModifyingCode,
+      modifyingCode: this.modifyingCode,
       label: this.label,
       isEvent: this.isEvent
     }
@@ -78,7 +80,7 @@ export default class Connection {
   
   static deserialize(json) {
     json.forEach(connectionData => {
-      this.connectionFromExistingData(connectionData.targetId, connectionData.modifyingcode, connectionData.sourceId, connectionData.trackingCode, connectionData.label, connectionData.isEvent)
+      this.connectionFromExistingData(connectionData)
     })
   }
   
@@ -88,13 +90,14 @@ export default class Connection {
     }
   }
   
-  static connectionFromExistingData(targetId, modifyingCode, sourceId, trackingCode, label, isEvent) {
-    const target = lively.elementByID(targetId);
-    const source = lively.elementByID(sourceId);
-    const undeadConnection = new Connection(target, 'something', source, 'something', isEvent);
-    undeadConnection.setModifyingCode(modifyingCode);
-    undeadConnection.setTrackingCode(trackingCode);
-    undeadConnection.setLabel(label);
+  static connectionFromExistingData(config) {
+    
+    const target = lively.elementByID(config.targetId);
+    const source = lively.elementByID(config.sourceId);
+    const undeadConnection = new Connection(target, config.sourceProperty, source, config.targetProperty, config.isEvent);
+    undeadConnection.setModifyingCode(config.modifyingCode);
+    undeadConnection.setTrackingCode(config.trackingCode);
+    undeadConnection.setLabel(config.label);
     undeadConnection.activate();
   }
   
@@ -114,7 +117,6 @@ export default class Connection {
   }
   
   async activateEvent() {
-    lively.notify(this.trackingCode)
     lively.addEventListener('Connections', this.source, this.trackingCode, this._eventListener);
   }
   
@@ -137,7 +139,7 @@ export default class Connection {
   }
   
   async connectionFunction(sourceValue) {  
-    let myFunction = await this.valueModifyingCode.boundEval()
+    let myFunction = await this.modifyingCode.boundEval()
     myFunction(this.target, sourceValue)
   }
   
@@ -166,7 +168,7 @@ export default class Connection {
   
   copyAndActivate() {
     let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
-    newConnection.setModifyingCode(this.valueModifyingCode);
+    newConnection.setModifyingCode(this.modifyingCode);
     newConnection.activate();
     return newConnection;
   }
@@ -213,21 +215,21 @@ export default class Connection {
   }
   
   getSourceProperty() {
-    return this.sourceProperty
+    return this._sourceProperty
   }
   
   setSourceProperty(newProperty) {
-    this.sourceProperty = newProperty;
+    this._sourceProperty = newProperty;
     this.saveSerializedConnectionIntoWidget();
     this.activate();
   }
   
   getModifyingCode() {
-    return this.valueModifyingCode
+    return this.modifyingCode
   }
   
   setModifyingCode(string) {
-    this.valueModifyingCode = string;
+    this.modifyingCode = string;
     this.saveSerializedConnectionIntoWidget();
   }
   
@@ -247,11 +249,11 @@ export default class Connection {
   }
   
   getLabel() {
-    return this.label
+    return this._sourceProperty + "⇨" + this._targetProperty 
   }
   
   setLabel(string) {
-    this.label = string
+    this.label = string // not used...
   }
   
 }
