@@ -179,13 +179,22 @@ export default class AcademicQuery extends Morph {
     return s
   }
   
+  enableEditing() {
+    var queries = this.get("#inner").querySelectorAll("[name='sub']")
+    queries.forEach(q => {
+      q.setAttribute("contenteditable", true)
+      q.style.cursor = "text";
+    })
+    //query.setAttribute("contenteditable", true)
+    //query.style.cursor = "text;"
+    lively.notify("QUERIES", queries)
+  }
+  
   onMouseOver(event) {
     this.style.color = "orange"
-    lively.notify("THIS", this)
-    lively.notify("TARGET", event.target.id)
     // vielleicht lieber wie so ein Halo
     // --> 0 breites span oder so, das relative ist und dem den Button als Kind
-    var span = <span id="button" style="width: 0px; position: relative"></span>
+    var span = <span id="button" style="height: 0px; position: relative"></span>
     var button = <button>+</button>
     span.appendChild(
       //<div id="button" style="width: 100%; max-width: max">
@@ -193,7 +202,7 @@ export default class AcademicQuery extends Morph {
       //</div>
     )
     //event.target.parentElement.appendChild(this)
-    lively.query(this, "#inner").appendChild(span)
+    //lively.query(this, "#inner").appendChild(span)
   }
   
   onMouseOut(event) {
@@ -203,19 +212,22 @@ export default class AcademicQuery extends Morph {
   }
   
   async queryToView(object) {
-      //var subDiv = <div id="innerDiv" style="margin: 5px; border: 1px solid gray;"></div>;
-      var span = <span contenteditable="true" id="inner"></span>
+      var span =
+          <span class="tooltip" contenteditable="false" id="inner">
+            <span class="tooltiptext"><button>AND</button><button>OR</button></span>
+          </span>
       
     switch(object.type) {
       case "simple":
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span contenteditable="true" id="sub">{value} </span>;
+          var subSpan = <span name="sub">{value} </span>;
           span.appendChild(subSpan)
           span.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-          //span.addEventListener('mouseover', this.onMouseOver);
           span.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
           span.style.cursor = "grab" // on drag: grabbing
         });
+        var edit = <span id="edit" title="edit query" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+        span.appendChild(edit);
         break;
 
       case "conjunction":
@@ -244,6 +256,7 @@ export default class AcademicQuery extends Morph {
       case "composite":
         [object.attribute, object.comparator, object.value].forEach(value => {
           var subSpan = <span contenteditable="true">{value} </span>;
+
           span.appendChild(subSpan)
         });
     }
