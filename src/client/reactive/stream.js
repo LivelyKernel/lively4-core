@@ -1,5 +1,8 @@
 import aexpr from 'active-expression-rewriting';
 
+const GeneratorFunction = Object.getPrototypeOf(function*(){}).constructor
+const AsyncGeneratorFunction = Object.getPrototypeOf(async function*(){}).constructor
+
 export default class Stream {
   constructor(source) {
     this._ended = false;
@@ -102,4 +105,83 @@ export default class Stream {
     
     return newStream;
   }
+  
+  static from(thing, ...args) {
+    const newStream = new Stream();
+
+    if (thing instanceof GeneratorFunction) {
+      for (let item of thing()) {
+        newStream.write(item);
+      }
+      newStream.end();
+    } else if (thing instanceof AsyncGeneratorFunction) {
+      (async () => {
+        for await (let item of thing()) {
+          newStream.write(item);
+        }
+        newStream.end();
+      })();
+    }
+
+    return newStream;
+  }
+  
+  asAsyncGenerator() {
+    const that = this;
+    let currentItemIndex = 0;
+    
+    let gotNewValue;
+    let waitForValue;
+    function resetWaitForValue() {
+      waitForValue = new Promise(resolve => {
+        gotNewValue = resolve;
+      });
+    }
+    resetWaitForValue();
+
+    let signalEnd;
+    const waitForEnd = new Promise(resolve => {
+      signalEnd = resolve;
+    })
+    
+    this.on('data', () => {
+      const temp = gotNewValue;
+      resetWaitForValue();
+      temp();
+    });
+    this.on('end', () => {
+      signalEnd()
+    });
+
+    async function* genFunc() {
+
+      while (true) {
+        while (that._data.length > currentItemIndex) {
+          yield that._data[currentItemIndex++];
+        } 
+        
+        const done = await Promise.race([waitForValue.then(() => false), waitForEnd.then(() => true)]);
+        if (done) {
+          return;
+        }
+      }
+    }
+    
+    return genFunc();
+  }
+  
+  transform(genFunc) {
+    const that = this;
+    const newStream = new Stream();
+
+    (async function() {
+      for await (let i of genFunc(that.asAsyncGenerator())) {
+        newStream.write(i);
+      }
+      newStream.end();
+    })()
+    
+    return newStream;
+  }
+  
 }

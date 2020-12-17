@@ -54,6 +54,7 @@ describe('Iterators and Utility Methods for Active Expressions', () => {
       const ae = aexpr(() => val);
 
       (async () => {
+        // #TODO: do instantaneous change get applied for '.values()'?
         await lively.sleep(10);
         val++;
         await lively.sleep(10);
