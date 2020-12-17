@@ -25,8 +25,11 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   attachedCallback() {
   }
+  
   detachedCallback() {
+  
   }
+
   async showMenu(evt, menuItems) {
     return ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
   }
@@ -37,8 +40,12 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     Connection.allConnections.forEach(connection => {
       connections.push(connection)
     })
-    let existingConnectionsMenu = connections.map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
-    let myConnectionsMenu = Connection.allConnectionsFor(this.source).map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let existingConnectionsMenu = connections.map(connection => [
+      connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let myConnectionsMenu = Connection.allConnectionsFor(this.source)
+        .map(connection => [
+          connection.getLabel(), 
+          () => this.openConnectionEditor(connection)]);
     
     const menuItems = [
       ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
@@ -128,7 +135,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   async openConnectionEditor(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
-    lively.setExtent(editor.parentElement, lively.pt(900, 200))
+    lively.setExtent(editor.parentElement, lively.pt(800, 50))
     editor.setConnection(connection)
   }
   
@@ -153,7 +160,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   finishCreatingConnection(target, targetProperty, event) {
-    let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
+    let connection = new Connection(this.source, this.sourceProperty, 
+                                    target, targetProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();
     if(!event.shiftKey){

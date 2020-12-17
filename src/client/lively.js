@@ -1276,8 +1276,7 @@ export default class Lively {
     }
   }
 
-
-  static showElement(elem, timeout) {
+  static showElement(elem, timeout=3000) {
     if (!elem || !elem.getBoundingClientRect) return ;
     var comp = document.createElement("div");
     var bounds = elem.getBoundingClientRect();
@@ -1302,7 +1301,7 @@ export default class Lively {
 
       + "</pre>";
 
-    setTimeout( () => comp.remove(), timeout || 3000);
+    if (timeout) setTimeout( () => comp.remove(), timeout);
     return comp;
   }
   

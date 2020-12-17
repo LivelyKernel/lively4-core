@@ -17,7 +17,7 @@
       border: 1px solid lightgray;
     }
     
-    .editors {
+    #editors {
       flex: 1;
       overflow: auto;
       background-color: rgba(240,240,240);
@@ -35,6 +35,14 @@
       color: white;
     }
     
+    #editors {
+      display: none
+    }
+    
+    #actionButtons {
+      float: right;
+      padding-right: 2px;
+    }
     
   </style>
   <div id="pane">
@@ -42,26 +50,37 @@
       <!--
       <input id="labelField" value=0>
       -->
-      <span id=sourceLabel class="label">Sou</span>
       <button title="set source" id="newSourceButton"><i class="fa fa-crosshairs" aria-hidden="true"></i></button>
+      <span id=sourceLabel class="label">Sou</span>
+      <span id="sourceProperty" class="label"></span>
+      
       <i style="height:0px" class="fa fa-arrow-right" aria-hidden="true"></i>
-      <span id=targetLabel class="label">Tar</span>
+      
       <button title="set target" id="newTargetButton"><i class="fa fa-crosshairs" aria-hidden="true"></i></button>  
+      <span id=targetLabel class="label">Tar</span>
+      <span id="targetProperty" class="label"></span>
+      
+      <span id="actionButtons">
+        <input id="activityCheckbox" name="activityCheckbox" type="checkbox">
+        <label for="activityCheckbox">active</label>
+        <button titlle="delete conntection" id="destroyButton"><i class="fa fa-trash" aria-hidden="true"></i></button>
+        <button title="save" id="saveButton"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+        
+        
+        
+        <button title="copy connection" id="copyButton"><i class="fa fa-copy" aria-hidden="true"></i></button>
+        
+        
+        <!--
+          <button title="toggle direction" id="toggleDirectionButton"></button>
+          <button id="drawConnectionArrowButton">Draw connection arrow</button>
+        -->
+        <button  id="editButton" title="edit connection"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+      </span>
     </div>
-    <div class="editors">
+    <div id="editors">
       <lively-code-mirror id="trackingCodeField">'lively.notify(5)'</lively-code-mirror>
       <lively-code-mirror id="modifyingCodeField">'lively.notify(5)'</lively-code-mirror>
     </div>
-    <div class="buttons">
-      <button titlle="delete conntection" id="destroyButton"><i class="fa fa-trash" aria-hidden="true"></i></button>
-      <button title="save" id="saveButton"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-      <!--
-        <button title="toggle direction" id="toggleDirectionButton"></button>
-        <button id="drawConnectionArrowButton">Draw connection arrow</button>
-      -->
-      <button title="copy connection" id="copyButton"><i class="fa fa-copy" aria-hidden="true"></i></button>
-      <input id="activityCheckbox" name="activityCheckbox" type="checkbox">
-      <label for="activityCheckbox">active</label>
-    </div>    
   </div>
 </template>

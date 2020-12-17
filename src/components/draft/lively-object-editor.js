@@ -107,12 +107,7 @@ export default class ObjectEditor extends Morph {
       this.targetElement.__scripts__ = {};
     }
 
-    if (!this.targetElement.dataset['livelyId']) {
-      var uuid = generateUUID();
-
-      this.targetElement.setAttribute('data-lively-id', uuid);
-      this.setAttribute('target', '$' + uuid);
-    }
+    lively.ensureID(this.targetElement)
 
     this.createObservers();
     
