@@ -90,7 +90,6 @@ export default class LivelyBibtexEntry extends Morph {
   }
   
   onCancel() {
-    debugger
     this.disableEditing()
   }
   

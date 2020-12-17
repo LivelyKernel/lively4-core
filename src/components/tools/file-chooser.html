@@ -1,0 +1,47 @@
+<template id="file-chooser" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+  }
+
+  #layout {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background-color: rgb(245,245,245);
+  }
+  
+  
+  #pane {
+    height: calc(100% - 30px);
+    overflow: hidden;
+    background-color: white;
+  }
+  
+  #buttons {
+    position: absolute;
+    height: 30px;
+    bottom: 0px;
+    right: 0px;
+  }
+
+  
+  lively-container-navbar {
+    
+  }
+  
+  
+  
+  
+</style>
+  <div id="layout">
+    <div id="pane">
+      <lively-container-navbar id="navbar"></lively-container-navbar>
+    </div>
+    <div id="buttons">
+        <button id="ok">ok</button>
+    </div>    
+  </div>
+</template>
+

@@ -128,6 +128,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   async openConnectionEditor(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
+    lively.setExtent(editor.parentElement, lively.pt(900, 200))
     editor.setConnection(connection)
   }
   
