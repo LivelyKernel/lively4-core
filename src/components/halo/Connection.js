@@ -13,6 +13,14 @@ export default class Connection {
     // return this._currentId++
   }
   
+  targetIsFunction() {
+    try {
+      return this.target[this._targetProperty] instanceof Function
+    } catch(e) {
+      return false
+    }
+  }
+  
   constructor(source, sourceProperty, target, targetProperty, isEvent) {
     debugger
     this.id = Connection.nextId();
@@ -27,16 +35,35 @@ export default class Connection {
     this._eventListener = evt => this.connectionFunction(evt)
     this._targetProperty = this.cleanProperty(this._targetProperty)
     if(isEvent){
+      if (this.targetIsFunction()) {
+        this.modifyingCode = 
       this.modifyingCode = 
+`(target, event) => {
+  target.${this._targetProperty}(event);
+}`;        
+      } else {
 `(target, event) => {
   target.${this._targetProperty} = 42;
 }`;
+      }
+        
       this.trackingCode = this._sourceProperty;
     } else {
-      this.modifyingCode = 
+      if (this.targetIsFunction()) {
+        this.modifyingCode = 
+`(target, sourceValue) => {
+  target.${this._targetProperty}(sourceValue);
+}`;   
+      } else {
+        this.modifyingCode = 
 `(target, sourceValue) => {
   target.${this._targetProperty} = sourceValue;
-}`;
+}`;        
+      }
+      
+      
+      
+      
       this._sourceProperty = this.cleanProperty(this._sourceProperty)
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
