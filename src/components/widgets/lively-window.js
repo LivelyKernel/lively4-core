@@ -80,7 +80,6 @@ export default class Window extends Morph {
     });
     this._attrObserver.observe(this, { attributes: true });
     
-    
     this.setAttribute("tabindex", 0)
   }
 

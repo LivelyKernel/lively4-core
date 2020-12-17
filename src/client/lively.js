@@ -1199,7 +1199,7 @@ export default class Lively {
   }
 
 
-  static showPath(path, color, printArrow) {
+  static showPath(path, color, printArrow, timeoutOrFalse=3000) {
     color = color || "red"
     var comp = this.createPath(path, color, printArrow)
     document.body.appendChild(comp);
@@ -1209,7 +1209,7 @@ export default class Lively {
     comp.isMetaNode = true;
     comp.style.pointerEvents = "none";
     comp.style.touchAction = "none";
-    setTimeout( () => comp.remove(), 3000);
+    if (timeoutOrFalse) setTimeout( () => comp.remove(), timeoutOrFalse);
     return comp
   }
 
@@ -1276,8 +1276,7 @@ export default class Lively {
     }
   }
 
-
-  static showElement(elem, timeout) {
+  static showElement(elem, timeout=3000) {
     if (!elem || !elem.getBoundingClientRect) return ;
     var comp = document.createElement("div");
     var bounds = elem.getBoundingClientRect();
@@ -1302,7 +1301,7 @@ export default class Lively {
 
       + "</pre>";
 
-    setTimeout( () => comp.remove(), timeout || 3000);
+    if (timeout) setTimeout( () => comp.remove(), timeout);
     return comp;
   }
   
@@ -1695,6 +1694,8 @@ export default class Lively {
       return desc.value && _.isFunction(desc.value)
     })
   }
+  
+  /*MD ## Events MD*/
 
   static onUnload() {
     // #TODO How to deal with multiple open lively pages?
@@ -1805,6 +1806,8 @@ export default class Lively {
     localStorage["logLivelyBoot"] = bool
   }
 
+  /*MD ### Focus MD*/
+  
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body
       || (element && element.id == "copy-hack-element")

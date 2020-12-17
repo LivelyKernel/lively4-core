@@ -274,11 +274,9 @@ export default class Files {
     return (await this.type(url)) == "file"
   }
 
-  // #TODO: should be 'directiory'
   static async isDirectory(url) {
-    return (await this.type(url)) == "file"
+    return (await this.type(url)) == "directory"
   }
-
 
   static directory(string) {
     string = string.toString()
@@ -656,7 +654,18 @@ export default class Files {
      return versions
   }
   
-  
+  /*MD ## File Chooser MD*/
+    
+  static async chooseFile(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFile(url)
+  }
+
+  static async chooseFiles(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFiles(url)
+  }
+
   
   
 }

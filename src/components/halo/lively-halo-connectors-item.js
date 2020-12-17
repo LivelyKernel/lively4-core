@@ -25,20 +25,21 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   attachedCallback() {
   }
+  
   detachedCallback() {
+  
   }
+
   async showMenu(evt, menuItems) {
     return ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
   }
   
   async showStartingConnectorsMenuFor(evt) {  
     
-    let connections = []
-    Connection.allConnections.forEach(connection => {
-      connections.push(connection)
-    })
-    let existingConnectionsMenu = connections.map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
-    let myConnectionsMenu = Connection.allConnectionsFor(this.source).map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let myConnectionsMenu = Connection.allConnectionsFor(this.source)
+        .map(connection => [
+          connection.getLabel(), 
+          () => this.openConnectionEditor(connection)]);
     
     const menuItems = [
       ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
@@ -47,8 +48,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       ['Events', this.getAllEventsFor(this.source, evt)],
       ['Style', this.getAllStylesFor(this.source, evt)],
       ['On custom...', () => this.startCreatingConnectionCustom(evt)],
-      ['My Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
-      ['All Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
+      ['Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
     ];
     
     return this.showMenu(evt, menuItems);
@@ -94,8 +94,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   elementUnderHand(evt) {
-    var path = evt.composedPath().slice(evt.composedPath().indexOf(evt.srcElement))
-    return path[0]
+    return lively.hand.elementUnderHand(evt)
   }
   
   onPointerMove(evt) {
@@ -111,9 +110,10 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.valueIndicator.remove();
     }
     this.valueIndicator = <span>{this.sourceProperty}</span>;
+    this.valueIndicator.isMetaNode = true
     this.valueIndicator.style.zIndex = 200;
-    lively.setGlobalPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
     document.body.appendChild(this.valueIndicator);
+    lively.setGlobalPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
   }
   
   onPointerUp(evt) {
@@ -128,6 +128,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   async openConnectionEditor(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
+    lively.setExtent(editor.parentElement, lively.pt(800, 50))
     editor.setConnection(connection)
   }
   
@@ -152,7 +153,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   finishCreatingConnection(target, targetProperty, event) {
-    let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
+    let connection = new Connection(this.source, this.sourceProperty, 
+                                    target, targetProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();
     if(!event.shiftKey){

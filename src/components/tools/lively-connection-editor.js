@@ -6,26 +6,109 @@ import Rasterize, { CloneDeepHTML } from 'src/client/rasterize.js';
 
 export default class LivelyConnectionEditor extends Morph {
   async initialize() {
+    this.registerAttributes(["sourceId", "connectionId"])
+    
     this.windowTitle = "LivelyConnectionEditor";
     this.registerButtons();
     this.activityCheckbox.addEventListener("click", () => this.activeChanged());
-    this.sourcePicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.sourcePicture.children[0], this.connection.getSource()))
-    this.targetPicture.addEventListener('mouseenter', () => this.startDrawingArrowToSource(this.targetPicture.children[0], this.connection.getTarget()))
-    this.get("#labelField").value = this.getAttribute("data-mydata-label") || 0;
+    
+    this.findConnection()
+    if (this.connection) {
+      this.setConnection(this.connection)
+    }
+    
+    // this.get("#labelField").value = this.getAttribute("data-mydata-label") || 0;
+
     this.trackingCodeField.editorLoaded().then(() => {this.trackingCodeField.doSave = () => this.saveConnection()})
     this.modifyingCodeField.editorLoaded().then(() => {this.modifyingCodeField.doSave = () => this.saveConnection()})
   }
+  
+  findConnection() {
+    if (this.sourceId && this.connectionId) {
+      var sourceElement = lively.elementByID(this.sourceId)
+      this.connection = Connection.allConnectionsFor(sourceElement).find(ea => ea.id == this.connectionId)
+      if (!this.connection) throw new Error("Could not find Connection " + this.connectionId)
+    } 
+  }
+  
+  /*MD ## UI MD*/
+  
+  drawArrowToSource(from, to) {
+    
+    if (from.pathHightlight) {
+      from.pathHightlight.remove()
+    }
+    // let line = [lively.getGlobalCenter(from), lively.getGlobalCenter(to)];
+    // from.pathHightlight = lively.showPath(line, "rgba(80,180,80,1)", true, false);
 
+    
+    from.pathHightlight = lively.showElement(to, false)
+    from.pathHightlight.innerHTML = ""
+    from.pathHightlight.style.border = "3px dashed orange"
+  }
+  
+  removeArrowToSource(from, target) {
+    if (from.pathHightlight) {
+      from.pathHightlight.remove()
+    }
+  }
+  
+  
+  
+  registerHighlight(element, target) {
+    element.addEventListener('mouseenter', () =>
+      this.drawArrowToSource(element, target))
+    element.addEventListener('mouseleave', () =>
+      this.removeArrowToSource(element, target))
+
+  }
+  
+  attacheCallback() {
+    this.updateConnectorHighlight()
+  }
+  
+  detachedCallback() {
+    if (this.connection) this.connection.removeConnectionLine()
+  }
+  
+  async updateConnectorHighlight() {
+    if (!this.connection) return
+    
+    this.connection.drawConnectionLine();
+  }
+  
+  updateEditors() {
+    this.get("#trackingCodeField").editorLoaded().then(() => 
+      this.get('#trackingCodeField').value = this.connection.getTrackingCode())
+    this.get("#modifyingCodeField").editorLoaded().then(() => 
+      this.get('#modifyingCodeField').value = this.connection.getModifyingCode())
+  }
+  
+  
   setConnection(connection) {
+    
     this.connection = connection;
-    this.get("#labelField").value = this.connection.getLabel();
-    this.get("#sourceLabel").innerHTML = 'Source: ' + this.getClassName(this.connection.getSource());
-    this.get("#targetLabel").innerHTML = 'Target: ' + this.getClassName(this.connection.getTarget());
+    if (this.connection) {
+      this.sourceId = this.connection.sourceId
+      this.connectionId = this.connection.id
+    }
+    this.updateView()
+  }
+
+  updateView() {
+    if (!this.connection) return
+    
+    this.get("#sourceLabel").innerHTML = lively.elementToCSSName(this.connection.getSource());
+    this.get("#sourceProperty").innerHTML = this.connection.sourceProperty;
+    
+    this.get("#targetLabel").innerHTML = lively.elementToCSSName(this.connection.getTarget());
+    this.get("#targetProperty").innerHTML = this.connection.targetProperty;
+    
     this.activityCheckbox.checked = this.connection.isActive;
-    this.addPictureForElement(this.connection.getSource(), this.sourcePicture);
-    this.addPictureForElement(this.connection.getTarget(), this.targetPicture);
-    this.get("#trackingCodeField").editorLoaded().then(() => this.get('#trackingCodeField').value = this.connection.getTrackingCode())
-    this.get("#modifyingCodeField").editorLoaded().then(() => this.get('#modifyingCodeField').value = this.connection.getModifyingCode())
+    this.updateEditors()
+    this.registerHighlight(this.get("#sourceLabel"), this.connection.getSource())
+    this.registerHighlight(this.get("#targetLabel"), this.connection.getTarget())      
+    this.updateConnectorHighlight()    
   }
 
   addPictureForElement(element, container) {
@@ -62,6 +145,33 @@ export default class LivelyConnectionEditor extends Morph {
     return path[0]
   }
   
+  getClassName(object){
+    return (object.constructor&&object.constructor.name) || object.toString()
+  }
+  
+  activeChanged() {
+    this.connection.setActive(this.activityCheckbox.checked);
+  }
+
+  get activityCheckbox() {
+    return this.get("#activityCheckbox");
+  }
+  
+  saveConnection() {
+    // this.connection.setLabel(this.get("#labelField").value);
+    this.trackingCodeField.editorLoaded().then(() => this.connection.setTrackingCode(this.trackingCodeField.value))
+    this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCode(this.modifyingCodeField.value))
+  }
+  
+  get trackingCodeField() {
+    return this.get("#trackingCodeField")
+  }
+  
+  get modifyingCodeField() {
+    return this.get("#modifyingCodeField")
+  }
+  /*MD ## Events MD*/
+  
   onPointerMove(evt) {
     if (this.dropIndicator) this.dropIndicator.remove()
     this.dropTarget = this.elementUnderHand(evt)
@@ -80,26 +190,7 @@ export default class LivelyConnectionEditor extends Morph {
     
     this.saveNewElement(morph);
   }
-  
-  get sourcePicture() {
-    return this.get("#sourcePicture");
-  }
-
-  get targetPicture() {
-    return this.get("#targetPicture");
-  }
-
-  getClassName(object){
-    return (object.constructor&&object.constructor.name) || object.toString()
-  }
-  
-  activeChanged() {
-    this.connection.setActive(this.activityCheckbox.checked);
-  }
-
-  get activityCheckbox() {
-    return this.get("#activityCheckbox");
-  }
+    
   
   onNewSourceButton() {
     this.chooseNewElement(true)
@@ -108,11 +199,7 @@ export default class LivelyConnectionEditor extends Morph {
   onNewTargetButton() {
     this.chooseNewElement(false)
   }
-
-  onDrawConnectionArrowButton() {
-    this.connection.drawConnectionLine();
-  }
-  
+ 
   onDestroyButton() {
     this.connection.destroy();
     if (this.parentElement && this.parentElement.localName === 'lively-window') {
@@ -126,20 +213,21 @@ export default class LivelyConnectionEditor extends Morph {
     this.saveConnection();
   }
   
-  saveConnection() {
-    this.connection.setLabel(this.get("#labelField").value);
-    this.trackingCodeField.editorLoaded().then(() => this.connection.setTrackingCode(this.trackingCodeField.value))
-    this.modifyingCodeField.editorLoaded().then(() => this.connection.setModifyingCode(this.modifyingCodeField.value))
+  onEditButton() {
+    if (this.get("#editors").style.display == "block") {
+      this.get("#editors").style.display = "none"
+      // #TODO how windows and components.... haggle out their size... lässt zu wünschen übrig
+      this.parentElement.style.height = "50px" 
+    } else {
+      this.get("#editors").style.display = "block"
+      for (let ea of this.shadowRoot.querySelectorAll('lively-code-mirror')) {
+        ea.value = ea.value // force update
+      }
+      this.parentElement.style.height = "250px"
+    }
+    
   }
-  
-  get trackingCodeField() {
-    return this.get("#trackingCodeField")
-  }
-  
-  get modifyingCodeField() {
-    return this.get("#modifyingCodeField")
-  }
-  
+    
   onCopyButton() {
     let copiedConnection = this.connection.copyAndActivate();
     this.openEditorForConnection(copiedConnection);
@@ -155,16 +243,11 @@ export default class LivelyConnectionEditor extends Morph {
     this.setConnection(this.connection);
   }
 
-  startDrawingArrowToSource(from, to) {
-    let line = [lively.getGlobalCenter(from), lively.getGlobalCenter(to)];
-    lively.showPath(line, "rgba(80,180,80,1)", true);
-  }
-  
-  /* Lively-specific API */
+  /*MD ## Lively-specific API MD*/
 
   // store something that would be lost
   livelyPrepareSave() {
-    this.setAttribute("data-mydata-label", this.get("#labelField").value)
+    // this.setAttribute("data-mydata-label", this.get("#labelField").value)
   }
 
   livelyPreMigrate() {
@@ -172,7 +255,7 @@ export default class LivelyConnectionEditor extends Morph {
   }
 
   livelyMigrate(other) {
-    this.setConnection(other.connection);
+    // this.setConnection(other.connection);
   }
 
   livelyInspect(contentNode, inspector) {

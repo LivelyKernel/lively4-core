@@ -23,17 +23,13 @@ export default class IndexSearch extends Morph {
     Bindings.connect(this, "replace", this.get("#replaceInput"), "value");
     
     this.registerSignalEnter(this.shadowRoot)
-    this.get("#replaceInput").addEventListener("enter-pressed", () => this.onReplaceInputEnter());
+    this.get("#replaceInput").addEventListener("enter-pressed", () => this.updateReplacePreview());
     this.get("#searchInput").addEventListener("enter-pressed", () => this.onSearchButton());
     this.get("#scopeInput").addEventListener("enter-pressed", () => this.onSearchButton());
     
     // kick off search...
     if(this.pattern) {
       await this.search();
-      
-      if(this.replace) {
-        await this.updateReplacePreview();
-      }
     }
   }
   
@@ -62,13 +58,15 @@ export default class IndexSearch extends Morph {
     } else {
       this.mode = "replace"      
     }
+    this.search();
   }
 
   onReplaceInputEnter() {
     this.updateReplacePreview()
   }
   
-  onReplaceButton() {
+  async onReplaceButton() {
+   
     this.replaceInFiles()
   }
   /*MD ## Search MD*/
@@ -79,7 +77,7 @@ export default class IndexSearch extends Morph {
       this.pattern = text;
     }
 
-    if (this.pattern.length < 2) {
+    if (!this.pattern || this.pattern.length < 2) {
       this.log("please enter a longer search string");
       this.searchInProgres = false;
       return; 
@@ -155,6 +153,7 @@ export default class IndexSearch extends Morph {
             line: lineNumber,
             column: m.index,
             text: eaLine,
+            indexed: ea.file, 
             selection: m[0]
           })          
         }
@@ -190,7 +189,7 @@ export default class IndexSearch extends Morph {
   }
 
   // #important
-  updateSearchResults(search=this.pattern) {
+  async updateSearchResults(search=this.pattern) {
     var list = _.sortBy(this.files, ea => ea.url)
     let lastPrefix
     for (var ea of list) {
@@ -232,6 +231,10 @@ export default class IndexSearch extends Morph {
       
       this.get("#searchResults").appendChild(item);
     }
+    
+    if(this.replace) {
+      await this.updateReplacePreview();
+    }
   }
   
   hightlightPattern(text, pattern) {
@@ -255,15 +258,27 @@ export default class IndexSearch extends Morph {
     await this.replaceInFiles()
   }
   
+  hasPreview() {
+    return this.files && (this.files.length > 0) && this.files[0].item.querySelector("td#replace")
+  }
+  
+  
   updateReplacePreview() {
+    if (this.mode != "replace") return
     for (var file of this.files) {
       if (file.item) {
         file.item.querySelectorAll("#replace").forEach(td => td.remove());
         
         var newText = file.text.replace(new RegExp(this.pattern, "g"), this.replace)
+        file.replaced = newText
         var replacedText = this.hightlightPattern(newText, this.replace)
         var replacePreviewColumn = <td id="replace">{replacedText}</td>
         file.item.appendChild(replacePreviewColumn)
+        
+        
+        file.item.querySelectorAll("#select").forEach(td => td.remove());
+        var selectColumn = <td id="select"><input type="checkbox" checked></input></td>
+        file.item.insertBefore(selectColumn, file.item.childNodes[0])
       }
     }    
   }
@@ -274,20 +289,56 @@ export default class IndexSearch extends Morph {
       this.log("please search files first")
       return
     }
+    
+    if (!this.hasPreview()) {
+      await this.updateReplacePreview()
+    }
+    
     let toReplace = []
     let regex = new RegExp(pattern, "g")
-    for (let url of this.files.map(ea => ea.url).uniq()) {
+    var selectedFilesLines = this.files.filter(ea => ea.item.querySelector("td#select input").checked)
+   
+    var warnings = []
+    var selectedFiles = selectedFilesLines.map(ea => ea.url).uniq()    
+    for (let url of selectedFiles) {
       let getRequest = await fetch(url)
       let lastVersion = getRequest.headers.get("fileversion")
       let contents = await getRequest.text()
-      let newcontents = contents.replace(regex, replace)
-      if (contents == newcontents) {
-        this.log("pattern did not match " + pattern) 
+      
+      var lines = selectedFilesLines.filter(ea => ea.url == url)
+      
+      if (contents === lines[0].indexed.content ) {
+        // #TODO instead of replacing everthing, we should honor the selection?
+        
+        let newcontents = contents.split("\n").map((ea, index) => {
+          var line = lines.find(ea => ea.line == index)
+          if (line) {
+            if (line.text != ea) {
+              throw new Error("original line changed!")
+            }
+            
+            return line.replaced // our replacement 
+          } else {
+            return ea
+          }
+        }).join("\n")
+        
+        //  let oldnewcontents = contents.replace(regex, replace)
+        // if (oldnewcontents !== newcontents) {
+        //   throw new Error("Upsi!")
+        // }
+        
+        if (contents == newcontents) {
+          this.log("pattern did not match " + pattern) 
+        }
+        toReplace.push({url: url, lastversion: lastVersion, oldcontent: contents, newcontent: newcontents})        
+      } else {
+        lines.forEach(line => line.item.style.outline = "1px solid red")
+        warnings.push("WARNING: skip " + url + ", because content changed!")         
       }
-      toReplace.push({url: url, lastversion: lastVersion, oldcontent: contents, newcontent: newcontents})
     }
   
-     if (!(await this.confirmReplaceDialog(toReplace, regex))) {
+     if (!(await this.confirmReplaceDialog(toReplace, regex, warnings))) {
       lively.warn("replacing files canceled");
       return;
     }
@@ -334,15 +385,16 @@ export default class IndexSearch extends Morph {
     }
   }
   
-  confirmReplaceDialog(toReplace, regex) {
+  confirmReplaceDialog(toReplace, regex, warnings) {
     const list = toReplace.map(ea => {
-      var numberOfMatches = Strings.matchAll(regex, ea.oldcontent).length;
       var filename = ea.url.replace(/.*\//, "");
-      return <li>{filename}: {numberOfMatches} occurence(s)</li>;
+      return <li>{filename}</li>;
     });
+    warnings = warnings
     var msg = <div>Replace 
                 <b>{this.pattern}</b> with <b>{this.replace}</b> 
                 in {toReplace.length} files?
+                <div style="color: red; white-space: pre;">{warnings.join("\n")}</div>
                 <ul style="font-size: 10pt">
                   {...list}
                 </ul>

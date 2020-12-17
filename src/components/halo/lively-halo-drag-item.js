@@ -42,7 +42,7 @@ export default class HaloDragItem extends HaloItem {
   }
    
   stop(evt) {
-    this.halo.info.stop()
+    this.halo.info && this.halo.info.stop()
     //  STOP DRAGGING
     if (this.isDragging) {    
       this.isDragging = false;
@@ -72,7 +72,9 @@ export default class HaloDragItem extends HaloItem {
       } else {
          lively.setPosition(this.dragTarget, newPosition, "relative");
       }
-      this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
+      if (this.halo.info) {
+        this.halo.info.innerHTML = "drag " + lively.getPosition(this.dragTarget)
+      }
     }
     evt.preventDefault();
   }
