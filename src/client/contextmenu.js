@@ -420,6 +420,20 @@ export default class ContextMenu {
           }
           this.hide();
         }],
+        ["List", async evt => {
+          var morph  = await (<lively-list>
+              <li>one</li>
+              <li>two</li>
+              <li>three</li>
+              <li>four</li>
+            </lively-list>)
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          this.hide();
+        }],
         ["Path", async evt => {
           var morph  = await lively.openPart("path")
           this.openCenteredAt(morph, worldContext, evt)          

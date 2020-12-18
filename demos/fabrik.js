@@ -1,7 +1,7 @@
 // DRAFT JUST to have a look at it again.
 
 import Morph from "src/components/widgets/lively-morph.js"
-
+import {pt} from "src/client/graphics.js"
 
 /**
  * Fabrik.js.  This file contains Fabrik  
@@ -29,6 +29,14 @@ import Morph from "src/components/widgets/lively-morph.js"
 
 
 // STUBS
+var Global = {
+  
+}
+
+class WorldMorph {
+  
+}
+
 class Widget {
   
 }
@@ -37,6 +45,9 @@ class SelectionMorph {
   
 }
 
+class Class {
+  
+}
 
 // logMethod(Morph.prototype, 'onMouseDown');
 
@@ -52,9 +63,9 @@ export default class Fabrik {
 	}
 	
 	addTextComponent(toComponent) {
-		 var c = new TextComponent();
-		 toComponent.plugin(c);
-		 return c;
+     var c = new TextComponent();
+     toComponent.plugin(c);
+     return c;
 	}
 
 	addFunctionComponent(toComponent) {
@@ -130,11 +141,11 @@ export default class Fabrik {
 
 	openFabrikTextListExample() {
 		// the next variables are intentionally defined global
-		f = this.openFabrikComponent();
-		input = this.addFunctionComponent(f);
+		var f = this.openFabrikComponent();
+		var input = this.addFunctionComponent(f);
 		input.setFunctionBody("return ['eins', 'zwei', 'drei']")
-		list = this.addTextListComponent(f);
-		out = this.addTextComponent(f);
+		var list = this.addTextListComponent(f);
+		var out = this.addTextComponent(f);
 		f.connectComponents(input, "Result", list, "List");
 		f.connectComponents(list, "Selection", out, "Text");	
 		f.morph.automaticLayout();
@@ -152,7 +163,7 @@ export default class Fabrik {
 		m1.changed = function(){c.updateView()};
 		m2.changed = function(){c.updateView()};
 		
-		world = WorldMorph.current();
+		var world = WorldMorph.current();
 		world.addMorph(c);
 		world.addMorph(m1);
 		world.addMorph(m2);
@@ -284,8 +295,8 @@ export default class Fabrik {
 		var zipInput = this.addTextComponent(base); zipInput.panel.setExtent(pt(100,50));
 		
 		/* 
-		 * Building the requester Fabrik
-		 */
+     * Building the requester Fabrik
+     */
 		var requestor = this.openFabrikComponent(world, loc, pt(700, 250), 'Request Weather');
 		requestor.morph.owner.remove(); // FIXME hack so that window morph disappears...
 		base.morph.addMorph(requestor.morph);
@@ -1294,7 +1305,7 @@ class PinConnector extends Widget {
 		
 		
     this.fromPin = fromPinHandle; 
-		this.toPin = toPinHandle;				 
+		this.toPin = toPinHandle;		     
 		this.isBidirectional = false;
 		
 		if (toPinHandle.isFakeHandle) return;
@@ -1503,8 +1514,8 @@ class ComponentMorph extends Morph {
 		var self = this;
 		menu.addItem(["add pin named...", function() { 
 			WorldMorph.current().prompt('Name for Pin?', function(name) {
-				 self.component.addFieldAndPinHandle(name) }, 'Test')}]
-			 );
+		     self.component.addFieldAndPinHandle(name) }, 'Test')}]
+	     );
 		return menu;
 	}
 
@@ -2003,7 +2014,7 @@ class Component extends Widget {
 		this.morph = null;
 		this.pinHandles.each(function(ea) {ea.deleteView});
 	}
-			 
+	     
 	addField(fieldName, coercionSpec, forceSet) {
 		this.formalModel.addField(fieldName, coercionSpec, forceSet);
 		this.pvtCreateAccessorsForField(fieldName);
@@ -2257,10 +2268,10 @@ class FabrikMorph extends ComponentMorph {
 	
 	// remove and put stuff in setupforcomponent instead
 	setupForFabrik(fabrik){
-		 this.fabrik = fabrik;  // remove instance var, component is sufficient
-		 this.component = fabrik;
-		 this.component.components.each(function(ea) { this.addMorphForComponent(ea) }, this);
-		 this.component.connectors.each(function(ea) { this.addMorph(ea.morph || ea.buildView()) }, this);		
+     this.fabrik = fabrik;  // remove instance var, component is sufficient
+     this.component = fabrik;
+     this.component.components.each(function(ea) { this.addMorphForComponent(ea) }, this);
+     this.component.connectors.each(function(ea) { this.addMorph(ea.morph || ea.buildView()) }, this);		
 	}
 	
 	setupHaloItems(){
@@ -2328,8 +2339,8 @@ class FabrikMorph extends ComponentMorph {
 		// var handle = new HandleMorph(pt(0,0), lively.scene.Rectangle, evt.hand, this.userFrame, "bottomRight");
 		// 	handle.setExtent(pt(0, 0));
 		// 	handle.mode = 'reshape';
-		//		 this.userFrame.addMorph(handle);
-		//		 evt.hand.setMouseFocus(handle);
+		//     this.userFrame.addMorph(handle);
+		//     evt.hand.setMouseFocus(handle);
 	}
 
 	makeSelection(evt) {  //default behavior is to grab a submorph
@@ -2357,7 +2368,7 @@ class FabrikMorph extends ComponentMorph {
 	updateAfterCollapse() {
 		this.updateHaloItemPositions();
 		if (this.isFramed())
-		   	this.setExtent(this.getExtent().addPt(this.owner.titleBar.getExtent().withX(0)));
+       	this.setExtent(this.getExtent().addPt(this.owner.titleBar.getExtent().withX(0)));
 	}
 	
 	collapse() {
@@ -2378,7 +2389,7 @@ class FabrikMorph extends ComponentMorph {
 				ea.panel.dimMorph.remove();
 			if (ea.panel.isCollapsed == false) {
 				// console.log("collapse " + ea);
-			 	ea.panel.collapseToggle(true);
+	     	ea.panel.collapseToggle(true);
 			};
 		});
 		
@@ -2392,7 +2403,7 @@ class FabrikMorph extends ComponentMorph {
 				this.removeMorph(ea.morph); 
 				this.hiddenContainer.addMorph(ea.morph)}.bind(this));
 			this.positionAndExtentChange(this.collapsedPosition || this.getPosition(),
-										 this.collapsedExtent || this.component.defaultCollapsedExtent);
+								     this.collapsedExtent || this.component.defaultCollapsedExtent);
 		}
 	}
 	
@@ -2430,12 +2441,12 @@ class FabrikMorph extends ComponentMorph {
 	minExtent() {
 		return pt(10,5);
 		// if (this.isCollapsed) return pt(10,5);
-		//		 var borderMorphs = this.getComponentMorphsNearBorders();
-		//		 var topY = borderMorphs.top ? borderMorphs.top.getPosition().y : 0;
-		//		 var leftX = borderMorphs.left ? borderMorphs.left.getPosition().y : 0;
-		//		 var bottomY = borderMorphs.bottom ? borderMorphs.bottom.bounds().maxY() : 50;
-		//		 var rightX = borderMorphs.right ? borderMorphs.right.bounds().maxX() : 50;
-		//		 return pt(rightX - leftX, bottomY - topY);
+		//     var borderMorphs = this.getComponentMorphsNearBorders();
+		//     var topY = borderMorphs.top ? borderMorphs.top.getPosition().y : 0;
+		//     var leftX = borderMorphs.left ? borderMorphs.left.getPosition().y : 0;
+		//     var bottomY = borderMorphs.bottom ? borderMorphs.bottom.bounds().maxY() : 50;
+		//     var rightX = borderMorphs.right ? borderMorphs.right.bounds().maxX() : 50;
+		//     return pt(rightX - leftX, bottomY - topY);
 	}
 	
 	getComponentMorphsNearBorders() {
@@ -2797,7 +2808,7 @@ class FunctionComponentMorph extends ComponentMorph {
 	
 	setupHaloItems(){
 		super.setupHaloItems();
-		 var inputHalo = this.addHaloItem("+input", new Rectangle(0,0,45,20),
+     var inputHalo = this.addHaloItem("+input", new Rectangle(0,0,45,20),
 			{relativePosition: pt(0,0), positionOffset: pt(0,-20)},
 			{fill: Color.blue.lighter().lighter()/*, fillOpacity: 0.5*/});
 		inputHalo.connectModel({model: this.component, setValue: "interactiveAndNewInputField"});
@@ -2816,7 +2827,7 @@ class FunctionComponentMorph extends ComponentMorph {
 		// this.functionBodyMorph.boundEval = this.functionBodyMorph.boundEval.wrap(function(proceed, str) {
 			// var forceImplicit = !str.match(/^[ ]*return /);
 			// var source = self.component.composeFunction(self.component.formalModel.getFunctionHeader(), str, interactiveEval, forceImplicit);
-			// console.log("eval: " + source)		  
+			// console.log("eval: " + source)      
 			// return eval(source).apply(self.component, self.component.parameterValues());
 		// });
 	}		
@@ -3246,15 +3257,15 @@ class ComponentBoxMorph extends Morph {
 
 	buildContent() {
 		this.addMorphOfComponent(new FabrikComponent(), function() {
-			  var extent = pt(300,250);
-			  var fabrik = new FabrikComponent();
-			  fabrik.defaultViewExtent = extent;
-			  fabrik.viewTitle = 'Fabrik';
-			  fabrik.openIn(WorldMorph.current(), WorldMorph.current().hands.first().getPosition().midPt(extent));
-			  return fabrik.panel.owner;
+	      var extent = pt(300,250);
+	      var fabrik = new FabrikComponent();
+	      fabrik.defaultViewExtent = extent;
+	      fabrik.viewTitle = 'Fabrik';
+	      fabrik.openIn(WorldMorph.current(), WorldMorph.current().hands.first().getPosition().midPt(extent));
+	      return fabrik.panel.owner;
 	  	});
 	  	var defaultCreateFunc = function(theClass, optExtent) {
-		  	return new theClass().buildView(optExtent);
+      	return new theClass().buildView(optExtent);
 	  	};
 	  	this.addMorphOfComponent(new FunctionComponent(), defaultCreateFunc.curry(FunctionComponent));
 		this.addMorphOfComponent(new TextComponent(), defaultCreateFunc.curry(TextComponent));
