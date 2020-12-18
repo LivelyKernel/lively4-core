@@ -322,6 +322,17 @@ export default class Connection {
   getLabel() {
     return this._sourceProperty + "⇨" + this._targetProperty 
   }
+
+  getFullLabel() {
+    try {
+      return lively.elementToCSSName(this.getSource()) + " " + this._sourceProperty +
+        "⇨" + lively.elementToCSSName(this.getTarget()) + " "+ this._targetProperty      
+    } catch(e) {
+      return this.getLabel()
+    }
+    
+  }
+
   
   setLabel(string) {
     this.label = string // not used...
