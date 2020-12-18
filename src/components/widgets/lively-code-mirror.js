@@ -941,6 +941,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   set value(text) {
+    if (text === undefined) text = ""
     if (this.editor) {
       this.editor.setValue(text)
     } else {
