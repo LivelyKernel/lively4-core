@@ -22,7 +22,6 @@ export default class Connection {
   }
   
   constructor(source, sourceProperty, target, targetProperty, isEvent) {
-    debugger
     this.id = Connection.nextId();
     window.allConnections.add(this);
     
@@ -34,16 +33,17 @@ export default class Connection {
     this.isActive = false
     this._eventListener = evt => this.connectionFunction(evt)
     this._targetProperty = this.cleanProperty(this._targetProperty)
+    
+    
     if(isEvent){
-      if (this.targetIsFunction()) {
-        this.modifyingCode = 
+      if (this.targetIsFunction()) { 
       this.modifyingCode = 
 `(target, event) => {
   target.${this._targetProperty}(event);
 }`;        
       } else {
-`(target, event) => {
-  target.${this._targetProperty} = 42;
+      this.modifyingCode = `(target, event) => {
+  target.${this._targetProperty} = event;
 }`;
       }
         
@@ -322,6 +322,17 @@ export default class Connection {
   getLabel() {
     return this._sourceProperty + "⇨" + this._targetProperty 
   }
+
+  getFullLabel() {
+    try {
+      return lively.elementToCSSName(this.getSource()) + " " + this._sourceProperty +
+        "⇨" + lively.elementToCSSName(this.getTarget()) + " "+ this._targetProperty      
+    } catch(e) {
+      return this.getLabel()
+    }
+    
+  }
+
   
   setLabel(string) {
     this.label = string // not used...

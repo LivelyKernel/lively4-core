@@ -21,6 +21,7 @@ import Favorites from "src/client/favorites.js"
 import { applicationFolder } from 'src/client/vivide/utils.js';
 import { createView } from 'src/client/vivide/scripts/loading.js';
 import SearchRoots from "src/client/search-roots.js"
+import Connection from "src/components/halo/Connection.js";
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -330,6 +331,19 @@ export default class ContextMenu {
   
   // #important
   static worldMenuItems(worldContext) {
+    
+    let connections = []
+    Connection.allConnections.forEach(connection => {
+      connections.push(connection)
+    })
+    let existingConnectionsMenu = connections.map(connection => [connection.getFullLabel(), 
+      async () => {
+        let editor = await lively.openComponentInWindow('lively-connection-editor')
+        lively.setExtent(editor.parentElement, lively.pt(800, 50))
+        editor.setConnection(connection)
+      }]);
+        
+
     var items =  [
       ["Workspace", evt => {
         this.hide();
@@ -611,6 +625,13 @@ export default class ContextMenu {
           } 
         }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
+      [
+        "Debug", [
+          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
+          
+        ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
+      ],
+      
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 
           "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
