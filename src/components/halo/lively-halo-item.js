@@ -17,6 +17,15 @@ export default class HaloItem extends Morph {
   
   get isMetaNode() { return true}
   
+  get halo() {
+    return this.parentElement
+  }
+  
+  set halo(v) {
+    // nothing to set here any more
+  }
+  
+  
   initialize() {
     // super.initialize()
     this.registerMouseEvents()

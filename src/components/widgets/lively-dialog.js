@@ -31,8 +31,13 @@ export default class Dialog extends Morph {
     this.remove()
   }
   
-  async confirm(msg) {
-    this.get("#message").innerHTML = msg
+  async confirm(msgOrElement) {
+    if (msgOrElement instanceof HTMLElement) {
+      this.get("#message").innerHTML = ""
+      this.get("#message").appendChild(msgOrElement)
+    } else {
+      this.get("#message").innerHTML = msgOrElement
+    }
     return new Promise((resolve, reject) => {
       this.resolve = resolve
     })

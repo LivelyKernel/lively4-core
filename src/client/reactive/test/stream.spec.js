@@ -323,4 +323,203 @@ describe("Streams", function() {
       });
     });
   });
+  describe("generator interaction", function() {
+
+    it("Stream.from(<GeneratorFunction>)", async () => {
+      const s = Stream.from(function*() {
+        yield 1;
+        yield 2;
+        yield 3;
+      });
+
+      const dataSpy = dataSpyFor(s);
+      const endSpy = endSpyFor(s);
+
+      expect(dataSpy).to.be.calledThrice;
+      expect(dataSpy.withArgs(1)).to.be.calledBefore(dataSpy.withArgs(2));
+      expect(dataSpy.withArgs(2)).to.be.calledBefore(dataSpy.withArgs(3));
+      expect(endSpy).to.be.calledOnce;
+    });
+
+    it("Stream.from(<AsyncGeneratorFunction>)", async () => {
+      const s = Stream.from(async function*() {
+        yield 1;
+        await lively.sleep(500)
+        yield 2;
+        await lively.sleep(500)
+        yield 3;
+      });
+
+      const dataSpy = dataSpyFor(s);
+      const endSpy = endSpyFor(s);
+
+      expect(dataSpy).not.to.be.called;
+      expect(endSpy).not.to.be.called;
+
+      await lively.sleep(250)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(1);
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+
+      await lively.sleep(500)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(2);
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+
+      await lively.sleep(500)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(3);
+      expect(endSpy).to.be.calledOnce;
+    });
+
+    it(".asAsyncGenerator", async () => {
+      let val = 0;
+
+      const stream = new Stream();
+
+      // already existing increments
+      stream.write(val++);
+      stream.write(val++);
+
+      (async () => {
+        stream.write(val++);
+
+        await lively.sleep(10);
+        stream.write(val++);
+
+        await lively.sleep(10);
+        stream.write(val++);
+
+        await lively.sleep(10);
+        stream.write(val++);
+
+        await lively.sleep(10);
+        stream.write(val++);
+        stream.end();
+        // executed before #final_check, because the `end` is for await loop continues executed as a new async micro task (this is why we need the `- 1` in #final_check)
+        stream.write(val++);
+
+        // test is already over
+        await lively.sleep(10);
+        stream.write(val++);
+      })();
+
+      let j = 0;
+      for await (let v of stream.asAsyncGenerator()) {
+        expect(v).to.equal(j++);
+      }
+      // #final_check
+      expect(j).to.equal(val - 1);
+    });
+
+    it(".asAsyncGenerator can deal with multiple changes in a synchronous execution", async () => {
+      let val = 0;
+
+      const stream = new Stream();
+
+      (async () => {
+        await lively.sleep(10);
+        stream.write(val++);
+        stream.write(val++);
+        stream.write(val++);
+        stream.end();
+        stream.write(val++);
+      })();
+
+      let j = 0;
+      for await (let v of stream.asAsyncGenerator()) {
+        expect(v).to.equal(j++);
+      }
+      expect(j).to.equal(3);
+    });
+
+    it("multiple .asAsyncGenerator can co-exist", async () => {
+      let val = 0;
+
+      const stream = new Stream();
+
+      (async () => {
+        await lively.sleep(10);
+        stream.write(val++);
+        stream.write(val++);
+        stream.write(val++);
+        stream.end();
+        stream.write(val++);
+      })();
+
+      async function loop() {
+        let j = 0;
+        for await (let v of stream.asAsyncGenerator()) {
+          expect(v).to.equal(j++);
+        }
+        return j;
+      }
+      
+      const iterationCounts = await Promise.all((2).times(loop));
+      iterationCounts.forEach(j => {
+        expect(j).to.equal(3);
+      });
+    });
+
+    it("Stream::transform(<AsyncGeneratorFunction>)", async () => {
+      const src = new Stream();
+      const dest = src.transform(async function*(gen) {
+        for await (let i of gen) {
+          yield i
+          yield i+1
+          await lively.sleep(200)
+          yield i+2
+          await lively.sleep(500)
+          yield i+3
+        }
+      });
+
+      (async () => {
+        src.write(1);
+        await lively.sleep(500)
+        src.write(5);
+        await lively.sleep(500)
+        src.end();
+      })();
+
+      const dataSpy = dataSpyFor(dest);
+      const endSpy = endSpyFor(dest);
+
+      expect(dataSpy).not.to.be.called;
+      expect(endSpy).not.to.be.called;
+
+      // wait a bit
+      await lively.sleep(100)
+      expect(dataSpy).to.be.calledTwice;
+      expect(dataSpy.withArgs(1)).to.be.calledBefore(dataSpy.withArgs(2));
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+
+      await lively.sleep(200)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(3);
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+      
+      await lively.sleep(500)
+      expect(dataSpy).to.be.calledThrice;
+      expect(dataSpy.withArgs(4)).to.be.calledBefore(dataSpy.withArgs(5));
+      expect(dataSpy.withArgs(5)).to.be.calledBefore(dataSpy.withArgs(6));
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+
+      await lively.sleep(200)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(7);
+      expect(endSpy).not.to.be.called;
+      dataSpy.reset();
+      
+      await lively.sleep(500)
+      expect(dataSpy).to.be.calledOnce;
+      expect(dataSpy).to.be.calledWith(8);
+      expect(endSpy).to.be.calledOnce;
+    });
+  });
 });

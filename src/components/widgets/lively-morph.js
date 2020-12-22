@@ -73,7 +73,7 @@ export default class Morph extends HTMLElement {
     // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.from(this.shadowRoot.querySelectorAll('button')).forEach(node => {
       var name = node.id;
-      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      var funcName = name.camelCase().replace(/^./, c => 'on'+ c.toUpperCase());
       // console.log('register button ' + name)
       node.addEventListener("click", evt => {
         if (this[funcName] instanceof Function) {
@@ -84,6 +84,40 @@ export default class Morph extends HTMLElement {
       });
     });
   }
+  
+  /* 
+    catches all enter keyup events and syntesizes a new enter event! 
+  */
+  registerSignalEnter(rootElement = this) {
+    var domain = "singnal-enter"
+    lively.removeEventListener(domain, rootElement) // just in case...
+    lively.addEventListener(domain, rootElement, "keyup", evt => {
+      if(evt.code == "Enter") { 
+        evt.target.dispatchEvent(new CustomEvent("enter-pressed", { detail: evt })) 
+      }  
+    })
+  }
+  
+  registerAttributes(list) {
+    for(let name of list) {
+      this.registerAttribute(name)
+    }
+  }
+  
+  registerAttribute(name) {
+    Object.defineProperty(this, name, {
+      get() { 
+        return this.getAttribute(name); 
+      },
+      set(newValue) { 
+        this.setAttribute(name, newValue)
+      },
+      enumerable: true,
+      configurable: true
+    });
+  }
+
+  
   
   toString() {
     return "[" + this.constructor.name + "]"

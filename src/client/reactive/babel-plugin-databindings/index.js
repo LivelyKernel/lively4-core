@@ -1,14 +1,21 @@
+function transformToDataBinding(ppath, path, state) {
+  
+}
+
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
 
   return {
-    name: "ast-transform",
+    name: "data-binding",
     visitor: {
       Program: {
         enter(ppath, state) {
           ppath.traverse({
-            LabeledStatement(path) {              
+            LabeledStatement(path) {
               const node = path.node;
+              if (node.label.name !== "binding") {
+                return transformToDataBinding.call(this, ppath, path, state);
+              }
               if (node.label.name !== "always") return;
               const variableDeclaration = node.body.declarations[0];
               path.replaceWith(t.variableDeclaration(node.body.kind, node.body.declarations.map((varDecl) => t.variableDeclarator(varDecl.id))));

@@ -19,9 +19,8 @@ export default class LivelyBibtexEntry extends Morph {
     } catch(e) {
       console.warn("[lively-bibtex-entry] initialize failed, could not parse ", this.textContent)
     }
-    this.get("#entry").addEventListener("dragstart", evt => this.onDragStart(evt));
-
-    this.get("#draghandle").draggable = true;
+    this.registerButtons()
+    this.updateView()
   }
 
   async onDragStart(evt) { 
@@ -37,20 +36,31 @@ export default class LivelyBibtexEntry extends Morph {
   
   disableEditing() {
     var newvalue;
-      try {
-        newvalue = Parser.toJSON(this.textContent);
-      } catch (e) {
-        lively.notify("could not parse bibtex entry: " + e);
-      }
-      if (newvalue && newvalue[0]) {
-        this.value = newvalue[0];
-        this.setAttribute("mode", "view");
-        this.removeAttribute("contenteditable");
-      }
+    try {
+      newvalue = Parser.toJSON(this.editor.value);
+    } catch (e) {
+      lively.notify("could not parse bibtex entry: " + e);
+    }
+    if (newvalue && newvalue[0]) {
+      this.value = newvalue[0];
+      this.mode = "view";
+    }
+    this.updateView()
   }
+  
+  get mode() {
+    return this.getAttribute("mode");
+  }
+
+  set mode(mode) {
+    // mode: default, edit, readonly
+    this.setAttribute("mode", mode);
+  }
+
+  
   enableEditing() {
     this.setAttribute("mode", "edit");
-    this.setAttribute("contenteditable", "true");
+    this.updateView()
   }
 
   get value() {
@@ -78,31 +88,59 @@ export default class LivelyBibtexEntry extends Morph {
   livelyMigrate(other) {
     this.value = other.value;
   }
+  
+  onCancel() {
+    this.disableEditing()
+  }
+  
+  get pane() {
+    return this.get("#pane")
+  }
+  
+  async showEditor() {
+    this.editor = await (<lively-code-mirror id="editor" mode="plain"></lively-code-mirror>)
+    this.editor.value = this.textContent
+    
+    if (this.mode != "edit") return // we have changed in the background...
+    this.pane.innerHTML = ""
+    this.pane.appendChild(this.editor)
+  }
     
   updateView() {
+    if (this.mode == "edit") return this.showEditor()
     if (!this.value || !this.value.entryTags) return;
-    this.get("#key").textContent = this.key;
-    this.followURLonClick(this.get("#key"), "bib://" + this.key)
-    this.get("#edit").addEventListener("click", () => this.enableEditing())
-    this.get("#cancel").addEventListener("click", () => this.disableEditing())
+    
+    var key = <span id="key">{this.key}</span>
+    this.followURLonClick(key, "bib://" + this.key)
+    
+    this.pane.innerHTML = ""
+    
     try {
-      this.get("#author").textContent = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
+      var authoText = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
     } catch (e) {
-      this.get("#author").textContent = this.author;
+      authoText = this.author;
     }
-    this.get("#year").textContent = this.year;
     try {
-      this.get("#title").textContent = latexconv.convertLaTeXToUnicode(this.title);
+      var titleText = latexconv.convertLaTeXToUnicode(this.title);
     } catch (e) {
-      this.get("#title").textContent = this.title;
+      titleText = this.title;
     }
     
+    var misc = <span id="misc"></span>
     if (this.value.entryTags.microsoftid) {
       let url = "academic://expr:Id=" + this.value.entryTags.microsoftid
-      this.get("#misc").innerHTML = ""
-      this.get("#misc").appendChild(<span class="academic"
+      misc.appendChild(<span class="academic"
             click={() => lively.openBrowser(url)}>[academic]</span>)
-    }
+    }    
+    var entry = <div id="entry">
+      <div id="draghandle" draggable="true"></div>
+      [{key}] <span id="author">{authoText}</span>. <span id="year">{this.year}</span>.
+      <span id="title">{titleText}</span>
+      {misc}
+      <span id="edit" title="edit entry" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>
+    </div>
+    entry.addEventListener("dragstart", evt => this.onDragStart(evt));
+    this.pane.appendChild(entry)
   }
 
   generateFilename() {

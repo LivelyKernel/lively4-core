@@ -227,6 +227,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     // event.stopPropagation();
     this.dispatchEvent(event)
     this["editor-loaded"] = true // event can sometimes already be fired
+    
+    await lively.sleep(0)
+    this.editor.refresh()
   }
 
   async editorLoaded() {
@@ -938,11 +941,16 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   set value(text) {
+    if (text === undefined) text = ""
     if (this.editor) {
       this.editor.setValue(text)
     } else {
       this._value = text
     }
+    lively.sleep(0).then(() => {
+      if (this.editor) this.editor.refresh()
+    })
+    
   }
 
   setCustomStyle(source) {
@@ -1166,7 +1174,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   mergeView(originalText, originalLeftText) {
-    debugger
     var target = this.shadowRoot.querySelector("#code-mirror-container")
     target.innerHTML = "";
     this._mergeView =  CodeMirror.MergeView(target, {
