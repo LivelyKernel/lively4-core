@@ -5,6 +5,39 @@ chai.use(sinonChai);
 
 import 'src/client/lang/lang.js';
 import 'src/client/lang/lang-ext.js';
+import 'src/client/lang/lang-zone.js';
+
+describe('Zones', function() {
+
+  it('`Zone` is globally defined', () => {
+    expect(Zone).to.be.defined;
+  });
+
+  describe('Zone.current', function() {
+
+    it('`Zone.current` is defined', () => {
+      expect(Zone).to.have.property('current')
+    });
+
+  });
+
+  describe('Zone.root', function() {
+
+    it('`Zone.root` is defined', () => {
+      expect(Zone).to.have.property('root')
+    });
+
+  });
+
+  describe('runZoned', function() {
+
+    it('`runZoned` is globally defined', () => {
+      expect(runZoned).to.be.defined;
+    });
+
+  });
+
+});
 
 describe('lang', function() {
 

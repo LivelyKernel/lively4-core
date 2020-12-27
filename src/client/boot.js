@@ -451,6 +451,7 @@ async function intializeLively() {
     groupedMessage('Load Standard Library');
       await System.import("lang");
       await System.import("lang-ext");
+      await System.import("lang-zone");
     groupedMessageEnd();
 
     groupedMessage('Initialize Document (in lively.js)' );
