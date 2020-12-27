@@ -466,6 +466,10 @@ export default class ContextMenu {
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
+        ["Plugin explorer", async evt => {
+            const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
+            explorer.livelyExample();
+        }],
         // ['Debugger', evt => lively.openDebugger().then( cmp), 
         //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
