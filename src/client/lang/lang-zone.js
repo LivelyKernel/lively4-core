@@ -22,20 +22,30 @@ function exposeGlobal(key, value) {
 - currently implemented as a lightweight wrapper around [Dexie.Promise](https://dexie.org/docs/Promise/Promise.PSD)
 MD*/
 
-const globalZone = () => {
-  Dexie.Promise.PSD
-}
+const globalZone = (() => {
+  let zone = Dexie.Promise.PSD;
+  
+  while (!zone.global) {
+    if (zone.parent && zone.parent !== zone) {
+      zone = zone.parent;
+    } else {
+      throw new Error('could not initialize `zones`: no global zone found');
+    }
+  }
+
+  return zone;
+})();
 
 const Zone = {
 
-  get root() {return 42 },
+  get root() { return globalZone; },
 
-  get current() {return 42 }
+  get current() { return Dexie.Promise.PSD; }
 
 };
 
-function runZoned(fn, { zoneValues = {} } = {} ) {
-  
+function runZoned(fn, { zoneValues } = {} ) {
+  return Dexie.Promise.newPSD(fn, zoneValues);
 }
 
 exposeGlobal('Zone', Zone);

@@ -2,6 +2,7 @@ import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
+const assert = chai.assert;
 
 import 'src/client/lang/lang.js';
 import 'src/client/lang/lang-ext.js';
@@ -13,18 +14,74 @@ describe('Zones', function() {
     expect(Zone).to.be.defined;
   });
 
+  describe('Zone.root', function() {
+
+    it('`Zone.root` is defined', () => {
+      expect(Zone).to.have.property('root');
+    });
+
+    it('`Zone.root` is a global zone', () => {
+      expect(Zone.root).to.have.property('global', true);
+    });
+
+  });
+
   describe('Zone.current', function() {
 
     it('`Zone.current` is defined', () => {
       expect(Zone).to.have.property('current')
     });
 
-  });
+    it('applies prototypical inheritance', async () => {
+      const outerZone = Zone.current;
+      const expectedValue = 17;
 
-  describe('Zone.root', function() {
+      let middleZone, innerZone;
+      let executed = false;
+      await runZoned(async () => {
+        middleZone = Zone.current;
+        middleZone.middleProp = expectedValue;
+        await runZoned(async () => {
+          innerZone = Zone.current;
+          executed = true;
+        });
+      });
+      expect(executed).to.be.true;
+      
+      expect(middleZone.middleProp).to.equal(expectedValue);
+      expect(innerZone.middleProp).to.equal(expectedValue);
+      assert.notStrictEqual(innerZone, outerZone);
+    });
 
-    it('`Zone.root` is defined', () => {
-      expect(Zone).to.have.property('root')
+    it('keeps a reference to its parent', async () => {
+      const outerZone = Zone.current;
+      
+      let middleZone, innerZone;
+      let executed = false;
+      await runZoned(async () => {
+        middleZone = Zone.current;
+
+        await runZoned(async () => {
+          innerZone = Zone.current;
+          executed = true;
+        });
+      });
+      expect(executed).to.be.true;
+
+      // parent reference
+      assert.strictEqual(middleZone.parent, outerZone);
+      assert.strictEqual(innerZone.parent, middleZone);
+    });
+
+    it('child zone can access properties given as zone values', async () => {
+      let innerZone;
+      await runZoned(async () => {
+        await runZoned(async () => {
+          innerZone = Zone.current;
+        });
+      }, { zoneValues: { p: 42 }});
+
+      expect(innerZone).to.have.property('p', 42);
     });
 
   });
@@ -33,6 +90,55 @@ describe('Zones', function() {
 
     it('`runZoned` is globally defined', () => {
       expect(runZoned).to.be.defined;
+    });
+
+    it('`runZoned` runs the function', async () => {
+      let executed = false;
+
+      await runZoned(() => {
+        executed = true;
+      })
+
+      expect(executed).to.be.true;
+    });
+
+    it('returns the function\'s return value', async () => {
+      const result = await runZoned(() => 42);
+
+      expect(result).to.equal(42);
+    });
+
+    it('runs code in its own zone', async () => {
+      const outerZone = Zone.current;
+      
+      let innerZone;
+      await runZoned(() => {
+        innerZone = Zone.current;
+      });
+      
+      assert.notStrictEqual(innerZone, outerZone);
+    });
+
+    it('keeps the zone consistent across native await', async () => {
+      let innerZone1, innerZone2;
+      await runZoned(async () => {
+        innerZone1 = Zone.current;
+        await lively.sleep(20);
+        innerZone2 = Zone.current;
+      });
+      
+      assert.strictEqual(innerZone1, innerZone2);
+    });
+
+    it('attaches zone properties', async () => {
+      const outerZone = Zone.current;
+      
+      let innerZone;
+      await runZoned(async () => {
+        innerZone = Zone.current;
+      }, { zoneValues: { p: 42 } });
+
+      expect(innerZone).to.have.property('p', 42);
     });
 
   });
