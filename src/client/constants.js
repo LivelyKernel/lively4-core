@@ -1,7 +1,7 @@
 /**
  * All standard DOM events
  */
-export const domEvents =  [
+export const domEvents = [
   "animationend",
   "animationiteration",
   "animationstart",
@@ -226,7 +226,20 @@ export const domEvents =  [
   "moztimechange",
   "open",
   "show"
-];
+].concat([
+  // Pointer Events
+  // https://developer.mozilla.org/en-US/docs/Web/Events#Pointer_events
+  "pointerover",
+  "pointerenter",
+  "pointerdown",
+  "pointermove",
+  "pointerup",
+  "pointercancel",
+  "pointerout",
+  "pointerleave",
+  "gotpointercapture",
+  "lostpointercapture"
+]).uniq();
 
 /**
  * All standard CSS Properties

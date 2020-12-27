@@ -73,7 +73,7 @@ export default class Morph extends HTMLElement {
     // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.from(this.shadowRoot.querySelectorAll('button')).forEach(node => {
       var name = node.id;
-      var funcName = name.replace(/^./, c => 'on'+ c.toUpperCase());
+      var funcName = name.camelCase().replace(/^./, c => 'on'+ c.toUpperCase());
       // console.log('register button ' + name)
       node.addEventListener("click", evt => {
         if (this[funcName] instanceof Function) {

@@ -394,7 +394,7 @@ export default class PluginExplorer extends Morph {
     
     changeSelectedPlugin(url) {
         this.workspace.plugin = url;
-        this.saveWorkspace();
+        this.saveWorkspaceFile(this.workspaceURL);
         this.loadPluginFile(this.workspace.plugin);
     }
 
@@ -495,7 +495,6 @@ export default class PluginExplorer extends Morph {
     }
 
     async updateTransformation(ast) {
-        const plugin = await this.getPlugin();
         let transitions = new Transitions();
         transitions.addEntryTransition(this.sourceText);
 
@@ -532,9 +531,7 @@ export default class PluginExplorer extends Morph {
             
             const config = {};
             const selection = this.workspace.pluginSelection;
-            
-            config.plugins = await Promise.all(selection.map(obj => this.getPlugin(obj.url)));
-            config.plugins.push(plugin);
+            config.plugins = await Promise.all(selection.map(({url}) => this.getPlugin(url)));
             
             const filename = 'tempfile.js';
             config.sourceFileName = filename

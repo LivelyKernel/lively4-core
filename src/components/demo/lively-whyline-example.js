@@ -4,7 +4,7 @@ obj.v.w.x = obj ? "cool" : "oh no";
 var boo, a, b;
 ([a, b, ...boo] = "abcdef");
 ({a, mojo: b} = {a: 1, mojo: 3});
-
+ 
 if (a < 0) {
   a--
 } else if (a == 0) {
@@ -12,7 +12,7 @@ if (a < 0) {
 } else {
   a++
 }
-
+ 
 function foo(a,b) {
   let c = a + b;
   for (var i = 0; i < 2; i++) {
@@ -25,6 +25,7 @@ function foo(a,b) {
   }
   return;
 }
-
+ 
 foo(a, b)
 let d = a + b
+

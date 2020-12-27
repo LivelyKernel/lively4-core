@@ -2,14 +2,26 @@
 
 window.allConnections = window.allConnections || new Set()
 
+import { uuid } from 'utils';
+
+
 export default class Connection {
   
   static nextId(){
-    this._currentId = this._currentId || 1
-    return this._currentId++
+    return uuid()
+    // this._currentId = this._currentId || 1
+    // return this._currentId++
   }
   
-  constructor(target, targetProperty, source, sourceProperty, isEvent) {
+  targetIsFunction() {
+    try {
+      return this.target[this._targetProperty] instanceof Function
+    } catch(e) {
+      return false
+    }
+  }
+  
+  constructor(source, sourceProperty, target, targetProperty, isEvent) {
     this.id = Connection.nextId();
     window.allConnections.add(this);
     
@@ -21,24 +33,53 @@ export default class Connection {
     this.isActive = false
     this._eventListener = evt => this.connectionFunction(evt)
     this._targetProperty = this.cleanProperty(this._targetProperty)
+    
+    
     if(isEvent){
+      if (this.targetIsFunction()) { 
+      this.modifyingCode = 
+`(target, event) => {
+  target.${this._targetProperty}(event);
+}`;        
+      } else {
       this.modifyingCode = `(target, event) => {
-  target.${this._targetProperty} = 42;
+  target.${this._targetProperty} = event;
 }`;
+      }
+        
       this.trackingCode = this._sourceProperty;
     } else {
-      this.modifyingCode = `(target, sourceValue) => {
+      if (this.targetIsFunction()) {
+        this.modifyingCode = 
+`(target, sourceValue) => {
+  target.${this._targetProperty}(sourceValue);
+}`;   
+      } else {
+        this.modifyingCode = 
+`(target, sourceValue) => {
   target.${this._targetProperty} = sourceValue;
-}`;
+}`;        
+      }
+      
+      
+      
+      
       this._sourceProperty = this.cleanProperty(this._sourceProperty)
       this.trackingCode = `(source) => {
   return source.${this._sourceProperty};
 }`
     }
-    
-    // this.label = 'Connection ' + this.id
     this.makeSavingScript();
   }
+  
+  get sourceProperty() {
+    return this._sourceProperty
+  }
+  
+  get targetProperty() {
+    return this._targetProperty
+  }
+  
   
   cleanProperty(property) {
     return property.split(".").map(each => this.camelCaseIfNeeded(each)).join(".")
@@ -53,12 +94,19 @@ export default class Connection {
   }
   
   makeSavingScript() {
-    this.targetId = lively.ensureID(this.target);
-    this.sourceId = lively.ensureID(this.source);
-    this.saveSerializedConnectionIntoWidget();
+    if (this.target) {
+      this.targetId = lively.ensureID(this.target);
+    } 
+    if (this.source) {
+      this.sourceId = lively.ensureID(this.source);
+    }
+    if (this.target && this.source) {
+      this.saveSerializedConnectionIntoWidget();
+    }
   }
   
   saveSerializedConnectionIntoWidget() {
+    if (!this.source) return; // cannot save it...
     const serializedConnections = Array.from(window.allConnections)
       .filter(connection => connection.source === this.source)
       .map(connection => connection.serialize())
@@ -94,7 +142,10 @@ export default class Connection {
     
     const target = lively.elementByID(config.targetId);
     const source = lively.elementByID(config.sourceId);
-    const undeadConnection = new Connection(target, config.sourceProperty, source, config.targetProperty, config.isEvent);
+    const undeadConnection = new Connection(
+        source, config.targetProperty, 
+        target, config.sourceProperty,
+        config.isEvent);
     undeadConnection.setModifyingCode(config.modifyingCode);
     undeadConnection.setTrackingCode(config.trackingCode);
     undeadConnection.setLabel(config.label);
@@ -117,7 +168,9 @@ export default class Connection {
   }
   
   async activateEvent() {
-    lively.addEventListener('Connections', this.source, this.trackingCode, this._eventListener);
+    if (this.source) {
+      lively.addEventListener('Connections', this.source, this.trackingCode, this._eventListener);
+    }
   }
   
   async activateAexpr() {
@@ -143,9 +196,24 @@ export default class Connection {
     myFunction(this.target, sourceValue)
   }
   
-  drawConnectionLine() {
-    let line = [lively.getGlobalCenter(this.source), lively.getGlobalCenter(this.target)];
-    lively.showPath(line, "rgba(80,180,80,1)", true);
+  async drawConnectionLine() {
+    this.removeConnectionLine()
+    var from = this.getSource()
+    var to = this.getTarget()
+    if (!from || !to) return
+    
+    var connector = document.createElement("lively-connector")
+    connector.setAttribute("data-lively4-donotpersist", true)
+    await lively.components.openIn(document.body, connector)
+    this.connectionLine = connector
+    
+    connector.connectFrom(from)
+    connector.connectTo(to)
+    return connector
+  }
+  
+  async removeConnectionLine() {
+    if (this.connectionLine) this.connectionLine.remove()
   }
   
   setActive(shouldBeActive) {
@@ -167,7 +235,10 @@ export default class Connection {
   }
   
   copyAndActivate() {
-    let newConnection = new Connection(this.target, this._targetProperty, this.source, this.sourceProperty, this.isEvent);
+    let newConnection = new Connection(
+      this.source, this.sourceProperty, 
+      this.target, this._targetProperty, 
+      this.isEvent);
     newConnection.setModifyingCode(this.modifyingCode);
     newConnection.activate();
     return newConnection;
@@ -251,6 +322,17 @@ export default class Connection {
   getLabel() {
     return this._sourceProperty + "⇨" + this._targetProperty 
   }
+
+  getFullLabel() {
+    try {
+      return lively.elementToCSSName(this.getSource()) + " " + this._sourceProperty +
+        "⇨" + lively.elementToCSSName(this.getTarget()) + " "+ this._targetProperty      
+    } catch(e) {
+      return this.getLabel()
+    }
+    
+  }
+
   
   setLabel(string) {
     this.label = string // not used...

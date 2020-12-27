@@ -14,7 +14,7 @@ export default class PluginSelector extends Morph {
         this._pluginExplorer = null;
 
         this.listData = await this.fetchListData();
-        this.displayListItems(this.listData);
+        this.displayListItems(this.listData.map(item => item.url));
         
         this.selectedItems = [];
         this.restoreSelection();
@@ -51,8 +51,8 @@ export default class PluginSelector extends Morph {
         }
         const list = this.listData.map(node => this.fileNameToName(node.name))
         this.selectedItems = this.workspace.pluginSelection;
-        for (const item of (this.selectedItems || [])) {
-            const listElement = this.listElementTo(this.fileNameToName(item.name), list);
+        for (const {url} of (this.selectedItems || [])) {
+            const listElement = this.listElementTo(this.fileNameToName(url), list);
             const button = listElement.childNodes[0];
             button.className += ' on';
         }
@@ -60,34 +60,39 @@ export default class PluginSelector extends Morph {
 
     displayListItems(dataList) {
         let shouldColorDifferent = false;
-        for (const item of dataList) {
+        for (const url of dataList) {
             const entry = <div class={'entry' + (shouldColorDifferent ? ' contrast' : '')}></div>;           
             
             const toggleButtonClass = 'toggle';
-            const toggleButton = <button class={toggleButtonClass}>{this.fileNameToName(item.name)}</button>;
+            const toggleButton = <button class={toggleButtonClass}>{this.fileNameToName(url)}</button>;
+            const browseButton = <button>browse</button>
             const editButton = <button>edit</button>
             const input = <input class="options"></input>;
             
             
             toggleButton.addEventListener('click', e => {
                 // as objects get serialized and deserialized we cannot use includes
-                const itemIndex = this.selectedItems.findIndex(elm => elm.item.name === item.name)
+                const itemIndex = this.selectedItems.findIndex(obj => obj.url === url);
                 if (itemIndex !== -1) {
                     e.target.className = toggleButtonClass;
                     this.selectedItems.splice(itemIndex, 1);
                 } else {
                     e.target.className += ' on';
-                    this.selectedItems.push(item);
+                    this.selectedItems.push({url: url, options: eval(input.value)});
                 }
-                this.pluginExplorer.savePluginSelection({item: this.selectedItems, options: eval(input.value)});
+                this.pluginExplorer.savePluginSelection(this.selectedItems);
                 
             });
             
-            editButton.addEventListener('click', e => {
-                this.pluginExplorer.changeSelectedPlugin(item.url);
+            browseButton.addEventListener('click', e => {
+                lively.openBrowser(url, true);
             })
             
-            for (const elm of [toggleButton, editButton, input]) {
+            editButton.addEventListener('click', e => {
+                this.pluginExplorer.changeSelectedPlugin(url);
+            })
+            
+            for (const elm of [toggleButton, browseButton, editButton, input]) {
                 entry.appendChild(elm);
             }
             

@@ -79,7 +79,7 @@ class VarRecorder {
         // eval a .js file
         this._MODULE_NAME = this.filename;
       } else {
-        throw new Error('Transpiling neither a .js module nor workspace code');
+        throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        
     }
     return this._MODULE_NAME
