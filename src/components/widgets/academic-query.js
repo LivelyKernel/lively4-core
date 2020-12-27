@@ -213,8 +213,8 @@ export default class AcademicQuery extends Morph {
   
   async queryToView(object) {
       var span =
-          <span class="tooltip" contenteditable="false" id="inner">
-            <span class="tooltiptext"><button>AND</button><button>OR</button></span>
+          <span class="hover" contenteditable="false" id="inner">
+            <span class="hovercontent"><button class="button">AND</button><button class="button">OR</button></span>
           </span>
       
     switch(object.type) {
