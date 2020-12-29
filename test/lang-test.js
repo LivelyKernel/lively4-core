@@ -141,6 +141,69 @@ describe('Zones', function() {
       expect(innerZone).to.have.property('p', 42);
     });
 
+    it('tracks zones over native await on primitive values', async () => {
+      let callback;
+      const prom = new Promise(resolve => callback = resolve);
+
+      let innerZone;
+      async function f3() {
+        await 42;
+        assert.strictEqual(Zone.current, innerZone);
+        callback()
+      }
+      async function f2() {
+        await f3();
+      }
+      
+      await runZoned(async () => {
+        innerZone = Zone.current;
+        await f2();
+      });
+      
+      await prom;
+    });
+
+    it('handles errors correctly', async () => {
+      let catchCalled = false;
+      let finallyCalled = false;
+      
+      const expectedError = new Error('expected')
+      
+      try {
+        await runZoned(async () => {
+          throw expectedError;
+        });
+      } catch (e) {
+        catchCalled = true;
+      } finally {
+        finallyCalled = true
+      }
+      
+      expect(catchCalled).to.be.true;
+      expect(finallyCalled).to.be.true;
+    });
+
+    it('handles errors correctly after native await on a primitive', async () => {
+      let catchCalled = false;
+      let finallyCalled = false;
+      
+      const expectedError = new Error('expected')
+      
+      try {
+        await runZoned(async () => {
+          await 42;
+          throw expectedError;
+        });
+      } catch (e) {
+        catchCalled = true;
+      } finally {
+        finallyCalled = true
+      }
+      
+      expect(catchCalled).to.be.true;
+      expect(finallyCalled).to.be.true;
+    });
+
   });
 
 });
