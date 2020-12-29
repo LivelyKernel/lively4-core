@@ -122,7 +122,12 @@ s.addOperation(
 )
 
 const observer = new MutationObserver(function(mutations) {
-  mutations.forEach(mutation => lively.notify("observation", mutation.type))
+  mutations.forEach(mutation => {
+    //lively.notify("observation", mutation.type)
+    if (mutation.type == "characterData") {
+      this.textContent = this.viewToQuery()
+    }
+  })
 })
 const config = {
   attributes: true,
@@ -153,6 +158,11 @@ export default class AcademicQuery extends Morph {
     this.updateView()
   }
   
+  getQuery() {
+    // dasselbe wie viewToQuery?
+    return this.textContent;
+  }
+  
   async setQueryObject(o) {
     this.ui = await this.queryToView(o);
     
@@ -168,10 +178,10 @@ export default class AcademicQuery extends Morph {
     if(this.ui) {
       pane.appendChild(this.ui)
     }
-      //<b><span class="blub">Query:</span>{this.textContent}</b>)
   }
 
   viewToQuery() {
+    // TODO
     var pane = this.get("#pane")
         
     var s = "... parsed from ui"
@@ -212,24 +222,9 @@ export default class AcademicQuery extends Morph {
   }
   
   async queryToView(object) {
-      var span =
-          <span class="hover" contenteditable="false" id="inner">
-            <span class="hovercontent"><button class="button">AND</button><button class="button">OR</button></span>
-          </span>
+      var span = <span contenteditable="false" id="inner"></span>;
       
     switch(object.type) {
-      case "simple":
-        [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span name="sub">{value} </span>;
-          span.appendChild(subSpan)
-          span.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-          span.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
-          span.style.cursor = "grab" // on drag: grabbing
-        });
-        var edit = <span id="edit" title="edit query" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
-        span.appendChild(edit);
-        break;
-
       case "conjunction":
         // Textselection in css vielleicht entfernen für Drag & Drop (bzw. erstmal Drag einschalten)
         // events.stoppropagation und preventdefault
@@ -252,13 +247,26 @@ export default class AcademicQuery extends Morph {
           </table>
         )
         break;
-
-      case "composite":
+      
+      // "composite" or "simple"
+      default:
+        
+        // make span hoverable
+        span =
+          <span class="hover" contenteditable="false" id="inner">
+            <span class="hovercontent"><button class="button">AND</button><button class="button">OR</button></span>
+          </span>;
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span contenteditable="true">{value} </span>;
-
+          var subSpan = <span name="sub">{value} </span>;
           span.appendChild(subSpan)
+          span.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+          span.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
+          subSpan.style.cursor = "grab" // on drag: grabbing
         });
+        var edit = <span id="edit" title="edit query" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+        edit.style.cursor = "pointer";
+        span.appendChild(edit);
+        break;
     }
 
     var queryElement = <div><b>{span}</b></div>;
