@@ -121,11 +121,21 @@ s.addOperation(
   }
 )
 
-const observer = new MutationObserver(function(mutations) {
+/*const observer = new MutationObserver(function(mutations) {
   mutations.forEach(mutation => {
     //lively.notify("observation", mutation.type)
     if (mutation.type == "characterData") {
-      this.textContent = this.viewToQuery()
+      var element = mutation.target;
+      lively.notify("ELEMENT",element)
+      while (element.parentNode && (element.nodeName != "ACADEMIC-QUERY")) {
+        lively.notify("CURRENT ELEMENT",element)
+        element = element.parentNode;
+      }
+      if (element.nodeName == "ACADEMIC-QUERY") {
+        element.textContent = element.viewToQuery();
+      } else {
+        lively.notify("Could not find academic-query");
+      }
     }
   })
 })
@@ -136,11 +146,11 @@ const config = {
   attributeOldValue: true,
   characterDataOldValue: true,
   //attributeFilter: true // breaks for some reason
-}
+}*/
 
 export default class AcademicQuery extends Morph {
   constructor() {
-    super()
+    super();
   }
   
   async initialize() {
@@ -183,10 +193,14 @@ export default class AcademicQuery extends Morph {
   viewToQuery() {
     // TODO
     var pane = this.get("#pane")
-        
-    var s = "... parsed from ui"
     
-    return s
+    // if pane - div - b - span - table (complex)
+      // table - tr - th.textContent?
+    lively.notify("TEXTCONTENT", pane.textContent);
+    
+    var query = "... parsed from ui"
+    
+    return query
   }
   
   enableEditing() {
@@ -197,7 +211,6 @@ export default class AcademicQuery extends Morph {
     })
     //query.setAttribute("contenteditable", true)
     //query.style.cursor = "text;"
-    lively.notify("QUERIES", queries)
   }
   
   onMouseOver(event) {
@@ -270,8 +283,25 @@ export default class AcademicQuery extends Morph {
     }
 
     var queryElement = <div><b>{span}</b></div>;
-    //lively.notify("queryElement", typeof queryElement)
-    //lively.notify("pane", typeof this.get('#pane'))
+    
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        //lively.notify("observation", mutation.type)
+        if (mutation.type == "characterData") {
+          this.textContent = this.viewToQuery();
+        }
+      })
+    })
+    
+    const config = {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
+      //attributeFilter: true // breaks for some reason
+    }
+    
     observer.observe(this.get('#pane'), config)
     return queryElement;
   }
