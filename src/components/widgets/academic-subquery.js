@@ -218,10 +218,13 @@ export default class AcademicSubquery extends Morph {
     var query = "... parsed from ui"
     
     if (this.isComplex) {
-      var left = this.leftSubquery.viewToQuery()
-      var right = this.rightSubquery.viewToQuery()
-      var conjunction = this.get('#conjunction').textContent
-      query = conjunction + "(" + left + ", " + right + ")";
+      // TODO: Why is this neccessary?
+      if (this.leftSubquery && this.rightSubquery) {
+        var left = this.leftSubquery.viewToQuery()
+        var right = this.rightSubquery.viewToQuery()
+        var conjunction = this.get('#conjunction').textContent
+        query = conjunction + "(" + left + ", " + right + ")";
+      }
     } else {
       var [attr, comp, val] = this.get('#inner')
                   .querySelectorAll("span[name='sub']")
