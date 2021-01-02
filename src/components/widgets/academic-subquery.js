@@ -215,21 +215,19 @@ export default class AcademicSubquery extends Morph {
   }
 
   viewToQuery() {
-    var pane = this.get("#pane")
-    
-    // if pane - div - b - span - table (complex)
-      // table - tr - th.textContent?
     var query = "... parsed from ui"
     
     if (this.isComplex) {
-      query = this.leftSubquery.viewToQuery() + this.rightSubquery.viewToQuery()
+      var left = this.leftSubquery.viewToQuery()
+      var right = this.rightSubquery.viewToQuery()
+      var conjunction = this.get('#conjunction').textContent
+      query = conjunction + "(" + left + ", " + right + ")";
     } else {
-      query = this.get('#inner')
+      var [attr, comp, val] = this.get('#inner')
                   .querySelectorAll("span[name='sub']")
-                  .map(e => e.textContent)
-                  .join('')
+                  .map(e => e.textContent);
+      query = attr + comp + "'" + val + "'";
     }
-    
     
     return query
   }
@@ -260,7 +258,7 @@ export default class AcademicSubquery extends Morph {
         // Textselection in css vielleicht entfernen für Drag & Drop (bzw. erstmal Drag einschalten)
         // events.stoppropagation und preventdefault
         this.isComplex = true;
-        var subSpan = <span contenteditable="true" style="font-size: 150%">{object.conjunction}</span>;
+        var subSpan = <span id="conjunction" contenteditable="true" style="font-size: 150%">{object.conjunction}</span>;
         var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
         await left.setQueryObject(object.left);
         this.leftSubquery = left; // for viewToQuery

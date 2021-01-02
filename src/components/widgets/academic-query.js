@@ -44,7 +44,6 @@ export default class AcademicQuery extends Morph {
         //lively.notify("SUPER observation", mutation.type)
         if (mutation.type == "childList") {
           if (this.subquery) this.textContent = this.subquery.viewToQuery();
-          lively.notify("TEXTCONTENT", this.textContent)
         }
       })
     });
