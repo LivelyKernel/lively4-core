@@ -148,6 +148,8 @@ const config = {
   //attributeFilter: true // breaks for some reason
 }*/
 
+var observer;
+
 export default class AcademicSubquery extends Morph {
   constructor() {
     super();
@@ -155,6 +157,31 @@ export default class AcademicSubquery extends Morph {
   
   async initialize() {
     this.updateView()
+    
+    observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        //nach jeder Änderung erstmal nen Timer
+        //lively.notify("observation", mutation.type)
+        if (mutation.type == "characterData") {
+          this.textContent = this.viewToQuery();
+        }
+        if (mutation.type == "childList") {
+          var div = <div id="update"></div>;
+          this.appendChild(div);
+          this.removeChild(div);
+        }
+      })
+    });
+    
+    const config = {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
+    };
+    
+    observer.observe(this.get('#pane'), config);
   }
   
   async setQuery(q) {
@@ -188,14 +215,21 @@ export default class AcademicSubquery extends Morph {
   }
 
   viewToQuery() {
-    // TODO
     var pane = this.get("#pane")
     
     // if pane - div - b - span - table (complex)
       // table - tr - th.textContent?
-    lively.notify("TEXTCONTENT", pane.textContent);
-    
     var query = "... parsed from ui"
+    
+    if (this.isComplex) {
+      query = this.leftSubquery.viewToQuery() + this.rightSubquery.viewToQuery()
+    } else {
+      query = this.get('#inner')
+                  .querySelectorAll("span[name='sub']")
+                  .map(e => e.textContent)
+                  .join('')
+    }
+    
     
     return query
   }

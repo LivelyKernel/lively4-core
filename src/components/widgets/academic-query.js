@@ -36,12 +36,15 @@ export default class AcademicQuery extends Morph {
   async initialize() {
     this.updateView();
     
+    // alternativ immer das AcademicQuery object mitgeben
+    // und dem Bescheid geben, wenn ein update ist
+    // (alles kacke)
     var observer = new MutationObserver((mutations) => {
       mutations.forEach(mutation => {
-        //lively.notify("observation", mutation.type)
-        if (mutation.type == "characterData") {
+        //lively.notify("SUPER observation", mutation.type)
+        if (mutation.type == "childList") {
           if (this.subquery) this.textContent = this.subquery.viewToQuery();
-          lively.notify("THIS in observer", this)
+          lively.notify("TEXTCONTENT", this.textContent)
         }
       })
     });
@@ -59,7 +62,7 @@ export default class AcademicQuery extends Morph {
   }
   
   async setQuery(q) {
-    var subquery = await (<academic-subquery></academic-subquery>);
+    var subquery = await (<academic-subquery id="main"></academic-subquery>);
     subquery.setQuery(q)
     
     this.textContent = q;
@@ -73,27 +76,26 @@ export default class AcademicQuery extends Morph {
   }
 
   async updateView() {
-    // TODO: input feld und button
     var pane = this.get("#pane")
-    pane.innerHTML = ""
-    
+    var queryView = <academic-subquery></academic-subquery>;
     if(this.subquery) {
-      pane.appendChild(this.subquery)
+      queryView = this.subquery;
+    } else {
+      lively.notify("Could not load query.");
     }
+    var input = <input value={queryView.textContent} style="width: 300px"></input>;
+    var updateButton = <button click={() => input.value = (this.getQuery())}>update</button>;
+    
+    pane.innerHTML = ""
+    pane.appendChild(<div>
+                       {input} {updateButton}
+                       {queryView}
+                     </div>);
   }
 
-  /*viewToQuery() {
-    // TODO, rufen wir nur von hier auf der subquery auf?
-    var pane = this.get("#pane")
-    
-    // if pane - div - b - span - table (complex)
-      // table - tr - th.textContent?
-    lively.notify("TEXTCONTENT", pane.textContent);
-    
-    var query = "... parsed from ui"
-    
-    return query
-  }*/
+  viewToQuery() {
+    return this.subquery.textContent;
+  }
   
   async livelyExample() {
     this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
