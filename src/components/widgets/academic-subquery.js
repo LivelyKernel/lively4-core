@@ -18,7 +18,7 @@ var g = ohm.grammar(
       "=" | "<" | ">"
 
     Attribute (an attribute) =
-      letter letter? letter?
+      letter letter? letter? letter?
 
     Value (a value) =
       "\'" alnum* "\'" -- string
@@ -89,8 +89,8 @@ s.addOperation(
       return comparator.sourceString;
     },
 
-    Attribute: function(a, b, c) {
-      return [a.interpret(), b.interpret(), c.interpret()].join('');
+    Attribute: function(a, b, c, d) {
+      return [a.interpret(), b.interpret(), c.interpret(), d.interpret()].join('');
     },
 
     Value: function(value) {
@@ -107,7 +107,8 @@ s.addOperation(
     },
 
     Number: function(n) {
-      return parseFloat(n.sourceString);
+      //return parseFloat(n.sourceString);
+      return n.sourceString;
     },
     Date: function(_1, year, _2, month, _3, day, _4) {
       return new Date(year.interpret(),
@@ -313,17 +314,24 @@ export default class AcademicSubquery extends Morph {
         query = conjunction + "(" + left + ", " + right + ")";
       }
     } else {
-      var [attr, comp, val] = this.get('#inner')
-                  .querySelectorAll("span[name='queryPart']")
-                  .map(e => e.textContent);
-      if (val)
-        val = val.slice(0, val.length - 1); // remove last whitespace
-      // TODO: keep the '' when parsing query so that we don't have
-      // 3 spans here....
-      // OOODER ich lass das mit dem Edit Mode, dafür gibt's ja schon
-      // das input Feld
-      //query = attr + comp + "'" + val + "'";
-      query = attr + comp + val;
+      var innerSpan = this.get('#inner');
+      if (innerSpan) {
+        lively.notify("INNERSPAN", innerSpan)
+        var [attr, comp, val] = innerSpan
+                    .querySelectorAll("span[name='queryPart']")
+                    .map(e => e.textContent);
+        if (val)
+          val = val.slice(0, val.length - 1); // remove last whitespace
+        // TODO: keep the '' when parsing query so that we don't have
+        // 3 spans here....
+        // OOODER ich lass das mit dem Edit Mode, dafür gibt's ja schon
+        // das input Feld
+        //query = attr + comp + "'" + val + "'";
+        if (innerSpan.getAttribute("type") == "composite")
+          query = "Composite(" + attr + comp + val + ")";
+        else
+          query = attr + comp + val;
+      }
     }
     
     return query
@@ -415,6 +423,7 @@ export default class AcademicSubquery extends Morph {
         span.appendChild(edit);
         break;
     }
+    span.setAttribute("type", object.type);
 
     var queryElement = <div class="dropTarget"><b>{span}</b></div>;
     
@@ -422,8 +431,10 @@ export default class AcademicSubquery extends Morph {
   }
   
   async livelyExample() {
-    this.setQuery("And(Or(Y='1985', Y='2008'), Ti='disordered electronic systems')")
-    //this.setQuery("And(O='abc', Y='1000')")
+    //this.setQuery("Composite(AA.AuN=='susan t dumais')");
+    this.setQuery("Composite(AA.AuId=2055148755)")
+    //this.setQuery("And(Or(Y=1985, Y=2008), Ti='disordered electronic systems')")
+    //this.setQuery("And(O='abc', Y=1000)")
     //this.setQuery("Y='1000'")
   }
   

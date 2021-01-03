@@ -77,7 +77,8 @@ export default class AcademicQuery extends Morph {
   }
   
   async livelyExample() {
-    this.setQuery("And(Or(Y = '1985', Y = '2008'), Ti = 'disordered electronic systems')")
+    this.setQuery("Composite(AA.AuId = 2055148755)")
+    //this.setQuery("And(Or(Y = '1985', Y = '2008'), Ti = 'disordered electronic systems')")
     //this.setQuery("And(O='abc', Y='1000')")
     //this.setQuery("Y='1000'")
   }
