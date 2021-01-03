@@ -190,7 +190,45 @@ export default class AcademicSubquery extends Morph {
     // TODO: Why are we switching focus after editing
     // once we start observing?
     observer.observe(this.get('#pane'), config);
+    
+    // TODO: falls ich das umbaue, sodass eine subquery einfach als
+    // html Element in updateView erstellt wird, muss das hier auch da rein
+    this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+    this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+    this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+    this.addEventListener('drop', (evt) => this.onDrop(evt))
+    
+    this.style.draggable = 'true';
+  //   "drag",
+  // "dragend",
+  // "dragenter",
+  // "dragleave",
+  // "dragover",
+  // "dragstart",
+  // "drop",
   }
+  
+  onDragStart(event) {
+    event.dataTransfer.setData("element", event.target.id);
+  }
+  
+  onDragEnd(event) {
+    event.dataTransfer.setData("element", event.target.id);
+  }
+  
+  onDragOver(event) {
+    event.dataTransfer.setData("element", event.target.id);
+  }
+  
+  onDrop(event) {
+    event.preventDefault();
+    var data = event.dataTransfer.getData("element");
+    event.target.appendChild(lively.query(this, '#'+data))
+  }
+  
+  
+  
+  
   
   async setQuery(q) {
     this.textContent = q;
@@ -211,8 +249,6 @@ export default class AcademicSubquery extends Morph {
     this.ui = await this.queryToView(o);
     
     this.updateView();
-    
-    return this;
   }
 
   async updateView() {
@@ -220,12 +256,18 @@ export default class AcademicSubquery extends Morph {
     pane.innerHTML = ""
     
     if(this.ui) {
+      this.ui.style.draggable = 'true'
+      this.ui.style.userSelect = 'none'
+      this.ui.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+      this.ui.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+      this.ui.addEventListener('dragover', (evt) => this.onDragOver(evt))
+      this.ui.addEventListener('drop', (evt) => this.onDrop(evt))
       pane.appendChild(this.ui)
     }
   }
 
   async viewToQuery() {
-    var query = "... parsed from ui"
+    var query = this.textContent;
     
     if (this.isComplex) {
       // TODO: Why is this neccessary?
@@ -240,12 +282,6 @@ export default class AcademicSubquery extends Morph {
                   .querySelectorAll("span[name='sub']")
                   .map(e => e.textContent);
       query = attr + comp + "'" + val + "'";
-    }
-    
-    if (query == "... parsed from ui") {
-      lively.notify("LEFT", this.leftSubquery)
-      lively.notify("RIGHT", this.rightSubquery)
-      lively.notify("COMPLEX", this.isComplex)
     }
     
     return query
@@ -271,13 +307,14 @@ export default class AcademicSubquery extends Morph {
   
   async queryToView(object) {
     var span = <span contenteditable="false" id="inner"></span>;
+    var subSpan;
       
     switch(object.type) {
       case "conjunction":
         // Textselection in css vielleicht entfernen für Drag & Drop (bzw. erstmal Drag einschalten)
         // events.stoppropagation und preventdefault
         this.isComplex = true;
-        var subSpan = <span id="conjunction" contenteditable="true" style="font-size: 150%">{object.conjunction}</span>;
+        subSpan = <span id="conjunction" contenteditable="false" style="font-size: 150%">{object.conjunction}</span>;
         var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
         await left.setQueryObject(object.left);
         this.leftSubquery = left; // for viewToQuery
@@ -305,15 +342,20 @@ export default class AcademicSubquery extends Morph {
         // make span hoverable
         span =
           <span class="hover" contenteditable="false" id="inner">
-            <span class="hovercontent"><button class="button">AND</button><button class="button">OR</button></span>
+            <span class="hovercontent">
+              <button class="button">AND</button>
+              <button class="button">OR</button>
+            </span>
           </span>;
+        
+        subSpan = <span name="sub" draggable='true'></span>;
         [object.attribute, object.comparator, object.value].forEach(value => {
-          var subSpan = <span name="sub">{value} </span>;
-          span.appendChild(subSpan)
-          span.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-          span.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
+          subSpan.appendChild(<span>{value} </span>)
+          subSpan.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+          subSpan.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
           subSpan.style.cursor = "grab" // on drag: grabbing
         });
+        span.appendChild(subSpan);
         var edit = <span id="edit" title="edit query" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
         edit.style.cursor = "pointer";
         span.appendChild(edit);
