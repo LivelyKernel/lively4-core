@@ -63,10 +63,11 @@ export default class AcademicQuery extends Morph {
     }
     var input = <input id="queryInput" value={this.textContent} style="width: 300px"></input>;
     var updateButton = <button click={() => this.setQuery(input.value)}>update</button>;
+    var searchButton = <button click={() => lively.openBrowser("academic://expr:" + this.textContent + "?count=100")}>search</button>;
     
     pane.innerHTML = ""
     pane.appendChild(<div>
-                       {input} {updateButton}
+                       {input} {updateButton} {searchButton}
                        {queryView}
                      </div>);
   }

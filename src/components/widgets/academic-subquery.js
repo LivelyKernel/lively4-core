@@ -162,9 +162,10 @@ export default class AcademicSubquery extends Morph {
     observer = new MutationObserver((mutations) => {
       mutations.forEach(mutation => {
         //lively.notify("observation", mutation.type)
-        
+        clearTimeout(timeout);
         timeout = setTimeout(async () => {
           if (mutation.type == "characterData") {
+            lively.notify("THIS", this)
             this.textContent = await this.viewToQuery();
           }
           if (mutation.type == "childList") {
@@ -193,10 +194,10 @@ export default class AcademicSubquery extends Morph {
     
     // TODO: falls ich das umbaue, sodass eine subquery einfach als
     // html Element in updateView erstellt wird, muss das hier auch da rein
-    this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-    this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-    this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-    this.addEventListener('drop', (evt) => this.onDrop(evt))
+//     this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+//     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+//     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+//     this.addEventListener('drop', (evt) => this.onDrop(evt))
     
     this.style.draggable = 'true';
   //   "drag",
@@ -209,26 +210,75 @@ export default class AcademicSubquery extends Morph {
   }
   
   onDragStart(event) {
-    event.dataTransfer.setData("element", event.target.id);
+    //event.dataTransfer.setData("element", event.target.id);
+    this.style.opacity = '0.4';
+    this.style.color = "black";
+    
+    // var id = lively.ensureID(this)
+    // this.id = id
+    
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', this.innerHTML);
+    //event.dataTransfer.setData("application/lively4id", id);
   }
   
   onDragEnd(event) {
-    event.dataTransfer.setData("element", event.target.id);
+    //event.dataTransfer.setData("element", event.target.id);
+    this.style.opacity = '1.0';
   }
   
   onDragOver(event) {
-    event.dataTransfer.setData("element", event.target.id);
+    //event.dataTransfer.setData("element", event.target.id);
+    // the next line should not be neccessary with onDragEnter()...
+    this.classList.add('over');
+    //this.style.border = '3px dotted #666';
   }
   
   onDrop(event) {
+    //if (this.dragStart !== this) {
+      //var id = event.dataTransfer.getData("application/lively4id")
+      //var el = lively.query(this, "#"+id);
+      //lively.notify("ELEMENT", el);
+    this.innerHTML = event.dataTransfer.getData("text/html");
+    this.classList.remove('over');
+    //}
+  }
+  
+  onDragEnter(event) {
     event.preventDefault();
-    var data = event.dataTransfer.getData("element");
-    event.target.appendChild(lively.query(this, '#'+data))
+    //if (!this.complexQuery) this.style.border = '3px dotted #666';
+    //lively.notify("ENTERED THIS", this.classList)
+    this.classList.add('over');
+  }
+  
+  onDragLeave(event) {
+    event.preventDefault();
+    this.classList.remove('over');
+
+    //if (!this.isComplex) this.style.border = '3px dotted #FFF';
   }
   
   
   
   
+  async updateView() {
+    var pane = this.get("#pane")
+    pane.innerHTML = ""
+    
+    if(this.ui) {
+      this.ui.style.draggable = 'true'
+      this.ui.style.userSelect = 'none'
+      if (!this.isComplex) {
+        this.ui.addEventListener('dragstart', this.onDragStart)
+        this.ui.addEventListener('dragend', this.onDragEnd)
+        this.ui.addEventListener('dragover', this.onDragOver)
+        this.ui.addEventListener('dragenter', this.onDragEnter)
+        this.ui.addEventListener('dragleave', this.onDragLeave)
+        this.ui.addEventListener('drop', this.onDrop)
+      }
+      pane.appendChild(this.ui)
+    }
+  }
   
   async setQuery(q) {
     this.textContent = q;
@@ -251,50 +301,54 @@ export default class AcademicSubquery extends Morph {
     this.updateView();
   }
 
-  async updateView() {
-    var pane = this.get("#pane")
-    pane.innerHTML = ""
-    
-    if(this.ui) {
-      this.ui.style.draggable = 'true'
-      this.ui.style.userSelect = 'none'
-      this.ui.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-      this.ui.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-      this.ui.addEventListener('dragover', (evt) => this.onDragOver(evt))
-      this.ui.addEventListener('drop', (evt) => this.onDrop(evt))
-      pane.appendChild(this.ui)
-    }
-  }
-
   async viewToQuery() {
     var query = this.textContent;
     
     if (this.isComplex) {
       // TODO: Why is this neccessary?
       if (await this.leftSubquery && await this.rightSubquery) {
-        var left = await this.leftSubquery.viewToQuery()
-        var right = await this.rightSubquery.viewToQuery()
-        var conjunction = this.get('#conjunction').textContent
+        var left = await this.leftSubquery.viewToQuery();
+        var right = await this.rightSubquery.viewToQuery();
+        var conjunction = this.get('#conjunction').textContent;
         query = conjunction + "(" + left + ", " + right + ")";
       }
     } else {
       var [attr, comp, val] = this.get('#inner')
-                  .querySelectorAll("span[name='sub']")
+                  .querySelectorAll("span[name='queryPart']")
                   .map(e => e.textContent);
-      query = attr + comp + "'" + val + "'";
+      if (val)
+        val = val.slice(0, val.length - 1); // remove last whitespace
+      // TODO: keep the '' when parsing query so that we don't have
+      // 3 spans here....
+      // OOODER ich lass das mit dem Edit Mode, dafür gibt's ja schon
+      // das input Feld
+      //query = attr + comp + "'" + val + "'";
+      query = attr + comp + val;
     }
     
     return query
   }
   
-  enableEditing() {
-    var queries = this.get("#inner").querySelectorAll("[name='sub']")
-    queries.forEach(q => {
-      q.setAttribute("contenteditable", true)
-      q.style.cursor = "text";
-    })
-    //query.setAttribute("contenteditable", true)
-    //query.style.cursor = "text;"
+  toggleEditing() {
+    var queries = this.get("#inner").querySelectorAll("[name='sub']");
+    var edit = this.get('#edit');
+    edit.innerHTML = "";
+    
+    if (!this.editing) {
+      this.editing = true;
+      edit.appendChild(<i class="fa fa-hand-paper-o" aria-hidden="true"></i>);
+      queries.forEach(q => {
+        q.setAttribute("contenteditable", true);
+        q.style.cursor = "text";
+      });
+    } else {
+      this.editing = false;
+      edit.appendChild(<i class="fa fa-pencil" aria-hidden="true"></i>);
+      queries.forEach(q => {
+        q.setAttribute("contenteditable", false);
+        q.style.cursor = "grab";
+      });
+    }
   }
   
   onMouseOver(event) {
@@ -350,19 +404,19 @@ export default class AcademicSubquery extends Morph {
         
         subSpan = <span name="sub" draggable='true'></span>;
         [object.attribute, object.comparator, object.value].forEach(value => {
-          subSpan.appendChild(<span>{value} </span>)
+          subSpan.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
           subSpan.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
           subSpan.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
           subSpan.style.cursor = "grab" // on drag: grabbing
         });
         span.appendChild(subSpan);
-        var edit = <span id="edit" title="edit query" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+        var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
         edit.style.cursor = "pointer";
         span.appendChild(edit);
         break;
     }
 
-    var queryElement = <div><b>{span}</b></div>;
+    var queryElement = <div class="dropTarget"><b>{span}</b></div>;
     
     return queryElement;
   }
