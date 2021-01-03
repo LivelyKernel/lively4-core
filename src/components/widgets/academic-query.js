@@ -1,33 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import AcademicSubquery from "src/components/widgets/academic-subquery.js";
 
-/*const observer = new MutationObserver(function(mutations) {
-  mutations.forEach(mutation => {
-    //lively.notify("observation", mutation.type)
-    if (mutation.type == "characterData") {
-      var element = mutation.target;
-      lively.notify("ELEMENT",element)
-      while (element.parentNode && (element.nodeName != "ACADEMIC-QUERY")) {
-        lively.notify("CURRENT ELEMENT",element)
-        element = element.parentNode;
-      }
-      if (element.nodeName == "ACADEMIC-QUERY") {
-        element.textContent = element.viewToQuery();
-      } else {
-        lively.notify("Could not find academic-query");
-      }
-    }
-  })
-})
-const config = {
-  attributes: true,
-  childList: true,
-  subtree: true,
-  attributeOldValue: true,
-  characterDataOldValue: true,
-  //attributeFilter: true // breaks for some reason
-}*/
-
 export default class AcademicQuery extends Morph {
   constructor() {
     super();
@@ -39,11 +12,17 @@ export default class AcademicQuery extends Morph {
     // alternativ immer das AcademicQuery object mitgeben
     // und dem Bescheid geben, wenn ein update ist
     // (alles kacke)
+    // idealerweise bemerkt der hier schon, wenn sich
+    // irgendwo unter ihm Text ändert
     var observer = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
+      mutations.forEach(async mutation => {
         //lively.notify("SUPER observation", mutation.type)
         if (mutation.type == "childList") {
-          if (this.subquery) this.textContent = this.subquery.viewToQuery();
+          if (this.subquery) {
+            this.textContent = await this.subquery.viewToQuery();
+            var input = this.get('#queryInput');
+            input.value = this.getQuery();
+          }
         }
       })
     });
@@ -82,8 +61,8 @@ export default class AcademicQuery extends Morph {
     } else {
       lively.notify("Could not load query.");
     }
-    var input = <input value={queryView.textContent} style="width: 300px"></input>;
-    var updateButton = <button click={() => input.value = (this.getQuery())}>update</button>;
+    var input = <input id="queryInput" value={this.textContent} style="width: 300px"></input>;
+    var updateButton = <button click={() => this.setQuery(input.value)}>update</button>;
     
     pane.innerHTML = ""
     pane.appendChild(<div>

@@ -149,6 +149,7 @@ const config = {
 }*/
 
 var observer;
+var timeout;
 
 export default class AcademicSubquery extends Morph {
   constructor() {
@@ -160,16 +161,21 @@ export default class AcademicSubquery extends Morph {
     
     observer = new MutationObserver((mutations) => {
       mutations.forEach(mutation => {
-        //nach jeder Änderung erstmal nen Timer
         //lively.notify("observation", mutation.type)
-        if (mutation.type == "characterData") {
-          this.textContent = this.viewToQuery();
-        }
-        if (mutation.type == "childList") {
-          var div = <div id="update"></div>;
-          this.appendChild(div);
-          this.removeChild(div);
-        }
+        
+        timeout = setTimeout(async () => {
+          if (mutation.type == "characterData") {
+            this.textContent = await this.viewToQuery();
+          }
+          if (mutation.type == "childList") {
+            clearTimeout(timeout);
+            //timeout = setTimeout(() => {
+              var div = <div id="update"></div>;
+              this.appendChild(div);
+              this.removeChild(div);
+            //}, 3000);
+          }
+        }, 1000);
       })
     });
     
@@ -181,6 +187,8 @@ export default class AcademicSubquery extends Morph {
       characterDataOldValue: true,
     };
     
+    // TODO: Why are we switching focus after editing
+    // once we start observing?
     observer.observe(this.get('#pane'), config);
   }
   
@@ -202,7 +210,9 @@ export default class AcademicSubquery extends Morph {
   async setQueryObject(o) {
     this.ui = await this.queryToView(o);
     
-    this.updateView()
+    this.updateView();
+    
+    return this;
   }
 
   async updateView() {
@@ -214,14 +224,14 @@ export default class AcademicSubquery extends Morph {
     }
   }
 
-  viewToQuery() {
+  async viewToQuery() {
     var query = "... parsed from ui"
     
     if (this.isComplex) {
       // TODO: Why is this neccessary?
-      if (this.leftSubquery && this.rightSubquery) {
-        var left = this.leftSubquery.viewToQuery()
-        var right = this.rightSubquery.viewToQuery()
+      if (await this.leftSubquery && await this.rightSubquery) {
+        var left = await this.leftSubquery.viewToQuery()
+        var right = await this.rightSubquery.viewToQuery()
         var conjunction = this.get('#conjunction').textContent
         query = conjunction + "(" + left + ", " + right + ")";
       }
@@ -230,6 +240,12 @@ export default class AcademicSubquery extends Morph {
                   .querySelectorAll("span[name='sub']")
                   .map(e => e.textContent);
       query = attr + comp + "'" + val + "'";
+    }
+    
+    if (query == "... parsed from ui") {
+      lively.notify("LEFT", this.leftSubquery)
+      lively.notify("RIGHT", this.rightSubquery)
+      lively.notify("COMPLEX", this.isComplex)
     }
     
     return query
