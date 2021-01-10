@@ -123,7 +123,6 @@ s.addOperation(
 )
 
 var observer;
-var timeout;
 
 export default class AcademicSubquery extends Morph {
   constructor() {
@@ -134,22 +133,16 @@ export default class AcademicSubquery extends Morph {
     this.updateView()
     
     observer = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
-        //lively.notify("observation", mutation.type)
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
-          if (mutation.type == "characterData") {
-            this.textContent = await this.viewToQuery();
-          }
-          if (mutation.type == "childList") {
-            clearTimeout(timeout);
-            //timeout = setTimeout(() => {
-              var div = <div id="update"></div>;
-              this.appendChild(div);
-              this.removeChild(div);
-            //}, 3000);
-          }
-        }, 1000);
+      mutations.forEach(async mutation => {
+        if (mutation.type == "characterData") {
+          this.textContent = await this.viewToQuery();
+        }
+        if (mutation.type == "childList") {
+          // TODO: better propagation to super elements
+          var div = <div id="update"></div>;
+          this.appendChild(div);
+          this.removeChild(div);
+        }
       })
     });
     
@@ -389,13 +382,13 @@ export default class AcademicSubquery extends Morph {
                 class="button"
                 click={() => {
                   this.setQuery(
-                    "And(" + this.textContent + ", A='Placeholder')")
+                    "And(" + this.textContent + ", " + this.textContent + ")")
                 }}>AND</button>
               <button
                 class="button"
                 click={() => {
                   this.setQuery(
-                    "Or(" + this.textContent + ", A='Placeholder')")
+                    "Or(" + this.textContent + ", " + this.textContent + ")")
                 }}>OR</button>
             </span>
           </span>;
