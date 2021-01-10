@@ -1,0 +1,102 @@
+<template id="trace-visualization">
+    <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+    <style data-src="/templates/livelystyle.css"></style>
+    <style>
+        :host {
+
+        }
+
+        .layout-column {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sub {
+            margin-left: 30px !important;
+        }
+        
+        .changing {
+            background: orange !important;
+        }
+        
+        .column-left {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 0.2;
+        }
+
+        .column-middle {
+            flex: 0.5;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgb(120, 118, 116);
+        }
+
+        .column-right {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 0.3;
+
+            border-left: 1px solid black;
+        }
+
+        .layout-row {
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            height: 100%;
+        }
+            
+        .pane {
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .pane {
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .entry {
+            padding: 2px;
+            margin: .3em;
+            background: #eee;
+            cursor: pointer;
+        }
+
+        .entry:hover {
+            background: #bbb;
+        }
+
+        #traceList {
+            overflow: scroll;
+            width: 100%;
+            height: 100%;
+        }
+
+        #content {
+          background-color: gray;
+        }
+    </style>
+    
+    <div class="layout-row">
+        <div class="column-left">
+            <div id="traceList"></div>
+        </div>
+        <lively-separator reverse=true></lively-separator>
+        <div class="column-middle">
+            <lively-editor id="editor" class="pane"></lively-editor>
+        </div>
+        <lively-separator reverse=true></lively-separator>
+        <div class="column-right">
+            <lively-ast-inspector class="pane" id="currentAst"></lively-ast-inspector>
+            <lively-separator reverse=true></lively-separator>
+            <lively-ast-inspector class="pane" id="transformedAst"></lively-ast-inspector>
+        </div>
+    </div>
+
+
+</template>
