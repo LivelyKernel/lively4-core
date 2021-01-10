@@ -23,7 +23,7 @@ import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 import indentationWidth from 'src/components/widgets/indent.js';
-
+import { isTestFile } from 'src/components/tools/lively-testrunner.js';
 
 /*MD
 
@@ -706,7 +706,7 @@ export default class Container extends Morph {
         console.groupEnd("run test: " + this.getPath());
       }
     } else {
-      lively.notify("no rest-runner to run " + url.toString().replace(/.*\//,""));
+      lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
 
@@ -1036,6 +1036,23 @@ export default class Container extends Morph {
     } else {
       lively.openBrowser(url);
     }
+  }
+
+  async onSpawnTestRunner(evt) {
+    const path = this.getPath()
+
+    if (!isTestFile(path)) {
+      lively.warn('current file is no test file');
+      return;
+    }
+    
+    const pos = lively.getPosition(evt);
+    const testRunner = await lively.openComponentInWindow('lively-testrunner', pos);
+    testRunner.setTestPath(path);
+    await testRunner.clearTests();
+    await testRunner.resetMocha();
+    await testRunner.loadTests();
+    await testRunner.runTests();
   }
 
   onHome() {

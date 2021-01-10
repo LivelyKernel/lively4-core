@@ -1,4 +1,4 @@
-<template id="academic-query" >
+<template id="academic-subquery" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
 <style>
@@ -27,7 +27,7 @@
   position: absolute;
   bottom: 125%;
   left: 50%;
-  margin-bottom: -4px;
+  margin-bottom: -3px;
 
   /* Fade in hover */
   opacity: 0;
@@ -38,16 +38,16 @@
   font-size: 10px
 }
 
-/*.tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #555 transparent transparent transparent;
-}*/
+  .dropTarget {
+    border: 3px solid white;
+  }
+  .dropTarget.over {
+    border: 3px dotted #666;
+  }
+  
+  .queryPart:blank {
+    background: pink;
+  }
 
 .hover:hover .hovercontent {
   visibility: visible;

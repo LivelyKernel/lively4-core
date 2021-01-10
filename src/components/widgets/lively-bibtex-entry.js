@@ -116,9 +116,9 @@ export default class LivelyBibtexEntry extends Morph {
     this.pane.innerHTML = ""
     
     try {
-      var authoText = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
+      var authorText = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
     } catch (e) {
-      authoText = this.author;
+      authorText = this.author;
     }
     try {
       var titleText = latexconv.convertLaTeXToUnicode(this.title);
@@ -134,7 +134,7 @@ export default class LivelyBibtexEntry extends Morph {
     }    
     var entry = <div id="entry">
       <div id="draghandle" draggable="true"></div>
-      [{key}] <span id="author">{authoText}</span>. <span id="year">{this.year}</span>.
+      [{key}] <span id="author">{authorText}</span>. <span id="year">{this.year}</span>.
       <span id="title">{titleText}</span>
       {misc}
       <span id="edit" title="edit entry" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>

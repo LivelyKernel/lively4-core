@@ -93,6 +93,7 @@ SystemJS.config({
     // utils
     'lang': lively4url + '/src/client/lang/lang.js',
     'lang-ext': lively4url + '/src/client/lang/lang-ext.js',
+    'lang-zone': lively4url + '/src/client/lang/lang-zone.js',
 
     // utils
     'utils': lively4url + '/src/client/utils.js'

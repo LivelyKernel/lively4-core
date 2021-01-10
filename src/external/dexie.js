@@ -1,3 +1,10 @@
+// =============================================================================
+// ========================== MONKEY PATCHED TO ================================
+// ========================= PROVIDE ZONE ACCESS ===============================
+// =============================================================================
+// =============================================================================
+// =============================================================================
+
 /*
  * Dexie.js - a minimalistic wrapper for IndexedDB
  * ===============================================
@@ -888,6 +895,8 @@ props(Promise, {
     //task: {get: ()=>task},
     newPSD: newScope,
     usePSD: usePSD,
+    incrementExpectedAwaits: incrementExpectedAwaits,
+    decrementExpectedAwaits: decrementExpectedAwaits,
     scheduler: {
         get: function () { return asap$1; },
         set: function (value) { asap$1 = value; }

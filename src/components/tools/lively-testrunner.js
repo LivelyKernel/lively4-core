@@ -17,12 +17,15 @@ MD*/
 
 // });
 
-function isTestFile(fileName) {
+export function isTestFile(fileName) {
   return fileName.match(/(-|\.)(spec|test)\.js$/);
 }
 
 export default class TestRunner extends Morph {
   get testDir() { return this.get('#testDir'); }
+  setTestPath(path) {
+    this.testDir.value = path;
+  }
 
   initialize() {
     
