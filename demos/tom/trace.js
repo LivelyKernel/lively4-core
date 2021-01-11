@@ -1,4 +1,5 @@
 import * as _ from 'src/external/lodash/lodash.js';
+import loadPlugin from 'demos/tom/plugin-load-promise.js'
 
 class Event {
     constructor(type, data, position) {
@@ -32,6 +33,14 @@ class ASTChangeEvent {
         this.__type__ = 'ASTChangeEvent';
     }
     
+    apply(ast) {
+        
+    }
+    
+    revert(ast) {
+        
+    }
+    
     visit(object) {
         object.visitASTChangeEvent(this);
     }
@@ -55,6 +64,9 @@ class TraceSection {
         this.name = name;
         this.entries = entries;
         
+        this.nodes = new Map();
+        
+        this.changes = [];
         this.hasChanges = false;
     }
 
@@ -64,7 +76,15 @@ class TraceSection {
     
     addChange(changeEvent) {
         this.hasChanges = true;
-        this.entries.last.addChange(changeEvent);
+        if(this.entries.last) {
+            this.entries.last.addChange(changeEvent);
+        }
+        this.changes.push(changeEvent);
+        
+    }
+    
+    somethingHappened() {
+        return this.hasChanges || this.entries.length > 0;
     }
     
     visit(object) {
@@ -75,6 +95,7 @@ class TraceSection {
 class Trace {
     constructor() {
         this._log = [];
+        this.counter = 0;
     }
 
     register(name) {
@@ -88,11 +109,18 @@ class Trace {
     startTraversion() {
         this.log(new Event('startTraversion'));
     }
+    
+    createTraceID() {
+        return {
+            sectionId: 0,
+            nodeId: this.counter++
+        }
+    }
 
     /* AST changes */
 
-    notify(key, oldValue, newValue) {
-        this.log(new ASTChangeEvent(null, key, clone(oldValue), clone(newValue)));
+    notify(objectID, key, oldValue, newValue) {
+        this.log(new ASTChangeEvent(objectID, key, clone(oldValue), clone(newValue)));
     }
 
     /* Plugins */
@@ -107,9 +135,9 @@ class Trace {
 
     /* Functions */
 
-    aboutToEnter(position, name, returnValue) {
+    aboutToEnter(position, name) {
         this.log(new Event('aboutToEnter', name, position));
-        return returnValue;
+        return name;
     }
 
     enterFunction(position, name) {
@@ -160,7 +188,13 @@ class Trace {
         this.log(new Event('assignment', [clone(left), clone(right)], position));
         return right;
     }
-
+    
+    /* Error */
+    
+    error(error) {
+        this.log(new Event('error', [error.stack]));
+    }
+    
     /* Analyzation */
 
     analyze() {
@@ -173,19 +207,24 @@ class Trace {
         startIndex++;
 
         const stack = [];
-        console.log(startIndex);
+        let section;
         for (const entry of this._log.slice(startIndex)) {
             switch (entry.type) {
                 case 'enterPlugin':
                     stack.push(new TraceSection(entry.data));
                     break;
                 case 'leavePlugin':
-                    const section = stack.pop();
+                    section = stack.pop();
                     if (stack.last) {
                         stack.last.addEntry(section);
                     } else {
                         this.sections.push(section);
                     }
+                    break;
+                case 'error':
+                    section = stack.pop();
+                    section.addEntry(entry);
+                    stack.last.addEntry(section)
                     break;
                 default:
                     if (stack[stack.length - 1]) {
@@ -203,7 +242,9 @@ class Trace {
                     }
             }
         }
-        this.sections = this.sections.filter(section => section.entries.length > 0);
+        
+        this.sections.push(...stack);
+        this.sections = this.sections.filter(section => section.somethingHappened());
     }
 }
 
@@ -211,5 +252,29 @@ Trace.traceIdenifierName = '__currentTrace__';
 Trace.locations = [];
 Trace.register = location => Trace.locations.push(location) - 1;
 Trace.resolve = (number, locations) => locations[number];
+
+Trace.on = async function(source, pluginsUrls) {
+    const data = await loadPlugin(source, pluginsUrls)
+    const obj = {
+        locations: data.locations,
+        oldAST: JSON.parse(data.oldAST),
+        transformedAST: JSON.parse(data.transformedAST || '{}'),
+        trace: Object.assign(new Trace(), JSON.parse(data.trace)),
+        transformedCode: data.transformedCode
+    };
+    
+    const trace = obj.trace;
+
+    for (const entry of trace._log) {
+        entry.position = obj.locations[entry.position];
+        //console.log(entry)
+    }
+
+    trace.oldAST = obj.oldAST;
+    trace.transformedAST = obj.transformedAST;
+
+    trace.analyze();
+    return trace;            
+}
 
 export default Trace;
