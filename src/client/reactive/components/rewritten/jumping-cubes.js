@@ -8,6 +8,7 @@ import MCTS from './jumping-cubes-mcts.js';
 import Matrix from './square-matrix.js';
 
 import { shake } from 'utils';
+import { fa4 } from 'src/client/utils/font-awesome-utils.js';
 
 class Cube {
 
@@ -587,10 +588,6 @@ export default class JumpingCubes extends Morph {
   onContextMenu(evt) {
     evt.stopPropagation();
     evt.preventDefault();
-
-    function fa4(classes) {
-      return '<i class="fa fa-' + classes + '" aria-hidden="true"></i>';
-    }
 
     const players = this.getConfig().players.map((player, index) => {
       function checkIcon(enabled) {

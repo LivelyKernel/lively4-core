@@ -1,6 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import AcademicSubquery from "src/components/widgets/academic-subquery.js";
 
+var timeout;
+
 export default class AcademicQuery extends Morph {
   constructor() {
     super();
@@ -16,14 +18,17 @@ export default class AcademicQuery extends Morph {
     // irgendwo unter ihm Text ändert
     var observer = new MutationObserver((mutations) => {
       mutations.forEach(async mutation => {
-        //lively.notify("SUPER observation", mutation.type)
-        if (mutation.type == "childList") {
-          if (this.subquery) {
-            this.textContent = await this.subquery.viewToQuery();
-            var input = this.get('#queryInput');
-            input.value = this.getQuery();
+        lively.notify("SUPER observation", mutation.type)
+        clearTimeout(timeout);
+        timeout = setTimeout(async () => {
+          if (mutation.type == "childList") {
+            if (this.subquery) {
+              this.textContent = await this.subquery.viewToQuery();
+              var input = this.get('#queryInput');
+              input.value = this.getQuery();
+            }
           }
-        }
+        }, 1000);
       })
     });
     

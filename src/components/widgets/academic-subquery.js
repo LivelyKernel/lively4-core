@@ -122,33 +122,6 @@ s.addOperation(
   }
 )
 
-/*const observer = new MutationObserver(function(mutations) {
-  mutations.forEach(mutation => {
-    //lively.notify("observation", mutation.type)
-    if (mutation.type == "characterData") {
-      var element = mutation.target;
-      lively.notify("ELEMENT",element)
-      while (element.parentNode && (element.nodeName != "ACADEMIC-QUERY")) {
-        lively.notify("CURRENT ELEMENT",element)
-        element = element.parentNode;
-      }
-      if (element.nodeName == "ACADEMIC-QUERY") {
-        element.textContent = element.viewToQuery();
-      } else {
-        lively.notify("Could not find academic-query");
-      }
-    }
-  })
-})
-const config = {
-  attributes: true,
-  childList: true,
-  subtree: true,
-  attributeOldValue: true,
-  characterDataOldValue: true,
-  //attributeFilter: true // breaks for some reason
-}*/
-
 var observer;
 var timeout;
 
@@ -161,24 +134,21 @@ export default class AcademicSubquery extends Morph {
     this.updateView()
     
     observer = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
-        //lively.notify("observation", mutation.type)
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        mutations.forEach(async mutation => {
           if (mutation.type == "characterData") {
-            lively.notify("THIS", this)
             this.textContent = await this.viewToQuery();
           }
           if (mutation.type == "childList") {
-            clearTimeout(timeout);
-            //timeout = setTimeout(() => {
-              var div = <div id="update"></div>;
-              this.appendChild(div);
-              this.removeChild(div);
-            //}, 3000);
+            // TODO: better propagation to super elements
+            var div = <div id="update"></div>;
+            this.appendChild(div);
+            this.removeChild(div);
+          
           }
-        }, 1000);
-      })
+        })
+      }, 300);
     });
     
     const config = {
@@ -300,6 +270,9 @@ export default class AcademicSubquery extends Morph {
     this.ui = await this.queryToView(o);
     
     this.updateView();
+    
+    // when only setting the query object, the query might not be set yet
+    this.textContent = await this.viewToQuery();
   }
 
   async viewToQuery() {
@@ -316,16 +289,18 @@ export default class AcademicSubquery extends Morph {
     } else {
       var innerSpan = this.get('#inner');
       if (innerSpan) {
-        lively.notify("INNERSPAN", innerSpan)
+        //lively.notify("INNERSPAN", innerSpan)
         var [attr, comp, val] = innerSpan
                     .querySelectorAll("span[name='queryPart']")
                     .map(e => e.textContent);
         if (val)
           val = val.slice(0, val.length - 1); // remove last whitespace
-        // TODO: keep the '' when parsing query so that we don't have
-        // 3 spans here....
-        // OOODER ich lass das mit dem Edit Mode, dafür gibt's ja schon
-        // das input Feld
+        
+        // TODO check if attribute has string value
+        var stringAttributes = {A: "Author"}
+        if (attr.slice(0, attr.length - 1) in stringAttributes) {
+          val = "'" + val + "'"
+        }
         //query = attr + comp + "'" + val + "'";
         if (innerSpan.getAttribute("type") == "composite")
           query = "Composite(" + attr + comp + val + ")";
@@ -366,7 +341,7 @@ export default class AcademicSubquery extends Morph {
   onMouseOut(event) {
     this.style.color = "black"
   }
-  
+
   async queryToView(object) {
     var span = <span contenteditable="false" id="inner"></span>;
     var subSpan;
@@ -405,8 +380,18 @@ export default class AcademicSubquery extends Morph {
         span =
           <span class="hover" contenteditable="false" id="inner">
             <span class="hovercontent">
-              <button class="button">AND</button>
-              <button class="button">OR</button>
+              <button
+                class="button"
+                click={() => {
+                  this.setQuery(
+                    "And(" + this.textContent + ", " + this.textContent + ")")
+                }}>AND</button>
+              <button
+                class="button"
+                click={() => {
+                  this.setQuery(
+                    "Or(" + this.textContent + ", " + this.textContent + ")")
+                }}>OR</button>
             </span>
           </span>;
         
@@ -431,8 +416,8 @@ export default class AcademicSubquery extends Morph {
   }
   
   async livelyExample() {
-    //this.setQuery("Composite(AA.AuN=='susan t dumais')");
-    this.setQuery("Composite(AA.AuId=2055148755)")
+    this.setQuery("Composite(AA.AuN=='susan t dumais')");
+    //this.setQuery("Composite(AA.AuId=2055148755)")
     //this.setQuery("And(Or(Y=1985, Y=2008), Ti='disordered electronic systems')")
     //this.setQuery("And(O='abc', Y=1000)")
     //this.setQuery("Y='1000'")

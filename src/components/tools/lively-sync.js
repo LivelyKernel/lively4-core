@@ -31,12 +31,6 @@ export default class Sync extends Morph {
     this.get('#gitrepository').addEventListener("change", evt => this.onGitrepositoryInputChange(evt))
     this.get('#serverUrl').addEventListener("change", evt => this.onServerUrlInputChange(evt))
     
-    
-    var travis = this.get("#travisLink");
-    travis.onclick = () => {
-      window.open(travis.getAttribute("href"));
-      return false;
-    };
     this.updateWindowTitle()
     this.updateServerURL()
   }
