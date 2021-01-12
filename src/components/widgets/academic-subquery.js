@@ -297,7 +297,10 @@ export default class AcademicSubquery extends Morph {
           val = val.slice(0, val.length - 1); // remove last whitespace
         
         // TODO check if attribute has string value
-        var stringAttributes = {A: "Author"}
+        var stringAttributes = {
+          "A": "Author",
+          "AA.AuN": "Author Name",
+        }
         if (attr.slice(0, attr.length - 1) in stringAttributes) {
           val = "'" + val + "'"
         }
