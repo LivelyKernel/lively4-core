@@ -19,12 +19,12 @@ function createObservingAccessorsOn(object, propertyName, observer) {
     })
 }
 
-const handler = (observer) => {
+const handler = (observer, key) => {
     return {
         set: function(obj, prop, value) {
             // Todo: Reflect.set()
             if (Number.isInteger(Number.parseInt(prop))) {
-                observer.notify(prop, copy(obj[prop]), copy(value));
+                observer.notify(prop, copy(obj[prop]), copy(value), key);
                 wrapAST(value, observer, true);
             }
             obj[prop] = value;
@@ -33,8 +33,8 @@ const handler = (observer) => {
     }
 };
 
-function wrappedArray(array, observer) {
-    return new Proxy(array, handler(observer));
+function wrappedArray(array, observer, key) {
+    return new Proxy(array, handler(observer, key));
 }
 
 export default function wrapAST(astNode, observer, onlyUnknownNodes) {
@@ -59,13 +59,13 @@ export default function wrapAST(astNode, observer, onlyUnknownNodes) {
                 }
 
                 const arrayObserver = {
-                    notify(key, oldValue, newValue) {
-                        observer.notify(astNode.traceID, key, oldValue, newValue)
+                    notify(prop, oldValue, newValue) {
+                        observer.notify(astNode.traceID, prop, oldValue, newValue, key)
                     }
                 };
 
                 // Todo: do better handling
-                astNode[key] = wrappedArray(value, arrayObserver);
+                astNode[key] = wrappedArray(value, arrayObserver, key);
 
                 // notify if the array is replaced
                 createObservingAccessorsOn(astNode, key, observer);

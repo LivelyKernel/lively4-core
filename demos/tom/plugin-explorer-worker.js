@@ -111,18 +111,19 @@ self.onmessage = function(msg) {
 
                 wrapAST(ast, trace);
                 let result
-                //try {
+                try {
                     result = babel.transformFromAst(ast, undefined, config);
-                /*} catch (e) {
+                } catch (e) {
+                    result = null;
                     trace.error(e);
-                }*/
+                }
 
 
                 // const result = babel.transform(msg.data.source, config);
                 postMessage({
                     oldAST: oldASTAsString,
-                    transformedAST: JSON.stringify(result.ast),
-                    transformedCode: result.code,
+                    transformedAST: JSON.stringify(result && result.ast),
+                    transformedCode: result && result.code,
                     trace: JSON.stringify(trace),
                     locations: Trace.locations
                 });

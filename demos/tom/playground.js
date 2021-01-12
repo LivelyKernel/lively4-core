@@ -9,7 +9,7 @@ export default function({types: t}) {
                 }
                 path.node.modified = true;
                 
-                path.node.callee.name = 'test_' +  path.node.callee.name;               
+                path.node.callee.name = [...path.node.callee.name].reverse().join('');
             }
         }
     }

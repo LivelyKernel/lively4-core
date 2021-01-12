@@ -1,5 +1,7 @@
 import loadPlugin from 'demos/tom/plugin-load-promise.js'
 import Trace from 'demos/tom/trace.js';
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -14,17 +16,18 @@ export default class TraceVisualization extends Morph {
         this.currentURL = null;
 
     }
-    
-    static async for(source, pluginUrls) {
-        const trace = await Trace.on(source, pluginUrls);
-        const selector = await lively.openComponentInWindow('trace-visualization');
-        selector.visualize(trace);
-    }
+
+     
+    static async for (source, pluginUrls) {
+            const trace = await Trace.on(source, pluginUrls);
+            const selector = await lively.openComponentInWindow('trace-visualization');
+            selector.visualize(trace);
+        }
 
     visualize(trace) {
         this.trace = trace;
         this.updateList();
-        this.showCurrentAST();
+        this.setCurrentAST(trace.oldAST);
     }
 
     /* UI access */
@@ -57,7 +60,7 @@ export default class TraceVisualization extends Morph {
 
     addListItem(section) {
         const className = `entry ${section.hasChanges ? 'changing' : ''}`
-        const header = < div class = {className} > +{ section.name } < /div>;
+        const header = < div class = { className } > +{ section.name } < /div>;
         const body = < div > < /div>;
         const entry = < div > { header } { body } < /div>;
 
@@ -73,7 +76,7 @@ export default class TraceVisualization extends Morph {
                     elm.visit({
                         visitEvent(event) {
                             const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
-                            const subEntry = < div class = {className} > { event.type } < /div>;
+                            const subEntry = < div class = { className } > { event.type } < /div>;
 
                             body.appendChild(subEntry);
 
@@ -81,13 +84,20 @@ export default class TraceVisualization extends Morph {
                                 if (me.lastMark) {
                                     me.lastMark.clear();
                                 }
+                                          
+                                me.updateAST(section, elm);
 
                                 const position = elm.position;
+                                if(!position) {
+                                    return;
+                                }
                                 if (me.currentURL !== position.filename) {
                                     me.editor.setURL(position.filename);
                                     await me.editor.loadFile();
                                 }
-                                          
+
+                                
+
                                 me.editorDoc.scrollIntoView({
                                     line: position.startLine - 1,
                                     ch: position.startColumn
@@ -132,8 +142,43 @@ export default class TraceVisualization extends Morph {
     }
 
     /* update AST */
-    showCurrentAST() {
-        this.currentAST.inspect(this.trace.oldAST);
+
+    setCurrentAST(ast) {
+        // this.currentAST.inspect(ast);
+        this.currentAST.value = babel.transformFromAst(ast).code
+    }
+
+    setTransformedAST(ast) {
+        // this.transformedAst.inspect(ast);
+                                          
+        this.transformedAst.value = babel.transformFromAst(ast).code
+    }
+
+    showASTs() {
+        this.setCurrentAST(this.curAST);
+        this.setTransformedAST(this.nextAST)
+    }
+
+    updateAST(section, entry) {
+        this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
+        this.nextAST;
+        const sections = this.trace.sections;
+        for (const sec of sections) {
+            if (sec === section) {
+                break;
+            }
+            sec.apply(this.curAST);
+        }
+
+        const index = section.entries.indexOf(entry);
+
+        for (let i = 0; i < index; i++) {
+            section.entries[i].apply(this.curAST);
+        }
+
+        this.nextAST = JSON.parse(JSON.stringify(this.curAST));
+        section.entries[index].apply(this.nextAST);
+        this.showASTs();
     }
 
 
@@ -161,9 +206,9 @@ export default class TraceVisualization extends Morph {
     async livelyExample() {
         const source = `if(true){}`;
         const urls = ['https://lively-kernel.org/lively4/lively4-tom/demos/tom/defect-demo-plugin.js'];
-                                          
+
         const trace = await Trace.on(source, urls);
-                                          
+
         this.visualize(trace);
     }
 

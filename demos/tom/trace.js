@@ -1,23 +1,31 @@
 import * as _ from 'src/external/lodash/lodash.js';
 import loadPlugin from 'demos/tom/plugin-load-promise.js'
 
+const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
+
 class Event {
     constructor(type, data, position) {
         this.type = type;
         this.position = position;
         this.data = data;
-        
+
         this.changes = [];
         this.hasChanges = false;
-        
+
         this.__type__ = 'Event';
     }
-    
+
     addChange(changeEvent) {
         this.hasChanges = true;
         this.changes.push(changeEvent);
     }
-    
+
+    apply(ast) {
+        for (const change of this.changes) {
+            change.apply(ast);
+        }
+    }
+
     visit(object) {
         object.visitEvent(this);
     }
@@ -29,18 +37,70 @@ class ASTChangeEvent {
         this.propertyName = propertyName;
         this.oldValue = oldValue;
         this.newValue = newValue;
-        
+
         this.__type__ = 'ASTChangeEvent';
     }
-    
+
+    getNode(id, astNode) {
+        
+
+        if (astNode.type) {
+            const isSearchedNode = value => value && value.traceID !== undefined && value.traceID.nodeID === id.nodeID;
+            
+            if(isSearchedNode(astNode)) {
+                return astNode;
+            }
+            
+            const keys = Object.keys(astNode).filter(key => !excludedProperties.includes(key));
+            for (const key of keys) {
+                const value = astNode[key];
+
+
+                if (Array.isArray(value)) {
+                    for (const entry of value) {
+                        const node = this.getNode(id, entry)
+                        if(isSearchedNode(node)) {
+                            return node;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (!value) {
+                    continue;
+                }
+
+                switch (typeof value) {
+                    case 'function':
+                        // ignore functions
+                        break;
+                    case 'object':
+                        // assume it is an astNode
+                        const node = this.getNode(id, value)
+                        if(isSearchedNode(node)) {
+                            return node;
+                        }
+                        // fallthrough as we want to know if a node is replaced
+                    default:
+                        // ignore value
+                }
+            }
+        }
+    }
+
     apply(ast) {
-        
+        let astNode = this.getNode(this.objectID, ast);
+        if (this.arrayProperty) {
+            astNode = astNode[this.arrayProperty];
+        } 
+        astNode[this.propertyName] = this.newValue;
     }
-    
+
     revert(ast) {
-        
+
     }
-    
+
     visit(object) {
         object.visitASTChangeEvent(this);
     }
@@ -63,9 +123,9 @@ class TraceSection {
     constructor(name, entries = []) {
         this.name = name;
         this.entries = entries;
-        
+
         this.nodes = new Map();
-        
+
         this.changes = [];
         this.hasChanges = false;
     }
@@ -73,20 +133,34 @@ class TraceSection {
     addEntry(entry) {
         this.entries.push(entry);
     }
-    
+
     addChange(changeEvent) {
         this.hasChanges = true;
-        if(this.entries.last) {
+        if (this.entries.last) {
             this.entries.last.addChange(changeEvent);
+        } else {
+            const stub = new Event('stub');
+            this.entries.push(stub);
+            stub.addChange(changeEvent);
         }
         this.changes.push(changeEvent);
-        
+
     }
-    
+
     somethingHappened() {
         return this.hasChanges || this.entries.length > 0;
     }
-    
+
+    apply(ast) {
+        for (const change of this.changes) {
+            change.apply(ast);
+        }
+    }
+
+    revert(ast) {
+
+    }
+
     visit(object) {
         object.visitTraceSection(this);
     }
@@ -109,18 +183,20 @@ class Trace {
     startTraversion() {
         this.log(new Event('startTraversion'));
     }
-    
+
     createTraceID() {
         return {
-            sectionId: 0,
-            nodeId: this.counter++
+            sectionID: 0,
+            nodeID: this.counter++
         }
     }
 
     /* AST changes */
 
-    notify(objectID, key, oldValue, newValue) {
-        this.log(new ASTChangeEvent(objectID, key, clone(oldValue), clone(newValue)));
+    notify(objectID, key, oldValue, newValue, arrayProperty) {
+        const event = new ASTChangeEvent(objectID, key, clone(oldValue), clone(newValue));
+        this.log(event);
+        event.arrayProperty = arrayProperty;
     }
 
     /* Plugins */
@@ -188,13 +264,13 @@ class Trace {
         this.log(new Event('assignment', [clone(left), clone(right)], position));
         return right;
     }
-    
+
     /* Error */
-    
+
     error(error) {
         this.log(new Event('error', [error.stack]));
     }
-    
+
     /* Analyzation */
 
     analyze() {
@@ -223,8 +299,8 @@ class Trace {
                     break;
                 case 'error':
                     section = stack.pop();
-                    section.addEntry(entry);
-                    stack.last.addEntry(section)
+                    section.addEntry(Object.assign(new Event(), entry));
+                    this.sections.push(section);
                     break;
                 default:
                     if (stack[stack.length - 1]) {
@@ -233,16 +309,16 @@ class Trace {
                         event.visit({
                             visitEvent(event) {
                                 stack.last.addEntry(event);
-                            }, 
+                            },
                             visitASTChangeEvent(changeEvent) {
                                 stack.last.addChange(changeEvent);
                             }
                         });
-                        
+
                     }
             }
         }
-        
+
         this.sections.push(...stack);
         this.sections = this.sections.filter(section => section.somethingHappened());
     }
@@ -262,7 +338,7 @@ Trace.on = async function(source, pluginsUrls) {
         trace: Object.assign(new Trace(), JSON.parse(data.trace)),
         transformedCode: data.transformedCode
     };
-    
+
     const trace = obj.trace;
 
     for (const entry of trace._log) {
@@ -274,7 +350,7 @@ Trace.on = async function(source, pluginsUrls) {
     trace.transformedAST = obj.transformedAST;
 
     trace.analyze();
-    return trace;            
+    return trace;
 }
 
 export default Trace;
