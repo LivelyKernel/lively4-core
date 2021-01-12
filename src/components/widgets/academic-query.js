@@ -18,7 +18,7 @@ export default class AcademicQuery extends Morph {
     // irgendwo unter ihm Text ändert
     var observer = new MutationObserver((mutations) => {
       mutations.forEach(async mutation => {
-        lively.notify("SUPER observation", mutation.type)
+        //lively.notify("SUPER observation", mutation.type)
         clearTimeout(timeout);
         timeout = setTimeout(async () => {
           if (mutation.type == "childList") {
@@ -72,9 +72,10 @@ export default class AcademicQuery extends Morph {
     
     pane.innerHTML = ""
     pane.appendChild(<div>
-                       {input} {updateButton} {searchButton}
-                       {queryView}
-                     </div>);
+        <h1>Academic Query:</h1>
+        {input} {updateButton} {searchButton}
+        {queryView}
+      </div>);
   }
 
   viewToQuery() {
