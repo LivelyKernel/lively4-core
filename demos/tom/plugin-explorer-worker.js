@@ -12,28 +12,27 @@ importScripts(lively4url + '/demos/tom/plugin-explorer-systemjs-config.js')
 // not sure why I need this but without it I cannot import the plugins
 System.import(pluginTransformationPlugin);
 
-const enumerationPlugin = function() {
-
-    let counter = 0;
-
+const enumerationPlugin = createTraceID => function() {
     const visitor = {
         enter(path) {
-            path.node.traceid = counter++;
+            if(!path.node.traceID) {
+                path.node.traceID = createTraceID();
+            } 
         }
     };
 
     return {
         visitor: {
             Program(path) {
-                path.node.traceid = counter++;
+                path.node.traceID = createTraceID();
                 path.traverse(visitor)
             }
         }
     }
 }
 
-const enumerationConfig = {
-    plugins: [enumerationPlugin]
+const enumerationConfig = createTraceID => {
+    return {plugins: [enumerationPlugin(createTraceID)]}
 }
 
 async function importPlugin(url) {
@@ -87,6 +86,10 @@ self.onmessage = function(msg) {
         const trace = new Trace();
         // make it globally available for use in plugins
         window[Trace.traceIdenifierName] = trace;
+        
+        function createTraceID() {
+    return trace.createTraceID();
+}
 
         importPlugins(msg.data.urls)
             .then(function(modules) {
@@ -103,11 +106,17 @@ self.onmessage = function(msg) {
                 };
 
                 trace.startTraversion();
-                const ast = babel.transform(msg.data.source, enumerationConfig).ast;
+                const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
                 const oldASTAsString = JSON.stringify(ast);
 
                 wrapAST(ast, trace);
-                const result = babel.transformFromAst(ast, undefined, config);
+                let result
+                //try {
+                    result = babel.transformFromAst(ast, undefined, config);
+                /*} catch (e) {
+                    trace.error(e);
+                }*/
+
 
                 // const result = babel.transform(msg.data.source, config);
                 postMessage({

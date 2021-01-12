@@ -1,5 +1,3 @@
-"enable aexpr";
-
 import loadPlugin from 'demos/tom/plugin-load-promise.js'
 import Trace from 'demos/tom/trace.js';
 
@@ -15,6 +13,12 @@ export default class TraceVisualization extends Morph {
 
         this.currentURL = null;
 
+    }
+    
+    static async for(source, pluginUrls) {
+        const trace = await Trace.on(source, pluginUrls);
+        const selector = await lively.openComponentInWindow('trace-visualization');
+        selector.visualize(trace);
     }
 
     visualize(trace) {
@@ -96,7 +100,7 @@ export default class TraceVisualization extends Morph {
                                     line: position.endLine - 1,
                                     ch: position.endColumn
                                 }, {
-                                    css: 'background: ' + color
+                                    css: 'background: #eee'
                                 });
                             });
                         },
@@ -155,28 +159,12 @@ export default class TraceVisualization extends Morph {
     }
 
     async livelyExample() {
-
-        const source = `locals.foo`;
-
-        loadPlugin(source, ['https://lively-kernel.org/lively4/lively4-tom/src/external/babel-plugin-locals.js'])
-            .then(val => {
-                const obj = {
-                    locations: val.locations,
-                    oldAST: JSON.parse(val.oldAST),
-                    transformedAST: JSON.parse(val.transformedAST),
-                    trace: Object.assign(new Trace(), JSON.parse(val.trace)),
-                    transformedCode: val.transformedCode
-                };
-
-                for (const entry of obj.trace._log) {
-                    entry.position = obj.locations[entry.position];
-                    //console.log(entry)
-                }
-                obj.trace.analyze();
-                obj.trace.oldAST = obj.oldAST;
-                this.visualize(obj.trace)
-
-            })
+        const source = `if(true){}`;
+        const urls = ['https://lively-kernel.org/lively4/lively4-tom/demos/tom/defect-demo-plugin.js'];
+                                          
+        const trace = await Trace.on(source, urls);
+                                          
+        this.visualize(trace);
     }
 
 

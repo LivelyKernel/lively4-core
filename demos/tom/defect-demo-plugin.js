@@ -3,11 +3,13 @@ export default function({ types: t }) {
         name: 'demo-plugin',
         visitor: {
             Conditional(path) {
-                path.get('test').insertBefore(t.stringLiteral('start'));
-                path.get('test').insertAfter(t.stringLiteral('after'));
+                const startNode = t.stringLiteral('start');
+                const endNode = t.stringLiteral('after');
+                path.get('test').insertBefore(startNode);
+                path.get('test').insertAfter(endNode);
             },
             AssignmentExpression(path) {
-                alert(path.node.left.name)
+                console.log(path.node.left.name)
             }
         }
     }
