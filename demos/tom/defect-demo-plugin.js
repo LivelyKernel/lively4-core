@@ -9,6 +9,9 @@ export default function({ types: t }) {
             },
             
             AssignmentExpression(path) {
+                if(path.isGenerated()) {
+                    return;
+                }
                 const position = t.numericLiteral(path.node.loc.start.line);
                 path.insertBefore(position);
             }

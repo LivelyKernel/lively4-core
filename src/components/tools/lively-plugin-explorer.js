@@ -542,7 +542,7 @@ export default class PluginExplorer extends Morph {
             config.sourceFileName = filename
             config.moduleIds = false;
             
-            config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
+            // config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
             this.transformationResult = babel.transform(this.sourceText, config);
             
 

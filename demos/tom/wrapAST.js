@@ -39,7 +39,7 @@ function wrappedArray(array, observer, key) {
 
 export default function wrapAST(astNode, observer, onlyUnknownNodes) {
     // simply check if the object is an astNode
-    if (astNode.type) {
+    if (astNode && astNode.type) {
         if (onlyUnknownNodes) {
             if (astNode.traceID) {
                 return;

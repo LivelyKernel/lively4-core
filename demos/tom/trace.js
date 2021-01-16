@@ -239,6 +239,16 @@ class Trace {
     nextLoopIteration(position, ...args) {
         this.log(new Event('nextLoopIteration', args.map(clone), position));
     }
+    
+    forIterator(position, iterator) {
+        this.log(new Event('forIterator', iterator, position));
+        return iterator;
+    }
+    
+    forKeys(position, keys) {
+        this.log(new Event('forKeys', keys, position));
+        return keys;
+    }
 
     endLoop(position) {
         this.log(new Event('endLoop', undefined, position));
@@ -326,7 +336,33 @@ class Trace {
 
 Trace.traceIdenifierName = '__currentTrace__';
 Trace.locations = [];
-Trace.register = location => Trace.locations.push(location) - 1;
+Trace.fileRegistry = new Map();
+Trace.astNodeRegistry = new Map();
+
+Trace.register = function(astNode, state) {
+    if (Trace.astNodeRegistry.has(astNode)) {
+        return Trace.astNodeRegistry.get(astNode);
+    }
+    
+    const filename = state.file.opts.filename;
+
+    const start = astNode.loc.start;
+    const end = astNode.loc.end;
+
+    const locationObject = {
+        filename,
+        startLine: start.line,
+        startColumn: start.column,
+        endLine: end.line,
+        endColumn: end.column
+    }
+    
+    const id = Trace.locations.push(locationObject) - 1;
+    Trace.astNodeRegistry.set(astNode, id);
+    
+    return id;
+}
+
 Trace.resolve = (number, locations) => locations[number];
 
 Trace.on = async function(source, pluginsUrls) {
@@ -348,6 +384,7 @@ Trace.on = async function(source, pluginsUrls) {
 
     trace.oldAST = obj.oldAST;
     trace.transformedAST = obj.transformedAST;
+    
 
     trace.analyze();
     return trace;

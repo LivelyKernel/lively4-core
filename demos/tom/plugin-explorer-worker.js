@@ -35,6 +35,29 @@ const enumerationConfig = createTraceID => {
     return {plugins: [enumerationPlugin(createTraceID)]}
 }
 
+
+// copied from src/client/lively.js
+async function unloadModule(path) {
+    var normalizedPath = System.normalizeSync(path)
+    try {
+      // check, to prevent trying to reloading a module a second time if there was an error #375
+      if (System.get(normalizedPath)) {
+        await System.import(normalizedPath).then(module => {
+          if(module && typeof module.__unload__ === "function") {
+            module.__unload__();
+          }
+        });        
+      }      
+    } catch(e) {
+      console.log("WARNING: error while trying to unload " + path)
+    }
+    System.registry.delete(normalizedPath);
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][normalizedPath] = undefined;
+    delete System.loads[normalizedPath]
+}
+
+
 async function importPlugin(url) {
     const module = await System.import(url);
     const plugin = module.default;
@@ -118,8 +141,6 @@ self.onmessage = function(msg) {
                     trace.error(e);
                 }
 
-
-                // const result = babel.transform(msg.data.source, config);
                 postMessage({
                     oldAST: oldASTAsString,
                     transformedAST: JSON.stringify(result && result.ast),
@@ -127,6 +148,10 @@ self.onmessage = function(msg) {
                     trace: JSON.stringify(trace),
                     locations: Trace.locations
                 });
+                
+                for (const url of msg.data.urls) {
+                    unloadModule(url);
+                }                
             })
     })
 }
