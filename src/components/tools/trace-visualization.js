@@ -14,7 +14,11 @@ export default class TraceVisualization extends Morph {
 
 
         this.currentURL = null;
-
+        
+        // declare variables used later on for documentation
+        this.trace;
+        this.curAST;
+        this.nextAST;
     }
 
      
@@ -87,7 +91,7 @@ export default class TraceVisualization extends Morph {
                                           
                                 me.updateAST(section, elm);
 
-                                const position = elm.position;
+                                const position = me.trace.resolve(elm.position);
                                 if(!position) {
                                     return;
                                 }
@@ -95,8 +99,6 @@ export default class TraceVisualization extends Morph {
                                     me.editor.setURL(position.filename);
                                     await me.editor.loadFile();
                                 }
-
-                                
 
                                 me.editorDoc.scrollIntoView({
                                     line: position.startLine - 1,
@@ -121,8 +123,6 @@ export default class TraceVisualization extends Morph {
                             subEntry.innerText = 'Section' + traceSection.name;
                         }
                     });
-
-
                 }
             } else {
                 body.innerHTML = '';
@@ -162,6 +162,7 @@ export default class TraceVisualization extends Morph {
     updateAST(section, entry) {
         this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
         this.nextAST;
+        
         const sections = this.trace.sections;
         for (const sec of sections) {
             if (sec === section) {

@@ -145,13 +145,10 @@ self.onmessage = function(msg) {
                     oldAST: oldASTAsString,
                     transformedAST: JSON.stringify(result && result.ast),
                     transformedCode: result && result.code,
-                    trace: JSON.stringify(trace),
-                    locations: Trace.locations
+                    trace: trace.serialize()
                 });
                 
-                for (const url of msg.data.urls) {
-                    unloadModule(url);
-                }                
+                msg.data.urls.forEach(unloadModule)                
             })
     })
 }

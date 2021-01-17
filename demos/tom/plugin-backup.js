@@ -1,6 +1,8 @@
 import Trace from 'demos/tom/trace.js';
 import wrapAST from 'demos/tom/wrapAST.js';
 
+let pluginDefinedTrace = false;
+
 export default function({ types: t }) {
     function error(path, message) {
         throw path.buildCodeFrameError(message);
@@ -29,7 +31,7 @@ export default function({ types: t }) {
     }
 
     function location(astNode, state) {
-        const id = Trace.register(astNode, state);
+        const id = window[Trace.traceIdenifierName].register(astNode, state);
 
         return t.numericLiteral(id);
     }
@@ -64,6 +66,17 @@ export default function({ types: t }) {
 
     return {
         name: 'tracer',
+        pre() {
+            if(!window[Trace.traceIdenifierName]) {
+                window[Trace.traceIdenifierName] = new Trace();
+                pluginDefinedTrace = true;
+            }
+        },
+        post() {
+            if(pluginDefinedTrace) {
+                delete window[Trace.traceIdenifierName];
+            }
+        },
         visitor: {
             Program(path) {
                 // wrapAST(path.node, {notify(){console.log(...arguments)}})

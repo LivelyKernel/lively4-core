@@ -42,15 +42,15 @@ class ASTChangeEvent {
     }
 
     getNode(id, astNode) {
-        
+
 
         if (astNode.type) {
             const isSearchedNode = value => value && value.traceID !== undefined && value.traceID.nodeID === id.nodeID;
-            
-            if(isSearchedNode(astNode)) {
+
+            if (isSearchedNode(astNode)) {
                 return astNode;
             }
-            
+
             const keys = Object.keys(astNode).filter(key => !excludedProperties.includes(key));
             for (const key of keys) {
                 const value = astNode[key];
@@ -59,7 +59,7 @@ class ASTChangeEvent {
                 if (Array.isArray(value)) {
                     for (const entry of value) {
                         const node = this.getNode(id, entry)
-                        if(isSearchedNode(node)) {
+                        if (isSearchedNode(node)) {
                             return node;
                         }
                     }
@@ -78,7 +78,7 @@ class ASTChangeEvent {
                     case 'object':
                         // assume it is an astNode
                         const node = this.getNode(id, value)
-                        if(isSearchedNode(node)) {
+                        if (isSearchedNode(node)) {
                             return node;
                         }
                         // fallthrough as we want to know if a node is replaced
@@ -93,7 +93,7 @@ class ASTChangeEvent {
         let astNode = this.getNode(this.objectID, ast);
         if (this.arrayProperty) {
             astNode = astNode[this.arrayProperty];
-        } 
+        }
         astNode[this.propertyName] = this.newValue;
     }
 
@@ -170,10 +170,11 @@ class Trace {
     constructor() {
         this._log = [];
         this.counter = 0;
-    }
 
-    register(name) {
-        console.log(name);
+        this.locations = [];
+        this.filenames = [];
+        this.fileRegistry = new Map();
+        this.astNodeRegistry = new Map();
     }
 
     log(event) {
@@ -188,6 +189,73 @@ class Trace {
         return {
             sectionID: 0,
             nodeID: this.counter++
+        }
+    }
+    
+    serialize() {
+        const serialized = {};
+        
+        serialized._log = JSON.stringify(this._log);
+        serialized.locations = JSON.stringify(this.locations);
+        serialized.filenames = JSON.stringify(this.filenames);
+        serialized.astNodeRegistry = JSON.stringify([...this.astNodeRegistry]);
+        
+        return serialized;
+    }
+    
+    static deserializedFrom(obj) {
+        const trace = new Trace();
+        
+        trace._log = JSON.parse(obj._log);
+        trace.locations = JSON.parse(obj.locations);
+        trace.filenames = JSON.parse(obj.filenames);
+        trace.astNodeRegistry = new Map(JSON.parse(obj.astNodeRegistry));
+        
+        return trace;
+    }
+
+    /* */
+
+    register(astNode, state) {
+        if (this.astNodeRegistry.has(astNode)) {
+            return this.astNodeRegistry.get(astNode);
+        }
+
+        const filename = state.file.opts.filename;
+        let fileID;
+
+        if (this.fileRegistry.has(filename)) {
+            fileID = this.fileRegistry.get(filename)
+        } else {
+            fileID = this.filenames.push(filename) - 1;
+            this.fileRegistry.set(filename, fileID);
+        }
+
+        const start = astNode.loc.start;
+        const end = astNode.loc.end;
+
+        const location = [
+            fileID,
+            start.line,
+            start.column,
+            end.line,
+            end.column
+        ];
+
+        const id = this.locations.push(location) - 1;
+        this.astNodeRegistry.set(astNode, id);
+
+        return id;
+    }
+
+    resolve(locationID) {
+        const location = this.locations[locationID];
+        return {
+            filename: this.filenames[location[0]],
+            startLine: location[1],
+            startColumn: location[2],
+            endLine: location[3],
+            endColumn: location[4]
         }
     }
 
@@ -239,12 +307,12 @@ class Trace {
     nextLoopIteration(position, ...args) {
         this.log(new Event('nextLoopIteration', args.map(clone), position));
     }
-    
+
     forIterator(position, iterator) {
         this.log(new Event('forIterator', iterator, position));
         return iterator;
     }
-    
+
     forKeys(position, keys) {
         this.log(new Event('forKeys', keys, position));
         return keys;
@@ -335,56 +403,22 @@ class Trace {
 }
 
 Trace.traceIdenifierName = '__currentTrace__';
-Trace.locations = [];
-Trace.fileRegistry = new Map();
-Trace.astNodeRegistry = new Map();
-
-Trace.register = function(astNode, state) {
-    if (Trace.astNodeRegistry.has(astNode)) {
-        return Trace.astNodeRegistry.get(astNode);
-    }
-    
-    const filename = state.file.opts.filename;
-
-    const start = astNode.loc.start;
-    const end = astNode.loc.end;
-
-    const locationObject = {
-        filename,
-        startLine: start.line,
-        startColumn: start.column,
-        endLine: end.line,
-        endColumn: end.column
-    }
-    
-    const id = Trace.locations.push(locationObject) - 1;
-    Trace.astNodeRegistry.set(astNode, id);
-    
-    return id;
-}
-
-Trace.resolve = (number, locations) => locations[number];
 
 Trace.on = async function(source, pluginsUrls) {
-    const data = await loadPlugin(source, pluginsUrls)
+    const data = await loadPlugin(source, pluginsUrls);
     const obj = {
         locations: data.locations,
         oldAST: JSON.parse(data.oldAST),
         transformedAST: JSON.parse(data.transformedAST || '{}'),
-        trace: Object.assign(new Trace(), JSON.parse(data.trace)),
+        trace: Trace.deserializedFrom(data.trace),
         transformedCode: data.transformedCode
     };
 
     const trace = obj.trace;
 
-    for (const entry of trace._log) {
-        entry.position = obj.locations[entry.position];
-        //console.log(entry)
-    }
-
     trace.oldAST = obj.oldAST;
     trace.transformedAST = obj.transformedAST;
-    
+
 
     trace.analyze();
     return trace;
