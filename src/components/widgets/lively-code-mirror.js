@@ -29,6 +29,7 @@ self.CodeMirror = CodeMirror // for modules
 let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
+import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 
 import _ from 'src/external/lodash/lodash.js'
 
@@ -1426,10 +1427,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   
   /*MD ## Active Expression Support MD*/
+  
+  async dependencyGraph(){
+    return this._deps || (this._deps =  new DependencyGraph(await this.astCapabilities(this.editor)));
+  }
+  
   async updateAExprDependencies() {
     await this.editor;
-    const capabilities = await this.astCapabilities(this.editor);
-    if (!capabilities.canParse || !capabilities.hasActiveExpressionsDirective) {
+    const dependencyGraph = await this.dependencyGraph();
+    if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {
       this.hideAExprDependencyGutter();
       this.resetAExprTextMarkers();
       this.resetAExprDependencyTextMarkers();
@@ -1443,8 +1449,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   async showAExprTextMarkers() {
     const editor = await this.editor;
     await this.resetAExprTextMarkers();
-    const capabilities = await this.astCapabilities(this.editor);
-    capabilities.getAllActiveExpressions().forEach(path => {
+    const dependencyGraph = await this.dependencyGraph();
+    dependencyGraph.getAllActiveExpressions().forEach(path => {
       const r = range(path.node.loc).asCM();
       const mark = this.editor.markText(r[0], r[1], {
         css: "background-color: #3BEDED",
@@ -1492,10 +1498,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     await this.editor;
     await this.resetAExprDependencyTextMarkers();
     const cursor = this.editor.getCursor();
-    const capabilities = await this.astCapabilities(this.editor);
-    const aexprPath = capabilities.getAexprAtCursor(cursor);
+    const dependencyGraph = await this.dependencyGraph();
+    const aexprPath = dependencyGraph.getAexprAtCursor(cursor);
     if (!aexprPath) return;
-    const deps = capabilities.resolveDependencies(aexprPath.get("arguments")[0]);
+    const deps = dependencyGraph.resolveDependencies(aexprPath.get("arguments")[0]);
     deps.forEach((path) => {
       const r = range(path.node.loc).asCM();
       const mark = this.editor.markText(r[0], r[1], {
@@ -1510,9 +1516,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     const lines = [];
     
     await this.editor;
-    const capabilities = await this.astCapabilities(this.editor);
-    capabilities.getAllActiveExpressions().forEach(path => {
-      const dependencies = capabilities.resolveDependencies(path.get("arguments")[0]);
+    const dependencyGraph = await this.dependencyGraph();
+    debugger;
+    dependencyGraph.getAllActiveExpressions().forEach(path => {
+      const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
 
       dependencies.forEach(statement => {
         if (!dict.get(statement)) {

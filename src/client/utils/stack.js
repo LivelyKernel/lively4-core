@@ -1,3 +1,6 @@
+
+import sourcemap from 'src/external/source-map.min.js';
+
 /*MD # Stack MD*/
 export default class Stack {
   static get defaultErrorMessage() {
@@ -76,7 +79,6 @@ export class Frame {
     }
 
     lively.warn('could not analyse frame', desc);
-    debugger;
   }
 
   _extractEvalInfos(desc) {
@@ -151,6 +153,22 @@ export class Frame {
     this._evalFunc = func;
   }
 
+  async _determineSourceInfo() {
+    if(this._file === "<anonymous>") return;
+    if(!this._transpiled) {
+      this._sourceLoc = {line: this._line, column: this._char, source: this._file};
+      return;
+    }
+    const [livelyPath, srcPath] = this._file.split("/src/");
+    const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
+    var sourceMap = await sourceMappingURL.fetchJSON();
+    var smc = sourcemap.SourceMapConsumer(sourceMap);
+    this._sourceLoc = smc.originalPositionFor({
+      line: parseInt(this._line),
+      column: parseInt(this._char)
+    });
+  }
+  
   /*MD ## func MD*/
   /**
    * returns Bool
@@ -182,6 +200,27 @@ export class Frame {
 
   get char() {
     return this._char;
+  }
+  
+  async getSourceLoc() {
+    if(!this._sourceLoc) {
+      await this._determineSourceInfo();
+    }
+    return this._sourceLoc;
+  }
+  
+  async getSourceLine() {
+    if(!this._sourceLoc.line) {
+      await this._determineSourceInfo();
+    }
+    return this._sourceLoc.line;
+  }
+  
+  async getSourceChar() {
+    if(!this._sourceLoc.character) {
+      await this._determineSourceInfo();
+    }
+    return this._sourceLoc.column;
   }
 
   /*MD ## eval func MD*/

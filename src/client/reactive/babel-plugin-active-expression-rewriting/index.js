@@ -281,6 +281,26 @@ export default function(babel) {
                 valueToReturn
               ]));
           }
+          function setClassFilePathStatement() {
+            let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+            if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+              fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
+            }
+            return t.expressionStatement(t.assignmentExpression("=", 
+                  t.memberExpression(t.thisExpression(), t.identifier("__classFilePath__")), 
+                  t.stringLiteral(fileName)));
+          }
+          
+          function isClassFilePathStatement(statement) {
+            if(!t.isExpressionStatement(statement)) return false;
+            if(t.isAssignmentExpression(statement.expression)) {
+              return t.isMemberExpression(statement.expression.left) && t.isIdentifier(statement.expression.left.property) && statement.expression.left.property.name === "__classFilePath__";
+            } else if (t.isCallExpression(statement.expression)) {
+              return statement.expression.arguments.length >= 2 && statement.expression.arguments[1].value === "__classFilePath__";
+            }
+            return false;
+          }
+          
 
           // ------------- ensureBlock -------------
           const maybeWrapInStatement = (node, wrapInReturnStatement) => {
@@ -314,6 +334,7 @@ export default function(babel) {
             }
             return path;
           }
+          let hasInitialize = false;
           path.traverse({
             BlockParent(path) {
               if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
@@ -332,6 +353,11 @@ export default function(babel) {
             },
             SwitchCase(path) {
               wrapPropertyOfPath(path, "consequent");
+            },
+            ClassMethod(path) {
+              if(path.node.key.name === "initialize") {
+                hasInitialize = true;
+              }
             }
           });
           
@@ -388,7 +414,30 @@ export default function(babel) {
                 path.replaceWith(assignment);
               }
             },
+            
+            ClassMethod(path) {
+              if(hasInitialize ? path.node.key.name !== "initialize" : path.node.kind !== "constructor") return;
+              const bodyStatements = path.node.body.body;
+              const lastStatement = bodyStatements[bodyStatements.length - 1];
+              if(bodyStatements.length === 0 || !isClassFilePathStatement(lastStatement)) {
+                path.get('body').pushContainer('body', setClassFilePathStatement());                      
+              }
+            },
 
+            
+            ClassDeclaration(path) {
+              if(hasInitialize) return;
+              const classBody = path.node.body;
+              if(!classBody.body.some((classElement) => t.isClassMethod(classElement) && classElement.kind === "constructor")) {
+                // No constructor exists -> Override default constructor
+                const constructorContent = [];
+                if(path.node.superClass) {
+                  constructorContent.push(t.expressionStatement(t.callExpression(t.super(), [])));
+                }
+                constructorContent.push(setClassFilePathStatement());
+                path.get("body").unshiftContainer("body", t.classMethod("constructor", t.identifier("constructor"), [], t.blockStatement(constructorContent)));
+              }              
+            },
             /*MD # Identifier MD*/
             Identifier(path) {
               //console.log(path.node.name);
