@@ -373,6 +373,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-Alt-G Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('then')),
         "Shift-Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('else')),
 
+        // #KeyboardShortcut Alt-/ insert markdown comment
+        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment('condition')),
+        
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
           if(this.isJavaScript){

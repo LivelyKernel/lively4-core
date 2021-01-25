@@ -4,6 +4,7 @@ const babel = babelDefault.babel;
 import SyntaxChecker from 'src/client/syntax.js'
 import sourcemap from 'src/external/source-map.min.js'
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
+import TraceVisualization from 'src/components/tools/trace-visualization.js';
 
 
 function babelVisitorWrapper(key, nodeType, visitor) {
@@ -230,6 +231,10 @@ export default class PluginExplorer extends Morph {
         this.systemJSButton.classList.toggle("on", bool);
     }
     onToggleSystemJS() { this.toggleOption("systemJS"); }
+    
+    onDebug() {
+        TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => x.url));
+    }
 
     /*MD ## Options MD*/
 
@@ -537,7 +542,7 @@ export default class PluginExplorer extends Morph {
             config.sourceFileName = filename
             config.moduleIds = false;
             
-            config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
+            // config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
             this.transformationResult = babel.transform(this.sourceText, config);
             
 

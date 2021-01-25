@@ -397,6 +397,20 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
+  insertMarkdownComment() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const before = '/*MD ## ';
+    const around = 'your text';
+    const after = ' MD*/';
+    const l4url = 'lively4url';
+    const l4urlplus = l4url + ' + ';
+
+    const selections = cm.getSelections();
+    cm.replaceSelections(selections.fill(before));
+    cm.replaceSelections(selections.fill(after), "start");
+    cm.replaceSelections(selections.fill(around), "around");
+  }
   braveNewWorld() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
