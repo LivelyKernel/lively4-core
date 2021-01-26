@@ -31,6 +31,7 @@ import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 import { getDependencyMapForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
 
 import _ from 'src/external/lodash/lodash.js';
@@ -1410,7 +1411,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
-    const dependencyMap = await this.allDependencies();
+    const dependencyMap = await this.allDependenciesByLine();
     this.showAExprDependencyGutterMarkers(dependencyMap);
   }
 
@@ -1480,27 +1481,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async showAExprDependencyGutterMarkers(dependencyMap) {
-    const lines = [];
-
     await this.editor;
 
-    for (const [statement, aExprs] of dependencyMap.entries()) {
-      const line = statement.node.loc.start.line - 1;
-      if (!lines[line]) {
-        lines[line] = [];
-      }
-      for (let aExpr of aExprs) {
-        lines[line].push(aExpr);
-      }
+    for (const [line, aExprs] of dependencyMap.entries()) {
+      this.drawAExprGutter(line, aExprs);
     }
-
-    this.editor.doc.clearGutter('activeExpressionGutter');
-    lines.forEach((deps, line) => {
-      this.drawAExprGutter(line, deps);
-    });
   }
 
-  async allDependencies() {
+  async allDependenciesByLine() {
     const dict = new Map();
 
     await this.editor;
@@ -1509,10 +1497,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
 
       dependencies.forEach(statement => {
-        if (!dict.get(statement)) {
-          dict.set(statement, []);
+        const line = statement.node.loc.start.line-1;
+        if (!dict.get(line)) {
+          dict.set(line, []);
         }
-        dict.get(statement).push({ location: path.node.loc, source: path.get("arguments.0.body").getSource() });
+        dict.get(line).push({ location: path.node.loc, source: path.get("arguments.0.body").getSource(), events: 0 });
       });
     });
     const map = getDependencyMapForFile(this.fileURL());
@@ -1520,16 +1509,34 @@ export default class LivelyCodeMirror extends HTMLElement {
       if(aes.length > 0) {
         const memberName = dependency.contextIdentifierValue()[1];
         let deps = dependencyGraph.resolveDependenciesForMember(memberName);
+        
         deps.forEach(path => {
-          if (!dict.get(path)) {
-            dict.set(path, []);
+          const line = path.node.loc.start.line-1;
+          if (!dict.get(line)) {
+            dict.set(line, []);
           }
           for (const ae of aes) {
-            dict.get(path).push({ location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode });
+            var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
+            const relatedEvents = valueChangedEvents.filter(event => event.value.trigger.source.includes(this.fileURL()) && event.value.trigger.line - 1 === line);  
+            dict.get(line).push({ location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode, events: relatedEvents.length });
           }
         });
-      }      
+      }
     });
+    
+    /*let dynamicAES = AExprRegistry.allAsArray();
+    dynamicAES.forEach(ae => {   
+      var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
+      valueChangedEvents.forEach(event => {        
+        if(event.value.trigger.source.includes(this.fileURL())) {     
+          const line = event.value.trigger.line - 1;
+          if (!dict.get(line)) {
+            dict.set(line, []);
+          }
+          dict.get(line).push({ location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode });
+        }
+      });
+    });*/
 
     return dict;
   }
@@ -1581,7 +1588,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           lively.openBrowser(path, true, start, true);
         }
         menu.remove();
-      }, '→', fa(inThisFile ? 'location-arrow' : 'file-code-o')]);
+      }, dep.events + " event" + (dep.events===1?"":"s"), fa(inThisFile ? 'location-arrow' : 'file-code-o')]);
     });
 
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
