@@ -13,10 +13,12 @@ export default class AexprTest extends Morph {
     this.x = new Poll(4);
     this.createButton.addEventListener('click', () => this.addAE());
     this.changeButton.addEventListener('click', () => this.changeAEs());
+    this.deleteButton.addEventListener('click', () => this.deleteAEs());
   }
   
   addAE() {
     let z = 4;
+    this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
     this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
     z++;
   }
@@ -26,12 +28,23 @@ export default class AexprTest extends Morph {
     this.y++;
   }
   
+  deleteAEs() {
+    for(const ae of this.aes) {
+      ae.dispose();
+    }
+    this.aes = [];
+  }
+  
   get createButton() {
     return this.get("#create");
   }
 
   get changeButton() {
     return this.get("#change");
+  }
+
+  get deleteButton() {
+    return this.get("#delete");
   }
 
   async livelyExample() {}
