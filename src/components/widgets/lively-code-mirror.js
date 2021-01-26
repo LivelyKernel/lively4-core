@@ -30,6 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
+import { getDependencyMapForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 
 import _ from 'src/external/lodash/lodash.js'
 
@@ -1446,7 +1447,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
-    this.showAExprDependencyGutterMarkers();
+    const dependencyMap = await this.allDependencies();
+    this.showAExprDependencyGutterMarkers(dependencyMap);
   }
 
   async showAExprTextMarkers() {
@@ -1514,25 +1516,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
   }
   
-  async showAExprDependencyGutterMarkers() {
-    const dict = new Map();
+  async showAExprDependencyGutterMarkers(dependencyMap) {
     const lines = [];
     
     await this.editor;
-    const dependencyGraph = await this.dependencyGraph();
-    debugger;
-    dependencyGraph.getAllActiveExpressions().forEach(path => {
-      const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
-
-      dependencies.forEach(statement => {
-        if (!dict.get(statement)) {
-          dict.set(statement, []);
-        }
-        dict.get(statement).push(path);
-      });
-    });
   
-    for (const [statement,aExprs] of dict.entries()){
+    for (const [statement,aExprs] of dependencyMap.entries()){
       const line = statement.node.loc.start.line - 1; 
       if (!lines[line]) {
         lines[line] = [];
@@ -1546,6 +1535,40 @@ export default class LivelyCodeMirror extends HTMLElement {
     lines.forEach((deps, line) => {
       this.drawAExprGutter(line, deps);
     })
+  }
+  
+  async allDependencies() {
+    const dict = new Map();
+    
+    await this.editor;
+    const dependencyGraph = await this.dependencyGraph();
+    dependencyGraph.getAllActiveExpressions().forEach(path => {
+      const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
+
+      dependencies.forEach(statement => {
+        if (!dict.get(statement)) {
+          dict.set(statement, []);
+        }
+        dict.get(statement).push({location: path.loc, source: path.get("arguments.0.body").getSource()});
+      });
+    });
+    const map = getDependencyMapForFile(lively.query(this, "lively-container").getURL().pathname);
+    map.forEach((aes, dependency) => {
+      debugger;
+      const memberName = dependency.contextIdentifierValue()[1];
+      let deps = dependencyGraph.resolveDependenciesForMember(memberName);  
+      deps.forEach((path) => {
+        if (!dict.get(path)) {
+          dict.set(path, []);
+        }
+        for(const ae of aes) {
+           dict.get(path).push({location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode});
+        }
+      });
+    })
+    
+    
+    return dict;
   }
   
   drawAExprGutter(line, dependencies) {
@@ -1583,11 +1606,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   drawAExprDependencyList(dependencies) {
     const list = <div style="display:flex;flex-direction:column;width:fit-content;height:fit-content;"></div>;
+    debugger;
     dependencies.forEach(dep => {
-      const state = dep.get("arguments.0.body").getSource();
-      const line = dep.node.loc.start.line;
-      const description = `${line} : ${state}`;
-      const item = <div style="width:fit-content;height:fit-content;">{description}</div>;
+      const state = dep.source;
+      const line = dep.location.start.line;
+      let description = `${line} : ${state}`;
+      let path = dep.location.file;
+      if(path) {
+        description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
+      }
+      const item = <div style="width:fit-content;height:fit-content;font-size:20px">{description}</div>;
       list.append(item);
     });
 

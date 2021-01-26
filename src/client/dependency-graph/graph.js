@@ -378,9 +378,9 @@ export class DependencyGraph {
 		let dependencyGraph = this;
 		this.programPath.traverse({
 			Function(path) {
-        if(path.node.key.name !== memberName) return;
+        if(!path.node.key || path.node.key.name !== memberName) return;
         if (!path.node.extra.dependencies) {
-          path.node.extra.dependencies = dependencyGraph._resolveDependencies(path);
+          path.node.extra.dependencies = dependencyGraph.resolveDependencies(path);
         }
         deps.push(...(path.node.extra.dependencies || []), path.get("key"));
 			},
