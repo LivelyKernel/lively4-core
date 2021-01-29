@@ -6,6 +6,9 @@ const babel = babelDefault.babel;
 import { loc, range } from 'utils';
 import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { getDependencyMapForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -17,7 +20,7 @@ export default class CodemirrorPlayground extends Morph {
   get lcm() { return this.editor.get("lively-code-mirror"); }
   get $() { return this.lcm.editor; }
   get dependencyGraph(){
-    return this._deps || (this._deps =  new DependencyGraph(this.lcm.value));
+    return this._deps || (this._deps =  new DependencyGraph(new LivelyCodeMirrorCodeProvider(this.lcm, this.lcm.editor)));
   }
   
   get aexprs() {
@@ -74,15 +77,7 @@ export default class CodemirrorPlayground extends Morph {
   }
   
   collectAExpr() {
-    const allAExpr = [];
-    this.dependencyGraph.inner.traverseAsAST({
-      CallExpression(path) {
-        if (isAExpr(path) ) {
-          allAExpr.push(path);
-        }
-      }
-    });    
-    return allAExpr;    
+    return this.dependencyGraph.collectAExpr();
   }
   
   selectedAExpr() {
@@ -118,21 +113,37 @@ export default class CodemirrorPlayground extends Morph {
   showAExprInfo() {
     this.resetTextMarkers();
     
-    const aexpr = this.selectedAExpr();
-    if (!aexpr) return;
+    // ToDo: find the members in the code and resolve the dependencies in the graph.
+    const map = getDependencyMapForFile(this.editor.getURL().pathname);
+    map.forEach((ae, dependency) => {
+      const memberName = dependency.contextIdentifierValue()[1];
+      let deps = this.dependencyGraph.resolveDependenciesForMember(memberName);  
+      deps.forEach((path) => {
+        const r = range(path.node.loc).asCM();
+        this.textMarkers.push(this.$.markText(r[0], r[1], {
+          css: "background-color: orange",
+        }))
+      });
+    })
+    // resolving should be as easy as calling the _resolveDependencies method with the path
     
-    range(aexpr.node.loc).selectInCM(this.$);
-    
-    const cursor = this.$.getCursor();
-    const code = this.lcm.value;
-    let dep = new DependencyGraph(code);
-    let deps = this.dependencyGraph.resolveDependencies(cursor);  
+    //ToDo: This approach is primarily usefull for linking related events to the code. We should probably save the location per dependency and then use the events just for linking with i.e. timeline
+    /*let dynamicAES = AExprRegistry.allAsArray();
+    var valueChangedEvents = dynamicAES.flatMap(ae => ae.meta().get("events")).filter(event => event.type === "changed value");
+    valueChangedEvents.forEach(event => {   
+      if(event.value.trigger.source.includes(this.editor.getURL().pathname)) {     
+        const r = range([event.value.trigger, {line: event.value.trigger.line, column: event.value.trigger.column + 5}]).asCM();
+        this.textMarkers.push(this.$.markText(r[0], r[1], {
+          css: "background-color: orange",
+      }))
+      }
+    });
     deps.forEach((path) => {
       const r = range(path.node.loc).asCM();
       this.textMarkers.push(this.$.markText(r[0], r[1], {
         css: "background-color: orange",
       }))
-    });
+    });*/
   }
   
   
@@ -141,7 +152,7 @@ export default class CodemirrorPlayground extends Morph {
     let lines = [];    
     
     this.aexprs.forEach((path)=> {
-      let dependencies = this.dependencyGraph._resolveDependencies(path.get("arguments")[0]);
+      let dependencies = this.dependencyGraph.resolveDependencies(path.get("arguments")[0]);
       
       dependencies.forEach(statement => {
         // keep node identity instead of nodepaths???

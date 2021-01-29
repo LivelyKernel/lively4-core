@@ -497,8 +497,8 @@ class Range {
   }
 
   contains(location) {
-    if (location.isRange) {
-      return containsRange(location);
+    if (isRange(location)) {
+      return this.containsRange(range(location));
     }
     const ll = loc(location);
     return this.start.isBefore(ll) && ll.isBefore(this.end);
@@ -544,6 +544,24 @@ class Range {
   toString() {
     return `range(${this.start.innerToString()}, ${this.end.innerToString()})`;
   }
+}
+
+function isRange(r) {
+  if (r.isRange) {
+    return true;
+  }
+  // cm style
+  if (Array.isArray(r)) {
+    return true;
+  }
+  if (r.anchor && r.head) {
+    return true;
+  }
+  // babel style
+  if (r.start && r.end) {
+    return true;
+  }
+  return false;
 }
 
 export function range(r) {

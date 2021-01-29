@@ -5,19 +5,65 @@ const { types: t } = babelDefault.babel;
 
 export class DependencyGraph {
   
-	get inner() { return this._inner }
+	get programPath() { return this.capabilities.programPath }
 
-	constructor(code) {
-		this._inner = code.toAST();
+	constructor(capabilities) {
+    this.capabilities = capabilities;
 
 		//Stores globally a `map` of properties (`String`) to objectbindings of the objects, that have a property of that name. 
 		this.memberAssignments = new Map();
+    this.finishedEnrichment = false;
 		this.enrich();
 	}
+  
+  getAexprAtCursor(location) {
+    let aexprPath;
+    this.programPath.traverse({
+      CallExpression(path) {
+        if (!range(path.node.loc).contains(location)) {
+          path.skip();
+        } else if (isAExpr(path)) {
+          aexprPath = path;
+          path.stop();
+        }
+      }
+    });
+    return aexprPath;
+  }
+  
+  getAllActiveExpressions () {
+    const allAExpr = [];
+    this.programPath.traverse({
+      CallExpression(path) {
+        if (isAExpr(path) ) {
+          allAExpr.push(path);
+        }
+      }
+    });    
+    return allAExpr;    
+  }
+
+  get hasActiveExpressionsDirective() {
+    return this.programPath.node.directives.some(node => {
+      return node.value.value === "enable aexpr";
+    });
+  }
+
+  ensureEnrichment() {
+    if (this.finishedEnrichment) return true;
+    if (!this.programPath || !this.hasActiveExpressionsDirective) return false;
+    try {
+      this.enrich();
+    } catch (err) {
+      console.error("Unable to process source code", err);
+      return false;
+    }
+    return true;
+  }
 
 	enrich() {
 		let self = this;
-		this._inner.traverseAsAST({
+		this.programPath.traverse({
 			enter(path) {
 				path.node.extra = {
 					// this in necessary due to possible circles
@@ -31,8 +77,8 @@ export class DependencyGraph {
 		});
 
 		// adds the corresponding binding to every identifier
-		this._inner.traverseAsAST({
-			Scope(path) {
+		this.programPath.traverse({
+			Scopable(path) {
 				Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
 					binding.referencePaths.forEach(path => {
 						path.node.extra.binding = binding;
@@ -45,17 +91,18 @@ export class DependencyGraph {
     
     this.enrichFunctionNodes();
 
-		this._inner.traverseAsAST({
+		this.programPath.traverse({
 			Expression(expr) {
 				self.collectExpressionInformation(expr);
 			}
 		});
+    this.finishedEnrichment = true;
 	}
   
 	// Filters every memberassignment and registers it in `this.memberAssignments`
   extractMemberAssignments(){
     let self = this;
-    this._inner.traverseAsAST({
+    this.programPath.traverse({
 			MemberExpression(expr) {
 				if (expr.node.computed) return;
 				if (!expr.parentPath.isAssignmentExpression()) return;
@@ -86,7 +133,7 @@ export class DependencyGraph {
   
   enrichFunctionNodes(){
     // adds bindings definend outside of the current scope(e.g. Function) to the scope
-		this._inner.traverseAsAST({
+		this.programPath.traverse({
 			'Function|ArrowFunctionExpression|Program'(path) {
 				path.node.extra.leakingBindings = leakingBindings(path);
 				const callExpressions = path.node.extra.callExpressions = [];
@@ -130,16 +177,17 @@ export class DependencyGraph {
   *
   */
 	collectExpressionInformation(path) {
-    //debugger;
+		if (path.node.extra.results) {
+			return path.node.extra.results
+		}
+    
 		if (path.node.extra.returnVisited <= 0) {
+      path.node.extra.resolvedObjects = [];
+      path.node.extra.results = [];
 			return [];
 		}
 
 		path.node.extra.returnVisited -= 1;
-
-		if (path.node.extra.results) {
-			return path.node.extra.results
-		}
 
 		let results = [];
     let resolvedObjects = [];
@@ -163,9 +211,11 @@ export class DependencyGraph {
     } else if (path.isAssignmentExpression() || path.isVariableDeclarator()) {
           
 			let val = this.assignedValue(path);
-			this.collectExpressionInformation(val);
-			results = val.node.extra.results;
-      resolvedObjects = val.node.extra.resolvedObjects;
+      if(val && val.node) {        
+        this.collectExpressionInformation(val);
+        results = val.node.extra.results;
+        resolvedObjects = val.node.extra.resolvedObjects;
+      }
 
 		} else if (path.isFunction()) {
 			results = [path];
@@ -276,6 +326,7 @@ export class DependencyGraph {
      * //b is equal to {x:2}
      */
   shadowedBindings(bindings) {
+    if(!bindings) return [];
     
     /* this should be stored in the members map or in an extra property. 
     * DOES NOT DETECT DEPENDENCIES THROUGH SIMPLE ASSIGNMENTS (a la `a = b`)
@@ -297,14 +348,13 @@ export class DependencyGraph {
   * DOES NOT care for execution order of the code
   * uses heuristics e.g. fixed recursion depth
   */
-	resolveDependencies(location) {
-
+	resolveDependenciesAtLocation(location) {
 		let node;
 		let dep;
 		let dependencyGraph = this;
-		this._inner.traverseAsAST({
+		this.programPath.traverse({
 			CallExpression(path) {
-				if (isAExpr(path) && range(path.node.loc).contains(location)) {
+				if (isAExpr(path) && range(path.node.loc).contains(location.node.loc)) {
 					if (path.node.dependencies != null) {
 						dep = path.node.dependencies;
 						console.log("dependencies already collected: ", dep);
@@ -321,8 +371,37 @@ export class DependencyGraph {
 		}
 		return node.extra.dependencies;
 	}
-
-	_resolveDependencies(path) {
+  
+  resolveDependenciesForMember(memberName) {
+		let deps = [];
+    const self = this;
+		let dependencyGraph = this;
+		this.programPath.traverse({
+			Function(path) {
+        if(!path.node.key || path.node.key.name !== memberName) return;
+        if (!path.node.extra.dependencies) {
+          path.node.extra.dependencies = dependencyGraph.resolveDependencies(path);
+        }
+        deps.push(...(path.node.extra.dependencies || []), path.get("key"));
+			},
+      AssignmentExpression(path) {
+        const left = path.node.left;
+        if(t.isMemberExpression(left), t.isThisExpression(left.object) && left.property.name === memberName) {
+          deps.push(path);
+        }
+      },
+      UpdateExpression(path) {
+        const argument = path.node.argument;
+        if(t.isMemberExpression(argument), t.isThisExpression(argument.object) && argument.property.name === memberName) {
+          deps.push(path);
+        }
+      }
+      //Todo: Array stuff??
+		});
+		return deps;
+	}
+  
+	resolveDependencies(path) {
 		const self = this;
 		if ((path.node.extra.visited -= 1) <= 0) {
 			return path.node.extra.dependencies || new Set();
@@ -343,7 +422,7 @@ export class DependencyGraph {
 				if (t.isAssignmentExpression(callee)) {
 					const value = this.assignedValue(callee);
 					if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
-						this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
+						this.resolveDependencies(value).forEach(dep => dependencies.add(dep));
 					}
 				}
 
@@ -356,7 +435,7 @@ export class DependencyGraph {
 		if (path.node.extra.objects.size) {
 			for (const [objExpr, members] of path.node.extra.objects.entries()) {
 				for (const member of members) {
-            self.assignmentsOf(member, {bindings: new Set([objExpr.extra.binding])}).forEach(assignment => {
+            self.assignmentsOf(member, {bindings: new Set(objExpr.extra.binding ?[objExpr.extra.binding]:[])}).forEach(assignment => {
 						dependencies.add(assignment)
 					});
 				}
