@@ -234,7 +234,7 @@ export default class Container extends Morph {
       url = new URL(this.normalizeURL(path));
       // url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
-    } else if (path.match(/^[a-zA-Z]+:\/\//)) {
+    } else if (path.match(/^[a-zA-Z]+:/)) {
       url = new URL(path)
       var other = true
     } else {
@@ -540,7 +540,7 @@ export default class Container extends Morph {
     if (!path) return;
     if (files.isURL(path)) {
       return new URL(path);
-    } if (path.match(/^[a-zA-Z]+:\/\//)) {
+    } if (path.match(/^[a-zA-Z]+:/)) {
       return new URL(path);
     } else {
       return new URL("https://lively4/" + path);
