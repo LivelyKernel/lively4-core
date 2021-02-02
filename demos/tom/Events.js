@@ -51,8 +51,6 @@ export class ASTChangeEvent {
     }
 
     getNode(id, astNode) {
-
-
         if (astNode.type) {
             const isSearchedNode = value => value && value.traceID !== undefined && value.traceID.nodeID === id.nodeID;
 
@@ -90,11 +88,40 @@ export class ASTChangeEvent {
                         if (isSearchedNode(node)) {
                             return node;
                         }
-                        // fallthrough as we want to know if a node is replaced
+                        break;
                     default:
                         // ignore value
                 }
             }
+        }
+    }
+    
+    resolve(copy, ast) {
+        
+        // Todo: optimize by caching: traceID -> ASTNode
+        if(copy.isTraceID) {
+            return this.getNode(copy, ast);
+        } else if(Array.isArray(copy)) {
+            const result = [];
+            for(const entry of copy) {
+                result.push(this.resolve(entry, ast));
+            }
+            return result;
+        } else if(copy.traceID) { // is astNode
+            const result = {};
+            
+            for(const key in copy) {
+                // do not expand the reference of the object itself
+                if(key === 'traceID') {
+                    result[key] = copy[key];
+                    continue;
+                }
+                result[key] = this.resolve(copy[key], ast);
+            }
+            
+            return result;
+        } else {
+            return copy;
         }
     }
 
@@ -103,11 +130,7 @@ export class ASTChangeEvent {
         if (this.arrayProperty) {
             astNode = astNode[this.arrayProperty];
         }
-        astNode[this.propertyName] = this.newValue;
-    }
-
-    revert(ast) {
-
+        astNode[this.propertyName] = this.resolve(this.newValue, ast);
     }
 
     visit(object) {

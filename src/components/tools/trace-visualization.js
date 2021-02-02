@@ -197,6 +197,8 @@ export default class TraceVisualization extends Morph {
     updateAST(path, entry) {
         this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
         this.nextAST;
+                                          
+                                          debugger
         
         let entries = this.trace.sections;
                                           

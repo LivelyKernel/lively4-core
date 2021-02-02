@@ -2,7 +2,7 @@ export default function({types: t}) {
     return {
         name: 'test',
         visitor: {
-            Function(path) {
+            FunctionDeclaration(path) {
                 if(path.node.alreadyVisited) {
                     return;
                 }
