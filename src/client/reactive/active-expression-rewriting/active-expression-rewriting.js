@@ -72,7 +72,7 @@ class Dependency {
   // #TODO: compute and cache isGlobal
   constructor(context, identifier, type) {
     this._type = type;
-    
+    this.classFilePath = context.__classFilePath__;
     this.isTracked = false;
   }
 
@@ -223,6 +223,10 @@ const DependenciesToAExprs = {
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
+  },
+  
+  getDependencyMapForFile(url) {
+    return new Map(this._depsToAExprs.getAllLeft().filter(dep => dep.classFilePath && dep.classFilePath.includes(url)).map(dep => [dep, this.getAExprsForDep(dep)]));
   },
 
   getAExprsForDep(dep) {
@@ -820,6 +824,11 @@ export function getGlobal(globalName) {
   if (expressionAnalysisMode) {
     DependencyManager.associateGlobal(globalName);
   }
+}
+
+
+export function getDependencyMapForFile(url) {
+  return DependenciesToAExprs.getDependencyMapForFile(url);
 }
 
 export function setGlobal(globalName) {
