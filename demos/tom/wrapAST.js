@@ -37,6 +37,56 @@ function wrappedArray(array, observer, key) {
     return new Proxy(array, handler(observer, key));
 }
 
+function copyUnknownASTParts(astNode) {
+    // simply check if the object is an astNode
+    if (astNode && astNode.type) {
+        // if already in AST return only a reference
+        if (astNode.traceID) {
+            return astNode.traceID;
+        }
+        
+        const objectCopy = {};
+
+        const keys = Object.keys(astNode).filter(key => !excludedProperties.includes(key));
+        for (const key of keys) {
+            const value = astNode[key];
+
+            if (Array.isArray(value)) {
+                const copiedArray = [];
+                objectCopy[key] = copiedArray;
+                
+                for(const entry of value) {
+                    copiedArray.push(copyUnknownASTParts(entry));
+                }
+
+                continue;
+            }
+
+            if (value === null) {
+                objectCopy[key] = value;
+                continue;
+            }
+
+            switch (typeof value) {
+                case 'function':
+                    // ignore functions
+                    break;
+                case 'object':
+                    // assume it is an astNode
+                    objectCopy[key] = copyUnknownASTParts(value);
+                    break;
+                default:
+                    objectCopy[key] = value;
+            }
+        }
+        
+        return objectCopy;
+    } else {
+        // probably not an AST node => do a generic copy
+        return JSON.parse(JSON.stringify(astNode));
+    }
+}
+
 export default function wrapAST(astNode, observer, onlyUnknownNodes) {
     // simply check if the object is an astNode
     if (astNode && astNode.type) {
@@ -44,7 +94,7 @@ export default function wrapAST(astNode, observer, onlyUnknownNodes) {
             if (astNode.traceID) {
                 return;
             } else {
-                astNode.traceID = window[Trace.traceIdenifierName].createTraceID();
+                astNode.traceID = window[Trace.traceIdentifierName].createTraceID();
             }
         }
 
@@ -64,7 +114,6 @@ export default function wrapAST(astNode, observer, onlyUnknownNodes) {
                     }
                 };
 
-                // Todo: do better handling
                 astNode[key] = wrappedArray(value, arrayObserver, key);
 
                 // notify if the array is replaced

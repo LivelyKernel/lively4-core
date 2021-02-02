@@ -22,7 +22,7 @@ export default function({ types: t }) {
     }
 
     function callOnTrace(methodName, args = [], shouldBeStatement = false) {
-        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdenifierName), t.identifier(methodName)),
+        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdentifierName), t.identifier(methodName)),
             args);
         if (shouldBeStatement) {
             call = t.expressionStatement(call);
@@ -31,7 +31,7 @@ export default function({ types: t }) {
     }
 
     function location(astNode, state) {
-        const id = window[Trace.traceIdenifierName].register(astNode, state);
+        const id = window[Trace.traceIdentifierName].register(astNode, state);
 
         return t.numericLiteral(id);
     }
@@ -67,14 +67,14 @@ export default function({ types: t }) {
     return {
         name: 'tracer',
         pre() {
-            if(!window[Trace.traceIdenifierName]) {
-                window[Trace.traceIdenifierName] = new Trace();
+            if(!window[Trace.traceIdentifierName]) {
+                window[Trace.traceIdentifierName] = new Trace();
                 pluginDefinedTrace = true;
             }
         },
         post() {
             if(pluginDefinedTrace) {
-                delete window[Trace.traceIdenifierName];
+                delete window[Trace.traceIdentifierName];
             }
         },
         visitor: {
@@ -104,6 +104,14 @@ export default function({ types: t }) {
                         ]);
                     callee.replaceWith(t.stringLiteral(name));
                     callee.insertBefore(aboutToEnter);
+                    
+                    const left = callOnTrace('left',
+                    [
+                        location(path.node, this),
+                        path.node
+                    ]);
+                
+                path.replaceWith(left)
                     return;
                 } else if (t.isFunctionExpression(callee)) {
                     name = callee.node.id.name || 'anonymous function';
@@ -113,11 +121,21 @@ export default function({ types: t }) {
 
                 const aboutToEnter = callOnTrace('aboutToEnter',
                     [
-                        location(callee.node, this),
+                        location(path.node, this),
                         t.stringLiteral(name)
                     ]);
-
+                
+                
                 callee.insertBefore(aboutToEnter);
+                
+                
+                const left = callOnTrace('left',
+                    [
+                        location(path.node, this),
+                        path.node
+                    ]);
+                
+                path.replaceWith(left)
 
 
             },
