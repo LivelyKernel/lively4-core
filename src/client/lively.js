@@ -1517,7 +1517,7 @@ export default class Lively {
   }
   
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
-  static async openBrowser(url, edit, patternOrPostion, replaceExisting, worldContext) {
+  static async openBrowser(url, edit, patternOrPostion, replaceExisting, worldContext, useExisting) {
     worldContext = worldContext || document.body
     if (patternOrPostion && patternOrPostion.line)
       var lineAndColumn = patternOrPostion
@@ -1530,7 +1530,11 @@ export default class Lively {
     var containerPromise;
     if (replaceExisting) {
       livelyContainer = Array.from(worldContext.querySelectorAll("lively-container")).find(ea => ea.isSearchBrowser);
+    } else if(useExisting) {
+      const containers = Array.from(worldContext.querySelectorAll('lively-container')).filter(c => c.getAttribute('src') === url);
+      livelyContainer = containers.find(c => (c.getAttribute('mode') === 'edit') === edit);
     }
+    
 
     var lastWindow = _.first(Array.from(worldContext.querySelectorAll("lively-window"))
       .filter(  ea => ea.childNodes[0] && ea.childNodes[0].isSearchBrowser));

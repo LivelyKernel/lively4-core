@@ -1680,7 +1680,7 @@ export default class Container extends Morph {
   }
 
   hideNavbar() {
-    if (lively.getExtent(this).x > 1 ) {
+    if (lively.getExtent(this.navbar()).x > 1 ) {
       this.get('lively-separator').onClick()
     }
   }

@@ -16,6 +16,7 @@ export default class AexprTest extends Morph {
     this.deleteButton.addEventListener('click', () => this.deleteAEs());
   }
   
+  
   addAE() {
     let z = 4;
     this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));

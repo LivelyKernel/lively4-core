@@ -159,7 +159,25 @@
     opacity: 0.4;
   }
 
-  .activeExpressionGutter-marker {
+  .activeExpressionGutter-marker-ae {
+    width: 10px;
+    cursor: pointer;
+    box-sizing: content-box;
+
+    transition: all 0.3s ease-in-out;
+    transition-property: background-color, color;
+
+    background-color: rgba(0,255,165,0.5);
+    color: rgba(0,0,0,0.5);
+    text-align: center;
+    vertical-align: middle;
+    line-height: normal;
+    display: flex;
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+  }
+
+  .activeExpressionGutter-marker-dep {
     width: 10px;
     cursor: pointer;
     box-sizing: content-box;
