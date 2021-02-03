@@ -234,7 +234,7 @@ export default class Container extends Morph {
       url = new URL(this.normalizeURL(path));
       // url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
-    } else if (path.match(/^[a-zA-Z]+:\/\//)) {
+    } else if (path.match(/^[a-zA-Z]+:/)) {
       url = new URL(path)
       var other = true
     } else {
@@ -363,6 +363,9 @@ export default class Container extends Morph {
     if (format == "html") {
       headers["content-type"] = "text/html" // maybe we can convice the url to return html
     }
+    if (path.match(/gs\:/)) {
+      format = "md"
+    }
     
     headers['cache-control'] = 'no-cache'
     // #deprecated since we now use no-ache
@@ -430,7 +433,6 @@ export default class Container extends Morph {
       
       this.content = content
       this.showNavbar();
-      
       
       if (format == "html" || this.contentType.match("text/html"))  {
         this.sourceContent = content;
@@ -540,7 +542,7 @@ export default class Container extends Morph {
     if (!path) return;
     if (files.isURL(path)) {
       return new URL(path);
-    } if (path.match(/^[a-zA-Z]+:\/\//)) {
+    } if (path.match(/^[a-zA-Z]+:/)) {
       return new URL(path);
     } else {
       return new URL("https://lively4/" + path);

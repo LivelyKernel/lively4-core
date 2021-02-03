@@ -55,16 +55,61 @@ export default class TraceVisualization extends Morph {
     get editorDoc() {
         return this.editor.currentEditor();
     }
+    
+    async onShowAst() {
+        if(!this.comparison) {
+            this.comparison = await lively.openComponentInWindow('lively-ast-comparison');
+        }        
+        this.comparison.updateView(this.curAST, this.nextAST);
+    }
 
     /* update List */
 
     clearList() {
         this.traceList.innerHTML = '';
     }
+    
+    setSubEntryEventListener(subEntry, elm, path) {
+        subEntry.addEventListener('mouseover', async e => {
+            // prevent outer mouseover listener to overwrite this action
+            e.stopPropagation();
 
-    addListItem(section) {
+            if (this.lastMark) {
+                this.lastMark.clear();
+            }
+
+            this.updateAST(path, elm);
+
+            const position = this.trace.resolve(elm.position);
+            if(!position) {
+                return;
+            }
+            if (this.currentURL !== position.filename) {
+                this.editor.setURL(position.filename);
+                this.currentURL = position.filename;
+                await this.editor.loadFile();
+            }
+
+            this.editorDoc.scrollIntoView({
+                line: position.startLine - 1,
+                ch: position.startColumn
+            }, 200);
+
+            this.lastMark = this.editorDoc.markText({
+                line: position.startLine - 1,
+                ch: position.startColumn
+            }, {
+                line: position.endLine - 1,
+                ch: position.endColumn
+            }, {
+                css: 'background: #eee'
+            });
+        });
+    }
+    
+    createSectionElement(section, path = [section]) {
         const className = `entry ${section.hasChanges ? 'changing' : ''}`
-        const header = < div class = { className } > +{ section.name } < /div>;
+        const header = < div class = { className } > + { section.name } < /div>;
         const body = < div > < /div>;
         const entry = < div > { header } { body } < /div>;
 
@@ -76,51 +121,31 @@ export default class TraceVisualization extends Morph {
             const me = this;
             if (!isTriggered) {
                 for (const elm of section.entries) {
-
                     elm.visit({
                         visitEvent(event) {
                             const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
                             const subEntry = < div class = { className } > { event.type } < /div>;
 
-                            body.appendChild(subEntry);
-
-                            subEntry.addEventListener('mouseover', async e => {
-                                if (me.lastMark) {
-                                    me.lastMark.clear();
-                                }
-                                          
-                                me.updateAST(section, elm);
-
-                                const position = me.trace.resolve(elm.position);
-                                if(!position) {
-                                    return;
-                                }
-                                if (me.currentURL !== position.filename) {
-                                    me.editor.setURL(position.filename);
-                                    await me.editor.loadFile();
-                                }
-
-                                me.editorDoc.scrollIntoView({
-                                    line: position.startLine - 1,
-                                    ch: position.startColumn
-                                });
-
-                                me.lastMark = me.editorDoc.markText({
-                                    line: position.startLine - 1,
-                                    ch: position.startColumn
-                                }, {
-                                    line: position.endLine - 1,
-                                    ch: position.endColumn
-                                }, {
-                                    css: 'background: #eee'
-                                });
-                            });
+                            body.appendChild(subEntry);        
+                            me.setSubEntryEventListener(subEntry, elm, path);
                         },
-                        visitASTChangeEvent(ASTChangeEvent) {
+                        visitErrorEvent(errorEvent) {
+                            const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
+                            const subEntry = < div class = { className } style="background: red; color: #eee" > { errorEvent.type } < /div>;
 
+                            body.appendChild(subEntry);        
+                            subEntry.addEventListener('mouseover', e => {
+                                me.editor.value = errorEvent.data;
+                            }); 
                         },
                         visitTraceSection(traceSection) {
-                            subEntry.innerText = 'Section' + traceSection.name;
+                            const subEntry = me.createSectionElement(traceSection, [...path, traceSection]);
+                            subEntry.className += ' sub';
+                            
+                            body.appendChild(subEntry);
+                            
+                            const header = subEntry.children[0];
+                            me.setSubEntryEventListener(header, elm, path);
                         }
                     });
                 }
@@ -130,6 +155,12 @@ export default class TraceVisualization extends Morph {
             isTriggered = !isTriggered;
 
         });
+                                      
+        return entry;
+    }
+
+    addListItem(section) {
+        const entry = this.createSectionElement(section);
 
         this.traceList.appendChild(entry);
     }
@@ -156,29 +187,39 @@ export default class TraceVisualization extends Morph {
 
     showASTs() {
         this.setCurrentAST(this.curAST);
-        this.setTransformedAST(this.nextAST)
+        this.setTransformedAST(this.nextAST);
+                                          
+        if(this.comparison) {
+            this.comparison.updateView(this.curAST, this.nextAST);
+        }
     }
-
-    updateAST(section, entry) {
+                                      
+    updateAST(path, entry) {
         this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
         this.nextAST;
+                                          
+                                          debugger
         
-        const sections = this.trace.sections;
-        for (const sec of sections) {
-            if (sec === section) {
-                break;
+        let entries = this.trace.sections;
+                                          
+        for (const part of path) {
+            for (const entry of entries) {
+                if(entry === part) {
+                    break;
+                }
+                entry.apply(this.curAST)
             }
-            sec.apply(this.curAST);
+            entries = part.entries;
         }
 
-        const index = section.entries.indexOf(entry);
+        const index = entries.indexOf(entry);
 
         for (let i = 0; i < index; i++) {
-            section.entries[i].apply(this.curAST);
+            entries[i].apply(this.curAST);
         }
 
         this.nextAST = JSON.parse(JSON.stringify(this.curAST));
-        section.entries[index].apply(this.nextAST);
+        entries[index].apply(this.nextAST);
         this.showASTs();
     }
 
@@ -197,7 +238,7 @@ export default class TraceVisualization extends Morph {
     livelyMigrate(other) {
         // whenever a component is replaced with a newer version during development
         // this method is called on the new object during migration, but before initialization
-        this.someJavaScriptProperty = other.someJavaScriptProperty
+        this.visualize(other.trace);
     }
 
     livelyInspect(contentNode, inspector) {
@@ -205,12 +246,7 @@ export default class TraceVisualization extends Morph {
     }
 
     async livelyExample() {
-        const source = `if(true){}`;
-        const urls = ['https://lively-kernel.org/lively4/lively4-tom/demos/tom/defect-demo-plugin.js'];
 
-        const trace = await Trace.on(source, urls);
-
-        this.visualize(trace);
     }
 
 

@@ -1,15 +1,21 @@
-export default function({types: t}) {
-    
+export default function({types: t}) {    
     return {
         name: 'test',
         visitor: {
-            CallExpression(path) {
-                if (path.node.modified) {
+            FunctionDeclaration(path) {
+                if(path.node.alreadyVisited) {
                     return;
                 }
-                path.node.modified = true;
                 
-                path.node.callee.name = [...path.node.callee.name].reverse().join('');
+                const returnNode = t.returnStatement(t.arrowFunctionExpression([], t.numericLiteral(5)));
+
+                const node = t.functionDeclaration(
+                    path.node.id, 
+                    [], 
+                    t.blockStatement([returnNode]));
+                node.alreadyVisited = true;
+                
+                path.replaceWith(node);
             }
         }
     }

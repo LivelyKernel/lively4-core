@@ -1,10 +1,7 @@
 import Trace from 'demos/tom/trace.js';
+import copyAST from 'demos/tom/copyAST.js';
 
-const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
-
-function copy(value) {
-    return value; // JSON.parse(JSON.stringify(value));
-}
+export const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
 
 function createObservingAccessorsOn(object, propertyName, observer) {
     const newPropertyName = '_' + propertyName;
@@ -12,8 +9,12 @@ function createObservingAccessorsOn(object, propertyName, observer) {
     Object.defineProperty(object, propertyName, {
         get() { return object[newPropertyName]; },
         set(value) {
-            observer.notify(object.traceID, propertyName, object[newPropertyName], value);
+            const pluginRound = window[Trace.traceIdentifierName].pluginRound;
             wrapAST(value, observer, true);
+            observer.notify(object.traceID, 
+                            propertyName, 
+                            copyAST(object[newPropertyName], pluginRound), 
+                            copyAST(value, pluginRound));
             object[newPropertyName] = value;
         }
     })
@@ -24,8 +25,10 @@ const handler = (observer, key) => {
         set: function(obj, prop, value) {
             // Todo: Reflect.set()
             if (Number.isInteger(Number.parseInt(prop))) {
-                observer.notify(prop, copy(obj[prop]), copy(value), key);
+                const pluginRound = window[Trace.traceIdentifierName].pluginRound;
+                debugger
                 wrapAST(value, observer, true);
+                observer.notify(prop, copyAST(obj[prop], pluginRound), copyAST(value, pluginRound), key);
             }
             obj[prop] = value;
             return true;
@@ -44,7 +47,7 @@ export default function wrapAST(astNode, observer, onlyUnknownNodes) {
             if (astNode.traceID) {
                 return;
             } else {
-                astNode.traceID = window[Trace.traceIdenifierName].createTraceID();
+                astNode.traceID = window[Trace.traceIdentifierName].createTraceID();
             }
         }
 
@@ -64,7 +67,6 @@ export default function wrapAST(astNode, observer, onlyUnknownNodes) {
                     }
                 };
 
-                // Todo: do better handling
                 astNode[key] = wrappedArray(value, arrayObserver, key);
 
                 // notify if the array is replaced

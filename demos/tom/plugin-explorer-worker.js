@@ -15,9 +15,9 @@ System.import(pluginTransformationPlugin);
 const enumerationPlugin = createTraceID => function() {
     const visitor = {
         enter(path) {
-            if(!path.node.traceID) {
+            if (!path.node.traceID) {
                 path.node.traceID = createTraceID();
-            } 
+            }
         }
     };
 
@@ -32,7 +32,7 @@ const enumerationPlugin = createTraceID => function() {
 }
 
 const enumerationConfig = createTraceID => {
-    return {plugins: [enumerationPlugin(createTraceID)]}
+    return { plugins: [enumerationPlugin(createTraceID)] }
 }
 
 
@@ -40,16 +40,16 @@ const enumerationConfig = createTraceID => {
 async function unloadModule(path) {
     var normalizedPath = System.normalizeSync(path)
     try {
-      // check, to prevent trying to reloading a module a second time if there was an error #375
-      if (System.get(normalizedPath)) {
-        await System.import(normalizedPath).then(module => {
-          if(module && typeof module.__unload__ === "function") {
-            module.__unload__();
-          }
-        });        
-      }      
-    } catch(e) {
-      console.log("WARNING: error while trying to unload " + path)
+        // check, to prevent trying to reloading a module a second time if there was an error #375
+        if (System.get(normalizedPath)) {
+            await System.import(normalizedPath).then(module => {
+                if (module && typeof module.__unload__ === "function") {
+                    module.__unload__();
+                }
+            });
+        }
+    } catch (e) {
+        console.log("WARNING: error while trying to unload " + path)
     }
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
@@ -108,11 +108,11 @@ self.onmessage = function(msg) {
 
         const trace = new Trace();
         // make it globally available for use in plugins
-        window[Trace.traceIdenifierName] = trace;
-        
+        window[Trace.traceIdentifierName] = trace;
+
         function createTraceID() {
-    return trace.createTraceID();
-}
+            return trace.createTraceID();
+        }
 
         importPlugins(msg.data.urls)
             .then(function(modules) {
@@ -147,8 +147,8 @@ self.onmessage = function(msg) {
                     transformedCode: result && result.code,
                     trace: trace.serialize()
                 });
-                
-                msg.data.urls.forEach(unloadModule)                
+
+                msg.data.urls.forEach(unloadModule)
             })
     })
 }
