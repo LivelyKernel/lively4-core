@@ -9,7 +9,7 @@ export default class Poll {
   
   addVoteToOption(index) {
     this.options[index] = this.options[index] + 1;
-    this.options.values();
+    this.options.values(); 
   }
   
   getBestOption() {

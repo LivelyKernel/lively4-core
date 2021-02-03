@@ -356,11 +356,6 @@ class Hook {
 
   addLocation(location) {
     this.locations.push(location);
-    const self = this;
-    location.then((l) => {
-      console.log(self.constructor.name)
-      console.log(l)
-    });
   }
 
   async getLocations() {
@@ -726,24 +721,24 @@ class TracingHandler {
    * ********************** update ********************************
    * **************************************************************
    */
-  static memberUpdated(obj, prop) {    
+  static memberUpdated(obj, prop, location) {    
     const hook = SourceCodeHook.get(obj, prop);
     if(!hook) return;
-    hook.addLocation(TracingHandler.findRegistrationLocation());
+    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
   }
 
-  static globalUpdated(globalName) {
+  static globalUpdated(globalName, location) {
     const hook = SourceCodeHook.get(globalRef, globalName);
     if(!hook) return;
-    hook.addLocation(TracingHandler.findRegistrationLocation());
+    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
   }
 
-  static localUpdated(scope, varName) {
+  static localUpdated(scope, varName, location) {
     const hook = SourceCodeHook.get(scope, varName);
     if(!hook) return;
-    hook.addLocation(TracingHandler.findRegistrationLocation());
+    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
   }
 
@@ -754,7 +749,12 @@ class TracingHandler {
 
     for (let frame of frames.slice()) {
       if (!frame.file.includes("active-expression")) {
-        return frame.getSourceLoc();
+        const loc = await frame.getSourceLoc();
+        return {
+          start: {line: loc.line, column: loc.column},
+          end: {line: loc.line, column: loc.column},
+          file: loc.source,
+        }
       } 
     }
     return undefined;
@@ -805,87 +805,87 @@ export function getAndCallMember(obj, prop, args = []) {
   return result;
 }
 
-export function setMember(obj, prop, val) {
+export function setMember(obj, prop, val, location) {
   const result = obj[prop] = val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberAddition(obj, prop, val) {
+export function setMemberAddition(obj, prop, val, location) {
   const result = obj[prop] += val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberSubtraction(obj, prop, val) {
+export function setMemberSubtraction(obj, prop, val, location) {
   const result = obj[prop] -= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberMultiplication(obj, prop, val) {
+export function setMemberMultiplication(obj, prop, val, location) {
   const result = obj[prop] *= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberDivision(obj, prop, val) {
+export function setMemberDivision(obj, prop, val, location) {
   const result = obj[prop] /= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberRemainder(obj, prop, val) {
+export function setMemberRemainder(obj, prop, val, location) {
   const result = obj[prop] %= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberExponentiation(obj, prop, val) {
+export function setMemberExponentiation(obj, prop, val, location) {
   const result = obj[prop] **= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberLeftShift(obj, prop, val) {
+export function setMemberLeftShift(obj, prop, val, location) {
   const result = obj[prop] <<= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberRightShift(obj, prop, val) {
+export function setMemberRightShift(obj, prop, val, location) {
   const result = obj[prop] >>= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberUnsignedRightShift(obj, prop, val) {
+export function setMemberUnsignedRightShift(obj, prop, val, location) {
   const result = obj[prop] >>>= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseAND(obj, prop, val) {
+export function setMemberBitwiseAND(obj, prop, val, location) {
   const result = obj[prop] &= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseXOR(obj, prop, val) {
+export function setMemberBitwiseXOR(obj, prop, val, location) {
   const result = obj[prop] ^= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseOR(obj, prop, val) {
+export function setMemberBitwiseOR(obj, prop, val, location) {
   const result = obj[prop] |= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function deleteMember(obj, prop) {
+export function deleteMember(obj, prop, location) {
   const result = delete obj[prop];
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
@@ -896,9 +896,9 @@ export function getLocal(scope, varName, value) {
   }
 }
 
-export function setLocal(scope, varName, value) {
+export function setLocal(scope, varName, value, location) {
   scope[varName] = value;
-  TracingHandler.localUpdated(scope, varName);
+  TracingHandler.localUpdated(scope, varName, location);
 }
 
 export function getGlobal(globalName) {
@@ -914,7 +914,7 @@ export async function getDependencyTriplesForFile(url) {
     for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
       for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
         const location = ae.meta().get("location").file;
-        if (location.includes(url) || locations.some(loc => loc && loc.source.includes(url))) {
+        if (location.includes(url) || locations.some(loc => loc && loc.file.includes(url))) {
           result.push({ hook, dependency, ae });
         }
       }
@@ -931,8 +931,8 @@ export async function getAETriplesForFile(url) {
   return DependenciesToAExprs.getAETriplesForFile(url);
 }
 
-export function setGlobal(globalName) {
-  TracingHandler.globalUpdated(globalName);
+export function setGlobal(globalName, location) {
+  TracingHandler.globalUpdated(globalName, location);
 }
 
 export default aexpr;

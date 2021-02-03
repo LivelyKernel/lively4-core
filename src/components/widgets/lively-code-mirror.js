@@ -1412,6 +1412,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     const [depToAE, AEToDep] = await this.allDependenciesByLine();
+    this.editor.doc.clearGutter('activeExpressionGutter')
     this.showAExprDependencyGutterMarkers(depToAE, false);
     this.showAExprDependencyGutterMarkers(AEToDep, true);
   }
@@ -1484,7 +1485,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   async showAExprDependencyGutterMarkers(dependencyMap, isAE) {
     await this.editor;
 
-    this.editor.doc.clearGutter('activeExpressionGutter')
     for (const [line, aExprs] of dependencyMap.entries()) {
       this.drawAExprGutter(line, aExprs, isAE);
     }
@@ -1513,8 +1513,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     });*/
 
-    const handleDepAEPairing = (ae, dependencyFile, dependencyLoc, dependencySource) => {
+    const handleDepAEPairing = (ae, dependencyLoc, dependencySource) => {
       const dependencyLine = dependencyLoc.start.line - 1;
+      const dependencyFile = dependencyLoc.file;
       const AELocation = ae.meta().get("location");
       const AELine = AELocation.start.line - 1;
 
@@ -1537,14 +1538,13 @@ export default class LivelyCodeMirror extends HTMLElement {
         AEToDep.get(AELine).push({ location: dependencyLoc, source: dependencySource, events: relatedEvents.length });
       }
     };
-
+    
     const depsMapInFile = await getDependencyTriplesForFile(this.fileURL());
     for (const { hook, dependency, ae } of depsMapInFile) {
       const dependencyInfo = dependency.contextIdentifierValue();
       const locations = await hook.getLocations();
       for (const location of locations) {
-        const start = { line: location.line, column: location.column };
-        handleDepAEPairing(ae, location.source, { start, end: start /*TODO: Find end*/, file: location.source }, dependencyInfo[1]);
+        handleDepAEPairing(ae, location, dependencyInfo[1]);
       }
       /*const memberName = dependency.contextIdentifierValue()[1];
       let deps = dependencyGraph.resolveDependenciesForMember(memberName);

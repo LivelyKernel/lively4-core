@@ -7,6 +7,7 @@ import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
 
   async initialize() {
+    this.c = 0;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
     this.y = 4;
@@ -15,7 +16,6 @@ export default class AexprTest extends Morph {
     this.changeButton.addEventListener('click', () => this.changeAEs());
     this.deleteButton.addEventListener('click', () => this.deleteAEs());
   }
-  
   
   addAE() {
     let z = 4;
