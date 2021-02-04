@@ -355,25 +355,14 @@ class Hook {
   }
 
   addLocation(location) {
-    this.locations.push(location);
+    if(!this.locations.some(loc => _.isEqual(loc, location))) {
+      this.locations.push(location);
+    }
+    //Todo: Promises get added multiple times... Also, use a Set?
   }
 
   async getLocations() {
-    const locs = await Promise.all(this.locations);
-    this.locations = _.sortedUniq(locs.sort((a, b) => {
-      if(a.source < b.source) {
-        return -1;
-      } else if (a.source > b.source) {
-        return 1;
-      }
-      if(a.line < b.line) {
-        return -1;
-      } else if(a.line > b.line) {
-        return 1;
-      }
-      return a.column - b.column;
-    }));
-    return this.locations;
+    return await Promise.all(this.locations);
   }
 
   notifyDependencies() {

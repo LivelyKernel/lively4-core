@@ -1589,6 +1589,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.editor.doc.setGutterMarker(line, 'activeExpressionGutter', this.drawAExprGutterMarker(dependencies, isAE));
   }
 
+  faIcon(name, ...modifiers) {
+    return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
+  }
+  
   drawAExprGutterMarker(dependencies, isAE) {
     //Use accumulate instead
     const sorted = dependencies.sort((aDep, bDep) => {
@@ -1631,16 +1635,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.drawAExprDependencyList(accumulated, markerBounds);
     };
 
-    // TODO render this without the "0"
     return <div class={"activeExpressionGutter-marker" + (isAE ? "-ae" : "-dep")} click={callback}>
       {accumulated.length}
     </div>;
   }
 
   async drawAExprDependencyList(dependencies, markerBounds) {
-    function fa(name, ...modifiers) {
-      return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
-    }
 
     const menuItems = [];
 
@@ -1657,14 +1657,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       }
       menuItems.push([description, () => {
         const start = { line: dep.location.start.line - 1, ch: dep.location.start.column };
+        const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
         if (inThisFile) {
-          const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
           this.editor.setSelection(start, end);
         } else {
-          lively.openBrowser(path, true, start, false, undefined, true);
+          lively.openBrowser(path, true, {start, end}, false, undefined, true);
         }
         menu.remove();
-      }, dep.events + " event" + (dep.events === 1 ? "" : "s"), fa(inThisFile ? 'location-arrow' : 'file-code-o')]);
+      }, dep.events + " event" + (dep.events === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
     });
 
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
