@@ -155,11 +155,11 @@ export class Frame {
 
   async _determineSourceInfo() {
     if(this._file === "<anonymous>") return;
-    if(!this._transpiled) {
+    const [livelyPath, srcPath] = this._file.split("/src/");
+    if(!this._transpiled || !srcPath) {
       this._sourceLoc = {line: this._line, column: this._char, source: this._file};
       return;
     }
-    const [livelyPath, srcPath] = this._file.split("/src/");
     const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
     var sourceMap = await sourceMappingURL.fetchJSON();
     var smc = sourcemap.SourceMapConsumer(sourceMap);

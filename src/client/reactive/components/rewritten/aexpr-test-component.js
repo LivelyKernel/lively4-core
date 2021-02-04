@@ -7,6 +7,7 @@ import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
 
   async initialize() {
+    this.c = 0;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
     this.y = 4;
@@ -47,6 +48,7 @@ export default class AexprTest extends Morph {
     return this.get("#delete");
   }
 
-  async livelyExample() {}
+  async livelyExample() {
+  }
 
 }

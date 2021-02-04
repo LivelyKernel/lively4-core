@@ -14,7 +14,9 @@ function clone(object) {
 export default class Trace {
     constructor() {
         this._log = [];
+        
         this.counter = 0;
+        this.pluginRound = 0;
 
         this.locations = [];
         this.filenames = [];
@@ -32,7 +34,7 @@ export default class Trace {
 
     createTraceID() {
         return {
-            sectionID: 0,
+            pluginRoundID: this.pluginRound,
             nodeID: this.counter++,
             isTraceID: true
         }
@@ -132,7 +134,7 @@ export default class Trace {
     /* AST changes */
 
     notify(objectID, key, oldValue, newValue, arrayProperty) {
-        const event = new ASTChangeEvent(objectID, key, clone(oldValue), clone(newValue));
+        const event = new ASTChangeEvent(objectID, key, oldValue, newValue);
         this.log(event);
         event.arrayProperty = arrayProperty;
     }
@@ -141,6 +143,7 @@ export default class Trace {
 
     enterPlugin(name) {
         this.log(new Event('enterPlugin', name));
+        this.pluginRound++;
     }
 
     leavePlugin(name) {

@@ -1,10 +1,7 @@
 import Trace from 'demos/tom/trace.js';
+import copyAST from 'demos/tom/copyAST.js';
 
-const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
-
-function copy(value) {
-    return value; // JSON.parse(JSON.stringify(value));
-}
+export const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
 
 function createObservingAccessorsOn(object, propertyName, observer) {
     const newPropertyName = '_' + propertyName;
@@ -12,8 +9,12 @@ function createObservingAccessorsOn(object, propertyName, observer) {
     Object.defineProperty(object, propertyName, {
         get() { return object[newPropertyName]; },
         set(value) {
-            observer.notify(object.traceID, propertyName, object[newPropertyName], value);
+            const pluginRound = window[Trace.traceIdentifierName].pluginRound;
             wrapAST(value, observer, true);
+            observer.notify(object.traceID, 
+                            propertyName, 
+                            copyAST(object[newPropertyName], pluginRound), 
+                            copyAST(value, pluginRound));
             object[newPropertyName] = value;
         }
     })
@@ -24,8 +25,10 @@ const handler = (observer, key) => {
         set: function(obj, prop, value) {
             // Todo: Reflect.set()
             if (Number.isInteger(Number.parseInt(prop))) {
-                observer.notify(prop, copy(obj[prop]), copy(value), key);
+                const pluginRound = window[Trace.traceIdentifierName].pluginRound;
+                debugger
                 wrapAST(value, observer, true);
+                observer.notify(prop, copyAST(obj[prop], pluginRound), copyAST(value, pluginRound), key);
             }
             obj[prop] = value;
             return true;
@@ -35,56 +38,6 @@ const handler = (observer, key) => {
 
 function wrappedArray(array, observer, key) {
     return new Proxy(array, handler(observer, key));
-}
-
-function copyUnknownASTParts(astNode) {
-    // simply check if the object is an astNode
-    if (astNode && astNode.type) {
-        // if already in AST return only a reference
-        if (astNode.traceID) {
-            return astNode.traceID;
-        }
-        
-        const objectCopy = {};
-
-        const keys = Object.keys(astNode).filter(key => !excludedProperties.includes(key));
-        for (const key of keys) {
-            const value = astNode[key];
-
-            if (Array.isArray(value)) {
-                const copiedArray = [];
-                objectCopy[key] = copiedArray;
-                
-                for(const entry of value) {
-                    copiedArray.push(copyUnknownASTParts(entry));
-                }
-
-                continue;
-            }
-
-            if (value === null) {
-                objectCopy[key] = value;
-                continue;
-            }
-
-            switch (typeof value) {
-                case 'function':
-                    // ignore functions
-                    break;
-                case 'object':
-                    // assume it is an astNode
-                    objectCopy[key] = copyUnknownASTParts(value);
-                    break;
-                default:
-                    objectCopy[key] = value;
-            }
-        }
-        
-        return objectCopy;
-    } else {
-        // probably not an AST node => do a generic copy
-        return JSON.parse(JSON.stringify(astNode));
-    }
 }
 
 export default function wrapAST(astNode, observer, onlyUnknownNodes) {
