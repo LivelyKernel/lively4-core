@@ -12,29 +12,51 @@ importScripts(lively4url + '/demos/tom/plugin-explorer-systemjs-config.js')
 // not sure why I need this but without it I cannot import the plugins
 System.import(pluginTransformationPlugin);
 
-const enumerationPlugin = function() {
-
-    let counter = 0;
-
+const enumerationPlugin = createTraceID => function() {
     const visitor = {
         enter(path) {
-            path.node.traceid = counter++;
+            if (!path.node.traceID) {
+                path.node.traceID = createTraceID();
+            }
         }
     };
 
     return {
         visitor: {
             Program(path) {
-                path.node.traceid = counter++;
+                path.node.traceID = createTraceID();
                 path.traverse(visitor)
             }
         }
     }
 }
 
-const enumerationConfig = {
-    plugins: [enumerationPlugin]
+const enumerationConfig = createTraceID => {
+    return { plugins: [enumerationPlugin(createTraceID)] }
 }
+
+
+// copied from src/client/lively.js
+async function unloadModule(path) {
+    var normalizedPath = System.normalizeSync(path)
+    try {
+        // check, to prevent trying to reloading a module a second time if there was an error #375
+        if (System.get(normalizedPath)) {
+            await System.import(normalizedPath).then(module => {
+                if (module && typeof module.__unload__ === "function") {
+                    module.__unload__();
+                }
+            });
+        }
+    } catch (e) {
+        console.log("WARNING: error while trying to unload " + path)
+    }
+    System.registry.delete(normalizedPath);
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][normalizedPath] = undefined;
+    delete System.loads[normalizedPath]
+}
+
 
 async function importPlugin(url) {
     const module = await System.import(url);
@@ -86,7 +108,11 @@ self.onmessage = function(msg) {
 
         const trace = new Trace();
         // make it globally available for use in plugins
-        window[Trace.traceIdenifierName] = trace;
+        window[Trace.traceIdentifierName] = trace;
+
+        function createTraceID() {
+            return trace.createTraceID();
+        }
 
         importPlugins(msg.data.urls)
             .then(function(modules) {
@@ -103,20 +129,26 @@ self.onmessage = function(msg) {
                 };
 
                 trace.startTraversion();
-                const ast = babel.transform(msg.data.source, enumerationConfig).ast;
+                const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
                 const oldASTAsString = JSON.stringify(ast);
 
                 wrapAST(ast, trace);
-                const result = babel.transformFromAst(ast, undefined, config);
+                let result
+                try {
+                    result = babel.transformFromAst(ast, undefined, config);
+                } catch (e) {
+                    result = null;
+                    trace.error(e);
+                }
 
-                // const result = babel.transform(msg.data.source, config);
                 postMessage({
                     oldAST: oldASTAsString,
-                    transformedAST: JSON.stringify(result.ast),
-                    transformedCode: result.code,
-                    trace: JSON.stringify(trace),
-                    locations: Trace.locations
+                    transformedAST: JSON.stringify(result && result.ast),
+                    transformedCode: result && result.code,
+                    trace: trace.serialize()
                 });
+
+                msg.data.urls.forEach(unloadModule)
             })
     })
 }

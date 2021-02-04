@@ -74,7 +74,7 @@ export default function({ types: t }) {
         },
         post() {
             if(pluginDefinedTrace) {
-                delete window[Trace.traceIdentifierName];
+                window[Trace.traceIdentifierName] = undefined;
             }
         },
         visitor: {
@@ -85,7 +85,6 @@ export default function({ types: t }) {
                 if (path.node.alreadyVisited || path.isGenerated()) {
                     return;
                 }
-
 
                 path.node.alreadyVisited = true;
                 let callee = path.get('callee');
@@ -111,7 +110,7 @@ export default function({ types: t }) {
                         path.node
                     ]);
                 
-                path.replaceWith(left)
+                    path.replaceWith(left)
                     return;
                 } else if (t.isFunctionExpression(callee)) {
                     name = callee.node.id.name || 'anonymous function';
@@ -154,7 +153,7 @@ export default function({ types: t }) {
                     ]));                    
                 } else {
                     modifyFunction('anonymous function', path, this);
-                }                
+                }
             },
             "ClassMethod|ObjectMethod"(path) {
                 const key = path.node.key;

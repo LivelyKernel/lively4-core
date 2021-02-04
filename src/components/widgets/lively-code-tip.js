@@ -24,7 +24,7 @@ export default class CodeTip extends Morph {
     }
 
     this.tips = [
-      "With 'Alt-Enter' you can access a powerful refactoring menu.",
+      "With 'Alt-M' you can access a powerful refactoring menu.",
       "Press 'Next Tip' to get more advice!",
       "You can get a global context menu by clicking on the background or anywhere there is  not a local context menu.",
       "Make your code simpler to understand with the extract method feature 'Alt+M'.",

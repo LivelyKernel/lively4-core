@@ -134,23 +134,21 @@ export default class AcademicSubquery extends Morph {
     this.updateView()
     
     observer = new MutationObserver((mutations) => {
-      mutations.forEach(mutation => {
-        //lively.notify("observation", mutation.type)
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        mutations.forEach(async mutation => {
           if (mutation.type == "characterData") {
             this.textContent = await this.viewToQuery();
           }
           if (mutation.type == "childList") {
-            clearTimeout(timeout);
-            //timeout = setTimeout(() => {
-              var div = <div id="update"></div>;
-              this.appendChild(div);
-              this.removeChild(div);
-            //}, 3000);
+            // TODO: better propagation to super elements
+            var div = <div id="update"></div>;
+            this.appendChild(div);
+            this.removeChild(div);
+          
           }
-        }, 1000);
-      })
+        })
+      }, 300);
     });
     
     const config = {
@@ -297,13 +295,13 @@ export default class AcademicSubquery extends Morph {
                     .map(e => e.textContent);
         if (val)
           val = val.slice(0, val.length - 1); // remove last whitespace
-        // TODO: keep the '' when parsing query so that we don't have
-        // 3 spans here....
-        // OOODER ich lass das mit dem Edit Mode, dafür gibt's ja schon
-        // das input Feld
         
         // TODO check if attribute has string value
-        if (attr.slice(0, attr.length - 1) == "A") {
+        var stringAttributes = {
+          "A": "Author",
+          "AA.AuN": "Author Name",
+        }
+        if (attr.slice(0, attr.length - 1) in stringAttributes) {
           val = "'" + val + "'"
         }
         //query = attr + comp + "'" + val + "'";
@@ -389,13 +387,13 @@ export default class AcademicSubquery extends Morph {
                 class="button"
                 click={() => {
                   this.setQuery(
-                    "And(" + this.textContent + ", A='Placeholder')")
+                    "And(" + this.textContent + ", " + this.textContent + ")")
                 }}>AND</button>
               <button
                 class="button"
                 click={() => {
                   this.setQuery(
-                    "Or(" + this.textContent + ", A='Placeholder')")
+                    "Or(" + this.textContent + ", " + this.textContent + ")")
                 }}>OR</button>
             </span>
           </span>;

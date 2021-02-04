@@ -484,8 +484,8 @@ export default class JumpingCubes extends Morph {
     this.processQueue(clickables.sample());
   }
 
-  ae(fn, ...opts) {
-    const ae = aexpr(fn, ...opts);
+  ae(fn) {
+    const ae = aexpr(fn);
     this.aexprs.add(ae);
     return ae;
   }
