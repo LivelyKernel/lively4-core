@@ -13,8 +13,8 @@ export default class LivelyMleCodeEditor extends Morph {
   onDeployButton() {
     this.loading = true;
     const editor = this.shadowRoot.getElementById("code");
-    this.socket.emit('save', {
-      file: editor.getValue()
+    this._socket.emit('save', {
+      file: editor.value
     });
   }
   
@@ -25,24 +25,24 @@ export default class LivelyMleCodeEditor extends Morph {
   }
   
   set socket(v){
-    this.socket = v;
+    this._socket = v;
     this.loading = true;
-    this.socket.emit('read');
-    this.socket.on('failure', m => {
+    this._socket.emit('read');
+    this._socket.on('failure', m => {
       this.loading = false;
       this.shadowRoot.getElementById("result").innerHTML = m;
       this.shadowRoot.getElementById("result").className = "notification is-danger";
     });
-    this.socket.on('busy', m => {
+    this._socket.on('busy', m => {
       this.loading = false;
     });
-    this.socket.on('result', (r, status) => {
+    this._socket.on('result', (r, status) => {
       if(status === "read"){
         this.loading = false;
         this.shadowRoot.getElementById("code").value = r;
       }
       if (status === "saved") {
-        this.socket.emit('deploy', {
+        this._socket.emit('deploy', {
           connectionString: '132.145.55.192:1521/MLEEDITOR',
           user: 'system',
           password: 'MY_PASSWORD_123'
