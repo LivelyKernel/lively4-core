@@ -48,6 +48,7 @@ export default class AexprTest extends Morph {
     return this.get("#delete");
   }
 
-  async livelyExample() {}
+  async livelyExample() {
+  }
 
 }

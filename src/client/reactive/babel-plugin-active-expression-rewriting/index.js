@@ -466,10 +466,10 @@ export default function(babel) {
                 // No constructor exists -> Override default constructor
                 const constructorContent = [];
                 if(path.node.superClass) {
-                  constructorContent.push(t.expressionStatement(t.callExpression(t.super(), [])));
+                  constructorContent.push(t.expressionStatement(t.callExpression(t.super(), [t.spreadElement(t.identifier("args"))])));
                 }
                 constructorContent.push(setClassFilePathStatement());
-                path.get("body").unshiftContainer("body", t.classMethod("constructor", t.identifier("constructor"), [], t.blockStatement(constructorContent)));
+                path.get("body").unshiftContainer("body", t.classMethod("constructor", t.identifier("constructor"), [t.restElement(t.identifier("args"))], t.blockStatement(constructorContent)));
               }              
             },
             /*MD # Identifier MD*/
