@@ -1,5 +1,4 @@
 
-
 export class PIReference {
   static get isPIReference() { return true; }
 
@@ -8,7 +7,8 @@ export class PIReference {
   }
 
   create(strings, ...expressions) {
-    // debugger
+    this.strings = strings;
+    this.expressions = expressions;
   }
 
   get access() {
