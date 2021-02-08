@@ -67,7 +67,7 @@ extend(Object.prototype, {
   traverseAsAST(visitor) {
     return babel.traverse(this, visitor);
   },
-  inspect() {
+  openInInspector() {
     lively.openInspector(this);
   }
 

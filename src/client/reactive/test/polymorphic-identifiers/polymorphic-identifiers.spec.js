@@ -117,16 +117,19 @@ describe("PI", function() {
     })``.access).to.equal('bar')
   });
 
-//   it("inserts default constructors", () => {
-//     class A {
-//       constructor() {
-//         this.prop = 42;
-//       }
-//     }
-//     class B extends A {}
+});
+describe("AEs", function() {
+  
+  it("AExprs insert default constructors", () => {
+    class A {
+      constructor(prop) {
+        this.prop = prop;
+      }
+    }
+    class B extends A {}
     
-//     const b = new B();
-//     expect(b.prop).to.equal(42);
-//   });
+    const b = new B(42);
+    expect(b.prop).to.equal(42);
+  });
 
 });
