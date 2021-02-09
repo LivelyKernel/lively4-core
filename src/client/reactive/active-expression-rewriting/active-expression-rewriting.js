@@ -220,12 +220,14 @@ const DependenciesToAExprs = {
   associate(dep, aexpr) {
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
+    debouncedUpdateDebuggingViews();
   },
 
   disconnectAllForAExpr(aexpr) {
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
+    debouncedUpdateDebuggingViews();
   },
 
   getAETriplesForFile(url) {
@@ -271,9 +273,11 @@ const HooksToDependencies = {
 
   associate(hook, dep) {
     this._hooksToDeps.associate(hook, dep);
+    debouncedUpdateDebuggingViews();
   },
   remove(hook, dep) {
     this._hooksToDeps.remove(hook, dep);
+    debouncedUpdateDebuggingViews();
   },
 
   async getHookTriplesForFile(url) {
@@ -293,6 +297,7 @@ const HooksToDependencies = {
 
   disconnectAllForDependency(dep) {
     this._hooksToDeps.removeAllLeftFor(dep);
+    debouncedUpdateDebuggingViews();
   },
 
   getDepsForHook(hook) {
@@ -715,6 +720,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static globalUpdated(globalName, location) {
@@ -722,6 +728,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static localUpdated(scope, varName, location) {
@@ -729,6 +736,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static async findRegistrationLocation() {
@@ -894,6 +902,32 @@ export function getGlobal(globalName) {
   if (expressionAnalysisMode) {
     DependencyManager.associateGlobal(globalName);
   }
+}
+
+const registeredDebuggingViews = [];
+
+const debouncedUpdateDebuggingViews = _.debounce(updateDebggingViews, 100);
+
+async function updateDebggingViews() {
+  for(let i = 0; i < registeredDebuggingViews.length; i++) {
+    if(!await registeredDebuggingViews[i]()) {
+      registeredDebuggingViews.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+export async function registerFileForAEDebugging(url, context, triplesCallback) {
+  const callback = async () => {
+    if(context && (!context.valid || context.valid())) {
+      triplesCallback(await getDependencyTriplesForFile(url));
+      return true;
+    }
+    return false;
+  }
+  registeredDebuggingViews.push(callback);
+  
+  triplesCallback(await getDependencyTriplesForFile(url));
 }
 
 export async function getDependencyTriplesForFile(url) {
