@@ -151,14 +151,15 @@ export default class Files {
     if (fromServerURL && (fromServerURL == toServerURL)) {
       
       // use special server MOVE/RENAME method
-      var result = await fetch(url, {
+      var resp = await fetch(url, {
         method: "MOVE",
         headers: {
           destination: newURL
         }
-      }).then(r => r.text())
+      })
+      var result = await resp.text()
       lively.notify("MOVE", result)
-      return 
+      return resp
     }
     
     var content = await fetch(url).then(r => r.blob())
@@ -171,7 +172,7 @@ export default class Files {
 
     if (putResponse.status !== 200) {
       lively.confirm("could not move file to " + newURL)
-      return 
+      return putResponse
     }
 
     // ok, lets be crazy... we first delete
@@ -187,8 +188,9 @@ export default class Files {
         method: 'PUT',
         body: content
       })
-      return 
+      return putAgainResponse
     }
+    return getResponse
   }
   
   static async statFile(urlString){
