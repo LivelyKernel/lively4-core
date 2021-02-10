@@ -1,6 +1,6 @@
 
-export class PIReference {
-  static get isPIReference() { return true; }
+export class PIScheme {
+  static get isPIScheme() { return true; }
 
   applyOptions(options = {}) {
     Object.assign(this, options);
@@ -20,7 +20,7 @@ export class PIReference {
 }
 
 export function makeRef(referenceClass, options) {
-  if (referenceClass && referenceClass.isPIReference) {
+  if (referenceClass && referenceClass.isPIScheme) {
     const reference = new referenceClass(options);
     reference.applyOptions(options);
 

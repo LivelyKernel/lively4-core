@@ -27,6 +27,14 @@ export default class BidirectionalMultiMap {
     this.domainToRange.clear();
     this.rangeToDomain.clear();
   }
+  
+  hasRight(val) {    
+    return this.rangeToDomain.has(val);
+  }
+  
+  hasLeft(val) {
+    return this.domainToRange.has(val);
+  }
 
   getRightsFor(left) {
     return this.domainToRange.getOrCreate(left, () => new Set());
