@@ -1,1 +1,1 @@
-<div style="background-color:green; position:absolute;top:0px; left:0px;width:100%; height:100%"></div>
+<div style="background-color:green; position:absolute;top:0px; left:0px;width:90%; height:90%"></div>
