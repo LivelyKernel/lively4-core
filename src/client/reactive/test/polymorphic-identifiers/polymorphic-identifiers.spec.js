@@ -4,18 +4,18 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { PIReference, makeRef } from 'src/client/reactive/polymorphic-identifiers/polymorphic-identifiers.js';
+import { PIScheme, makeRef } from 'src/client/reactive/polymorphic-identifiers/polymorphic-identifiers.js';
 import { uuid } from 'utils';
 
 describe("PI", function() {
   
   it("is defined", () => {
-    expect(PIReference).to.be.ok;
+    expect(PIScheme).to.be.ok;
     expect(makeRef).to.be.ok;
   });
 
   it("detects accesses", () => {
-    class fourtyTwo extends PIReference {
+    class fourtyTwo extends PIScheme {
       read() {
         return 42;
       }
@@ -29,7 +29,7 @@ describe("PI", function() {
   });
 
   it("can access the `this` reference", () => {
-    class prop extends PIReference {
+    class prop extends PIScheme {
       create(strings) {
         this.prop = strings.first;
       }
@@ -65,7 +65,7 @@ describe("PI", function() {
   });
 
   it("can access locals with eval", () => {
-    class local extends PIReference {
+    class local extends PIScheme {
       create(strings) {
         this.local = strings.first;
       }
