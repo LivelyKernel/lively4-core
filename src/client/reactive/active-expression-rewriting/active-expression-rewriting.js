@@ -216,31 +216,35 @@ class Dependency {
 
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
+  _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
+    const location = aexpr.meta().get("location").file;
+    if(!this._AEsPerFile.has(location)) {
+      this._AEsPerFile.set(location, new Set());
+    }
+    this._AEsPerFile.get(location).add(aexpr);
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
+    debouncedUpdateDebuggingViews();
   },
 
   disconnectAllForAExpr(aexpr) {
+    const location = aexpr.meta().get("location").file;
+    if(this._AEsPerFile.has(location)) {
+      this._AEsPerFile.get(location).delete(aexpr);
+    }
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
+    debouncedUpdateDebuggingViews();
   },
 
-  getAETriplesForFile(url) {
-    const result = [];
-    for (const ae of this._depsToAExprs.getAllRight()) {
-      const location = ae.meta().get("location").file;
-      if (location.includes(url)) {
-        for (const dependency of this.getDepsForAExpr(ae)) {
-          for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
-            result.push({ hook, dependency, ae });
-          }
-        }
-      }
+  getAEsInFile(url) {
+    for(const [location, aes] of this._AEsPerFile.entries()) {
+      if(location.includes(url)) return aes;
     }
-    return result;
+    return [];
   },
 
   getAExprsForDep(dep) {
@@ -271,28 +275,27 @@ const HooksToDependencies = {
 
   associate(hook, dep) {
     this._hooksToDeps.associate(hook, dep);
+    debouncedUpdateDebuggingViews();
   },
+  
   remove(hook, dep) {
     this._hooksToDeps.remove(hook, dep);
+    debouncedUpdateDebuggingViews();
   },
 
-  async getHookTriplesForFile(url) {
-    const result = [];
-    for (const hook of this._hooksToDeps.getAllLeft()) {
-      const locations = await hook.getLocations();
-      if (locations.some(loc => loc && loc.source.includes(url))) {
-        for (const dependency of this.getDepsForHook(hook)) {
-          for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
-            result.push({ hook, dependency, ae });
-          }
-        }
-      }
-    }
-    return result;
+  async getHooksInFile(url) {
+    const hooksWithLocations = await Promise.all(this._hooksToDeps.getAllLeft().map(hook => {
+      return hook.getLocations().then(locations => {return {hook, locations}});     
+    }))
+    return hooksWithLocations.filter(({hook, locations}) => {
+      const location = locations.find(loc => loc && loc.source); 
+      return location && locations.source.includes(url);
+    }).map(({hook, locations}) => hook);
   },
 
   disconnectAllForDependency(dep) {
     this._hooksToDeps.removeAllLeftFor(dep);
+    debouncedUpdateDebuggingViews();
   },
 
   getDepsForHook(hook) {
@@ -715,6 +718,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static globalUpdated(globalName, location) {
@@ -722,6 +726,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static localUpdated(scope, varName, location) {
@@ -729,6 +734,7 @@ class TracingHandler {
     if(!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
+    debouncedUpdateDebuggingViews();
   }
 
   static async findRegistrationLocation() {
@@ -896,14 +902,47 @@ export function getGlobal(globalName) {
   }
 }
 
+const registeredDebuggingViews = [];
+
+const debouncedUpdateDebuggingViews = _.debounce(updateDebggingViews, 100);
+
+async function updateDebggingViews() {
+  for(let i = 0; i < registeredDebuggingViews.length; i++) {
+    if(!await registeredDebuggingViews[i]()) {
+      registeredDebuggingViews.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+export async function registerFileForAEDebugging(url, context, triplesCallback) {
+  const callback = async () => {
+    if(context && (!context.valid || context.valid())) {
+      triplesCallback(await getDependencyTriplesForFile(url));
+      return true;
+    }
+    return false;
+  }
+  registeredDebuggingViews.push(callback);
+  
+  triplesCallback(await getDependencyTriplesForFile(url));
+}
+
 export async function getDependencyTriplesForFile(url) {
   const result = [];
-  for (const hook of HooksToDependencies._hooksToDeps.getAllLeft()) {
-    const locations = await hook.getLocations();
+  for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
+    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+      for(const hook of HooksToDependencies.getHooksForDep(dependency)) {
+          result.push({ hook, dependency, ae });
+      }
+    }
+  }
+  for (const hook of await HooksToDependencies.getHooksInFile(url)) {
     for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
-      for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
+      for(const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
         const location = ae.meta().get("location").file;
-        if (location.includes(url) || locations.some(loc => loc && loc.file.includes(url))) {
+        // if the AE is also in this file, we already covered it with the previous loop
+        if (!location.includes(url)){
           result.push({ hook, dependency, ae });
         }
       }
