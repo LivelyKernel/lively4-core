@@ -1,6 +1,7 @@
 # Polymorphic-Identifiers
 
 ```JavaScript
+'pi';
 import { PIScheme } from 'polymorphic-identifiers';
 
 // example scheme
