@@ -30,7 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { getDependencyTriplesForFile, registerFileForAEDebugging } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
 
@@ -1413,8 +1413,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     
-    
-    registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
+    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
       this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
         this.showAExprDependencyGutterMarkers(depToAE, false);
