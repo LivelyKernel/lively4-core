@@ -1,10 +1,11 @@
 # Polymorphic-Identifiers
 
 ```JavaScript
-import { PIReference } from 'polymorphic-identifiers';
+'pi';
+import { PIScheme } from 'polymorphic-identifiers';
 
 // example scheme
-class qa extends PIReference {
+class qa extends PIScheme {
   read() {
     const { elements } = this.parse();
     return elements;
