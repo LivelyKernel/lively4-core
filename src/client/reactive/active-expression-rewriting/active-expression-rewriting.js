@@ -377,10 +377,12 @@ const DependenciesToAExprs = {
 
   associate(dep, aexpr) {
     const location = aexpr.meta().get("location");
-    if (location && location.file && !this._AEsPerFile.has(location.file)) {
-      this._AEsPerFile.set(location, new Set());
+    if(location && location.file) {      
+      if (!this._AEsPerFile.has(location.file)) {
+        this._AEsPerFile.set(location.file, new Set());
+      }
+      this._AEsPerFile.get(location.file).add(aexpr);
     }
-    this._AEsPerFile.get(location).add(aexpr);
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
     DebuggingCache.debouncedUpdateDebuggingViews();
@@ -389,7 +391,7 @@ const DependenciesToAExprs = {
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
     if (location && location.file && this._AEsPerFile.has(location.file)) {
-      this._AEsPerFile.get(location).delete(aexpr);
+      this._AEsPerFile.get(location.file).delete(aexpr);
     }
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
