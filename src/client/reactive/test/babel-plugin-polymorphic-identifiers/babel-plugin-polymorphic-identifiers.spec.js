@@ -5,7 +5,7 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { PIScheme } from 'src/client/reactive/polymorphic-identifiers/polymorphic-identifiers.js';
+import { PIScheme } from 'polymorphic-identifiers';
 import { uuid } from 'utils';
 
 describe("PI", function() {
@@ -27,8 +27,8 @@ describe("PI", function() {
 
   it("can access the `this` reference", () => {
     class prop extends PIScheme {
-      create(strings) {
-        this.prop = strings.first;
+      initialize() {
+        this.prop = this.strings.first;
       }
       read() {
         return this.thisReference[this.prop];
@@ -57,8 +57,8 @@ describe("PI", function() {
 
   it("can access locals with eval", () => {
     class local extends PIScheme {
-      create(strings) {
-        this.local = strings.first;
+      initialize() {
+        this.local = this.strings.first;
       }
       read() {
         return this.evalFunction(this.local);
@@ -94,21 +94,6 @@ describe("PI", function() {
     }
     
     expect(foo``).to.equal('bar')
-  });
-
-});
-describe("AEs", function() {
-  
-  it("AExprs insert default constructors", () => {
-    class A {
-      constructor(prop) {
-        this.prop = prop;
-      }
-    }
-    class B extends A {}
-    
-    const b = new B(42);
-    expect(b.prop).to.equal(42);
   });
 
 });
