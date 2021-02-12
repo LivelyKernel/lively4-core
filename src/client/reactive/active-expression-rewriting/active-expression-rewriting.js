@@ -14,6 +14,7 @@ import BidirectionalMultiMap from './bidirectional-multi-map.js';
 import { isFunction } from 'utils';
 import lively from "src/client/lively.js";
 import _ from 'src/external/lodash/lodash.js';
+import diff from 'src/external/diff-match-patch.js';
 
 /*MD # Dependency Analysis MD*/
 
@@ -213,36 +214,194 @@ class Dependency {
   }
 
 }
+/*MD # Debugging Cache MD*/
+
+export class AEDebuggingCache {
+
+  constructor() {
+    this.registeredDebuggingViews = [];
+    this.debouncedUpdateDebuggingViews = _.debounce(this.updateDebggingViews, 100);
+  }
+  /*MD ## Registration MD*/
+  async registerFileForAEDebugging(url, context, triplesCallback) {
+    const callback = async () => {
+      if (context && (!context.valid || context.valid())) {
+        triplesCallback((await this.getDependencyTriplesForFile(url)));
+        return true;
+      }
+      return false;
+    };
+    this.registeredDebuggingViews.push(callback);
+
+    triplesCallback((await this.getDependencyTriplesForFile(url)));
+  }
+
+  /*MD ## Caching MD*/
+
+  /*MD ## Code Change API MD*/
+  async updateFile(url, oldCode, newCode) {
+    try {
+      const lineMapping = this.calculateMapping(oldCode, newCode);
+      for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
+        const location = ae.meta().get("location");
+        this.remapLocation(lineMapping, location);
+      }
+      for (const hook of await HooksToDependencies.getHooksInFile(url)) {
+        hook.getLocations().then(locations => {
+          for (const location of locations) {
+            this.remapLocation(lineMapping, location);
+          }
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  remapLocation(lineMapping, location) {
+    let [diff, lineChanged] = lineMapping[location.start.line];
+
+    if (diff === -1) {
+      location.start.line = 0;
+    } else {
+      location.start.line = diff;
+    }
+
+    let [diff2, lineChanged2] = lineMapping[location.end.line];
+
+    if (diff2 === -1) {
+      location.end.line = 0;
+    } else {
+      location.end.line = diff2;
+    }
+    if (lineChanged || lineChanged2) {
+      lively.notify("Changed AE code for existing AE. There are outdated expressions in the system");
+      //ToDo: Check if the content is similar enough, mark AEs as outdated
+    }
+  }
+
+  calculateMapping(oldCode, newCode) {
+    const mapping = []; //For each line of oldCode: new Line in newCode if existing, changedContent if the line no longer exists but can be mapped to a newCode line
+    var dmp = new diff.diff_match_patch();
+    var a = dmp.diff_linesToChars_(oldCode, newCode);
+    var lineText1 = a.chars1;
+    var lineText2 = a.chars2;
+    var lineArray = a.lineArray;
+    var diffs = dmp.diff_main(lineText1, lineText2, false);
+
+    let originalLine = 0;
+    let newLine = 0;
+    let recentDeletions = 0;
+    let recentAdditions = 0;
+    for (let [type, data] of diffs) {
+      if (type === 0) {
+        recentDeletions = 0;
+        recentAdditions = 0;
+        for (let i = 0; i < data.length; i++) {
+          mapping[originalLine] = [newLine, false];
+          originalLine++;
+          newLine++;
+        }
+      } else if (type === 1) {
+        if (recentDeletions > 0) {
+          const matchingLines = Math.max(recentDeletions, data.length);
+          for(let i = 0; i < matchingLines; i++) {
+            mapping[originalLine - matchingLines + i] = [newLine, true];
+            newLine++;
+          }
+          data = data.substring(matchingLines)
+        } 
+        if(data.length > 0) {
+          newLine += data.length;
+          recentAdditions += data.length;
+        }
+      } else {
+        if (recentAdditions > 0) {
+          const matchingLines = Math.max(recentAdditions, data.length);
+          for(let i = 0; i < matchingLines; i++) {
+            mapping[originalLine] = [newLine - matchingLines + i, true];
+            originalLine++;
+          }          
+          data = data.substring(matchingLines)
+        }
+        recentDeletions += data.length;
+        for (let i = 0; i < data.length; i++) {
+          mapping[originalLine] = [-1, false];
+          originalLine++;
+        }
+      }
+    }
+
+    dmp.diff_charsToLines_(diffs, lineArray);
+
+    return mapping;
+  }
+  /*MD ## Rewriting API MD*/
+  async updateDebggingViews() {
+    for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
+      if (!(await this.registeredDebuggingViews[i]())) {
+        this.registeredDebuggingViews.splice(i, 1);
+        i--;
+      }
+    }
+  }
+
+  async getDependencyTriplesForFile(url) {
+    const result = [];
+    for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
+      for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+        for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
+          result.push({ hook, dependency, ae });
+        }
+      }
+    }
+    for (const hook of await HooksToDependencies.getHooksInFile(url)) {
+      for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
+        for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
+          const location = ae.meta().get("location").file;
+          // if the AE is also in this file, we already covered it with the previous loop
+          if (!location.includes(url)) {
+            result.push({ hook, dependency, ae });
+          }
+        }
+      }
+    }
+    return result;
+  }
+}
+export const DebuggingCache = new AEDebuggingCache();
 
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
   _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
-    const location = aexpr.meta().get("location").file;
-    if(!this._AEsPerFile.has(location)) {
-      this._AEsPerFile.set(location, new Set());
+    const location = aexpr.meta().get("location");
+    if(location && location.file) {      
+      if (!this._AEsPerFile.has(location.file)) {
+        this._AEsPerFile.set(location.file, new Set());
+      }
+      this._AEsPerFile.get(location.file).add(aexpr);
     }
-    this._AEsPerFile.get(location).add(aexpr);
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   },
 
   disconnectAllForAExpr(aexpr) {
-    const location = aexpr.meta().get("location").file;
-    if(this._AEsPerFile.has(location)) {
-      this._AEsPerFile.get(location).delete(aexpr);
+    const location = aexpr.meta().get("location");
+    if (location && location.file && this._AEsPerFile.has(location.file)) {
+      this._AEsPerFile.get(location.file).delete(aexpr);
     }
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   },
 
   getAEsInFile(url) {
-    for(const [location, aes] of this._AEsPerFile.entries()) {
-      if(location.includes(url)) return aes;
+    for (const [location, aes] of this._AEsPerFile.entries()) {
+      if (location.includes(url)) return aes;
     }
     return [];
   },
@@ -275,27 +434,29 @@ const HooksToDependencies = {
 
   associate(hook, dep) {
     this._hooksToDeps.associate(hook, dep);
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   },
-  
+
   remove(hook, dep) {
     this._hooksToDeps.remove(hook, dep);
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   },
 
   async getHooksInFile(url) {
     const hooksWithLocations = await Promise.all(this._hooksToDeps.getAllLeft().map(hook => {
-      return hook.getLocations().then(locations => {return {hook, locations}});     
-    }))
-    return hooksWithLocations.filter(({hook, locations}) => {
-      const location = locations.find(loc => loc && loc.source); 
-      return location && locations.source.includes(url);
-    }).map(({hook, locations}) => hook);
+      return hook.getLocations().then(locations => {
+        return { hook, locations };
+      });
+    }));
+    return hooksWithLocations.filter(({ hook, locations }) => {
+      const location = locations.find(loc => loc && loc.file);
+      return location && location.file.includes(url);
+    }).map(({ hook, locations }) => hook);
   },
 
   disconnectAllForDependency(dep) {
     this._hooksToDeps.removeAllLeftFor(dep);
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   },
 
   getDepsForHook(hook) {
@@ -358,14 +519,15 @@ class Hook {
   }
 
   addLocation(location) {
-    if(!this.locations.some(loc => _.isEqual(loc, location))) {
+    if (!this.locations.some(loc => _.isEqual(loc, location))) {
       this.locations.push(location);
     }
     //Todo: Promises get added multiple times... Also, use a Set?
   }
 
   async getLocations() {
-    return await Promise.all(this.locations);
+    this.locations = await Promise.all(this.locations);
+    return this.locations;
   }
 
   notifyDependencies() {
@@ -378,12 +540,12 @@ class SourceCodeHook extends Hook {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
   }
-  
+
   static get(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToSourceCodeHook.getRightFor(compKey);    
+    return CompositeKeyToSourceCodeHook.getRightFor(compKey);
   }
-  
+
   constructor(context, identifier) {
     super();
 
@@ -713,28 +875,28 @@ class TracingHandler {
    * ********************** update ********************************
    * **************************************************************
    */
-  static memberUpdated(obj, prop, location) {    
+  static memberUpdated(obj, prop, location) {
     const hook = SourceCodeHook.get(obj, prop);
-    if(!hook) return;
+    if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   }
 
   static globalUpdated(globalName, location) {
     const hook = SourceCodeHook.get(globalRef, globalName);
-    if(!hook) return;
+    if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   }
 
   static localUpdated(scope, varName, location) {
     const hook = SourceCodeHook.get(scope, varName);
-    if(!hook) return;
+    if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies();
-    debouncedUpdateDebuggingViews();
+    DebuggingCache.debouncedUpdateDebuggingViews();
   }
 
   static async findRegistrationLocation() {
@@ -746,11 +908,11 @@ class TracingHandler {
       if (!frame.file.includes("active-expression")) {
         const loc = await frame.getSourceLoc();
         return {
-          start: {line: loc.line, column: loc.column},
-          end: {line: loc.line, column: loc.column},
-          file: loc.source,
-        }
-      } 
+          start: { line: loc.line, column: loc.column },
+          end: { line: loc.line, column: loc.column },
+          file: loc.source
+        };
+      }
     }
     return undefined;
   }
@@ -900,63 +1062,6 @@ export function getGlobal(globalName) {
   if (expressionAnalysisMode) {
     DependencyManager.associateGlobal(globalName);
   }
-}
-
-const registeredDebuggingViews = [];
-
-const debouncedUpdateDebuggingViews = _.debounce(updateDebggingViews, 100);
-
-async function updateDebggingViews() {
-  for(let i = 0; i < registeredDebuggingViews.length; i++) {
-    if(!await registeredDebuggingViews[i]()) {
-      registeredDebuggingViews.splice(i, 1);
-      i--;
-    }
-  }
-}
-
-export async function registerFileForAEDebugging(url, context, triplesCallback) {
-  const callback = async () => {
-    if(context && (!context.valid || context.valid())) {
-      triplesCallback(await getDependencyTriplesForFile(url));
-      return true;
-    }
-    return false;
-  }
-  registeredDebuggingViews.push(callback);
-  
-  triplesCallback(await getDependencyTriplesForFile(url));
-}
-
-export async function getDependencyTriplesForFile(url) {
-  const result = [];
-  for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
-      for(const hook of HooksToDependencies.getHooksForDep(dependency)) {
-          result.push({ hook, dependency, ae });
-      }
-    }
-  }
-  for (const hook of await HooksToDependencies.getHooksInFile(url)) {
-    for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
-      for(const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
-        const location = ae.meta().get("location").file;
-        // if the AE is also in this file, we already covered it with the previous loop
-        if (!location.includes(url)){
-          result.push({ hook, dependency, ae });
-        }
-      }
-    }
-  }
-  return result;
-}
-
-export async function getHookTriplesForFile(url) {
-  return HooksToDependencies.getHookTriplesForFile(url);
-}
-
-export async function getAETriplesForFile(url) {
-  return DependenciesToAExprs.getAETriplesForFile(url);
 }
 
 export function setGlobal(globalName, location) {

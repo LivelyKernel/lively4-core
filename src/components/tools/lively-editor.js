@@ -32,7 +32,7 @@ import files from "src/client/files.js"
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 import ContextMenu from 'src/client/contextmenu.js'
 
-
+import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 
 
 export default class Editor extends Morph {
@@ -455,6 +455,8 @@ export default class Editor extends Morph {
   ```
   MD*/
       try {
+        const prev = await urlString.fetchText();
+        DebuggingCache.updateFile(urlString, prev, data);
         var response = await fetch(urlString, {
           method: 'PUT', 
           body: data,
