@@ -1,6 +1,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {Message} from "src/client/gmail.js"
 
+
+/*MD 
+![](gmail-message.png)
+MD*/
+
+
 export default class GmailMessage extends Morph {
   async initialize() {
     this.updateView()
