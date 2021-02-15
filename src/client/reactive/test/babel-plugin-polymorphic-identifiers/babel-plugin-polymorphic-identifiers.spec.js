@@ -1,17 +1,17 @@
+'pi'
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { PIScheme, makeRef } from 'polymorphic-identifiers';
+import { PIScheme } from 'polymorphic-identifiers';
 import { uuid } from 'utils';
 
 describe("PI", function() {
   
   it("is defined", () => {
     expect(PIScheme).to.be.ok;
-    expect(makeRef).to.be.ok;
   });
 
   it("detects accesses", () => {
@@ -21,10 +21,7 @@ describe("PI", function() {
       }
     }
 
-    expect(makeRef(fourtyTwo, {
-      thisReference: this,
-      evalFunction: str => eval(str)
-    })``.access).to.equal(42)
+    expect(fourtyTwo``).to.equal(42)
     
   });
 
@@ -45,16 +42,10 @@ describe("PI", function() {
     const o = {
       foo: 17,
       func() {
-        return makeRef(prop, {
-          thisReference: this,
-          evalFunction: str => eval(str)
-        })`foo`.access;
+        return prop`foo`;
       },
       write(value) {
-        makeRef(prop, {
-          thisReference: this,
-          evalFunction: str => eval(str)
-        })`bar`.access = value;
+        prop`bar` << value;
       }
     };
     expect(o.func()).to.equal(17)
@@ -86,23 +77,14 @@ describe("PI", function() {
     let v1 = 'v1', v2 = 42;
 
     // read
-    expect(makeRef(local, {
-          thisReference: this,
-          evalFunction: str => eval(str)
-        })`v1`.access).to.equal('v1')
+    expect(local`v1`).to.equal('v1')
     
     // write
-    makeRef(local, {
-          thisReference: this,
-          evalFunction: str => eval(str)
-        })`v2`.access = "v2";
+    local`v2` << "v2";
     expect(v2).to.equal('v2');
     
     // read/write
-    makeRef(local, {
-          thisReference: this,
-          evalFunction: str => eval(str)
-        })`v2`.access += '.2';
+    local`v2` << local`v2` + '.2';
     expect(v2).to.equal('v2.2');
   });
 
@@ -111,25 +93,7 @@ describe("PI", function() {
       return 'bar';
     }
     
-    expect(makeRef(foo, {
-      thisReference: this,
-      evalFunction: str => eval(str)
-    })``.access).to.equal('bar')
-  });
-
-});
-describe("AEs", function() {
-  
-  it("AExprs insert default constructors", () => {
-    class A {
-      constructor(prop) {
-        this.prop = prop;
-      }
-    }
-    class B extends A {}
-    
-    const b = new B(42);
-    expect(b.prop).to.equal(42);
+    expect(foo``).to.equal('bar')
   });
 
 });

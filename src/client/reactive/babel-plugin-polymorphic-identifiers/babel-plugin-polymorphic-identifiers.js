@@ -30,7 +30,6 @@ export default function ({ types: t, template }) {
             return foundDirective;
           }
 
-          debugger
           const shouldTransform = state.opts.executedIn === 'workspace' || hasDirective(path, "pi");
           if (!shouldTransform) {
             return;

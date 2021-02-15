@@ -30,7 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { getDependencyTriplesForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
 
@@ -223,6 +223,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     await lively.sleep(0);
     this.editor.refresh();
+    this.updateAExprDependencies();
   }
 
   async editorLoaded() {
@@ -1411,10 +1412,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
-    const [depToAE, AEToDep] = await this.allDependenciesByLine();
-    this.editor.doc.clearGutter('activeExpressionGutter')
-    this.showAExprDependencyGutterMarkers(depToAE, false);
-    this.showAExprDependencyGutterMarkers(AEToDep, true);
+    
+    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
+      this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
+        this.editor.doc.clearGutter('activeExpressionGutter');
+        this.showAExprDependencyGutterMarkers(depToAE, false);
+        this.showAExprDependencyGutterMarkers(AEToDep, true);        
+      });
+    });
   }
 
   async showAExprTextMarkers() {
@@ -1490,7 +1495,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
 
-  async allDependenciesByLine() {
+  async allDependenciesByLine(depsMapInFile) {
     const depToAE = new Map();
     const AEToDep = new Map();
 
@@ -1527,7 +1532,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         if (!depToAE.get(dependencyLine)) {
           depToAE.set(dependencyLine, []);
         }
-        depToAE.get(dependencyLine).push({ location: AELocation, source: ae.meta().get("sourceCode"), events: relatedEvents.length });
+        // Group by AE to distinguish between mutltiple AE Objects in the same line?
+        depToAE.get(dependencyLine).push({ location: AELocation, source: ae.meta().get("sourceCode"), events: relatedEvents.length, aes: new Set([ae]) });
       }
 
       if (AELocation.file.includes(this.fileURL())) {
@@ -1535,11 +1541,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         if (!AEToDep.get(AELine)) {
           AEToDep.set(AELine, []);
         }
-        AEToDep.get(AELine).push({ location: dependencyLoc, source: dependencySource, events: relatedEvents.length });
+        AEToDep.get(AELine).push({ location: dependencyLoc, source: dependencySource, events: relatedEvents.length, aes: new Set([ae]) });
       }
     };
     
-    const depsMapInFile = await getDependencyTriplesForFile(this.fileURL());
     for (const { hook, dependency, ae } of depsMapInFile) {
       const dependencyInfo = dependency.contextIdentifierValue();
       const locations = await hook.getLocations();
@@ -1584,6 +1589,10 @@ export default class LivelyCodeMirror extends HTMLElement {
   fileURL() {
     return lively.query(this, "lively-container").getURL().pathname;
   }
+  
+  valid() {
+    return !!lively.query(this, "lively-container");
+  }
 
   drawAExprGutter(line, dependencies, isAE) {
     this.editor.doc.setGutterMarker(line, 'activeExpressionGutter', this.drawAExprGutterMarker(dependencies, isAE));
@@ -1627,6 +1636,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         if(dep.location.end.column > lastDep.location.end.column) {
           lastDep.location.end = dep.location.end;
         }
+        lastDep.aes = new Set([...lastDep.aes, ...dep.aes]);
       }
     });
 
@@ -1636,7 +1646,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     };
 
     return <div class={"activeExpressionGutter-marker" + (isAE ? "-ae" : "-dep")} click={callback}>
-      {accumulated.length}
+      {isAE ? <b>AE</b> : <i class="fa fa-share-alt"></i>}
     </div>;
   }
 
@@ -1664,7 +1674,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           lively.openBrowser(path, true, {start, end}, false, undefined, true);
         }
         menu.remove();
-      }, dep.events + " event" + (dep.events === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
+      }, dep.events + " event" + (dep.events === 1 ? "" : "s") + ", " + dep.aes.size + " instance" + (dep.aes.size === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
     });
 
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);

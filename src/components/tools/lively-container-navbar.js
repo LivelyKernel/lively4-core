@@ -437,6 +437,7 @@ export default class LivelyContainerNavbar extends Morph {
         return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
+    debugger
     files.unshift({name: "..", type: "directory", url: stats.parent});
     return files
   }
@@ -629,6 +630,8 @@ export default class LivelyContainerNavbar extends Morph {
           var container = lively.query(this, "lively-container")
           if (container) await container.editFile();
         } 
+        // non-http(s) paths are not normalized by default
+        const href = System.normalizeSync(link.href);
         await this.followPath(link.href);
       }
       
@@ -895,6 +898,8 @@ export default class LivelyContainerNavbar extends Morph {
       // console.log("show sublist md" + this.url)
 
       this.showDetailsMD(sublist)
+    } else if (this.url.match(/^gs:/)) {
+      this.showDetailsGS(sublist)
     } else {
       if (!optionsWasHandles) {
         this.showDetailsOptions(sublist)
@@ -1054,6 +1059,60 @@ export default class LivelyContainerNavbar extends Morph {
       }) 
       sublist.appendChild(classItem)
     })
+  }
+
+  async showDetailsGS(sublist) {
+    const category = name => {
+      const element = this.createDetailsItem(name);
+      element.classList.add("subitem", "level1");
+      sublist.appendChild(element);
+    }
+
+    const item = (name, callback) => {
+      const element = this.createDetailsItem(name);
+      element.classList.add("link", "subitem", "level2");
+      element.onclick = callback;
+      sublist.appendChild(element);
+    }
+
+    const isUnit = this.url.match(/^gs:docs\/units\/([-\w]+)$/);
+    if (isUnit) {
+      category('Skills');
+      const details = await this.url.fetchStats({ details: true });
+      details.skills.sortBy().forEach(skillKey => {
+        item(skillKey, () => this.followPath('gs:docs/skills/' + skillKey));
+      })
+      return;
+    }
+
+    const isSkill = this.url.match(/^gs:docs\/skills\/([-\w]+)$/);
+    if (isSkill) {
+      category('Used By');
+      const details = await this.url.fetchStats({ details: true });
+      details.usedBy.sortBy().forEach(unitKey => {
+        item(unitKey, () => this.followPath('gs:docs/units/' + unitKey));
+      })
+      return;
+    }
+
+    // fallback: just render something...
+    var links = {
+      1: 'one',
+      2: 'two',
+      3: 'three',
+    }
+    _.keys(links).forEach( name => {
+      var item = links[name];
+      var element = this.createDetailsItem(name);
+      element.classList.add("link");
+      element.classList.add("subitem");
+      element.classList.add("level" + (name));
+      // element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
+      sublist.appendChild(element);
+    });
   }
 
 

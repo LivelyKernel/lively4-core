@@ -1,15 +1,22 @@
 
-export class PIReference {
-  static get isPIReference() { return true; }
+export class PIScheme {
+  static get isPIScheme() { return true; }
 
-  applyOptions(options = {}) {
-    Object.assign(this, options);
+  static createRef(options, strings, ...expressions) {
+    const reference = new this();
+    reference.configure(options, strings, ...expressions);
+    reference.initialize();
+    return reference;
   }
-
-  create(strings, ...expressions) {
+  
+  configure(options = {}, strings, ...expressions) {
+    Object.assign(this, options);
     this.strings = strings;
     this.expressions = expressions;
   }
+
+  // hook into a created reference
+  initialize() {}
 
   get access() {
     return this.read();
@@ -19,18 +26,12 @@ export class PIReference {
   }
 }
 
-export function makeRef(referenceClass, options) {
-  if (referenceClass && referenceClass.isPIReference) {
-    const reference = new referenceClass(options);
-    reference.applyOptions(options);
-
-    return (strings, ...expressions) => {
-      reference.create(strings, ...expressions);
-      return reference
-    };
+export function makeRef(Scheme, options) {
+  if (Scheme && Scheme.isPIScheme) {
+    return (strings, ...expressions) => Scheme.createRef(options, strings, ...expressions);
   }
 
   return (...args) => ({
-    access: referenceClass(...args)
+    access: Scheme(...args)
   });
 }

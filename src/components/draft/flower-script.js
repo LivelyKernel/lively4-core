@@ -4,6 +4,10 @@ import Window from "./lively-window.js"
 import {pt} from "src/client/graphics.js" 
 import DragBehavior from "src/client/morphic/dragbehavior.js"
 
+/*MD 
+ #Orphan #Trash
+MD*/
+
 export default class FlowerScript extends Morph {
 
   get isFlowerNode() {
