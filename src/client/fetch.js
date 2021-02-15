@@ -140,7 +140,8 @@ export async function installAuthorizedFetch() {
         }          
       }
       
-      if  (isWriting && baseUrlsAuthNeededForWriting.find(ea => url.startsWith(ea))) {
+      if  (isWriting && baseUrlsAuthNeededForWriting.find(
+          ea => url.startsWith(ea) && !url.startsWith(lively4url + "/.transpiled/")  )) {
         return {
             result: (async () => {
               console.log("AuthorizedFetch Write: " + url)
