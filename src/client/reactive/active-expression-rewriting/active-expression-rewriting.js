@@ -378,10 +378,7 @@ const DependenciesToAExprs = {
   associate(dep, aexpr) {
     const location = aexpr.meta().get("location");
     if(location && location.file) {      
-      if (!this._AEsPerFile.has(location.file)) {
-        this._AEsPerFile.set(location.file, new Set());
-      }
-      this._AEsPerFile.get(location.file).add(aexpr);
+      this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     }
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
