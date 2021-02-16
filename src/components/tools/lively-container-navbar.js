@@ -437,7 +437,6 @@ export default class LivelyContainerNavbar extends Morph {
         return ((a.title || a.name) >= (b.title || b.name)) ? 1 : -1;
       })
       .filter(ea => ! ea.name.match(/^\./));
-    debugger
     files.unshift({name: "..", type: "directory", url: stats.parent});
     return files
   }
