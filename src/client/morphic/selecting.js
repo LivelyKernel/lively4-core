@@ -109,26 +109,40 @@ export default class Selecting {
     // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
 
       
-      var rootNode = this.findRootNode(document.body)
       
       var path = this.slicePathIfContainerContent(e.composedPath());
       
-      // var rootNode = lively.findWorldContext(path)
       
       // workaround weird toplevel event issues... the halo should not get the event
       // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
       if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
         path = this.lastPath || e.composedPath()
       }      
+      
+      // some inception: deal with containers that should behave as if they are their own document
+      // if we have found one, treat them as root
+      var worldContexts = path
+        .map(ea => lively.findWorldContext(ea))
+        .filter(ea => ea)
+        .filter(ea => ea.id == "container-root")
+      if (worldContexts.length > 0) {
+        var rootNode = this.findRootNode(worldContexts[0])
+      } else {
+        rootNode = this.findRootNode(document.body)
+      }
+      
       this.lastPath = path
       path = path
         // .reverse()
         .filter(ea => ! this.isIgnoredOnMagnify(ea))
       
+      
+      
       if (e.shiftKey) {
         var idx = e.composedPath().indexOf(document.body);
         path= path
       } else {
+        debugger
         // by default: don't go into the shadows
         path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
