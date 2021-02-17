@@ -25,7 +25,7 @@ var lastWindow;
 })()
 ```
 
-## Turning Wiki-pages into Tools (#PaperIdea)
+## Turning Wiki-pages into Tools ( #PaperIdea )
 
 We used markdown pages to prototype tools and visualizations a lot. But to use it, one had to navigate to that specific page and interact with the tool there. A good and working example of the setup are these journal pages and their index page that allows to create new entries. But markdown pages are not easy to integrate into a workflow with other tools. E.g. using the git graph visualization tool directly from our sync tools is not possible.
 

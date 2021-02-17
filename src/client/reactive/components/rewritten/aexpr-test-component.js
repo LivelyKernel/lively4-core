@@ -5,9 +5,10 @@ import { AExprRegistry } from 'src/client/reactive/active-expression/active-expr
 import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
   async initialize() {
-    this.c = 10;
+    this.c = 100;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
+    
     this.y = 4;
     this.x = new Poll(4);
     this.createButton.addEventListener('click', () => this.addAE());
