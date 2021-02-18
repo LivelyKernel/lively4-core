@@ -367,9 +367,12 @@ export default class LivelyDrawio extends Morph {
           encodeURIComponent(this.src.replace(githubPrefix, ""))
     } 
     if (drawioURL) {
-        var iFrame = await(parent ? lively.create("lively-iframe") : lively.openComponentInWindow("lively-iframe"))
-        lively.setExtent(iFrame.parentElement, pt(1200,800))
-        iFrame.setURL(drawioURL)
+      
+        // iFrame does not work any more due to some microsoft iframe security restrictions with GitHub?
+        /// var iFrame = await(parent ? lively.create("lively-iframe") : lively.openComponentInWindow("lively-iframe"))
+        // lively.setExtent(iFrame.parentElement, pt(1200,800))
+        // iFrame.setURL(drawioURL)
+        window.open(drawioURL)
     } else {
       lively.notify("editing not supported for", this.src)
     }
