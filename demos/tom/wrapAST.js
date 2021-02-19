@@ -23,15 +23,13 @@ function createObservingAccessorsOn(object, propertyName, observer) {
 const handler = (observer, key) => {
     return {
         set: function(obj, prop, value) {
-            // Todo: Reflect.set()
             if (Number.isInteger(Number.parseInt(prop))) {
                 const pluginRound = window[Trace.traceIdentifierName].pluginRound;
-                debugger
                 wrapAST(value, observer, true);
                 observer.notify(prop, copyAST(obj[prop], pluginRound), copyAST(value, pluginRound), key);
             }
-            obj[prop] = value;
-            return true;
+            
+            return Reflect.set(obj, prop, value);
         }
     }
 };

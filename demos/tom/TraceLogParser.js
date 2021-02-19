@@ -12,9 +12,6 @@ export default class TraceLogParser {
     constructor(trace) {
         this.trace = trace;
         this.index = 0;
-        
-        this.functionNesting = 0;
-        this.conditionNesting = 0;
     }
     
     get log() {
@@ -76,13 +73,13 @@ export default class TraceLogParser {
             if(this.match('leavePlugin')) {
                 return section;
             } else if(this.matchPeek('return')) {
-                // Todo: escape nested constructs, ie function(condition(return))
                 const returnEntry = this.consume();
                 section.addEntry(this.instantiateEvent(returnEntry));
                 
                 if(returnEntry.position === this.peek().position) {
                     this.match('left');
                 }
+                debugger
                 
                 throw new EarlyReturn('function');
             } else if(this.matchPeek('leave')) {
@@ -123,18 +120,10 @@ export default class TraceLogParser {
                 section.addEntry(this.consumeAsEvent());
                 // break out from nesting
                 throw new EarlyReturn('error');
-            }
-            
-            if(this.conditionNesting > 0) {
-                if(this.match('endCondition')) {
-                    return section;
-                }
-            }
-            
-            if(this.functionNesting > 0) {
-                if(this.match('left')) {
-                    return section;
-                }
+            } else if(this.match('endCondition')) {
+                return section;
+            } else if(this.match('left')) {
+                return section;
             }
             
             section.addEntry(this.consumeAsEvent());
@@ -150,9 +139,7 @@ export default class TraceLogParser {
         
         section.addEntry(condition);
         
-        this.conditionNesting++;
         this.defaultParse(condition, higherSections);
-        this.conditionNesting--;
         
         return condition;
     }
@@ -168,9 +155,6 @@ export default class TraceLogParser {
         
         section.addEntry(fun);
         
-        const oldNestingLevel = this.conditionNesting;
-        this.functionNesting++;
-        
         try {
             this.defaultParse(fun, higherSections);
         } catch(e) {
@@ -180,10 +164,6 @@ export default class TraceLogParser {
                 throw e;
             }
         }
-        
-        // restore condition nesting level as we maybe escaped from one without properly doing so
-        this.conditionNesting = oldNestingLevel;
-        this.functionNesting--;
         
         return fun;
     }

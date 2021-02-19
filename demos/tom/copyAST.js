@@ -8,6 +8,8 @@ function copyArrayOfRound(arr, roundNumber) {
     return copy;
 }
 
+// Todo: merge wrap and copy => copy all nodes without traceID
+// roundNumber could result in unncessary copies as in one round there could be multiple edits
 export default function copyASTPartsOfRound(object, roundNumber) {
     // simply check if the object is an astNode
     if (object && object.type) {
@@ -37,7 +39,6 @@ export default function copyASTPartsOfRound(object, roundNumber) {
                     // ignore functions
                     break;
                 case 'object':
-                    // assume it is an astNode
                     objectCopy[key] = copyASTPartsOfRound(value, roundNumber);
                     break;
                 default:

@@ -1,6 +1,6 @@
 import * as _ from 'src/external/lodash/lodash.js';
 import loadPlugin from 'demos/tom/plugin-load-promise.js';
-import { ErrorEvent, Event, ASTChangeEvent, eventTypes } from 'demos/tom/Events.js';
+import { ErrorEvent, Event, ASTChangeEvent } from 'demos/tom/Events.js';
 import TraceLogParser from 'demos/tom/TraceLogParser.js';
 
 function clone(object) {
