@@ -1,5 +1,5 @@
 /**
- * A slightlyy smarter EventTarget class
+ * A slightly smarter EventTarget class
  */
 export default class EventTarget {
   constructor() {

@@ -276,7 +276,7 @@ export default function(babel) {
               t.sequenceExpression([
                 path.node,
                 t.callExpression(
-                  addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name)]
+                  addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name), getSourceLocation(path)]
                 ),
                 valueToReturn
               ]));
@@ -301,6 +301,39 @@ export default function(babel) {
             return false;
           }
           
+          function getSourceLocation(path) {
+            let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+            if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+              fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
+            }
+            const node = path.node;
+            if(!node.loc) {
+              console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming")
+              return t.identifier("undefined");
+            }
+
+            const sourceLocation = template(`({
+              file: '${fileName}',
+              end: {
+                column: END_COLUMN,
+                line: END_LINE
+              },
+              start: {
+                column: START_COLUMN,
+                line: START_LINE
+              },
+              source: ''
+            })`);
+
+            // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+            return sourceLocation({
+              END_COLUMN: t.numericLiteral(node.loc.end.column),
+              END_LINE: t.numericLiteral(node.loc.end.line),
+              START_COLUMN: t.numericLiteral(node.loc.start.column),
+              START_LINE: t.numericLiteral(node.loc.start.line),
+              // SOURCE: source
+            }).expression;
+          }          
 
           // ------------- ensureBlock -------------
           const maybeWrapInStatement = (node, wrapInReturnStatement) => {
@@ -399,6 +432,7 @@ export default function(babel) {
                   argument.node,
                   t.numericLiteral(1),
                 )
+                assignment.loc = path.node.loc;
                 
                 if(!prefix) {
                   // need to modify result for postfix operators
@@ -409,8 +443,8 @@ export default function(babel) {
                     assignment,
                     t.numericLiteral(1)
                   )
+                  assignment.loc = path.node.loc;
                 }
-                
                 path.replaceWith(assignment);
               }
             },
@@ -432,10 +466,10 @@ export default function(babel) {
                 // No constructor exists -> Override default constructor
                 const constructorContent = [];
                 if(path.node.superClass) {
-                  constructorContent.push(t.expressionStatement(t.callExpression(t.super(), [])));
+                  constructorContent.push(t.expressionStatement(t.callExpression(t.super(), [t.spreadElement(t.identifier("args"))])));
                 }
                 constructorContent.push(setClassFilePathStatement());
-                path.get("body").unshiftContainer("body", t.classMethod("constructor", t.identifier("constructor"), [], t.blockStatement(constructorContent)));
+                path.get("body").unshiftContainer("body", t.classMethod("constructor", t.identifier("constructor"), [t.restElement(t.identifier("args"))], t.blockStatement(constructorContent)));
               }              
             },
             /*MD # Identifier MD*/
@@ -485,43 +519,6 @@ export default function(babel) {
                 }
               }
 
-              function addSourceLocationToSecondParameter(aexprIdentifierPath) {
-                let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
-                if(fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
-                  fileName = 'workspace:'+fileName.split('unnamed_module_')[1];
-                }
-
-                const sourceLocation = template(`({
-                  file: '${fileName}',
-                  end: {
-                    column: END_COLUMN,
-                    line: END_LINE
-                  },
-                  start: {
-                    column: START_COLUMN,
-                    line: START_LINE
-                  },
-                  source: ''
-                })`);
-                function buildSourceLocation(aexprIdentifierPath) {
-                  const node = aexprIdentifierPath.node;
-                  if(!node.loc) {
-                    console.error("Make sure to add loc information manually when inserting an AE during transformation")
-                  }
-                  // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
-                  return sourceLocation({
-                    END_COLUMN: t.numericLiteral(node.loc.end.column),
-                    END_LINE: t.numericLiteral(node.loc.end.line),
-                    START_COLUMN: t.numericLiteral(node.loc.start.column),
-                    START_LINE: t.numericLiteral(node.loc.start.line),
-                    // SOURCE: source
-                  }).expression;
-                }
-
-                const location = buildSourceLocation(aexprIdentifierPath);
-                addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'location', location);
-              }
-
               function addOriginalSourceCode(aexprIdentifierPath) {
                 const args = aexprIdentifierPath.parentPath.get('arguments');
                 if (args.length === 0) {
@@ -535,7 +532,8 @@ export default function(babel) {
               }
 
               function addSourceMetaData(path) {
-                addSourceLocationToSecondParameter(path); 
+                const location = getSourceLocation(path);
+                addAsObjectPropertyAsSecondParameter(path.parentPath, 'location', location);
                 addOriginalSourceCode(path);
               }
 
@@ -743,7 +741,8 @@ export default function(babel) {
                       path.node.left.object,
                       getPropertyFromMemberExpression(path.node.left),
                       //t.stringLiteral(path.node.operator),
-                      path.node.right
+                      path.node.right,
+                      getSourceLocation(path),
                     ]
                   )
                 );
@@ -788,7 +787,8 @@ export default function(babel) {
                             addCustomTemplate(state.file, SET_LOCAL), [
                               getIdentifierForExplicitScopeObject(parentWithScope),
                               t.stringLiteral(path.node.left.name),
-                              valueForAExpr
+                              valueForAExpr,
+                              getSourceLocation(path),
                             ]
                           ),
                           t.unaryExpression('void', t.numericLiteral(0))

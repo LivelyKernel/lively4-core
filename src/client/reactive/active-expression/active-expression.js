@@ -202,7 +202,7 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created');
+    this.logEvent('created', this);
 
     if (new.target === BaseActiveExpression) {
       this.addToRegistry();

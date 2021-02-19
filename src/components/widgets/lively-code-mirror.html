@@ -12,6 +12,7 @@
   <style data-src="/src/external/code-mirror/addon/tern/tern.css"></style>
   <style data-src="/src/external/code-mirror/addon/hint/show-hint.css"></style>
   <style data-src="/src/components/widgets/lively-code-mirror.css"></style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style>
   :host {
     display: block;
@@ -144,14 +145,15 @@
 /*
   ActiveExpressions Gutter
   */
+    
   .activeExpressionGutter {
-    width: 10px;
+    width: 12px;
 
     transition: all 0.5s ease-in-out;
     transition-property: opacity;
 
     opacity: 0;
-    background-color: orange;/*lightgray;*/
+    background-color: lightgray;
     border-left: solid 0.3px gray;
     border-right: solid 0.3px gray;
   }
@@ -159,7 +161,7 @@
     opacity: 0.4;
   }
 
-  .activeExpressionGutter-marker {
+  .activeExpressionGutter-marker-ae {
     width: 10px;
     cursor: pointer;
     box-sizing: content-box;
@@ -167,9 +169,27 @@
     transition: all 0.3s ease-in-out;
     transition-property: background-color, color;
 
-    background-color: rgba(255,165,0,0.5);
-    color: rgba(0,0,0,0.5);
-    text-align: center;
+    /* background-color: rgba(255,165,0,0.5);*/
+    color: rgba(0,0,255,1);
+    /*text-align: center;*/
+    vertical-align: middle;
+    line-height: normal;
+    display: flex;
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+  }
+
+  .activeExpressionGutter-marker-dep {
+    width: 10px;
+    cursor: pointer;
+    box-sizing: content-box;
+
+    transition: all 0.3s ease-in-out;
+    transition-property: background-color, color;
+
+    /* background-color: rgba(255,165,0,0.5);*/
+    color: rgba(255,0,0,1);
+    /*text-align: center;*/
     vertical-align: middle;
     line-height: normal;
     display: flex;

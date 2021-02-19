@@ -844,6 +844,42 @@ export class Lively4URLScheme extends Scheme {
   }
 }
 
+export class GSScheme_Stub extends Scheme {
+  
+  get scheme() {
+    return "gs";
+  }
+
+  resolve() {
+    return true
+  }
+
+  static async delegatee() {
+    if (this._delegatee) {
+      return this._delegatee;
+    } else {
+      return this._delegateePromise = this._delegateePromise || new Promise(resolve => this._delegateeResolve = resolve);
+    }
+  }
+
+  static delegateTo(Scheme) {
+    this._delegatee = Scheme;
+    this._delegateeResolve && this._delegateeResolve(this._delegatee);
+  }
+
+  async holdOff(methodName, ...args) {
+    const NewScheme = await GSScheme_Stub.delegatee();
+    this.migrateTo(NewScheme);
+    return this[methodName](...args);
+  }
+
+  async GET(...args) { return this.holdOff('GET', ...args); }
+  async PUT(...args) { return this.holdOff('PUT', ...args); }
+  async OPTIONS(...args) { return this.holdOff('OPTIONS', ...args); }
+  async POST(...args) { return this.holdOff('POST', ...args); }
+  async DELETE(...args) { return this.holdOff('DELETE', ...args); }
+}
+
 
 export default class PolymorphicIdentifier {
   
@@ -868,6 +904,7 @@ export default class PolymorphicIdentifier {
       DateScheme,
       BooleanScheme,
       Lively4URLScheme,
+      GSScheme_Stub,
     ].forEach(scheme => this.register(scheme));
   }
   

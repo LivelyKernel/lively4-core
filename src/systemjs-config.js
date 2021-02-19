@@ -90,6 +90,12 @@ SystemJS.config({
     'babel-plugin-var-recorder-dev': lively4url + '/src/external/babel-plugin-var-recorder-dev.js',
     'workspace-loader': lively4url + '/src/client/workspace-loader.js',
 
+    // support for polymorphic identifiers
+    'babel-plugin-polymorphic-identifiers': lively4url + '/src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js',
+    'polymorphic-identifiers': lively4url + '/src/client/reactive/polymorphic-identifiers/polymorphic-identifiers.js',
+    'babel-plugin-constraint-connectors': lively4url + '/src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js',
+    'babel-plugin-constraint-connectors-active-expression': lively4url + '/src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js',
+
     // utils
     'lang': lively4url + '/src/client/lang/lang.js',
     'lang-ext': lively4url + '/src/client/lang/lang-ext.js',
@@ -136,6 +142,9 @@ const aexprViaDirective = {
     stage2: false,
     stage3: false,
     plugins: [
+      'babel-plugin-constraint-connectors-active-expression',
+      'babel-plugin-constraint-connectors',
+      'babel-plugin-polymorphic-identifiers',
       ['babel-plugin-rp19-jsx', {
         executedIn: 'file'
       }],
@@ -215,6 +224,15 @@ SystemJS.config({
         stage3: false,
         plugins: [
           // lively4url + '/demos/swe/debugging-plugin.js',
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
@@ -247,6 +265,15 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
@@ -270,6 +297,15 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],

@@ -30,7 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { getDependencyMapForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
 
@@ -223,6 +223,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     await lively.sleep(0);
     this.editor.refresh();
+    this.updateAExprDependencies();
   }
 
   async editorLoaded() {
@@ -1401,6 +1402,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async updateAExprDependencies() {
+    if(!this.isJavaScript) return;
     await this.editor;
     const dependencyGraph = await this.dependencyGraph();
     if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {
@@ -1411,8 +1413,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
-    const dependencyMap = await this.allDependenciesByLine();
-    this.showAExprDependencyGutterMarkers(dependencyMap);
+    
+    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
+      this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
+        this.editor.doc.clearGutter('activeExpressionGutter');
+        this.showAExprDependencyGutterMarkers(depToAE, false);
+        this.showAExprDependencyGutterMarkers(AEToDep, true);        
+      });
+    });
   }
 
   async showAExprTextMarkers() {
@@ -1480,50 +1488,88 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
   }
 
-  async showAExprDependencyGutterMarkers(dependencyMap) {
+  async showAExprDependencyGutterMarkers(dependencyMap, isAE) {
     await this.editor;
 
     for (const [line, aExprs] of dependencyMap.entries()) {
-      this.drawAExprGutter(line, aExprs);
+      this.drawAExprGutter(line, aExprs, isAE);
     }
   }
 
-  async allDependenciesByLine() {
-    const dict = new Map();
+  async allDependenciesByLine(depsMapInFile) {
+    const depToAE = new Map();
+    const AEToDep = new Map();
 
     await this.editor;
-    const dependencyGraph = await this.dependencyGraph();
+    /*const dependencyGraph = await this.dependencyGraph();
     dependencyGraph.getAllActiveExpressions().forEach(path => {
       const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
+      const AELine = path.node.loc.start.line - 1;
+      if (!AEToDep.get(AELine)) {
+        AEToDep.set(AELine, []);
+      }
 
       dependencies.forEach(statement => {
-        const line = statement.node.loc.start.line-1;
-        if (!dict.get(line)) {
-          dict.set(line, []);
+        const depLine = statement.node.loc.start.line - 1;
+        if (!depToAE.get(depLine)) {
+          depToAE.set(depLine, []);
         }
-        dict.get(line).push({ location: path.node.loc, source: path.get("arguments.0.body").getSource(), events: 0 });
+        depToAE.get(depLine).push({ location: path.node.loc, source: path.get("arguments.0.body").getSource(), events: 0 });
+        AEToDep.get(AELine).push({ location: statement.node.loc, source: statement.getSource(), events: 0 });
       });
-    });
-    const map = getDependencyMapForFile(this.fileURL());
-    map.forEach((aes, dependency) => {
-      if(aes.length > 0) {
-        const memberName = dependency.contextIdentifierValue()[1];
-        let deps = dependencyGraph.resolveDependenciesForMember(memberName);
-        
-        deps.forEach(path => {
-          const line = path.node.loc.start.line-1;
-          if (!dict.get(line)) {
-            dict.set(line, []);
-          }
-          for (const ae of aes) {
-            var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-            const relatedEvents = valueChangedEvents.filter(event => event.value.trigger.source.includes(this.fileURL()) && event.value.trigger.line - 1 === line);  
-            dict.get(line).push({ location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode, events: relatedEvents.length });
-          }
-        });
+    });*/
+
+    const handleDepAEPairing = (ae, dependencyLoc, dependencySource) => {
+      const dependencyLine = dependencyLoc.start.line - 1;
+      const dependencyFile = dependencyLoc.file;
+      const AELocation = ae.meta().get("location");
+      const AELine = AELocation.start.line - 1;
+
+      var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
+      const relatedEvents = valueChangedEvents.filter(event => event.value.trigger.source.includes(dependencyFile) && event.value.trigger.line - 1 === dependencyLine);
+
+      if (dependencyFile.includes(this.fileURL())) {
+        // Dependency is in this file
+        if (!depToAE.get(dependencyLine)) {
+          depToAE.set(dependencyLine, []);
+        }
+        // Group by AE to distinguish between mutltiple AE Objects in the same line?
+        depToAE.get(dependencyLine).push({ location: AELocation, source: ae.meta().get("sourceCode"), events: relatedEvents.length, aes: new Set([ae]) });
       }
-    });
+
+      if (AELocation.file.includes(this.fileURL())) {
+        // AE is in this file
+        if (!AEToDep.get(AELine)) {
+          AEToDep.set(AELine, []);
+        }
+        AEToDep.get(AELine).push({ location: dependencyLoc, source: dependencySource, events: relatedEvents.length, aes: new Set([ae]) });
+      }
+    };
     
+    for (const { hook, dependency, ae } of depsMapInFile) {
+      const dependencyInfo = dependency.contextIdentifierValue();
+      const locations = await hook.getLocations();
+      for (const location of locations) {
+        handleDepAEPairing(ae, location, dependencyInfo[1]);
+      }
+      /*const memberName = dependency.contextIdentifierValue()[1];
+      let deps = dependencyGraph.resolveDependenciesForMember(memberName);
+       deps.forEach(path => {
+        for (const ae of aes) {
+          handleDepAEPairing(ae, this.fileURL(), path.node.loc, path.getSource());
+        }
+      });*/
+    }
+    /*const aeMapInFile = getAETriplesForFile(this.fileURL());
+    for (const { hook, dependency, ae } of aeMapInFile) {
+      const dependencyInfo = dependency.contextIdentifierValue();
+      const locations = await hook.getLocations();
+      for (const location of locations) {
+        const start = { line: location.line, column: location.column };
+        handleDepAEPairing(ae, location.source, { start, end: start /*TODO: Find end*//*, file: location.source }, dependencyInfo[1]);
+      }
+    }*/
+
     /*let dynamicAES = AExprRegistry.allAsArray();
     dynamicAES.forEach(ae => {   
       var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
@@ -1538,33 +1584,74 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     });*/
 
-    return dict;
+    return [depToAE, AEToDep];
   }
 
   fileURL() {
     return lively.query(this, "lively-container").getURL().pathname;
   }
-
-  drawAExprGutter(line, dependencies) {
-    this.editor.doc.setGutterMarker(line, 'activeExpressionGutter', this.drawAExprGutterMarker(dependencies));
+  
+  valid() {
+    return !!lively.query(this, "lively-container");
   }
 
-  drawAExprGutterMarker(dependencies) {
+  drawAExprGutter(line, dependencies, isAE) {
+    this.editor.doc.setGutterMarker(line, 'activeExpressionGutter', this.drawAExprGutterMarker(dependencies, isAE));
+  }
+
+  faIcon(name, ...modifiers) {
+    return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
+  }
+  
+  drawAExprGutterMarker(dependencies, isAE) {
+    //Use accumulate instead
+    const sorted = dependencies.sort((aDep, bDep) => {
+      const a = aDep.location;
+      const b = bDep.location;
+      if (a.file < b.file) {
+        return -1;
+      } else if (a.file > b.file) {
+        return 1;
+      }
+      if (a.start.line < b.start.line) {
+        return -1;
+      } else if (a.start.line > b.start.line) {
+        return 1;
+      }
+      return a.start.column - b.start.column;
+    });
+
+    const accumulated = [];
+
+    sorted.forEach(dep => {
+      //Location might differ due to one object having this file as source and the other not having a source
+      if (accumulated.length === 0 || !_.isEqual(accumulated[accumulated.length - 1].location.start, dep.location.start)) {
+        accumulated.push(dep);
+      } else {
+        const lastDep = accumulated[accumulated.length - 1];
+
+        lastDep.events += dep.events;
+        if(dep.source.length > lastDep.source.length) {
+          lastDep.source = dep.source;
+        }
+        if(dep.location.end.column > lastDep.location.end.column) {
+          lastDep.location.end = dep.location.end;
+        }
+        lastDep.aes = new Set([...lastDep.aes, ...dep.aes]);
+      }
+    });
+
     const callback = async evt => {
       const markerBounds = evt.target.getBoundingClientRect();
-      this.drawAExprDependencyList(dependencies, markerBounds);
+      this.drawAExprDependencyList(accumulated, markerBounds);
     };
 
-    // TODO render this without the "0"
-    return <div class="activeExpressionGutter-marker" click={callback}>
-      {dependencies.length}
+    return <div class={"activeExpressionGutter-marker" + (isAE ? "-ae" : "-dep")} click={callback}>
+      {isAE ? <b>AE</b> : <i class="fa fa-share-alt"></i>}
     </div>;
   }
 
   async drawAExprDependencyList(dependencies, markerBounds) {
-    function fa(name, ...modifiers) {
-      return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
-    }
 
     const menuItems = [];
 
@@ -1580,15 +1667,15 @@ export default class LivelyCodeMirror extends HTMLElement {
         description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
       }
       menuItems.push([description, () => {
-        const start = {line: dep.location.start.line - 1, ch: dep.location.start.column}
-        const end = {line: dep.location.end.line - 1, ch: dep.location.end.column}
-        if(inThisFile) {
+        const start = { line: dep.location.start.line - 1, ch: dep.location.start.column };
+        const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
+        if (inThisFile) {
           this.editor.setSelection(start, end);
         } else {
-          lively.openBrowser(path, true, start, true);
+          lively.openBrowser(path, true, {start, end}, false, undefined, true);
         }
         menu.remove();
-      }, dep.events + " event" + (dep.events===1?"":"s"), fa(inThisFile ? 'location-arrow' : 'file-code-o')]);
+      }, dep.events + " event" + (dep.events === 1 ? "" : "s") + ", " + dep.aes.size + " instance" + (dep.aes.size === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
     });
 
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
