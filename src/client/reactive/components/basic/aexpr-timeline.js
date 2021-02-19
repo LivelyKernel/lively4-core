@@ -94,30 +94,22 @@ export default class EventDrops extends Morph {
 
     this.groupByLine.addEventListener('change', () => {
       if (this.groupByLine.checked) {
-        this.groupingFunction = undefined;
+        this.groupingFunction = this.locationGrouping();
       } else {
-        this.groupingFunction = each => each.meta().get('id');
+        this.groupingFunction = this.instanceGrouping();
       }
     });
 
     this.numberEventsContainer = this.numberEvents;
     document.body.querySelectorAll('#event-drops-tooltip').forEach(each => each.remove());
     this.d3 = d3;
-    debugger;
-    const tree = jQuery.jstree.create(this.aeOverview, {
+    jQuery(this.aeOverview).jstree({
       "plugins" : [ "wholerow", "checkbox" ],
+      "checkbox": {
+        "keep_selected_style": false
+      },
       'core': {
-        "themes" : { "stripes" : true },
-        'data': [
-          {
-            'text': 'root',
-            "icon" : "/static/3.3.11/assets/images/tree_icon.png",
-            'children': [
-              'child1',
-              'child2'
-            ]
-          }
-        ]
+        "themes" : { "icons" : false },
       }
     });
     this.update();
@@ -150,10 +142,23 @@ export default class EventDrops extends Morph {
     let dataFromSource = this.dataFromSource || (() => AExprRegistry.allAsArray());
     if (_.isFunction(dataFromSource)) return dataFromSource();else return dataFromSource;
   }
+  
+  fileGrouping() {
+    let fileName = string => string.substring(0, string.lastIndexOf("@"));
+    return (each => fileName(each.meta().get('id')))
+  }
+  
+  locationGrouping() {
+    let locationID = string => string.substring(0, string.lastIndexOf("#"));
+    return (each => locationID(each.meta().get('id')))
+  }
+  
+  instanceGrouping() {
+     return (each => each.meta().get('id'));
+  }
 
   getGroupingFunction() {
-    let deIndex = string => string.substring(0, string.lastIndexOf("#"));
-    return this.groupingFunction || (each => deIndex(each.meta().get('id')));
+    return this.groupingFunction || this.locationGrouping();
   }
 
   update() {
@@ -161,13 +166,19 @@ export default class EventDrops extends Morph {
     this.setAexprs(this.getDataFromSource());
     setTimeout(() => {
       this.update();
-    }, 1000);
+    }, 3000);
   }
 
   setAexprs(aexprs) {
+    for(let i = 0; i < aexprs.length; i++) {
+      aexprs[i].timelineID = i;
+    }
+    const checkedIndices = jQuery(this.aeOverview).jstree(true).get_bottom_selected();
+    const selectedAEs = checkedIndices.map(i => aexprs[i - 1]);
+    this.updateOverview(aexprs);
     let scrollBefore = this.diagram.scrollTop;
-    if (aexprs.length == 0) return;
-    let groups = aexprs.groupBy(this.getGroupingFunction());
+    if (selectedAEs.length == 0) return;
+    let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({ name: each, data: groups[each].flatMap(ae => ae.meta().get('events')) }));
     this.setData(groups);
     let newDomain = this.zoomedTo;
@@ -192,6 +203,44 @@ export default class EventDrops extends Morph {
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);
     this.diagram.scrollTop = scrollBefore;
+  }
+  
+  updateOverview(aexprs) {
+    jQuery(this.aeOverview).jstree(true).settings.core.data = this.generateOverviewJSON(aexprs); 
+    jQuery(this.aeOverview).jstree(true).refresh();
+  }
+  
+  generateOverviewJSON(aexprs) {
+    let json = [];
+    let files = aexprs.groupBy(this.fileGrouping());
+    for(const file of Object.keys(files)) {
+      let locations = files[file].groupBy(this.locationGrouping());
+      const children = Object.keys(locations).map(location => {return {
+        "text": "line " + location.substring(location.lastIndexOf("@") + 1),
+        "children": locations[location].map((ae) => {
+          const id = ae.meta().get('id');
+          return {
+            "id": ae.timelineID + 1,
+            "text": id.substring(id.lastIndexOf("#") + 1)
+          }
+        })
+      }});
+      json.push({
+        "text": file,
+        "children": children,
+      })
+    }
+    return json;
+    /*[
+        {
+          'text': 'root',
+          "icon" : "/static/3.3.11/assets/images/tree_icon.png",
+          'children': [
+            'child1',
+            'child2'
+          ]
+        }
+      ]*/
   }
 
   setData(data) {
