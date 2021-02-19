@@ -54,6 +54,7 @@ async function unloadModule(path) {
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][normalizedPath] = undefined;
+    debugger
     delete System.loads[normalizedPath]
 }
 
@@ -106,6 +107,10 @@ self.onmessage = function(msg) {
             }
         });
 
+        const preloadedPlugins = new Set(Object.keys(System['@@registerRegistry']));
+
+        debugger
+
         const trace = new Trace();
         // make it globally available for use in plugins
         window[Trace.traceIdentifierName] = trace;
@@ -140,15 +145,20 @@ self.onmessage = function(msg) {
                     result = null;
                     trace.error(e);
                 }
+                debugger;
 
-                postMessage({
-                    oldAST: oldASTAsString,
-                    transformedAST: JSON.stringify(result && result.ast),
-                    transformedCode: result && result.code,
-                    trace: trace.serialize()
-                });
+                const pluginsToUnload = Object.keys(System['@@registerRegistry']).filter(plugin => !
+                    preloadedPlugins.has(plugin));
 
-                msg.data.urls.forEach(unloadModule)
+                Promise.all(pluginsToUnload.map(unloadModule))
+                    .then(_ => {
+                        postMessage({
+                            oldAST: oldASTAsString,
+                            transformedAST: JSON.stringify(result && result.ast),
+                            transformedCode: result && result.code,
+                            trace: trace.serialize()
+                        });
+                    })
             })
     })
 }

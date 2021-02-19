@@ -34,7 +34,7 @@ export default class TraceVisualization extends Morph {
         this.setCurrentAST(trace.oldAST);
     }
 
-    /* UI access */
+    /*MD ## UI access MD*/
 
     get traceList() {
         return this.get('#traceList');
@@ -62,11 +62,36 @@ export default class TraceVisualization extends Morph {
         }        
         this.comparison.updateView(this.curAST, this.nextAST);
     }
+    
+    async setEditorURL(newURL) {
+        if (this.currentURL !== newURL) {
+            this.editor.setURL(newURL);
+            this.currentURL = newURL;
+            await this.editor.loadFile();
+        }
+    }
 
-    /* update List */
+    /*MD ## Update list MD*/
 
     clearList() {
         this.traceList.innerHTML = '';
+    }
+    
+    markAndScrollTo(position) {
+        this.editorDoc.scrollIntoView({
+            line: position.startLine - 1,
+            ch: position.startColumn
+        }, 200);
+
+        this.lastMark = this.editorDoc.markText({
+            line: position.startLine - 1,
+            ch: position.startColumn
+        }, {
+            line: position.endLine - 1,
+            ch: position.endColumn
+        }, {
+            css: 'background: #eee'
+        });
     }
     
     setSubEntryEventListener(subEntry, elm, path) {
@@ -78,32 +103,14 @@ export default class TraceVisualization extends Morph {
                 this.lastMark.clear();
             }
 
-            this.updateAST(path, elm);
+            this.updateASTs(path, elm);
 
             const position = this.trace.resolve(elm.position);
-            if(!position) {
-                return;
+            
+            if(position) {
+                await this.setEditorURL(position.filename);
+                this.markAndScrollTo(position);
             }
-            if (this.currentURL !== position.filename) {
-                this.editor.setURL(position.filename);
-                this.currentURL = position.filename;
-                await this.editor.loadFile();
-            }
-
-            this.editorDoc.scrollIntoView({
-                line: position.startLine - 1,
-                ch: position.startColumn
-            }, 200);
-
-            this.lastMark = this.editorDoc.markText({
-                line: position.startLine - 1,
-                ch: position.startColumn
-            }, {
-                line: position.endLine - 1,
-                ch: position.endColumn
-            }, {
-                css: 'background: #eee'
-            });
         });
     }
     
@@ -172,16 +179,13 @@ export default class TraceVisualization extends Morph {
         }
     }
 
-    /* update AST */
+    /*MD ## Update AST MD*/
 
     setCurrentAST(ast) {
-        // this.currentAST.inspect(ast);
         this.currentAST.value = babel.transformFromAst(ast).code
     }
 
-    setTransformedAST(ast) {
-        // this.transformedAst.inspect(ast);
-                                          
+    setTransformedAST(ast) {                               
         this.transformedAst.value = babel.transformFromAst(ast).code
     }
 
@@ -194,12 +198,7 @@ export default class TraceVisualization extends Morph {
         }
     }
                                       
-    updateAST(path, entry) {
-        this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
-        this.nextAST;
-                                          
-                                          debugger
-        
+    walkPath(path, ast) {
         let entries = this.trace.sections;
                                           
         for (const part of path) {
@@ -207,11 +206,18 @@ export default class TraceVisualization extends Morph {
                 if(entry === part) {
                     break;
                 }
-                entry.apply(this.curAST)
+                entry.apply(ast);
             }
             entries = part.entries;
         }
-
+        
+        return entries;
+    }
+                                      
+    updateASTs(path, entry) {
+        this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
+        
+        const entries = this.walkPath(path, this.curAST);
         const index = entries.indexOf(entry);
 
         for (let i = 0; i < index; i++) {
