@@ -3,6 +3,8 @@ import EventTarget from '../utils/event-target.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
+import sourcemap from 'src/external/source-map.min.js';
+
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
@@ -200,7 +202,7 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created');
+    this.logEvent('created', this);
 
     if (new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -211,7 +213,7 @@ export class BaseActiveExpression {
     this.lastValue = NO_VALUE_YET;
     this.updateLastValue();
   }
-  
+
   updateLastValue() {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
@@ -318,14 +320,41 @@ export class BaseActiveExpression {
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
-
-    this.logEvent('changed value', value);
+    this.findCallee().then(trigger => {
+      this.logEvent('changed value', {value, trigger});
+    })
+   
 
     this.notify(value, {
       lastValue,
       expr: this.func,
       aexpr: this
     });
+  }
+
+  async findCallee() {
+    const stack = lively.stack();
+    const frames = stack.frames;
+    
+    for (let frame of frames) {
+      if(!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
+        return await frame.getSourceLoc();
+      }
+    }
+    return undefined;
+  }
+
+  async extractSourceMap(code) {
+    var m = code.match(/\/\/# sourceMappingURL=(.*)(\n|$)/);
+    if (!m) return false;
+    var sourceMappingURL = m[1];
+    return (await fetch(sourceMappingURL)).json();
+  }
+
+  extractSourceURL(code) {
+    var m = code.match(/\/\/# sourceURL=(.*)(\n|$)/);
+    if (!m) return false;
+    return m[1];
   }
 
   setupMatcher(matchConfig) {
@@ -509,7 +538,7 @@ export class BaseActiveExpression {
   disable() {
     if (this._isEnabled) {
       this._isEnabled = false;
-      this.emit('disable')
+      this.emit('disable');
     }
   }
 

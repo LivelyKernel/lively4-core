@@ -15,9 +15,9 @@ System.import(pluginTransformationPlugin);
 const enumerationPlugin = createTraceID => function() {
     const visitor = {
         enter(path) {
-            if(!path.node.traceID) {
+            if (!path.node.traceID) {
                 path.node.traceID = createTraceID();
-            } 
+            }
         }
     };
 
@@ -32,8 +32,32 @@ const enumerationPlugin = createTraceID => function() {
 }
 
 const enumerationConfig = createTraceID => {
-    return {plugins: [enumerationPlugin(createTraceID)]}
+    return { plugins: [enumerationPlugin(createTraceID)] }
 }
+
+
+// copied from src/client/lively.js
+async function unloadModule(path) {
+    var normalizedPath = System.normalizeSync(path)
+    try {
+        // check, to prevent trying to reloading a module a second time if there was an error #375
+        if (System.get(normalizedPath)) {
+            await System.import(normalizedPath).then(module => {
+                if (module && typeof module.__unload__ === "function") {
+                    module.__unload__();
+                }
+            });
+        }
+    } catch (e) {
+        console.log("WARNING: error while trying to unload " + path)
+    }
+    System.registry.delete(normalizedPath);
+    // #Hack #issue in SystemJS babel syntax errors do not clear errors
+    System['@@registerRegistry'][normalizedPath] = undefined;
+    debugger
+    delete System.loads[normalizedPath]
+}
+
 
 async function importPlugin(url) {
     const module = await System.import(url);
@@ -83,13 +107,17 @@ self.onmessage = function(msg) {
             }
         });
 
+        const preloadedPlugins = new Set(Object.keys(System['@@registerRegistry']));
+
+        debugger
+
         const trace = new Trace();
         // make it globally available for use in plugins
-        window[Trace.traceIdenifierName] = trace;
-        
+        window[Trace.traceIdentifierName] = trace;
+
         function createTraceID() {
-    return trace.createTraceID();
-}
+            return trace.createTraceID();
+        }
 
         importPlugins(msg.data.urls)
             .then(function(modules) {
@@ -111,21 +139,26 @@ self.onmessage = function(msg) {
 
                 wrapAST(ast, trace);
                 let result
-                //try {
+                try {
                     result = babel.transformFromAst(ast, undefined, config);
-                /*} catch (e) {
+                } catch (e) {
+                    result = null;
                     trace.error(e);
-                }*/
+                }
+                debugger;
 
+                const pluginsToUnload = Object.keys(System['@@registerRegistry']).filter(plugin => !
+                    preloadedPlugins.has(plugin));
 
-                // const result = babel.transform(msg.data.source, config);
-                postMessage({
-                    oldAST: oldASTAsString,
-                    transformedAST: JSON.stringify(result.ast),
-                    transformedCode: result.code,
-                    trace: JSON.stringify(trace),
-                    locations: Trace.locations
-                });
+                Promise.all(pluginsToUnload.map(unloadModule))
+                    .then(_ => {
+                        postMessage({
+                            oldAST: oldASTAsString,
+                            transformedAST: JSON.stringify(result && result.ast),
+                            transformedCode: result && result.code,
+                            trace: trace.serialize()
+                        });
+                    })
             })
     })
 }

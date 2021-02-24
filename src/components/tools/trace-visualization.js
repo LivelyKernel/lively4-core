@@ -1,5 +1,7 @@
 import loadPlugin from 'demos/tom/plugin-load-promise.js'
 import Trace from 'demos/tom/trace.js';
+import babelDefault from 'systemjs-babel-build';
+const babel = babelDefault.babel;
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -12,22 +14,27 @@ export default class TraceVisualization extends Morph {
 
 
         this.currentURL = null;
+        
+        // declare variables used later on for documentation
+        this.trace;
+        this.curAST;
+        this.nextAST;
+    }
 
-    }
-    
-    static async for(source, pluginUrls) {
-        const trace = await Trace.on(source, pluginUrls);
-        const selector = await lively.openComponentInWindow('trace-visualization');
-        selector.visualize(trace);
-    }
+     
+    static async for (source, pluginUrls) {
+            const trace = await Trace.on(source, pluginUrls);
+            const selector = await lively.openComponentInWindow('trace-visualization');
+            selector.visualize(trace);
+        }
 
     visualize(trace) {
         this.trace = trace;
         this.updateList();
-        this.showCurrentAST();
+        this.setCurrentAST(trace.oldAST);
     }
 
-    /* UI access */
+    /*MD ## UI access MD*/
 
     get traceList() {
         return this.get('#traceList');
@@ -48,16 +55,68 @@ export default class TraceVisualization extends Morph {
     get editorDoc() {
         return this.editor.currentEditor();
     }
+    
+    async onShowAst() {
+        if(!this.comparison) {
+            this.comparison = await lively.openComponentInWindow('lively-ast-comparison');
+        }        
+        this.comparison.updateView(this.curAST, this.nextAST);
+    }
+    
+    async setEditorURL(newURL) {
+        if (this.currentURL !== newURL) {
+            this.editor.setURL(newURL);
+            this.currentURL = newURL;
+            await this.editor.loadFile();
+        }
+    }
 
-    /* update List */
+    /*MD ## Update list MD*/
 
     clearList() {
         this.traceList.innerHTML = '';
     }
+    
+    markAndScrollTo(position) {
+        this.editorDoc.scrollIntoView({
+            line: position.startLine - 1,
+            ch: position.startColumn
+        }, 200);
 
-    addListItem(section) {
+        this.lastMark = this.editorDoc.markText({
+            line: position.startLine - 1,
+            ch: position.startColumn
+        }, {
+            line: position.endLine - 1,
+            ch: position.endColumn
+        }, {
+            css: 'background: #eee'
+        });
+    }
+    
+    setSubEntryEventListener(subEntry, elm, path) {
+        subEntry.addEventListener('mouseover', async e => {
+            // prevent outer mouseover listener to overwrite this action
+            e.stopPropagation();
+
+            if (this.lastMark) {
+                this.lastMark.clear();
+            }
+
+            this.updateASTs(path, elm);
+
+            const position = this.trace.resolve(elm.position);
+            
+            if(position) {
+                await this.setEditorURL(position.filename);
+                this.markAndScrollTo(position);
+            }
+        });
+    }
+    
+    createSectionElement(section, path = [section]) {
         const className = `entry ${section.hasChanges ? 'changing' : ''}`
-        const header = < div class = {className} > +{ section.name } < /div>;
+        const header = < div class = { className } > + { section.name } < /div>;
         const body = < div > < /div>;
         const entry = < div > { header } { body } < /div>;
 
@@ -69,50 +128,33 @@ export default class TraceVisualization extends Morph {
             const me = this;
             if (!isTriggered) {
                 for (const elm of section.entries) {
-
                     elm.visit({
                         visitEvent(event) {
                             const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
-                            const subEntry = < div class = {className} > { event.type } < /div>;
+                            const subEntry = < div class = { className } > { event.type } < /div>;
 
-                            body.appendChild(subEntry);
-
-                            subEntry.addEventListener('mouseover', async e => {
-                                if (me.lastMark) {
-                                    me.lastMark.clear();
-                                }
-
-                                const position = elm.position;
-                                if (me.currentURL !== position.filename) {
-                                    me.editor.setURL(position.filename);
-                                    await me.editor.loadFile();
-                                }
-                                          
-                                me.editorDoc.scrollIntoView({
-                                    line: position.startLine - 1,
-                                    ch: position.startColumn
-                                });
-
-                                me.lastMark = me.editorDoc.markText({
-                                    line: position.startLine - 1,
-                                    ch: position.startColumn
-                                }, {
-                                    line: position.endLine - 1,
-                                    ch: position.endColumn
-                                }, {
-                                    css: 'background: #eee'
-                                });
-                            });
+                            body.appendChild(subEntry);        
+                            me.setSubEntryEventListener(subEntry, elm, path);
                         },
-                        visitASTChangeEvent(ASTChangeEvent) {
+                        visitErrorEvent(errorEvent) {
+                            const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
+                            const subEntry = < div class = { className } style="background: red; color: #eee" > { errorEvent.type } < /div>;
 
+                            body.appendChild(subEntry);        
+                            subEntry.addEventListener('mouseover', e => {
+                                me.editor.value = errorEvent.data;
+                            }); 
                         },
                         visitTraceSection(traceSection) {
-                            subEntry.innerText = 'Section' + traceSection.name;
+                            const subEntry = me.createSectionElement(traceSection, [...path, traceSection]);
+                            subEntry.className += ' sub';
+                            
+                            body.appendChild(subEntry);
+                            
+                            const header = subEntry.children[0];
+                            me.setSubEntryEventListener(header, elm, path);
                         }
                     });
-
-
                 }
             } else {
                 body.innerHTML = '';
@@ -120,6 +162,12 @@ export default class TraceVisualization extends Morph {
             isTriggered = !isTriggered;
 
         });
+                                      
+        return entry;
+    }
+
+    addListItem(section) {
+        const entry = this.createSectionElement(section);
 
         this.traceList.appendChild(entry);
     }
@@ -131,9 +179,54 @@ export default class TraceVisualization extends Morph {
         }
     }
 
-    /* update AST */
-    showCurrentAST() {
-        this.currentAST.inspect(this.trace.oldAST);
+    /*MD ## Update AST MD*/
+
+    setCurrentAST(ast) {
+        this.currentAST.value = babel.transformFromAst(ast).code
+    }
+
+    setTransformedAST(ast) {                               
+        this.transformedAst.value = babel.transformFromAst(ast).code
+    }
+
+    showASTs() {
+        this.setCurrentAST(this.curAST);
+        this.setTransformedAST(this.nextAST);
+                                          
+        if(this.comparison) {
+            this.comparison.updateView(this.curAST, this.nextAST);
+        }
+    }
+                                      
+    walkPath(path, ast) {
+        let entries = this.trace.sections;
+                                          
+        for (const part of path) {
+            for (const entry of entries) {
+                if(entry === part) {
+                    break;
+                }
+                entry.apply(ast);
+            }
+            entries = part.entries;
+        }
+        
+        return entries;
+    }
+                                      
+    updateASTs(path, entry) {
+        this.curAST = JSON.parse(JSON.stringify(this.trace.oldAST));
+        
+        const entries = this.walkPath(path, this.curAST);
+        const index = entries.indexOf(entry);
+
+        for (let i = 0; i < index; i++) {
+            entries[i].apply(this.curAST);
+        }
+
+        this.nextAST = JSON.parse(JSON.stringify(this.curAST));
+        entries[index].apply(this.nextAST);
+        this.showASTs();
     }
 
 
@@ -151,7 +244,7 @@ export default class TraceVisualization extends Morph {
     livelyMigrate(other) {
         // whenever a component is replaced with a newer version during development
         // this method is called on the new object during migration, but before initialization
-        this.someJavaScriptProperty = other.someJavaScriptProperty
+        this.visualize(other.trace);
     }
 
     livelyInspect(contentNode, inspector) {
@@ -159,12 +252,7 @@ export default class TraceVisualization extends Morph {
     }
 
     async livelyExample() {
-        const source = `if(true){}`;
-        const urls = ['https://lively-kernel.org/lively4/lively4-tom/demos/tom/defect-demo-plugin.js'];
-                                          
-        const trace = await Trace.on(source, urls);
-                                          
-        this.visualize(trace);
+
     }
 
 

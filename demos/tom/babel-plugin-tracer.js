@@ -1,6 +1,8 @@
 import Trace from 'demos/tom/trace.js';
 import wrapAST from 'demos/tom/wrapAST.js';
 
+let pluginDefinedTrace = false;
+
 export default function({ types: t }) {
     function error(path, message) {
         throw path.buildCodeFrameError(message);
@@ -20,7 +22,7 @@ export default function({ types: t }) {
     }
 
     function callOnTrace(methodName, args = [], shouldBeStatement = false) {
-        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdenifierName), t.identifier(methodName)),
+        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdentifierName), t.identifier(methodName)),
             args);
         if (shouldBeStatement) {
             call = t.expressionStatement(call);
@@ -29,20 +31,7 @@ export default function({ types: t }) {
     }
 
     function location(astNode, state) {
-        const filename = state.file.opts.filename;
-
-        const start = astNode.loc.start;
-        const end = astNode.loc.end;
-
-        const locationObject = {
-            filename,
-            startLine: start.line,
-            startColumn: start.column,
-            endLine: end.line,
-            endColumn: end.column
-        }
-
-        const id = Trace.register(locationObject);
+        const id = window[Trace.traceIdentifierName].register(astNode, state);
 
         return t.numericLiteral(id);
     }
@@ -77,6 +66,17 @@ export default function({ types: t }) {
 
     return {
         name: 'tracer',
+        pre() {
+            if(!window[Trace.traceIdentifierName]) {
+                window[Trace.traceIdentifierName] = new Trace();
+                pluginDefinedTrace = true;
+            }
+        },
+        post() {
+            if(pluginDefinedTrace) {
+                delete window[Trace.traceIdentifierName];
+            }
+        },
         visitor: {
             Program(path) {
                 // wrapAST(path.node, {notify(){console.log(...arguments)}})
@@ -104,6 +104,14 @@ export default function({ types: t }) {
                         ]);
                     callee.replaceWith(t.stringLiteral(name));
                     callee.insertBefore(aboutToEnter);
+                    
+                    const left = callOnTrace('left',
+                    [
+                        location(path.node, this),
+                        path.node
+                    ]);
+                
+                path.replaceWith(left)
                     return;
                 } else if (t.isFunctionExpression(callee)) {
                     name = callee.node.id.name || 'anonymous function';
@@ -113,19 +121,44 @@ export default function({ types: t }) {
 
                 const aboutToEnter = callOnTrace('aboutToEnter',
                     [
-                        location(callee.node, this),
+                        location(path.node, this),
                         t.stringLiteral(name)
                     ]);
-
+                
+                
                 callee.insertBefore(aboutToEnter);
+                
+                
+                const left = callOnTrace('left',
+                    [
+                        location(path.node, this),
+                        path.node
+                    ]);
+                
+                path.replaceWith(left)
 
 
             },
             ArrowFunctionExpression(path) {
-
+                if(path.node.expression) {                    
+                    const body = path.get('body');
+                    
+                    body.replaceWith(callOnTrace('return', [
+                        location(body.node, this), 
+                        body.node
+                    ]));
+                    
+                    body.insertBefore(callOnTrace('enterFunction', [
+                        location(path.node, this), 
+                        t.stringLiteral('anonymous function')
+                    ]));                    
+                } else {
+                    modifyFunction('anonymous function', path, this);
+                }                
             },
             "ClassMethod|ObjectMethod"(path) {
-                const name = path.node.key.name;
+                const key = path.node.key;
+                const name = key.value || key.name;
                 modifyFunction(name, path, this);
             },
             "FunctionDeclaration|FunctionExpression"(path) {
@@ -143,13 +176,21 @@ export default function({ types: t }) {
                 ]));
             },
             ForOfStatement(path) {
-
+                const iterator = path.get('right');
+                iterator.replaceWith(callOnTrace('forIterator', [
+                    location(iterator.node, this),
+                    iterator.node
+                ]));
             },
             ForInStatement(path) {
-
+                const keys = path.get('right');
+                keys.replaceWith(callOnTrace('forKeys', [
+                    location(keys.node, this),
+                    keys.node
+                ]));
             },
             Conditional(path) {
-                if (path.node.alreadyVisited) {
+                if (path.node.alreadyVisited || path.isGenerated()) {
                     return;
                 }
 
@@ -161,12 +202,13 @@ export default function({ types: t }) {
                 ]);
 
                 // do not log else ifs
+                const node = path.node;
                 if (path.parent.type !== 'IfStatement') {
                     path.insertBefore(callOnTrace('beginCondition', [
-                        location(path.node, this),
+                        location(node, this),
                         t.stringLiteral(path.type)
                     ]));
-                    path.insertAfter(callOnTrace('endCondition', [location(path.node, this)]));
+                    path.insertAfter(callOnTrace('endCondition', [location(node, this)]));
                 }
             },
 

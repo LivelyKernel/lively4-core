@@ -7,100 +7,6 @@ import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promise
 import TraceVisualization from 'src/components/tools/trace-visualization.js';
 
 
-function babelVisitorWrapper(key, nodeType, visitor) {
-    return function(...args) {
-        console.log(args[0])
-        console.log(nodeType, key);
-        visitor(...args);
-    }
-}
-
-class Transitions {
-    constructor() {
-        this._transitions = [];
-        this.savedTransitions = [];
-        this.selectionTookPlace = false;
-        this.errorState = null;
-    }
-
-    _getProgramParent(path) {
-        let parent = path;
-        do {
-            if (parent.isProgram()) return parent;
-        } while ((parent = parent.parentPath));
-    };
-
-    getValue() {
-        return this._transitions;
-    };
-
-    addEntryTransition(code) {
-        this._transitions.push({
-            code,
-            alias: "Original",
-            type: "entry",
-            size: new Blob([code], { type: "text/plain" }).size
-        })
-    }
-
-    addExitTransition(code) {
-        this._transitions.push({
-            code,
-            alias: "output",
-            type: "exit",
-            size: new Blob([code], { type: "text/plain" }).size
-        });
-    };
-
-    wrapPluginVisitorMethod(pluginAlias, visitorType, callback) {
-        return (...args) => {
-            try {
-                callback.call(this, ...args);
-
-            this.savedTransitions.push({
-                node: JSON.parse(JSON.stringify((args[0].node))),
-                parent: _.cloneDeep(this._getProgramParent(args[0]).node),
-                alias: pluginAlias,
-                type: visitorType
-            })
-            } catch(e) {
-                this.errorState = {
-                    error: e,
-                    alias: pluginAlias,
-                    type: visitorType
-                };
-                // still want the normal error handling of the plugin explorer
-                throw e;
-            }
-        };
-    };
-
-    selectTransitionsIfNecessary() {
-        if (!this.selectionTookPlace) {
-            for (const transition of this.savedTransitions) {
-                const { code } = babel.transformFromAst(transition.parent);
-                if (this._transitions.length === 0 || this._transitions[this._transitions.length - 1].code !== code) {
-                    this._transitions.push({
-                        code,
-                        alias: transition.alias,
-                        type: transition.type,
-                        currentNode: transition.node.type,
-                        size: new Blob([code], { type: "text/plain" }).size
-                    });
-                }
-            }
-            if (this.errorState !== null) {
-                this._transitions.push({
-                    code: this.errorState.error.stack,
-                    alias: this.errorState.alias,
-                    type: this.errorState.type
-                })
-            }
-            this.selectionTookPlace = true;
-        }
-    }
-}
-
 export default class PluginExplorer extends Morph {
 
     static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
@@ -459,14 +365,6 @@ export default class PluginExplorer extends Morph {
         }
     }
 
-    replaceButtonsWith(buttons) {
-        const pane = this.get('#buttonPane');
-        pane.innerHTML = '';
-        for (const button of buttons) {
-            pane.appendChild(button);
-        }
-    }
-
     updateAndExecute(code) {
         this.transformedSourceLCM.value = code;
 
@@ -474,35 +372,7 @@ export default class PluginExplorer extends Morph {
         if (this.autoRunTests) runTests();
     }
 
-    setTransitionButtons(transitions) {
-        this.replaceButtonsWith(transitions.getValue().map((transition, index) => {
-            const nameComponents = transition.alias.split(' ');
-            let buttonContent = transition.alias;
-            let path = null;
-            if (nameComponents.length > 1) {
-                buttonContent = nameComponents.slice(0, -1).join(' ');
-                path = nameComponents.last;
-            }
-            
-            const button = document.createElement('button');
-            button.innerText = `${index}: ${buttonContent}`;
-            button.addEventListener('click', e => {
-                // transition.inspect()
-                if(path) {
-                    lively.openBrowser(path);
-                }
-            });
-            button.addEventListener('mouseover', e => {
-                this.updateAndExecute(transition.code);
-            });
-            return button;
-        }))
-    }
-
     async updateTransformation(ast) {
-        let transitions = new Transitions();
-        transitions.addEntryTransition(this.sourceText);
-
         try {
             console.group("PLUGIN TRANSFORMATION");
             if (!ast) return;
@@ -542,24 +412,24 @@ export default class PluginExplorer extends Morph {
             config.sourceFileName = filename
             config.moduleIds = false;
             
-            config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
+            
+            // here for documenting the babel hook
+            config.wrapPluginVisitorMethod = (pluginAlias, visitorType, callback) => {
+                return (...args) => {
+                    console.log(pluginAlias, visitorType)
+                    callback(...args);
+                }
+            };
+            
             this.transformationResult = babel.transform(this.sourceText, config);
             
 
-            // Todo: find in original code how to use
-            // transitions.addExitTransition(this.transformationResult.code);
-
             this.updateAndExecute(this.transformationResult.code);
-
-            transitions.selectTransitionsIfNecessary();
-            transitions.addExitTransition(this.transformationResult.code);
         } catch (e) {
             console.error(e);
             this.transformedSourceLCM.value = e.stack;
         } finally {
             console.groupEnd();
-            transitions.selectTransitionsIfNecessary();
-            this.setTransitionButtons(transitions);
         }
     }
 
@@ -674,6 +544,7 @@ export default class PluginExplorer extends Morph {
     livelyMigrate(other) {
         // #TODO: do we still need this?
         this.addEventListener("initialize", () => {
+            this.workspaceURL = other.workspaceURL;
             this.loadWorkspace(other.workspace);
             this.sourceCM.setValue(other.sourceText);
             this.transformedSourceCM.setValue(other.transformedSourceCM.getValue());

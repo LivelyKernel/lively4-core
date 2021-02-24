@@ -1,15 +1,15 @@
-export default function({types: t}) {
-    
+export default function({types: t}) {    
     return {
         name: 'test',
         visitor: {
-            CallExpression(path) {
-                if (path.node.modified) {
-                    return;
-                }
-                path.node.modified = true;
-                
-                path.node.callee.name = 'test_' +  path.node.callee.name;               
+            Conditional(path) {
+                debugger
+                path.get('test').insertAfter(t.stringLiteral('afterTest'));
+            },
+            
+            AssignmentExpression(path) {
+                debugger
+                path.node.loc.start
             }
         }
     }
