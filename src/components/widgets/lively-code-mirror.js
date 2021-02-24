@@ -1402,6 +1402,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async updateAExprDependencies() {
+    if(!this.isJavaScript) return;
     await this.editor;
     const dependencyGraph = await this.dependencyGraph();
     if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {

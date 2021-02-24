@@ -1063,19 +1063,19 @@ export default class Container extends Morph {
   }
 
   async onSync(evt) {
-    var comp = lively.components.createComponent("lively-sync");
+    var comp = await (<lively-sync></lively-sync>);
     var compWindow;
     lively.components.openInWindow(comp).then((w) => {
       compWindow = w;
       lively.setPosition(w, lively.pt(100, 100));
     });
 
-    var serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
+    var serverURL = lively.files.serverURL("" + this.getURL())
     comp.setServerURL(serverURL);
     console.log("server url: " + serverURL);
-    if (!this.getURL().pathname.match(serverURL)) {
-      return lively.notify("can only sync on our repositories");
-    }
+    // if (!this.getURL().pathname.match(serverURL)) {
+    //   return lively.notify("can only sync on our repositories");
+    // }
     var repo =  this.getPath().replace(serverURL +"/", "").replace(/\/.*/,"");
     comp.setRepository(repo);
     comp.sync();
