@@ -73,6 +73,16 @@ export const AExprRegistry = {
    */
   allAsArray() {
     return Array.from(self.__aexprRegistry_aexprs__);
+  },
+
+  addEventListener(reference, callback) {
+    if(!this.listeners) this.listeners = []
+    this.listeners.push({ reference, callback });
+  },
+
+  eventListeners() {
+    this.listeners = this.listeners.filter(listener => listener.reference);
+    return this.listeners;
   }
 };
 
@@ -321,9 +331,8 @@ export class BaseActiveExpression {
     const lastValue = this.lastValue;
     this.storeResult(value);
     this.findCallee().then(trigger => {
-      this.logEvent('changed value', {value, trigger});
-    })
-   
+      this.logEvent('changed value', { value, trigger, lastValue });
+    });
 
     this.notify(value, {
       lastValue,
@@ -335,9 +344,9 @@ export class BaseActiveExpression {
   async findCallee() {
     const stack = lively.stack();
     const frames = stack.frames;
-    
+
     for (let frame of frames) {
-      if(!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
+      if (!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
         return await frame.getSourceLoc();
       }
     }
@@ -572,7 +581,9 @@ export class BaseActiveExpression {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    events.push({ timestamp: new Date(), type, value });
+    const event = { timestamp: new Date(), type, value };
+    AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
+    events.push(event);
     if (events.length > 5000) events.shift();
   }
 
