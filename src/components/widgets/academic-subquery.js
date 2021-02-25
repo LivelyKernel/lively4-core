@@ -166,11 +166,13 @@ export default class AcademicSubquery extends Morph {
     
     // TODO: falls ich das umbaue, sodass eine subquery einfach als
     // html Element in updateView erstellt wird, muss das hier auch da rein
-//     this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-//     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-//     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-//     this.addEventListener('drop', (evt) => this.onDrop(evt))
-    
+    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
+     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
+     this.addEventListener('drop', (evt) => this.onDrop(evt))
+    */
     this.style.draggable = 'true';
   //   "drag",
   // "dragend",
@@ -190,7 +192,7 @@ export default class AcademicSubquery extends Morph {
     // this.id = id
     
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', this.innerHTML);
+    event.dataTransfer.setData('text/html', this.queryElement.getQuery()); // set Query as info
     //event.dataTransfer.setData("application/lively4id", id);
   }
   
@@ -207,11 +209,14 @@ export default class AcademicSubquery extends Morph {
   }
   
   onDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
     //if (this.dragStart !== this) {
       //var id = event.dataTransfer.getData("application/lively4id")
       //var el = lively.query(this, "#"+id);
       //lively.notify("ELEMENT", el);
-    this.innerHTML = event.dataTransfer.getData("text/html");
+    var query = event.dataTransfer.getData("text/html");
+    this.queryElement.setQuery(event.dataTransfer.getData("text/html")); // read query in
     this.classList.remove('over');
     //}
   }
@@ -248,6 +253,15 @@ export default class AcademicSubquery extends Morph {
       this.ui.addEventListener('dragleave', this.onDragLeave)
       this.ui.addEventListener('drop', this.onDrop)
     }
+    this.ui.queryElement = this; // oufff
+    /*if (!this.isComplex) {
+      this.addEventListener('dragstart', this.onDragStart)
+      this.addEventListener('dragend', this.onDragEnd)
+      this.addEventListener('dragover', this.onDragOver)
+      this.addEventListener('dragenter', this.onDragEnter)
+      this.addEventListener('dragleave', this.onDragLeave)
+      this.addEventListener('drop', this.onDrop)
+    }*/
     pane.appendChild(this.ui)
   }
   
@@ -318,6 +332,7 @@ export default class AcademicSubquery extends Morph {
   
   async toggleEditing() {
     this.editing = !this.editing;
+    lively.notify("EDIT", this.editing)
     this.ui = await this.queryToView();
     this.updateView();
   }
