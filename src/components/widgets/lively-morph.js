@@ -27,6 +27,11 @@ export default class Morph extends HTMLElement {
     }
     return morph;
   }
+  
+  setWindowSize(width, height) {
+    this.parentElement.style["width"] = width + "px";
+    this.parentElement.style["height"] = height + "px";
+  }
 
   set windowTitle(string){
     this._windowTitle = string;

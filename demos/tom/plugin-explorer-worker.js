@@ -54,7 +54,6 @@ async function unloadModule(path) {
     System.registry.delete(normalizedPath);
     // #Hack #issue in SystemJS babel syntax errors do not clear errors
     System['@@registerRegistry'][normalizedPath] = undefined;
-    debugger
     delete System.loads[normalizedPath]
 }
 
@@ -109,7 +108,6 @@ self.onmessage = function(msg) {
 
         const preloadedPlugins = new Set(Object.keys(System['@@registerRegistry']));
 
-        debugger
 
         const trace = new Trace();
         // make it globally available for use in plugins
@@ -145,7 +143,8 @@ self.onmessage = function(msg) {
                     result = null;
                     trace.error(e);
                 }
-                debugger;
+            
+            debugger
 
                 const pluginsToUnload = Object.keys(System['@@registerRegistry']).filter(plugin => !
                     preloadedPlugins.has(plugin));
@@ -154,8 +153,6 @@ self.onmessage = function(msg) {
                     .then(_ => {
                         postMessage({
                             oldAST: oldASTAsString,
-                            transformedAST: JSON.stringify(result && result.ast),
-                            transformedCode: result && result.code,
                             trace: trace.serialize()
                         });
                     })

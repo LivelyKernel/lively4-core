@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
+import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 
 var g = ohm.grammar(
   `Academic { 
@@ -165,11 +166,13 @@ export default class AcademicSubquery extends Morph {
     
     // TODO: falls ich das umbaue, sodass eine subquery einfach als
     // html Element in updateView erstellt wird, muss das hier auch da rein
-//     this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-//     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-//     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-//     this.addEventListener('drop', (evt) => this.onDrop(evt))
-    
+    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
+     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
+     this.addEventListener('drop', (evt) => this.onDrop(evt))
+    */
     this.style.draggable = 'true';
   //   "drag",
   // "dragend",
@@ -189,7 +192,7 @@ export default class AcademicSubquery extends Morph {
     // this.id = id
     
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', this.innerHTML);
+    event.dataTransfer.setData('text/html', this.queryElement.getQuery()); // set Query as info
     //event.dataTransfer.setData("application/lively4id", id);
   }
   
@@ -206,11 +209,14 @@ export default class AcademicSubquery extends Morph {
   }
   
   onDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
     //if (this.dragStart !== this) {
       //var id = event.dataTransfer.getData("application/lively4id")
       //var el = lively.query(this, "#"+id);
       //lively.notify("ELEMENT", el);
-    this.innerHTML = event.dataTransfer.getData("text/html");
+    var query = event.dataTransfer.getData("text/html");
+    this.queryElement.setQuery(event.dataTransfer.getData("text/html")); // read query in
     this.classList.remove('over');
     //}
   }
@@ -233,41 +239,49 @@ export default class AcademicSubquery extends Morph {
   
   
   async updateView() {
+    if(!this.ui) { return }
     var pane = this.get("#pane")
     pane.innerHTML = ""
     
-    if(this.ui) {
-      this.ui.style.draggable = 'true'
-      this.ui.style.userSelect = 'none'
-      if (!this.isComplex) {
-        this.ui.addEventListener('dragstart', this.onDragStart)
-        this.ui.addEventListener('dragend', this.onDragEnd)
-        this.ui.addEventListener('dragover', this.onDragOver)
-        this.ui.addEventListener('dragenter', this.onDragEnter)
-        this.ui.addEventListener('dragleave', this.onDragLeave)
-        this.ui.addEventListener('drop', this.onDrop)
-      }
-      pane.appendChild(this.ui)
+    this.ui.style.draggable = 'true'
+    this.ui.style.userSelect = 'none'
+    if (!this.isComplex) {
+      this.ui.addEventListener('dragstart', this.onDragStart)
+      this.ui.addEventListener('dragend', this.onDragEnd)
+      this.ui.addEventListener('dragover', this.onDragOver)
+      this.ui.addEventListener('dragenter', this.onDragEnter)
+      this.ui.addEventListener('dragleave', this.onDragLeave)
+      this.ui.addEventListener('drop', this.onDrop)
     }
+    this.ui.queryElement = this; // oufff
+    /*if (!this.isComplex) {
+      this.addEventListener('dragstart', this.onDragStart)
+      this.addEventListener('dragend', this.onDragEnd)
+      this.addEventListener('dragover', this.onDragOver)
+      this.addEventListener('dragenter', this.onDragEnter)
+      this.addEventListener('dragleave', this.onDragLeave)
+      this.addEventListener('drop', this.onDrop)
+    }*/
+    pane.appendChild(this.ui)
   }
   
   async setQuery(q) {
     this.textContent = q;
     
     var match = g.match(q);
-    var queryObject = s(match).interpret();
-    this.ui = await this.queryToView(queryObject);
+    this.ast = s(match).interpret();
+    this.ui = await this.queryToView(this.ast);
     
     this.updateView()
   }
   
   getQuery() {
-    // dasselbe wie viewToQuery?
     return this.textContent;
   }
   
   async setQueryObject(o) {
-    this.ui = await this.queryToView(o);
+    this.ast = o
+    this.ui = await this.queryToView();
     
     this.updateView();
     
@@ -276,6 +290,7 @@ export default class AcademicSubquery extends Morph {
   }
 
   async viewToQuery() {
+    // TODO!
     var query = this.textContent;
     
     if (this.isComplex) {
@@ -315,26 +330,89 @@ export default class AcademicSubquery extends Morph {
     return query
   }
   
-  toggleEditing() {
-    var queries = this.get("#inner").querySelectorAll("[name='sub']");
-    var edit = this.get('#edit');
-    edit.innerHTML = "";
+  async toggleEditing() {
+    this.editing = !this.editing;
+    lively.notify("EDIT", this.editing)
+    this.ui = await this.queryToView();
+    this.updateView();
+  }
+  
+  // builds the UI in edit mode
+  async buildEditable(ast) {
+    var inner = <span id="inner"></span>;
+    var query = <span name="sub" draggable='false'></span>;
+    var schema = await MicrosoftAcademicEntities.generateSchema("paper"); // TODO: in der Klasse speichern?
     
-    if (!this.editing) {
-      this.editing = true;
-      edit.appendChild(<i class="fa fa-hand-paper-o" aria-hidden="true"></i>);
-      queries.forEach(q => {
-        q.setAttribute("contenteditable", true);
-        q.style.cursor = "text";
+    // attribute
+    var attribute = <select name='attribute' id='attribute'></select>;
+    var selectedAttribute; // TODO: Klassenvariable?
+    schema.filter(attr => attr.operations != "None").forEach(option => {
+      var selected = (option.name == ast.attribute);
+      if (selected) { selectedAttribute = option; }
+      attribute.options.add(new Option(option.name, option.name, selected, selected))
+    })
+    query.appendChild(attribute);
+    
+    // comparator
+    var mapOperationToSymbol = op => {switch(op) {
+        case "Equals":
+          return ["==", "="];
+        case "StartsWith":
+          return ["="];
+        case "IsBetween":
+          return [">", ">=", "<", "<=", "="];
+        default:
+          return op;
+      } // TODO: in der Klasse speichern?
+    };
+    var comparator = <select name='comparator' id='comparator'></select>;
+    selectedAttribute.operations.split(", ")
+      .map(operation => mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat()
+      .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
+      .forEach(option => {
+        var selected = (option == ast.comparator);
+        comparator.options.add(new Option(option, option, selected, selected))
       });
-    } else {
-      this.editing = false;
-      edit.appendChild(<i class="fa fa-pencil" aria-hidden="true"></i>);
-      queries.forEach(q => {
-        q.setAttribute("contenteditable", false);
-        q.style.cursor = "grab";
-      });
-    }
+    query.appendChild(comparator);
+    
+    // value
+    var value = <input id="value" name="value" value={ast.value}></input>;
+    // TODO: fit input type to attribute type
+    query.appendChild(value);
+    
+    inner.appendChild(query);
+    
+    var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-hand-paper-o" aria-hidden="true"></i></span>;
+    edit.style.cursor = "pointer";
+    inner.appendChild(edit);
+    
+    return inner;
+  }
+  
+  async buildConjunctionQuery(ast) {
+    var inner = <span id="inner"></span>;
+    var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
+    var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
+    await left.setQueryObject(ast.left);
+    this.leftSubquery = left; // for viewToQuery
+    var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
+    await right.setQueryObject(ast.right);
+    this.rightSubquery = right; // for viewToQuery
+    inner.appendChild(
+      <table>
+        <tr>
+          <th>{conjunction}</th>
+          <th>
+            <table>
+              <tr>{left}</tr>
+              <tr>{right}</tr>
+            </table>
+          </th>
+        </tr>
+      </table>
+    )
+    return inner;
   }
   
   onMouseOver(event) {
@@ -344,76 +422,56 @@ export default class AcademicSubquery extends Morph {
   onMouseOut(event) {
     this.style.color = "black"
   }
+  
+  buildSimpleQuery(ast) {
+    var inner =
+      <span class="hover" contenteditable="false" id="inner">
+        <span class="hovercontent">
+          <button
+            class="button"
+            click={() => {
+              this.setQuery(
+                "And(" + this.textContent + ", " + this.textContent + ")")
+            }}>AND</button>
+          <button
+            class="button"
+            click={() => {
+              this.setQuery(
+                "Or(" + this.textContent + ", " + this.textContent + ")")
+            }}>OR</button>
+        </span>
+      </span>;
+    var query = <span name="sub" draggable='true'></span>;
+    [ast.attribute, ast.comparator, ast.value].forEach(value => {
+      query.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
+      query.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+      query.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
+      query.style.cursor = "grab"
+    });
+    inner.appendChild(query);
+    var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+    edit.style.cursor = "pointer";
+    inner.appendChild(edit);
+    return inner;
+  }
 
-  async queryToView(object) {
-    var span = <span contenteditable="false" id="inner"></span>;
-    var subSpan;
-      
-    switch(object.type) {
-      case "conjunction":
-        // Textselection in css vielleicht entfernen für Drag & Drop (bzw. erstmal Drag einschalten)
-        // events.stoppropagation und preventdefault
-        this.isComplex = true;
-        subSpan = <span id="conjunction" contenteditable="false" style="font-size: 150%">{object.conjunction}</span>;
-        var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-        await left.setQueryObject(object.left);
-        this.leftSubquery = left; // for viewToQuery
-        var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-        await right.setQueryObject(object.right);
-        this.rightSubquery = right; // for viewToQuery
-        span.appendChild(
-          <table>
-            <tr>
-              <th>{subSpan}</th>
-              <th>
-                <table>
-                  <tr>{left}</tr>
-                  <tr>{right}</tr>
-                </table>
-              </th>
-            </tr>
-          </table>
-        )
-        break;
-      
-      // "composite" or "simple"
-      default:
-        this.isComplex = false;
-        // make span hoverable
-        span =
-          <span class="hover" contenteditable="false" id="inner">
-            <span class="hovercontent">
-              <button
-                class="button"
-                click={() => {
-                  this.setQuery(
-                    "And(" + this.textContent + ", " + this.textContent + ")")
-                }}>AND</button>
-              <button
-                class="button"
-                click={() => {
-                  this.setQuery(
-                    "Or(" + this.textContent + ", " + this.textContent + ")")
-                }}>OR</button>
-            </span>
-          </span>;
-        
-        subSpan = <span name="sub" draggable='true'></span>;
-        [object.attribute, object.comparator, object.value].forEach(value => {
-          subSpan.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
-          subSpan.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-          subSpan.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
-          subSpan.style.cursor = "grab" // on drag: grabbing
-        });
-        span.appendChild(subSpan);
-        var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
-        edit.style.cursor = "pointer";
-        span.appendChild(edit);
-        break;
+  async queryToView() {
+    const ast = this.ast;
+    var inner = <span id="inner"></span>;
+    if (ast.type == "conjunction") {
+      this.isComplex = true;
+      inner = await this.buildConjunctionQuery(ast);
+    } else { // "composite" or "simple"
+      this.isComplex = false;
+      if (this.editing) { // edit mode
+        inner = await this.buildEditable(ast);
+      } else { // read mode
+        inner = this.buildSimpleQuery(ast);
+      }
     }
-    span.setAttribute("type", object.type);
+    inner.setAttribute("type", ast.type);
 
-    var queryElement = <div class="dropTarget"><b>{span}</b></div>;
+    var queryElement = <div class="dropTarget"><b>{inner}</b></div>;
     
     return queryElement;
   }
