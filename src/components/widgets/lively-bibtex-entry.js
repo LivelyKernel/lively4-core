@@ -97,6 +97,10 @@ export default class LivelyBibtexEntry extends Morph {
     return this.get("#pane")
   }
   
+  getAuthors() {
+    return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
+  }
+  
   async showEditor() {
     this.editor = await (<lively-code-mirror id="editor" mode="plain"></lively-code-mirror>)
     this.editor.value = this.textContent
@@ -116,7 +120,7 @@ export default class LivelyBibtexEntry extends Morph {
     this.pane.innerHTML = ""
     
     try {
-      var authorText = this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).join(", ");
+      var authorText = this.getAuthors().join(", ");
     } catch (e) {
       authorText = this.author;
     }
