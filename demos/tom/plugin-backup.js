@@ -22,8 +22,7 @@ export default function({ types: t }) {
     }
 
     function callOnTrace(methodName, args = [], shouldBeStatement = false) {
-        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdentifierName), t.identifier(methodName)),
-            args);
+        let call = t.callExpression(t.memberExpression(t.identifier(Trace.traceIdentifierName), t.identifier(methodName)), args);
         if (shouldBeStatement) {
             call = t.expressionStatement(call);
         }
@@ -89,24 +88,35 @@ export default function({ types: t }) {
                 path.node.alreadyVisited = true;
                 let callee = path.get('callee');
                 let name;
+                debugger
 
                 if (t.isMemberExpression(callee)) {
-                    callee.node.computed = true;
-                    callee = path.get('callee.property');
+                    if(callee.node.computed) {
+                        callee = path.get('callee.property');
 
-                    name = callee.node.name || 'anonymous function';
+                        name = callee.node;
+                    } else {
+                        callee.node.computed = true;
+                        callee = path.get('callee.property');
+
+                        name = t.stringLiteral(callee.node.name || 'anonymous function');
+                    }
+                    
+                    
+                    
+                    const loc = location(callee.node, this);
 
                     const aboutToEnter = callOnTrace('aboutToEnter',
                         [
-                            location(callee.node, this),
-                            t.stringLiteral(name)
+                            loc,
+                            name
                         ]);
-                    callee.replaceWith(t.stringLiteral(name));
+                    callee.replaceWith(name);
                     callee.insertBefore(aboutToEnter);
                     
                     const left = callOnTrace('left',
                     [
-                        location(path.node, this),
+                        loc,
                         path.node
                     ]);
                 

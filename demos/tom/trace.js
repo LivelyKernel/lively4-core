@@ -71,9 +71,7 @@ export default class Trace {
         const obj = {
             locations: data.locations,
             oldAST: JSON.parse(data.oldAST),
-            transformedAST: JSON.parse(data.transformedAST || '{}'),
             trace: Trace.deserializedFrom(data.trace),
-            transformedCode: data.transformedCode
         };
 
         const trace = obj.trace;

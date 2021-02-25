@@ -76,11 +76,6 @@ export default class TraceLogParser {
                 const returnEntry = this.consume();
                 section.addEntry(this.instantiateEvent(returnEntry));
                 
-                if(returnEntry.position === this.peek().position) {
-                    this.match('left');
-                }
-                debugger
-                
                 throw new EarlyReturn('function');
             } else if(this.matchPeek('leave')) {
                 const leaveEntry = this.consume();
@@ -91,10 +86,8 @@ export default class TraceLogParser {
             }
             else if(this.matchPeek('enterPlugin')) {
                 section.addEntry(this.parsePlugin());
-                continue;
             } else if(this.matchPeek('aboutToEnter')) {
                 this.parseFunction(section, [...higherSections, section]);
-                continue;
             } else if(this.matchPeek('enterFunction')) {
                 if(!section.isFunction() || (section.isFunction() && section._name !== this.peek().data)) {
                     // entered a function that got called from native code or babel
@@ -103,10 +96,8 @@ export default class TraceLogParser {
                 } else {
                     this.match('enterFunction');
                 }
-                continue;
             } else if(this.matchPeek('beginCondition')) {
                 this.parseCondition(section, [...higherSections, section]);
-                continue;
             } else if(this.matchPeek('astChangeEvent')) {
                 const change = this.consumeAsEvent();
                 
@@ -115,18 +106,17 @@ export default class TraceLogParser {
                 }
                 
                 section.addChange(change);
-                continue;
             } else if(this.matchPeek('error')) {
                 section.addEntry(this.consumeAsEvent());
-                // break out from nesting
+
                 throw new EarlyReturn('error');
             } else if(this.match('endCondition')) {
                 return section;
             } else if(this.match('left')) {
                 return section;
+            } else {
+                section.addEntry(this.consumeAsEvent());
             }
-            
-            section.addEntry(this.consumeAsEvent());
         }
         
         return section;
@@ -163,6 +153,11 @@ export default class TraceLogParser {
             } else {
                 throw e;
             }
+        }
+        
+        // Functions that got entered from native code or babel get not left event
+        if(fun.position === this.peek().position) {
+            this.match('left');
         }
         
         return fun;
