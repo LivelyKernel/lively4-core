@@ -4,12 +4,13 @@ export default function({types: t}) {
         visitor: {
             Conditional(path) {
                 debugger
-                path.get('test').insertAfter(t.stringLiteral('afterTest'));
+                const string = t.stringLiteral('afterTest');
+                path.get('test')
+                    .insertAfter(string);
             },
             
             AssignmentExpression(path) {
-                debugger
-                path.node.loc.start
+                console.log(path.node.loc.start);
             }
         }
     }

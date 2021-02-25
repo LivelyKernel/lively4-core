@@ -51,7 +51,7 @@ export class ASTChangeEvent {
     }
 
     getNode(id, astNode) {
-        if (astNode.type) {
+        if (astNode && astNode.type) {
             const isSearchedNode = value => value && value.traceID !== undefined && value.traceID.nodeID === id.nodeID;
 
             if (isSearchedNode(astNode)) {
@@ -97,6 +97,9 @@ export class ASTChangeEvent {
     }
     
     resolve(copy, ast) {
+        if (!copy) {
+            return copy;
+        }
         
         // Todo: optimize by caching: traceID -> ASTNode
         if(copy.isTraceID) {
