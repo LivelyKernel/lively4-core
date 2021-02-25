@@ -146,6 +146,21 @@ export default class AcademicSubquery extends Morph {
     // to use the descriptions in the UI, we need to shorten some
     var createShortDescriptions = attr => {
       switch(attr.name) {
+        case "AA.AdId": 
+          attr.shortDesc = "Affiliation ID";
+          break;
+        case "AA.AfN": 
+          attr.shortDesc = "Affiliation Name (normalized)";
+          break;
+        case "AA.AuN": 
+          attr.shortDesc = "Author Name (normalized)";
+          break;
+        case "AA.DAuN": 
+          attr.shortDesc = "Author Name (original)";
+          break;
+        case "AA.DAfN": 
+          attr.shortDesc = "Affiliation Name (original)";
+          break;
         case "AW": 
           attr.shortDesc = "Unique words in abstract";
           break;
@@ -158,6 +173,9 @@ export default class AcademicSubquery extends Morph {
         case "D":
           attr.shortDesc = "Date";
           break;
+        case "DN": 
+          attr.shortDesc = "Paper Title";
+          break;
         case "DOI":
           attr.shortDesc = "Digital Object Identifier";
           break;
@@ -167,6 +185,12 @@ export default class AcademicSubquery extends Morph {
         case "FamId":
           attr.shortDesc = "Family Group ID";
           break;
+        case "F.DFN": 
+          attr.shortDesc = "Field of Study Name (original)";
+          break;
+        case "F.FN": 
+          attr.shortDesc = "Field of Study Name (normalized)";
+          break;
         case "LP":
           attr.shortDesc = "Last Page";
           break;
@@ -175,6 +199,9 @@ export default class AcademicSubquery extends Morph {
           break;
         case "RId":
           attr.shortDesc = "Referenced Paper IDs";
+          break;
+        case "Ti": 
+          attr.shortDesc = "Title";
           break;
         case "VFN":
           attr.shortDesc = "Journal or Conf. name (full)";
@@ -191,8 +218,8 @@ export default class AcademicSubquery extends Morph {
       return attr;
     }
     this.schemaFiltered = this.schema
-                                .filter(attr => attr.operations != "None")
-                                .map(attr => createShortDescriptions(attr));
+                            .filter(attr => attr.operations != "None")
+                            .map(attr => createShortDescriptions(attr));
     // map words for operations to symbols for the query 
     this.mapOperationToSymbol = op => {switch(op) {
         case "Equals":
@@ -365,38 +392,35 @@ export default class AcademicSubquery extends Morph {
     } else {
       var innerSpan = this.get('#inner');
       if (!innerSpan) { return query }
-      var attr, comp, val;
+      var attribute, comp, val;
       if (this.editing) { // edit mode
         var attrElement = innerSpan.querySelector('#attribute');
-        attr = attrElement.options[attrElement.selectedIndex].value // or .text;
+        attribute = attrElement.options[attrElement.selectedIndex].value // or .text;
         var compElement = innerSpan.querySelector('#comparator');
         comp = compElement.options[compElement.selectedIndex].value // or .text;
         val = innerSpan.querySelector('#value').value;
       } else { // read mode
         //lively.notify("INNERSPAN", innerSpan)
-        [attr, comp, val] = innerSpan
+        [attribute, comp, val] = innerSpan
                               .querySelectorAll("span[name='queryPart']")
                               .map(e => e.textContent);
-        if (val)
-          val = val.slice(0, val.length - 1); // remove last whitespace
       }
       
+      var currentAttribute;
+      this.schemaFiltered.forEach(attr => {
+        if (attr.name == attribute) {
+          currentAttribute = attr;
+      }})
       
-      
-      // TODO check if attribute has string value
-      var stringAttributes = {
-        "A": "Author",
-        "AA.AuN": "Author Name",
-      }
-      if (attr.slice(0, attr.length - 1) in stringAttributes) {
+      if (currentAttribute.type == "String") {
         val = "'" + val + "'"
       }
-      // TODO: check if current attribute is composite (has .)
-      //query = attr + comp + "'" + val + "'";
-      if (innerSpan.getAttribute("type") == "composite")
-        query = "Composite(" + attr + comp + val + ")";
+      
+      if (currentAttribute.name.includes("."))
+        query = "Composite(" + attribute + comp + val + ")";
+        // TODO: Set type to Composite?
       else
-        query = attr + comp + val;
+        query = attribute + comp + val;
       
       
       
@@ -507,7 +531,7 @@ export default class AcademicSubquery extends Morph {
       </span>;
     var query = <span name="sub" draggable='true'></span>;
     [ast.attribute, ast.comparator, ast.value].forEach(value => {
-      query.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
+      query.appendChild(<span class="queryPart" name="queryPart">{value}</span>)
       query.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
       query.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
       query.style.cursor = "grab"
