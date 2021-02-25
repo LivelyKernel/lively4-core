@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
-import MicrosoftAcademicEntities from "src/client/literature.js";
+import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 
 var g = ohm.grammar(
   `Academic { 
@@ -256,8 +256,8 @@ export default class AcademicSubquery extends Morph {
     this.textContent = q;
     
     var match = g.match(q);
-    var queryObject = s(match).interpret();
-    this.ui = await this.queryToView(queryObject);
+    this.ast = s(match).interpret();
+    this.ui = await this.queryToView(this.ast);
     
     this.updateView()
   }
@@ -268,6 +268,7 @@ export default class AcademicSubquery extends Morph {
   }
   
   async setQueryObject(o) {
+    this.ast = o
     this.ui = await this.queryToView(o);
     
     this.updateView();
@@ -316,35 +317,72 @@ export default class AcademicSubquery extends Morph {
     return query
   }
   
-  toggleEditing() {
+  async toggleEditing() {
     var queries = this.get("#inner").querySelectorAll("[name='sub']");
     var edit = this.get('#edit');
-    edit.innerHTML = "";
+    //edit.innerHTML = "";
     
     // TODO: Hier this.editing = !this.editing und dann updateView()
-    if (!this.editing) {
-      this.editing = true;
-      edit.appendChild(<i class="fa fa-hand-paper-o" aria-hidden="true"></i>);
-      queries.forEach(q => {
-        q.setAttribute("contenteditable", true);
-        q.style.cursor = "text";
-      });
-    } else {
-      this.editing = false;
-      edit.appendChild(<i class="fa fa-pencil" aria-hidden="true"></i>);
-      queries.forEach(q => {
-        q.setAttribute("contenteditable", false);
-        q.style.cursor = "grab";
-      });
-    }
+    this.editing = !this.editing;
+    this.ui = await this.queryToView(this.ast); // TODO: sollte das hier in updateView passieren?
+    this.updateView();
+    // TODO: Edit Zeichen in buildEditable ändern
+    
+    /*
+    edit.appendChild(<i class="fa fa-hand-paper-o" aria-hidden="true"></i>);
+    edit.appendChild(<i class="fa fa-pencil" aria-hidden="true"></i>);
+    */
   }
   
-  onMouseOver(event) {
-    this.style.color = "orange"
-  }
-  
-  onMouseOut(event) {
-    this.style.color = "black"
+  // builds the UI in edit mode
+  async buildEditable(object) {
+    var inner = <span id="inner"></span>;
+    var query = <span name="sub" draggable='false'></span>;
+    var schema = await MicrosoftAcademicEntities.generateSchema("paper"); // TODO: in der Klasse speichern?
+    
+    // attribute
+    var attribute = <select name='attribute' id='attribute'></select>;
+    var selectedAttribute;
+    schema.filter(attr => attr.operations != "None").forEach(option => {
+      var selected = (option.name == object.attribute);
+      if (selected) { selectedAttribute = option; }
+      attribute.options.add(new Option(option.name, option.name, selected, selected))
+    })
+    query.appendChild(attribute);
+    
+    // comparator
+    var mapOperationToSymbol = op => {switch(op) {
+        case "Equals":
+          return ["==", "="];
+        case "StartsWith":
+          return ["="];
+        case "IsBetween":
+          return [">", ">=", "<", "<=", "="];
+        default:
+          return op;
+      } // TODO: in der Klasse speichern?
+    };
+    var comparator = <select name='comparator' id='comparator'></select>;
+    selectedAttribute.operations.split(", ")
+      .map(operation => mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat() // flatten array of arrays
+      .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
+      .forEach(option => {
+        var selected = (option == object.comparator);
+        comparator.options.add(new Option(option, option, selected, selected))
+      });
+    query.appendChild(comparator);
+    
+    // value
+    var value = <input id="value" name="value" value={object.value}></input>;
+    // TODO: fit input type to attribute type
+    query.appendChild(value);
+    
+    inner.appendChild(query);
+    var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+    edit.style.cursor = "pointer";
+    inner.appendChild(edit);
+    return inner;
   }
   
   async buildConjunctionQuery(object) {
@@ -372,6 +410,14 @@ export default class AcademicSubquery extends Morph {
     return inner;
   }
   
+  onMouseOver(event) {
+    this.style.color = "orange"
+  }
+  
+  onMouseOut(event) {
+    this.style.color = "black"
+  }
+  
   buildSimpleQuery(object) {
     var inner =
       <span class="hover" contenteditable="false" id="inner">
@@ -390,7 +436,6 @@ export default class AcademicSubquery extends Morph {
             }}>OR</button>
         </span>
       </span>;
-
     var query = <span name="sub" draggable='true'></span>;
     [object.attribute, object.comparator, object.value].forEach(value => {
       query.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
@@ -407,14 +452,16 @@ export default class AcademicSubquery extends Morph {
 
   async queryToView(object) {
     var inner = <span id="inner"></span>;
-      
     if (object.type == "conjunction") {
       this.isComplex = true;
       inner = await this.buildConjunctionQuery(object);
-    } else { 
-      // "composite" or "simple"
+    } else { // "composite" or "simple"
       this.isComplex = false;
-      inner = this.buildSimpleQuery(object);
+      if (this.editing) { // edit mode
+        inner = await this.buildEditable(object);
+      } else { // drag&drop / read mode
+        inner = this.buildSimpleQuery(object);
+      }
     }
     inner.setAttribute("type", object.type);
 

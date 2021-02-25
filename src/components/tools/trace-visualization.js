@@ -14,6 +14,7 @@ export default class TraceVisualization extends Morph {
 
 
         this.currentURL = null;
+        this.textManuallyChanged = false;
         
         // declare variables used later on for documentation
         this.trace;
@@ -64,10 +65,11 @@ export default class TraceVisualization extends Morph {
     }
     
     async setEditorURL(newURL) {
-        if (this.currentURL !== newURL) {
+        if (this.currentURL !== newURL || this.textManuallyChanged) {
             this.editor.setURL(newURL);
             this.currentURL = newURL;
             await this.editor.loadFile();
+            this.textManuallyChanged = false;
         }
     }
 
@@ -112,6 +114,9 @@ export default class TraceVisualization extends Morph {
                 this.markAndScrollTo(position);
             }
         });
+        
+        subEntry.addEventListener('dblclick', e => {
+            elm.openInInspector()        })
     }
     
     createSectionElement(section, path = [section]) {
@@ -142,7 +147,9 @@ export default class TraceVisualization extends Morph {
 
                             body.appendChild(subEntry);        
                             subEntry.addEventListener('mouseover', e => {
-                                me.editor.value = errorEvent.data;
+                                          debugger
+                                me.editor.setText(errorEvent.data[0]);
+                                me.textManuallyChanged = true;
                             }); 
                         },
                         visitTraceSection(traceSection) {
