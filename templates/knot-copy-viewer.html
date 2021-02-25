@@ -1,0 +1,30 @@
+<template id="knot-copy-viewer" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+  #content,#editor{
+    height: 50%;
+  }
+#content {
+  background-color: lightgray;
+  overflow-y: scroll;
+}
+  li:hover {
+    background-color: green;
+  }
+  li:focus, li:focus-within{
+    background-color: red;
+    border: 3px solid red;
+  }
+</style>
+  <button id="plusButton">plus</button>
+  <button id="minusButton">minus</button>
+<div id="content">
+  <slot id="list"></slot>
+</div>
+<lively-code-mirror id="editor" wrapmode="true"></lively-code-mirror>
+</template>
+
