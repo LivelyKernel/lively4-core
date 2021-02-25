@@ -10,11 +10,14 @@ import toTitleCase from "src/external/title-case.js"
 import moment from "src/external/moment.js"
 
 
-/*MD 
+/*MD # Literature Listing
 
 [Microsoft Graph API](https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes) | [Schema](https://docs.microsoft.com/en-us/academic-services/knowledge-exploration-service/reference-makes-api-entity-schema)
 
+![](literature-listing.png)
+
 MD*/
+
 
 export default class LiteratureListing extends Morph {
   async initialize () {
@@ -76,8 +79,10 @@ export default class LiteratureListing extends Morph {
   async updateView() {
     this.get("#content").innerHTML = "updating files and entries... (this may take a while)"
 
-    await this.updateFiles()
-    await this.updateEntries()
+    if (!this.literatureFiles) {
+      await this.updateFiles()
+      await this.updateEntries()      
+    }
    
     this.details = <div id="details" style="position:absolute;"></div>
     this.details.hidden = true
@@ -245,6 +250,13 @@ export default class LiteratureListing extends Morph {
 
   livelyMigrate(other) {
     this.container = other.container
+    this.literatureFiles = other.literatureFiles
+  }
+  
+  livelyInspect(contentNode, inspector) {
+    if (this.literatureFiles) {
+      contentNode.appendChild(inspector.display(this.literatureFiles, false, "#literatureFiles", this));
+    } 
   }
   
   async livelyExample() {

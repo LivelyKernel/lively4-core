@@ -5,6 +5,12 @@ import Bindings from "src/client/bindings.js"
 import {promisedEvent} from "src/client/utils.js"
 
 
+/*MD # File Chooser
+
+![](file-chooser.png){width=300px}
+
+MD*/
+
 export default class FileChooser extends Morph {
   async initialize() {
     this.registerAttributes(["root"]);

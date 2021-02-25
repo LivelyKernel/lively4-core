@@ -1,16 +1,15 @@
-
-import Dexie from "src/external/dexie3.js"
-import BibtexParser from 'src/external/bibtexParse.js';
-import MarkdownIt from "src/external/markdown-it.js";
 import Bibliography from "src/client/bibliography.js"
 import FileIndex from "src/client/fileindex.js";
-import {pt} from "src/client/graphics.js"
-import toTitleCase from "src/external/title-case.js"
 import moment from "src/external/moment.js"
-
 import {Paper} from "src/client/literature.js"
-
 import Morph from 'src/components/widgets/lively-morph.js';
+
+
+/*MD # Literature Search 
+
+![](literature-search.png)
+
+MD*/
 
 export default class LiteratureSearch extends Morph {
   async initialize() {

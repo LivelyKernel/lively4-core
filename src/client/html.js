@@ -216,6 +216,13 @@ export default class HTML {
       if (node.getAttribute) {
         
         var href = node.getAttribute("href")
+        if (!href) {
+          href = node.getAttribute("xlink:href")
+          if (href) {
+            var isXLink = true;
+          }
+        }
+        
         if (href) {
           // console.log("FIX LINK ", href)
           // #TODO load inplace....
