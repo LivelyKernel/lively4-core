@@ -2,6 +2,14 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 
+/*MD 
+# Blabla 
+Strg + Alt + P
+oder Alt + P MD*/
+
+/*MD <edit://src/components/widgets/academic-subquery.html>
+oder browse:// 
+ #TODO MD*/
 var g = ohm.grammar(
   `Academic { 
     Exp =
@@ -131,8 +139,73 @@ export default class AcademicSubquery extends Morph {
     super();
   }
   
+  /*MD ## Init MD*/
   async initialize() {
-    this.updateView()
+    // load the schema of a paper
+    this.schema = await MicrosoftAcademicEntities.generateSchema("paper");
+    // to use the descriptions in the UI, we need to shorten some
+    var createShortDescriptions = attr => {
+      switch(attr.name) {
+        case "AW": 
+          attr.shortDesc = "Unique words in abstract";
+          break;
+        case "BT":
+          attr.shortDesc = "BibTex document type";
+          break;
+        case "CitCon":
+          attr.shortDesc = "Citation contexts";
+          break;
+        case "D":
+          attr.shortDesc = "Date";
+          break;
+        case "DOI":
+          attr.shortDesc = "Digital Object Identifier";
+          break;
+        case "E":
+          attr.shortDesc = "Extended metadata";
+          break;
+        case "FamId":
+          attr.shortDesc = "Family Group ID";
+          break;
+        case "LP":
+          attr.shortDesc = "Last Page";
+          break;
+        case "Pt":
+          attr.shortDesc = "Publication type";
+          break;
+        case "RId":
+          attr.shortDesc = "Referenced Paper IDs";
+          break;
+        case "VFN":
+          attr.shortDesc = "Journal or Conf. name (full)";
+          break;
+        case "VSN":
+          attr.shortDesc = "Journal or Conf. name (short)";
+          break;
+        case "W":
+          attr.shortDesc = "Unique words in title";
+          break;
+        default:
+          attr.shortDesc = attr.description;
+      }
+      return attr;
+    }
+    this.schemaFiltered = this.schema
+                                .filter(attr => attr.operations != "None")
+                                .map(attr => createShortDescriptions(attr));
+    // map words for operations to symbols for the query 
+    this.mapOperationToSymbol = op => {switch(op) {
+        case "Equals":
+          return ["==", "="];
+        case "StartsWith":
+          return ["="];
+        case "IsBetween":
+          return [">", ">=", "<", "<=", "="];
+        default:
+          return op;
+      }};
+    
+    this.updateView();
     
     observer = new MutationObserver((mutations) => {
       clearTimeout(timeout);
@@ -151,7 +224,6 @@ export default class AcademicSubquery extends Morph {
         })
       }, 300);
     });
-    
     const config = {
       attributes: true,
       childList: true,
@@ -159,9 +231,6 @@ export default class AcademicSubquery extends Morph {
       attributeOldValue: true,
       characterDataOldValue: true,
     };
-    
-    // TODO: Why are we switching focus after editing
-    // once we start observing?
     observer.observe(this.get('#pane'), config);
     
     // TODO: falls ich das umbaue, sodass eine subquery einfach als
@@ -174,13 +243,6 @@ export default class AcademicSubquery extends Morph {
      this.addEventListener('drop', (evt) => this.onDrop(evt))
     */
     this.style.draggable = 'true';
-  //   "drag",
-  // "dragend",
-  // "dragenter",
-  // "dragleave",
-  // "dragover",
-  // "dragstart",
-  // "drop",
   }
   
   onDragStart(event) {
@@ -253,7 +315,7 @@ export default class AcademicSubquery extends Morph {
       this.ui.addEventListener('dragleave', this.onDragLeave)
       this.ui.addEventListener('drop', this.onDrop)
     }
-    this.ui.queryElement = this; // oufff
+    this.ui.queryElement = this; // for drag and drop
     /*if (!this.isComplex) {
       this.addEventListener('dragstart', this.onDragStart)
       this.addEventListener('dragend', this.onDragEnd)
@@ -290,7 +352,6 @@ export default class AcademicSubquery extends Morph {
   }
 
   async viewToQuery() {
-    // TODO!
     var query = this.textContent;
     
     if (this.isComplex) {
@@ -303,37 +364,52 @@ export default class AcademicSubquery extends Morph {
       }
     } else {
       var innerSpan = this.get('#inner');
-      if (innerSpan) {
+      if (!innerSpan) { return query }
+      var attr, comp, val;
+      if (this.editing) { // edit mode
+        var attrElement = innerSpan.querySelector('#attribute');
+        attr = attrElement.options[attrElement.selectedIndex].value // or .text;
+        var compElement = innerSpan.querySelector('#comparator');
+        comp = compElement.options[compElement.selectedIndex].value // or .text;
+        val = innerSpan.querySelector('#value').value;
+      } else { // read mode
         //lively.notify("INNERSPAN", innerSpan)
-        var [attr, comp, val] = innerSpan
-                    .querySelectorAll("span[name='queryPart']")
-                    .map(e => e.textContent);
+        [attr, comp, val] = innerSpan
+                              .querySelectorAll("span[name='queryPart']")
+                              .map(e => e.textContent);
         if (val)
           val = val.slice(0, val.length - 1); // remove last whitespace
-        
-        // TODO check if attribute has string value
-        var stringAttributes = {
-          "A": "Author",
-          "AA.AuN": "Author Name",
-        }
-        if (attr.slice(0, attr.length - 1) in stringAttributes) {
-          val = "'" + val + "'"
-        }
-        //query = attr + comp + "'" + val + "'";
-        if (innerSpan.getAttribute("type") == "composite")
-          query = "Composite(" + attr + comp + val + ")";
-        else
-          query = attr + comp + val;
       }
+      
+      
+      
+      // TODO check if attribute has string value
+      var stringAttributes = {
+        "A": "Author",
+        "AA.AuN": "Author Name",
+      }
+      if (attr.slice(0, attr.length - 1) in stringAttributes) {
+        val = "'" + val + "'"
+      }
+      // TODO: check if current attribute is composite (has .)
+      //query = attr + comp + "'" + val + "'";
+      if (innerSpan.getAttribute("type") == "composite")
+        query = "Composite(" + attr + comp + val + ")";
+      else
+        query = attr + comp + val;
+      
+      
+      
+      
     }
-    
+    lively.notify("QUERY from view", query)
     return query
   }
   
   async toggleEditing() {
+    await this.setQuery(await this.viewToQuery()); // update query from changes
     this.editing = !this.editing;
-    lively.notify("EDIT", this.editing)
-    this.ui = await this.queryToView();
+    this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
   }
   
@@ -341,33 +417,21 @@ export default class AcademicSubquery extends Morph {
   async buildEditable(ast) {
     var inner = <span id="inner"></span>;
     var query = <span name="sub" draggable='false'></span>;
-    var schema = await MicrosoftAcademicEntities.generateSchema("paper"); // TODO: in der Klasse speichern?
     
     // attribute
     var attribute = <select name='attribute' id='attribute'></select>;
-    var selectedAttribute; // TODO: Klassenvariable?
-    schema.filter(attr => attr.operations != "None").forEach(option => {
+    //var selectedAttribute; // TODO: Klassenvariable?
+    this.schemaFiltered.forEach(option => {
       var selected = (option.name == ast.attribute);
-      if (selected) { selectedAttribute = option; }
-      attribute.options.add(new Option(option.name, option.name, selected, selected))
+      if (selected) { this.selectedAttribute = option; }
+      attribute.options.add(new Option(option.shortDesc, option.name, selected, selected))
     })
     query.appendChild(attribute);
     
     // comparator
-    var mapOperationToSymbol = op => {switch(op) {
-        case "Equals":
-          return ["==", "="];
-        case "StartsWith":
-          return ["="];
-        case "IsBetween":
-          return [">", ">=", "<", "<=", "="];
-        default:
-          return op;
-      } // TODO: in der Klasse speichern?
-    };
     var comparator = <select name='comparator' id='comparator'></select>;
-    selectedAttribute.operations.split(", ")
-      .map(operation => mapOperationToSymbol(operation)) // map words to arrays of symbols
+    this.selectedAttribute.operations.split(", ")
+      .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
       .flat()
       .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
       .forEach(option => {
