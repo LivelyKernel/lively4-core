@@ -12,12 +12,26 @@
     #content {
       background-color: gray;
     }
+    td {
+      border: 1px solid black;
+      padding: 3px;
+    }
+    th {
+      border: 2px solid black;
+      padding: 2px;
+      text-align: center;
+    }
+    #valuesOverTime {
+      width: 100%;
+      border-spacing: 0px;
+    }
     .container {
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 1fr 3fr auto;
       align-items:stretch;
       justify-items:stretch;
       height: 100%;
+      overflow: hidden;
     }
     .row {
       display: grid;
@@ -25,21 +39,36 @@
       align-items:stretch;
       justify-items:stretch;
       width: 100%;
+      overflow-y: hidden;
     }
     .pane {
       margin: 1px;
       border: 1px solid #d5d5d5;
+      overflow-y: auto;
+    }
+    .variable {
+      color: #0000FF
     }
   </style>
 
   <div class="container">    
     <div class="row">
-      <div id="aeOverview" class="pane"></div>
-      <div>
-        Values over time
+      <div class="pane">     
+        <h3> AE Overview </h3>
+        <div id="aeOverview"></div>
+      </div>
+      <div class="pane">
+        <h3> Values over time </h3>
+        <table id="valuesOverTime">
+        </table>
+        Filter: <span class="variable">event</span> => {<input id="filterInput">}
+        <button id="filterButton">Filter</button>
       </div>
     </div>
-    <div id="diagram" class="pane"></div>
+    <div class="pane">    
+      <h3> Timeline </h3>      
+      <div id="diagram"></div>
+    </div>
     <div id="footer" class="pane">
       <p class="infos">
         <span id="numberEvents"></span> events <span class="light">found between</span> <br />

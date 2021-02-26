@@ -81,6 +81,7 @@ export const AExprRegistry = {
   },
 
   eventListeners() {
+    if(!this.listeners) return [];
     this.listeners = this.listeners.filter(listener => listener.reference);
     return this.listeners;
   }

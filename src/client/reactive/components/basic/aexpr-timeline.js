@@ -106,28 +106,41 @@ export default class EventDrops extends Morph {
         "themes": { "icons": false }
       }
     });
-    
+
     this.aeChangedDebounced = (() => this.setAexprs(this.getDataFromSource())).debounce(10, 300);
     this.eventsChangedDebounced = (() => this.updateTimeline(this.getDataFromSource())).debounce(100, 1000);
     this.activeExpressionsChanged();
     //Register to AE changes
     AExprRegistry.addEventListener(this, (ae, event) => {
-      if(event.type === "created" || event.type === "disposed") {
-        this.activeExpressionsChanged()
+      if (event.type === "created" || event.type === "disposed") {
+        this.activeExpressionsChanged();
       } else {
-        this.eventsChanged()        
+        this.eventsChanged();
       }
     });
     //Register to overview selection changes
     jQuery(this.aeOverview).on("changed.jstree", (e, data) => {
       this.eventsChanged();
-    })
+    }
     //Register to grouping change
-    this.groupByLine.addEventListener('change', () => {
+    );this.groupByLine.addEventListener('change', () => {
       if (this.groupByLine.checked) {
         this.groupingFunction = this.locationGrouping();
       } else {
         this.groupingFunction = this.instanceGrouping();
+      }
+      this.eventsChanged();
+    });
+    //Register to filter changes
+    this.filterFunction = () => true;
+    this.filterButton.addEventListener('click', () => {
+      const inputValue = this.filterInput.value;
+      if (!inputValue) {
+        this.filterFunction = () => true;
+      } else {
+        this.filterFunction = event => {
+          return eval(inputValue);
+        };
       }
       this.eventsChanged();
     });
@@ -178,7 +191,6 @@ export default class EventDrops extends Morph {
   getGroupingFunction() {
     return this.groupingFunction || this.locationGrouping();
   }
-  
 
   activeExpressionsChanged() {
     this.aeChangedDebounced();
@@ -201,15 +213,19 @@ export default class EventDrops extends Morph {
       aexprs[i].timelineID = i;
     }
     this.updateOverview(aexprs);
-    this.updateTimeline(aexprs)
+    this.updateTimeline(aexprs);
   }
 
   updateTimeline(aexprs) {
     const checkedIndices = jQuery(this.aeOverview).jstree(true).get_bottom_selected();
     const selectedAEs = checkedIndices.map(i => aexprs[i - 1]).filter(ae => ae);
+    this.updateValuesOverTime(selectedAEs);
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
-    groups = Object.keys(groups).map(each => ({ name: each, data: groups[each].flatMap(ae => ae.meta().get('events')) }));
+    groups = Object.keys(groups).map(each => ({
+      name: each,
+      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction)
+    }));
     this.setData(groups);
     if (selectedAEs.length == 0) return;
 
@@ -236,6 +252,23 @@ export default class EventDrops extends Morph {
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);
     this.diagram.scrollTop = scrollBefore;
+  }
+
+  updateValuesOverTime(aexprs) {
+    const aeWithRelevantEvents = aexprs.map(ae => {
+      return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value").filter(this.filterFunction) };
+    });
+    this.valuesOverTime.innerHTML = "";
+    
+    for(const {ae, events} of aeWithRelevantEvents) {
+      if(events.length === 0) continue;
+      let row = <tr><th>{ae.meta().get('id')}</th></tr>
+      row.append(<td>{events[0].value.lastValue}</td>);
+      for(const event of events) {
+        row.append(<td>{event.value.value}</td>);
+      }
+      this.valuesOverTime.append(row);
+    }
   }
 
   updateOverview(aexprs) {
@@ -320,4 +353,17 @@ export default class EventDrops extends Morph {
   get aeOverview() {
     return this.get("#aeOverview");
   }
+
+  get filterInput() {
+    return this.get("#filterInput");
+  }
+
+  get filterButton() {
+    return this.get("#filterButton");
+  }
+
+  get valuesOverTime() {
+    return this.get("#valuesOverTime");
+  }
+
 }
