@@ -59,13 +59,11 @@ export default class AcademicQuery extends Morph {
   }
 
   async updateView() {
+    if(!this.subquery) { return }
     var pane = this.get("#pane")
     var queryView = <academic-subquery></academic-subquery>;
-    if(this.subquery) {
-      queryView = this.subquery;
-    } else {
-      lively.notify("Could not load query.");
-    }
+    queryView = this.subquery;
+
     var input = <input id="queryInput" value={this.textContent} style="width: 300px"></input>;
     var updateButton = <button click={() => this.setQuery(input.value)}>update</button>;
     var searchButton = <button click={() => lively.openBrowser("academic://expr:" + this.textContent + "?count=100")}>search</button>;
