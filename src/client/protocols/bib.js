@@ -21,6 +21,9 @@ export class BibScheme extends BibliographyScheme {
     var entry = entries[0] || {authors: undefined, keywords: undefined, title: ""}
     var key = query
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
+    var literatureNotes = await FileIndex.current().db.files
+      .filter( ea => ea.name.match(key + ".md")).toArray()
+
     
     var papers = await Literature.db.papers.where("key").equals(key).toArray()
      
@@ -43,7 +46,7 @@ export class BibScheme extends BibliographyScheme {
     if (entry.source) {
       content += "<pre>" + entry.source+ "</pre>"
     }         
-    content += "<h3>Documents</h3><ul>" + files.map(ea => {
+    content += "<h3>Documents</h3><ul>" + (files.concat(literatureNotes)).map(ea => {
       return `<li><a href="${ea.url}">${ea.name}</a></li>`     
     }).join("\n") + "</ul>"
 

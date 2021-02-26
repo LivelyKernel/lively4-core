@@ -34,7 +34,8 @@ export default class Trace {
 
     createTraceID() {
         return {
-            pluginRoundID: this.pluginRound,
+            // plugin round not needed, but nice for debugging
+            pluginRound: this.pluginRound,
             nodeID: this.counter++,
             isTraceID: true
         }
