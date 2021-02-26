@@ -1481,6 +1481,7 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       if (existingFound) {
+        comp.parentElement.focus();
         comp.focus();
         return;
       }
