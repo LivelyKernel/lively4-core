@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
+import files from "src/client/files.js"
 
 /*MD 
 # Blabla 
@@ -332,7 +333,6 @@ export default class AcademicSubquery extends Morph {
   
   
   
-  
   async updateView() {
     if(!this.ui) { return }
     var pane = this.get("#pane")
@@ -423,7 +423,7 @@ export default class AcademicSubquery extends Morph {
         val = "'" + val + "'"
       }
       
-      if (currentAttribute.name.includes("."))
+      if (currentAttribute.name.match(/\./))
         query = "Composite(" + currentAttribute.name + comp + val + ")";
         // TODO: Set type to Composite?
       else
@@ -550,6 +550,7 @@ export default class AcademicSubquery extends Morph {
   }
   
   async buildSimpleQuery(ast) {
+    // setup
     var inner =
       <span class="hover" contenteditable="false" id="inner">
         <span class="hovercontent">
@@ -569,21 +570,47 @@ export default class AcademicSubquery extends Morph {
       </span>;
     var queryElement = <span name="sub" draggable='true'></span>;
     
-    // attribute
     var currentAttribute;
     var schema = await this.getPreparedSchema();
     schema.forEach(option => {
       if (option.name == ast.attribute) { currentAttribute = option; }
     })
-    var attrElement = <span class="queryPart" name="queryPart">{currentAttribute.shortDesc}</span>;
+    
+    // substitute IDs
+    var attribute = currentAttribute.shortDesc;
+    var value = ast.value;
+    var comparator = ast.comparator;
+    
+    if (currentAttribute.name.match(/[Ii]d/)) {
+      var id = ast.value; // 12345678
+      var raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`); // vielleicht attr nicht beschränken
+      var entity = raw.entities[0];
+      if (entity) { // not a valid ID
+        debugger;
+        var type = MicrosoftAcademicEntities.getEntityType(entity.Ty);
+        var nameAttribute = currentAttribute.name.replace("Id", "N") // AA.AuId --> AA.AuN
+        schema.forEach(option => {
+          if (option.name == nameAttribute) { attribute = option.shortDesc; }
+        })
+        // only the part after the . if there is one
+        value = entity[nameAttribute.substring("AA.AuN".indexOf(".") + 1)]
+      }
+    }
+    // TODO! Jetzt kann ich die Query eigentlich nicht mehr von der UI aus bauen,
+    // wenn ich aus dem read mode komme 
+    // --> Query immer so lassen und beim Drag and Drop anpassen
+    // bzw. wenn man wieder aus dem edit mode kommt, aus der UI lesen
+    
+    // attribute
+    var attrElement = <span class="queryPart" name="queryPart">{attribute}</span>;
     queryElement.appendChild(attrElement);
     
     // comparator
-    var compElement = <span class="queryPart" name="queryPart">{ast.comparator}</span>;
+    var compElement = <span class="queryPart" name="queryPart">{comparator}</span>;
     queryElement.appendChild(compElement);
     
     // value
-    var valElement = <span class="queryPart" name="queryPart">{ast.value}</span>;
+    var valElement = <span class="queryPart" name="queryPart">{value}</span>;
     queryElement.appendChild(valElement);
     
     queryElement.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
