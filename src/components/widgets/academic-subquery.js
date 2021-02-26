@@ -149,7 +149,7 @@ export default class AcademicSubquery extends Morph {
       timeout = setTimeout(async () => {
         mutations.forEach(async mutation => {
           if (mutation.type == "characterData") {
-            this.textContent = await this.viewToQuery();
+            //this.textContent = await this.viewToQuery();
           }
           if (mutation.type == "childList") {
             // TODO: better propagation to super elements
@@ -387,7 +387,7 @@ export default class AcademicSubquery extends Morph {
   async viewToQuery() {
     var query = this.textContent;
     
-    if (this.isComplex) {
+    if (this.isComplex) { // conjunction
       // TODO: Why is this neccessary?
       if (await this.leftSubquery && await this.rightSubquery) {
         var left = await this.leftSubquery.viewToQuery();
@@ -395,7 +395,17 @@ export default class AcademicSubquery extends Morph {
         var conjunction = this.get('#conjunction').textContent;
         query = conjunction + "(" + left + ", " + right + ")";
       }
-    } else {
+    } else { // simple
+      // Do not render the view to the query in read-mode,
+      // because nothing should have changed there anyways.
+      // However, we might have substituted IDs through names,
+      // which could backfire if we call viewToQuery().
+      // On the other hand, if the query (textcontent) is
+      // empty so far, we probably still want to create it.
+      // TODO: OR NOT! BECAUSE I WILL CHANGE HOW THE
+      // CONJUNCTION BUTTONS SET THE QUERIES (set queries, not objects)
+      if (!this.editing && query) { return query; }
+      
       var innerSpan = this.get('#inner');
       if (!innerSpan) { return query }
       var attribute, comp, val;
@@ -517,13 +527,23 @@ export default class AcademicSubquery extends Morph {
   }
   
   async buildConjunctionQuery(ast) {
+    var query = this.textContent;
+    var leftBracket = query.indexOf("(")
+    var comma = query.indexOf(", ")
+    var leftQuery = query.substring(leftBracket+1, comma)
+    var rightQuery = query.substring(comma+1, query.length-1)
+    
     var inner = <span id="inner"></span>;
     var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
+    
     var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await left.setQueryObject(ast.left);
+    //await left.setQueryObject(ast.left); // TODO: Remove all traces this ever existed
+    await left.setQuery(leftQuery);
     this.leftSubquery = left; // for viewToQuery
+    
     var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await right.setQueryObject(ast.right);
+    //await right.setQueryObject(ast.right);
+    await right.setQuery(rightQuery);
     this.rightSubquery = right; // for viewToQuery
     inner.appendChild(
       <table>
@@ -582,17 +602,21 @@ export default class AcademicSubquery extends Morph {
     var comparator = ast.comparator;
     
     if (currentAttribute.name.match(/[Ii]d/)) {
-      var id = ast.value; // 12345678
+      var id = ast.value;
       var raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`); // vielleicht attr nicht beschränken
       var entity = raw.entities[0];
+      // TODO: handle wrong IDs
       if (entity) { // not a valid ID
         var type = MicrosoftAcademicEntities.getEntityType(entity.Ty);
-        var nameAttribute = currentAttribute.name.replace("Id", "N") // AA.AuId --> AA.AuN
-        schema.forEach(option => {
-          if (option.name == nameAttribute) { attribute = option.shortDesc; }
-        })
+        var nameAttribute = currentAttribute.name.replace("Id", "N"); // AA.AuId --> AA.AuN
         // only the part after the . if there is one
-        value = entity[nameAttribute.substring("AA.AuN".indexOf(".") + 1)]
+        var maybeUndefinedValue = entity[nameAttribute.substring("AA.AuN".indexOf(".") + 1)];
+        if (maybeUndefinedValue) { // might not give a result
+          value = maybeUndefinedValue;
+          schema.forEach(option => {
+            if (option.name == nameAttribute) { attribute = option.shortDesc; }
+          })
+        }
       }
     }
     // TODO! Jetzt kann ich die Query eigentlich nicht mehr von der UI aus bauen,
